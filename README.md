@@ -13,6 +13,7 @@
 - wol网络唤醒
 ## 使用
 项目目前使用pkg打包
+先使用 `npm run pkg`打包然后使用各个平台的可执行程序运行;
 1. `filecat --port 5567 --base_folder d:/ `
 2. `filecat --env ./env`
 ## 路线
