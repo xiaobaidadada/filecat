@@ -1,0 +1,12 @@
+
+#服务器端口
+port=5567
+# 文件夹起始地址
+base_folder=D:\
+
+# 本地账号密码
+username=123
+password=123
+
+work_dir=D:\data
+

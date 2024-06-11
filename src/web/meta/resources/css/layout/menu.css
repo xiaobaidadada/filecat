@@ -1,0 +1,63 @@
+
+
+.menu {
+    display: flex;
+    padding-bottom: 1em;
+    overflow: auto;
+}
+
+.menu .wrapper {
+    display: flex;
+    flex-grow: 1;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+body.rtl .menu .wrapper {
+    margin-right: 16em;
+}
+
+.menu ul {
+    list-style: none;
+    display: flex;
+    color: rgb(84, 110, 122);
+    font-weight: 500;
+    padding: 0;
+    margin: 0 0 -2px 0;
+    font-size: .8em;
+    text-align: center;
+    justify-content: left;
+}
+
+.menu ul li {
+    position: relative;
+    padding: 1.5em 2em;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: .1s ease-in-out all;
+
+}
+
+.menu ul li:hover {
+    background: var(--moon-grey);
+}
+
+.menu ul li.active {
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+.menu ul li.active::before {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: "";
+    background: var(--blue);
+    opacity: 0.08;
+}
+
+.menu i {
+    font-size: 1em;
+    vertical-align: middle;
+}

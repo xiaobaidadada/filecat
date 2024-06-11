@@ -1,0 +1,79 @@
+@import "../_variables.css";
+/*居中
+ <div className={"center "}>
+            <div>
+                居中
+            </div>
+ </div>
+*/
+.center {
+    background: #fff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.center img {
+    width: 4em;
+    height: 4em;
+    margin: 0 auto;
+    display: block;
+}
+
+.center h1,.self_win_center h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin: .4em 0 .67em;
+}
+
+.center >* {
+    /*position: relative;*/
+    /*top: 50%;*/
+    /*left: 50%;*/
+    /*transform: translate(-50%, -50%);*/
+    /*max-width: 16em;*/
+    /*width: 90%;*/
+}
+.self_win_center {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 16em;
+    width: 90%;
+}
+
+.center.recaptcha > * {
+    min-width: 304px;
+}
+
+.center #recaptcha {
+    margin: .5em 0 0;
+}
+
+.center .wrong {
+    background: var(--red);
+    color: #fff;
+    padding: .5em;
+    text-align: center;
+    animation: .2s opac forwards;
+}
+
+@keyframes opac {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.center p {
+    cursor: pointer;
+    text-align: right;
+    color: var(--blue);
+    text-transform: lowercase;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin: .5rem 0;
+}
