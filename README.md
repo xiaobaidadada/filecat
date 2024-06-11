@@ -11,7 +11,10 @@
 - docker监控查看
 - 系统内存，cpu信息
 - wol网络唤醒
-
+## 使用
+项目目前使用pkg打包
+1. `filecat --port 5567 --base_folder d:/ `
+2. `filecat --env ./env`
 ## 路线
 1. 支持更多的ddns平台
 2. 优化进程信息获取、sft、rdp代理等
