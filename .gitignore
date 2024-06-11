@@ -1,0 +1,8 @@
+/node_modules/
+/build/
+/filecat-linux
+/filecat-macos
+/filecat-win.exe
+/filecat.exe
+/.idea/
+/dist/

@@ -1,0 +1,55 @@
+
+/*
+网站导航菜单
+ <nav className={"nav"}>
+                <div className={"nav_1"}>
+                    <div className=" nav_2">
+                        <i className="material-icons">folder</i>
+                        <span className=" nav_3">我的文件</span>
+                    </div>
+
+                </div>
+                <div className={"nav_1"}>
+                    <div className=" nav_2">
+                        <i className="material-icons">folder</i>
+                        <span className=" nav_3">你的文件</span>
+                    </div>
+
+                </div>
+</nav>
+*/
+.nav {
+    width: 16em;
+    position: fixed;
+    top: 4em;
+    left: 0;
+    z-index: 1;
+}
+
+.nav .nav_2 {
+    width: 100%;
+    display: block;
+    border-radius: 0;
+    font-size: 1.1em;
+    padding: 1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer
+}
+.nav_2 .nav_3 {
+    padding: .4em;
+    -webkit-transition: .1s ease-in-out all;
+    transition: .1s ease-in-out all;
+    border-radius: 50%;
+}
+.nav_2:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+.nav > .nav_1 {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+nav .nav_2 > * {
+    vertical-align: middle;
+}

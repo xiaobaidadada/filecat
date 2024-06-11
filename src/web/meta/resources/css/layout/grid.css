@@ -1,0 +1,15 @@
+
+.grid_three {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 三列等宽 */
+    gap: 1rem; /* 列之间的间隔 */
+}
+
+.grid_three_item {
+    /*background-color: lightblue; !* 背景颜色 *!*/
+    /*padding: 1rem; !* 内边距 *!*/
+    /*text-align: center; !* 文字居中对齐 *!*/
+    font-weight: 500; /* 加粗 */
+    min-width: 3rem;
+    padding-top: 0.5rem;
+}

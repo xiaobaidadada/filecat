@@ -1,0 +1,56 @@
+
+.nav_list_a {
+    --link-border-style: none;
+    --link-color: var(--c-transparent-black_900);
+    align-items: center;
+    background: rgba(0, 0, 0, .05);
+    border-radius: 24px;
+    display: flex;
+    flex-shrink: 0;
+    padding-bottom: 0.6rem;
+    padding-top: 0.6rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    transition: all .2s ease-out;
+    text-decoration: none;
+    position: relative;
+    margin: 1rem;
+}
+/* 在链接上悬停时显示灰色遮罩 */
+.nav_list_a:hover::before {
+    content: "";
+    /* 绝对定位，铺满链接 */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* 设置背景颜色为半透明灰色 */
+    background-color: rgba(0, 0, 0, .08);
+    /* 隐藏遮罩层 */
+    opacity: 0;
+    /* 过渡效果 */
+    transition: opacity 0.3s ease;
+    border-radius: 24px;
+}
+
+/* 在链接上悬停时显示灰色遮罩 */
+.nav_list_a:hover::before {
+    /* 显示遮罩层 */
+    opacity: 1;
+}
+.nav_list_div {
+    padding: 2rem;
+    -ms-overflow-style: none;
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin: 0 -20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    width: 100%;
+    /*height: 100%;*/
+    flex-wrap: wrap;
+
+}
+

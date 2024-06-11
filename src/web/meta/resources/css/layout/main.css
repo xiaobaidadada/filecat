@@ -1,0 +1,9 @@
+
+
+
+main {
+    /*直接让内容居右*/
+    min-height: 1em;
+    margin: 0 1em 1em auto;
+    width: calc(100% - 19em);
+}
