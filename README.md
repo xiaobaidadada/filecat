@@ -16,10 +16,10 @@
 - wol网络唤醒
 ## 使用
 ### 直接使用
-[最新release](https://github.com/xiaobaidadada/filecat/releases/tag/%E5%88%9D%E5%A7%8B%E5%8C%96)
+下载[最新release](https://github.com/xiaobaidadada/filecat/releases/tag/%E5%88%9D%E5%A7%8B%E5%8C%96)
 然后使用各个平台的可执行程序运行;
 1. `filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
-2.使用例子中的配置文件 `filecat --env ./env`
+2. 使用例子中的配置文件 `filecat --env ./env`
 ### 开发
 项目目前使用pkg打包，请使用node18.x.x
 ## 路线
