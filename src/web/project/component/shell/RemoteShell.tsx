@@ -7,12 +7,14 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
 import {SshPojo} from "../../../../common/req/ssh.pojo";
+import {joinPaths} from "../../../../common/ListUtil";
 
 export function RemoteShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
     const [shellShowInit,setShellShowInit] = useState(false);
     const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
 
     const initTerminal =  async () => {
         const terminal = new Terminal({
@@ -36,6 +38,7 @@ export function RemoteShell(props) {
         const data = new WsData(CmdType.remote_shell_send);
         const req = new SshPojo();
         Object.assign(req,sshInfo);
+        req.dir = joinPaths(...shellNowDir);
         data.context= req;
         await ws.send(data)
         ws.addMsg(CmdType.remote_shell_getting,(wsData:WsData<SysPojo>)=>{
@@ -85,10 +88,10 @@ export function RemoteShell(props) {
                 data.context=shellShow.path
                 ws.send(data)
             }
-            setShellShowInit(true);
             return;
         }
         initTerminal();
+        setShellShowInit(true);
     }, [shellShow])
     useEffect(() => {
         return ()=> {

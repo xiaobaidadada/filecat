@@ -136,6 +136,8 @@ export class SshService extends SshSsh2 {
                     return "";
                 }
                 client.shell((err, stream) => {
+                    // cd目录
+                    stream.write(`cd '${pojo.dir}' \r`);
                     //发送到web
                     stream.on('data', (cmdData) => {
                         const result = new WsData<SysPojo>(CmdType.remote_shell_getting);

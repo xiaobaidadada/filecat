@@ -77,6 +77,10 @@ export function webPathJoin(...pathList) {
 export function joinPaths(...parts) {
     let p = parts[0];
     for (let i = 1; i < parts.length; i++) {
+        if (parts[i][parts[i].length-1] === '/') {
+            p += parts[i];
+            continue
+        }
         p += '/' + parts[i];
     }
     // return parts

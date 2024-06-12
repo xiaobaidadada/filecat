@@ -81,10 +81,10 @@ export function FileShell(props) {
                 data.context=shellShow.path
                 ws.send(data)
             }
-            setShellShowInit(true);
             return;
         }
         initTerminal();
+        setShellShowInit(true);
     }, [shellShow])
     useEffect(() => {
         return ()=> {
