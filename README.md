@@ -1,5 +1,9 @@
 ## 说明
 面向开发者的文件管理工具。
+![image](https://github.com/xiaobaidadada/filecat/assets/61794688/516ef7db-65c6-4f2d-b6e6-18b35f6e81a7)
+![image](https://github.com/xiaobaidadada/filecat/assets/61794688/97c630c5-6c0f-48d2-9a67-20b2ff86eae9)
+
+![image](https://github.com/xiaobaidadada/filecat/assets/61794688/a3383438-57ff-43db-ae17-3e500d99ea5f)
 
 ## 主要特性
 -  文件管理
@@ -27,4 +31,3 @@
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
 - [mstsc](https://github.com/citronneur/mstsc.js)
-- [NTop](https://github.com/gsass1/NTop)
