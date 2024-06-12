@@ -48,6 +48,10 @@ export class ShellService {
     async send(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
         const socket = socketMap.get(socketId);
+        // 要传递的环境变量
+        const envVars = {
+            PATH: process.env.PATH, // 传递 PATH 环境变量
+        };
         if (!socket) {
             // 创建
             const ptyProcess = pty.spawn(getShell(), [], {
@@ -55,7 +59,7 @@ export class ShellService {
                 cols: 240,
                 rows: 30,
                 cwd: process.env.HOME,
-                env: process.env,
+                env: envVars,
                 useConpty: process.env.NODE_ENV!=="production" ? false : undefined,
             });
             const sysPath = path.join(Env.base_folder, (data.context !== null && data.context !== "null") ? data.context : "");

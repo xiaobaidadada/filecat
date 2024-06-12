@@ -61,7 +61,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
                 if (shellShow.show) {
                     setShellShow({
                         show: true,
-                        path: joinPaths(...shellNowDir)
+                        path: req.dir
                     })
                 }
                 return;

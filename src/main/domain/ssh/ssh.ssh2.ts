@@ -14,10 +14,15 @@ const sftp_client = "sftp_client_key";
 export class SshSsh2 extends LifecycleRecordService {
 
     async connect(req: SshPojo): Client {
+        // 要传递的环境变量
+        const envVars = {
+            PATH: process.env.PATH, // 传递 PATH 环境变量
+        };
         const options = {
             host: req.domain,
             port: req.port,
             username: req.username,
+            env:envVars
         };
         if (req.private_path) {
             options['privateKey'] = fs.readFileSync(req.private_path);
