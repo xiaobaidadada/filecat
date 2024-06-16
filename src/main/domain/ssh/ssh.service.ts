@@ -16,6 +16,7 @@ import archiver from "archiver";
 import Stream from "node:stream";
 import multer from "multer";
 import {Context} from "koa";
+import {DataUtil} from "../data/DataUtil";
 
 
 export const navindex_remote_ssh_key = "navindex_remote_ssh_key";
@@ -207,11 +208,48 @@ export class SshService extends SshSsh2 {
         const client = this.lifeGetData(SshPojo.getKey(ctx.request.query)) as Client;
         const sftp = this.sftGet(client);
         const remoteFilePath = ctx.request.query.target;
+
+        const temp = "tempfile";
+
+        const localFilePath = DataUtil.writeFileSyncTemp(path.basename(remoteFilePath),temp,file.buffer);
+
+
+        const readStream = fs.createReadStream(localFilePath);
         const writeStream = sftp.createWriteStream(remoteFilePath);
-        // 将流数据写入远程文件
-        // 将文件数据转换为可读流
-        const fileStream = Readable.from(file.buffer);
-        fileStream.pipe(writeStream);
+        // const stats = fs.statSync(localFilePath);
+        // const totalSize = stats.size;
+        // let uploadedSize = 0;
+
+        readStream.on('data', (chunk) => {
+            // uploadedSize += chunk.length;
+            // const percent = Math.floor((uploadedSize / totalSize) * 100);
+            // console.log(`Progress: ${percent}%`);
+        });
+
+        return new Promise((resolve, reject) => {
+            readStream.pipe(writeStream);
+            writeStream.on('close', () => {
+                resolve(1);
+                fs.unlinkSync(localFilePath);
+            });
+            writeStream.on('error', (err) => {
+                reject(err);
+            });
+        })
+        // return new Promise((resolve, reject) => {
+        //     sftp.fastPut(localFilePath, remoteFilePath, (err) => {
+        //         if (err) {
+        //             reject(err);
+        //         } else {
+        //             resolve(1);
+        //         }
+        //     });
+        // })
+        // const writeStream = sftp.createWriteStream(remoteFilePath);
+        // // 将流数据写入远程文件
+        // // 将文件数据转换为可读流
+        // const fileStream = Readable.from(file.buffer);
+        // fileStream.pipe(writeStream);
 
         // sftp.fastPut(file.buffer, remoteFilePath, (err) => {
         //     if (err) throw err;

@@ -22,11 +22,11 @@ export class DataUtil {
         }
     }
 
-    private static checkFile(k) {
-        const p = path.join(Env.work_dir, "datafile", k);
+    private static checkFile(k,dir) {
+        const p = path.join(Env.work_dir, dir, k);
         if (!fs.existsSync(p)) {
             // @ts-ignore 检查某个目录是否存在
-            fse.ensureDir( path.join(Env.work_dir, "datafile"));
+            fse.ensureDir( path.join(Env.work_dir, dir));
             fs.writeFileSync(p, "");
             return false;
         }
@@ -46,7 +46,7 @@ export class DataUtil {
 
     public static getFile(k): string {
         const p = path.join(Env.work_dir, "datafile", k);
-        if (!this.checkFile(k)) {
+        if (!this.checkFile(k,"datafile")) {
             return ""
         }
         return fs.readFileSync(p).toString();
@@ -54,8 +54,16 @@ export class DataUtil {
 
     public static setFile(k, v: string) {
         const p = path.join(Env.work_dir, "datafile", k);
-        this.checkFile(k);
+        this.checkFile(k,"datafile");
         fs.writeFileSync(p, v);
+    }
+
+    // 上传到临时目录下，并返回文件路径
+    public static writeFileSyncTemp(file: string,dir, data: any) {
+        const p = path.join(Env.work_dir, dir, file);
+        this.checkFile(file,dir);
+        fs.writeFileSync(p, data);
+        return p;
     }
 }
 
