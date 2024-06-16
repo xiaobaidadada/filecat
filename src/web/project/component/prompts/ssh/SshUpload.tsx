@@ -64,6 +64,7 @@ export function SshUpload() {
                                 {/*<i className="material-icons"></i>*/}
                                 {v.name}
                             </div>
+                            {/*展示多个文件*/}
                             <div className="file-progress">
                                 <div style={{
                                     "width": `${
