@@ -105,5 +105,5 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
     }
 
     return <BaseFileItem  name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
-    click={clickHandler}/>
+                          click={clickHandler}/>
 }
