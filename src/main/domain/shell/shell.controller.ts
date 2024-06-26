@@ -1,11 +1,16 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {shellServiceImpl} from "./shell.service";
+import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 
 
 export class ShellController {
 
-    // 文件
+    @msg(CmdType.shell_open)
+    async open(data:WsData<ShellInitPojo>) {
+        shellServiceImpl.open(data);
+        return ""
+    }
     @msg(CmdType.shell_send)
     async send(data:WsData<any>) {
         shellServiceImpl.send(data);
@@ -36,6 +41,11 @@ export class ShellController {
     }
 
     // 进入exec执行
+    @msg(CmdType.docker_shell_exec_open)
+    async dockerShellExecOpen(data:WsData<ShellInitPojo>) {
+        await shellServiceImpl.dockerShellExecOpen(data);
+        return "";
+    }
     @msg(CmdType.docker_shell_exec)
     async dockerShellExec(data:WsData<any>) {
         await shellServiceImpl.dockerShellExec(data);

@@ -6,7 +6,7 @@ import {SysPojo} from "../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
-import {SshPojo} from "../../../../common/req/ssh.pojo";
+import {ShellInitPojo, SshPojo} from "../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../common/ListUtil";
 
 export function RemoteShell(props) {
@@ -30,17 +30,11 @@ export function RemoteShell(props) {
             cursorBlink: true,
             cursorStyle: 'bar',
             scrollback: 1000,
-            scrollSensitivity: 15,
+            scrollSensitivity: 1,
             tabStopWidth: 4,
 
         });
-        terminal.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
-        const data = new WsData(CmdType.remote_shell_send);
-        const req = new SshPojo();
-        Object.assign(req,sshInfo);
-        req.dir = joinPaths(...shellNowDir);
-        data.context= req;
-        await ws.send(data)
+
         ws.addMsg(CmdType.remote_shell_getting,(wsData:WsData<SysPojo>)=>{
             terminal.write(wsData.context)
         })
@@ -98,7 +92,18 @@ export function RemoteShell(props) {
             close();
         }
     }, []);
+    const init = (rows:number,cols:number)=>{
+        terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
+        const data = new WsData(CmdType.remote_shell_open);
+        const req = new SshPojo();
+        Object.assign(req,sshInfo);
+        req.init_path = joinPaths(...shellNowDir);
+        req.rows = rows;
+        req.cols = cols;
+        data.context= req;
+        ws.send(data)
+    }
     return (
-        <Shell show={shellShow.show} terminal={terminalState}/>
+        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
     )
 }

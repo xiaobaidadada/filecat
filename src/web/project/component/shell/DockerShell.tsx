@@ -7,6 +7,7 @@ import {SysPojo} from "../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
+import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 
 export function DockerShell(props) {
     const [terminalState,setTerminalState] = useState(null)
@@ -30,10 +31,7 @@ export function DockerShell(props) {
             tabStopWidth: 4,
             convertEol:true // \n换行符
         });
-        terminal.writeln('\x1b[38;2;29;153;243mconnect...\x1b[0m ')
-        const data = new WsData(shellShow.type==="logs"?CmdType.docker_shell_logs:CmdType.docker_shell_exec);
-        data.context=shellShow.dockerId;
-        await ws.send(data)
+
         ws.subscribeUnconnect(close)
         ws.addMsg(shellShow.type==="logs"?CmdType.docker_shell_logs_getting:CmdType.docker_shell_exec_getting,(wsData:WsData<SysPojo>)=>{
             // wsData.context=wsData.context.replaceAll(/(?<!\r)\n/, "\r\n")
@@ -74,7 +72,23 @@ export function DockerShell(props) {
             close();
         }
     }, []);
+    const init = (rows:number,cols:number)=>{
+
+        terminalState.writeln('\x1b[38;2;29;153;243mconnect...\x1b[0m ');
+        const pojo = new ShellInitPojo();
+        pojo.rows = rows;
+        pojo.cols = cols;
+        pojo.dockerId = shellShow.dockerId;
+        let data :any;
+        if (shellShow.type==="logs") {
+            data = new WsData(CmdType.docker_shell_logs);
+        } else {
+            data = new WsData(CmdType.docker_shell_exec_open);
+        }
+        data.context = pojo;
+        ws.send(data)
+    }
     return (
-        <Shell show={shellShow.show} terminal={terminalState}/>
+        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
     )
 }

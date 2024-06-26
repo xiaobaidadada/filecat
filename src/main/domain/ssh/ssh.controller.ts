@@ -1,7 +1,7 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {navindex_remote_ssh_key, sshService} from "./ssh.service";
-import {SshPojo} from "../../../common/req/ssh.pojo";
+import {ShellInitPojo, SshPojo} from "../../../common/req/ssh.pojo";
 import {Body, Controller, Ctx, Delete, Get, Param, Post, Put, UploadedFile} from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {NavIndexItem} from "../../../common/req/common.pojo";
@@ -76,6 +76,11 @@ export class SSHController {
     }
 
     // cmd
+    @msg(CmdType.remote_shell_open)
+    async open(data: WsData<SshPojo>) {
+        sshService.open(data);
+        return ""
+    }
     @msg(CmdType.remote_shell_send)
     async send(data: WsData<SshPojo>) {
         sshService.send(data);

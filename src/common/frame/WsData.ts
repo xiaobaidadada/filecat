@@ -12,7 +12,9 @@ export enum CmdType {
     sys_getting,
     // 取消系统信息订阅
     sys_cancel,
-    // 发送命令，或者开启命令会话
+
+    shell_open,
+    // 发送命令
     shell_send,
     // shell持续接收
     shell_getting,
@@ -30,6 +32,7 @@ export enum CmdType {
     docker_shell_logs_getting,
     docker_shell_logs_cancel,
     // docker exec执行
+    docker_shell_exec_open,
     docker_shell_exec,
     docker_shell_exec_getting,
     docker_shell_exec_cancel,
@@ -43,6 +46,7 @@ export enum CmdType {
     process_cancel,
     process_close,
     // 远程shell
+    remote_shell_open,
     remote_shell_send,
     remote_shell_getting,
     remote_shell_cancel,
