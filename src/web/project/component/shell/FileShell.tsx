@@ -6,6 +6,7 @@ import {SysPojo} from "../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
+import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 
 export function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
@@ -26,14 +27,10 @@ export function FileShell(props) {
             cursorBlink: true,
             cursorStyle: 'bar',
             scrollback: 1000,
-            scrollSensitivity: 15,
+            scrollSensitivity: 1,
             tabStopWidth: 4,
 
         });
-        terminal.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
-        const data = new WsData(CmdType.shell_send);
-        data.context=shellShow.path
-        await ws.send(data)
         ws.addMsg(CmdType.shell_getting,(wsData:WsData<SysPojo>)=>{
             terminal.write(wsData.context)
         })
@@ -91,7 +88,17 @@ export function FileShell(props) {
             close();
         }
     }, []);
+    const init = (rows:number,cols:number)=>{
+        terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
+        const data = new WsData(CmdType.shell_open);
+        const pojo = new ShellInitPojo();
+        pojo.init_path = shellShow.path;
+        pojo.rows = rows;
+        pojo.cols = cols;
+        data.context= pojo;
+        ws.send(data)
+    }
     return (
-        <Shell show={shellShow.show} terminal={terminalState}/>
+        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
     )
 }

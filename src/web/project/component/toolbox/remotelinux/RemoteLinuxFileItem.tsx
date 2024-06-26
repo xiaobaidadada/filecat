@@ -64,6 +64,8 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
                         path: req.dir
                     })
                 }
+                setSelectList([])
+                setClickList([])
                 return;
             }
         } else {

@@ -6,7 +6,8 @@ import '@xterm/xterm/css/xterm.css'
 
 export interface ShellProps {
     show:boolean,
-    terminal:Terminal
+    terminal:Terminal,
+    init:(rows:number,cols:number) =>void
 }
 
 export function Shell(props:ShellProps) {
@@ -35,6 +36,7 @@ export function Shell(props:ShellProps) {
             // terminal 的尺寸与父元素匹配
             props.terminal!.loadAddon(fitAddon)
             fitAddon.fit()
+            props.init(props.terminal.rows,props.terminal.cols);
         }
 
     },[props.terminal])

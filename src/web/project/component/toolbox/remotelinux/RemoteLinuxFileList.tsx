@@ -169,7 +169,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
     function downloadFile() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        const url = `/ssh/download?file=${files[0]['name']}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}`;
+        const url = `/ssh/download?file=${joinPaths(...shellNowDir,files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}`;
         window.open(url);
     }
 

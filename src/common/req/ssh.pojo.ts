@@ -1,4 +1,11 @@
-export class SshPojo {
+export class ShellInitPojo {
+    rows:number;
+    cols:number;
+    init_path:string;
+    dockerId:string;
+}
+
+export class SshPojo extends ShellInitPojo{
     username:string;
     password:string;
     private_path:string; //密码和私钥文件地址二选一
@@ -15,3 +22,5 @@ export class SshPojo {
         return obj.domain+obj.port+obj.username+obj.password??obj.private_path;
     }
 }
+
+
