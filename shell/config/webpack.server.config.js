@@ -36,7 +36,7 @@ module.exports = {
             'process.env.NODE_ENV': JSON.stringify('production'),
         }),
         new webpack.IgnorePlugin({
-            resourceRegExp: /^\.\/win-process.*?$/,
+            resourceRegExp: /^\.\/.*?\.node$/
             // contextRegExp: /moment$/,
         })
     ],
