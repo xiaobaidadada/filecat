@@ -69,7 +69,7 @@
     "pretty": true,
     // "strictNullChecks": true,
     // "noUnusedLocals": false,
-//    "noStrictGenericChecks": true,
+    //    "noStrictGenericChecks": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "strictPropertyInitialization": false,
@@ -77,8 +77,8 @@
     "jsx": "react",
   },
   "include": [
-//    "libs",
-//    "src"
+    //    "libs",
+    //    "src"
     "src/common",
     "src/main"
   ],

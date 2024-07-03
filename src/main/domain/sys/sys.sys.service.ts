@@ -58,7 +58,7 @@ class SysSystemService {
         if (wss.ws.readyState !==1) {
             throw  "断开连接";
         }
-        wss.ws.send(result.encode())
+        wss.sendData(result.encode())
     }
 
     // 订阅要满足幂等性

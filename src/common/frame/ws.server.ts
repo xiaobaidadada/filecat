@@ -1,6 +1,10 @@
 import WebSocket from "ws";
 import {msg, routerHandlerMap} from "./router";
-import {CmdType, WsData} from "./WsData";
+import {CmdType, protocolIsProto2, WsData} from "./WsData";
+import * as parser from "socket.io-parser"
+import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
+
+const decoder = new parser.Decoder();
 
 // 连接期间内一直存在
 export class Wss {
@@ -22,6 +26,16 @@ export class Wss {
         return this._ws;
     }
 
+    sendData(data: any) {
+        if (Array.isArray(data)) {
+            for (let i = 0; i < data.length; i++) {
+                this._ws.send(data[i]);
+            }
+        } else {
+            this._ws.send(data);
+        }
+    }
+
     public setClose(close: Function) {
         this._close.push(close);
     }
@@ -34,17 +48,36 @@ class WsPreHandler {
         console.log('ws客户端连接');
         // 该ws只创建一次
         const wss = new Wss(ws);
+        if (!protocolIsProto2) {
+            decoder.on("decoded", async (packet) => {
+                const data = new WsData(packet.data[0], packet.data[1]);
+                data.wss = wss;
+                const handle = routerHandlerMap.get(data.cmdType);
+                if (handle) {
+                    const rsq: string = await handle(data);
+                    // 发送消息给客户端
+                    wss.sendData(new WsData(data.cmdType, rsq).encode());
+                } else {
+                    console.log("没有匹配到路由")
+                }
+            })
+        }
         // 监听客户端发送的消息
         wss.ws.on('message', async function incoming(message: WebSocket.Data) {
-            const data = WsData.decode(message.toString());
-            data.wss = wss;
-            const handle = routerHandlerMap.get(data.cmdType);
-            if (handle) {
-                const rsq: string = await handle(data);
-                // 发送消息给客户端
-                wss.ws.send(new WsData(data.cmdType, rsq).encode());
+            if (protocolIsProto2) {
+                const data = WsData.decode(message);
+                data.wss = wss;
+                const handle = routerHandlerMap.get(data.cmdType);
+                if (handle) {
+                    const rsq: string = await handle(data);
+                    // 发送消息给客户端
+                    wss.sendData(new WsData(data.cmdType, rsq).encode());
+                } else {
+                    console.log("没有匹配到路由")
+                }
             } else {
-                console.log("没有匹配到路由")
+                // 暂时都是字符串
+                decoder.add(message.toString());
             }
         });
         // 监听客户端断开连接事件

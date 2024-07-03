@@ -11,6 +11,7 @@ import {Ddns} from "./ddns/Ddns";
 import {NavIndex} from "./navindex/NavIndex";
 import {Settings} from "./setting/Setting";
 import {Editor} from "./file/component/Editor";
+import {Net} from "./net/Net";
 
 
 
@@ -29,6 +30,7 @@ function Layout() {
             {icon: "cloud", name: "ddns", rto: "ddns/"},
         ],
         [
+            {icon: "network_ping", name: "虚拟网络", rto: "net/"},
             {icon: "settings", name: "设置", rto: "setting/"},
             {icon: "logout", name: "退出登录",clickFun: logout,rto: "/"},
             // {component:(<div>测试</div>)}
@@ -57,7 +59,10 @@ function Layout() {
                 <SysInfo />
                 {/*ddns*/}
                 <Ddns />
-                {/*测试开发中*/}
+
+                {/*网络*/}
+                <Net/>
+                {/*设置*/}
                 <Settings />
             </CommonBody>
         </div>

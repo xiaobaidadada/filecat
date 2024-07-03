@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "build/main.js",
-  "engines": [
-    "node = 18.x.x"
-  ],
+  "engines": {
+    "node": "18.x.x"
+  },
   "scripts": {
+    "check": "node ./shell/install.js",
+    "generate-proto": "node --require ts-node/register ./src/common/proto/proto.generate.ts",
     "hot-server-dev": "node --require ts-node/register ./src/main/piping.main.ts ",
     "dev": "npm run webpack-dev | npm run server-dev",
     "server-dev": "node --require ts-node/register ./src/main/server.ts --env ./env",
@@ -19,7 +21,13 @@
   "pkg": {
     "assets": [
       "build/dist/*",
-      "build/win-process.node"
+      "build/win-process.node",
+      "build/wintun.node",
+      "build/linuxtun.node",
+      "build/wintun-x86.dll",
+      "build/wintun-arm64.dll",
+      "build/wintun-arm.dll",
+      "build/wintun-amd64.dll"
     ],
     "targets": [
       "node18-win-x64",
@@ -32,7 +40,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.11.13",
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
     "@koa/cors": "^5.0.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
@@ -41,6 +49,7 @@
     "axios": "^1.6.8",
     "chart.js": "^4.4.2",
     "fs-extra": "^11.2.0",
+    "jmespath": "^0.16.0",
     "koa": "^2.15.2",
     "koa-body": "^6.0.1",
     "koa-proxies": "^0.12.4",
@@ -63,6 +72,7 @@
     "rimraf": "^5.0.5",
     "routing-controllers": "^0.10.4",
     "serialize-javascript": "^6.0.2",
+    "socket.io-parser": "^4.2.4",
     "ssh2": "^1.15.0",
     "systeminformation": "^4.34.23",
     "tencentcloud-sdk-nodejs": "^4.0.858",
@@ -82,8 +92,10 @@
     "listr2": "^8.2.1",
     "piping": "^1.0.0-rc.4",
     "pkg": "^5.8.1",
+    "protobufjs-cli": "^1.1.2",
     "style-loader": "^3.3.4",
     "ts-node": "^10.9.2",
+    "typescript": "^5.5.2",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4",

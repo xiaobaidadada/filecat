@@ -42,11 +42,12 @@ export function Rdp() {
             canvas.height = window.innerHeight;
             // canvas.width = "100%";
             // canvas.height = "100%";
-            client.connect(item ? item.address : ip, "", item ? item.username : username, item ? item.password : password, function (err) {
+            client.connect(ip?ip :item.address , "", username?username : item.username , password ? password : item.password, function (err) {
                 Mstsc.$("webview").style.display = 'none';
                 // Mstsc.$("main").style.display = 'inline';
             });
         }
+
 
         connect(address, username, password);
     }

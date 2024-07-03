@@ -20,6 +20,7 @@ import {Env} from "../common/Env";
 import {SettingController} from "./domain/setting/setting.controller";
 import {SSHController} from "./domain/ssh/ssh.controller";
 import {RdpController} from "./domain/rdp/rdp.controller";
+import {ServerEvent} from "./other/config";
 const WebSocket = require('ws');
 
 
@@ -95,4 +96,10 @@ server.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request);
     });
+});
+
+ServerEvent.emit("start");
+
+process.on('uncaughtException', (err) => {
+    console.error('未捕获的异常:', err);
 });

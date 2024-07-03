@@ -71,7 +71,7 @@ export class ShellService {
         ptyProcess.onData((cmdData) => {
             const result = new WsData<SysPojo>(CmdType.shell_getting);
             result.context = cmdData;
-            (data.wss as Wss).ws.send(result.encode())
+            (data.wss as Wss).sendData(result.encode())
         })
         socketMap.set(socketId, ptyProcess);
         (data.wss as Wss).ws.on('close', function close() {
@@ -95,7 +95,7 @@ export class ShellService {
         } else {
             const result = new WsData<SysPojo>(CmdType.shell_getting);
             result.context = "shell状态错误";
-            (data.wss as Wss).ws.send(result.encode());
+            (data.wss as Wss).sendData(result.encode());
             (data.wss as Wss).ws.close();
         }
     }
@@ -130,13 +130,13 @@ export class ShellService {
             exec.stdout.on('data', (eData) => {
                 const result = new WsData<SysPojo>(CmdType.docker_shell_logs_getting);
                 result.context = eData.toString();
-                (data.wss as Wss).ws.send(result.encode())
+                (data.wss as Wss).sendData(result.encode())
             });
 
             exec.stderr.on('data', (eData) => {
                 const result = new WsData<SysPojo>(CmdType.docker_shell_logs_getting);
                 result.context = eData.toString();
-                (data.wss as Wss).ws.send(result.encode())
+                (data.wss as Wss).sendData(result.encode())
             });
 
             exec.on('close', (code) => {
@@ -193,7 +193,7 @@ export class ShellService {
         } else {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = '\x1b[38;2;29;153;243m容器内不存在任何shell\x1b[0m ';
-            (data.wss as Wss).ws.send(result.encode());
+            (data.wss as Wss).sendData(result.encode());
             (data.wss as Wss).ws.close();
             return;
         }
@@ -212,7 +212,7 @@ export class ShellService {
         ptyProcess.onData((cmdData) => {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = cmdData;
-            (data.wss as Wss).ws.send(result.encode())
+            (data.wss as Wss).sendData(result.encode())
         })
         socketMap.set(socketId, ptyProcess);
         (data.wss as Wss).ws.on('close', function close() {
@@ -236,7 +236,7 @@ export class ShellService {
         } else {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = "error";
-            (data.wss as Wss).ws.send(result.encode());
+            (data.wss as Wss).sendData(result.encode());
             (data.wss as Wss).ws.close();
         }
     }

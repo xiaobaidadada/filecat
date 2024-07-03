@@ -174,10 +174,9 @@ export class Client {
 			self.activeSession = true;
 		});
 		ws.addMsg(CmdType.rdp_bitmap,(wsData)=>{
-			const context = wsData.context;
-			// 数组类型转换
-			context.data = context.data.data;
-			self.render.update(context);
+			const bitmap = wsData.context;
+			bitmap.data = wsData.bin_context;
+			self.render.update(bitmap);
 		});
 		ws.addMsg(CmdType.rdp_close,(wsData)=>{
 			next(null);

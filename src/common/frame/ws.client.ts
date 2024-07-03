@@ -1,5 +1,7 @@
-import {CmdType, WsData} from "./WsData";
+import {CmdType, protocolIsProto2, WsData} from "./WsData";
+import * as parser from "socket.io-parser"
 
+const decoder = new parser.Decoder();
 
 export class WsClient {
     private  _socket;
@@ -12,35 +14,85 @@ export class WsClient {
 
     private _msgHandlerMap = new Map();
     constructor(url:string,authHandle:(socket:WebSocket)=>void) {
-       this._url = url;
-       this._authHandle = authHandle;
+        this._url = url;
+        this._authHandle = authHandle;
     }
 
 
 
     public async connect():Promise<boolean> {
         const handle = (resolve)=>{
+            if (this._status !==0) {
+                resolve(true);
+                return;
+            }
             const unConnect =()=> {
                 this._status = 0;
+                decoder.removeAllListeners();
+                decoder.destroy();
                 if (this._subscribeUnconnect) {
                     this._subscribeUnconnect();
                 }
             }
             const open = async (event) => {
-                resolve(true);
                 console.log('ws连接成功');
                 // 身份验证发送
                 if (this._authHandle) {
                     this._authHandle(this._socket)
                 }
                 this._status = 1;
+                resolve(true);
+                decoder.on("decoded",(d)=>{
+                    const data = new WsData(d.data[0],d.data[1]);
+                    data.wss = this._socket;
+                    const fun = this._msgHandlerMap.get(data.cmdType)
+                    if (fun) {
+                        fun(data);
+                    }
+                })
             }
-            const message = (event:MessageEvent)=>{
-                const data = WsData.decode(event.data.toString());
-                data.wss = this._socket;
-                const fun = this._msgHandlerMap.get(data.cmdType)
-                if (fun) {
-                    fun(data);
+            let dataList = [];
+            let processing = false;
+            const handleData = async (rowData)=>{
+                if (protocolIsProto2) {
+                    const data = WsData.decode(rowData);
+                    data.wss = this._socket;
+                    const fun = this._msgHandlerMap.get(data.cmdType)
+                    if (fun) {
+                        fun(data);
+                    }
+                } else {
+                    decoder.add(rowData);
+                }
+                handle();
+            }
+            const handle = ()=>{
+                if (dataList.length === 0) {
+                    processing = false;
+                    return;
+                }
+                processing = true;
+                const data = dataList.shift();
+                if (data instanceof ArrayBuffer) {
+                    // 处理 ArrayBuffer 数据
+                    handleData(new Uint8Array(data))
+                } else if (data instanceof Blob) {
+                    // 处理 Blob 数据
+                    // 例如，将 Blob 转换为 ArrayBuffer
+                    const reader = new FileReader();
+                    reader.onload = async function() {
+                        handleData(new Uint8Array(reader.result as ArrayBuffer ));
+                    };
+                    reader.readAsArrayBuffer(data);
+                } else {
+                    // 处理其他类型的数据，例如字符串
+                    handleData(data)
+                }
+            }
+            const message = async (event:MessageEvent)=>{
+                dataList.push(event.data);
+                if (!processing) {
+                    handle();
                 }
             }
             if (!this.isAilive()) {
@@ -85,7 +137,14 @@ export class WsClient {
             this._promise = null;
         }
         await this.connect()
-        this._socket!.send(wsData.encode())
+        const data = wsData.encode();
+        if (Array.isArray(data)) {
+            for (let i = 0; i < data.length; i++) {
+                this._socket!.send(data[i]);
+            }
+        } else {
+            this._socket!.send(data);
+        }
         new Promise((resolve)=>{
             this._msgHandlerMap.set(wsData.cmdType,resolve);
         })
