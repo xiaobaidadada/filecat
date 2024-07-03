@@ -24,7 +24,7 @@
 ### 开发
 项目目前使用pkg打包，请使用node18.x.x
 ## 功能说明
-1. 点对点客户端功能在macos下无法使用。很多功能没有在macos下测试过，只支持windwos和Linux;
+1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windwos和Linux;
 2. 部分功能目前处于demo阶段，未来会持续优化；
 ## 路线
 1. 支持更多的ddns平台
