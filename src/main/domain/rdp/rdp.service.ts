@@ -31,19 +31,21 @@ export class RdpService {
         rdpClient.on('connect', function () {
             const result = new WsData<SysPojo>(CmdType.rdp_connect);
             result.context = "";
-            (data.wss as Wss).ws.send(result.encode())
-        }).on('bitmap', function(bitmap) {
+            (data.wss as Wss).sendData(result.encode())
+        }).on('bitmap', async function(bitmap) {
             const result = new WsData<SysPojo>(CmdType.rdp_bitmap);
+            result.bin_context = bitmap.data;
+            bitmap.data=null;
             result.context = bitmap;
             (data.wss as Wss).ws.send(result.encode())
         }).on('close', function() {
             const result = new WsData<SysPojo>(CmdType.rdp_close);
             result.context = "";
-            (data.wss as Wss).ws.send(result.encode())
+            (data.wss as Wss).sendData(result.encode())
         }).on('error', function(err) {
             const result = new WsData<SysPojo>(CmdType.rdp_error);
             result.context = err;
-            (data.wss as Wss).ws.send(result.encode())
+            (data.wss as Wss).sendData(result.encode())
         }).connect(context.ip, 3389);
         (data.wss as Wss).setClose(()=>{
             if(!rdpClient) return;

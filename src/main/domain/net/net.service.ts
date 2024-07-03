@@ -26,7 +26,7 @@ export class NetService {
         }
         const pojo: proxyInterface | any = {};
         proxyTargetUrlMap.set(data.targetProxyUrl, pojo);
-        const port = await findAvailablePort(3001, 5000);
+        const port = await findAvailablePort(49152, 65535);
         pojo.beforPort = port;
         const app = new Koa();
         // 自定义 CORS 规则

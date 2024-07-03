@@ -17,7 +17,7 @@ const processWssMap = new Map<string, Wss>();
 
 
 const { createRequire } = require('node:module');
-const require_c = createRequire(__filename);
+export const require_c = createRequire(__filename);
 
 export class SysProcessService {
     winGetProcess() {
@@ -96,7 +96,7 @@ export class SysProcessService {
         if (wss.ws.readyState !== 1) {
             throw "断开连接";
         }
-        wss.ws.send(result.encode())
+        wss.sendData(result.encode())
     }
 
     private async openProcessPush(wss: Wss) {

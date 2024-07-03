@@ -22,7 +22,10 @@ export class SshSsh2 extends LifecycleRecordService {
             host: req.domain,
             port: req.port,
             username: req.username,
-            env:envVars
+            env:envVars,
+            // 设定keepaliveInterval和keepaliveCountMax
+            keepaliveInterval: 10000, // 每10秒发送一次keepalive消息
+            keepaliveCountMax: 10 // 尝试10次keepalive后如果没有响应则断开连接
         };
         if (req.private_path) {
             options['privateKey'] = fs.readFileSync(req.private_path);

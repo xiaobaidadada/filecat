@@ -17,7 +17,7 @@ enum Type {
 function CardComponent(props: CardProps ,type:Type) {
     const contextClass = type===Type.common?"card-content"
         :type===Type.full?"card-content full":"";
-    return <form className={"card"}>
+    return <div className={"card"}>
         <div className={"card-title"}>
             <h2>{props.title}</h2>
             <div>{props.titleCom && props.titleCom}</div>
@@ -29,7 +29,7 @@ function CardComponent(props: CardProps ,type:Type) {
             {props.rightBottomCom}
             {/*<input type="submit" className="button button--flat" value="更新"/>*/}
         </div>
-    </form>
+    </div>
 }
 
 export function Card(props: CardProps) {

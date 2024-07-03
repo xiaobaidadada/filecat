@@ -143,7 +143,7 @@ export class SshService extends SshSsh2 {
                 stream.on('data', (cmdData) => {
                     const result = new WsData<SysPojo>(CmdType.remote_shell_getting);
                     result.context = cmdData.toString();
-                    (data.wss as Wss).ws.send(result.encode())
+                    (data.wss as Wss).sendData(result.encode())
                 })
                 // 发送
                 emitter.on('data', (data) => {

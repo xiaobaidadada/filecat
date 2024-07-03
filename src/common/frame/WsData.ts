@@ -1,6 +1,11 @@
 import {Wss} from "./ws.server";
 import {JsonUtil} from "../JsonUtil";
+import * as proto from "../proto/proto"
+import * as parser from "socket.io-parser"
+import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
 
+const encoder = new parser.Encoder();
+export const protocolIsProto2 = true;
 export enum CmdType {
     // 连接
     connection= 0,
@@ -63,29 +68,52 @@ export enum CmdType {
     wheel,
     scancode,
     unicode,
-    rdp_disconnect
+    rdp_disconnect,
+
+
+    // net
+    vir_net_serverIno_get
 }
 
 
 export class WsData<T> {
     public cmdType: CmdType;
     public context: T|any;
+    public bin_context: Uint8Array;
     public wss:Wss|null|WebSocket;
 
     constructor(cmdType: CmdType);
     constructor(cmdType: CmdType,context:T);
-    constructor(cmdType: CmdType,context?:T) {
+    constructor(cmdType: CmdType,context:T,bin_context: Uint8Array);
+    constructor(cmdType: CmdType,context?:T,bin_context?: Uint8Array) {
         this.cmdType = cmdType;
         this.context = context;
+        this.bin_context = bin_context;
     }
 
-    public encode():string {
-        return JsonUtil.getJson([this.cmdType, this.context ? JSON.stringify(this.context):""]);
+    public encode(){
+        if (protocolIsProto2) {
+            return proto.WsMessage.encode(proto.WsMessage.create({
+                code: this.cmdType,
+                context: JsonUtil.getJson(this.context),
+                binContext: this.bin_context
+            })).finish();
+        } else {
+            const p = {
+                type:PacketType.EVENT,
+                data:[this.cmdType,this.context]
+            }
+            return encoder.encode(p as Packet);
+        }
+        // return JsonUtil.getJson([this.cmdType, this.context ? JSON.stringify(this.context):""]);
     }
 
-    public static decode(str) {
-        const data = JsonUtil.fromJson(str);
-        return new WsData(data[0],data[1]?JSON.parse(data[1]):null);
+    public static decode(buffer) {
+        const data = proto.WsMessage.decode(buffer);
+        return new WsData(data.code,JsonUtil.fromJson(data.context),data.binContext);
+
+        // const data = JsonUtil.fromJson(buffer.toString());
+        // return new WsData(data[0],data[1]?JSON.parse(data[1]):null);
     }
 
 }

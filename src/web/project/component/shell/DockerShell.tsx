@@ -28,7 +28,7 @@ export function DockerShell(props) {
             cursorStyle: 'bar',
             scrollback: 1000,
             scrollSensitivity: 15,
-            tabStopWidth: 4,
+            tabStopWidth: 1,
             convertEol:true // \n换行符
         });
 

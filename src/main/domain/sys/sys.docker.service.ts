@@ -22,7 +22,7 @@ class SysDockerService {
         if (wss.ws.readyState !==1) {
             throw "断开连接";
         }
-        wss.ws.send(result.encode())
+        wss.sendData(result.encode())
     }
 
     private async openDockerPush(wss: Wss) {
