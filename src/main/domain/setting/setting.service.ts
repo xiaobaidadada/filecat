@@ -125,7 +125,7 @@ export class SettingService {
             }
         }
         // return true;
-        if (Cache.getTokenSet().has(token)) {
+        if (Cache.check(token)) {
             Cache.updateTimer(token);
             return true;
         }
