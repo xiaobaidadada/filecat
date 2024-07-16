@@ -17,7 +17,7 @@ export function Button(props: { text: string, clickFun?: Function }) {
 
 export function ButtonText(props:{text:string,clickFun?:Function}) {
     return (<input
-        className="button button--flat"
+        className="button button--flat "
         type="button"
         value={props.text}
         onClick={props.clickFun}

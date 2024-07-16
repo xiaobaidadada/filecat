@@ -3,6 +3,7 @@ import {SysPojo} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
 import {exec, execSync, spawn} from "child_process";
 import {SystemUtil} from "./sys.utl";
+import {getShell} from "../shell/shell.service";
 
 
 let sysJobInterval: any = null;
@@ -51,9 +52,9 @@ class SysDockerService {
                         console.log('系统信息推送失败docker')
                         clearInterval(sysJobInterval);
                         sysJobInterval = null;
+                        dockerMap.delete(socketId);
                         if (wss) {
                             wss.ws.close();
-                            dockerMap.delete(socketId);
                         }
                     }
                 }
@@ -97,7 +98,7 @@ class SysDockerService {
                 return;
             }
             this.getAllContainer();
-            let child = spawn('docker stats  --no-trunc --format "table {{.ID}};;{{.MemUsage}};;{{.CPUPerc}}"', [...docker_result_list.map(v => v[0])], {shell: "cmd"});
+            let child = spawn('docker stats  --no-trunc --format "table {{.ID}};;{{.MemUsage}};;{{.CPUPerc}}"', [...docker_result_list.map(v => v[0])], {shell: getShell()});
             spawnChild = child;
             // 监听子进程的 stdout 流，并输出数据
             child.stdout.on('data', (data) => {

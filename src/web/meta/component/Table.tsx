@@ -38,6 +38,7 @@ export function Table(props: { children?: ReactNode[]; headers?: string[], rows?
     </table>
 }
 
+// 多行
 export function Rows(props: { columns: ReactNode[], isFlex?: boolean }) {
     return <div style={{
         display: props.isFlex ? 'flex' : 'block',

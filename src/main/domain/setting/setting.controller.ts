@@ -11,6 +11,7 @@ import {settingService} from "./setting.service";
 import {GetFilePojo} from "../../../common/file.pojo";
 import {json} from "react-router-dom";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
+import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 
 @Service()
 @Controller("/setting")
@@ -120,4 +121,38 @@ export class SettingController {
         DataUtil.setFile(settingService.routerHandler(req.router),req.context);
         return Sucess("1");
     }
+
+    token_setting = "token_setting";
+    @Get('/token')
+    async  getToken() {
+        return Sucess(DataUtil.get(this.token_setting));
+    }
+
+    @Post('/token/save')
+    async saveToken(@Body()req:TokenSettingReq) {
+        if (req.mode === TokenTimeMode.close) {
+            Cache.setIgnore(false);
+            Cache.setIgnoreCheck(false);
+        } else  if (req.mode === TokenTimeMode.length) {
+            Cache.setIgnore(true);
+            Cache.getTokenMap().forEach(v=>clearTimeout(v));
+            Cache.getTokenMap().clear();
+            Cache.getTokenSet().forEach(v=> Cache.getTokenMap().set(v,setTimeout(()=>{
+                Cache.getTokenSet().delete(v);
+                Cache.getTokenMap().delete(v);
+            },1000*req.length)))
+        } else {
+            Cache.setIgnore(true);
+            Cache.setIgnoreCheck(true);
+        }
+        DataUtil.set(this.token_setting,req);
+        return Sucess("1");
+    }
+
+    @Get('/token/clear')
+    async  clearToken() {
+        Cache.clear();
+        return Sucess("1");
+    }
+
 }
