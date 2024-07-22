@@ -9,7 +9,7 @@ import {UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {CustomerRouter} from "./CustomerRouter";
 import {CustomerApiRouter} from "./CustomerApiRouter";
-import {Auth} from "./Auth";
+import {Sys} from "./Sys";
 
 
 
@@ -18,7 +18,7 @@ const menuRots = [{index: 1, name: "系统", rto: "password/"},{index: 1, name: 
 export function  Settings() {
 
     return  <Menu optionList={menuRots}>
-        <Auth />
+        <Sys />
         <CustomerRouter />
         <CustomerApiRouter />
     </Menu>

@@ -8,3 +8,10 @@ export class TokenSettingReq {
     mode:TokenTimeMode;
     length:number ; // 秒
 }
+
+export class FileSettingItem {
+    path:string;
+    default:boolean = false;
+    note:string;
+    index:number;
+}

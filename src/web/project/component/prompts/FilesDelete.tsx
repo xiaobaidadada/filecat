@@ -9,13 +9,13 @@ import {getByIndexs} from "../../../../common/ListUtil";
 import {getRouterAfter} from "../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../file/FileUtil";
 
-
 export function FilesDelete(props) {
     let location = useLocation();
     const navigate = useNavigate();
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFileList,setSelectedFileList] = useRecoilState($stroe.selectedFileList);
     const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
+
 
     function cancel(){
         setShowPrompt({

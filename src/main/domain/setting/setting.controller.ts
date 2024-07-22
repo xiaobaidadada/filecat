@@ -122,30 +122,15 @@ export class SettingController {
         return Sucess("1");
     }
 
-    token_setting = "token_setting";
+
     @Get('/token')
     async  getToken() {
-        return Sucess(DataUtil.get(this.token_setting));
+        return Sucess(settingService.getToken());
     }
 
     @Post('/token/save')
     async saveToken(@Body()req:TokenSettingReq) {
-        if (req.mode === TokenTimeMode.close) {
-            Cache.setIgnore(false);
-            Cache.setIgnoreCheck(false);
-        } else  if (req.mode === TokenTimeMode.length) {
-            Cache.setIgnore(true);
-            Cache.getTokenMap().forEach(v=>clearTimeout(v));
-            Cache.getTokenMap().clear();
-            Cache.getTokenSet().forEach(v=> Cache.getTokenMap().set(v,setTimeout(()=>{
-                Cache.getTokenSet().delete(v);
-                Cache.getTokenMap().delete(v);
-            },1000*req.length)))
-        } else {
-            Cache.setIgnore(true);
-            Cache.setIgnoreCheck(true);
-        }
-        DataUtil.set(this.token_setting,req);
+        settingService.saveToken(req.mode,req.length);
         return Sucess("1");
     }
 
@@ -155,4 +140,17 @@ export class SettingController {
         return Sucess("1");
     }
 
+
+    // 设置文件路由设置
+    @Post('/filesSetting/save')
+    saveFilesSetting(@Body() req:any) {
+        settingService.saveFilesSetting(req);
+        return Sucess("1");
+    }
+
+    // 获取文件设置
+    @Get("/filesSetting")
+    getFilesSetting() {
+        return Sucess(settingService.getFilesSetting());
+    }
 }

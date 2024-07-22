@@ -4,13 +4,19 @@ import fs from "fs";
 import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Cache} from "../../other/cache";
 import {AuthFail, Sucess} from "../../other/Result";
+import {ServerEvent} from "../../other/config";
+import {FileSettingItem, TokenTimeMode} from "../../../common/req/setting.req";
+import {Env} from "../../../common/Env";
+import {ba} from "tencentcloud-sdk-nodejs";
 const needle = require('needle');
 
 const customer_router_key = "customer_router_key";
 
 const customer_api_router_key = "customer_api_router_key";
 
+const token_setting = "token_setting";
 
+const files_pre_mulu_key = "files_pre_mulu_key";
 
 export class SettingService {
 
@@ -151,7 +157,80 @@ export class SettingService {
         return DataUtil.set(self_auth_jscode,req.open);
     }
 
+    getToken() {
+        return DataUtil.get(token_setting);
+    }
+
+    saveToken (mode:TokenTimeMode,length:number) {
+        if (mode === TokenTimeMode.close) {
+            Cache.setIgnore(false);
+            Cache.setIgnoreCheck(false);
+        } else  if (mode === TokenTimeMode.length) {
+            Cache.setIgnore(true);
+            Cache.clearTokenTimerMap();
+            Cache.getTokenMap().forEach(v=> Cache.getTokenTimerMap().set(v,setTimeout(()=>{
+                Cache.getTokenMap().delete(v);
+                Cache.getTokenTimerMap().delete(v);
+            },1000*length)))
+        } else if (mode === TokenTimeMode.forver){
+            Cache.clearTokenTimerMap();
+            Cache.setIgnore(true);
+            Cache.setIgnoreCheck(true);
+        }
+        DataUtil.set(token_setting,{mode,length});
+    }
+
+    public init() {
+        const data = DataUtil.get(token_setting);
+        if (!!data && !!data['mode']) {
+            this.saveToken(data['mode'],data["length"]);
+        }
+    }
+
+    update_files_setting :FileSettingItem[];
+    public getFilesSetting() {
+        if (this.update_files_setting) {
+            return this.update_files_setting;
+        }
+        const items:FileSettingItem[] = DataUtil.get(files_pre_mulu_key);
+        const base = new FileSettingItem();
+        base.path = Env.base_folder;
+        base.note = "默认配置路径";
+        const list = items ?? [];
+        if (!list.find(v=>v.default)) {
+            base.default = true;
+        }
+        this.update_files_setting = [base,...list];
+        return this.update_files_setting;
+    }
+
+    public saveFilesSetting(items:FileSettingItem[]) {
+        if (!Array.isArray(items) || items.length===0) {
+            return;
+        }
+        items.shift();
+        DataUtil.set(files_pre_mulu_key, items);
+        this.update_files_setting = null;
+    }
+
+    public getFileRootPath (token:string) {
+        const obj = Cache.getTokenMap().get(token);
+        const index = obj?obj["root_index"]:null;
+        const list = this.getFilesSetting();
+        if(index) {
+            return list[index].path;
+        } else {
+            for (const item of list) {
+                if (item.default) {
+                    return item.path;
+                }
+            }
+        }
+    }
 
 }
 
 export const settingService: SettingService = new SettingService();
+ServerEvent.on("start", (data) => {
+    settingService.init();
+})

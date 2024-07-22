@@ -57,7 +57,7 @@
 
 .header>div div {
   vertical-align: middle;
-  position: relative;
+  /*position: relative;*/
 }
 
 .header .search-button,

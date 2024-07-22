@@ -75,7 +75,10 @@ export function FileShell(props) {
             //已经开启了
             if (shellShowInit) {
                 const data = new WsData(CmdType.shell_cd);
-                data.context=shellShow.path
+                const pojo = new ShellInitPojo();
+                pojo.init_path = shellShow.path;
+                pojo.http_token = localStorage.getItem('token');
+                data.context=pojo;
                 ws.send(data)
             }
             return;
@@ -95,6 +98,8 @@ export function FileShell(props) {
         pojo.init_path = shellShow.path;
         pojo.rows = rows;
         pojo.cols = cols;
+        pojo.http_token = localStorage.getItem('token');
+
         data.context= pojo;
         ws.send(data)
     }
