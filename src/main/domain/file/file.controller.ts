@@ -1,7 +1,7 @@
 // 定义一个控制器
 import {
     Body,
-    Controller,
+    Controller, Ctx,
     Delete,
     Get,
     Param,
@@ -17,67 +17,83 @@ import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
 import multer from 'multer';
 import {cutCopyReq, fileInfoReq, fileReq, saveTxtReq} from "../../../common/req/file.req";
+import {Cache} from "../../other/cache";
 
 @Controller("/file")
 export class FileController {
 
     @Get()
-    async getRootFile(): Promise<Result<GetFilePojo | string>> {
-        return await FileServiceImpl.getFile('');
+    async getRootFile(@Ctx() ctx): Promise<Result<GetFilePojo | string>> {
+        return await FileServiceImpl.getFile('',ctx.headers.authorization);
     }
 
     @Get('/:path*')
-    async getFile(@Param("path") path?: string): Promise<Result<GetFilePojo | string>> {
-        return await FileServiceImpl.getFile(path);
+    async getFile(@Ctx() ctx,@Param("path") path?: string): Promise<Result<GetFilePojo | string>> {
+        return await FileServiceImpl.getFile(path,ctx.headers.authorization);
     }
 
 
     @Put("/:path*")
-    async uploadFile(@Param("path") path?: string, @UploadedFile('file') file?: multer.File) {
-        await FileServiceImpl.uploadFile(path, file);
+    async uploadFile(@Ctx() ctx,@Param("path") path?: string, @UploadedFile('file') file?: multer.File) {
+        await FileServiceImpl.uploadFile(path, file,ctx.headers.authorization);
         return Sucess("1");
     }
 
     @Delete("/:path*")
-    async deletes(@Param("path") path?: string) {
-        await FileServiceImpl.deletes(path);
+    async deletes(@Ctx() ctx,@Param("path") path?: string) {
+        await FileServiceImpl.deletes(ctx.headers.authorization,path);
         return Sucess("1");
     }
 
     @Post('/save/:path*')
-    async save(@Param("path") path?: string, @Body() data?: saveTxtReq) {
-        await FileServiceImpl.save(data?.context, path);
+    async save(@Ctx() ctx,@Param("path") path?: string, @Body() data?: saveTxtReq) {
+        await FileServiceImpl.save(ctx.headers.authorization,data?.context, path);
         return Sucess("1");
     }
 
     @Post('/cut')
-    async cut(@Body() data?: cutCopyReq) {
-        await FileServiceImpl.cut(data);
+    async cut(@Ctx() ctx,@Body() data?: cutCopyReq) {
+        await FileServiceImpl.cut(ctx.headers.authorization,data);
         return Sucess("1");
     }
 
     @Post('/copy')
-    async copy(@Body() data?: cutCopyReq) {
-        await FileServiceImpl.copy(data);
+    async copy(@Ctx() ctx,@Body() data?: cutCopyReq) {
+        await FileServiceImpl.copy(ctx.headers.authorization,data);
         return Sucess("1");
     }
 
     @Post('/new/file')
-    async newFile(@Body() data?: fileInfoReq) {
-        await FileServiceImpl.newFile(data);
+    async newFile(@Ctx() ctx,@Body() data?: fileInfoReq) {
+        await FileServiceImpl.newFile(ctx.headers.authorization,data);
         return Sucess("1");
     }
 
     @Post('/new/dir')
-    async newDir(@Body() data?: fileInfoReq) {
-        await FileServiceImpl.newDir(data);
+    async newDir(@Ctx() ctx ,@Body() data?: fileInfoReq) {
+        await FileServiceImpl.newDir(ctx.headers.authorization,data);
         return Sucess("1");
     }
 
     @Post('/rename')
-    async rename(@Body() data?: fileInfoReq) {
-        await FileServiceImpl.rename(data);
+    async rename(@Ctx() ctx ,@Body() data?: fileInfoReq) {
+        await FileServiceImpl.rename(ctx.headers.authorization,data);
         return Sucess("1");
+    }
+
+    @Post('/base_switch')
+    async switchBasePath(@Body() data:{root_index:number},@Ctx() ctx ) {
+        const obj = Cache.getTokenMap().get(ctx.headers.authorization);
+        if (obj) {
+            obj["root_index"] = data.root_index;
+        }
+        return Sucess("1");
+    }
+
+    @Post('/base_switch/get')
+    async switchGetBasePath(@Ctx() ctx ) {
+        const obj = Cache.getTokenMap().get(ctx.headers.authorization);
+        return Sucess(obj?obj["root_index"]:null);
     }
 
 }

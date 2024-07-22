@@ -41,7 +41,7 @@ export class Http {
                 url += `file=${file}&`;
             }
         }
-        return url.slice(0, -1);;
+        return url.slice(0, -1);
     }
 
     async post(url,jsonData) {

@@ -16,6 +16,7 @@ export function FileItem(props: FileItemData & { index?: number }) {
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
+
     const navigate = useNavigate();
     let location = useLocation();
     // const match = useMatch('/:pre/file/*');
@@ -53,7 +54,7 @@ export function FileItem(props: FileItemData & { index?: number }) {
             if (item !== undefined) {
                 if (model) {
                     // 双击文件
-                    const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}/`)
+                    const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
                     setEditorSetting({
                         model,
                         open: true,

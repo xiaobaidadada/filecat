@@ -7,7 +7,6 @@ import {fileHttp} from "../../util/config";
 import {getNewDeleteByList} from "../../../../common/ListUtil";
 import {getRouterAfter} from "../../util/WebPath";
 
-
 export function FilesUpload() {
     let location = useLocation();
     const navigate = useNavigate();

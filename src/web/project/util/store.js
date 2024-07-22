@@ -112,6 +112,11 @@ export const $stroe = {
     sshInfo:atom({
         key: 'sshInfo',
         default:{}
+    }),
+    // 文件根路径
+    file_root_index:atom({
+        key: 'file_root_index',
+        default:null
     })
 }
 

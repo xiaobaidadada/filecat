@@ -2,13 +2,13 @@
 
 export class Cache {
 
-    static token :Set<string> = new Set();
+    static token :Map<string,any> = new Map();
     static timerMap = new Map();
     static ignore_update = false;
     static ignore_check= false;
 
     public static  setToken (token:string):void {
-        this.token.add(token);
+        this.token.set(token,{});
         if (!this.ignore_check) {
             this.timerMap.set(token,setTimeout(()=>{
                 this.token.delete(token);
@@ -30,10 +30,10 @@ export class Cache {
             },1000*60*60))
         }
     }
-    public static getTokenSet() {
+    public static getTokenMap() {
         return this.token;
     }
-    public static getTokenMap() {
+    public static getTokenTimerMap() {
         return this.timerMap;
     }
     public static setIgnore(mode:boolean) {
@@ -43,6 +43,10 @@ export class Cache {
         this.ignore_check = mode;
     }
 
+    public static  clearTokenTimerMap() {
+        this.timerMap.forEach(v=>clearTimeout(v));;
+        this.timerMap.clear();
+    }
     public static  clear() {
         this.timerMap.clear();
         this.token.clear();

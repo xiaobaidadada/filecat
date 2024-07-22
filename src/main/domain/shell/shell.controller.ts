@@ -6,6 +6,7 @@ import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 
 export class ShellController {
 
+    // 文件
     @msg(CmdType.shell_open)
     async open(data:WsData<ShellInitPojo>) {
         shellServiceImpl.open(data);
@@ -22,7 +23,7 @@ export class ShellController {
         return ""
     }
     @msg(CmdType.shell_cd)
-    async cd(data:WsData<any>) {
+    async cd(data:WsData<ShellInitPojo>) {
         shellServiceImpl.cd(data);
         return ""
     }

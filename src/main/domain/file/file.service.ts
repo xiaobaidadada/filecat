@@ -10,16 +10,17 @@ import {cutCopyReq, fileInfoReq} from "../../../common/req/file.req";
 import {formatFileSize, getShortTime} from "../../../common/ValueUtil";
 import * as Stream from "node:stream";
 import {Env} from "../../../common/Env";
+import {settingService} from "../setting/setting.service";
 const archiver = require('archiver');
 
 class FileService {
 
-    public async getFile(filePath):Promise<Result<GetFilePojo|string>> {
+    public async getFile(filePath,token):Promise<Result<GetFilePojo|string>> {
         const result:GetFilePojo = {
             files:[],
             folders:[]
         };
-        const sysPath = path.join(Env.base_folder,filePath?decodeURIComponent(filePath):"");
+        const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
@@ -58,8 +59,8 @@ class FileService {
     }
 
 
-    public uploadFile(filePath,file: multer.File) {
-        const sysPath = path.join(Env.base_folder,filePath?decodeURIComponent(filePath):"");
+    public uploadFile(filePath,file: multer.File,token) {
+        const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         if (!file) {
             // 目录
             if (!fs.existsSync(sysPath)) {
@@ -72,11 +73,11 @@ class FileService {
         fs.writeFileSync(sysPath, file.buffer);
     }
 
-    public deletes( filePath?:string) {
+    public deletes(token,filePath?:string) {
         if (!filePath) {
             return;
         }
-        const sysPath = path.join(Env.base_folder,decodeURIComponent(filePath));
+        const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(filePath));
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             fs.unlinkSync(sysPath)
@@ -85,21 +86,22 @@ class FileService {
         }
     }
 
-    public save(context?:string,filePath?:string) {
+    public save(token,context?:string,filePath?:string) {
         if (context===null || context===undefined) {
             return;
         }
-        const sysPath = path.join(Env.base_folder,filePath?decodeURIComponent(filePath):"");
+        const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
     }
 
-    public cut(data?: cutCopyReq) {
+    public cut(token,data?: cutCopyReq) {
         if (!data) {
             return;
         }
-        const sysPath = path.join(Env.base_folder);
-        const toSysPath = path.join(Env.base_folder,data.to?decodeURIComponent(data.to):"");
+        const root_path = settingService.getFileRootPath(token);
+        const sysPath = path.join(root_path);
+        const toSysPath = path.join(root_path,data.to?decodeURIComponent(data.to):"");
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             fs.renameSync(filePath,decodeURIComponent(path.join(toSysPath,path.basename(file))));
@@ -107,12 +109,13 @@ class FileService {
         }
     }
 
-    public async copy(data?: cutCopyReq) {
+    public async copy(token,data?: cutCopyReq) {
         if (!data) {
             return;
         }
-        const sysPath = path.join(Env.base_folder);
-        const toSysPath = path.join(Env.base_folder,data.to?decodeURIComponent(data.to):"");
+        const root_path = settingService.getFileRootPath(token);
+        const sysPath = path.join(root_path);
+        const toSysPath = path.join(root_path,data.to?decodeURIComponent(data.to):"");
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             // 覆盖
@@ -122,20 +125,20 @@ class FileService {
 
     }
 
-    public async newFile(data?: fileInfoReq) {
-        await this.todoNew(2,data)
+    public async newFile(index,data?: fileInfoReq) {
+        await this.todoNew(index,2,data)
 
     }
 
-    public async newDir(data?: fileInfoReq) {
-        await this.todoNew(1,data)
+    public async newDir(index,data?: fileInfoReq) {
+        await this.todoNew(index,1,data)
     }
 
-    public async todoNew(type,data?: fileInfoReq) {
+    public async todoNew(index,type,data?: fileInfoReq) {
         if (data===null || data===undefined) {
             return
         }
-        const sysPath = path.join(Env.base_folder,decodeURIComponent(data.name));
+        const sysPath = path.join(settingService.getFileRootPath(index),decodeURIComponent(data.name));
         if (fs.existsSync(sysPath)) {
             return;
         }
@@ -148,12 +151,13 @@ class FileService {
         }
     }
 
-    public async rename(data?: fileInfoReq) {
+    public async rename(token,data?: fileInfoReq) {
         if (!data) {
             return;
         }
-        const sysPath = path.join(Env.base_folder,decodeURIComponent(data.name));
-        const sysPathNew = path.join(Env.base_folder,decodeURIComponent(data.newName));
+        const root_path = settingService.getFileRootPath(token);
+        const sysPath = path.join(root_path,decodeURIComponent(data.name));
+        const sysPathNew = path.join(root_path,decodeURIComponent(data.newName));
         await fse.rename(sysPath,sysPathNew);
     }
 
@@ -165,9 +169,10 @@ class FileService {
             ctx.body = 'File not found';
             return;
         }
+        const token = ctx.query['token'];
         if (!Array.isArray(file)) {
             ctx.set('Content-Type', 'application/octet-stream');
-            const sysPath = path.join(Env.base_folder,decodeURIComponent(file));
+            const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
             const fileName = path.basename(sysPath)
             const stats = fs.statSync(sysPath);
             if (stats.isFile()) {
@@ -201,7 +206,7 @@ class FileService {
             // 将压缩后的文件流发送给客户端
             archive.pipe(stream)
             for (const file of files) {
-                const sysPath = path.join(Env.base_folder,decodeURIComponent(file));
+                const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
                 const stats = fs.statSync(sysPath);
                 if (stats.isFile()) {
                     archive.file(sysPath);

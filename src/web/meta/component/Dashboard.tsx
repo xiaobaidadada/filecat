@@ -101,7 +101,7 @@ export function TextLine(props:{
 
 }
 
-export function Dropdown(props) {
+export function Dropdown(props:{children?:{r:React.ReactNode,v:any}[],click?:(v)=>void, value?:any}) {
     const [className, setClassName] = React.useState("dropdown_none");
     const click = () =>{
         setClassName("dropdown_none");
@@ -112,16 +112,18 @@ export function Dropdown(props) {
             setClassName(className === "dropdown" ? "dropdown_none" : "dropdown")
         }}/>
         {className==="dropdown" && <OverlayTransparent click={click}/>}
-        <div className={"dropdown_start"} >
-            <div className={className}>
-                {props.children}
-            </div>
+        <div className={className}>
+            {props.children.map((v, index) => (<div key={index} className={props.value!==undefined&&props.value===v.v?"dropdown_selected":""} onClick={() => {
+                if (props.click) props.click(v.v)
+            }}>
+                {v.r}
+            </div>))}
         </div>
     </div>
 
 }
 
-export function Overlay(props:{click:Function}) {
+export function Overlay(props: { click: Function }) {
     return <div className="overlay" onClick={props.click}></div>
 }
 

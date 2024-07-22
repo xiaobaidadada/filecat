@@ -3,6 +3,7 @@ export class ShellInitPojo {
     cols:number;
     init_path:string;
     dockerId:string;
+    http_token:string;
 }
 
 export class SshPojo extends ShellInitPojo{

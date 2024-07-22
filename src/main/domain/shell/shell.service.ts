@@ -8,6 +8,7 @@ import path from "path";
 import {SystemUtil} from "../sys/sys.utl";
 import {Env} from "../../../common/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
+import {settingService} from "../setting/setting.service";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
@@ -65,7 +66,7 @@ export class ShellService {
             env: envVars,
             useConpty: process.env.NODE_ENV !== "production" ? false : undefined,
         });
-        const sysPath = path.join(Env.base_folder, (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
+        const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
         ptyProcess.write(cm);
         ptyProcess.onData((cmdData) => {
@@ -111,11 +112,11 @@ export class ShellService {
         }
     }
 
-    cd(data: WsData<any>) {
+    cd(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         const pty = socketMap.get(socketId);
         if (pty) {
-            const sysPath = path.join(Env.base_folder, (data.context !== null && data.context !== "null") ? decodeURIComponent(data.context) : "");
+            const sysPath = path.join(settingService.getFileRootPath(data.context.http_token),decodeURIComponent(data.context.init_path));
             const cm = `cd '${sysPath}' ${cr}`;
             pty.write(cm);
         }

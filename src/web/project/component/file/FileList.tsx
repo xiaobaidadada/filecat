@@ -3,8 +3,8 @@ import {FileItem} from "./FileItem";
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {fileHttp} from "../../util/config";
-import {Link, useLocation, useMatch} from "react-router-dom";
+import {fileHttp, settingHttp} from "../../util/config";
+import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {getNextByLoop} from "../../../../common/ListUtil";
@@ -16,6 +16,7 @@ import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import Noty from "noty";
 import {FileRename} from "../prompts/FileRename";
+import {Dropdown} from "../../../meta/component/Dashboard";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -29,6 +30,8 @@ const fileTypes = Object.values(FileListShowTypeEmum);
 export function FileList() {
     const inputRef = useRef();
     let location = useLocation();
+    const navigate = useNavigate();
+
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
@@ -39,6 +42,28 @@ export function FileList() {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
+
+    const [file_paths, setFile_paths] = useState([]);
+    const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
+
+    const getItems = async () => {
+        const result = await settingHttp.get("filesSetting");
+        const list = [];
+        if (result.code === RCode.Sucess) {
+            for (let i=0; i<result.data.length; i++) {
+                list.push({
+                    r:(<div>{result.data[i].note}</div>),
+                    v:i
+                })
+            }
+            setFile_paths(list);
+        }
+        const swith_result = await fileHttp.post("base_switch/get");
+        if (swith_result.code === RCode.Sucess) {
+            if (swith_result.data) {
+                    setFile_root_path(swith_result.data);}
+        }
+    }
 
     const fileHandler = async () => {
         // 文件列表初始化界面
@@ -60,6 +85,7 @@ export function FileList() {
             await fileHandler();
         };
         fetchData();
+        getItems();
     }, [location]);
     useEffect(() => {
         const element = inputRef.current;
@@ -142,10 +168,16 @@ export function FileList() {
             files[i]= getFileNameByLocation(location,file.name)
         }
         const url = fileHttp.getDownloadUrl(files);
-        window.open(url);
+        window.open(url+`&token=${localStorage.getItem('token')}`);
     }
     function updateFile() {
         setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{}});
+    }
+
+    const baseSwitch = async (v) =>{
+        setFile_root_path(v);
+        await fileHttp.post("base_switch",{root_index:v})
+        navigate("/file/");
     }
     return (
         <div>
@@ -162,6 +194,7 @@ export function FileList() {
                 <ActionButton icon={"grid_view"} title={"切换样式"} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={"创建文件夹"} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={"创建文本文件"} onClick={filenew}/>
+                <Dropdown children={file_paths} click={(v)=>{ baseSwitch(v);}} value={file_root_path}/>
             </Header>
             <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
                 {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
