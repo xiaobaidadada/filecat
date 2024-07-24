@@ -1,6 +1,7 @@
 ## 说明
-这是一个面向开发者的文件管理、服务器工具集合(web服务)。
+- 这是一个面向开发者的文件管理、服务器工具集合(web服务)。
 你可以使用该软件在自己的家里使用任意一台主机，利用ddns或者穿透功能实现一个自己的个人网盘，或者用来简单管理一个linux服务器。需要访问家庭中的路由器后台等局域网受限的网址的时候，你可以利用rdp、ssh、网页代理功能轻松实现这一目的。
+- 本项目的网页ui是基于filebrowser项目的，filebrowser偏向于普通用户使用不能满足作为一个软件开发人员的更多功能需要，所以才有了这个项目，我是觉得filebrowser ui挺好看的所以就直接复制了。
 ## 截图
 ![image](https://github.com/user-attachments/assets/98a77c5f-e6f8-44ee-a136-f6fc5c0be459)
 ![image](https://github.com/xiaobaidadada/filecat/assets/61794688/97c630c5-6c0f-48d2-9a67-20b2ff86eae9)
