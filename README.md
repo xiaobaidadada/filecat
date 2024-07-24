@@ -1,9 +1,9 @@
 ## 说明
-面向开发者的文件管理、服务器工具集合。
-![image](https://github.com/xiaobaidadada/filecat/assets/61794688/516ef7db-65c6-4f2d-b6e6-18b35f6e81a7)
+这是一个面向开发者的文件管理、服务器工具集合(web服务)。
+你可以使用该软件在自己的家里使用任意一台主机，利用ddns或者穿透功能实现一个自己的个人网盘，或者用来简单管理一个linux服务器。需要访问家庭中的路由器后台等局域网受限的网址的时候，你可以利用rdp、ssh、网页代理功能轻松实现这一目的。
+## 截图
+![image](https://github.com/user-attachments/assets/98a77c5f-e6f8-44ee-a136-f6fc5c0be459)
 ![image](https://github.com/xiaobaidadada/filecat/assets/61794688/97c630c5-6c0f-48d2-9a67-20b2ff86eae9)
-![image](https://github.com/xiaobaidadada/filecat/assets/61794688/a3383438-57ff-43db-ae17-3e500d99ea5f)
-
 ## 主要特性
 -  文件管理、文件在线编辑(双击)
 - 终端、ssh代理
