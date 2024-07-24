@@ -70,7 +70,9 @@ export function BaseFileItem(props: FileItemData & { index?: number; click: (ind
         click(props.index)
     }} className={"item"} role="button" data-type={props.type}
                  data-dir={!props.type || props.type === FileTypeEnum.folder}
-                 aria-selected={getByList(selectList, props.index) !== null}>
+                 aria-selected={getByList(selectList, props.index) !== null}
+                 aria-label={props.name}
+    >
         <div>
             {/*<img/>*/}
             <i className="material-icons"></i>

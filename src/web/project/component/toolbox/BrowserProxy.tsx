@@ -89,7 +89,6 @@ export function BrowserProxy(props) {
     }
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             <InputTextIcon placeholder={"系统代理端口"} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
             <InputTextIcon placeholder={"要代理的url"} icon={"http"} value={showUrl} handleInputChange={(v) => {
                 setshowUrl(v);

@@ -204,7 +204,6 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         <div>
             <Header>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
-                <title><h3>FileCat</h3></title>
                 <ActionButton icon={"arrow_back"} title={"返回"} onClick={backDir}/>
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.SshDelete, overlay: true, data: {}})

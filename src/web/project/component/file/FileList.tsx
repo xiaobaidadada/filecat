@@ -178,12 +178,13 @@ export function FileList() {
         setFile_root_path(v);
         await fileHttp.post("base_switch",{root_index:v})
         navigate("/file/");
+        setSelectList([])
+        setClickList([])
     }
     return (
         <div>
             <Header>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
-                <title><h3>FileCat</h3></title>
                 {selectedFile.length>0&& <ActionButton icon={"delete"} title={"删除"} onClick={()=>{setShowPrompt({show: true,type:PromptEnum.FilesDelete,overlay: true,data:{}})}}/>}
                 {selectedFile.length>0&& <ActionButton icon={"content_copy"} title={"复制"} onClick={copy}/>}
                 {selectedFile.length>0&& <ActionButton icon={"content_cut"} title={"剪切"} onClick={cut}/>}

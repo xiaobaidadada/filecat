@@ -87,7 +87,6 @@ export function Rdp() {
     }
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             <InputTextIcon placeholder={"地址"} icon={"outlet"} value={address}
                            handleInputChange={(v) => setAddress(v)}/>
             <InputTextIcon placeholder={"账号"} icon={"http"} value={username}
