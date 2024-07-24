@@ -9,6 +9,8 @@ import {getRouterAfter} from "../../util/WebPath";
 import Noty from "noty";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {BaseFileItem} from "./component/BaseFileItem";
+import {RCode} from "../../../../common/Result.pojo";
+import {NotyFail} from "../../util/noty";
 
 
 export function FileItem(props: FileItemData & { index?: number }) {
@@ -55,6 +57,10 @@ export function FileItem(props: FileItemData & { index?: number }) {
                 if (model) {
                     // 双击文件
                     const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
+                    if (rsq.code !== RCode.Sucess) {
+                        NotyFail("超过20MB");
+                        return;
+                    }
                     setEditorSetting({
                         model,
                         open: true,

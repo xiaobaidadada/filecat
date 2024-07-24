@@ -59,7 +59,6 @@ export function NetWol(props) {
 
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             <ActionButton icon={"play_arrow"} title={"发送"} onClick={()=>{go();}}/>
             <InputTextIcon placeholder={"目标设备mac地址"} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
         </Header>

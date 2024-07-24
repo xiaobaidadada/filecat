@@ -45,9 +45,7 @@ function Layout() {
             <Prompt></Prompt>
             <Editor />
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
-            <Header>
-                <title><h3>FileCat</h3></title>
-            </Header>
+            <Header/>
             <CommonBody navList={MainNavList}>
                 {/*文件*/}
                 <FileList/>

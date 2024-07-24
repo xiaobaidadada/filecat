@@ -120,7 +120,6 @@ export function Docker(props) {
     }
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             {optRow.length > 0 && <div>
                 {optRow[1].props.context}
             </div>}

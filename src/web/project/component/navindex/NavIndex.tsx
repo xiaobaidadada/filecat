@@ -42,7 +42,6 @@ export function NavIndex() {
 
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             <ButtonLittle text={"添加"} clickFun={add}/>
         </Header>
         <NavIndexContainer getItems={getItems}  save={save} items={[{key:"name",preName:"名字"},{key:"url",preName:"url"}]}/>

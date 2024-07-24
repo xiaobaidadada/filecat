@@ -57,7 +57,7 @@ export function Editor() {
         }
     }
     const div = <div id="editor-container">
-        <Header>
+        <Header ignore_tags={true}>
             <ActionButton title={"取消"} icon={"close"} onClick={cancel}/>
             <title>{editorSetting.fileName}</title>
             <ActionButton title={"保存"} icon={"save"} onClick={save}/>

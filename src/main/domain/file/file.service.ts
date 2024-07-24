@@ -3,7 +3,7 @@ import { FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import fs, {Stats} from "fs";
 import fse from 'fs-extra'
 import path from "path";
-import {Result, Sucess} from "../../other/Result";
+import {Fail, Result, Sucess} from "../../other/Result";
 import multer from "multer";
 import {rimraf} from "rimraf";
 import {cutCopyReq, fileInfoReq} from "../../../common/req/file.req";
@@ -13,6 +13,7 @@ import {Env} from "../../../common/Env";
 import {settingService} from "../setting/setting.service";
 const archiver = require('archiver');
 
+const MAX_SIZE_TXT = 20 * 1024 * 1024;
 class FileService {
 
     public async getFile(filePath,token):Promise<Result<GetFilePojo|string>> {
@@ -24,6 +25,9 @@ class FileService {
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
+            if (stats.size > MAX_SIZE_TXT) {
+                return Fail("超过20MB");
+            }
             const buffer = fs.readFileSync(sysPath);
             return Sucess(buffer.toString());
         }

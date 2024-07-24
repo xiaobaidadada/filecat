@@ -65,7 +65,9 @@
 .file-icons [aria-label$=".rs"] i::before,
 .file-icons [aria-label$=".vue"] i::before,
 .file-icons [aria-label$=".xml"] i::before,
-.file-icons [aria-label$=".yml"] i::before
+.file-icons [aria-label$=".yml"] i::before,
+.file-icons [aria-label$=".tsx"] i::before,
+.file-icons [aria-label$=".ts"] i::before
 { content: 'code' }
 
 /* #999 - Executable */
@@ -188,7 +190,9 @@
 .file-icons [aria-label$=".ps1"] i,
 .file-icons [aria-label$=".rtf"] i,
 .file-icons [aria-label$=".vob"] i,
-.file-icons [aria-label$=".wim"] i
+.file-icons [aria-label$=".wim"] i,
+.file-icons [aria-label$=".ts"] i,
+.file-icons [aria-label$=".tsx"] i
 { color: var(--icon-blue) }
 
 /* #60f - Various */

@@ -99,7 +99,6 @@ export function RemoteLinux(props) {
     }
     return <div>
         <Header>
-            <title><h3>FileCat</h3></title>
             <InputTextIcon placeholder={"目录"} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={"账号"} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={"密码"} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
