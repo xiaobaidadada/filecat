@@ -3,13 +3,13 @@
     /*max-width: 5rem;*/
     position: relative;
 }
-.dropdown_none {
-    display: none;
-}
+/*.dropdown_none {*/
+/*    display: none;*/
+/*}*/
 .dropdown {
     min-width: 10rem;
     /*max-width: 5rem;*/
-    top: 3em;
+    /*top: 3em;*/
     right: 1em;
 
     position: absolute;
@@ -23,6 +23,11 @@
     z-index: 99999;
     cursor: pointer;
     width: 100%;
+}
+.dropdown_child {
+    top: 0;
+    left: 1rem;
+    position: absolute;
 }
 
 body.rtl .dropdown {

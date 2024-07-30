@@ -31,7 +31,7 @@ export class SSHController {
     // 获取文本
     @Post("/get/file/text")
     async getFileText(@Body() body: SshPojo) {
-        return Sucess(await sshService.getFileText(body));
+        return sshService.getFileText(body);
     }
 
     // 更新文本

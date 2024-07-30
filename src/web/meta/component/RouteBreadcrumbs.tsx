@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {webPathJoin} from "../../../common/ListUtil";
-import '../resources/css/all.css'
+// import '../resources/css/all.css'
 // 依靠路由的面包屑
 
 export function RouteBreadcrumbs(props: {
@@ -35,7 +35,7 @@ export function RouteBreadcrumbs(props: {
                     href: index===0?`${prePathP}${v}/`:webPathJoin(list[index-1].href,v)
                 })
             }
-            
+
             setPrePath(prePathP)
             // console.log(JSON.stringify(list))
             setTotalRoutePaths(list);

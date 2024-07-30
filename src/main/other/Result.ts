@@ -14,9 +14,9 @@ export function Sucess<T>(data:T,code:RCode = RCode.Sucess):Result<T> {
     }
 }
 
-export function Fail(message:string):Result<undefined> {
+export function Fail(message:string,code:RCode = RCode.Fail):Result<undefined> {
     return {
-        code:RCode.Fail,
+        code:code,
         message:message
     }
 }

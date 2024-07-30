@@ -1,6 +1,6 @@
 import React, {ReactNode} from 'react';
 import {useNavigate, useLinkClickHandler, Link} from 'react-router-dom';
-import '../resources/css/all.css'
+
 
 export function To(props: {
     className?: string,

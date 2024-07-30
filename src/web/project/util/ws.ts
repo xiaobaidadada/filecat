@@ -6,5 +6,6 @@ export const ws = new WsClient(window.location.host,  (socket)=>{
     data.context = {
         Authorization: localStorage.getItem('token')
     }
-     socket.send(data.encode())
+     // @ts-ignore
+    socket.send(data.encode())
 });

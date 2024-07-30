@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react';
+import React, {ReactNode, useState} from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -11,9 +11,13 @@ import {saveTxtReq} from "../../../../common/req/file.req";
 import {BaseFileItem} from "./component/BaseFileItem";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail} from "../../util/noty";
+import {PromptEnum} from "../prompts/Prompt";
+import {StringUtil} from "../../../../common/StringUtil";
 
+const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","wmv","swf","mod","mpv","mpeg","asf"]);
+const compressing_list = new Set(["tar","gzip","tgz","zip"]);// compressing
 
-export function FileItem(props: FileItemData & { index?: number }) {
+export function FileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
@@ -57,7 +61,7 @@ export function FileItem(props: FileItemData & { index?: number }) {
                 if (model) {
                     // 双击文件
                     const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
-                    if (rsq.code !== RCode.Sucess) {
+                    if (rsq.code === RCode.File_Max) {
                         NotyFail("超过20MB");
                         return;
                     }
@@ -89,6 +93,20 @@ export function FileItem(props: FileItemData & { index?: number }) {
         }
     }
 
-    return <BaseFileItem name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
-                         click={clickHandler}/>
+    // 右键功能
+    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+
+
+    const handleContextMenu = (event,name) => {
+        event.preventDefault();
+        if (video_format_set.has(StringUtil.getFileExtension(name))) {
+            setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:{ x: event.clientX, y: event.clientY ,filename: name}});
+        }
+
+    };
+
+
+    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+                         click={clickHandler} itemWidth={props.itemWidth}>
+    </BaseFileItem>
 }

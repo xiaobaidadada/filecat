@@ -59,9 +59,24 @@ export class SshSsh2 extends LifecycleRecordService {
         })
     }
 
+    // 获取sftp
     sftGet(client: Client) {
         const sftp = client[sftp_client];
         return sftp;
+    }
+
+    // 获取文件信息
+    async sftGetFileStats(filePath:string,client: Client) :Promise<any>{
+        return this.asyncExec((resolve, reject) => {
+            const sftp = this.sftGet(client);
+            sftp.stat(filePath, (err, stats) => {
+                if (err) {
+                    resolve(null);
+                    return;
+                }
+                resolve(stats);
+            });
+        }, 1000 * 30);
     }
 
     // 获取目录下文件

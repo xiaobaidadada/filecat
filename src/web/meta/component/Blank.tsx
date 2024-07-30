@@ -1,5 +1,5 @@
 import React, {ReactNode, useEffect} from 'react';
-import '../resources/css/all.css'
+
 
 export function Blank(props:{context?:string}) {
     return <h2 className="message">

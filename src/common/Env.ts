@@ -4,10 +4,10 @@ import path from "path";
 export class Env {
 
     public static  port: number = 5567;
-    public static base_folder:string = ".";
+    public static base_folder:string = process.cwd(); // 默认工作目录
     public static username:string = "";
     public static password:string = "";
-    public static work_dir:string = "./data";
+    public static work_dir:string = `${process.cwd()}/data`;
     public static env:string = "";
     public static parseArgs() {
         const args = process.argv.slice(2);

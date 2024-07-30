@@ -57,9 +57,8 @@ export function Editor() {
         }
     }
     const div = <div id="editor-container">
-        <Header ignore_tags={true}>
-            <ActionButton title={"取消"} icon={"close"} onClick={cancel}/>
-            <title>{editorSetting.fileName}</title>
+        <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
+            <title key={2}>{editorSetting.fileName}</title>]}>
             <ActionButton title={"保存"} icon={"save"} onClick={save}/>
         </Header>
         <AceEditor

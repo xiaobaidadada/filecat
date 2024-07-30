@@ -1,6 +1,5 @@
 import React, {ReactNode} from 'react';
 import {Route, Routes} from "react-router-dom";
-import '../resources/css/all.css'
 
 
 export interface RouteContainerProps {

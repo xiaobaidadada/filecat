@@ -215,9 +215,9 @@ export class SettingService {
 
     public getFileRootPath (token:string) {
         const obj = Cache.getTokenMap().get(token);
-        const index = obj?obj["root_index"]:null;
+        const index = obj?obj["root_index"]??null:null;
         const list = this.getFilesSetting();
-        if(index) {
+        if(index !== null) {
             return list[index].path;
         } else {
             for (const item of list) {

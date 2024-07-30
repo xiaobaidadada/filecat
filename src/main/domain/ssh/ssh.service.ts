@@ -17,9 +17,12 @@ import Stream from "node:stream";
 import multer from "multer";
 import {Context} from "koa";
 import {DataUtil} from "../data/DataUtil";
+import {Fail, Sucess} from "../../other/Result";
+import {RCode} from "../../../common/Result.pojo";
 
 
 export const navindex_remote_ssh_key = "navindex_remote_ssh_key";
+const MAX_SIZE_TXT = 20 * 1024 * 1024;
 
 export class SshService extends SshSsh2 {
 
@@ -63,7 +66,11 @@ export class SshService extends SshSsh2 {
             return "";
         }
         this.lifeHeart(SshPojo.getKey(req));
-        return this.sftGetFileText(req, client);
+        const stats = await this.sftGetFileStats(req.file,client);
+        if (stats.size > MAX_SIZE_TXT) {
+            return Fail("超过20MB",RCode.File_Max);
+        }
+        return Sucess(await this.sftGetFileText(req, client));
     }
 
     async updateFileText(req: SshPojo) {

@@ -36,16 +36,11 @@ function App() {
         }
     }, [location]);
     return (
-        <div style={{
-            "height":"100%"
-        }}>
-                <SimpleRoutes rtos={["/","/login","/*"]}>
-                    <Login/>
-                    <Login/>
-                    <Layout/>
-                </SimpleRoutes>
-        </div>
-
+        <SimpleRoutes rtos={["/","/login","/*"]}>
+            <Login/>
+            <Login/>
+            <Layout/>
+        </SimpleRoutes>
     );
 }
 

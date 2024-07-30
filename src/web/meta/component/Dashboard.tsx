@@ -4,7 +4,7 @@ import Login from "../../project/component/Login";
 import Layout from "../../project/component/Layout";
 import {SimpleRoutes} from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
-import '../resources/css/all.css'
+
 // 菜单容器
 export function Menu(props) {
     const location = useLocation();
@@ -101,37 +101,54 @@ export function TextLine(props:{
 
 }
 
-export function Dropdown(props:{children?:{r:React.ReactNode,v:any}[],click?:(v)=>void, value?:any}) {
-    const [className, setClassName] = React.useState("dropdown_none");
+export function DropdownTag(props:{items?:{r:React.ReactNode,v:any}[],click?:(v)=>void, pre_value?:any}) {
+    const [show, setShow] = React.useState(false);
     const click = () =>{
-        setClassName("dropdown_none");
+        setShow(false);
     }
 
     return <div className={"dropdown_start"}>
         <ActionButton icon={"more_vert"} title={"更多"} onClick={() => {
-            setClassName(className === "dropdown" ? "dropdown_none" : "dropdown")
+            setShow(!show)
         }}/>
-        {className==="dropdown" && <OverlayTransparent click={click}/>}
-        <div className={className}>
-            {props.children.map((v, index) => (<div key={index} className={props.value!==undefined&&props.value===v.v?"dropdown_selected":""} onClick={() => {
-                if (props.click) props.click(v.v)
-            }}>
-                {v.r}
-            </div>))}
-        </div>
+        {show && <OverlayTransparent click={click}/>}
+        {show && <Dropdown {...props}/>}
+
     </div>
 
+}
+
+function DropdownItem (props:{key,value,click,context,pre_value,c?:React.ReactNode}) {
+    return <div  className={props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}
+                onClick={() => {
+                    if (props.click) props.click(props.value)
+                }}>
+        {props.context}
+        {props.c &&
+            <div className={"dropdown_child"}>
+                {props.c}
+            </div>
+        }
+    </div>
+}
+
+type DropdownItemsPojo = { r: React.ReactNode, v: any,c?:DropdownItemsPojo }[];
+
+export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v) => void, pre_value?: any }) {
+    return <div className={"dropdown"}>
+        {props.items && props.items.map((v, index) => (<DropdownItem key={index} value={v.v} click={props.click} context={v.r} pre_value={props.pre_value} c={(<Dropdown items={v.c} click={props.click} pre_value={props.pre_value}/>)}/>))}
+    </div>
 }
 
 export function Overlay(props: { click: Function }) {
     return <div className="overlay" onClick={props.click}></div>
 }
 
-export function OverlayTransparent(props:{click:Function}) {
+export function OverlayTransparent(props: { click: Function }) {
     return <div className="overlay_trans" onClick={props.click}></div>
 }
 
-export function FullScreenDiv(props:{isFull?:boolean;children?: React.ReactNode;}) {
+export function FullScreenDiv(props: { isFull?: boolean;children?: React.ReactNode;}) {
     return <div className={props.isFull ?"full_screen":""}>
         {props.children}
     </div>
