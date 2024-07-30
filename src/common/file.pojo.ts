@@ -22,3 +22,9 @@ export interface GetFilePojo {
     folders?: FileItemData[],
 }
 
+export class FileVideoFormatTrans {
+    source_filename:string;
+    to_format:string;
+    to_filename:string;
+    token:string;
+}

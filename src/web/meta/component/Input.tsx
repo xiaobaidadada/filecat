@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import '../resources/css/all.css'
+
 import {MaterialIcon} from "material-icons";
 
 export function InputTextIcon(props: {
@@ -7,7 +7,8 @@ export function InputTextIcon(props: {
     handleInputChange?: (event: string, target: any) => void,
     value?: string,
     icon:MaterialIcon,
-    max_width?:string
+    max_width?:string,
+    handleEnterPress?:Function
 }) {
     const [value, setValue] = React.useState("");
     useEffect(() => {
@@ -25,7 +26,13 @@ export function InputTextIcon(props: {
                     }
                     setValue(event.target.value);
                 }}
-                style={{}}
+                onKeyPress={(event)=>{
+                    if (event.key === 'Enter') {
+                        if (props.handleEnterPress) {
+                            props.handleEnterPress();
+                        }
+                    }
+                }}
             />
         </div>
     </div>

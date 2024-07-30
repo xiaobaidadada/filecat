@@ -1,5 +1,5 @@
 import React, {ReactNode} from 'react';
-import '../resources/css/all.css'
+// import '../resources/css/all.css'
 import {MaterialIcon} from "material-icons";
 import {To} from "./To";
 

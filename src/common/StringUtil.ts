@@ -32,4 +32,8 @@ export class StringUtil {
         }
         return r;
     }
+
+    public static getFileExtension(fileName) {
+        return fileName.split('.').pop();
+    }
 }

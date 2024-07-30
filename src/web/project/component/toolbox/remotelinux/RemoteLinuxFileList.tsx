@@ -16,7 +16,8 @@ import {RemoteLinuxFileItem} from "./RemoteLinuxFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteShell} from "../../shell/RemoteShell";
 import {getFilesByIndexs} from "../../file/FileUtil";
-import {FileTypeEnum} from "../../../../../common/file.pojo";
+import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
+import {InputTextIcon} from "../../../../meta/component/Input";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -27,6 +28,8 @@ export enum FileListShowTypeEmum {
 
 const fileTypes = Object.values(FileListShowTypeEmum);
 
+const columnWidth = 280;
+
 export class RemoteLinuxFileListProps {
     close: () => void;
     data: {
@@ -36,6 +39,11 @@ export class RemoteLinuxFileListProps {
         password: string;
         dir: string;
     }
+}
+
+let pre_search:GetFilePojo;
+export function setPreSearch(data:GetFilePojo) {
+    pre_search = data;
 }
 
 export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
@@ -54,6 +62,9 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [sshInfo, setSSHInfo] = useRecoilState($stroe.sshInfo);
 
+    const [itemWidth,setItemWidth] = useState();
+    const [search,setSearch] = useState("");
+
     const fileHandler = async () => {
         // 文件列表初始化界面
         const req = new SshPojo();
@@ -67,15 +78,26 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             return;
         }
         const {folders, files} = rsp.data||{};
-        setNowFileList({folders:folders||[], files:files||[]});
+        const data = {folders:folders||[], files:files||[]};
+        setNowFileList(data);
+        pre_search =data;
     }
     const fetchData = async () => {
         await fileHandler();
+    };
+    const handleResize = () => {
+        let columns = Math.floor(
+            document.querySelector("main").offsetWidth / columnWidth
+        );
+        if (columns === 0) columns = 1;
+        setItemWidth(`calc(${100 / columns}% - 1em)`)
     };
     // 在组件挂载后执行的逻辑
     useEffect(() => {
         routerClick();
         fetchData();
+        handleResize();
+        window.addEventListener('resize', handleResize);
     }, []); //location 暂时不做监听，也无法监听
     useEffect(() => {
         const element = inputRef.current;
@@ -200,9 +222,31 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         }
     }
 
+    // 搜索
+    const searchHanle = ()=>{
+        if (!pre_search) {
+            return;
+        }
+        setSelectList([])
+        setClickList([])
+        const files = [];
+        const folders = [];
+        for (const file of pre_search.files ?? []) {
+            if (file.name.includes(search)) {
+                files.push(file);
+            }
+        }
+        for (const folder of pre_search.folders ?? []) {
+            if (folder.name.includes(search)) {
+                folders.push(folder);
+            }
+        }
+        setNowFileList({files,folders});
+    }
+
     return (
         <div>
-            <Header>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={"搜索当前目录"} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
                 <ActionButton icon={"arrow_back"} title={"返回"} onClick={backDir}/>
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => {
@@ -230,14 +274,14 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 {(!!nowFileList && !!nowFileList.folders) &&
                     (<div>{nowFileList.folders.map((v, index) => (
                         // @ts-ignore
-                        <RemoteLinuxFileItem index={index} key={index} {...v} />))}</div>)
+                        <RemoteLinuxFileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
                 {(!!nowFileList && !!nowFileList.folders && nowFileList.files.length > 0) && <h2>文件</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&
                     // @ts-ignore
                     (<div>{nowFileList.files.map((v, index) => (
                         // @ts-ignore
-                        <RemoteLinuxFileItem index={index + nowFileList.folders.length} key={index} {...v}/>))}</div>)
+                        <RemoteLinuxFileItem  itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}/>))}</div>)
                 }
             </div>
             <RemoteShell/>

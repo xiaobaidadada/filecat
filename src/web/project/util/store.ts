@@ -2,7 +2,12 @@ import {atom, RecoilState, useRecoilState} from 'recoil';
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {WsClient} from "../../../common/frame/ws.client";
 
-
+export class ShowPromptData {
+    show:boolean;
+    type: string;
+    overlay:boolean;
+    data:any;
+}
 export const $stroe = {
     // 当前的所有文件
     nowFileList: atom({
@@ -60,12 +65,7 @@ export const $stroe = {
     showPrompt: atom(
         {
             key: 'showPrompt',
-            default: {
-                show:false,
-                type: '',
-                overlay:false,
-                data:{}
-            }
+            default: new ShowPromptData()
         }
     ),
     // 编辑器设置

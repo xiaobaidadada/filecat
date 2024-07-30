@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react'
 import {useRecoilState} from "recoil";
-import '../../meta/resources/css/all.css'
 import {InputPassword, InputText} from "../../meta/component/Input";
 import {Button} from "../../meta/component/Button";
 import {Link, useLocation, useNavigate} from "react-router-dom";

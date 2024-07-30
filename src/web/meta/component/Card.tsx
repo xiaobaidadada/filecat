@@ -1,6 +1,6 @@
 import React, {useRef} from 'react';
 import Noty from "noty";
-import '../resources/css/all.css'
+import {InputText} from "./Input";
 
 export interface CardProps {
     title?: string;
@@ -66,4 +66,34 @@ export function TextTip(props:TextProps) {
             <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.context}</div>
         </div>
     )
+}
+
+
+export function CardPrompt(props:{title:string,context?:React.ReactNode[],cancel?:()=>void,confirm?:()=>void,cancel_t?:string,confirm_t?:string}) {
+    return (<div className={"card floating"}>
+        <div className="card-title">
+            <h2>{props.title}</h2>
+        </div>
+        <div className="card-content">
+            {props.context && props.context.map((value,index) => (<div key={index}>{value}</div>))}
+        </div>
+        <div className="card-action">
+            <button className="button button--flat button--grey" onClick={props.cancel}>
+                {props.cancel_t ?? "cancel"}
+            </button>
+            <button className="button button--flat" onClick={props.confirm}>
+                {props.confirm_t ?? "confirm"}
+            </button>
+        </div>
+    </div>)
+}
+
+export function ProgressCard(props:{progress:number}) {
+    return <div className="progress-card">
+        <div className="progress-per">
+            <div style={{
+                "width": `${props.progress}%`
+            }}></div>
+        </div>
+    </div>
 }

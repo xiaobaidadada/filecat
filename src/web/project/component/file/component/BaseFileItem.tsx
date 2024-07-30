@@ -57,7 +57,7 @@ function getModelType(name) {
     return "text";
 }
 
-export function BaseFileItem(props: FileItemData & { index?: number; click: (index: number, model:string,name:string) => void }) {
+export function BaseFileItem(props: FileItemData & {extraAttr?:any, index?: number; click: (index: number, model:string,name:string) => void,itemWidth?:string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
 
     async function click(index: number) {
@@ -66,12 +66,15 @@ export function BaseFileItem(props: FileItemData & { index?: number; click: (ind
         }
     }
 
-    return (<div onClick={() => {
+    return (<div {...props.extraAttr} onClick={() => {
         click(props.index)
     }} className={"item"} role="button" data-type={props.type}
                  data-dir={!props.type || props.type === FileTypeEnum.folder}
                  aria-selected={getByList(selectList, props.index) !== null}
                  aria-label={props.name}
+                 style={{
+                     "--filewidth":props.itemWidth ?? "33%"
+                 }}
     >
         <div>
             {/*<img/>*/}

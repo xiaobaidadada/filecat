@@ -12,9 +12,11 @@ import {BaseFileItem} from "../../file/component/BaseFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RCode} from "../../../../../common/Result.pojo";
 import path from "path";
+import {NotyFail} from "../../../util/noty";
+import {setPreSearch} from "./RemoteLinuxFileList";
 
 
-export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
+export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
@@ -56,6 +58,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
                     return;
                 }
                 setNowFileList(rsp.data)
+                setPreSearch(rsp.data);
                 setShellNowDir([...shellNowDir,name])
 
                 if (shellShow.show) {
@@ -78,6 +81,10 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
                     Object.assign(req,sshInfo);
                     req.file = joinPaths(...shellNowDir,name);
                     const rsq = await sshHttp.post("get/file/text",req);
+                    if (rsq.code === RCode.File_Max) {
+                        NotyFail("超过20MB");
+                        return;
+                    }
                     setEditorSetting({
                         model,
                         open: true,
@@ -104,6 +111,6 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number }) {
         }
     }
 
-    return <BaseFileItem  name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+    return <BaseFileItem  name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} itemWidth={props.itemWidth}
     click={clickHandler}/>
 }

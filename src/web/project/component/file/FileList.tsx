@@ -16,7 +16,9 @@ import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import Noty from "noty";
 import {FileRename} from "../prompts/FileRename";
-import {Dropdown} from "../../../meta/component/Dashboard";
+import {DropdownTag} from "../../../meta/component/Dashboard";
+import {InputTextIcon} from "../../../meta/component/Input";
+import {FileItemData, GetFilePojo} from "../../../../common/file.pojo";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -26,6 +28,10 @@ export enum FileListShowTypeEmum {
 
 
 const fileTypes = Object.values(FileListShowTypeEmum);
+
+const columnWidth = 280;
+
+let pre_search:GetFilePojo;
 
 export function FileList() {
     const inputRef = useRef();
@@ -45,6 +51,9 @@ export function FileList() {
 
     const [file_paths, setFile_paths] = useState([]);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
+
+    const [itemWidth,setItemWidth] = useState();
+    const [search,setSearch] = useState("");
 
     const getItems = async () => {
         const result = await settingHttp.get("filesSetting");
@@ -72,6 +81,7 @@ export function FileList() {
             return;
         }
         setNowFileList(rsp.data)
+        pre_search =rsp.data;
         if (shellShow.show) {
             setShellShow({
                 show: true,
@@ -79,6 +89,13 @@ export function FileList() {
             })
         }
     }
+    const handleResize = () => {
+        let columns = Math.floor(
+            document.querySelector("main").offsetWidth / columnWidth
+        );
+        if (columns === 0) columns = 1;
+        setItemWidth(`calc(${100 / columns}% - 1em)`)
+    };
     // 在组件挂载后执行的逻辑
     useEffect(() => {
         const fetchData = async () => {
@@ -86,6 +103,8 @@ export function FileList() {
         };
         fetchData();
         getItems();
+        handleResize();
+        window.addEventListener('resize', handleResize);
     }, [location]);
     useEffect(() => {
         const element = inputRef.current;
@@ -174,6 +193,7 @@ export function FileList() {
         setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{}});
     }
 
+    // 多root目录切换
     const baseSwitch = async (v) =>{
         setFile_root_path(v);
         await fileHttp.post("base_switch",{root_index:v})
@@ -181,35 +201,66 @@ export function FileList() {
         setSelectList([])
         setClickList([])
     }
+
+    // 搜索
+    const searchHanle = ()=>{
+        if (!pre_search) {
+            return;
+        }
+        setSelectList([])
+        setClickList([])
+        const files = [];
+        const folders = [];
+        for (const file of pre_search.files ?? []) {
+            if (file.name.includes(search)) {
+                files.push(file);
+            }
+        }
+        for (const folder of pre_search.folders ?? []) {
+            if (folder.name.includes(search)) {
+                folders.push(folder);
+            }
+        }
+        setNowFileList({files,folders});
+    }
     return (
         <div>
-            <Header>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={"搜索当前目录"} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
-                {selectedFile.length>0&& <ActionButton icon={"delete"} title={"删除"} onClick={()=>{setShowPrompt({show: true,type:PromptEnum.FilesDelete,overlay: true,data:{}})}}/>}
-                {selectedFile.length>0&& <ActionButton icon={"content_copy"} title={"复制"} onClick={copy}/>}
-                {selectedFile.length>0&& <ActionButton icon={"content_cut"} title={"剪切"} onClick={cut}/>}
-                {(copyedFileList.length>0 || cutedFileList.length>0)&& <ActionButton onClick={paste} icon={"content_paste"} title={"粘贴到此处"} tip={copyedFileList.length+cutedFileList.length}/>}
-                {selectedFile.length>0&& <ActionButton icon={"download"} title={"下载"} onClick={downloadFile}/>}
-                {selectedFile.length === 1&& <ActionButton icon={"edit_attributes"} title={"重命名"} onClick={updateFile}/>}
-                <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick} />
+                {selectedFile.length > 0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => {
+                    setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {}})
+                }}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_copy"} title={"复制"} onClick={copy}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_cut"} title={"剪切"} onClick={cut}/>}
+                {(copyedFileList.length > 0 || cutedFileList.length > 0) &&
+                    <ActionButton onClick={paste} icon={"content_paste"} title={"粘贴到此处"}
+                                  tip={copyedFileList.length + cutedFileList.length}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"download"} title={"下载"} onClick={downloadFile}/>}
+                {selectedFile.length === 1 &&
+                    <ActionButton icon={"edit_attributes"} title={"重命名"} onClick={updateFile}/>}
+                <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
                 <ActionButton icon={"grid_view"} title={"切换样式"} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={"创建文件夹"} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={"创建文本文件"} onClick={filenew}/>
-                <Dropdown children={file_paths} click={(v)=>{ baseSwitch(v);}} value={file_root_path}/>
+                <DropdownTag items={file_paths} click={(v) => {
+                    baseSwitch(v);
+                }} pre_value={file_root_path}/>
             </Header>
             <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
                 {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
                 {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>文件夹</h2>}
                 {(nowFileList.folders) &&
                     // @ts-ignore
-                    (<div>{nowFileList.folders.map((v, index) => (<FileItem index={index} key={index} {...v} />))}</div>)
+                    (<div>{nowFileList.folders.map((v, index) => (<FileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
                 {(nowFileList.files && nowFileList.files.length > 0) && <h2>文件</h2>}
                 {(nowFileList.files) &&
                     // @ts-ignore
-                    (<div>{nowFileList.files.map((v, index) => (
+                    (<div>
+                        {nowFileList.files.map((v, index) => (
                         // @ts-ignore
-                        <FileItem index={index + nowFileList.folders.length} key={index} {...v}/>))}</div>)
+                        <FileItem itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
+                    </div>)
                 }
             </div>
             <FileShell />

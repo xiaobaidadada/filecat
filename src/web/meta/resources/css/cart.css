@@ -1,0 +1,18 @@
+.progress-card {
+    margin-bottom: 8px;
+
+}
+
+.progress-card .progress-per {
+    margin-top: 2px;
+    width: 100%;
+    height: 5px;
+}
+
+.progress-card .progress-per div {
+    height: 100%;
+    background-color: #40c4ff;
+    width: 0;
+    transition: 0.2s ease width;
+    border-radius: 10px;
+}

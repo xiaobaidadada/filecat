@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import Chart from 'chart.js/auto';
-import '../resources/css/all.css'
+
 
 
 const CircleChart = ({ percentage }) => {

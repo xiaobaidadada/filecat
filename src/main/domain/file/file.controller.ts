@@ -12,12 +12,14 @@ import {
     UploadedFile,
     UseBefore
 } from "routing-controllers";
-import {GetFilePojo} from "../../../common/file.pojo";
+import {FileVideoFormatTrans, GetFilePojo} from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
 import multer from 'multer';
 import {cutCopyReq, fileInfoReq, fileReq, saveTxtReq} from "../../../common/req/file.req";
 import {Cache} from "../../other/cache";
+import {msg} from "../../../common/frame/router";
+import {CmdType, WsData} from "../../../common/frame/WsData";
 
 @Controller("/file")
 export class FileController {
@@ -96,4 +98,9 @@ export class FileController {
         return Sucess(obj?obj["root_index"]:null);
     }
 
+    @msg(CmdType.file_video_trans)
+    async file_video_trans(data:WsData<FileVideoFormatTrans>) {
+        FileServiceImpl.file_video_trans(data);
+        return ""
+    }
 }

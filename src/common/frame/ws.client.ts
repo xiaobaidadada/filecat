@@ -8,6 +8,7 @@ export class WsClient {
     private _url;
     // 0 是未连接
     private  _status = 0;
+    private _self_close  = false;
     private _authHandle;
     private _subscribeUnconnect;
     private _promise;
@@ -30,9 +31,10 @@ export class WsClient {
                 this._status = 0;
                 decoder.removeAllListeners();
                 decoder.destroy();
-                if (this._subscribeUnconnect) {
+                if (this._subscribeUnconnect && !this._self_close) {
                     this._subscribeUnconnect();
                 }
+                this._self_close = false;
             }
             const open = async (event) => {
                 console.log('ws连接成功');
@@ -171,6 +173,7 @@ export class WsClient {
     }
     public async unConnect() {
         if (this.isAilive()) {
+            this._self_close = true;
             this._socket.close();
         }
         this._status = 0;

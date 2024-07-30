@@ -1,4 +1,4 @@
-import { FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
+import {FileTypeEnum, FileVideoFormatTrans, GetFilePojo} from "../../../common/file.pojo";
 // import {config} from "../../other/config";
 import fs, {Stats} from "fs";
 import fse from 'fs-extra'
@@ -11,7 +11,12 @@ import {formatFileSize, getShortTime} from "../../../common/ValueUtil";
 import * as Stream from "node:stream";
 import {Env} from "../../../common/Env";
 import {settingService} from "../setting/setting.service";
+import {CmdType, WsData} from "../../../common/frame/WsData";
+import {Wss} from "../../../common/frame/ws.server";
+import {SysPojo} from "../../../common/req/sys.pojo";
+import {RCode} from "../../../common/Result.pojo";
 const archiver = require('archiver');
+const ffmpeg  = require('fluent-ffmpeg');
 
 const MAX_SIZE_TXT = 20 * 1024 * 1024;
 class FileService {
@@ -26,7 +31,7 @@ class FileService {
         if (stats.isFile()) {
             // 单个文件
             if (stats.size > MAX_SIZE_TXT) {
-                return Fail("超过20MB");
+                return Fail("超过20MB",RCode.File_Max);
             }
             const buffer = fs.readFileSync(sysPath);
             return Sucess(buffer.toString());
@@ -220,6 +225,38 @@ class FileService {
             }
             archive.finalize();
         }
+    }
+
+    file_video_trans(data:WsData<FileVideoFormatTrans>) {
+        const pojo = data.context as FileVideoFormatTrans;
+        const wss = data.wss as Wss;
+        const root_path = settingService.getFileRootPath(pojo.token);
+        const sysPath = path.join(root_path,decodeURIComponent(pojo.source_filename));
+        const sysPathNew = path.join(root_path,decodeURIComponent(pojo.to_filename));
+
+        ffmpeg(sysPath)
+            .toFormat(pojo.to_format)
+            // .videoCodec('libx264')
+            // .audioCodec('aac')
+            .on('start', function(commandLine) {
+                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+                result.context = 0;
+                wss.sendData(result.encode());
+            })
+            .on('progress', function(progress) {
+                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+                result.context = progress.percent.toFixed(2);
+                wss.sendData(result.encode());
+            })
+            .on('error', function(err, stdout, stderr) {
+                wss.ws.close();
+            })
+            .on('end', function() {
+                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+                result.context = 100;
+                wss.sendData(result.encode());
+            })
+            .save(sysPathNew);
     }
 
 }
