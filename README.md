@@ -2,6 +2,10 @@
 English | [中文](./doc/ZH_README.md)
 
 This is a web-based toolkit for developers that includes file management and server utilities. It supports online file compression and decompression, terminal access, SSH proxy, P2P, DDNS, and other features.
+# Screenshot
+![image](https://github.com/user-attachments/assets/37ffe3bf-19b9-4da0-9eaf-deb3d0a4d034)
+![image](https://github.com/user-attachments/assets/12df7c32-7bde-4c5c-80e4-eedb57c18de9)
+
 # Usage
 ### Direct Usage
 Download the[latest release ](https://github.com/xiaobaidadada/filecat/releases)
