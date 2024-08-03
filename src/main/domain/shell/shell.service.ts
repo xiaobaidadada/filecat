@@ -9,11 +9,21 @@ import {SystemUtil} from "../sys/sys.utl";
 import {Env} from "../../../common/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
+import {SysEnum} from "../../../common/req/user.req";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
 let cr = '\r';
 
+export function getSys() {
+    if (sysType === "win") {
+        return SysEnum.win
+    } else if (sysType === "linux") {
+        return SysEnum.linux
+    } else {
+        return ;
+    }
+}
 function getSysShell() {
     if (sysType === 'win') {
         if (SystemUtil.commandIsExist("pwsh")) {

@@ -6,8 +6,11 @@ import {fileHttp} from "../../util/config";
 import {getRouterAfter} from "../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getFilesByIndexs} from "../file/FileUtil";
+import {useTranslation} from "react-i18next";
 
 export function FileRename(props) {
+    const { t } = useTranslation();
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
     const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
@@ -38,17 +41,17 @@ export function FileRename(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>修改名字</h2>
+            <h2>{t("修改名字")}</h2>
         </div>
         <div className="card-content">
-            <InputText placeholderOut={"输入新名字"} value={getName()} handleInputChange={(value)=>setName(value)} />
+            <InputText placeholderOut={t("输入新名字")} value={getName()} handleInputChange={(value)=>setName(value)} />
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
-                取消
+                {t("取消")}
             </button>
             <button className="button button--flat" onClick={dirnew}>
-                修改
+                {t("修改")}
             </button>
         </div>
     </div>)

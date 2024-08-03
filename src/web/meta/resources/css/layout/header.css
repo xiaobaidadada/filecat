@@ -18,7 +18,15 @@
   padding: 0.5em 0.5em 0.5em 1em;
   align-items: center;
 }
-
+.header-min {
+  height: 0.1rem;
+  font-size: 0.1rem;
+  opacity: 0.5;
+}
+.header-min:hover {
+  height: 4rem;
+  font-size: small;
+}
 .header > * {
   flex: 0 0 auto;
 }

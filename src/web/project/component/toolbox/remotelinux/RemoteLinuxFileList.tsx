@@ -18,6 +18,7 @@ import {RemoteShell} from "../../shell/RemoteShell";
 import {getFilesByIndexs} from "../../file/FileUtil";
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
+import {useTranslation} from "react-i18next";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -47,6 +48,8 @@ export function setPreSearch(data:GetFilePojo) {
 }
 
 export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
+    const { t } = useTranslation();
+
     const inputRef = useRef();
     // let location = useLocation();
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
@@ -246,26 +249,26 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
     return (
         <div>
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={"搜索当前目录"} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
-                <ActionButton icon={"arrow_back"} title={"返回"} onClick={backDir}/>
-                {selectedFile.length > 0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => {
+                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>
+                {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.SshDelete, overlay: true, data: {}})
                 }}/>}
-                {selectedFile.length > 0 && <ActionButton icon={"content_copy"} title={"复制"} onClick={copy}/>}
-                {selectedFile.length > 0 && <ActionButton icon={"content_cut"} title={"剪切"} onClick={cut}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_copy"} title={t("复制")} onClick={copy}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_cut"} title={t("剪切")} onClick={cut}/>}
                 {(copyedFileList.length > 0 || cutedFileList.length > 0) &&
-                    <ActionButton onClick={paste} icon={"content_paste"} title={"粘贴到此处"}
+                    <ActionButton onClick={paste} icon={"content_paste"} title={t("粘贴到此处")}
                                   tip={copyedFileList.length + cutedFileList.length}/>}
                 {(selectedFile.length === 1 &&  nowFileList.files.length>=1 && nowFileList.folders.length>=1 &&getFilesByIndexs(nowFileList, selectedFile)[0]['type'] !== FileTypeEnum.folder) &&
-                    <ActionButton icon={"download"} title={"下载"} onClick={downloadFile}/>}
+                    <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
                 {selectedFile.length === 1 &&
-                    <ActionButton icon={"edit_attributes"} title={"重命名"} onClick={updateFile}/>}
+                    <ActionButton icon={"edit_attributes"} title={t("重命名")} onClick={updateFile}/>}
                 <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
-                <ActionButton icon={"grid_view"} title={"切换样式"} onClick={switchGridView}/>
-                <ActionButton icon={"create_new_folder"} title={"创建文件夹"} onClick={dirnew}/>
-                <ActionButton icon={"note_add"} title={"创建文本文件"} onClick={filenew}/>
-                <ActionButton icon={"close"} title={"关闭"} onClick={() => {
+                <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
+                <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
+                <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
+                <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
                     props.close();
                 }}/>
             </Header>

@@ -13,10 +13,11 @@ import {$stroe} from "../../util/store";
 import {Rows, Table} from "../../../meta/component/Table";
 import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {TableListRender} from "./component/TableListRend";
+import {useTranslation} from "react-i18next";
 
 
 
-const headers = ["编号","路径", "是否默认", "备注" ];
+
 export function  Sys() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -28,6 +29,10 @@ export function  Sys() {
     const [tokenSeconds,setTokenSeconds] = useState();
 
     const [rows, setRows] = useState([]);
+    const { t, i18n } = useTranslation();
+    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+
+    const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const getItems = async () => {
         const result = await settingHttp.get("filesSetting");
         if (result.code === RCode.Sucess) {
@@ -135,6 +140,13 @@ export function  Sys() {
             }).show();
         }
     }
+
+    // 语言国际化
+    const switchLanguage = async () =>{
+        i18n.changeLanguage(userInfo.language)
+        await settingHttp.post("language/save",{language:userInfo.language});
+    }
+
     const tokenClearAll = async () => {
         const result1 = await settingHttp.get("token/clear");
         if (result1.code === RCode.Sucess) {
@@ -185,34 +197,41 @@ export function  Sys() {
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
-                <Card title={"修改密码"} rightBottomCom={<ButtonText text={'确定修改'} clickFun={update}/>}>
-                    <InputText placeholder={'新账号'}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
-                    <InputText placeholder={'新密码'}  value={password} handleInputChange={(value)=>{setPassword(value)}} />
+                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update}/>}>
+                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
+                    <InputText placeholder={t('新密码')}  value={password} handleInputChange={(value)=>{setPassword(value)}} />
                 </Card>
             </Dashboard>
             <Dashboard>
-                <Card title={"自定义auth"} rightBottomCom={<ButtonText text={'保存'} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={"代码修改"} onClick={jscode}/>}>
-                    <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:"开启",value:true},{title:"关闭",value:false}]}/>
+                <Card title={t("自定义auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
+                    <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
             </Dashboard>
             <Dashboard>
-                <Card title={"token过期时间"} rightBottomCom={<Rows isFlex={true} columns={[
-                    <ButtonText text={'清空token'} clickFun={tokenClearAll}/>,
-                    <ButtonText text={'保存'} clickFun={tokenUpdate}/>]}/>}>
+                <Card title={t("token过期时间")} rightBottomCom={<Rows isFlex={true} columns={[
+                    <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,
+                    <ButtonText text={t('保存')} clickFun={tokenUpdate}/>]}/>}>
                     <Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={"关闭"} selected={tokenMode === TokenTimeMode.close} onchange={()=>{setTokenMode(TokenTimeMode.close)}}/>,
-                        <InputRadio value={1} context={"指定时间"} selected={tokenMode === TokenTimeMode.length}  onchange={()=>{setTokenMode(TokenTimeMode.length)}}/>,
-                        <InputRadio value={1} context={"永不过期"} selected={tokenMode === TokenTimeMode.forver}  onchange={()=>{setTokenMode(TokenTimeMode.forver)}}/>
+                        <InputRadio value={1} context={t("关闭")} selected={tokenMode === TokenTimeMode.close} onchange={()=>{setTokenMode(TokenTimeMode.close)}}/>,
+                        <InputRadio value={1} context={t("指定时间")} selected={tokenMode === TokenTimeMode.length}  onchange={()=>{setTokenMode(TokenTimeMode.length)}}/>,
+                        <InputRadio value={1} context={t("永不过期")} selected={tokenMode === TokenTimeMode.forver}  onchange={()=>{setTokenMode(TokenTimeMode.forver)}}/>
                     ]}/>
-                    {tokenMode === TokenTimeMode.length && <InputText placeholder={'秒'}  value={tokenSeconds} handleInputChange={(value)=>{setTokenSeconds(value)}} />}
+                    {tokenMode === TokenTimeMode.length && <InputText placeholder={t('秒')}  value={tokenSeconds} handleInputChange={(value)=>{setTokenSeconds(value)}} />}
 
+                </Card>
+                <Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>
+                    <Select value={userInfo.language} onChange={(value)=>{
+                        const newInfo = {...userInfo};
+                        newInfo.language = value;
+                        setUserInfo(newInfo);
+                    }} options={[{title:"english",value:"en"},{title:"中文",value:"zh"}]}/>
                 </Card>
 
             </Dashboard>
         </Column>
         <Column widthPer={50}>
             <Dashboard>
-                <CardFull title={"文件夹路径"} titleCom={<div><ActionButton icon={"add"} title={"添加"} onClick={add}/><ActionButton icon={"save"} title={"保存"} onClick={save}/></div>}>
+                <CardFull title={t("文件夹路径")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                     <Table headers={headers} rows={rows.map((item, index) => {
                         const new_list = [
                             <div>{index}</div>,
@@ -221,12 +240,12 @@ export function  Sys() {
                             }} no_border={true}/>,
                             <Select value={item.default} onChange={(value) => {
                                 onChange(item,value,index);
-                            }}  options={[{title:"是",value:true},{title:"否",value:false}]} no_border={true}/>,
+                            }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;
                             }} no_border={true}/>,
                             <div>
-                                {index!==0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => del(index)}/> }
+                                {index!==0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/> }
                             </div>,
                         ];
                         return new_list;

@@ -16,10 +16,13 @@ import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteLinuxFileList} from "./RemoteLinuxFileList";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
+import {useTranslation} from "react-i18next";
 
 
 
 export function RemoteLinux(props) {
+    const { t } = useTranslation();
+
     //连接信息
     const [username,setUsername] = useState('');
     const [password,setPassword] = useState('');
@@ -99,15 +102,15 @@ export function RemoteLinux(props) {
     }
     return <div>
         <Header>
-            <InputTextIcon placeholder={"目录"} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
-            <InputTextIcon placeholder={"账号"} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
-            <InputTextIcon placeholder={"密码"} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
-            <InputTextIcon placeholder={"私钥路径"} icon={"private_connectivity"} value={private_path} handleInputChange={(v)=>setPrivatePath(v)} max_width={"15rem"}/>
-            <InputTextIcon placeholder={"连接地址"} icon={"location_on"} value={domain} handleInputChange={(v) => {setDomain(v);}} max_width={"15rem"}/>
-            <InputTextIcon placeholder={"端口"} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
-            <ActionButton icon={"play_arrow"} title={"连接"} onClick={go}/>
+            <InputTextIcon placeholder={t("目录")} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
+            <InputTextIcon placeholder={t("账号")} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
+            <InputTextIcon placeholder={t("密码")} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
+            <InputTextIcon placeholder={t("私钥路径")} icon={"private_connectivity"} value={private_path} handleInputChange={(v)=>setPrivatePath(v)} max_width={"15rem"}/>
+            <InputTextIcon placeholder={t("连接地址")} icon={"location_on"} value={domain} handleInputChange={(v) => {setDomain(v);}} max_width={"15rem"}/>
+            <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
+            <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>
         </Header>
-        {!status ? <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:"名字"},{key:"domain",preName:"地址"},{key:"port",preName:"端口"},{key:"username",preName:"账号"},{key:"password",preName:"密码"},{key:"private_path",preName:"私钥路径"},{key:"dir",preName:"访问目录"}]}/>
+        {!status ? <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")}]}/>
             : <RemoteLinuxFileList close={close} data={{port,password,username,domain,dir}}/>}
     </div>
 }

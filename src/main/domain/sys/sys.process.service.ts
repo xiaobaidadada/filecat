@@ -86,6 +86,7 @@ export class SysProcessService {
             this.clear();
         });
         child.on('close', (code) => {
+            this.clear();
             console.log(`child process exited with code ${code}`);
         });
     }
@@ -137,6 +138,11 @@ export class SysProcessService {
 
     private killSpwn() {
         if (spawnChild) {
+            if (sysType === 'win') {
+                spawnChild.close();
+            } else {
+                spawnChild.kill('SIGTERM');
+            }
             SystemUtil.killProcess(spawnChild.pid);
             spawnChild = null;
         }

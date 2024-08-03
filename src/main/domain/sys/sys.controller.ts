@@ -11,9 +11,19 @@ import {SysDockerServiceImpl} from "./sys.docker.service";
 @Controller("/sys")
 export class SysController {
 
-    @Get()
+    @Get("/base")
     async get() {
        return SyserviceImpl.getSysIno();
+    }
+
+    @Get("/disk")
+    async disk() {
+        return SyserviceImpl.getDisk();
+    }
+
+    @Get("/filedisk")
+    async fileDisk() {
+        return SyserviceImpl.getFileDisk();
     }
 
     // 订阅系统信息

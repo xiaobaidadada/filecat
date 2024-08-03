@@ -35,9 +35,10 @@ module.exports = {
         }),
     ],
     devServer: {
-        static:{
-            directory: path.join(__dirname,"..","..","src","web","project", './'),
-        },
+        static:[
+            {directory: path.join(__dirname,"..","..","src","web","project", './'),},
+            {directory: path.join(__dirname,"..","..","src","web","project", 'component',"toolbox","rdp","client","js")}
+        ],
         port: 3001,
         open: false,
 

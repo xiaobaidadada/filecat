@@ -149,7 +149,7 @@ export function OverlayTransparent(props: { click: Function }) {
 }
 
 export function FullScreenDiv(props: { isFull?: boolean;children?: React.ReactNode;}) {
-    return <div className={props.isFull ?"full_screen":""}>
+    return <div className={props.isFull ?"full_screen":"not_screen"}>
         {props.children}
     </div>
 }

@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState,useContext } from 'react';
 import {FileItem} from "./FileItem";
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
@@ -18,7 +18,13 @@ import Noty from "noty";
 import {FileRename} from "../prompts/FileRename";
 import {DropdownTag} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
-import {FileItemData, GetFilePojo} from "../../../../common/file.pojo";
+import {FileCompressPojo, FileItemData, FileVideoFormatTransPojo, GetFilePojo} from "../../../../common/file.pojo";
+import {StringUtil} from "../../../../common/StringUtil";
+import {NotyFail, NotySucess} from "../../util/noty";
+import {ws} from "../../util/ws";
+import {CmdType, WsData} from "../../../../common/frame/WsData";
+import {useTranslation} from "react-i18next";
+import {GlobalContext} from "../../GlobalProvider";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -34,6 +40,8 @@ const columnWidth = 280;
 let pre_search:GetFilePojo;
 
 export function FileList() {
+    const { t } = useTranslation();
+
     const inputRef = useRef();
     let location = useLocation();
     const navigate = useNavigate();
@@ -49,30 +57,13 @@ export function FileList() {
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
 
-    const [file_paths, setFile_paths] = useState([]);
+    const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
 
     const [itemWidth,setItemWidth] = useState();
     const [search,setSearch] = useState("");
 
-    const getItems = async () => {
-        const result = await settingHttp.get("filesSetting");
-        const list = [];
-        if (result.code === RCode.Sucess) {
-            for (let i=0; i<result.data.length; i++) {
-                list.push({
-                    r:(<div>{result.data[i].note}</div>),
-                    v:i
-                })
-            }
-            setFile_paths(list);
-        }
-        const swith_result = await fileHttp.post("base_switch/get");
-        if (swith_result.code === RCode.Sucess) {
-            if (swith_result.data) {
-                    setFile_root_path(swith_result.data);}
-        }
-    }
+    const {reloadUserInfo} = useContext(GlobalContext);
 
     const fileHandler = async () => {
         // 文件列表初始化界面
@@ -102,7 +93,7 @@ export function FileList() {
             await fileHandler();
         };
         fetchData();
-        getItems();
+
         handleResize();
         window.addEventListener('resize', handleResize);
     }, [location]);
@@ -157,6 +148,9 @@ export function FileList() {
             layout:"bottomLeft"
         }).show();
     }
+
+
+    // 文件复制 移动 剪辑 创建  下载 压缩
     function copy() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
         // @ts-ignore
@@ -192,11 +186,26 @@ export function FileList() {
     function updateFile() {
         setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{}});
     }
+    function compress() {
+        const files = getFilesByIndexs(nowFileList, selectedFile);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            files[i]= getFileNameByLocation(location,file.name)
+        }
+        if (!files || files.length === 0) {
+            NotyFail("没有选中");
+            return;
+        }
+        setShowPrompt({show: true,type:PromptEnum.Compress,overlay: true,data:{files}});
+    }
+
+
 
     // 多root目录切换
     const baseSwitch = async (v) =>{
         setFile_root_path(v);
         await fileHttp.post("base_switch",{root_index:v})
+        await reloadUserInfo();
         navigate("/file/");
         setSelectList([])
         setClickList([])
@@ -223,37 +232,39 @@ export function FileList() {
         }
         setNowFileList({files,folders});
     }
+
     return (
         <div>
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={"搜索当前目录"} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
-                {selectedFile.length > 0 && <ActionButton icon={"delete"} title={"删除"} onClick={() => {
+                {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {}})
                 }}/>}
-                {selectedFile.length > 0 && <ActionButton icon={"content_copy"} title={"复制"} onClick={copy}/>}
-                {selectedFile.length > 0 && <ActionButton icon={"content_cut"} title={"剪切"} onClick={cut}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_copy"} title={t("复制")} onClick={copy}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"content_cut"} title={t("剪切")} onClick={cut}/>}
                 {(copyedFileList.length > 0 || cutedFileList.length > 0) &&
-                    <ActionButton onClick={paste} icon={"content_paste"} title={"粘贴到此处"}
+                    <ActionButton onClick={paste} icon={"content_paste"} title={t("粘贴到此处")}
                                   tip={copyedFileList.length + cutedFileList.length}/>}
-                {selectedFile.length > 0 && <ActionButton icon={"download"} title={"下载"} onClick={downloadFile}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
+                {selectedFile.length > 0 && <ActionButton icon={"compress"} title={t("压缩")} onClick={compress}/>}
                 {selectedFile.length === 1 &&
-                    <ActionButton icon={"edit_attributes"} title={"重命名"} onClick={updateFile}/>}
+                    <ActionButton icon={"edit_attributes"} title={t("重命名")} onClick={updateFile}/>}
                 <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
-                <ActionButton icon={"grid_view"} title={"切换样式"} onClick={switchGridView}/>
-                <ActionButton icon={"create_new_folder"} title={"创建文件夹"} onClick={dirnew}/>
-                <ActionButton icon={"note_add"} title={"创建文本文件"} onClick={filenew}/>
+                <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
+                <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
+                <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
                 <DropdownTag items={file_paths} click={(v) => {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>
             </Header>
             <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
                 {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
-                {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>文件夹</h2>}
+                {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>{t("文件夹")}</h2>}
                 {(nowFileList.folders) &&
                     // @ts-ignore
                     (<div>{nowFileList.folders.map((v, index) => (<FileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
-                {(nowFileList.files && nowFileList.files.length > 0) && <h2>文件</h2>}
+                {(nowFileList.files && nowFileList.files.length > 0) && <h2>{t("文件")}</h2>}
                 {(nowFileList.files) &&
                     // @ts-ignore
                     (<div>

@@ -33,7 +33,7 @@ export abstract class DdnsPre implements updateDns{
         getIpsCurrentStamp = now;
         const net = await si.networkInterfaces();
         const list:DdnsIPPojo[] = [];
-        for (const item of net) {
+        for (const item of Array.isArray(net)?net:[net]) {
             if (item.ip4) {
                 const ipv4 = new DdnsIPPojo();
                 ipv4.isIPv4=true;

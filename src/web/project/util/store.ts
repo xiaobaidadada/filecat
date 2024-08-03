@@ -1,6 +1,18 @@
 import {atom, RecoilState, useRecoilState} from 'recoil';
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {WsClient} from "../../../common/frame/ws.client";
+import {UserBaseInfo} from "../../../common/req/user.req";
+
+const localStorageEffect = key => ({ setSelf, onSet }) => {
+    const savedValue = localStorage.getItem(key);
+    if (savedValue != null) {
+        setSelf(JSON.parse(savedValue));
+    }
+
+    onSet(newValue => {
+        localStorage.setItem(key, JSON.stringify(newValue));
+    });
+};
 
 export class ShowPromptData {
     show:boolean;
@@ -8,6 +20,7 @@ export class ShowPromptData {
     overlay:boolean;
     data:any;
 }
+
 export const $stroe = {
     // 当前的所有文件
     nowFileList: atom({
@@ -116,7 +129,30 @@ export const $stroe = {
     // 文件根路径
     file_root_index:atom({
         key: 'file_root_index',
-        default:null
+        default:null,
+        effects:[
+            localStorageEffect("file_root_index")
+        ]
+    }),
+    file_root_list:atom({
+        key: 'file_root_list',
+        default:[],
+        effects:[
+            localStorageEffect("file_root_list")
+        ]
+    }),
+    // 用户基本信息
+    user_base_info:atom({
+        key: 'user_base_info',
+        default:{} as UserBaseInfo,
+        effects:[
+            localStorageEffect("user_base_info")
+        ]
+    }),
+    // 头部菜单状态
+    header_min:atom({
+        key: 'header_min',
+        default:false
     })
 }
 

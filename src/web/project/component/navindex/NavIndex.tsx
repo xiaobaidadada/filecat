@@ -7,10 +7,13 @@ import {navHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {ButtonLittle} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
+import {useTranslation} from "react-i18next";
 
 
 
 export function NavIndex() {
+    const { t } = useTranslation();
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
 
     const add =  ()=>{
@@ -42,8 +45,8 @@ export function NavIndex() {
 
     return <div>
         <Header>
-            <ButtonLittle text={"添加"} clickFun={add}/>
+            <ButtonLittle text={t("添加")} clickFun={add}/>
         </Header>
-        <NavIndexContainer getItems={getItems}  save={save} items={[{key:"name",preName:"名字"},{key:"url",preName:"url"}]}/>
+        <NavIndexContainer getItems={getItems}  save={save} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>
     </div>
 }

@@ -9,11 +9,14 @@ import {UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {Table} from "../../../meta/component/Table";
 import {TableListRender} from "./component/TableListRend";
+import {useTranslation} from "react-i18next";
 
 
-const headers = ["路由", "文件|http路径", "备注", ];
 
 export function CustomerRouter() {
+    const { t } = useTranslation();
+    const headers = [t("路由"), `${t("文件")}|http${t("路径")}`, t("备注"), ];
+
     const save = async (req:[[]]) => {
         const result = await settingHttp.post("customer_router/save",req);
         if (result.code === RCode.Sucess) {

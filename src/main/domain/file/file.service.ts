@@ -1,4 +1,10 @@
-import {FileTypeEnum, FileVideoFormatTrans, GetFilePojo} from "../../../common/file.pojo";
+import {
+    FileCompressPojo,
+    FileCompressType,
+    FileTypeEnum,
+    FileVideoFormatTransPojo,
+    GetFilePojo
+} from "../../../common/file.pojo";
 // import {config} from "../../other/config";
 import fs, {Stats} from "fs";
 import fse from 'fs-extra'
@@ -15,11 +21,12 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
+import {FileCompress} from "./file.compress";
 const archiver = require('archiver');
 const ffmpeg  = require('fluent-ffmpeg');
 
 const MAX_SIZE_TXT = 20 * 1024 * 1024;
-class FileService {
+class FileService extends FileCompress{
 
     public async getFile(filePath,token):Promise<Result<GetFilePojo|string>> {
         const result:GetFilePojo = {
@@ -197,7 +204,7 @@ class FileService {
                 ctx.body = stream
                 // 将压缩后的文件流发送给客户端
                 archive.pipe(stream);
-                archive.directory(sysPath);
+                archive.directory(sysPath,path.basename(sysPath));
                 archive.finalize();
             }
 
@@ -227,8 +234,8 @@ class FileService {
         }
     }
 
-    file_video_trans(data:WsData<FileVideoFormatTrans>) {
-        const pojo = data.context as FileVideoFormatTrans;
+    file_video_trans(data:WsData<FileVideoFormatTransPojo>) {
+        const pojo = data.context as FileVideoFormatTransPojo;
         const wss = data.wss as Wss;
         const root_path = settingService.getFileRootPath(pojo.token);
         const sysPath = path.join(root_path,decodeURIComponent(pojo.source_filename));
@@ -245,7 +252,7 @@ class FileService {
             })
             .on('progress', function(progress) {
                 const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
-                result.context = progress.percent.toFixed(2);
+                result.context = progress.percent.toFixed(0);
                 wss.sendData(result.encode());
             })
             .on('error', function(err, stdout, stderr) {
@@ -257,6 +264,100 @@ class FileService {
                 wss.sendData(result.encode());
             })
             .save(sysPathNew);
+    }
+
+    async uncompress(data:WsData<FileCompressPojo>) {
+        const pojo = data.context as FileCompressPojo;
+        const source_file = decodeURIComponent(pojo.source_file);
+        const tar_dir = decodeURIComponent(pojo.tar_dir??"");
+        const directoryPath = path.dirname(source_file);
+        const root_path = settingService.getFileRootPath(pojo.token);
+        const targetFolder = path.join(root_path,directoryPath,tar_dir);
+        const wss = data.wss as Wss;
+        if(tar_dir) {
+            fs.mkdirSync(path.join(targetFolder), { recursive: true });
+        }
+        const sysSourcePath = path.join(root_path,source_file);
+        const outHanle = (value)=>{
+            if (value === -1) {
+                wss.ws.close();
+                return;
+            }
+            const result = new WsData<SysPojo>(CmdType.file_uncompress_progress);
+            result.context = value;
+            wss.sendData(result.encode());
+        };
+        if (pojo.format === FileCompressType.tar) {
+            this.unTar(sysSourcePath,targetFolder,outHanle)
+        } else if (pojo.format === FileCompressType.zip) {
+            this.unZip(sysSourcePath,targetFolder,outHanle)
+        }  else if (pojo.format === FileCompressType.gzip) {
+            this.unTar(sysSourcePath,targetFolder,outHanle,true)
+        } else if (pojo.format === FileCompressType.rar) {
+            try {
+                await this.unRar(sysSourcePath,targetFolder,outHanle)
+            } catch (e) {
+                wss.ws.close();
+            }
+        } else {
+            wss.ws.close();
+        }
+    }
+
+    FileCompress(data:WsData<FileCompressPojo>) {
+        const pojo = data.context as FileCompressPojo;
+        const files = pojo.filePaths;
+        const root_path = settingService.getFileRootPath(pojo.token);
+        const wss = data.wss as Wss;
+        const filePaths:string[] = [],directorys:string[]= [];
+        for (const file of files) {
+            const name  = path.join(root_path,decodeURIComponent(file));
+            try {
+                const stats = fs.statSync(name);
+                if (stats.isFile()) {
+                    filePaths.push(name);
+                } else {
+                    directorys.push(name);
+                }
+            } catch (e) {
+            }
+        }
+        let format;
+        switch (pojo.format) {
+            case FileCompressType.gzip:
+                format = FileCompressType.tar;
+                break;
+            default:
+                format = pojo.format;
+        }
+        const targerFilePath  = path.join(root_path,decodeURIComponent(pojo.tar_filename));
+        this.compress(format,pojo.compress_level,targerFilePath,filePaths,directorys,(value)=>{
+            if (value === -1) {
+                wss.ws.close();
+                return;
+            }
+            const result = new WsData<SysPojo>(CmdType.file_compress_progress);
+            result.context = value;
+            wss.sendData(result.encode());
+        },pojo.format === FileCompressType.gzip);
+    }
+
+    getTotalFile(data:{files:string[],total:number},filepath:string) {
+        try {
+            const stats = fs.statSync(filepath);
+            if (stats.isFile()) {
+                data.total += 1;
+                data.files.push(filepath);
+                return;
+            }
+        } catch (e) {
+            return
+        }
+        const items = fs.readdirSync(filepath);// 读取目录内容
+        for (const item of items) {
+            const p = path.join(filepath, item);
+            this.getTotalFile(data,p);
+        }
     }
 
 }

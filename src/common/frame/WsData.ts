@@ -76,6 +76,10 @@ export enum CmdType {
     //文件功能
     file_video_trans,
     file_video_trans_progress,
+    file_uncompress,
+    file_uncompress_progress,
+    file_compress,
+    file_compress_progress
 }
 
 

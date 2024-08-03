@@ -8,8 +8,10 @@ import {InputRadio, InputText} from "../../../meta/component/Input";
 import {ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";
 import {VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
+import {useTranslation} from "react-i18next";
 
 export function NetClient(props) {
+    const { t } = useTranslation();
 
     const [ip, setIp] = useState("");
     const [mask, setMask] = useState(0);
@@ -53,16 +55,16 @@ export function NetClient(props) {
         <Row>
 
             <Column>
-                <Card title={""} rightBottomCom={<ButtonText text={'保存'} clickFun={save}/>}>
+                <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
                     <InputText placeholder={"ip "} value={ip} handleInputChange={(d)=>{setIp(d)}}/>
                     <InputText placeholder={"mask"} value={mask} handleInputChange={(d)=>{setMask(d)}}/>
-                    <InputText placeholder={"服务器ip"} value={serverIp} handleInputChange={(d)=>{setServerIp(d)}}/>
-                    <InputText placeholder={"服务器port"} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
+                    <InputText placeholder={`${t("服务器")}ip`} value={serverIp} handleInputChange={(d)=>{setServerIp(d)}}/>
+                    <InputText placeholder={`${t("服务器")}part`} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
 
                     <Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={"开启"} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
-                        <InputRadio value={1} context={"关闭"} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
+                        <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
+                        <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
                     ]}/>
                 </Card>
                 <Card title={""} >

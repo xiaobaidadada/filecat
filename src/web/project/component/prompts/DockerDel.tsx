@@ -4,9 +4,12 @@ import {$stroe} from "../../util/store";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {useLocation, useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 
 
 export function DockerDel(props) {
+    const { t } = useTranslation();
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     // const navigate = useNavigate();
     // const location = useLocation();
@@ -24,18 +27,18 @@ export function DockerDel(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>确定删除</h2>
+            <h2>{t("确定删除")}</h2>
         </div>
         <div className="card-content">
-            是否删除:{showPrompt.data.name}
+            {t("是否删除")}:{showPrompt.data.name}
         </div>
 
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
-                取消
+                {t("取消")}
             </button>
             <button className="button button--flat" onClick={del}>
-                删除
+                {t("删除")}
             </button>
         </div>
     </div>)

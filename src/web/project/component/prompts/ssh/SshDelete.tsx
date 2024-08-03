@@ -10,9 +10,11 @@ import {getRouterAfter} from "../../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
+import {useTranslation} from "react-i18next";
 
 
 export function SshDelete(props) {
+    const { t } = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFileList,setSelectedFileList] = useRecoilState($stroe.selectedFileList);
@@ -50,7 +52,7 @@ export function SshDelete(props) {
         <div className="card floating">
             <div className="card-content">
                 <p>
-                    是否删除选中的文件
+                    {t("是否删除选中的文件")}
                 </p>
 
             </div>
@@ -58,12 +60,12 @@ export function SshDelete(props) {
                 <button
                     className="button button--flat button--grey" onClick={cancel}
                 >
-                    取消
+                    {t("取消")}
                 </button>
                 <button
                     className="button button--flat button--red" onClick={confirm}
                 >
-                    删除
+                    {t("删除")}
                 </button>
             </div>
         </div>

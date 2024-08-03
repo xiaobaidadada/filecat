@@ -7,8 +7,11 @@ import {getRouterAfter} from "../../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../../common/ListUtil";
+import {useTranslation} from "react-i18next";
 
 export function SshNewDir(props) {
+    const { t } = useTranslation();
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
@@ -35,17 +38,17 @@ export function SshNewDir(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>创建目录</h2>
+            <h2>{t("创建目录")}</h2>
         </div>
         <div className="card-content">
-            <InputText placeholderOut={"输入目录名"} value={name} handleInputChange={(value)=>setName(value)} />
+            <InputText placeholderOut={t("输入目录名")} value={name} handleInputChange={(value)=>setName(value)} />
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
-                取消
+                {t("取消")}
             </button>
             <button className="button button--flat" onClick={dirnew}>
-                创建
+                {t("创建")}
             </button>
         </div>
     </div>)

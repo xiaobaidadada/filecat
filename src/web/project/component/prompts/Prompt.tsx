@@ -16,7 +16,8 @@ import {SshNewFile} from "./ssh/SshNewFile";
 import {SshPaste} from "./ssh/SshPaste";
 import {SshReName} from "./ssh/SshReName";
 import {SshUpload} from "./ssh/SshUpload";
-import {FileMenu} from "./FileMenu";
+import {FileMenu} from "./FileMenu/FileMenu";
+import {Compress} from "./FileMenu/Compress";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -34,6 +35,7 @@ export enum PromptEnum {
     SshReName = "SshReName",
     SshUpload = "SshUpload",
     FileMenu = "FileMenu",
+    Compress = "Compress",
 }
 
 export function Prompt() {
@@ -89,6 +91,9 @@ export function Prompt() {
             break;
         case PromptEnum.FileMenu:
             div = <FileMenu />
+            break;
+        case PromptEnum.Compress:
+            div = <Compress />
             break;
     }
 

@@ -8,8 +8,11 @@ import {ddnsHttp,} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../common/req/ddns.pojo";
 import Noty from "noty";
+import {useTranslation} from "react-i18next";
 
 export function TengXun(props: any) {
+    const { t } = useTranslation();
+
     const [ipv4s,setIpv4s] = useState([]);
     const [ipv6s,setIpv6s] = useState([]);
     const [secretid,setSecretid] = useState("");
@@ -101,15 +104,15 @@ export function TengXun(props: any) {
 
             </Column>
             <Column>
-                <Card title={"账号设置"} rightBottomCom={<ButtonText text={'保存'} clickFun={save}/>}>
+                <Card title={t("账号设置")} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
                     <InputText placeholder={"SecretId"} value={secretid} handleInputChange={(d)=>{setSecretid(d)}}/>
                     <InputText placeholder={"SecretKey"} value={secretkey} handleInputChange={(d)=>{setSecretkey(d)}}/>
                     <Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={"开启"} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
-                        <InputRadio value={1} context={"关闭"} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
+                        <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
+                        <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
                     ]}/>
                 </Card>
-                <Card title={"说明"} >
+                <Card title={t("说明")} >
                     域名如果不存在会自动创建，空子域名是@，ip6和ipv4可以互相切换。
                 </Card>
             </Column>

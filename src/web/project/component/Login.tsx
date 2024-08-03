@@ -8,12 +8,14 @@ import { userHttp} from "../util/config";
 import {UserLogin} from "../../../common/req/user.req";
 import {$stroe} from "../util/store";
 import {SelfCenter, WinCenter} from "../../meta/component/Dashboard";
+import {useTranslation} from "react-i18next";
 
 
 function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const { t } = useTranslation();
 
     async function login() {
         const data : UserLogin = {
@@ -38,13 +40,13 @@ function Login() {
             <WinCenter>
                 <h1>FileCat</h1>
                 <div>
-                    <InputText placeholder={"账号"} handleInputChange={(value) => {
+                    <InputText placeholder={t("账号")} handleInputChange={(value) => {
                         setUsername(value)
                     }}/>
-                    <InputPassword placeholder={"密码"} handleInputChange={(value) => {
+                    <InputPassword placeholder={t("密码")} handleInputChange={(value) => {
                         setPassword(value)
                     }} handleEnterPress={login}/>
-                    <Button text={"登录"} clickFun={login}/>
+                    <Button text={t("登录")} clickFun={login}/>
                 </div>
             </WinCenter>
     );

@@ -11,10 +11,13 @@ import {NetPojo} from "../../../../common/req/net.pojo";
 import {RCode} from "../../../../common/Result.pojo";
 import {Blank} from "../../../meta/component/Blank";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
+import {useTranslation} from "react-i18next";
 
 
 
 export function BrowserProxy(props) {
+    const { t } = useTranslation();
+
     const [showUrl, setshowUrl] = useState('');
     const [gourl,setGourl] = useState('');
     const [sysPort,setSysPort] = useState(undefined);
@@ -89,18 +92,18 @@ export function BrowserProxy(props) {
     }
     return <div>
         <Header>
-            <InputTextIcon placeholder={"系统代理端口"} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
-            <InputTextIcon placeholder={"要代理的url"} icon={"http"} value={showUrl} handleInputChange={(v) => {
+            <InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
+            <InputTextIcon placeholder={t("要代理的url")} icon={"http"} value={showUrl} handleInputChange={(v) => {
                 setshowUrl(v);
             }}/>
-            <ActionButton icon={"play_arrow"} title={"开始代理"} onClick={go}/>
-            <ActionButton icon={"fullscreen"} title={"全屏"} onClick={() => setFullScreen(!fullScreen)}/>
-            <ActionButton icon={"close"} title={"关闭"} onClick={() => {close(); setFullScreen(false);setshowUrl("")}}/>
+            <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={go}/>
+            <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={() => setFullScreen(!fullScreen)}/>
+            <ActionButton icon={"close"} title={t(t("关闭"))} onClick={() => {close(); setFullScreen(false);setshowUrl("")}}/>
         </Header>
 
         <FullScreenDiv isFull={fullScreen}>
             <div id="browser">
-                {!gourl && <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:"名字"},{key:"url",preName:"url"}]}/>}
+                {!gourl && <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>}
                 <iframe id="webview" src={gourl}></iframe>
             </div>
         </FullScreenDiv>
