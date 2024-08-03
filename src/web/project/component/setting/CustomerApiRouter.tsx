@@ -12,12 +12,14 @@ import {TableListRender} from "./component/TableListRend";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {saveTxtReq} from "../../../../common/req/file.req";
+import {useTranslation} from "react-i18next";
 
 
-const headers = ["路由","auth",  "备注", ];
 
 export function CustomerApiRouter() {
+    const { t } = useTranslation();
 
+    const headers = [t("路由"),t("auth"),  t("备注"), ];
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue);
     const [rows, setRows] = useState([]);
@@ -70,7 +72,7 @@ export function CustomerApiRouter() {
     }
     return <RowColumn>
         <Dashboard>
-            <CardFull title={"自定义路由"} titleCom={<div><ActionButton icon={"add"} title={"添加"} onClick={add}/><ActionButton icon={"save"} title={"保存"} onClick={save}/></div>}>
+            <CardFull title={t("自定义路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={headers} rows={rows.map((item, index) => {
                     const new_list = [
                         <InputText value={item.router} handleInputChange={(value) => {
@@ -78,13 +80,13 @@ export function CustomerApiRouter() {
                         }} no_border={true}/>,
                         <Select defaultValue={item.needAuth} onChange={(value) => {
                             item.needAuth = value === "true";
-                        }}  options={[{title:"是",value:true},{title:"否",value:false}]} no_border={true}/>,
+                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                         <InputText value={item.note} handleInputChange={(value) => {
                             item.note = value;
                         }} no_border={true}/>,
                         <div>
-                            <ActionButton icon={"delete"} title={"删除"} onClick={() => del(index)}/>
-                            <ActionButton icon={"edit"} title={"编辑"} onClick={() => edit(item)}/>
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                            <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                         </div>,
                     ];
                     return new_list;

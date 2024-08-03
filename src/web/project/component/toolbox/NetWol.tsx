@@ -6,9 +6,11 @@ import Header from "../../../meta/component/Header";
 import {netHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
+import {useTranslation} from "react-i18next";
 
 
 export function NetWol(props) {
+    const { t } = useTranslation();
 
     const [mac, setMac] = useState('');
     const go = async (macAddress?: string) => {
@@ -59,10 +61,10 @@ export function NetWol(props) {
 
     return <div>
         <Header>
-            <ActionButton icon={"play_arrow"} title={"发送"} onClick={()=>{go();}}/>
-            <InputTextIcon placeholder={"目标设备mac地址"} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
+            <ActionButton icon={"play_arrow"} title={t("发送")} onClick={()=>{go();}}/>
+            <InputTextIcon placeholder={t("目标设备mac地址")} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
         </Header>
 
-        <NavIndexContainer getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: "名字"}, {key: "mac", preName: "mac地址"}]}/>
+        <NavIndexContainer getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")}]}/>
     </div>
 }

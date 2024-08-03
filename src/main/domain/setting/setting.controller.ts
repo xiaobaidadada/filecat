@@ -1,5 +1,5 @@
 import {Body, Controller, Get, Param, Post} from "routing-controllers";
-import {UserLogin} from "../../../common/req/user.req";
+import {UserBaseInfo, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Result, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
@@ -12,6 +12,7 @@ import {GetFilePojo} from "../../../common/file.pojo";
 import {json} from "react-router-dom";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {getSys} from "../shell/shell.service";
 
 @Service()
 @Controller("/setting")
@@ -152,5 +153,20 @@ export class SettingController {
     @Get("/filesSetting")
     getFilesSetting() {
         return Sucess(settingService.getFilesSetting());
+    }
+
+    language = "user_language";
+    @Post('/language/save')
+    languageSetting(@Body() req:{language:string}) {
+        DataUtil.set(this.language,req.language);
+        return Sucess("1");
+    }
+
+    @Get("/userInfo/get")
+    getLanguage() {
+        const pojo = new UserBaseInfo();
+        pojo.language = DataUtil.get(this.language)??"en";
+        pojo.sys = getSys();
+        return Sucess(pojo);
     }
 }

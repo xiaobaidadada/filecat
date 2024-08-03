@@ -26,6 +26,16 @@
     color: white;
     cursor: pointer;
 }
+.little-button-status {
+    padding: 10px 20px;
+    margin-left: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--surfaceSecondary);
+    color: white;
+    cursor: pointer;
+}
 /*.little-button:hover {*/
 /*    background-color: #45a049;*/
 /*}*/
@@ -41,9 +51,9 @@
     width: 100%;
     background-color: #f8f8f8;
     position: fixed;
-    top: 4.5rem;
+    top: 0;
     right: 0;
     max-width: 100%;
-    z-index: 9999;
+    z-index: 1;
     height: 100%;
 }

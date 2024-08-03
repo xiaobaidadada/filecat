@@ -8,8 +8,11 @@ import {fileReq} from "../../../../common/req/file.req";
 import {getByIndexs} from "../../../../common/ListUtil";
 import {getRouterAfter} from "../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../file/FileUtil";
+import {useTranslation} from "react-i18next";
 
 export function FilesDelete(props) {
+    const { t } = useTranslation();
+
     let location = useLocation();
     const navigate = useNavigate();
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
@@ -39,7 +42,7 @@ export function FilesDelete(props) {
         <div className="card floating">
             <div className="card-content">
                 <p>
-                    是否删除选中的文件
+                    {t("是否删除选中的文件")}
                 </p>
 
             </div>
@@ -47,12 +50,12 @@ export function FilesDelete(props) {
                 <button
                     className="button button--flat button--grey" onClick={cancel}
                 >
-                    取消
+                    {t("取消")}
                 </button>
                 <button
                     className="button button--flat button--red" onClick={confirm}
                 >
-                    删除
+                    {t("删除")}
                 </button>
             </div>
         </div>

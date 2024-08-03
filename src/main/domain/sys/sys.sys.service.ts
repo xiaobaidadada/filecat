@@ -53,7 +53,7 @@ class SysSystemService {
         result.context = {
             memTotal: (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
             memLeft: (freeMemory / (1024 * 1024 * 1024)).toFixed(2),
-            cpu_currentLoad: currentLoad.currentload.toFixed(2),
+            cpu_currentLoad: currentLoad.currentLoad.toFixed(2),
         };
         if (wss.ws.readyState !==1) {
             throw  "断开连接";

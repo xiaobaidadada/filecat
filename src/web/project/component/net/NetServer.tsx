@@ -10,14 +10,16 @@ import {Rows, Table} from "../../../meta/component/Table";
 import {VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
+import {useTranslation} from "react-i18next";
 
 export function NetServer(props) {
+    const { t } = useTranslation();
 
     const [serverPort, setServerPort] = useState("");
     const [isOpen,setIsOpen] = useState(false);
     const [isUdp, setIsUdp] = useState(false);
     const [key,setKey] = useState("");
-    const [headers, setHeaders] = useState(["虚拟ip", "物理ip","在线状态"]);
+    const [headers, setHeaders] = useState([t(`${t("虚拟")}ip`), `${t("物理")}ip`,t("在线状态")]);
     const [rows, setRows] = useState([]);
 
     useEffect(() => {
@@ -58,21 +60,21 @@ export function NetServer(props) {
         <Row>
 
             <Column>
-                <Card title={""} rightBottomCom={<ButtonText text={'保存'} clickFun={save}/>}>
+                <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
 
                     <InputText placeholder={"port"} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
                     <form>
-                        状态:<Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={"开启"} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
-                        <InputRadio value={1} context={"关闭"} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
+                        {t("状态")}:<Rows isFlex={true} columns={[
+                        <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
+                        <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
                     ]}/>
                     </form>
                     <form>
-                        模式
+                        {t("模式")}
                         <Rows isFlex={true} columns={[
-                            <InputRadio value={1} context={"tcp流量转发"} selected={!isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>,
-                            <InputRadio value={1} context={"udp点对点"} selected={isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>
+                            <InputRadio value={1} context={`tcp${t("流量转发")}`} selected={!isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>,
+                            <InputRadio value={1} context={`udp${t("点对点")}`} selected={isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>
                         ]}/>
                     </form>
 

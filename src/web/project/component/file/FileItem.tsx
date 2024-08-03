@@ -13,9 +13,8 @@ import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail} from "../../util/noty";
 import {PromptEnum} from "../prompts/Prompt";
 import {StringUtil} from "../../../../common/StringUtil";
+import {FileMenuData, FileMenuEnum, getFileFormat} from "../prompts/FileMenu/FileMenuType";
 
-const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","wmv","swf","mod","mpv","mpeg","asf"]);
-const compressing_list = new Set(["tar","gzip","tgz","zip"]);// compressing
 
 export function FileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
@@ -99,10 +98,12 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
 
     const handleContextMenu = (event,name) => {
         event.preventDefault();
-        if (video_format_set.has(StringUtil.getFileExtension(name))) {
-            setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:{ x: event.clientX, y: event.clientY ,filename: name}});
-        }
-
+        const pojo = new FileMenuData();
+        pojo.filename = name;
+        pojo.x = event.clientX;
+        pojo.y = event.clientY;
+        pojo.type = getFileFormat(name);
+        setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:pojo});
     };
 
 

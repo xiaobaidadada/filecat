@@ -6,6 +6,19 @@ export function ButtonLittle(props:{text:string,clickFun?:Function}) {
     return (<button className={"little-button button"}  onClick={props.clickFun}>{props.text}</button>)
 }
 
+export function ButtonLittleStatus(props:{text:string,clickFun?:(open?:boolean)=>void,defaultStatus:boolean}) {
+    const [color, setColor] = React.useState(props.defaultStatus);
+    return (<button className={"little-button-status"}  style={{
+        backgroundColor:!color?"var(--surfaceSecondary)":"var(--blue)"
+    }} onClick={()=>{
+        const v = !color;
+        setColor(v);
+        if(props.clickFun ){
+            props.clickFun(v);
+        }
+    }}>{props.text}</button>)
+}
+
 export function Button(props: { text: string, clickFun?: Function }) {
     return (<input
         className="button button--block"

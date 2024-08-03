@@ -12,27 +12,31 @@ import {NavIndex} from "./navindex/NavIndex";
 import {Settings} from "./setting/Setting";
 import {Editor} from "./file/component/Editor";
 import {Net} from "./net/Net";
+import {useTranslation} from "react-i18next";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../util/store";
 
 
 
 function Layout() {
-
+    const { t } = useTranslation();
+    const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     function logout() {
         localStorage.setItem('token','')
     }
     const MainNavList:NavItem[][] = [
         [
-            {icon: "folder", name: "文件夹", rto: "file/",},],
+            {icon: "folder", name: t("文件夹"), rto: "file/",},],
         [
-            {icon: "home", name: "索引", rto: "navindex/"},
-            {icon: "home_repair_service", name: "工具箱", rto: "toolbox/"},
-            {icon: "computer", name: "系统信息", rto: "info/"},
+            {icon: "home", name: t("索引"), rto: "navindex/"},
+            {icon: "home_repair_service", name: t("工具箱"), rto: "toolbox/"},
+            {icon: "computer", name: t("系统信息"), rto: "info/"},
             {icon: "cloud", name: "ddns", rto: "ddns/"},
         ],
         [
-            {icon: "network_ping", name: "虚拟网络", rto: "net/"},
-            {icon: "settings", name: "设置", rto: "setting/"},
-            {icon: "logout", name: "退出登录",clickFun: logout,rto: "/"},
+            {icon: "network_ping", name: t("虚拟网络"), rto: "net/"},
+            {icon: "settings", name: t("设置"), rto: "setting/"},
+            {icon: "logout", name: t("退出登录"),clickFun: logout,rto: "/"},
             // {component:(<div>测试</div>)}
         ]
     ]
@@ -45,7 +49,7 @@ function Layout() {
             <Prompt></Prompt>
             <Editor />
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
-            <Header/>
+            {!headerMin && <Header/>}
             <CommonBody navList={MainNavList}>
                 {/*文件*/}
                 <FileList/>

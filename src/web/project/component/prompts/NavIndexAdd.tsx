@@ -6,9 +6,12 @@ import {navHttp} from "../../util/config";;
 import {useLocation, useNavigate} from "react-router-dom";
 import Noty from "noty";
 import {RCode} from "../../../../common/Result.pojo";
+import {useTranslation} from "react-i18next";
 
 
 export function NavIndexAdd(props) {
+    const { t } = useTranslation();
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [name, setName] = useState("");
     const [url,setUrl] = useState("");
@@ -42,7 +45,7 @@ export function NavIndexAdd(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>添加索引</h2>
+            <h2>{t("添加索引")}</h2>
         </div>
         <div className="card-content">
             <InputText placeholderOut={"名字"}  handleInputChange={(value)=>setName(value)} />
@@ -50,10 +53,10 @@ export function NavIndexAdd(props) {
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
-                取消
+                {t("取消")}
             </button>
             <button className="button button--flat" onClick={add}>
-                添加
+                {t("添加")}
             </button>
         </div>
     </div>)

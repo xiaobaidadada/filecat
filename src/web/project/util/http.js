@@ -3,6 +3,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {useNavigate} from "react-router-dom";
 import Noty from "noty";
 
+let now = Date.now();
 export class Http {
 
     check(data) {
@@ -16,6 +17,14 @@ export class Http {
                 timeout: 1000, // 设置通知消失的时间（单位：毫秒）
                 layout:"bottomLeft"
             }).show();
+        }
+        if (data && data.code===RCode.AuthFail) {
+            if (Date.now() - now < 2000) {
+                return ;
+            }
+            console.log('跳转')
+            now = Date.now();
+            window.location.href = "";
         }
     }
 

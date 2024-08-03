@@ -6,9 +6,11 @@ import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {getNewDeleteByList, joinPaths} from "../../../../../common/ListUtil";
 import {getRouterAfter} from "../../../util/WebPath";
+import {useTranslation} from "react-i18next";
 
 
 export function SshUpload() {
+    const { t } = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [open, setOpen] = React.useState(false);
@@ -53,7 +55,7 @@ export function SshUpload() {
     >
         <div className="card floating">
             <div className="card-title">
-                <h2>{uploadFiles.length}个文件正在上传</h2>
+                <h2>{uploadFiles.length}{t("个文件正在上传")}</h2>
                 <ActionButton icon={open ? "keyboard_arrow_down" : "keyboard_arrow_up"} title={"Toggle file upload list"} onClick={click}/>
             </div>
             {open && <div className="card-content file-icons">

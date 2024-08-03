@@ -45,6 +45,7 @@ const tasksLister = new Listr(
                             rej(false);
                             return;
                         }
+                        copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","toolbox","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"))
                         console.log('构建web完成');
                         res(true);
                     });

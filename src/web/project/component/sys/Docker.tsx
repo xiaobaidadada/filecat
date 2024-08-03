@@ -14,17 +14,19 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {sort} from "../../../../common/ListUtil";
 import {PromptEnum} from "../prompts/Prompt";
+import {useTranslation} from "react-i18next";
 
 let filter = ""
 
 
 
 export function Docker(props) {
+    const { t } = useTranslation();
 
     const [shellShow, setShellShow] = useRecoilState($stroe.dockerShellShow);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [filterKey,setFilterKey] = useState("");
-    const [headers, setHeaders] = useState(["id", "名字", "镜像", "命令", "状态","内存","cpu%", "选择"]);
+    const [headers, setHeaders] = useState(["id", t("名字"), t("镜像"), t("命令"), t("状态"),t("内存"),"cpu%", t("选择")]);
     const [rows, setRows] = useState([]);
     const [optRow, setOptRow] = useState([]);
     const [count, setCount] = useState(0);

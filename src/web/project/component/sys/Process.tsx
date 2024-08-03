@@ -10,23 +10,26 @@ import {ActionButton, Button, ButtonText} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {formatFileSize} from "../../../../common/ValueUtil";
 import {sort} from "../../../../common/ListUtil";
+import {useTranslation} from "react-i18next";
 
 let filter = ""
 let sortMem = false;
 let sortCpu = false;
 export function Process(props) {
+    const { t } = useTranslation();
+
     const [rows, setRows] = useState([]);
     const [optRow, setOptRow] = useState([]);
     const [count, setCount] = useState(0);
     const [filterKey,setFilterKey] = useState("");
-    const [headers, setHeaders] = useState(["pid", "名字","创建用户",
-        (<span>内存<ActionButton icon={"sort"} title={"升序"}  onClick={()=>{
+    const [headers, setHeaders] = useState(["pid", t("名字"),"创建用户",
+        (<span>{t("内存")}<ActionButton icon={"sort"} title={"升序"}  onClick={()=>{
             sortMem=!sortMem;
         }}/></span>)
         ,(<span>cpu%<ActionButton icon={"sort"} title={"升序"}  onClick={()=>{
             sortCpu=!sortCpu;
         }}/></span>),
-        "选择",]);
+        t("选择"),]);
 
     const init = async () => {
         const data = new WsData(CmdType.process_get);

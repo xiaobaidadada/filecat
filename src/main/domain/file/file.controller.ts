@@ -12,7 +12,7 @@ import {
     UploadedFile,
     UseBefore
 } from "routing-controllers";
-import {FileVideoFormatTrans, GetFilePojo} from "../../../common/file.pojo";
+import {FileCompressPojo, FileVideoFormatTransPojo, GetFilePojo} from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
 import multer from 'multer';
@@ -95,12 +95,25 @@ export class FileController {
     @Post('/base_switch/get')
     async switchGetBasePath(@Ctx() ctx ) {
         const obj = Cache.getTokenMap().get(ctx.headers.authorization);
-        return Sucess(obj?obj["root_index"]:null);
+        return Sucess(obj?obj["root_index"]??0:null);
     }
 
     @msg(CmdType.file_video_trans)
-    async file_video_trans(data:WsData<FileVideoFormatTrans>) {
+    async file_video_trans(data:WsData<FileVideoFormatTransPojo>) {
         FileServiceImpl.file_video_trans(data);
         return ""
     }
+
+    @msg(CmdType.file_uncompress)
+    async uncompress(data:WsData<FileCompressPojo>) {
+        FileServiceImpl.uncompress(data);
+        return ""
+    }
+
+    @msg(CmdType.file_compress)
+    async compress(data:WsData<FileCompressPojo>) {
+        FileServiceImpl.FileCompress(data);
+        return ""
+    }
+
 }

@@ -8,8 +8,11 @@ import {ddnsHttp,} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod} from "../../../../common/req/ddns.pojo";
 import Noty from "noty";
+import {useTranslation} from "react-i18next";
 
 export function Dnspod(props: any) {
+    const { t } = useTranslation();
+
     const [ipv4s,setIpv4s] = useState([]);
     const [ipv6s,setIpv6s] = useState([]);
     const [id,setId] = useState("");
@@ -101,15 +104,15 @@ export function Dnspod(props: any) {
 
             </Column>
             <Column>
-                <Card title={"账号设置"} rightBottomCom={<ButtonText text={'保存'} clickFun={save}/>}>
+                <Card title={t("账号设置")} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
                     <InputText placeholder={"ID"} value={id} handleInputChange={(d)=>{setId(d)}}/>
                     <InputText placeholder={"TOKEN"} value={token} handleInputChange={(d)=>{setToken(d)}}/>
                     <Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={"开启"} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
-                        <InputRadio value={1} context={"关闭"} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
+                        <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
+                        <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
                     ]}/>
                 </Card>
-                <Card title={"说明"} >
+                <Card title={t("说明")} >
                     域名如果不存在会自动创建，空子域名是@，ip6和ipv4可以互相切换。
                 </Card>
             </Column>

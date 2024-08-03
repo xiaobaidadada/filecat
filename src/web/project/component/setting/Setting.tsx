@@ -10,12 +10,14 @@ import {RCode} from "../../../../common/Result.pojo";
 import {CustomerRouter} from "./CustomerRouter";
 import {CustomerApiRouter} from "./CustomerApiRouter";
 import {Sys} from "./Sys";
+import {useTranslation} from "react-i18next";
 
 
 
-const menuRots = [{index: 1, name: "系统", rto: "password/"},{index: 1, name: "自定义页面路由", rto: "customer_router/"},{index: 1, name: "自定义api路由", rto: "customer_api_router/"}];
 
 export function  Settings() {
+    const { t } = useTranslation();
+    const menuRots = [{index: 1, name: t("系统"), rto: "password/"},{index: 1, name: t("自定义页面路由"), rto: "customer_router/"},{index: 1, name: t("自定义api路由"), rto: "customer_api_router/"}];
 
     return  <Menu optionList={menuRots}>
         <Sys />
