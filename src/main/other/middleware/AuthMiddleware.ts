@@ -50,11 +50,11 @@ export class AuthMiddleware implements KoaMiddlewareInterface {
 
 
 
-    @msg(CmdType.auth)
-    async auth(wsData:WsData<any>){
-        // todo 暂时不严格处理
-        if (await settingService.check(wsData.context.Authorization)) {
-            (wsData.wss as Wss).status = 1;
-        }
-    }
+    // @msg(CmdType.auth)
+    // async auth(wsData:WsData<any>){
+    //     // todo 暂时不严格处理
+    //     if (await settingService.check(wsData.context.Authorization)) {
+    //         (wsData.wss as Wss).status = 1;
+    //     }
+    // }
 }

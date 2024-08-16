@@ -46,7 +46,7 @@ export class Http {
     getDownloadUrl(files) {
         let url = "/download?";
         if (files ) {
-            for (let file of files) {
+            for (let file of Array.isArray(files)?files:[files]) {
                 url += `file=${file}&`;
             }
         }

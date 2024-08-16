@@ -21,6 +21,7 @@ import {SettingController} from "./domain/setting/setting.controller";
 import {SSHController} from "./domain/ssh/ssh.controller";
 import {RdpController} from "./domain/rdp/rdp.controller";
 import {ServerEvent} from "./other/config";
+import {VideoController} from "./domain/video/video.controller";
 const WebSocket = require('ws');
 
 
@@ -41,7 +42,7 @@ const app = createKoaServer({
     routePrefix: '/api',
     classTransformer: true,
     // controllers: [`${__dirname}/domain/**/*.*s`],
-    controllers: [UserController,SysController,ShellController,FileController,DdnsController,NetController,NavindexController,SettingController,SSHController,RdpController],
+    controllers: [UserController,SysController,ShellController,FileController,DdnsController,NetController,NavindexController,SettingController,SSHController,RdpController,VideoController],
     // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
     middlewares: [AuthMiddleware,GlobalErrorHandler,CheckTokenMiddleware],
 });

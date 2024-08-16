@@ -22,8 +22,9 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
+import {getFfmpeg} from "../bin/bin";
 const archiver = require('archiver');
-const ffmpeg  = require('fluent-ffmpeg');
+
 
 const MAX_SIZE_TXT = 20 * 1024 * 1024;
 class FileService extends FileCompress{
@@ -241,7 +242,7 @@ class FileService extends FileCompress{
         const sysPath = path.join(root_path,decodeURIComponent(pojo.source_filename));
         const sysPathNew = path.join(root_path,decodeURIComponent(pojo.to_filename));
 
-        ffmpeg(sysPath)
+        getFfmpeg()(sysPath)
             .toFormat(pojo.to_format)
             // .videoCodec('libx264')
             // .audioCodec('aac')

@@ -7,6 +7,9 @@ This is a web-based toolkit for developers that includes file management and ser
 ![image](https://github.com/user-attachments/assets/12df7c32-7bde-4c5c-80e4-eedb57c18de9)
 
 # Usage
+## Demo
+url: http://116.198.245.137:5569/
+credentials: `admin`/`admin` Currently, there is no permission functionality, so please do not change the password as it may affect the experience of others.
 ### Direct Usage
 Download the[latest release ](https://github.com/xiaobaidadada/filecat/releases)
 and run the executable for your platform;

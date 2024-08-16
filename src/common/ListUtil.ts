@@ -169,3 +169,15 @@ export function getByListRandom<T>(list: T[], ignoreIndex?: number) {
     }
     return list[index];
 }
+
+export function  deleteList<T>(list: T[], check: (data: T) => boolean): T | undefined {
+    if (!check) {
+        return undefined;
+    }
+    for (let index = 0; index < list.length; index++) {
+        if (check(list[index])) {
+            return list.splice(index, 1)[0];
+        }
+    }
+    return undefined;
+}

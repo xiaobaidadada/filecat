@@ -25,6 +25,9 @@ const tasksLister = new Listr(
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm.dll"), path.join(__dirname, "..", "build", "wintun-arm.dll"))
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm64.dll"), path.join(__dirname, "..", "build", "wintun-arm64.dll"))
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
+                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
+                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg.exe"), path.join(__dirname, "..", "build", "ffmpeg.exe"))
+
 
                         rimraf(path.join(__dirname,"..","build","server"));
                         console.log('构建服务端完成');

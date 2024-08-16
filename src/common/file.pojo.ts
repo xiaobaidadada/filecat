@@ -7,7 +7,8 @@ export enum FileTypeEnum {
     text='text',
     video='video',
     invalid_link='invalid_link',
-    folder='folder'
+    folder='folder',
+    unknow=""
 }
 
 export interface FileItemData {

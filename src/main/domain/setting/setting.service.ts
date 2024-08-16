@@ -5,9 +5,10 @@ import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/custo
 import {Cache} from "../../other/cache";
 import {AuthFail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
-import {FileSettingItem, TokenTimeMode} from "../../../common/req/setting.req";
+import {FileSettingItem, SysSoftware, SysSoftwareItem, TokenTimeMode} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
 import {ba} from "tencentcloud-sdk-nodejs";
+import {SystemUtil} from "../sys/sys.utl";
 const needle = require('needle');
 
 const customer_router_key = "customer_router_key";
@@ -226,6 +227,35 @@ export class SettingService {
                 }
             }
         }
+    }
+
+    cacheSysSoftwareItem:SysSoftwareItem[];
+    public getSoftware() {
+        if (this.cacheSysSoftwareItem) {
+            return this.cacheSysSoftwareItem;
+        }
+        const items:SysSoftwareItem[] = DataUtil.get("sys_software");
+        const map = new Map();
+        for (const item of items ?? []) {
+            map.set(item.id,item);
+        }
+        const list:SysSoftwareItem[] = [];
+        for (const id of Object.values(SysSoftware)) {
+            const pojo = new SysSoftwareItem();
+            pojo.id = id;
+            const item = map.get(id);
+            pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ffmpeg"}  -version`);
+            pojo.path = item?item.path:"";
+            list.push(pojo);
+        }
+        this.cacheSysSoftwareItem = list;
+        return list;
+    }
+
+    public setSoftware(req) {
+        DataUtil.set("sys_software", req);
+        this.cacheSysSoftwareItem = null;
+        this.getFilesSetting();
     }
 
 }

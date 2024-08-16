@@ -13,6 +13,7 @@ import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {FileMenuData} from "./FileMenuType";
 import {useTranslation} from "react-i18next";
+import {FileMenuItem} from "./FileMenu";
 
 
 export function VideoTrans(props) {
@@ -73,26 +74,16 @@ export function VideoTrans(props) {
     }
     return (<div>
         {is_opt &&
-            <div
-                style={{
-                    position: 'absolute',
-                    top: `${showPrompt.data.y}px`,
-                    left: `${showPrompt.data.x}px`,
-                    backgroundColor: 'white',
-                    // border: '1px solid black',
-                    padding: '5px',
-                    zIndex: 999999,
-                }}
-            >
-                <Dropdown items={items} click={click} pre_value={"123"}/>
-            </div>}
-
-
+            <FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>
+        }
         {showPrompt.show && (is_opt ? <OverlayTransparent click={close}/> :
             <div>
-                <CardPrompt title={t("视频格式转换")} cancel={close} confirm={confirm} cancel_t={t("取消")} confirm_t={t("确定")}
-                            context={!progress ? [<InputText placeholderOut={t("ffmpeg支持的目标格式")} placeholder={"flv mp4 ..."}
-                                                             value={prompt} handleInputChange={(value) => setPrompt(value)}/>,
+                <CardPrompt title={t("视频格式转换")} cancel={close} confirm={confirm} cancel_t={t("取消")}
+                            confirm_t={t("确定")}
+                            context={!progress ? [<InputText placeholderOut={t("ffmpeg支持的目标格式")}
+                                                             placeholder={"flv mp4 ..."}
+                                                             value={prompt}
+                                                             handleInputChange={(value) => setPrompt(value)}/>,
                                     <InputText placeholderOut={t("目标文件名")} value={newFileName}
                                                handleInputChange={(value) => setNewFileName(value)}/>,
                                     <div>{t("生成文件的目标文件在本目录下")}</div>
