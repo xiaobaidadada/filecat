@@ -1,6 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 import {Column, Dashboard, Menu, Row, RowColumn} from "../../../meta/component/Dashboard";
-import {Card, CardFull} from "../../../meta/component/Card";
+import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
 import Noty from "noty";
@@ -14,6 +14,7 @@ import {Rows, Table} from "../../../meta/component/Table";
 import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {TableListRender} from "./component/TableListRend";
 import {useTranslation} from "react-i18next";
+import {GlobalContext} from "../../GlobalProvider";
 
 
 
@@ -29,14 +30,21 @@ export function  Sys() {
     const [tokenSeconds,setTokenSeconds] = useState();
 
     const [rows, setRows] = useState([]);
+    const [rows_outside_software, setRows_outside_software] = useState([]);
     const { t, i18n } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const {initUserInfo} = useContext(GlobalContext);
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
+    const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
     const getItems = async () => {
         const result = await settingHttp.get("filesSetting");
         if (result.code === RCode.Sucess) {
             setRows(result.data);
+        }
+        const result1 = await settingHttp.get("outside/software/get");
+        if (result1.code === RCode.Sucess) {
+            setRows_outside_software(result1.data);
         }
     }
 
@@ -194,6 +202,20 @@ export function  Sys() {
             setRows([]);
             setRows(list);
     }
+    // 外部软件
+    const save_outside_software = async () => {
+        const result = await settingHttp.post("outside/software/save", rows_outside_software);
+        if (result.code === RCode.Sucess) {
+            new Noty({
+                type: 'success',
+                text: '保存成功',
+                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
+                layout: "bottomLeft"
+            }).show();
+            initUserInfo();
+        }
+    }
+
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
@@ -252,6 +274,21 @@ export function  Sys() {
                     })} width={"10rem"}/>
                 </CardFull>
             </Dashboard>
+            <Dashboard>
+                <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
+                    <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
+                        const new_list = [
+                            <div>{item.id}</div>,
+                            <StatusCircle ok={item.installed} />,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true} placeholder={t("默认使用环境变量")}/>,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+            </Dashboard>
         </Column>
+
     </Row>
 }

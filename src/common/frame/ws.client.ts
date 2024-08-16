@@ -1,4 +1,4 @@
-import {CmdType, protocolIsProto2, WsData} from "./WsData";
+import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
 
 const decoder = new parser.Decoder();
@@ -99,7 +99,7 @@ export class WsClient {
             }
             if (!this.isAilive()) {
                 // 创建 WebSocket 连接
-                const socket = new WebSocket(`ws://${this._url}`);
+                const socket = new WebSocket(`ws://${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`);
                 // 监听连接成功事件
                 socket.addEventListener('open', open);
 
@@ -183,4 +183,16 @@ export class WsClient {
         this._msgHandlerMap.set(cmdType,handler)
     }
 
+
+    public static getOtherWebSocket(code:CmdType) {
+        return new WebSocket(`ws://${window.location.host}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
+    }
+
+    public static getOtherWebSocketUrl(code:CmdType,query:{[key: string]: string}) {
+        let url  = `ws://${window.location.host}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
+        for (const key of Object.keys(query)) {
+            url += `&${key}=${encodeURIComponent(query[key])}`;
+        }
+        return url;
+    }
 }

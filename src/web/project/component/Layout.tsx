@@ -15,6 +15,7 @@ import {Net} from "./net/Net";
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../util/store";
+import {Preview} from "./file/component/Preview";
 
 
 
@@ -48,6 +49,7 @@ function Layout() {
             {/*全局显示*/}
             <Prompt></Prompt>
             <Editor />
+            <Preview />
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody navList={MainNavList}>

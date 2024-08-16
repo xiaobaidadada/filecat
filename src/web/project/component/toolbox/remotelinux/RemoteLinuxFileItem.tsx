@@ -14,6 +14,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import path from "path";
 import {NotyFail} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
+import {getEditModelType} from "../../../../../common/StringUtil";
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
@@ -28,7 +29,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
 
 
     // const match = useMatch('/:pre/file/*');
-    const clickHandler = async (index, model, name) => {
+    const clickHandler = async (index, name) => {
         const select = getByList(selectList, index);
         if (select !== null) {
             // @ts-ignore 取消选择
@@ -75,6 +76,10 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
+                let model = getEditModelType(name);
+                if (!model) {
+                    model = "txt"
+                }
                 if (model) {
                     // 双击文件
                     const req = new SshPojo();
@@ -101,12 +106,6 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                     setEditorValue(rsq.data)
                     return;
                 }
-                new Noty({
-                    type: 'warning',
-                    text: '暂时只支持文本文件',
-                    timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                    layout: "bottomLeft"
-                }).show();
             }
         }
     }

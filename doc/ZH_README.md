@@ -17,6 +17,9 @@
 - wol网络唤醒
 - 点对点通信
 ## 使用
+## 体验
+url: http://116.198.245.137:5569/
+credentials: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
 ### 直接使用
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行;

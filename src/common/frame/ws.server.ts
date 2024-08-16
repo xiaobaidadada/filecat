@@ -1,8 +1,12 @@
 import WebSocket from "ws";
-import {msg, routerHandlerMap} from "./router";
-import {CmdType, protocolIsProto2, WsData} from "./WsData";
+import {msg, otherRouterHandlerMap, routerHandlerMap} from "./router";
+import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
 import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
+import {settingService} from "../../main/domain/setting/setting.service";
+import {wss} from "tencentcloud-sdk-nodejs";
+
+const url = require('url');
 
 const decoder = new parser.Decoder();
 
@@ -11,7 +15,7 @@ export class Wss {
 
     private _ws: WebSocket;
     // 0 是未验证,1是验证过的 目前不需要心跳
-    public status = 0;
+    // public status = 0;
 
     public dataMap = new Map();
     public id: string;
@@ -100,11 +104,11 @@ class WsPreHandler {
             }
         });
         //  身份验证
-        setTimeout(() => {
-            if (wss.status === 0) {
-                wss.ws.close();
-            }
-        }, 1000 * 10)
+        // setTimeout(() => {
+        //     if (wss.status === 0) {
+        //         wss.ws.close();
+        //     }
+        // }, 1000 * 10)
     }
 
 }
@@ -118,8 +122,34 @@ export class WsServer {
 
     public start() {
         // 监听客户端连接事件
-        this._wss.on('connection', function connection(ws: WebSocket) {
-            routerHandlerMap.get(CmdType.connection)!(ws);
+        this._wss.on('connection', async function connection(ws: WebSocket,request) {
+            try {
+                // 解析查询参数
+                const parsedUrl = url.parse(request.url, true); // 使用 'true' 参数解析查询字符串
+                const { query } = parsedUrl; // 解析后的查询参数对象
+                if (!await settingService.check(query['token'])) {
+                    ws.close();
+                    console.log('未验证的ws请求')
+                    return;
+                }
+                if (query['type'] === `${WsConnectType.data}`) {
+                    routerHandlerMap.get(CmdType.connection)!(ws);
+                } else if (query['type'] === `${WsConnectType.other}`) {
+                    const handler = otherRouterHandlerMap.get(parseInt(query['code']));
+                    if (handler) {
+                        handler(ws,query);
+                    }else {
+                        console.log('没找到对应路径')
+                    };
+                } else {
+                    console.log('ws未找到对应的访问途径');
+                    ws.close();
+                }
+            } catch (e) {
+                console.log(e);
+                ws.close()
+            }
+
         });
     }
 }

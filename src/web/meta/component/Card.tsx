@@ -97,3 +97,15 @@ export function ProgressCard(props:{progress:number}) {
         </div>
     </div>
 }
+
+export const StatusCircle = (props:{ok:boolean}) => {
+    const circleStyle = {
+        width: '10px',
+        height: '10px',
+        borderRadius: '50%',
+        backgroundColor: props.ok?'var(--icon-green)':'var(--iconTertiary)',
+        display: 'inline-block'
+    };
+
+    return <div style={circleStyle}></div>;
+};

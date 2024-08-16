@@ -153,6 +153,11 @@ export const $stroe = {
     header_min:atom({
         key: 'header_min',
         default:false
+    }),
+    // 文件预览
+    file_preview:atom({
+        key: 'file_preview',
+        default:{open:false} as {open:boolean,type?:FileTypeEnum,name?:string,url?:string},
     })
 }
 

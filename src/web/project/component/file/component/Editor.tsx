@@ -23,10 +23,8 @@ import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/ext-language_tools";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
-import {useLocation, useMatch} from "react-router-dom";
-import {fileHttp} from "../../../util/config";
-import {saveTxtReq} from "../../../../../common/req/file.req";
-import {getRouterAfter} from "../../../util/WebPath";
+import {useLocation, useNavigate} from "react-router-dom";
+
 
 const ace = require("ace-builds/src-noconflict/ace");
 ace.config.set(
@@ -41,7 +39,8 @@ ace.config.setModuleUrl(
 export function Editor() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
-
+    const navigate = useNavigate();
+    const location = useLocation();
 
     function handleEditorChange(data) {
         setEditorValue(data)
@@ -54,6 +53,7 @@ export function Editor() {
         if (editorSetting.save) {
             await editorSetting.save(editorValue);
             setEditorValue("");
+            navigate(location.pathname);
         }
     }
     const div = <div id="editor-container">

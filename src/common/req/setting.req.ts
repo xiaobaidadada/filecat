@@ -15,3 +15,12 @@ export class FileSettingItem {
     note:string;
     index:number;
 }
+
+export enum SysSoftware {
+    ffmpeg="ffmpeg",
+}
+export class SysSoftwareItem {
+    id:SysSoftware;
+    installed:boolean; // 是否安装
+    path?:string; // 如果没有在path环境变量内可以使用这个
+}

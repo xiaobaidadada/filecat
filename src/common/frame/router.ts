@@ -1,8 +1,10 @@
 // 用于保存对象实例，避免重复创建，因为typedi必须要提前创建，但是这里是最提前的所以需要自己创建
 import {CmdType} from "./WsData";
+import WebSocket from "ws";
 
 const objMap = new Map<string,Object>();
 export const routerHandlerMap = new Map<CmdType,Function>();
+export const otherRouterHandlerMap = new Map<CmdType,(ws: WebSocket,query:{[key: string]: string})=>any>();
 
 export function msg(msg:CmdType) {
     /**
@@ -23,5 +25,14 @@ export function msg(msg:CmdType) {
         // };
     }
 
+}
+
+export function otherMsg(msg:CmdType) {
+    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
+        const p = objMap.get(target.name);
+        const obj = p??new target.constructor();
+        descriptor.value
+        otherRouterHandlerMap.set(msg,obj[key].bind(obj))
+    }
 }
 

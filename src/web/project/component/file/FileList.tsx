@@ -25,6 +25,7 @@ import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
+import {Preview} from "./component/Preview";
 
 export enum FileListShowTypeEmum {
     block = "",

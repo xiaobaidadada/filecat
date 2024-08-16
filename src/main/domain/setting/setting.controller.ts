@@ -8,8 +8,6 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Env} from "../../../common/Env";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
-import {GetFilePojo} from "../../../common/file.pojo";
-import {json} from "react-router-dom";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {getSys} from "../shell/shell.service";
@@ -155,6 +153,17 @@ export class SettingController {
         return Sucess(settingService.getFilesSetting());
     }
 
+    // 系统软件设置
+    @Get("/outside/software/get")
+    getSoftware() {
+        return Sucess(settingService.getSoftware());
+    }
+    @Post('/outside/software/save')
+    setSoftware(@Body() req:any) {
+        settingService.setSoftware(req);
+        return Sucess("");
+    }
+
     language = "user_language";
     @Post('/language/save')
     languageSetting(@Body() req:{language:string}) {
@@ -167,6 +176,12 @@ export class SettingController {
         const pojo = new UserBaseInfo();
         pojo.language = DataUtil.get(this.language)??"en";
         pojo.sys = getSys();
+        const list = settingService.getSoftware();
+        const map = {};
+        for (const item of list) {
+            map[item.id]= item;
+        }
+        pojo.sysSoftWare = map;
         return Sucess(pojo);
     }
 }

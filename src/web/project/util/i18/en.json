@@ -145,5 +145,6 @@
   "要代理的url": "URL to Proxy",
   "系统代理端口": "System Proxy Port",
   "返回": "Back",
-  "不允许为空": "input not empty"
+  "不允许为空": "input not empty",
+  "没有安装ffmpeg": "Not found ffmpeg"
 }

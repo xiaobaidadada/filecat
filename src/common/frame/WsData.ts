@@ -10,7 +10,7 @@ export enum CmdType {
     // 连接
     connection= 0,
     // 验证
-    auth = 1,
+    // auth = 1,
     // 系统信息
     sys_get,
     // 系统信息推送一直获取
@@ -79,9 +79,17 @@ export enum CmdType {
     file_uncompress,
     file_uncompress_progress,
     file_compress,
-    file_compress_progress
+    file_compress_progress,
+
+    // rtsp
+    rtsp_get,
+    rtsp_cancel,
 }
 
+export enum WsConnectType {
+    data,
+    other
+}
 
 export class WsData<T> {
     public cmdType: CmdType;

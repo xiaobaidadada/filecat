@@ -12,6 +12,7 @@ import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../.
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
+import {FileMenuItem} from "./FileMenu";
 
 export function UnCompress(props) {
     const { t } = useTranslation();
@@ -72,19 +73,7 @@ export function UnCompress(props) {
     }
     return (<div>
         {is_opt &&
-            <div
-                style={{
-                    position: 'absolute',
-                    top: `${showPrompt.data.y}px`,
-                    left: `${showPrompt.data.x}px`,
-                    backgroundColor: 'white',
-                    // border: '1px solid black',
-                    padding: '5px',
-                    zIndex: 999999,
-                }}
-            >
-                <Dropdown items={items} click={click} />
-            </div>}
+            <FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>}
 
 
         {showPrompt.show && (is_opt ? <OverlayTransparent click={close}/> :

@@ -132,7 +132,7 @@ function DropdownItem (props:{key,value,click,context,pre_value,c?:React.ReactNo
     </div>
 }
 
-type DropdownItemsPojo = { r: React.ReactNode, v: any,c?:DropdownItemsPojo }[];
+export type DropdownItemsPojo = { r: React.ReactNode, v: any,c?:DropdownItemsPojo }[];
 
 export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v) => void, pre_value?: any }) {
     return <div className={"dropdown"}>
