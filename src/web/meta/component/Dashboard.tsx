@@ -144,8 +144,8 @@ export function Overlay(props: { click: Function }) {
     return <div className="overlay" onClick={props.click}></div>
 }
 
-export function OverlayTransparent(props: { click: Function }) {
-    return <div className="overlay_trans" onClick={props.click}></div>
+export function OverlayTransparent(props: { click: Function ,children?: React.ReactNode}) {
+    return <div className="overlay_trans" onClick={props.click}>{props.children}</div>
 }
 
 export function FullScreenDiv(props: { isFull?: boolean;children?: React.ReactNode;}) {

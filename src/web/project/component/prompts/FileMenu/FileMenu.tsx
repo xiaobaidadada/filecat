@@ -70,9 +70,10 @@ export function FileMenu() {
             div = <UnCompress />
             break;
         case FileMenuEnum.unknown:
-            div = <div>
-                <FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={textClick}/>
-                <OverlayTransparent click={close} />
+            div = <div onWheel={()=>{
+                close();
+            }}>
+                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={textClick}/>}/>
             </div>
 
     }
