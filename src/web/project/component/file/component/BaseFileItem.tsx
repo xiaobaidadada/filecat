@@ -7,7 +7,7 @@ import {$stroe} from "../../../util/store";
 
 
 
-export function BaseFileItem(props: FileItemData & {extraAttr?:any, index?: number; click: (index: number, name:string) => void,itemWidth?:string }) {
+export function BaseFileItem(props: FileItemData & {extraAttr?:any, index?: number; click: (index: number, name:string) => void,itemWidth?:string,children?: React.ReactNode }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
 
     async function click(index: number) {
@@ -36,5 +36,6 @@ export function BaseFileItem(props: FileItemData & {extraAttr?:any, index?: numb
             {/*<p>34MB</p>*/}
             <p>{props.mtime}</p>
         </div>
+        {props.children}
     </div>)
 }
