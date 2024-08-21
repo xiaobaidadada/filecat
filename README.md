@@ -1,32 +1,44 @@
 # filecat
-English | [中文](./doc/ZH_README.md)
-
-This is a web-based toolkit for developers that includes file management and server utilities. It supports online file compression and decompression, terminal access, SSH proxy, P2P, DDNS, and other features.
-# Screenshot
-![image](https://github.com/user-attachments/assets/37ffe3bf-19b9-4da0-9eaf-deb3d0a4d034)
-![image](https://github.com/user-attachments/assets/12df7c32-7bde-4c5c-80e4-eedb57c18de9)
-
-# Usage
-## Demo
+- 中文 | [English ](./doc/EN_README.md)
+- 这是一个面向开发者的文件管理、服务器工具集合(web服务)。
+你可以使用该软件在自己的家里使用任意一台主机，利用ddns或者穿透功能实现一个自己的个人网盘，或者用来简单管理一个linux服务器。需要访问家庭中的路由器后台等局域网受限的网址的时候，你可以利用rdp、ssh、网页代理功能轻松实现这一目的
+## 截图
+![image](https://github.com/user-attachments/assets/98a77c5f-e6f8-44ee-a136-f6fc5c0be459)
+![image](https://github.com/xiaobaidadada/filecat/assets/61794688/97c630c5-6c0f-48d2-9a67-20b2ff86eae9)
+## 主要特性
+-  文件管理、编辑、解压缩、格式转换等。
+- 终端、ssh代理
+- ddns
+- ftp代理
+- http网页代理
+- rdp代理
+- rtsp代理播放器
+- docker监控查看
+- 系统内存，cpu信息
+- wol网络唤醒
+- 点对点通信,vpn
+## 使用
+## 体验
 url: http://116.198.245.137:5569/
-credentials: `admin`/`admin` Currently, there is no permission functionality, so please do not change the password as it may affect the experience of others.
-### Direct Usage
-Download the[latest release ](https://github.com/xiaobaidadada/filecat/releases)
-and run the executable for your platform;
-1. Execute the command filecat --port 5567 --base_folder d:/. If you do not set a username, the default username and password are admin.
-2. Use the configuration file from the example and execute the command filecat --env ./env. On Linux, you may need to run sudo chmod +x ./filecat-linux to gain execution permissions
-### Development
-The project is currently packaged using pkg. Please use Node.js version 18.x.x.
-
-## Feature Description
-1. The peer-to-peer client functionality does not work on macOS. On Windows, it requires administrator mode, and on Linux, it requires root privileges. Additionally, many features have not been tested on macOS and are only supported on Windows and Linux.
-2. Some features are currently in the demo stage and will be continuously optimized in the future.
-# Roadmap
-- Optimize process information retrieval, SSH file management, DDNS logging, and other features.
-- Add more file management features.
-
-# Thanks
-Some features of this project are based on or inspired by the following projects.
+账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
+### 直接使用
+下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
+然后使用各个平台的可执行程序运行;
+1. 执行命令`filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
+2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
+### 开发
+- 项目目前使用pkg打包，请使用node18.x.x
+- install 如果失败可能是由于网络问题，单独install一下对应的依赖包。
+## 功能说明
+1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windwos和Linux;
+2. 部分功能目前处于demo阶段，未来会持续优化；
+## 路线
+1. 支持更多的ddns平台
+2. 修复与优化优化网络通信速度，更好的支持rdp和点对点
+3. 优化进程信息获取、sft、rdp代理等
+4. 流媒体存储播放工具
+## 致谢
+本项目部分功能还基于或者借鉴于以下项目
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
 - [mstsc](https://github.com/citronneur/mstsc.js)
