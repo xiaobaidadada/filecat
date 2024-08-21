@@ -120,6 +120,10 @@ export class SettingService {
     }
 
     public async check(token:string) {
+        if (Cache.check(token)) {
+            Cache.updateTimer(token);
+            return true;
+        }
         if (this.getSelfAuthOpen()) {
             const selfHandler = this.getHandlerClass(self_auth_jscode);
             if (!selfHandler) {
@@ -130,11 +134,6 @@ export class SettingService {
             if (result) {
                 return true;
             }
-        }
-        // return true;
-        if (Cache.check(token)) {
-            Cache.updateTimer(token);
-            return true;
         }
         return false;
     }

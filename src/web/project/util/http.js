@@ -53,14 +53,16 @@ export class Http {
         return url.slice(0, -1);
     }
 
-    async post(url,jsonData) {
+    async post(url,jsonData,notCheck= true) {
         url=url===undefined?'':url;
         const rsq = await axios.post(this.baseUrl+url, jsonData,{
             headers: {
                 Authorization: localStorage.getItem('token')
             }
         });
-        this.check(rsq.data);
+        if (notCheck) {
+            this.check(rsq.data);
+        }
         return rsq.data
     }
 

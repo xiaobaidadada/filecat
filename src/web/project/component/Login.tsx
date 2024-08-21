@@ -22,7 +22,7 @@ function Login() {
             username:username,
             password: password
         }
-        const rsq = await userHttp.post("login",data );
+        const rsq = await userHttp.post("login",data,false );
         if (rsq.code === 0) {
             localStorage.setItem('token',rsq.data)
             navigate('/file')
