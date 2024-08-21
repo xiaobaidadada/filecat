@@ -146,7 +146,7 @@ export class WsServer {
                     ws.close();
                 }
             } catch (e) {
-                console.log(e);
+                console.log('ws connection',e);
                 ws.close()
             }
 

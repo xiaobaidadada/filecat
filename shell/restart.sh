@@ -3,7 +3,7 @@
 
 # 读取参数
 PORT1=5567
-PORT2=3001
+PORT2=3301
 
 # 查找并关闭第一个端口的程序
 find_and_kill_process() {

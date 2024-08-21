@@ -75,7 +75,6 @@ export function FileMenu() {
             }}>
                 <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={textClick}/>}/>
             </div>
-
     }
     return (div);
 }

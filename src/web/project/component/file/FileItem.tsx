@@ -104,18 +104,18 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
 
 
-    const handleContextMenu = (event,name) => {
+    const handleContextMenu = (event,name,isDir) => {
         event.preventDefault();
         const pojo = new FileMenuData();
         pojo.filename = name;
         pojo.x = event.clientX;
         pojo.y = event.clientY;
-        pojo.type = getFileFormat(name);
+        pojo.type = isDir?FileMenuEnum.folder:getFileFormat(name);
         setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:pojo});
     };
 
 
-    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

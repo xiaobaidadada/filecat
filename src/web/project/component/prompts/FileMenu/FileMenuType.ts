@@ -3,7 +3,8 @@ import {StringUtil} from "../../../../../common/StringUtil";
 export enum FileMenuEnum {
     video,
     uncompress,
-    unknown
+    unknown,
+    folder
 }
 export class FileMenuData {
     x:number;

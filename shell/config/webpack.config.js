@@ -39,9 +39,15 @@ module.exports = {
             {directory: path.join(__dirname,"..","..","src","web","project", './'),},
             {directory: path.join(__dirname,"..","..","src","web","project", 'component',"toolbox","rdp","client","js")}
         ],
-        port: 3001,
+        port: 3301,
         open: false,
-
+        // onListening: function (devServer) {
+        //     if (!devServer) {
+        //         throw new Error('webpack-dev-server is not defined');
+        //     }
+        //     // const port = devServer.server.address().port;
+        //     console.log('Listening on port:', port);
+        // },
         allowedHosts: "all", //  新增该配置项
     },
 };

@@ -72,7 +72,7 @@ if (process.env.NODE_ENV==="production") {
     });
 } else {
     app.use(proxy(/^(?!\/api)/, {
-        target: 'http://127.0.0.1:3001',
+        target: 'http://127.0.0.1:3301',
         // changeOrigin: true,
         // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
         rewrite: function(path) {
@@ -89,7 +89,8 @@ if (process.env.NODE_ENV==="production") {
 
 // 启动服务器
 const server = app.listen(Env.port, () => {
-    console.log(`Server is running on port ${Env.port} \n`);
+    const url = `http://localhost:${Env.port}/`;
+    console.log(`Server is running click \x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
 });
 
 // 将WebSocket服务器与Koa服务器绑定到同一个端口
