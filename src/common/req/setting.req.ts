@@ -24,3 +24,13 @@ export class SysSoftwareItem {
     installed:boolean; // 是否安装
     path?:string; // 如果没有在path环境变量内可以使用这个
 }
+
+export class systemdPojo {
+    name:string;
+    load_state:string; // 装载状态
+    active_state:string; // 激活状态
+    unit_state:string; // 存活状态
+    comm:string; // 执行命令
+    user:string; // 所属用户
+    isSys:boolean; // 是系统创建的(或者加入到filecat监管的)
+}

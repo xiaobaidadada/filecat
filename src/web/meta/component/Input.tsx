@@ -92,7 +92,7 @@ export function InputText(props: {
     placeholderOut?: string,
     handleInputChange?: (value: string) => void,
     value?: string,
-    handleEnterPress?:()=>void,
+    handlerEnter?:()=>void,
     no_border?:boolean
 }) {
     return Input({
@@ -136,6 +136,28 @@ export function InputRadio(props: {
                onChange={() => {
                    if (props.onchange) props.onchange(props.value)
                }}/>
+        {props.context}
+    </div>
+}
+
+export function InputCheckbox(props: {
+    value: any,
+    context: any,
+    onchange?: () => void,
+    selected?: boolean
+}) {
+
+    return <div className="input_radio_row">
+        <i className="material-icons icon" onClick={()=>{
+            if (props.onchange) {
+                props.onchange();
+            }
+        }}>{props.selected?"check_box":"check_box_outline_blank" }</i>
+        {/* 通过state更改input是会报错的。所以改成自定义的。*/}
+        {/*<input type="checkbox" checked={props.selected} name="common_name" value={props.value} className={"input_radio"}*/}
+        {/*       onChange={() => {*/}
+        {/*           if (props.onchange) props.onchange(props.value)*/}
+        {/*       }}/>*/}
         {props.context}
     </div>
 }

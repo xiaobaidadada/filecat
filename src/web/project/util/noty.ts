@@ -27,3 +27,16 @@ export function NotyFail(text) {
         layout: "bottomLeft"
     }).show();
 }
+
+export function NotyWaring(text) {
+    if (Date.now() - now < 500) {
+        return ;
+    }
+    now = Date.now();
+    new Noty({
+        type: 'warning',
+        text: text,
+        timeout:false, // 需要点击才消失
+        layout: "topRight"
+    }).show();
+}

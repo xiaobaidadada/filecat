@@ -115,7 +115,7 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
     };
 
 
-    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} isLink={props.isLink}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

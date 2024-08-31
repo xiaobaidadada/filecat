@@ -16,7 +16,7 @@ export enum CmdType {
     // 系统信息推送一直获取
     sys_getting,
     // 取消系统信息订阅
-    sys_cancel,
+    // sys_cancel,
 
     shell_open,
     // 发送命令
@@ -31,7 +31,7 @@ export enum CmdType {
     docker_get,
     docker_getting,
     // docker 取消
-    docker_cancel,
+    // docker_cancel,
     // docker的logs
     docker_shell_logs,
     docker_shell_logs_getting,
@@ -48,8 +48,16 @@ export enum CmdType {
     // 获取进程信息
     process_get,
     process_getting,
-    process_cancel,
-    process_close,
+    // process_cancel, // 取消订阅
+    process_close, // 关闭进程
+
+
+    // 获取filecat管理的systemd
+    systemd_inside_get,
+    systemd_inside_getting,
+    systemd_logs_get,
+    systemd_logs_getting,
+
     // 远程shell
     remote_shell_open,
     remote_shell_send,

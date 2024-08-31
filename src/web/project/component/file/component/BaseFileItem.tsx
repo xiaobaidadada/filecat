@@ -5,25 +5,30 @@ import {getByList} from "../../../../../common/ListUtil";
 import {$stroe} from "../../../util/store";
 
 
-
-
-export function BaseFileItem(props: FileItemData & {extraAttr?:any, index?: number; click: (index: number, name:string) => void,itemWidth?:string,children?: React.ReactNode }) {
+export function BaseFileItem(props: FileItemData & {
+    extraAttr?: any,
+    index?: number;
+    click: (index: number, name: string) => void,
+    itemWidth?: string,
+    children?: React.ReactNode
+}) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
 
     async function click(index: number) {
         if (props.click) {
-            props.click(index,props.name);
+            props.click(index, props.name);
         }
     }
 
     return (<div {...props.extraAttr} onClick={() => {
         click(props.index)
-    }} className={"item"} role="button" data-type={props.type}
+    }} className={"item"} role="button"
+                 data-type={props.isLink?"invalid_link":props.type}
                  data-dir={!props.type || props.type === FileTypeEnum.folder}
                  aria-selected={getByList(selectList, props.index) !== null}
                  aria-label={props.name}
                  style={{
-                     "--filewidth":props.itemWidth ?? "33%"
+                     "--filewidth": props.itemWidth ?? "33%"
                  }}
     >
         <div>

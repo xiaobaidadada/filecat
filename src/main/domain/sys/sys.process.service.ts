@@ -1,35 +1,31 @@
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
-import {sysType} from "../shell/shell.service";
+import {getSys, sysType} from "../shell/shell.service";
 import {SystemUtil} from "./sys.utl";
 import { spawn} from "child_process";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {StringUtil} from "../../../common/StringUtil";
 import path from "path";
+import {getProcessAddon} from "../bin/bin";
+import {SysEnum} from "../../../common/req/user.req";
 
 let sysJobInterval: any = null;
 
 let processJobInterval: any = null;
-let spawnChild: any = null;
+let spawnChild = getProcessAddon();
 let result_list: any = [];
 
 const processWssMap = new Map<string, Wss>();
 
 
-const { createRequire } = require('node:module');
-export const require_c = createRequire(__filename);
-
 export class SysProcessService {
-    winGetProcess() {
+    winAndLinuxGetProcess() {
         // let child = spawn(process.execPath,['./process.exe'],{shell:"cmd"});
-        let child = require_c(path.join(__dirname,'win-process.node'));
-        spawnChild = child;
         // 监听子进程的 stdout 流，并输出数据
-        child.on((data) => {
+        spawnChild.on((data) => {
             if (!Array.isArray(data)) {
                 return;
             }
-            result_list = [];
             const list:any = [];
             for (const process of data) {
                 // ID name USER MEM CPU
@@ -43,7 +39,7 @@ export class SysProcessService {
             if (processWssMap.size === 0) {
                 this.clear();
             }
-        });
+        },"process",[]);
     }
 
     linuxGetProcess() {
@@ -123,9 +119,7 @@ export class SysProcessService {
                         await this.pushProcessInfo(wss, result_list);
                     } catch (e) {
                         console.log(e)
-                        console.log('系统信息推送失败docker')
-                        clearInterval(sysJobInterval);
-                        sysJobInterval = null;
+                        console.log('系统信息推送失败进程')
                         if (wss) {
                             wss.ws.close();
                             processWssMap.delete(socketId);
@@ -137,24 +131,24 @@ export class SysProcessService {
     }
 
     private killSpwn() {
-        if (spawnChild) {
-            if (sysType === 'win') {
-                spawnChild.close();
+            const sys = getSys();
+            if (sys === SysEnum.linux || sys == SysEnum.win) {
+                spawnChild.close("process");
             } else {
                 spawnChild.kill('SIGTERM');
+                SystemUtil.killProcess(spawnChild.pid);
             }
-            SystemUtil.killProcess(spawnChild.pid);
-            spawnChild = null;
-        }
+
     }
 
     private getProcessInfo() {
         try {
-            if (spawnChild) {
+            if (sysJobInterval) {
                 return;
             }
-            if (sysType === 'win') {
-                this.winGetProcess();
+            const sys = getSys();
+            if (sys === SysEnum.linux || sys == SysEnum.win) {
+                this.winAndLinuxGetProcess();
             } else {
                 this.linuxGetProcess();
             }
@@ -182,11 +176,6 @@ export class SysProcessService {
         await this.openProcessPush((data.wss as Wss));
     }
 
-    async processCancel(data: WsData<any>) {
-        const id = (data.wss as Wss).id;
-        processWssMap.delete(id);
-        (data.wss as Wss).ws.close();
-    }
 
     async processClose(data: WsData<any>) {
         SystemUtil.killProcess(data.context.pid)

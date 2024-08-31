@@ -25,7 +25,11 @@ import {VideoController} from "./domain/video/video.controller";
 const WebSocket = require('ws');
 
 
-Env.parseArgs();
+
+
+async function start() {
+
+    await Env.parseArgs();
 
 // 环境变量加载
 // dotenv.config({ override: true });
@@ -36,72 +40,75 @@ Env.parseArgs();
 //     }
 // })
 
-// 创建 Koa 应用并注册控制器
-const app = createKoaServer({
-    cors: true,
-    routePrefix: '/api',
-    classTransformer: true,
-    // controllers: [`${__dirname}/domain/**/*.*s`],
-    controllers: [UserController,SysController,ShellController,FileController,DdnsController,NetController,NavindexController,SettingController,SSHController,RdpController,VideoController],
-    // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
-    middlewares: [AuthMiddleware,GlobalErrorHandler,CheckTokenMiddleware],
-});
-const wss = new WebSocket.Server({ noServer: true });
-(new WsServer(wss)).start();
-
-if (process.env.NODE_ENV==="production") {
-    // 配置静态资源代理
-    // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
-    // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-    app.use(async (ctx,next) => {
-        if (ctx.url.includes("/api/")) {
-            next();
-            return;
-        }
-        try {
-            if (!ctx.url || ctx.url==="/") {
-                throw "";
-            }
-            const url = path.join(__dirname,'dist',path.basename(ctx.url));
-            fs.accessSync(url,fs.constants.F_OK,)
-            ctx.body = fs.createReadStream(url);
-        } catch (e) {
-            ctx.type = 'html';
-            ctx.body = fs.createReadStream(path.join(__dirname,'dist',"index.html"));
-        }
+    // 创建 Koa 应用并注册控制器
+    const app = createKoaServer({
+        cors: true,
+        routePrefix: '/api',
+        classTransformer: true,
+        // controllers: [`${__dirname}/domain/**/*.*s`],
+        controllers: [UserController,SysController,ShellController,FileController,DdnsController,NetController,NavindexController,SettingController,SSHController,RdpController,VideoController],
+        // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
+        middlewares: [AuthMiddleware,GlobalErrorHandler,CheckTokenMiddleware],
     });
-} else {
-    app.use(proxy(/^(?!\/api)/, {
-        target: 'http://127.0.0.1:3301',
-        // changeOrigin: true,
-        // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
-        rewrite: function(path) {
-            if (path.indexOf('.')!==-1) {
-                const paths = path.split('/')
-                return '/'+paths[paths.length-1]
-            } else {
-                return '/'
+    const wss = new WebSocket.Server({ noServer: true });
+    (new WsServer(wss)).start();
+
+    if (process.env.NODE_ENV==="production") {
+        // 配置静态资源代理
+        // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
+        // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
+        app.use(async (ctx,next) => {
+            if (ctx.url.includes("/api/")) {
+                next();
+                return;
             }
-        },
-        // logs: true
-    }))
+            try {
+                if (!ctx.url || ctx.url==="/") {
+                    throw "";
+                }
+                const url = path.join(__dirname,'dist',path.basename(ctx.url));
+                fs.accessSync(url,fs.constants.F_OK,)
+                ctx.body = fs.createReadStream(url);
+            } catch (e) {
+                ctx.type = 'html';
+                ctx.body = fs.createReadStream(path.join(__dirname,'dist',"index.html"));
+            }
+        });
+    } else {
+        app.use(proxy(/^(?!\/api)/, {
+            target: 'http://127.0.0.1:3301',
+            // changeOrigin: true,
+            // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
+            rewrite: function(path) {
+                if (path.indexOf('.')!==-1) {
+                    const paths = path.split('/')
+                    return '/'+paths[paths.length-1]
+                } else {
+                    return '/'
+                }
+            },
+            // logs: true
+        }))
+    }
+
+    // 启动服务器
+    const server = app.listen(Env.port, () => {
+        const url = `http://localhost:${Env.port}/`;
+        console.log(`\x1b[31m服务器正在运行 click\x1b[0m  \x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
+    });
+
+    // 将WebSocket服务器与Koa服务器绑定到同一个端口
+    server.on('upgrade', (request, socket, head) => {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    });
+
+    ServerEvent.emit("start");
+
+    process.on('uncaughtException', (err) => {
+        console.error('未捕获的异常:', err);
+    });
 }
+start();
 
-// 启动服务器
-const server = app.listen(Env.port, () => {
-    const url = `http://localhost:${Env.port}/`;
-    console.log(`Server is running click \x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
-});
-
-// 将WebSocket服务器与Koa服务器绑定到同一个端口
-server.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
-    });
-});
-
-ServerEvent.emit("start");
-
-process.on('uncaughtException', (err) => {
-    console.error('未捕获的异常:', err);
-});

@@ -60,7 +60,6 @@ export function FileList() {
 
     const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
-
     const [itemWidth,setItemWidth] = useState();
     const [search,setSearch] = useState("");
 

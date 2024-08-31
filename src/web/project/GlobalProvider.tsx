@@ -31,8 +31,7 @@ export const GlobalProvider = ({ children }) => {
         }
         const swith_result = await fileHttp.post("base_switch/get");
         if (swith_result.code === RCode.Sucess) {
-            if (swith_result.data) {
-                setFile_root_path(swith_result.data);}
+            setFile_root_path(swith_result.data);
         }
     }
     const reloadFileRoot = async ()=>{

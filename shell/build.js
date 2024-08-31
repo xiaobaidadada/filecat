@@ -18,7 +18,8 @@ const tasksLister = new Listr(
                             rej(false);
                             return;
                         }
-                        copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "sys", "win-process.node"), path.join(__dirname, "..", "build", "win-process.node"))
+                        copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "win-process.node"), path.join(__dirname, "..", "build", "win-process.node"))
+                        copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "linux-process.node"), path.join(__dirname, "..", "build", "linux-process.node"))
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "tun","ts","linux","linuxtun.node"), path.join(__dirname, "..", "build", "linuxtun.node"))
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "tun","ts","win","wintun.node"), path.join(__dirname, "..", "build", "wintun.node"))
                         copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-amd64.dll"), path.join(__dirname, "..", "build", "wintun-amd64.dll"))
@@ -48,7 +49,10 @@ const tasksLister = new Listr(
                             rej(false);
                             return;
                         }
-                        copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","toolbox","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"))
+                        copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","toolbox","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"));
+                        copyFileSync(path.join(__dirname, "..", "src", "web", "meta","resources","img","favicon-16x16.png"), path.join(__dirname, "..", "build", "dist","favicon-16x16.png"));
+                        copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","img","favicon-32x32.png"), path.join(__dirname, "..", "build", "dist","favicon-32x32.png"));
+                        // copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "component","resources","img","svg.png"), path.join(__dirname, "..", "build", "dist","svg.png"))
                         console.log('构建web完成');
                         res(true);
                     });

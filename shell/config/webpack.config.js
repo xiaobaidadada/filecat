@@ -23,6 +23,10 @@ module.exports = {
             {
                 test: /\.css$/, // 匹配所有以.css结尾的文件
                 use: ['style-loader', 'css-loader'] // 使用style-loader和css-loader处理匹配到的文件
+            },
+            {
+                test: /\.svg/,
+                type: 'asset/inline'
             }
         ],
     },
@@ -37,7 +41,8 @@ module.exports = {
     devServer: {
         static:[
             {directory: path.join(__dirname,"..","..","src","web","project", './'),},
-            {directory: path.join(__dirname,"..","..","src","web","project", 'component',"toolbox","rdp","client","js")}
+            {directory: path.join(__dirname,"..","..","src","web","project", 'component',"toolbox","rdp","client","js")},
+            {directory: path.join(__dirname,"..","..","src","web","meta", 'resources',"img","./",)}
         ],
         port: 3301,
         open: false,

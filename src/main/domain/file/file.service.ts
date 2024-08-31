@@ -62,13 +62,15 @@ class FileService extends FileCompress{
                     type:FileTypeEnum.text,
                     name:item,
                     mtime:formattedCreationTime,
-                    size
+                    size,
+                    isLink:stats.isSymbolicLink()
                 })
             } else if (stats.isDirectory()) {
                 result.folders?.push({
                     type:FileTypeEnum.folder,
                     name:item,
                     mtime:formattedCreationTime,
+                    isLink:stats.isSymbolicLink()
                 })
             }
         }
@@ -110,6 +112,10 @@ class FileService extends FileCompress{
         const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
+    }
+
+    public common_save(path:string,context:string) {
+        fs.writeFileSync(path, context);
     }
 
     public cut(token,data?: cutCopyReq) {

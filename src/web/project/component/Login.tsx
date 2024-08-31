@@ -37,18 +37,18 @@ function Login() {
     }
 
     return (
-            <WinCenter>
-                <h1>FileCat</h1>
-                <div>
-                    <InputText placeholder={t("账号")} handleInputChange={(value) => {
-                        setUsername(value)
-                    }}/>
-                    <InputPassword placeholder={t("密码")} handleInputChange={(value) => {
-                        setPassword(value)
-                    }} handleEnterPress={login}/>
-                    <Button text={t("登录")} clickFun={login}/>
-                </div>
-            </WinCenter>
+        <WinCenter>
+            <h1>FileCat</h1>
+            <div>
+                <InputText placeholder={t("账号")} handleInputChange={(value) => {
+                    setUsername(value)
+                }}/>
+                <InputPassword placeholder={t("密码")} handleInputChange={(value) => {
+                    setPassword(value)
+                }} handleEnterPress={login}/>
+                <Button text={t("登录")} clickFun={login}/>
+            </div>
+        </WinCenter>
     );
 }
 

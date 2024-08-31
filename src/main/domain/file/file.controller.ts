@@ -20,6 +20,7 @@ import {cutCopyReq, fileInfoReq, fileReq, saveTxtReq} from "../../../common/req/
 import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
+import {settingService} from "../setting/setting.service";
 
 @Controller("/file")
 export class FileController {
@@ -53,6 +54,12 @@ export class FileController {
         return Sucess("1");
     }
 
+    @Post('/common/save')
+    async common_save(@Body() data: {path:string,context:string}) {
+        await FileServiceImpl.common_save(data.path,data.context);
+        return Sucess("1");
+    }
+
     @Post('/cut')
     async cut(@Ctx() ctx,@Body() data?: cutCopyReq) {
         await FileServiceImpl.cut(ctx.headers.authorization,data);
@@ -83,6 +90,7 @@ export class FileController {
         return Sucess("1");
     }
 
+    // 切换路径
     @Post('/base_switch')
     async switchBasePath(@Body() data:{root_index:number},@Ctx() ctx ) {
         const obj = Cache.getTokenMap().get(ctx.headers.authorization);
@@ -92,10 +100,23 @@ export class FileController {
         return Sucess("1");
     }
 
+    // 获取主根位置
     @Post('/base_switch/get')
     async switchGetBasePath(@Ctx() ctx ) {
         const obj = Cache.getTokenMap().get(ctx.headers.authorization);
-        return Sucess(obj?obj["root_index"]??0:null);
+        let index;
+        if (obj["root_index"]!==undefined) {
+            index = obj["root_index"];
+        } else {
+            const list = settingService.getFilesSetting();
+            for (let i=0;i<list.length;i++) {
+                const item = list[i];
+                if (item.default) {
+                    index = i;
+                }
+            }
+        }
+        return Sucess(index);
     }
 
     @msg(CmdType.file_video_trans)

@@ -9,46 +9,59 @@ export class Env {
     public static password:string = "";
     public static work_dir:string = `${process.cwd()}/data`;
     public static env:string = "";
-    public static parseArgs() {
-        const args = process.argv.slice(2);
-        const result = {};
+    public static async parseArgs() {
+        return new Promise((resolve, reject) => {
+            const args = process.argv.slice(2);
+            const result = {};
 
-        for (let i = 0; i < args.length; i++) {
-            const arg = args[i];
+            for (let i = 0; i < args.length; i++) {
+                const arg = args[i];
 
-            if (arg.startsWith('--')) {
-                const key = arg.slice(2);
-                let value = true;
+                if (arg.startsWith('--')) {
+                    const key = arg.slice(2);
+                    let value = true;
 
-                if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+                    if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+                        // @ts-ignore
+                        value = args[++i];
+                    }
+
                     // @ts-ignore
-                    value = args[++i];
-                }
+                    if (value === 'true') {
+                        value = true;
+                    } else { // @ts-ignore
+                        if (value === 'false') {
+                            value = false;
+                        } else { // @ts-ignore
+                            if (!isNaN(value)) {
+                                // @ts-ignore
+                                value = Number(value);
+                            }
+                        }
+                    }
 
-                // @ts-ignore
-                if (value === 'true') {
-                    value = true;
-                } else { // @ts-ignore
-                    if (value === 'false') {
-                                        value = false;
-                                    } else { // @ts-ignore
-                        if (!isNaN(value)) {
-                                                                // @ts-ignore
-                            value = Number(value);
-                                                            }
+                    result[key] = value;
+                    // 特殊安装处理
+                    if (key ==="install") {
+                        // @ts-ignore
+                        if (value !== "linux") {
+                            console.log("sorry现在只支持linux")
+                            process.exit();
+                        }
+                        require("./install");
+                        return;
                     }
                 }
-
-                result[key] = value;
             }
-        }
-        for (const key of Object.keys(result)) {
-            this[key] = result[key];
-        }
-        if (this.env) {
-            this.load(this.env);
-        }
-        return result;
+            for (const key of Object.keys(result)) {
+                this[key] = result[key];
+            }
+            if (this.env) {
+                this.load(this.env);
+            }
+            resolve(1);
+            // return result;
+        })
     }
     public static updateEnv(list:{key:string, value?:string}[]) {
         if (!this.env) return;

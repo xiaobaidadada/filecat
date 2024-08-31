@@ -2,6 +2,7 @@ import {atom, RecoilState, useRecoilState} from 'recoil';
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {WsClient} from "../../../common/frame/ws.client";
 import {UserBaseInfo} from "../../../common/req/user.req";
+import {Confirm} from "../component/prompts/Confirm";
 
 const localStorageEffect = key => ({ setSelf, onSet }) => {
     const savedValue = localStorage.getItem(key);
@@ -81,6 +82,14 @@ export const $stroe = {
             default: new ShowPromptData()
         }
     ),
+    // 通用确认
+    confirm:atom({
+        key: 'confirm',
+        default: {
+            open:false,
+            handle:null
+        }
+    }),
     // 编辑器设置
     editorSetting:atom({
         key: 'editorSetting',
@@ -121,12 +130,20 @@ export const $stroe = {
             dockerId:""
         }
     }),
+    // systemd 的shell是否开启
+    systemd_shell_show:atom({
+        key: 'systemd_shell_show',
+        default:{
+            show:false,
+            unit_name:""
+        }
+    }),
     // ssh工具连接信息
     sshInfo:atom({
         key: 'sshInfo',
         default:{}
     }),
-    // 文件根路径
+    // 文件根路径主
     file_root_index:atom({
         key: 'file_root_index',
         default:null,
@@ -134,6 +151,7 @@ export const $stroe = {
             localStorageEffect("file_root_index")
         ]
     }),
+    // root根路径
     file_root_list:atom({
         key: 'file_root_list',
         default:[],
