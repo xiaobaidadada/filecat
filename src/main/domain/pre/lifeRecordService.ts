@@ -1,6 +1,4 @@
 // 生命周期管理
-import {resolve} from "chart.js/helpers";
-
 export class LifecycleRecordService {
     // 数据map
     private dataMap: Map<string, any> = new Map();

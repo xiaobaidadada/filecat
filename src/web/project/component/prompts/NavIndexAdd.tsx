@@ -49,7 +49,7 @@ export function NavIndexAdd(props) {
         </div>
         <div className="card-content">
             <InputText placeholderOut={"名字"}  handleInputChange={(value)=>setName(value)} />
-            <InputText placeholderOut={"url"}  handleInputChange={(value)=>setUrl(value)} handleEnterPress={add} />
+            <InputText placeholderOut={"url"}  handleInputChange={(value)=>setUrl(value)} handlerEnter={add} />
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>

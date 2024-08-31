@@ -15,6 +15,7 @@ import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req
 import {TableListRender} from "./component/TableListRend";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
+import Header from "../../../meta/component/Header";
 
 
 
@@ -289,6 +290,6 @@ export function  Sys() {
                 </CardFull>
             </Dashboard>
         </Column>
-
+        <Header left_children={<span className={"credits"}>version:1.0.1</span>}/>
     </Row>
 }

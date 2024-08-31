@@ -6,7 +6,17 @@ import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component
 import {useLocation, useNavigate} from "react-router-dom";
 
 
-const colorList = ["#ffffff", "#fefff8", "#fcfdf1", "#f5effc", "#f8f1ff", "#f8f9fd", "#ebf4fe", "#c4bcfb", "#ebebeb", "#e8f7eb", "#eaf2f9"]
+const colorList = ["#ffffff",
+    "#fefff8",
+    "#fcfdf1",
+    // "#d4e3cd",
+    "#d3d2dc",
+    "#f8f9fd",
+    "#ebf4fe",
+    // "#c4bcfb",
+    "#ebebeb",
+    "#e8f7eb",
+    "#eaf2f9"]
 
 let indexp;
 let itemp_recover;

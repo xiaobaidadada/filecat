@@ -71,11 +71,6 @@ class SysSystemService {
         await this.openSysPush((data.wss as Wss));
     }
 
-    async sysCancel(data: WsData<any>) {
-        const id = (data.wss as Wss).id;
-        sysWssMap.delete(id);
-        (data.wss as Wss).ws.close();
-    }
 
 }
 

@@ -15,7 +15,8 @@ export interface FileItemData {
     type?:FileTypeEnum,
     name:string,
     mtime?:string,
-    size?:string
+    size?:string,
+    isLink?:boolean,
 }
 
 export interface GetFilePojo {

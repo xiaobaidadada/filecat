@@ -48,6 +48,7 @@ export function Sys(props) {
     }
     const getBase = async ()=>{
         const rsq1 = await sysHttp.get("base");
+
         if (rsq1.code === RCode.Sucess) {
             const data :staticSysPojo = rsq1.data;
             setSys(data)
@@ -81,8 +82,6 @@ export function Sys(props) {
             (async ()=>{
                 if (ws.isAilive()) {
                     ws.setPromise(async (resolve)=>{
-                        const data = new WsData(CmdType.sys_cancel);
-                        await ws.send(data)
                         await ws.unConnect();
                         resolve();
                     })
@@ -95,15 +94,21 @@ export function Sys(props) {
         <Header>
             <ButtonLittleStatus defaultStatus={false} text={t("基本信息")} clickFun={(v)=>{
                 setBase(v)
-                getBase();
+                if(v) {
+                    getBase();
+                }
             }}/>
             <ButtonLittleStatus defaultStatus={false} text={t("物理硬盘")} clickFun={(v)=>{
                 setDisk(v);
-                getDisk();
+                if (v) {
+                    getDisk();
+                }
             }}/>
             <ButtonLittleStatus defaultStatus={false} text={t("文件硬盘")} clickFun={(v)=>{
                 setFileDisk(v)
-                getFileDisk();
+                if (v) {
+                    getFileDisk();
+                }
             }}/>
         </Header>
         <Dashboard>
@@ -158,7 +163,7 @@ export function Sys(props) {
                 </Column>}
                 {disk && <Column >
                     <CardFull title={t(`物理硬盘`)} >
-                        <Table headers={diskheaders} rows={diskList} width={"10rem"}/>
+                        <Table headers={diskheaders} rows={[]} width={"10rem"}/>
                     </CardFull>
                 </Column>}
                 {fileDisk && <Column >

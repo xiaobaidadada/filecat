@@ -50,8 +50,6 @@ class SysDockerService {
                     } catch (e) {
                         console.log(e)
                         console.log('系统信息推送失败docker')
-                        clearInterval(sysJobInterval);
-                        sysJobInterval = null;
                         dockerMap.delete(socketId);
                         if (wss) {
                             wss.ws.close();
@@ -62,6 +60,23 @@ class SysDockerService {
                 this.getAllContainer();
             }, 1000);
         }
+    }
+
+    public get_all_images() {
+        const images = [];
+        let cons: any = execSync('docker images --format "{{.ID}};;{{.Repository}}:{{.Tag}};;{{.CreatedAt}};;{{.Size}}"');
+        cons = cons.toString().split(/\n|\r\n/).filter(v => v.length > 0);
+        for (let i = 1; i < cons.length; i++) {
+            const con = cons[i];
+            const parts = con.split(";;").filter(v => v.length > 0);
+            images.push([
+                parts[0],//id
+                parts[1],//name
+                parts[2], // 创建时间
+                parts[3], // 大小
+            ])
+        }
+        return images;
     }
 
     private getAllContainer() {
@@ -133,9 +148,9 @@ class SysDockerService {
                 console.error('Error:', err);
                 this.dockerClear();
             });
-            child.on('close', (code) => {
-                console.log(`child process exited with code ${code}`);
-            });
+            // child.on('close', (code) => {
+            //     console.log(`dockrr child process exited with code ${code}`);
+            // });
         } catch (e) {
             console.log(e)
             this.dockerClear();
@@ -164,11 +179,6 @@ class SysDockerService {
         await this.openDockerPush((data.wss as Wss));
     }
 
-    async dockerCancel(data: WsData<any>) {
-        const id = (data.wss as Wss).id;
-        dockerMap.delete(id);
-        (data.wss as Wss).ws.close();
-    }
 
     async dockerSwitch(data:WsData<any>) {
         if (data.context.type === "start") {
@@ -182,6 +192,23 @@ class SysDockerService {
     async dockerDelContainer(data:WsData<any>) {
         await exec(`docker stop ${data.context.dockerId}`);
         await exec(`docker rm ${data.context.dockerId}`);
+    }
+
+    async check_image_delete(ids:string[]) {
+        const not_delete_ids:string[]  = [];
+        for (const id of ids) {
+            const stdout = execSync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
+            if (stdout.trim()) {
+                // 有容器使用
+                not_delete_ids.push(id);
+            }
+        }
+        return not_delete_ids;
+    }
+
+    async delete_image(ids:string[]) {
+        const param = ids.join(" ");
+        execSync(`docker rm  ${param}`)
     }
 }
 

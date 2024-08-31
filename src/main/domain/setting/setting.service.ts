@@ -87,7 +87,7 @@ export class SettingService {
                         await new Promise((resolve) => {
                             ctx.req.on('end', resolve);
                         });
-                        ctx.body = await instance.handler(ctx.headers,data,ctx);
+                        ctx.body = await instance.handler(ctx.headers,data,ctx,Cache);
                     } catch (e) {
                         ctx.body = Sucess(e.toString());
                     }

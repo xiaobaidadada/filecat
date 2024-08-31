@@ -9,9 +9,9 @@ import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 
-export function DockerShell(props) {
+export function SystemdShell(props) {
     const [terminalState,setTerminalState] = useState(null)
-    const [shellShow,setShellShow] = useRecoilState($stroe.dockerShellShow);
+    const [shellShow,setShellShow] = useRecoilState($stroe.systemd_shell_show);
 
     const initTerminal =  async () => {
         const terminal = new Terminal({
@@ -31,23 +31,14 @@ export function DockerShell(props) {
             tabStopWidth: 4,
             convertEol:true // \n换行符
         });
-
         ws.subscribeUnconnect(close)
-        ws.addMsg(shellShow.type==="logs"?CmdType.docker_shell_logs_getting:CmdType.docker_shell_exec_getting,(wsData:WsData<SysPojo>)=>{
+        ws.addMsg(CmdType.systemd_logs_getting,(wsData:WsData<SysPojo>)=>{
             // wsData.context=wsData.context.replaceAll(/(?<!\r)\n/, "\r\n")
             if (wsData.context==="error") {
                 close();
             }
             terminal.write(wsData.context)
         })
-        // 交互效果完全发送到服务器
-        if (shellShow.type==="exec") {
-            terminal.onData(async (data) => {
-                const obj = new WsData(CmdType.docker_shell_exec);
-                obj.context=data;
-                await ws.send(obj)
-            });
-        }
         setTerminalState(terminal)
     }
     const close = ()=>{
@@ -66,6 +57,14 @@ export function DockerShell(props) {
             return
         }
         initTerminal();
+        const handleCustomEvent = (event) => {
+            // 测试一下事件功能
+            ws.unConnect();
+        };
+        document.addEventListener('cancel_systemd_logs', handleCustomEvent);
+        return () => {
+            document.removeEventListener('cancel_systemd_logs', handleCustomEvent);
+        };
     }, [shellShow])
     useEffect(() => {
         return ()=> {
@@ -73,18 +72,9 @@ export function DockerShell(props) {
         }
     }, []);
     const init = (rows:number,cols:number)=>{
-
         terminalState.writeln('\x1b[38;2;29;153;243mconnect...\x1b[0m ');
-        const pojo = new ShellInitPojo();
-        pojo.rows = rows;
-        pojo.cols = cols;
-        pojo.dockerId = shellShow.dockerId;
-        let data :any;
-        if (shellShow.type==="logs") {
-            data = new WsData(CmdType.docker_shell_logs);
-        } else {
-            data = new WsData(CmdType.docker_shell_exec_open);
-        }
+        const pojo = {unit_name:shellShow.unit_name};
+        const  data = new WsData(CmdType.systemd_logs_get);
         data.context = pojo;
         ws.send(data)
     }

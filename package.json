@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "build/main.js",
   "engines": {
@@ -21,6 +21,7 @@
     "assets": [
       "build/dist/*",
       "build/win-process.node",
+      "build/linux-process.node",
       "build/wintun.node",
       "build/linuxtun.node",
       "build/wintun-x86.dll",
@@ -98,7 +99,7 @@
     "listr2": "^8.2.1",
     "piping": "^1.0.0-rc.4",
     "pkg": "^5.8.1",
-    "protobufjs-cli": "^1.1.2",
+    "protobufjs-cli": "^1.1.3",
     "style-loader": "^3.3.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.2",

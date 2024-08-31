@@ -2,22 +2,27 @@ import path from "path";
 import fs from "fs";
 import fse from 'fs-extra'
 import {Env} from "../../../common/Env";
-
+export enum file_key {
+    data = "data",
+    systemd = "systemd"
+}
 export class DataUtil {
+    private static data_path_map = {};
+    private static data_map = {};
 
-    private static data_path = "";
-    private static data = {};
+    // private static data_path = "";
+    // private static data = {};
 
-    private static init() {
-        if (this.data_path === "") {
-            // @ts-ignore
-            this.data_path = path.join(Env.work_dir, "data.json");
-            if (!fs.existsSync(this.data_path)) {
-                // @ts-ignore 检查某个目录是否存在
+    private static init(file:file_key) {
+        let value = this.data_path_map[file];
+        if (value === undefined || value=== null) {
+            this.data_path_map[file] = value = path.join(Env.work_dir, "data.json");
+            if (!fs.existsSync(value)) {
                 fse.ensureDir(Env.work_dir)
-                fs.writeFileSync(this.data_path, "{}");
+                fs.writeFileSync(value, "{}");
+                this.data_map[file] = {};
             } else {
-                this.data = JSON.parse(fs.readFileSync(this.data_path).toString());
+                this.data_map[file] = JSON.parse(fs.readFileSync(value).toString());
             }
         }
     }
@@ -25,7 +30,6 @@ export class DataUtil {
     private static checkFile(k,dir) {
         const p = path.join(Env.work_dir, dir, k);
         if (!fs.existsSync(p)) {
-            // @ts-ignore 检查某个目录是否存在
             fse.ensureDir( path.join(Env.work_dir, dir));
             fs.writeFileSync(p, "");
             return false;
@@ -33,15 +37,15 @@ export class DataUtil {
         return true;
     }
 
-    public static get<T>(k): T {
-        this.init();
-        return this.data[k];
+    public static get<T>(k, file:file_key = file_key.data): T {
+        this.init(file);
+        return this.data_map[file][k];
     }
 
-    public static set(k, v) {
-        this.init();
-        this.data[k] = v;
-        fs.writeFileSync(this.data_path, JSON.stringify(this.data));
+    public static set(k, v, file:file_key = file_key.data) {
+        this.init(file);
+        this.data_map[file][k] = v;
+        fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
     }
 
     public static getFile(k): string {

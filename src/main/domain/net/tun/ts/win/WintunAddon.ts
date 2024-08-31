@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import {sysType} from "../../../../shell/shell.service";
-import {require_c} from "../../../../sys/sys.process.service";
+const { createRequire } = require('node:module');
+export const require_c = createRequire(__filename);
 
 export interface WintunAddonTypes {
     /**

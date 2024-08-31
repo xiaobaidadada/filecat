@@ -336,8 +336,7 @@ export class VirtualService extends UdpUtil {
                 return;
             }
             if (info) {
-                // @ts-ignore
-                resolve(info);
+                resolve(info as CLientInfo);
                 return;
             }
             this.clientIPAndUdpMap.set(destIP, -1);
@@ -362,8 +361,8 @@ export class VirtualService extends UdpUtil {
                 clearInterval(interval);
                 resolve(null);
             }, 5000);
-            info = new CLientInfo();
-            info.udpClient = server;
+            const info_new = new CLientInfo();
+            info_new.udpClient = server;
             server.on('message', (msg, rinfo: CLientInfo) => {
                 try {
                     const {hashKey, code, buffer} = this.getUdpData(msg);
@@ -385,20 +384,20 @@ export class VirtualService extends UdpUtil {
                             // 收到连接 改变客户端发送的方向
                             server.send(this.getUdpBuffer(infoType.empty, Buffer.alloc(0), clientHashKey), data.to_port, data.to_address, (err) => {
                             });
-                            info.to_port = data.to_port;
-                            info.to_address = data.to_address;
+                            info_new.to_port = data.to_port;
+                            info_new.to_address = data.to_address;
                             // 成功改变才设置
-                            info.heart = true;
-                            this.clientIPAndUdpMap.set(destIP, info);
-                            info.starChecktHeart(this.clientIPAndUdpMap, destIP, this.getUdpBuffer(infoType.heart, Buffer.alloc(0), this.getClientHashKey()));
+                            info_new.heart = true;
+                            this.clientIPAndUdpMap.set(destIP, info_new);
+                            info_new.starChecktHeart(this.clientIPAndUdpMap, destIP, this.getUdpBuffer(infoType.heart, Buffer.alloc(0), this.getClientHashKey()));
                             console.log(destIP, "的udp创建完成(主动)")
-                            resolve(info);
+                            resolve(info_new);
                             break;
                         case infoType.data:
                             this.writeToTun(buffer);
                             break;
                         case infoType.heart:
-                            info.heart = true;
+                            info_new.heart = true;
                             break;
                     }
                 } catch (e) {

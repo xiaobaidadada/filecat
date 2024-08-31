@@ -18,6 +18,7 @@ import {SshReName} from "./ssh/SshReName";
 import {SshUpload} from "./ssh/SshUpload";
 import {FileMenu} from "./FileMenu/FileMenu";
 import {Compress} from "./FileMenu/Compress";
+import {Confirm} from "./Confirm";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -40,12 +41,14 @@ export enum PromptEnum {
 
 export function Prompt() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
 
     function click() {
         setShowPrompt({show: false, type: '', overlay: false,data: {}});
     }
 
     let div = <div></div>;
+    let confirm_div = <Confirm />;
     switch (showPrompt.type) {
         case PromptEnum.FilesUpload:
             div = <FilesUpload></FilesUpload>
@@ -98,6 +101,8 @@ export function Prompt() {
     }
 
     return (<div>
+        {confirm.open && confirm_div}
+        {confirm.open && <Overlay click={click}/>}
         {showPrompt.show && div}
         {showPrompt.show && showPrompt.overlay && <Overlay click={click}/>}
     </div>)

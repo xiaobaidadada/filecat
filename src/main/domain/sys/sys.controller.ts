@@ -1,11 +1,13 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Service} from "typedi";
-import {Controller, Get} from "routing-controllers";
+import {Body, Controller, Get, Post} from "routing-controllers";
 import {SyserviceImpl} from "./sys.service";
 import {SysSystemServiceImpl} from "./sys.sys.service";
 import {SysProcessServiceImpl} from "./sys.process.service";
 import {SysDockerServiceImpl} from "./sys.docker.service";
+import {systemd} from "./sys.systemd.service";
+import {Sucess} from "../../other/Result";
 
 @Service()
 @Controller("/sys")
@@ -33,12 +35,6 @@ export class SysController {
         return ""
     }
 
-    // 取消订阅系统信息
-    @msg(CmdType.sys_cancel)
-    async sysCancel(data: WsData<any>) {
-        await SysSystemServiceImpl.sysCancel(data);
-        return ""
-    }
 
     // 订阅docker信息
     @msg(CmdType.docker_get)
@@ -47,10 +43,23 @@ export class SysController {
         return ""
     }
 
-    @msg(CmdType.docker_cancel)
-    async dockerCancel(data: WsData<any>) {
-        await SysDockerServiceImpl.dockerCancel(data);
-        return ""
+    // 所有镜像
+    @Get("/docker/images")
+    async get_all_images() {
+        return Sucess(SysDockerServiceImpl.get_all_images());
+    }
+
+    // 删除容器
+    @Post("/docker/delete")
+    async delete_image(@Body() data:{ids:string[]}) {
+        await SysDockerServiceImpl.delete_image(data.ids);
+        return Sucess("");
+    }
+
+    // 检测容器是否能被删除
+    @Post("/docker/check/delete")
+    async check_image_delete(@Body() data:{ids:string[]}) {
+        return Sucess(await SysDockerServiceImpl.check_image_delete(data.ids));
     }
 
     // docker开关
@@ -74,17 +83,57 @@ export class SysController {
         return ""
     }
 
-    // 取消订阅进程信息
-    @msg(CmdType.process_cancel)
-    async processCancel(data: WsData<any>) {
-        await SysProcessServiceImpl.processCancel(data);
-        return ""
-    }
-
     // 关闭订阅进程信息
     @msg(CmdType.process_close)
     async processClose(data: WsData<any>) {
         await SysProcessServiceImpl.processClose(data);
         return ""
     }
+
+    // 获取内部 systemd信息
+    @msg(CmdType.systemd_inside_get)
+    async systemdInsideGet(data:WsData<any>) {
+        await systemd.systemdInsideGet(data);
+        return "";
+    }
+
+    @Get("/systemd/allget")
+    async getAllSystemd() {
+        return Sucess(systemd.getAllSystemd());
+    }
+
+    @Post("/systemd/add")
+    async addAllSystemd(@Body() pojo:{unit_name:string}) {
+        await systemd.addSystemd(pojo.unit_name);
+        return Sucess(systemd.getAllInsideSystemd());
+    }
+
+    @Get("/systemd/inside/all")
+    async getInsideAllSystemd() {
+        return Sucess(systemd.getAllInsideSystemd());
+    }
+
+    @Post("/systemd/delete")
+    async deleteAllSystemd(@Body() pojo:{unit_name:string}) {
+        await systemd.deleteSystemd(pojo.unit_name);
+        return Sucess("");
+    }
+
+    @Post("/systemd/get/context")
+    async get_systemd_context(@Body() pojo:{unit_name:string}) {
+        return Sucess( await systemd.get_systemd_context(pojo.unit_name));
+    }
+
+    @Post("/systemd/sys/delete")
+    async delte_systemd(@Body() pojo:{unit_name:string}) {
+        return Sucess( await systemd.delete_sys_systemd(pojo.unit_name));
+    }
+
+    // 日志
+    @msg(CmdType.systemd_logs_get)
+    async systemd_logs_get(data:WsData<any>) {
+        await systemd.systemd_logs_get(data);
+        return ""
+    }
+
 }

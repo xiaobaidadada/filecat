@@ -75,12 +75,9 @@ export function Process(props) {
             (async () => {
                 if (ws.isAilive()) {
                     ws.setPromise(async (resolve) => {
-                        const data = new WsData(CmdType.docker_cancel);
-                        await ws.send(data)
                         await ws.unConnect();
                         resolve();
                     });
-
                 }
             })();
         }
@@ -105,7 +102,7 @@ export function Process(props) {
 
         </Header>
         <Dashboard>
-            {rows.length === 0 && !filter ? (<Blank context={"在主机上无法找到获取进程的系统工具"}/>) : (
+            {rows.length === 0 && !filter ? (<Blank context={"加载中请等待..."}/>) : (
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`进程(${count})`}

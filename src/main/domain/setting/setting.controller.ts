@@ -174,7 +174,7 @@ export class SettingController {
     @Get("/userInfo/get")
     getLanguage() {
         const pojo = new UserBaseInfo();
-        pojo.language = DataUtil.get(this.language)??"en";
+        pojo.language = DataUtil.get(this.language)??"zh";
         pojo.sys = getSys();
         const list = settingService.getSoftware();
         const map = {};
