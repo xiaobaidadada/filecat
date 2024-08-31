@@ -1,5 +1,5 @@
 
-# ![](./src/web/meta/resources/img/favicon-32x32.png) filecat
+# ![](./src/web/meta/resources/img/logo-70.png) filecat
 
 - 中文 | [English ](./doc/EN_README.md)
 - 这是一个面向开发者的文件管理、服务器工具集合(web服务)。
