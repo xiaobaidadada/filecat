@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
-import {FileMenuData, FileMenuEnum} from "./FileMenuType";
+import {FileMenuData} from "../../../../../common/FileMenuType";
 import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
@@ -13,6 +13,7 @@ import {getRouterAfter} from "../../../util/WebPath";
 import {RCode} from "../../../../../common/Result.pojo";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {getEditModelType} from "../../../../../common/StringUtil";
+import {FileTypeEnum} from "../../../../../common/file.pojo";
 
 
 
@@ -59,17 +60,18 @@ export function FileMenu() {
         close();
     }
     switch (pojo.type) {
-        case FileMenuEnum.video:
+        case FileTypeEnum.video:
             if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ffmpeg] || !user_base_info.sysSoftWare[SysSoftware.ffmpeg].installed) {
                 NotyFail(t("找不到ffmpeg"))
                 break;
             }
             div = <VideoTrans />
             break;
-        case FileMenuEnum.uncompress:
+        case FileTypeEnum.uncompress:
             div = <UnCompress />
             break;
-        case FileMenuEnum.unknown:
+        case FileTypeEnum.unknow:
+        default:
             div = <div onWheel={()=>{
                 close();
             }}>
@@ -79,7 +81,7 @@ export function FileMenu() {
     return (div);
 }
 
-export function FileMenuItem(props:{x:number,y:number,items?: DropdownItemsPojo,click?: (v) => void}) {
+export function FileMenuItem(props:{x:number,y:number,items?: any,click?: (v) => void}) {
     return <div
         style={{
             position: 'absolute',

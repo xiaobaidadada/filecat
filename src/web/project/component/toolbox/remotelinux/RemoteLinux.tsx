@@ -28,7 +28,7 @@ export function RemoteLinux(props) {
     const [password,setPassword] = useState('');
     const [private_path, setPrivatePath] = useState('');
     const [domain,setDomain] = useState('');
-    const [port,setPort] = useState();
+    const [port,setPort] = useState(undefined);
     const [dir,setDir] = useState('');
     const [status,setStatus] = useState<boolean>(false);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);

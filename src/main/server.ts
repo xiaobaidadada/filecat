@@ -76,7 +76,7 @@ async function start() {
         });
     } else {
         app.use(proxy(/^(?!\/api)/, {
-            target: 'http://127.0.0.1:3301',
+            target: `http://127.0.0.1:${process.env.webpack_port??"3301"}`,
             // changeOrigin: true,
             // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
             rewrite: function(path) {

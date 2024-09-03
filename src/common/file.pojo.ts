@@ -8,7 +8,8 @@ export enum FileTypeEnum {
     video='video',
     invalid_link='invalid_link',
     folder='folder',
-    unknow=""
+    unknow="text",
+    uncompress ="uncompress", // 压缩文件
 }
 
 export interface FileItemData {
@@ -17,6 +18,7 @@ export interface FileItemData {
     mtime?:string,
     size?:string,
     isLink?:boolean,
+    path?:string,
 }
 
 export interface GetFilePojo {
@@ -44,5 +46,5 @@ export class FileCompressPojo {
     source_file:string; // 源文件
     filePaths:string[];
     tar_filename:string; // 目标压缩文件名字
-    compress_level:1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; //压缩级别
+    compress_level:number|1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; //压缩级别
 }

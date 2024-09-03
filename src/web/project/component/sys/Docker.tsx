@@ -36,7 +36,7 @@ export function Docker(props) {
 
 
     const [optRow, setOptRow] = useState([]);
-    const [images_filterkey, set_images_filterkey] = useState();
+    const [images_filterkey, set_images_filterkey] = useState(undefined);
     const [show_iamges,set_show_iamges] = useState(false);
 
 

@@ -11,7 +11,7 @@ import {getRouterAfter} from "../../../util/WebPath";
 import {FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
-import {FileMenuData} from "./FileMenuType";
+import {FileMenuData} from "../../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem} from "./FileMenu";
 
@@ -21,8 +21,8 @@ export function VideoTrans(props) {
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [items, setItems,] = useState([{r:`${t("转到")}mp4`,v:"mp4"},{r:`${t("转到")}flv`,v:"flv"},{r:t("自定义"),v:""}]);
-    const [prompt, setPrompt] = useState();
-    const [newFileName, setNewFileName] = useState();
+    const [prompt, setPrompt] = useState("");
+    const [newFileName, setNewFileName] = useState("");
     const [is_opt, setIs_opt] = useState(true);
 
     const [progress, setProgress] = useState(0);

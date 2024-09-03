@@ -14,9 +14,9 @@ export function NetClient(props) {
     const { t } = useTranslation();
 
     const [ip, setIp] = useState("");
-    const [mask, setMask] = useState(0);
+    const [mask, setMask] = useState(undefined);
     const [serverIp, setServerIp] = useState("");
-    const [serverPort, setServerPort] = useState("");
+    const [serverPort, setServerPort] = useState(undefined);
     const [isOpen,setIsOpen] = useState(false);
     const [key,setKey] = useState("");
 

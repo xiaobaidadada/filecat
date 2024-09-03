@@ -23,7 +23,7 @@ export function Compress(props) {
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [items, setItems,] = useState([{r:t("解压"),v:t("解压")}]);
-    const [tar_filename, setTar_filename] = useState();
+    const [tar_filename, setTar_filename] = useState("");
     const [placeholder, setPlaceholder] = useState(".tar");
     const [format, setFormat] = useState(FileCompressType.tar);
 
@@ -68,7 +68,7 @@ export function Compress(props) {
         <div>
             <CardPrompt title={t("压缩文件")} cancel={close} confirm={confirm} cancel_t={t("取消")} confirm_t={t("确定")}
                         context={!progress ? [
-                                <Select value={format} onChange={(value)=>{
+                                <Select value={format} onChange={(value:FileCompressType)=>{
                                     let v;
                                     if (value === FileCompressType.tar) {
                                         v = FileCompressType.tar;

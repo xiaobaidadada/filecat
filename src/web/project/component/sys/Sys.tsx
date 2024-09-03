@@ -24,7 +24,7 @@ export function Sys(props) {
     const [memLeft,setMemLeft] = useState(0)
     const [memTotal,setMemTotal] = useState(0)
     const [currentLoad,setCurrentLoad] = useState(0)
-    const [sys,setSys] = useState({})
+    const [sys,setSys] = useState({} as any)
     const [base,setBase] = useState(false)
     const [disk,setDisk] = useState(false)
     const [fileDisk,setFileDisk] = useState(false)
@@ -112,44 +112,44 @@ export function Sys(props) {
             }}/>
         </Header>
         <Dashboard>
-            <Row>
-                <Column widthPer={33}>
-                    <Card title={t("内存")}>
-                        <Row>
-                            <Column>
-                                <CircleChart percentage={memPercentage}  />
-                            </Column>
-                            <Column>
-                                <Row>
-                                    <Column widthPer={100}>
-                                        <div>
-                                            <TextLine left={t("总容量")} center={`${memTotal}G`}/>
-                                        </div>
-                                    </Column>
-                                    <Column widthPer={100}>
-                                        <TextLine left={t("剩余")} center={`${memLeft}G`}/>
-                                    </Column>
-                                </Row>
-                            </Column>
-                        </Row>
-                    </Card>
-                </Column>
-                <Column widthPer={33}>
-                    <Card title={"cpu"}>
-                        <Row>
-                            <Column>
-                                <CircleChart percentage={currentLoad}  />
-                            </Column>
-                            <Column>
-                                <Row>
-                                    <TextLine left={t("使用率")} center={currentLoad}/>
-                                </Row>
-                            </Column>
-                        </Row>
-                    </Card>
-                </Column>
+        <Row>
+            <Column widthPer={33}>
+                <Card title={t("内存")}>
+                    <Row>
+                        <Column>
+                            <CircleChart percentage={memPercentage}  />
+                        </Column>
+                        <Column>
+                            <Row>
+                                <Column widthPer={100}>
+                                    <div>
+                                        <TextLine left={t("总容量")} center={`${memTotal}G`}/>
+                                    </div>
+                                </Column>
+                                <Column widthPer={100}>
+                                    <TextLine left={t("剩余")} center={`${memLeft}G`}/>
+                                </Column>
+                            </Row>
+                        </Column>
+                    </Row>
+                </Card>
+            </Column>
+            <Column widthPer={33}>
+                <Card title={"cpu"}>
+                    <Row>
+                        <Column>
+                            <CircleChart percentage={currentLoad}  />
+                        </Column>
+                        <Column>
+                            <Row>
+                                <TextLine left={t("使用率")} center={currentLoad}/>
+                            </Row>
+                        </Column>
+                    </Row>
+                </Card>
+            </Column>
 
-            </Row>
+        </Row>
             <Row>
                 {base && <Column>
                     <Card title={t("基本信息")}>
@@ -172,6 +172,6 @@ export function Sys(props) {
                     </CardFull>
                 </Column>}
             </Row>
-        </Dashboard>
-    </div>
+    </Dashboard>
+        </div>
 }

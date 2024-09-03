@@ -13,7 +13,7 @@ export interface ShellProps {
 export function Shell(props:ShellProps) {
     const [shellHeight,setShellHeight] = useState(25);
     const shellDividerRef = useRef(null);
-    const fitAddon = useCallback(new FitAddon(),[])
+    const fitAddon = new FitAddon();
     const shellRef = useRef(null);
     // pty 终端
     const terminalRef = useRef(null);
@@ -27,7 +27,7 @@ export function Shell(props:ShellProps) {
         // @ts-ignore
         const bottom =2.25 +shellDividerRef.current.offsetHeight / size;
         if (userPos <= top && userPos >= bottom) {
-            setShellHeight(userPos.toFixed(2))
+            setShellHeight(parseFloat(userPos.toFixed(2)))
         }
     }, 32),[])
     useEffect(() => {

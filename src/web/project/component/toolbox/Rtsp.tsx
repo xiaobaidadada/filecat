@@ -24,7 +24,7 @@ let flvPlayer;
 export function Rtsp() {
     const { t } = useTranslation();
 
-    const [address, setAddress] = useState();
+    const [address, setAddress] = useState(undefined);
     const [status, setStatus] = useState<boolean>(false);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
 

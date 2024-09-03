@@ -41,6 +41,9 @@ const columnWidth = 280;
 let pre_search:GetFilePojo;
 
 export function FileList() {
+    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
+
     const { t } = useTranslation();
 
     const inputRef = useRef();
@@ -60,7 +63,7 @@ export function FileList() {
 
     const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
-    const [itemWidth,setItemWidth] = useState();
+    const [itemWidth,setItemWidth] = useState(undefined);
     const [search,setSearch] = useState("");
 
     const {reloadUserInfo} = useContext(GlobalContext);
@@ -93,12 +96,14 @@ export function FileList() {
             await fileHandler();
         };
         fetchData();
+        // @ts-ignore
+        setEditorSetting({open: false});
+        setFilePreview({open:false});
 
-        handleResize();
-        window.addEventListener('resize', handleResize);
     }, [location]);
     useEffect(() => {
         const element = inputRef.current;
+        // @ts-ignore
         const doc = element.ownerDocument;
         doc.addEventListener("dragover", (event)=>{event.preventDefault();});
         doc.addEventListener("drop", async (event) => {
@@ -118,7 +123,8 @@ export function FileList() {
             setUploadFiles(files);
             setShowPrompt({show: true,type: PromptEnum.FilesUpload,overlay: false,data:{}});
         });
-
+        handleResize();
+        window.addEventListener('resize', handleResize);
     }, []);
     function switchGridView() {
         setFileType(getNextByLoop(fileTypes, fileType))
@@ -181,7 +187,7 @@ export function FileList() {
             files[i]= getFileNameByLocation(location,file.name)
         }
         const url = fileHttp.getDownloadUrl(files);
-        window.open(url+`&token=${localStorage.getItem('token')}`);
+        window.open(url);
     }
     function updateFile() {
         setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{}});
