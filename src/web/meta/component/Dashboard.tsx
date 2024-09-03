@@ -140,11 +140,11 @@ export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v) => void
     </div>
 }
 
-export function Overlay(props: { click: Function }) {
+export function Overlay(props: { click: ()=>void }) {
     return <div className="overlay" onClick={props.click}></div>
 }
 
-export function OverlayTransparent(props: { click: Function ,children?: React.ReactNode}) {
+export function OverlayTransparent(props: { click:()=>void ,children?: React.ReactNode}) {
     return <div className="overlay_trans" onClick={props.click}>{props.children}</div>
 }
 

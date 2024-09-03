@@ -258,7 +258,7 @@ export function Systemd(props) {
             {rows.length !== 0 && !systemd &&
                 <Row>
                     <Column widthPer={80}>
-                        <CardFull title={`filecat创建单元(${rows.length})`}
+                        <CardFull title={`filecat监控单元(${rows.length})`}
                                   titleCom={<InputText placeholder={"过滤单元"} value={filterKey}  handleInputChange={(value) => {
                                       setFilterKey(value)
                                   }}/>}>

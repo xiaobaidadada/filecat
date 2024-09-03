@@ -3,6 +3,7 @@ import {FileItemData, FileTypeEnum} from "../../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {getByList} from "../../../../../common/ListUtil";
 import {$stroe} from "../../../util/store";
+import {fileHttp} from "../../../util/config";
 
 
 export function BaseFileItem(props: FileItemData & {
@@ -31,9 +32,12 @@ export function BaseFileItem(props: FileItemData & {
                      "--filewidth": props.itemWidth ?? "33%"
                  }}
     >
+
         <div>
-            {/*<img/>*/}
-            <i className="material-icons"></i>
+            {(props.type === FileTypeEnum.image && props.path != undefined) ? (
+                <img src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
+                <i className="material-icons"></i>}
+
         </div>
         <div>
             <p className="name">{props.name}</p>

@@ -25,9 +25,9 @@ export function Rdp() {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
 
-    const [address, setAddress] = useState();
-    const [username, setUsername] = useState();
-    const [password, setPassword] = useState();
+    const [address, setAddress] = useState(undefined);
+    const [username, setUsername] = useState(undefined);
+    const [password, setPassword] = useState(undefined);
     const [fullScreen, setFullScreen] = useState(false);
     const [status, setStatus] = useState<boolean>(false);
     var client = null;

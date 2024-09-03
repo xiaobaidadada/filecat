@@ -24,6 +24,7 @@ export function TimeConverTer(props) {
             return;
         }
         let stampp:number|string = 0;
+        // @ts-ignore
         const isStamp :boolean = stamp!=='' && stamp!==0;
         if (isStamp) {
             if (!isNumeric(stamp)) {
@@ -54,6 +55,7 @@ export function TimeConverTer(props) {
         setTime(formattedDate)
         if (!stamp) {
             const stamppp = date.getTime();
+            // @ts-ignore
             setStamp(type==='毫秒'?stamppp:stamppp/1000)
         }
     }

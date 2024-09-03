@@ -15,7 +15,7 @@ import {useTranslation} from "react-i18next";
 export function NetServer(props) {
     const { t } = useTranslation();
 
-    const [serverPort, setServerPort] = useState("");
+    const [serverPort, setServerPort] = useState(undefined);
     const [isOpen,setIsOpen] = useState(false);
     const [isUdp, setIsUdp] = useState(false);
     const [key,setKey] = useState("");
@@ -26,6 +26,7 @@ export function NetServer(props) {
         const getItems = async ()=>{
             const data = new WsData(CmdType.vir_net_serverIno_get);
             const list = await ws.send(data);
+            // @ts-ignore
             setRows(list);
         }
         getItems();

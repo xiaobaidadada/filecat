@@ -23,18 +23,20 @@ import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
+import {getFileFormat} from "../../../common/FileMenuType";
 const archiver = require('archiver');
+const mime = require('mime-types');
 
 
 const MAX_SIZE_TXT = 20 * 1024 * 1024;
 class FileService extends FileCompress{
 
-    public async getFile(filePath,token):Promise<Result<GetFilePojo|string>> {
+    public async getFile(param_path,token):Promise<Result<GetFilePojo|string>> {
         const result:GetFilePojo = {
             files:[],
             folders:[]
         };
-        const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
+        const sysPath = path.join(settingService.getFileRootPath(token),param_path?decodeURIComponent(param_path):"");
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
@@ -58,19 +60,22 @@ class FileService extends FileCompress{
             const formattedCreationTime = getShortTime(new Date(stats.mtime).getTime());
             const size = formatFileSize(stats.size);
             if (stats.isFile()) {
+                const type = getFileFormat(item);
                 result.files?.push({
-                    type:FileTypeEnum.text,
+                    type:type,
                     name:item,
                     mtime:formattedCreationTime,
                     size,
-                    isLink:stats.isSymbolicLink()
+                    isLink:stats.isSymbolicLink(),
+                    path:`${param_path}/${item}`
                 })
             } else if (stats.isDirectory()) {
                 result.folders?.push({
                     type:FileTypeEnum.folder,
                     name:item,
                     mtime:formattedCreationTime,
-                    isLink:stats.isSymbolicLink()
+                    isLink:stats.isSymbolicLink(),
+                    path:param_path
                 })
             }
         }
@@ -185,7 +190,7 @@ class FileService extends FileCompress{
     }
 
 
-    download(ctx) {
+    async download(ctx) {
         const file = ctx.request.query.file;
         if (!file || !file.length) {
             ctx.status = 404;
@@ -193,13 +198,21 @@ class FileService extends FileCompress{
             return;
         }
         const token = ctx.query['token'];
+        if (!await settingService.check(token)) {
+            ctx.status = 404;
+            ctx.body = 'File not found';
+            return;
+        }
         if (!Array.isArray(file)) {
-            ctx.set('Content-Type', 'application/octet-stream');
+
             const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
             const fileName = path.basename(sysPath)
             const stats = fs.statSync(sysPath);
-            if (stats.isFile()) {
+            ctx.set('Content-Type', mime.lookup(fileName) || 'application/octet-stream');
+            if (!fileName.endsWith('.pdf')) {
                 ctx.attachment(fileName); // 设置文件名
+            }
+            if (stats.isFile()) {
                 // 发送文件
                 ctx.body = fs.createReadStream(sysPath);
             } else {

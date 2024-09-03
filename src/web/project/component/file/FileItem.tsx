@@ -1,8 +1,8 @@
-import React, {ReactNode, useState} from 'react';
+import React from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {useLocation, useMatch, useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {getByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
 import {fileHttp} from "../../util/config";
 import {getRouterAfter} from "../../util/WebPath";
@@ -11,10 +11,10 @@ import {BaseFileItem} from "./component/BaseFileItem";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail} from "../../util/noty";
 import {PromptEnum} from "../prompts/Prompt";
-import {getEditModelType, getFileType, StringUtil} from "../../../../common/StringUtil";
-import {FileMenuData, FileMenuEnum, getFileFormat} from "../prompts/FileMenu/FileMenuType";
+import {getEditModelType} from "../../../../common/StringUtil";
+import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
-import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {getFileNameByLocation} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
@@ -86,15 +86,20 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
                     setEditorValue(rsq.data)
                     return;
                 } else {
-                    const type = getFileType(name);
-                    if (type === FileTypeEnum.video) {
-                        let url = fileHttp.getDownloadUrl(getFileNameByLocation(location,name));
-                        url+`&token=${localStorage.getItem('token')}`
-                        setFilePreview({open:true, type: FileTypeEnum.video, name, url})
-                    }else if (type===FileTypeEnum.unknow) {
-                        NotyFail(t("未知类型、请使用右键文件"))
-                        return;
+                    const type = getFileFormat(name);
+                    let url = fileHttp.getDownloadUrl(getFileNameByLocation(location,name));
+                    switch (type) {
+                        case FileTypeEnum.video:
+                        case FileTypeEnum.image:
+                        case FileTypeEnum.pdf:
+                            setFilePreview({open:true, type: type, name, url})
+                            break;
+                        case FileTypeEnum.unknow:
+                        default:
+                            NotyFail(t("未知类型、请使用右键文件"))
+                            break;
                     }
+
                 }
             }
         }
@@ -110,12 +115,12 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
         pojo.filename = name;
         pojo.x = event.clientX;
         pojo.y = event.clientY;
-        pojo.type = isDir?FileMenuEnum.folder:getFileFormat(name);
+        pojo.type = isDir?FileTypeEnum.folder:getFileFormat(name);
         setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:pojo});
     };
 
 
-    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} isLink={props.isLink}
+    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} isLink={props.isLink} path={props.path}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

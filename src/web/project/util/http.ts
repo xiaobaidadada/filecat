@@ -51,7 +51,7 @@ export class Http {
                 url += `file=${file}&`;
             }
         }
-        return url.slice(0, -1);
+        return url.slice(0, -1)+`&token=${localStorage.getItem('token')}`;
     }
 
     async post(url,jsonData = {},notCheck= true):Promise<Result<any>> {

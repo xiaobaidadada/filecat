@@ -28,7 +28,7 @@ export function  Sys() {
     const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue);
 
     const [tokenMode,setTokenMode]  = useState(TokenTimeMode.close);
-    const [tokenSeconds,setTokenSeconds] = useState();
+    const [tokenSeconds,setTokenSeconds] = useState(undefined);
 
     const [rows, setRows] = useState([]);
     const [rows_outside_software, setRows_outside_software] = useState([]);

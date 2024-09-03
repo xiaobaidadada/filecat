@@ -4,7 +4,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../project/util/store";
 import logo  from "../resources/img/logo.svg"
 
-function Header(props: { ignore_tags?: boolean, children?: React.ReactNode[], left_children?: React.ReactNode[] }) {
+function Header(props: { ignore_tags?: boolean, children?: any, left_children?: any }) {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     return (

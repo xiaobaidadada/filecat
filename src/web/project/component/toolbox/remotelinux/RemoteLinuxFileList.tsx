@@ -50,7 +50,7 @@ export function setPreSearch(data:GetFilePojo) {
 export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const { t } = useTranslation();
 
-    const inputRef = useRef();
+    const inputRef = useRef(undefined);
     // let location = useLocation();
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
@@ -65,7 +65,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [sshInfo, setSSHInfo] = useRecoilState($stroe.sshInfo);
 
-    const [itemWidth,setItemWidth] = useState();
+    const [itemWidth,setItemWidth] = useState(undefined);
     const [search,setSearch] = useState("");
 
     const fileHandler = async () => {

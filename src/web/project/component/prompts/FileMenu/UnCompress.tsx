@@ -19,7 +19,7 @@ export function UnCompress(props) {
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [items, setItems,] = useState([{r:t("解压"),v:t("解压")}]);
-    const [tarDir, setTarDir] = useState();
+    const [tarDir, setTarDir] = useState(undefined);
     const [is_opt, setIs_opt] = useState(true);
 
     const [progress, setProgress] = useState(0);

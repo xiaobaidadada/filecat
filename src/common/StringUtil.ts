@@ -91,21 +91,4 @@ export function getEditModelType(name) {
     return "";
 }
 
-export function getFileType(name):FileTypeEnum {
-    let p = name.split('.');
-    if (p.length === 1) {
-        return FileTypeEnum.unknow;
-    }
-    p = p[p.length - 1];
-    switch (p) {
-        case 'mp4':
-        // case "webm":
-        // case "m3u8":
-        // case "ogv":
-        // case "mpd":
-            return FileTypeEnum.video;
-        case 'pdf':
-            return FileTypeEnum.pdf;
-    }
-    return FileTypeEnum.unknow;
-}
+

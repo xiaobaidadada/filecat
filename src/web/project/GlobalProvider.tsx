@@ -7,7 +7,7 @@ import {fileHttp, settingHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 
-export const GlobalContext = createContext();
+export const GlobalContext = createContext(undefined);
 
 export const GlobalProvider = ({ children }) => {
     const [state, setState] = useState({} as UserBaseInfo);
