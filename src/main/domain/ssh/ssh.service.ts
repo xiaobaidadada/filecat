@@ -8,7 +8,7 @@ const EventEmitter = require('events');
 
 
 import {Client} from 'ssh2';
-import {SshSsh2} from "./ssh.ssh2";
+import {sftp_client, SshSsh2} from "./ssh.ssh2";
 import path from "path";
 import {Env} from "../../../common/Env";
 import fs from "fs";
@@ -34,7 +34,8 @@ export class SshService extends SshSsh2 {
         const client = await this.connect(req);
         this.lifeStart(SshPojo.getKey(req), client, async (c) => {
             try {
-                client.close();
+                client[sftp_client].end();
+                client.end();
             } catch (e) {
                 console.log('触发', e)
             }

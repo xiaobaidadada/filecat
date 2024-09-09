@@ -63,9 +63,9 @@ export class DataUtil {
     }
 
     // 上传到临时目录下，并返回文件路径
-    public static writeFileSyncTemp(file: string,dir, data: any) {
-        const p = path.join(Env.work_dir, dir, file);
-        this.checkFile(file,dir);
+    public static writeFileSyncTemp(filename: string,dir, data: any) {
+        const p = path.join(Env.work_dir, dir, filename);
+        this.checkFile(filename,dir);
         fs.writeFileSync(p, data);
         return p;
     }

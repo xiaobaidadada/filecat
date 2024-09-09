@@ -38,7 +38,7 @@ export const user_click_file = () => {
                 }
                 value = rsq.data;
             }
-            if (type === FileTypeEnum.md) {
+            if (type === FileTypeEnum.md && param.model !=="text") {
                 set_markdown({context: value, filename: name})
                 return;
             }

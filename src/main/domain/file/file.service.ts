@@ -252,9 +252,9 @@ class FileService extends FileCompress{
                 const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
                 const stats = fs.statSync(sysPath);
                 if (stats.isFile()) {
-                    archive.file(sysPath);
+                    archive.file(sysPath, { name: path.basename(sysPath) });
                 } else {
-                    archive.directory(sysPath);
+                    archive.directory(sysPath,path.basename(sysPath));
                 }
             }
             archive.finalize();

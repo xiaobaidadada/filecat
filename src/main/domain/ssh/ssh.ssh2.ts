@@ -9,7 +9,7 @@ const EventEmitter = require('events');
 import {Client} from 'ssh2';
 import fs from "fs";
 
-const sftp_client = "sftp_client_key";
+export const sftp_client = "sftp_client_key";
 
 export class SshSsh2 extends LifecycleRecordService {
 

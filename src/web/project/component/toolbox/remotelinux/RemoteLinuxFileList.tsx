@@ -106,30 +106,35 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             window.removeEventListener('resize', handleResize);
         }
     }, []); //location 暂时不做监听，也无法监听
+    const dragover = async (event) => {
+        event.preventDefault();
+        let dt = event.dataTransfer;
+        // console.log(dt)
+        let el = event.target;
+        // console.log(el,dt)
+        if (dt.files.length <= 0) return;
+        for (let i = 0; i < 5; i++) {
+            if (el !== null && !el.classList.contains("item")) {
+                el = el.parentElement;
+            }
+        }
+        // 文件名不会包含绝对路径
+        let files = await scanFiles(dt);
+        setUploadFiles(files);
+        setShowPrompt({show: true, type: PromptEnum.SshUpload, overlay: false, data: {}});
+    };
+    const  drop = (event) => {
+        event.preventDefault();
+    };
     useEffect(() => {
         const element = inputRef.current;
         const doc = element.ownerDocument;
-        doc.addEventListener("dragover", (event) => {
-            event.preventDefault();
-        });
-        doc.addEventListener("drop", async (event) => {
-            event.preventDefault();
-            let dt = event.dataTransfer;
-            // console.log(dt)
-            let el = event.target;
-            // console.log(el,dt)
-            if (dt.files.length <= 0) return;
-            for (let i = 0; i < 5; i++) {
-                if (el !== null && !el.classList.contains("item")) {
-                    el = el.parentElement;
-                }
-            }
-            // 文件名不会包含绝对路径
-            let files = await scanFiles(dt);
-            setUploadFiles(files);
-            setShowPrompt({show: true, type: PromptEnum.SshUpload, overlay: false, data: {}});
-        });
-
+        doc.addEventListener("dragover",drop );
+        doc.addEventListener("drop", dragover);
+        return ()=>{
+            doc.removeEventListener("dragover", dragover);
+            doc.removeEventListener("drop", drop);
+        }
     }, []);
 
     function switchGridView() {

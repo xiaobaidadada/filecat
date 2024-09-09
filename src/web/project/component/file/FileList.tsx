@@ -42,7 +42,7 @@ export function FileList() {
 
     const { t } = useTranslation();
 
-    const inputRef = useRef();
+    const inputRef = useRef(null);
     let location = useLocation();
     const navigate = useNavigate();
 
@@ -99,31 +99,36 @@ export function FileList() {
         setFilePreview({open:false});
 
     }, [location]);
+    const drop = async (event) => {
+        event.preventDefault();
+        let dt = event.dataTransfer;
+        // console.log(dt)
+        let el = event.target;
+        // console.log(el,dt)
+        if (dt.files.length <= 0) return;
+        for (let i = 0; i < 5; i++) {
+            if (el !== null && !el.classList.contains("item")) {
+                el = el.parentElement;
+            }
+        }
+        // 文件名不会包含绝对路径
+        let files = await scanFiles(dt);
+        setUploadFiles(files);
+        setShowPrompt({show: true,type: PromptEnum.FilesUpload,overlay: false,data:{}});
+    }
+    const dragover = (event)=>{event.preventDefault();}
     useEffect(() => {
+
         const element = inputRef.current;
         // @ts-ignore
         const doc = element.ownerDocument;
-        doc.addEventListener("dragover", (event)=>{event.preventDefault();});
-        doc.addEventListener("drop", async (event) => {
-            event.preventDefault();
-            let dt = event.dataTransfer;
-            // console.log(dt)
-            let el = event.target;
-            // console.log(el,dt)
-            if (dt.files.length <= 0) return;
-            for (let i = 0; i < 5; i++) {
-                if (el !== null && !el.classList.contains("item")) {
-                    el = el.parentElement;
-                }
-            }
-            // 文件名不会包含绝对路径
-            let files = await scanFiles(dt);
-            setUploadFiles(files);
-            setShowPrompt({show: true,type: PromptEnum.FilesUpload,overlay: false,data:{}});
-        });
+        doc.addEventListener("dragover", dragover);
+        doc.addEventListener("drop", drop);
         handleResize();
         window.addEventListener('resize', handleResize);
         return ()=>{
+            doc.removeEventListener("dragover", dragover);
+            doc.removeEventListener("drop", drop);
             window.removeEventListener('resize', handleResize);
             if(shellShow.show) {
                 setShellShow({show: false,path: ''})
