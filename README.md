@@ -5,8 +5,8 @@
 - 这是一个面向开发者的文件管理、服务器工具集合(web服务)。
 你可以使用该软件在自己的家里使用任意一台主机，利用ddns或者穿透功能实现一个自己的个人网盘，或者用来简单管理一个linux服务器。需要访问家庭中的路由器后台等局域网受限的网址的时候，你可以利用rdp、ssh、网页代理功能轻松实现这一目的，本项目不同于宝塔这样的高度可视化操作软件，而是提供一个方便又简洁、简单、好看的文件管理工具，从而更好的使用ssh.
 ## 截图
-![image](https://github.com/user-attachments/assets/98a77c5f-e6f8-44ee-a136-f6fc5c0be459)
-![image](https://github.com/xiaobaidadada/filecat/assets/61794688/97c630c5-6c0f-48d2-9a67-20b2ff86eae9)
+![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+
 ## 使用
 ### 体验
 url: http://116.198.245.137:5569/
@@ -22,17 +22,21 @@ url: http://116.198.245.137:5569/
 - 项目目前使用pkg打包，请使用node18.x.x，不打包也要使用node18,一些插件目前只支持node18；
 - install 如果失败可能是由于网络问题，单独install一下对应的依赖包。
 ## 主要特性
--  文件管理、编辑、解压缩、格式转换等，shell功能会一直跟着目录走。
-- 终端、ssh代理
+-  文件管理
+  - 图片，视频，markdown 等文件格式在线预览。
+  - 代码编辑器，可选择文件打开方式。
+  - sutdio 编辑器，右键文件夹可以打开一个类似vscode的编辑器页面，可用于linux程序临时开发环境。
+  - 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
+  - 终端，可以实时跟着目录走。
+- ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
 - ddns
-- ftp代理(ssh文件管理)
 - http网页代理
 - rdp代理(windwos远程控制)
 - rtsp代理播放器
 - docker容器，镜像管理，查看日志等功能
 - 系统内存，cpu信息,systemd
 - wol网络唤醒
-- 点对点通信,vpn
+- 虚拟网络，可以实现p2p,vpn功能。
 ## 功能说明
 1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windwos和Linux;
 2. 部分功能目前处于demo阶段，未来会持续优化；
