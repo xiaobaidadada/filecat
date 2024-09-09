@@ -80,12 +80,6 @@ export function FileList() {
         }
         setNowFileList(rsp.data)
         pre_search =rsp.data;
-        if (shellShow.show) {
-            setShellShow({
-                show: true,
-                path: getRouterAfter('file',location.pathname)
-            })
-        }
     }
     const handleResize = () => {
         let columns = Math.floor(
@@ -130,7 +124,10 @@ export function FileList() {
         handleResize();
         window.addEventListener('resize', handleResize);
         return ()=>{
-            setShellShow({show: false,path: ''})
+            window.removeEventListener('resize', handleResize);
+            if(shellShow.show) {
+                setShellShow({show: false,path: ''})
+            }
         }
     }, []);
     function switchGridView() {
@@ -141,17 +138,17 @@ export function FileList() {
         setClickList([])
     }
     function shellClick() {
-            if (!shellShow.show) {
-                setShellShow({
-                    show: true,
-                    path: getRouterAfter('file',location.pathname)
-                })
-            } else {
-                setShellShow({
-                    show: false,
-                    path: ''
-                })
-            }
+        if (!shellShow.show) {
+            setShellShow({
+                show: true,
+                path: getRouterAfter('file',location.pathname)
+            })
+        } else {
+            setShellShow({
+                show: false,
+                path: ''
+            })
+        }
     }
     function ok(txt) {
         new Noty({
@@ -282,8 +279,8 @@ export function FileList() {
                     // @ts-ignore
                     (<div>
                         {nowFileList.files.map((v, index) => (
-                        // @ts-ignore
-                        <FileItem itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
+                            // @ts-ignore
+                            <FileItem itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
                     </div>)
                 }
             </div>
