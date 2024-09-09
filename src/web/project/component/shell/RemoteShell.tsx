@@ -34,9 +34,17 @@ export function RemoteShell(props) {
             tabStopWidth: 4,
 
         });
-
+        let handle;
+        const handle_msg2 = (context:string)=> {
+            terminal.write(context);
+        }
+        handle = (context: string) => {
+            terminal.clear();
+            terminal.write(context);
+            handle = handle_msg2;
+        };
         ws.addMsg(CmdType.remote_shell_getting,(wsData:WsData<SysPojo>)=>{
-            terminal.write(wsData.context)
+            handle(wsData.context)
         })
         // 交互效果完全发送到服务器
         terminal.onData(async (data) => {

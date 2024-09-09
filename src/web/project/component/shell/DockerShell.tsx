@@ -33,12 +33,21 @@ export function DockerShell(props) {
         });
 
         ws.subscribeUnconnect(close)
+        let handle;
+        const handle_msg2 = (context:string)=> {
+            terminal.write(context);
+        }
+        handle = (context: string) => {
+            terminal.clear();
+            terminal.write(context);
+            handle = handle_msg2;
+        };
         ws.addMsg(shellShow.type==="logs"?CmdType.docker_shell_logs_getting:CmdType.docker_shell_exec_getting,(wsData:WsData<SysPojo>)=>{
             // wsData.context=wsData.context.replaceAll(/(?<!\r)\n/, "\r\n")
             if (wsData.context==="error") {
                 close();
             }
-            terminal.write(wsData.context)
+            handle(wsData.context)
         })
         // 交互效果完全发送到服务器
         if (shellShow.type==="exec") {

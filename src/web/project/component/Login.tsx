@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import {useRecoilState} from "recoil";
 import {InputPassword, InputText} from "../../meta/component/Input";
 import {Button} from "../../meta/component/Button";
@@ -9,12 +9,14 @@ import {UserLogin} from "../../../common/req/user.req";
 import {$stroe} from "../util/store";
 import {SelfCenter, WinCenter} from "../../meta/component/Dashboard";
 import {useTranslation} from "react-i18next";
+import {GlobalContext} from "../GlobalProvider";
 
 
 function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const {reloadUserInfo} = useContext(GlobalContext);
     const { t } = useTranslation();
 
     async function login() {
@@ -25,6 +27,7 @@ function Login() {
         const rsq = await userHttp.post("login",data,false );
         if (rsq.code === 0) {
             localStorage.setItem('token',rsq.data)
+            reloadUserInfo();
             navigate('/file')
         } else {
             new Noty({

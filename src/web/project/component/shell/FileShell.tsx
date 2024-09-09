@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react'
-import { Terminal } from '@xterm/xterm';
+import React, {useEffect, useState} from 'react'
+import {Terminal} from '@xterm/xterm';
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
@@ -32,8 +32,17 @@ export function FileShell(props) {
             tabStopWidth: 4,
 
         });
+        let handle;
+        const handle_msg2 = (context:string)=> {
+            terminal.write(context);
+        }
+        handle = (context: string) => {
+            terminal.clear();
+            terminal.write(context);
+            handle = handle_msg2;
+        };
         ws.addMsg(CmdType.shell_getting,(wsData:WsData<SysPojo>)=>{
-            terminal.write(wsData.context)
+            handle(wsData.context);
         })
         // 交互效果完全发送到服务器
         terminal.onData(async (data) => {

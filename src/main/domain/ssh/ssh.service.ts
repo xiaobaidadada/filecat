@@ -34,7 +34,7 @@ export class SshService extends SshSsh2 {
         const client = await this.connect(req);
         this.lifeStart(SshPojo.getKey(req), client, async (c) => {
             try {
-                client.end();
+                client.close();
             } catch (e) {
                 console.log('触发', e)
             }
