@@ -15,7 +15,7 @@
 .shell__divider {
   position: relative;
   height: 8px;
-  z-index: 9999;
+  z-index: 999;
   background: rgba(127, 127, 127, 0.1);
   transition: 0.2s ease background;
   cursor: ns-resize;

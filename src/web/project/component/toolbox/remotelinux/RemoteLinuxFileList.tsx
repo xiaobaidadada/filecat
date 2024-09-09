@@ -248,7 +248,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     }
 
     return (
-        <div>
+        <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
                 <ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>

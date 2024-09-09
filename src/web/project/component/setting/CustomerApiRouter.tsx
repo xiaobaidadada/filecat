@@ -13,6 +13,8 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
+import {editor_data} from "../../util/store.util";
+import {NotyFail} from "../../util/noty";
 
 
 
@@ -21,7 +23,6 @@ export function CustomerApiRouter() {
 
     const headers = [t("路由"),t("auth"),  t("备注"), ];
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue);
     const [rows, setRows] = useState([]);
     const getItems = async () => {
         const result = await settingHttp.get("api/customer_router");
@@ -51,6 +52,10 @@ export function CustomerApiRouter() {
         setRows([...rows]);
     }
     const edit = async (item)=>{
+        if (!item.router) {
+            NotyFail("路由不能为空");
+            return;
+        }
         const res = await settingHttp.get(`jscode/${encodeURIComponent(item.router)}`);
         setEditorSetting({
             model: "javascript",
@@ -63,12 +68,12 @@ export function CustomerApiRouter() {
                 }
                 const rsq = await settingHttp.post("jscode/save", data);
                 if (rsq.code === 0) {
-                    setEditorValue('')
+                    editor_data.set_value_temp('')
                     setEditorSetting({open: false,model:'',fileName:'',save:null})
                 }
             }
         })
-        setEditorValue(res.data);
+        editor_data.set_value_temp(res.data)
     }
     return <RowColumn>
         <Dashboard>

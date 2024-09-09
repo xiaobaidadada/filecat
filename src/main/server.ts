@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { createKoaServer } from 'routing-controllers';
+import {createKoaServer} from 'routing-controllers';
 // import {config} from "./other/config";
 // import dotenv from "dotenv";
 import {WsServer} from "../common/frame/ws.server";
@@ -22,9 +22,8 @@ import {SSHController} from "./domain/ssh/ssh.controller";
 import {RdpController} from "./domain/rdp/rdp.controller";
 import {ServerEvent} from "./other/config";
 import {VideoController} from "./domain/video/video.controller";
+
 const WebSocket = require('ws');
-
-
 
 
 async function start() {
@@ -46,45 +45,47 @@ async function start() {
         routePrefix: '/api',
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
-        controllers: [UserController,SysController,ShellController,FileController,DdnsController,NetController,NavindexController,SettingController,SSHController,RdpController,VideoController],
+        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController],
         // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
-        middlewares: [AuthMiddleware,GlobalErrorHandler,CheckTokenMiddleware],
+        middlewares: [AuthMiddleware, GlobalErrorHandler, CheckTokenMiddleware],
     });
-    const wss = new WebSocket.Server({ noServer: true });
+    const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start();
 
-    if (process.env.NODE_ENV==="production") {
+    if (process.env.NODE_ENV === "production") {
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-        app.use(async (ctx,next) => {
+        app.use(async (ctx, next) => {
             if (ctx.url.includes("/api/")) {
                 next();
                 return;
             }
             try {
-                if (!ctx.url || ctx.url==="/") {
+                if (!ctx.url || ctx.url === "/") {
                     throw "";
                 }
-                const url = path.join(__dirname,'dist',path.basename(ctx.url));
-                fs.accessSync(url,fs.constants.F_OK,)
+                const url = path.join(__dirname, 'dist', path.basename(ctx.url));
+                fs.accessSync(url, fs.constants.F_OK,)
                 ctx.body = fs.createReadStream(url);
             } catch (e) {
                 ctx.type = 'html';
-                ctx.body = fs.createReadStream(path.join(__dirname,'dist',"index.html"));
+                ctx.body = fs.createReadStream(path.join(__dirname, 'dist', "index.html"));
             }
         });
     } else {
         app.use(proxy(/^(?!\/api)/, {
-            target: `http://127.0.0.1:${process.env.webpack_port??"3301"}`,
+            target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`,
             // changeOrigin: true,
             // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
-            rewrite: function(path) {
-                if (path.indexOf('.')!==-1) {
-                    const paths = path.split('/')
-                    return '/'+paths[paths.length-1]
+            rewrite: function (path) {
+                if (path.endsWith(".md")) {
+                    return "/"; // md 特殊文件
+                } else if (path.indexOf('.') !== -1) {
+                    const paths = path.split('/') // 带后缀的静态文件
+                    return '/' + paths[paths.length - 1]
                 } else {
-                    return '/'
+                    return '/'; // 其它所有的非文件类型
                 }
             },
             // logs: true
@@ -110,5 +111,6 @@ async function start() {
         console.error('未捕获的异常:', err);
     });
 }
+
 start();
 

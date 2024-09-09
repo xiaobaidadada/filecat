@@ -10,13 +10,43 @@ import {SysInfo} from "./sys/SysInfo";
 import {Ddns} from "./ddns/Ddns";
 import {NavIndex} from "./navindex/NavIndex";
 import {Settings} from "./setting/Setting";
-import {Editor} from "./file/component/Editor";
+import {FileEditor} from "./file/component/FileEditor";
 import {Net} from "./net/Net";
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../util/store";
 import {Preview} from "./file/component/Preview";
+import {MarkDown} from "./file/component/MarkDown";
+import {Studio} from "./file/component/studio/Studio";
+import "ace-builds/src-noconflict/theme-chaos";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-javascript";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-python";
+import "ace-builds/src-noconflict/mode-ini";
+import "ace-builds/src-noconflict/mode-c_cpp";
+import "ace-builds/src-noconflict/mode-sh";
+import "ace-builds/src-noconflict/mode-lua";
+import "ace-builds/src-noconflict/mode-haml";
+import "ace-builds/src-noconflict/mode-xml";
+import "ace-builds/src-noconflict/mode-tsx";
+import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/mode-sql";
+import "ace-builds/src-noconflict/mode-typescript";
+import "ace-builds/src-noconflict/mode-markdown";
+import "ace-builds/src-noconflict/ext-language_tools";
 
+const ace = require("ace-builds/src-noconflict/ace");
+ace.config.set(
+    "basePath",
+    "https://cdn.jsdelivr.net/npm/ace-builds@1.4.3/src-noconflict/"
+);
+ace.config.setModuleUrl(
+    "ace/mode/javascript_worker",
+    "https://cdn.jsdelivr.net/npm/ace-builds@1.4.3/src-noconflict/worker-javascript.js"
+);
 
 
 function Layout() {
@@ -48,8 +78,10 @@ function Layout() {
         <div>
             {/*全局显示*/}
             <Prompt></Prompt>
-            <Editor />
+            <FileEditor />
             <Preview />
+            <MarkDown />
+            <Studio />
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody navList={MainNavList}>

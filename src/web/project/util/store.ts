@@ -88,6 +88,10 @@ export const $stroe = {
         default: {
             open:false,
             handle:null
+        } as {
+            open:boolean,
+            handle:()=>void,
+            title?:string
         }
     }),
     // 编辑器设置
@@ -100,11 +104,6 @@ export const $stroe = {
             save:null
         }
     }),
-    // 编辑器内容
-    editorValue:atom({
-        key: 'editorValue',
-        default:'123'
-    }),
     // shell是否开启 并传递初始目录
     fileShellShow:atom({
         key:"shellShow",
@@ -112,6 +111,11 @@ export const $stroe = {
             show:false,
             path:''
         }
+    }),
+    // 只是隐藏不消失
+    file_shell_hidden:atom({
+        key: 'file_shell_hidden',
+        default:undefined
     }),
     // 远程shell是否开启
     remoteShellShow:atom({
@@ -175,7 +179,16 @@ export const $stroe = {
     // 文件预览
     file_preview:atom({
         key: 'file_preview',
-        default:{open:false} as {open:boolean,type?:FileTypeEnum,name?:string,url?:string},
+        default:{open:false} as {open:boolean,type?:FileTypeEnum,name?:string,url?:string,context?:string},
+    }),
+    // md预览
+    markdown:atom({
+        key: 'markdown',
+        default:{} as {filename?:string,context?:string},
+    }),
+    studio:atom({
+        key: 'studio',
+        default:{} as {folder_path?:string,name?:string}
     })
 }
 

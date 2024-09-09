@@ -1,6 +1,6 @@
 import {
     FileCompressPojo,
-    FileCompressType,
+    FileCompressType, FileTreeList,
     FileTypeEnum,
     FileVideoFormatTransPojo,
     GetFilePojo
@@ -24,6 +24,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
+import {getEditModelType} from "../../../common/StringUtil";
 const archiver = require('archiver');
 const mime = require('mime-types');
 
@@ -37,14 +38,20 @@ class FileService extends FileCompress{
             folders:[]
         };
         const sysPath = path.join(settingService.getFileRootPath(token),param_path?decodeURIComponent(param_path):"");
+        if (!fs.existsSync(sysPath)) {
+            return Fail("路径不存在",RCode.Fail);
+        }
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
             if (stats.size > MAX_SIZE_TXT) {
                 return Fail("超过20MB",RCode.File_Max);
             }
+            const name = path.basename(sysPath);
             const buffer = fs.readFileSync(sysPath);
-            return Sucess(buffer.toString());
+            const pojo = Sucess(buffer.toString(),RCode.PreFile);
+            pojo.message = name;
+            return pojo;
         }
 
         const items = fs.readdirSync(sysPath);// 读取目录内容
@@ -380,6 +387,35 @@ class FileService extends FileCompress{
         }
     }
 
+    async studio_get_item(param_path:string,token:string) {
+        const result:{list:FileTreeList} = {
+            list:[]
+        };
+        const sysPath = path.join(settingService.getFileRootPath(token),param_path?decodeURIComponent(param_path):"");
+        if (!fs.existsSync(sysPath)) {
+            return Fail("路径不存在",RCode.Fail);
+        }
+        const stats = fs.statSync(sysPath);
+        if (stats.isFile()) {
+            return Fail("是文件",RCode.Fail);
+        }
+        const items = fs.readdirSync(sysPath);// 读取目录内容
+        for (const item of items) {
+            const filePath = path.join(sysPath, item);
+            // 获取文件或文件夹的元信息
+            let stats: null| Stats= null;
+            try {
+                stats = fs.statSync(filePath);
+            } catch (e) {
+                continue;
+            }
+            result.list.push({
+                type:stats.isFile()?"file":"folder",
+                name:item
+            })
+        }
+        return result;
+    }
 }
 
 export const FileServiceImpl = new FileService();

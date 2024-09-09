@@ -18,7 +18,7 @@ function CardComponent(props: CardProps ,type:Type) {
     const contextClass = type===Type.common?"card-content"
         :type===Type.full?"card-content full":"";
     return <div className={"card"}>
-        <div className={"card-title"}>
+        <div className={"card-title not-select-div"}>
             <h2>{props.title}</h2>
             <div>{props.titleCom && props.titleCom}</div>
         </div>

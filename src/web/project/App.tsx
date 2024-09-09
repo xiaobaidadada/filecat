@@ -27,11 +27,12 @@ function App() {
     const [befor,setBefor] = useState('');
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
-
-    useEffect( () => {
+    useEffect(() => {
 
         // 界面加载完的初始化
         initUserInfo();
+    }, []);
+    useEffect( () => {
 
         if (befor === location.pathname || befor=== "/" || befor==='/login') {
             return;
@@ -43,6 +44,7 @@ function App() {
             navigate("/");
         }
     }, [location]);
+
     return (
         <SimpleRoutes rtos={["/","/login","/*"]}>
             <Login/>

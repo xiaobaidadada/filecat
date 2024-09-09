@@ -38,7 +38,7 @@
     transform: scale(0);
     transition: .1s ease-in-out transform;
     transform-origin: top right;
-    z-index: 99999;
+    z-index: 999;
   }
 
   body.rtl #dropdown {
@@ -94,7 +94,7 @@
   }
   nav {
     top: 0;
-    z-index: 99999;
+    z-index: 999;
     background: #fff;
     height: 100%;
     width: 16em;

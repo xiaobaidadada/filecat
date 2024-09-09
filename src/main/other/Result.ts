@@ -1,4 +1,5 @@
 import {RCode} from "../../common/Result.pojo";
+import {FileTypeEnum} from "../../common/file.pojo";
 
 
 export type Result<T> = {

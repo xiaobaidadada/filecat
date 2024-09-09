@@ -1,31 +1,27 @@
-import React, {useEffect, useRef, useState,useContext } from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {FileItem} from "./FileItem";
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {fileHttp, settingHttp} from "../../util/config";
-import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
+import {fileHttp} from "../../util/config";
+import {useLocation, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {getNextByLoop} from "../../../../common/ListUtil";
 import {scanFiles} from "../../util/file";
-import {Prompt, PromptEnum} from "../prompts/Prompt";
+import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
 import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import Noty from "noty";
-import {FileRename} from "../prompts/FileRename";
 import {DropdownTag} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
-import {FileCompressPojo, FileItemData, FileVideoFormatTransPojo, GetFilePojo} from "../../../../common/file.pojo";
-import {StringUtil} from "../../../../common/StringUtil";
-import {NotyFail, NotySucess} from "../../util/noty";
-import {ws} from "../../util/ws";
-import {CmdType, WsData} from "../../../../common/frame/WsData";
+import {GetFilePojo} from "../../../../common/file.pojo";
+import {NotyFail} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
-import {Preview} from "./component/Preview";
+import {user_click_file} from "../../util/store.util";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -67,11 +63,19 @@ export function FileList() {
     const [search,setSearch] = useState("");
 
     const {reloadUserInfo} = useContext(GlobalContext);
+    const { click_file } = user_click_file();
 
     const fileHandler = async () => {
         // 文件列表初始化界面
         const rsp = await fileHttp.get(getRouterAfter('file',location.pathname));
+        if (rsp.code === RCode.PreFile) {
+            click_file({name:rsp.message,context:rsp.data}); // 对于非文本类型的暂时不能用这种长路径url直接打开
+            return;
+        }
         if (rsp.code !== RCode.Sucess) {
+            if (rsp.message) {
+                NotyFail(rsp.message);
+            }
             return;
         }
         setNowFileList(rsp.data)
@@ -125,6 +129,9 @@ export function FileList() {
         });
         handleResize();
         window.addEventListener('resize', handleResize);
+        return ()=>{
+            setShellShow({show: false,path: ''})
+        }
     }, []);
     function switchGridView() {
         setFileType(getNextByLoop(fileTypes, fileType))
@@ -240,7 +247,7 @@ export function FileList() {
     }
 
     return (
-        <div>
+        <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
@@ -259,7 +266,7 @@ export function FileList() {
                 <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
-                <DropdownTag items={file_paths} click={(v) => {
+                <DropdownTag title={t("切换目录")} items={file_paths} click={(v) => {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>
             </Header>

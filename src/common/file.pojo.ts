@@ -10,6 +10,7 @@ export enum FileTypeEnum {
     folder='folder',
     unknow="text",
     uncompress ="uncompress", // 压缩文件
+    md  = "md"
 }
 
 export interface FileItemData {
@@ -48,3 +49,10 @@ export class FileCompressPojo {
     tar_filename:string; // 目标压缩文件名字
     compress_level:number|1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; //压缩级别
 }
+
+export interface FileTree {
+    type:string & "folder" | "file";
+    name:string;
+    children?:FileTree[];
+}
+export type FileTreeList = FileTree[];

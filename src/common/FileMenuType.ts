@@ -7,6 +7,7 @@ export class FileMenuData {
     y:number;
     filename:string;
     type:FileTypeEnum;
+    path:string;
 }
 
 
@@ -19,6 +20,8 @@ export function getFileFormat(filename:string): FileTypeEnum {
     const extension = StringUtil.getFileExtension(filename);
     if (extension ==="pdf") {
         return FileTypeEnum.pdf;
+    } else if (extension == "md") {
+        return FileTypeEnum.md;
     }
     else if (video_format_set.has(extension)) {
         return FileTypeEnum.video;

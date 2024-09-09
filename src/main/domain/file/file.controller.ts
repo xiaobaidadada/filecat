@@ -137,4 +137,10 @@ export class FileController {
         return ""
     }
 
+    // 获取studio路径
+    @Post("/studio/get/item")
+    async studio_get_item(@Body() data:{path:string},@Ctx() ctx ) {
+        return Sucess(await FileServiceImpl.studio_get_item(data.path,ctx.headers.authorization));
+    }
+
 }
