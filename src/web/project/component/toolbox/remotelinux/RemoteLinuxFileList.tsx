@@ -42,13 +42,14 @@ export class RemoteLinuxFileListProps {
     }
 }
 
-let pre_search:GetFilePojo;
-export function setPreSearch(data:GetFilePojo) {
+let pre_search: GetFilePojo;
+
+export function setPreSearch(data: GetFilePojo) {
     pre_search = data;
 }
 
 export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
     const inputRef = useRef(undefined);
     // let location = useLocation();
@@ -65,8 +66,8 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [sshInfo, setSSHInfo] = useRecoilState($stroe.sshInfo);
 
-    const [itemWidth,setItemWidth] = useState(undefined);
-    const [search,setSearch] = useState("");
+    const [itemWidth, setItemWidth] = useState(undefined);
+    const [search, setSearch] = useState("");
 
     const fileHandler = async () => {
         // 文件列表初始化界面
@@ -80,10 +81,10 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         if (rsp.code !== RCode.Sucess) {
             return;
         }
-        const {folders, files} = rsp.data||{};
-        const data = {folders:folders||[], files:files||[]};
+        const {folders, files} = rsp.data || {};
+        const data = {folders: folders || [], files: files || []};
         setNowFileList(data);
-        pre_search =data;
+        pre_search = data;
     }
     const fetchData = async () => {
         await fileHandler();
@@ -101,6 +102,9 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         fetchData();
         handleResize();
         window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        }
     }, []); //location 暂时不做监听，也无法监听
     useEffect(() => {
         const element = inputRef.current;
@@ -123,7 +127,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             // 文件名不会包含绝对路径
             let files = await scanFiles(dt);
             setUploadFiles(files);
-            setShowPrompt({show: true,type: PromptEnum.SshUpload,overlay: false,data:{}});
+            setShowPrompt({show: true, type: PromptEnum.SshUpload, overlay: false, data: {}});
         });
 
     }, []);
@@ -194,7 +198,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
     function downloadFile() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        const url = `/ssh/download?file=${joinPaths(...shellNowDir,files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}`;
+        const url = `/ssh/download?file=${joinPaths(...shellNowDir, files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}`;
         window.open(url);
     }
 
@@ -215,8 +219,8 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         if (rsp.code !== RCode.Sucess) {
             return;
         }
-        const {folders, files} = rsp.data||{};
-        setNowFileList({folders:folders||[], files:files||[]});
+        const {folders, files} = rsp.data || {};
+        setNowFileList({folders: folders || [], files: files || []});
         if (shellShow.show) {
             setShellShow({
                 show: true,
@@ -226,7 +230,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     }
 
     // 搜索
-    const searchHanle = ()=>{
+    const searchHanle = () => {
         if (!pre_search) {
             return;
         }
@@ -244,12 +248,15 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 folders.push(folder);
             }
         }
-        setNowFileList({files,folders});
+        setNowFileList({files, folders});
     }
 
     return (
         <div className={"not-select-div"}>
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
+                                                  icon={"search"} value={""} handleInputChange={(v) => {
+                setSearch(v)
+            }} max_width={"25em"}/>}>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
                 <ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
@@ -260,7 +267,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 {(copyedFileList.length > 0 || cutedFileList.length > 0) &&
                     <ActionButton onClick={paste} icon={"content_paste"} title={t("粘贴到此处")}
                                   tip={copyedFileList.length + cutedFileList.length}/>}
-                {(selectedFile.length === 1 &&  nowFileList.files.length>=1 && nowFileList.folders.length>=1 &&getFilesByIndexs(nowFileList, selectedFile)[0]['type'] !== FileTypeEnum.folder) &&
+                {(selectedFile.length === 1 && nowFileList.files.length >= 1 && nowFileList.folders.length >= 1 && getFilesByIndexs(nowFileList, selectedFile)[0]['type'] !== FileTypeEnum.folder) &&
                     <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
                 {selectedFile.length === 1 &&
                     <ActionButton icon={"edit_attributes"} title={t("重命名")} onClick={updateFile}/>}
@@ -283,8 +290,9 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 {(!!nowFileList && !!nowFileList.folders) &&
                     // @ts-ignore
                     (<div>{nowFileList.files.map((v, index) => (
-                        // @ts-ignore
-                        <RemoteLinuxFileItem  itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}/>))}</div>)
+                        <RemoteLinuxFileItem itemWidth={itemWidth} index={index + nowFileList.folders.length}
+                            // @ts-ignore
+                                             key={index} {...v}/>))}</div>)
                 }
             </div>
             <RemoteShell/>

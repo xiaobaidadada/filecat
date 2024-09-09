@@ -101,14 +101,14 @@ export function Studio(props) {
         } else {
             if (have_update) {
                 setShowPrompt({open: true,handle:()=>{
-                        load_file(pojo.name,pre_path);
-                        setShowPrompt({open:false,handle:null});
+                    load_file(pojo.name,pre_path);
+                    setShowPrompt({open:false,handle:null});
                         set_have_update(false);
                     },title:"确定不保存就切换吗?" });
                 return;
             }
             // 点击文件
-            await load_file(pojo.name,pre_path);
+           await load_file(pojo.name,pre_path);
         }
     }
     async function file_save() {
