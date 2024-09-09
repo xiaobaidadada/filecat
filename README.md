@@ -2,8 +2,7 @@
 # ![](./src/web/meta/resources/img/logo-70.png) filecat
 
 - 中文 | [English ](./doc/EN_README.md)
-- 这是一个面向开发者的文件管理、服务器工具集合(web服务)。
-你可以使用该软件在自己的家里使用任意一台主机，利用ddns或者穿透功能实现一个自己的个人网盘，或者用来简单管理一个linux服务器。需要访问家庭中的路由器后台等局域网受限的网址的时候，你可以利用rdp、ssh、网页代理功能轻松实现这一目的，本项目不同于宝塔这样的高度可视化操作软件，而是提供一个方便又简洁、简单、好看的文件管理工具，从而更好的使用ssh.
+- 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
 ## 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
@@ -29,22 +28,25 @@ url: http://116.198.245.137:5569/
   4. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
   5. 终端，可以实时跟着目录走。
 - ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
+- 索引，是网址收藏夹，可用于保存服务器上其它的网站
 - ddns
 - http网页代理
 - rdp代理(windwos远程控制)
-- rtsp代理播放器
+- rtsp代理播放器，输入直播源，比如监控的url可以实时网页观看
 - docker容器，镜像管理，查看日志等功能
-- 系统内存，cpu信息,systemd
+- 系统内存cpu信息，进程cpu信息（利用c插件、使用极低的资源，实时查看系统全部进程信息，类似windows的任务管理器）,systemd管理(linux下才有)
 - wol网络唤醒
-- 虚拟网络，可以实现p2p,vpn功能。
+- 虚拟网络，可以实现p2p,vpn功能。(不是端口转发，而是利用tun在主机上创建虚拟ip)
 ## 功能说明
 1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windwos和Linux;
 2. 部分功能目前处于demo阶段，未来会持续优化；
 ## 路线
-1. 支持更多的ddns平台
-2. 修复与优化优化网络通信速度，更好的支持rdp和点对点
-3. 优化进程信息获取、sft、rdp代理等
-4. 流媒体存储播放工具
+1. 优化更多操作细节 
+2. 支持更多的文件格式浏览
+3. 支持更多的流媒体功能
+4. 支持更多的ddns平台
+5. 自动化爬虫
+6. 路由权限
 ## 致谢
 本项目部分功能还基于或者借鉴于以下项目
 - [filebrowser](https://github.com/filebrowser/filebrowser)
