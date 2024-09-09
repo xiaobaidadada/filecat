@@ -24,7 +24,7 @@ export function Studio(props) {
     const [editorValue, setEditorValue] = useState("");
     const [update,set_update] = useState<boolean>(false);
     const [edit_model,set_edit_model]= useState("text");
-    const [edit_filename,set_edit_filename]=useState("");
+    const [edit_filename,set_edit_filename]=useState({path:"",name:""});
     const [edit_file_path,set_edit_file_path]=useState("");
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
     const [have_update,set_have_update] = useState(false);
@@ -63,7 +63,7 @@ export function Studio(props) {
     }
     useEffect(() => {
         setEditorValue("");
-        set_edit_filename("");
+        set_edit_filename({});
         set_have_update(false);
         if (!studio.folder_path) {
             return;
@@ -89,7 +89,7 @@ export function Studio(props) {
         }
         setEditorValue(rsq.data);
         editor_data.set_value_temp(rsq.data);
-        set_edit_filename(name);
+        set_edit_filename({path: pre_path,name});
         set_edit_file_path(pre_path);
     }
     const click = async (pojo:FileTree,set_children:(list:FileTree[])=>void,pre_path:string) => {
@@ -101,14 +101,14 @@ export function Studio(props) {
         } else {
             if (have_update) {
                 setShowPrompt({open: true,handle:()=>{
-                    load_file(pojo.name,pre_path);
-                    setShowPrompt({open:false,handle:null});
+                        load_file(pojo.name,pre_path);
+                        setShowPrompt({open:false,handle:null});
                         set_have_update(false);
                     },title:"确定不保存就切换吗?" });
                 return;
             }
             // 点击文件
-           await load_file(pojo.name,pre_path);
+            await load_file(pojo.name,pre_path);
         }
     }
     async function file_save() {
@@ -172,7 +172,7 @@ export function Studio(props) {
     return <div  className={"studio"}>
         <Header ignore_tags={true}
                 left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
-                    <title key={2}>{edit_filename}</title>]}>
+                    <title key={2}>{edit_filename.name}</title>]}>
             <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
         </Header>
@@ -189,8 +189,8 @@ export function Studio(props) {
                     className="shell__overlay" onPointerUp={handlePointerup}
                 />
             }
-            <div className={"studio-editor"} key={edit_filename}>
-                {edit_filename && <AceEditor
+            <div className={"studio-editor"} key={edit_filename.path}>
+                {edit_filename.name && <AceEditor
                     mode={edit_model}
                     width="100%"
                     height="100%"
