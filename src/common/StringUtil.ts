@@ -86,6 +86,7 @@ export function getEditModelType(name) {
         case 'cpp':
         case 'h':
         case 'c':
+        case "cc":
             return 'c_cpp'
     }
     return "";

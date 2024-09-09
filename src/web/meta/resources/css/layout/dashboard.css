@@ -90,9 +90,9 @@ table th {
     text-align: left;
 }
 
-table th,
-table td {
-    width: 1rem;
+.dashboard table th,
+.dashboard table td {
+    /*width: 1rem;*/
     padding: .5em 0;
     max-width: 2rem;
 }
