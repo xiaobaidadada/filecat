@@ -11,6 +11,7 @@ import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 export function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
+    const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
     const [shellShowInit,setShellShowInit] = useState(false);
 
     const initTerminal =  async () => {
@@ -86,11 +87,6 @@ export function FileShell(props) {
         initTerminal();
         setShellShowInit(true);
     }, [shellShow])
-    useEffect(() => {
-        return ()=> {
-            close();
-        }
-    }, []);
     const init = (rows:number,cols:number)=>{
         terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
         const data = new WsData(CmdType.shell_open);
@@ -104,6 +100,6 @@ export function FileShell(props) {
         ws.send(data)
     }
     return (
-        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
+        <Shell show={shellShow.show} file_shell_hidden={file_shell_hidden} terminal={terminalState} init={init}/>
     )
 }

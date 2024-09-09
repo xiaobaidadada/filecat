@@ -17,7 +17,7 @@ export interface NavProps {
 
 export function Nav(props: NavProps) {
     return (
-        <nav className={"nav"}>
+        <nav className={"nav not-select-div"}>
             {props.navList.map((item, index) => {
                 return (<div key={index} className=" nav_1">
                     {item.map((item2, index) => {

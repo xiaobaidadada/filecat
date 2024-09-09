@@ -24,7 +24,7 @@ export function Confirm(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>{t("验证执行")}</h2>
+            <h2>{showPrompt.title ?? t("验证执行")}</h2>
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>

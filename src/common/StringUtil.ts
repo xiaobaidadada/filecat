@@ -91,4 +91,12 @@ export function getEditModelType(name) {
     return "";
 }
 
-
+export function join_url(u1:string,u2:string) {
+    if (u1.endsWith("/") && u2.startsWith("/")) {
+        return u1.slice(0,-1) + u2;
+    } else if (!u1.endsWith("/") && !u2.startsWith("/")) {
+        return u1 + "/" +u2;
+    } else {
+        return u1 + u2;
+    }
+}

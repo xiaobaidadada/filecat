@@ -2,6 +2,10 @@ html[dir="rtl"] #listing {
   margin-right: 16em;
 }
 
+.not-select-div {
+  user-select: none;
+}
+
 #listing h2 {
   margin: 0 0 0 0.5em;
   font-size: 0.9em;
@@ -272,7 +276,7 @@ html[dir="rtl"] #listing {
   position: fixed;
   bottom: -4em;
   left: 0;
-  z-index: 99999;
+  z-index: 999;
   width: 100%;
   background-color: var(--blue);
   height: 4em;

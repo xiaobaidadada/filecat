@@ -23,6 +23,7 @@ import {NotySucess} from "../../util/noty";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {getRouterAfter} from "../../util/WebPath";
 import {SystemdShell} from "../shell/SystemdShell";
+import {editor_data} from "../../util/store.util";
 
 let filter = ""
 
@@ -50,7 +51,6 @@ export function Systemd(props) {
     const [inside_systemd,set_inside_systemd] = useState(new Set());
 
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
 
     const init = async () => {
         const data = new WsData(CmdType.systemd_inside_get);
@@ -199,12 +199,12 @@ export function Systemd(props) {
                     }
                     const rsq1 = await fileHttp.post("common/save", data)
                     if (rsq1.code === RCode.Sucess) {
-                        setEditorValue('')
+                        editor_data.set_value_temp('')
                         setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
                 }
             })
-            setEditorValue(rsq.data.context)
+            editor_data.set_value_temp(rsq.data.context)
         }
     }
     return <div>

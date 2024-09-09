@@ -8,7 +8,10 @@ import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {ExtendedImage} from "./ExtendedImage";
 
 export function Preview(props: any) {
-    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
+    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
+    if (!file_preview.open) {
+        return ;
+    }
     function cancel () {
         setFilePreview({open:false})
     }

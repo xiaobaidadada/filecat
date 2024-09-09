@@ -1,7 +1,8 @@
 {
   "name": "filecat",
-  "version": "1.0.1",
-  "description": "",
+  "version": "1.0.2",
+  "description": "filecat 文件管理器",
+  "author": "xiaobaidadada",
   "main": "build/main.js",
   "engines": {
     "node": "18.x.x"
@@ -36,8 +37,6 @@
   },
   "bin": "build/main.js",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
     "@koa/cors": "^5.0.0",
@@ -83,10 +82,17 @@
     "chart.js": "^4.4.2",
     "css-loader": "^6.10.0",
     "flv.js": "^1.6.2",
+    "github-markdown-css": "^5.6.1",
     "html-webpack-plugin": "^5.6.0",
     "i18next": "^23.12.2",
     "listr2": "^8.2.1",
     "lodash": "^4.17.21",
+    "markdown-it": "^14.1.0",
+    "markdown-it-emoji": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-sub": "^2.0.0",
+    "markdown-it-sup": "^2.0.0",
+    "markdown-it-task-lists": "^2.1.1",
     "material-icons": "^1.13.12",
     "normalize.css": "^8.0.1",
     "noty": "^3.2.0-beta-deprecated",

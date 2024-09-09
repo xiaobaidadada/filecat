@@ -16,6 +16,7 @@ import {TableListRender} from "./component/TableListRend";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import Header from "../../../meta/component/Header";
+import {editor_data} from "../../util/store.util";
 
 
 
@@ -25,7 +26,6 @@ export function  Sys() {
     const [password, setPassword] = useState("");
     const [authopen, setAuthopen] = useState(false);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue);
 
     const [tokenMode,setTokenMode]  = useState(TokenTimeMode.close);
     const [tokenSeconds,setTokenSeconds] = useState(undefined);
@@ -107,12 +107,12 @@ export function  Sys() {
                 }
                 const rsq = await settingHttp.post("jscode/save", data);
                 if (rsq.code === 0) {
-                    setEditorValue('')
+                    editor_data.set_value_temp('')
                     setEditorSetting({open: false,model:'',fileName:'',save:null})
                 }
             }
         })
-        setEditorValue(res.data);
+        editor_data.set_value_temp(res.data)
     }
     const authOpenSave = async () =>{
         const result = await settingHttp.post("self_auth_open/save", {open:authopen});
@@ -290,6 +290,6 @@ export function  Sys() {
                 </CardFull>
             </Dashboard>
         </Column>
-        <Header left_children={<span className={"credits"}>version:1.0.1</span>}/>
+        <Header left_children={<span className={"credits"}>version:1.0.2</span>}/>
     </Row>
 }

@@ -15,13 +15,13 @@ import path from "path";
 import {NotyFail} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
+import {editor_data} from "../../../util/store.util";
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
@@ -98,12 +98,12 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                             req.context = context;
                             const rsq = await sshHttp.post("update/file/text",req);
                             if (rsq.code === 0) {
-                                setEditorValue('');
+                                editor_data.set_value_temp('')
                                 setEditorSetting({open: false, model: '', fileName: '', save: null})
                             }
                         }
                     })
-                    setEditorValue(rsq.data)
+                    editor_data.set_value_temp(rsq.data)
                     return;
                 }
             }

@@ -3,5 +3,6 @@ export enum RCode {
     Fail,
     AuthFail = 2,
     DdnsAuthFail,
-    File_Max
+    File_Max,
+    PreFile,
 }

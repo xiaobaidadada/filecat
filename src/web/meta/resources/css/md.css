@@ -1,0 +1,55 @@
+
+#md-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #fafafa;
+    position: fixed;
+    padding-top: 4em;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1000;
+    overflow: auto;
+}
+#md-container .md-context{
+    padding-top: 1em;
+    padding-left: 20%;
+    padding-right: 20%;
+    padding-bottom: 4em;
+    width:100%;
+    min-height: 100%;
+    overflow: auto;
+}
+
+.md-context > div {
+    padding-top: 1rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.075);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
+    min-height: 100%;
+    overflow: auto;
+}
+
+.code-block-with-copy {
+    position: relative; /* 让按钮相对代码块定位 */
+}
+
+.copy-btn {
+    position: absolute;
+    top: 10px;   /* 将按钮置于代码块的顶部 */
+    right: 10px; /* 将按钮置于代码块的右侧 */
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px; /* 调整按钮文字大小 */
+}
+
+.copy-btn:hover {
+    background-color: var(--borderPrimary);
+}

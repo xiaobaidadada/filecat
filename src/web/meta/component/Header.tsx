@@ -8,7 +8,7 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     return (
-        <header className={`header ${headerMin?"header-min":""}`}>
+        <header className={`header not-select-div ${headerMin?"header-min":""}`}>
             {props.ignore_tags !== true &&
                 <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank"><img src={logo } alt="FileCat"/></a></h3>
                 // <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{t("title")}</a></h3>

@@ -14,6 +14,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
+import {user_click_file} from "../../../util/store.util";
 
 
 
@@ -23,7 +24,10 @@ export function FileMenu() {
     const { t } = useTranslation();
     const [items, setItems,] = useState([{r:t("以文本打开")}]);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
+    const [studio, set_studio] = useRecoilState($stroe.studio);
+    const { click_file } = user_click_file();
+
+    const items_folder = [{r:t("以studio打开")}];
 
     const close = ()=>{
         setShowPrompt({show: false, type: '', overlay: false,data: {}});
@@ -32,31 +36,7 @@ export function FileMenu() {
     const pojo = showPrompt.data as FileMenuData;
     const textClick = async (v)=> {
         const name = showPrompt.data.filename;
-        const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
-        if (rsq.code === RCode.File_Max) {
-            NotyFail("超过20MB");
-            return;
-        }
-        let model = getEditModelType(name);
-        if (!model) {
-            model = "text"
-        }
-        setEditorSetting({
-            model,
-            open: true,
-            fileName: name,
-            save: async (context) => {
-                const data: saveTxtReq = {
-                    context
-                }
-                const rsq = await fileHttp.post(`save/${getRouterAfter('file', location.pathname)}${name}`, data)
-                if (rsq.code === 0) {
-                    setEditorValue('')
-                    setEditorSetting({open: false, model: '', fileName: '', save: null})
-                }
-            }
-        })
-        setEditorValue(rsq.data)
+        click_file({name,model:"text"});
         close();
     }
     switch (pojo.type) {
@@ -69,6 +49,15 @@ export function FileMenu() {
             break;
         case FileTypeEnum.uncompress:
             div = <UnCompress />
+            break;
+        case FileTypeEnum.folder:
+            div = <div onWheel={()=>{
+                close();
+            }}>
+                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_folder} click={()=>{
+                    set_studio({folder_path:showPrompt.data.path,name:showPrompt.data.filename});
+                }}/>}/>
+            </div>
             break;
         case FileTypeEnum.unknow:
         default:
@@ -90,7 +79,7 @@ export function FileMenuItem(props:{x:number,y:number,items?: any,click?: (v) =>
             backgroundColor: 'white',
             // border: '1px solid black',
             padding: '5px',
-            zIndex: 999999,
+            zIndex: 999,
         }}
     >
         <Dropdown items={props.items} click={props.click}/>

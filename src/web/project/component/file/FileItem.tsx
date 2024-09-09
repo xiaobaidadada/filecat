@@ -15,20 +15,19 @@ import {getEditModelType} from "../../../../common/StringUtil";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
 import {getFileNameByLocation} from "./FileUtil";
+import {user_click_file} from "../../util/store.util";
 
 
-export function FileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
+export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [editorValue, setEditorValue] = useRecoilState($stroe.editorValue)
-    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
+    const { click_file } = user_click_file();
     const {t} = useTranslation();
 
     const navigate = useNavigate();
     let location = useLocation();
     // const match = useMatch('/:pre/file/*');
-    const clickHandler = async (index,  name) => {
+    const clickHandler = async (index, name) => {
         const select = getByList(selectList, index);
         if (select !== null) {
             // @ts-ignore 取消选择
@@ -60,47 +59,7 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
-                const model = getEditModelType(name);
-                if (model) {
-                    // 双击文件
-                    const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
-                    if (rsq.code === RCode.File_Max) {
-                        NotyFail("超过20MB");
-                        return;
-                    }
-                    setEditorSetting({
-                        model,
-                        open: true,
-                        fileName: props.name,
-                        save: async (context) => {
-                            const data: saveTxtReq = {
-                                context
-                            }
-                            const rsq = await fileHttp.post(`save/${getRouterAfter('file', location.pathname)}${props.name}`, data)
-                            if (rsq.code === 0) {
-                                setEditorValue('')
-                                setEditorSetting({open: false, model: '', fileName: '', save: null})
-                            }
-                        }
-                    })
-                    setEditorValue(rsq.data)
-                    return;
-                } else {
-                    const type = getFileFormat(name);
-                    let url = fileHttp.getDownloadUrl(getFileNameByLocation(location,name));
-                    switch (type) {
-                        case FileTypeEnum.video:
-                        case FileTypeEnum.image:
-                        case FileTypeEnum.pdf:
-                            setFilePreview({open:true, type: type, name, url})
-                            break;
-                        case FileTypeEnum.unknow:
-                        default:
-                            NotyFail(t("未知类型、请使用右键文件"))
-                            break;
-                    }
-
-                }
+                click_file({name});
             }
         }
     }
@@ -109,18 +68,24 @@ export function FileItem(props: FileItemData & { index?: number,itemWidth?:strin
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
 
 
-    const handleContextMenu = (event,name,isDir) => {
+    const handleContextMenu = (event, name, isDir) => {
         event.preventDefault();
         const pojo = new FileMenuData();
+        pojo.path = webPathJoin(location.pathname, name)
         pojo.filename = name;
         pojo.x = event.clientX;
         pojo.y = event.clientY;
-        pojo.type = isDir?FileTypeEnum.folder:getFileFormat(name);
-        setShowPrompt({show: true,type:PromptEnum.FileMenu,overlay: false,data:pojo});
+        pojo.type = isDir ? FileTypeEnum.folder : getFileFormat(name);
+        setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
 
 
-    return <BaseFileItem extraAttr={{onContextMenu:(event)=>{handleContextMenu(event,props.name,props.type === FileTypeEnum.folder)}}} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} isLink={props.isLink} path={props.path}
+    return <BaseFileItem extraAttr={{
+        onContextMenu: (event) => {
+            handleContextMenu(event, props.name, props.type === FileTypeEnum.folder)
+        }
+    }} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+                         isLink={props.isLink} path={props.path}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

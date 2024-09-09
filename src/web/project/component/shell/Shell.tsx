@@ -7,13 +7,14 @@ import '@xterm/xterm/css/xterm.css'
 export interface ShellProps {
     show:boolean,
     terminal:Terminal,
-    init:(rows:number,cols:number) =>void
+    init:(rows:number,cols:number) =>void,
+    file_shell_hidden?:boolean,
 }
 
 export function Shell(props:ShellProps) {
     const [shellHeight,setShellHeight] = useState(25);
     const shellDividerRef = useRef(null);
-    const fitAddon = new FitAddon();
+    const fitAddon = useCallback(new FitAddon(),[])
     const shellRef = useRef(null);
     // pty 终端
     const terminalRef = useRef(null);
@@ -58,9 +59,12 @@ export function Shell(props:ShellProps) {
         shellRef.current.removeEventListener("pointermove", handleDrag);
 
     };
+    if (!props.show) {
+        return ;
+    }
     return <div className={"shell"} style={{
         height: `${shellHeight}em`,
-        display: `${props.show? 'block' : 'none'}`
+        display: `${props.file_shell_hidden? 'none' : 'block'}`
     }} ref={shellRef}>
         <div className={"shell__divider"} ref={shellDividerRef} onPointerDown={handlePointerDown}
              onPointerUp={handlePointerup}/>
