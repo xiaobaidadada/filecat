@@ -186,9 +186,15 @@ export const $stroe = {
         key: 'markdown',
         default:{} as {filename?:string,context?:string},
     }),
+    // 编辑器
     studio:atom({
         key: 'studio',
         default:{} as {folder_path?:string,name?:string}
+    }),
+    // 图片编辑器
+    image_editor:atom({
+        key:'image_editor',
+        default:{} as {path?:string,name?:string}
     })
 }
 

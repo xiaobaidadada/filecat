@@ -64,3 +64,28 @@ export function scanFiles(dt) {
         }
     });
 }
+
+
+export function loadJsFileOnce(path_name) {
+    return new Promise((resolvem,reject) => {
+        // 创建 script 元素
+        const script = document.createElement('script');
+        script.src = path_name; // 外部脚本的 URL
+        script.async = true; // 异步加载脚本
+
+        // 监听加载完成事件
+        script.onload = () => {
+            resolvem(null);
+            console.log('脚本加载完成');
+        };
+
+        // 监听加载错误事件
+        script.onerror = () => {
+            reject(reject);
+            console.error('脚本加载失败');
+        };
+
+        // 将 script 元素添加到 DOM 中
+        document.body.appendChild(script);
+    })
+}

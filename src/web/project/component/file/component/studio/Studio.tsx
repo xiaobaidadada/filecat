@@ -63,6 +63,7 @@ export function Studio(props) {
     }
     useEffect(() => {
         setEditorValue("");
+        // @ts-ignore
         set_edit_filename({});
         set_have_update(false);
         if (!studio.folder_path) {

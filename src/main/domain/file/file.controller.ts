@@ -12,7 +12,7 @@ import {
     UploadedFile,
     UseBefore
 } from "routing-controllers";
-import {FileCompressPojo, FileVideoFormatTransPojo, GetFilePojo} from "../../../common/file.pojo";
+import {base64UploadType, FileCompressPojo, FileVideoFormatTransPojo, GetFilePojo} from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
 import multer from 'multer';
@@ -54,11 +54,20 @@ export class FileController {
         return Sucess("1");
     }
 
+    // base保存支持分片 这个框架post默认最大只支持1mb
+    @Post('/base64/save/:path*')
+    async common_base64_save(@Ctx() ctx,@Param("path") path?: string,@Body() data?: {base64_context:string,type:base64UploadType}) {
+        await FileServiceImpl.common_base64_save(ctx.headers.authorization,path,data.base64_context,data.type);
+        return Sucess("1");
+    }
+
+    // 这里的路径不是相对的而是系统绝对路径
     @Post('/common/save')
     async common_save(@Body() data: {path:string,context:string}) {
         await FileServiceImpl.common_save(data.path,data.context);
         return Sucess("1");
     }
+
 
     @Post('/cut')
     async cut(@Ctx() ctx,@Body() data?: cutCopyReq) {

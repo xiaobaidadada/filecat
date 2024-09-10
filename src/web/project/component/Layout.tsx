@@ -37,6 +37,7 @@ import "ace-builds/src-noconflict/mode-sql";
 import "ace-builds/src-noconflict/mode-typescript";
 import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/ext-language_tools";
+import {ImageEditor} from "./file/component/image/ImageEditor";
 
 const ace = require("ace-builds/src-noconflict/ace");
 ace.config.set(
@@ -52,6 +53,8 @@ ace.config.setModuleUrl(
 function Layout() {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
+    const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
+
     function logout() {
         localStorage.setItem('token','')
     }
@@ -82,6 +85,7 @@ function Layout() {
             <Preview />
             <MarkDown />
             <Studio />
+            {image_editor.path!==undefined && <ImageEditor />}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody navList={MainNavList}>

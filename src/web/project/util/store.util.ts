@@ -113,3 +113,17 @@ export class editor_data {
         }
     }
 }
+
+
+// 将 Base64 数据分成多个片段
+export function createChunks(base64Str, size) {
+    const chunks = [];
+    let index = 0;
+
+    while (index < base64Str.length) {
+        chunks.push(base64Str.slice(index, index + size));
+        index += size;
+    }
+
+    return chunks;
+}

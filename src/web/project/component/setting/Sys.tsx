@@ -34,7 +34,7 @@ export function  Sys() {
     const [rows_outside_software, setRows_outside_software] = useState([]);
     const { t, i18n } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const {initUserInfo} = useContext(GlobalContext);
+    const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
@@ -181,6 +181,7 @@ export function  Sys() {
                 timeout: 1000, // 设置通知消失的时间（单位：毫秒）
                 layout: "bottomLeft"
             }).show();
+            reloadUserInfo();
         }
     }
     const add = ()=>{

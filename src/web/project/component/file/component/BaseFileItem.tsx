@@ -35,7 +35,7 @@ export function BaseFileItem(props: FileItemData & {
 
         <div>
             {(props.type === FileTypeEnum.image && props.path != undefined) ? (
-                <img src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
+                <img loading="lazy" src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
                 <i className="material-icons"></i>}
 
         </div>
