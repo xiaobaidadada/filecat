@@ -1,4 +1,5 @@
 import {
+    base64UploadType,
     FileCompressPojo,
     FileCompressType, FileTreeList,
     FileTypeEnum,
@@ -130,6 +131,16 @@ class FileService extends FileCompress{
         fs.writeFileSync(path, context);
     }
 
+    public common_base64_save(token:string,filepath:string,base64_context:string,type:base64UploadType) {
+        const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(filepath));
+        const binaryData = Buffer.from(base64_context, 'base64');
+        if (type === base64UploadType.all || type === base64UploadType.start) {
+            fs.writeFileSync(sysPath, binaryData);
+        } else if (type === base64UploadType.part){
+            fs.appendFileSync(sysPath, binaryData);
+        }
+    }
+
     public cut(token,data?: cutCopyReq) {
         if (!data) {
             return;
@@ -220,6 +231,7 @@ class FileService extends FileCompress{
                 ctx.attachment(fileName); // 设置文件名
             }
             if (stats.isFile()) {
+                ctx.set('Cache-Control', 'public, max-age=3600'); // 一个小时的缓存
                 // 发送文件
                 ctx.body = fs.createReadStream(sysPath);
             } else {

@@ -18,6 +18,7 @@ import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
+import {loadJsFileOnce} from "../../../util/file";
 
 
 // require('./client/js/rle');
@@ -30,9 +31,18 @@ export function Rdp() {
     const [password, setPassword] = useState(undefined);
     const [fullScreen, setFullScreen] = useState(false);
     const [status, setStatus] = useState<boolean>(false);
+    const loadfile = async ()=> {
+        try {
+            await loadJsFileOnce("rle.js");
+        } catch (e) {
+            NotyFail("加载资源失败");
+            return;
+        }
+
+    }
     var client = null;
     useEffect(() => {
-
+        loadfile();
         return ()=>{
             if (client) {
                 client.remove();

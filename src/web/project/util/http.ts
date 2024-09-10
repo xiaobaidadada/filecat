@@ -48,10 +48,16 @@ export class Http {
         let url = "/download?";
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
+                if (file.endsWith("/")  || file.endsWith("\\")) {
+                    file = file.slice(0, -1);
+                }
                 url += `file=${file}&`;
             }
         }
-        return url.slice(0, -1)+`&token=${localStorage.getItem('token')}`;
+        if (url.endsWith("&") || url.endsWith("/")  || url.endsWith("\\")) {
+            url = url.slice(0, -1);
+        }
+        return url +`&token=${localStorage.getItem('token')}`;
     }
 
     async post(url,jsonData = {},notCheck= true):Promise<Result<any>> {

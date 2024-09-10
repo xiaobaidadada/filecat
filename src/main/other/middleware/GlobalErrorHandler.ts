@@ -10,6 +10,7 @@ export class GlobalErrorHandler implements KoaMiddlewareInterface {
         try {
             await next();
         } catch (error) {
+            console.log("全局异常拦截",error);
             // next不再执行
             ctx.body = JSON.stringify(Fail(JSON.stringify(error)));
         }

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {FileMenuData} from "../../../../../common/FileMenuType";
@@ -7,15 +7,9 @@ import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
-import {Dropdown, DropdownItemsPojo, OverlayTransparent} from "../../../../meta/component/Dashboard";
-import {fileHttp} from "../../../util/config";
-import {getRouterAfter} from "../../../util/WebPath";
-import {RCode} from "../../../../../common/Result.pojo";
-import {saveTxtReq} from "../../../../../common/req/file.req";
-import {getEditModelType} from "../../../../../common/StringUtil";
+import {Dropdown, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {user_click_file} from "../../../util/store.util";
-
 
 
 export function FileMenu() {
@@ -26,8 +20,10 @@ export function FileMenu() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const { click_file } = user_click_file();
+    const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
 
     const items_folder = [{r:t("以studio打开")}];
+    const items_images = [{r:t("以图片编辑器打开")}];
 
     const close = ()=>{
         setShowPrompt({show: false, type: '', overlay: false,data: {}});
@@ -50,11 +46,20 @@ export function FileMenu() {
         case FileTypeEnum.uncompress:
             div = <UnCompress />
             break;
+        case FileTypeEnum.image:
+            div = <div onWheel={()=>{
+                close();
+            }}>
+                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_images} click={()=>{
+                    set_image_editor({path:showPrompt.data.path,name:showPrompt.data.filename});
+                }}/>}/>
+            </div>
+            break;
         case FileTypeEnum.folder:
             div = <div onWheel={()=>{
                 close();
             }}>
-                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_folder} click={()=>{
+                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_images} click={()=>{
                     set_studio({folder_path:showPrompt.data.path,name:showPrompt.data.filename});
                 }}/>}/>
             </div>

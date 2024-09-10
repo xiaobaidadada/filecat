@@ -41,6 +41,7 @@ module.exports = {
     devServer: {
         static:[
             {directory: path.join(__dirname,"..","..","src","web","project", './'),},
+            {directory: path.join(__dirname,"..","..","src","web","project", 'component',"file","component","image","js")},
             {directory: path.join(__dirname,"..","..","src","web","project", 'component',"toolbox","rdp","client","js")},
             {directory: path.join(__dirname,"..","..","src","web","meta", 'resources',"img","./",)}
         ],

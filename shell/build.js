@@ -49,6 +49,7 @@ const tasksLister = new Listr(
                             rej(false);
                             return;
                         }
+                        copyFileSync(path.join(__dirname, "..", "src", "web", "project", 'component',"file","component","image","js","filerobot-image-editor.min.js"), path.join(__dirname, "..", "build", "dist","filerobot-image-editor.min.js"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","toolbox","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "meta","resources","img","favicon-16x16.png"), path.join(__dirname, "..", "build", "dist","favicon-16x16.png"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","img","favicon-32x32.png"), path.join(__dirname, "..", "build", "dist","favicon-32x32.png"));
