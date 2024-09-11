@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {FileTree} from "../../../../../../../common/file.pojo";
 
-export function Folder(props:FileTree&{key:any ,pre_path:string,click?:(pojo:FileTree, set_children:(list:FileTree[])=>void,pre_path:string)=>Promise<void>}):void { {
+export function Folder(props:FileTree&{key:any ,pre_path:string,click?:(pojo:FileTree, set_children:(list:FileTree[])=>void,pre_path:string)=>Promise<void>}):React.JSX.Element { {
     const [expanded, setExpanded] = useState(false);
     const [children, setChildren] = useState<FileTree[]>([]);
     const set_children = (list:FileTree[]) =>{

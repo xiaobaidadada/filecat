@@ -6,7 +6,7 @@ import {webPathJoin} from "../../../common/ListUtil";
 
 export function RouteBreadcrumbs(props: {
     baseRoute: string,
-    clickFun?:Function
+    clickFun?:()=>void
 }) {
     let location = useLocation();
     const [totalRoutePaths, setTotalRoutePaths] = useState([]);
