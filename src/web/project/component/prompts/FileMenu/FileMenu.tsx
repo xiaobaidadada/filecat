@@ -59,7 +59,7 @@ export function FileMenu() {
             div = <div onWheel={()=>{
                 close();
             }}>
-                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_images} click={()=>{
+                <OverlayTransparent click={close}  children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items_folder} click={()=>{
                     set_studio({folder_path:showPrompt.data.path,name:showPrompt.data.filename});
                 }}/>}/>
             </div>
@@ -81,7 +81,7 @@ export function FileMenuItem(props:{x:number,y:number,items?: any,click?: (v) =>
             position: 'absolute',
             top: `${props.y}px`,
             left: `${props.x}px`,
-            backgroundColor: 'white',
+            // backgroundColor: 'white',
             // border: '1px solid black',
             padding: '5px',
             zIndex: 999,
