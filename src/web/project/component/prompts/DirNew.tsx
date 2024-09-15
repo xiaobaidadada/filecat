@@ -24,11 +24,15 @@ export function DirNew(props) {
             return;
         }
         // 新建文件和新建文件夹的名字都不能含有 / 这样的特殊路径
-        const fileName = `${getRouterAfter('file',location.pathname)}${name}`
+        const fileName = `${showPrompt.data.dir}${name}`
         const rsq = await fileHttp.post('new/dir', {name:fileName})
         if (rsq.code === 0) {
             cancel();
-            navigate(location.pathname);
+            if (showPrompt.data.call) {
+                showPrompt.data.call();
+            } else {
+                navigate(location.pathname);
+            }
         }
     }
     return (<div className={"card floating"}>

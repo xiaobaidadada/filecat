@@ -73,10 +73,7 @@ export function VideoTrans(props) {
         })
     }
     return (<div>
-        {is_opt &&
-            <FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>
-        }
-        {showPrompt.show && (is_opt ? <OverlayTransparent click={close}/> :
+        {showPrompt.show && (is_opt ? <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>}/> :
             <div>
                 <CardPrompt title={t("视频格式转换")} cancel={close} confirm={confirm} cancel_t={t("取消")}
                             confirm_t={t("确定")}

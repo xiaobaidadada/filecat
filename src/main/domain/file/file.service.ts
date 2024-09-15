@@ -192,8 +192,7 @@ class FileService extends FileCompress{
             // 创建目录
             fs.mkdirSync(sysPath, { recursive: true });
         } else {
-            fs.writeFileSync(sysPath,"");
-
+            fs.writeFileSync(sysPath,data.context ?? "");
         }
     }
 

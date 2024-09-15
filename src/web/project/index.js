@@ -6,6 +6,7 @@ import {BrowserRouter} from "react-router-dom";
 import "./util/in18resource"
 import {GlobalProvider} from "./GlobalProvider";
 
+
 const container = document.getElementById('root');
 const root = createRoot(container);
 root.render(<RecoilRoot>

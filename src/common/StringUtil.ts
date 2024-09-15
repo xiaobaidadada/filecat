@@ -88,6 +88,8 @@ export function getEditModelType(name) {
         case 'c':
         case "cc":
             return 'c_cpp'
+        case "excalidraw":
+            return 'json'
     }
     return "";
 }
@@ -100,4 +102,17 @@ export function join_url(u1:string,u2:string) {
     } else {
         return u1 + u2;
     }
+}
+
+// 获取路由url的第一个key值
+export function getWebFirstKey(url:string) {
+    if (!url) {
+        return "";
+    }
+    for (let i=1;i<url.length;i++) {
+        if (url[i] === "//") {
+            return url.slice(1,i);
+        }
+    }
+    return url.slice(1);
 }

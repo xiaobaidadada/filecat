@@ -7,9 +7,12 @@ export enum FileTypeEnum {
     video = 'video',
     invalid_link = 'invalid_link',
     folder = 'folder',
+    studio_file = 'studio_file',
+    studio_folder = 'studio_folder',
     unknow = "text",
     uncompress = "uncompress", // 压缩文件
-    md = "md"
+    md = "md",
+    excalidraw = "excalidraw"
 }
 
 export interface FileItemData {

@@ -164,7 +164,7 @@ table tr>*:last-child {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1001;
+    z-index: 1002;
     max-width: 25em;
     width: 90%;
     max-height: 95%;
@@ -315,7 +315,7 @@ body.rtl .card .card-action {
     left: 0;
     height: 100%;
     width: 100%;
-    z-index: 1000;
+    z-index: 1001;
     visibility: hidden;
     opacity: 0;
     animation: .1s show forwards;
@@ -328,7 +328,7 @@ body.rtl .card .card-action {
     left: 0;
     height: 100%;
     width: 100%;
-    z-index: 999;
+    z-index: 1001;
     visibility: hidden;
     opacity: 0;
     animation: .1s show forwards;

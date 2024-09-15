@@ -45,6 +45,7 @@ export function Prompt() {
 
     function click() {
         setShowPrompt({show: false, type: '', overlay: false,data: {}});
+        set_confirm({open: false,handle:null})
     }
 
     let div = <div></div>;

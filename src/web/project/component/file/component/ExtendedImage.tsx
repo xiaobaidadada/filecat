@@ -1,6 +1,6 @@
 import React, {ReactNode, useEffect, useRef, useState} from 'react';
 
-// todo 图片查看暂时不要
+
 export function ExtendedImage(props:{path:string}) {
     const container = useRef(null);
     const imgex = useRef(null);

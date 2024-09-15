@@ -3,6 +3,7 @@ import {FileTypeEnum} from "../../../common/file.pojo";
 import {WsClient} from "../../../common/frame/ws.client";
 import {UserBaseInfo} from "../../../common/req/user.req";
 import {Confirm} from "../component/prompts/Confirm";
+import {FileMenuData} from "../../../common/FileMenuType";
 
 const localStorageEffect = key => ({ setSelf, onSet }) => {
     const savedValue = localStorage.getItem(key);
@@ -19,7 +20,7 @@ export class ShowPromptData {
     show:boolean;
     type: string;
     overlay:boolean;
-    data:any;
+    data:FileMenuData;
 }
 
 export const $stroe = {
@@ -194,6 +195,11 @@ export const $stroe = {
     // 图片编辑器
     image_editor:atom({
         key:'image_editor',
+        default:{} as {path?:string,name?:string}
+    }),
+    // excalidraw编辑器
+    excalidraw_editor:atom({
+        key:'excalidraw_editor',
         default:{} as {path?:string,name?:string}
     })
 }

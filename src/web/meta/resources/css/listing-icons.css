@@ -113,6 +113,10 @@
 .file-icons [aria-label$=".wim"] i::before
 { content: 'album' }
 
+/* 绘图 */
+.file-icons [aria-label$=".excalidraw"] i::before
+{ content: 'draw' }
+
 /* #999 - Font */
 
 .file-icons [aria-label$=".otf"] i::before,
@@ -199,7 +203,8 @@
 
 .file-icons [aria-label$=".iso"] i,
 .file-icons [aria-label$=".php"] i,
-.file-icons [aria-label$=".rar"] i
+.file-icons [aria-label$=".rar"] i,
+.file-icons [aria-label$=".excalidraw"] i
 { color: var(--icon-violet) }
 
 /* Overrides */

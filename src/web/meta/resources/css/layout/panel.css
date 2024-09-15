@@ -10,9 +10,9 @@
     min-width: 10rem;
     /*max-width: 5rem;*/
     /*top: 3em;*/
-    right: 1em;
+    /*right: 1em;*/
 
-    position: absolute;
+    /*position: absolute;*/
 
     display: block;
     background-color: #fff;
@@ -20,15 +20,11 @@
     /*transform: scale(0);*/
     /*transition: .1s ease-in-out transform;*/
     /*transform-origin: top right;*/
-    z-index: 999;
+    z-index: 1001;
     cursor: pointer;
     width: 100%;
 }
-.dropdown_child {
-    top: 0;
-    left: 1rem;
-    position: absolute;
-}
+
 
 body.rtl .dropdown {
     right: unset;
@@ -42,6 +38,7 @@ body.rtl .dropdown {
     /*border-bottom: 1px solid #ccc;*/
     padding-top: .5rem;
     padding-bottom: .5rem;
+    padding-left: .2rem;
     word-break: break-all;
 }
 .dropdown > div:hover,input :hover {

@@ -204,12 +204,14 @@ export class SettingService {
         return this.update_files_setting;
     }
 
-    public saveFilesSetting(items:FileSettingItem[]) {
+    public saveFilesSetting(items:FileSettingItem[],token:string) {
         if (!Array.isArray(items) || items.length===0) {
             return;
         }
         items.shift();
         DataUtil.set(files_pre_mulu_key, items);
+        const obj = Cache.getTokenMap().get(token);
+        obj["root_index"] = 0; // 回到默认
         this.update_files_setting = null;
     }
 

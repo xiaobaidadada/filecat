@@ -38,6 +38,8 @@ import "ace-builds/src-noconflict/mode-typescript";
 import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/ext-language_tools";
 import {ImageEditor} from "./file/component/image/ImageEditor";
+import {ExcalidrawEditor} from "./file/component/ExcalidrawEditor";
+import {routerConfig} from "../../../common/RouterConfig";
 
 const ace = require("ace-builds/src-noconflict/ace");
 ace.config.set(
@@ -54,22 +56,23 @@ function Layout() {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
+    const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
 
     function logout() {
         localStorage.setItem('token','')
     }
     const MainNavList:NavItem[][] = [
         [
-            {icon: "folder", name: t("文件夹"), rto: "file/",},],
+            {icon: "folder", name: t("文件夹"), rto: `${routerConfig.file}/`,},],
         [
-            {icon: "home", name: t("索引"), rto: "navindex/"},
-            {icon: "home_repair_service", name: t("工具箱"), rto: "toolbox/"},
-            {icon: "computer", name: t("系统信息"), rto: "info/"},
-            {icon: "cloud", name: "ddns", rto: "ddns/"},
+            {icon: "home", name: t("索引"), rto: `${routerConfig.navindex}/`},
+            {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
+            {icon: "computer", name: t("系统信息"), rto: `${routerConfig.info}/`},
+            {icon: "cloud", name: "ddns", rto: `${routerConfig.ddns}/`},
         ],
         [
-            {icon: "network_ping", name: t("虚拟网络"), rto: "net/"},
-            {icon: "settings", name: t("设置"), rto: "setting/"},
+            {icon: "network_ping", name: t("虚拟网络"), rto: `${routerConfig.net}/`},
+            {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
             {icon: "logout", name: t("退出登录"),clickFun: logout,rto: "/"},
             // {component:(<div>测试</div>)}
         ]
@@ -81,29 +84,30 @@ function Layout() {
         <div>
             {/*全局显示*/}
             <Prompt></Prompt>
-            <FileEditor />
-            <Preview />
-            <MarkDown />
-            <Studio />
-            {image_editor.path!==undefined && <ImageEditor />}
+            <FileEditor/>
+            <Preview/>
+            <MarkDown/>
+            <Studio/>
+            {image_editor.path !== undefined && <ImageEditor/>}
+            {excalidraw_editor.path !== undefined && <ExcalidrawEditor />}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody navList={MainNavList}>
                 {/*文件*/}
                 <FileList/>
                 {/*索引*/}
-                <NavIndex />
+                <NavIndex/>
                 {/*工具箱*/}
                 <ToolBox/>
                 {/*系统信息*/}
-                <SysInfo />
+                <SysInfo/>
                 {/*ddns*/}
-                <Ddns />
+                <Ddns/>
 
                 {/*网络*/}
                 <Net/>
                 {/*设置*/}
-                <Settings />
+                <Settings/>
             </CommonBody>
         </div>
     )

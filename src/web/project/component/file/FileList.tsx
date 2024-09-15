@@ -184,10 +184,10 @@ export function FileList() {
         setShowPrompt({show: true,type:PromptEnum.Confirm,overlay: true,data:{}});
     }
     function dirnew() {
-        setShowPrompt({show: true,type:PromptEnum.DirNew,overlay: true,data:{}});
+        setShowPrompt({show: true,type:PromptEnum.DirNew,overlay: true,data:{dir:getRouterAfter('file',location.pathname)}});
     }
     function filenew() {
-        setShowPrompt({show: true,type:PromptEnum.FileNew,overlay: true,data:{}});
+        setShowPrompt({show: true,type:PromptEnum.FileNew,overlay: true,data:{dir:getRouterAfter('file',location.pathname)}});
     }
     function downloadFile() {
         const files = getFilesByIndexs(nowFileList, selectedFile);

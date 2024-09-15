@@ -20,7 +20,7 @@
   },
   "pkg": {
     "assets": [
-      "build/dist/*",
+      "build/dist/**/**",
       "build/win-process.node",
       "build/linux-process.node",
       "build/wintun.node",
@@ -74,6 +74,7 @@
     "@babel/preset-env": "^7.24.3",
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",
+    "@excalidraw/excalidraw": "^0.17.6",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "ace-builds": "^1.32.9",

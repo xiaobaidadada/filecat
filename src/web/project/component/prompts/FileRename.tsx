@@ -22,21 +22,37 @@ export function FileRename(props) {
         setShowPrompt({show: false,type: "",overlay: false,data:{}})
     }
     const getName = () =>{
-        const files = getFilesByIndexs(nowFileList, selectedFile);
-        return files[0].name;
+        if (!showPrompt.data.path) {
+            const files = getFilesByIndexs(nowFileList, selectedFile);
+            return files[0].name;
+        } else {
+            return showPrompt.data.filename;
+        }
+
     }
     const dirnew = async ()=>{
-        if (!name || selectedFile.length!==1) {
+        if (!showPrompt.data.path && (!name || selectedFile.length!==1)) {
             cancel()
             return;
         }
-        const files = getFilesByIndexs(nowFileList, selectedFile);
-        const newName = `${getRouterAfter('file',location.pathname)}${name}`
-        const filename = `${getRouterAfter('file',location.pathname)}${files[0].name}`
+        let newName;
+        let filename;
+        if (!showPrompt.data.path) {
+            const files = getFilesByIndexs(nowFileList, selectedFile);
+            newName = `${getRouterAfter('file',location.pathname)}${name}`
+            filename = `${getRouterAfter('file',location.pathname)}${files[0].name}`
+        } else {
+            filename = showPrompt.data.path;
+            newName =  `${showPrompt.data.dir}${name}`;
+        }
         const rsq = await fileHttp.post('rename', {name:filename,newName:newName})
         if (rsq.code === 0) {
             cancel();
-            navigate(location.pathname);
+            if (showPrompt.data.call) {
+                showPrompt.data.call();
+            } else {
+                navigate(location.pathname);
+            }
         }
     }
     return (<div className={"card floating"}>
