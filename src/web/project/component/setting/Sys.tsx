@@ -291,6 +291,6 @@ export function  Sys() {
                 </CardFull>
             </Dashboard>
         </Column>
-        <Header left_children={<span className={"credits"}>version:1.0.2</span>}/>
+        <Header left_children={<span className={"credits"}>version:1.0.3</span>}/>
     </Row>
 }
