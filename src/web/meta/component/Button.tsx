@@ -2,7 +2,7 @@ import React from 'react';
 import {MaterialIcon} from "material-icons";
 
 
-export function ButtonLittle(props:{text:string,clickFun?:Function}) {
+export function ButtonLittle(props:{text:string,clickFun?:()=>void}) {
     return (<button className={"little-button button"}  onClick={props.clickFun}>{props.text}</button>)
 }
 
@@ -19,7 +19,7 @@ export function ButtonLittleStatus(props:{text:string,clickFun?:(open?:boolean)=
     }}>{props.text}</button>)
 }
 
-export function Button(props: { text: string, clickFun?: Function }) {
+export function Button(props: { text: string, clickFun?: ()=>void }) {
     return (<input
         className="button button--block"
         type="submit"
@@ -28,7 +28,7 @@ export function Button(props: { text: string, clickFun?: Function }) {
     />)
 }
 
-export function ButtonText(props:{text:string,clickFun?:Function}) {
+export function ButtonText(props:{text:string,clickFun?:()=>void}) {
     return (<input
         className="button button--flat "
         type="button"
@@ -37,7 +37,7 @@ export function ButtonText(props:{text:string,clickFun?:Function}) {
     />)
 }
 
-export function ActionButton(props:{icon:MaterialIcon,title:string,onClick?:Function,tip?:any,selected?:boolean,key?:any}) {
+export function ActionButton(props:{icon:MaterialIcon,title:string,onClick?:(event?:any)=>void,tip?:any,selected?:boolean,key?:any}) {
     return (
         <div className="action" title={props.title} onClick={props.onClick}>
             <i className="material-icons icon" style={{

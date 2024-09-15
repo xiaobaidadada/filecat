@@ -27,15 +27,24 @@ export function FilesDelete(props) {
     }
     async function confirm() {
 
-        const files = getFilesByIndexs(nowFileList, selectedFileList);
-        for (const file of files) {
-            await fileHttp.delete(getFileNameByLocation(location,file.name))
+        if (showPrompt.data.path) {
+            await fileHttp.delete(showPrompt.data.path)
+        } else {
+            const files = getFilesByIndexs(nowFileList, selectedFileList);
+            for (const file of files) {
+                await fileHttp.delete(getFileNameByLocation(location,file.name))
+            }
         }
         setShowPrompt({
             show:false,overlay: false,type: '',data: {}
         })
-        navigate(location.pathname)
-        setSelectedFileList([])
+        if (showPrompt.data.call) {
+            showPrompt.data.call();
+        } else {
+            navigate(location.pathname)
+            setSelectedFileList([])
+        }
+
     }
 
     return (

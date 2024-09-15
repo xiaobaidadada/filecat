@@ -1,9 +1,10 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Link, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
 import Login from "../../project/component/Login";
 import Layout from "../../project/component/Layout";
 import {SimpleRoutes} from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
+import {FileMenuItem} from "../../project/component/prompts/FileMenu/FileMenu";
 
 // 菜单容器
 export function Menu(props) {
@@ -111,28 +112,34 @@ export function DropdownTag(props: {
     title?: any
 }) {
     const [show, setShow] = React.useState(false);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
     const click = () => {
         setShow(false);
     }
 
     return <div className={"dropdown_start"}>
-        <ActionButton icon={"more_vert"} title={props.title} onClick={() => {
+        <ActionButton icon={"more_vert"} title={props.title} onClick={(event) => {
+            setPosition({top: event.clientY, left: event.clientX})
             setShow(!show)
         }}/>
         {show && <OverlayTransparent click={click}/>}
-        {show && <Dropdown {...props}/>}
+        {show && <FileMenuItem x={position.left} y={position.top}
+                               items={props.items} click={props.click}/> }
     </div>
 
 }
 
 function DropdownItem(props: { key, value, click, context, pre_value, c?: React.ReactNode }) {
     return <div className={props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation()
+                    e.nativeEvent.stopImmediatePropagation()
                     if (props.click) props.click(props.value)
                 }}>
         {props.context}
         {props.c &&
-            <div className={"dropdown_child"}>
+            <div className={""}>
                 {props.c}
             </div>
         }

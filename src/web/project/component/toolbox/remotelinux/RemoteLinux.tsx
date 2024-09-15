@@ -43,7 +43,7 @@ export function RemoteLinux(props) {
         const res = await sshHttp.post("close", req);
         setStatus(false)
     }
-    const go = async (item:SshPojo)=>{
+    const go = async (item?:SshPojo)=>{
         const req = new SshPojo();
         req.password = item?item.password:password;
         req.domain = item?item.domain:domain;
@@ -108,7 +108,7 @@ export function RemoteLinux(props) {
             <InputTextIcon placeholder={t("私钥路径")} icon={"private_connectivity"} value={private_path} handleInputChange={(v)=>setPrivatePath(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("连接地址")} icon={"location_on"} value={domain} handleInputChange={(v) => {setDomain(v);}} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
-            <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>
+            <ActionButton icon={"play_arrow"} title={t("连接")} onClick={()=>{go()}}/>
         </Header>
         {!status ? <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")}]}/>
             : <RemoteLinuxFileList close={close} data={{port,password,username,domain,dir}}/>}

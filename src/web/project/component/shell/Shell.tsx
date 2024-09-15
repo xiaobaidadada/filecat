@@ -14,6 +14,7 @@ export interface ShellProps {
 export function Shell(props:ShellProps) {
     const [shellHeight,setShellHeight] = useState(25);
     const shellDividerRef = useRef(null);
+    // @ts-ignore
     const fitAddon = useCallback(new FitAddon(),[])
     const shellRef = useRef(null);
     // pty 终端
@@ -21,6 +22,7 @@ export function Shell(props:ShellProps) {
     const [shellDrag,setShellDrag] = useState(false);
 
     const handleDrag = useCallback(lodash.throttle( (event)=> {
+        // @ts-ignore
         fitAddon.fit();
         const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
         const top = window.innerHeight / size - 4;
@@ -35,7 +37,9 @@ export function Shell(props:ShellProps) {
         if (props.terminal) {
             props.terminal.open(terminalRef.current);
             // terminal 的尺寸与父元素匹配
+            // @ts-ignore
             props.terminal!.loadAddon(fitAddon)
+            // @ts-ignore
             fitAddon.fit()
             props.init(props.terminal.rows,props.terminal.cols);
         }

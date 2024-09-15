@@ -22,6 +22,8 @@ import {SSHController} from "./domain/ssh/ssh.controller";
 import {RdpController} from "./domain/rdp/rdp.controller";
 import {ServerEvent} from "./other/config";
 import {VideoController} from "./domain/video/video.controller";
+import {routerConfig} from "../common/RouterConfig";
+import {getWebFirstKey} from "../common/StringUtil";
 
 const WebSocket = require('ws');
 
@@ -53,6 +55,11 @@ async function start() {
     (new WsServer(wss)).start();
 
     if (process.env.NODE_ENV === "production") {
+        const router = new Set();
+        for (const item of Object.values(routerConfig)) {
+            router.add(`/${item}`)
+            router.add(`${item}`)
+        }
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
@@ -62,10 +69,16 @@ async function start() {
                 return;
             }
             try {
-                if (!ctx.url || ctx.url === "/") {
+                if (router.has(getWebFirstKey(ctx.url))) {
                     throw "";
                 }
-                const url = path.join(__dirname, 'dist', path.basename(ctx.url));
+                let url ;
+                if (ctx.url.includes("excalidraw-assets")) {
+                    ctx.url = ctx.url.slice(1); // 删去/
+                    url = path.join(__dirname, 'dist', ctx.url);
+                } else {
+                    url = path.join(__dirname, 'dist', path.basename(ctx.url));
+                }
                 fs.accessSync(url, fs.constants.F_OK,)
                 ctx.body = fs.createReadStream(url);
             } catch (e) {

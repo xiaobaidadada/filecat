@@ -17,7 +17,7 @@ export function getRouterAfter(keyRouter,router) {
     return result;
 }
 
-// 获取资源所在的路径上一级
+// 获取资源所在的路径上一级 会以/结尾
 export function getRouterPrePath(path) {
     path = path.trim();
     if (path.endsWith('/') || path.endsWith('\\')) {
@@ -31,7 +31,11 @@ export function getRouterPrePath(path) {
         }
 
     }
-    return path.substring(0,index);
+    path = path.substring(0,index);
+    if (!path.endsWith('/')) {
+        path = path+"/"
+    }
+    return path;
 }
 
 export function isNumeric(str) {

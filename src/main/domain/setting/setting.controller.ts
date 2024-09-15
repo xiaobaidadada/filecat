@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Post} from "routing-controllers";
+import {Body, Controller, Ctx, Get, Param, Post} from "routing-controllers";
 import {UserBaseInfo, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Result, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -142,8 +142,8 @@ export class SettingController {
 
     // 设置文件路由设置
     @Post('/filesSetting/save')
-    saveFilesSetting(@Body() req:any) {
-        settingService.saveFilesSetting(req);
+    saveFilesSetting(@Body() req:any,@Ctx() ctx) {
+        settingService.saveFilesSetting(req,ctx.headers.authorization);
         return Sucess("1");
     }
 

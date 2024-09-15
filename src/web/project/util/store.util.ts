@@ -11,36 +11,37 @@ import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 
-
-
+async function get_file_context(path) {
+    const rsq = await fileHttp.get(path);
+    if (rsq.code === RCode.File_Max) {
+        NotyFail("超过20MB");
+        return;
+    }
+    return rsq.data;
+}
 
 export const user_click_file = () => {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
-    const { t } = useTranslation();
+    const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
 
-     const click_file = async (param:{name,context?:string,model?:string})=> {
-        const {name,context} = param;
-        const model_type = getEditModelType(name);
-        const model = !model_type ? param.model :model_type;
+    const {t} = useTranslation();
+
+    const click_file = async (param: { name, context?: string, model?: string }) => {
+        const {name, context} = param;
+        let model = getEditModelType(name);
         const type = getFileFormat(name);
-        if (model) {
+        if (param.model === "text") {
             // 双击文件
             let value;
             if (context) {
                 value = context;
             } else {
-                const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${name}`)
-                if (rsq.code === RCode.File_Max) {
-                    NotyFail("超过20MB");
-                    return;
-                }
-                value = rsq.data;
+                value = await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`)
             }
-            if (type === FileTypeEnum.md && param.model !=="text") {
-                set_markdown({context: value, filename: name})
-                return;
+            if (!model) {
+                model = "text";
             }
             setEditorSetting({
                 model,
@@ -62,6 +63,16 @@ export const user_click_file = () => {
         } else {
             let url = fileHttp.getDownloadUrl(getFileNameByLocation(location, name));
             switch (type) {
+                case FileTypeEnum.excalidraw:
+                    set_excalidraw_editor({path: "", name});
+                    break;
+                case FileTypeEnum.md:
+
+                    set_markdown({
+                        context: await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`),
+                        filename: name
+                    })
+                    break;
                 case FileTypeEnum.video:
                 case FileTypeEnum.image:
                 case FileTypeEnum.pdf:
@@ -69,7 +80,12 @@ export const user_click_file = () => {
                     break;
                 case FileTypeEnum.unknow:
                 default:
-                    NotyFail(t("未知类型、请使用右键文件"))
+                    if (model) {
+                        param.model = "text";
+                        click_file(param);
+                        break;
+                    }
+                    NotyFail(t("未知类型、请右键点击文件"))
                     break;
             }
 
@@ -82,30 +98,33 @@ export const user_click_file = () => {
 
 export class editor_data {
 
-    static cache_str:string = "";
+    static cache_str: string = "";
 
-    public static set_value_temp(v:string){
+    public static set_value_temp(v: string) {
         editor_data.cache_str = v;
     }
+
     public static get_value_temp() {
         return editor_data.cache_str;
     }
 
-    public static set_value(v:string,filename?:string){
+    public static set_value(v: string, filename?: string) {
         if (filename) {
             localStorage.setItem(filename, v);
         } else {
-            localStorage.setItem("cache_str",v);
+            localStorage.setItem("cache_str", v);
         }
     }
-    public static get_value(filename?:string) {
+
+    public static get_value(filename?: string) {
         if (filename) {
             localStorage.getItem(filename);
         } else {
             localStorage.getItem("cache_str");
         }
     }
-    public static delete_value(filename?:string) {
+
+    public static delete_value(filename?: string) {
         if (filename) {
             localStorage.removeItem(filename);
         } else {

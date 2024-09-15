@@ -43,7 +43,7 @@ export function ImageEditor() {
                 const mimeType = editedImageObject.mimeType;
                 const extension = editedImageObject.extension;
                 const name = editedImageObject.name ?? image_editor.name;
-                const router_path = `base64/save/${encodeURIComponent(`${getRouterPrePath(path)}/${name}.${extension}`)}`;
+                const router_path = `base64/save/${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`;
                 if (base64Data.length <= max_length) {
                     const data = {
                         base64_context:base64Data,

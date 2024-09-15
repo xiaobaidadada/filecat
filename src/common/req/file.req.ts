@@ -16,5 +16,6 @@ export interface cutCopyReq {
 export interface fileInfoReq {
     name:string,
     newName:string;
+    context?:string
 }
 

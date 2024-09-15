@@ -1,20 +1,23 @@
 import React, {useEffect, useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {InputText} from "../../../meta/component/Input";
+import {InputText, Select} from "../../../meta/component/Input";
 import {fileHttp} from "../../util/config";
 import {getRouterAfter} from "../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
+import {FileCompressType} from "../../../../common/file.pojo";
 
 export function FileNew(props) {
     const { t } = useTranslation();
+    const [format, setFormat] = useState("");
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [name, setName] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
 
+    const select_item = [{title:`${t("空")}`,value:""},{title:`excalidraw${t("格式")}`,value:".excalidraw"}]
     const cancel=()=> {
         setShowPrompt({show: false,type: "",overlay: false,data:{}})
     }
@@ -23,11 +26,25 @@ export function FileNew(props) {
             cancel()
             return;
         }
-        const fileName = `${getRouterAfter('file',location.pathname)}${name}`
-        const rsq = await fileHttp.post('new/file', {name:fileName})
+        let r_name = name;
+        let context = "";
+        if (format) {
+            if (!name.endsWith(format)) {
+                r_name = name+format;
+            }
+            if (format === ".excalidraw") {
+                context = "{}";
+            }
+        }
+        const fileName = `${showPrompt.data.dir}${r_name}`
+        const rsq = await fileHttp.post('new/file', {name:fileName,context})
         if (rsq.code === 0) {
             cancel();
-            navigate(location.pathname);
+            if (showPrompt.data.call) {
+                showPrompt.data.call();
+            } else {
+                navigate(location.pathname);
+            }
         }
     }
     return (<div className={"card floating"}>
@@ -36,6 +53,9 @@ export function FileNew(props) {
         </div>
         <div className="card-content">
             <InputText placeholderOut={t("输入文本名")} value={name} handleInputChange={(value)=>setName(value)} />
+            <Select value={format} onChange={(value:FileCompressType)=>{
+                setFormat(value);
+            }} options={select_item}/>
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
