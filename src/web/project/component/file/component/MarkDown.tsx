@@ -13,6 +13,7 @@ import taskLists from 'markdown-it-task-lists';
 import 'github-markdown-css/github-markdown.css';
 import {NotySucess} from "../../../util/noty";
 import {join_url} from "../../../../../common/StringUtil";
+import {copyToClipboard} from "../../../util/FunUtil";
 
 // import hljs from 'highlight.js' // https://highlightjs.org
 
@@ -62,7 +63,7 @@ const markdownItAddPrefixToLinks = (md) => {
         if (hrefIndex >= 0) {
             const hrefValue = token.attrs[hrefIndex][1]; // 获取原始的 href 值
             // href 为它添加 /file/ 前缀
-            token.attrs[hrefIndex][1] = join_url(window.location.href , hrefValue);
+            token.attrs[hrefIndex][1] = join_url(window.location.href, hrefValue);
         }
         // 调用默认的渲染器，继续正常渲染其他部分
         return defaultRender(tokens, idx, options, env, self);
@@ -84,36 +85,9 @@ md.use(emoji)       // 支持 Emoji
 
 export function MarkDown(props) {
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
-    const copyToClipboard = (text) => {
-        // 创建一个不可见的textarea元素
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-
-        // 让textarea不可见
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-
-        // 把textarea添加到DOM中
-        document.body.appendChild(textArea);
-
-        // 选中textarea中的文本
-        textArea.select();
-        textArea.setSelectionRange(0, 99999); // 对移动设备的支持
-
-        try {
-            // 使用execCommand复制
-            const successful = document.execCommand('copy');
-            if (successful) {
-                NotySucess('复制成功');
-            } else {
-                console.error('复制失败');
-            }
-        } catch (err) {
-            console.error('复制失败：', err);
-        }
-
-        // 移除textarea元素
-        document.body.removeChild(textArea);
+    const copy = (text) => {
+        copyToClipboard(text)
+        NotySucess('复制成功');
     };
     useEffect(() => {
         // 在组件渲染完成后为复制按钮添加事件处理
@@ -121,7 +95,7 @@ export function MarkDown(props) {
         copyButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const code = this.getAttribute('data-code');
-                copyToClipboard(code);
+                copy(code);
             });
         });
 
@@ -130,25 +104,27 @@ export function MarkDown(props) {
             copyButtons.forEach(button => {
                 button.removeEventListener('click', function () {
                     const code = this.getAttribute('data-code');
-                    copyToClipboard(code);
+                    copy(code);
                 });
             });
         };
     }, [markdown]); // 每次 markdownText 改变时重新绑定事件
     if (!markdown.context) {
-        return ;
+        return;
     }
-    function cancel () {
-        set_markdown({context:"",filename:""})
+
+    function cancel() {
+        set_markdown({context: "", filename: ""})
     }
 
 
     return <div id={"md-container"}>
-        <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
-            <title key={2}>{markdown.filename}</title>]}>
+        <Header ignore_tags={true}
+                left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
+                    <title key={2}>{markdown.filename}</title>]}>
         </Header>
         <div className={"md-context markdown-body "}>
-            <div dangerouslySetInnerHTML={{ __html: md.render(markdown.context) }} />
+            <div dangerouslySetInnerHTML={{__html: md.render(markdown.context)}}/>
         </div>
     </div>
 }

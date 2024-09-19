@@ -3,6 +3,8 @@ import lodash from "lodash";
 import {FitAddon} from "@xterm/addon-fit";
 import {Terminal} from "@xterm/xterm";
 import '@xterm/xterm/css/xterm.css'
+import {copyToClipboard} from "../../util/FunUtil";
+import {NotySucess} from "../../util/noty";
 
 export interface ShellProps {
     show:boolean,
@@ -42,6 +44,22 @@ export function Shell(props:ShellProps) {
             // @ts-ignore
             fitAddon.fit()
             props.init(props.terminal.rows,props.terminal.cols);
+
+            // 监听键盘事件
+            props.terminal.attachCustomKeyEventHandler((event) => {
+                // 检测用户是否按下 Ctrl + C
+                if (event.ctrlKey && event.key === 'c') {
+                    const selectedText = props.terminal.getSelection();
+                    if (selectedText) {
+                        copyToClipboard(selectedText);
+                        NotySucess("已复制");
+                        // 阻止默认的 Ctrl + C 事件（防止它发送中断信号）
+                        event.preventDefault();
+                        props.terminal.focus();
+                    }
+                }
+                return true;
+            });
         }
 
     },[props.terminal])
