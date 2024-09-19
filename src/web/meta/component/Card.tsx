@@ -1,6 +1,7 @@
 import React, {useRef} from 'react';
 import Noty from "noty";
 import {InputText} from "./Input";
+import {copyToClipboard} from "../../project/util/FunUtil";
 
 export interface CardProps {
     title?: string;
@@ -46,13 +47,7 @@ export interface TextProps {
 export function TextTip(props:TextProps) {
     const copyRef = useRef<HTMLDivElement>(null);
     const click = () =>{
-        const textarea = document.createElement('textarea');
-        // @ts-ignore
-        textarea.value = props.context;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
+        copyToClipboard(props.context)
         new Noty({
             type: 'info',
             text: '复制完成',
