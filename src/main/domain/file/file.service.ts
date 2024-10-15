@@ -3,7 +3,7 @@ import {
     FileCompressPojo,
     FileCompressType, FileTreeList,
     FileTypeEnum,
-    FileVideoFormatTransPojo,
+    FileVideoFormatTransPojo, FileInfoItemData,
     GetFilePojo
 } from "../../../common/file.pojo";
 // import {config} from "../../other/config";
@@ -26,6 +26,7 @@ import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {getEditModelType} from "../../../common/StringUtil";
+import si from "systeminformation";
 const archiver = require('archiver');
 const mime = require('mime-types');
 
@@ -33,12 +34,12 @@ const mime = require('mime-types');
 const MAX_SIZE_TXT = 20 * 1024 * 1024;
 class FileService extends FileCompress{
 
-    public async getFile(param_path,token):Promise<Result<GetFilePojo|string>> {
+    public async getFile(param_path,token,is_sys_path?: number):Promise<Result<GetFilePojo|string>> {
         const result:GetFilePojo = {
             files:[],
-            folders:[]
+            folders:[],
         };
-        const sysPath = path.join(settingService.getFileRootPath(token),param_path?decodeURIComponent(param_path):"");
+        const sysPath = is_sys_path===1?`/${decodeURIComponent(param_path)}`:path.join(settingService.getFileRootPath(token),param_path?decodeURIComponent(param_path):"");
         if (!fs.existsSync(sysPath)) {
             return Fail("路径不存在",RCode.Fail);
         }
@@ -53,6 +54,10 @@ class FileService extends FileCompress{
             const pojo = Sucess(buffer.toString(),RCode.PreFile);
             pojo.message = name;
             return pojo;
+        } else {
+            if (!stats.isDirectory()) {
+                return Fail("不是文件",RCode.Fail);
+            }
         }
 
         const items = fs.readdirSync(sysPath);// 读取目录内容
@@ -63,11 +68,11 @@ class FileService extends FileCompress{
             try {
                 stats = fs.statSync(filePath);
             } catch (e) {
-                continue;
+                console.log("读取错误",e);
             }
-            const formattedCreationTime = getShortTime(new Date(stats.mtime).getTime());
-            const size = formatFileSize(stats.size);
-            if (stats.isFile()) {
+            const formattedCreationTime = stats?getShortTime(new Date(stats.mtime).getTime()):"";
+            const size = stats?formatFileSize(stats.size):"";
+            if (stats && stats.isFile()) {
                 const type = getFileFormat(item);
                 result.files?.push({
                     type:type,
@@ -77,7 +82,7 @@ class FileService extends FileCompress{
                     isLink:stats.isSymbolicLink(),
                     path:`${param_path}/${item}`
                 })
-            } else if (stats.isDirectory()) {
+            } else if (stats && stats.isDirectory()) {
                 result.folders?.push({
                     type:FileTypeEnum.folder,
                     name:item,
@@ -85,11 +90,32 @@ class FileService extends FileCompress{
                     isLink:stats.isSymbolicLink(),
                     path:param_path
                 })
+            }  else {
+                result.files?.push({
+                    type:FileTypeEnum.dev,
+                    name:item,
+                    mtime:formattedCreationTime,
+                    size,
+                    path:`${param_path}/${item}`
+                })
             }
         }
         return Sucess(result);
     }
 
+    public async getFileInfo(type:FileTypeEnum,fpath:string,token) {
+        let info:FileInfoItemData = {};
+        const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(fpath));
+        switch (type) {
+            case FileTypeEnum.folder:
+                info = await this.getDiskSizeForPath(sysPath);
+                break;
+            default:
+                break;
+        }
+
+        return info;
+    }
 
     public uploadFile(filePath,file: multer.File,token) {
         const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
@@ -118,18 +144,20 @@ class FileService extends FileCompress{
         }
     }
 
-    public save(token,context?:string,filePath?:string) {
+    public save(token,context?:string,filePath?:string,is_sys_path?: number) {
         if (context===null || context===undefined) {
             return;
         }
-        const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
+        const sysPath = is_sys_path===1?`/${decodeURIComponent(filePath)}`:path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
+
+        // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
     }
 
-    public common_save(path:string,context:string) {
-        fs.writeFileSync(path, context);
-    }
+    // public common_save(path:string,context:string) {
+    //     fs.writeFileSync(path, context);
+    // }
 
     public common_base64_save(token:string,filepath:string,base64_context:string,type:base64UploadType) {
         const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(filepath));
@@ -426,6 +454,42 @@ class FileService extends FileCompress{
             })
         }
         return result;
+    }
+
+    public async getDiskSizeForPath(fpath) {
+        const pojo:FileInfoItemData = {};
+        try {
+            // 获取磁盘信息
+            const diskData = await si.fsSize();
+            // 解析路径对应的磁盘（例如 C:/）
+            const dirPath = path.resolve(fpath);
+            let targetDisk;
+            diskData.forEach(disk => {
+                if (dirPath.startsWith(disk.mount)) {
+                    if (!targetDisk) {
+                        targetDisk = disk;
+                        return;
+                    } else {
+                        if(disk.mount.length > targetDisk.mount.length) {
+                            targetDisk = disk;
+                        }
+                    }
+                }
+            })
+            // const targetDisk = diskData.find(disk => dirPath.startsWith(disk.mount));
+            if (targetDisk) {
+                pojo.path = dirPath;
+                pojo.name = path.basename(fpath);
+                pojo.total_size = formatFileSize(targetDisk.size);
+                pojo.left_size = formatFileSize(targetDisk.available);
+                pojo.fs_type = targetDisk.type;
+                // pojo.used_size = targetDisk.used;
+            }
+        } catch (error) {
+            console.error('Error fetching disk information:', error);
+            return pojo;
+        }
+        return  pojo;
     }
 }
 

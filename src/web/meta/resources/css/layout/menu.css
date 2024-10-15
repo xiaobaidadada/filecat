@@ -3,7 +3,7 @@
 .menu {
     display: flex;
     padding-bottom: 1em;
-    overflow: auto;
+    /*overflow: auto;*/
 }
 
 .menu .wrapper {

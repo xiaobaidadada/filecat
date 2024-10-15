@@ -8,7 +8,7 @@ import {useTranslation} from "react-i18next";
 
 
 
-export function Ddns() {
+export default function Ddns() {
     const { t } = useTranslation();
 
     const menuRots = [{index: 1, name:`dnspod(${t("腾讯")})`, rto: "dnspod/"}, {index: 2, name: `${t("腾讯")}${t("云")}`, rto: "tengxun/"},

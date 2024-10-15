@@ -7,6 +7,7 @@ import {Service} from "typedi";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Env} from "../../../common/Env";
 import {DataUtil} from "../data/DataUtil";
+import {generateSaltyUUID} from "../../../common/StringUtil";
 
 @Service()
 @Controller("/user")
@@ -17,20 +18,20 @@ export class UserController {
         const username = DataUtil.get("username");
         if (Env.username) {
             if (user.username=== `${Env.username}` && user.password===`${Env.password}` ) {
-                const uuid = Date.now();
+                const uuid = generateSaltyUUID();
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }
         } else if (username){
             const password = DataUtil.get("password");
             if (user.username=== `${username}` && user.password===`${password}` ) {
-                const uuid = Date.now();
+                const uuid = generateSaltyUUID();
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }
         } else {
             if (user.username=== "admin" && user.password==="admin" ) {
-                const uuid = Date.now();
+                const uuid = generateSaltyUUID();
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }

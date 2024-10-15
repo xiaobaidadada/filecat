@@ -14,7 +14,7 @@ export class Http {
         if (data && data.code===RCode.Fail) {
             new Noty({
                 type: 'error',
-                text: '请求错误',
+                text: data.message ?? '请求错误',
                 timeout: 1000, // 设置通知消失的时间（单位：毫秒）
                 layout:"bottomLeft"
             }).show();

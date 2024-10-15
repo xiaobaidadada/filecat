@@ -46,7 +46,9 @@ function Input(props: {
     value?: string,
     handlerEnter?:()=>void,
     focus?:boolean,
-    no_border?:boolean
+    no_border?:boolean,
+    left_placeholder?:string,
+    right_placeholder?:string
 }) {
     const inputRef = useRef(null);
     const [value, setValue] = React.useState("");
@@ -60,28 +62,48 @@ function Input(props: {
             setCss(`${css} input--no_border`);
         }
     }, [props.value]);
-    return (<div>
+    return (<div >
             {props.placeholderOut && <p>{props.placeholderOut}</p>}
-            <input
-                className={css}
-                type={props.type}
-                placeholder={value || props.placeholder}
-                onChange={(event) => {
-                    if (props.handleInputChange) {
-                        props.handleInputChange(event.target.value, event.target);
-                    }
-                    setValue(event.target.value);
-                }}
-                onKeyPress={(event)=>{
-                    if (event.key === 'Enter') {
-                        if (props.handlerEnter) {
-                            props.handlerEnter();
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+            }}>
+                {props.left_placeholder && <div style={{
+                    "paddingRight":".3rem",
+                    width:"auto",
+                    whiteSpace: "nowrap",
+                }}>
+                    {props.left_placeholder}
+                </div>}
+                <input
+                    className={css}
+                    type={props.type}
+                    placeholder={value || props.placeholder}
+                    onChange={(event) => {
+                        if (props.handleInputChange) {
+                            props.handleInputChange(event.target.value, event.target);
                         }
-                    }
-                }}
-                value={value}
-                ref={inputRef}
-            />
+                        setValue(event.target.value);
+                    }}
+                    onKeyPress={(event) => {
+                        if (event.key === 'Enter') {
+                            if (props.handlerEnter) {
+                                props.handlerEnter();
+                            }
+                        }
+                    }}
+                    value={value}
+                    ref={inputRef}
+                />
+                {props.right_placeholder && <div style={{
+                    "paddingLeft":".3rem",
+                    width:"auto",
+                    whiteSpace: "nowrap",
+                }}>
+                    {props.right_placeholder}
+                </div>}
+
+            </div>
         </div>
 
     )
@@ -92,8 +114,10 @@ export function InputText(props: {
     placeholderOut?: string,
     handleInputChange?: (value: string) => void,
     value?: string,
-    handlerEnter?:()=>void,
-    no_border?:boolean
+    handlerEnter?: () => void,
+    no_border?: boolean,
+    left_placeholder?: string,
+    right_placeholder?:string
 }) {
     return Input({
         ...props
@@ -103,13 +127,18 @@ export function InputText(props: {
 export function InputPassword(props: {
     placeholder?: string,
     handleInputChange?: (value: string) => void,
-    handleEnterPress?:()=>void
+    handleEnterPress?: () => void
 }) {
-    return Input({placeholder: props.placeholder, type: "password", handleInputChange: props.handleInputChange,handlerEnter:props.handleEnterPress});
+    return Input({
+        placeholder: props.placeholder,
+        type: "password",
+        handleInputChange: props.handleInputChange,
+        handlerEnter: props.handleEnterPress
+    });
 }
 
 export interface SelectProps {
-    options: {title:string,value:any}[];
+    options: { title: string, value: any }[];
     onChange: (value: string) => void;
     defaultValue?:any,
     no_border?:boolean,

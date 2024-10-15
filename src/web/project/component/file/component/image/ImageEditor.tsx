@@ -15,7 +15,7 @@ let filerobotImageEditor;
 // 不一定是1 Mb
 const max_length = 1024 * 1000 ;
 
-export function ImageEditor() {
+export default function ImageEditor() {
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const navigate = useNavigate();
     const location = useLocation();

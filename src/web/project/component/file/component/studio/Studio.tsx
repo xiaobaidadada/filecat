@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {$stroe} from "../../../../util/store";
 import {useRecoilState} from "recoil";
-
 import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {FolderTree} from "./Tree/FolderTree";
@@ -16,14 +15,13 @@ import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
 import lodash from "lodash";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
-import {webPathJoin} from "../../../../../../common/ListUtil";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
-import videojs from "video.js";
-import any = videojs.any;
 
 
-export function Studio(props) {
+
+
+export default function Studio(props) {
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const [list, set_list] = useState([]);
     const [pre_path, set_pre_path] = useState("")

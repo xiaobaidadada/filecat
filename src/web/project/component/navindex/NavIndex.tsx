@@ -11,7 +11,7 @@ import {useTranslation} from "react-i18next";
 
 
 
-export function NavIndex() {
+export default function NavIndex() {
     const { t } = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);

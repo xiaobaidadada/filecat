@@ -18,7 +18,7 @@ export class DataUtil {
         if (value === undefined || value=== null) {
             this.data_path_map[file] = value = path.join(Env.work_dir, "data.json");
             if (!fs.existsSync(value)) {
-                fse.ensureDir(Env.work_dir)
+                fse.ensureDirSync(path.dirname(value))
                 fs.writeFileSync(value, "{}");
                 this.data_map[file] = {};
             } else {
@@ -30,7 +30,7 @@ export class DataUtil {
     private static checkFile(k,dir) {
         const p = path.join(Env.work_dir, dir, k);
         if (!fs.existsSync(p)) {
-            fse.ensureDir( path.join(Env.work_dir, dir));
+            fse.ensureDirSync( path.join(Env.work_dir, dir));
             fs.writeFileSync(p, "");
             return false;
         }

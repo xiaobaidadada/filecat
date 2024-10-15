@@ -11,9 +11,12 @@ import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 
-async function get_file_context(path) {
+async function get_file_context(path,is_sys_path) {
+    if(is_sys_path) {
+        path+="?is_sys_path=1"
+    }
     const rsq = await fileHttp.get(path);
-    if (rsq.code === RCode.File_Max) {
+    if (rsq.code === RCode.Sucess) {
         NotyFail("超过20MB");
         return;
     }
@@ -28,7 +31,7 @@ export const user_click_file = () => {
 
     const {t} = useTranslation();
 
-    const click_file = async (param: { name, context?: string, model?: string }) => {
+    const click_file = async (param: { name, context?: string, model?: string,sys_path?:string,menu_list?:any[] }) => {
         const {name, context} = param;
         let model = getEditModelType(name);
         const type = getFileFormat(name);
@@ -38,12 +41,16 @@ export const user_click_file = () => {
             if (context) {
                 value = context;
             } else {
-                value = await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`)
+                value = await get_file_context(param.sys_path??`${getRouterAfter('file', location.pathname)}${name}`,param.sys_path);
+                // if (!value) {
+                //     return;
+                // }
             }
             if (!model) {
                 model = "text";
             }
             setEditorSetting({
+                menu_list:param.menu_list,
                 model,
                 open: true,
                 fileName: name,
@@ -51,7 +58,7 @@ export const user_click_file = () => {
                     const data: saveTxtReq = {
                         context
                     }
-                    const rsq = await fileHttp.post(`save/${getRouterAfter('file', location.pathname)}${name}`, data)
+                    const rsq = await fileHttp.post(`save/${param.sys_path??`${getRouterAfter('file', location.pathname)}${name}`}?is_sys_path=${param.sys_path?1:0}`, data)
                     if (rsq.code === 0) {
                         editor_data.set_value_temp('')
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
@@ -69,7 +76,7 @@ export const user_click_file = () => {
                 case FileTypeEnum.md:
 
                     set_markdown({
-                        context: await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`),
+                        context: await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`,false),
                         filename: name
                     })
                     break;

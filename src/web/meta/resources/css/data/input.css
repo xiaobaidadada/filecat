@@ -60,3 +60,17 @@
 .input_radio_row i:hover{
     cursor: pointer;
 }
+
+.black-tip {
+    border-radius: .1em;
+    padding: .2em ;
+    background: white;
+    /*border: 1px solid rgba(0, 0, 0, 0.1);*/
+    transition: .2s ease all;
+    color: #333;
+    margin-top: .3rem;
+    display: inline-block;
+}
+.black-tip:hover {
+    background: var(--surfaceSecondary);
+}

@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/Dashboard';
 import {Card} from "../../../meta/component/Card";
-import {ButtonText} from "../../../meta/component/Button";
+import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";
 import {InputRadio, InputText} from "../../../meta/component/Input";
 import {ddnsHttp,} from "../../util/config";
@@ -82,14 +82,18 @@ export function Dnspod(props: any) {
             }).show();
         }
     }
+
+    const add_ipv4 = ()=>{
+
+    }
     return <div>
         <Row>
             <Column >
-                <Card title={"ipv4"} >
+                <Card title={"ipv4"} titleCom={<ActionButton icon={"add"} title={t("添加")} onClick={add_ipv4}/>}>
                     {ipv4s.length>0 &&
                         ipv4s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
-                            <InputText placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
+                            <InputText right_placeholder={item.source_type} placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
                 </Card>
@@ -97,7 +101,7 @@ export function Dnspod(props: any) {
                     {ipv6s.length>0 &&
                         ipv6s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
-                            <InputText placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
+                            <InputText right_placeholder={item.source_type} placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
                 </Card>

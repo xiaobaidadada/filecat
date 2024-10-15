@@ -23,7 +23,7 @@ export function Compress(props) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [items, setItems,] = useState([{r: t("解压"), v: t("解压")}]);
+
     const [tar_filename, setTar_filename] = useState("");
     const [placeholder, setPlaceholder] = useState(".tar");
     const [format, setFormat] = useState(FileCompressType.tar);

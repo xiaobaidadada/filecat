@@ -4,7 +4,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {exec, execSync, spawn} from "child_process";
 import {SystemUtil} from "./sys.utl";
 import {getShell} from "../shell/shell.service";
-
+import WebSocket from "ws";
 
 let sysJobInterval: any = null;
 
@@ -20,7 +20,7 @@ class SysDockerService {
     async pushDockerInfo(wss: Wss, results: any) {
         const result = new WsData<SysPojo>(CmdType.docker_getting);
         result.context = results;
-        if (wss.ws.readyState !==1) {
+        if (wss.ws.readyState ===WebSocket.CLOSED) {
             throw "断开连接";
         }
         wss.sendData(result.encode())
@@ -48,8 +48,7 @@ class SysDockerService {
                     try {
                         await this.pushDockerInfo(wss, docker_result_list);
                     } catch (e) {
-                        console.log(e)
-                        console.log('系统信息推送失败docker')
+                        console.log('docker信息推送失败docker',e)
                         dockerMap.delete(socketId);
                         if (wss) {
                             wss.ws.close();
@@ -210,6 +209,7 @@ class SysDockerService {
         const param = ids.join(" ");
         execSync(`docker rm  ${param}`)
     }
+
 }
 
 export const SysDockerServiceImpl = new SysDockerService();

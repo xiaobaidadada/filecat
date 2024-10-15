@@ -56,4 +56,14 @@
     max-width: 100%;
     z-index: 1;
     height: 100%;
+
+}
+.full_screen_more {
+    overflow: auto;
+}
+
+.full_screen_context {
+    padding-top:5rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
 }

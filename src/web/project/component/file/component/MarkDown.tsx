@@ -83,7 +83,7 @@ md.use(emoji)       // 支持 Emoji
     .use(markdownItCopyButton) // 使用自定义插件
     .use(markdownItAddPrefixToLinks); // 使用自定义插件
 
-export function MarkDown(props) {
+export default function MarkDown(props) {
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const copy = (text) => {
         copyToClipboard(text)

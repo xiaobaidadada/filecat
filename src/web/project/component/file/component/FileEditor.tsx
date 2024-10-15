@@ -8,8 +8,26 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {editor_data} from "../../../util/store.util";
 import {NotySucess} from "../../../util/noty";
 
-
-export function FileEditor() {
+import "ace-builds/src-noconflict/theme-chaos";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-javascript";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-python";
+import "ace-builds/src-noconflict/mode-ini";
+import "ace-builds/src-noconflict/mode-c_cpp";
+import "ace-builds/src-noconflict/mode-sh";
+import "ace-builds/src-noconflict/mode-lua";
+import "ace-builds/src-noconflict/mode-haml";
+import "ace-builds/src-noconflict/mode-xml";
+import "ace-builds/src-noconflict/mode-tsx";
+import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/mode-sql";
+import "ace-builds/src-noconflict/mode-typescript";
+import "ace-builds/src-noconflict/mode-markdown";
+import "ace-builds/src-noconflict/ext-language_tools";
+export default function FileEditor() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [editorValue, setEditorValue] = useState(undefined)
     const navigate = useNavigate();
@@ -58,6 +76,7 @@ export function FileEditor() {
     const div = <div id="editor-container">
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
             <title key={2}>{editorSetting.fileName}</title>]}>
+            {editorSetting.menu_list && editorSetting.menu_list}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
         </Header>
         <AceEditor // 使用默认值重新渲染

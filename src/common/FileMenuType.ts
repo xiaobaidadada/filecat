@@ -16,6 +16,7 @@ export class FileMenuData {
     ok?:any;
     dockerId?:string;
     name?:string;
+    extra_data?:any;
 }
 
 

@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {Suspense, useEffect, useRef, useState} from 'react'
 import {Card} from "../../../meta/component/Card";
 import {Column, Dashboard, Menu, Row, RowColumn} from "../../../meta/component/Dashboard";
 import {InputText} from "../../../meta/component/Input";
@@ -8,11 +8,10 @@ import {RemoteLinux} from "./remotelinux/RemoteLinux";
 import {Rdp} from "./rdp/Rdp";
 import {NetWol} from "./NetWol";
 import {useTranslation} from "react-i18next";
-import {Rtsp} from "./Rtsp";
+const Rtsp = React.lazy(()=> import("./Rtsp"))
 
 
-
-export function ToolBox(props) {
+export default function ToolBox(props) {
     const { t } = useTranslation();
 
     const menuRots = [{index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/"},
@@ -41,7 +40,10 @@ export function ToolBox(props) {
                     {/*</Column>*/}
                 </Row>
             </Dashboard>
-            <Rtsp />
+            <Suspense fallback={<div></div>}>
+                <Rtsp />
+            </Suspense>
+
         </Menu>
 
     )

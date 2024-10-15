@@ -89,7 +89,7 @@ export function TengXun(props: any) {
                     {ipv4s.length>0 &&
                         ipv4s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
-                            <InputText placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
+                            <InputText right_placeholder={item.source_type} placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
                 </Card>
@@ -97,7 +97,7 @@ export function TengXun(props: any) {
                     {ipv6s.length>0 &&
                         ipv6s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
-                            <InputText placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
+                            <InputText right_placeholder={item.source_type} placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
                 </Card>

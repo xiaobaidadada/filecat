@@ -10,7 +10,7 @@ import {$stroe} from "../../util/store";
 import {SysEnum} from "../../../../common/req/user.req";
 
 
-export function SysInfo(props) {
+export default function SysInfo(props) {
     const { t } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const menuRots = [{index: 1, name: t("系统性能"), rto: "sys/"},{index: 2, name: t("系统进程"), rto: "process/"}, {index: 3, name: t("docker容器"), rto: "docker/"}];
