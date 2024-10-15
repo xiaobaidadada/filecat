@@ -19,9 +19,9 @@ function CardComponent(props: CardProps ,type:Type) {
     const contextClass = type===Type.common?"card-content"
         :type===Type.full?"card-content full":"";
     return <div className={"card"}>
-        <div className={"card-title not-select-div"}>
+        <div className={"card-title"}>
             <h2>{props.title}</h2>
-            <div>{props.titleCom && props.titleCom}</div>
+            <div className={"not-select-div"}>{props.titleCom && props.titleCom}</div>
         </div>
         <div className={contextClass}>
             {props.children}
@@ -42,12 +42,13 @@ export function CardFull(props:CardProps) {
 }
 
 export interface TextProps {
-    context?:string
+    context?:string,
+    children?:any
 }
 export function TextTip(props:TextProps) {
     const copyRef = useRef<HTMLDivElement>(null);
     const click = () =>{
-        copyToClipboard(props.context)
+        copyToClipboard(props.context ?? props.children)
         new Noty({
             type: 'info',
             text: '复制完成',
@@ -57,8 +58,8 @@ export function TextTip(props:TextProps) {
     }
     return (
         <div className="card-text">
-            <div className={"card-text-context"}>{props.context}</div>
-            <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.context}</div>
+            <div className={"card-text-context"}>{props.context ?? props.children}</div>
+            <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.context ?? props.children}</div>
         </div>
     )
 }

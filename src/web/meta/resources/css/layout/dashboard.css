@@ -122,6 +122,7 @@ table tr>*:last-child {
     white-space: nowrap; /* 让文本不换行 */
     overflow: hidden; /* 隐藏溢出的文本 */
     text-overflow: ellipsis; /* 在文本溢出时显示省略号 */
+    /*font-size: .8rem; !* 或者使用 em、rem 等单位 *!*/
 }
 .card-text .card-text-tip {
    display: none;

@@ -15,7 +15,7 @@ import {useTranslation} from "react-i18next";
 
 
 
-export function  Settings() {
+export default function  Settings() {
     const { t } = useTranslation();
     const menuRots = [{index: 1, name: t("系统"), rto: "password/"},{index: 1, name: t("自定义页面路由"), rto: "customer_router/"},{index: 1, name: t("自定义api路由"), rto: "customer_api_router/"}];
 

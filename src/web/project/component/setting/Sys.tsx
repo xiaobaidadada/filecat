@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Menu, Row, RowColumn} from "../../../meta/component/Dashboard";
-import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
+import {Column, Dashboard, Menu, Row, RowColumn, TextLine} from "../../../meta/component/Dashboard";
+import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
 import Noty from "noty";
@@ -11,7 +11,7 @@ import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Rows, Table} from "../../../meta/component/Table";
-import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
+import {SysSoftware, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {TableListRender} from "./component/TableListRend";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
@@ -38,6 +38,9 @@ export function  Sys() {
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
+
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+
     const getItems = async () => {
         const result = await settingHttp.get("filesSetting");
         if (result.code === RCode.Sucess) {
@@ -218,6 +221,28 @@ export function  Sys() {
         }
     }
 
+    // 外部软件信息解释
+    const soft_ware_info_click = (id)=>{
+        let context;
+        if(id === SysSoftware.ffmpeg) {
+            context = <div>
+                视频转换，rtsp播放器等媒体功能都需要这个软件。linux下你可以使用apt或者yum来安装，或者直接输入软件的位置
+            </div>
+        } else if (id === SysSoftware.smartmontools) {
+            context = <div>
+                磁盘检查需要这个软件。linux下你可以使用apt或者yum来安装，或者直接输入软件的位置。
+            </div>
+        } else if (id === SysSoftware.ntfs_3g) {
+            context = <div>
+                如果在linux需要挂载ntfs的硬盘，需要这个软件支持。
+            </div>
+        }
+        set_prompt_card({open:true,title:"信息",context_div : (
+                <div >
+                    {context}
+                </div>
+            )})
+    }
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
@@ -285,12 +310,13 @@ export function  Sys() {
                             <InputText value={item.path} handleInputChange={(value) => {
                                 item.path = value;
                             }} no_border={true} placeholder={t("默认使用环境变量")}/>,
+                            <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click(item.id)}} title={"信息"}/>
                         ];
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
             </Dashboard>
         </Column>
-        <Header left_children={<span className={"credits"}>version:1.0.3</span>}/>
+        <Header left_children={<span className={"credits"}>{`version:${process.env.version}`}</span>}/>
     </Row>
 }

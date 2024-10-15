@@ -293,3 +293,9 @@ html[dir="rtl"] #listing {
 #listing #multiple-selection i {
   color: var(--iconSecondary);
 }
+
+
+
+.card-tree-view ul:hover,.card-tree-view li:hover{
+  cursor: default;
+}

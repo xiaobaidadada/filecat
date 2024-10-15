@@ -18,6 +18,8 @@ export class FileSettingItem {
 
 export enum SysSoftware {
     ffmpeg="ffmpeg",
+    smartmontools = "smartmontools",
+    ntfs_3g = "ntfs_3g"
 }
 export class SysSoftwareItem {
     id:SysSoftware;

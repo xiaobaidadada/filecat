@@ -8,11 +8,19 @@ export enum DdnsType {
     tengxun,
     ali
 }
+
+export enum ip_source_type {
+    physics= "物理",
+    http_get = "http_get"
+}
+
 export class DdnsIPPojo {
     isIPv4: boolean; //ipv4还是ipv6
     ifaceOrWww:string; //获取ip途径对应的信息来源
     ip?:string; //上次ip信息
     ddnsHost?:string;
+    source_type?:ip_source_type;
+    source_value?:string;
 }
 
 export class DnsPod {

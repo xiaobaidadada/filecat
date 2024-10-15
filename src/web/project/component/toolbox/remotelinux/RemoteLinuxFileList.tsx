@@ -9,7 +9,8 @@ import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
 import {getNextByLoop, joinPaths} from "../../../../../common/ListUtil";
 import {scanFiles} from "../../../util/file";
-import {Prompt, PromptEnum} from "../../prompts/Prompt";
+import { PromptEnum} from "../../prompts/Prompt";
+
 import {RCode} from "../../../../../common/Result.pojo";
 import Noty from "noty";
 import {RemoteLinuxFileItem} from "./RemoteLinuxFileItem";

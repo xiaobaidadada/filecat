@@ -58,6 +58,7 @@ export enum CmdType {
     systemd_logs_get,
     systemd_logs_getting,
 
+
     // 远程shell
     remote_shell_open,
     remote_shell_send,

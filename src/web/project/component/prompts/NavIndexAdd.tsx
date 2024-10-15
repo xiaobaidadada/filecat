@@ -45,7 +45,7 @@ export function NavIndexAdd(props) {
     }
     return (<div className={"card floating"}>
         <div className="card-title">
-            <h2>{t("添加索引")}</h2>
+            <h2>{t("添加网站")}</h2>
         </div>
         <div className="card-content">
             <InputText placeholderOut={"名字"}  handleInputChange={(value)=>setName(value)} />

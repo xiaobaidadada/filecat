@@ -241,12 +241,18 @@ export class SettingService {
             map.set(item.id,item);
         }
         const list:SysSoftwareItem[] = [];
-        for (const id of Object.values(SysSoftware)) {
+        for (const key of Object.keys(SysSoftware)) {
             const pojo = new SysSoftwareItem();
-            pojo.id = id;
-            const item = map.get(id);
-            pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ffmpeg"}  -version`);
+            pojo.id = SysSoftware[key];
+            const item = map.get(key);
             pojo.path = item?item.path:"";
+            if (key === SysSoftware.ffmpeg) {
+                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ffmpeg"}  -version`);
+            } else if (key === SysSoftware.smartmontools) {
+                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "smartctl"} --version`);
+            } else if (key === SysSoftware.ntfs_3g) {
+                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ntfs-3g"} --version`);
+            }
             list.push(pojo);
         }
         this.cacheSysSoftwareItem = list;

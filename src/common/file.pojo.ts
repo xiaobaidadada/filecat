@@ -1,3 +1,4 @@
+
 export enum FileTypeEnum {
     audio = "audio",
     blob = 'blob',
@@ -12,7 +13,8 @@ export enum FileTypeEnum {
     unknow = "text",
     uncompress = "uncompress", // 压缩文件
     md = "md",
-    excalidraw = "excalidraw"
+    excalidraw = "excalidraw",
+    dev = "dev" // linux设备 不是文件或者目录
 }
 
 export interface FileItemData {
@@ -24,9 +26,18 @@ export interface FileItemData {
     path?: string,
 }
 
+export interface FileInfoItemData {
+    path?:string;
+    name?:string;
+    total_size?:any;
+    left_size?:any;
+    used_size?:any;
+    fs_type?:string;
+}
+
 export interface GetFilePojo {
     files?: FileItemData[],
-    folders?: FileItemData[],
+    folders?: FileItemData[]
 }
 
 export class FileVideoFormatTransPojo {

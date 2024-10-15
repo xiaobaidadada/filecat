@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react';
+import React, {ReactNode,Suspense} from 'react';
 import {Route, Routes} from "react-router-dom";
 
 
@@ -13,7 +13,7 @@ export const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
         {props.children.map((value, index) => {
             return (
                 // @ts-ignore
-                <Route key={index} path={props.rtos[index]} element={(value)}/>
+                <Route key={index} path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>}/>
             )
         })}
         ( <Route  path={"/"} element={(props.children[0])}/>)

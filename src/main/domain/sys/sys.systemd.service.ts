@@ -7,7 +7,7 @@ import {SysPojo} from "../../../common/req/sys.pojo";
 import {deleteList} from "../../../common/ListUtil";
 import fs from "fs";
 const { spawn ,execSync} = require('child_process');
-
+import WebSocket from "ws";
 const systemd_key = "systemd_key";
 
 let  spawnChild = getProcessAddon();
@@ -132,7 +132,7 @@ export class SysSystemdService {
         service_names = names.join(" ");
         const {pids,pid_name_map,not_pid_names} = await this.getSytemdPids(names);
         pid_name_map__ = pid_name_map;
-        spawnChild.on((data) => {
+        spawnChild.on("systemd",(data) => {
             if (!Array.isArray(data)) {
                 return;
             }
@@ -160,7 +160,7 @@ export class SysSystemdService {
             if (processWssSet.size === 0) {
                 this.clear();
             }
-        },"systemd",pids);
+        },pids);
     }
     private async pushInfo(wss: Wss, results: any,avtives:string[] ) {
         const r_list = [];
@@ -175,7 +175,7 @@ export class SysSystemdService {
         });
         const result = new WsData<SysPojo>(CmdType.systemd_inside_getting);
         result.context = r_list;
-        if (wss.ws.readyState !== 1) {
+        if (wss.ws.readyState ===WebSocket.CLOSED) {
             throw "断开连接";
         }
         wss.sendData(result.encode())
@@ -199,8 +199,7 @@ export class SysSystemdService {
                     try {
                         await this.pushInfo(wss, result_list,avtives);
                     } catch (e) {
-                        console.log(e)
-                        console.log('系统信息推送失败systemd')
+                        console.log('systemd推送失败systemd',e)
                         if (wss) {
                             wss.ws.close();
                             processWssSet.delete(wss);

@@ -21,7 +21,7 @@ import {NotyFail} from "../../util/noty";
 import {SysSoftware} from "../../../../common/req/setting.req";
 
 let flvPlayer;
-export function Rtsp() {
+export default function Rtsp() {
     const { t } = useTranslation();
 
     const [address, setAddress] = useState(undefined);

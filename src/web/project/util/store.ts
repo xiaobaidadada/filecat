@@ -1,9 +1,10 @@
 import {atom, RecoilState, useRecoilState} from 'recoil';
-import {FileTypeEnum} from "../../../common/file.pojo";
+import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {WsClient} from "../../../common/frame/ws.client";
 import {UserBaseInfo} from "../../../common/req/user.req";
 import {Confirm} from "../component/prompts/Confirm";
 import {FileMenuData} from "../../../common/FileMenuType";
+import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 
 const localStorageEffect = key => ({ setSelf, onSet }) => {
     const savedValue = localStorage.getItem(key);
@@ -30,7 +31,7 @@ export const $stroe = {
         default: {
             folders: [{name: "文件夹1"}, {name: "文件夹2"}],
             files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
-        } // 初始值
+        } as GetFilePojo // 初始值
     }),
     // 选中的文件 下标
     selectedFileList: atom({
@@ -95,6 +96,15 @@ export const $stroe = {
             title?:string
         }
     }),
+    // 通用卡片
+    prompt_card:atom({
+       key:"prompt_card" ,
+        default:{open:false} as {
+            context_div?:any,
+            open:boolean,
+            title?:string
+        }
+    }),
     // 编辑器设置
     editorSetting:atom({
         key: 'editorSetting',
@@ -102,7 +112,13 @@ export const $stroe = {
             model:'text',
             open:false,
             fileName:'',
-            save:null
+            save:null,
+        } as {
+            menu_list?:any[],
+            model?:string,
+            open?:boolean,
+            fileName?:string,
+            save?:any,
         }
     }),
     // shell是否开启 并传递初始目录
@@ -201,6 +217,13 @@ export const $stroe = {
     excalidraw_editor:atom({
         key:'excalidraw_editor',
         default:{} as {path?:string,name?:string}
+    }),
+    // 磁盘
+    disk:atom({
+        key:"disk",
+        default: {
+            type:""
+        } as {type?:string,data?:DiskDevicePojo}
     })
 }
 

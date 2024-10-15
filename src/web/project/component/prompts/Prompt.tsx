@@ -19,6 +19,7 @@ import {SshUpload} from "./ssh/SshUpload";
 import {FileMenu} from "./FileMenu/FileMenu";
 import {Compress} from "./FileMenu/Compress";
 import {Confirm} from "./Confirm";
+import {PromptCard} from "./PromptCard";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -39,17 +40,20 @@ export enum PromptEnum {
     Compress = "Compress",
 }
 
-export function Prompt() {
+export default function Prompt() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [confirm, set_confirm] = useRecoilState($stroe.confirm);
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
     function click() {
-        setShowPrompt({show: false, type: '', overlay: false,data: {}});
-        set_confirm({open: false,handle:null})
+        setShowPrompt({show: false, type: '', overlay: false, data: {}});
+        set_confirm({open: false, handle: null})
+        set_prompt_card({open: false})
     }
 
     let div = <div></div>;
-    let confirm_div = <Confirm />;
+    let confirm_div = <Confirm/>;
+    let prompt_card_div = <PromptCard/>;
     switch (showPrompt.type) {
         case PromptEnum.FilesUpload:
             div = <FilesUpload></FilesUpload>
@@ -70,38 +74,40 @@ export function Prompt() {
             div = <FileRename></FileRename>
             break;
         case PromptEnum.DockerDel:
-            div = <DockerDel />
+            div = <DockerDel/>
             break;
         case PromptEnum.NavIndexAdd:
-            div = <NavIndexAdd />
+            div = <NavIndexAdd/>
             break;
         case PromptEnum.SshDelete:
-            div = <SshDelete />
+            div = <SshDelete/>
             break;
         case PromptEnum.SshNewDir:
-            div = <SshNewDir />
+            div = <SshNewDir/>
             break;
         case PromptEnum.SshNewFile:
-            div = <SshNewFile />
+            div = <SshNewFile/>
             break;
         case PromptEnum.SshPaste:
-            div = <SshPaste />
+            div = <SshPaste/>
             break;
         case PromptEnum.SshReName:
-            div = <SshReName />
+            div = <SshReName/>
             break;
         case PromptEnum.SshUpload:
-            div = <SshUpload />
+            div = <SshUpload/>
             break;
         case PromptEnum.FileMenu:
-            div = <FileMenu />
+            div = <FileMenu/>
             break;
         case PromptEnum.Compress:
-            div = <Compress />
+            div = <Compress/>
             break;
     }
 
     return (<div>
+        {prompt_card.open && prompt_card_div}
+        {prompt_card.open && <Overlay click={click}/>}
         {confirm.open && confirm_div}
         {confirm.open && <Overlay click={click}/>}
         {showPrompt.show && div}

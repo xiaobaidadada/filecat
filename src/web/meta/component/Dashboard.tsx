@@ -84,6 +84,7 @@ export function WinCenter(props) {
     </div>)
 }
 
+// Flex 流式布局的容器
 export function FlexContainer(props) {
     return (
         <div className={"flex"}>
@@ -164,8 +165,18 @@ export function OverlayTransparent(props: { click: () => void, children?: React.
     return <div className="overlay_trans" onClick={props.click}>{props.children}</div>
 }
 
-export function FullScreenDiv(props: { isFull?: boolean; children?: React.ReactNode; }) {
-    return <div className={props.isFull ? "full_screen" : "not_screen"}>
+export function FullScreenDiv(props: { isFull?: boolean; children?: React.ReactNode; more?:boolean}) {
+    let className = props.isFull ? "full_screen " : "not_screen ";
+    if(props.more) {
+        className += " full_screen_more ";
+    }
+    return <div className={className} >
+        {props.children}
+    </div>
+}
+
+export function FullScreenContext(props: { children?: React.ReactNode; }) {
+    return <div className={"full_screen_context"}>
         {props.children}
     </div>
 }

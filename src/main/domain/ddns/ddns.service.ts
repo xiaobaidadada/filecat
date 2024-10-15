@@ -22,7 +22,7 @@ export class DdnsService extends DdnsPre{
 
     public   ddnsTask() {
         setInterval(async ()=>{
-            const netList = await this.getNowIps();
+            const netList = await this.updateAndGetIps();
             await dnspodService.Run(netList)
             await tengxunService.Run(netList);
             await aliService.Run(netList);

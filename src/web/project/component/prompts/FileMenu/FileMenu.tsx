@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import {Dropdown, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {user_click_file} from "../../../util/store.util";
+import {DiskMountAction} from "./DiskMountAction";
 
 
 export function FileMenu() {
@@ -51,6 +52,13 @@ export function FileMenu() {
                 close();
             }}>
                 <UnCompress/>
+            </div>
+            break;
+        case FileTypeEnum.dev:
+            div = <div onWheel={() => {
+                close();
+            }}>
+                <DiskMountAction/>
             </div>
             break;
         case FileTypeEnum.image:

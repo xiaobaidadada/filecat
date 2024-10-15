@@ -1,8 +1,10 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
-
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const package_data = require("../../package.json")
 module.exports = {
+    mode: 'production',
     entry: path.join(__dirname, "..", "..", "src", "web", "project", 'index.js'),
     output: {
         // path: path.resolve(__dirname, '..','..','dist'),
@@ -41,6 +43,10 @@ module.exports = {
         new webpack.DefinePlugin({
             'process.env': JSON.stringify(process.env),
         }),
+        new webpack.DefinePlugin({
+            'process.env.version': JSON.stringify(package_data.version),
+        })
+        // new BundleAnalyzerPlugin()
     ],
     devServer: {
         static: [

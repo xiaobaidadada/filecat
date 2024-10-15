@@ -8,7 +8,7 @@ import {useTranslation} from "react-i18next";
 
 
 
-export function  Net() {
+export default function  Net() {
     const { t } = useTranslation();
     const menuRots = [{index: 2, name: t("服务端"), rto: "server/"},{index: 1, name: t("客户端"), rto: "client/"}];
 

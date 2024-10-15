@@ -85,7 +85,7 @@
 
 .studio-editor {
     min-height: 1em;
-    margin: 1em 1em 1em auto;
+    margin: 0 1em 1em auto;
     /*width: auto;*/
     flex-grow: 1;           /* 占据剩余的所有宽度 */
 

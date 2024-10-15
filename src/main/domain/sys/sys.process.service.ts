@@ -2,17 +2,18 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {getSys, sysType} from "../shell/shell.service";
 import {SystemUtil} from "./sys.utl";
-import { spawn} from "child_process";
+import {spawn} from "child_process";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {StringUtil} from "../../../common/StringUtil";
 import path from "path";
 import {getProcessAddon} from "../bin/bin";
 import {SysEnum} from "../../../common/req/user.req";
+import WebSocket from "ws";
 
 let sysJobInterval: any = null;
 
 let processJobInterval: any = null;
-let spawnChild = getProcessAddon();
+let spawnChild: any = getProcessAddon();
 let result_list: any = [];
 
 const processWssMap = new Map<string, Wss>();
@@ -22,28 +23,28 @@ export class SysProcessService {
     winAndLinuxGetProcess() {
         // let child = spawn(process.execPath,['./process.exe'],{shell:"cmd"});
         // 监听子进程的 stdout 流，并输出数据
-        spawnChild.on((data) => {
+        spawnChild.on("process", (data) => {
             if (!Array.isArray(data)) {
                 return;
             }
-            const list:any = [];
+            const list: any = [];
             for (const process of data) {
                 // ID name USER MEM CPU
                 list.push([process.id,
                     process.name,
                     process.user_name,
                     process.mem,
-                    process.cpu?process.cpu.toFixed(2):0]);
+                    process.cpu ? process.cpu.toFixed(2) : 0]);
             }
             result_list = list;
             if (processWssMap.size === 0) {
                 this.clear();
             }
-        },"process",[]);
+        }, []);
     }
 
     linuxGetProcess() {
-        let child = spawn('top',['-b'],{
+        let child = spawn('top', ['-b'], {
             env: {
                 COLUMNS: '800' // 设置为所需宽度，比如 80
             }
@@ -54,17 +55,17 @@ export class SysProcessService {
             if (!data && !data.toString()) {
                 return;
             }
-            const rows= data.toString().split(/\n|\r\n/).filter(v => v.length > 5);
-            const  list:any[] = [];
+            const rows = data.toString().split(/\n|\r\n/).filter(v => v.length > 5);
+            const list: any[] = [];
             for (let i = 1; i < rows.length; i++) {
                 const clumn = rows[i];
                 const parts = clumn.split(" ").filter(v => v.length > 0);
                 if (parts[0].includes("PID")) {
                     continue;
                 }
-                list.push([parts[0],parts[parts.length-1],parts[1],
+                list.push([parts[0], parts[parts.length - 1], parts[1],
                     parts[5] * 1024 // kb换算成字节
-                    ,parts[8]])
+                    , parts[8]])
             }
             result_list = list;
             if (processWssMap.size === 0) {
@@ -90,7 +91,7 @@ export class SysProcessService {
     async pushProcessInfo(wss: Wss, results: any) {
         const result = new WsData<SysPojo>(CmdType.process_getting);
         result.context = results;
-        if (wss.ws.readyState !== 1) {
+        if (wss.ws.readyState === WebSocket.CLOSED) {
             throw "断开连接";
         }
         wss.sendData(result.encode())
@@ -131,13 +132,13 @@ export class SysProcessService {
     }
 
     private killSpwn() {
-            const sys = getSys();
-            if (sys === SysEnum.linux || sys == SysEnum.win) {
-                spawnChild.close("process");
-            } else {
-                spawnChild.kill('SIGTERM');
-                SystemUtil.killProcess(spawnChild.pid);
-            }
+        const sys = getSys();
+        if (sys === SysEnum.linux || sys == SysEnum.win) {
+            spawnChild.close("process");
+        } else {
+            spawnChild.kill('SIGTERM');
+            SystemUtil.killProcess(spawnChild.pid);
+        }
 
     }
 

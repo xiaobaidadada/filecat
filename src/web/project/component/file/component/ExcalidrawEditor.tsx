@@ -17,7 +17,7 @@ const loadStyles = async () => {
 };
 
 // let load_style = false;
-export function ExcalidrawEditor() {
+export default function ExcalidrawEditor() {
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
     const [excalidrawAPI, setExcalidrawAPI] = useState(null);
     const navigate = useNavigate();

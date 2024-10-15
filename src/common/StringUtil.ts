@@ -1,5 +1,3 @@
-import {FileTypeEnum} from "./file.pojo";
-
 export class Param {
     key:string;
     value?:any;
@@ -115,4 +113,16 @@ export function getWebFirstKey(url:string) {
         }
     }
     return url.slice(1);
+}
+
+export function generateSaltyUUID() {
+    // 生成一个标准的 UUID
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0; // 随机生成 0-15 的整数
+        const v = c === 'x' ? r : (r & 0x3 | 0x8); // 确保版本号是 4 和变种号
+        return v.toString(16); // 转换为十六进制
+    });
+
+    // 将盐值添加到 UUID 中
+    return uuid + '-';
 }

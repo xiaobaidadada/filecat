@@ -1,5 +1,5 @@
 import si from "systeminformation";
-import {DdnsConnection, DdnsIPPojo} from "../../../common/req/ddns.pojo";
+import {DdnsConnection, DdnsIPPojo, ip_source_type} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {IResult} from "tldts-core";
 import {DataUtil} from "../data/DataUtil";
@@ -7,12 +7,11 @@ import {getMapByList} from "../../../common/ListUtil";
 import {parse} from "tldts";
 
 
-
 const wwwIpv4 = "https://4.ipw.cn";
 const wwwIpv6 = "https://6.ipw.cn";
 
 let getIpsCurrentStamp = null; // 上次查询Ip时间
-let cacheIps:string = ""; // 缓存ip
+let cacheIps:DdnsIPPojo[] = []; // 缓存ip
 export abstract class DdnsPre implements updateDns{
      async_have = false;//不是第一次同步
 
@@ -26,11 +25,21 @@ export abstract class DdnsPre implements updateDns{
 
     async getNowIps() {
         const now = Date.now();
-        if (!!getIpsCurrentStamp && now - getIpsCurrentStamp  < 1000 *30) {
+        if (!!getIpsCurrentStamp && now - getIpsCurrentStamp  < 1000 * 30) {
             // 小于30秒，使用上次的查询的结果
-            return JSON.parse(cacheIps);
+        } else {
+            if (cacheIps.length === 0) {
+                await this.updateAndGetIps();
+            }
+            this.updateAndGetIps().catch((err) => {
+                console.log('获取ip错误',err);
+            })
         }
-        getIpsCurrentStamp = now;
+        return cacheIps;
+    }
+
+    public async updateAndGetIps() {
+        getIpsCurrentStamp = Date.now();
         const net = await si.networkInterfaces();
         const list:DdnsIPPojo[] = [];
         for (const item of Array.isArray(net)?net:[net]) {
@@ -39,6 +48,7 @@ export abstract class DdnsPre implements updateDns{
                 ipv4.isIPv4=true;
                 ipv4.ifaceOrWww=item.iface;
                 ipv4.ip=item.ip4;
+                ipv4.source_type = ip_source_type.physics;
                 list.push(ipv4);
             }
             if (item.ip6) {
@@ -46,6 +56,7 @@ export abstract class DdnsPre implements updateDns{
                 ipv6.isIPv4=false;
                 ipv6.ifaceOrWww=item.iface;
                 ipv6.ip=item.ip6;
+                ipv6.source_type = ip_source_type.physics;
                 list.push(ipv6);
             }
         }
@@ -55,6 +66,7 @@ export abstract class DdnsPre implements updateDns{
             ipv4.isIPv4=true;
             ipv4.ifaceOrWww=wwwIpv4;
             ipv4.ip=ip4;
+            ipv4.source_type = ip_source_type.http_get;
             list.push(ipv4);
         }
         const ip6 = await this.getWwwIp6();
@@ -63,9 +75,10 @@ export abstract class DdnsPre implements updateDns{
             ipv6.isIPv4=false;
             ipv6.ifaceOrWww=wwwIpv6;
             ipv6.ip=ip6
+            ipv6.source_type = ip_source_type.http_get;
             list.push(ipv6);
         }
-        cacheIps = JSON.stringify(list);
+        cacheIps = list;
         return list;
     }
 

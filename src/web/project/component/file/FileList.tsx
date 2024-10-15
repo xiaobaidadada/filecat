@@ -15,13 +15,14 @@ import {RCode} from "../../../../common/Result.pojo";
 import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import Noty from "noty";
-import {DropdownTag} from "../../../meta/component/Dashboard";
+import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
-import {GetFilePojo} from "../../../../common/file.pojo";
+import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {user_click_file} from "../../util/store.util";
+
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -36,7 +37,7 @@ const columnWidth = 280;
 
 let pre_search:GetFilePojo;
 
-export function FileList() {
+export default function FileList() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
 
@@ -64,6 +65,9 @@ export function FileList() {
 
     const {reloadUserInfo} = useContext(GlobalContext);
     const { click_file } = user_click_file();
+
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+
 
     const fileHandler = async () => {
         // 文件列表初始化界面
@@ -248,6 +252,23 @@ export function FileList() {
         setNowFileList({files,folders});
     }
 
+    // 文件夹信息
+    const folder_info = async ()=>{
+        const rsq = await fileHttp.post("file/info",{type:FileTypeEnum.folder,path:getRouterAfter('file',location.pathname)})
+        if(rsq.code === RCode.Sucess) {
+            set_prompt_card({open:true,title:"信息",context_div : (
+                    <div >
+                        <TextLine left={t("挂载位置磁盘")} right={ rsq.data && rsq.data.total_size}/>
+                        <TextLine left={`${t("磁盘剩余")}`} right={ rsq.data && rsq.data.left_size}/>
+                        <TextLine left={`${t("文件系统")}`} right={ rsq.data && rsq.data.fs_type}/>
+                        <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
+                        <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
+                    </div>
+                )})
+        }
+
+    }
+
     return (
         <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
@@ -268,6 +289,7 @@ export function FileList() {
                 <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
+                <ActionButton icon={"info"} title={t("信息")} onClick={folder_info}/>
                 <DropdownTag title={t("切换目录")} items={file_paths} click={(v) => {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>

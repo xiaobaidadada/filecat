@@ -193,11 +193,18 @@ export function Systemd(props) {
                 open: true,
                 fileName: props.name,
                 save: async (context) => {
-                    const data = {
-                        context,
-                        path:rsq.data.path
+                    // const data = {
+                    //     context,
+                    //     path:rsq.data.path
+                    // }
+                    const data: saveTxtReq = {
+                        context
                     }
-                    const rsq1 = await fileHttp.post("common/save", data)
+                    if (rsq.data.path[0] === "/") {
+                        rsq.data.path =  rsq.data.path.slice(1);
+                    }
+                    const rsq1 = await fileHttp.post(`save/${rsq.data.path}?is_sys_path=1`, data)
+                    // const rsq1 = await fileHttp.post("common/save", data)
                     if (rsq1.code === RCode.Sucess) {
                         editor_data.set_value_temp('')
                         setEditorSetting({open: false, model: '', fileName: '', save: null})

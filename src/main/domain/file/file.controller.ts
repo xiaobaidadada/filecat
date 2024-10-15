@@ -12,7 +12,13 @@ import {
     UploadedFile,
     UseBefore
 } from "routing-controllers";
-import {base64UploadType, FileCompressPojo, FileVideoFormatTransPojo, GetFilePojo} from "../../../common/file.pojo";
+import {
+    base64UploadType,
+    FileCompressPojo,
+    FileTypeEnum,
+    FileVideoFormatTransPojo,
+    GetFilePojo
+} from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
 import multer from 'multer';
@@ -31,10 +37,14 @@ export class FileController {
     }
 
     @Get('/:path*')
-    async getFile(@Ctx() ctx,@Param("path") path?: string): Promise<Result<GetFilePojo | string>> {
-        return await FileServiceImpl.getFile(path,ctx.headers.authorization);
+    async getFile(@Ctx() ctx,@Param("path") path?: string,@QueryParam("is_sys_path",{required:false}) is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
+        return await FileServiceImpl.getFile(path,ctx.headers.authorization,is_sys_path);
     }
 
+    @Post('/file/info')
+    async getFileInfo(@Ctx() ctx, @Body() data: {type:FileTypeEnum,path:string}) {
+        return Sucess(await FileServiceImpl.getFileInfo(data.type,data.path,ctx.headers.authorization));
+    }
 
     @Put("/:path*")
     async uploadFile(@Ctx() ctx,@Param("path") path?: string, @UploadedFile('file') file?: multer.File) {
@@ -49,8 +59,8 @@ export class FileController {
     }
 
     @Post('/save/:path*')
-    async save(@Ctx() ctx,@Param("path") path?: string, @Body() data?: saveTxtReq) {
-        await FileServiceImpl.save(ctx.headers.authorization,data?.context, path);
+    async save(@Ctx() ctx,@Param("path") path?: string, @Body() data?: saveTxtReq,@QueryParam("is_sys_path",{required:false}) is_sys_path?: number) {
+        await FileServiceImpl.save(ctx.headers.authorization,data?.context, path,is_sys_path);
         return Sucess("1");
     }
 
@@ -61,12 +71,12 @@ export class FileController {
         return Sucess("1");
     }
 
-    // 这里的路径不是相对的而是系统绝对路径
-    @Post('/common/save')
-    async common_save(@Body() data: {path:string,context:string}) {
-        await FileServiceImpl.common_save(data.path,data.context);
-        return Sucess("1");
-    }
+    // // 这里的路径不是相对的而是系统绝对路径
+    // @Post('/common/save')
+    // async common_save(@Body() data: {path:string,context:string}) {
+    //     await FileServiceImpl.common_save(data.path,data.context);
+    //     return Sucess("1");
+    // }
 
 
     @Post('/cut')

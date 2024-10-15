@@ -32,8 +32,7 @@
 //    "libs",
 //    "src"
     "src/common",
-    "src/main",
-    "src/web"
+    "src/main"
   ],
   "exclude": [
     "build",
