@@ -18,8 +18,9 @@ url: http://116.198.245.137:5569/
 ### linux下安装
 对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-liunx`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;
 ### 开发
-- 项目目前使用pkg打包，请使用node18.x.x，不打包也要使用node18,一些插件目前只支持node18；
-- install 如果失败可能是由于网络问题，单独install一下对应的依赖包。
+- 项目目前使用pkg打包，请使用node18.x.x，vpn功能目前只能用node18;
+- 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
+- 本项目所有需要编译的依赖都使用了预构建，会从github下载编译好的文件，如果你电脑上的网络安装的时候无法访问github则会退化成编译。如果是在windows上需要编译编译可能遇到的问题可以参考这个链接https://blog.csdn.net/jjocwc/article/details/134152602。
 ## 主要特性
 -  文件管理
   1. 图片，视频，markdown 等文件格式在线预览。
