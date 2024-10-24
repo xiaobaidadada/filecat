@@ -2,6 +2,7 @@ import React from 'react';
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../project/util/store";
+// @ts-ignore
 import logo  from "../resources/img/logo.svg"
 
 function Header(props: { ignore_tags?: boolean, children?: any, left_children?: any }) {

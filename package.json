@@ -16,18 +16,13 @@
     "webpack-build": "npx webpack  --config shell/config/webpack.config.js",
     "build": "tsc && node shell/build.js",
     "start": "node build/main.js",
-    "pkg-win": "pkg . --targets node18-win-x64 --output filecat-win.exe",
-    "pkg-linux": "pkg . --targets node18-linux-x64 --output filecat-linux"
+    "pkg-win-amd64": "pkg . --targets node18-win-x64 --output filecat-win.exe",
+    "pkg-linux-amd64": "pkg . --targets node18-linux-x64 --output filecat-linux"
   },
   "pkg": {
     "assets": [
       "build/dist/**/**",
-      "build/wintun.node",
-      "build/linuxtun.node",
-      "build/wintun-x86.dll",
-      "build/wintun-arm64.dll",
-      "build/wintun-arm.dll",
-      "build/wintun-amd64.dll"
+      "node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll/*.dll"
     ]
   },
   "bin": "build/main.js",
@@ -35,6 +30,7 @@
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
     "@koa/cors": "^5.0.0",
+    "@xiaobaidadada/node-tuntap2-wintun": "^1.0.5",
     "archiver": "^7.0.1",
     "fluent-ffmpeg": "^2.1.3",
     "fs-extra": "^11.2.0",
