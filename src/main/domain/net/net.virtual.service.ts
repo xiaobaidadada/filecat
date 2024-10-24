@@ -7,11 +7,12 @@ import {findAvailablePort} from "../../../common/findPort";
 import os from "os";
 import {TcpUtil} from "../pre/tcp.util";
 import {Wss} from "../../../common/frame/ws.server";
+import {get_wintun_dll_path} from "../bin/bin";
 
 const dgram = require("dgram");
 const net = require('net');
 const crypto = require('crypto');
-const {LinuxTun, LinuxTap, Wintun} = require('./tun/index');
+const {LinuxTun, LinuxTap, Wintun} = require('@xiaobaidadada/node-tuntap2-wintun');
 const path = require("path");
 
 const vir_server_data_key = "vir_server_net_data_key";
@@ -73,9 +74,9 @@ class CLientInfo extends UdpUtil {
 }
 
 interface TunInfo {
-    winAdapter: any;
-    winSession: any;
-    winTun: any;
+    // winAdapter: any;
+    // winSession: any;
+    // winTun: any;
     linuxTun: any
 }
 
@@ -561,36 +562,16 @@ export class VirtualService extends UdpUtil {
         }
     }
 
-    getArch() {
-
-        let cpuArch = os.arch();
-        switch (cpuArch) {
-            case "x64":
-                return "amd64";
-            case "ia32":
-                return "x86";
-            default:
-                break;
-        }
-        return cpuArch;
-    }
-
     private tunStart(data: VirClientPojo) {
         const {ip, mask} = data;
         try {
             if (sysType === 'win') {
-                const cpuArch = this.getArch();
-                const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
-                Wintun.wintunSetPath(path.join(__dirname, winfilename));
-                const wintunHandle = Wintun.wintunInit();
-                const adapterHandle = Wintun.wintunSetIpv4AndGetAdapter("filecat", ip, mask);
-                const sessionHandle = Wintun.wintunGetSession(adapterHandle);
-                Wintun.wintunUpOn(sessionHandle, (buf) => {
+                Wintun.wintunSetPath(get_wintun_dll_path());
+                Wintun.wintunInit();
+                Wintun.wintunSetIpv4("filecat", ip, mask);
+                Wintun.wintunUpOn((buf) => {
                     this.handleTunPackage(buf, data.serverIp, data.serverPort);
                 });
-                this.tun.winAdapter = adapterHandle;
-                this.tun.winSession = sessionHandle;
-                this.tun.winTun = wintunHandle;
             } else {
                 const tun = new LinuxTun();
                 tun.mtu = 4096;
@@ -734,7 +715,7 @@ export class VirtualService extends UdpUtil {
             }
             // 接收到数据转发到网卡
             if (sysType === 'win') {
-                Wintun.wintunSend(this.tun.winSession, buffer);
+                Wintun.wintunSend(buffer);
             } else {
                 this.tun.linuxTun.write(buffer);
             }
@@ -748,7 +729,7 @@ export class VirtualService extends UdpUtil {
             return;
         }
         if (sysType === 'win') {
-            Wintun.wintunClose(this.tun.winAdapter, this.tun.winSession, this.tun.winTun)
+            Wintun.wintunClose()
         } else {
             this.tun.linuxTun.release();
         }

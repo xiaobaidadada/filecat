@@ -126,13 +126,14 @@ export function DiskMount() {
 
     const handleContextMenu = (event, data) => {
         event.preventDefault();
-        const pojo = new FileMenuData();
-        pojo.x = event.clientX;
-        pojo.y = event.clientY;
-        pojo.type = FileTypeEnum.dev;
-        pojo.extra_data = data;
-        pojo.call = get_blk;
-        setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
+        // todo 暂时删除无用的磁盘分区右键菜单
+        // const pojo = new FileMenuData();
+        // pojo.x = event.clientX;
+        // pojo.y = event.clientY;
+        // pojo.type = FileTypeEnum.dev;
+        // pojo.extra_data = data;
+        // pojo.call = get_blk;
+        // setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
     // 渲染节点
     const node_render_pd = (data:any)=> {

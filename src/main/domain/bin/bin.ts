@@ -3,11 +3,58 @@ import {SysEnum} from "../../../common/req/user.req";
 import path from "path";
 import {settingService} from "../setting/setting.service";
 import {SysSoftware} from "../../../common/req/setting.req";
-
+import os from "os";
+import {Env} from "../../../common/Env";
+const fs = require('fs');
+import fse from 'fs-extra'
 const {createRequire} = require('node:module');
 export const require_c = createRequire(__filename);
 // import {node_process_watcher} from "node-process-watcher";
 const ffmpeg = require('fluent-ffmpeg');
+
+// 从虚拟路径复制文件到实际路径
+function writeToStorage(virtualFilePath,realInstallPath)
+{
+    const filename        = path.basename(virtualFilePath);
+    // const realInstallPath = path.join(realInstallDir, filename);
+    if (!fs.existsSync(realInstallPath))
+    {
+        const data = fs.readFileSync(virtualFilePath);
+        fs.writeFileSync(realInstallPath, data);
+    }
+    // return realInstallPath;
+}
+
+
+export function get_wintun_dll_path():string {
+    try {
+        const relp = path.join(Env.work_dir, "packges","filecat_dlls");
+        fse.ensureDirSync(relp);
+        let cpuArch = os.arch();
+        switch (cpuArch) {
+            case 'arm':
+            case 'arm64':
+                break;
+            case 'ia32':
+                cpuArch = "x86";
+                break;
+            case 'x64':
+                cpuArch = "amd64";
+                break;
+            default:
+                // console.log('未知架构:', arch);
+                break;
+        }
+        const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
+        const p = path.join(relp,winfilename);
+        if (!fs.existsSync(p)) {
+            writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
+        }
+        return p;
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 export function getFfmpeg() {
     const list = settingService.getSoftware();

@@ -46,6 +46,7 @@ export function Sys(props) {
 
     const  get_real_time_info = async ()=>{
         if (!real_time_p) {
+            ws.unConnect();
             return;
         }
         const data = new WsData(CmdType.sys_get);
@@ -57,9 +58,6 @@ export function Sys(props) {
             setMemLeft(memLeft);
             setMemTotal(memTotal);
             setmemPercentage(((memTotal - memLeft) / memTotal) * 100);
-            if (!real_time_p) {
-                ws.unConnect();
-            }
         })
 
         // ws.subscribeUnconnect(init);
@@ -151,9 +149,7 @@ export function Sys(props) {
             <ButtonLittleStatus defaultStatus={real_time} text={t("实时信息")} clickFun={(v) => {
                 set_real_time(v)
                 real_time_p = v;
-                if (v) {
-                    get_real_time_info();
-                }
+                get_real_time_info();
             }}/>
         </Header>
         <Dashboard>

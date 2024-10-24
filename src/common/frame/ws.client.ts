@@ -173,6 +173,7 @@ export class WsClient {
     }
     public async unConnect() {
         if (this.isAilive()) {
+            console.log('主动关闭客户端')
             this._self_close = true;
             this._socket.close();
         }

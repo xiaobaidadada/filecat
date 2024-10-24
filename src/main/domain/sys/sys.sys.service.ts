@@ -77,8 +77,18 @@ class SysSystemService {
 
     public async diskSmartctl(disk:string) {
         const result = new DiskCheckInfo();
-        const jsonstr = execSync(`${getSmartctl()} -a --json ${disk}`).toString();
-        const pojo = JSON.parse(jsonstr);
+        let pojo;
+        try {
+            const jsonstr = execSync(`${getSmartctl()} -a --json ${disk}`).toString();
+            pojo = JSON.parse(jsonstr)
+        } catch (e) {
+            if (e.status === 4) {
+                // 内容过长
+                pojo = JSON.parse(e.stdout);
+            }else {
+                throw e;
+            }
+        }
         result.model_name = pojo["model_name"];
         result.serial_number = pojo["serial_number"];
         result.firmware_version = pojo["firmware_version"];
