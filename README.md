@@ -17,7 +17,7 @@ url: http://116.198.245.137:5569/
 2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
 3. 如果不能运行请自己在对应环境下进行打包编译或者使用不打包方式运行(网络功能暂时不支持多环境)
 ### linux下安装
-对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-liunx`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;
+对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-linux`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;
 ### 开发
 - 项目目前使用pkg打包，请使用node18.x.x，vpn功能目前只能用node18;
 - 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
@@ -42,7 +42,7 @@ url: http://116.198.245.137:5569/
 - wol网络唤醒
 - 虚拟网络，可以实现p2p,vpn功能。(不是端口转发，而是利用tun在主机上创建虚拟ip)
 ## 功能说明
-1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windwos和Linux;
+1. 点对点客户端功能在macos下无法使用，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windows和Linux;
 2. 部分功能目前处于demo阶段，未来会持续优化；
 ## 路线
 1. 优化更多操作细节 
