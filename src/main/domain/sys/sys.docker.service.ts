@@ -56,7 +56,7 @@ class SysDockerService {
                     }
                 }
                 // 优化点
-                this.getAllContainer();
+                // this.getAllContainer();
             }, 1000);
         }
     }
