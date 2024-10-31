@@ -11,6 +11,8 @@
 url: http://116.198.245.137:5569/
 账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
 ### 直接使用
+最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
+
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行;
 1. 执行命令`filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
