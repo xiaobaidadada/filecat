@@ -1,6 +1,5 @@
 import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
-import pidtree from "pidtree";
 
 export class SystemUtil {
 
@@ -18,14 +17,8 @@ export class SystemUtil {
         if (sysType === 'win') {
             SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
         } else {
-            pidtree(pid, function (err, pids) {
-                if (pids) {
-                    for (const id  of pids) {
-                        SystemUtil.commandIsExist(`kill  ${id} `)
-                    }
-                }
-            })
-            SystemUtil.commandIsExist(`kill  ${pid} `)
+            SystemUtil.commandIsExist(`kill -9 ${pid} `)
+
         }
     }
 }
