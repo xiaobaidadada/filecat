@@ -41,7 +41,7 @@ export function TableListRender(props: {
         setRows([...rows]);
     }
     return <Dashboard>
-            <CardFull title={t("跳转路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+            <CardFull title={t("页面资源路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={props.headers} rows={rows.map((itemList, index) => {
                     const new_list = [
                         <InputText value={itemList[0]} handleInputChange={(value) => {

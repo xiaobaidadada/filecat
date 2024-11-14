@@ -24,6 +24,7 @@ import {ServerEvent} from "./other/config";
 import {VideoController} from "./domain/video/video.controller";
 import {routerConfig} from "../common/RouterConfig";
 import {getWebFirstKey} from "../common/StringUtil";
+import {CryptoController} from "./domain/crypto/crypto.controller";
 
 const WebSocket = require('ws');
 
@@ -47,7 +48,7 @@ async function start() {
         routePrefix: '/api',
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
-        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController],
+        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController,CryptoController],
         // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
         middlewares: [AuthMiddleware, GlobalErrorHandler, CheckTokenMiddleware],
     });

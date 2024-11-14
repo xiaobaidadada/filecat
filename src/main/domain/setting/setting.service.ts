@@ -9,6 +9,7 @@ import {FileSettingItem, SysSoftware, SysSoftwareItem, TokenTimeMode} from "../.
 import {Env} from "../../../common/Env";
 import {ba} from "tencentcloud-sdk-nodejs";
 import {SystemUtil} from "../sys/sys.utl";
+import {Body} from "routing-controllers";
 const needle = require('needle');
 
 const customer_router_key = "customer_router_key";
@@ -265,6 +266,15 @@ export class SettingService {
         this.getFilesSetting();
     }
 
+    extra_env_path = "extra_env_path"
+    public getEnvPath() {
+        return DataUtil.get(this.extra_env_path)??"";
+    }
+
+    setEnvPath(path:string) {
+        DataUtil.set(this.extra_env_path,path);
+        return Sucess("1");
+    }
 }
 
 export const settingService: SettingService = new SettingService();

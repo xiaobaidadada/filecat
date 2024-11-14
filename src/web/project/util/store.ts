@@ -93,7 +93,8 @@ export const $stroe = {
         } as {
             open:boolean,
             handle:()=>void,
-            title?:string
+            title?:string,
+            sub_title?:string,
         }
     }),
     // 通用卡片

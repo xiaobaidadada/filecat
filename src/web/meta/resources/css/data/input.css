@@ -39,6 +39,13 @@
     resize: vertical;
 }
 
+.input_left {
+    margin-bottom: .5em;
+    display: block;
+    background-color: #f5f5f5;
+    margin-left: .5rem;
+}
+
 .input--red {
     background: #fcd0cd;
 }
