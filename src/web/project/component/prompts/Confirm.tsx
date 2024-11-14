@@ -26,6 +26,9 @@ export function Confirm(props) {
         <div className="card-title">
             <h2>{showPrompt.title ?? t("验证执行")}</h2>
         </div>
+        <div>
+            {showPrompt.sub_title}
+        </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={cancel}>
                 {t("取消")}

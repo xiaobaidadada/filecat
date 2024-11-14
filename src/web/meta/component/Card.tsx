@@ -65,19 +65,25 @@ export function TextTip(props:TextProps) {
 }
 
 
-export function CardPrompt(props:{title:string,context?:React.ReactNode[],cancel?:()=>void,confirm?:()=>void,cancel_t?:string,confirm_t?:string}) {
-    return (<div className={"card floating"}>
+export function CardPrompt(props:{title:string,context?:React.ReactNode[],cancel?:()=>void,confirm?:()=>void,cancel_t?:string,confirm_t?:string,confirm_enter?:()=>void}) {
+    return (<div className={"card floating"} onKeyPress={(event) => {
+        if (event.key === 'Enter') {
+            if(props.confirm_enter){
+                props.confirm_enter();
+            }
+        }
+    }}>
         <div className="card-title">
             <h2>{props.title}</h2>
         </div>
         <div className="card-content">
             {props.context && props.context.map((value,index) => (<div key={index}>{value}</div>))}
         </div>
-        <div className="card-action">
+        <div className="card-action" >
             <button className="button button--flat button--grey" onClick={props.cancel}>
                 {props.cancel_t ?? "cancel"}
             </button>
-            <button className="button button--flat" onClick={props.confirm}>
+            <button className="button button--flat" onClick={props.confirm} >
                 {props.confirm_t ?? "confirm"}
             </button>
         </div>

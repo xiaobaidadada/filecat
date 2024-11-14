@@ -18,7 +18,6 @@ export class SystemUtil {
             SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
         } else {
             SystemUtil.commandIsExist(`kill -9 ${pid} `)
-
         }
     }
 }

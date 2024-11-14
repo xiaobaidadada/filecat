@@ -75,29 +75,27 @@ export function CustomerApiRouter() {
         })
         editor_data.set_value_temp(res.data)
     }
-    return <RowColumn>
-        <Dashboard>
-            <CardFull title={t("自定义路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
-                <Table headers={headers} rows={rows.map((item, index) => {
-                    const new_list = [
-                        <InputText value={item.router} handleInputChange={(value) => {
-                            item.router = value;
-                        }} no_border={true}/>,
-                        <Select defaultValue={item.needAuth} onChange={(value) => {
-                            item.needAuth = value === "true";
-                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
-                        <InputText value={item.note} handleInputChange={(value) => {
-                            item.note = value;
-                        }} no_border={true}/>,
-                        <div>
-                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
-                            <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
-                        </div>,
-                    ];
-                    return new_list;
-                })} width={"10rem"}/>
-            </CardFull>
-        </Dashboard>
-    </RowColumn>
+    return <Dashboard>
+        <CardFull title={t("自定义api路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+            <Table headers={headers} rows={rows.map((item, index) => {
+                const new_list = [
+                    <InputText value={item.router} handleInputChange={(value) => {
+                        item.router = value;
+                    }} no_border={true}/>,
+                    <Select defaultValue={item.needAuth} onChange={(value) => {
+                        item.needAuth = value === "true";
+                    }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                    <InputText value={item.note} handleInputChange={(value) => {
+                        item.note = value;
+                    }} no_border={true}/>,
+                    <div>
+                        <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                        <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
+                    </div>,
+                ];
+                return new_list;
+            })} width={"10rem"}/>
+        </CardFull>
+    </Dashboard>
 
 }

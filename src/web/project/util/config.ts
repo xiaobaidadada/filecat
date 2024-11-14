@@ -28,3 +28,5 @@ export const sshHttp = new Http(`${config.baseUrl}ssh/`);
 export const rdpHttp = new Http(`${config.baseUrl}rdp/`);
 
 export const videoHttp = new Http(`${config.baseUrl}video/`);
+
+export const cryptoHttp = new Http(`${config.baseUrl}crypto/`);

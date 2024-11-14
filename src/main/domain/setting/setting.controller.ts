@@ -184,4 +184,17 @@ export class SettingController {
         pojo.sysSoftWare = map;
         return Sucess(pojo);
     }
+
+
+    // path路径
+    @Get("/env/path/get")
+    getEnvPath() {
+        return Sucess(settingService.getEnvPath());
+    }
+
+    @Post('/env/path/save')
+    setEnvPath(@Body() req:{path:string}) {
+        settingService.setEnvPath(req.path);
+        return Sucess("1");
+    }
 }

@@ -169,7 +169,7 @@ export function Systemd(props) {
             set_systemd_rows(systemd_rows_p);
             return;
         }
-        for (const list of systemd_rows) {
+        for (const list of systemd_rows_p) {
             if(list[0].props.context.includes(systemd_filterkey) || list[3].props.context.includes(systemd_filterkey)) {
                 left_rows.push(list);
             }

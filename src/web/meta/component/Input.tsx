@@ -142,16 +142,32 @@ export interface SelectProps {
     onChange: (value: string) => void;
     defaultValue?:any,
     no_border?:boolean,
-    value?:any
+    value?:any,
+    tip?:any,
+    width?:string,
 }
 
 export function Select(props: SelectProps) {
 
-    return <select defaultValue={props.defaultValue} value={props.value} className={`input input--block ${props.no_border?"input--no_border":""}`} onChange={(event) => props.onChange(event.target.value)}>
-        {props.options.map((item, index) => {
-            return <option  key={index} value={item.value}   >{item.title}</option>;
-        })}
-    </select>
+    return <div style={{
+        display: "flex",
+    }}>
+        { props.tip &&
+            <label className={`input input_left `}>
+                {props.tip}
+            </label>
+        }
+        <select defaultValue={props.defaultValue} value={props.value}
+                style={{
+                    width: props.width,
+                }}
+                className={`input input--block  ${props.no_border ? "input--no_border" : ""}`}
+                onChange={(event) => props.onChange(event.target.value)}>
+            {props.options.map((item, index) => {
+                return <option key={index} value={item.value}>{item.title}</option>;
+            })}
+        </select>
+    </div>
 }
 
 export function InputRadio(props: {
