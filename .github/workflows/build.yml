@@ -33,7 +33,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   prebuild: # 执行node的 预构建
-    if: ${{ github.event.inputs.job == 'prebuild' }}
+    if: ${{ github.event.inputs.job == 'build' || github.event.inputs.job == 'build-push'}}
     runs-on: ubuntu-20.04
     name: Prebuild on ubuntu-20.04
     # needs: test
@@ -42,9 +42,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+          registry-url: https://registry.npmjs.org
       - run: |
           sudo apt update
           sudo apt install gcc-10 g++-10 -y
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
       - run: npm install --ignore-scripts
       - run: npm run build
+      - if: ${{github.event.inputs.job == 'build-push'}}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
