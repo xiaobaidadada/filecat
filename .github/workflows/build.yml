@@ -1,0 +1,50 @@
+name: "Run prebuild's and Create GitHub and NPM release"
+run-name: Package against ${{ github.ref_name }} # 每次运行的时候显示的名字
+
+# 本yml参考于 https://github.com/WiseLibs/better-sqlite3/blob/master/.github/workflows/build.yml
+on:
+  workflow_dispatch: # 手动触发
+    inputs: # 定义触发的时候可以输入的参数
+      job: # 参数名称 通过 ${{ github.event.inputs.job }} 访问值 下面是参数的要求描述
+        description: "任务类型"
+        required: true
+        default: prebuild
+        type: string
+
+# 所有的jobs下的任务都会被执行
+jobs:
+  publish-npm:
+    if: ${{ github.event.inputs.job == 'push-npm' }}
+    name: Publishing to NPM
+    runs-on: ubuntu-20.04
+    #needs: # 等待别的 job 任务完成
+      #- prebuild
+      #- prebuild-alpine
+      #- prebuild-alpine-arm
+      #- prebuild-linux-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  prebuild: # 执行node的 预构建
+    if: ${{ github.event.inputs.job == 'prebuild' }}
+    runs-on: ubuntu-20.04
+    name: Prebuild on ubuntu-20.04
+    # needs: test
+    steps:
+      - uses: actions/checkout@v4 # 使用社区的指令
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: |
+          sudo apt update
+          sudo apt install gcc-10 g++-10 -y
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+      - run: npm install --ignore-scripts
+      - run: npm run build

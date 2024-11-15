@@ -4,6 +4,7 @@ const config = require('./config/webpack.config.js');
 const serverConfig = require('./config/webpack.server.config.js');
 const {copyFileSync} = require("fs");
 const path = require("path");
+const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
 
 
@@ -29,6 +30,7 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg.exe"), path.join(__dirname, "..", "build", "ffmpeg.exe"))
+                        rimraf(path.join(__dirname,"..","build","server"));
                         res(true);
                     });
 

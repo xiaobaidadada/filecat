@@ -3,10 +3,6 @@
   "version": "1.0.5",
   "description": "filecat 文件管理器",
   "author": "xiaobaidadada",
-  "main": "build/main.js",
-  "engines": {
-    "node": "18.x.x"
-  },
   "scripts": {
     "dev": "node  --require ts-node/register ./shell/dev.js --env ./env",
     "dev-debug": "node --inspect=0.0.0.0:9001 --require ts-node/register ./shell/dev.js --env ./env",
@@ -26,8 +22,33 @@
       "node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll/*.dll"
     ]
   },
-  "bin": "build/main.js",
-  "keywords": [],
+  "bin": {
+    "filecat": "shell/filecat.js"
+  },
+  "keywords": [
+    "administrator",
+    "filemanager",
+    "cpu",
+    "docker",
+    "linux",
+    "文件服务器",
+    "运维面板",
+    "react",
+    "ssh",
+    "ftp",
+    "systeminfo",
+    "vpn",
+    "docker",
+    "ddns"
+  ],
+  "files": [
+    "build/**/*",
+    "shell",
+    "env",
+    "LICENSE.txt",
+    "README.md",
+    "package.json"
+  ],
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.11.14",
     "@koa/cors": "^5.0.0",
