@@ -14,4 +14,5 @@ export class UserBaseInfo {
     language:string;
     sys:SysEnum; // 系统
     sysSoftWare:{[key in SysSoftware]:SysSoftwareItem}|{};
+    runing_time_length:any; // 系统运行的时间
 }

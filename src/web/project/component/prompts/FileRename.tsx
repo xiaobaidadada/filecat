@@ -7,21 +7,22 @@ import {getRouterAfter} from "../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getFilesByIndexs} from "../file/FileUtil";
 import {useTranslation} from "react-i18next";
+import {CardPrompt} from "../../../meta/component/Card";
 
 export function FileRename(props) {
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [name, setName] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
 
-    const cancel=()=> {
-        setShowPrompt({show: false,type: "",overlay: false,data:{}})
+    const cancel = () => {
+        setShowPrompt({show: false, type: "", overlay: false, data: {}})
     }
-    const getName = () =>{
+    const getName = () => {
         if (!showPrompt.data.path) {
             const files = getFilesByIndexs(nowFileList, selectedFile);
             return files[0].name;
@@ -30,8 +31,8 @@ export function FileRename(props) {
         }
 
     }
-    const dirnew = async ()=>{
-        if (!showPrompt.data.path && (!name || selectedFile.length!==1)) {
+    const dirnew = async () => {
+        if (!showPrompt.data.path && (!name || selectedFile.length !== 1)) {
             cancel()
             return;
         }
@@ -39,13 +40,13 @@ export function FileRename(props) {
         let filename;
         if (!showPrompt.data.path) {
             const files = getFilesByIndexs(nowFileList, selectedFile);
-            newName = `${getRouterAfter('file',location.pathname)}${name}`
-            filename = `${getRouterAfter('file',location.pathname)}${files[0].name}`
+            newName = `${getRouterAfter('file', location.pathname)}${name}`
+            filename = `${getRouterAfter('file', location.pathname)}${files[0].name}`
         } else {
             filename = showPrompt.data.path;
-            newName =  `${showPrompt.data.dir}${name}`;
+            newName = `${showPrompt.data.dir}${name}`;
         }
-        const rsq = await fileHttp.post('rename', {name:filename,newName:newName})
+        const rsq = await fileHttp.post('rename', {name: filename, newName: newName})
         if (rsq.code === 0) {
             cancel();
             if (showPrompt.data.call) {
@@ -55,20 +56,16 @@ export function FileRename(props) {
             }
         }
     }
-    return (<div className={"card floating"}>
-        <div className="card-title">
-            <h2>{t("修改名字")}</h2>
-        </div>
-        <div className="card-content">
-            <InputText placeholderOut={t("输入新名字")} value={getName()} handleInputChange={(value)=>setName(value)} />
-        </div>
-        <div className="card-action">
-            <button className="button button--flat button--grey" onClick={cancel}>
-                {t("取消")}
-            </button>
-            <button className="button button--flat" onClick={dirnew}>
-                {t("修改")}
-            </button>
-        </div>
-    </div>)
+
+
+    return (<CardPrompt title={t("修改名字")} cancel={cancel} confirm={dirnew} cancel_t={t("取消")}
+                        confirm_t={t("修改")}
+                        context={[
+                            <div className="card-content">
+                                <InputText placeholderOut={t("输入新名字")} value={getName()}
+                                           handleInputChange={(value) => setName(value)}/>
+
+                            </div>]}
+                        confirm_enter={dirnew}
+    />)
 }

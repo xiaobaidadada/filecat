@@ -159,6 +159,7 @@ export function  Sys() {
                 </Card>
             </Dashboard>
         </Column>
-        <Header left_children={<span className={"credits"}>{`version:${process.env.version}`}</span>}/>
+        <Header left_children={<span> <span className={"credits"}>{`version:${process.env.version}`}</span><span
+            className={"credits"}>系统运行于:{userInfo.runing_time_length}</span></span>}/>
     </Row>
 }
