@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "filecat 文件管理器",
   "author": "xiaobaidadada",
   "scripts": {
@@ -80,10 +80,10 @@
     "tar": "^7.4.3",
     "tencentcloud-sdk-nodejs": "^4.0.858",
     "tldts": "^6.1.20",
+    "tslib": "^2.6.3",
     "typedi": "^0.10.0",
     "unzipper": "^0.12.2",
-    "ws": "^8.16.0",
-    "tslib": "^2.6.3"
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",

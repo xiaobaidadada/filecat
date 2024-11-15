@@ -6,9 +6,15 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-
+let exe_path;
+if (process.argv[0].endsWith("node") && process.argv[1].endsWith("filecat")) {
+    // 通过 脚本运行
+    exe_path = `${process.argv[0]} ${process.argv[1]} `
+} else {
+    exe_path = process.argv[0];
+}
 const data = {
-    exe_path:process.argv[0],
+    exe_path:exe_path,
     env_path:"",
     port:5567,
     username:"admin",
