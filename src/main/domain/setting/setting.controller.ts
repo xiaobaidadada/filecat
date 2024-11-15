@@ -11,6 +11,7 @@ import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {getSys} from "../shell/shell.service";
+import {getShortTime} from "../../../common/ValueUtil";
 
 @Service()
 @Controller("/setting")
@@ -171,6 +172,7 @@ export class SettingController {
         return Sucess("1");
     }
 
+    start_server_time = Date.now();
     @Get("/userInfo/get")
     getLanguage() {
         const pojo = new UserBaseInfo();
@@ -182,6 +184,7 @@ export class SettingController {
             map[item.id]= item;
         }
         pojo.sysSoftWare = map;
+        pojo.runing_time_length = getShortTime(this.start_server_time)
         return Sucess(pojo);
     }
 

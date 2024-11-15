@@ -2,6 +2,9 @@ import path from "path";
 import fs, {Stats} from "fs";
 import fse from 'fs-extra'
 import {Env} from "../../../common/Env";
+import {execSync} from "child_process";
+import {getSys} from "../shell/shell.service";
+import {SysEnum} from "../../../common/req/user.req";
 
 const crypto = require('crypto');
 const sshpk = require('sshpk');
@@ -108,6 +111,9 @@ export class CryptoService {
         fse.ensureDirSync(this.get_home_path());
         const rpath = path.join(this.get_home_path(), name);
         fs.writeFileSync(rpath, context);
+        if (getSys() === SysEnum.linux) {
+            execSync(`chmod 600 ${rpath}`) // 保证权限不至于太宽松
+        }
     }
 }
 

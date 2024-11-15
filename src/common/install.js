@@ -88,6 +88,7 @@ After=network.target
 [Service]
 ExecStart=${data.exe_path} ${param}
 Restart=always
+User=root
 Group=root
 KillMode=process
 [Install]

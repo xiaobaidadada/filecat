@@ -40,7 +40,7 @@ export function Crypto() {
             NotyFail("密钥不能为空");
             return;
         }
-        let name = method;
+        let name = "id_"+method;
         if (type === "pub") {
             name += ".pub";
         }
