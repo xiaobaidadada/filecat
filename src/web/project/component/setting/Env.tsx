@@ -24,7 +24,7 @@ export function Env() {
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
-    const protection_dir_headers = [t("编号"),t("路径")];
+    const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
 
 
     const getItems = async () => {
@@ -79,7 +79,7 @@ export function Env() {
         setRows([...rows]);
     }
     const protection_dir_add = ()=>{
-        set_protection_dir_rows([...protection_dir_rows,{path:""}]);
+        set_protection_dir_rows([...protection_dir_rows,{path:"",note:""}]);
     }
     const protection_dir_del = (index)=>{
         protection_dir_rows.splice(index, 1);
@@ -192,6 +192,9 @@ export function Env() {
                             <div>{index}</div>,
                             <InputText value={item.path} handleInputChange={(value) => {
                                 item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
                             }} no_border={true}/>,
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_dir_del(index)}/> ,
                         ];
