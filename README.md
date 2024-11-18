@@ -3,7 +3,7 @@
 
 - 中文 | [English ](./doc/EN_README.md)
 - 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，更多使用方式请参考下文。
+- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明,更多使用方式请参考下文。
 ## 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
@@ -11,17 +11,16 @@
 ### 体验
 url: http://116.198.245.137:5569/
 账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
-### 二进制文件，直接使用
+### npm 安装方式使用
+如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
+### 二进制文件方式，直接使用
 最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
-
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行(x64);
 1. 执行命令`filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
 2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
 3. 如果不能运行请自己在对应环境下进行打包编译或者使用不打包方式运行(网络功能暂时不支持多环境)
-### npm 安装使用
-如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
-### linux下安装
+### linux下安装到systemd后台运行
 这里的安装是安装到systemd作为后台进程，默认需要使用root权限，对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-linux`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;如果你使用npm安装了filecat，可以直接使用`filecat --install linux`来安装到systemd。
 ### 开发
 - 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
@@ -36,7 +35,7 @@ url: http://116.198.245.137:5569/
   5. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
   6. 终端，可以实时跟着目录走。
 - ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
-- 索引，是网址收藏夹，可用于保存服务器上其它的网站
+- 网站，是网址收藏夹，可用于保存服务器上其它的网站
 - ddns
 - http网页代理
 - rdp代理(windwos远程控制)

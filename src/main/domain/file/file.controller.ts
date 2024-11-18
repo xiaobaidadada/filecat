@@ -54,8 +54,7 @@ export class FileController {
 
     @Delete("/:path*")
     async deletes(@Ctx() ctx,@Param("path") path?: string) {
-        await FileServiceImpl.deletes(ctx.headers.authorization,path);
-        return Sucess("1");
+        return await FileServiceImpl.deletes(ctx.headers.authorization,path);
     }
 
     @Post('/save/:path*')

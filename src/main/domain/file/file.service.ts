@@ -133,15 +133,19 @@ class FileService extends FileCompress{
 
     public deletes(token,filePath?:string) {
         if (!filePath) {
-            return;
+            return Sucess("1");
         }
         const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(filePath));
+        if (settingService.protectionCheck(sysPath)) {
+            return Fail("1",RCode.PROTECT_FILE);
+        }
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             fs.unlinkSync(sysPath)
         } else {
             rimraf(sysPath);
         }
+        return Sucess("1");
     }
 
     public save(token,context?:string,filePath?:string,is_sys_path?: number) {

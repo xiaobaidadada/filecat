@@ -5,7 +5,8 @@ import {copyToClipboard} from "../../project/util/FunUtil";
 
 export interface CardProps {
     title?: string;
-    titleCom?:React.ReactNode;
+    self_title?: any;
+    titleCom?: React.ReactNode;
     children?: React.ReactNode;
     rightBottomCom?: React.ReactNode;
 }
@@ -15,12 +16,12 @@ enum Type {
     full
 }
 
-function CardComponent(props: CardProps ,type:Type) {
-    const contextClass = type===Type.common?"card-content"
-        :type===Type.full?"card-content full":"";
+function CardComponent(props: CardProps, type: Type) {
+    const contextClass = type === Type.common ? "card-content"
+        : type === Type.full ? "card-content full" : "";
     return <div className={"card"}>
         <div className={"card-title"}>
-            <h2>{props.title}</h2>
+            {props.self_title ? props.self_title : <h2>{props.title}</h2>}
             <div className={"not-select-div"}>{props.titleCom && props.titleCom}</div>
         </div>
         <div className={contextClass}>
@@ -34,26 +35,27 @@ function CardComponent(props: CardProps ,type:Type) {
 }
 
 export function Card(props: CardProps) {
-    return CardComponent(props,Type.common);
+    return CardComponent(props, Type.common);
 }
 
-export function CardFull(props:CardProps) {
-    return CardComponent(props,Type.full);
+export function CardFull(props: CardProps) {
+    return CardComponent(props, Type.full);
 }
 
 export interface TextProps {
-    context?:string,
-    children?:any
+    context?: string,
+    children?: any
 }
-export function TextTip(props:TextProps) {
+
+export function TextTip(props: TextProps) {
     const copyRef = useRef<HTMLDivElement>(null);
-    const click = () =>{
+    const click = () => {
         copyToClipboard(props.context ?? props.children)
         new Noty({
             type: 'info',
             text: '复制完成',
             timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-            layout:"bottomLeft"
+            layout: "bottomLeft"
         }).show();
     }
     return (
@@ -65,10 +67,18 @@ export function TextTip(props:TextProps) {
 }
 
 
-export function CardPrompt(props:{title:string,context?:React.ReactNode[],cancel?:()=>void,confirm?:()=>void,cancel_t?:string,confirm_t?:string,confirm_enter?:()=>void}) {
+export function CardPrompt(props: {
+    title: string,
+    context?: React.ReactNode[],
+    cancel?: () => void,
+    confirm?: () => void,
+    cancel_t?: string,
+    confirm_t?: string,
+    confirm_enter?: () => void
+}) {
     return (<div className={"card floating"} onKeyPress={(event) => {
         if (event.key === 'Enter') {
-            if(props.confirm_enter){
+            if (props.confirm_enter) {
                 props.confirm_enter();
             }
         }
@@ -77,20 +87,20 @@ export function CardPrompt(props:{title:string,context?:React.ReactNode[],cancel
             <h2>{props.title}</h2>
         </div>
         <div className="card-content">
-            {props.context && props.context.map((value,index) => (<div key={index}>{value}</div>))}
+            {props.context && props.context.map((value, index) => (<div key={index}>{value}</div>))}
         </div>
-        <div className="card-action" >
+        <div className="card-action">
             <button className="button button--flat button--grey" onClick={props.cancel}>
                 {props.cancel_t ?? "cancel"}
             </button>
-            <button className="button button--flat" onClick={props.confirm} >
+            <button className="button button--flat" onClick={props.confirm}>
                 {props.confirm_t ?? "confirm"}
             </button>
         </div>
     </div>)
 }
 
-export function ProgressCard(props:{progress:number}) {
+export function ProgressCard(props: { progress: number }) {
     return <div className="progress-card">
         <div className="progress-per">
             <div style={{
@@ -100,12 +110,12 @@ export function ProgressCard(props:{progress:number}) {
     </div>
 }
 
-export const StatusCircle = (props:{ok:boolean}) => {
+export const StatusCircle = (props: { ok: boolean }) => {
     const circleStyle = {
         width: '10px',
         height: '10px',
         borderRadius: '50%',
-        backgroundColor: props.ok?'var(--icon-green)':'var(--iconTertiary)',
+        backgroundColor: props.ok ? 'var(--icon-green)' : 'var(--iconTertiary)',
         display: 'inline-block'
     };
 

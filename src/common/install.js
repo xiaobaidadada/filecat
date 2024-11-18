@@ -20,7 +20,9 @@ const data = {
     username:"admin",
     password:"admin",
     work_dir:`${process.cwd()}/data`,
-    base_folder:process.cwd()
+    base_folder:process.cwd(),
+    Group:"root",
+    User:"root"
 };
 // 提问函数
 const askQuestion = (query) => {
@@ -31,6 +33,14 @@ const step = {
         const input = await askQuestion(`\x1b[31m1.\x1b[0m程序位置-绝对路径(当前-${data.exe_path}):`);
         if (input) {
             data.exe_path = input;
+        }
+        const User = await askQuestion(`\x1b[31m5/7.\x1b[0m请输入用户账号(默认:root):`);
+        if (User) {
+            data.User = User;
+            const Group = await askQuestion(`\x1b[31m5/7.\x1b[0m请输入用户所属组(默认:${User}):`);
+            if (Group) {
+                data.Group = Group;
+            }
         }
         return "2";
     },
@@ -94,8 +104,8 @@ After=network.target
 [Service]
 ExecStart=${data.exe_path} ${param}
 Restart=always
-User=root
-Group=root
+User=${data.User}
+Group=${data.Group}
 KillMode=process
 [Install]
 WantedBy=multi-user.target
