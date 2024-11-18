@@ -226,6 +226,7 @@ class FileService extends FileCompress{
         } else {
             fs.writeFileSync(sysPath,data.context ?? "");
         }
+        settingService.protectionInit();
     }
 
     public async rename(token,data?: fileInfoReq) {

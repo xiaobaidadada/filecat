@@ -34,10 +34,10 @@ const step = {
         if (input) {
             data.exe_path = input;
         }
-        const User = await askQuestion(`\x1b[31m5/7.\x1b[0m请输入用户账号(默认:root):`);
+        const User = await askQuestion(`\x1b[31m\x1b[0m请输入用户账号(默认:root):`);
         if (User) {
             data.User = User;
-            const Group = await askQuestion(`\x1b[31m5/7.\x1b[0m请输入用户所属组(默认:${User}):`);
+            const Group = await askQuestion(`\x1b[31m\x1b[0m请输入用户所属组(默认:${User}):`);
             if (Group) {
                 data.Group = Group;
             }
