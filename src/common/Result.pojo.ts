@@ -5,4 +5,5 @@ export enum RCode {
     DdnsAuthFail,
     File_Max,
     PreFile,
+    PROTECT_FILE,
 }

@@ -77,3 +77,16 @@
     font-size: 0.9rem;
     margin: .5rem 0;
 }
+
+.div-row {
+    display: flex;
+    /*align-items: flex-start; !* 或者 align-items: flex-end; *!*/
+
+    /*display: grid;*/
+    /*grid-template-columns: repeat(auto-fit, minmax(0, 33%)); 自动调整元素大小布局*/
+    /*grid-template-columns: repeat(auto-fit, minmax(0, 1fr %));  1fr 子元素的最大宽度含义，fr是等分空间值，表示几个可用空间*/
+    margin: 0 -.5em;
+    flex-wrap: wrap;
+    align-items: center; /* 垂直居中 */
+
+}

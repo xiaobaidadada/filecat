@@ -3,10 +3,6 @@
     "esModuleInterop": true,
     "target": "es2015",
     "module": "commonjs",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
     "allowJs": true,
     /* 方便调试，生成对应的js和ts对应的map文件*/
     "sourceMap": true,

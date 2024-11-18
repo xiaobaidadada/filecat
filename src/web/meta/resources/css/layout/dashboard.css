@@ -12,6 +12,8 @@
     /*grid-template-columns: repeat(auto-fit, minmax(0, 1fr %));  1fr 子元素的最大宽度含义，fr是等分空间值，表示几个可用空间*/
     margin: 0 -.5em;
     flex-wrap: wrap;
+    /*align-items: center; !* 垂直居中 *!*/
+
 }
 
 

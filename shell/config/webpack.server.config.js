@@ -2,7 +2,7 @@ const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
-
+const package_data = require("../../package.json")
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
     mode: 'production', // 或者 'production'
@@ -38,6 +38,9 @@ module.exports = {
         new webpack.IgnorePlugin({
             resourceRegExp: /^\.\/.*?\.node$/
             // contextRegExp: /moment$/,
+        }),
+        new webpack.DefinePlugin({
+            'process.env.version': JSON.stringify(package_data.version),
         })
     ],
     optimization: {

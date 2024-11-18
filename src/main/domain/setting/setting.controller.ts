@@ -200,4 +200,18 @@ export class SettingController {
         settingService.setEnvPath(req.path);
         return Sucess("1");
     }
+
+
+    // 获取保护目录
+    @Get("/protection_dir")
+    protectionDirGet() {
+        return Sucess(settingService.protectionDirGet());
+    }
+
+    // 保存保护目录
+    @Post('/protection_dir/save')
+    protectionDirSave(@Body() req:any) {
+        settingService.protectionDirSave(req);
+        return Sucess("1");
+    }
 }

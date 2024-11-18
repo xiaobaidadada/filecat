@@ -20,12 +20,15 @@ export function Env() {
     const [rows_outside_software, setRows_outside_software] = useState([]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const [env_path,set_env_path] = useState("");
+    const [protection_dir_rows,set_protection_dir_rows] = useState([]);
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
+    const protection_dir_headers = [t("编号"),t("路径")];
 
 
     const getItems = async () => {
+        // 文件夹根路径
         const result = await settingHttp.get("filesSetting");
         if (result.code === RCode.Sucess) {
             setRows(result.data);
@@ -39,6 +42,11 @@ export function Env() {
         if (result2.code === RCode.Sucess) {
             set_env_path(result2.data);
         }
+        // 保护目录
+        const result3 = await settingHttp.get("protection_dir");
+        if (result3.code === RCode.Sucess) {
+            set_protection_dir_rows(result3.data ?? []);
+        }
     }
     useEffect(() => {
         getItems();
@@ -51,12 +59,15 @@ export function Env() {
         }
         const result = await settingHttp.post("filesSetting/save", rows);
         if (result.code === RCode.Sucess) {
-            new Noty({
-                type: 'success',
-                text: '保存成功',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotySucess("保存成功")
+            reloadUserInfo();
+        }
+    }
+    // 保护目录保存
+    const protection_dir_save = async () => {
+        const result = await settingHttp.post("protection_dir/save", protection_dir_rows);
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
             reloadUserInfo();
         }
     }
@@ -66,6 +77,13 @@ export function Env() {
     const del = (index) => {
         rows.splice(index, 1);
         setRows([...rows]);
+    }
+    const protection_dir_add = ()=>{
+        set_protection_dir_rows([...protection_dir_rows,{path:""}]);
+    }
+    const protection_dir_del = (index)=>{
+        protection_dir_rows.splice(index, 1);
+        set_protection_dir_rows([...protection_dir_rows]);
     }
     const onChange = (item,value,index)=> {
         const list = [];
@@ -104,6 +122,17 @@ export function Env() {
             context = <div>
                 如果在linux需要挂载ntfs的硬盘，需要这个软件支持。
             </div>
+        } else if(id === "保护目录") {
+            context = <div>
+                在删除的时候保护目录会拒绝删除。
+                <ul>
+                    <li>可以使用 /* 来表达该目录下所有文件都禁止删除</li>
+                </ul>
+            </div>
+        } else if (id === "文件夹路径") {
+            context = <div>
+                用于在文件夹下切换根目录
+            </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >
@@ -122,7 +151,22 @@ export function Env() {
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
-                <CardFull title={t("文件夹路径")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+                <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
+                    <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
+                        const new_list = [
+                            <div>{item.id}</div>,
+                            <StatusCircle ok={item.installed} />,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true} placeholder={t("默认使用环境变量")}/>,
+                            <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click(item.id)}} title={"信息"}/>
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+            </Dashboard>
+            <Dashboard>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("文件夹路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件夹路径")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                     <Table headers={headers} rows={rows.map((item, index) => {
                         const new_list = [
                             <div>{index}</div>,
@@ -142,22 +186,20 @@ export function Env() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
-            </Dashboard>
-            <Dashboard>
-                <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
-                    <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
+                <CardFull self_title={<span className={" div-row "}><h2>{t("保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_dir_save}/></div>}>
+                    <Table headers={protection_dir_headers} rows={protection_dir_rows.map((item, index) => {
                         const new_list = [
-                            <div>{item.id}</div>,
-                            <StatusCircle ok={item.installed} />,
+                            <div>{index}</div>,
                             <InputText value={item.path} handleInputChange={(value) => {
                                 item.path = value;
-                            }} no_border={true} placeholder={t("默认使用环境变量")}/>,
-                            <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click(item.id)}} title={"信息"}/>
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_dir_del(index)}/> ,
                         ];
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
             </Dashboard>
+
         </Column>
         <Column>
             <Dashboard>

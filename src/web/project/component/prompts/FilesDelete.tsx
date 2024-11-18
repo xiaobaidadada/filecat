@@ -9,6 +9,8 @@ import {getByIndexs} from "../../../../common/ListUtil";
 import {getRouterAfter} from "../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../file/FileUtil";
 import {useTranslation} from "react-i18next";
+import {RCode} from "../../../../common/Result.pojo";
+import {NotyFail} from "../../util/noty";
 
 export function FilesDelete(props) {
     const { t } = useTranslation();
@@ -28,11 +30,17 @@ export function FilesDelete(props) {
     async function confirm() {
 
         if (showPrompt.data.path) {
-            await fileHttp.delete(showPrompt.data.path)
+           const r = await fileHttp.delete(showPrompt.data.path);
+           if (r.code === RCode.PROTECT_FILE) {
+               NotyFail("保护路径不能删除");
+           }
         } else {
             const files = getFilesByIndexs(nowFileList, selectedFileList);
             for (const file of files) {
-                await fileHttp.delete(getFileNameByLocation(location,file.name))
+                const r = await fileHttp.delete(getFileNameByLocation(location,file.name))
+                if (r.code === RCode.PROTECT_FILE) {
+                    NotyFail("保护路径不能删除");
+                }
             }
         }
         setShowPrompt({
