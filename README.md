@@ -3,7 +3,7 @@
 
 - 中文 | [English ](./doc/EN_README.md)
 - 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明,更多使用方式请参考下文。
+- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明。也支持二进制方式直接运行，更多使用方式请参考下文。
 ## 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
@@ -11,9 +11,9 @@
 ### 体验
 url: http://116.198.245.137:5569/
 账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
-### npm 安装方式使用
+### npm 方式运行
 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
-### 二进制文件方式，直接使用
+### 二进制文件方式运行
 最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行(x64);
