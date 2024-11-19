@@ -1,62 +1,72 @@
-
 # ![](./src/web/meta/resources/img/logo-70.png) filecat
 
 - 中文 | [English ](./doc/EN_README.md)
-- 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明。也支持二进制方式直接运行，更多使用方式请参考下文。
-## 截图
-![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+- 中文 | [Português ](./doc/PT_README.md)
+- 中文 | [中文 ](./doc/ZN_README.md)
+- Use a beautiful UI based on [filebrowser](https://github.com/filebrowser/filebrowser) to manage files, with additional server management capabilities.
+- Install with `npm install filecat -g` and run `filecat`. Add the parameter `filecat --help` for more details. You can also run it directly with the binary. More usage options can be found below.
 
-## 使用
-### 体验
-url: http://116.198.245.137:5569/
-账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
-### npm 方式运行
-- 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
-- 如果网络比较差，可以使用淘宝镜像源`npm config set registry https://registry.npmmirror.com`。或者，安装的时候临时使用淘宝镜像源`npm install -g filecat --registry https://registry.npmmirror.com`。
-### 二进制文件方式运行
-最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
-下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
-然后使用各个平台的可执行程序运行(x64);
-1. 执行命令`filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
-2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
-3. 如果不能运行请自己在对应环境下进行打包编译或者使用不打包方式运行(网络功能暂时不支持多环境)
-### linux下安装到systemd后台运行
-这里的安装是安装到systemd作为后台进程，默认需要使用root权限，对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-linux`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;如果你使用npm安装了filecat，可以直接使用`filecat --install linux`来安装到systemd。
-### 开发
-- 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
-- 本项目所有需要编译的依赖都使用了预构建，会从github下载编译好的文件，如果你电脑上的网络安装的时候无法访问github则会退化成编译。如果是在windows上需要编译编译可能遇到的问题可以参考这个链接https://blog.csdn.net/jjocwc/article/details/134152602
-## 主要特性
--  文件管理
-  1. 图片，视频，markdown 等文件格式在线预览。
-  2. 代码编辑器，可选择文件打开方式。
-  3. 图片编辑器，对图片右键可以进入[图片编辑器](https://github.com/scaleflex/filerobot-image-editor)模式。
-  4. studio 编辑器，右键文件夹可以打开一个类似vscode的编辑器页面，可用于linux程序临时开发环境。
-  5. [excalidraw](https://github.com/excalidraw/excalidraw)绘图编辑器，这是一个很好用白板工具。 
-  5. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
-  6. 终端，可以实时跟着目录走。
-- ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
-- 网站，是网址收藏夹，可用于保存服务器上其它的网站
-- ddns
-- http网页代理
-- rdp代理(windwos远程控制)
-- rtsp代理播放器，输入直播源，比如监控的url可以实时网页观看
-- docker容器，镜像管理，查看日志等功能
-- 系统内存cpu信息，进程cpu信息（利用c插件、使用极低的资源，实时查看系统全部进程信息，类似windows的任务管理器）,systemd管理(linux下才有)
-- wol网络唤醒
-- 虚拟网络，可以实现p2p,vpn功能。(不是端口转发，而是利用tun在主机上创建虚拟ip)
-## 功能说明
-1. 由于一些库目前不支持mac(比如虚拟网络) **mac下无法使用**上面的安装方式直接安装成功，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windows和Linux;
-2. 部分功能目前处于demo阶段，未来会持续优化；
-## 路线
-1. 优化更多操作细节 
-2. 支持更多的文件格式浏览
-3. 支持更多的流媒体功能
-4. 支持更多的ddns平台
-5. 自动化爬虫
-6. 路由权限
-## 致谢
-本项目部分功能还基于或者借鉴于以下项目
+## Screenshots
+![Display](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+
+## Usage
+### Try it out
+URL: http://116.198.245.137:5569/
+Username and password: `admin`/`admin`. There is no permission system at the moment, so please do not change the password to avoid affecting others' experience.
+
+### Running via npm
+- If your server already has Node and npm installed, use `npm install filecat -g` to install it globally and then run the command `filecat`. Alternatively, install it with `npm install filecat` inside your project and run with `npx filecat`.
+- If you're experiencing network issues, you can use the Taobao npm mirror: `npm config set registry https://registry.npmmirror.com`, or install temporarily using the mirror: `npm install -g filecat --registry https://registry.npmmirror.com`.
+
+### Running via binary
+The latest code is not directly packaged. To use the newest features and bug fixes, you’ll need to package the code yourself.
+Download the [latest release](https://github.com/xiaobaidadada/filecat/releases) and run the binary for your platform (x64):
+1. Run the command `filecat --port 5567 --base_folder d:/`. If no username is set, the default login will be admin.
+2. Use the example configuration file and run with `filecat --env ./env`. On Linux, you may need to run `sudo chmod +x ./filecat-linux` to get execution permissions.
+3. If the binary doesn't run, you can build the code yourself or use a non-packaged version (network features are not supported in all environments).
+
+### Installation on Linux with systemd
+This installation method sets up filecat to run as a background process with systemd. It requires root privileges. It is recommended to use this installation method for Linux systems. After downloading the latest version of the `filecat-linux` binary, give it execution permissions and run `./filecat-linux --install linux`. If you installed filecat with npm, you can run `filecat --install linux` directly to install it to systemd.
+
+### Development
+- Currently, installing directly on macOS may fail (not tested). You can try using `npm install --ignore-scripts` as an alternative.
+- This project uses pre-built dependencies to avoid the need for compiling during installation. If there are network issues during installation, the system will attempt to compile the dependencies manually. If you’re on Windows and encounter issues during compilation, consult [this link](https://blog.csdn.net/jjocwc/article/details/134152602) for more information.
+
+## Key Features
+- File management
+  1. Preview images, videos, markdown, and other formats online.
+  2. Code editor, with options to open files in different modes.
+  3. Image editor accessible by right-clicking on images.
+  4. Studio editor, similar to VSCode, that can be used as a temporary development environment on Linux.
+  5. [Excalidraw](https://github.com/excalidraw/excalidraw) diagram editor, an excellent whiteboard tool.
+  6. Switch root directories by adding multiple folder paths in settings, switching root directory only for one session.
+  7. Terminal that allows real-time navigation through directories.
+
+- SSH, FTP proxy: Manage multiple Linux servers, similar to WinSCP, making terminal and file management more convenient.
+- Website: A URL bookmark tool, can be used to save other websites on the server.
+- DDNS.
+- HTTP web proxy.
+- RDP proxy (Windows remote control).
+- RTSP proxy player, input a stream URL like a surveillance camera feed to view it in real-time via a webpage.
+- Docker container management, including image management and log viewing.
+- System memory and CPU info, process CPU info (using a C plugin with minimal resources to monitor all system processes, similar to Windows Task Manager), systemd management (available on Linux).
+- WOL (Wake-on-LAN) to remotely power on devices.
+- Virtual networks for P2P, VPN functionality (not port forwarding, but by creating virtual IPs on the host using TUN).
+
+## Notes
+1. Some features are not available on macOS (such as virtual networks), and on Windows, the application needs to be run in administrator mode. On Linux, root privileges are required for some features.
+2. Some features are still in demo stage and will be continuously improved.
+
+## Roadmap
+1. Improve more operational details.
+2. Support more file formats for browsing.
+3. Support more streaming features.
+4. Support additional DDNS platforms.
+5. Automated web scraping.
+6. Route permission management.
+
+## Acknowledgments
+Some features in this project are based on or inspired by the following projects:
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
 - [mstsc](https://github.com/citronneur/mstsc.js)
