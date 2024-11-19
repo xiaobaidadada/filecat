@@ -12,7 +12,8 @@
 url: http://116.198.245.137:5569/
 账号密码: `admin`/`admin`暂时没有权限功能，请不要修改密码，影响别人体验
 ### npm 方式运行
-如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
+- 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
+- 如果网络比较差，可以使用淘宝镜像源`npm config set registry https://registry.npmmirror.com`。或者，安装的时候临时使用淘宝镜像源`npm install -g filecat --registry https://registry.npmmirror.com`。
 ### 二进制文件方式运行
 最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
