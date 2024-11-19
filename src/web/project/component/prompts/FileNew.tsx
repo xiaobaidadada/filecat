@@ -53,7 +53,7 @@ export function FileNew(props) {
                         confirm_t={t("创建")}
                         context={[
                             <div className="card-content">
-                                <InputText placeholderOut={t("输入文件名")} value={name}
+                                <InputText placeholderOut={t("enter_file_name")} value={name}
                                            handleInputChange={(value) => setName(value)}/>
                             </div>]}
                         confirm_enter={dirnew}

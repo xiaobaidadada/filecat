@@ -144,7 +144,11 @@ export function  Sys() {
                         const newInfo = {...userInfo};
                         newInfo.language = value;
                         setUserInfo(newInfo);
-                    }} options={[{title:"english",value:"en"},{title:"中文",value:"zh"}]}/>
+                    }} options={[
+                        {title:"english",value:"en"},
+                        {title:"中文",value:"zh"},
+                        {title:"Português",value:"pt"}
+                        ]}/>
                 </Card>
                 <Card title={t("token过期时间")} rightBottomCom={<Rows isFlex={true} columns={[
                     <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,

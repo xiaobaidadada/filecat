@@ -18,7 +18,7 @@ import {Env} from "./Env";
 
 export default function  Settings() {
     const { t } = useTranslation();
-    const menuRots = [{index: 1, name: t("系统"), rto: "password/"},{index: 1, name: t("环境"), rto: "env_setting/"},{index: 1, name: t("自定义路由"), rto: "customer_router/"}];
+    const menuRots = [{index: 1, name: t("系统"), rto: "password/"},{index: 1, name: t("environment"), rto: "env_setting/"},{index: 1, name: t("自定义路由"), rto: "customer_router/"}];
 
     return  <Menu optionList={menuRots}>
         <Sys />

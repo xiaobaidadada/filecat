@@ -166,5 +166,21 @@
   "Offline_Uncorrectable": "Offline_Uncorrectable",
   "UDMA_CRC_Error_Count": "UDMA_CRC_Error_Count",
   "Multi_Zone_Error_Rate": "Multi_Zone_Error_Rate",
-  "Head_Flying_Hours": "Head_Flying_Hours"
+  "Head_Flying_Hours": "Head_Flying_Hours",
+  "enter_file_name": "Enter file name",
+  "file_system": "File system",
+   "mount_location_disk": "Mount location disk",
+   "number_of_folders": "Number of folders",
+   "number_of_files": "Number of files",
+   "open_with_text": "Open with text",
+   "copied": "Copied",
+   "confirm": "Confirm",
+   "revise": "revise",
+   "external_software": "External Software",
+   "ffmpeg_info": "Video conversion, rtsp player and other media functions require this software. Under Linux, you can use apt or yum to install, or directly enter the location of the software",
+   "environment": "Enviroment",
+   "software": "Software",
+   "whether_to_install": "Whether to install",
+   "information": "Information"
+  
 }

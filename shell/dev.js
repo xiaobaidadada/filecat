@@ -32,7 +32,7 @@ const runServer = async () => {
         if (!devServer) {
             throw new Error('webpack-dev-server is not defined');
         }
-        console.log('\x1b[31m请用后端端口访问网页\x1b[0m');
+        console.log('\x1b[Please use the backend port to access the web page\x1b[0m');
     };
     const compiler = Webpack(webpackConfig);
 

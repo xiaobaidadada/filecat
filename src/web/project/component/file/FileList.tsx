@@ -175,7 +175,7 @@ export default function FileList() {
         // @ts-ignore
         setCopyedFileList(files.map(file=>getFileNameByLocation(location,file.name)));
         setCutedFileList([]);
-        ok('已复制')
+        ok(t("copied"))
     }
     function cut() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
@@ -256,13 +256,13 @@ export default function FileList() {
     const folder_info = async ()=>{
         const rsq = await fileHttp.post("file/info",{type:FileTypeEnum.folder,path:getRouterAfter('file',location.pathname)})
         if(rsq.code === RCode.Sucess) {
-            set_prompt_card({open:true,title:"信息",context_div : (
+            set_prompt_card({open:true,title: t("系统信息"),context_div : (
                     <div >
-                        <TextLine left={t("挂载位置磁盘")} right={ rsq.data && rsq.data.total_size}/>
-                        <TextLine left={`${t("磁盘剩余")}`} right={ rsq.data && rsq.data.left_size}/>
-                        <TextLine left={`${t("文件系统")}`} right={ rsq.data && rsq.data.fs_type}/>
-                        <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
-                        <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
+                        <TextLine left={t("mount_location_disk")} right={ rsq.data && rsq.data.total_size}/>
+                        <TextLine left={`${t("剩余")}`} right={ rsq.data && rsq.data.left_size}/>
+                        <TextLine left={`${t("file_system")}`} right={ rsq.data && rsq.data.fs_type}/>
+                        <TextLine left={`${t("number_of_folders")}`} right={nowFileList.folders.length}/>
+                        <TextLine left={`${t("number_of_files")}`} right={nowFileList.files.length}/>
                     </div>
                 )})
         }

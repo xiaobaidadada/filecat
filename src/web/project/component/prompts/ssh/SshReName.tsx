@@ -53,7 +53,7 @@ export function SshReName(props) {
                 {t("取消")}
             </button>
             <button className="button button--flat" onClick={dirnew}>
-                {t("修改")}
+                {t("revise")}
             </button>
         </div>
     </div>)

@@ -5,6 +5,7 @@ import {Terminal} from "@xterm/xterm";
 import '@xterm/xterm/css/xterm.css'
 import {copyToClipboard} from "../../util/FunUtil";
 import {NotySucess} from "../../util/noty";
+import { useTranslation } from "react-i18next";
 
 export interface ShellProps {
     show:boolean,
@@ -14,6 +15,7 @@ export interface ShellProps {
 }
 
 export function Shell(props:ShellProps) {
+    const {t} = useTranslation();
     const [shellHeight,setShellHeight] = useState(25);
     const shellDividerRef = useRef(null);
     // @ts-ignore
@@ -52,7 +54,7 @@ export function Shell(props:ShellProps) {
                     const selectedText = props.terminal.getSelection();
                     if (selectedText) {
                         copyToClipboard(selectedText);
-                        NotySucess("已复制");
+                        NotySucess(t("copied"));
                         // 阻止默认的 Ctrl + C 事件（防止它发送中断信号）
                         event.preventDefault();
                         props.terminal.focus();

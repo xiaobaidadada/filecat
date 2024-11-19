@@ -10,6 +10,9 @@ import {Env} from "../../../common/Env";
 import {ba} from "tencentcloud-sdk-nodejs";
 import {SystemUtil} from "../sys/sys.utl";
 import {Body} from "routing-controllers";
+import i18n from '../../../web/project/util/in18resource';
+import pt from "../../../web/project/util/i18/pt.json";
+
 
 const needle = require('needle');
 
@@ -22,6 +25,8 @@ const token_setting = "token_setting";
 const files_pre_mulu_key = "files_pre_mulu_key";
 
 export class SettingService {
+
+    
 
     getCustomerRouter() {
         const list = DataUtil.get(customer_router_key);
@@ -201,7 +206,7 @@ export class SettingService {
         const items: FileSettingItem[] = DataUtil.get(files_pre_mulu_key);
         const base = new FileSettingItem();
         base.path = Env.base_folder;
-        base.note = "默认配置路径";
+        base.note = i18n.t('默认配置')
         const list = items ?? [];
         if (!list.find(v => v.default)) {
             base.default = true;
@@ -338,3 +343,4 @@ ServerEvent.on("start", (data) => {
     settingService.init();
     settingService.protectionInit();
 })
+

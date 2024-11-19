@@ -170,5 +170,21 @@
   "Total_LBAs_Read": "总读取逻辑块地址数",
   "disk": "硬盘",
   "part": "分区",
-  "lvm": "逻辑卷"
+  "lvm": "逻辑卷",
+  "enter_file_name": "输入文件名",
+  "fyle_system": "文件系统",
+  "mount_location_disk": "挂载位置磁盘",
+  "number_of_folders": "文件夹数",
+  "number_of_files": "文件数",
+  "open_with_text": "以文本打开",
+  "copied": "已复制",
+  "confirm": "确认",
+  "revise": "修改",
+  "external_software": "外部软件",
+  "ffmpeg_info": "视频转换，rtsp播放器等媒体功能都需要这个软件。linux下你可以使用apt或者yum来安装，或者直接输入软件的位置",
+  "environment": "环境",
+  "software": "软件",
+  "whether_to_install": "是否安装",
+  "information": "信息"
+
 }

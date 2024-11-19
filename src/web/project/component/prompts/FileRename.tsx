@@ -59,7 +59,7 @@ export function FileRename(props) {
 
 
     return (<CardPrompt title={t("修改名字")} cancel={cancel} confirm={dirnew} cancel_t={t("取消")}
-                        confirm_t={t("修改")}
+                        confirm_t={t("revise")}
                         context={[
                             <div className="card-content">
                                 <InputText placeholderOut={t("输入新名字")} value={getName()}

@@ -59,7 +59,7 @@ export function Paste(props) {
             <button
                 className="button button--flat button--red" onClick={ok}
             >
-                {t("确认")}
+                {t("confirm")}
             </button>
         </div>
     </div>

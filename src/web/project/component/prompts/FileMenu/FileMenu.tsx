@@ -16,7 +16,7 @@ export function FileMenu() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
-    const [items, setItems,] = useState([{r: t("以文本打开")}]);
+    const [items, setItems,] = useState([{r: t("open_with_text")}]);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();

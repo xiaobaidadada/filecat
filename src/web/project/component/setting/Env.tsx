@@ -23,7 +23,7 @@ export function Env() {
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
-    const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
+    const headers_outside_software = [t("software"),t("whether_to_install"), t("路径") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
 
 
@@ -134,7 +134,7 @@ export function Env() {
                 用于在文件夹下切换根目录
             </div>
         }
-        set_prompt_card({open:true,title:"信息",context_div : (
+        set_prompt_card({open:true,title:t("information"),context_div : (
                 <div >
                     {context}
                 </div>
@@ -151,7 +151,7 @@ export function Env() {
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
-                <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
+                <CardFull title={t("external_software")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
                     <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
                         const new_list = [
                             <div>{item.id}</div>,

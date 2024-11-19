@@ -174,7 +174,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         const files = getFilesByIndexs(nowFileList, selectedFile);
         setCopyedFileList(files.map(file => joinPaths(...shellNowDir, file.name)));
         setCutedFileList([]);
-        ok('已复制')
+        ok(t("copied"))
     }
 
     function cut() {
