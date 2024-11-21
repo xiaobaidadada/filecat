@@ -16,6 +16,9 @@ const plugins = [
     }),
     new webpack.DefinePlugin({
         'process.env.run_env': JSON.stringify("pkg")
+    }),
+    new webpack.IgnorePlugin({
+        resourceRegExp: /Debug/,
     })
 ];
 module.exports = {
