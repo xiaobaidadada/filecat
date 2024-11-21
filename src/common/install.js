@@ -40,6 +40,8 @@ const step = {
             const Group = await askQuestion(`\x1b[31m\x1b[0m请输入用户所属组(默认:${User}):`);
             if (Group) {
                 data.Group = Group;
+            } else {
+                data.Group = User;
             }
         }
         return "2";

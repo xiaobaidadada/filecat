@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -16,7 +16,7 @@ const navindex_key = "navindex_net_key_list";
 
 const navindex_wol_key = "navindex_wol_key";
 
-@Controller("/net")
+@JsonController("/net")
 export class NetController {
 
     @Post('/start')

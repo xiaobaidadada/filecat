@@ -1,4 +1,4 @@
-import {Middleware, KoaMiddlewareInterface, UnauthorizedError} from 'routing-controllers';
+import {Middleware, KoaMiddlewareInterface, UnauthorizedError, ExpressMiddlewareInterface} from 'routing-controllers';
 import {Cache} from "../cache";
 import {Container, Inject} from "typedi";
 import {AuthFail, Fail} from "../Result";
@@ -9,43 +9,54 @@ import {FileServiceImpl} from "../../domain/file/file.service";
 import {DataUtil} from "../../domain/data/DataUtil";
 import {settingService} from "../../domain/setting/setting.service";
 import {sshService} from "../../domain/ssh/ssh.service";
+import {Request, Response} from 'express';
 
 const pathRegex = /^(?!.*\/api).*$/;
 
 @Middleware({type: 'before'})
-export class AuthMiddleware implements KoaMiddlewareInterface {
+export class AuthMiddleware implements ExpressMiddlewareInterface {
 
 
 
-    async use(ctx: any, next: (err?: any) => Promise<any>): Promise<any> {
+    async use(req: Request, res: Response, next: (err?: any) => Promise<any>): Promise<any> {
         // 下载拦截
-        if (ctx.url.startsWith("/download")) {
-            FileServiceImpl.download(ctx);
+        if (req.originalUrl.startsWith("/api/download")) {
+            const token:string = req.query['token'] as string;
+            if (!await settingService.check(token)) {
+                res.send(JSON.stringify(AuthFail('失败')));
+                return
+            }
+            FileServiceImpl.download(req);
             return ;
         }
         // 校验可以用params
-        if (ctx.url.startsWith("/ssh/download")) {
-            sshService.download(ctx);
+        if (req.originalUrl.startsWith("/api/ssh/download")) {
+            const token:string = req.query['token'] as string;
+            if (!await settingService.check(token)) {
+                res.send(JSON.stringify(AuthFail('失败')));
+                return
+            }
+            sshService.download(req);
             return ;
         }
         //  自定义路由拦截
-        if (await settingService.intercept(ctx)) {
+        if (await settingService.intercept(req)) {
             return ;
         }
-        if (ctx.url.indexOf('/api/user/login') !==-1  ||  pathRegex.test(ctx.url) ) {
+        if (req.originalUrl.indexOf('/api/user/login') !==-1  ||  pathRegex.test(req.originalUrl) ) {
             // 过滤 非api直接放行
-            return next();
+             next();
+            return;
         }
         // 从请求头或者其他地方获取登录凭证，这里以简单示例为例
-        const token = ctx.headers.authorization;
+        const token = req.headers.authorization;
         if (await settingService.check(token)) {
-            return next();
+             next();
+            return
         }
-
-        // 如果验证通过，将用户信息存储到上下文中，以便后续处理 todo
-        // ctx.user = { id: 1, username: 'user' }; // 这里假设用户信息是 { id, username }
         // 如果没有登录凭证，返回未授权错误
-        ctx.body = AuthFail('失败');
+        res.send(JSON.stringify(AuthFail('失败')));
+        return;
     }
 
 

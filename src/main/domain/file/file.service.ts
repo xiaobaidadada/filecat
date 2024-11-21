@@ -80,7 +80,7 @@ class FileService extends FileCompress{
                     mtime:formattedCreationTime,
                     size,
                     isLink:stats.isSymbolicLink(),
-                    path:`${param_path}/${item}`
+                    path:path.join(param_path,item)
                 })
             } else if (stats && stats.isDirectory()) {
                 result.folders?.push({
@@ -96,7 +96,7 @@ class FileService extends FileCompress{
                     name:item,
                     mtime:formattedCreationTime,
                     size,
-                    path:`${param_path}/${item}`
+                    path:path.join(param_path,item)
                 })
             }
         }
@@ -241,40 +241,37 @@ class FileService extends FileCompress{
 
 
     async download(ctx) {
-        const file = ctx.request.query.file;
+        const file = ctx.query.file;
         if (!file || !file.length) {
-            ctx.status = 404;
-            ctx.body = 'File not found';
+            ctx.res.status(404).send('File not found');
             return;
         }
         const token = ctx.query['token'];
-        if (!await settingService.check(token)) {
-            ctx.status = 404;
-            ctx.body = 'File not found';
-            return;
-        }
         if (!Array.isArray(file)) {
 
             const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
             const fileName = path.basename(sysPath)
             const stats = fs.statSync(sysPath);
-            ctx.set('Content-Type', mime.lookup(fileName) || 'application/octet-stream');
+            ctx.res.set('Content-Type', mime.lookup(fileName) || 'application/octet-stream');
             if (!fileName.endsWith('.pdf')) {
-                ctx.attachment(fileName); // 设置文件名
+                ctx.res.attachment(fileName); // 设置文件名
             }
             if (stats.isFile()) {
-                ctx.set('Cache-Control', 'public, max-age=3600'); // 一个小时的缓存
+                ctx.res.set('Cache-Control', 'public, max-age=3600'); // 一个小时的缓存
                 // 发送文件
-                ctx.body = fs.createReadStream(sysPath);
+                const readStream = fs.createReadStream(sysPath);
+                readStream.pipe(ctx.res);
+                // ctx.res.body = fs.createReadStream(sysPath);
             } else {
-                ctx.attachment(fileName+".zip");
+                ctx.res.attachment(fileName+".zip");
                 const archive = archiver('zip', {
                     zlib: { level: 5 } // 设置压缩级别
                 });
-                const stream = new Stream.PassThrough()
-                ctx.body = stream
+                // const stream = new Stream.PassThrough()
+                // stream.pipe(ctx.res)
+                // ctx.res.body = stream
                 // 将压缩后的文件流发送给客户端
-                archive.pipe(stream);
+                archive.pipe(ctx.res);
                 archive.directory(sysPath,path.basename(sysPath));
                 archive.finalize();
             }
@@ -284,14 +281,14 @@ class FileService extends FileCompress{
             const archive = archiver('zip', {
                 zlib: { level: 5 } // 设置压缩级别
             });
-            ctx.attachment("output.zip");
-            ctx.set('Content-Type', 'application/octet-stream');
+            ctx.res.attachment("output.zip");
+            ctx.res.set('Content-Type', 'application/octet-stream');
             // ctx.set('Content-Type', 'application/zip');
             // ctx.set('Content-Disposition', 'attachment; filename=output.zip');
-            const stream = new Stream.PassThrough()
-            ctx.body = stream
+            // const stream = new Stream.PassThrough()
+            // ctx.res.body = stream
             // 将压缩后的文件流发送给客户端
-            archive.pipe(stream)
+            archive.pipe( ctx.res)
             for (const file of files) {
                 const sysPath = path.join(settingService.getFileRootPath(token),decodeURIComponent(file));
                 const stats = fs.statSync(sysPath);

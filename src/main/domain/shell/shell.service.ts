@@ -54,7 +54,7 @@ export function getShell() {
 }
 
 // const pty:any = shell === 'powershell.exe'?require('../../../../local_node_modules/windows/node-pty'):require('../../../../local_node_modules/linux/node-pty');
-const pty: any = require("@homebridge/node-pty-prebuilt-multiarch")
+const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 
 const socketMap: Map<string, any> = new Map();
@@ -73,7 +73,9 @@ export class ShellService {
             rows: pojo.rows,
             cwd: process.env.HOME,
             env:process.env,
-            useConpty: process.env.NODE_ENV !== "production" ? false : undefined,
+            useConptyDll:false, // 使用useConpty的话 新版本的windwos都不需要这个dll自带的有
+            useConpty: process.env.NODE_ENV !== "production" ? false : undefined,// conpty 可以支持 bash 等命令 从 Windows 10 版本 1809 开始提供 ， 但是如果使用了 powershell 这个也就没有必要了，而且设置为false才能使用debug模式运行
+            // exePath:"F:\\winpty-agent.exe"
         });
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;

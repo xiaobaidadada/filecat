@@ -15,7 +15,7 @@ export class SystemUtil {
 
     public static killProcess(pid): void {
         if (sysType === 'win') {
-            SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
+            SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`) // todo 关闭一个控制台进程下的所有子进程
         } else {
             SystemUtil.commandIsExist(`kill -9 ${pid} `)
         }

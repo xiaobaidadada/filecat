@@ -2,10 +2,8 @@ import {ShellInitPojo, SshPojo} from "../../../common/req/ssh.pojo";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
-
 const {Readable} = require('stream');
 const EventEmitter = require('events');
-
 
 import {Client} from 'ssh2';
 import {sftp_client, SshSsh2} from "./ssh.ssh2";
@@ -15,7 +13,6 @@ import fs from "fs";
 import archiver from "archiver";
 import Stream from "node:stream";
 import multer from "multer";
-import {Context} from "koa";
 import {DataUtil} from "../data/DataUtil";
 import {Fail, Sucess} from "../../other/Result";
 import {RCode} from "../../../common/Result.pojo";
@@ -205,29 +202,29 @@ export class SshService extends SshSsh2 {
     }
 
     download(ctx) {
-        const file = ctx.request.query.file;
+        const file = ctx.query.file;
         if (!file || !file.length) {
-            ctx.status = 404;
-            ctx.body = 'File not found';
+            ctx.res.status(404).send('File not found');
             return;
         }
-        ctx.attachment(file);
-        ctx.set('Content-Type', 'application/octet-stream');
-        const stream = new Stream.PassThrough()
-        ctx.body = stream
-        const client = this.lifeGetData(SshPojo.getKey(ctx.request.query)) as Client;
+        ctx.res.attachment(file);
+        ctx.res.set('Content-Type', 'application/octet-stream');
+        // const stream = new Stream.PassThrough()
+        // ctx.res.body = stream
+        const client = this.lifeGetData(SshPojo.getKey(ctx.query)) as Client;
         if (!client) {
-            return ctx.body = "";
+            ctx.status(200).res.send('');
+            return ;
         }
         const sftp = this.sftGet(client);
         const readStream = sftp.createReadStream(file);
-        readStream.pipe(stream);
+        readStream.pipe(ctx.res);
     }
 
     public uploadFile(ctx, file: multer.File) {
-        const client = this.lifeGetData(SshPojo.getKey(ctx.request.query)) as Client;
+        const client = this.lifeGetData(SshPojo.getKey(ctx.query)) as Client;
         const sftp = this.sftGet(client);
-        const remoteFilePath = ctx.request.query.target;
+        const remoteFilePath = ctx.query.target;
 
         const temp = "tempfile";
 

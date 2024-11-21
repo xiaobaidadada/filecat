@@ -1,4 +1,4 @@
-import {Body, Controller, Ctx, Get, Param, Post} from "routing-controllers";
+import {Body, Controller, Ctx, Get, JsonController, Param, Post, Req} from "routing-controllers";
 import {UserBaseInfo, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Result, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -14,7 +14,7 @@ import {getSys} from "../shell/shell.service";
 import {getShortTime} from "../../../common/ValueUtil";
 
 @Service()
-@Controller("/setting")
+@JsonController("/setting")
 export class SettingController {
 
     @Post('/updatePassword')
@@ -143,7 +143,7 @@ export class SettingController {
 
     // 设置文件路由设置
     @Post('/filesSetting/save')
-    saveFilesSetting(@Body() req:any,@Ctx() ctx) {
+    saveFilesSetting(@Body() req:any,@Req() ctx) {
         settingService.saveFilesSetting(req,ctx.headers.authorization);
         return Sucess("1");
     }

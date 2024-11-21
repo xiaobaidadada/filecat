@@ -1,13 +1,13 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {rdpService} from "./rdp.service";
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {Sucess} from "../../other/Result";
 // todo json序列化方式，传输速度，页面css适配问题
 const navindex_rdp_key = "navindex_rdp_tag_key"
-@Controller("/rdp")
+@JsonController("/rdp")
 export class RdpController {
 
     @msg(CmdType.infos)

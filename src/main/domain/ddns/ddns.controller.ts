@@ -1,12 +1,12 @@
 import {
     Body,
-    Controller, Get, Param, Post,
+    Controller, Get, JsonController, Param, Post,
 } from "routing-controllers";
 import {ddnsService} from "./ddns.service";
 import {DdnsConnection} from "../../../common/req/ddns.pojo";
 
 
-@Controller("/ddns")
+@JsonController("/ddns")
 export class DdnsController {
 
 

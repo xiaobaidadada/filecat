@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import {createKoaServer} from 'routing-controllers';
+import {createExpressServer, createKoaServer} from 'routing-controllers';
 // import {config} from "./other/config";
 // import dotenv from "dotenv";
 import {WsServer} from "../common/frame/ws.server";
@@ -9,12 +9,12 @@ import {ShellController} from "./domain/shell/shell.controller";
 import {FileController} from "./domain/file/file.controller";
 import {AuthMiddleware} from "./other/middleware/AuthMiddleware";
 import {GlobalErrorHandler} from "./other/middleware/GlobalErrorHandler";
-import {CheckTokenMiddleware} from "./other/middleware/redirect";
+// import {CheckTokenMiddleware} from "./other/middleware/redirect";
 import path from "path";
 import fs from "fs";
 import {DdnsController} from "./domain/ddns/ddns.controller";
 import {NetController} from "./domain/net/net.controller";
-import proxy from 'koa-proxies';
+// import proxy from 'koa-proxies';
 import {NavindexController} from "./domain/navindex/navindex.controller";
 import {Env} from "../common/Env";
 import {SettingController} from "./domain/setting/setting.controller";
@@ -25,6 +25,7 @@ import {VideoController} from "./domain/video/video.controller";
 import {routerConfig} from "../common/RouterConfig";
 import {getWebFirstKey} from "../common/StringUtil";
 import {CryptoController} from "./domain/crypto/crypto.controller";
+import {Request, Response} from 'express';
 
 const WebSocket = require('ws');
 
@@ -43,14 +44,15 @@ async function start() {
 // })
 
     // 创建 Koa 应用并注册控制器
-    const app = createKoaServer({
-        cors: true,
+    const app = createExpressServer({
+        cors: false,
         routePrefix: '/api',
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
-        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController,CryptoController],
+        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController],
         // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
-        middlewares: [AuthMiddleware, GlobalErrorHandler, CheckTokenMiddleware],
+        middlewares: [AuthMiddleware, GlobalErrorHandler],
+        defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
     });
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start();
@@ -64,35 +66,39 @@ async function start() {
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-        app.use(async (ctx, next) => {
-            if (ctx.url.includes("/api/")) {
+        app.use(async (req: Request, res: Response, next) => {
+            if (req.originalUrl && req.originalUrl.includes("/api/")) {
                 next();
                 return;
             }
             try {
-                if (router.has(getWebFirstKey(ctx.url))) {
+                if (router.has(getWebFirstKey(req.originalUrl))) {
                     throw "";
                 }
-                let url ;
-                if (ctx.url.includes("excalidraw-assets")) {
-                    ctx.url = ctx.url.slice(1); // 删去/
-                    url = path.join(__dirname, 'dist', ctx.url);
+                let url;
+                if (req.originalUrl.includes("excalidraw-assets")) {
+                    req.originalUrl = req.originalUrl.slice(1); // 删去/
+                    url = path.join(__dirname, 'dist', req.originalUrl);
                 } else {
-                    url = path.join(__dirname, 'dist', path.basename(ctx.url));
+                    url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 }
                 fs.accessSync(url, fs.constants.F_OK,)
-                ctx.body = fs.createReadStream(url);
+                const readStream = fs.createReadStream(url);
+                readStream.pipe(res);
+                // ctx.body = fs.createReadStream(url);
             } catch (e) {
-                ctx.type = 'html';
-                ctx.body = fs.createReadStream(path.join(__dirname, 'dist', "index.html"));
+                res.type('html');
+                fs.createReadStream(path.join(__dirname, 'dist', "index.html")).pipe(res);
+                // ctx.body = fs.createReadStream(path.join(__dirname, 'dist', "index.html"));
             }
         });
     } else {
-        app.use(proxy(/^(?!\/api)/, {
-            target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`,
+        const {createProxyMiddleware} = require('http-proxy-middleware');
+        // 使用正则表达式匹配路径并代理
+        app.use(/^(?!\/api)/, createProxyMiddleware({
+            target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
             // changeOrigin: true,
-            // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
-            rewrite: function (path) {
+            pathRewrite: (path, req) => {
                 if (path.endsWith(".md")) {
                     return "/"; // md 特殊文件
                 } else if (path.indexOf('.') !== -1) {
@@ -101,9 +107,8 @@ async function start() {
                 } else {
                     return '/'; // 其它所有的非文件类型
                 }
-            },
-            // logs: true
-        }))
+            }
+        }));
     }
 
     // 启动服务器
