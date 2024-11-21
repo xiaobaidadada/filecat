@@ -1,7 +1,7 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Service} from "typedi";
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {SyserviceImpl} from "./sys.service";
 import {SysSystemServiceImpl} from "./sys.sys.service";
 import {SysProcessServiceImpl} from "./sys.process.service";
@@ -11,7 +11,7 @@ import {Sucess} from "../../other/Result";
 import {SysCmdExePojo} from "../../../common/req/sys.pojo";
 
 @Service()
-@Controller("/sys")
+@JsonController("/sys")
 export class SysController {
 
     @Get("/base")

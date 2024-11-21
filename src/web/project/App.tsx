@@ -28,9 +28,10 @@ function App() {
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
     useEffect(() => {
-
-        // 界面加载完的初始化
-        initUserInfo();
+        if (localStorage.getItem("token")) {
+            // 界面加载完的初始化  登录完成后才请求
+            initUserInfo();
+        }
     }, []);
     useEffect( () => {
 

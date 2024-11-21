@@ -2,13 +2,13 @@ import {otherMsg} from "../../../common/frame/router";
 import {CmdType} from "../../../common/frame/WsData";
 import WebSocket from "ws";
 import {videoService} from "./video.service";
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {Sucess} from "../../other/Result";
 
 const navindex_video_key = "navindex_video_tag_key"
-@Controller("/video")
+@JsonController("/video")
 export class VideoController {
 
     @otherMsg(CmdType.rtsp_get)

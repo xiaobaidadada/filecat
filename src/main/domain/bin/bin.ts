@@ -5,20 +5,20 @@ import {settingService} from "../setting/setting.service";
 import {SysSoftware} from "../../../common/req/setting.req";
 import os from "os";
 import {Env} from "../../../common/Env";
+
 const fs = require('fs');
 import fse from 'fs-extra'
+
 const {createRequire} = require('node:module');
 export const require_c = createRequire(__filename);
 // import {node_process_watcher} from "node-process-watcher";
 const ffmpeg = require('fluent-ffmpeg');
 
 // 从虚拟路径复制文件到实际路径
-function writeToStorage(virtualFilePath,realInstallPath)
-{
-    const filename        = path.basename(virtualFilePath);
+function writeToStorage(virtualFilePath, realInstallPath) {
+    const filename = path.basename(virtualFilePath);
     // const realInstallPath = path.join(realInstallDir, filename);
-    if (!fs.existsSync(realInstallPath))
-    {
+    if (!fs.existsSync(realInstallPath)) {
         const data = fs.readFileSync(virtualFilePath);
         fs.writeFileSync(realInstallPath, data);
     }
@@ -26,7 +26,7 @@ function writeToStorage(virtualFilePath,realInstallPath)
 }
 
 
-export function get_wintun_dll_path():string {
+export function get_wintun_dll_path(): string {
     try {
         const relp = path.join(Env.work_dir, "packges","filecat_dlls");
         fse.ensureDirSync(relp);
@@ -46,11 +46,21 @@ export function get_wintun_dll_path():string {
                 break;
         }
         const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
-        const p = path.join(relp,winfilename);
-        if (!fs.existsSync(p)) {
-            writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
+        // pkg  env
+        if (process.env.run_env === "docker") {
+            return path.resolve(winfilename);
+        } else if (process.env.run_env === "pkg") {
+            const p = path.join(relp, winfilename);
+            if (!fs.existsSync(p)) {
+                writeToStorage(path.join(__dirname,winfilename),p);
+                // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
+                // writeToStorage(path.resolve(winfilename), p)
+            }
+            return p;
+        } else {
+            // npm env
+            return path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename)
         }
-        return p;
     } catch (e) {
         console.log(e);
     }

@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {Service} from "typedi";
 import {NavIndexItem} from "../../../common/req/common.pojo";
@@ -7,7 +7,7 @@ import {DataUtil} from "../data/DataUtil";
 const navindex_key = "navindex_key_list";
 
 @Service()
-@Controller("/navindex")
+@JsonController("/navindex")
 export class NavindexController {
 
     @Post('/add')

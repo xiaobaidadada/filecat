@@ -1,11 +1,11 @@
-import {Body, Controller, Get, Param, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Param, Post} from "routing-controllers";
 import {ddnsService} from "../ddns/ddns.service";
 import {Sucess} from "../../other/Result";
 import {crypto_service} from "./crypto.service";
 import {DdnsConnection} from "../../../common/req/ddns.pojo";
 
 
-@Controller("/crypto")
+@JsonController("/crypto")
 export class CryptoController {
 
 

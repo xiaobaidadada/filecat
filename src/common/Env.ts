@@ -4,6 +4,7 @@ import os from "os";
 
 const {execSync} = require('child_process');
 const help = `
+命令参数都需要加 --
 1. update 升级(npm方式升级)
 2. remove 移除(从npm)
 3. version 版本
@@ -11,12 +12,14 @@ const help = `
 5. install 安装到systemd（只支持linux)
 6. uninstall 从systemd卸载（只支持linux)
 7  restart 重启systemd服务（只支持linux)
-8. port 输入端口
-9. env 输入环境配置文件
-10. work_dir 工作目录，软件执行需要生成一些数据，会放到这个目录下，默认是启动软件所在的目录下的data文件夹
-11. base_folder 软件管理的文件夹默认根路径，默认是启动软件所在的目录
-12. username 登录账号 默认是admin (截止到1.0.5目前没有权限功能)
-13. password 登录密码 默认是admin
+8. stop 停止运行systemd服务(支持linux)
+// 以下参数都需要额外的参数输入 例如"filecat --port 8080 "端口参数 用于控制程序运行。
+9. port 需要端口参数 
+10. env 输入环境配置文件
+11. work_dir 工作目录，软件执行需要生成一些数据，会放到这个目录下，默认是启动软件所在的目录下的data文件夹
+12. base_folder 软件管理的文件夹默认根路径，默认是启动软件所在的目录
+13. username 登录账号 默认是admin (截止到1.0.5目前没有权限功能)
+14. password 登录密码 默认是admin
 `;
 
 export class Env {

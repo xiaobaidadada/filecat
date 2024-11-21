@@ -45,7 +45,7 @@ export class Http {
     }
 
     getDownloadUrl(files) {
-        let url = "/download?";
+        let url = "/api/download?";
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
                 if (file.endsWith("/")  || file.endsWith("\\")) {
@@ -57,7 +57,7 @@ export class Http {
         if (url.endsWith("&") || url.endsWith("/")  || url.endsWith("\\")) {
             url = url.slice(0, -1);
         }
-        return url +`&token=${localStorage.getItem('token')}`;
+        return url +`&token=${encodeURIComponent(localStorage.getItem('token'))}`;
     }
 
     async post(url,jsonData = {},notCheck= true):Promise<Result<any>> {

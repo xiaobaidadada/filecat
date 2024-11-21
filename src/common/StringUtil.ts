@@ -1,29 +1,29 @@
 export class Param {
-    key:string;
-    value?:any;
+    key: string;
+    value?: any;
 }
 
 export class StringUtil {
-    public static  trim(str) {
+    public static trim(str) {
         if (!str) return "";
         return str.replace(" ", "");
     }
 
-    public static trimList(list,index) {
+    public static trimList(list, index) {
         const one = list[index];
         return this.trim(one);
     }
 
-    public static getParam(...vs:Param[]) {
+    public static getParam(...vs: Param[]) {
         let r = "?";
         let h = false;
         if (Array.isArray(vs)) {
             for (const item of vs) {
                 if (item.value) {
                     if (h) {
-                        r+=`&${item.key}=${item.value}`;
+                        r += `&${item.key}=${item.value}`;
                     } else {
-                        r+=`${item.key}=${item.value}`;
+                        r += `${item.key}=${item.value}`;
                         h = true;
                     }
                 }
@@ -92,37 +92,35 @@ export function getEditModelType(name) {
     return "";
 }
 
-export function join_url(u1:string,u2:string) {
+export function join_url(u1: string, u2: string) {
     if (u1.endsWith("/") && u2.startsWith("/")) {
-        return u1.slice(0,-1) + u2;
+        return u1.slice(0, -1) + u2;
     } else if (!u1.endsWith("/") && !u2.startsWith("/")) {
-        return u1 + "/" +u2;
+        return u1 + "/" + u2;
     } else {
         return u1 + u2;
     }
 }
 
 // 获取路由url的第一个key值
-export function getWebFirstKey(url:string) {
+export function getWebFirstKey(url: string) {
     if (!url) {
         return "";
     }
-    for (let i=1;i<url.length;i++) {
+    for (let i = 1; i < url.length; i++) {
         if (url[i] === "//") {
-            return url.slice(1,i);
+            return url.slice(1, i);
         }
     }
     return url.slice(1);
 }
 
-export function generateSaltyUUID() {
-    // 生成一个标准的 UUID
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0; // 随机生成 0-15 的整数
-        const v = c === 'x' ? r : (r & 0x3 | 0x8); // 确保版本号是 4 和变种号
-        return v.toString(16); // 转换为十六进制
-    });
-
-    // 将盐值添加到 UUID 中
-    return uuid + '-';
+export function generateSaltyUUID(context: string= "") {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + (context ?? `${Date.now()}`);
+    let result = '';
+    for (let i = 0; i < 60; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters[randomIndex];
+    }
+    return result;
 }

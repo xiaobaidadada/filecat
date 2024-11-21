@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
 import {UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -10,28 +10,28 @@ import {DataUtil} from "../data/DataUtil";
 import {generateSaltyUUID} from "../../../common/StringUtil";
 
 @Service()
-@Controller("/user")
+@JsonController("/user")
 export class UserController {
 
     @Post('/login')
-    login(@Body()user:UserLogin) {
-        const username = DataUtil.get("username");
+    login(@Body() user: UserLogin) {
+        const username = DataUtil.get("username") as string;
         if (Env.username) {
-            if (user.username=== `${Env.username}` && user.password===`${Env.password}` ) {
-                const uuid = generateSaltyUUID();
+            if (user.username === `${Env.username}` && user.password === `${Env.password}`) {
+                const uuid = generateSaltyUUID(username);
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }
-        } else if (username){
+        } else if (username) {
             const password = DataUtil.get("password");
-            if (user.username=== `${username}` && user.password===`${password}` ) {
-                const uuid = generateSaltyUUID();
+            if (user.username === `${username}` && user.password === `${password}`) {
+                const uuid = generateSaltyUUID(username);
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }
         } else {
-            if (user.username=== "admin" && user.password==="admin" ) {
-                const uuid = generateSaltyUUID();
+            if (user.username === "admin" && user.password === "admin") {
+                const uuid = generateSaltyUUID(username);
                 Cache.setToken(`${uuid}`)
                 return Sucess(uuid)
             }
