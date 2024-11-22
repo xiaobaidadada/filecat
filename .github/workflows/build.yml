@@ -46,7 +46,7 @@ jobs:
       DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
-      - run: apk add docker build-base git python3 py3-setuptools --update-cache
+      - run: apk add docker build-base linux-headers git python3 py3-setuptools --update-cache
 #      - uses: actions/setup-node@v4
 #        with:
 #          node-version: 18
