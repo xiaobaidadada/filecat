@@ -82,11 +82,13 @@ export class DnsPodService extends DdnsPre implements updateDns{
                     async_have = true;
                     DataUtil.set(ddns_dnspod_key, data);
                 }
+            } else {
+                return false;
             }
         } finally {
 
         }
-
+        return true;
     }
 
     async update(data: DdnsConnection,domain:IResult,ip:string,type:string) {

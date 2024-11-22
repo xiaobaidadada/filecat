@@ -14,7 +14,8 @@ export class SysService {
             cpu_brand: cpu.brand,
             cpu_core_num: cpu.cores,
             cpu_phy_core_num: cpu.physicalCores,
-            cpu_speed_hz: cpu.speedMax
+            cpu_speed_hz: cpu.speedMax,
+            pid_ppid:`${process.pid};${process.ppid}`,
         })
     }
 
