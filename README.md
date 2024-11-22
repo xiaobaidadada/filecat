@@ -14,6 +14,7 @@ url: http://116.198.245.137:5569/
 ### 2. npm 方式运行
 - 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
 - 如果网络比较差，可以使用淘宝镜像源`npm config set registry https://registry.npmmirror.com`。或者，安装的时候临时使用淘宝镜像源`npm install -g filecat --registry https://registry.npmmirror.com`。
+- 许多依赖是预构建放在github上的，如果主机环境访问github很慢，需要编译，查看报错后安装诸如`npm -g install node-addon-api`的依赖。在windwos上编译可能遇到的问题可以查看这个链接 https://blog.csdn.net/jjocwc/article/details/134152602
 ### 3. 二进制文件方式运行
 最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
