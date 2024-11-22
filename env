@@ -1,12 +1,16 @@
 
 #服务器端口
+#server port
 port=5567
-# 文件夹起始地址
-#base_folder=D:\
+# 文件夹起始地址 文件管理的默认地址，不填的话会是执行程序的目录
+# The starting folder address, the default address for file management. If not specified, it will be the directory of the executing program.
+#base_folder=D:\ 或者 /home/user
 
 # 本地账号密码
-username=123
-password=123
+username=admin
+password=admin
 
-#work_dir=D:\data
+# 该程序需要一个目录来存放数据，最好是空目录
+# The program requires a directory to store data, preferably an empty directory.
+#work_dir=D:\data 或者 /home
 
