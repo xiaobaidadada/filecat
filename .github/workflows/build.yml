@@ -10,6 +10,10 @@ on:
         required: true
         default: prebuild
         type: string
+      tag:
+        description: '发布docker可选的docker标签'
+        required: false
+        default: ''
 
 # 所有的jobs下的任务都会被执行
 jobs:
@@ -36,19 +40,21 @@ jobs:
   push-docker:
     if: ${{ github.event.inputs.job == 'push-docker'}}
     runs-on: ubuntu-latest
+    container: node:18-alpine
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
       DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          registry-url: https://registry.npmjs.org
-      - run: |
-          sudo apt update
-          sudo apt install gcc-10 g++-10 -y
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+      - run: apk add build-base git python3 py3-setuptools --update-cache
+#      - uses: actions/setup-node@v4
+#        with:
+#          node-version: 18
+#          registry-url: https://registry.npmjs.org
+#      - run: |
+#          sudo apt update
+#          sudo apt install gcc-10 g++-10 -y
+#          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
       - name: Docker meta # 镜像仓库
         id: meta
         uses: docker/metadata-action@v5
@@ -56,6 +62,11 @@ jobs:
           images: | 
             ${{ env.DOCKER_REPO }}
             ghcr.io/${{ github.repository }}
+          tags: |
+            ${{ github.ref_name }}   # 使用 GitHub 分支作为标签
+            latest                  # 也为镜像加上 latest 标签
+            ${{ github.event.inputs.tag && github.event.inputs.tag || '' }}  # 如果 tag 不为空，则添加它，否则不添加
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker buildx
