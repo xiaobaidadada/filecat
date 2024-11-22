@@ -18,7 +18,7 @@ url: http://116.198.245.137:5569/
 最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行(x64);
-1. 执行命令`filecat --port 5567 --base_folder d:/ `  不设置username的话，账号密码默认是admin
+1. 执行命令`filecat --port 5567 --base_folder /home `  不设置username的话，账号密码默认是admin
 2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
 3. 如果不能运行请自己在对应环境下进行打包编译或者使用不打包方式运行(网络功能暂时不支持多环境)
 ### 4. linux下安装到systemd后台运行
@@ -27,7 +27,7 @@ url: http://116.198.245.137:5569/
 使用`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`命令直接运行。
 
 说明:
-1. 所有的用于可执行的参数在这里都可用，也可以省略那么参数会使用项目下的env文件。
+1. 所有的用于可执行的参数在这里都可用，也可以省略参数，那么参数会使用项目下的env文件。
 2. 可以使用`-v`参数映射一个env配置文件给程序， `-v /home:/home`是管理文件的必要参数(使用`base_folder`参数设置)，否则能够看到的只是容器内的临时文件。
 3. `--net=host`参数可以使用项目的所有关于网络的功能(虚拟网络，ddns等)，由于在容器内运行，系统基本信息有些获取不到，但是内存和cpu使用率还是可以获取到物理机的。
 4. 本软件是为了管理主机的，如果只是想用文件管理功能，使用docker是可以的，否则还是建议在物理机上安装此程序。
@@ -42,13 +42,11 @@ url: http://116.198.245.137:5569/
   4. studio 编辑器，右键文件夹可以打开一个类似vscode的编辑器页面，可用于linux程序临时开发环境。
   5. [excalidraw](https://github.com/excalidraw/excalidraw)绘图编辑器，这是一个很好用白板工具。 
   5. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
-  6. 终端，可以实时跟着目录走。
+  6. 终端，默认是bash， windwos下是 powershell。
 - ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
 - 网站，是网址收藏夹，可用于保存服务器上其它的网站
 - ddns
-- http网页代理
-- rdp代理(windwos远程控制)
-- rtsp代理播放器，输入直播源，比如监控的url可以实时网页观看
+- http网页代理、rdp代理(windwos远程控制)、rtsp代理播放器，输入直播源，比如监控的url可以实时网页观看
 - docker容器，镜像管理，查看日志等功能
 - 系统内存cpu信息，进程cpu信息（利用c插件、使用极低的资源，实时查看系统全部进程信息，类似windows的任务管理器）,systemd管理(linux下才有)
 - wol网络唤醒
