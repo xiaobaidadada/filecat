@@ -115,11 +115,13 @@ export abstract class DdnsPre implements updateDns{
                     this.async_have = true;
                     DataUtil.set(this.getDdnsKey(), data);
                 }
+            } else {
+                return false;
             }
         }catch (e) {
             console.log(e)
         }
-
+        return true;
     }
 
     abstract update(data: DdnsConnection, domain: IResult, ip: string, type: string);

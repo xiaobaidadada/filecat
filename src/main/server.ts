@@ -49,7 +49,12 @@ async function start() {
         routePrefix: '/api',
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
-        controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController, NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController],
+        controllers:[
+            UserController, SysController, ShellController, FileController, DdnsController, NetController,
+            NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController
+        ],
+        // controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController,
+        // NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController],
         // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理

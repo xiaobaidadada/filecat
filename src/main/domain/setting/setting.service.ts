@@ -7,7 +7,6 @@ import {AuthFail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {FileSettingItem, SysSoftware, SysSoftwareItem, TokenTimeMode} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
-import {ba} from "tencentcloud-sdk-nodejs";
 import {SystemUtil} from "../sys/sys.utl";
 import {Body} from "routing-controllers";
 

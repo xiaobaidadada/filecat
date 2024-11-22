@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "filecat 文件管理器",
   "author": "xiaobaidadada",
   "scripts": {
@@ -118,7 +118,6 @@
     "style-loader": "^3.3.4",
     "systeminformation": "^5.22.11",
     "tar": "^7.4.3",
-    "tencentcloud-sdk-nodejs": "^4.0.858",
     "tldts": "^6.1.20",
     "ts-node": "^10.9.2",
     "typedi": "^0.10.0",
