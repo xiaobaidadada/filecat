@@ -4,7 +4,6 @@ import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
 import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
 import {settingService} from "../../main/domain/setting/setting.service";
-import {wss} from "tencentcloud-sdk-nodejs";
 
 const url = require('url');
 
