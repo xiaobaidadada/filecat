@@ -63,9 +63,9 @@ jobs:
             ${{ env.DOCKER_REPO }}
             ghcr.io/${{ github.repository }}
           tags: |
-            ${{ github.ref_name }}   # 使用 GitHub 分支作为标签
-            latest                  # 也为镜像加上 latest 标签
-            ${{ github.event.inputs.tag && github.event.inputs.tag || '' }}  # 如果 tag 不为空，则添加它，否则不添加
+            ${{ github.ref_name }}   
+            latest                  
+            ${{ github.event.inputs.tag && github.event.inputs.tag || '' }}  
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
