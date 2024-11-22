@@ -12,4 +12,4 @@ RUN #chmod +x /app/filecat-linux
 EXPOSE 5567
 ENTRYPOINT ["node","/app/main.js"]
 # 默认参数 有参数会被覆盖
-CMD ["--env", "/app/env"]
+CMD ["--env", "/app/env","--base_folder","/home"]
