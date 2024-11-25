@@ -62,7 +62,9 @@ url: http://116.198.245.137:5569/
 4. 支持更多的ddns平台
 5. 自动化爬虫
 6. 路由权限
-## 七. 致谢
+## 七. qq群
+824838674
+## 八. 致谢
 本项目部分功能还基于或者借鉴于以下项目
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
