@@ -18,7 +18,7 @@ on:
 # 所有的jobs下的任务都会被执行
 jobs:
   push-npm: # 执行node的 预构建
-    if: ${{ github.event.inputs.job == 'push-npm'}}
+    if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'push-all' }}
     runs-on: ubuntu-20.04
     name: Prebuild on ubuntu-20.04
     # needs: test
@@ -38,7 +38,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
-    if: ${{ github.event.inputs.job == 'push-docker'}}
+    if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
     runs-on: ubuntu-latest
     container: node:18-alpine
     env:
