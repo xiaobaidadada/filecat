@@ -38,7 +38,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
-    if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
+    if: ${{ github.event.inputs.job == 'push-docker' }}
     runs-on: ubuntu-latest
     container: node:18-alpine
     env:
@@ -103,7 +103,7 @@ jobs:
         architecture: [ x64, arm64 ]
         node: [ 18 ]
     name: Prebuild on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }},${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
       - uses: actions/setup-node@v4
