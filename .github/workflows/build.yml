@@ -96,7 +96,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   build-pkg-amd:
-    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'push-all' }}
+    if: ${{ github.event.inputs.job == 'build-pkg'  }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-latest ]
