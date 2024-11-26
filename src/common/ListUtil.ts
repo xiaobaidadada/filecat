@@ -30,6 +30,28 @@ export function getByList(list, value) {
     return list[index];
 }
 
+// 获取数组元素的最大值和最小值
+export function getMaxByList(list?:number[]) {
+    if(!list) {
+        return {};
+    }
+    let max;
+    let min;
+    for (let v of list) {
+        if(max === undefined) {
+            max = v;
+        } else if (max < v) {
+            max = v;
+        }
+        if (min === undefined) {
+            min = v;
+        } else if (min > v) {
+            min = v;
+        }
+    }
+    return {max,min};
+}
+
 // 删除数组中的一个元素，并返回新的数组
 export function getNewDeleteByList(list, value) {
     const index = list.indexOf(value);

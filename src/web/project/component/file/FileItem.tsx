@@ -3,7 +3,7 @@ import {FileItemData, FileTypeEnum} from "../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
-import {getByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
+import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
 import {fileHttp} from "../../util/config";
 import {getRouterAfter} from "../../util/WebPath";
 import {saveTxtReq} from "../../../../common/req/file.req";
@@ -21,6 +21,7 @@ import {user_click_file} from "../../util/store.util";
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
+    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
     const { click_file } = user_click_file();
     const {t} = useTranslation();
 
@@ -34,8 +35,25 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             setSelectList(getNewDeleteByList(selectList, index))
             // console.log('取消')
         } else {
-            // @ts-ignore 选中
-            setSelectList([...selectList, index])
+            if (enterKey ==="ctrl") {
+                // @ts-ignore 选中
+                setSelectList([...selectList, index])
+            } else if(enterKey ==="shift") {
+                const {max,min} = getMaxByList(selectList);
+                const list:number[] = [];
+                if(index >= max) {
+                    for(let i=max; i<=index; i++) {
+                        list.push(i);
+                    }
+                } else {
+                    for(let i=min; i >= index; i--) {
+                        list.push(i);
+                    }
+                }
+                setSelectList(list);
+            } else {
+                setSelectList([index])
+            }
         }
 
         // @ts-ignore 点击

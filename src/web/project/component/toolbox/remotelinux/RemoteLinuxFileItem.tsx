@@ -3,7 +3,7 @@ import {FileItemData, FileTypeEnum} from "../../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
-import {getByList, getNewDeleteByList, joinPaths, webPathJoin} from "../../../../../common/ListUtil";
+import {getByList, getMaxByList, getNewDeleteByList, joinPaths, webPathJoin} from "../../../../../common/ListUtil";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {getRouterAfter} from "../../../util/WebPath";
 import Noty from "noty";
@@ -26,7 +26,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
     const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
-
+    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
 
     // const match = useMatch('/:pre/file/*');
     const clickHandler = async (index, name) => {
@@ -36,8 +36,25 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
             setSelectList(getNewDeleteByList(selectList, index))
             // console.log('取消')
         } else {
-            // @ts-ignore 选中
-            setSelectList([...selectList, index])
+            if (enterKey ==="ctrl") {
+                // @ts-ignore 选中
+                setSelectList([...selectList, index])
+            } else if(enterKey ==="shift") {
+                const {max,min} = getMaxByList(selectList);
+                const list:number[] = [];
+                if(index >= max) {
+                    for(let i=max; i<=index; i++) {
+                        list.push(i);
+                    }
+                } else {
+                    for(let i=min; i >= index; i--) {
+                        list.push(i);
+                    }
+                }
+                setSelectList(list);
+            } else {
+                setSelectList([index])
+            }
         }
 
         // @ts-ignore 点击

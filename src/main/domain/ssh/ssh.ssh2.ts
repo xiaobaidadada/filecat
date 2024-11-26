@@ -50,11 +50,11 @@ export class SshSsh2 extends LifecycleRecordService {
                 resolve(false);
                 console.log("ssh关闭")
                 this.lifeClose(SshPojo.getKey(req));
-                try {
-                    client[sftp_client].end();
-                } catch (e) {
-                    console.log(e);
-                }
+                // try {
+                //     client[sftp_client].end();
+                // } catch (e) {
+                //     console.log(e);
+                // }
             });
         })
     }

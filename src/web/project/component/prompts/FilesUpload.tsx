@@ -7,6 +7,7 @@ import {fileHttp} from "../../util/config";
 import {getNewDeleteByList} from "../../../../common/ListUtil";
 import {getRouterAfter} from "../../util/WebPath";
 import {useTranslation} from "react-i18next";
+import {NotyFail} from "../../util/noty";
 
 export function FilesUpload() {
     const { t } = useTranslation();
@@ -28,25 +29,31 @@ export function FilesUpload() {
             const newList: any = Array.from(uploadFiles);
             for (let index = 0; index < newList.length; ) {
                 let value: any = newList[index];
-                // console.log(`${getRouterAfter('file',location.pathname)}${value.fullPath}`)
-                const rsp = await fileHttp.put(`${getRouterAfter('file',location.pathname)}${value.fullPath}`, value, (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setNowProgress({
-                        name: value.name,
-                        value: percentCompleted,
-                        index: index
+                try {
+                    // console.log(`${getRouterAfter('file',location.pathname)}${value.fullPath}`)
+                    const rsp = await fileHttp.put(`${getRouterAfter('file',location.pathname)}${value.fullPath}`, value, (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setNowProgress({
+                            name: value.name,
+                            value: percentCompleted,
+                            index: index
+                        })
                     })
-                })
-                if (rsp.code === 0) {
-                    // @ts-ignore
-                    // setUploadFiles(getNewDeleteByList(newList, value))
+                    if (rsp.code === 0) {
+                        // @ts-ignore
+                        // setUploadFiles(getNewDeleteByList(newList, value))
+                    }
+                    if (index === newList.length - 1) {
+                        navigate(location.pathname);
+                        setUploadFiles([])
+                        setShowPrompt({show: false,type: '',overlay: false,data:{}})
+                    }
+                    index++;
+                } catch (e) {
+                    NotyFail(`上传:${value.name} 文件出错!`)
+                    return;
                 }
-                if (index === newList.length - 1) {
-                    navigate(location.pathname);
-                    setUploadFiles([])
-                    setShowPrompt({show: false,type: '',overlay: false,data:{}})
-                }
-                index++;
+
             }
             // console.log(uploadFiles)
         })();

@@ -12,10 +12,12 @@ import {Env} from "../../../common/Env";
 import fs from "fs";
 import archiver from "archiver";
 import Stream from "node:stream";
-import multer from "multer";
 import {DataUtil} from "../data/DataUtil";
 import {Fail, Sucess} from "../../other/Result";
 import {RCode} from "../../../common/Result.pojo";
+import {settingService} from "../setting/setting.service";
+import multer from 'multer';
+import {Request, Response} from "express";
 
 
 export const navindex_remote_ssh_key = "navindex_remote_ssh_key";
@@ -221,58 +223,77 @@ export class SshService extends SshSsh2 {
         readStream.pipe(ctx.res);
     }
 
-    public uploadFile(ctx, file: multer.File) {
-        const client = this.lifeGetData(SshPojo.getKey(ctx.query)) as Client;
+    fileUploadOptions = {
+        storage: multer.diskStorage({
+            destination: (req: any, file: any, cb: any) => {
+                // return cb(new Error("Custom error: Path issue"));
+                cb(null, req.fileDir);  // 存储路径
+            },
+            filename: (req: any, file: any, cb: any) => {
+                // file.originalname
+                cb(null, req.fileName);
+            }
+        })
+    };
+
+    upload = multer({
+        storage: this.fileUploadOptions.storage,
+        // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制
+    }).single('file');
+
+    public uploadFileAsync(req: Request, res: Response): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.upload(req, res, (err) => {
+                if (err) {
+                    return reject(err);  // 如果出错，拒绝 Promise
+                }
+                resolve();  // 如果上传成功，解析 Promise
+            });
+        });
+    }
+
+    public async uploadFile(req:any,res:Response) {
+        const client = this.lifeGetData(SshPojo.getKey(req.query)) as Client;
         const sftp = this.sftGet(client);
-        const remoteFilePath = ctx.query.target;
+        const remoteFilePath = req.query.target;
 
         const temp = "tempfile";
 
-        const localFilePath = DataUtil.writeFileSyncTemp(path.basename(remoteFilePath),temp,file.buffer);
-
-
-        const readStream = fs.createReadStream(localFilePath);
-        const writeStream = sftp.createWriteStream(remoteFilePath);
-        // const stats = fs.statSync(localFilePath);
-        // const totalSize = stats.size;
-        // let uploadedSize = 0;
-
-        readStream.on('data', (chunk) => {
-            // uploadedSize += chunk.length;
-            // const percent = Math.floor((uploadedSize / totalSize) * 100);
-            // console.log(`Progress: ${percent}%`);
-        });
-
+        const localFilePath = DataUtil.writeFileSyncTemp(path.basename(remoteFilePath),temp);
+        req['fileDir'] = path.dirname(localFilePath);
+        req['fileName'] = path.basename(localFilePath);
+        await this.uploadFileAsync(req, res);
         return new Promise((resolve, reject) => {
-            readStream.pipe(writeStream);
-            writeStream.on('close', () => {
-                resolve(1);
-                readStream.close();
+            // 上传文件
+            sftp.fastPut(localFilePath, remoteFilePath, (err) => { // 比下面的更快
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(1);
+                }
                 fs.unlinkSync(localFilePath);
             });
-            writeStream.on('error', (err) => {
-                reject(err);
-            });
-        })
+        });
+        //
+        // const readStream = fs.createReadStream(localFilePath);
+        // const writeStream = sftp.createWriteStream(remoteFilePath);
+        // readStream.on('data', (chunk) => {
+        //     // 这种方式可以检测到进度 但是会慢点 fastPut 会并发 上传占用的内存都差不多
+        //     // uploadedSize += chunk.length;
+        //     // const percent = Math.floor((uploadedSize / totalSize) * 100);
+        //     // console.log(`Progress: ${percent}%`);
+        // });
         // return new Promise((resolve, reject) => {
-        //     sftp.fastPut(localFilePath, remoteFilePath, (err) => {
-        //         if (err) {
-        //             reject(err);
-        //         } else {
-        //             resolve(1);
-        //         }
+        //     readStream.pipe(writeStream);
+        //     writeStream.on('close', () => {
+        //         resolve(1);
+        //         readStream.close();
+        //         fs.unlinkSync(localFilePath);
+        //     });
+        //     writeStream.on('error', (err) => {
+        //         reject(err);
         //     });
         // })
-        // const writeStream = sftp.createWriteStream(remoteFilePath);
-        // // 将流数据写入远程文件
-        // // 将文件数据转换为可读流
-        // const fileStream = Readable.from(file.buffer);
-        // fileStream.pipe(writeStream);
-
-        // sftp.fastPut(file.buffer, remoteFilePath, (err) => {
-        //     if (err) throw err;
-        // });
-
     }
 }
 

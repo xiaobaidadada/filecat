@@ -33,7 +33,7 @@ const WebSocket = require('ws');
 async function start() {
 
     await Env.parseArgs();
-
+    // console.log(process.pid);
 // 环境变量加载
 // dotenv.config({ override: true });
 // Object.keys(config).forEach(key => {

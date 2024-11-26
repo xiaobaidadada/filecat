@@ -12,13 +12,14 @@ import {
     Param,
     Post,
     Put,
-    Req,
+    Req, Res,
     UploadedFile
 } from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import multer from "multer";
+import {Request, Response} from "express";
 
 @JsonController("/ssh")
 export class SSHController {
@@ -81,8 +82,8 @@ export class SSHController {
 
     // 上传文件
     @Put("/")
-    async uploadFile(@Req() ctx: any ,@UploadedFile('file') file?: multer.File) {
-        await sshService.uploadFile(ctx, file);
+    async uploadFile(@Req() req: Request, @Res() res: Response,) {
+        await sshService.uploadFile(req, res);
         return Sucess("1");
     }
 
@@ -92,6 +93,7 @@ export class SSHController {
         sshService.open(data);
         return ""
     }
+
     @msg(CmdType.remote_shell_send)
     async send(data: WsData<SshPojo>) {
         sshService.send(data);
