@@ -6,7 +6,7 @@ import {Confirm} from "../component/prompts/Confirm";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 
-const localStorageEffect = key => ({ setSelf, onSet }) => {
+const localStorageEffect = key => ({setSelf, onSet}) => {
     const savedValue = localStorage.getItem(key);
     if (savedValue != null) {
         setSelf(JSON.parse(savedValue));
@@ -18,10 +18,10 @@ const localStorageEffect = key => ({ setSelf, onSet }) => {
 };
 
 export class ShowPromptData {
-    show:boolean;
+    show: boolean;
     type: string;
-    overlay:boolean;
-    data:FileMenuData;
+    overlay: boolean;
+    data: FileMenuData;
 }
 
 export const $stroe = {
@@ -32,6 +32,11 @@ export const $stroe = {
             folders: [{name: "文件夹1"}, {name: "文件夹2"}],
             files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
         } as GetFilePojo // 初始值
+    }),
+    // 按下的键盘按键
+    enterKey: atom({
+        key: "enterKey",
+        default: ""
     }),
     // 选中的文件 下标
     selectedFileList: atom({
@@ -85,146 +90,146 @@ export const $stroe = {
         }
     ),
     // 通用确认
-    confirm:atom({
+    confirm: atom({
         key: 'confirm',
         default: {
-            open:false,
-            handle:null
+            open: false,
+            handle: null
         } as {
-            open:boolean,
-            handle:()=>void,
-            title?:string,
-            sub_title?:string,
+            open: boolean,
+            handle: () => void,
+            title?: string,
+            sub_title?: string,
         }
     }),
     // 通用卡片
-    prompt_card:atom({
-       key:"prompt_card" ,
-        default:{open:false} as {
-            context_div?:any,
-            open:boolean,
-            title?:string
+    prompt_card: atom({
+        key: "prompt_card",
+        default: {open: false} as {
+            context_div?: any,
+            open: boolean,
+            title?: string
         }
     }),
     // 编辑器设置
-    editorSetting:atom({
+    editorSetting: atom({
         key: 'editorSetting',
-        default:{
-            model:'text',
-            open:false,
-            fileName:'',
-            save:null,
+        default: {
+            model: 'text',
+            open: false,
+            fileName: '',
+            save: null,
         } as {
-            menu_list?:any[],
-            model?:string,
-            open?:boolean,
-            fileName?:string,
-            save?:any,
+            menu_list?: any[],
+            model?: string,
+            open?: boolean,
+            fileName?: string,
+            save?: any,
         }
     }),
     // shell是否开启 并传递初始目录
-    fileShellShow:atom({
-        key:"shellShow",
-        default:{
-            show:false,
-            path:''
+    fileShellShow: atom({
+        key: "shellShow",
+        default: {
+            show: false,
+            path: ''
         }
     }),
     // 只是隐藏不消失
-    file_shell_hidden:atom({
+    file_shell_hidden: atom({
         key: 'file_shell_hidden',
-        default:undefined
+        default: undefined
     }),
     // 远程shell是否开启
-    remoteShellShow:atom({
-        key:"remoteShellShow",
-        default:{
-            show:false,
-            path:''
+    remoteShellShow: atom({
+        key: "remoteShellShow",
+        default: {
+            show: false,
+            path: ''
         }
     }),
     // docker 的shell是否开启
-    dockerShellShow:atom({
+    dockerShellShow: atom({
         key: 'dockerShellShow',
-        default:{
-            type:"", // print exec
-            show:false,
-            dockerId:""
+        default: {
+            type: "", // print exec
+            show: false,
+            dockerId: ""
         }
     }),
     // systemd 的shell是否开启
-    systemd_shell_show:atom({
+    systemd_shell_show: atom({
         key: 'systemd_shell_show',
-        default:{
-            show:false,
-            unit_name:""
+        default: {
+            show: false,
+            unit_name: ""
         }
     }),
     // ssh工具连接信息
-    sshInfo:atom({
+    sshInfo: atom({
         key: 'sshInfo',
-        default:{}
+        default: {}
     }),
     // 文件根路径主
-    file_root_index:atom({
+    file_root_index: atom({
         key: 'file_root_index',
-        default:null,
-        effects:[
+        default: null,
+        effects: [
             localStorageEffect("file_root_index")
         ]
     }),
     // root根路径
-    file_root_list:atom({
+    file_root_list: atom({
         key: 'file_root_list',
-        default:[],
-        effects:[
+        default: [],
+        effects: [
             localStorageEffect("file_root_list")
         ]
     }),
     // 用户基本信息
-    user_base_info:atom({
+    user_base_info: atom({
         key: 'user_base_info',
-        default:{} as UserBaseInfo,
-        effects:[
+        default: {} as UserBaseInfo,
+        effects: [
             localStorageEffect("user_base_info")
         ]
     }),
     // 头部菜单状态
-    header_min:atom({
+    header_min: atom({
         key: 'header_min',
-        default:false
+        default: false
     }),
     // 文件预览
-    file_preview:atom({
+    file_preview: atom({
         key: 'file_preview',
-        default:{open:false} as {open:boolean,type?:FileTypeEnum,name?:string,url?:string,context?:string},
+        default: {open: false} as { open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string },
     }),
     // md预览
-    markdown:atom({
+    markdown: atom({
         key: 'markdown',
-        default:{} as {filename?:string,context?:string},
+        default: {} as { filename?: string, context?: string },
     }),
     // 编辑器
-    studio:atom({
+    studio: atom({
         key: 'studio',
-        default:{} as {folder_path?:string,name?:string}
+        default: {} as { folder_path?: string, name?: string }
     }),
     // 图片编辑器
-    image_editor:atom({
-        key:'image_editor',
-        default:{} as {path?:string,name?:string}
+    image_editor: atom({
+        key: 'image_editor',
+        default: {} as { path?: string, name?: string }
     }),
     // excalidraw编辑器
-    excalidraw_editor:atom({
-        key:'excalidraw_editor',
-        default:{} as {path?:string,name?:string}
+    excalidraw_editor: atom({
+        key: 'excalidraw_editor',
+        default: {} as { path?: string, name?: string }
     }),
     // 磁盘
-    disk:atom({
-        key:"disk",
+    disk: atom({
+        key: "disk",
         default: {
-            type:""
-        } as {type?:string,data?:DiskDevicePojo}
+            type: ""
+        } as { type?: string, data?: DiskDevicePojo }
     })
 }
 

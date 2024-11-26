@@ -148,11 +148,12 @@ export class SysProcessService {
                 return;
             }
             const sys = getSys();
-            if (sys === SysEnum.linux || sys == SysEnum.win) {
-                this.winAndLinuxGetProcess();
-            } else {
-                this.linuxGetProcess();
-            }
+            this.winAndLinuxGetProcess();
+            // if (sys === SysEnum.linux || sys == SysEnum.win) {
+            //     this.winAndLinuxGetProcess();
+            // } else {
+            //     this.linuxGetProcess();
+            // }
         } catch (e) {
             console.log(e)
             this.clear();

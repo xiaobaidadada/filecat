@@ -7,7 +7,7 @@ import {fileHttp} from "../../util/config";
 import {useLocation, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
-import {getNextByLoop} from "../../../../common/ListUtil";
+import {getNewDeleteByList, getNextByLoop} from "../../../../common/ListUtil";
 import {scanFiles} from "../../util/file";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter} from "../../util/WebPath";
@@ -53,6 +53,7 @@ export default function FileList() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
     const [copyedFileList,setCopyedFileList] = useRecoilState($stroe.copyedFileList);
+    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
     const [cutedFileList,setCutedFileList] = useRecoilState($stroe.cutedFileList);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
@@ -269,8 +270,51 @@ export default function FileList() {
 
     }
 
+    // 快捷键
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if(!event.ctrlKey) {
+                if(event.key === 'Escape') {
+                    setSelectList([])
+                } else if(event.key === 'Shift') {
+                    setEnterKey("shift")
+                }
+                return;
+            }
+            if(event.key === 'a' || event.key === 'A') {
+                const len = nowFileList.files.length;
+                const len2 = nowFileList.folders.length;
+                const list = [];
+                for (let i= 0; i < len+len2; i++) {
+                    list.push(i);
+                }
+                setSelectList(list)
+            }  else {
+                setEnterKey("ctrl")
+            }
+        };
+        const handleKeyUp = (event) => {
+            if (!event.ctrlKey) {
+                setEnterKey("");
+            }
+        };
+        // 添加全局键盘事件监听
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        // 在组件卸载时移除事件监听
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [nowFileList]);
+    const clickBlank = (event) => {
+        if (event.target === event.currentTarget) {
+            setSelectList([])
+        }
+    }
+
     return (
-        <div className={"not-select-div"}>
+        <div className={"not-select-div"} >
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
@@ -299,12 +343,12 @@ export default function FileList() {
                 {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>{t("文件夹")}</h2>}
                 {(nowFileList.folders) &&
                     // @ts-ignore
-                    (<div>{nowFileList.folders.map((v, index) => (<FileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
+                    (<div onClick={clickBlank}>{nowFileList.folders.map((v, index) => (<FileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
-                {(nowFileList.files && nowFileList.files.length > 0) && <h2>{t("文件")}</h2>}
+                {(nowFileList.files && nowFileList.files.length > 0) && <h2 onClick={clickBlank}>{t("文件")}</h2>}
                 {(nowFileList.files) &&
                     // @ts-ignore
-                    (<div>
+                    (<div onClick={clickBlank}>
                         {nowFileList.files.map((v, index) => (
                         // @ts-ignore
                         <FileItem itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
