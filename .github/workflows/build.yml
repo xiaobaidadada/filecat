@@ -102,8 +102,8 @@ jobs:
         os: [ ubuntu-20.04, windows-latest ]
         architecture: [ x64, arm64 ]
         node: [ 18 ]
-    name: Prebuild on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }},${{ matrix.architecture }}
+    name: Prebuild on ${{ matrix.os }},${{ matrix.architecture }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
       - uses: actions/setup-node@v4
