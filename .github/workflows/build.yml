@@ -96,12 +96,14 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   build-pkg-amd:
-    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'run-all' }}
+    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'push-all' }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-latest ]
         architecture: [ x64, arm64 ]
         node: [ 18 ]
+    name: Prebuild on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
       - uses: actions/setup-node@v4
