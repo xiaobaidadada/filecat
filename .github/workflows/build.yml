@@ -95,3 +95,25 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  build-pkg-amd:
+    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'run-all' }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, windows-latest ]
+        architecture: [ x64, arm64 ]
+        node: [ 18 ]
+    steps:
+      - uses: actions/checkout@v4 # 使用社区的指令
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install
+      - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'x64' }}
+        run: npm run pkg-build && pkg . --no-dependencies --targets node18-win-x64 --output filecat-win-x64.exe
+      - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
+        run: npm run pkg-build && pkg . --no-dependencies --targets node18-win-arm64 --output filecat-win-arm64.exe
+      - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
+        run: npm run pkg-build && pkg . --no-dependencies --targets node18-linux-x64 --output filecat-linux-x64
+      - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'arm64' }}
+        run: npm run pkg-build && pkg . --no-dependencies --targets node18-linux-arm64 --output filecat-linux-arm64
+      - run: prebuild --upload  --files filecat-* -u ${{ secrets.GITHUB_TOKEN }}
