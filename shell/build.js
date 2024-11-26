@@ -1,5 +1,6 @@
 const {Listr} = require("listr2");
 const webpack = require('webpack');
+const os = require("os");
 const config = require('./config/webpack.config.js');
 const args = process.argv.slice(2);  // slice to remove the first two default values
 let serverConfig ;
@@ -59,7 +60,7 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg.exe"), path.join(__dirname, "..", "build", "ffmpeg.exe"))
-                        if (args[0]!=="npm") {
+                        if (args[0]!=="npm" && os.platform() === 'win32') {
                             copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))
                         }
                         rimraf(path.join(__dirname,"..","build","server"));
