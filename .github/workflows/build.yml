@@ -93,7 +93,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   build-pkg:
-    if: ${{ github.event.inputs.job == 'build-pkg'  }}
+    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'push-all' }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-2019 ]
