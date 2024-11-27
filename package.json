@@ -84,7 +84,7 @@
     "@babel/preset-typescript": "^7.24.1",
     "@excalidraw/excalidraw": "^0.17.6",
     "@koa/cors": "^5.0.0",
-    "@xiaobaidadada/prebuild": "^13.0.1-5",
+    "@xiaobaidadada/prebuild": "^13.0.1-6",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "ace-builds": "^1.32.9",
