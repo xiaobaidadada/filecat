@@ -3,7 +3,7 @@
 
 - 中文 | [English ](./doc/EN_README.md)
 - 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明。也支持二进制方式直接运行，更多使用方式请参考下文。
+- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式请参考下文。
 ## 一. 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
@@ -16,12 +16,10 @@ url: http://116.198.245.137:5569/
 - 如果网络比较差，可以使用淘宝镜像源`npm config set registry https://registry.npmmirror.com`。或者，安装的时候临时使用淘宝镜像源`npm install -g filecat --registry https://registry.npmmirror.com`。
 - 许多依赖是预构建放在github上的，如果主机环境访问github很慢，需要编译，查看报错后安装诸如`npm -g install node-addon-api`的依赖。在windwos上编译可能遇到的问题可以查看这个链接 https://blog.csdn.net/jjocwc/article/details/134152602
 ### 3. 二进制文件方式运行
-最新的代码不会直接打包，如果要使用最新功能和bug修复请自己打个包。
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
-然后使用各个平台的可执行程序运行(x64);
-1. 执行命令`filecat --port 5567 --base_folder /home `  不设置username的话，账号密码默认是admin
+然后使用各个平台的可执行程序运行;（windows在可执行系统信息中处理器如果是AMD就是x64或者arm，linux输入`uname -m`）；
+1. 执行命令`filecat.exe --port 5567 --base_folder /home `  不设置username的话，账号密码默认是admin
 2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
-3. 如果不能运行请自己在对应环境下进行打包编译或者使用不打包方式运行(网络功能暂时不支持多环境)
 ### 4. linux下安装到systemd后台运行
 这里的安装是安装到systemd作为后台进程，默认需要使用root权限，对于Linux系统现在提供自动安装功能，推荐使用这种systemd方式运行;只需要下载最新版本的`filecat-linux`可执行程序后，给与它chod可执行权限，然后运行 `./filecat-linux --install linux`;如果你使用npm安装了filecat，可以直接使用`filecat --install linux`来安装到systemd。
 ### 5. docker 方式运行
