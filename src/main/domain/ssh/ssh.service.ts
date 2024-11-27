@@ -5,7 +5,7 @@ import {SysPojo} from "../../../common/req/sys.pojo";
 const {Readable} = require('stream');
 const EventEmitter = require('events');
 
-import {Client} from 'ssh2';
+import {Client} from '@xiaobaidadada/ssh2-prebuilt';
 import {sftp_client, SshSsh2} from "./ssh.ssh2";
 import path from "path";
 import {Env} from "../../../common/Env";

@@ -115,3 +115,12 @@ export function getProcessAddon() {
     //     child = require_c(path.join(__dirname,'win-process.node'));
     // }
 }
+
+let wasmBinary;
+export function loadWasm() {
+    if (!wasmBinary) {
+        // 读取 .wasm 文件的二进制内容
+        wasmBinary = fs.readFileSync(path.join(__dirname,'unrar.wasm'));
+    }
+    return wasmBinary;
+}

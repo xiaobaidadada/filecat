@@ -6,7 +6,7 @@ import {LifecycleRecordService} from "../pre/lifeRecordService";
 const EventEmitter = require('events');
 
 
-import {Client} from 'ssh2';
+import {Client} from '@xiaobaidadada/ssh2-prebuilt';
 import fs from "fs";
 
 export const sftp_client = "sftp_client_key";

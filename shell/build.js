@@ -59,10 +59,11 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm64.dll"), path.join(__dirname, "..", "build", "wintun-arm64.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg.exe"), path.join(__dirname, "..", "build", "ffmpeg.exe"))
-                        if (args[0]!=="npm" && os.platform() === 'win32') {
-                            copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))
+                        if (args[0] !=="npm") {
+                            copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
                         }
+                        // 因为不一定不是windows环境 所以都复制一下，发布npm 在windows环境下，不然没有这个dll
+                        copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))
                         rimraf(path.join(__dirname,"..","build","server"));
                         res(true);
                     });

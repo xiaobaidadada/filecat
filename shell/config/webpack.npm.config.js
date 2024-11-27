@@ -31,8 +31,7 @@ module.exports = {
             '@xiaobaidadada/node-pty-prebuilt':'commonjs @xiaobaidadada/node-pty-prebuilt',
             '@xiaobaidadada/node-tuntap2-wintun':'commonjs @xiaobaidadada/node-tuntap2-wintun',
             'node-process-watcher':'commonjs node-process-watcher',
-            'node-unrar-js':'commonjs node-unrar-js',
-            'ssh2':'commonjs ssh2',
+            '@xiaobaidadada/ssh2-prebuilt':'commonjs @xiaobaidadada/ssh2-prebuilt',
         }
     ],
     plugins: [
@@ -41,6 +40,9 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             'process.env.version': JSON.stringify(package_data.version),
+        }),
+        new webpack.DefinePlugin({
+            'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify
         }),
         // new webpack.IgnorePlugin({ // 前面已经排除了可能含义.node的项目 这里就不需要了
         //     resourceRegExp: /\.node$/
