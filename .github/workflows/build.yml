@@ -96,7 +96,7 @@ jobs:
     if: ${{ github.event.inputs.job == 'build-pkg'  }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-latest ]
+        os: [ ubuntu-20.04, windows-2019 ]
         architecture: [ x64, arm64 ]
         node: [ 18 ]
     name: Prebuild on ${{ matrix.os }},${{ matrix.architecture }}
@@ -109,16 +109,18 @@ jobs:
       - run: npm install
       - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'x64' }}
         run: |
-          npm run pkg-build && pkg . --no-dependencies --targets node18-win-x64 --output filecat-win-x64.exe
-#          npx --no-install prebuild --upload-files-zip "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }}
-      - if: |
-          ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
-        run: npm run pkg-build && pkg . --no-dependencies --targets node18-win-arm64 --output filecat-win-arm64.exe
-      - if: |
-          ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
-        run: npm run pkg-build && pkg . --no-dependencies --targets node18-linux-x64 --output filecat-linux-x64
+          npm run pkg-build && npx pkg . --no-dependencies --targets node18-win-x64 --output filecat-win-x64.exe
+          npx --no-install prebuild --upload-files-zip "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
+        run: | 
+          npm run pkg-build && npx pkg . --no-dependencies --targets node18-win-arm64 --output filecat-win-arm64.exe
+          npx --no-install prebuild --upload-files-zip "node18-win-arm64" -u ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
+        run: | 
+          npm run pkg-build && npx pkg . --no-dependencies --targets node18-linux-x64 --output filecat-linux-x64
+          npx --no-install prebuild --upload-files-zip "node18-linux-x64" -u ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'arm64' }}
         run: |
-          npm run pkg-build && pkg . --no-dependencies --targets node18-linux-arm64 --output filecat-linux-arm64
-      - run: |
-          prebuild --upload  --files filecat-* -u ${{ secrets.GITHUB_TOKEN }}
+          npm run pkg-build && npx pkg . --no-dependencies --targets node18-linux-arm64 --output filecat-linux-arm64
+          npx --no-install prebuild --upload-files-zip "node18-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }}
+
