@@ -110,17 +110,17 @@ jobs:
       - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'x64' }}
         run: |
           npm run pkg-build && npx pkg . --no-dependencies --targets node18-win-x64 --output filecat-win-x64.exe --no-input
-          npx --no-install prebuild --upload-files-zip "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
         run: | 
           npm run pkg-build && npx pkg . --no-dependencies --targets node18-win-arm64 --output filecat-win-arm64.exe --no-input
-          npx --no-install prebuild --upload-files-zip "filecat-win-arm64.exe" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-win-arm64.exe" -u ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
         run: | 
           npm run pkg-build && npx pkg . --no-dependencies --targets node18-linux-x64 --output filecat-linux-x64 --no-input
-          npx --no-install prebuild --upload-files-zip "filecat-linux-x64" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-linux-x64" -u ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'arm64' }}
         run: |
           npm run pkg-build && npx pkg . --no-dependencies --targets node18-linux-arm64 --output filecat-linux-arm64 --no-input
-          npx --no-install prebuild --upload-files-zip "filecat-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }}
 
