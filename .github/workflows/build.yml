@@ -38,7 +38,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
-    if: ${{ github.event.inputs.job == 'push-docker' }}
+    if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
     runs-on: ubuntu-latest
     container: node:18-alpine
     env:
