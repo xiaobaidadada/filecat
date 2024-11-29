@@ -90,11 +90,9 @@ async function start() {
                 fs.accessSync(url, fs.constants.F_OK,)
                 const readStream = fs.createReadStream(url);
                 readStream.pipe(res);
-                // ctx.body = fs.createReadStream(url);
             } catch (e) {
                 res.type('html');
                 fs.createReadStream(path.join(__dirname, 'dist', "index.html")).pipe(res);
-                // ctx.body = fs.createReadStream(path.join(__dirname, 'dist', "index.html"));
             }
         });
     } else {
