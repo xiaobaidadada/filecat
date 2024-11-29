@@ -3,12 +3,13 @@ import path from "path";
 import fs from "fs";
 import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Cache} from "../../other/cache";
-import {AuthFail, Sucess} from "../../other/Result";
+import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {FileSettingItem, SysSoftware, SysSoftwareItem, TokenTimeMode} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
 import {SystemUtil} from "../sys/sys.utl";
 import {Body} from "routing-controllers";
+import {Request} from "express";
 
 const needle = require('needle');
 
@@ -31,8 +32,8 @@ export class SettingService {
         DataUtil.set(customer_router_key, req);
     }
 
-    public async intercept(ctx: any) {
-        let c_url = ctx.url;
+    public async intercept(ctx: Request) {
+        let c_url = ctx.originalUrl;
         if (ctx.url.includes("?")) {
             c_url = ctx.url.split("?")[0];
         }
@@ -48,17 +49,19 @@ export class SettingService {
                         if ((location as string).startsWith("http")) {
                             const response = await needle('get', location, ctx.headers);
                             for (let key in response.headers) {
-                                ctx.set(key, response.headers[key]);
+                                ctx.res.setHeader(key, response.headers[key]);
+                                // ctx.set(key, response.headers[key]);
                             }
-                            ctx.body = response.body;
-                            ctx.status = response.statusCode;
+                            ctx.res.status(response.statusCode).send(response.body);
+
                         } else {
                             const url = path.join(location);
                             if ((location as string).includes(".htm")) {
-                                ctx.type = 'html';
+                                ctx.res.setHeader("Content-Type", "text/html");
+                                // ctx.type = 'html';
                             }
                             fs.accessSync(url, fs.constants.F_OK,)
-                            ctx.body = fs.createReadStream(url);
+                            fs.createReadStream(url).pipe(ctx.res);
                         }
                         return true;
                     }
@@ -72,7 +75,7 @@ export class SettingService {
                     if (item.needAuth) {
                         const token = ctx.headers.authorization;
                         if (!await this.check(token)) {
-                            ctx.body = AuthFail('失败');
+                            ctx.res.send(AuthFail('失败'));
                             return true;
                         }
                     }
@@ -80,17 +83,16 @@ export class SettingService {
                         const instance = this.getHandlerClass(item.router);
                         // 监听 'data' 事件以接收数据块
                         let data = '';
-                        ctx.req.on('data', (chunk) => {
+                        ctx.on('data', (chunk) => {
                             data += chunk;
                         });
-
                         // 等待 'end' 事件完成
                         await new Promise((resolve) => {
-                            ctx.req.on('end', resolve);
+                            ctx.on('end', resolve);
                         });
-                        ctx.body = await instance.handler(ctx.headers, data, ctx, Cache);
+                        ctx.res.send(await instance.handler(ctx.headers, data, ctx, Cache))
                     } catch (e) {
-                        ctx.body = Sucess(e.toString());
+                        ctx.res.send(Sucess(e.toString()))
                     }
                     return true;
                 }
