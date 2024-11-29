@@ -29,6 +29,7 @@ function Layout() {
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
+    const [custom_fun_opt,set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
 
     function logout() {
         localStorage.setItem('token', '')
@@ -50,6 +51,10 @@ function Layout() {
             // {component:(<div>测试</div>)}
         ]
     ]
+    if(custom_fun_opt) {
+        // @ts-ignore
+        MainNavList[MainNavList.length-1].push(custom_fun_opt);
+    }
 
 
     return (

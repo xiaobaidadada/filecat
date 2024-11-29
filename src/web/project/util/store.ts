@@ -194,6 +194,14 @@ export const $stroe = {
             localStorageEffect("user_base_info")
         ]
     }),
+    // 自定义选项
+    custom_fun_opt: atom({
+       key: 'custom_fun_opt',
+       default: [],
+       effects: [
+           localStorageEffect("custom_fun_opt")
+       ]
+    }),
     // 头部菜单状态
     header_min: atom({
         key: 'header_min',
