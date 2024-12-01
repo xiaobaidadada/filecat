@@ -260,8 +260,12 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
 
     // 快捷键
+    const [isFocused, setIsFocused] = useState(false);
     useEffect(() => {
         const handleKeyDown = (event) => {
+            if (!isFocused) {
+                return;
+            }
             if(!event.ctrlKey) {
                 if(event.key === 'Escape') {
                     setSelectList([])
@@ -295,7 +299,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [nowFileList]);
+    }, [nowFileList,isFocused]);
     const clickBlank = (event) => {
         if (event.target === event.currentTarget) {
             setSelectList([])
@@ -330,7 +334,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                     props.close();
                 }}/>
             </Header>
-            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
+            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
                 {(!!nowFileList && !!nowFileList.folders && nowFileList.folders.length > 0) && <h2>文件夹</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&
                     (<div onClick={clickBlank}>{nowFileList.folders.map((v, index) => (

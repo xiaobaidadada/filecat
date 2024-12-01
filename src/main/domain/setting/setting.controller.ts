@@ -96,18 +96,24 @@ export class SettingController {
         router = settingService.routerHandler(router);
         const context = DataUtil.getFile(router);
         const  pre = ` 
-             // 必须存在的类
-             class Api {  
+         // 必须存在的类
+         class Api {  
+            
+            /*
+            * 处理并返回结果
+            * 此脚本会被用于eval执行，所以本项目内setting.service.ts文件内的所有变量都使用，如果需要可以自己查询相关变量。
+            * @params headers: 请求头对象
+            * @params body: 请求体 字符串形式
+            * @params req: express 的req
+            * @params cache: filecat的token缓存管理器 
+            */
+            async handler(headers,body,req,cache) { 
                 
-                /*
-                * 处理并返回结果
-                * @params headers: 请求头对象
-                * @params body: 请求体
-                */
-                async handler(headers,body,ctx) { 
-                    return null;
-                }
-             }
+                // todo 处理
+                
+                return null;
+            }
+         }
         `;
         if (!context) {
             DataUtil.setFile(router,pre);

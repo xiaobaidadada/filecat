@@ -5,6 +5,9 @@ import {ActionButton} from "../../../../meta/component/Button";
 import {InputText} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {useTranslation} from "react-i18next";
+import {SysSoftware} from "../../../../../common/req/setting.req";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../../util/store";
 
 
 
@@ -16,6 +19,7 @@ export function TableListRender(props: {
     headers: string[],
 }) {
     const { t } = useTranslation();
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
     const headers = [t("路由"), `${t("文件")}|http${t("路径")}`, t("删除")];
     const [rows, setRows] = useState([]);
@@ -40,8 +44,19 @@ export function TableListRender(props: {
         rows.splice(index, 1);
         setRows([...rows]);
     }
+
+    const soft_ware_info_click = ()=>{
+        let context = <div>
+            需要以 "/api" 开头的路由，会自动识别文件地址和http地址，将页面转到对应结果。
+        </div>;
+        set_prompt_card({open:true,title:"信息",context_div : (
+                <div >
+                    {context}
+                </div>
+            )})
+    }
     return <Dashboard>
-            <CardFull title={t("页面资源路由")} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+            <CardFull  self_title={<span className={" div-row "}><h2>{t("页面资源路由")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={props.headers} rows={rows.map((itemList, index) => {
                     const new_list = [
                         <InputText value={itemList[0]} handleInputChange={(value) => {

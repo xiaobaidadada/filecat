@@ -270,9 +270,14 @@ export default function FileList() {
 
     }
 
+
     // 快捷键
+    const [isFocused, setIsFocused] = useState(false);
     useEffect(() => {
         const handleKeyDown = (event) => {
+            if (!isFocused) {
+                return;
+            }
             if(!event.ctrlKey) {
                 if(event.key === 'Escape') {
                     setSelectList([])
@@ -306,7 +311,7 @@ export default function FileList() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [nowFileList]);
+    }, [nowFileList,isFocused]);
     const clickBlank = (event) => {
         if (event.target === event.currentTarget) {
             setSelectList([])
@@ -338,7 +343,7 @@ export default function FileList() {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>
             </Header>
-            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
+            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
                 {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
                 {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>{t("文件夹")}</h2>}
                 {(nowFileList.folders) &&
