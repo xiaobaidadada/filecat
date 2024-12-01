@@ -65,8 +65,7 @@ export class FileCompress {
         // Read the archive file into a typedArray
         const buf = Uint8Array.from(fs.readFileSync(filePath)).buffer;
         const opt = {data: buf}
-        if (process.env.run_env !==undefined && process.env.run_env !== "npm") {
-            console.log('ok')
+        if (process.env.NODE_ENV === "production") {
             opt['wasmBinary'] = loadWasm();
         }
         const extractor = await unrar.createExtractorFromData(opt);
