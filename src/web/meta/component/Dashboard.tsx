@@ -23,7 +23,7 @@ export function Menu(props) {
     }, []);
     return <div className={"dashboard"}>
         {/*标签头*/}
-        <div className={"menu"}>
+        <div className={"menu not-select-div"}>
             <div className={"wrapper"}>
                 <ul>
 

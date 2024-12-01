@@ -12,11 +12,14 @@ import {RCode} from "../../../../common/Result.pojo";
 import {Blank} from "../../../meta/component/Blank";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {useTranslation} from "react-i18next";
+import {$stroe} from "../../util/store";
+import {useRecoilState} from "recoil";
 
 
 
 export function BrowserProxy(props) {
     const { t } = useTranslation();
+    const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
 
     const [showUrl, setshowUrl] = useState('');
     const [gourl,setGourl] = useState('');
@@ -30,6 +33,7 @@ export function BrowserProxy(props) {
             return;
         }
         setGourl("")
+        setHeaderMin(false);
     }
     const go = async (url?:string)=>{
         // if (!gourl.startsWith('http://') && !gourl.startsWith('https://')) {
@@ -90,6 +94,10 @@ export function BrowserProxy(props) {
         }
         setSysPort(parseInt(v));
     }
+    const fullscreen = ()=>{
+        setFullScreen(!fullScreen)
+        setHeaderMin(!fullScreen);
+    }
     return <div>
         <Header>
             <InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
@@ -97,7 +105,7 @@ export function BrowserProxy(props) {
                 setshowUrl(v);
             }}/>
             <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={go}/>
-            <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={() => setFullScreen(!fullScreen)}/>
+            <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={fullscreen}/>
             <ActionButton icon={"close"} title={t(t("关闭"))} onClick={() => {close(); setFullScreen(false);setshowUrl("")}}/>
         </Header>
 

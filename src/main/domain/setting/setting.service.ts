@@ -34,8 +34,8 @@ export class SettingService {
 
     public async intercept(ctx: Request) {
         let c_url = ctx.originalUrl;
-        if (ctx.url.includes("?")) {
-            c_url = ctx.url.split("?")[0];
+        if (ctx.originalUrl.includes("?")) {
+            c_url = ctx.originalUrl.split("?")[0];
         }
         const list_router = DataUtil.get<[][]>(customer_router_key);
         if (!!list_router && list_router.length > 0) {
@@ -90,7 +90,10 @@ export class SettingService {
                         await new Promise((resolve) => {
                             ctx.on('end', resolve);
                         });
-                        ctx.res.send(await instance.handler(ctx.headers, data, ctx, Cache))
+                        const r = await instance.handler(ctx.headers, data, ctx, Cache);
+                        if (r !== null && r !== undefined) {
+                            ctx.res.send(r);
+                        }
                     } catch (e) {
                         ctx.res.send(Sucess(e.toString()))
                     }
