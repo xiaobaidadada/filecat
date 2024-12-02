@@ -197,7 +197,7 @@ export const $stroe = {
     // 自定义选项
     custom_fun_opt: atom({
        key: 'custom_fun_opt',
-       default: [],
+       default: null,
        effects: [
            localStorageEffect("custom_fun_opt")
        ]

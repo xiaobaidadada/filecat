@@ -135,7 +135,7 @@ export function NavIndexContainer(props: {
         last_queue.pop();
     }
     return <div className={"nav_list_div"}>
-        {last_queue_index!==-1 && <ActionButton title={"取消"} icon={"arrow_back"} onClick={back_last}/>}
+        {last_queue_index!==-1 && <ActionButton title={"返回"} icon={"arrow_back"} onClick={back_last}/>}
         {items.map((item, index) => (
             <div
                 key={index}

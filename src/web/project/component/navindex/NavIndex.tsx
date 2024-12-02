@@ -45,7 +45,7 @@ export default function NavIndex() {
 
     return <div>
         <Header>
-            <ButtonLittle text={t("添加")} clickFun={add}/>
+            {/*<ButtonLittle text={t("添加")} clickFun={add}/>*/}
         </Header>
         <NavIndexContainer getItems={getItems}  save={save} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>
     </div>
