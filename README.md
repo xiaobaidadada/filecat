@@ -3,7 +3,7 @@
 
 - 中文 | [English ](./doc/EN_README.md)
 - 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，添加参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式请参考下文。
+- 安装`npm install filecat -g`然后执行 `filecat`，使用参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式请参考下文。
 ## 一. 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
