@@ -20,7 +20,7 @@ export class SshPojo extends ShellInitPojo{
     source:string;
     target:string; // 目标目录，用于文件移动操作
     public static getKey(obj:SshPojo) : string{
-        return obj.private_path ?? obj.domain+obj.port+obj.username+obj.password;
+        return obj.domain+obj.port+obj.username;
     }
 }
 

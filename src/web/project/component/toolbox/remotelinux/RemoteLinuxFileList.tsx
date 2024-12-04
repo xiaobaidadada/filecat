@@ -20,6 +20,7 @@ import {getFilesByIndexs} from "../../file/FileUtil";
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
+import {NotyFail} from "../../../util/noty";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -81,6 +82,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         req.port = props.data.port;
         const rsp = await sshHttp.post("get/dir", req);
         if (rsp.code !== RCode.Sucess) {
+            NotyFail("连接失败")
             return;
         }
         const {folders, files} = rsp.data || {};

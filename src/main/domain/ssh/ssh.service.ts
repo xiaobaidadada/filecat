@@ -31,6 +31,9 @@ export class SshService extends SshSsh2 {
             return true;
         }
         const client = await this.connect(req);
+        if (!client) {
+            throw "连接失败";
+        }
         this.lifeStart(SshPojo.getKey(req), client, async (c) => {
             try {
                 client[sftp_client].end();
