@@ -31,7 +31,7 @@ export function Docker(props) {
 
     const [shellShow, setShellShow] = useRecoilState($stroe.dockerShellShow);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [filterKey,setFilterKey] = useState("");
+    const [filterKey,setFilterKey] = useState(filter);
     const [headers, setHeaders] = useState(["id", t("名字"), t("镜像"), t("命令"), t("状态"),t("内存"),"cpu%", t("选择")]);
 
 
