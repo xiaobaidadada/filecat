@@ -17,7 +17,7 @@ url: http://116.198.245.137:5569/
 - 许多依赖是预构建放在github上的，如果主机环境访问github很慢(多尝试几下也许就好了)，需要编译，查看报错后安装诸如`npm -g install node-addon-api`的依赖。在windwos上编译可能遇到的问题可以查看这个链接 https://blog.csdn.net/jjocwc/article/details/134152602
 ### 3. 二进制文件方式运行
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
-然后使用各个平台的可执行程序运行;（windows在可执行系统信息中处理器如果是AMD就是x64或者arm，linux输入`uname -m`）；
+然后使用各个平台的可执行程序运行;（windows在系统信息中,查看处理器如果是AMD就是x64，或者就是arm，linux输入`uname -m`可以显示架构类型）；
 1. 执行命令`filecat.exe --port 5567 --base_folder /home `  不设置username的话，账号密码默认是admin
 2. 使用例子中的配置文件，执行命令`filecat --env ./env`；linux下也许需要执行`sudo chmod +x ./filecat-linux`获得执行权限
 ### 4. linux下安装到systemd后台运行
@@ -33,6 +33,7 @@ url: http://116.198.245.137:5569/
 ## 三. 开发
 - 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
 - 本项目所有需要编译的依赖都使用了预构建，会从github下载编译好的文件，如果你电脑上的网络安装的时候无法访问github则会退化成编译。如果是在windows上需要编译编译可能遇到的问题可以参考这个链接https://blog.csdn.net/jjocwc/article/details/134152602
+- 项目使用nodejs， web网页构建使用react,没有使用Ui框架，而是使用[filebrowser](https://github.com/filebrowser/filebrowser)项目的css,本地dev开发的时候服务端是转发webpack的服务，打包环境下是把web网页作为资源加载的，服务器的路由使用routing-controllers来处理http，使用common下的frame处理websocket（使用和socket.io解析json一样的库socket.io-parser，有一个参数`export const protocolIsProto2 = true;`可选择使用proto协议，为什么不直接使用socket.io呢，是因为当时本来采用的proto，想更多的复用一下代码），都支持修饰器用法，打包的时候前后端都会使用webpack打包。
 ## 四. 主要特性
 -  文件管理
   1. 图片，视频，markdown 等文件格式在线预览。

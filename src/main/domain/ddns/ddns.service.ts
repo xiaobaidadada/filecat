@@ -16,6 +16,8 @@ import {Client as txClient} from "./tx/dnspod_client"
 
 const dnspodTest = "https://dnsapi.cn/User.Detail";
 
+export const ddns_http_url_key = "ddns_http_url_key";
+
 
 export class DdnsService extends DdnsPre {
 
