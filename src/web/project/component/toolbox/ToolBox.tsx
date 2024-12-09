@@ -21,7 +21,7 @@ export default function ToolBox(props) {
         {index: 3, name: `rdp${t("代理")}`, rto: "rdp/"},
         {index: 4, name: t("网络唤醒"), rto: "netwol/"},
         {index: 5, name: t("rtsp播放器"), rto: "rtsp/"},
-        {index: 6, name: t("对称密钥"), rto: "crypto/"},
+        {index: 6, name: t("非对称密钥"), rto: "crypto/"},
         {index: 7, name: t("时间工具"), rto: "timeutil/"},
 
     ];

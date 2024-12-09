@@ -1,11 +1,11 @@
-import si from "systeminformation";
 import {DdnsConnection, DdnsIPPojo, ip_source_type} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {IResult} from "tldts-core";
 import {DataUtil} from "../data/DataUtil";
 import {getMapByList} from "../../../common/ListUtil";
 import {parse} from "tldts";
-
+import {ddns_http_url_key} from "./ddns.service";
+const os = require('os');
 
 const wwwIpv4 = "https://4.ipw.cn";
 const wwwIpv6 = "https://6.ipw.cn";
@@ -15,13 +15,13 @@ let cacheIps:DdnsIPPojo[] = []; // 缓存ip
 export abstract class DdnsPre implements updateDns{
      async_have = false;//不是第一次同步
 
-    async getWwwIp4(){
-        return await HttpRequest.get(wwwIpv4);
-    }
-
-    async getWwwIp6() {
-        return await HttpRequest.get(wwwIpv6);
-    }
+    // async getWwwIp4(){
+    //     return await HttpRequest.get(wwwIpv4);
+    // }
+    //
+    // async getWwwIp6() {
+    //     return await HttpRequest.get(wwwIpv6);
+    // }
 
     async getNowIps() {
         const now = Date.now();
@@ -40,44 +40,46 @@ export abstract class DdnsPre implements updateDns{
 
     public async updateAndGetIps() {
         getIpsCurrentStamp = Date.now();
-        const net = await si.networkInterfaces();
+        let ifaces = os.networkInterfaces();
         const list:DdnsIPPojo[] = [];
-        for (const item of Array.isArray(net)?net:[net]) {
-            if (item.ip4) {
-                const ipv4 = new DdnsIPPojo();
-                ipv4.isIPv4=true;
-                ipv4.ifaceOrWww=item.iface;
-                ipv4.ip=item.ip4;
-                ipv4.source_type = ip_source_type.physics;
-                list.push(ipv4);
-            }
-            if (item.ip6) {
-                const ipv6 = new DdnsIPPojo();
-                ipv6.isIPv4=false;
-                ipv6.ifaceOrWww=item.iface;
-                ipv6.ip=item.ip6;
-                ipv6.source_type = ip_source_type.physics;
-                list.push(ipv6);
+        for (const key of Object.keys(ifaces)) {
+            const value = ifaces[key];
+            for (const item of Array.isArray(value)?value:[value]) {
+                const ipPojo = new DdnsIPPojo();
+                ipPojo.ifaceOrWww= key;
+                ipPojo.ip=item.address;
+                ipPojo.source_type = ip_source_type.physics;
+                if (item.family === 'IPv4') {
+                    ipPojo.isIPv4=true;
+                } else if (item.family === 'IPv6') {
+                    ipPojo.isIPv4=false;
+                }
+                list.push(ipPojo);
             }
         }
-        const ip4 = await this.getWwwIp4();
-        if (ip4) {
-            const ipv4 = new DdnsIPPojo();
-            ipv4.isIPv4=true;
-            ipv4.ifaceOrWww=wwwIpv4;
-            ipv4.ip=ip4;
-            ipv4.source_type = ip_source_type.http_get;
-            list.push(ipv4);
+        const url_list :DdnsIPPojo[] = DataUtil.get(ddns_http_url_key) ?? [];
+        for (const pojo of url_list) {
+            pojo.ip= await HttpRequest.get(pojo.ifaceOrWww);
+            list.push(pojo);
         }
-        const ip6 = await this.getWwwIp6();
-        if (ip6) {
-            const ipv6 = new DdnsIPPojo();
-            ipv6.isIPv4=false;
-            ipv6.ifaceOrWww=wwwIpv6;
-            ipv6.ip=ip6
-            ipv6.source_type = ip_source_type.http_get;
-            list.push(ipv6);
-        }
+        // const ip4 = await this.getWwwIp4();
+        // if (ip4) {
+        //     const ipv4 = new DdnsIPPojo();
+        //     ipv4.isIPv4=true;
+        //     ipv4.ifaceOrWww=wwwIpv4;
+        //     ipv4.ip=ip4;
+        //     ipv4.source_type = ip_source_type.http_get;
+        //     list.push(ipv4);
+        // }
+        // const ip6 = await this.getWwwIp6();
+        // if (ip6) {
+        //     const ipv6 = new DdnsIPPojo();
+        //     ipv6.isIPv4=false;
+        //     ipv6.ifaceOrWww=wwwIpv6;
+        //     ipv6.ip=ip6
+        //     ipv6.source_type = ip_source_type.http_get;
+        //     list.push(ipv6);
+        // }
         cacheIps = list;
         return list;
     }
