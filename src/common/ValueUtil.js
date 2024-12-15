@@ -34,11 +34,16 @@ export function getShortTime(startStamp) {
         return `${(minutesDiff/ year_1).toFixed(0)}年前`;
     }
 }
-
+export const MAX_SIZE_TXT = 20 * 1024 * 1024;
 const b_1 = 1024;
 const kb_1 = 1024 *1024;
 const mk_1 = 1024 * 1024 * 1024;
 export function formatFileSize(bytes) {
+    if(!bytes && bytes!==0) {
+        return '';
+    } else if (typeof bytes !== 'number') {
+            return bytes;
+    }
     if (bytes < b_1) {
         return bytes + ' B';
     } else if (bytes < kb_1) {

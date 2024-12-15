@@ -16,6 +16,7 @@ import {NotyFail} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
+import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
@@ -27,6 +28,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
     const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
+    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
 
     // const match = useMatch('/:pre/file/*');
     const clickHandler = async (index, name) => {
@@ -75,6 +77,10 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                 if (rsp.code !== RCode.Sucess) {
                     return;
                 }
+                for (const item of rsp.data.files??[]) {
+                    item.origin_size = item.size;
+                    item.size = formatFileSize(item.size);
+                }
                 setNowFileList(rsp.data)
                 setPreSearch(rsp.data);
                 setShellNowDir([...shellNowDir,name])
@@ -99,28 +105,39 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                 }
                 if (model) {
                     // 双击文件
-                    const req = new SshPojo();
-                    Object.assign(req,sshInfo);
-                    req.file = joinPaths(...shellNowDir,name);
-                    const rsq = await sshHttp.post("get/file/text",req);
-                    if (rsq.code === RCode.File_Max) {
-                        NotyFail("超过20MB");
+                    const open_file = async ()=>{
+                        const req = new SshPojo();
+                        Object.assign(req,sshInfo);
+                        req.file = joinPaths(...shellNowDir,name);
+                        const rsq = await sshHttp.post("get/file/text",req);
+                        setEditorSetting({
+                            model,
+                            open: true,
+                            fileName: props.name,
+                            save: async (context) => {
+                                req.context = context;
+                                const rsq = await sshHttp.post("update/file/text",req);
+                                if (rsq.code === 0) {
+                                    editor_data.set_value_temp('')
+                                    setEditorSetting({open: false, model: '', fileName: '', save: null})
+                                }
+                            }
+                        })
+                        editor_data.set_value_temp(rsq.data)
+                    }
+                    if (typeof props.origin_size === "number" && props.origin_size > MAX_SIZE_TXT) {
+                        setShowPrompt({
+                            open: true,
+                            title: "提示",
+                            sub_title: `文件超过20MB了确定要打开吗?`,
+                            handle: async () => {
+                                setShowPrompt({open:false,handle:null});
+                                await open_file();
+                            }
+                        })
                         return;
                     }
-                    setEditorSetting({
-                        model,
-                        open: true,
-                        fileName: props.name,
-                        save: async (context) => {
-                            req.context = context;
-                            const rsq = await sshHttp.post("update/file/text",req);
-                            if (rsq.code === 0) {
-                                editor_data.set_value_temp('')
-                                setEditorSetting({open: false, model: '', fileName: '', save: null})
-                            }
-                        }
-                    })
-                    editor_data.set_value_temp(rsq.data)
+                    await open_file();
                     return;
                 }
             }

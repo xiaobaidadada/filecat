@@ -1,7 +1,7 @@
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {getFileNameByLocation} from "../component/file/FileUtil";
-import {fileHttp} from "./config";
-import {NotyFail} from "./noty";
+import {cryptoHttp, fileHttp} from "./config";
+import {NotyFail, NotySucess} from "./noty";
 import {getEditModelType} from "../../../common/StringUtil";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {getRouterAfter} from "./WebPath";
@@ -10,6 +10,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
+import { MAX_SIZE_TXT } from "../../../common/ValueUtil";
 
 async function get_file_context(path,is_sys_path) {
     if(is_sys_path) {
@@ -28,10 +29,24 @@ export const user_click_file = () => {
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
+    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
 
     const {t} = useTranslation();
 
-    const click_file = async (param: { name, context?: string, model?: string,sys_path?:string,menu_list?:any[] }) => {
+    const click_file = async (param: { name,size?:number,ignore_size?:boolean, context?: string, model?: string,sys_path?:string,menu_list?:any[] }) => {
+        if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
+            setShowPrompt({
+                open: true,
+                title: "提示",
+                sub_title: `文件超过20MB了确定要打开吗?`,
+                handle: async () => {
+                    setShowPrompt({open:false,handle:null});
+                    param.ignore_size = true;
+                    click_file(param);
+                }
+            })
+            return;
+        }
         const {name, context} = param;
         let model = getEditModelType(name);
         const type = getFileFormat(name);
@@ -74,7 +89,6 @@ export const user_click_file = () => {
                     set_excalidraw_editor({path: "", name});
                     break;
                 case FileTypeEnum.md:
-
                     set_markdown({
                         context: await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`,false),
                         filename: name

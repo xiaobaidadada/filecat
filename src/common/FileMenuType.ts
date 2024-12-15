@@ -6,6 +6,7 @@ export class FileMenuData {
     x?:number;
     y?:number;
     filename?:string;
+    size?:any;
     path?:string;
     textClick?:(v) => void;
     type?:FileTypeEnum;

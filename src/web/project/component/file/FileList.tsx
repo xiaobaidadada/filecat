@@ -22,6 +22,7 @@ import {NotyFail} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {user_click_file} from "../../util/store.util";
+import { formatFileSize } from '../../../../common/ValueUtil';
 
 
 export enum FileListShowTypeEmum {
@@ -82,6 +83,11 @@ export default function FileList() {
                 NotyFail(rsp.message);
             }
             return;
+        }
+        const data :GetFilePojo = rsp.data;
+        for (const item of data.files??[]) {
+            item.origin_size = item.size;
+            item.size = formatFileSize(item.size);
         }
         setNowFileList(rsp.data)
         pre_search =rsp.data;

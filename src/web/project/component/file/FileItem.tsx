@@ -16,6 +16,7 @@ import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
 import {getFileNameByLocation} from "./FileUtil";
 import {user_click_file} from "../../util/store.util";
+import { MAX_SIZE_TXT } from '../../../../common/ValueUtil';
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
@@ -77,7 +78,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
-                click_file({name});
+                click_file({name,size:props.origin_size});
             }
         }
     }
@@ -86,7 +87,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
 
 
-    const handleContextMenu = (event, name, isDir) => {
+    const handleContextMenu = (event, name, isDir,size) => {
         event.preventDefault();
         const pojo = new FileMenuData();
         pojo.path = webPathJoin(location.pathname, name)
@@ -94,13 +95,14 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
         pojo.x = event.clientX;
         pojo.y = event.clientY;
         pojo.type = isDir ? FileTypeEnum.folder : getFileFormat(name);
+        pojo.size = size;
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
 
 
     return <BaseFileItem extraAttr={{
         onContextMenu: (event) => {
-            handleContextMenu(event, props.name, props.type === FileTypeEnum.folder)
+            handleContextMenu(event, props.name, props.type === FileTypeEnum.folder,props.origin_size)
         }
     }} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
                          isLink={props.isLink} path={props.path}

@@ -165,6 +165,13 @@ export const $stroe = {
             unit_name: ""
         }
     }),
+    // 日志shell
+    log_viewer: atom({
+       key: 'log_viewer',
+       default: {
+           show: false,
+       }
+    }),
     // ssh工具连接信息
     sshInfo: atom({
         key: 'sshInfo',

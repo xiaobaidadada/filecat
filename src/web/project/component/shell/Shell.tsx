@@ -11,6 +11,7 @@ export interface ShellProps {
     terminal:Terminal,
     init:(rows:number,cols:number) =>void,
     file_shell_hidden?:boolean,
+    get_simple?:boolean
 }
 
 export function Shell(props:ShellProps) {
@@ -56,7 +57,10 @@ export function Shell(props:ShellProps) {
                         // 阻止默认的 Ctrl + C 事件（防止它发送中断信号）
                         event.preventDefault();
                         props.terminal.focus();
+                        return false;
                     }
+                } else if (event.type === "keydown" && event.key === "v" && event.ctrlKey) {
+                    return false;
                 }
                 return true;
             });
@@ -84,9 +88,9 @@ export function Shell(props:ShellProps) {
     if (!props.show) {
         return ;
     }
-    return <div className={"shell"} style={{
+    return props.get_simple ? <div className={"pty"} style={{height:'100%'}} ref={terminalRef}/> :<div className={"shell"} style={{
         height: `${shellHeight}em`,
-        display: `${props.file_shell_hidden? 'none' : 'block'}`
+        display: `${props.file_shell_hidden ? 'none' : 'block'}`
     }} ref={shellRef}>
         <div className={"shell__divider"} ref={shellDividerRef} onPointerDown={handlePointerDown}
              onPointerUp={handlePointerup}/>
