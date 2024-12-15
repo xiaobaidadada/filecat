@@ -21,7 +21,6 @@ import {Request, Response} from "express";
 
 
 export const navindex_remote_ssh_key = "navindex_remote_ssh_key";
-const MAX_SIZE_TXT = 20 * 1024 * 1024;
 
 export class SshService extends SshSsh2 {
 
@@ -70,9 +69,9 @@ export class SshService extends SshSsh2 {
         }
         this.lifeHeart(SshPojo.getKey(req));
         const stats = await this.sftGetFileStats(req.file,client);
-        if (stats.size > MAX_SIZE_TXT) {
-            return Fail("超过20MB",RCode.File_Max);
-        }
+        // if (stats.size > MAX_SIZE_TXT) {
+        //     return Fail("超过20MB",RCode.File_Max);
+        // }
         return Sucess(await this.sftGetFileText(req, client));
     }
 

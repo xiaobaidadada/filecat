@@ -94,7 +94,7 @@ export class SshSsh2 extends LifecycleRecordService {
                     const isDirectory = (file.attrs.mode & 0o170000) === 0o040000;
                     const isLink = (file.attrs.mode & 0o170000) === 0o120000;
                     const name = file.filename;
-                    const size = formatFileSize(file.attrs.size);
+                    // const size = formatFileSize(file.attrs.size);
                     const mtime = file.attrs.mtime;
                     const formattedCreationTime = getShortTime(new Date(mtime).getTime());
                     if (!isDirectory) {
@@ -102,7 +102,7 @@ export class SshSsh2 extends LifecycleRecordService {
                             type: FileTypeEnum.text,
                             name: name,
                             mtime: formattedCreationTime,
-                            size,
+                            size:file.attrs.size,
                             isLink
                         })
                     } else {

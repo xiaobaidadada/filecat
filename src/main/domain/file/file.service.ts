@@ -32,8 +32,6 @@ const mime = require('mime-types');
 import multer from 'multer';
 import {Request, Response} from "express";
 
-const MAX_SIZE_TXT = 20 * 1024 * 1024;
-
 class FileService extends FileCompress {
 
     public async getFile(param_path, token, is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
@@ -48,9 +46,9 @@ class FileService extends FileCompress {
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
-            if (stats.size > MAX_SIZE_TXT) {
-                return Fail("超过20MB", RCode.File_Max);
-            }
+            // if (stats.size > MAX_SIZE_TXT) {
+            //     return Fail("超过20MB", RCode.File_Max);
+            // }
             const name = path.basename(sysPath);
             const buffer = fs.readFileSync(sysPath);
             const pojo = Sucess(buffer.toString(), RCode.PreFile);
@@ -73,14 +71,14 @@ class FileService extends FileCompress {
                 console.log("读取错误", e);
             }
             const formattedCreationTime = stats ? getShortTime(new Date(stats.mtime).getTime()) : "";
-            const size = stats ? formatFileSize(stats.size) : "";
+            // const size = stats ? formatFileSize(stats.size) : "";
             if (stats && stats.isFile()) {
                 const type = getFileFormat(item);
                 result.files?.push({
                     type: type,
                     name: item,
                     mtime: formattedCreationTime,
-                    size,
+                    size:stats.size,
                     isLink: stats.isSymbolicLink(),
                     path: path.join(param_path, item)
                 })
@@ -97,7 +95,7 @@ class FileService extends FileCompress {
                     type: FileTypeEnum.dev,
                     name: item,
                     mtime: formattedCreationTime,
-                    size,
+                    size: stats.size,
                     path: path.join(param_path, item)
                 })
             }

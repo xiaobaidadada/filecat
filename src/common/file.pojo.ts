@@ -21,7 +21,8 @@ export interface FileItemData {
     type?: FileTypeEnum,
     name: string,
     mtime?: string,
-    size?: string,
+    origin_size?:any,
+    size?: any, // 数字和字符串
     isLink?: boolean,
     path?: string,
 }

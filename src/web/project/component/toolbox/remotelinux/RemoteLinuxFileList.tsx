@@ -21,6 +21,7 @@ import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
+import { formatFileSize } from '../../../../../common/ValueUtil';
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -86,6 +87,10 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             return;
         }
         const {folders, files} = rsp.data || {};
+        for (const item of files??[]) {
+            item.origin_size = item.size;
+            item.size = formatFileSize(item.size);
+        }
         const data = {folders: folders || [], files: files || []};
         setNowFileList(data);
         pre_search = data;
@@ -229,6 +234,9 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             return;
         }
         const {folders, files} = rsp.data || {};
+        for (const item of files??[]) {
+            item.size = formatFileSize(item.size);
+        }
         setNowFileList({folders: folders || [], files: files || []});
         if (shellShow.show) {
             setShellShow({

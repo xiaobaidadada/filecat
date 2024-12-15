@@ -16,11 +16,14 @@ export function FileMenu() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
-    const [items, setItems,] = useState([{r: t("以文本打开")}]);
+    const [items, setItems,] = useState([{r: t("以文本打开"),v:1},
+        // {r: t("以日志打开"),v:2}
+    ]);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
+    const [shellShow,set_log_viewer] = useRecoilState($stroe.log_viewer);
 
     const items_folder = [{r: t("以studio打开")}];
     const items_images = [{r: t("以图片编辑器打开")}];
@@ -31,9 +34,15 @@ export function FileMenu() {
     let div; // useEffect 是已经渲染过了再执行
     const pojo = showPrompt.data;
     const textClick = async (v) => {
-        const name = showPrompt.data.filename;
-        click_file({name, model: "text"});
-        close();
+        if ( v===1 ) {
+            const name = showPrompt.data.filename;
+            click_file({name, model: "text",size:showPrompt.data.size});
+            close();
+        } else if ( v===2 ) {
+            // setShellShow({show: true})
+            // close();
+        }
+
     }
     switch (pojo.type) {
         case FileTypeEnum.video:
