@@ -24,6 +24,7 @@ import {Request, Response} from "express";
 @JsonController("/ssh")
 export class SSHController {
 
+    // todo 有一个连接，其他用户不需要密码也能连接，以后有权限了可以改一下
     @Post("/start")
     async start(@Body() body: SshPojo) {
         return Sucess(await sshService.start(body));
