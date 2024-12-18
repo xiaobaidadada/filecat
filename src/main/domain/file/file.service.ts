@@ -79,7 +79,7 @@ class FileService extends FileCompress {
                     name: item,
                     mtime: formattedCreationTime,
                     size: stats.size,
-                    isLink: stats.isSymbolicLink(),
+                    isLink: stats?.isSymbolicLink(),
                     path: path.join(param_path, item)
                 })
             } else if (stats && stats.isDirectory()) {
@@ -87,7 +87,7 @@ class FileService extends FileCompress {
                     type: FileTypeEnum.folder,
                     name: item,
                     mtime: formattedCreationTime,
-                    isLink: stats.isSymbolicLink(),
+                    isLink: stats?.isSymbolicLink(),
                     path: param_path
                 })
             } else {
@@ -95,7 +95,7 @@ class FileService extends FileCompress {
                     type: FileTypeEnum.dev,
                     name: item,
                     mtime: formattedCreationTime,
-                    size: stats.size,
+                    size: stats?.size,
                     path: path.join(param_path, item)
                 })
             }

@@ -14,7 +14,7 @@ url: http://116.198.245.137:5569/
 ### 2. npm 方式运行
 - 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
 - 如果网络比较差，可以使用淘宝镜像源`npm config set registry https://registry.npmmirror.com`。或者，安装的时候临时使用淘宝镜像源`npm install -g filecat --registry https://registry.npmmirror.com`。
-- 许多依赖是预构建放在github上的，如果主机环境访问github很慢(多尝试几下也许就好了)，需要编译，查看报错后安装诸如`npm -g install node-addon-api`的依赖。在windwos上编译可能遇到的问题可以查看这个链接 https://blog.csdn.net/jjocwc/article/details/134152602
+- 许多依赖是预构建放在github上的(支持node 16、18、20、22)，如果主机环境访问github很慢(多尝试几下也许就好了)，需要编译，查看报错后安装诸如`npm -g install node-addon-api`的依赖。实在访问不了github导致安装不了也可以使用下面的二进制或者docker运行。在windwos上编译可能遇到的问题可以查看这个链接 https://blog.csdn.net/jjocwc/article/details/134152602
 ### 3. 二进制文件方式运行
 下载[最新release](https://github.com/xiaobaidadada/filecat/releases)
 然后使用各个平台的可执行程序运行;（windows在系统信息中,查看处理器如果是AMD就是x64，或者就是arm，linux输入`uname -m`可以显示架构类型）；
@@ -43,7 +43,7 @@ url: http://116.198.245.137:5569/
   5. [excalidraw](https://github.com/excalidraw/excalidraw)绘图编辑器，这是一个很好用白板工具。 
   5. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
   6. 终端，默认是bash， windwos下是 powershell。
-  7. 超大文本日志查看器，对任意文本右键使用作为日志类型查看。 
+  7. 超大文本日志查看器，对任意文本右键使用作为日志类型查看，点击窗口后可以使用上下键来快速滚动翻页。
 - ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
 - 网站，是网址收藏夹，可用于保存服务器上其它的网站
 - ddns
