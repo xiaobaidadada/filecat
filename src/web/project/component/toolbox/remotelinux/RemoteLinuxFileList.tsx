@@ -1,27 +1,27 @@
 import React, {useEffect, useRef, useState} from 'react';
 
-import {RouteBreadcrumbs} from "../../../../../../../file_browser_platform/src/web/meta/component/RouteBreadcrumbs";
+import {RouteBreadcrumbs} from "../../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../../../../../../file_browser_platform/src/web/project/util/store";
-import {fileHttp, sshHttp} from "../../../../../../../file_browser_platform/src/web/project/util/config";
+import {$stroe} from "../../../util/store";
+import {fileHttp, sshHttp} from "../../../util/config";
 import {Link, useLocation, useMatch} from "react-router-dom";
-import {ActionButton} from "../../../../../../../file_browser_platform/src/web/meta/component/Button";
-import Header from "../../../../../../../file_browser_platform/src/web/meta/component/Header";
-import {getNextByLoop, joinPaths} from "../../../../../../../file_browser_platform/src/common/ListUtil";
-import {scanFiles} from "../../../../../../../file_browser_platform/src/web/project/util/file";
-import { PromptEnum} from "../../../../../../../file_browser_platform/src/web/project/component/prompts/Prompt";
+import {ActionButton} from "../../../../meta/component/Button";
+import Header from "../../../../meta/component/Header";
+import {getNextByLoop, joinPaths} from "../../../../../common/ListUtil";
+import {scanFiles} from "../../../util/file";
+import { PromptEnum} from "../../prompts/Prompt";
 
-import {RCode} from "../../../../../../../file_browser_platform/src/common/Result.pojo";
+import {RCode} from "../../../../../common/Result.pojo";
 import Noty from "noty";
-import {RemoteLinuxFileItem} from "../../../../../../../file_browser_platform/src/web/project/component/toolbox/remotelinux/RemoteLinuxFileItem";
-import {SshPojo} from "../../../../../../../file_browser_platform/src/common/req/ssh.pojo";
-import {RemoteShell} from "../../../../../../../file_browser_platform/src/web/project/component/shell/RemoteShell";
-import {getFilesByIndexs} from "../../../../../../../file_browser_platform/src/web/project/component/file/FileUtil";
-import {FileTypeEnum, GetFilePojo} from "../../../../../../../file_browser_platform/src/common/file.pojo";
-import {InputTextIcon} from "../../../../../../../file_browser_platform/src/web/meta/component/Input";
+import {RemoteLinuxFileItem} from "./RemoteLinuxFileItem";
+import {SshPojo} from "../../../../../common/req/ssh.pojo";
+import {RemoteShell} from "../../shell/RemoteShell";
+import {getFilesByIndexs} from "../../file/FileUtil";
+import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
+import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail} from "../../../../../../../file_browser_platform/src/web/project/util/noty";
-import { formatFileSize } from '../../../../../../../file_browser_platform/src/common/ValueUtil';
+import {NotyFail} from "../../../util/noty";
+import { formatFileSize } from '../../../../../common/ValueUtil';
 
 export enum FileListShowTypeEmum {
     block = "",
