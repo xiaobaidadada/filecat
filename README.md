@@ -43,6 +43,7 @@ url: http://116.198.245.137:5569/
   5. [excalidraw](https://github.com/excalidraw/excalidraw)绘图编辑器，这是一个很好用白板工具。 
   5. 切换根目录，在设置中添加多个文件夹路径后，可以在右上角选择切换根目录，只对一个session生效。
   6. 终端，默认是bash， windwos下是 powershell。
+  7. 超大文本日志查看器，对任意文本右键使用作为日志类型查看。 
 - ssh代理,ftp代理: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。
 - 网站，是网址收藏夹，可用于保存服务器上其它的网站
 - ddns

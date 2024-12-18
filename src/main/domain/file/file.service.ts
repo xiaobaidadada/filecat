@@ -4,7 +4,7 @@ import {
     FileCompressType, FileTreeList,
     FileTypeEnum,
     FileVideoFormatTransPojo, FileInfoItemData,
-    GetFilePojo
+    GetFilePojo, LogViewerPojo
 } from "../../../common/file.pojo";
 // import {config} from "../../other/config";
 import fs, {Stats} from "fs";
@@ -78,7 +78,7 @@ class FileService extends FileCompress {
                     type: type,
                     name: item,
                     mtime: formattedCreationTime,
-                    size:stats.size,
+                    size: stats.size,
                     isLink: stats.isSymbolicLink(),
                     path: path.join(param_path, item)
                 })
@@ -136,7 +136,7 @@ class FileService extends FileCompress {
         // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制
     }).single('file');
 
-    public uploadFile(filePath, req: Request,res:Response, token) {
+    public uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         // if (!file) {
@@ -149,12 +149,12 @@ class FileService extends FileCompress {
         // }
         req['fileDir'] = path.dirname(sysPath);
         req['fileName'] = path.basename(sysPath);
-            this.upload(req, res, (err) => {
-                if (err) {
+        this.upload(req, res, (err) => {
+            if (err) {
 
-                }
-                // 成功上传
-            });
+            }
+            // 成功上传
+        });
         // 写入文件
         // fs.writeFileSync(sysPath, file.buffer);
         //multer 默认使用 return new Multer({}) 默认memoryStorage 这种方式 buffer 不属于v8内存管理  所以内存释放的比较慢
@@ -521,6 +521,134 @@ class FileService extends FileCompress {
             return pojo;
         }
         return pojo;
+    }
+
+    go_forward_log( pojo : LogViewerPojo ,file_path) {
+        // 开始查找
+        let linesRead = 0; // 行数
+        let haveReadSize = 0; // 已经读取的字节数
+        const fd = fs.openSync(file_path, "r");
+        while (haveReadSize < pojo.once_max_size) {
+            // 创建一个 100 字节的缓冲区
+            const buffer = Buffer.alloc(1024);
+            // 返回实际读取的字节数
+            const bytesRead = fs.readSync(fd, buffer,
+                    0, // 相对于当前的偏移位置
+                    buffer.length, // 读取的长度
+                    pojo.position // 当前位置
+                );
+            // 遍历 buffer 中的每一个字节
+            let done = false;
+            let last_h = -1; // 上一个/n 未开始的也算 /n 都是不包括
+            for (let i = 0; i <= bytesRead; i++) {
+                // 如果字节是换行符 '\n'（ASCII值为 10）
+                if (buffer[i] === 10 || i === bytesRead ) { // 换行或者 最后一个字符
+                    linesRead++;
+                    // 总的来说 字符串要不包括\n 但是结束位置包括\n
+                    const end_offset = i === bytesRead?i+1:i;
+                    pojo.context_list.push(buffer.toString('utf8', last_h+1, end_offset)); // i 不包括 /n
+                    pojo.context_start_position_list.push(pojo.position + last_h + 1); // 开始位置
+                    pojo.context_position_list.push(pojo.position + end_offset); // 结束位置 是/n的位置
+                    if (linesRead >= pojo.line) {
+                        done = true;
+                        break;
+                    }
+                    last_h = i;
+                }
+            }
+
+            if (done) {
+                break;
+            } else {
+                haveReadSize += bytesRead;
+                // 更新文件位置
+                pojo.position += bytesRead;
+            }
+            if (bytesRead === 0) {
+                break;
+            }
+        }
+        // 关闭文件
+        fs.closeSync(fd);
+        return pojo;
+    }
+
+    go_back_log( pojo : LogViewerPojo ,file_path ) {
+        // 开始查找
+        let linesRead = 0; // 行数
+        let haveReadSize = 0; // 已经读取的字节数
+        const fd = fs.openSync(file_path, "r");
+        let buffer_len = 1024;
+        while (haveReadSize < pojo.once_max_size) {
+            if (pojo.position < buffer_len) {
+                // buffer_len = Math.floor(pojo.position / 2);
+                buffer_len = pojo.position; // 全部读完
+            } else {
+                buffer_len = pojo.position - buffer_len;
+            }
+            let buffer = Buffer.alloc(buffer_len); // 缓冲区满足当前位置往前移动的距离
+            pojo.position = pojo.position - buffer.length; // 位置前移
+            // 返回实际读取的字节数
+            const bytesRead = fs.readSync(fd, buffer,
+                0, // 相对于当前的偏移位置
+                buffer.length, // 读取的长度
+                pojo.position // 当前位置 往前推进了一点
+            );
+
+            // 遍历 buffer 中的每一个字节
+            let done = false;
+            let last_h = bytesRead; // 上一个 \n
+            for (let i = bytesRead; i >= 0; i--) {
+                // 如果字节是换行符 '\n'（ASCII值为 10）
+                if (buffer[i] === 10 || i===0) {
+                    linesRead++;
+                    const start_offset = i===0?i:i+1;
+                    pojo.context_list.push(buffer.toString('utf8', i===0?i:i+1, last_h));
+                    pojo.context_start_position_list.push(pojo.position + start_offset);
+                    pojo.context_position_list.push(pojo.position + last_h);
+                    if (linesRead >= pojo.line) {
+                        done = true;
+                        break;
+                    }
+                    last_h = i;
+                }
+            }
+
+            if (done) {
+                break;
+            } else {
+                haveReadSize += bytesRead;
+                // 更新文件位置
+                pojo.position -= bytesRead;
+            }
+            if (bytesRead === 0 || pojo.position <= 0) {
+                break;
+            }
+        }
+        // 关闭文件
+        fs.closeSync(fd);
+        return pojo;
+    }
+
+    log_viewer(data: WsData<LogViewerPojo>) {
+        const pojo = data.context as LogViewerPojo;
+        pojo.context = "";
+        pojo.context_list = [];
+        pojo.context_position_list = [];
+        pojo.context_start_position_list = [];
+        const root_path = settingService.getFileRootPath(pojo.token);
+        const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+        // 获取文件的元数据
+        const stats = fs.statSync(file_path);
+        // 文件当前的最大大小
+        const fileSize = stats.size;
+        pojo.max_size = fileSize;
+        if ((pojo.position <= 0 && pojo.back) || pojo.position >= fileSize) {
+            pojo.context = '';
+            return pojo;
+        }
+        if (pojo.back) return this.go_back_log(pojo,file_path);
+        return  this.go_forward_log(pojo, file_path);
     }
 }
 

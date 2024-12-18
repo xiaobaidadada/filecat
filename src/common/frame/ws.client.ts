@@ -14,6 +14,26 @@ export class WsClient {
     private _promise;
 
     private _msgHandlerMap = new Map();
+    private _msgResolveMap = new Map();
+    private _msgResolveTimeoutMap = new Map();
+
+    handMsg(cmdType: CmdType,data : WsData<any>) {
+        const fun = this._msgHandlerMap.get(data.cmdType)
+        if (fun) {
+            fun(data);
+        }
+        const resolve = this._msgResolveMap.get(data.cmdType)
+        if (resolve) {
+            resolve(data);
+            this._msgResolveMap.delete(data.cmdType)
+        }
+        const timeout = this._msgResolveTimeoutMap.get(cmdType);
+        if(timeout) {
+            clearTimeout(timeout);
+            this._msgResolveTimeoutMap.delete(cmdType);
+        }
+    }
+
     constructor(url:string,authHandle:(socket:WebSocket)=>void) {
         this._url = url;
         this._authHandle = authHandle;
@@ -47,10 +67,7 @@ export class WsClient {
                 decoder.on("decoded",(d)=>{
                     const data = new WsData(d.data[0],d.data[1]);
                     data.wss = this._socket;
-                    const fun = this._msgHandlerMap.get(data.cmdType)
-                    if (fun) {
-                        fun(data);
-                    }
+                    this.handMsg(data.cmdType,data);
                 })
             }
             let dataList = [];
@@ -59,10 +76,7 @@ export class WsClient {
                 if (protocolIsProto2) {
                     const data = WsData.decode(rowData);
                     data.wss = this._socket;
-                    const fun = this._msgHandlerMap.get(data.cmdType)
-                    if (fun) {
-                        fun(data);
-                    }
+                    this.handMsg(data.cmdType,data);
                 } else {
                     decoder.add(rowData);
                 }
@@ -115,7 +129,7 @@ export class WsClient {
                 // 监听连接错误事件
                 socket.addEventListener('error', function (event) {
                     console.error('WebSocket error:', event);
-                    unConnect()
+                    unConnect();
                 });
                 this._socket = socket;
             } else {
@@ -133,7 +147,7 @@ export class WsClient {
     };
 
 
-    public async send(wsData:WsData<any>) {
+    public async send(wsData:WsData<any>):Promise<WsData<any>> {
         if (this._promise) {
             await this._promise;
             this._promise = null;
@@ -147,8 +161,13 @@ export class WsClient {
         } else {
             this._socket!.send(data);
         }
-        new Promise((resolve)=>{
-            this._msgHandlerMap.set(wsData.cmdType,resolve);
+        return new Promise((resolve,reject)=>{
+            const timeout = setTimeout(()=>{
+                resolve(null);
+                console.log('ws超时',wsData.cmdType)
+            },1000 * 6);
+            this._msgResolveMap.set(wsData.cmdType,resolve);
+            this._msgResolveTimeoutMap.set(wsData.cmdType,timeout);
         })
     }
     // 可以作为锁，控制两个路由之前的跳转处理函数的先后顺序

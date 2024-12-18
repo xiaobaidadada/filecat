@@ -36,7 +36,8 @@ export function NotyWaring(text) {
     new Noty({
         type: 'warning',
         text: text,
-        timeout:false, // 需要点击才消失
+        // timeout:false, // 需要点击才消失
+        timeout: 300, // 设置通知消失的时间（单位：毫秒）
         layout: "topRight"
     }).show();
 }

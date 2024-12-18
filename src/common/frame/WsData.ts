@@ -89,6 +89,7 @@ export enum CmdType {
     file_uncompress_progress,
     file_compress,
     file_compress_progress,
+    log_viewer,
 
     // rtsp
     rtsp_get,

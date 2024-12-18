@@ -165,11 +165,12 @@ export const $stroe = {
             unit_name: ""
         }
     }),
-    // 日志shell
+    // 日志 文件
     log_viewer: atom({
        key: 'log_viewer',
-       default: {
-           show: false,
+       default: {} as {
+           show: boolean,
+           fileName?: string
        }
     }),
     // ssh工具连接信息

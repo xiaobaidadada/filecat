@@ -9,9 +9,10 @@ import {NotySucess} from "../../util/noty";
 export interface ShellProps {
     show:boolean,
     terminal:Terminal,
-    init:(rows:number,cols:number) =>void,
+    init?:(rows:number,cols:number) =>void,
     file_shell_hidden?:boolean,
-    get_simple?:boolean
+    get_simple?:boolean,
+    rows_clos?:(rows:number,cols:number) => void
 }
 
 export function Shell(props:ShellProps) {
@@ -27,6 +28,9 @@ export function Shell(props:ShellProps) {
     const handleDrag = useCallback(lodash.throttle( (event)=> {
         // @ts-ignore
         fitAddon.fit();
+        if (props.init) {
+            props.init(props.terminal.rows,props.terminal.cols);
+        }
         const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
         const top = window.innerHeight / size - 4;
         const userPos = (window.innerHeight - event.clientY) / size;
@@ -44,8 +48,9 @@ export function Shell(props:ShellProps) {
             props.terminal!.loadAddon(fitAddon)
             // @ts-ignore
             fitAddon.fit()
-            props.init(props.terminal.rows,props.terminal.cols);
-
+            if (props.init) {
+                props.init(props.terminal.rows,props.terminal.cols);
+            }
             // 监听键盘事件
             props.terminal.attachCustomKeyEventHandler((event) => {
                 // 检测用户是否按下 Ctrl + C

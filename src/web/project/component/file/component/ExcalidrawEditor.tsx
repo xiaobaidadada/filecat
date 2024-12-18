@@ -29,10 +29,6 @@ export default function ExcalidrawEditor() {
     // }
     const getContext = async () => {
         const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${excalidraw_editor.name}`)
-        if (rsq.code === RCode.File_Max) {
-            NotyFail("超过20MB");
-            return;
-        }
         return JSON.parse(rsq.data);
     }
     useEffect(() => {

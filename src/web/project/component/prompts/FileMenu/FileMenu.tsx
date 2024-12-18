@@ -17,13 +17,13 @@ export function FileMenu() {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
     const [items, setItems,] = useState([{r: t("以文本打开"),v:1},
-        // {r: t("以日志打开"),v:2}
+        {r: t("以日志打开"),v:2}
     ]);
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
+    // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
-    const [shellShow,set_log_viewer] = useRecoilState($stroe.log_viewer);
+    const [shell_file_log,set_file_log] = useRecoilState($stroe.log_viewer);
 
     const items_folder = [{r: t("以studio打开")}];
     const items_images = [{r: t("以图片编辑器打开")}];
@@ -39,8 +39,8 @@ export function FileMenu() {
             click_file({name, model: "text",size:showPrompt.data.size});
             close();
         } else if ( v===2 ) {
-            // setShellShow({show: true})
-            // close();
+            set_file_log({show: true,fileName: showPrompt.data.filename})
+            close();
         }
 
     }

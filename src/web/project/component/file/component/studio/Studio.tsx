@@ -9,7 +9,6 @@ import {getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
 import {editor_data} from "../../../../util/store.util";
-import AceEditor from "react-ace";
 import {getEditModelType} from "../../../../../../common/StringUtil";
 import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
@@ -17,6 +16,7 @@ import lodash from "lodash";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
+import Ace from "../Ace";
 
 
 
@@ -40,6 +40,7 @@ export default function Studio(props) {
     const [nav_width, set_nav_width] = useState(16);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const {t} = useTranslation();
+    const [editor,set_editor] = useState(undefined);
 
     function shellClick() {
         if (file_shell_hidden !== undefined) {
@@ -127,7 +128,7 @@ export default function Studio(props) {
             return;
         }
         const data: saveTxtReq = {
-            context: editor_data.get_value_temp()
+            context: editor.getValue()
         }
         const rsq = await fileHttp.post(`save/${edit_file_path}`, data)
         if (rsq.code === 0) {
@@ -139,7 +140,9 @@ export default function Studio(props) {
     const handleKeyDown = (event) => {
         if (event.ctrlKey && event.key === 's') {
             event.preventDefault();
-            file_save();
+            if (have_update) {
+                file_save();
+            }
         }
     };
     useEffect(() => {
@@ -149,8 +152,8 @@ export default function Studio(props) {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [have_update]);
-    let change = (value) => {
-        editor_data.set_value_temp(value);
+    let change = () => {
+        // editor_data.set_value_temp(value);
         if (!have_update) {
             set_have_update(true);
         }
@@ -256,28 +259,7 @@ export default function Studio(props) {
                 />
             }
             <div className={"studio-editor"} key={edit_filename.path}>
-                {edit_filename.name && <AceEditor
-                    mode={edit_model}
-                    width="100%"
-                    height="100%"
-                    theme={"github"}
-                    onChange={change}
-                    fontSize={14}
-                    showPrintMargin={false}
-                    showGutter={true}
-                    highlightActiveLine={false}
-                    defaultValue={editorValue}
-                    // wrapEnabled={true}
-                    setOptions={{
-                        useWorker: false,
-                        enableBasicAutocompletion: true,
-                        enableLiveAutocompletion: true,
-                        enableSnippets: true,
-                        showLineNumbers: true,
-                        tabSize: 2,
-                        // wrap:true
-                    }}
-                />}
+                {edit_filename.name && <Ace name={edit_filename.name}  on_change={change} init={(v)=>set_editor(v)}/>}
             </div>
         </div>
     </div>
