@@ -7,6 +7,7 @@ import {getFilesByIndexs} from "../../file/FileUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
+import {CardPrompt} from "../../../../meta/component/Card";
 
 export function SshReName(props) {
     const { t } = useTranslation();
@@ -41,20 +42,13 @@ export function SshReName(props) {
             cancel();
         }
     }
-    return (<div className={"card floating"}>
-        <div className="card-title">
-            <h2>{t("修改名字")}</h2>
-        </div>
-        <div className="card-content">
-            <InputText placeholderOut={t("输入新名字")} value={getName()} handleInputChange={(value)=>setName(value)} />
-        </div>
-        <div className="card-action">
-            <button className="button button--flat button--grey" onClick={cancel}>
-                {t("取消")}
-            </button>
-            <button className="button button--flat" onClick={dirnew}>
-                {t("修改")}
-            </button>
-        </div>
-    </div>)
+
+    return (<CardPrompt title={t("修改名字")} cancel={cancel} confirm={dirnew} cancel_t={t("取消")} confirm_t={t("创建")}
+                        context={[
+                            <div className="card-content">
+                                <InputText placeholderOut={t("输入新名字")} value={name}
+                                           handleInputChange={(value) => setName(value)}/>
+                            </div>]}
+                        confirm_enter={dirnew}
+    />)
 }

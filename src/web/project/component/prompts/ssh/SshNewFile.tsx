@@ -8,6 +8,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
+import {CardPrompt} from "../../../../meta/component/Card";
 
 export function SshNewFile(props) {
     const { t } = useTranslation();
@@ -35,20 +36,13 @@ export function SshNewFile(props) {
             cancel();
         }
     }
-    return (<div className={"card floating"}>
-        <div className="card-title">
-            <h2>{t("创建文件")}</h2>
-        </div>
-        <div className="card-content">
-            <InputText placeholderOut={"输入文本名"} value={name} handleInputChange={(value)=>setName(value)} />
-        </div>
-        <div className="card-action">
-            <button className="button button--flat button--grey" onClick={cancel}>
-                {t("取消")}
-            </button>
-            <button className="button button--flat" onClick={dirnew}>
-                {t("创建")}
-            </button>
-        </div>
-    </div>)
+
+    return (<CardPrompt title={t("创建文件")} cancel={cancel} confirm={dirnew} cancel_t={t("取消")} confirm_t={t("创建")}
+                        context={[
+                            <div className="card-content">
+                                <InputText placeholderOut={t("输入文本名")} value={name}
+                                           handleInputChange={(value) => setName(value)}/>
+                            </div>]}
+                        confirm_enter={dirnew}
+    />)
 }
