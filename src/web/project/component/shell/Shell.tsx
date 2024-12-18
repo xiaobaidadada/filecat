@@ -28,9 +28,6 @@ export function Shell(props:ShellProps) {
     const handleDrag = useCallback(lodash.throttle( (event)=> {
         // @ts-ignore
         fitAddon.fit();
-        if (props.init) {
-            props.init(props.terminal.rows,props.terminal.cols);
-        }
         const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
         const top = window.innerHeight / size - 4;
         const userPos = (window.innerHeight - event.clientY) / size;
