@@ -18,7 +18,7 @@ const Studio = React.lazy(() => import("./file/component/studio/Studio"))
 const Net = React.lazy(() => import("./net/Net"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
-// const LogShell = React.lazy(() => import("./shell/LogShell"))
+const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 import {useRecoilState} from "recoil";
 import {$stroe} from "../util/store";
 import {routerConfig} from "../../../common/RouterConfig";
@@ -61,9 +61,9 @@ function Layout() {
     return (
         <div>
             {/*全局显示*/}
-            {/*<Suspense fallback={<div></div>}>*/}
-            {/*    <LogShell />*/}
-            {/*</Suspense>*/}
+            <Suspense fallback={<div></div>}>
+                <FileLog />
+            </Suspense>
             <Suspense fallback={<div></div>}>
                 <Prompt></Prompt>
             </Suspense>

@@ -17,7 +17,7 @@ import {
     FileCompressPojo,
     FileTypeEnum,
     FileVideoFormatTransPojo,
-    GetFilePojo
+    GetFilePojo, LogViewerPojo
 } from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Result, Sucess} from "../../other/Result";
@@ -165,6 +165,12 @@ export class FileController {
     async compress(data: WsData<FileCompressPojo>) {
         FileServiceImpl.FileCompress(data);
         return ""
+    }
+
+    @msg(CmdType.log_viewer)
+    async log_viewer(data: WsData<LogViewerPojo>) {
+        // 如果一行太长 现在会进行截断成多个分裂的行
+        return FileServiceImpl.log_viewer(data);
     }
 
     // 获取studio路径

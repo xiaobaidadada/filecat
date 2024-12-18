@@ -78,3 +78,21 @@ export enum base64UploadType {
     start, // 开始部分
     part, // 部分
 }
+
+
+export class LogViewerPojo {
+    path:string;
+    token: string;
+    position:number = 0; // 文件读取的偏移位置
+    line:number = 1000; // 读取一千行
+    once_max_size:number = 1024 * 60; // 一次读取最大的字节数 60 KB
+
+    back:boolean; // 往回查找
+
+    // 返回用的
+    context:string;
+    context_list:string[] = []; // 多个数组
+    context_start_position_list:number[] = []; // 多个数组 对应的开始位置
+    context_position_list:number[] = []; // 多个数组 对应的结束位置
+    max_size:number; // 当前文件的最大字节数
+}
