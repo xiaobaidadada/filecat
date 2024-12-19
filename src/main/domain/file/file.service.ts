@@ -141,10 +141,11 @@ class FileService extends FileCompress {
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         // if (!file) {
         //     // 目录
-        //     if (!fs.existsSync(sysPath)) {
-        //         // 目录不存在，创建目录
-        //         fs.mkdirSync(sysPath, {recursive: true});
-        //     }
+            if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
+                // 目录不存在，创建目录
+                fs.mkdirSync(sysPath, {recursive: true});
+                return;
+            }
         //     return;
         // }
         req['fileDir'] = path.dirname(sysPath);

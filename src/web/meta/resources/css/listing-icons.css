@@ -207,6 +207,11 @@
 .file-icons [aria-label$=".excalidraw"] i
 { color: var(--icon-violet) }
 
+.file-icons [aria-label$=".md"] i::before
+{
+    content: url('../img/MdiLanguageMarkdownOutline.svg');
+}
+
 /* Overrides */
 
 .file-icons [data-dir=true] i { color: var(--icon-blue) }
@@ -214,7 +219,3 @@
 .file-icons [aria-selected=true] i { color: var(--item-selected) }
 
 
-.file-icons [aria-label$=".md"] i::before
-{
-    content: url('../img/MdiLanguageMarkdownOutline.svg');
-}
