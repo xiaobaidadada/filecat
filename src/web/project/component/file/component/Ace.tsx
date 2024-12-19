@@ -20,7 +20,7 @@ import {editor_data} from "../../../util/store.util";
 
 
 
-export default function Ace(props:{name: string,on_change?:()=>void,init?:(editor:AceItem.Editor)=>void,options?: Partial<AceItem.EditorOptions>}) {
+export default function Ace(props:{name: string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>}) {
     const editorRef = useRef(null);
 
     useEffect(() => {
@@ -50,10 +50,10 @@ export default function Ace(props:{name: string,on_change?:()=>void,init?:(edito
             }
         });
         editorRef.current = editor;
-        if (props.init) {
-            props.init(editor);
-        }
+        editor_data.set_editor_temp(editor);
+
         return () => {
+            editor_data.set_editor_temp(null);
             editor.destroy();
         };
     }, []);
