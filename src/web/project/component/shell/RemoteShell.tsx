@@ -72,7 +72,6 @@ export function RemoteShell(props) {
                 })
             }
         })();
-        setShellShow({show: false,path: ''})
     }
     useEffect(() => {
         return ()=> {
@@ -81,6 +80,7 @@ export function RemoteShell(props) {
     }, [])
     useEffect(() => {
         if (!shellShow.show) {
+            close();
             return
         }
         if (terminalState) {
@@ -95,11 +95,6 @@ export function RemoteShell(props) {
         initTerminal();
         setShellShowInit(true);
     }, [shellShow])
-    useEffect(() => {
-        return ()=> {
-            close();
-        }
-    }, []);
     const init = (rows:number,cols:number)=>{
         terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
         const data = new WsData(CmdType.remote_shell_open);

@@ -643,7 +643,7 @@ class FileService extends FileCompress {
         // 文件当前的最大大小
         const fileSize = stats.size;
         pojo.max_size = fileSize;
-        if ((pojo.position <= 0 && pojo.back) || pojo.position >= fileSize) {
+        if ((pojo.position <= 0 && pojo.back) || (!pojo.back && pojo.position >= fileSize)) {
             pojo.context = '';
             return pojo;
         }
