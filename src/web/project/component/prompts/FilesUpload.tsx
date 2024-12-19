@@ -31,7 +31,7 @@ export function FilesUpload() {
                 let value: any = newList[index];
                 try {
                     // console.log(`${getRouterAfter('file',location.pathname)}${value.fullPath}`)
-                    const rsp = await fileHttp.put(`${getRouterAfter('file',location.pathname)}${value.fullPath}`, value, (progressEvent) => {
+                    const rsp = await fileHttp.put(`${getRouterAfter('file',location.pathname)}${value.fullPath}?dir=${value.isDir?1:0}`, value, (progressEvent) => {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                         setNowProgress({
                             name: value.name,

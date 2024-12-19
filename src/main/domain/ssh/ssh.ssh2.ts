@@ -177,7 +177,7 @@ export class SshSsh2 extends LifecycleRecordService {
                 if (err) {
                     console.error('Error creating folder:', err);
                 } else {
-                    console.log('Folder created successfully');
+                    console.log('ssh Folder created successfully',req.dir);
                 }
                 resolve(true);
             });
