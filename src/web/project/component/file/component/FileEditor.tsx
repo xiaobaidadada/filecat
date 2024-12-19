@@ -14,7 +14,6 @@ import Ace from "./Ace";
 export default function FileEditor() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [have_update,set_have_update] = useState(false);
-    const [editor,set_editor] = useState(undefined);
 
     function handleEditorChange() {
         if (!have_update) {
@@ -27,7 +26,7 @@ export default function FileEditor() {
     }
     async function save() {
         if (editorSetting.save && have_update) {
-            await editorSetting.save(editor.getValue() );
+            await editorSetting.save(editor_data.get_deitor_value() );
             editor_data.set_value_temp('');
             // NotySucess("保存成功")
             set_have_update(false);
@@ -43,6 +42,11 @@ export default function FileEditor() {
         }
     };
     useEffect(() => {
+        return () => {
+            set_have_update(false);
+        }
+    }, [editorSetting]);
+    useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
 
         return () => {
@@ -56,7 +60,7 @@ export default function FileEditor() {
             {editorSetting.menu_list && editorSetting.menu_list}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
         </Header>
-        <Ace name={editorSetting.fileName}  on_change={handleEditorChange} init={(v)=>set_editor(v)}/>
+        <Ace name={editorSetting.fileName}  on_change={handleEditorChange} />
     </div>;
     return editorSetting.open && div
 }

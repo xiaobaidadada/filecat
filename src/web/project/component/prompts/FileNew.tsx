@@ -55,6 +55,9 @@ export function FileNew(props) {
                             <div className="card-content">
                                 <InputText placeholderOut={t("输入文件名")} value={name}
                                            handleInputChange={(value) => setName(value)}/>
+                                <Select value={format} onChange={(value:FileCompressType)=>{
+                                    setFormat(value);
+                                }} options={select_item}/>
                             </div>]}
                         confirm_enter={dirnew}
     />)

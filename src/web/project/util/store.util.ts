@@ -11,6 +11,7 @@ import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../common/ValueUtil";
+import ace, {Ace as AceItem, version as ace_version} from "ace-builds";
 
 async function get_file_context(path,is_sys_path) {
     if(is_sys_path) {
@@ -120,9 +121,21 @@ export const user_click_file = () => {
 export class editor_data {
 
     static cache_str: string = "";
+    static editor:AceItem.Editor|null = null;
 
     public static set_value_temp(v: string) {
         editor_data.cache_str = v;
+    }
+
+    public static set_editor_temp(v:AceItem.Editor |null) {
+        editor_data.editor = v;
+    }
+
+    public static get_deitor_value() {
+        if (!editor_data.editor) {
+             throw "不存在编辑器";
+        }
+        return editor_data.editor.getValue();
     }
 
     public static get_value_temp() {
