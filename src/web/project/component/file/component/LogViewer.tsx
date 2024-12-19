@@ -10,7 +10,6 @@ import {Shell} from "../../shell/Shell";
 import {ShellInitPojo} from "../../../../../common/req/ssh.pojo";
 import Header from "../../../../meta/component/Header";
 import {ActionButton} from "../../../../meta/component/Button";
-import {SearchAddon} from '@xterm/addon-search';
 import {FileCompressPojo, LogViewerPojo} from "../../../../../common/file.pojo";
 import {getRouterAfter} from "../../../util/WebPath";
 import {NotyWaring} from "../../../util/noty";
@@ -141,8 +140,13 @@ export default function LogViewer(props) {
             req = pojo;
             // console.log(req)
             insert_v2(pojo.context_list,pojo.context_position_list,pojo.context_start_position_list,req.back);
-            if(req.back) {
-                set_progress(Math.floor(100 * parseInt(shellRef.current.children[shellRef.current.children.length - req.context_list.length -1].getAttribute('position')) / req.max_size))
+            if(req.back && dom_children_list.length > 0) {
+                // debugger
+                if (req.context_list.length > dom_children_list.length) {
+                    set_progress(Math.floor(100 * parseInt(dom_children_list[req.context_list.length - dom_children_list.length ].getAttribute('position')) / req.max_size))
+                } else {
+                    set_progress(Math.floor(100 * parseInt(dom_children_list[dom_children_list.length - req.context_list.length ].getAttribute('position')) / req.max_size))
+                }
             } else {
                 set_progress(Math.floor(100 * (req.context_position_list[req.context_position_list.length-1] ??0) / req.max_size))
             }
@@ -265,17 +269,29 @@ export default function LogViewer(props) {
         return;
     }
     const go_to_progress = async ()=>{
-        for (const item of dom_children_list) {
-            shellRef.current.removeChild(item);
-        }
-        dom_children_list = [];
+
         req.line = history_max_line;
         req.context = "";
         req.context_list = [];
         req.context_position_list = [];
         req.context_start_position_list = [];
-        req.back = false;
-        req.position = Math.floor(req.max_size * (parseInt(go_progress) / 100));
+        let v = 0;
+        try {
+            v= parseInt(go_progress);
+            if (v >100) {
+                throw "超过最大范围";
+            }
+            for (const item of dom_children_list) {
+                shellRef.current.removeChild(item);
+            }
+            dom_children_list = [];
+        } catch (e) {
+            NotyWaring(e);
+            return;
+        }
+        req.back = v === 100 ;
+        req.position = Math.floor(req.max_size * (v / 100));
+        // console.log(req)
         await send();
     }
     return <div id={'editor-container'}>
