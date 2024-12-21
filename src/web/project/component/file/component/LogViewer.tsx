@@ -1,18 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Terminal} from '@xterm/xterm';
 
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {ws} from "../../../util/ws";
-import {SysPojo} from "../../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
-import {Shell} from "../../shell/Shell";
-import {ShellInitPojo} from "../../../../../common/req/ssh.pojo";
 import Header from "../../../../meta/component/Header";
 import {ActionButton} from "../../../../meta/component/Button";
-import {FileCompressPojo, LogViewerPojo} from "../../../../../common/file.pojo";
+import {LogViewerPojo} from "../../../../../common/file.pojo";
 import {getRouterAfter} from "../../../util/WebPath";
-import {NotyWaring} from "../../../util/noty";
+import {NotyFail, NotyInfo, NotyWaring} from "../../../util/noty";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {deleteList} from "../../../../../common/ListUtil";
@@ -60,30 +56,35 @@ import {deleteList} from "../../../../../common/ListUtil";
 const history_max_line = 300; // 最多创建多少个dom对象
 
 
-// todo dom元素铺满的时候 走dom的值覆盖 而不是插入新的dom对象
-
-// let insert_num = 0; // 插入次数
+let open_watch = false;
 
 let last_position = 0;
 
-let alert = false;
+let top_alert = true;
 var req :LogViewerPojo;
-
+/**
+ *
+ * 1. 如果整个视图只用一个div 每次更新都会完全刷新dom的全部内容 效果会不好
+ * 2. 如果按固定大小输出 而不管行数 每次更新内容 最后一行 大概率会断行
+ * 3. 对于fs.watch 而言 我们可以相信是按行数输出的 所以可以按大小输出
+ */
 var dom_children_list = [];
 
 export default function LogViewer(props) {
     const [shellShow, setShellShow] = useRecoilState($stroe.log_viewer);
     const shellRef = useRef(null);
     const [progress,set_progress ] = useState(0);
-    const [go_progress,set_go_progress ] = useState(0);
+    const [go_progress,set_go_progress ] = useState(100);
+    const [tip,set_tip ] = useState(false);
     const { t } = useTranslation();
 
     const insert_dom = (data,position:number,start_postion:number,back = false,firstChild?:any)=> {
         // insert_num++;
-        const update = shellRef.current.scrollTop === shellRef.current.scrollHeight
+        // const update = shellRef.current.scrollTop === shellRef.current.scrollHeight
         const newDiv = document.createElement('div');
         newDiv.textContent = data;
-        newDiv.style.whiteSpace = 'break-word';
+        newDiv.style.whiteSpace = 'pre-wrap';  // 或者 'pre' (不会自动换行) \r\n 在最后面不会有额外换行，在前面有换行
+        // newDiv.style.whiteSpace = 'break-word';
         newDiv.style.overflowWrap = 'break-word';
         newDiv.setAttribute('position',`${position}`);
         newDiv.setAttribute('start_position',`${start_postion}`);
@@ -94,8 +95,8 @@ export default function LogViewer(props) {
             shellRef.current.appendChild(newDiv);
             dom_children_list.push(newDiv);
         }
-        if (update)
-        shellRef.current.scrollTop = shellRef.current.scrollHeight;
+        // if (update)
+        // shellRef.current.scrollTop = shellRef.current.scrollHeight;
         return newDiv;
     }
 
@@ -108,14 +109,17 @@ export default function LogViewer(props) {
     const insert_v2 = (data:string|string[],position_list:number[],start_position_list:number[],back:boolean = false) => {
         if(!data)return;
         const list = Array.isArray(data)?data:data.split("\n");
+        debugger
         if (!back) {
             // 正向插入
             for (let i=0; i < list.length; i++) {
                 insert_dom(list[i],position_list[i],start_position_list[i]);
             }
             if (dom_children_list.length > history_max_line) {
-                for (let i = 0; i < dom_children_list.length-history_max_line ; i++) {
-                    delete_dom(dom_children_list[i]);
+                let max = dom_children_list.length - history_max_line;
+                while (max >0) {
+                    delete_dom(dom_children_list[0]);
+                    max --;
                 }
             }
         } else {
@@ -125,8 +129,10 @@ export default function LogViewer(props) {
                 last_div = insert_dom(list[i],position_list[i] ,start_position_list[i],true,i  === 0?shellRef.current.firstChild :last_div  );
             }
             if (dom_children_list.length > history_max_line) {
-                for (let i = dom_children_list.length-1; i >= history_max_line ; i--) {
-                    delete_dom(dom_children_list[i]);
+                let max = dom_children_list.length-1;
+                while (max >=history_max_line) {
+                    delete_dom(dom_children_list[dom_children_list.length-1]);
+                    max--;
                 }
             }
         }
@@ -139,43 +145,83 @@ export default function LogViewer(props) {
             const pojo = data.context as LogViewerPojo;
             req = pojo;
             // console.log(req)
+            // return
             insert_v2(pojo.context_list,pojo.context_position_list,pojo.context_start_position_list,req.back);
-            if(req.back && dom_children_list.length > 0) {
-                // debugger
-                if (req.context_list.length > dom_children_list.length) {
-                    set_progress(Math.floor(100 * parseInt(dom_children_list[req.context_list.length - dom_children_list.length ].getAttribute('position')) / req.max_size))
+            if (req.context_list.length >0) {
+                if(req.back && dom_children_list.length > 0) {
+                    if (req.context_list.length > dom_children_list.length) {
+                        set_progress(Math.floor(100 * parseInt(dom_children_list[req.context_list.length - dom_children_list.length ].getAttribute('position')) / req.max_size))
+                    } else {
+                        set_progress(Math.floor(100 * parseInt(dom_children_list[dom_children_list.length - req.context_list.length ].getAttribute('position')) / req.max_size))
+                    }
+                    top_alert = false;
                 } else {
-                    set_progress(Math.floor(100 * parseInt(dom_children_list[dom_children_list.length - req.context_list.length ].getAttribute('position')) / req.max_size))
+                    set_progress(Math.floor(100 * (req.context_position_list[req.context_position_list.length-1] ??0) / req.max_size))
                 }
-            } else {
-                set_progress(Math.floor(100 * (req.context_position_list[req.context_position_list.length-1] ??0) / req.max_size))
+
             }
+            if (shellRef.current.clientHeight  === shellRef.current.scrollHeight) {
+                watch(0);
+            }
+
         }
+    }
+    const watch = (position)=>{
+        if(open_watch)return;
+        open_watch = true;
+        set_progress(100);
+        ws.addMsg(CmdType.log_viewer_watch,(wsData: WsData<LogViewerPojo>)=>{
+            const pojo = wsData.context as LogViewerPojo;
+            if(!pojo) {
+                return;
+            }
+            req = pojo;
+            insert_v2(pojo.context_list,pojo.context_position_list,pojo.context_start_position_list,false);
+            shellRef.current.scrollTop = shellRef.current.scrollHeight;
+        } );
+        req.context = '';
+        req.context_list = [];
+        req.context_position_list = [];
+        req.context_start_position_list = [];
+        req.position = position;
+        ws.sendData(CmdType.log_viewer_watch, req) ;
+        set_tip(true);
+    }
+    const cancel_watch = ()=>{
+        if (!open_watch)return;
+        open_watch = false;
+        ws.unConnect();
+        set_tip(false)
+        // console.log('取消实时监听')
     }
     const initTerminal = async () => {
 
         // 监听滚动事件
         const handleScroll = async () => {
-            // if (insert_num > 0) {
-            //     console.log(insert_num)
-            //     insert_num --;
-            //     // return;
-            // }
             const element = shellRef.current;
             if (element) {
+
+                if (last_position > element.scrollTop) {
+                    cancel_watch(); // 往上滑就取消实时监听
+                }
                 // 检测是否滚动到底部
-                if (last_position < element.scrollTop  && dom_children_list.length > 0&& element.scrollTop + element.clientHeight + 500  >= element.scrollHeight) {
+                if (open_watch) {
+                    last_position = element.scrollTop;
+                    return;
+                } if (last_position < element.scrollTop  && dom_children_list.length > 0&& element.scrollTop + element.clientHeight + 500  >= element.scrollHeight) {
                     // console.log("滚动到达底部");
                     const position = parseInt(dom_children_list[dom_children_list.length -1].getAttribute('position'))
                     if (position >= req.max_size)  {
-                        if (!alert) {
-                            alert = true;
-                            NotyWaring('到达底部');
-                        }
+                        // if (!top_alert) {
+                        //     top_alert = true;
+                            watch(position);
+                        //     NotyInfo('到达底部开始实时监听');
+                        // }
                         // console.log(position,req.max_size)
-                        last_position = element.scrollTop;
+                        // last_position = element.scrollTop;
                         return;
                     }
+                    // console.log(11)
                     req.line = 20;
                     req.context = "";
                     req.context_list = [];
@@ -191,13 +237,14 @@ export default function LogViewer(props) {
                     // console.log("滚动到达顶部");
                     const position = parseInt(dom_children_list[0].getAttribute('start_position'));
                     if (position <= 0)  {
-                        if (!alert) {
-                            alert = true;
+                        if (!top_alert) {
+                            top_alert = true;
                             NotyWaring('到达顶部');
                         }
                         last_position = element.scrollTop;
                         return;
                     }
+
                     req.line = 10;
                     req.context = "";
                     req.context_list = [];
@@ -209,7 +256,6 @@ export default function LogViewer(props) {
                     // insert_v2("好",[parseInt(shellRef.current.children[0].getAttribute('position'))],true);
                 }
                 last_position = element.scrollTop;
-                alert = false;
             }
         };
         shellRef.current.addEventListener("scroll", handleScroll);
@@ -231,7 +277,9 @@ export default function LogViewer(props) {
         };
         shellRef.current.addEventListener("wheel", handleWheel, { passive: false });
 
-        set_go_progress(0)
+        // set_go_progress(0)
+        set_tip(false);
+        open_watch = false;
         last_position = 0;
         dom_children_list = [];
         req = new LogViewerPojo();
@@ -240,16 +288,19 @@ export default function LogViewer(props) {
         req.line = history_max_line;
         req.path = `${getRouterAfter('file', location.pathname)}${shellShow.fileName}`;
         req.token = localStorage.getItem("token");
-
+        // insert_v2(`12
+        // 2321888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+        // 312`,[0],[0],true);
         await send();
     }
 
 
-    const close = () => {
+    const close = async () => {
         if (shellRef.current) {
             // shellRef.current.removeEventListener("scroll", handleScroll);
             shellRef.current.remove();
         }
+        await ws.unConnect();
         dom_children_list = [];
     }
     useEffect(() => {
@@ -278,7 +329,8 @@ export default function LogViewer(props) {
         let v = 0;
         try {
             v= parseInt(go_progress);
-            if (v >100) {
+            if (v >100 || v <0) {
+                NotyFail('范围在0-100')
                 throw "超过最大范围";
             }
             for (const item of dom_children_list) {
@@ -289,16 +341,20 @@ export default function LogViewer(props) {
             NotyWaring(e);
             return;
         }
-        req.back = v === 100 ;
+        req.back = v >= 100 ;
         req.position = Math.floor(req.max_size * (v / 100));
-        // console.log(req)
+        // console.log(v,req.position)
         await send();
     }
     return <div id={'editor-container'}>
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={() => {
             setShellShow({show: false})
-        }}/>]}>
-            加载进度{progress}<InputTextIcon max_width={"10rem"} placeholder={t('跳转进度')} icon={"percent"} value={go_progress} handleInputChange={(v) => {
+        }}/>,
+            <title key={2}>{shellShow.fileName}<span>加载完成</span></title>,
+        ]}>
+            {tip && <span style={{color:'var(--icon-green)',whiteSpace:'pre'}}>正在实时监听   </span>}
+            <span>当前加载进度{progress}</span>
+            <InputTextIcon max_width={"10rem"} placeholder={t('跳转进度')} icon={"percent"} value={go_progress} handleInputChange={(v) => {
                 set_go_progress(v);
             }}/>
             <ActionButton icon={"play_arrow"} title={t("跳转进度")} onClick={go_to_progress}/>

@@ -174,13 +174,18 @@ export class SysProcessService {
         if (processWssMap.get(id)) {
             return;
         }
+        (data.wss as Wss).setClose(()=>{
+            this.processClose(data);
+        })
         processWssMap.set((data.wss as Wss).id, (data.wss as Wss))
         await this.openProcessPush((data.wss as Wss));
     }
 
 
     async processClose(data: WsData<any>) {
-        SystemUtil.killProcess(data.context.pid)
+        clearInterval(processJobInterval);
+        processJobInterval = null;
+        this.killSpwn();
     }
 
 }

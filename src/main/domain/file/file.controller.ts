@@ -173,6 +173,12 @@ export class FileController {
         return FileServiceImpl.log_viewer(data);
     }
 
+    @msg(CmdType.log_viewer_watch)
+    async log_viewer_watch(data: WsData<LogViewerPojo>) {
+        // 如果一行太长 现在会进行截断成多个分裂的行
+        return FileServiceImpl.log_viewer_watch(data);
+    }
+
     // 获取studio路径
     @Post("/studio/get/item")
     async studio_get_item(@Body() data: { path: string }, @Req() ctx) {

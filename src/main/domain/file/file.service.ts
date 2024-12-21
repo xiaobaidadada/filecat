@@ -31,6 +31,7 @@ const archiver = require('archiver');
 const mime = require('mime-types');
 import multer from 'multer';
 import {Request, Response} from "express";
+const chokidar = require('chokidar');
 
 class FileService extends FileCompress {
 
@@ -141,11 +142,11 @@ class FileService extends FileCompress {
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         // if (!file) {
         //     // 目录
-            if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
-                // 目录不存在，创建目录
-                fs.mkdirSync(sysPath, {recursive: true});
-                return;
-            }
+        if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
+            // 目录不存在，创建目录
+            fs.mkdirSync(sysPath, {recursive: true});
+            return;
+        }
         //     return;
         // }
         req['fileDir'] = path.dirname(sysPath);
@@ -524,49 +525,76 @@ class FileService extends FileCompress {
         return pojo;
     }
 
+    isFirstByte(byte) {
+        // 确保 byte 是一个有效的字节 (0 - 255)
+        if (byte === undefined || byte < 0 || byte > 255) {
+            throw 'Invalid byte';
+        }
+        // 1 字节: 0xxxxxxx (0x00 ~ 0x7F)  不需要校验
+        // 2 字节: 110xxxxx (0x80 ~ 0x7FF)
+        // 3 字节: 1110xxxx (0x800 ~ 0xFFFF)
+        // 4 字节: 11110xxx (0x10000 ~ 0x10FFFF)
+        // 使用掩码和位运算判断
+        return (byte & 0xE0) === 0xC0 || (byte & 0xF0) === 0xE0 || (byte & 0xF8) === 0xF0;
+    }
+
+
     go_forward_log( pojo : LogViewerPojo ,file_path) {
         // 开始查找
         let linesRead = 0; // 行数
         let haveReadSize = 0; // 已经读取的字节数
         const fd = fs.openSync(file_path, "r");
+        let max_count = 100;
         while (haveReadSize < pojo.once_max_size) {
-            // 创建一个 100 字节的缓冲区
-            const buffer = Buffer.alloc(1024);
+            if (max_count<=0) {
+                break;
+            }
+            max_count--;
+            // 创建一个 10 kb字节的缓冲区
+            const buffer = Buffer.alloc(10240);
             // 返回实际读取的字节数
-            const bytesRead = fs.readSync(fd, buffer,
-                    0, // 相对于当前的偏移位置
-                    buffer.length, // 读取的长度
-                    pojo.position // 当前位置
-                );
+            let bytesRead = fs.readSync(fd, buffer,
+                0, // 相对于当前的偏移位置
+                buffer.length, // 读取的长度
+                pojo.position // 当前位置
+            );
             // 遍历 buffer 中的每一个字节
             let done = false;
             let last_h = -1; // 上一个/n 未开始的也算 /n 都是不包括
-            for (let i = 0; i <= bytesRead; i++) {
+            for (let i = 0,ch_byte_i = bytesRead-1; i < bytesRead; i++) {
                 // 如果字节是换行符 '\n'（ASCII值为 10）
-                if (buffer[i] === 10 || i === bytesRead ) { // 换行或者 最后一个字符
+                if (buffer[i] === 10 || i === ch_byte_i ) { // 换行或者 最后一个字符
+                    let index = i;
+                    if(i === ch_byte_i && (buffer[i] & 0x80) !== 0) {
+                        // 最后一位 不是单字节字符 需要找到首字节
+                        for (let j = i; j > last_h; j--) {
+                            if (this.isFirstByte(buffer[j])) {
+                                index = j-1;
+                                break;
+                            }
+                        }
+                    }
                     linesRead++;
-                    // 总的来说 字符串要不包括\n 但是结束位置包括\n
-                    const end_offset = i === bytesRead?i+1:i;
-                    pojo.context_list.push(buffer.toString('utf8', last_h+1, end_offset)); // i 不包括 /n
-                    pojo.context_start_position_list.push(pojo.position + last_h + 1); // 开始位置
-                    pojo.context_position_list.push(pojo.position + end_offset); // 结束位置 是/n的位置
+                    // 以/n做字符串结尾，扫描到的/n 或者文件的最后一个字符
+                    const now_str_start = last_h+1;
+                    const next_str_start = index + 1;
+                    pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start)); // i 不包括 /n
+                    pojo.context_start_position_list.push(pojo.position + now_str_start); // 开始位置
+                    pojo.context_position_list.push(pojo.position + next_str_start); // 结束位置 是/n的位置
                     if (linesRead >= pojo.line) {
                         done = true;
                         break;
                     }
-                    last_h = i;
+                    last_h = index;
                 }
             }
 
-            if (done) {
+            if (done || bytesRead === 0) {
                 break;
             } else {
-                haveReadSize += bytesRead;
+                haveReadSize += last_h;
                 // 更新文件位置
-                pojo.position += bytesRead;
-            }
-            if (bytesRead === 0) {
-                break;
+                pojo.position += last_h +1; // 往前进一个字符
             }
         }
         // 关闭文件
@@ -579,13 +607,16 @@ class FileService extends FileCompress {
         let linesRead = 0; // 行数
         let haveReadSize = 0; // 已经读取的字节数
         const fd = fs.openSync(file_path, "r");
-        let buffer_len = 1024;
+        let buffer_len = 10240;
+        let max_count = 100;
         while (haveReadSize < pojo.once_max_size) {
+            if (max_count<=0) {
+                break;
+            }
+            max_count--;
             if (pojo.position < buffer_len) {
                 // buffer_len = Math.floor(pojo.position / 2);
                 buffer_len = pojo.position; // 全部读完
-            } else {
-                buffer_len = pojo.position - buffer_len;
             }
             let buffer = Buffer.alloc(buffer_len); // 缓冲区满足当前位置往前移动的距离
             pojo.position = pojo.position - buffer.length; // 位置前移
@@ -600,30 +631,38 @@ class FileService extends FileCompress {
             let done = false;
             let last_h = bytesRead; // 上一个 \n
             for (let i = bytesRead; i >= 0; i--) {
+                let index = i;
                 // 如果字节是换行符 '\n'（ASCII值为 10）
                 if (buffer[i] === 10 || i===0) {
+                    if(i === 0 && (buffer[i] & 0x80) !== 0) {
+                        // 找到首字节
+                        for (let j = 0; j < last_h; j++) {
+                            if (this.isFirstByte(buffer[j])) {
+                                index = j +1;
+                                break;
+                            }
+                        }
+                    }
                     linesRead++;
-                    const start_offset = i===0?i:i+1;
-                    pojo.context_list.push(buffer.toString('utf8', i===0?i:i+1, last_h));
-                    pojo.context_start_position_list.push(pojo.position + start_offset);
-                    pojo.context_position_list.push(pojo.position + last_h);
+                    const now_str_start = index ===0 && pojo.position ===0 ?0:index+1;
+                    const next_str_start = last_h + 1;
+                    pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start));
+                    pojo.context_start_position_list.push(pojo.position + now_str_start);
+                    pojo.context_position_list.push(pojo.position + next_str_start);
                     if (linesRead >= pojo.line) {
                         done = true;
                         break;
                     }
-                    last_h = i;
+                    last_h = index;
                 }
             }
 
-            if (done) {
+            if (done || bytesRead === 0 || (last_h<=0  && pojo.position ===0)) {
                 break;
             } else {
-                haveReadSize += bytesRead;
+                haveReadSize += (bytesRead-last_h);
                 // 更新文件位置
-                pojo.position -= bytesRead;
-            }
-            if (bytesRead === 0 || pojo.position <= 0) {
-                break;
+                pojo.position -= last_h -1;
             }
         }
         // 关闭文件
@@ -650,6 +689,90 @@ class FileService extends FileCompress {
         }
         if (pojo.back) return this.go_back_log(pojo,file_path);
         return  this.go_forward_log(pojo, file_path);
+    }
+
+    file_change_watcher_map = new Map();
+
+    log_viewer_watch(data: WsData<LogViewerPojo>) {
+        const pojo = data.context as LogViewerPojo;
+        if(this.file_change_watcher_map.has(pojo.token)) {
+            return;
+        }
+
+        const wss = data.wss as Wss;
+        pojo.context = "";
+        pojo.context_list = [];
+        pojo.context_position_list = [];
+        pojo.context_start_position_list = [];
+        const root_path = settingService.getFileRootPath(pojo.token);
+        const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+        // 使用 chokidar 监控文件变化
+        let watcher = chokidar.watch(file_path, {
+            persistent: true,  // 持续监听
+            usePolling: true, // 使用事件驱动模式（默认是）
+            // interval: 100,     // 轮询间隔（如果启用了轮询模式）
+        });
+        this.file_change_watcher_map.set(pojo.token,watcher);
+        wss.setClose(()=>{
+            watcher.close();
+            this.file_change_watcher_map.delete(pojo.token);
+        })
+        // 已读取的字节数
+        let bytesRead = pojo.max_size;
+        // 监听文件变化事件
+        watcher.on('change', (changedFilePath) => {
+            if (changedFilePath === file_path) {
+                // 获取当前文件的状态
+                fs.stat(file_path, (err, stats) => {
+                    if (err) {
+                        console.error('Failed to get file stats:', err);
+                        watcher.close();
+                        this.file_change_watcher_map.delete(pojo.token);
+                        return;
+                    }
+                    if (stats.size > bytesRead) {  // 文件变大
+                        // 文件变大，创建新的读取流
+                        const newStream = fs.createReadStream(file_path, { encoding: 'utf8', start: bytesRead });
+                        newStream.on('data', (chunk) => {
+                            const str = chunk.toString();
+                            let now_str_start = bytesRead;
+                            let next_str_start = bytesRead + chunk.length+1; // todo +1?
+                            let index = 0;
+                            for (let i =0 ;i <str.length; i++) {
+                                if(!/^\s$/.test(str[i]) ) {
+                                    // 不是空白字符
+                                    break;
+                                } else if (str[i] === '\n' && chunk.length-1 > i) {
+                                    index = i+1;
+                                    now_str_start = bytesRead + index;
+                                    next_str_start + index;
+                                    break;
+                                }
+                            }
+                            // send
+                            pojo.context_list.push(str.slice(index,chunk.length));
+                            pojo.context_start_position_list.push(now_str_start );
+                            pojo.context_position_list.push(next_str_start);
+                            pojo.max_size = bytesRead + chunk.length;
+                            const result = new WsData<SysPojo>(CmdType.log_viewer_watch);
+                            result.context = pojo;
+                            wss.sendData(result.encode());
+                            bytesRead += Buffer.byteLength(chunk, 'utf8'); // chunk 是字符串而不是字节流 所以要求实际长度一下
+
+                            // init
+                            pojo.context_list = [];
+                            pojo.context_position_list = [];
+                            pojo.context_start_position_list = [];
+                        });
+                    }
+                });
+            }
+        });
+        // 监听错误
+        watcher.on('error', (error) => {
+            watcher.close();
+            this.file_change_watcher_map.delete(pojo.token);
+        });
     }
 }
 

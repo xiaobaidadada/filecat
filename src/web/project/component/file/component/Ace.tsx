@@ -7,6 +7,7 @@ import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/mode-tsx";
 import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-sh";
+import "ace-builds/src-noconflict/mode-yaml";
 import "ace-builds/src-noconflict/theme-cloud9_day";
 ace.config.set("basePath", `https://cdn.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
 ace.config.set('modePath', `https://cdn.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
@@ -16,7 +17,7 @@ import modelist from "ace-builds/src-noconflict/ext-modelist";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
-
+import "ace-builds/src-noconflict/ext-language_tools";
 
 
 
@@ -31,13 +32,16 @@ export default function Ace(props:{name: string,on_change?:()=>void,options?: Pa
             theme: "ace/theme/cloud9_day",
             mode: modelist.getModeForPath(props.name ?? '').mode,
             wrap: false,
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true,
-            enableSnippets: true,
             highlightActiveLine:false, // 鼠标放在一行上的高亮
             fontSize:14,
             // fontFamily:"JetBrains Mono"
             ...props.options,
+        });
+        // 语言智能提醒需要 import "ace-builds/src-noconflict/ext-language_tools";
+        editor.setOptions({
+            enableBasicAutocompletion: true, // 语言的基本自动补全 需要按 table
+            enableSnippets: true, // 快速插入模板，会有提示 安装enter键入 fori这样的
+            enableLiveAutocompletion: true // 实时提醒
         });
         // 监听滚动事件
         editor.container.addEventListener("wheel", function (e) {
