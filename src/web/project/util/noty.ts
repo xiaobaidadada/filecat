@@ -41,3 +41,17 @@ export function NotyWaring(text) {
         layout: "topRight"
     }).show();
 }
+
+export function NotyInfo(text) {
+    if (Date.now() - now < 500) {
+        return ;
+    }
+    now = Date.now();
+    new Noty({
+        type: 'info',
+        text: text,
+        // timeout:false, // 需要点击才消失
+        timeout: 300, // 设置通知消失的时间（单位：毫秒）
+        layout: "topRight"
+    }).show();
+}

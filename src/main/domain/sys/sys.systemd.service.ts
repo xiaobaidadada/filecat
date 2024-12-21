@@ -186,6 +186,11 @@ export class SysSystemdService {
             return;
         }
         if (!jobInterval) {
+            (data.wss as Wss).setClose(()=>{
+                clearInterval(jobInterval);
+                jobInterval = null;
+                this.clear();
+            })
             jobInterval = setInterval(async () => {
                 if (processWssSet.size === 0) {
                     clearInterval(jobInterval);
