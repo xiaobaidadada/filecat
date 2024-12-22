@@ -142,11 +142,11 @@ class FileService extends FileCompress {
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         // if (!file) {
         //     // 目录
-        if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
-            // 目录不存在，创建目录
-            fs.mkdirSync(sysPath, {recursive: true});
-            return;
-        }
+            if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
+                // 目录不存在，创建目录
+                fs.mkdirSync(sysPath, {recursive: true});
+                return;
+            }
         //     return;
         // }
         req['fileDir'] = path.dirname(sysPath);
@@ -554,10 +554,10 @@ class FileService extends FileCompress {
             const buffer = Buffer.alloc(10240);
             // 返回实际读取的字节数
             let bytesRead = fs.readSync(fd, buffer,
-                0, // 相对于当前的偏移位置
-                buffer.length, // 读取的长度
-                pojo.position // 当前位置
-            );
+                    0, // 相对于当前的偏移位置
+                    buffer.length, // 读取的长度
+                    pojo.position // 当前位置
+                );
             // 遍历 buffer 中的每一个字节
             let done = false;
             let last_h = -1; // 上一个/n 未开始的也算 /n 都是不包括
