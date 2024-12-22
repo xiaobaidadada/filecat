@@ -55,7 +55,7 @@ import {deleteList} from "../../../../../common/ListUtil";
 
 const history_max_line = 300; // 最多创建多少个dom对象
 
-
+let open_watch_timer;
 let open_watch = false;
 
 let last_position = 0;
@@ -161,7 +161,7 @@ export default function LogViewer(props) {
 
             }
             if (shellRef.current.clientHeight  === shellRef.current.scrollHeight) {
-                watch(0);
+                watch(req.max_size);
             }
 
         }
@@ -170,6 +170,11 @@ export default function LogViewer(props) {
         if(open_watch)return;
         open_watch = true;
         set_progress(100);
+        if (open_watch_timer) {
+            clearTimeout(open_watch_timer);
+            open_watch_timer = null;
+            return;
+        }
         ws.addMsg(CmdType.log_viewer_watch,(wsData: WsData<LogViewerPojo>)=>{
             const pojo = wsData.context as LogViewerPojo;
             if(!pojo) {
@@ -190,8 +195,12 @@ export default function LogViewer(props) {
     const cancel_watch = ()=>{
         if (!open_watch)return;
         open_watch = false;
-        ws.unConnect();
-        set_tip(false)
+        open_watch_timer = setTimeout(()=>{
+            ws.unConnect();
+            set_tip(false)
+            open_watch_timer = null;
+        },5000)
+
         // console.log('取消实时监听')
     }
     const initTerminal = async () => {
@@ -279,6 +288,7 @@ export default function LogViewer(props) {
 
         // set_go_progress(0)
         set_tip(false);
+        open_watch_timer = null;
         open_watch = false;
         last_position = 0;
         dom_children_list = [];
@@ -346,6 +356,23 @@ export default function LogViewer(props) {
         // console.log(v,req.position)
         await send();
     }
+    const bottom = async ()=>{
+        if(open_watch)return;
+        req.line = history_max_line;
+        req.context = "";
+        req.context_list = [];
+        req.context_position_list = [];
+        req.context_start_position_list = [];
+        for (const item of dom_children_list) {
+            shellRef.current.removeChild(item);
+        }
+        dom_children_list = [];
+        req.back = true ;
+        req.position = req.max_size;
+        await send();
+        shellRef.current.scrollTop = shellRef.current.scrollHeight;
+        watch(req.max_size);
+    }
     return <div id={'editor-container'}>
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={() => {
             setShellShow({show: false})
@@ -358,6 +385,7 @@ export default function LogViewer(props) {
                 set_go_progress(v);
             }}/>
             <ActionButton icon={"play_arrow"} title={t("跳转进度")} onClick={go_to_progress}/>
+            <ActionButton icon={"text_rotate_vertical"} title={t("滑动到文件最底部，实时输出")} onClick={bottom}/>
         </Header>
         <div style={{height: `100%`}}>
             <div ref={shellRef} style={{
