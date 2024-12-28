@@ -123,7 +123,7 @@ export class FileController {
     // 切换路径
     @Post('/base_switch')
     async switchBasePath(@Body() data: { root_index: number }, @Req() ctx) {
-        const obj = Cache.getTokenMap().get(ctx.headers.authorization);
+        const obj = Cache.getValue(ctx.headers.authorization);
         if (obj) {
             obj["root_index"] = data.root_index;
         }
@@ -133,7 +133,7 @@ export class FileController {
     // 获取主根位置
     @Post('/base_switch/get')
     async switchGetBasePath(@Req() req: Request) {
-        const obj = Cache.getTokenMap().get(req.headers.authorization);
+        const obj = Cache.getValue(req.headers.authorization);
         let index;
         if (obj["root_index"] !== undefined) {
             index = obj["root_index"];
