@@ -214,7 +214,7 @@ export default function LogViewer(props) {
                     if (position >= req.max_size)  {
                         // if (!top_alert) {
                         //     top_alert = true;
-                        watch(position);
+                            watch(position);
                         //     NotyInfo('到达底部开始实时监听');
                         // }
                         // console.log(position,req.max_size)

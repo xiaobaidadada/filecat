@@ -1,57 +1,79 @@
-
-
 export class Cache {
 
-    static token :Map<string,any> = new Map();
-    static timerMap = new Map();
-    static ignore_update = false;
-    static ignore_check= false;
+    private static time_len = 1000 * 60 * 60;
 
-    public static  setToken (token:string):void {
-        this.token.set(token,{});
-        if (!this.ignore_check) {
-            this.timerMap.set(token,setTimeout(()=>{
-                this.token.delete(token);
-                this.timerMap.delete(token);
-            },1000*60*60))
-        }
+    private static valueMap: Map<string, any> = new Map();
+    private static timeLenMap: Map<string, number> = new Map();
+    private static stampMap: Map<string, number> = new Map();
 
-    }
-    public static updateTimer(token:string) {
-        if (this.ignore_update) {
-            return;
+    /**
+     * 设置缓存
+     * @param key
+     * @param value
+     * @param time_len_second
+     */
+    public static setValue(key: string, value: any, time_len_second?: number): void {
+        this.valueMap.set(key, value);
+        if (time_len_second !== undefined)
+            this.timeLenMap.set(key, time_len_second * 1000);
+        else {
+            this.timeLenMap.set(key, this.time_len);
         }
-        const timer = this.timerMap.get(token);
-        if (timer) {
-            clearTimeout(timer);
-            this.timerMap.set(token,setTimeout(()=>{
-                this.token.delete(token);
-                this.timerMap.delete(token);
-            },1000*60*60))
-        }
-    }
-    public static getTokenMap() {
-        return this.token;
-    }
-    public static getTokenTimerMap() {
-        return this.timerMap;
-    }
-    public static setIgnore(mode:boolean) {
-        this.ignore_update = mode;
-    }
-    public static setIgnoreCheck(mode:boolean) {
-        this.ignore_check = mode;
+        this.stampMap.set(key, Date.now());
     }
 
-    public static  clearTokenTimerMap() {
-        this.timerMap.forEach(v=>clearTimeout(v));;
-        this.timerMap.clear();
+    /**
+     * 更新变量的过期时间
+     * @param key
+     */
+    public static updateStamp(key: string): void {
+        this.stampMap.set(key, Date.now());
     }
-    public static  clear() {
-        this.timerMap.clear();
-        this.token.clear();
+
+    /**
+     * 过期一个值 并判断是否过期
+     * @param key
+     */
+    public static getValue(key: string): any {
+        if (this.time_len === -1) {
+            // 没有过期时间
+
+            return this.valueMap.get(key);
+        }
+        // 有过期时间
+        if (this.timeLenMap.get(key) > Date.now() - this.stampMap.get(key)) {
+            return this.valueMap.get(key);
+        }
+        // 过期了
+        this.stampMap.delete(key);
+        this.timeLenMap.delete(key);
+        this.valueMap.delete(key);
+        return null;
     }
+
+    /**
+     * 设置默认过期时间长度
+     * @param len 毫秒
+     */
+    public static set_default_time_len(len: number): void {
+        this.time_len = len;
+    }
+
+    /**
+     * 清理所有缓存
+     */
+    public static clear() {
+        this.valueMap.clear();
+        this.timeLenMap.clear();
+        this.stampMap.clear();
+    }
+
+    /**
+     * 检查token是否过期
+     * @param token
+     */
     public static check(token) {
-        return this.token.has(token);
+        const v = this.getValue(token);
+        return v !== null && v !== undefined;
     }
 }

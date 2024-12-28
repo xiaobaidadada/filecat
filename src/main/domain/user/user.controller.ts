@@ -19,20 +19,23 @@ export class UserController {
         if (Env.username) {
             if (user.username === `${Env.username}` && user.password === `${Env.password}`) {
                 const uuid = generateSaltyUUID(username);
-                Cache.setToken(`${uuid}`)
+                // Cache.setToken(`${uuid}`)
+                Cache.setValue(`${uuid}`,{});
                 return Sucess(uuid)
             }
         } else if (username) {
             const password = DataUtil.get("password");
             if (user.username === `${username}` && user.password === `${password}`) {
                 const uuid = generateSaltyUUID(username);
-                Cache.setToken(`${uuid}`)
+                // Cache.setToken(`${uuid}`)
+                Cache.setValue(`${uuid}`,{});
                 return Sucess(uuid)
             }
         } else {
             if (user.username === "admin" && user.password === "admin") {
                 const uuid = generateSaltyUUID(username);
-                Cache.setToken(`${uuid}`)
+                // Cache.setToken(`${uuid}`)
+                Cache.setValue(`${uuid}`,{});
                 return Sucess(uuid)
             }
         }

@@ -130,7 +130,7 @@ export class SettingService {
 
     public async check(token: string) {
         if (Cache.check(token)) {
-            Cache.updateTimer(token);
+            Cache.updateStamp(token);
             return true;
         }
         if (this.getSelfAuthOpen()) {
@@ -172,19 +172,14 @@ export class SettingService {
 
     saveToken(mode: TokenTimeMode, length: number) {
         if (mode === TokenTimeMode.close) {
-            Cache.setIgnore(false);
-            Cache.setIgnoreCheck(false);
+            // 使用默认长度模式
+            Cache.set_default_time_len(60*60 * 1000);
         } else if (mode === TokenTimeMode.length) {
-            Cache.setIgnore(true);
-            Cache.clearTokenTimerMap();
-            Cache.getTokenMap().forEach(v => Cache.getTokenTimerMap().set(v, setTimeout(() => {
-                Cache.getTokenMap().delete(v);
-                Cache.getTokenTimerMap().delete(v);
-            }, 1000 * length)))
+            // 使用指定长度模式
+            Cache.set_default_time_len(length * 1000);
         } else if (mode === TokenTimeMode.forver) {
-            Cache.clearTokenTimerMap();
-            Cache.setIgnore(true);
-            Cache.setIgnoreCheck(true);
+            // 永不过期
+            Cache.set_default_time_len(-1);
         }
         DataUtil.set(token_setting, {mode, length});
     }
@@ -220,13 +215,13 @@ export class SettingService {
         }
         items.shift();
         DataUtil.set(files_pre_mulu_key, items);
-        const obj = Cache.getTokenMap().get(token);
+        const obj = Cache.getValue(token);
         obj["root_index"] = 0; // 回到默认
         this.update_files_setting = null;
     }
 
     public getFileRootPath(token: string) {
-        const obj = Cache.getTokenMap().get(token);
+        const obj = Cache.getValue(token);
         const index = obj ? obj["root_index"] ?? null : null;
         const list = this.getFilesSetting();
         if (index !== null) {
