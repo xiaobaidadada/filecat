@@ -40,7 +40,6 @@ export default function Studio(props) {
     const [nav_width, set_nav_width] = useState(16);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const {t} = useTranslation();
-    const [editor,set_editor] = useState(undefined);
 
     function shellClick() {
         if (file_shell_hidden !== undefined) {
@@ -128,7 +127,7 @@ export default function Studio(props) {
             return;
         }
         const data: saveTxtReq = {
-            context: editor.getValue()
+            context: editor_data.get_editor_value()
         }
         const rsq = await fileHttp.post(`save/${edit_file_path}`, data)
         if (rsq.code === 0) {
@@ -246,7 +245,7 @@ export default function Studio(props) {
                 width: `${nav_width - 1}em`,
             }}
                  onContextMenu={(event) => {
-                         handleContextMenu(event, edit_filename.name, getRouterAfter('file', studio.folder_path), true, get_item)
+                     handleContextMenu(event, edit_filename.name, getRouterAfter('file', studio.folder_path), true, get_item)
                  }}
             >
                 <FolderTree pre_path={pre_path} list={list} click={click} handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
@@ -259,7 +258,7 @@ export default function Studio(props) {
                 />
             }
             <div className={"studio-editor"} key={edit_filename.path}>
-                {edit_filename.name && <Ace name={edit_filename.name}  on_change={change} init={(v)=>set_editor(v)}/>}
+                {edit_filename.name && <Ace name={edit_filename.name}  on_change={change} />}
             </div>
         </div>
     </div>

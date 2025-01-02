@@ -131,7 +131,7 @@ export class editor_data {
         editor_data.editor = v;
     }
 
-    public static get_deitor_value() {
+    public static get_editor_value() {
         if (!editor_data.editor) {
              throw "不存在编辑器";
         }

@@ -26,7 +26,7 @@ export default function FileEditor() {
     }
     async function save() {
         if (editorSetting.save && have_update) {
-            await editorSetting.save(editor_data.get_deitor_value() );
+            await editorSetting.save(editor_data.get_editor_value() );
             editor_data.set_value_temp('');
             // NotySucess("保存成功")
             set_have_update(false);
