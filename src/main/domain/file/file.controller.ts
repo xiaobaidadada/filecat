@@ -27,6 +27,7 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {settingService} from "../setting/setting.service";
 import {Request, Response} from 'express';
+import {search_file, search_file_cancel} from "./file.search";
 
 
 @JsonController("/file")
@@ -177,6 +178,18 @@ export class FileController {
     async log_viewer_watch(data: WsData<LogViewerPojo>) {
         // 如果一行太长 现在会进行截断成多个分裂的行
         return FileServiceImpl.log_viewer_watch(data);
+    }
+
+    @msg(CmdType.search_file)
+    async search_file(data: WsData<LogViewerPojo>) {
+        search_file(data);
+        return "";
+    }
+
+    @msg(CmdType.search_file_cancel)
+    async search_file_cancel(data: WsData<LogViewerPojo>) {
+        search_file_cancel(data);
+        return "";
     }
 
     // 获取studio路径

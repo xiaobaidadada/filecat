@@ -245,7 +245,7 @@ export default function Studio(props) {
                 width: `${nav_width - 1}em`,
             }}
                  onContextMenu={(event) => {
-                     handleContextMenu(event, edit_filename.name, getRouterAfter('file', studio.folder_path), true, get_item)
+                         handleContextMenu(event, edit_filename.name, getRouterAfter('file', studio.folder_path), true, get_item)
                  }}
             >
                 <FolderTree pre_path={pre_path} list={list} click={click} handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>

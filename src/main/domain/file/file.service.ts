@@ -599,7 +599,55 @@ class FileService extends FileCompress {
         }
         // 关闭文件
         fs.closeSync(fd);
+        // if(pojo.find_back_enter_index && pojo.context_list.length >0) {
+        //     for (let i=0 ;i<pojo.context_list.length;i++) {
+        //         const regex = new RegExp(pojo.query_text, 'g');
+        //         pojo.context_list[i] = pojo.context_list[i].replace(regex, `<span style="color: blue;">${pojo.query_text}</span>`);
+        //     }
+        // }
         return pojo;
+    }
+
+    /**
+     * 往后搜索找到最近的换行符
+     * @param pojo
+     * @param file_path
+     * @param max_len 往后最长的距离
+     */
+    find_back_enter_index(pojo : LogViewerPojo ,file_path,max_len = 10240) {
+        const fd = fs.openSync(file_path, "r");
+        let buffer_len = max_len;
+        if (pojo.position < buffer_len) {
+            buffer_len = pojo.position; // 全部读完
+        }
+        let buffer = Buffer.alloc(buffer_len); // 缓冲区满足当前位置往前移动的距离
+        const position = pojo.position - buffer.length; // 位置前移
+        // 返回实际读取的字节数
+        const bytesRead = fs.readSync(fd, buffer,
+            0, // 相对于当前的偏移位置
+            buffer.length, // 读取的长度
+            position // 当前位置 往前推进了一点
+        );
+        for (let i = bytesRead; i >= 0; i--) {
+            let index = i;
+            // 如果字节是换行符 '\n'（ASCII值为 10）
+            if (buffer[i] === 10 || i===0) {
+                if((buffer[i] & 0x80) !== 0) {
+                    // 找到首字节
+                    for (let j = 0; j < bytesRead; j++) {
+                        if (this.isFirstByte(buffer[j])) {
+                            index = j +1;
+                            break;
+                        }
+                    }
+                }
+                pojo.position = position + index +2;
+                fs.closeSync(fd);
+                return;
+            }
+        }
+        fs.closeSync(fd);
+        pojo.position = position;
     }
 
     go_back_log( pojo : LogViewerPojo ,file_path ) {
@@ -634,7 +682,7 @@ class FileService extends FileCompress {
                 let index = i;
                 // 如果字节是换行符 '\n'（ASCII值为 10）
                 if (buffer[i] === 10 || i===0) {
-                    if(i === 0 && (buffer[i] & 0x80) !== 0) {
+                    if(i === 0 && pojo.position !==0 && (buffer[i] & 0x80) !== 0) {
                         // 找到首字节
                         for (let j = 0; j < last_h; j++) {
                             if (this.isFirstByte(buffer[j])) {
@@ -688,6 +736,7 @@ class FileService extends FileCompress {
             return pojo;
         }
         if (pojo.back) return this.go_back_log(pojo,file_path);
+        if(pojo.find_back_enter_index)this.find_back_enter_index(pojo,file_path,100);
         return  this.go_forward_log(pojo, file_path);
     }
 
