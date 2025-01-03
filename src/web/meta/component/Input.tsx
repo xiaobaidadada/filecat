@@ -10,8 +10,10 @@ export function InputTextIcon(props: {
     max_width?:string,
     handleEnterPress?:Function
 }) {
+    const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
     useEffect(() => {
+        inputRef.current.value = props.value;
         setValue(props.value || "");
     }, [props.value]);
     return <div id="search" className="" style={{"maxWidth":props.max_width}}>
@@ -19,6 +21,7 @@ export function InputTextIcon(props: {
             <i className="material-icons">{props.icon}</i>
             <input
                 type="text"
+                ref={inputRef}  // 使用 ref 关联到 input 元素
                 placeholder={value || props.placeholder}
                 onChange={(event) => {
                     if (props.handleInputChange) {

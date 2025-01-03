@@ -91,6 +91,10 @@ export enum CmdType {
     file_compress_progress,
     log_viewer,
     log_viewer_watch,
+    search_file,
+    search_file_progress,
+    search_file_index, // 结果输出
+    search_file_cancel ,
 
     // rtsp
     rtsp_get,
