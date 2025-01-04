@@ -13,6 +13,7 @@ import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {deleteList} from "../../../../../common/ListUtil";
 import {search_file_cancel} from "../../../../../main/domain/file/file.search";
+import {LongText} from "../../../../meta/component/Card";
 // const insert_data = (data:string)=> {
 //     if(!data)return;
 //     insert_done = false;
@@ -466,11 +467,8 @@ export default function LogViewer(props) {
                         setShellShow({show: false})
                     }}/>,
                     <div key={2} style={{
-                        whiteSpace: 'nowrap',
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden',
                         width: '4rem'
-                    }}>{shellShow.fileName}</div>,
+                    }}><LongText context={shellShow.fileName}/></div>,
                     <React.Fragment key={3}> <InputTextIcon handleEnterPress={search_file} placeholder={t("回车搜索整个文件")}
                                                             icon={"search"} value={search} handleInputChange={(v) => {
                         set_search(v)
