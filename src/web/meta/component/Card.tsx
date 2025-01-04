@@ -66,6 +66,15 @@ export function TextTip(props: TextProps) {
     )
 }
 
+export function LongText(props: TextProps) {
+    return (
+        <div className="card-text">
+            <div className={"card-text-context"}>{props.context ?? props.children}</div>
+            <div className={"card-text-tip"} >{props.context ?? props.children}</div>
+        </div>
+    )
+}
+
 
 export function CardPrompt(props: {
     title: string,

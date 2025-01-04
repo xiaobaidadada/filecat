@@ -139,6 +139,7 @@ table tr>*:last-child {
     width: auto;
     white-space: nowrap; /* 不换行 */
     border-radius: 0.1rem;
+    z-index: 1001;
 }
 .card-text-tip:hover {
     display: block;
@@ -150,7 +151,7 @@ table tr>*:last-child {
     width: auto;
     white-space: nowrap; /* 不换行 */
     border-radius: 0.1rem;
-
+    z-index: 1001;
 }
 
 .card {

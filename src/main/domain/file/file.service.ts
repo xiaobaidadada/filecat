@@ -636,12 +636,13 @@ class FileService extends FileCompress {
                     // 找到首字节
                     for (let j = 0; j < bytesRead; j++) {
                         if (this.isFirstByte(buffer[j])) {
-                            index = j +1;
+                            index = j -1;
                             break;
                         }
                     }
                 }
-                pojo.position = position + index +2;
+                const now_str_start = index ===0 && pojo.position ===0 ?0:index+1;
+                pojo.position = position + now_str_start ;
                 fs.closeSync(fd);
                 return;
             }
@@ -686,7 +687,7 @@ class FileService extends FileCompress {
                         // 找到首字节
                         for (let j = 0; j < last_h; j++) {
                             if (this.isFirstByte(buffer[j])) {
-                                index = j +1;
+                                index = j -1;
                                 break;
                             }
                         }
