@@ -209,7 +209,7 @@ export class NetService {
                             break;
                         case 'put':
                         case 'post': {
-                            if (pojo.form_data_list) {
+                            if (pojo.form_data_list && pojo.form_data_list.length > 0 && pojo.body_type === http_body_type.form) {
                                 option['multipart'] = true;
                                 const form = {};
                                 const files = {};

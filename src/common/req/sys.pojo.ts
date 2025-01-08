@@ -13,6 +13,7 @@ export interface staticSysPojo {
     cpu_phy_core_num:number
     cpu_speed_hz:number
     pid_ppid:string;
+    user:string;
 }
 
 // 物理信息
