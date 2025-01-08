@@ -22,6 +22,7 @@ import {loadJsFileOnce} from "../../../util/file";
 
 
 // require('./client/js/rle');
+let load;
 export function Rdp() {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
@@ -34,6 +35,7 @@ export function Rdp() {
     const loadfile = async ()=> {
         try {
             await loadJsFileOnce("rle.js");
+            load = true;
         } catch (e) {
             NotyFail("加载资源失败");
             return;
@@ -42,6 +44,7 @@ export function Rdp() {
     }
     var client = null;
     useEffect(() => {
+        if(!load)
         loadfile();
         return ()=>{
             if (client) {
