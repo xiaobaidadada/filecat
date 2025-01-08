@@ -20,7 +20,7 @@ import {editor_data} from "../../../util/store.util";
 import "ace-builds/src-noconflict/ext-language_tools";
 
 
-
+// name 是用于获取 类型的方式
 export default function Ace(props:{name: string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>}) {
     const editorRef = useRef(null);
 

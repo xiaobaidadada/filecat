@@ -28,7 +28,7 @@ export function SshUpload() {
             const newList: any = Array.from(uploadFiles);
             for (let index = 0; index < newList.length; ) {
                 let value: any = newList[index];
-                const url = `?target=${joinPaths(...shellNowDir,value.fullPath)}&domain=${sshInfo['domain']}&port=${sshInfo['port']}&username=${sshInfo['username']}&password=${sshInfo['password']}&dir=${value.isDir?1:0}`;
+                const url = `?target=${encodeURIComponent(joinPaths(...shellNowDir,value.fullPath))}&domain=${sshInfo['domain']}&port=${sshInfo['port']}&username=${sshInfo['username']}&password=${sshInfo['password']}&dir=${value.isDir?1:0}`;
                 const rsp = await sshHttp.put(url, value, (progressEvent) => {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                     setNowProgress({

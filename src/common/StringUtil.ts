@@ -124,3 +124,12 @@ export function generateSaltyUUID(context: string= "") {
     }
     return result;
 }
+
+export function generateRandomHash(length = 16) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let hash = '';
+    for (let i = 0; i < length; i++) {
+        hash += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return hash;
+}

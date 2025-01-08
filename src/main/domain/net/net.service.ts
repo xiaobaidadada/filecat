@@ -1,7 +1,15 @@
-import {NetPojo} from "../../../common/req/net.pojo";
+import {http_body_type, HttpFormData, HttpFormPojo, NetPojo} from "../../../common/req/net.pojo";
 import {findAvailablePort} from "../../../common/findPort";
-import {Sucess} from "../../other/Result";
+import {Fail, Sucess} from "../../other/Result";
 import proxy from 'koa-proxies';
+import {Request, Response} from "express";
+import path from "path";
+import fs from "fs";
+import multer from 'multer';
+import {data_dir_tem_name, DataUtil} from "../data/DataUtil";
+
+const needle = require('needle');
+
 
 const Koa = require('koa');
 const cors = require('@koa/cors');
@@ -136,6 +144,104 @@ export class NetService {
             // 关闭套接字
             socket.close();
         });
+    }
+
+    fileUploadOptions = {
+        storage: multer.diskStorage({
+            destination: (req: any, file: any, cb: any) => {
+                // return cb(new Error("Custom error: Path issue"));
+                cb(null, req.fileDir);  // 存储路径
+            },
+            filename: (req: any, file: any, cb: any) => {
+                // file.originalname
+                cb(null, file.fieldname);
+            }
+        })
+    };
+    upload = multer({
+        storage: this.fileUploadOptions.storage,
+        // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制
+    }).any();
+
+    public httpSend(req: Request, res: Response) {
+
+        const sysPath = path.join(DataUtil.get_tem_path(data_dir_tem_name.http_tempfile));
+        req['fileDir'] = sysPath;
+        // req['fileName'] = path.basename(sysPath);
+        return new Promise((resolve)=>{
+            this.upload(req, res, (err) => {
+                // console.log(req)
+                if (err) {
+                    resolve(res.status(500).send(Fail(err.message)));
+                    return;
+                }
+                const pojo = JSON.parse(req.body.data) as HttpFormPojo;
+                const call = (err, needle_res) => {
+                    if (err) {
+                        console.error('Error:', err);
+                        resolve(res.status(500).send(err.code));
+                    } else {
+                        resolve(res.header('filecat_remote_raw_headers',needle_res.rawHeaders).status(needle_res.statusCode).send(needle_res.raw));
+                    }
+                    if(pojo.form_data_list) {
+                        for(const item of pojo.form_data_list as HttpFormData[]) {
+                            try {
+                                if(item.is_file) {
+                                    fs.unlinkSync(path.join(sysPath,item.fullPath))
+                                }
+                            } catch (e) {
+                                console.log(e)
+                            }
+                        }
+                    }
+
+                };
+                const option = {
+                    headers:pojo.headers
+                };
+                try {
+                    if (pojo.body_type === http_body_type.json) {
+                        pojo.data = pojo.json_data;
+                    }
+                    switch (pojo.method) {
+                        case 'get':
+                            needle(pojo.method,pojo.url,option, call);
+                            break;
+                        case 'put':
+                        case 'post': {
+                            if (pojo.form_data_list) {
+                                option['multipart'] = true;
+                                const form = {};
+                                const files = {};
+                                for (const f of req['files'] ?? []) {
+                                    files[f['fieldname']] = f;
+                                }
+                                for(const item of pojo.form_data_list as HttpFormData[]) {
+                                    if(item.is_file) {
+                                        form[item.key] = {
+                                            file:path.join(sysPath,item.fullPath) ,
+                                            filename: item.fileName,
+                                            content_type: files[item.fullPath]?.mimetype
+                                        };
+                                    } else {
+                                        form[item.key] = item.value;
+                                    }
+                                }
+                                needle[pojo.method](pojo.url,form,option, call);
+                            } else {
+                                needle[pojo.method](pojo.url,pojo.data,option, call);
+                            }
+                        }
+                            break;
+                        default:
+                            needle[pojo.method](pojo.url,pojo.data,option, call);
+                            break;
+                    }
+                } catch (e) {
+                    resolve(res.status(500).send(e.message));
+                }
+            });
+        })
     }
 }
 

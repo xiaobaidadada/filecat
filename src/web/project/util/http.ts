@@ -73,6 +73,23 @@ export class Http {
         return rsq.data
     }
 
+    public getUrl(url) {
+        return this.baseUrl + url;
+    }
+
+    async post_form_data(url,form_data:FormData) {
+        url=url===undefined?'':url;
+        const rsq = await axios.post(this.baseUrl+url, form_data,
+            {
+                headers:{
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': localStorage.getItem('token')
+                }
+            });
+        this.check(rsq.data);
+        return rsq.data
+    }
+
     async put(url,file,progressFun) {
         url=url===undefined?'':url;
         // 创建 FormData 对象
@@ -105,6 +122,10 @@ export class Http {
         });
         this.check(rsq.data);
         return rsq.data
+    }
+
+    public   have_http_method(method_name) {
+        return axios[method_name];
     }
 
 }

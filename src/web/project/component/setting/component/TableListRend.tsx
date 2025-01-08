@@ -61,12 +61,15 @@ export function TableListRender(props: {
                     const new_list = [
                         <InputText value={itemList[0]} handleInputChange={(value) => {
                             itemList[0] = value;
+                            setRows([...rows]);
                         }} no_border={true}/>,
                         <InputText value={itemList[1]} handleInputChange={(value) => {
                             itemList[1] = value;
+                            setRows([...rows]);
                         }} no_border={true}/>,
                         <InputText value={itemList[2]} handleInputChange={(value) => {
                             itemList[2] = value;
+                            setRows([...rows]);
                         }} no_border={true}/>,
                         <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
                     ];

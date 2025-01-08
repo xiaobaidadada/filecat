@@ -5,7 +5,7 @@ import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
 import {fileHttp} from "../../util/config";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {BaseFileItem} from "./component/BaseFileItem";
 import {RCode} from "../../../../common/Result.pojo";
@@ -69,7 +69,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             if (item !== undefined) {
                 // 双击文件夹
                 // debugger;
-                navigate(webPathJoin(location.pathname, name))
+                navigate(webPathJoin(getRouterPath(), name))
                 setSelectList([])
                 setClickList([])
                 return;
@@ -90,7 +90,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     const handleContextMenu = (event, name, isDir,size) => {
         event.preventDefault();
         const pojo = new FileMenuData();
-        pojo.path = webPathJoin(location.pathname, name)
+        pojo.path = webPathJoin(getRouterPath(), name)
         pojo.filename = name;
         pojo.x = event.clientX;
         pojo.y = event.clientY;

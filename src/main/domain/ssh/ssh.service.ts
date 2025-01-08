@@ -257,7 +257,7 @@ export class SshService extends SshSsh2 {
     public async uploadFile(req:any,res:Response) {
         const client = this.lifeGetData(SshPojo.getKey(req.query)) as Client;
         const sftp = this.sftGet(client);
-        const remoteFilePath = req.query.target;
+        const remoteFilePath = decodeURIComponent(req.query.target);
         if (req.query.dir === "1") {
             req.dir = remoteFilePath;
             await this.sftCreateDir(req, client);

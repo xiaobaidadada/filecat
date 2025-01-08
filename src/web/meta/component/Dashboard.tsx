@@ -5,6 +5,7 @@ import Layout from "../../project/component/Layout";
 import {SimpleRoutes} from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
 import {FileMenuItem} from "../../project/component/prompts/FileMenu/FileMenu";
+import {getRouterPath} from "../../project/util/WebPath";
 
 // 菜单容器
 export function Menu(props) {
@@ -16,7 +17,7 @@ export function Menu(props) {
     const [selectedIndex, setSelectedIndex] = React.useState(0);
     useEffect(() => {
         for (let index = 0; index < props.optionList.length; index++) {
-            if (location.pathname.includes(props.optionList[index].rto)) {
+            if (getRouterPath().includes(props.optionList[index].rto)) {
                 setSelectedIndex(index);
             }
         }

@@ -4,7 +4,7 @@ import {cryptoHttp, fileHttp} from "./config";
 import {NotyFail, NotySucess} from "./noty";
 import {getEditModelType} from "../../../common/StringUtil";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {getRouterAfter} from "./WebPath";
+import {getRouterAfter, getRouterPath} from "./WebPath";
 import {RCode} from "../../../common/Result.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "./store";
@@ -57,7 +57,7 @@ export const user_click_file = () => {
             if (context) {
                 value = context;
             } else {
-                value = await get_file_context(param.sys_path??`${getRouterAfter('file', location.pathname)}${name}`,param.sys_path);
+                value = await get_file_context(param.sys_path??`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`,param.sys_path);
                 // if (!value) {
                 //     return;
                 // }
@@ -74,7 +74,8 @@ export const user_click_file = () => {
                     const data: saveTxtReq = {
                         context
                     }
-                    const rsq = await fileHttp.post(`save/${param.sys_path??`${getRouterAfter('file', location.pathname)}${name}`}?is_sys_path=${param.sys_path?1:0}`, data)
+                    const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
+                    const rsq = await fileHttp.post(`save/${param.sys_path??`${v}${name}`}?is_sys_path=${param.sys_path?1:0}`, data)
                     if (rsq.code === 0) {
                         editor_data.set_value_temp('')
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
@@ -84,14 +85,14 @@ export const user_click_file = () => {
             editor_data.set_value_temp(value)
             return;
         } else {
-            let url = fileHttp.getDownloadUrl(getFileNameByLocation(location, name));
+            let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
             switch (type) {
                 case FileTypeEnum.excalidraw:
                     set_excalidraw_editor({path: "", name});
                     break;
                 case FileTypeEnum.md:
                     set_markdown({
-                        context: await get_file_context(`${getRouterAfter('file', location.pathname)}${name}`,false),
+                        context: await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`,false),
                         filename: name
                     })
                     break;
@@ -136,6 +137,10 @@ export class editor_data {
              throw "不存在编辑器";
         }
         return editor_data.editor.getValue();
+    }
+
+    public static get_editor() {
+        return this.editor;
     }
 
     public static get_value_temp() {

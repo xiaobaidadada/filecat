@@ -90,7 +90,7 @@ export default function Studio(props) {
     const load_file = async (name, pre_path) => {
         const model = getEditModelType(name) ?? "text";
         set_edit_model(model);
-        const rsq = await fileHttp.get(`${pre_path}`)
+        const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
         if (rsq.code === RCode.File_Max) {
             NotyFail("超过20MB");
             return;
@@ -129,7 +129,7 @@ export default function Studio(props) {
         const data: saveTxtReq = {
             context: editor_data.get_editor_value()
         }
-        const rsq = await fileHttp.post(`save/${edit_file_path}`, data)
+        const rsq = await fileHttp.post(`save/${encodeURIComponent(edit_file_path)}`, data)
         if (rsq.code === 0) {
             // NotySucess("保存成功");
             set_have_update(false);

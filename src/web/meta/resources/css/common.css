@@ -5,3 +5,17 @@
     z-index: 1000;
 }
 
+/* http 请求*/
+
+.http_url  {
+    display: flex;  /* 启用 Flexbox 布局 */
+    /*justify-content: space-between;  !* 项目在主轴上均匀分布 *!*/
+    padding-bottom: 1rem;
+    align-items: center;  /* 垂直居中 */
+
+}
+
+.http_ace {
+    height: 15rem;
+}
+

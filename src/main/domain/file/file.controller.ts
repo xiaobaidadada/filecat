@@ -41,7 +41,8 @@ export class FileController {
 
     @Get('/:path([^"]{0,})')
     async getFile(@Req() ctx, @Param("path") path?: string, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
-        return await FileServiceImpl.getFile(path, ctx.headers.authorization, is_sys_path);
+        // 默认已经对 url 解码了 这里不做也行
+        return await FileServiceImpl.getFile(decodeURIComponent(path), ctx.headers.authorization, is_sys_path);
     }
 
     @Post('/file/info')
@@ -57,7 +58,7 @@ export class FileController {
 
     @Put('/:path([^"]{0,})')
     async uploadFile(@Req() req: Request, @Res() res: Response, @Param("path") path?: string) {
-        await FileServiceImpl.uploadFile(path, req, res, req.headers.authorization);
+        await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
     }
 

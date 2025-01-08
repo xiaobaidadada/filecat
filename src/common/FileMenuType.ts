@@ -13,7 +13,7 @@ export class FileMenuData {
     items?:{r?:string,v?:any}[];
     files?:any;
     dir?:string;
-    call?:()=>void;
+    call?:(e?:any)=>void;
     ok?:any;
     dockerId?:string;
     name?:string;

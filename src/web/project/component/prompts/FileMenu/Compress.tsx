@@ -7,7 +7,7 @@ import {InputText, Select} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
@@ -50,7 +50,7 @@ export function Compress(props) {
         if (!r_name.endsWith(format)) {
             r_name = r_name + "." + format;
         }
-        req.tar_filename = `${getRouterAfter('file', location.pathname)}${r_name}`;
+        req.tar_filename = `${getRouterAfter('file', getRouterPath())}${r_name}`;
         req.token = localStorage.getItem("token");
         req.compress_level = compress_level;
         ws.sendData(CmdType.file_compress, req);
@@ -59,7 +59,7 @@ export function Compress(props) {
             setProgress(v)
             if (v === 100) {
                 NotySucess("完成");
-                navigate(location.pathname);
+                navigate(getRouterPath());
                 ws.unConnect();
                 close()
             }

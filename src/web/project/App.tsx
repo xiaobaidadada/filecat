@@ -17,6 +17,7 @@ import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "./util/store";
 import {GlobalContext} from "./GlobalProvider";
+import {getRouterPath} from "./util/WebPath";
 
 
 
@@ -35,10 +36,10 @@ function App() {
     }, []);
     useEffect( () => {
 
-        if (befor === location.pathname || befor=== "/" || befor==='/login') {
+        if (befor === getRouterPath() || befor=== "/" || befor==='/login') {
             return;
         }
-        setBefor(location.pathname)
+        setBefor(getRouterPath())
         // 监控任何路由的变化
         const token = localStorage.getItem("token");
         if (!token || token==="null") {

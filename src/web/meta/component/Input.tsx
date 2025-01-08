@@ -13,7 +13,11 @@ export function InputTextIcon(props: {
     const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
     useEffect(() => {
-        inputRef.current.value = props.value;
+        let v = props.value;
+        if(v === undefined || v === null) {
+            v = '';
+        }
+        inputRef.current.value = v;
         setValue(props.value || "");
     }, [props.value]);
     return <div id="search" className="" style={{"maxWidth":props.max_width}}>
@@ -177,10 +181,11 @@ export function InputRadio(props: {
     value: any,
     context: any,
     onchange?: (value: string) => void,
-    selected?: boolean
+    selected?: boolean,
+    name?:string
 }) {
     return <div className="input_radio_row">
-        <input type="radio" checked={props.selected} name="common_name" value={props.value} className={"input_radio"}
+        <input type="radio" checked={props.selected} name={props.name ?? "common_name"} value={props.value} className={"input_radio"}
                onChange={() => {
                    if (props.onchange) props.onchange(props.value)
                }}/>

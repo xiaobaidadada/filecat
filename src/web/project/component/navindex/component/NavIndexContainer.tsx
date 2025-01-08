@@ -4,6 +4,8 @@ import {getByListRandom, getNewDeleteByList} from "../../../../../common/ListUti
 import {InputText, InputTextIcon} from "../../../../meta/component/Input";
 import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
 import {useLocation, useNavigate} from "react-router-dom";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../../util/store";
 
 
 const colorList = ["#ffffff",
@@ -44,6 +46,7 @@ export function NavIndexContainer(props: {
     clickItem?: (item: any) => void,
     save?: (items: { url?: string, name?: string }[]) => Promise<void>,
     items: NavItem[];
+    get_pre_add_item?:()=> Promise<any>
 }) {
     const [items, setItems] = useState([] as SiteIndexItem[]);
     const [last_queue_index,set_last_queue_index] = useState<number>(-1);
@@ -52,6 +55,9 @@ export function NavIndexContainer(props: {
     const [unfold,set_unfold] = useState<boolean>(false);
 
     const [edit_index, setEdit_index] = useState<number[]>([]);
+
+    const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useRecoilState($stroe.nav_index_add_item_by_now_list);
+
 
     const handleDragStart = (event, index) => {
         indexp = index;
@@ -104,11 +110,19 @@ export function NavIndexContainer(props: {
         setEdit(!edit)
 
     }
-    const addItem = () => {
-        const list = [...items, {name: "",  color: getByListRandom(colorList)}];
+    const addItem = async () => {
+        const list = [...items, {name: "",  color: getByListRandom(colorList),...(props.get_pre_add_item && await props.get_pre_add_item())}];
         update_list(list);
         setItems(list)
     }
+    useEffect( () => {
+        if(nav_index_add_item_by_now_list) {
+            const list = [...items, {name: "",  color: getByListRandom(colorList),...nav_index_add_item_by_now_list}];
+            update_list(list);
+            setItems(list)
+            setEdit(true)
+        }
+    }, [nav_index_add_item_by_now_list]);
     const addDirItem = () => {
         const list = [...items, {name: "",_type:"dir",_children:[],  color: getByListRandom(colorList)}];
         update_list(list);

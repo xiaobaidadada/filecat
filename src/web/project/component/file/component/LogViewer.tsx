@@ -7,7 +7,7 @@ import {$stroe} from "../../../util/store";
 import Header from "../../../../meta/component/Header";
 import {ActionButton} from "../../../../meta/component/Button";
 import {LogViewerPojo} from "../../../../../common/file.pojo";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {NotyFail, NotyWaring} from "../../../util/noty";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
@@ -312,8 +312,9 @@ export default function LogViewer(props) {
 
 
         req.line = history_max_line;
-        req.path = `${getRouterAfter('file', location.pathname)}${shellShow.fileName}`;
+        req.path = `${getRouterAfter('file', getRouterPath())}${shellShow.fileName}`;
         req.token = localStorage.getItem("token");
+
         // insert_v2(`12
         // 2321888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
         // 312`,[0],[0],true);

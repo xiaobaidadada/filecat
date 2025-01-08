@@ -199,6 +199,11 @@ export function Docker(props) {
         }
 
     }
+    // 更新容器
+    const updat_list = async ()=>{
+        const data = new WsData(CmdType.docker_get);
+        await ws.send(data)
+    }
     return <div>
         <Header left_children={<ButtonLittleStatus defaultStatus={false} text={t("docker镜像")} clickFun={(v) => {
             set_show_iamges(v);
@@ -226,7 +231,9 @@ export function Docker(props) {
                     }}
                     />}
             </div>}
-
+            {(rows.length !== 0 || filterKey) && !show_iamges && (
+                <ActionButton icon={"refresh"} title={"列表更新"} onClick={updat_list}/>
+            )}
         </Header>
         <Dashboard>
             {show_iamges &&

@@ -14,3 +14,13 @@ export function flatten(list) {
     }
     return result;
 }
+
+export function removeLastDir(url) {
+    if(!url) return url;
+    const arr = url.split("/");
+    if (arr.pop() === "") {
+        arr.pop();
+    }
+
+    return arr.join("/");
+}
