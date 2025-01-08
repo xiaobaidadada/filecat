@@ -3,7 +3,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {InputText, Select} from "../../../meta/component/Input";
 import {ddnsHttp, fileHttp} from "../../util/config";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {FileCompressType} from "../../../../common/file.pojo";
@@ -37,7 +37,7 @@ export function DdnsAddHttp(props) {
         const rsq = await ddnsHttp.post('http/add', ipPojo)
         if (rsq.code === 0) {
             NotySucess("添加成功，稍后刷新")
-            navigate(location.pathname);
+            navigate(getRouterPath());
         }
         cancel();
     }

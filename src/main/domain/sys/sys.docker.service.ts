@@ -20,7 +20,7 @@ class SysDockerService {
     async pushDockerInfo(wss: Wss, results: any) {
         const result = new WsData<SysPojo>(CmdType.docker_getting);
         result.context = results;
-        if (wss.ws.readyState ===WebSocket.CLOSED) {
+        if (wss.ws.readyState === WebSocket.CLOSED) {
             throw "断开连接";
         }
         wss.sendData(result.encode())
@@ -48,7 +48,7 @@ class SysDockerService {
                     try {
                         await this.pushDockerInfo(wss, docker_result_list);
                     } catch (e) {
-                        console.log('docker信息推送失败docker',e)
+                        console.log('docker信息推送失败docker', e)
                         dockerMap.delete(socketId);
                         if (wss) {
                             wss.ws.close();
@@ -78,6 +78,7 @@ class SysDockerService {
         return images;
     }
 
+    // docker stats 显示的信息不是很全面 需要这个来获取更全面的信息
     private getAllContainer() {
         const p_c = docker_result_list;
         docker_result_list = [];
@@ -87,32 +88,34 @@ class SysDockerService {
             const con = cons[i];
             const parts = con.split(";;").filter(v => v.length > 0);
             const dockerIdIndex = dockerIndexMap.get(parts[0]);
-            const c = dockerIdIndex!==undefined&&dockerIdIndex!==null?p_c[dockerIdIndex]:undefined;
+            const c = dockerIdIndex !== undefined && dockerIdIndex !== null ? p_c[dockerIdIndex] : undefined;
             docker_result_list.push([
                 parts[0].slice(0, 10),//id
                 parts[1],//name
                 parts[2],
                 parts[3],
                 parts[4],
-                c!==undefined?c[5]:0,
-                c!==undefined?c[6]:0,
+                c !== undefined ? c[5] : 0,
+                c !== undefined ? c[6] : 0,
             ])
             dockerIndexMap.set(parts[0], i - 1);
         }
     }
+
     private killDockerSpwn() {
         if (spawnChild) {
             SystemUtil.killProcess(spawnChild.pid);
-            spawnChild=null;
+            spawnChild = null;
         }
     }
+
     private getDockerInfo() {
         try {
             if (spawnChild) {
                 return;
             }
             this.getAllContainer();
-            let child = spawn('docker stats  --no-trunc --format "table {{.ID}};;{{.MemUsage}};;{{.CPUPerc}}"', [...docker_result_list.map(v => v[0])], {shell: getShell()});
+            let child = spawn('docker stats --all --no-trunc --format "table {{.ID}};;{{.MemUsage}};;{{.CPUPerc}}"', [], {shell: getShell()});
             spawnChild = child;
             // 监听子进程的 stdout 流，并输出数据
             child.stdout.on('data', (data) => {
@@ -129,7 +132,7 @@ class SysDockerService {
                     const index = dockerIndexMap.get(parts[0]);
                     if (typeof index === "number") {
                         const mib = parts[1].split("/")[0];
-                        docker_result_list[index][5] =mib ;
+                        docker_result_list[index][5] = mib;
                         docker_result_list[index][6] = parts[2];
                     }
                 }
@@ -168,6 +171,7 @@ class SysDockerService {
     async dockerGet(data: WsData<any>) {
         const id = (data.wss as Wss).id;
         if (dockerMap.get(id)) {
+            this.getAllContainer();
             return;
         }
         if (!SystemUtil.commandIsExist(" docker ps")) {
@@ -179,7 +183,7 @@ class SysDockerService {
     }
 
 
-    async dockerSwitch(data:WsData<any>) {
+    async dockerSwitch(data: WsData<any>) {
         if (data.context.type === "start") {
             await exec(`docker start ${data.context.dockerId}`);
         } else if (data.context.type === "stop") {
@@ -188,13 +192,13 @@ class SysDockerService {
         this.getAllContainer();
     }
 
-    async dockerDelContainer(data:WsData<any>) {
+    async dockerDelContainer(data: WsData<any>) {
         await exec(`docker stop ${data.context.dockerId}`);
         await exec(`docker rm ${data.context.dockerId}`);
     }
 
-    async check_image_delete(ids:string[]) {
-        const not_delete_ids:string[]  = [];
+    async check_image_delete(ids: string[]) {
+        const not_delete_ids: string[] = [];
         for (const id of ids) {
             const stdout = execSync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
             if (stdout.trim()) {
@@ -205,7 +209,7 @@ class SysDockerService {
         return not_delete_ids;
     }
 
-    async delete_image(ids:string[]) {
+    async delete_image(ids: string[]) {
         const param = ids.join(" ");
         execSync(`docker rm  ${param}`)
     }

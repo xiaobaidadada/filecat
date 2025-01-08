@@ -3,7 +3,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {InputText} from "../../../meta/component/Input";
 import {fileHttp} from "../../util/config";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getFilesByIndexs} from "../file/FileUtil";
 import {useTranslation} from "react-i18next";
@@ -40,8 +40,8 @@ export function FileRename(props) {
         let filename;
         if (!showPrompt.data.path) {
             const files = getFilesByIndexs(nowFileList, selectedFile);
-            newName = `${getRouterAfter('file', location.pathname)}${name}`
-            filename = `${getRouterAfter('file', location.pathname)}${files[0].name}`
+            newName = `${getRouterAfter('file', getRouterPath())}${name}`
+            filename = `${getRouterAfter('file', getRouterPath())}${files[0].name}`
         } else {
             filename = showPrompt.data.path;
             newName = `${showPrompt.data.dir}${name}`;
@@ -52,7 +52,7 @@ export function FileRename(props) {
             if (showPrompt.data.call) {
                 showPrompt.data.call();
             } else {
-                navigate(location.pathname);
+                navigate(getRouterPath());
             }
         }
     }

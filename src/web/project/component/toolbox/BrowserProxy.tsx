@@ -101,7 +101,7 @@ export function BrowserProxy(props) {
     return <div>
         <Header>
             <InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
-            <InputTextIcon placeholder={t("要代理的url")} icon={"http"} value={showUrl} handleInputChange={(v) => {
+            <InputTextIcon placeholder={t("要代理的url")} icon={"link"} value={showUrl} handleInputChange={(v) => {
                 setshowUrl(v);
             }}/>
             <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={go}/>

@@ -33,3 +33,36 @@ export class VirNetItem {
     real_ip:string;
     online:boolean = false;
 }
+
+
+export interface HttpFormData {
+    key: string;
+    value: string; // 值如果是文件 这个值没有意义
+    // 下面是有文件的时候才有意义的
+    is_file?: boolean;
+    fullPath?: string; // 临时名字
+    fileName?: string; // 实际名字
+    file_object?: any // 临时的 服务端不保存
+
+}
+export enum http_body_type {
+    row = 1,
+    json = 2,
+    form = 3,
+
+}
+export class HttpFormPojo {
+    body_type:http_body_type;
+    header_type:number; // 1 请求头 2 请求体
+    url:string;
+    method:string;
+    headers:any;
+    // 字符串数据
+    data:string;
+    // json 数据
+    json_data:string;
+    // 表单数据
+    // form_data:{[key:string]:HttpFormData} | string;
+    form_data_list :HttpFormData[] | string;
+
+}

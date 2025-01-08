@@ -1,7 +1,7 @@
 import React, {useEffect} from "react";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../../util/store";
-import {getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
+import {getRouterAfter, getRouterPath, getRouterPrePath} from "../../../../util/WebPath";
 import {fileHttp} from "../../../../util/config";
 import {loadJsFileOnce} from "../../../../util/file";
 import {NotyFail, NotySucess} from "../../../../util/noty";
@@ -90,7 +90,7 @@ export default function ImageEditor() {
             onClose: (closingReason) => {
                 filerobotImageEditor.terminate();
                 set_image_editor({});
-                navigate(location.pathname);
+                navigate(getRouterPath());
             },
         });
     }

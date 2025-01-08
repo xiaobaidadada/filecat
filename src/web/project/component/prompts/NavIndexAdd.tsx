@@ -7,6 +7,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import Noty from "noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
+import {getRouterPath} from "../../util/WebPath";
 
 
 export function NavIndexAdd(props) {
@@ -34,7 +35,7 @@ export function NavIndexAdd(props) {
         if (result.code === RCode.Sucess) {
             cancel();
             // 需要当前页面监听    const location = useLocation();
-            navigate(location.pathname);
+            navigate(getRouterPath());
             // new Noty({
             //     type: 'success',
             //     text: '成功',

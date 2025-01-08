@@ -7,7 +7,7 @@ import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
@@ -48,8 +48,8 @@ export function VideoTrans(props) {
             NotyFail("和原文件格式后缀一样");
             return;
         }
-        const sourceFileName = `${getRouterAfter('file',location.pathname)}${showPrompt.data.filename}`;
-        const targetFileName = `${getRouterAfter('file',location.pathname)}${newFileName}`;
+        const sourceFileName = `${getRouterAfter('file',getRouterPath())}${showPrompt.data.filename}`;
+        const targetFileName = `${getRouterAfter('file',getRouterPath())}${newFileName}`;
 
         const req = new FileVideoFormatTransPojo();
         req.to_format = prompt;
@@ -62,7 +62,7 @@ export function VideoTrans(props) {
             setProgress(v)
             if (v === 100) {
                 NotySucess("完成");
-                navigate(location.pathname);
+                navigate(getRouterPath());
                 ws.unConnect();
                 close()
             }

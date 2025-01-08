@@ -5,7 +5,7 @@ import {$stroe} from "../../util/store";
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {fileHttp} from "../../util/config";
 import {getNewDeleteByList} from "../../../../common/ListUtil";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../util/noty";
 
@@ -31,7 +31,7 @@ export function FilesUpload() {
                 let value: any = newList[index];
                 try {
                     // console.log(`${getRouterAfter('file',location.pathname)}${value.fullPath}`)
-                    const rsp = await fileHttp.put(`${getRouterAfter('file',location.pathname)}${value.fullPath}?dir=${value.isDir?1:0}`, value, (progressEvent) => {
+                    const rsp = await fileHttp.put(`${encodeURIComponent(`${getRouterAfter('file',getRouterPath())}${value.fullPath}`)}?dir=${value.isDir?1:0}`, value, (progressEvent) => {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                         setNowProgress({
                             name: value.name,
@@ -44,7 +44,7 @@ export function FilesUpload() {
                         // setUploadFiles(getNewDeleteByList(newList, value))
                     }
                     if (index === newList.length - 1) {
-                        navigate(location.pathname);
+                        navigate(getRouterPath());
                         setUploadFiles([])
                         setShowPrompt({show: false,type: '',overlay: false,data:{}})
                     }

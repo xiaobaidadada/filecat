@@ -6,7 +6,7 @@ import {$stroe} from "../../util/store";
 import {fileHttp} from "../../util/config";
 import {fileReq} from "../../../../common/req/file.req";
 import {getByIndexs} from "../../../../common/ListUtil";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../file/FileUtil";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../common/Result.pojo";
@@ -28,7 +28,6 @@ export function FilesDelete(props) {
         })
     }
     async function confirm() {
-
         if (showPrompt.data.path) {
            const r = await fileHttp.delete(showPrompt.data.path);
            if (r.code === RCode.PROTECT_FILE) {
@@ -37,7 +36,7 @@ export function FilesDelete(props) {
         } else {
             const files = getFilesByIndexs(nowFileList, selectedFileList);
             for (const file of files) {
-                const r = await fileHttp.delete(getFileNameByLocation(location,file.name))
+                const r = await fileHttp.delete(encodeURIComponent(getFileNameByLocation(file.name)))
                 if (r.code === RCode.PROTECT_FILE) {
                     NotyFail("保护路径不能删除");
                 }
@@ -49,7 +48,7 @@ export function FilesDelete(props) {
         if (showPrompt.data.call) {
             showPrompt.data.call();
         } else {
-            navigate(location.pathname)
+            navigate(getRouterPath())
             setSelectedFileList([])
         }
 

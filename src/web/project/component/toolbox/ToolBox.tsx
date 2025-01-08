@@ -9,6 +9,7 @@ import {Rdp} from "./rdp/Rdp";
 import {NetWol} from "./NetWol";
 import {useTranslation} from "react-i18next";
 import {Crypto} from "./Crypto";
+import {Http} from "./Http";
 const Rtsp = React.lazy(()=> import("./Rtsp"))
 
 
@@ -17,18 +18,19 @@ export default function ToolBox(props) {
 
     const menuRots = [
         {index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/"},
-        {index: 2, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/"},
-        {index: 3, name: `rdp${t("代理")}`, rto: "rdp/"},
-        {index: 4, name: t("网络唤醒"), rto: "netwol/"},
-        {index: 5, name: t("rtsp播放器"), rto: "rtsp/"},
-        {index: 6, name: t("非对称密钥"), rto: "crypto/"},
-        {index: 7, name: t("时间工具"), rto: "timeutil/"},
-
+        {index: 2, name: t("http代理"),rto:'http/'},
+        {index: 3, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/"},
+        {index: 4, name: `rdp${t("代理")}`, rto: "rdp/"},
+        {index: 5, name: t("网络唤醒"), rto: "netwol/"},
+        {index: 6, name: t("rtsp播放器"), rto: "rtsp/"},
+        {index: 7, name: t("非对称密钥"), rto: "crypto/"},
+        {index: 8, name: t("时间工具"), rto: "timeutil/"},
     ];
 
     return (
         <Menu optionList={menuRots}>
             <RemoteLinux />
+            <Http />
             <BrowserProxy />
             <Rdp />
             <NetWol />

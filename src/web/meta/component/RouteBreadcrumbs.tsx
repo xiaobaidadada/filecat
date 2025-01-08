@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {webPathJoin} from "../../../common/ListUtil";
+import {getRouterPath} from "../../project/util/WebPath";
 // import '../resources/css/all.css'
 // 依靠路由的面包屑
 
@@ -13,7 +14,7 @@ export function RouteBreadcrumbs(props: {
     const [prePath, setPrePath] = useState('/');
     React.useEffect(() => {
         let prePathP = '';
-        let routes = location.pathname.split('/');
+        let routes = (getRouterPath()).split('/');
         routes = routes.filter(v => v)
         const indexp = routes.indexOf(props.baseRoute);
         const list : any[] = [];

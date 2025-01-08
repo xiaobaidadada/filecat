@@ -2,7 +2,7 @@ import React, {useEffect} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {fileHttp} from "../../util/config";
-import {getRouterAfter} from "../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 
@@ -28,20 +28,20 @@ export function Paste(props) {
         if (cutedFileList.length > 0) {
             const rsp = await fileHttp.post('cut',{
                 files:cutedFileList,
-                to:getRouterAfter('file',location.pathname)
+                to:getRouterAfter('file',getRouterPath())
             });
             setCutedFileList([])
         } else {
             const rsp = await fileHttp.post('copy',{
                 files:copyedFileList,
-                to:getRouterAfter('file',location.pathname)
+                to:getRouterAfter('file',getRouterPath())
             });
             setCopyedFileList([])
         }
         setShowPrompt({
             show:false,overlay: false,type: '',data:{}
         })
-        navigate(location.pathname)
+        navigate(getRouterPath())
 
     }
     return <div className="card floating">

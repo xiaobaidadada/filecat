@@ -7,7 +7,7 @@ import {InputText} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
@@ -35,7 +35,7 @@ export function UnCompress(props) {
     const confirm = ()=> {
         const extension = StringUtil.getFileExtension(showPrompt.data.filename) ?? "" as string;
 
-        const sourceFileName = `${getRouterAfter('file',location.pathname)}${showPrompt.data.filename}`;
+        const sourceFileName = `${encodeURIComponent(getRouterAfter('file',getRouterPath()))}${showPrompt.data.filename}`;
 
         const req = new FileCompressPojo();
         let format;
@@ -61,7 +61,7 @@ export function UnCompress(props) {
             setProgress(v)
             if (v === 100) {
                 NotySucess("完成");
-                navigate(location.pathname);
+                navigate(getRouterPath());
                 ws.unConnect();
                 close()
             }

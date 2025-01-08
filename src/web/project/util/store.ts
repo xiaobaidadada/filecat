@@ -246,6 +246,11 @@ export const $stroe = {
         default: {
             type: ""
         } as { type?: string, data?: DiskDevicePojo }
+    }),
+    // 导航列表当前插入元素
+    nav_index_add_item_by_now_list: atom({
+        key: 'nav_index_add_item_by_now_list',
+        default: undefined as any
     })
 }
 

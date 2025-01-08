@@ -92,12 +92,15 @@ export function CustomerApiRouter() {
                 const new_list = [
                     <InputText value={item.router} handleInputChange={(value) => {
                         item.router = value;
+                        setRows([...rows]);
                     }} no_border={true}/>,
                     <Select defaultValue={item.needAuth} onChange={(value) => {
                         item.needAuth = value === "true";
+                        setRows([...rows]);
                     }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                     <InputText value={item.note} handleInputChange={(value) => {
                         item.note = value;
+                        setRows([...rows]);
                     }} no_border={true}/>,
                     <div>
                         <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>

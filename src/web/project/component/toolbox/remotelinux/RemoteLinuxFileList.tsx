@@ -22,6 +22,7 @@ import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
 import { formatFileSize } from '../../../../../common/ValueUtil';
+import { removeLastDir } from '../../../util/ListUitl';
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -316,14 +317,56 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             setSelectList([])
         }
     }
+    const uploadFile = () => {
+        setShowPrompt({show: true,type:PromptEnum.UploadFile,overlay: true,data:{
+                call:(event)=>{
 
+                    let files = (event.currentTarget as HTMLInputElement)?.files;
+                    if(!files)return;
+
+                    let folder_upload = !!files[0].webkitRelativePath;
+
+                    const uploadFiles: any = [];
+                    const dirs = new Set(); // 文件夹需要提前创建
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const fullPath = folder_upload ? file.webkitRelativePath : `${file.webkitRelativePath}${file.name}`;
+                        file['fullPath'] = fullPath;
+                        if(folder_upload) {
+                            dirs.add(removeLastDir(fullPath));
+                        }
+                        uploadFiles.push(file);
+                        // uploadFiles.push({
+                        //     file,
+                        //     name: file.name,
+                        //     size: file.size,
+                        //     isDir: false,
+                        //     fullPath,
+                        // });
+                    }
+                    const list = [];
+                    if(folder_upload) {
+                        for (const file of dirs) {
+                            list.push({
+                                isDir:true,
+                                fullPath:file,
+                                name:file
+                            })
+                        }
+                    }
+                    list.push(...uploadFiles);
+                    setUploadFiles(list);
+                    setShowPrompt({show: true,type: PromptEnum.SshUpload,overlay: false,data:{}});
+                }
+            }});
+    }
     return (
         <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                   icon={"search"} value={""} handleInputChange={(v) => {
                 setSearch(v)
             }} max_width={"25em"}/>}>
-                {/*<ActionButton icon="upload_file" title={"上传"}/>*/}
+
                 <ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.SshDelete, overlay: true, data: {}})
@@ -341,6 +384,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
+                <ActionButton icon="upload_file" title={"上传"} onClick={uploadFile}/>
                 <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
                     props.close();
                 }}/>

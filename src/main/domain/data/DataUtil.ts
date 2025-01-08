@@ -4,7 +4,12 @@ import fse from 'fs-extra'
 import {Env} from "../../../common/Env";
 export enum file_key {
     data = "data",
-    systemd = "systemd"
+    systemd = "systemd",
+    http_tag = "http_tag",
+}
+export enum data_dir_tem_name {
+    tempfile = "tempfile", // 临时文件
+    http_tempfile = "http_tempfile", // http 请求的临时文件
 }
 export class DataUtil {
     private static data_path_map = {};
@@ -12,6 +17,12 @@ export class DataUtil {
 
     // private static data_path = "";
     // private static data = {};
+
+    public static get_tem_path(type:data_dir_tem_name) {
+        const p = path.join(Env.work_dir, type);
+        fse.ensureDirSync(p)
+        return p;
+    }
 
     private static init(file:file_key) {
         let value = this.data_path_map[file];

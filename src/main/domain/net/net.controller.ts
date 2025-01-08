@@ -1,4 +1,4 @@
-import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Param, Post, Put, Req, Res} from "routing-controllers";
 import {UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -8,13 +8,18 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {NetPojo, VirClientPojo, VirNetItem, VirServerPojo} from "../../../common/req/net.pojo";
 import {netService} from "./net.service";
 import {NavIndexItem} from "../../../common/req/common.pojo";
-import {DataUtil} from "../data/DataUtil";
+import {DataUtil, file_key} from "../data/DataUtil";
 import {virtualService} from "./net.virtual.service";
 import {Wss} from "../../../common/frame/ws.server";
+import {Request, Response} from "express";
+import {FileServiceImpl} from "../file/file.service";
 
 const navindex_key = "navindex_net_key_list";
 
 const navindex_wol_key = "navindex_wol_key";
+
+const http_tag_key = "http_tag_key";
+
 
 @JsonController("/net")
 export class NetController {
@@ -92,4 +97,21 @@ export class NetController {
         return list;
     }
 
+    // http 的tag
+    @Get("/http/tag")
+    get_http_tag() {
+        let list = DataUtil.get(http_tag_key,file_key.http_tag);
+        return Sucess(list || []);
+    }
+
+    @Post('/http/tag/save')
+    save_http_tag(@Body() items: NavIndexItem[]) {
+        DataUtil.set(http_tag_key, items,file_key.http_tag);
+        return Sucess('ok');
+    }
+
+    @Post('/http/send')
+    async httpSend(@Req() req: Request, @Res() res: Response) {
+        return netService.httpSend(req, res);
+    }
 }

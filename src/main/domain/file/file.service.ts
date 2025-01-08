@@ -132,6 +132,7 @@ class FileService extends FileCompress {
         })
     };
 
+    // 上传文件 必须 保证文件所在的文件夹已经存在了
     upload = multer({
         storage: this.fileUploadOptions.storage,
         // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制

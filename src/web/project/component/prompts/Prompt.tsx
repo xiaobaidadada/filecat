@@ -21,6 +21,7 @@ import {Compress} from "./FileMenu/Compress";
 import {Confirm} from "./Confirm";
 import {PromptCard} from "./PromptCard";
 import {DdnsAddHttp} from "./DdnsAddHttp";
+import {UploadFile} from "./UploadFile";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -40,6 +41,7 @@ export enum PromptEnum {
     FileMenu = "FileMenu",
     Compress = "Compress",
     DdnsAddHttp = "DdnsAddHttp",
+    UploadFile = "UploadFile"
 }
 
 export default function Prompt() {
@@ -108,6 +110,8 @@ export default function Prompt() {
         case PromptEnum.DdnsAddHttp:
             div = <DdnsAddHttp/>
             break;
+        case PromptEnum.UploadFile:
+            div = <UploadFile/>
     }
 
     return (<div>

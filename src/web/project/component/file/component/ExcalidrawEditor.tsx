@@ -3,7 +3,7 @@ import {Excalidraw, Footer, MainMenu, Sidebar, WelcomeScreen} from "@excalidraw/
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {fileHttp} from "../../../util/config";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {RCode} from "../../../../../common/Result.pojo";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {editor_data} from "../../../util/store.util";
@@ -28,7 +28,7 @@ export default function ExcalidrawEditor() {
     //     load_style = true;
     // }
     const getContext = async () => {
-        const rsq = await fileHttp.get(`${getRouterAfter('file', location.pathname)}${excalidraw_editor.name}`)
+        const rsq = await fileHttp.get(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${excalidraw_editor.name}`)
         return JSON.parse(rsq.data);
     }
     useEffect(() => {
@@ -36,14 +36,14 @@ export default function ExcalidrawEditor() {
     }, [excalidraw_editor]);
     const close = () => {
         set_excalidraw_editor({});
-        navigate(location.pathname);
+        navigate(getRouterPath());
 
     }
     const save = async () => {
         const elements = excalidrawAPI.getSceneElements();
         // const appState = excalidrawAPI.getAppState();
         const data = { elements };
-        const rsq = await fileHttp.post(`save/${getRouterAfter('file', location.pathname)}${excalidraw_editor.name}`, {context:JSON.stringify(data)})
+        const rsq = await fileHttp.post(`save/${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${excalidraw_editor.name}`, {context:JSON.stringify(data)})
         if (rsq.code === 0) {
             NotySucess("保存成功")
             // setEditorSetting({open: false, model: '', fileName: '', save: null})

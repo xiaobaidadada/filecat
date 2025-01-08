@@ -41,3 +41,7 @@ export function getRouterPrePath(path) {
 export function isNumeric(str) {
     return /^\d+$/.test(str);
 }
+
+export function getRouterPath() {
+    return window.location.pathname + window.location.hash;
+}
