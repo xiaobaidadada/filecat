@@ -16,6 +16,7 @@ export class SysService {
             cpu_phy_core_num: cpu.physicalCores,
             cpu_speed_hz: cpu.speedMax,
             pid_ppid:`${process.pid};${process.ppid}`,
+            user:process.env['USER'] ?? process.env['USERNAME'],
         })
     }
 

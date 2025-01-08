@@ -97,11 +97,11 @@ export function Http() {
             }
         }
         if(item.form_data_list )
-        set_form_data_list(JSON.parse(item.form_data_list as string))
+            set_form_data_list(JSON.parse(item.form_data_list as string))
         if (item.json_data)
-        http_json_value = JSON.parse(item.json_data);
+            http_json_value = JSON.parse(item.json_data);
         if(item.data)
-        http_row_value = item.data;
+            http_row_value = item.data;
         if (item.body_type) {
             set_body_type(item.body_type);
             if (item.header_type === 2) {
@@ -443,14 +443,14 @@ export function Http() {
                 </Column>
                 <Column>
                     <NavIndexContainer  getItems={getItems} save={saveItems}
-                                       clickItem={clickItem}
-                                       items={[
-                                           {key: "name", preName: t("名字")},
-                                           {key: "url", preName: "url"},
-                                           {key: "method", preName: "method"},
-                                           {key: "headers", preName: "headers"},
-                                           {key: "data", preName: "data"},
-                                           {key: "form_data_list", preName: "form_data_list"}]}/>
+                                        clickItem={clickItem}
+                                        items={[
+                                            {key: "name", preName: t("名字")},
+                                            {key: "url", preName: "url"},
+                                            {key: "method", preName: "method"},
+                                            {key: "headers", preName: "headers"},
+                                            {key: "data", preName: "data"},
+                                            {key: "form_data_list", preName: "form_data_list"}]}/>
                 </Column>
             </Row>
         </Dashboard>
