@@ -86,7 +86,6 @@ export function Http() {
     const clickItem = async (item: { url?: string, name?: string } & HttpFormPojo) => {
         set_url(item.url);
         set_url_type(item.method);
-
         if (item.header_type) {
             switch_header_type(item.header_type)
         }
@@ -105,13 +104,16 @@ export function Http() {
         http_row_value = item.data;
         if (item.body_type) {
             set_body_type(item.body_type);
-            if (item.body_type === 1) {
-                editor_data.get_editor().setValue(http_row_value, -1)
-                editor_data.get_editor().session.setMode('ace/mode/text')
-            } else if (item.body_type === 2) {
-                editor_data.get_editor().setValue(JSON.stringify(http_json_value, null, 2), -1)
-                editor_data.get_editor().session.setMode('ace/mode/json')
+            if (item.header_type === 2) {
+                if (item.body_type === 1) {
+                    editor_data.get_editor().setValue(http_row_value, -1)
+                    editor_data.get_editor().session.setMode('ace/mode/text')
+                } else if (item.body_type === 2) {
+                    editor_data.get_editor().setValue(JSON.stringify(http_json_value, null, 2), -1)
+                    editor_data.get_editor().session.setMode('ace/mode/json')
+                }
             }
+
         }
 
     }
@@ -190,16 +192,18 @@ export function Http() {
         pojo.body_type = body_type;
         pojo.header_type = header_or_body_type;
         if (body_type === http_body_type.row) {
-
-            http_row_value = editor_data.get_editor_value();
+            if (header_or_body_type === 2) {
+                http_row_value = editor_data.get_editor_value();
+            }
             pojo.data = http_row_value;
             pojo.json_data = JSON.stringify(http_json_value);
         } else if (body_type === http_body_type.json) {
             http_header_value['Content-Type'] = 'application/json';
             if (header_or_body_type === 1)
                 editor_data.get_editor().setValue(JSON.stringify(http_header_value), -1)
-
-            http_json_value = JSON.parse(editor_data.get_editor_value());
+            if (header_or_body_type === 2) {
+                http_json_value = JSON.parse(editor_data.get_editor_value());
+            }
             pojo.json_data = JSON.stringify(http_json_value);
             pojo.data = http_row_value;
         } else if (body_type === http_body_type.form) {
