@@ -121,6 +121,7 @@ export function NavIndexContainer(props: {
             update_list(list);
             setItems(list)
             setEdit(true)
+            set_nav_index_add_item_by_now_list(undefined)
         }
     }, [nav_index_add_item_by_now_list]);
     const addDirItem = () => {
@@ -131,6 +132,7 @@ export function NavIndexContainer(props: {
     const cancel = () => {
         setEdit_index([]);
         setEdit(false);
+        if(itemp_recover)
         setItems(itemp_recover);
         set_unfold(false)
     }
