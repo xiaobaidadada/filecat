@@ -121,6 +121,12 @@ export function Http() {
         try {
             if (header_or_body_type === 1) {
                 http_header_value = JSON.parse(editor_data.get_editor_value());
+            } else if (header_or_body_type === 2) {
+                if (body_type === 1) {
+                    http_row_value = editor_data.get_editor_value();
+                } else if (body_type === 2) {
+                    http_json_value = JSON.parse(editor_data.get_editor_value());
+                }
             }
         } catch (e) {
             NotyFail(e.message);
