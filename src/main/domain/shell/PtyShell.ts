@@ -56,6 +56,7 @@ export enum exec_type {
     not = -1, // 不能执行
     auto_child_process = 0, // 使用内置子线程执行(除了cd命令)
     not_pty = 1, // 使用node_pty 执行(前提是传入了 node_pty)
+    continue = 2, // 继续系统的判断 或者 额外操作 取决于开发者
 }
 interface prompt_call_result {
     char_num: number; // \x1b 这样的控制字符会占据一个空格 而后面的[1;2D 会占据实际字符 所以要自己统计好数量
