@@ -9,6 +9,8 @@ import fs from "fs";
 import {Cache} from "../../other/cache";
 import {deleteList} from "../../../common/ListUtil";
 
+const root_id = "1";
+
 export class UserService {
 
     // 创建一个新的不重复的全局唯一id
@@ -29,7 +31,7 @@ export class UserService {
     public create_unique_reole_id(): any {
         let v = DataUtil.get(data_common_key.role_unique_id_num);
         if (v === null || v === undefined) {
-            v = "1";
+            v = root_id;
             DataUtil.set(data_common_key.role_unique_id_num, v);
         } else {
             v = JSON.parse(`${v}`);
@@ -44,7 +46,7 @@ export class UserService {
         const root_username = this.get_root_name();
         if (username === root_username) {
             // root 账号 使用 -1
-            return '1';
+            return root_id;
         }
         let mapping = DataUtil.get(data_common_key.user_id_name_mapping);
         if (!mapping) {
@@ -248,16 +250,21 @@ export class UserService {
 
     public root_init() {
         try {
+            // 以前的账号密码
             let root_name:string = DataUtil.get(data_common_key.username);
+
             if(!root_name) {
+                // 找到root 账号
                 root_name = this.get_root_name();
             }
-            let root_password = DataUtil.get(data_common_key.password);
-            let value = this.get_user_info_by_username(root_name);
+            let value = this.get_user_info_by_user_id(root_id); // 查看超级管理员 1 是否有数据
             if (!value) {
+                let root_password = DataUtil.get(data_common_key.password);
                 if(!root_password) {
+                    // 如果以前没有设置密码 使用环境变量的
                     root_password = Env.password;
                     if(!root_password) {
+                        // 环境变量也没有密码使用 admin
                         root_password = "admin";
                     }
                 }
@@ -266,7 +273,7 @@ export class UserService {
                 value.note = 'root account';
                 value.username = `${root_name}`;
                 value.hash_password = hash_string(`${root_password}`);
-                value.id = this.get_user_id(value.username);
+                value.id = root_id;
                 value.is_root = true;
                 value.language = "en";
                 // 创建
@@ -348,8 +355,8 @@ export class UserService {
             this.load_user_protection(mapping[key]);
         }
         // 超级管理员的加载
-        this.load_user_cmd_path("1");
-        this.load_user_protection("1");
+        this.load_user_cmd_path(root_id);
+        this.load_user_protection(root_id);
     }
 
     // ture 是合法

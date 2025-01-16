@@ -115,15 +115,15 @@ export function User() {
         const role = role_map.get(role_id);
         if (role) {
             if(role.cwd)
-            setwd(role.cwd);
+                setwd(role.cwd);
             if(role.access_dirs && role.access_dirs.length>0)
-            set_access_dirs(role.access_dirs)
+                set_access_dirs(role.access_dirs)
             if(role.not_access_dirs && role.not_access_dirs.length >0)
-            set_not_access_dirs(role.not_access_dirs)
+                set_not_access_dirs(role.not_access_dirs)
             if(role.access_cmd)
-            set_access_cmd(role.access_cmd);
+                set_access_cmd(role.access_cmd);
             if(role.language)
-            setLanguage(role.language);
+                setLanguage(role.language);
             if(role.auth_list && role.auth_list.length > 0) {
                 const set = new Set(role.auth_list);
                 for (const key of auth_list) {
@@ -311,11 +311,11 @@ export function User() {
                                     <InputText
                                         disabled={bind_role_item?.access_dirs?.length !== 0 && bind_role_item?.access_dirs?.length !== undefined}
                                         value={item} handleInputChange={(value) => {
-                                    access_dirs[index] = value;
-                                    set_access_dirs([...access_dirs]);
-                                }}/></div>
+                                        access_dirs[index] = value;
+                                        set_access_dirs([...access_dirs]);
+                                    }}/></div>
                                 {bind_role_item?.access_dirs?.length === 0 || bind_role_item?.access_dirs?.length === undefined
-                                &&
+                                    &&
                                     <ActionButton icon={"delete"} onClick={() => {
                                         access_dirs.splice(index, 1);
                                         set_access_dirs([...access_dirs]);
@@ -338,9 +338,9 @@ export function User() {
                                     <InputText
                                         disabled={bind_role_item?.not_access_dirs?.length !== 0 && bind_role_item?.not_access_dirs?.length!==undefined}
                                         value={item} handleInputChange={(value) => {
-                                    not_access_dirs[index] = value;
-                                    set_not_access_dirs([...not_access_dirs]);
-                                }}/></div>
+                                        not_access_dirs[index] = value;
+                                        set_not_access_dirs([...not_access_dirs]);
+                                    }}/></div>
                                 {bind_role_item?.not_access_dirs?.length === 0 || bind_role_item?.not_access_dirs?.length ===undefined &&
                                     <ActionButton
                                         icon={"delete"} onClick={() => {
@@ -355,7 +355,7 @@ export function User() {
                         <InputText
                             disabled={bind_role_item.access_cmd !== "" && bind_role_item.access_cmd !== undefined}
                             value={access_cmd} placeholder={"use blank split"}
-                                   handleInputChange={(value) => set_access_cmd(value)}/>
+                            handleInputChange={(value) => set_access_cmd(value)}/>
 
                         {
                             !is_root &&
