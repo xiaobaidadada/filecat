@@ -191,6 +191,7 @@ export class UserService {
         // 角色作用
         this.update_user_role_data(data);
         DataUtil.set(data_common_key.user_id_info_data_mapping, mapping);
+        this.load_user_cmd_path(id); // 权限更新
     }
 
     // 删除用户 id

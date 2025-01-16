@@ -724,7 +724,7 @@ export class PtyShell {
                         break;
                     default:
                         // 未知的不报错也不执行
-                        return;
+                           return;
                 }
             }
             if (this.cmd_set.has(exe)) {
@@ -810,12 +810,14 @@ export class PtyShell {
             this.child = this.node_require.child_process.spawn(exe, params, {
                 shell:true,
                 cwd: this.cwd,    // 设置子进程的工作目录
-                env: {...process.env, ...this.env}, // 传递环境变量
+                env: {...process.env, ...this.env,LANG: 'en_US.UTF-8'}, // 传递环境变量
                 // stdio: 'inherit'  // 让子进程的输入输出与父进程共享 pipe ignore inherit
                 // timeout: 5000,      // 设置超时为 5 秒
                 maxBuffer: 1024 * 1024 * 10,// 设置缓冲区为 10 MB
                 ...spawn_option
             });
+            // 设置编码为 'utf8'，确保输出按 UTF-8 编码解析
+            this.child.stdout.setEncoding('utf8');
             this.child.stdout.on('data', (data) => {
                 const v = data.toString(); // 子程序没有换行等符号不会立即输出 有缓冲区
                 this.send_and_enter(v);
