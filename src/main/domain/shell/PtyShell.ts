@@ -826,6 +826,7 @@ export class PtyShell {
             this.child.stderr.on('data', (data) => {
                 const v = data.toString();
                 this.send_and_enter(v);
+                this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
             });
             this.child.on('exit', (code) => {
                 this.close_child();

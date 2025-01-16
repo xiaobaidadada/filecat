@@ -14,6 +14,7 @@ import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import * as vm from "node:vm";
 import {userController} from "../user/user.controller";
 import {userService} from "../user/user.service";
+import {sysType} from "../shell/shell.service";
 
 const needle = require('needle');
 
@@ -320,18 +321,24 @@ export class SettingService {
         this.getFilesSetting(token);
     }
 
-    extra_env_path = data_common_key.extra_env_path
+    // extra_env_path = data_common_key.extra_env_path
 
-    // public getEnvPath() {
-    //     return DataUtil.get(this.extra_env_path) ?? "";
-    // }
-    //
-    // setEnvPath(path: string) {
-    //     DataUtil.set(this.extra_env_path, path);
-    //     return Sucess("1");
-    // }
+    public getEnvPath() {
+        return DataUtil.get(data_common_key.extra_env_path_list_key) ??[];
+    }
 
-    protection_directory = data_common_key.protection_directory
+    public get_env_list() {
+        const list:any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ??[];
+        const s = sysType === "win" ? ";" : ":";
+        return list.map(v=>v.path).join(s);
+    }
+
+    setEnvPath(paths: any[]) {
+        DataUtil.set(data_common_key.extra_env_path_list_key, paths);
+        return Sucess("1");
+    }
+
+    // protection_directory = data_common_key.protection_directory
 
     // 获取系统保护目录
     protectionDirGet(token): { path: string }[] {

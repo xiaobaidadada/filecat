@@ -20,12 +20,14 @@ export function Env() {
     const [rows, setRows] = useState([]);
     const [rows_outside_software, setRows_outside_software] = useState([]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-    const [env_path,set_env_path] = useState("");
+    // const [env_path,set_env_path] = useState("");
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
+    const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
+    const env_path_dir_headers = [t("编号"),t("路径"),t("备注")];
     const {check_user_auth} = use_auth_check();
 
     const getItems = async () => {
@@ -38,11 +40,11 @@ export function Env() {
         if (result1.code === RCode.Sucess) {
             setRows_outside_software(result1.data);
         }
-        // // env path
-        // const result2 = await settingHttp.get("env/path/get");
-        // if (result2.code === RCode.Sucess) {
-        //     set_env_path(result2.data);
-        // }
+        // env path
+        const result2 = await settingHttp.get("env/path/get");
+        if (result2.code === RCode.Sucess) {
+            set_env_path_dir_rows(result2.data);
+        }
         // 保护目录
         const result3 = await settingHttp.get("protection_dir");
         if (result3.code === RCode.Sucess) {
@@ -72,6 +74,7 @@ export function Env() {
             reloadUserInfo();
         }
     }
+
     const add = ()=>{
         setRows([...rows,{note:"",default:false,path:""}]);
     }
@@ -85,6 +88,13 @@ export function Env() {
     const protection_dir_del = (index)=>{
         protection_dir_rows.splice(index, 1);
         set_protection_dir_rows([...protection_dir_rows]);
+    }
+    const env_path_dir_add = ()=>{
+        set_env_path_dir_rows([...env_path_dir_rows,{path:"",note:""}]);
+    }
+    const env_path_dir_del = (index)=>{
+        env_path_dir_rows.splice(index, 1);
+        set_env_path_dir_rows([...env_path_dir_rows]);
     }
     const onChange = (item,value,index)=> {
         const list = [];
@@ -134,6 +144,10 @@ export function Env() {
             context = <div>
                 用于在文件夹下切换根目录
             </div>
+        } else if(id === "环境路径") {
+            context = <div>
+                当在不同用户环境下运行的时候由于没有执行终端去加载PATH，这里可以添加额外的PATH路径
+            </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >
@@ -142,13 +156,13 @@ export function Env() {
             )})
     }
 
-    // const update_env_path = async ()=>{
-    //     const result = await settingHttp.post("env/path/save", {path:env_path});
-    //     if (result.code === RCode.Sucess) {
-    //         NotySucess("保存成功")
-    //         initUserInfo();
-    //     }
-    // }
+    const update_env_path = async ()=>{
+        const result = await settingHttp.post("env/path/save", {paths:env_path_dir_rows});
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+            initUserInfo();
+        }
+    }
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
@@ -205,12 +219,27 @@ export function Env() {
             </Dashboard>
 
         </Column>
-        {/*<Column>*/}
-        {/*    <Dashboard>*/}
-        {/*        <Card title={t("PATH路径")} rightBottomCom={<ButtonText text={t('更新')} clickFun={update_env_path}/>}>*/}
-        {/*            <InputText placeholder={t('多个path路径使用:(linux)或者;(windwos)分割')}  value={env_path} handleInputChange={(value)=>{set_env_path(value)}} />*/}
-        {/*        </Card>*/}
-        {/*    </Dashboard>*/}
-        {/*</Column>*/}
+        <Column>
+            <Dashboard>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("PATH")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("环境路径")}} title={"信息"}/></span>}
+                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={env_path_dir_add}/>
+                              <ActionButton icon={"save"} title={t("保存")} onClick={update_env_path}/></div>}>
+                    <Table headers={env_path_dir_headers} rows={env_path_dir_rows.map((item, index) => {
+                        const new_list = [
+                            <div>{index}</div>,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => env_path_dir_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+            </Dashboard>
+        </Column>
     </Row>)
 }
