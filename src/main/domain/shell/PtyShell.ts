@@ -18,7 +18,7 @@ import {SysEnum} from "../../../common/req/user.req";
  * 3. 支持 ls pwd 等内置命令 ， 除了 cd 所有命令都可以自定义
  * 4. 不存在的命令会被用子进程执行
  * 5. 对于特殊的 shell 命令 会使用  node-pty 来执行 并让shell托管所有的输入输出数据
- * 6. 目前并不支持管道等功能 也就是  && | 这样的功能
+ * 6. 使用了shell: true 参数 系统的默认shell可以支持管道等操作，还可以支持程序路劲查找的功能
  */
 
 const cmd_list = ['ls', 'cd', 'pwd']; // 仅支持这三个内置命令 cd 命令是唯一支持参数的
@@ -405,8 +405,9 @@ export class PtyShell {
         line_reduce_num?: number,
         p_line?: string
     }) {
-        const prompt = !this.child ? this.raw_prompt : this.child_now_line;
-        let len = this.prompt_call_len + this.line_char_index; // 字符串前面的字符数量
+        const not_have_child = !this.child;
+        const prompt = not_have_child ? this.raw_prompt : this.child_now_line;
+        let len = not_have_child ?this.prompt_call_len:PtyShell.get_full_char_num(this.child_now_line) + this.line_char_index; // 字符串前面的字符数量
         if (param && param.line_add_num) {
             len += param.line_add_num;
         } else if (param && param.line_reduce_num) {
@@ -808,6 +809,7 @@ export class PtyShell {
             this.is_pty = false;
             // 其他的没有必要再创建一个 tty 都是资源消耗
             this.child = this.node_require.child_process.spawn(exe, params, {
+                shell:true,
                 cwd: this.cwd,    // 设置子进程的工作目录
                 env: {...process.env, ...this.env}, // 传递环境变量
                 // stdio: 'inherit'  // 让子进程的输入输出与父进程共享 pipe ignore inherit
@@ -816,7 +818,7 @@ export class PtyShell {
                 ...spawn_option
             });
             this.child.stdout.on('data', (data) => {
-                const v = data.toString();
+                const v = data.toString(); // 子程序没有换行等符号不会立即输出 有缓冲区
                 this.send_and_enter(v);
             });
             this.child.stderr.on('data', (data) => {
@@ -901,6 +903,9 @@ export class PtyShell {
                 }
                 start = -1;
             }
+        }
+        if(start !== -1) {
+            params.push(str.substring(start));
         }
         return {exe, params};
     }
