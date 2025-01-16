@@ -68,7 +68,7 @@ let line = "";
 
 let prompt = `${process.env.USER ?? process.env.USERNAME}>`;
 
-const shell_list = ['bash', 'sh', 'cmd', 'cmd.exe', 'pwsh', 'pwsh.exe', 'powershell', 'powershell.exe','vim','nano','cat','tail']; // 一些必须用 node_pty 执行的
+const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe','vim','nano','cat','tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
 // ANSI 转义序列，设置绿色、蓝色、重置颜色
 const green = '\x1b[32m';  // 绿色
 const blue = '\x1b[34m';   // 蓝色

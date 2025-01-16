@@ -1,12 +1,13 @@
 {
   "name": "filecat",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "filecat 文件管理器",
   "author": "xiaobaidadada",
   "scripts": {
     "dev": "node  --require ts-node/register ./shell/dev.js --env ./env",
     "server-debug-js": "tsc && node build/server/main/server.js --env ./env",
-    "server-dev-inspect": "node --inspect=0.0.0.0:9001 --require ts-node/register ./shell/dev.js --env ./env",
+    "dev-inspect": "node --inspect=0.0.0.0:9001 --require ts-node/register ./shell/dev.js --env ./env",
+    "server-dev-inspect": "node --inspect=0.0.0.0:9001 --require ts-node/register ./src/main/server.ts --env ./env ",
     "server-dev": "node --require ts-node/register ./src/main/server.ts --env ./env",
     "webpack-dev": "npx webpack serve --mode development --config shell/config/webpack.config.js",
     "generate-proto": "node --require ts-node/register ./src/common/proto/proto.generate.ts",

@@ -8,7 +8,7 @@
  * 读取输出与写入输入：捕获输出并发送输入，模拟用户交互。
  * 信号和控制字符支持：处理回车、换行等控制字符，并支持信号转发。
  */
-import {getSys} from "./shell.service";
+import {getShell, getSys} from "./shell.service";
 import {SysEnum} from "../../../common/req/user.req";
 
 /**
@@ -780,9 +780,9 @@ export class PtyShell {
         //     this.on_call(`\n\r`); // 先换个行
         // }
         if ((use_noe_pty || this.shell_set.has(exe)) && this.node_pty) {
-            if (!exe.includes('exe') && exe !== 'bash' && exe !== 'sh') {
-                exe += '.exe';
-            }
+            // if (!exe.includes('exe') && exe !== 'bash' && exe !== 'sh') {
+            //     exe += '.exe';
+            // }
             this.on_call(`\n\r`); // 先换个行
             this.child = this.node_pty.spawn(exe, params, {
                 name: 'xterm-color',
@@ -800,6 +800,7 @@ export class PtyShell {
             this.child.onExit(({exitCode, signal}) => {
                 this.close_child();
                 this.send_and_enter(`pty with ${exitCode}`);
+                this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
                 if (this.on_child_kill_call)
                     this.on_child_kill_call(exitCode);
             })
@@ -808,7 +809,7 @@ export class PtyShell {
             this.is_pty = false;
             // 其他的没有必要再创建一个 tty 都是资源消耗
             this.child = this.node_require.child_process.spawn(exe, params, {
-                shell:true,
+                shell:getShell(),
                 cwd: this.cwd,    // 设置子进程的工作目录
                 env: {...process.env, ...this.env,LANG: 'en_US.UTF-8'}, // 传递环境变量
                 // stdio: 'inherit'  // 让子进程的输入输出与父进程共享 pipe ignore inherit
@@ -833,10 +834,12 @@ export class PtyShell {
                 } else {
                     this.send_and_enter(``);
                 }
+                this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
                 if (this.on_child_kill_call)
                     this.on_child_kill_call(code);
             });
             this.child.on('error', (error) => {
+                this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
                 this.close_child();
                 this.send_and_enter(JSON.stringify(error));
             });
