@@ -405,9 +405,8 @@ export class PtyShell {
         line_reduce_num?: number,
         p_line?: string
     }) {
-        const not_have_child = !this.child;
-        const prompt = not_have_child ? this.raw_prompt : this.child_now_line;
-        let len = not_have_child ?this.prompt_call_len:PtyShell.get_full_char_num(this.child_now_line) + this.line_char_index; // 字符串前面的字符数量
+        const prompt = !this.child ? this.raw_prompt : this.child_now_line;
+        let len = (!this.child?this.prompt_call_len:PtyShell.get_full_char_num(prompt)) + this.line_char_index; // 字符串前面的字符数量
         if (param && param.line_add_num) {
             len += param.line_add_num;
         } else if (param && param.line_reduce_num) {
@@ -725,7 +724,7 @@ export class PtyShell {
                         break;
                     default:
                         // 未知的不报错也不执行
-                           return;
+                        return;
                 }
             }
             if (this.cmd_set.has(exe)) {
