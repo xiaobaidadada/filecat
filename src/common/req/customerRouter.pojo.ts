@@ -1,3 +1,4 @@
+import {data_common_key} from "../../main/domain/data/data_type";
 
 export class CustomerApiRouterPojo {
     router:string;
@@ -6,4 +7,4 @@ export class CustomerApiRouterPojo {
 }
 
 
-export const self_auth_jscode = "self_auth_jscode";
+export const self_auth_jscode = data_common_key.self_auth_jscode;

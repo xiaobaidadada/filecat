@@ -1,16 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {Blank} from "../../../meta/component/Blank";
-import {Column, Dashboard, Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card, CardFull, TextTip} from "../../../meta/component/Card";
+import {Column, Dashboard, Row} from '../../../meta/component/Dashboard';
+import {CardFull, TextTip} from "../../../meta/component/Card";
 import {Table} from "../../../meta/component/Table";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {InputText} from "../../../meta/component/Input";
-import {ActionButton, Button, ButtonText} from "../../../meta/component/Button";
+import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {formatFileSize} from "../../../../common/ValueUtil";
 import {sort} from "../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 let filter = ""
 let sortMem = false;
@@ -30,6 +32,7 @@ export function Process(props) {
             sortCpu=!sortCpu;
         }}/></span>),
         t("选择"),]);
+    const {check_user_auth} = use_auth_check();
 
     const init = async () => {
         const data = new WsData(CmdType.process_get);
@@ -96,7 +99,7 @@ export function Process(props) {
             {optRow.length > 0 && <div>
                 {optRow[1].props.context}
             </div>}
-            {optRow.length > 0 && <div>
+            {(optRow.length > 0 && check_user_auth(UserAuth.sys_process_close)) && <div>
                 <ActionButton icon={"stop"} title={"停止"} onClick={close}/>
             </div>}
 

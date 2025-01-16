@@ -43,6 +43,9 @@ export function NetServer(props) {
             setInterval(getItems,1000 * 30)
         }
         init();
+        return ()=>{
+            ws.unConnect();
+        }
     }, []);
     const save = async ()=>{
         const pojo = new VirServerPojo();

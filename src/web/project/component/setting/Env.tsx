@@ -12,6 +12,7 @@ import {GlobalContext} from "../../GlobalProvider";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotySucess} from "../../util/noty";
+import {use_auth_check} from "../../util/store.util";
 
 export function Env() {
     const { t, i18n } = useTranslation();
@@ -25,7 +26,7 @@ export function Env() {
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
-
+    const {check_user_auth} = use_auth_check();
 
     const getItems = async () => {
         // 文件夹根路径
@@ -37,11 +38,11 @@ export function Env() {
         if (result1.code === RCode.Sucess) {
             setRows_outside_software(result1.data);
         }
-        // env path
-        const result2 = await settingHttp.get("env/path/get");
-        if (result2.code === RCode.Sucess) {
-            set_env_path(result2.data);
-        }
+        // // env path
+        // const result2 = await settingHttp.get("env/path/get");
+        // if (result2.code === RCode.Sucess) {
+        //     set_env_path(result2.data);
+        // }
         // 保护目录
         const result3 = await settingHttp.get("protection_dir");
         if (result3.code === RCode.Sucess) {
@@ -141,13 +142,13 @@ export function Env() {
             )})
     }
 
-    const update_env_path = async ()=>{
-        const result = await settingHttp.post("env/path/save", {path:env_path});
-        if (result.code === RCode.Sucess) {
-            NotySucess("保存成功")
-            initUserInfo();
-        }
-    }
+    // const update_env_path = async ()=>{
+    //     const result = await settingHttp.post("env/path/save", {path:env_path});
+    //     if (result.code === RCode.Sucess) {
+    //         NotySucess("保存成功")
+    //         initUserInfo();
+    //     }
+    // }
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
@@ -204,12 +205,12 @@ export function Env() {
             </Dashboard>
 
         </Column>
-        <Column>
-            <Dashboard>
-                <Card title={t("PATH路径")} rightBottomCom={<ButtonText text={t('更新')} clickFun={update_env_path}/>}>
-                    <InputText placeholder={t('多个path路径使用:(linux)或者;(windwos)分割')}  value={env_path} handleInputChange={(value)=>{set_env_path(value)}} />
-                </Card>
-            </Dashboard>
-        </Column>
+        {/*<Column>*/}
+        {/*    <Dashboard>*/}
+        {/*        <Card title={t("PATH路径")} rightBottomCom={<ButtonText text={t('更新')} clickFun={update_env_path}/>}>*/}
+        {/*            <InputText placeholder={t('多个path路径使用:(linux)或者;(windwos)分割')}  value={env_path} handleInputChange={(value)=>{set_env_path(value)}} />*/}
+        {/*        </Card>*/}
+        {/*    </Dashboard>*/}
+        {/*</Column>*/}
     </Row>)
 }

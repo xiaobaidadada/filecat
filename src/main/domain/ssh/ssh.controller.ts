@@ -1,6 +1,6 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {navindex_remote_ssh_key, sshService} from "./ssh.service";
+import { sshService} from "./ssh.service";
 import {ShellInitPojo, SshPojo} from "../../../common/req/ssh.pojo";
 import {
     Body,
@@ -17,9 +17,12 @@ import {
 } from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {NavIndexItem} from "../../../common/req/common.pojo";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import multer from "multer";
 import {Request, Response} from "express";
+import {data_common_key} from "../data/data_type";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 
 @JsonController("/ssh")
 export class SSHController {
@@ -101,11 +104,11 @@ export class SSHController {
         return ""
     }
 
-    @msg(CmdType.remote_shell_cancel)
-    async cancel(data: WsData<SshPojo>) {
-        sshService.cancel(data);
-        return ""
-    }
+    // @msg(CmdType.remote_shell_cancel)
+    // async cancel(data: WsData<SshPojo>) {
+    //     sshService.cancel(data);
+    //     return ""
+    // }
 
     @msg(CmdType.remote_shell_cd)
     async cd(data: WsData<SshPojo>) {
@@ -114,14 +117,15 @@ export class SSHController {
     }
 
     @Post('/tag/save')
-    save(@Body() items: NavIndexItem[]) {
-        DataUtil.set(navindex_remote_ssh_key, items);
+    save(@Body() items: NavIndexItem[],@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.ssh_proxy_tag_update);
+        DataUtil.set(data_common_key.navindex_remote_ssh_key, items);
         return Sucess('ok');
     }
 
     @Get("/tag")
     get() {
-        let list = DataUtil.get(navindex_remote_ssh_key);
+        let list = DataUtil.get(data_common_key.navindex_remote_ssh_key);
         return Sucess(list || []);
     }
 }

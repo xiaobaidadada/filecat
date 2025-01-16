@@ -16,12 +16,18 @@ export function Menu(props) {
     }
     const [selectedIndex, setSelectedIndex] = React.useState(0);
     useEffect(() => {
+        let have = true;
         for (let index = 0; index < props.optionList.length; index++) {
             if (getRouterPath().includes(props.optionList[index].rto)) {
                 setSelectedIndex(index);
+                have = false;
+                break;
             }
         }
-    }, []);
+        if(have) {
+            setSelectedIndex(0);
+        }
+    }, [props.optionList]);
     return <div className={"dashboard"}>
         {/*标签头*/}
         <div className={"menu not-select-div"}>
@@ -133,7 +139,7 @@ export function DropdownTag(props: {
 }
 
 function DropdownItem(props: { key, value, click, context, pre_value, c?: React.ReactNode }) {
-    return <div className={props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}
+    return <div className={`dropdown_item ${props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}`}
                 onClick={(e) => {
                     e.stopPropagation()
                     e.nativeEvent.stopImmediatePropagation()

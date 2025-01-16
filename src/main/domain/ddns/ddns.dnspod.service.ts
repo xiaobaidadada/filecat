@@ -1,14 +1,14 @@
 import {HttpRequest} from "../../../common/http";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import {DdnsConnection, DnsPod} from "../../../common/req/ddns.pojo";
 import {getMapByList} from "../../../common/ListUtil";
 import {parse} from "tldts";
 import {DdnsPre, updateDns} from "./ddns.pre";
 import {IResult} from "tldts-core";
+import {data_common_key} from "../data/data_type";
 
 
 
-export const ddns_dnspod_key = "ddns_dnspod";
 const dnsPodList = "https://dnsapi.cn/Record.List";
 const dnspodModify  = "https://dnsapi.cn/Record.Modify";
 const dnspodCreate  = "https://dnsapi.cn/Record.Create";
@@ -51,7 +51,7 @@ export class DnsPodService extends DdnsPre implements updateDns{
     }
     public async Run(netList:any[]) {
         try {
-            const data = await DataUtil.get<DdnsConnection>(ddns_dnspod_key);
+            const data = await DataUtil.get<DdnsConnection>(data_common_key.ddns_dnspod_key);
             if (data && data.isOpen && data.ips && data.ips.length > 0) {
 
                 const map = getMapByList(netList,(v)=>v.ifaceOrWww+v.isIPv4);
@@ -80,7 +80,7 @@ export class DnsPodService extends DdnsPre implements updateDns{
                 }
                 if (change) {
                     async_have = true;
-                    DataUtil.set(ddns_dnspod_key, data);
+                    DataUtil.set(data_common_key.ddns_dnspod_key, data);
                 }
             } else {
                 return false;
@@ -104,7 +104,7 @@ export class DnsPodService extends DdnsPre implements updateDns{
     }
 
     getDdnsKey() {
-        return ddns_dnspod_key;
+        return data_common_key.ddns_dnspod_key;
     }
 }
 export const dnspodService = new DnsPodService();

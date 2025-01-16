@@ -20,6 +20,8 @@ const help = `
 12. base_folder 软件管理的文件夹默认根路径，默认是启动软件所在的目录
 13. username 登录账号 默认是admin (截止到1.0.5目前没有权限功能)
 14. password 登录密码 默认是admin
+15. reset_root_username 重新生成管理员的账号 (启动完请删除这个参数下次要再使用，下面的密码也是)
+16. reset_root_password
 `;
 
 export class Env {
@@ -30,6 +32,8 @@ export class Env {
     public static password: string = "";
     public static work_dir: string = `${process.cwd()}/data`;
     public static env: string = "";
+    public static reset_root_username: string;
+    public static reset_root_password: string;
 
     public static async parseArgs() {
         return new Promise((resolve, reject) => {

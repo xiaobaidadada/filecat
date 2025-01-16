@@ -14,3 +14,9 @@ password=admin
 # The program requires a directory to store data, preferably an empty directory.
 #work_dir=D:\data 或者 /home
 
+# 用于重新修改密码
+reset_root_password=
+
+#用于重新修改root账号
+reset_root_username=
+

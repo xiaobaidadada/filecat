@@ -35,6 +35,8 @@ export class Cache {
      * @param key
      */
     public static getValue(key: string): any {
+        const value = this.valueMap.get(key);
+        if (!value) return undefined; // 不存在key值返回空值
         if (this.time_len === -1) {
             // 没有过期时间
 
@@ -48,7 +50,7 @@ export class Cache {
         this.stampMap.delete(key);
         this.timeLenMap.delete(key);
         this.valueMap.delete(key);
-        return null;
+        throw "out of date";
     }
 
     /**

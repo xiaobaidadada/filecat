@@ -2,9 +2,9 @@ import {Ali, DdnsConnection, DnsPod, Tengxun} from "../../../common/req/ddns.poj
 import {DdnsPre} from "./ddns.pre";
 import {IResult} from "tldts-core";
 import {HttpRequest} from "../../../common/http";
+import {data_common_key} from "../data/data_type";
 const crypto = require('crypto');
 
-export const ddns_ali_key = "ali_ddns_key"
 export const alidnsEndpoint  = "https://alidns.aliyuncs.com/"
 
 
@@ -17,7 +17,7 @@ export function generateAliSignature(params, secret) {
 
 export class AliService extends DdnsPre {
     getDdnsKey() {
-        return ddns_ali_key;
+        return data_common_key.ddns_ali_key;
     }
 
     async update(data: DdnsConnection, domain: IResult, ip: string, type: string) {

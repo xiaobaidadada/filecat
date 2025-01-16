@@ -34,6 +34,7 @@ export interface FileInfoItemData {
     left_size?:any;
     used_size?:any;
     fs_type?:string;
+    now_absolute_path?:string; // 当前决定路径
 }
 
 export interface GetFilePojo {

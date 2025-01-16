@@ -20,7 +20,6 @@ import multer from 'multer';
 import {Request, Response} from "express";
 
 
-export const navindex_remote_ssh_key = "navindex_remote_ssh_key";
 
 export class SshService extends SshSsh2 {
 
@@ -187,13 +186,13 @@ export class SshService extends SshSsh2 {
 
     }
 
-    cancel(data: WsData<SshPojo>) {
-        const wss = (data.wss as Wss);
-        const emitter = wss.dataMap.get("emitter");
-        if (emitter) {
-            emitter.emit("data", "exit\r");
-        }
-    }
+    // cancel(data: WsData<SshPojo>) {
+    //     const wss = (data.wss as Wss);
+    //     const emitter = wss.dataMap.get("emitter");
+    //     if (emitter) {
+    //         emitter.emit("data", "exit\r");
+    //     }
+    // }
 
     cd(data: WsData<SshPojo>) {
         const wss = (data.wss as Wss);

@@ -1,8 +1,14 @@
-import React, {Suspense, useEffect, useRef, useState} from 'react'
+import React, {Suspense} from 'react'
 import '../../meta/resources/css/all.css'
 import Header from "../../meta/component/Header";
 import {CommonBody} from "../../meta/component/Body";
 import {NavItem} from "../../meta/component/NavProps";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../util/store";
+import {routerConfig} from "../../../common/RouterConfig";
+import {useTranslation} from "react-i18next";
+import {use_auth_check} from "../util/store.util";
+import {UserAuth} from "../../../common/req/user.req";
 
 const Ddns = React.lazy(() => import("./ddns/Ddns"))
 const FileList = React.lazy(() => import("./file/FileList"))
@@ -19,10 +25,6 @@ const Net = React.lazy(() => import("./net/Net"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
-import {useRecoilState} from "recoil";
-import {$stroe} from "../util/store";
-import {routerConfig} from "../../../common/RouterConfig";
-import {useTranslation} from "react-i18next";
 
 
 function Layout() {
@@ -31,26 +33,33 @@ function Layout() {
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
     const [custom_fun_opt,set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
+    const {check_user_auth} = use_auth_check();
 
     function logout() {
         localStorage.setItem('token', '')
     }
-
+    const seconds:NavItem[] = [
+        {icon: "home", name: t("网址"), rto: `${routerConfig.navindex}/`},
+        {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
+        {icon: "computer", name: t("系统信息"), rto: `${routerConfig.info}/`},
+    ];
+    if(check_user_auth(UserAuth.ddns)) {
+        seconds.push({icon: "cloud", name: "ddns", rto: `${routerConfig.ddns}/`})
+    }
+    let three:NavItem[] = [
+        {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
+        {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
+        // {component:(<div>测试</div>)}
+    ]
+    if(check_user_auth(UserAuth.vir_net)) {
+        three = [{icon: "network_ping", name: t("虚拟网络"), rto: `${routerConfig.net}/`},...three];
+    }
     const MainNavList: NavItem[][] = [
         [
-            {icon: "folder", name: t("文件夹"), rto: `${routerConfig.file}/`,},],
-        [
-            {icon: "home", name: t("网站"), rto: `${routerConfig.navindex}/`},
-            {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
-            {icon: "computer", name: t("系统信息"), rto: `${routerConfig.info}/`},
-            {icon: "cloud", name: "ddns", rto: `${routerConfig.ddns}/`},
+            {icon: "folder", name: t("文件夹"), rto: `${routerConfig.file}/`,},
         ],
-        [
-            {icon: "network_ping", name: t("虚拟网络"), rto: `${routerConfig.net}/`},
-            {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
-            {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
-            // {component:(<div>测试</div>)}
-        ]
+        seconds,
+        three
     ]
     if(custom_fun_opt) {
         // @ts-ignore
@@ -95,9 +104,9 @@ function Layout() {
                 {/*系统信息*/}
                 <SysInfo/>
                 {/*ddns*/}
-                <Ddns/>
+                {check_user_auth(UserAuth.ddns) && <Ddns/>}
                 {/*网络*/}
-                <Net/>
+                {check_user_auth(UserAuth.vir_net) && <Net/>}
                 {/*设置*/}
                 <Settings/>
             </CommonBody>

@@ -52,7 +52,7 @@ a {
     color: inherit
 }
 
-.dashboard p label {
+.dashboard  label , .dashboard_label{
     margin-bottom: .2em;
     display: block;
     font-size: .8em;
@@ -160,7 +160,7 @@ table tr>*:last-child {
     background-color: #fff;
     border-radius: 2px;
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
-    overflow: auto;
+    /*overflow: auto;*/
 }
 
 .card.floating {
@@ -224,7 +224,7 @@ body.rtl .card .card-action {
 
 .card .card-content.full {
     padding-bottom: 0;
-    overflow: auto;
+    /*overflow: auto;*/
 }
 
 .card h2 {
@@ -506,6 +506,8 @@ body.rtl .credits {
 }
 
 .card-action-bottom-right {
-    width: auto;
-    float: right; /* 靠右浮动 */
+    /*width: auto;*/
+    /*float: right; !* 靠右浮动 *!*/
+    display: flex;
+    justify-content: flex-end; /* 让子元素从右边开始排列 */
 }

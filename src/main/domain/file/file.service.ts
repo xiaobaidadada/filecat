@@ -31,6 +31,8 @@ const archiver = require('archiver');
 const mime = require('mime-types');
 import multer from 'multer';
 import {Request, Response} from "express";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 const chokidar = require('chokidar');
 
 class FileService extends FileCompress {
@@ -40,7 +42,11 @@ class FileService extends FileCompress {
             files: [],
             folders: [],
         };
+        if(is_sys_path === 1 && decodeURIComponent(param_path) === "etc/fstab") {
+            userService.check_user_auth(token,UserAuth.sys_disk_mount);
+        }
         const sysPath = is_sys_path === 1 ? `/${decodeURIComponent(param_path)}` : path.join(settingService.getFileRootPath(token), param_path ? decodeURIComponent(param_path) : "");
+        userService.check_user_path(token,sysPath)
         if (!fs.existsSync(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
@@ -107,6 +113,7 @@ class FileService extends FileCompress {
     public async getFileInfo(type: FileTypeEnum, fpath: string, token) {
         let info: FileInfoItemData = {};
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
+        userService.check_user_path(token,sysPath)
         switch (type) {
             case FileTypeEnum.folder:
                 info = await this.getDiskSizeForPath(sysPath);
@@ -114,7 +121,7 @@ class FileService extends FileCompress {
             default:
                 break;
         }
-
+        info.now_absolute_path = sysPath;
         return info;
     }
 
@@ -141,6 +148,7 @@ class FileService extends FileCompress {
     public uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
+        userService.check_user_path(token,sysPath)
         // if (!file) {
         //     // 目录
             if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
@@ -168,7 +176,8 @@ class FileService extends FileCompress {
             return Sucess("1");
         }
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filePath));
-        if (settingService.protectionCheck(sysPath)) {
+        userService.check_user_path(token,sysPath)
+        if (userService.protectionCheck(sysPath,token)) {
             return Fail("1", RCode.PROTECT_FILE);
         }
         const stats = fs.statSync(sysPath);
@@ -185,7 +194,7 @@ class FileService extends FileCompress {
             return;
         }
         const sysPath = is_sys_path === 1 ? `/${decodeURIComponent(filePath)}` : path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
-
+        userService.check_user_path(token,sysPath)
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
@@ -197,6 +206,7 @@ class FileService extends FileCompress {
 
     public common_base64_save(token: string, filepath: string, base64_context: string, type: base64UploadType) {
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filepath));
+        userService.check_user_path(token,sysPath)
         const binaryData = Buffer.from(base64_context, 'base64');
         if (type === base64UploadType.all || type === base64UploadType.start) {
             fs.writeFileSync(sysPath, binaryData);
@@ -212,6 +222,8 @@ class FileService extends FileCompress {
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path);
         const toSysPath = path.join(root_path, data.to ? decodeURIComponent(data.to) : "");
+        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token,toSysPath)
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             fs.renameSync(filePath, decodeURIComponent(path.join(toSysPath, path.basename(file))));
@@ -226,6 +238,8 @@ class FileService extends FileCompress {
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path);
         const toSysPath = path.join(root_path, data.to ? decodeURIComponent(data.to) : "");
+        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token,toSysPath)
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             // 覆盖
@@ -235,20 +249,21 @@ class FileService extends FileCompress {
 
     }
 
-    public async newFile(index, data?: fileInfoReq) {
-        await this.todoNew(index, 2, data)
+    public async newFile(token, data?: fileInfoReq) {
+        await this.todoNew(token, 2, data)
 
     }
 
-    public async newDir(index, data?: fileInfoReq) {
-        await this.todoNew(index, 1, data)
+    public async newDir(token, data?: fileInfoReq) {
+        await this.todoNew(token, 1, data)
     }
 
-    public async todoNew(index, type, data?: fileInfoReq) {
+    public async todoNew(token, type, data?: fileInfoReq) {
         if (data === null || data === undefined) {
             return
         }
-        const sysPath = path.join(settingService.getFileRootPath(index), decodeURIComponent(data.name));
+        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.name));
+        userService.check_user_path(token,sysPath)
         if (fs.existsSync(sysPath)) {
             return;
         }
@@ -258,7 +273,6 @@ class FileService extends FileCompress {
         } else {
             fs.writeFileSync(sysPath, data.context ?? "");
         }
-        settingService.protectionInit();
     }
 
     public async rename(token, data?: fileInfoReq) {
@@ -267,6 +281,7 @@ class FileService extends FileCompress {
         }
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path, decodeURIComponent(data.name));
+        userService.check_user_path(token,sysPath)
         const sysPathNew = path.join(root_path, decodeURIComponent(data.newName));
         await fse.rename(sysPath, sysPathNew);
     }

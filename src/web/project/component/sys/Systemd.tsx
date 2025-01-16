@@ -1,26 +1,24 @@
 import React, {useEffect, useState} from 'react'
 import {Blank} from "../../../meta/component/Blank";
-import {Column, Dashboard, Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card, CardFull, TextTip} from "../../../meta/component/Card";
+import {Column, Dashboard, Row} from '../../../meta/component/Dashboard';
+import {CardFull, TextTip} from "../../../meta/component/Card";
 import {Table} from "../../../meta/component/Table";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
-import {DiskDevicePojo, staticSysPojo, SysPojo} from "../../../../common/req/sys.pojo";
-import {InputText, InputTextIcon} from "../../../meta/component/Input";
-import {ActionButton, Button, ButtonLittleStatus, ButtonText} from "../../../meta/component/Button";
+import {InputText} from "../../../meta/component/Input";
+import {ActionButton, ButtonLittleStatus} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
-import {DockerShell} from "../shell/DockerShell";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {useTranslation} from "react-i18next";
 import {formatFileSize} from "../../../../common/ValueUtil";
-import {fileHttp, sshHttp, sysHttp} from "../../util/config";
+import {fileHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotySucess} from "../../util/noty";
 import {saveTxtReq} from "../../../../common/req/file.req";
-import {getRouterAfter} from "../../util/WebPath";
 import {SystemdShell} from "../shell/SystemdShell";
-import {editor_data} from "../../util/store.util";
+import {editor_data, use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 let filter = ""
 
@@ -28,6 +26,7 @@ let filter = ""
 let systemd_rows_p;
 export function Systemd(props) {
     const { t } = useTranslation();
+    const {check_user_auth} = use_auth_check();
 
     const [shellShow, setShellShow] = useRecoilState($stroe.systemd_shell_show);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
@@ -230,7 +229,7 @@ export function Systemd(props) {
             </div>}
             {/*ystemd管理的选项*/}
             {optRow.length > 0 && <div>
-                <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>
+                {check_user_auth(UserAuth.systemd_update)&& <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(optRow[1].props.context)}}/>
                 {/*{optRow[1].props.context.includes("Up") ? (*/}
                 {/*        <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>) :*/}
@@ -239,10 +238,11 @@ export function Systemd(props) {
             </div>}
             {/*系统的选项*/}
             {systemd_opt_row.length > 0 && <div>
-                <ActionButton icon={"delete"} title={"删除系统上的sytemd"} onClick={()=>{delete_systemd_sys(systemd_opt_row[0].props.context)}}/>
+                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"delete"} title={"删除系统上的sytemd"} onClick={()=>{delete_systemd_sys(systemd_opt_row[0].props.context)}}/>}
+
                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(systemd_opt_row[0].props.context)}}/>
-                <ActionButton icon={"text_fields"} title={"sytemd文件内容"} onClick={()=>{get_sytemd_context(systemd_opt_row[0].props.context)}}/>
-                {!inside_systemd.has(systemd_opt_row[0].props.context) && (<ActionButton icon={"plus_one"} title={"添加到管理"} onClick={() => add_systemd(systemd_opt_row[0].props.context)}/>)}
+                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"text_fields"} title={"sytemd文件内容"} onClick={()=>{get_sytemd_context(systemd_opt_row[0].props.context)}}/>}
+                {(check_user_auth(UserAuth.systemd_update) && !inside_systemd.has(systemd_opt_row[0].props.context)) && (<ActionButton icon={"plus_one"} title={"添加到管理"} onClick={() => add_systemd(systemd_opt_row[0].props.context)}/>)}
             </div>}
         </Header>
         <Dashboard>

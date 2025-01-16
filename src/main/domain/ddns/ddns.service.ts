@@ -2,21 +2,20 @@ import si from "systeminformation";
 import {Ali, DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, getIpType, Tengxun} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {Fail, Sucess} from "../../other/Result";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import {RCode} from "../../../common/Result.pojo";
 import {getMapByList} from "../../../common/ListUtil";
-import {ddns_dnspod_key, dnspodService} from "./ddns.dnspod.service";
+import { dnspodService} from "./ddns.dnspod.service";
 import {DdnsPre} from "./ddns.pre";
 import {IResult} from "tldts-core";
-import {ddns_tx_key, tengxunService} from "./ddns.tengxun.service";
-import {aliService, ddns_ali_key, generateAliSignature, alidnsEndpoint} from "./ddns.ali.server";
+import { tengxunService} from "./ddns.tengxun.service";
+import {aliService,generateAliSignature, alidnsEndpoint} from "./ddns.ali.server";
 // const tencentcloud = require("tencentcloud-sdk-nodejs")
 // const txClient = tencentcloud.dnspod.v20210323.Client;
 import {Client as txClient} from "./tx/dnspod_client"
+import {data_common_key} from "../data/data_type";
 
 const dnspodTest = "https://dnsapi.cn/User.Detail";
-
-export const ddns_http_url_key = "ddns_http_url_key";
 
 
 export class DdnsService extends DdnsPre {
@@ -46,16 +45,16 @@ export class DdnsService extends DdnsPre {
 
     async getIps(type: string) {
         const list: DdnsIPPojo[] = await this.getNowIps();
-        let key = "";
+        let key :data_common_key;
         switch (type) {
             case "dnspod":
-                key = ddns_dnspod_key;
+                key = data_common_key.ddns_dnspod_key;
                 break;
             case "tx":
-                key = ddns_tx_key;
+                key = data_common_key.ddns_tx_key;
                 break
             case "ali":
-                key = ddns_ali_key;
+                key = data_common_key.ddns_ali_key;
                 break;
         }
         const result = new DdnsConnection();
@@ -81,18 +80,18 @@ export class DdnsService extends DdnsPre {
         let key = "";
         switch (data.ddnsType) {
             case DdnsType.dnspod:
-                key = ddns_dnspod_key;
+                key = data_common_key.ddns_dnspod_key;
                 break;
             case DdnsType.tengxun:
-                key = ddns_tx_key;
+                key = data_common_key.ddns_tx_key;
                 break
             case DdnsType.ali:
-                key = ddns_ali_key;
+                key = data_common_key.ddns_ali_key;
                 break;
         }
         if (data.isOpen) {
             if (data.ddnsType === DdnsType.dnspod) {
-                key = ddns_dnspod_key;
+                key = data_common_key.ddns_dnspod_key;
                 try {
                     const r = await HttpRequest.post(dnspodTest, {
                         format: "json",
@@ -106,7 +105,7 @@ export class DdnsService extends DdnsPre {
                 }
 
             } else if (data.ddnsType === DdnsType.tengxun) {
-                key = ddns_tx_key;
+                key = data_common_key.ddns_tx_key;
                 try {
                     const client = new txClient({
                         credential: {
@@ -120,7 +119,7 @@ export class DdnsService extends DdnsPre {
                 }
             } else if (data.ddnsType === DdnsType.ali) {
                 // todo 目前不用
-                key = ddns_ali_key;
+                key = data_common_key.ddns_ali_key;
                 try {
                     const params = {
                         Action: 'DescribeTags',

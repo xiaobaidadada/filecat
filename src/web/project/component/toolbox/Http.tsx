@@ -18,12 +18,13 @@ import {copyToClipboard} from "../../util/FunUtil";
 import Noty from "noty";
 import {TokenTimeMode} from "../../../../common/req/setting.req";
 import Ace from "../file/component/Ace";
-import {editor_data} from "../../util/store.util";
+import {editor_data, use_auth_check} from "../../util/store.util";
 import {http_body_type, HttpFormData, HttpFormPojo} from "../../../../common/req/net.pojo";
 import {PromptEnum} from "../prompts/Prompt";
 import {removeLastDir} from '../../util/ListUitl';
 import {generateRandomHash} from "../../../../common/StringUtil";
 import axios, {AxiosResponse} from "axios";
+import {UserAuth} from "../../../../common/req/user.req";
 
 let http_header_value;
 let http_json_value;
@@ -37,6 +38,7 @@ export function Http() {
     const {t, i18n} = useTranslation();
     const [confirm, set_confirm] = useRecoilState($stroe.confirm);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const {check_user_auth} = use_auth_check();
 
     const [status_body, set_status_body] = useState('');
 
@@ -306,6 +308,10 @@ export function Http() {
         return pojo;
     }
     const save_as = () => {
+        if(!check_user_auth(UserAuth.http_proxy_tag_update)) {
+            NotyFail("no permission")
+            return;
+        }
         for (const item of form_data_list) {
             if (item.is_file) {
                 NotyFail('表单中含有文件，浏览器限制不能添加');
@@ -356,7 +362,8 @@ export function Http() {
                                                set_url(v);
                                            }}/>
                             <ActionButton icon={"send"} title={t("发送")} onClick={send}/>
-                            <ActionButton title={"添加"} icon={"save_as"} onClick={save_as}/>
+                            {check_user_auth(UserAuth.http_proxy_tag_update) &&
+                                <ActionButton title={"添加"} icon={"save_as"} onClick={save_as}/>}
                         </div>
                         <Rows isFlex={true} columns={[
                             <InputRadio value={1} name={'h_or_body'} context={t("请求头")}
@@ -443,6 +450,7 @@ export function Http() {
                 </Column>
                 <Column>
                     <NavIndexContainer  getItems={getItems} save={saveItems}
+                                        have_auth_edit={check_user_auth(UserAuth.http_proxy_tag_update)}
                                         clickItem={clickItem}
                                         items={[
                                             {key: "name", preName: t("名字")},

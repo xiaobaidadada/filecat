@@ -60,7 +60,7 @@ export default function FileEditor() {
             {editorSetting.menu_list && editorSetting.menu_list}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
         </Header>
-        <Ace name={editorSetting.fileName}  on_change={handleEditorChange} />
+        <Ace name={editorSetting.fileName} model={editorSetting.model} on_change={handleEditorChange} />
     </div>;
     return editorSetting.open && div
 }

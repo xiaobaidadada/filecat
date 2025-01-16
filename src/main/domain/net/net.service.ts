@@ -6,7 +6,8 @@ import {Request, Response} from "express";
 import path from "path";
 import fs from "fs";
 import multer from 'multer';
-import {data_dir_tem_name, DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
+import {data_dir_tem_name} from "../data/data_type";
 
 const needle = require('needle');
 

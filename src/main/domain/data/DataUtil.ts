@@ -2,15 +2,15 @@ import path from "path";
 import fs from "fs";
 import fse from 'fs-extra'
 import {Env} from "../../../common/Env";
-export enum file_key {
-    data = "data",
-    systemd = "systemd",
-    http_tag = "http_tag",
-}
-export enum data_dir_tem_name {
-    tempfile = "tempfile", // 临时文件
-    http_tempfile = "http_tempfile", // http 请求的临时文件
-}
+import {
+    data_common_key,
+    data_dir_tem_name,
+    data_version_type,
+    file_key,
+    is_data_version_type
+} from "./data_type";
+
+
 export class DataUtil {
     private static data_path_map = {};
     private static data_map = {};
@@ -24,13 +24,52 @@ export class DataUtil {
         return p;
     }
 
-    private static init(file:file_key) {
+    private static get_data_version():data_version_type {
+        const p = path.join(Env.work_dir, file_key.data_version);
+        if (!fs.existsSync(p)) {
+            return data_version_type.filecat_not
+        }
+        const value = parseInt(fs.readFileSync(p).toString());
+        if(is_data_version_type(value)) {
+            return value as data_version_type;
+        } else {
+            return data_version_type.undefine;
+        }
+    }
+
+    // 处理历史数据版本
+    public static handle_history_data() {
+        try {
+            const version = this.get_data_version();
+            if(version === data_version_type.filecat_not) {
+                // 升级到 data_version_type.filecat_1
+                const navindex_key = this.get(data_common_key.navindex_key);
+                const http_tag_key = this.get(data_common_key.http_tag_key);
+                this.init(file_key.navindex_key);
+                this.init(file_key.http_tag);
+                if(navindex_key) {
+                    this.set(data_common_key.navindex_key, navindex_key,file_key.navindex_key);
+                    this.set(data_common_key.navindex_key,null );
+                }
+                if(http_tag_key) {
+                    this.set(data_common_key.http_tag_key, http_tag_key,file_key.http_tag);
+                    this.set(data_common_key.http_tag_key,null );
+                }
+                const  p_v = path.join(Env.work_dir, file_key.data_version)
+                fs.writeFileSync(p_v, `${data_version_type.filecat_1}`);
+            }
+        } catch (e) {
+            console.log('历史数据处理失败',e);
+        }
+    }
+
+    private static init(file:file_key,default_value:string = "{}") {
         let value = this.data_path_map[file];
         if (value === undefined || value=== null) {
-            this.data_path_map[file] = value = path.join(Env.work_dir, "data.json");
+            this.data_path_map[file] = value = path.join(Env.work_dir, file);
             if (!fs.existsSync(value)) {
                 fse.ensureDirSync(Env.work_dir)
-                fs.writeFileSync(value, "{}");
+                fs.writeFileSync(value, default_value);
                 this.data_map[file] = {};
             } else {
                 this.data_map[file] = JSON.parse(fs.readFileSync(value).toString());
@@ -48,7 +87,7 @@ export class DataUtil {
         return true;
     }
 
-    public static get<T>(k, file:file_key = file_key.data): T {
+    public static get<T>(k:data_common_key, file:file_key = file_key.data): T {
         this.init(file);
         return this.data_map[file][k];
     }
@@ -59,17 +98,17 @@ export class DataUtil {
         fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
     }
 
-    public static getFile(k): string {
-        const p = path.join(Env.work_dir, "datafile", k);
-        if (!this.checkFile(k,"datafile")) {
+    public static getFile(k,dir:data_dir_tem_name): string {
+        const p = path.join(Env.work_dir, dir, k);
+        if (!this.checkFile(k,dir)) {
             return ""
         }
         return fs.readFileSync(p).toString();
     }
 
-    public static setFile(k, v: string) {
-        const p = path.join(Env.work_dir, "datafile", k);
-        this.checkFile(k,"datafile");
+    public static setFile(k, v: string,dir:data_dir_tem_name) {
+        const p = path.join(Env.work_dir, dir, k);
+        this.checkFile(k,dir);
         fs.writeFileSync(p, v);
     }
 

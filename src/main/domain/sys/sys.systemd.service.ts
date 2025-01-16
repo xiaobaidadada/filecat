@@ -1,6 +1,6 @@
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {systemdPojo} from "../../../common/req/setting.req";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import { getProcessAddon} from "../bin/bin";
 import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
@@ -8,7 +8,8 @@ import {deleteList} from "../../../common/ListUtil";
 import fs from "fs";
 const { spawn ,execSync} = require('child_process');
 import WebSocket from "ws";
-const systemd_key = "systemd_key";
+import {data_common_key} from "../data/data_type";
+const systemd_key = data_common_key.systemd_key;
 
 let  spawnChild = getProcessAddon();
 const processWssSet = new Set<Wss>();

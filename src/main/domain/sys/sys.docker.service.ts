@@ -65,7 +65,7 @@ class SysDockerService {
         const images = [];
         let cons: any = execSync('docker images --format "{{.ID}};;{{.Repository}}:{{.Tag}};;{{.CreatedAt}};;{{.Size}}"');
         cons = cons.toString().split(/\n|\r\n/).filter(v => v.length > 0);
-        for (let i = 1; i < cons.length; i++) {
+        for (let i = 0; i < cons.length; i++) {
             const con = cons[i];
             const parts = con.split(";;").filter(v => v.length > 0);
             images.push([
@@ -211,7 +211,7 @@ class SysDockerService {
 
     async delete_image(ids: string[]) {
         const param = ids.join(" ");
-        execSync(`docker rm  ${param}`)
+        execSync(`docker rmi  ${param}`)
     }
 
 }

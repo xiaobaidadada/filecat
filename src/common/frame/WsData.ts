@@ -2,7 +2,8 @@ import {Wss} from "./ws.server";
 import {JsonUtil} from "../JsonUtil";
 import * as proto from "../proto/proto"
 import * as parser from "socket.io-parser"
-import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
+import {Packet, PacketType} from "socket.io-parser"
+import {RCode} from "../Result.pojo";
 
 const encoder = new parser.Encoder();
 export const protocolIsProto2 = true;
@@ -23,8 +24,10 @@ export enum CmdType {
     shell_send,
     // shell持续接收
     shell_getting,
+    // 复制 命令
+    shell_copy,
     // 取消命令
-    shell_cancel,
+    // shell_cancel,
     // cd命令
     shell_cd,
     // docker订阅
@@ -111,6 +114,8 @@ export class WsData<T> {
     public context: T|any;
     public bin_context: Uint8Array;
     public wss:Wss|null|WebSocket;
+    public code:RCode; // 返回用的
+    public message; // 错误时候的信息
 
     constructor(cmdType: CmdType);
     constructor(cmdType: CmdType,context:T);
@@ -119,6 +124,7 @@ export class WsData<T> {
         this.cmdType = cmdType;
         this.context = context;
         this.bin_context = bin_context;
+        this.code = RCode.Sucess;
     }
 
     public encode(){

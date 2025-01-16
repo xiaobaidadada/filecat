@@ -84,6 +84,7 @@ main .spinner .bounce2 {
   vertical-align: middle;
   text-align: left;
   position: relative;
+  user-select: none;
 }
 
 .action .disabled {

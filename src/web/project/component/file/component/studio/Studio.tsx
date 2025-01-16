@@ -9,7 +9,7 @@ import {getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
 import {editor_data} from "../../../../util/store.util";
-import {getEditModelType} from "../../../../../../common/StringUtil";
+// import {getEditModelType} from "../../../../../../common/StringUtil";
 import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
 import lodash from "lodash";
@@ -27,7 +27,7 @@ export default function Studio(props) {
     const [pre_path, set_pre_path] = useState("")
     const [editorValue, setEditorValue] = useState("");
     const [update, set_update] = useState<boolean>(false);
-    const [edit_model, set_edit_model] = useState("text");
+    // const [edit_model, set_edit_model] = useState("text");
     const [edit_filename, set_edit_filename] = useState({path: "", name: ""});
     const [edit_file_path, set_edit_file_path] = useState("");
     const [confirm, set_confirm] = useRecoilState($stroe.confirm);
@@ -88,8 +88,8 @@ export default function Studio(props) {
         set_file_shell_hidden(undefined);
     }
     const load_file = async (name, pre_path) => {
-        const model = getEditModelType(name) ?? "text";
-        set_edit_model(model);
+        // const model = getEditModelType(name) ?? "text";
+        // set_edit_model(model);
         const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
         if (rsq.code === RCode.File_Max) {
             NotyFail("超过20MB");

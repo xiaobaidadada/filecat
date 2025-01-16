@@ -8,6 +8,8 @@ import {RCode} from "../../../../common/Result.pojo";
 import {ButtonLittle} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 
 
@@ -15,6 +17,7 @@ export default function NavIndex() {
     const { t } = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const {check_user_auth} = use_auth_check();
 
     const add =  ()=>{
         setShowPrompt({
@@ -47,6 +50,6 @@ export default function NavIndex() {
         <Header>
             {/*<ButtonLittle text={t("添加")} clickFun={add}/>*/}
         </Header>
-        <NavIndexContainer getItems={getItems}  save={save} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>
+        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.net_site_tag_update)} getItems={getItems}  save={save} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>
     </div>
 }

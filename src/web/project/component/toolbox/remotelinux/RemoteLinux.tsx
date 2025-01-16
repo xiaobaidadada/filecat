@@ -17,6 +17,8 @@ import {RemoteLinuxFileList} from "./RemoteLinuxFileList";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
+import {use_auth_check} from "../../../util/store.util";
+import {UserAuth} from "../../../../../common/req/user.req";
 
 
 
@@ -33,6 +35,7 @@ export function RemoteLinux(props) {
     const [status,setStatus] = useState<boolean>(false);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const {check_user_auth} = use_auth_check();
 
     const close = async () => {
         const req = new SshPojo();
@@ -110,7 +113,7 @@ export function RemoteLinux(props) {
             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
             <ActionButton icon={"play_arrow"} title={t("连接")} onClick={()=>{go()}}/>
         </Header>
-        {!status ? <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")}]}/>
+        {!status ? <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.ssh_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")}]}/>
             : <RemoteLinuxFileList close={close} data={{port,password,username,domain,dir}}/>}
     </div>
 }

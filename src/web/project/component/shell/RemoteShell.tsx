@@ -63,10 +63,10 @@ export function RemoteShell(props) {
             }
             if(ws.isAilive()) {
                 ws.setPromise(async (resolve)=>{
-                    const data = new WsData(CmdType.remote_shell_cancel);
-                    data.context=""
-                    ws.unSubscribeUnconnect();
-                    await ws.send(data);
+                    // const data = new WsData(CmdType.remote_shell_cancel);
+                    // data.context=""
+                    // ws.unSubscribeUnconnect();
+                    // await ws.send(data);
                     await ws.unConnect();
                     resolve();
                 })
