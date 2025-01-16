@@ -37,12 +37,16 @@ export class UserController {
                 return false;
             }
             // 开启了自定义处理
-            const result = await selfHandler.handler(req.headers);
-            if (result) {
-                const uuid = generateSaltyUUID(user_data.username+user_data.hash_password);
-                const cache :UserLoginData = {username:user.username,id:user_data.id};
-                Cache.setValue(`${uuid}`,cache);
-                return Sucess(uuid)
+            try {
+                const result = await selfHandler.handler(req.headers);
+                if (result) {
+                    const uuid = generateSaltyUUID(user_data.username+user_data.hash_password);
+                    const cache :UserLoginData = {username:user.username,id:user_data.id};
+                    Cache.setValue(`${uuid}`,cache);
+                    return Sucess(uuid)
+                }
+            } catch (e) {
+                console.log(e)
             }
             // 失败了继续正常的登录
         }
