@@ -62,7 +62,6 @@ const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 
 const socketMap: Map<string, any> = new Map();
-const init_sys_env_path = process.env.PATH;
 
 let line = "";
 
@@ -79,8 +78,7 @@ export class ShellService {
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        // process.env.PATH = init_sys_env_path +(sysType === "win" ? ";" : ":")  + settingService.getEnvPath();
-        process.env.PATH = init_sys_env_path;
+        const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
         const pojo = data.context as ShellInitPojo;
         if(pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
@@ -90,6 +88,7 @@ export class ShellService {
             rows: pojo.rows,
             cwd: sysPath,
             node_pty:pty,
+            env:{PATH},
             // prompt_call:()=>{
             //     re
             // },

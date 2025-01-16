@@ -165,6 +165,15 @@ export function Permission(props:{
                        }}/>
                 {t("shell命令检测")}
             </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.env_path_update)}
+                       checked={props.is_selected(UserAuth.env_path_update)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.env_path_update)
+                       }}/>
+                {t("PATH路径修改")}
+            </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

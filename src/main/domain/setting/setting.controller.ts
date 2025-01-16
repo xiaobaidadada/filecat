@@ -196,17 +196,18 @@ export class SettingController {
 
 
 
-    // // path路径
-    // @Get("/env/path/get")
-    // getEnvPath() {
-    //     return Sucess(settingService.getEnvPath());
-    // }
-    //
-    // @Post('/env/path/save')
-    // setEnvPath(@Body() req:{path:string}) {
-    //     settingService.setEnvPath(req.path);
-    //     return Sucess("1");
-    // }
+    // path路径
+    @Get("/env/path/get")
+    getEnvPath() {
+        return Sucess(settingService.getEnvPath());
+    }
+
+    @Post('/env/path/save')
+    setEnvPath(@Body() req:{paths:any[]},@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.env_path_update);
+        settingService.setEnvPath(req.paths);
+        return Sucess("1");
+    }
 
 
     // 获取保护目录

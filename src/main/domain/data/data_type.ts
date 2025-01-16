@@ -41,8 +41,8 @@ export enum data_common_key {
     token_setting = "token_setting",
     files_pre_mulu_key = "files_pre_mulu_key", // 废弃 文件目录
     sys_software = "sys_software",
-    extra_env_path = "extra_env_path",
-    protection_directory = "sys_protection_directory",
+    // extra_env_path = "extra_env_path",
+    // protection_directory = "sys_protection_directory",
     self_auth_jscode = "self_auth_jscode",
     navindex_video_key = "navindex_video_tag_key",
     systemd_key = "systemd_key",
@@ -58,6 +58,7 @@ export enum data_common_key {
     // 自定义shell cmd 检测
     self_shell_cmd_check_open_status = "self_shell_cmd_check_open_status",
     self_shell_cmd_jscode = "self_shell_cmd_jscode", // js code 文件名字
+    extra_env_path_list_key = "extra_env_path_list_key"
 }
 
 
