@@ -1,24 +1,24 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {InputText, InputTextIcon, Select} from "../../../../meta/component/Input";
-import {Card} from "../../../../meta/component/Card";
-import {ActionButton, Button, ButtonText} from "../../../../meta/component/Button";
-import {isNumeric} from "../../../util/WebPath";
+import React, {useEffect, useState} from 'react'
+import {InputTextIcon} from "../../../../meta/component/Input";
+import {ActionButton} from "../../../../meta/component/Button";
 import Noty from "noty";
 import Header from "../../../../meta/component/Header";
 
 
 import {Mstsc} from './client/js/mstsc.js';
 import {FullScreenDiv} from "../../../../meta/component/Dashboard";
-import {CmdType, WsData} from "../../../../../common/frame/WsData";
+import {CmdType} from "../../../../../common/frame/WsData";
 import {ws} from '../../../util/ws';
 import {NavIndexContainer} from "../../navindex/component/NavIndexContainer";
-import {netHttp, rdpHttp} from "../../../util/config";
+import {rdpHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {loadJsFileOnce} from "../../../util/file";
+import {use_auth_check} from "../../../util/store.util";
+import {UserAuth} from "../../../../../common/req/user.req";
 
 
 // require('./client/js/rle');
@@ -26,6 +26,7 @@ let load;
 export function Rdp() {
     const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
+    const {check_user_auth} = use_auth_check();
 
     const [address, setAddress] = useState(undefined);
     const [username, setUsername] = useState(undefined);
@@ -140,7 +141,7 @@ export function Rdp() {
             {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
         </Header>
         <FullScreenDiv isFull={fullScreen}>
-            {!status && <NavIndexContainer getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}, {key: "username", preName: t("账号")}, {key: "password", preName: t("密码")}]}/>}
+            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}, {key: "username", preName: t("账号")}, {key: "password", preName: t("密码")}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         </FullScreenDiv>
 

@@ -1,20 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {InputText, InputTextIcon, Select} from "../../../meta/component/Input";
-import {Card} from "../../../meta/component/Card";
-import {ActionButton, Button, ButtonLittle, ButtonText} from "../../../meta/component/Button";
-import {isNumeric} from "../../util/WebPath";
+import React, {useEffect, useState} from 'react'
+import {InputTextIcon} from "../../../meta/component/Input";
+import {ActionButton} from "../../../meta/component/Button";
 import Noty from "noty";
 import Header from "../../../meta/component/Header";
 import {FullScreenDiv} from "../../../meta/component/Dashboard";
-import { netHttp} from "../../util/config";
+import {netHttp} from "../../util/config";
 import {NetPojo} from "../../../../common/req/net.pojo";
 import {RCode} from "../../../../common/Result.pojo";
-import {Blank} from "../../../meta/component/Blank";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {useTranslation} from "react-i18next";
 import {$stroe} from "../../util/store";
 import {useRecoilState} from "recoil";
-
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 
 export function BrowserProxy(props) {
@@ -25,6 +23,8 @@ export function BrowserProxy(props) {
     const [gourl,setGourl] = useState('');
     const [sysPort,setSysPort] = useState(undefined);
     const [fullScreen, setFullScreen] = useState(false);
+    const {check_user_auth} = use_auth_check();
+
     const close = async () => {
         const req = new NetPojo();
         req.targetProxyUrl = typeof showUrl === "string" ?showUrl: gourl;
@@ -111,7 +111,7 @@ export function BrowserProxy(props) {
 
         <FullScreenDiv isFull={fullScreen}>
             <div id="browser">
-                {!gourl && <NavIndexContainer getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>}
+                {!gourl && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.browser_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>}
                 <iframe id="webview" src={gourl}></iframe>
             </div>
         </FullScreenDiv>

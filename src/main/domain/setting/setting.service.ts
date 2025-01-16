@@ -1,4 +1,4 @@
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import path from "path";
 import fs from "fs";
 import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/customerRouter.pojo";
@@ -10,16 +10,32 @@ import {Env} from "../../../common/Env";
 import {SystemUtil} from "../sys/sys.utl";
 import {Body} from "routing-controllers";
 import {Request} from "express";
+import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import * as vm from "node:vm";
+import {userController} from "../user/user.controller";
+import {userService} from "../user/user.service";
 
 const needle = require('needle');
 
-const customer_router_key = "customer_router_key";
+const customer_router_key = data_common_key.customer_router_key;
 
-const customer_api_router_key = "customer_api_router_key";
+const customer_api_router_key = data_common_key.customer_api_router_key;
 
-const token_setting = "token_setting";
+const token_setting = data_common_key.token_setting;
 
-const files_pre_mulu_key = "files_pre_mulu_key";
+const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
+
+const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
+
+const sandbox = {
+    needle: needle , // needle http 请求工具
+    user_login: userController.login,
+    create_user: userService.create_user,
+    fs:fs,
+    path: path,
+    cache_map:customer_cache_map
+};
+const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
 export class SettingService {
 
@@ -80,7 +96,8 @@ export class SettingService {
                         }
                     }
                     try {
-                        const instance = this.getHandlerClass(item.router);
+
+                        const instance = this.getHandlerClass(item.router,data_dir_tem_name.all_user_api_file_dir);
                         // 监听 'data' 事件以接收数据块
                         let data = '';
                         ctx.on('data', (chunk) => {
@@ -90,7 +107,7 @@ export class SettingService {
                         await new Promise((resolve) => {
                             ctx.on('end', resolve);
                         });
-                        const r = await instance.handler(ctx.headers, data, ctx, Cache);
+                        const r = await instance.handler(ctx.headers, data, ctx);
                         if (r !== null && r !== undefined) {
                             ctx.res.send(r);
                         }
@@ -106,16 +123,22 @@ export class SettingService {
         return false;
     }
 
-    public getHandlerClass(key) {
-        const jscode = DataUtil.getFile(this.routerHandler(key));
+    // 每次都会重新读取文件没有必要缓存 todo 更合适方案
+    public getHandlerClass(key,dir) {
+        const jscode = DataUtil.getFile(this.routerHandler(key),dir);
         if (!jscode) {
             return {};
         }
-        const ApiClass = eval(`(() => {
-            ${jscode};
-            return Api;
-        })()`);
-        const instance = new ApiClass();
+        const result = vm.runInContext(`(() => {
+                                                ${jscode};
+                                                return Api;
+                                            })()`, sandbox_context);
+        const instance = new result();
+        // const ApiClass = eval(`(() => {
+        //     ${jscode};
+        //     return Api;
+        // })()`);
+        // const instance = new ApiClass();
         return instance;
     }
 
@@ -133,17 +156,6 @@ export class SettingService {
             Cache.updateStamp(token);
             return true;
         }
-        if (this.getSelfAuthOpen()) {
-            const selfHandler = this.getHandlerClass(self_auth_jscode);
-            if (!selfHandler) {
-                return false;
-            }
-            // 开启了自定义处理
-            const result = await selfHandler.handler(token);
-            if (result) {
-                return true;
-            }
-        }
         return false;
     }
 
@@ -156,6 +168,14 @@ export class SettingService {
             }
         }
         return keys.join("");
+    }
+
+    public get_shell_cmd_check() {
+        return DataUtil.get(data_common_key.self_shell_cmd_check_open_status);
+    }
+
+    public save_shell_cmd_check(status) {
+        return DataUtil.set(data_common_key.self_shell_cmd_check_open_status,status);
     }
 
     public getSelfAuthOpen() {
@@ -191,48 +211,77 @@ export class SettingService {
         }
     }
 
-    update_files_setting: FileSettingItem[];
+    // update_files_setting: FileSettingItem[];
 
-    public getFilesSetting() {
-        if (this.update_files_setting) {
-            return this.update_files_setting;
-        }
-        const items: FileSettingItem[] = DataUtil.get(files_pre_mulu_key);
+    public getFilesSetting(token) {
+        // if (this.update_files_setting) {
+        //     return this.update_files_setting;
+        // }
+        // const items: FileSettingItem[] = DataUtil.get(files_pre_mulu_key);
+        //
+        // const list = items ?? [];
+        // if (!list.find(v => v.default)) {
+        //     base.default = true;
+        // }
+        // this.update_files_setting = [base, ...list];
+        // return this.update_files_setting;
+        const user_data = userService.get_user_info_by_token(token);
         const base = new FileSettingItem();
-        base.path = Env.base_folder;
-        base.note = "默认配置路径";
-        const list = items ?? [];
-        if (!list.find(v => v.default)) {
-            base.default = true;
+        base.path = user_data.cwd;
+        base.note = "default path";
+        let ok = true;
+        for (const item of user_data?.folder_items ?? []) {
+            if(item.default){
+                ok = false;
+                break;
+            }
         }
-        this.update_files_setting = [base, ...list];
-        return this.update_files_setting;
+        if(ok)base.default = true;
+        return [base,...user_data?.folder_items ??[]];
     }
 
     public saveFilesSetting(items: FileSettingItem[], token: string) {
         if (!Array.isArray(items) || items.length === 0) {
             return;
         }
-        items.shift();
-        DataUtil.set(files_pre_mulu_key, items);
-        const obj = Cache.getValue(token);
-        obj["root_index"] = 0; // 回到默认
-        this.update_files_setting = null;
+        items.shift(); // 删除系统的
+        const user_data = userService.get_user_info_by_token(token);
+        // 校验路径是否合法
+        for (const item of items) {
+            userService.check_user_path(token,item.path)
+        }
+        user_data.folder_items = items;
+        let index;
+        for (const v of items) {
+            if(v.default)
+                index = v.index
+        }
+        user_data.folder_item_now = index; // 使用默认的 cwd
+        if(index === undefined || index === null) {
+            user_data.folder_item_now = 0; // 回到默认
+        }
+        userService.save_user_info(user_data.id,user_data);
+        // DataUtil.set(files_pre_mulu_key, items);
+        // const obj = Cache.getValue(token);
+        // obj["root_index"] = 0; // 回到默认
+        // this.update_files_setting = null;
     }
 
-    public getFileRootPath(token: string) {
-        const obj = Cache.getValue(token);
-        const index = obj ? obj["root_index"] ?? null : null;
-        const list = this.getFilesSetting();
-        if (index !== null) {
-            return list[index].path;
-        } else {
-            for (const item of list) {
-                if (item.default) {
-                    return item.path;
-                }
-            }
-        }
+    public getFileRootPath(token: string):string {
+        // const obj = Cache.getValue(token);
+        // const index = obj ? obj["root_index"] ?? null : null;
+        // const list = this.getFilesSetting(token);
+        // if (index !== null) {
+        //     return list[index].path;
+        // } else {
+        //     for (const item of list) {
+        //         if (item.default) {
+        //             return item.path;
+        //         }
+        //     }
+        // }
+        const user_data = userService.get_user_info_by_token(token);
+        return user_data.folder_item_now === 0 || user_data.folder_item_now === undefined ?user_data.cwd : user_data.folder_items[user_data.folder_item_now -1].path as string;
     }
 
     cacheSysSoftwareItem: SysSoftwareItem[];
@@ -241,7 +290,7 @@ export class SettingService {
         if (this.cacheSysSoftwareItem) {
             return this.cacheSysSoftwareItem;
         }
-        const items: SysSoftwareItem[] = DataUtil.get("sys_software");
+        const items: SysSoftwareItem[] = DataUtil.get(data_common_key.sys_software);
         const map = new Map();
         for (const item of items ?? []) {
             map.set(item.id, item);
@@ -265,75 +314,43 @@ export class SettingService {
         return list;
     }
 
-    public setSoftware(req) {
+    public setSoftware(req,token) {
         DataUtil.set("sys_software", req);
         this.cacheSysSoftwareItem = null;
-        this.getFilesSetting();
+        this.getFilesSetting(token);
     }
 
-    extra_env_path = "extra_env_path"
+    extra_env_path = data_common_key.extra_env_path
 
-    public getEnvPath() {
-        return DataUtil.get(this.extra_env_path) ?? "";
-    }
+    // public getEnvPath() {
+    //     return DataUtil.get(this.extra_env_path) ?? "";
+    // }
+    //
+    // setEnvPath(path: string) {
+    //     DataUtil.set(this.extra_env_path, path);
+    //     return Sucess("1");
+    // }
 
-    setEnvPath(path: string) {
-        DataUtil.set(this.extra_env_path, path);
-        return Sucess("1");
-    }
-
-    protection_directory = "sys_protection_directory"
+    protection_directory = data_common_key.protection_directory
 
     // 获取系统保护目录
-    protectionDirGet(): { path: string }[] {
-        return DataUtil.get(this.protection_directory) ?? [];
+    protectionDirGet(token): { path: string }[] {
+        const user_data = userService.get_user_info_by_token(token);
+        // DataUtil.get(this.protection_directory) ?? [];
+        return user_data.protection_directory ?? []
     }
 
-    protection_directory_set: Set<String>;
 
-    protectionDirSave(data) {
-        DataUtil.set(this.protection_directory, data);
-        this.protectionInit();
+    protectionDirSave(data,token) {
+        const user_data = userService.get_user_info_by_token(token);
+        user_data.protection_directory = data;
+        userService.save_user_info(user_data.id,user_data);
+        userService.load_user_protection(user_data.id);
     }
-
-    protectionInit() {
-        try {
-            const list = this.protectionDirGet();
-            if (!this.protection_directory_set) {
-                this.protection_directory_set = new Set();
-            } else {
-                this.protection_directory_set.clear();
-            }
-            for (const item of list) {
-                if (item.path.endsWith("*")) {
-                    try {
-                        const sysPath = path.dirname(item.path);
-                        const items = fs.readdirSync(sysPath);// 读取目录内容
-                        for (const item of items) {
-                            const filePath = path.join(sysPath, item);
-                            this.protection_directory_set.add(filePath);
-                        }
-                    } catch (err) {
-                        console.error("处理保护目录",item, err);
-                    }
-                } else {
-                    this.protection_directory_set.add(item.path);
-                }
-            }
-        } catch (e) {
-            console.log("保护目录初始化错误", e);
-        }
-    }
-
-    protectionCheck(path:string) {
-        return this.protection_directory_set.has(path);
-    }
-
 
 }
 
 export const settingService: SettingService = new SettingService();
 ServerEvent.on("start", (data) => {
     settingService.init();
-    settingService.protectionInit();
 })

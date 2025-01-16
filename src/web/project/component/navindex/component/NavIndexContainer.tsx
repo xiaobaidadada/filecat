@@ -46,7 +46,8 @@ export function NavIndexContainer(props: {
     clickItem?: (item: any) => void,
     save?: (items: { url?: string, name?: string }[]) => Promise<void>,
     items: NavItem[];
-    get_pre_add_item?:()=> Promise<any>
+    get_pre_add_item?:()=> Promise<any>,
+    have_auth_edit?: boolean,
 }) {
     const [items, setItems] = useState([] as SiteIndexItem[]);
     const [last_queue_index,set_last_queue_index] = useState<number>(-1);
@@ -206,6 +207,8 @@ export function NavIndexContainer(props: {
             <ActionButton title={"添加类目"} icon={"add_box"} onClick={addDirItem}/>
             <ActionButton title={"全部编辑"} icon={unfold?"unfold_less":'unfold_more'} onClick={()=>{set_unfold(!unfold)}}/>
         </div>}
-        <ActionButton icon={!edit ? "edit" : "save"} title={!edit ? "编辑" : "保存"} onClick={editHander}/>
+        {
+            (props.have_auth_edit === undefined || props.have_auth_edit === true) &&   <ActionButton icon={!edit ? "edit" : "save"} title={!edit ? "编辑" : "保存"} onClick={editHander}/>
+        }
     </div>
 }

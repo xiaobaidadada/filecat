@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 
 import {MaterialIcon} from "material-icons";
+import {UserAuth} from "../../../common/req/user.req";
 
 export function InputTextIcon(props: {
     placeholder?: string,
@@ -55,7 +56,8 @@ function Input(props: {
     focus?:boolean,
     no_border?:boolean,
     left_placeholder?:string,
-    right_placeholder?:string
+    right_placeholder?:string,
+    disabled?:boolean,
 }) {
     const inputRef = useRef(null);
     const [value, setValue] = React.useState("");
@@ -83,6 +85,7 @@ function Input(props: {
                     {props.left_placeholder}
                 </div>}
                 <input
+                    disabled={!!props.disabled}
                     className={css}
                     type={props.type}
                     placeholder={value || props.placeholder}
@@ -125,6 +128,7 @@ export function InputText(props: {
     no_border?: boolean,
     left_placeholder?: string,
     right_placeholder?:string
+    disabled?: boolean,
 }) {
     return Input({
         ...props
@@ -152,6 +156,7 @@ export interface SelectProps {
     value?:any,
     tip?:any,
     width?:string,
+    disabled?:boolean
 }
 
 export function Select(props: SelectProps) {
@@ -160,14 +165,15 @@ export function Select(props: SelectProps) {
         display: "flex",
     }}>
         { props.tip &&
-            <label className={`input input_left `}>
+            <p className={`input input_left `}>
                 {props.tip}
-            </label>
+            </p>
         }
         <select defaultValue={props.defaultValue} value={props.value}
                 style={{
                     width: props.width,
                 }}
+                disabled = {!!props.disabled}
                 className={`input input--block  ${props.no_border ? "input--no_border" : ""}`}
                 onChange={(event) => props.onChange(event.target.value)}>
             {props.options.map((item, index) => {
@@ -194,18 +200,27 @@ export function InputRadio(props: {
 }
 
 export function InputCheckbox(props: {
-    value: any,
     context: any,
     onchange?: () => void,
-    selected?: boolean
+    selected?: boolean,
+    is_disable?: boolean,
 }) {
-
+    const [selected,set_selected] = useState<boolean>(false);
+    useEffect(() => {
+        set_selected(!!props.selected)
+    }, [props.selected]);
     return <div className="input_radio_row">
-        <i className="material-icons icon" onClick={()=>{
-            if (props.onchange) {
-                props.onchange();
-            }
-        }}>{props.selected?"check_box":"check_box_outline_blank" }</i>
+        <input type="checkbox" disabled={props.is_disable??false} checked={selected}
+               onChange={() => {
+                   if (props.onchange) {
+                       props.onchange();
+                   }
+               }}/>
+        {/*<i className="material-icons icon" onClick={() => {*/}
+        {/*    if (props.onchange) {*/}
+        {/*        props.onchange();*/}
+        {/*    }*/}
+        {/*}}>{selected ? "check_box" : "check_box_outline_blank"}</i>*/}
         {/* 通过state更改input是会报错的。所以改成自定义的。*/}
         {/*<input type="checkbox" checked={props.selected} name="common_name" value={props.value} className={"input_radio"}*/}
         {/*       onChange={() => {*/}

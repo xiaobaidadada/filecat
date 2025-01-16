@@ -10,12 +10,13 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
-import { MAX_SIZE_TXT } from "../../../common/ValueUtil";
+import {MAX_SIZE_TXT} from "../../../common/ValueUtil";
 import ace, {Ace as AceItem, version as ace_version} from "ace-builds";
+import {UserAuth} from "../../../common/req/user.req";
 
-async function get_file_context(path,is_sys_path) {
-    if(is_sys_path) {
-        path+="?is_sys_path=1"
+async function get_file_context(path, is_sys_path) {
+    if (is_sys_path) {
+        path += "?is_sys_path=1"
     }
     const rsq = await fileHttp.get(path);
     if (rsq.code === RCode.Sucess) {
@@ -34,14 +35,22 @@ export const user_click_file = () => {
 
     const {t} = useTranslation();
 
-    const click_file = async (param: { name,size?:number,ignore_size?:boolean, context?: string, model?: string,sys_path?:string,menu_list?:any[] }) => {
+    const click_file = async (param: {
+        name,
+        size?: number,
+        ignore_size?: boolean,
+        context?: string,
+        model?: string,
+        sys_path?: string,
+        menu_list?: any[]
+    }) => {
         if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
             setShowPrompt({
                 open: true,
                 title: "提示",
                 sub_title: `文件超过20MB了确定要打开吗?`,
                 handle: async () => {
-                    setShowPrompt({open:false,handle:null});
+                    setShowPrompt({open: false, handle: null});
                     param.ignore_size = true;
                     click_file(param);
                 }
@@ -57,17 +66,17 @@ export const user_click_file = () => {
             if (context) {
                 value = context;
             } else {
-                value = await get_file_context(param.sys_path??`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`,param.sys_path);
+                value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, param.sys_path);
                 // if (!value) {
                 //     return;
                 // }
             }
-            if (!model) {
-                model = "text";
-            }
+            // if (!model) {
+            //     model = "text";
+            // }
             setEditorSetting({
-                menu_list:param.menu_list,
-                model,
+                menu_list: param.menu_list,
+                // model,
                 open: true,
                 fileName: name,
                 save: async (context) => {
@@ -75,7 +84,7 @@ export const user_click_file = () => {
                         context
                     }
                     const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
-                    const rsq = await fileHttp.post(`save/${param.sys_path??`${v}${name}`}?is_sys_path=${param.sys_path?1:0}`, data)
+                    const rsq = await fileHttp.post(`save/${param.sys_path ?? `${v}${name}`}?is_sys_path=${param.sys_path ? 1 : 0}`, data)
                     if (rsq.code === 0) {
                         editor_data.set_value_temp('')
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
@@ -92,7 +101,7 @@ export const user_click_file = () => {
                     break;
                 case FileTypeEnum.md:
                     set_markdown({
-                        context: await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`,false),
+                        context: await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, false),
                         filename: name
                     })
                     break;
@@ -118,23 +127,46 @@ export const user_click_file = () => {
 
     return {click_file};
 }
+export const auth_key_map = new Map() // 更新的时候清空一下
+export const use_auth_check = () => {
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+
+    const check_user_auth = (auth: UserAuth) => {
+        const v = auth_key_map.get(auth);
+        if(v !== undefined) {
+            return v;
+        }
+        if(user_base_info?.user_data?.is_root) return true;
+        for (const v of (user_base_info.user_data?.auth_list ?? [])) {
+            if (v === auth) {
+                auth_key_map.set(auth, true);
+                return true;
+            }
+
+        }
+        auth_key_map.set(auth, false);
+        return false;
+    }
+
+    return {check_user_auth};
+}
 
 export class editor_data {
 
     static cache_str: string = "";
-    static editor:AceItem.Editor|null = null;
+    static editor: AceItem.Editor | null = null;
 
     public static set_value_temp(v: string) {
         editor_data.cache_str = v;
     }
 
-    public static set_editor_temp(v:AceItem.Editor |null) {
+    public static set_editor_temp(v: AceItem.Editor | null) {
         editor_data.editor = v;
     }
 
     public static get_editor_value() {
         if (!editor_data.editor) {
-             throw "不存在编辑器";
+            throw "不存在编辑器";
         }
         return editor_data.editor.getValue();
     }

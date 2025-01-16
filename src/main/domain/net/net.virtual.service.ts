@@ -1,4 +1,4 @@
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import {VirClientPojo, VirServerEnum, VirServerPojo} from "../../../common/req/net.pojo";
 import {sysType} from "../shell/shell.service";
 import {ServerEvent} from "../../other/config";
@@ -8,6 +8,7 @@ import os from "os";
 import {TcpUtil} from "../pre/tcp.util";
 import {Wss} from "../../../common/frame/ws.server";
 import {get_wintun_dll_path} from "../bin/bin";
+import {data_common_key} from "../data/data_type";
 
 const dgram = require("dgram");
 const net = require('net');
@@ -15,12 +16,12 @@ const crypto = require('crypto');
 const {LinuxTun, LinuxTap, Wintun} = require('@xiaobaidadada/node-tuntap2-wintun');
 const path = require("path");
 
-const vir_server_data_key = "vir_server_net_data_key";
-const vir_client_data_key = "vir_client_net_data_key";
+const vir_server_data_key = data_common_key.vir_server_data_key;
+const vir_client_data_key = data_common_key.vir_client_data_key;
 
 
-const vir_data_client_hash_key = "vir_data_client_hash_key";
-const vir_data_server_hash_key = "vir_data_server_hash_key";
+const vir_data_client_hash_key = data_common_key.vir_data_client_hash_key;
+const vir_data_server_hash_key = data_common_key.vir_data_server_hash_key;
 
 enum infoType {
     empty,

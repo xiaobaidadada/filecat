@@ -4,21 +4,21 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
-import { videoHttp} from "../../util/config";
+import {videoHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import {FullScreenDiv} from "../../../meta/component/Dashboard";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import Header from '../../../meta/component/Header';
 import "video.js/dist/video-js.min.css";
-import type Player from "video.js/dist/types/player";
 import videojs from "video.js";
 // import "videojs-mobile-ui/dist/videojs-mobile-ui.css";
 import flvjs from 'flv.js';
 import {WsClient} from "../../../../common/frame/ws.client";
 import {NotyFail} from "../../util/noty";
 import {SysSoftware} from "../../../../common/req/setting.req";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 let flvPlayer;
 export default function Rtsp() {
@@ -27,6 +27,7 @@ export default function Rtsp() {
     const [address, setAddress] = useState(undefined);
     const [status, setStatus] = useState<boolean>(false);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const {check_user_auth} = use_auth_check();
 
     const videoRef = useRef(null);
     const playerRef = useRef(null);
@@ -118,7 +119,7 @@ export default function Rtsp() {
             {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
             {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
         </Header>
-            {!status && <NavIndexContainer getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}]}/>}
+            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rtsp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         <div style={{
             "display":status?"block":"none"

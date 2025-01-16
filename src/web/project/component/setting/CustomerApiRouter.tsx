@@ -59,7 +59,7 @@ export function CustomerApiRouter() {
         }
         const res = await settingHttp.get(`jscode/${encodeURIComponent(item.router)}`);
         setEditorSetting({
-            model: "javascript",
+            model: "ace/mode/javascript",
             open: true,
             fileName: item.router,
             save:async (context)=>{

@@ -1,14 +1,18 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Service} from "typedi";
-import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {SyserviceImpl} from "./sys.service";
 import {SysSystemServiceImpl} from "./sys.sys.service";
 import {SysProcessServiceImpl} from "./sys.process.service";
 import {SysDockerServiceImpl} from "./sys.docker.service";
 import {systemd} from "./sys.systemd.service";
 import {Sucess} from "../../other/Result";
-import {SysCmdExePojo} from "../../../common/req/sys.pojo";
+import {SysCmd, SysCmdExePojo} from "../../../common/req/sys.pojo";
+import {userService} from "../user/user.service";
+import {Wss} from "../../../common/frame/ws.server";
+import {UserAuth} from "../../../common/req/user.req";
+import {Request} from "express";
 
 @Service()
 @JsonController("/sys")
@@ -50,9 +54,10 @@ export class SysController {
         return Sucess(SysDockerServiceImpl.get_all_images());
     }
 
-    // 删除容器
+    // 删除容器镜像
     @Post("/docker/delete")
-    async delete_image(@Body() data: { ids: string[] }) {
+    async delete_image(@Body() data: { ids: string[] },@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.docker_images_delete);
         await SysDockerServiceImpl.delete_image(data.ids);
         return Sucess("");
     }
@@ -66,6 +71,7 @@ export class SysController {
     // docker开关
     @msg(CmdType.docker_switch)
     async dockerSwitch(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token,UserAuth.docker_container_update);
         await SysDockerServiceImpl.dockerSwitch(data);
         return "";
     }
@@ -73,6 +79,7 @@ export class SysController {
     // docker 删除容器
     @msg(CmdType.docker_del_container)
     async dockerDelContainer(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token,UserAuth.docker_container_update);
         await SysDockerServiceImpl.dockerDelContainer(data);
         return "";
     }
@@ -87,6 +94,7 @@ export class SysController {
     // 关闭订阅进程信息
     @msg(CmdType.process_close)
     async processClose(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token,UserAuth.sys_process_close);
         await SysProcessServiceImpl.processClose(data);
         return ""
     }
@@ -104,7 +112,8 @@ export class SysController {
     }
 
     @Post("/systemd/add")
-    async addAllSystemd(@Body() pojo: { unit_name: string }) {
+    async addAllSystemd(@Body() pojo: { unit_name: string },@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
         await systemd.addSystemd(pojo.unit_name);
         return Sucess(systemd.getAllInsideSystemd());
     }
@@ -115,13 +124,15 @@ export class SysController {
     }
 
     @Post("/systemd/delete")
-    async deleteAllSystemd(@Body() pojo: { unit_name: string }) {
+    async deleteAllSystemd(@Body() pojo: { unit_name: string },@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
         await systemd.deleteSystemd(pojo.unit_name);
         return Sucess("");
     }
 
     @Post("/systemd/get/context")
-    async get_systemd_context(@Body() pojo: { unit_name: string }) {
+    async get_systemd_context(@Body() pojo: { unit_name: string },@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
         return Sucess(await systemd.get_systemd_context(pojo.unit_name));
     }
 
@@ -157,7 +168,10 @@ export class SysController {
 
     // 执行特定系统上的命令
     @Post("/cmd/exe")
-    async cmd_exe(@Body() pojo: SysCmdExePojo) {
+    async cmd_exe(@Body() pojo: SysCmdExePojo,@Req()req) {
+        if(pojo.type === SysCmd.mount) {
+            userService.check_user_auth(req.headers.authorization,UserAuth.sys_disk_mount);
+        }
         await SysSystemServiceImpl.cmd_exe(pojo);
         return Sucess("");
     }

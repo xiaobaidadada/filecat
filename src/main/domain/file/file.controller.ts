@@ -20,7 +20,7 @@ import {
     GetFilePojo, LogViewerPojo
 } from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
-import {Result, Sucess} from "../../other/Result";
+import {Fail, Result, Sucess} from "../../other/Result";
 import {cutCopyReq, fileInfoReq, fileReq, saveTxtReq} from "../../../common/req/file.req";
 import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
@@ -28,6 +28,8 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {settingService} from "../setting/setting.service";
 import {Request, Response} from 'express';
 import {search_file, search_file_cancel} from "./file.search";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 
 
 @JsonController("/file")
@@ -58,6 +60,7 @@ export class FileController {
 
     @Put('/:path([^"]{0,})')
     async uploadFile(@Req() req: Request, @Res() res: Response, @Param("path") path?: string) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
         await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
     }
@@ -65,13 +68,18 @@ export class FileController {
 
     @Delete('/:path([^"]{0,})')
     async deletes(@Req() ctx, @Param("path") path?: string) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
         return await FileServiceImpl.deletes(ctx.headers.authorization, path);
     }
 
     @Post('/save/:path([^"]{0,})')
     async save(@Req() ctx, @Param("path") path?: string, @Body() data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
-        await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
-        return Sucess("1");
+        if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
+            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy,false) ) {
+            await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
+            return Sucess("1");
+        }
+        return Fail("no permission")
     }
 
     // base保存支持分片 这个框架post默认最大只支持1mb
@@ -80,8 +88,12 @@ export class FileController {
         base64_context: string,
         type: base64UploadType
     }) {
-        await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
-        return Sucess("1");
+        if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
+            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy,false) ) {
+            await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
+            return Sucess("1");
+        }
+        return Fail("no permission")
     }
 
     // // 这里的路径不是相对的而是系统绝对路径
@@ -94,30 +106,35 @@ export class FileController {
 
     @Post('/cut')
     async cut(@Req() ctx, @Body() data?: cutCopyReq) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.cut(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/copy')
     async copy(@Req() ctx, @Body() data?: cutCopyReq) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
         await FileServiceImpl.copy(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/file')
     async newFile(@Req() ctx, @Body() data?: fileInfoReq) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
         await FileServiceImpl.newFile(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/dir')
     async newDir(@Req() ctx, @Body() data?: fileInfoReq) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
         await FileServiceImpl.newDir(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/rename')
     async rename(@Req() ctx, @Body() data?: fileInfoReq) {
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.rename(ctx.headers.authorization, data);
         return Sucess("1");
     }
@@ -125,30 +142,34 @@ export class FileController {
     // 切换路径
     @Post('/base_switch')
     async switchBasePath(@Body() data: { root_index: number }, @Req() ctx) {
-        const obj = Cache.getValue(ctx.headers.authorization);
-        if (obj) {
-            obj["root_index"] = data.root_index;
-        }
+        const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
+        user_data.folder_item_now = data.root_index;
+        userService.save_user_info(user_data.id,user_data);
+        // const obj = Cache.getValue(ctx.headers.authorization);
+        // if (obj) {
+        //     obj["root_index"] = data.root_index;
+        // }
         return Sucess("1");
     }
 
     // 获取主根位置
     @Post('/base_switch/get')
     async switchGetBasePath(@Req() req: Request) {
-        const obj = Cache.getValue(req.headers.authorization);
-        let index;
-        if (obj["root_index"] !== undefined) {
-            index = obj["root_index"];
-        } else {
-            const list = settingService.getFilesSetting();
-            for (let i = 0; i < list.length; i++) {
-                const item = list[i];
-                if (item.default) {
-                    index = i;
-                }
-            }
-        }
-        return Sucess(index);
+        // const obj = Cache.getValue(req.headers.authorization);
+        // let index;
+        // if (obj["root_index"] !== undefined) {
+        //     index = obj["root_index"];
+        // } else {
+        //     const list = settingService.getFilesSetting();
+        //     for (let i = 0; i < list.length; i++) {
+        //         const item = list[i];
+        //         if (item.default) {
+        //             index = i;
+        //         }
+        //     }
+        // }
+        const user_data = userService.get_user_info_by_token(req.headers.authorization);
+        return Sucess(user_data.folder_item_now === undefined ? 0 :user_data.folder_item_now);
     }
 
     @msg(CmdType.file_video_trans)

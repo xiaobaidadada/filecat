@@ -2,8 +2,8 @@ import WebSocket from "ws";
 import {msg, otherRouterHandlerMap, routerHandlerMap} from "./router";
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
-import {Decoder, Encoder, Packet, PacketType} from "socket.io-parser"
 import {settingService} from "../../main/domain/setting/setting.service";
+import {RCode} from "../Result.pojo";
 
 const url = require('url');
 
@@ -19,6 +19,7 @@ export class Wss {
     public dataMap = new Map();
     public id: string;
     public _close: Function[] = [];
+    public token;
 
     constructor(ws: WebSocket) {
         this._ws = ws;
@@ -51,10 +52,11 @@ export class Wss {
 class WsPreHandler {
 
     @msg(CmdType.connection)
-    async connection(ws: WebSocket) {
+    async connection(ws: WebSocket,token) {
         console.log('ws客户端连接');
         // 该ws只创建一次
         const wss = new Wss(ws);
+        wss.token = token;
         if (!protocolIsProto2) {
             decoder.on("decoded", async (packet) => {
                 const data = new WsData(packet.data[0], packet.data[1]);
@@ -76,9 +78,17 @@ class WsPreHandler {
                 data.wss = wss;
                 const handle = routerHandlerMap.get(data.cmdType);
                 if (handle) {
-                    const rsq: string = await handle(data);
-                    // 发送消息给客户端
-                    wss.sendData(new WsData(data.cmdType, rsq).encode());
+                    try {
+                        const rsq: string = await handle(data);
+                        // 发送消息给客户端
+                        wss.sendData(new WsData(data.cmdType, rsq).encode());
+                    } catch (e) {
+                        console.log(e)
+                        const p = new WsData(data.cmdType);
+                        p.code = RCode.Fail;
+                        p.message = JSON.stringify(e)
+                        wss.sendData(p.encode());
+                    }
                 } else {
                     console.log("没有匹配到路由")
                 }
@@ -136,11 +146,11 @@ export class WsServer {
                     return;
                 }
                 if (query['type'] === `${WsConnectType.data}`) {
-                    routerHandlerMap.get(CmdType.connection)!(ws);
+                    routerHandlerMap.get(CmdType.connection)!(ws,query['token']);
                 } else if (query['type'] === `${WsConnectType.other}`) {
                     const handler = otherRouterHandlerMap.get(parseInt(query['code']));
                     if (handler) {
-                        handler(ws,query);
+                        handler(ws,query); // query中有token了
                     }else {
                         console.log('没找到对应路径')
                     };

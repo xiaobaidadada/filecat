@@ -1,12 +1,15 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {rdpService} from "./rdp.service";
-import {Body, Controller, Get, JsonController, Post} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {NavIndexItem} from "../../../common/req/common.pojo";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import {Sucess} from "../../other/Result";
+import {data_common_key} from "../data/data_type";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 // todo json序列化方式，传输速度，页面css适配问题
-const navindex_rdp_key = "navindex_rdp_tag_key"
+const navindex_rdp_key = data_common_key.navindex_rdp_key
 @JsonController("/rdp")
 export class RdpController {
 
@@ -47,7 +50,8 @@ export class RdpController {
     }
 
     @Post('/tag/save')
-    save(@Body() items: NavIndexItem[]) {
+    save(@Body() items: NavIndexItem[],@Req()req) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.browser_proxy_tag_update);
         DataUtil.set(navindex_rdp_key, items);
         return Sucess('ok');
     }

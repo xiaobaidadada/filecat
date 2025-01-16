@@ -1,30 +1,28 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Menu, Row, RowColumn, TextLine} from "../../../meta/component/Dashboard";
-import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
+import React, {useEffect, useState} from 'react'
+import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
+import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
-import {settingHttp} from "../../util/config";
-import {UserLogin} from "../../../../common/req/user.req";
+import {settingHttp, userHttp} from "../../util/config";
+import {UserAuth, UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {Rows, Table} from "../../../meta/component/Table";
-import {SysSoftware, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
-import {TableListRender} from "./component/TableListRend";
+import {Rows} from "../../../meta/component/Table";
+import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
-import {GlobalContext} from "../../GlobalProvider";
 import Header from "../../../meta/component/Header";
-import {editor_data} from "../../util/store.util";
+import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySucess} from "../../util/noty";
-
-
 
 
 export function  Sys() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [authopen, setAuthopen] = useState(false);
+    const [shell_cmd_open, set_shell_cmd_open] = useState(false);
+
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
 
     const [tokenMode,setTokenMode]  = useState(TokenTimeMode.close);
@@ -32,7 +30,8 @@ export function  Sys() {
 
     const { t, i18n } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-
+    const {check_user_auth} = use_auth_check();
+    const [language,set_language] =  useState("");
 
     const update = async () =>{
         if (!username || !password) {
@@ -42,7 +41,8 @@ export function  Sys() {
         const user = new UserLogin();
         user.username = username;
         user.password = password;
-        const result = await settingHttp.post("updatePassword",user);
+        user.user_id = userInfo.user_data.id;
+        const result = await userHttp.post("updatePassword",user);
         if (result.code === RCode.Sucess) {
             NotySucess("修改成功")
         }
@@ -51,6 +51,9 @@ export function  Sys() {
         const getOpen = async ()=>{
             const result = await settingHttp.get("self_auth_open");
             setAuthopen(result.data);
+
+            const result2 = await settingHttp.get("shell_cmd_check_open");
+            set_shell_cmd_open(result2.data);
 
             const result1 = await settingHttp.get("token");
             if (result1.code === RCode.Sucess) {
@@ -67,12 +70,12 @@ export function  Sys() {
             }
         }
         getOpen();
-
+        set_language(userInfo?.user_data?.language);
     }, []);
     const jscode = async () =>{
         const res = await settingHttp.get(`self_auth_open/jscode`);
         setEditorSetting({
-            model: "javascript",
+            model: "ace/mode/javascript",
             open: true,
             fileName: "",
             save:async (context)=>{
@@ -89,8 +92,34 @@ export function  Sys() {
         })
         editor_data.set_value_temp(res.data)
     }
+    const shell_cmd_jscode = async () =>{
+        const res = await settingHttp.get(`shell_cmd_check_open/jscode`);
+        setEditorSetting({
+            model: "ace/mode/javascript",
+            open: true,
+            fileName: "",
+            save:async (context)=>{
+                const data  = {
+                    context,
+                }
+                const rsq = await settingHttp.post("shell_cmd_check_open/jscode/save", data);
+                if (rsq.code === 0) {
+                    editor_data.set_value_temp('')
+                    setEditorSetting({open: false,model:'',fileName:'',save:null})
+                }
+            }
+        })
+        editor_data.set_value_temp(res.data)
+    }
     const authOpenSave = async () =>{
         const result = await settingHttp.post("self_auth_open/save", {open:authopen});
+        if (result.code === RCode.Sucess) {
+            NotySucess("修改成功")
+        }
+    }
+
+    const auth_shell_open_Save = async () =>{
+        const result = await settingHttp.post("shell_cmd_check_open/save", {open:shell_cmd_open});
         if (result.code === RCode.Sucess) {
             NotySucess("修改成功")
         }
@@ -112,8 +141,8 @@ export function  Sys() {
 
     // 语言国际化
     const switchLanguage = async () =>{
-        i18n.changeLanguage(userInfo.language)
-        await settingHttp.post("language/save",{language:userInfo.language});
+        i18n.changeLanguage(language)
+        await userHttp.post("language/save",{language});
     }
 
     const tokenClearAll = async () => {
@@ -127,8 +156,12 @@ export function  Sys() {
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
-                <Card title={t("自定义auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
+                {check_user_auth(UserAuth.docker_images_delete)}
+                <Card title={t("自定义登录auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
                     <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+                </Card>
+                <Card title={t("自定义shell命令校验")} rightBottomCom={<ButtonText text={t('保存')} clickFun={auth_shell_open_Save}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={shell_cmd_jscode}/>}>
+                    <Select value={shell_cmd_open} onChange={(value)=>{set_shell_cmd_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
                 <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update}/>}>
                     <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
@@ -136,15 +169,14 @@ export function  Sys() {
                 </Card>
 
             </Dashboard>
+
         </Column>
         <Column widthPer={30}>
             <Dashboard>
                 <Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>
-                    <Select value={userInfo.language} onChange={(value)=>{
-                        const newInfo = {...userInfo};
-                        newInfo.language = value;
-                        setUserInfo(newInfo);
-                    }} options={[{title:"english",value:"en"},{title:"中文",value:"zh"}]}/>
+                    <Select value={language} onChange={(value)=>{
+                        set_language(value);
+                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"}]}/>
                 </Card>
                 <Card title={t("token过期时间")} rightBottomCom={<Rows isFlex={true} columns={[
                     <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,

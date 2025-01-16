@@ -2,6 +2,9 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {shellServiceImpl} from "./shell.service";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
+import {userService} from "../user/user.service";
+import {Wss} from "../../../common/frame/ws.server";
+import {UserAuth} from "../../../common/req/user.req";
 
 
 export class ShellController {
@@ -17,11 +20,11 @@ export class ShellController {
         shellServiceImpl.send(data);
         return ""
     }
-    @msg(CmdType.shell_cancel)
-    async cancel(data:WsData<any>) {
-        shellServiceImpl.cancel(data);
-        return ""
-    }
+    // @msg(CmdType.shell_cancel)
+    // async cancel(data:WsData<any>) {
+    //     shellServiceImpl.cancel(data);
+    //     return ""
+    // }
     @msg(CmdType.shell_cd)
     async cd(data:WsData<ShellInitPojo>) {
         shellServiceImpl.cd(data);
@@ -44,6 +47,7 @@ export class ShellController {
     // 进入exec执行
     @msg(CmdType.docker_shell_exec_open)
     async dockerShellExecOpen(data:WsData<ShellInitPojo>) {
+        userService.check_user_auth((data.wss as Wss).token,UserAuth.docker_container_update);
         await shellServiceImpl.dockerShellExecOpen(data);
         return "";
     }

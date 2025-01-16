@@ -133,3 +133,20 @@ export function generateRandomHash(length = 16) {
     }
     return hash;
 }
+
+export function have_empty_char(str:string) {
+    return /\s/.test(str)
+}
+
+// 删除路径后的 \ 字符
+export function removeTrailingPath(str) {
+    // 删除尾部的空白字符
+    const trimmedStr = str.trimEnd();
+
+    // 如果字符串尾部是反斜杠，删除它
+    if (trimmedStr.endsWith('\\') && !trimmedStr.endsWith(':\\') ) {
+        return trimmedStr.slice(0, -1);
+    }
+
+    return trimmedStr; // 返回没有尾部反斜杠和空白字符的字符串
+}

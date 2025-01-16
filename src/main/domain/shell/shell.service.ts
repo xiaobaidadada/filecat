@@ -10,10 +10,14 @@ import {Env} from "../../../common/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
 import {SysEnum} from "../../../common/req/user.req";
+import {exec_type, PtyShell} from "./PtyShell";
+import {userService} from "../user/user.service";
+import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
+import {data_common_key, data_dir_tem_name} from "../data/data_type";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
-let cr = '\r';
+let cr = '\r'; // xterm.js 按下 enter 是这个值
 
 export function getSys() {
     if (sysType === "win") {
@@ -59,32 +63,79 @@ const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 const socketMap: Map<string, any> = new Map();
 const init_sys_env_path = process.env.PATH;
+
+let line = "";
+
+let prompt = `${process.env.USER ?? process.env.USERNAME}>`;
+
+const shell_list = ['bash', 'sh', 'cmd', 'cmd.exe', 'pwsh', 'pwsh.exe', 'powershell', 'powershell.exe','vim','nano','cat','tail']; // 一些必须用 node_pty 执行的
+// ANSI 转义序列，设置绿色、蓝色、重置颜色
+const green = '\x1b[32m';  // 绿色
+const blue = '\x1b[34m';   // 蓝色
+const reset = '\x1b[0m';   // 重置颜色
+
 export class ShellService {
 
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        process.env.PATH = init_sys_env_path +(sysType === "win" ? ";" : ":")  + settingService.getEnvPath();
+        // process.env.PATH = init_sys_env_path +(sysType === "win" ? ";" : ":")  + settingService.getEnvPath();
+        process.env.PATH = init_sys_env_path;
         const pojo = data.context as ShellInitPojo;
-        // 创建
-        const ptyProcess = pty.spawn(getShell(), [], {
-            name: 'xterm-color',
+        if(pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
+        const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
+        const user_data = userService.get_user_info_by_token((data.wss as Wss).token);
+        const ptyProcess = new PtyShell({
             cols: pojo.cols,
             rows: pojo.rows,
-            cwd: process.env.HOME,
-            env:process.env,
-            useConptyDll:false, // 使用useConpty的话 新版本的windwos都不需要这个dll自带的有
-            useConpty: process.env.NODE_ENV !== "production" ? false : undefined,// conpty 可以支持 bash 等命令 从 Windows 10 版本 1809 开始提供 ， 但是如果使用了 powershell 这个也就没有必要了，而且设置为false才能使用debug模式运行
-            // exePath:"F:\\winpty-agent.exe"
+            cwd: sysPath,
+            node_pty:pty,
+            // prompt_call:()=>{
+            //     re
+            // },
+            node_pty_shell_list:shell_list,
+            prompt_call:(cwd)=>{
+                // 输出格式化的命令提示符
+                const p = path.basename(cwd);
+                const c = `${green}${user_data.username}${reset}:${blue}${p}${reset}:# `;
+                const len = PtyShell.get_full_char_num(`${user_data.username}:${p}:# `); // 计算纯字符
+                return {str:c,char_num:len};
+            },
+            on_call:(cmdData) => {
+                const result = new WsData<SysPojo>(CmdType.shell_getting);
+                result.context = cmdData;
+                (data.wss as Wss).sendData(result.encode())
+            },
+            copy_handle:(p)=>{
+                const result = new WsData<SysPojo>(CmdType.shell_copy);
+                result.context = p;
+                (data.wss as Wss).sendData(result.encode())
+            },
+            check_exe_cmd:(exe_cmd,params)=>{
+                if (settingService.get_shell_cmd_check()) {
+                    const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode,data_dir_tem_name.sys_file_dir);
+                    // 开启了自定义的处理
+                    if (selfHandler) {
+                        return  selfHandler.handler((data.wss as Wss).token,exe_cmd,params);
+                    }
+                }
+                if(!userService.check_user_cmd((data.wss as Wss).token,exe_cmd,false)) {
+                    // 检测命令能不能执行
+                    return exec_type.not;
+                }
+                // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
+                if(exe_cmd === 'cd') {
+                    // cd 需要检测一下目录
+                    if(userService.check_user_path((data.wss as Wss).token,path.isAbsolute(params[0])?params[0]:path.join(ptyProcess.cwd,params[0]))) {
+                        return exec_type.auto_child_process;
+                    }
+                }
+                return exec_type.auto_child_process;
+            }
         });
-        const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
-        const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
-        ptyProcess.write(cm);
-        ptyProcess.onData((cmdData) => {
-            const result = new WsData<SysPojo>(CmdType.shell_getting);
-            result.context = cmdData;
-            (data.wss as Wss).sendData(result.encode())
-        })
+        // const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
+        // const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
+        // ptyProcess.write(cm);
         socketMap.set(socketId, ptyProcess);
         (data.wss as Wss).ws.on('close', function close() {
             const pty = socketMap.get(socketId);
@@ -112,16 +163,16 @@ export class ShellService {
         }
     }
 
-    cancel(data: WsData<any>) {
-        const socketId = (data.wss as Wss).id;
-        (data.wss as Wss).ws.close();
-        const pty = socketMap.get(socketId);
-        if (pty) {
-            console.log('主动断开pty');
-            pty.kill();
-            socketMap.delete(socketId);
-        }
-    }
+    // cancel(data: WsData<any>) {
+    //     const socketId = (data.wss as Wss).id;
+    //     (data.wss as Wss).ws.close();
+    //     const pty = socketMap.get(socketId);
+    //     if (pty) {
+    //         console.log('主动断开pty');
+    //         pty.kill();
+    //         socketMap.delete(socketId);
+    //     }
+    // }
 
     cd(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
@@ -211,7 +262,7 @@ export class ShellService {
         }
 
         // 创建
-        const ptyProcess = pty.spawn(getShell(), [], {
+        const ptyProcess = pty.spawn(getSys() === SysEnum.win?"docker.exe":"docker", ['exec','-it',pojo.dockerId,dshell], {
             name: 'xterm-color',
             cols: pojo.cols,
             rows: pojo.rows,
@@ -219,18 +270,23 @@ export class ShellService {
             // env: process.env,
             useConpty: process.env.NODE_ENV !== "production" ? false : undefined,
         });
-        const cm = `docker exec -it ${pojo.dockerId} ${dshell} ${cr}`;
-        ptyProcess.write(cm);
+        // const cm = `docker exec -it ${pojo.dockerId} ${dshell} ${cr}`;
+        // ptyProcess.write(cm);
         ptyProcess.onData((cmdData) => {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = cmdData;
             (data.wss as Wss).sendData(result.encode())
         })
+        ptyProcess.onExit(({exitCode, signal}) => {
+            (data.wss as Wss).ws.close();
+            // ptyProcess.kill(); // 已经被kill
+            socketMap.delete(socketId);
+        })
         socketMap.set(socketId, ptyProcess);
         (data.wss as Wss).ws.on('close', function close() {
             const pty = socketMap.get(socketId);
             if (pty) {
-                console.log('意外断开pty');
+                console.log('ws客户端 意外断开pty');
                 pty.kill();
                 socketMap.delete(socketId);
             }

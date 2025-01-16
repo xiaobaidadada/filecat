@@ -13,7 +13,7 @@ export const CommonBody: React.FC<NavProps & {children: ReactNode[]}> = (props) 
         {/*{JSON.stringify(flatten(props.list).map(v=>v.rto+"*"))}*/}
         <Main>
             <SimpleRoutes rtos={flatten(props.navList).map(v=>v.rto+"*")}>
-                {props.children}
+                {props.children.filter(v=>!!v)}
             </SimpleRoutes>
         </Main>
 

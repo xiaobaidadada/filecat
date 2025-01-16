@@ -1,10 +1,10 @@
 import {DdnsConnection, DdnsIPPojo, ip_source_type} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {IResult} from "tldts-core";
-import {DataUtil} from "../data/DataUtil";
+import { DataUtil} from "../data/DataUtil";
 import {getMapByList} from "../../../common/ListUtil";
 import {parse} from "tldts";
-import {ddns_http_url_key} from "./ddns.service";
+import {data_common_key} from "../data/data_type";
 const os = require('os');
 
 const wwwIpv4 = "https://4.ipw.cn";
@@ -57,7 +57,7 @@ export abstract class DdnsPre implements updateDns{
                 list.push(ipPojo);
             }
         }
-        const url_list :DdnsIPPojo[] = DataUtil.get(ddns_http_url_key) ?? [];
+        const url_list :DdnsIPPojo[] = DataUtil.get(data_common_key.ddns_http_url_key) ?? [];
         for (const pojo of url_list) {
             pojo.ip= await HttpRequest.get(pojo.ifaceOrWww);
             list.push(pojo);

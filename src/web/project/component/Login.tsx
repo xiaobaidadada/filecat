@@ -16,7 +16,7 @@ function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const {reloadUserInfo} = useContext(GlobalContext);
+    const {initUserInfo} = useContext(GlobalContext);
     const { t } = useTranslation();
 
     async function login() {
@@ -27,12 +27,12 @@ function Login() {
         const rsq = await userHttp.post("login",data,false );
         if (rsq.code === 0) {
             localStorage.setItem('token',rsq.data)
-            reloadUserInfo();
+            initUserInfo();
             navigate('/file')
         } else {
             new Noty({
                 type: 'error',
-                text: '密码错误',
+                text: rsq.message,
                 timeout: 1000, // 设置通知消失的时间（单位：毫秒）
                 layout:"bottomLeft"
             }).show();

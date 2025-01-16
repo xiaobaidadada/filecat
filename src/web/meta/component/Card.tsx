@@ -19,7 +19,9 @@ enum Type {
 function CardComponent(props: CardProps, type: Type) {
     const contextClass = type === Type.common ? "card-content"
         : type === Type.full ? "card-content full" : "";
-    return <div className={"card"}>
+    return <div className={"card"} style={{
+        // overflow:"auto"
+    }}>
         <div className={"card-title"}>
             {props.self_title ? props.self_title : <h2>{props.title}</h2>}
             <div className={"not-select-div"}>{props.titleCom && props.titleCom}</div>

@@ -1,16 +1,19 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {InputText, InputTextIcon, Select} from "../../../meta/component/Input";
-import {ActionButton, Button, ButtonLittle, ButtonText} from "../../../meta/component/Button";
+import React, {useState} from 'react'
+import {InputTextIcon} from "../../../meta/component/Input";
+import {ActionButton} from "../../../meta/component/Button";
 import Noty from "noty";
 import Header from "../../../meta/component/Header";
 import {netHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {useTranslation} from "react-i18next";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 
 export function NetWol(props) {
     const { t } = useTranslation();
+    const {check_user_auth} = use_auth_check();
 
     const [mac, setMac] = useState('');
     const go = async (macAddress?: string) => {
@@ -65,6 +68,6 @@ export function NetWol(props) {
             <InputTextIcon placeholder={t("目标设备mac地址")} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
         </Header>
 
-        <NavIndexContainer getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")}]}/>
+        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.wol_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")}]}/>
     </div>
 }

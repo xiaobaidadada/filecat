@@ -7,6 +7,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
+import {copyToClipboard} from "../../util/FunUtil";
 
 export function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
@@ -44,6 +45,11 @@ export function FileShell(props) {
         ws.addMsg(CmdType.shell_getting,(wsData:WsData<SysPojo>)=>{
             handle(wsData.context);
         })
+        ws.addMsg(CmdType.shell_copy,(wsData:WsData<SysPojo>)=>{
+            if(wsData.context)
+            copyToClipboard(wsData.context);
+            terminal.focus()
+        })
         // 交互效果完全发送到服务器
         terminal.onData(async (data) => {
             const obj = new WsData(CmdType.shell_send);
@@ -61,10 +67,10 @@ export function FileShell(props) {
             }
             if(ws.isAilive()) {
                 ws.setPromise(async (resolve)=>{
-                    const data = new WsData(CmdType.shell_cancel);
-                    data.context=""
-                    ws.unSubscribeUnconnect();
-                    await ws.send(data);
+                    // const data = new WsData(CmdType.shell_cancel);
+                    // data.context=""
+                    // ws.unSubscribeUnconnect();
+                    // await ws.send(data);
                     await ws.unConnect();
                     resolve();
                 })
@@ -82,7 +88,7 @@ export function FileShell(props) {
             return
         }
         if (terminalState) {
-            //已经开启了
+            // todo 这个功能暂时不要了
             if (shellShowInit) {
                 const data = new WsData(CmdType.shell_cd);
                 const pojo = new ShellInitPojo();

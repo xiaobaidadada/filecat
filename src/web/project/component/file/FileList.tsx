@@ -24,6 +24,7 @@ import {GlobalContext} from "../../GlobalProvider";
 import {user_click_file} from "../../util/store.util";
 import { formatFileSize } from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
+import {TextTip} from "../../../meta/component/Card";
 
 
 export enum FileListShowTypeEmum {
@@ -271,6 +272,7 @@ export default function FileList() {
                         <TextLine left={`${t("文件系统")}`} right={ rsq.data && rsq.data.fs_type}/>
                         <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
                         <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
+                        <TextLine left={`${t("当前位置")}`} right={<TextTip context={rsq?.data?.now_absolute_path}/>}/>
                     </div>
                 )})
         }

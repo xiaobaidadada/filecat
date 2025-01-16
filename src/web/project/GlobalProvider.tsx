@@ -3,9 +3,10 @@ import React, { createContext, useState } from 'react';
 import {UserBaseInfo} from "../../common/req/user.req";
 import {useRecoilState} from "recoil";
 import {$stroe} from "./util/store";
-import {fileHttp, settingHttp} from "./util/config";
+import {fileHttp, settingHttp, userHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
+import {auth_key_map} from "./util/store.util";
 
 export const GlobalContext = createContext(undefined);
 
@@ -39,11 +40,12 @@ export const GlobalProvider = ({ children }) => {
     }
     const initUserInfo = async ()=> {
         await reloadFileRoot();
-        const result = await settingHttp.get("userInfo/get");
+        const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Sucess) {
-            setUser_base_info(result.data)
-            i18n.changeLanguage(result.data.language);
-
+            const p :UserBaseInfo = result.data;
+            setUser_base_info(p)
+            i18n.changeLanguage(p?.user_data?.language);
+            auth_key_map.clear();
         }
     }
 

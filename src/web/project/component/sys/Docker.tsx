@@ -14,9 +14,11 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {PromptEnum} from "../prompts/Prompt";
 import {useTranslation} from "react-i18next";
-import {sysHttp} from "../../util/config";
+import {sysHttp, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySucess, NotyWaring} from "../../util/noty";
+import {UserAuth, UserData} from "../../../../common/req/user.req";
+import {use_auth_check} from "../../util/store.util";
 
 let filter = ""
 
@@ -28,9 +30,11 @@ export function Docker(props) {
     const [images_selected,set_images_selected] = useState({});
     const [rows, setRows] = useState([]);
     const [rows_images, set_rows_images] = useState([]);
+    const {check_user_auth} = use_auth_check();
 
     const [shellShow, setShellShow] = useRecoilState($stroe.dockerShellShow);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [show_confirm, set_show_confirm] = useRecoilState($stroe.confirm);
     const [filterKey,setFilterKey] = useState(filter);
     const [headers, setHeaders] = useState(["id", t("名字"), t("镜像"), t("命令"), t("状态"),t("内存"),"cpu%", t("选择")]);
 
@@ -184,19 +188,28 @@ export function Docker(props) {
     }
     // 删除容器
     const delete_image = async ()=>{
-        const keys = Object.keys(images_selected);
-        const checkRsq = await sysHttp.post("docker/check/delete",{ids:keys});
-        if (checkRsq.code === RCode.Sucess ) {
-            if (checkRsq.data.length === 0) {
-                const rsq = await sysHttp.post("docker/delete",{ids:keys});
-                if (rsq.code === RCode.Sucess) {
-                    NotySucess("删除完成");
-                    load_images();
+        set_show_confirm({
+            open: true,
+            title: "确定删除选中的镜像吗",
+            // sub_title: ``,
+            handle: async () => {
+                const keys = Object.keys(images_selected);
+                const checkRsq = await sysHttp.post("docker/check/delete",{ids:keys});
+                if (checkRsq.code === RCode.Sucess ) {
+                    if (checkRsq.data.length === 0) {
+                        const rsq = await sysHttp.post("docker/delete",{ids:keys});
+                        if (rsq.code === RCode.Sucess) {
+                            NotySucess("删除完成");
+                            load_images();
+                            set_show_confirm({open:false,handle:null});
+                        }
+                    } else {
+                        NotyWaring(`有镜像正在运行${JSON.stringify(checkRsq.data)}`)
+                    }
                 }
-            } else {
-                NotyWaring(`有镜像正在运行${JSON.stringify(checkRsq.data)}`)
             }
-        }
+        })
+
 
     }
     // 更新容器
@@ -221,15 +234,16 @@ export function Docker(props) {
                 {optRow[1].props.context}
             </div>}
             {optRow.length > 0 && <div>
-                <ActionButton icon={"delete"} title={"删除容器"} onClick={del}/>
+                {check_user_auth(UserAuth.docker_container_update) && <ActionButton  icon={"delete"} title={"删除容器"} onClick={del}/>}
+
                 <ActionButton icon={"print"} title={"打印日志"} onClick={logs}/>
-                <ActionButton icon={"personal_video"} title={"执行命令"} onClick={exec}/>
-                {optRow[4].props.context.includes("Up") ? (
-                        <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>) :
-                    <ActionButton icon={"play_arrow"} title={"开启"} onClick={() => {
-                        dswitch("start")
-                    }}
-                    />}
+                {check_user_auth(UserAuth.docker_container_update) && <ActionButton icon={"personal_video"} title={"执行命令"} onClick={exec}/>}
+                {(check_user_auth(UserAuth.docker_container_update) && optRow[4].props.context.includes("Up") ) && <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>}
+                {(check_user_auth(UserAuth.docker_container_update) && !optRow[4].props.context.includes("Up") ) &&  <ActionButton icon={"play_arrow"} title={"开启"} onClick={() => {
+                    dswitch("start")
+                }}
+                />}
+
             </div>}
             {(rows.length !== 0 || filterKey) && !show_iamges && (
                 <ActionButton icon={"refresh"} title={"列表更新"} onClick={updat_list}/>
@@ -246,7 +260,7 @@ export function Docker(props) {
                                                        }} handlerEnter={search_image}/>}>
                             <Table headers={headers_images} rows={rows_images.map((value, index) => {
                                 value[4] =
-                                    <InputCheckbox value={index} context={t("")} selected={images_selected[value[0].props.context]}
+                                    <InputCheckbox  context={t("")} selected={images_selected[value[0].props.context]}
                                                    onchange={() => {
                                                        select(value[0].props.context)
                                                    }}/>; // 只有这样才会生效，如果在前面的http请求函数后是不会生效的，因为任何state修改过后，整个组件的所有元素都会被重新渲染，而在前面函数中填充的组件不在这个显示的组件(指的是这个组件返回的jfx html组件代码)运行内，就不会再次渲染了

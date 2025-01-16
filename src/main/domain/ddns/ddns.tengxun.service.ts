@@ -5,12 +5,12 @@ import {IResult} from "tldts-core";
 // const tencentcloud = require("tencentcloud-sdk-nodejs")
 // const txClient = tencentcloud.dnspod.v20210323.Client;
 import {Client as txClient}  from "./tx/dnspod_client"
+import {data_common_key} from "../data/data_type";
 
-export const ddns_tx_key = "tengxun_ddns_key"
 
 export class TengxunService extends DdnsPre {
     getDdnsKey() {
-        return ddns_tx_key;
+        return data_common_key.ddns_tx_key;
     }
 
     async update(data: DdnsConnection, domain: IResult, ip: string, type: string) {

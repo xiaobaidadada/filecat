@@ -1,5 +1,7 @@
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
+import {RCode} from "../Result.pojo";
+import {NotyFail} from "../../web/project/util/noty";
 
 const decoder = new parser.Decoder();
 
@@ -18,9 +20,8 @@ export class WsClient {
     private _msgResolveTimeoutMap = new Map();
 
     handMsg(cmdType: CmdType,data : WsData<any>) {
-        const fun = this._msgHandlerMap.get(data.cmdType)
-        if (fun) {
-            fun(data);
+        if(data.code === RCode.Fail) {
+            NotyFail(data.message);
         }
         const resolve = this._msgResolveMap.get(data.cmdType)
         if (resolve) {
@@ -32,6 +33,11 @@ export class WsClient {
             clearTimeout(timeout);
             this._msgResolveTimeoutMap.delete(cmdType);
         }
+        const fun = this._msgHandlerMap.get(data.cmdType)
+        if (fun) {
+            fun(data);
+        }
+
     }
 
     constructor(url:string,authHandle:(socket:WebSocket)=>void) {

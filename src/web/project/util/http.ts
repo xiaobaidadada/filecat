@@ -3,6 +3,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {useNavigate} from "react-router-dom";
 import Noty from "noty";
 import {Result} from "../../../main/other/Result";
+import {NotyFail} from "./noty";
 
 let now = Date.now();
 export class Http {
@@ -34,14 +35,19 @@ export class Http {
     }
 
     async get(url = ""):Promise<Result<any>> {
-        url=url===undefined?'':url;
-        const rsq = await axios.get(this.baseUrl+url,{
-            headers: {
-                Authorization: localStorage.getItem('token')
-            }
-        });
-        this.check(rsq.data);
-        return rsq.data
+        try {
+            url=url===undefined?'':url;
+            const rsq = await axios.get(this.baseUrl+url,{
+                headers: {
+                    Authorization: localStorage.getItem('token')
+                }
+            });
+            this.check(rsq.data);
+            return rsq.data
+        }catch(err) {
+            NotyFail(JSON.stringify(err));
+            return null;
+        }
     }
 
     getDownloadUrl(files) {
@@ -61,16 +67,21 @@ export class Http {
     }
 
     async post(url,jsonData = {},notCheck= true):Promise<Result<any>> {
-        url=url===undefined?'':url;
-        const rsq = await axios.post(this.baseUrl+url, jsonData,{
-            headers: {
-                Authorization: localStorage.getItem('token')
+        try {
+            url=url===undefined?'':url;
+            const rsq = await axios.post(this.baseUrl+url, jsonData,{
+                headers: {
+                    Authorization: localStorage.getItem('token')
+                }
+            });
+            if (notCheck) {
+                this.check(rsq.data);
             }
-        });
-        if (notCheck) {
-            this.check(rsq.data);
+            return rsq.data;
+        } catch (e) {
+            NotyFail(JSON.stringify(e));
+            return null;
         }
-        return rsq.data
     }
 
     public getUrl(url) {
@@ -78,50 +89,65 @@ export class Http {
     }
 
     async post_form_data(url,form_data:FormData) {
-        url=url===undefined?'':url;
-        const rsq = await axios.post(this.baseUrl+url, form_data,
-            {
-                headers:{
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': localStorage.getItem('token')
-                }
-            });
-        this.check(rsq.data);
-        return rsq.data
+        try {
+            url=url===undefined?'':url;
+            const rsq = await axios.post(this.baseUrl+url, form_data,
+                {
+                    headers:{
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': localStorage.getItem('token')
+                    }
+                });
+            this.check(rsq.data);
+            return rsq.data
+        } catch (e) {
+            NotyFail(JSON.stringify(e));
+            return null;
+        }
     }
 
     async put(url,file,progressFun) {
-        url=url===undefined?'':url;
-        // 创建 FormData 对象
-        const formData = new FormData();
-        formData.append('file', file);
-        const rsq = await axios.put(this.baseUrl+url, formData,
-            {
-                headers:{
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': localStorage.getItem('token')
-                },
-                onUploadProgress: (progressEvent) => {
-                    // 上传进度监听
-                    if (progressFun) {
-                        progressFun(progressEvent);
-                    }
+        try {
+            url=url===undefined?'':url;
+            // 创建 FormData 对象
+            const formData = new FormData();
+            formData.append('file', file);
+            const rsq = await axios.put(this.baseUrl+url, formData,
+                {
+                    headers:{
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': localStorage.getItem('token')
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        // 上传进度监听
+                        if (progressFun) {
+                            progressFun(progressEvent);
+                        }
 
-                }
-            });
-        this.check(rsq.data);
-        return rsq.data
+                    }
+                });
+            this.check(rsq.data);
+            return rsq.data
+        } catch (e) {
+            NotyFail(JSON.stringify(e));
+            return null;
+        }
     }
 
     async delete(url,jsonData?:any) {
-        url=url===undefined?'':url;
-        const rsq = await axios.delete(this.baseUrl+url,{
-            headers: {
-                Authorization: localStorage.getItem('token')
-            }
-        });
-        this.check(rsq.data);
-        return rsq.data
+       try {
+           url=url===undefined?'':url;
+           const rsq = await axios.delete(this.baseUrl+url,{
+               headers: {
+                   Authorization: localStorage.getItem('token')
+               }
+           });
+           this.check(rsq.data);
+           return rsq.data
+       }catch (e) {
+           NotyFail(JSON.stringify(e));
+           return null;
+       }
     }
 
     public   have_http_method(method_name) {

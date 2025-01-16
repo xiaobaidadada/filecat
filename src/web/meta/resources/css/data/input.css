@@ -81,3 +81,16 @@
 .black-tip:hover {
     background: var(--surfaceSecondary);
 }
+
+.checkbox_container {
+    /*display: inline-flex;*/
+    /*display: flex;*/
+    /*flex-wrap: wrap;*/
+    /*overflow: hidden;*/
+
+}
+
+.checkbox_container > div {
+    white-space: nowrap; /* 禁止文字换行 */
+    margin: 3px 3px 3px 4px;
+}
