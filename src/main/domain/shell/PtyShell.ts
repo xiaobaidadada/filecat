@@ -11,7 +11,7 @@
 
 
 import {word_detection_js} from "../../../common/word_detection_js";
-import {join_url} from "../../../common/StringUtil";
+import {get_best_cmd, path_join} from "../../../common/path_util";
 
 /**
  * 功能说明：
@@ -100,6 +100,31 @@ export class PtyShell {
         this.on_call(this.raw_prompt);
     }
 
+    // cmd 命令 参数预测 只要是参数都可能是本目录下的文件名所以可以检测一下
+    public cmd_params_detection(param_str):string|undefined {
+        // 这里的默认实现是开启了使用 node
+        if(this.not_use_node_pre_cmd_exec) {
+            return;
+        }
+        const items = this.node_require.fs.readdirSync(this.cwd);// 读取目录内容
+        if(!this.word_detection) {
+            this.word_detection = new word_detection_js();
+            for (const item of items) {
+                this.word_detection.add(item);
+            }
+        }
+        let v= this.word_detection.detection_next_one_word(param_str,".");
+        if (v === undefined) {
+            // windows的特殊处理判断
+            const list = this.word_detection.detection_next_list_word(param_str,".");
+            v= get_best_cmd(list);
+        }
+        return v;
+    }
+
+    // cmd 命令 参数预测
+    public cmd_exe_detection?: (exe:string)=>string;
+
     private cmd_set = new Set(cmd_list);
 
     private shell_set:Set<string>;
@@ -125,25 +150,6 @@ export class PtyShell {
     private on_child_kill_call?: (code) => void;
 
     private word_detection:word_detection_js;
-
-    // cmd 命令 参数预测 只要是参数都可能是本目录下的文件名所以可以检测一下
-    private cmd_params_detection(param_str):string|undefined {
-        // 这里的默认实现是开启了使用 node
-        if(this.not_use_node_pre_cmd_exec) {
-            return;
-        }
-        const items = this.node_require.fs.readdirSync(this.cwd);// 读取目录内容
-        if(!this.word_detection) {
-            this.word_detection = new word_detection_js();
-            for (const item of items) {
-                this.word_detection.add(item);
-            }
-        }
-        return this.word_detection.detection_next_one_word(param_str,".");
-    }
-
-    // cmd 命令 参数预测
-    cmd_exe_detection?: (exe:string)=>string;
 
     private node_pty: any;
     private child;
@@ -248,6 +254,10 @@ export class PtyShell {
         } else if (data.startsWith('\x1b')) {
             // 是控制字符但是没有 对应的处理删除
             return;
+        }
+        if(this.select_line) {
+            // 如果有选中就应该先删除
+            this.ctrl_exec('\x1b[3~'); // 删除
         }
         // 插入数据
         let enter_index = this.get_enter_index(data); // 从换行符开始截取一部分插入
@@ -469,7 +479,7 @@ export class PtyShell {
         switch (str) {
             case '\x09':{
                 // 按下 tab按键
-                if(this.line_index <= 0 ||
+                if(this.line_index < 0 ||
                     this.is_empty(this.line[this.line_index]) || // 字符位置是空的
                     (!this.is_empty(this.line[this.line_index]) && !this.is_empty(this.line[this.line_index+1]))) { // 自己和前面都不是空的（数组过节返回的也是空也可以)
                     // 不符合条件的不做命令自动补充
@@ -918,15 +928,15 @@ export class PtyShell {
                     return true;
                 case 'cd': {
                     let p;
-                    if(this.not_use_node_pre_cmd_exec) {
+                    if(!this.not_use_node_pre_cmd_exec) {
                         // 有node环境可以检测一下
                         p = this.node_require.path.isAbsolute(params[0]) ? params[0] : this.node_require.path.join(this.cwd, params[0]);
                         if (!this.node_require.fs.existsSync(p)) {
                             this.send_and_enter(`not directory ${p}`);
                         }
                     } else {
-                        // 没有node环境只能这样了
-                        p = join_url(this.cwd, params[0]);
+                        // 没有node环境只能这样了 todo 对于 .. 路径有问题
+                        p = path_join(this.cwd, params[0]);
                     }
                     this.cwd = p;
                     this.send_and_enter(``);

@@ -52,7 +52,8 @@ export enum UserAuth {
     filecat_file_context_update = 27 , // 仅仅是内容更新 这个和上一个有一个可以，就可以更新
     shell_cmd_check = 28 , // cmd shell 命令 检测是否能运行
     role_manage = 29 , //角色管理
-    env_path_update = 30  // 环境路径管理
+    env_path_update = 30,  // 环境路径管理
+    pty_cmd_update = 31, // pty cmd 环境更新
 }
 
 export class UserData extends UserLogin {
