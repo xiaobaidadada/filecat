@@ -97,6 +97,9 @@ export function User() {
         set_user_id(item?.id??"");
         if(item?.bind_role_id) {
             selete_role(item.bind_role_id,item.auth_list??[])
+        } else {
+            set_bind_role_id("");
+            set_bind_role_item({});
         }
 
     }

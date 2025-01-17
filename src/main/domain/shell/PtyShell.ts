@@ -8,8 +8,10 @@
  * 读取输出与写入输入：捕获输出并发送输入，模拟用户交互。
  * 信号和控制字符支持：处理回车、换行等控制字符，并支持信号转发。
  */
-import {getShell, getSys} from "./shell.service";
-import {SysEnum} from "../../../common/req/user.req";
+
+
+import {word_detection_js} from "../../../common/word_detection_js";
+import {join_url} from "../../../common/StringUtil";
 
 /**
  * 功能说明：
@@ -18,7 +20,7 @@ import {SysEnum} from "../../../common/req/user.req";
  * 3. 支持 ls pwd 等内置命令 ， 除了 cd 所有命令都可以自定义
  * 4. 不存在的命令会被用子进程执行
  * 5. 对于特殊的 shell 命令 会使用  node-pty 来执行 并让shell托管所有的输入输出数据
- * 6. 使用了shell: true 参数 系统的默认shell可以支持管道等操作，还可以支持程序路劲查找的功能
+ * 6. 使用了shell: true 参数 系统的默认shell可以支持管道等操作，还可以支持程序路劲查找的功能 但是这样无法支持 | 这样左边命令的校验了，暂时取消这个功能。以后再添加 不能使用原生的shell因为不知道会有什么特殊语法从而跳过命令校验
  */
 
 const cmd_list = ['ls', 'cd', 'pwd']; // 仅支持这三个内置命令 cd 命令是唯一支持参数的
@@ -46,6 +48,7 @@ const ctrl_list = [
     '\x1b[1;2F', // shift + end
     '\x1b[1;5D', // ctrl 向左
     '\x1b[1;5C', // ctrl 向右
+    '\x09' , // tab
 ]
 
 const cancel_ctrl_value = '\x1b[0m'; // 取消控制符号的值
@@ -74,6 +77,8 @@ interface Param {
     prompt_call?: (cwd: string) => prompt_call_result,
     node_pty_shell_list?:string[], // 一些必须用 node_pty 来执行的命令
     check_exe_cmd?: (exe_cmd: string,params:string[]) => exec_type, // 检查这个命令是否能执行
+    cmd_params_detection?: (param:string)=>string, // 获取cmd目录的参数 也就是 目录下文件可能的文件名检测
+    cmd_exe_detection?: (exe:string)=>string, // 也是检测 是命令的检测 由外部提供
 }
 
 type CmdHandler = (params: string[], send_prompt?: (data: string) => void) => void;
@@ -118,6 +123,27 @@ export class PtyShell {
     private copy_handle?: (data: string) => void;
 
     private on_child_kill_call?: (code) => void;
+
+    private word_detection:word_detection_js;
+
+    // cmd 命令 参数预测 只要是参数都可能是本目录下的文件名所以可以检测一下
+    private cmd_params_detection(param_str):string|undefined {
+        // 这里的默认实现是开启了使用 node
+        if(this.not_use_node_pre_cmd_exec) {
+            return;
+        }
+        const items = this.node_require.fs.readdirSync(this.cwd);// 读取目录内容
+        if(!this.word_detection) {
+            this.word_detection = new word_detection_js();
+            for (const item of items) {
+                this.word_detection.add(item);
+            }
+        }
+        return this.word_detection.detection_next_one_word(param_str,".");
+    }
+
+    // cmd 命令 参数预测
+    cmd_exe_detection?: (exe:string)=>string;
 
     private node_pty: any;
     private child;
@@ -439,8 +465,33 @@ export class PtyShell {
     }
 
     private ctrl_exec(str: string) {
-        let cancel_selected = true;
+        let cancel_selected = true; // 取消选中
         switch (str) {
+            case '\x09':{
+                // 按下 tab按键
+                if(this.line_index <= 0 ||
+                    this.is_empty(this.line[this.line_index]) || // 字符位置是空的
+                    (!this.is_empty(this.line[this.line_index]) && !this.is_empty(this.line[this.line_index+1]))) { // 自己和前面都不是空的（数组过节返回的也是空也可以)
+                    // 不符合条件的不做命令自动补充
+                    break;
+                }
+                const {word,is_exe}= this.get_last_word_cmd_or_param(this.line,this.line_index);
+                if(word) {
+                    let word_d;
+                    if(is_exe && this.cmd_exe_detection !== undefined){
+                        word_d = this.cmd_exe_detection(word);
+                    } else {
+                        word_d = this.cmd_params_detection(word); // 不可用或者没有实现会空
+                    }
+                    if(word_d!==undefined && word_d !== word) {
+                        this.line = this.line.substring(0, this.line_index - word.length+1) + word_d + this.line.substring(this.line_index+1)
+                        this.line_index = this.line_index-word.length+word_d.length;
+                        this.update_line({line_add_num:1});
+                    }
+                }
+
+            }
+            break;
             case "\x1b[A": {
                 // 向上
                 const index = this.history_line_index === -1 ? this.history_line.length - 1 : this.history_line_index - 1;
@@ -691,7 +742,7 @@ export class PtyShell {
     // 解析和执行命令 执行完会自动换行的
     private parse_exec() {
         // const line = this.delete_all_enter(this.line);
-        if(!this.line) {
+        if(!this.line && !this.child) {
             this.send_and_enter("");
             this.clear_line();
             return;
@@ -730,9 +781,11 @@ export class PtyShell {
             }
             if (this.cmd_set.has(exe)) {
                 // 检测某个已经有预处理的命令 包括用户自定义的
-                this.exec_cmd(exe, params);
-                this.clear_line();
-                return;
+                if(this.exec_cmd(exe, params)) {
+                    // 成功执行了不用再继续了
+                    this.clear_line();
+                    return;
+                }
             }
             this.spawn(exe, params,use_noe_pty);
             this.clear_line();
@@ -810,7 +863,7 @@ export class PtyShell {
             this.is_pty = false;
             // 其他的没有必要再创建一个 tty 都是资源消耗
             this.child = this.node_require.child_process.spawn(exe, params, {
-                shell:getShell(),
+                // shell:getShell(),
                 cwd: this.cwd,    // 设置子进程的工作目录
                 env: {...process.env, ...this.env,LANG: 'en_US.UTF-8'}, // 传递环境变量
                 // stdio: 'inherit'  // 让子进程的输入输出与父进程共享 pipe ignore inherit
@@ -856,35 +909,46 @@ export class PtyShell {
                 handle(params, (data: string) => {
                     this.send_and_enter(data, true)
                 });
-                return;
+                return true;
             }
             switch (exe) {
                 case 'pwd': {
                     this.send_and_enter(`${this.cwd}`);
                 }
-                    break;
+                    return true;
                 case 'cd': {
-                    const p = this.node_require.path.isAbsolute(params[0]) ? params[0] : this.node_require.path.join(this.cwd, params[0]);
-                    if (!this.node_require.fs.existsSync(p)) {
-                        this.send_and_enter(`not directory ${p}`);
-                        return;
+                    let p;
+                    if(this.not_use_node_pre_cmd_exec) {
+                        // 有node环境可以检测一下
+                        p = this.node_require.path.isAbsolute(params[0]) ? params[0] : this.node_require.path.join(this.cwd, params[0]);
+                        if (!this.node_require.fs.existsSync(p)) {
+                            this.send_and_enter(`not directory ${p}`);
+                        }
+                    } else {
+                        // 没有node环境只能这样了
+                        p = join_url(this.cwd, params[0]);
                     }
                     this.cwd = p;
                     this.send_and_enter(``);
+                    this.word_detection = undefined; // 清空检测器
                 }
-                    break;
+                    return true;
                 case 'ls': {
+                    if(this.not_use_node_pre_cmd_exec) {
+                        return false; // 让其它方式处理
+                    }
                     const items = this.node_require.fs.readdirSync(this.cwd);// 读取目录内容
                     const v = this.cols_handle(" " + items.join("  "));
                     this.send_and_enter(v);
                 }
-                    break;
+                    return true;
                 default:
-                    this.send_and_enter(`${this.cwd}`);
+                    return false; // 让其它方式处理
             }
         } catch (e) {
             this.send_and_enter(JSON.stringify(e));
         }
+        return false; // 让其它方式处理
     }
 
 
@@ -916,12 +980,36 @@ export class PtyShell {
         return {exe, params};
     }
 
-    private is_empty(str) {
+    get_last_word_cmd_or_param(line,now_index):{word:string,is_exe:boolean} {
+        // 获取当前命令 当前位置 往前的一个单词
+        let word ="",is_exe = true;
+        if(!!line && !!line[now_index]) {
+            // 字符串不能是空的 且 当前位置也不能是空的
+            for(let i=now_index;i>=0;i--) {
+                if(!this.is_empty(line[i])) {
+                    word = line[i]+word;
+                } else {
+                    // 判断前面是否还有字符
+                    for(let j=i;j>=0;j--) {
+                        if(line[j]) {
+                            is_exe = false;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return {word,is_exe};
+    }
+
+
+    private is_empty(str:string) {
         // 判断是否为 null 或 undefined
         if (str === null || str === undefined) {
             return true;
         }
-        // 判断是否为空字符串或仅包含空白字符（空格、换行符、制表符等）
+        // 判断是否为空字符串或仅包含空白字符（空格、换行符、制表符等） 对于 \b 这样的字符不能判断为空 powershell也是
         return str.trim() === '';
     }
 
