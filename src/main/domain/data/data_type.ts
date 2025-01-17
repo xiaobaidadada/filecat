@@ -58,7 +58,8 @@ export enum data_common_key {
     // 自定义shell cmd 检测
     self_shell_cmd_check_open_status = "self_shell_cmd_check_open_status",
     self_shell_cmd_jscode = "self_shell_cmd_jscode", // js code 文件名字
-    extra_env_path_list_key = "extra_env_path_list_key"
+    extra_env_path_list_key = "extra_env_path_list_key", // 额外环境变量 List
+    cmd_use_pty_key = "cmd_use_pty_key", // 使用node pty 的变量
 }
 
 

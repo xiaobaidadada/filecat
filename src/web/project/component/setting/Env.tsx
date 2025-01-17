@@ -23,6 +23,7 @@ export function Env() {
     // const [env_path,set_env_path] = useState("");
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
     const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
+    const [pty_cmd,set_pty_cmd] = useState("");
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
@@ -50,10 +51,23 @@ export function Env() {
         if (result3.code === RCode.Sucess) {
             set_protection_dir_rows(result3.data ?? []);
         }
+
+        const result4 = await settingHttp.get("pty_cmd");
+        if (result4.code === RCode.Sucess) {
+            set_pty_cmd(result4.data);
+        }
     }
     useEffect(() => {
         getItems();
     }, []);
+
+    const save_pty_cmd = async ()=>{
+        const result = await settingHttp.post("pty_cmd/save", {str:pty_cmd});
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+            reloadUserInfo();
+        }
+    }
 
     // 文件目录
     const save = async () => {
@@ -148,6 +162,10 @@ export function Env() {
             context = <div>
                 当在不同用户环境下运行的时候由于没有执行终端去加载PATH，这里可以添加额外的PATH路径，点击这里的保存还会更新系统上的path路径
             </div>
+        } else if(id === "pty") {
+            context = <div>
+                一些需要Pty环境的命令
+            </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >
@@ -239,6 +257,11 @@ export function Env() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
+                <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("pty")}} title={"信息"}/></span>}
+                      rightBottomCom={<ButtonText text={t('更新')} clickFun={save_pty_cmd}/>}>
+                    <InputText placeholder={t('cmd need pty env')}  value={pty_cmd} handleInputChange={(value)=>{set_pty_cmd(value)}} />
+                </Card>
             </Dashboard>
         </Column>
     </Row>)

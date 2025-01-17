@@ -16,6 +16,7 @@ import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {word_detection_js} from "../../../common/word_detection_js";
 import fs from "fs";
+import {get_best_cmd} from "../../../common/path_util";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
@@ -69,7 +70,6 @@ const socketMap: Map<string, any> = new Map();
 //
 // let prompt = `${process.env.USER ?? process.env.USERNAME}>`;
 
-const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe','vim','nano','cat','tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
 // ANSI 转义序列，设置绿色、蓝色、重置颜色
 const green = '\x1b[32m';  // 绿色
 const blue = '\x1b[34m';   // 蓝色
@@ -144,35 +144,7 @@ export class ShellService {
             // prompt_call:()=>{
             //     re
             // },
-            node_pty_shell_list:shell_list,
-            cmd_exe_detection:(exe)=>{
-                const v = word_detection.detection_next_one_word(exe,".");
-                if(getSys()!==SysEnum.win || v!==undefined){
-                    return v;
-                }
-                if(getSys()===SysEnum.win) {
-                    const list = word_detection.detection_next_list_word(exe);
-                    let ok;
-                    let ok_p = 0;
-                    for (const item of list) {
-                        const v = exec_map[path.extname(item)];
-                        if(v!== undefined && v>ok_p) {
-                            ok = item;
-                            ok_p = v;
-                        }
-                    }
-                    if(ok===undefined) {
-                        // 选出一个最短的
-                        for (const item of list) {
-                            if(item.length>ok_p) {
-                                ok = item;
-                                ok_p = item.length;
-                            }
-                        }
-                    }
-                    return ok;
-                }
-            },
+            node_pty_shell_list:settingService.get_pty_cmd(),
             prompt_call:(cwd)=>{
                 // 输出格式化的命令提示符
                 const p = path.basename(cwd);
@@ -216,6 +188,24 @@ export class ShellService {
                 return exec_type.auto_child_process;
             }
         });
+        ptyProcess.cmd_exe_detection = (exe)=>{
+            // 系统命令检测
+            let v = word_detection.detection_next_one_word(exe,".");
+            if(v!==undefined){
+                return v;
+            }
+            // 本目录下再检测一下
+            v = ptyProcess.cmd_params_detection(exe);
+            if(v!==undefined){
+                return v;
+            }
+            // windwos 的话判断一下特殊情况再检测一下
+            if(getSys()===SysEnum.win) {
+                // windows 可能出现多个同名带后缀的或者不带后缀的词
+                const list = word_detection.detection_next_list_word(exe,".");
+                return get_best_cmd(list);
+            }
+        }
         // const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         // const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
         // ptyProcess.write(cm);

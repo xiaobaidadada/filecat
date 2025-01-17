@@ -174,6 +174,15 @@ export function Permission(props:{
                        }}/>
                 {t("PATH路径修改")}
             </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.pty_cmd_update)}
+                       checked={props.is_selected(UserAuth.pty_cmd_update)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.pty_cmd_update)
+                       }}/>
+                {t("pty cmd 更新")}
+            </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

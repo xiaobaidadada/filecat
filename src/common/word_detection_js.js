@@ -44,40 +44,34 @@ export class word_detection_js {
     }
 
     /**
-     * 与detection_next_one_word作用一样但是是返回一个数组多个
+     * 在完全匹配的基础之上（不是尽可能） 再额外添加一个字符 获取这个额外添加的字符的所有更多尽可能的可能性
      * @param word
-     * @param dif_char 允许有多个不一样的，但是这多个不一样的字符是从这个字符开始的 一般设置为 . 设置为空的话会全部返回
+     * @param extra_word_char 在匹配自己的前提下 获取以此 往前多一个分叉的所有子分叉 （比如 cmd 使用 . 获取 cmd.exe cmd.bat 等)
      */
-    detection_next_list_word(word,dif_char = undefined) {
+    detection_next_list_word(word,extra_word_char ) {
         const r_list = [];
         if (!word || !this.root) r_list;
         let now_node = this.root;
         for (let i = 0; i < word.length; i++) {
             const v = now_node.children.get(word[i]);
             if (v == null) {
-                continue;
+                return r_list; // 本身就无法匹配完整
             }
             now_node = v;
         }
         // 基本字符都匹配上了现在来看看有没有多余的
         if (now_node.is_end) {
+            // 把本身先加入进去
             r_list.push(word);
         }
         if(!now_node.children) {
             return  r_list;
         }
         const ok_children_list = [];// 前面的都匹配上了
-        if(dif_char!==undefined) {
-            const dif_char_node = now_node.children.get(dif_char);
-            if(dif_char_node !== undefined && dif_char_node.children !== undefined) {
-                for (const node of dif_char_node.children.values()) {
-                    node.word = word+dif_char;
-                    ok_children_list.push(node);
-                }
-            }
-        } else {
-            for (const node of now_node.children.values()) {
-                node.word = word;
+        const dif_char_node = now_node.children.get(extra_word_char);
+        if(dif_char_node !== undefined && dif_char_node.children !== undefined) {
+            for (const node of dif_char_node.children.values()) {
+                node.word = word+extra_word_char;
                 ok_children_list.push(node);
             }
         }
@@ -117,24 +111,24 @@ export class word_detection_js {
     }
 
     /**
-     * 如果接下来只剩一个匹配(尽可能的往前匹配) 会把这个直接返回 探测接下来是不是就剩一个单词了
-     * 如果结果一样就不返回了
+     * 会  ”尽可能“  的往前匹配更多更匹配的 "唯一" 单词(有分叉就停止检索)
+     * 如果和原本的输入一样就不返回了
      * @param word 单词 而不是被检测的文本
-     * @param prefer_char 优先字符 添加这个词后 最后匹配到多个 会优先匹配一下这样的词 再看看是否唯一 不支持词语 一般设置为 .
+     * @param prefer_char 如果有这种情况 遇上分叉了 但是提供一个可选项，使用这个如果可以继续往前获取唯一的单词就继续往前
      * @return str or undefined
      */
-    detection_next_one_word(word, prefer_char=undefined) {
+    detection_next_one_word(word,prefer_char = undefined) {
         if (!word || !this.root) return;
         let now_node = this.root;
         for (let i = 0; i < word.length; i++) {
             const v = now_node.children.get(word[i]);
             if (v == null) {
-                return;
+                return; // 本身就无法匹配完整
             }
             now_node = v;
         }
         if (now_node.is_end) {
-            return undefined; // 一样的话就不返回了
+            return; // 一样的话就不返回了
         }
         if (now_node.children !== undefined) {
             if (now_node.children.size === 1) {
@@ -157,7 +151,7 @@ export class word_detection_js {
                     word += now_node.char;
                     now_node = now_node.children.values().next().value; // 获取唯一的元素值
                 } else {
-                    return; // 不唯一返回吧
+                    return word+now_node.char; // 接下来匹配会分叉就匹配到这返回吧
                 }
             } else {
                 if (now_node.is_end) {

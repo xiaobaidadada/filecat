@@ -1,4 +1,4 @@
-import { DataUtil} from "../data/DataUtil";
+import {DataUtil} from "../data/DataUtil";
 import path from "path";
 import fs from "fs";
 import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/customerRouter.pojo";
@@ -29,11 +29,11 @@ const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
 const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 
 const sandbox = {
-    needle: needle , // needle http 请求工具
+    needle: needle, // needle http 请求工具
     user_login: userController.login,
-    fs:fs,
+    fs: fs,
     path: path,
-    cache_map:customer_cache_map
+    cache_map: customer_cache_map
 };
 const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
@@ -97,7 +97,7 @@ export class SettingService {
                     }
                     try {
 
-                        const instance = this.getHandlerClass(item.router,data_dir_tem_name.all_user_api_file_dir);
+                        const instance = this.getHandlerClass(item.router, data_dir_tem_name.all_user_api_file_dir);
                         // 监听 'data' 事件以接收数据块
                         let data = '';
                         ctx.on('data', (chunk) => {
@@ -124,8 +124,8 @@ export class SettingService {
     }
 
     // 每次都会重新读取文件没有必要缓存 todo 更合适方案
-    public getHandlerClass(key,dir) {
-        const jscode = DataUtil.getFile(this.routerHandler(key),dir);
+    public getHandlerClass(key, dir) {
+        const jscode = DataUtil.getFile(this.routerHandler(key), dir);
         if (!jscode) {
             return {};
         }
@@ -175,7 +175,7 @@ export class SettingService {
     }
 
     public save_shell_cmd_check(status) {
-        return DataUtil.set(data_common_key.self_shell_cmd_check_open_status,status);
+        return DataUtil.set(data_common_key.self_shell_cmd_check_open_status, status);
     }
 
     public getSelfAuthOpen() {
@@ -193,7 +193,7 @@ export class SettingService {
     saveToken(mode: TokenTimeMode, length: number) {
         if (mode === TokenTimeMode.close) {
             // 使用默认长度模式
-            Cache.set_default_time_len(60*60 * 1000);
+            Cache.set_default_time_len(60 * 60 * 1000);
         } else if (mode === TokenTimeMode.length) {
             // 使用指定长度模式
             Cache.set_default_time_len(length * 1000);
@@ -208,6 +208,11 @@ export class SettingService {
         const data = DataUtil.get(token_setting);
         if (!!data && !!data['mode']) {
             this.saveToken(data['mode'], data["length"]);
+        }
+        // 高版本的 npm 也需要用pty环境了
+        const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe', 'vim', 'nano', 'cat', 'tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
+        if (!DataUtil.get(data_common_key.cmd_use_pty_key)) {
+            DataUtil.set(data_common_key.cmd_use_pty_key, shell_list);
         }
     }
 
@@ -231,13 +236,13 @@ export class SettingService {
         base.note = "default path";
         let ok = true;
         for (const item of user_data?.folder_items ?? []) {
-            if(item.default){
+            if (item.default) {
                 ok = false;
                 break;
             }
         }
-        if(ok)base.default = true;
-        return [base,...user_data?.folder_items ??[]];
+        if (ok) base.default = true;
+        return [base, ...user_data?.folder_items ?? []];
     }
 
     public saveFilesSetting(items: FileSettingItem[], token: string) {
@@ -248,26 +253,26 @@ export class SettingService {
         const user_data = userService.get_user_info_by_token(token);
         // 校验路径是否合法
         for (const item of items) {
-            userService.check_user_path(token,item.path)
+            userService.check_user_path(token, item.path)
         }
         user_data.folder_items = items;
         let index;
         for (const v of items) {
-            if(v.default)
+            if (v.default)
                 index = v.index
         }
         user_data.folder_item_now = index; // 使用默认的 cwd
-        if(index === undefined || index === null) {
+        if (index === undefined || index === null) {
             user_data.folder_item_now = 0; // 回到默认
         }
-        userService.save_user_info(user_data.id,user_data);
+        userService.save_user_info(user_data.id, user_data);
         // DataUtil.set(files_pre_mulu_key, items);
         // const obj = Cache.getValue(token);
         // obj["root_index"] = 0; // 回到默认
         // this.update_files_setting = null;
     }
 
-    public getFileRootPath(token: string):string {
+    public getFileRootPath(token: string): string {
         // const obj = Cache.getValue(token);
         // const index = obj ? obj["root_index"] ?? null : null;
         // const list = this.getFilesSetting(token);
@@ -281,7 +286,7 @@ export class SettingService {
         //     }
         // }
         const user_data = userService.get_user_info_by_token(token);
-        return user_data.folder_item_now === 0 || user_data.folder_item_now === undefined ?user_data.cwd : user_data.folder_items[user_data.folder_item_now -1].path as string;
+        return user_data.folder_item_now === 0 || user_data.folder_item_now === undefined ? user_data.cwd : user_data.folder_items[user_data.folder_item_now - 1].path as string;
     }
 
     cacheSysSoftwareItem: SysSoftwareItem[];
@@ -314,7 +319,7 @@ export class SettingService {
         return list;
     }
 
-    public setSoftware(req,token) {
+    public setSoftware(req, token) {
         DataUtil.set("sys_software", req);
         this.cacheSysSoftwareItem = null;
         this.getFilesSetting(token);
@@ -323,13 +328,13 @@ export class SettingService {
     // extra_env_path = data_common_key.extra_env_path
 
     public getEnvPath() {
-        return DataUtil.get(data_common_key.extra_env_path_list_key) ??[];
+        return DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
     }
 
     public get_env_list() {
-        const list:any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ??[];
+        const list: any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
         const s = sysType === "win" ? ";" : ":";
-        return list.map(v=>v.path).join(s);
+        return list.map(v => v.path).join(s);
     }
 
     setEnvPath(paths: any[]) {
@@ -347,11 +352,21 @@ export class SettingService {
         return user_data.protection_directory ?? []
     }
 
+    get_pty_cmd(): string[] {
+        return DataUtil.get(data_common_key.cmd_use_pty_key) ?? [];
+    }
 
-    protectionDirSave(data,token) {
+    save_pty_cmd(str) {
+        if (!str) str = "";
+        const list = str.split(/\s+/).filter(v => !!v);
+        DataUtil.set(data_common_key.cmd_use_pty_key, list);
+    }
+
+
+    protectionDirSave(data, token) {
         const user_data = userService.get_user_info_by_token(token);
         user_data.protection_directory = data;
-        userService.save_user_info(user_data.id,user_data);
+        userService.save_user_info(user_data.id, user_data);
         userService.load_user_protection(user_data.id);
     }
 

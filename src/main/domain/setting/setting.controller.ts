@@ -194,7 +194,18 @@ export class SettingController {
         return Sucess("");
     }
 
+    @Get("/pty_cmd")
+    get_pty_cmd(){
+        const list = settingService.get_pty_cmd();
+        return Sucess(list.join(" "));
+    }
 
+    @Post("/pty_cmd/save")
+    save_pty_cmd(@Body() req:any,@Req() ctx){
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.pty_cmd_update);
+        settingService.save_pty_cmd(req.str);
+        return Sucess("");
+    }
 
     // path路径
     @Get("/env/path/get")
