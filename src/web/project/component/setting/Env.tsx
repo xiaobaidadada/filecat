@@ -146,7 +146,7 @@ export function Env() {
             </div>
         } else if(id === "环境路径") {
             context = <div>
-                当在不同用户环境下运行的时候由于没有执行终端去加载PATH，这里可以添加额外的PATH路径
+                当在不同用户环境下运行的时候由于没有执行终端去加载PATH，这里可以添加额外的PATH路径，点击这里的保存还会更新系统上的path路径
             </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (

@@ -14,7 +14,7 @@ import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import * as vm from "node:vm";
 import {userController} from "../user/user.controller";
 import {userService} from "../user/user.service";
-import {sysType} from "../shell/shell.service";
+import {shellServiceImpl, sysType} from "../shell/shell.service";
 
 const needle = require('needle');
 
@@ -31,7 +31,6 @@ const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 const sandbox = {
     needle: needle , // needle http 请求工具
     user_login: userController.login,
-    create_user: userService.create_user,
     fs:fs,
     path: path,
     cache_map:customer_cache_map
@@ -335,6 +334,7 @@ export class SettingService {
 
     setEnvPath(paths: any[]) {
         DataUtil.set(data_common_key.extra_env_path_list_key, paths);
+        shellServiceImpl.path_init();
         return Sucess("1");
     }
 

@@ -28,6 +28,7 @@ import {CryptoController} from "./domain/crypto/crypto.controller";
 import {Request, Response} from 'express';
 import {DataUtil} from "./domain/data/DataUtil";
 import {userService} from "./domain/user/user.service";
+import {shellServiceImpl} from "./domain/shell/shell.service";
 
 const WebSocket = require('ws');
 
@@ -37,6 +38,7 @@ async function start() {
     await Env.parseArgs();
     DataUtil.handle_history_data();
     userService.root_init();
+    shellServiceImpl.path_init();
     // console.log(process.pid);
 // 环境变量加载
 // dotenv.config({ override: true });

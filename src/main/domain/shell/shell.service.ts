@@ -14,6 +14,8 @@ import {exec_type, PtyShell} from "./PtyShell";
 import {userService} from "../user/user.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {word_detection_js} from "../../../common/word_detection_js";
+import fs from "fs";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
@@ -63,9 +65,9 @@ const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 const socketMap: Map<string, any> = new Map();
 
-let line = "";
-
-let prompt = `${process.env.USER ?? process.env.USERNAME}>`;
+// let line = "";
+//
+// let prompt = `${process.env.USER ?? process.env.USERNAME}>`;
 
 const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe','vim','nano','cat','tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
 // ANSI 转义序列，设置绿色、蓝色、重置颜色
@@ -73,7 +75,57 @@ const green = '\x1b[32m';  // 绿色
 const blue = '\x1b[34m';   // 蓝色
 const reset = '\x1b[0m';   // 重置颜色
 
+let word_detection = new word_detection_js();
+// let word_detection_map = new Map<string, string>(); // 暂时不需要完整的路径
+let PATH = "";
+const s_f = (sysType === "win" ? ";" : ":");
+let PATH_file_total = 0; // win我的电脑 也就三千多个没必要上 c++版的了
+const exec_map = {// windwos文件命令执行优先级
+    ".com":4, // 越大优先
+    ".exe":3,
+    ".bat":2,
+    ".cmd":1
+}
 export class ShellService {
+
+
+    path_init() {
+        try {
+            word_detection.clear();
+            word_detection = new word_detection_js();
+            PATH_file_total = 0;
+            PATH = process.env.PATH +s_f + settingService.get_env_list();
+            for (const item of PATH.split(s_f)) {
+                try {
+                    if (fs.existsSync(item)) {
+                        // 如果路径存在，使用 fs.statSync() 判断是否为目录
+                        const stats = fs.statSync(item);
+                        if (stats.isDirectory()) {
+                            const items = fs.readdirSync(item);
+                            for (const filename of items ?? []) {
+                                if(getSys()===SysEnum.win && filename.endsWith(".dll")) {
+                                    continue;
+                                }
+                                word_detection.add(filename);
+                                // console.log(filename)
+                                // word_detection_map.set(filename, item);
+                                PATH_file_total++;
+                            }
+                        } else {
+                            console.log('路径存在，但它不是一个目录');
+                        }
+                    } else {
+                        console.log('目录不存在',item);
+                    }
+                } catch (err) {
+                    console.error('检查目录时发生错误:', err);
+                }
+            }
+            // console.log(PATH_file_total)
+        } catch (ex) {
+            console.log(ex)
+        }
+    }
 
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
@@ -93,6 +145,34 @@ export class ShellService {
             //     re
             // },
             node_pty_shell_list:shell_list,
+            cmd_exe_detection:(exe)=>{
+                const v = word_detection.detection_next_one_word(exe,".");
+                if(getSys()!==SysEnum.win || v!==undefined){
+                    return v;
+                }
+                if(getSys()===SysEnum.win) {
+                    const list = word_detection.detection_next_list_word(exe);
+                    let ok;
+                    let ok_p = 0;
+                    for (const item of list) {
+                        const v = exec_map[path.extname(item)];
+                        if(v!== undefined && v>ok_p) {
+                            ok = item;
+                            ok_p = v;
+                        }
+                    }
+                    if(ok===undefined) {
+                        // 选出一个最短的
+                        for (const item of list) {
+                            if(item.length>ok_p) {
+                                ok = item;
+                                ok_p = item.length;
+                            }
+                        }
+                    }
+                    return ok;
+                }
+            },
             prompt_call:(cwd)=>{
                 // 输出格式化的命令提示符
                 const p = path.basename(cwd);

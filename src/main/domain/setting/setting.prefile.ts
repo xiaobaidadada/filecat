@@ -6,8 +6,7 @@ export const router_pre_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is function params is { username, password } It is best to enable custom AUTH to use custrom token
-* 4. create_user is function 
+* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
 */
 
 class Api {  
@@ -16,9 +15,9 @@ class Api {
     * customer api 
     * @params headers 
     * @params body 
-    * @params ctx: express ctx
+    * @params req: express req
     */
-    async handler(headers,body,ctx) { 
+    async handler(headers,body,req) { 
         
         // todo 处理
         return null;
@@ -33,13 +32,13 @@ export const self_auth_open_js_code_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is function params is { username, password } It is best to enable custom AUTH to use custrom token
+* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
 * 4. create_user is function 
 */
  class Api {  
     
     /*
-    *  only use to first login 只用于登录
+    *  only use to first login to set token for username (只用于登录 为登录的用户设置 token 这个token 拥有这个用户的全部权限)
     * @params token: token
     * return boolen 
     */
@@ -57,7 +56,7 @@ export const self_shell_cmd_check_js_code_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is function params is { username, password } It is best to enable custom AUTH to use custrom token
+* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
 * 4. create_user is function 
 */
  class Api {  
