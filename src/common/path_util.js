@@ -12,6 +12,17 @@ function get_extname(filePath) {
     return filePath.slice(lastDotIndex);
 }
 
+export function find_sep(path) {
+    let sep = "\\";
+    for (const it of path) {
+        if(it==="/" || it==="\\") {
+            sep = it;
+            break;
+        }
+    }
+    return sep;
+}
+
 /**
  * windows 是 \ linux 是 /
  * @param path
@@ -19,14 +30,8 @@ function get_extname(filePath) {
  * @returns {*|string}
  */
 export function path_join(path,filename){
-    let s_r;
     // 先找到系统上的分隔符是啥
-    for (const it of path) {
-        if(it==="/" || it==="\\") {
-            s_r = it;
-            break;
-        }
-    }
+    let s_r = find_sep(path);
     if(filename === '.') {
         return path;
     } else if(filename === "..") {

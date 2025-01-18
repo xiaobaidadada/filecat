@@ -183,6 +183,24 @@ export function Permission(props:{
                        }}/>
                 {t("pty cmd 更新")}
             </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.sys_protection_dir)}
+                       checked={props.is_selected(UserAuth.sys_protection_dir)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.sys_protection_dir)
+                       }}/>
+                {t("系统保护路径更新")}
+            </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.recycle_file_save)}
+                       checked={props.is_selected(UserAuth.recycle_file_save)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.recycle_file_save)
+                       }}/>
+                {t("文件回收站")}
+            </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

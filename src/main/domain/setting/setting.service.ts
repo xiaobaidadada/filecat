@@ -13,7 +13,7 @@ import {Request} from "express";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import * as vm from "node:vm";
 import {userController} from "../user/user.controller";
-import {userService} from "../user/user.service";
+import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
 
 const needle = require('needle');
@@ -171,7 +171,7 @@ export class SettingService {
     }
 
     public get_shell_cmd_check() {
-        return DataUtil.get(data_common_key.self_shell_cmd_check_open_status);
+        return DataUtil.get(data_common_key.self_shell_cmd_check_open_status) ?? false;
     }
 
     public save_shell_cmd_check(status) {
@@ -179,11 +179,19 @@ export class SettingService {
     }
 
     public getSelfAuthOpen() {
-        return DataUtil.get(self_auth_jscode);
+        return DataUtil.get(self_auth_jscode) ?? false;
     }
 
     public setSelfAuthOpen(req) {
         return DataUtil.set(self_auth_jscode, req.open);
+    }
+
+    public get_recycle_bin_status(){
+        return DataUtil.get(data_common_key.recycle_bin_status)??false;
+    }
+
+    public get_recycle_dir():string{
+        return DataUtil.get(data_common_key.recycle_bin_key) ?? "";
     }
 
     getToken() {
@@ -345,11 +353,17 @@ export class SettingService {
 
     // protection_directory = data_common_key.protection_directory
 
-    // 获取系统保护目录
+
     protectionDirGet(token): { path: string }[] {
         const user_data = userService.get_user_info_by_token(token);
         // DataUtil.get(this.protection_directory) ?? [];
         return user_data.protection_directory ?? []
+    }
+
+    // 获取系统保护目录
+    protectionSysDirGet(): { path: string }[] {
+
+        return DataUtil.get(data_common_key.protection_directory) ?? [];
     }
 
     get_pty_cmd(): string[] {
@@ -367,7 +381,22 @@ export class SettingService {
         const user_data = userService.get_user_info_by_token(token);
         user_data.protection_directory = data;
         userService.save_user_info(user_data.id, user_data);
-        userService.load_user_protection(user_data.id);
+    }
+
+    protectionSysDirSave(data) {
+        DataUtil.set(data_common_key.protection_directory, data);
+    }
+
+
+    protectionCheck(sys_path:string) {
+        const list = this.protectionSysDirGet() ?? [];
+        for (const item of list) {
+            if(UserService.path_check_is_child(item.path,sys_path)) {
+                // 是子路径
+                return true;
+            }
+        }
+        return false;
     }
 
 }

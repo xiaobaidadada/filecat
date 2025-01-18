@@ -36,3 +36,9 @@ export class systemdPojo {
     user:string; // 所属用户
     isSys:boolean; // 是系统创建的(或者加入到filecat监管的)
 }
+
+export const enum status_open  {
+    auth,
+    cmd,
+    cyc, // 垃圾站
+}

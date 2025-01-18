@@ -24,7 +24,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {getEditModelType} from "../../../common/StringUtil";
+import {getEditModelType, removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
 
 const archiver = require('archiver');
@@ -175,11 +175,35 @@ class FileService extends FileCompress {
         if (!filePath) {
             return Sucess("1");
         }
-        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filePath));
+        let sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filePath));
         userService.check_user_path(token,sysPath)
-        if (userService.protectionCheck(sysPath,token)) {
+        if (userService.protectionCheck(sysPath,token) || settingService.protectionCheck(sysPath)) {
             return Fail("1", RCode.PROTECT_FILE);
         }
+        // 回收站判断
+        if(settingService.get_recycle_bin_status()) {
+            let cyc_path = settingService.get_recycle_dir();
+            cyc_path = removeTrailingPath(cyc_path);
+            sysPath = removeTrailingPath(sysPath);
+            if(cyc_path === sysPath) {
+                throw "cyc dir not to del"; // 回收站不能被删除
+            }
+            if(!userService.isSubPath(cyc_path,sysPath) && !!cyc_path) {
+                // 如果不是回收站内的文件 不做真的删除 而是剪切 且回收站路径存在
+                const ext_name = path.extname(sysPath);
+                const fileName = path.basename(filePath, ext_name);
+                let p = path.join(cyc_path,`${fileName}${ext_name}`);
+                if(fs.existsSync(p)) {
+                    p = path.join(cyc_path,`${fileName}_${Date.now()}${ext_name}`);
+                    if(fs.existsSync(p)) {
+                        throw "try again";
+                    }
+                }
+                this.cut_exec(sysPath,p);
+                return Sucess("1");
+            }
+        }
+        // 真的删除
         const stats = fs.statSync(sysPath);
         if (stats.isFile()) {
             fs.unlinkSync(sysPath)
@@ -225,10 +249,13 @@ class FileService extends FileCompress {
         userService.check_user_path(token,sysPath)
         userService.check_user_path(token,toSysPath)
         for (const file of data.files) {
-            const filePath = decodeURIComponent(path.join(sysPath, file));
-            fs.renameSync(filePath, decodeURIComponent(path.join(toSysPath, path.basename(file))));
-            rimraf(filePath);
+            this.cut_exec(decodeURIComponent(path.join(sysPath, file)),decodeURIComponent(path.join(toSysPath, path.basename(file))))
         }
+    }
+
+    public cut_exec(source_path:string,to_file:string) {
+        fs.renameSync(source_path, to_file);
+        rimraf(source_path);
     }
 
     public async copy(token, data?: cutCopyReq) {

@@ -54,6 +54,8 @@ export enum UserAuth {
     role_manage = 29 , //角色管理
     env_path_update = 30,  // 环境路径管理
     pty_cmd_update = 31, // pty cmd 环境更新
+    sys_protection_dir = 32 ,// 系统保护路径  所有用户都有的
+    recycle_file_save = 33, // 文件垃圾回收
 }
 
 export class UserData extends UserLogin {

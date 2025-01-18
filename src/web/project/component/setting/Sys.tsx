@@ -10,7 +10,7 @@ import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
-import {TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
+import {status_open, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
@@ -22,6 +22,8 @@ export function  Sys() {
     const [password, setPassword] = useState("");
     const [authopen, setAuthopen] = useState(false);
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
+    const [recycle_open, set_recycle_open] = useState(false);
+    const [recycle_dir, set_recycle_dir] = useState("");
 
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
 
@@ -47,13 +49,32 @@ export function  Sys() {
             NotySucess("修改成功")
         }
     }
+    const set_recycle_save = async () =>{
+        if (recycle_open) {
+            if(!recycle_dir) {
+                NotyFail("目录不能为空")
+                return;
+            }
+        }
+        const result = await settingHttp.post("sys_option/status/save", {type:status_open.cyc,value:recycle_dir,open:recycle_open});
+        if (result.code === RCode.Sucess) {
+            NotySucess("修改成功")
+        }
+    }
     useEffect(() => {
         const getOpen = async ()=>{
-            const result = await settingHttp.get("self_auth_open");
-            setAuthopen(result.data);
-
-            const result2 = await settingHttp.get("shell_cmd_check_open");
-            set_shell_cmd_open(result2.data);
+            const all_open_result = await settingHttp.get("sys_option/status");
+            if(all_open_result.code === RCode.Sucess) {
+                setAuthopen(all_open_result.data.self_auth_open);
+                set_shell_cmd_open(all_open_result.data.shell_cmd_check_open);
+                set_recycle_open(all_open_result.data.recycle_open);
+                set_recycle_dir(all_open_result.data.recycle_dir)
+            }
+            // const result = await settingHttp.get("self_auth_open");
+            // setAuthopen(result.data);
+            //
+            // const result2 = await settingHttp.get("shell_cmd_check_open");
+            // set_shell_cmd_open(result2.data);
 
             const result1 = await settingHttp.get("token");
             if (result1.code === RCode.Sucess) {
@@ -156,23 +177,26 @@ export function  Sys() {
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
-                {check_user_auth(UserAuth.docker_images_delete)}
+                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update}/>}>
+                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
+                    <InputText placeholder={t('新密码')}  value={password} handleInputChange={(value)=>{setPassword(value)}} />
+                </Card>
                 <Card title={t("自定义登录auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
                     <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
                 <Card title={t("自定义shell命令校验")} rightBottomCom={<ButtonText text={t('保存')} clickFun={auth_shell_open_Save}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={shell_cmd_jscode}/>}>
                     <Select value={shell_cmd_open} onChange={(value)=>{set_shell_cmd_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
-                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update}/>}>
-                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
-                    <InputText placeholder={t('新密码')}  value={password} handleInputChange={(value)=>{setPassword(value)}} />
-                </Card>
-
             </Dashboard>
 
         </Column>
         <Column widthPer={30}>
             <Dashboard>
+                <Card title={t("文件回收站")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={set_recycle_save}/>}>
+                    <InputText placeholder={t('目录')}  value={recycle_dir} handleInputChange={(value)=>{set_recycle_dir(value)}} />
+                    <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+
+                </Card>
                 <Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>
                     <Select value={language} onChange={(value)=>{
                         set_language(value);
