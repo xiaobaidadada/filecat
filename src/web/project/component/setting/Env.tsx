@@ -22,6 +22,7 @@ export function Env() {
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     // const [env_path,set_env_path] = useState("");
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
+    const [protection_sys_dir_rows,set_protection_sys_dir_rows] = useState([]);
     const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
     const [pty_cmd,set_pty_cmd] = useState("");
 
@@ -46,7 +47,7 @@ export function Env() {
         if (result2.code === RCode.Sucess) {
             set_env_path_dir_rows(result2.data);
         }
-        // 保护目录
+        // 个人保护目录
         const result3 = await settingHttp.get("protection_dir");
         if (result3.code === RCode.Sucess) {
             set_protection_dir_rows(result3.data ?? []);
@@ -55,6 +56,12 @@ export function Env() {
         const result4 = await settingHttp.get("pty_cmd");
         if (result4.code === RCode.Sucess) {
             set_pty_cmd(result4.data);
+        }
+
+        // 系统保护目录
+        const result5 = await settingHttp.get("protection_dir/sys");
+        if (result5.code === RCode.Sucess) {
+            set_protection_sys_dir_rows(result5.data ?? []);
         }
     }
     useEffect(() => {
@@ -88,6 +95,13 @@ export function Env() {
             reloadUserInfo();
         }
     }
+    const protection_sys_dir_save = async () => {
+        const result = await settingHttp.post("protection_dir/sys/save", protection_sys_dir_rows);
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+            reloadUserInfo();
+        }
+    }
 
     const add = ()=>{
         setRows([...rows,{note:"",default:false,path:""}]);
@@ -99,9 +113,16 @@ export function Env() {
     const protection_dir_add = ()=>{
         set_protection_dir_rows([...protection_dir_rows,{path:"",note:""}]);
     }
+    const protection_sys_dir_add = ()=>{
+        set_protection_sys_dir_rows([...protection_sys_dir_rows,{path:"",note:""}]);
+    }
     const protection_dir_del = (index)=>{
         protection_dir_rows.splice(index, 1);
         set_protection_dir_rows([...protection_dir_rows]);
+    }
+    const protection_sys_dir_del = (index)=>{
+        protection_sys_dir_rows.splice(index, 1);
+        set_protection_sys_dir_rows([...protection_sys_dir_rows]);
     }
     const env_path_dir_add = ()=>{
         set_env_path_dir_rows([...env_path_dir_rows,{path:"",note:""}]);
@@ -152,6 +173,7 @@ export function Env() {
                 在删除的时候保护目录会拒绝删除。
                 <ul>
                     <li>可以使用 /* 来表达该目录下所有文件都禁止删除</li>
+                    <li>可以使用 /** 来表达该目录下所有子目录文件都禁止删除</li>
                 </ul>
             </div>
         } else if (id === "文件夹路径") {
@@ -219,7 +241,7 @@ export function Env() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
-                <CardFull self_title={<span className={" div-row "}><h2>{t("保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_dir_save}/></div>}>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("个人保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_dir_save}/></div>}>
                     <Table headers={protection_dir_headers} rows={protection_dir_rows.map((item, index) => {
                         const new_list = [
                             <div>{index}</div>,
@@ -230,6 +252,21 @@ export function Env() {
                                 item.note = value;
                             }} no_border={true}/>,
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_dir_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_sys_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
+                    <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
+                        const new_list = [
+                            <div>{index}</div>,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_sys_dir_del(index)}/> ,
                         ];
                         return new_list;
                     })} width={"10rem"}/>

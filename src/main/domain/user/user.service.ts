@@ -337,7 +337,7 @@ export class UserService {
     }
 
     // 一个路径是不是另一个路径的子路径
-    isSubPath(parent, child) {
+    public isSubPath(parent, child) {
         parent = removeTrailingPath(parent);
         child = removeTrailingPath(child);
         const relativePath = path.relative(parent, child);
@@ -353,11 +353,9 @@ export class UserService {
         }
         for (const key of Object.keys(mapping)) {
             this.load_user_cmd_path(mapping[key]);
-            this.load_user_protection(mapping[key]);
         }
         // 超级管理员的加载
         this.load_user_cmd_path(root_id);
-        this.load_user_protection(root_id);
     }
 
     // ture 是合法
@@ -408,33 +406,42 @@ export class UserService {
         return !!v;
     }
 
-    user_protection_map = new Map();
-
-    load_user_protection(id: string) {
-        const user_data = this.get_user_info_by_user_id(id);
-        const list = user_data.protection_directory ?? [];
-        this.user_protection_map.set(id, list ?? []);
+    // to_path 是 set_path的子路径 还检测 *
+    public static path_check_is_child(set_path:string,to_path:string){
+        if(set_path === "*" || set_path === "**") {
+            return true; // 所有文件都不能删除
+        }
+        set_path = removeTrailingPath(set_path);
+        to_path = removeTrailingPath(to_path);
+        let p = set_path;
+        if(p.endsWith("**")) {
+            // 只要是子目录都不行
+            return userService.isSubPath(path.dirname(set_path),to_path);
+        } else if (p.endsWith("*")) {
+            p = path.dirname(p); // 单个名字的话是 . 当前目录
+            const p2 = path.dirname(to_path);
+            if (p === p2) {
+                return true; // 有相同的父目录
+            }
+        } else {
+            if (path.join(p) === to_path) {
+                return true; // 路径一样
+            }
+            // const relative = path.relative(sys_path, p);
+            // if(relative === "..") {
+            //     return  true; // 直接子目录
+            // }
+        }
+        // 不是子路径
+        return false;
     }
 
     protectionCheck(sys_path: string, token: string) {
         const user_data = userService.get_user_info_by_token(token);
-        const list = this.user_protection_map.get(user_data.id) ?? [];
+        const list = user_data.protection_directory ?? [];
         for (const item of list) {
-            let p = item.path;
-            if (p.endsWith("*")) {
-                p = path.dirname(item.path);
-                const p2 = path.dirname(sys_path);
-                if (p === p2) {
-                    return true; // 有相同的父目录
-                }
-            } else {
-                if (path.join(p) === sys_path) {
-                    return true; // 路径一样
-                }
-                // const relative = path.relative(sys_path, p);
-                // if(relative === "..") {
-                //     return  true; // 直接子目录
-                // }
+            if(UserService.path_check_is_child(item.path,sys_path)) {
+                return true; // 是子路径
             }
         }
         return false;

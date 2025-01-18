@@ -1,3 +1,5 @@
+import {find_sep} from "./path_util";
+
 export class Param {
     key: string;
     value?: any;
@@ -140,11 +142,12 @@ export function have_empty_char(str:string) {
 
 // 删除路径后的 \ 字符
 export function removeTrailingPath(str) {
+    const sep = find_sep(str);
     // 删除尾部的空白字符
     const trimmedStr = str.trimEnd();
 
     // 如果字符串尾部是反斜杠，删除它
-    if (trimmedStr.endsWith('\\') && !trimmedStr.endsWith(':\\') ) {
+    if (trimmedStr.endsWith(sep) && !trimmedStr.endsWith(':\\') ) {
         return trimmedStr.slice(0, -1);
     }
 

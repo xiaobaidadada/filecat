@@ -1,26 +1,22 @@
-import {Body, Controller, Ctx, Get, JsonController, Param, Post, Req} from "routing-controllers";
-import {UserAuth, UserBaseInfo, UserLogin} from "../../../common/req/user.req";
-import {AuthFail, Fail, Result, Sucess} from "../../other/Result";
+import {Body, Get, JsonController, Param, Post, Req} from "routing-controllers";
+import {UserAuth} from "../../../common/req/user.req";
+import {Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
-import {msg} from "../../../common/frame/router";
 import {Service} from "typedi";
-import {CmdType, WsData} from "../../../common/frame/WsData";
-import {Env} from "../../../common/Env";
-import { DataUtil} from "../data/DataUtil";
+import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
-import {getSys} from "../shell/shell.service";
-import {getShortTime} from "../../../common/ValueUtil";
+import {status_open, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
-import {hash_string} from "../user/user.hash";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
+import fs from "fs"
+import path from "path"
+import {rimraf} from "rimraf";
 
 @Service()
 @JsonController("/setting")
 export class SettingController {
-
 
 
     // 获取页面路由
@@ -31,8 +27,8 @@ export class SettingController {
 
     // 设置页面路由
     @Post('/customer_router/save')
-    saveRouter(@Body() req:any,@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.code_resource);
+    saveRouter(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.code_resource);
         settingService.setCustomerRouter(req);
         return Sucess("1");
     }
@@ -45,8 +41,8 @@ export class SettingController {
 
     // 设置api路由
     @Post('/api/customer_router/save')
-    saveApiRouter(@Body() req:any,@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.code_api);
+    saveApiRouter(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
         // todo 之前设置的js代码文件是否一直保留
         settingService.setCustomerApiRouter(req);
         return Sucess("1");
@@ -56,25 +52,25 @@ export class SettingController {
     @Get("/self_auth_open")
     getSelfAuth() {
         const result = settingService.getSelfAuthOpen();
-        return Sucess(result ?? false);
+        return Sucess(result);
     }
 
     // 设置 auth 开启状态
     @Post('/self_auth_open/save')
-    saveSelfAuth(@Body() req:any,@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.code_auth);
+    saveSelfAuth(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.code_auth);
         settingService.setSelfAuthOpen(req);
         return Sucess("1");
     }
 
     // auth js 代码获取
     @Get("/self_auth_open/jscode")
-    getSelfAuthJscode(@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.code_auth);
-        const context = DataUtil.getFile(self_auth_jscode,data_dir_tem_name.sys_file_dir);
-        const  pre = self_auth_open_js_code_file;
+    getSelfAuthJscode(@Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.code_auth);
+        const context = DataUtil.getFile(self_auth_jscode, data_dir_tem_name.sys_file_dir);
+        const pre = self_auth_open_js_code_file;
         if (!context) {
-            DataUtil.setFile(self_auth_jscode,pre,data_dir_tem_name.sys_file_dir);
+            DataUtil.setFile(self_auth_jscode, pre, data_dir_tem_name.sys_file_dir);
         }
         return Sucess(context || pre);
     }
@@ -83,25 +79,25 @@ export class SettingController {
     @Get("/shell_cmd_check_open")
     get_shell_cmd_check() {
         const result = settingService.get_shell_cmd_check();
-        return Sucess(result ?? false);
+        return Sucess(result );
     }
 
     // 保存 自定义 shell cmd 开启状态
     @Post('/shell_cmd_check_open/save')
-    save_shell_cmd_check(@Body() req:any,@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.shell_cmd_check);
+    save_shell_cmd_check(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.shell_cmd_check);
         settingService.save_shell_cmd_check(req.open);
         return Sucess("1");
     }
 
     // 自定义 shell cmd js 代码获取
     @Get("/shell_cmd_check_open/jscode")
-    get_shell_cmd_Jscode(@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.shell_cmd_check);
-        const context = DataUtil.getFile(data_common_key.self_shell_cmd_jscode,data_dir_tem_name.sys_file_dir);
-        const  pre = self_shell_cmd_check_js_code_file;
+    get_shell_cmd_Jscode(@Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.shell_cmd_check);
+        const context = DataUtil.getFile(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
+        const pre = self_shell_cmd_check_js_code_file;
         if (!context) {
-            DataUtil.setFile(data_common_key.self_shell_cmd_jscode,pre,data_dir_tem_name.sys_file_dir);
+            DataUtil.setFile(data_common_key.self_shell_cmd_jscode, pre, data_dir_tem_name.sys_file_dir);
         }
         return Sucess(context || pre);
 
@@ -109,61 +105,61 @@ export class SettingController {
 
     // 保存 shell cmd js 代码获取
     @Post("/shell_cmd_check_open/jscode/save")
-    save_shell_cmd_Jscode(@Req()req,@Body() body:{context:string}) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.shell_cmd_check);
-        DataUtil.setFile(data_common_key.self_shell_cmd_jscode,body.context,data_dir_tem_name.sys_file_dir);
+    save_shell_cmd_Jscode(@Req() req, @Body() body: { context: string }) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.shell_cmd_check);
+        DataUtil.setFile(data_common_key.self_shell_cmd_jscode, body.context, data_dir_tem_name.sys_file_dir);
         return Sucess("1");
     }
 
     // 获取js代码
     @Get('/jscode/:router*')
-    async getJscode(@Req() req,@Param("router") router?: string) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.code_api);
+    async getJscode(@Req() req, @Param("router") router?: string) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.code_api);
         router = settingService.routerHandler(router);
-        const context = DataUtil.getFile(router,data_dir_tem_name.all_user_api_file_dir);
-        const  pre = router_pre_file;
+        const context = DataUtil.getFile(router, data_dir_tem_name.all_user_api_file_dir);
+        const pre = router_pre_file;
         if (!context) {
-            DataUtil.setFile(router,pre,data_dir_tem_name.all_user_api_file_dir);
+            DataUtil.setFile(router, pre, data_dir_tem_name.all_user_api_file_dir);
         }
         return Sucess(context || pre);
     }
 
     // 设置js代码(用于任意的js代码文件保存)
     @Post('/jscode/save')
-    async saveJscode(@Body() req:{router:string,context:string},@Req()r) {
+    async saveJscode(@Body() req: { router: string, context: string }, @Req() r) {
         let dir;
-        if(req.router === self_auth_jscode) {
+        if (req.router === self_auth_jscode) {
             dir = data_dir_tem_name.sys_file_dir;
-            userService.check_user_auth(r.headers.authorization,UserAuth.code_auth);
+            userService.check_user_auth(r.headers.authorization, UserAuth.code_auth);
         } else {
             // 这里不再用于通用的 只用于这两个
-            userService.check_user_auth(r.headers.authorization,UserAuth.code_api);
+            userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
             dir = data_dir_tem_name.all_user_api_file_dir;
         }
 
-        DataUtil.setFile(settingService.routerHandler(req.router),req.context,dir);
+        DataUtil.setFile(settingService.routerHandler(req.router), req.context, dir);
         return Sucess("1");
     }
 
 
     @Get('/token')
-    async  getToken() {
+    async getToken() {
         return Sucess(settingService.getToken());
     }
 
     @Post('/token/save')
-    async saveToken(@Body()req:TokenSettingReq,@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.token_update);
+    async saveToken(@Body() req: TokenSettingReq, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.token_update);
         if (req.mode === TokenTimeMode.length && req.length < 10) {
             return Fail("时间过短小于10秒");
         }
-        settingService.saveToken(req.mode,req.length);
+        settingService.saveToken(req.mode, req.length);
         return Sucess("1");
     }
 
     @Get('/token/clear')
-    async  clearToken(@Req()r) {
-        userService.check_user_auth(r.headers.authorization,UserAuth.token_update);
+    async clearToken(@Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.token_update);
         Cache.clear();
         return Sucess("1");
     }
@@ -171,8 +167,8 @@ export class SettingController {
 
     // 设置文件路由设置
     @Post('/filesSetting/save')
-    saveFilesSetting(@Body() req:any,@Req() ctx) {
-        settingService.saveFilesSetting(req,ctx.headers.authorization);
+    saveFilesSetting(@Body() req: any, @Req() ctx) {
+        settingService.saveFilesSetting(req, ctx.headers.authorization);
         return Sucess("1");
     }
 
@@ -187,22 +183,23 @@ export class SettingController {
     getSoftware() {
         return Sucess(settingService.getSoftware());
     }
+
     @Post('/outside/software/save')
-    setSoftware(@Body() req:any,@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.outside_software_path);
-        settingService.setSoftware(req,ctx.headers.authorization);
+    setSoftware(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.outside_software_path);
+        settingService.setSoftware(req, ctx.headers.authorization);
         return Sucess("");
     }
 
     @Get("/pty_cmd")
-    get_pty_cmd(){
+    get_pty_cmd() {
         const list = settingService.get_pty_cmd();
         return Sucess(list.join(" "));
     }
 
     @Post("/pty_cmd/save")
-    save_pty_cmd(@Body() req:any,@Req() ctx){
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.pty_cmd_update);
+    save_pty_cmd(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.pty_cmd_update);
         settingService.save_pty_cmd(req.str);
         return Sucess("");
     }
@@ -214,8 +211,8 @@ export class SettingController {
     }
 
     @Post('/env/path/save')
-    setEnvPath(@Body() req:{paths:any[]},@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.env_path_update);
+    setEnvPath(@Body() req: { paths: any[] }, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
         settingService.setEnvPath(req.paths);
         return Sucess("1");
     }
@@ -229,8 +226,59 @@ export class SettingController {
 
     // 保存保护目录
     @Post('/protection_dir/save')
-    protectionDirSave(@Body() req:any,@Req() ctx) {
-        settingService.protectionDirSave(req,ctx.headers.authorization);
+    protectionDirSave(@Body() req: any, @Req() ctx) {
+        settingService.protectionDirSave(req, ctx.headers.authorization);
+        return Sucess("1");
+    }
+
+    // 获取保护目录
+    @Get("/protection_dir/sys")
+    protectionSysDirGet(@Req() ctx) {
+        return Sucess(settingService.protectionSysDirGet());
+    }
+
+    // 保存保护目录
+    @Post('/protection_dir/sys/save')
+    protectionSysDirSave(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_protection_dir);
+        settingService.protectionSysDirSave(req);
+        return Sucess("1");
+    }
+
+    // 获取系统所有的开关状态
+    @Get("/sys_option/status")
+    get_sys_option_status(@Req() ctx) {
+        // 获取系统所有功能的状态
+        const r ={
+            self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
+            shell_cmd_check_open:settingService.get_shell_cmd_check(), // 自定义cmd判断
+            recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
+            recycle_dir: settingService.get_recycle_dir() // 目录也返回
+        }
+        return Sucess(r);
+    }
+
+    // 获取系统所有的开关状态
+    @Post("/sys_option/status/save")
+    save_sys_option_status(@Req() ctx,@Body() body:{type:status_open,value:any,open:boolean}) {
+        // 获取系统所有功能的状态
+        if(body.type === status_open.cyc) {
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
+            DataUtil.set(data_common_key.recycle_bin_status, body.open)
+            if(body.value) {
+                if (!fs.existsSync(body.value)) {
+                   throw "dir not found"
+                }
+                const stats = fs.statSync(body.value);
+                if (!stats.isDirectory()) {
+                    throw "dir not a dir"
+                }
+                if(!path.isAbsolute(body.value)) {
+                    throw "dir not absolute"
+                }
+            }
+            DataUtil.set(data_common_key.recycle_bin_key, body.value)
+        }
         return Sucess("1");
     }
 }

@@ -42,7 +42,7 @@ export enum data_common_key {
     files_pre_mulu_key = "files_pre_mulu_key", // 废弃 文件目录
     sys_software = "sys_software",
     // extra_env_path = "extra_env_path",
-    // protection_directory = "sys_protection_directory",
+    protection_directory = "sys_protection_directory", // 系统保护路路径
     self_auth_jscode = "self_auth_jscode",
     navindex_video_key = "navindex_video_tag_key",
     systemd_key = "systemd_key",
@@ -60,6 +60,9 @@ export enum data_common_key {
     self_shell_cmd_jscode = "self_shell_cmd_jscode", // js code 文件名字
     extra_env_path_list_key = "extra_env_path_list_key", // 额外环境变量 List
     cmd_use_pty_key = "cmd_use_pty_key", // 使用node pty 的变量
+    recycle_bin_key = "recycle_bin_key", // 文件回收站目录
+    recycle_bin_status = "recycle_bin_status", // 文件回收站 功能是否开启
+
 }
 
 

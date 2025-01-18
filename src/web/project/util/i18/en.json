@@ -210,5 +210,8 @@
   "rtsp播放器": "RTSP Player",
   "标签编辑是所有人都可见的的数据": "Tag Edit is Data Visible to All",
   "角色": "Role",
-  "用户": "User"
+  "用户": "User",
+  "文件回收站": "Recycle Bin",
+  "个人保护路径": "Personal Protected Path",
+  "系统保护路径": "System Protected Path"
 }
