@@ -8,6 +8,7 @@ import {Sucess} from "../../other/Result";
 import {data_common_key} from "../data/data_type";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
+import {Wss} from "../../../common/frame/ws.server";
 // todo json序列化方式，传输速度，页面css适配问题
 const navindex_rdp_key = data_common_key.navindex_rdp_key
 @JsonController("/rdp")
@@ -15,6 +16,7 @@ export class RdpController {
 
     @msg(CmdType.infos)
     async infos(data:WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token,UserAuth.rdp_proxy);
         rdpService.infos(data);
         return ""
     }
@@ -51,13 +53,12 @@ export class RdpController {
 
     @Post('/tag/save')
     save(@Body() items: NavIndexItem[],@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.browser_proxy_tag_update);
         DataUtil.set(navindex_rdp_key, items);
         return Sucess('ok');
     }
 
     @Get("/tag")
-    get() {
+    get(@Req() req) {
         let list = DataUtil.get(navindex_rdp_key);
         return Sucess(list || []);
     }

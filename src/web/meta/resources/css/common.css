@@ -19,3 +19,33 @@
     height: 15rem;
 }
 
+/* 旋转 */
+
+/*关键帧设置*/
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.rotating-div {
+    color: green;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /*animation: rotate 3s infinite linear; !* 无线循环 *!*/
+    animation-name: rotate;               /* 指定动画名称 */
+    animation-duration: 3s;                /* 动画持续时间为 3 秒 */
+    animation-iteration-count: infinite;   /* 动画无限循环 */
+    animation-timing-function: linear;     /* 动画的时间函数为线性 */
+    /*animation: none; !* 取消旋转 *!*/
+}
+
+.rotating-div > span {
+    font-size: 2rem;
+}
+

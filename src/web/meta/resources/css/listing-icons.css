@@ -218,4 +218,10 @@
 .file-icons [data-dir=true] i::before { content: 'folder' }
 .file-icons [aria-selected=true] i { color: var(--item-selected) }
 
+/*特殊的 filecat work flow*/
+.file-icons [aria-label$=".workflow.yml"] i { color: var(--icon-blue) }
+.file-icons [aria-label$=".workflow.yml"] i::before
+{ content: 'api' }
+
+
 

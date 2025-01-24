@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Noty from "noty";
 import {InputText} from "./Input";
 import {copyToClipboard} from "../../project/util/FunUtil";
@@ -121,12 +121,30 @@ export function ProgressCard(props: { progress: number }) {
     </div>
 }
 
-export const StatusCircle = (props: { ok: boolean }) => {
+export const StatusCircle = (props: { ok?: boolean,success?:boolean,running?:boolean }) => {
+    const [color,set_color] = useState("var(--iconTertiary)");
+    useEffect(() => {
+        if(props.ok!==undefined) {
+            set_color(props.ok ? 'var(--icon-green)' : 'var(--iconTertiary)')
+            return;
+        }
+        if(props.success !== undefined) {
+            if(props.success === true) {
+                set_color('var(--icon-green)')
+            } else if(props.success === false) {
+                set_color('var(--icon-red)')
+            }
+            return;
+        }
+        if(props.running !== undefined) {
+            set_color('var(--icon-yellow)')
+        }
+    }, [props]);
     const circleStyle = {
         width: '10px',
         height: '10px',
         borderRadius: '50%',
-        backgroundColor: props.ok ? 'var(--icon-green)' : 'var(--iconTertiary)',
+        backgroundColor: color,
         display: 'inline-block'
     };
 

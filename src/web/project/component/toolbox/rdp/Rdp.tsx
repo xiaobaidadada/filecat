@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {ActionButton} from "../../../../meta/component/Button";
-import Noty from "noty";
 import Header from "../../../../meta/component/Header";
 
 
@@ -49,7 +48,7 @@ export function Rdp() {
         loadfile();
         return ()=>{
             if (client) {
-                client.remove();
+                client.close();
                 client = null;
             }
         }
@@ -114,12 +113,7 @@ export function Rdp() {
     const saveItems = async (items) => {
         const rsq = await rdpHttp.post("tag/save", items);
         if (rsq.code !== RCode.Sucess) {
-            new Noty({
-                type: 'error',
-                text: '网络错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotyFail("网络错误")
         }
     }
     const clickItem = async (item: any) => {

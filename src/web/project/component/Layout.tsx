@@ -100,15 +100,25 @@ function Layout() {
                 {/*网站 索引*/}
                 <NavIndex/>
                 {/*工具箱*/}
-                <ToolBox/>
+                <Suspense fallback={<div></div>}>
+                    <ToolBox/>
+                </Suspense>
                 {/*系统信息*/}
-                <SysInfo/>
+                <Suspense fallback={<div></div>}>
+                    <SysInfo/>
+                </Suspense>
                 {/*ddns*/}
-                {check_user_auth(UserAuth.ddns) && <Ddns/>}
+                <Suspense fallback={<div></div>}>
+                    {check_user_auth(UserAuth.ddns) && <Ddns/>}
+                </Suspense>
                 {/*网络*/}
-                {check_user_auth(UserAuth.vir_net) && <Net/>}
+                <Suspense fallback={<div></div>}>
+                    {check_user_auth(UserAuth.vir_net) && <Net/>}
+                </Suspense>
                 {/*设置*/}
-                <Settings/>
+                <Suspense fallback={<div></div>}>
+                    <Settings/>
+                </Suspense>
             </CommonBody>
         </div>
     )

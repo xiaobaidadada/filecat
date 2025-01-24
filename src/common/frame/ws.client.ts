@@ -20,6 +20,7 @@ export class WsClient {
     private _msgResolveTimeoutMap = new Map();
 
     handMsg(cmdType: CmdType,data : WsData<any>) {
+        // console.log(data)
         if(data.code === RCode.Fail) {
             NotyFail(data.message);
         }
@@ -72,6 +73,8 @@ export class WsClient {
                 resolve(true);
                 decoder.on("decoded",(d)=>{
                     const data = new WsData(d.data[0],d.data[1]);
+                    data.code = d.data[2];
+                    data.message = d.data[3];
                     data.wss = this._socket;
                     this.handMsg(data.cmdType,data);
                 })
@@ -205,10 +208,14 @@ export class WsClient {
         this._status = 0;
     }
 
+    // 多次add相同的 key 只会add一次
     public async  addMsg<T>(cmdType: CmdType,handler:(wsData:WsData<T>)=>void) {
         this._msgHandlerMap.set(cmdType,handler)
     }
 
+    public removeMsg<T>(cmdType: CmdType) {
+        this._msgHandlerMap.delete(cmdType)
+    }
 
     public static getOtherWebSocket(code:CmdType) {
         return new WebSocket(`ws://${window.location.host}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);

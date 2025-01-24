@@ -127,7 +127,7 @@ export class PtyShell {
 
     private cmd_set = new Set(cmd_list);
 
-    private shell_set:Set<string>;
+    private shell_set:Set<string>; // 支持 * 全部使用pty
 
     private node_require = {} as { path: any, fs: any, child_process: any };
 
@@ -229,11 +229,11 @@ export class PtyShell {
      *  on输出函数 重置
      * @param on_call
      */
-    public on(on_call: (data: string) => void) {
+    public set_on_call(on_call: (data: string) => void) {
         this.on_call = on_call;
     }
 
-    public on_child_kill(on_call: (code) => void) {
+    public on_child_kill(on_call: (code:number) => void) {
         this.on_child_kill_call = on_call;
     }
 
@@ -713,10 +713,10 @@ export class PtyShell {
             case '\x1b[1;5C': {
                 // ctrl 向右
                 if (this.line_index === this.line.length - 1) return;
-                const h = this.is_empty(this.line[this.line_index]);
+                const h = this.is_empty(this.line[this.line_index+1]);
                 const max = this.line.length - 1;
                 for (let i = this.line_index; i <= max; i++) {
-                    if (this.is_empty(this.line[i]) !== h || i === max) {
+                    if (this.is_empty(this.line[i+1]) !== h || i === max) {
                         this.line_index = i;
                         break;
                     }
@@ -749,6 +749,11 @@ export class PtyShell {
         this.history_line_index = -1;
     }
 
+    private exec_end_call(code){
+        if (this.on_child_kill_call)
+            this.on_child_kill_call(code) // 也发送一下;
+    }
+
     // 解析和执行命令 执行完会自动换行的
     private parse_exec() {
         // const line = this.delete_all_enter(this.line);
@@ -778,6 +783,7 @@ export class PtyShell {
                     case exec_type.not:
                         this.send_and_enter(`not have permission to execute ${exe}`);
                         this.clear_line();
+                        this.exec_end_call(-1);
                         return;
                     case exec_type.auto_child_process:
                         break;
@@ -786,6 +792,7 @@ export class PtyShell {
                         break;
                     default:
                         // 未知的不报错也不执行
+                        this.exec_end_call(-1);
                            return;
                 }
             }
@@ -794,6 +801,7 @@ export class PtyShell {
                 if(this.exec_cmd(exe, params)) {
                     // 成功执行了不用再继续了
                     this.clear_line();
+                    this.exec_end_call(0);
                     return;
                 }
             }
@@ -802,6 +810,7 @@ export class PtyShell {
         } catch (e) {
             console.log("子线程执行异常", e);
             this.send_and_enter(JSON.stringify(e));
+            this.exec_end_call(-1);
         }
     }
 
@@ -843,7 +852,7 @@ export class PtyShell {
         // if (!this.child) {
         //     this.on_call(`\n\r`); // 先换个行
         // }
-        if ((use_noe_pty || this.shell_set.has(exe)) && this.node_pty) {
+        if ((use_noe_pty || this.shell_set.has("*") || this.shell_set.has(exe)) && this.node_pty) {
             // if (!exe.includes('exe') && exe !== 'bash' && exe !== 'sh') {
             //     exe += '.exe';
             // }
@@ -865,8 +874,7 @@ export class PtyShell {
                 this.close_child();
                 this.send_and_enter(`pty with ${exitCode}`);
                 this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
-                if (this.on_child_kill_call)
-                    this.on_child_kill_call(exitCode);
+                this.exec_end_call(exitCode);
             })
             this.is_pty = true;
         } else {
@@ -900,13 +908,13 @@ export class PtyShell {
                     this.send_and_enter(``);
                 }
                 this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
-                if (this.on_child_kill_call)
-                    this.on_child_kill_call(code);
+                this.exec_end_call(code);
             });
             this.child.on('error', (error) => {
                 this.next_not_enter = false; // 下一次的换行输出 上一次没有换行
                 this.close_child();
                 this.send_and_enter(JSON.stringify(error));
+                this.exec_end_call(-1);
             });
         }
     }

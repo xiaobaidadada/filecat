@@ -15,9 +15,11 @@ $root.WsMessage = (function() {
      * Properties of a WsMessage.
      * @exports IWsMessage
      * @interface IWsMessage
-     * @property {number|null} [code] WsMessage code
+     * @property {number|null} [cmdType] WsMessage cmdType
      * @property {string|null} [context] WsMessage context
      * @property {Uint8Array|null} [binContext] WsMessage binContext
+     * @property {string|null} [message] WsMessage message
+     * @property {number|null} [code] WsMessage code
      */
 
     /**
@@ -36,12 +38,12 @@ $root.WsMessage = (function() {
     }
 
     /**
-     * WsMessage code.
-     * @member {number} code
+     * WsMessage cmdType.
+     * @member {number} cmdType
      * @memberof WsMessage
      * @instance
      */
-    WsMessage.prototype.code = 0;
+    WsMessage.prototype.cmdType = 0;
 
     /**
      * WsMessage context.
@@ -58,6 +60,22 @@ $root.WsMessage = (function() {
      * @instance
      */
     WsMessage.prototype.binContext = $util.newBuffer([]);
+
+    /**
+     * WsMessage message.
+     * @member {string} message
+     * @memberof WsMessage
+     * @instance
+     */
+    WsMessage.prototype.message = "";
+
+    /**
+     * WsMessage code.
+     * @member {number} code
+     * @memberof WsMessage
+     * @instance
+     */
+    WsMessage.prototype.code = 0;
 
     /**
      * Creates a new WsMessage instance using the specified properties.
@@ -83,12 +101,16 @@ $root.WsMessage = (function() {
     WsMessage.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.code != null && Object.hasOwnProperty.call(message, "code"))
-            writer.uint32(/* id 1, wireType 0 =*/8).int32(message.code);
+        if (message.cmdType != null && Object.hasOwnProperty.call(message, "cmdType"))
+            writer.uint32(/* id 1, wireType 0 =*/8).int32(message.cmdType);
         if (message.context != null && Object.hasOwnProperty.call(message, "context"))
             writer.uint32(/* id 2, wireType 2 =*/18).string(message.context);
         if (message.binContext != null && Object.hasOwnProperty.call(message, "binContext"))
             writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.binContext);
+        if (message.message != null && Object.hasOwnProperty.call(message, "message"))
+            writer.uint32(/* id 4, wireType 2 =*/34).string(message.message);
+        if (message.code != null && Object.hasOwnProperty.call(message, "code"))
+            writer.uint32(/* id 5, wireType 0 =*/40).int32(message.code);
         return writer;
     };
 
@@ -124,7 +146,7 @@ $root.WsMessage = (function() {
             var tag = reader.uint32();
             switch (tag >>> 3) {
             case 1: {
-                    message.code = reader.int32();
+                    message.cmdType = reader.int32();
                     break;
                 }
             case 2: {
@@ -133,6 +155,14 @@ $root.WsMessage = (function() {
                 }
             case 3: {
                     message.binContext = reader.bytes();
+                    break;
+                }
+            case 4: {
+                    message.message = reader.string();
+                    break;
+                }
+            case 5: {
+                    message.code = reader.int32();
                     break;
                 }
             default:
@@ -170,15 +200,21 @@ $root.WsMessage = (function() {
     WsMessage.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.code != null && message.hasOwnProperty("code"))
-            if (!$util.isInteger(message.code))
-                return "code: integer expected";
+        if (message.cmdType != null && message.hasOwnProperty("cmdType"))
+            if (!$util.isInteger(message.cmdType))
+                return "cmdType: integer expected";
         if (message.context != null && message.hasOwnProperty("context"))
             if (!$util.isString(message.context))
                 return "context: string expected";
         if (message.binContext != null && message.hasOwnProperty("binContext"))
             if (!(message.binContext && typeof message.binContext.length === "number" || $util.isString(message.binContext)))
                 return "binContext: buffer expected";
+        if (message.message != null && message.hasOwnProperty("message"))
+            if (!$util.isString(message.message))
+                return "message: string expected";
+        if (message.code != null && message.hasOwnProperty("code"))
+            if (!$util.isInteger(message.code))
+                return "code: integer expected";
         return null;
     };
 
@@ -194,8 +230,8 @@ $root.WsMessage = (function() {
         if (object instanceof $root.WsMessage)
             return object;
         var message = new $root.WsMessage();
-        if (object.code != null)
-            message.code = object.code | 0;
+        if (object.cmdType != null)
+            message.cmdType = object.cmdType | 0;
         if (object.context != null)
             message.context = String(object.context);
         if (object.binContext != null)
@@ -203,6 +239,10 @@ $root.WsMessage = (function() {
                 $util.base64.decode(object.binContext, message.binContext = $util.newBuffer($util.base64.length(object.binContext)), 0);
             else if (object.binContext.length >= 0)
                 message.binContext = object.binContext;
+        if (object.message != null)
+            message.message = String(object.message);
+        if (object.code != null)
+            message.code = object.code | 0;
         return message;
     };
 
@@ -220,7 +260,7 @@ $root.WsMessage = (function() {
             options = {};
         var object = {};
         if (options.defaults) {
-            object.code = 0;
+            object.cmdType = 0;
             object.context = "";
             if (options.bytes === String)
                 object.binContext = "";
@@ -229,13 +269,19 @@ $root.WsMessage = (function() {
                 if (options.bytes !== Array)
                     object.binContext = $util.newBuffer(object.binContext);
             }
+            object.message = "";
+            object.code = 0;
         }
-        if (message.code != null && message.hasOwnProperty("code"))
-            object.code = message.code;
+        if (message.cmdType != null && message.hasOwnProperty("cmdType"))
+            object.cmdType = message.cmdType;
         if (message.context != null && message.hasOwnProperty("context"))
             object.context = message.context;
         if (message.binContext != null && message.hasOwnProperty("binContext"))
             object.binContext = options.bytes === String ? $util.base64.encode(message.binContext, 0, message.binContext.length) : options.bytes === Array ? Array.prototype.slice.call(message.binContext) : message.binContext;
+        if (message.message != null && message.hasOwnProperty("message"))
+            object.message = message.message;
+        if (message.code != null && message.hasOwnProperty("code"))
+            object.code = message.code;
         return object;
     };
 

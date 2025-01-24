@@ -27,13 +27,14 @@ const http_tag_key = data_common_key.http_tag_key;
 export class NetController {
 
     @Post('/start')
-    async start(@Body() data: NetPojo) {
+    async start(@Body() data: NetPojo,@Req()req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         return netService.start(data);
     }
 
     @Post('/close')
-    async close(@Body() data: NetPojo) {
-
+    async close(@Body() data: NetPojo,@Req()req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         await netService.close(data);
         return Sucess("1");
     }
@@ -46,7 +47,8 @@ export class NetController {
     }
 
     @Get("/tag")
-    get() {
+    get(@Req()req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         let list = DataUtil.get(navindex_net_key_list);
         return Sucess(list || []);
     }
@@ -59,13 +61,15 @@ export class NetController {
     }
 
     @Get("/wol/tag")
-    getWolTag() {
+    getWolTag(@Req()req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         let list = DataUtil.get(navindex_wol_key);
         return Sucess(list || []);
     }
 
     @Post("/wol/exec")
-    wol(@Body() data: { mac: string }) {
+    wol(@Body() data: { mac: string },@Req()req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         netService.wol(data.mac);
         return Sucess("");
     }
@@ -110,7 +114,8 @@ export class NetController {
 
     // http 的tag
     @Get("/http/tag")
-    get_http_tag() {
+    get_http_tag(@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
         let list = DataUtil.get(http_tag_key,file_key.http_tag);
         return Sucess(list || []);
     }
@@ -124,6 +129,7 @@ export class NetController {
 
     @Post('/http/send')
     async httpSend(@Req() req: Request, @Res() res: Response) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
         return netService.httpSend(req, res);
     }
 }

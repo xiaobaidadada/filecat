@@ -59,6 +59,9 @@ class WsPreHandler {
         wss.token = token;
         if (!protocolIsProto2) {
             decoder.on("decoded", async (packet) => {
+                // if(packet.data[0] === CmdType.connection) {
+                //     return;
+                // }
                 const data = new WsData(packet.data[0], packet.data[1]);
                 data.wss = wss;
                 const handle = routerHandlerMap.get(data.cmdType);
@@ -75,6 +78,9 @@ class WsPreHandler {
         wss.ws.on('message', async function incoming(message: WebSocket.Data) {
             if (protocolIsProto2) {
                 const data = WsData.decode(message);
+                // if(data.cmdType === CmdType.connection) {
+                //     return;
+                // }
                 data.wss = wss;
                 const handle = routerHandlerMap.get(data.cmdType);
                 if (handle) {
@@ -153,7 +159,7 @@ export class WsServer {
                         handler(ws,query); // query中有token了
                     }else {
                         console.log('没找到对应路径')
-                    };
+                    }
                 } else {
                     console.log('ws未找到对应的访问途径');
                     ws.close();

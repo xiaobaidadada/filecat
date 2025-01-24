@@ -1,6 +1,6 @@
 export enum RCode {
-    Sucess,
-    Fail,
+    Sucess = 0,
+    Fail = 1,
     AuthFail = 2,
     DdnsAuthFail,
     File_Max,

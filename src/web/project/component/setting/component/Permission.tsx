@@ -8,7 +8,7 @@ import {deleteList} from "../../../../../common/ListUtil";
 
 export function Permission(props:{
     is_disable:(auth: UserAuth) => boolean;
-    is_selected :(auth: UserAuth)=>boolean;
+    is_selected :(auth: UserAuth,not_root?:boolean)=>boolean; //not_root root 也要选中
     select_auth:(auth: UserAuth) => void;
 }) {
     const {t, i18n} = useTranslation();
@@ -118,13 +118,6 @@ export function Permission(props:{
                 ddns
             </div>
             <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.crypto_ssh_file)}
-                       checked={props.is_selected(UserAuth.crypto_ssh_file)} onChange={() => {
-                    props.select_auth(UserAuth.crypto_ssh_file)
-                }}/>
-                {t("ssh密钥保存到磁盘")}
-            </div>
-            <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.outside_software_path)}
                        checked={props.is_selected(UserAuth.outside_software_path)} onChange={() => {
                     props.select_auth(UserAuth.outside_software_path)
@@ -199,7 +192,24 @@ export function Permission(props:{
                        onChange={() => {
                            props.select_auth(UserAuth.recycle_file_save)
                        }}/>
-                {t("文件回收站")}
+                {t("文件回收站修改")}
+            </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.workflow_exe)}
+                       checked={props.is_selected(UserAuth.workflow_exe)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.workflow_exe)
+                       }}/>
+                {t("workflow 执行")}
+            </div>
+            <div>
+                <input type="checkbox"
+                       checked={props.is_selected(UserAuth.workflow_exe_user,true)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.workflow_exe_user)
+                       }}/>
+                {t("workflow 执行用户")}
             </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
@@ -251,8 +261,60 @@ export function Permission(props:{
                        checked={props.is_selected(UserAuth.rtsp_proxy_tag_update)} onChange={() => {
                     props.select_auth(UserAuth.rtsp_proxy_tag_update)
                 }}/>
-                {t(" rtsp播放器")}
+                {t("rtsp播放器")}
             </div>
+
+            <h3>{t("工具功能")}</h3>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.ssh_proxy)}
+                       checked={props.is_selected(UserAuth.ssh_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.ssh_proxy)
+                }}/>
+                {t("ssh代理")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.http_proxy)}
+                       checked={props.is_selected(UserAuth.http_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.http_proxy)
+                }}/>
+                {t("http代理")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.browser_proxy)}
+                       checked={props.is_selected(UserAuth.browser_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.browser_proxy)
+                }}/>
+                {t("浏览器代理")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.rdp_proxy)}
+                       checked={props.is_selected(UserAuth.rdp_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.rdp_proxy)
+                }}/>
+                {t("rdp代理")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.wol_proxy)}
+                       checked={props.is_selected(UserAuth.wol_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.wol_proxy)
+                }}/>
+                {t("网络唤醒")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.rtsp_proxy)}
+                       checked={props.is_selected(UserAuth.rtsp_proxy)} onChange={() => {
+                    props.select_auth(UserAuth.rtsp_proxy)
+                }}/>
+                {t("rtsp播放器")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.crypto_ssh_file)}
+                       checked={props.is_selected(UserAuth.crypto_ssh_file)} onChange={() => {
+                    props.select_auth(UserAuth.crypto_ssh_file)
+                }}/>
+                {t("ssh密钥保存到磁盘")}
+            </div>
+
         </div>
     </React.Fragment>)
 }

@@ -1,3 +1,5 @@
+import {running_type} from "./file.req";
+
 export interface NavIndexItem {
     name:string;
     url:string;
@@ -5,12 +7,17 @@ export interface NavIndexItem {
 }
 
 
-export interface tree_item {
+export interface tree_item<T=any> {
     name: string;
-    children?: tree_item[];
+    children?: tree_item<T>[];
+    extra_data?:T; // 额外的字段数据
 }
 
 export type tree_list = tree_item[];
+
+export type workflow_realtime_tree_list = tree_item<{
+    running_type?: running_type;
+}>[];
 
 // 逻辑卷
 export class lv_item {

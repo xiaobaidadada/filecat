@@ -3,14 +3,20 @@ import Long = require("long");
 /** Properties of a WsMessage. */
 export interface IWsMessage {
 
-    /** WsMessage code */
-    code?: (number|null);
+    /** WsMessage cmdType */
+    cmdType?: (number|null);
 
     /** WsMessage context */
     context?: (string|null);
 
     /** WsMessage binContext */
     binContext?: (Uint8Array|null);
+
+    /** WsMessage message */
+    message?: (string|null);
+
+    /** WsMessage code */
+    code?: (number|null);
 }
 
 /** Represents a WsMessage. */
@@ -22,14 +28,20 @@ export class WsMessage implements IWsMessage {
      */
     constructor(properties?: IWsMessage);
 
-    /** WsMessage code. */
-    public code: number;
+    /** WsMessage cmdType. */
+    public cmdType: number;
 
     /** WsMessage context. */
     public context: string;
 
     /** WsMessage binContext. */
     public binContext: Uint8Array;
+
+    /** WsMessage message. */
+    public message: string;
+
+    /** WsMessage code. */
+    public code: number;
 
     /**
      * Creates a new WsMessage instance using the specified properties.

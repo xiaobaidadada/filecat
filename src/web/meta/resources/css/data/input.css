@@ -71,7 +71,7 @@
 .black-tip {
     border-radius: .1em;
     padding: .2em ;
-    background: white;
+    /*background: white;*/
     /*border: 1px solid rgba(0, 0, 0, 0.1);*/
     transition: .2s ease all;
     color: #333;

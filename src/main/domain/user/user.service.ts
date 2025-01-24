@@ -390,7 +390,14 @@ export class UserService {
     // 检测命令是否能执行 管理员有设置任意的权限 但是也要做校验
     public check_user_cmd(token: string, cmd: string,aotu_throw = true) {
         const user_data = userService.get_user_info_by_token(token);
-        const set = this.user_access_cmd_map.get(user_data.id);
+        return this.check_user_cmd_by_id(user_data.id,cmd,aotu_throw)
+    }
+
+    public check_user_cmd_by_id(user_id: string, cmd: string,aotu_throw = true) {
+        const set = this.user_access_cmd_map.get(user_id);
+        if(set.has("*")) {
+            return true; // * 所有命令支持
+        }
         if(aotu_throw) {
             if(!set.has(cmd)) throw "cmd is invalid"
         }
@@ -403,6 +410,17 @@ export class UserService {
         if(user_data.is_root) return true;
         const v = user_data?.auth_list.find(v => v === auth);
         if (auto_throw && !v) throw "no permission"
+        return !!v;
+    }
+
+    public check_user_auth_by_user_id(user_id:string, auth: UserAuth, param?:{
+        auto_throw?:boolean, // 是否自动抛出异常
+        root_check?:boolean // 为 true 是连root都要检查
+    }) {
+        const user_data = this.get_user_info_by_user_id(user_id);
+        if(!param.root_check && user_data.is_root) return true;
+        const v = user_data?.auth_list.find(v => v === auth);
+        if (!!param?.auto_throw && !v) throw "no permission"
         return !!v;
     }
 

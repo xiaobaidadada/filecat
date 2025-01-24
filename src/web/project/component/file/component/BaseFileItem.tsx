@@ -32,13 +32,20 @@ export function BaseFileItem(props: FileItemData & {
                      "--filewidth": props.itemWidth ?? "33%"
                  }}
     >
+        {props.icon === undefined &&
+            <div >
+                {(props.type === FileTypeEnum.image && props.path != undefined) ? (
+                        <img loading="lazy" src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
+                    <i className="material-icons"></i>
+                }
+            </div>
+        }
+        {props.icon !== undefined &&
+            <div className={"rotating-div"}>
+                <span className="material-icons">{props.icon}</span>
+            </div>
+        }
 
-        <div>
-            {(props.type === FileTypeEnum.image && props.path != undefined) ? (
-                <img loading="lazy" src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
-                <i className="material-icons"></i>}
-
-        </div>
         <div>
             <p className="name">{props.name}</p>
             {props.size ? <p>{props.size}</p> : <p>&mdash;</p>}

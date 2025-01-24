@@ -45,6 +45,10 @@ export class Client {
 		this.install();
 	}
 
+	close(){
+		this.activeSession = false;
+	}
+
 	install () {
 		var self = this;
 		// bind mouse move event

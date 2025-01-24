@@ -1,11 +1,11 @@
 import {Worker, isMainThread, parentPort} from 'worker_threads';
-import {CmdType, WsData} from "../../../common/frame/WsData";
-import {LogViewerPojo} from "../../../common/file.pojo";
-import {Wss} from "../../../common/frame/ws.server";
-import {settingService} from "../setting/setting.service";
+import {CmdType, WsData} from "../../../../common/frame/WsData";
+import {LogViewerPojo} from "../../../../common/file.pojo";
+import {Wss} from "../../../../common/frame/ws.server";
+import {settingService} from "../../setting/setting.service";
 import path from "path";
-import {ws} from "../../../web/project/util/ws";
-import {SysPojo} from "../../../common/req/sys.pojo";
+import {ws} from "../../../../web/project/util/ws";
+import {SysPojo} from "../../../../common/req/sys.pojo";
 import {FileWorkMessage} from "./file.type";
 
 const fs = require("fs");
@@ -41,7 +41,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
         wss.sendData(result.encode());
         return;
     }
-    const worker = new Worker(path.join(__dirname,'file.worker'));
+    const worker = new Worker(path.join(__dirname,'file.search.worker'));
     wss.dataMap.set('worker', worker);
     const close = ()=>{
         worker.postMessage({type: 4});
@@ -76,6 +76,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
     // 监听子线程退出
     worker.on('exit', (code) => {
         console.log(`子线程退出，退出码 ${code}`);
+        wss.dataMap.delete('worker');
     });
 }
 

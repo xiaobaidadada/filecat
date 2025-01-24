@@ -105,7 +105,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             handleContextMenu(event, props.name, props.type === FileTypeEnum.folder,props.origin_size)
         }
     }} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
-                         isLink={props.isLink} path={props.path}
+                         isLink={props.isLink} path={props.path} icon={props.icon}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

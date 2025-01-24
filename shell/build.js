@@ -16,6 +16,7 @@ const fs = require("fs");
 const path = require("path");
 const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
+const {get_webpack_work_config} = require('./config/webpack.worker.get.js');
 
 // 只能复制文件
 function copyFiles(sourceDir,destDir) {
@@ -38,8 +39,31 @@ function copyFiles(sourceDir,destDir) {
         console.error('复制文件时出错:', err);
     }
 }
+
 const tasksLister = new Listr(
     [
+        {
+            title:"子线程构建",
+            task:async ()=>{
+                return  Promise.all([new Promise((res, rej) => {
+                    // 第一个
+                    webpack(get_webpack_work_config({
+                        entry_path:path.join(__dirname, "..", "build", "server", "main","domain","file","search", "file.search.worker.js"),
+                        output_name:'file.search.worker.js',
+                        pkg:args[0]==="npm",
+                        docker:args[0]==="docker",
+                    }), (err, stats) => {
+                        if (err || stats.hasErrors()) {
+                            console.error(err || stats.toString());
+                            rej(false);
+                            return;
+                        }
+                        res(true);
+                    });
+
+                })])
+            }
+        },
         {
             title: "构建服务端",
             task: async () => {
@@ -59,7 +83,7 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm64.dll"), path.join(__dirname, "..", "build", "wintun-arm64.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
-                        copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
+                        // copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
                         copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
                         // 因为不一定不是windows环境 所以都复制一下，发布npm 在windows环境下，不然没有这个dll
                         copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))

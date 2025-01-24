@@ -5,6 +5,7 @@ import {UserBaseInfo} from "../../../common/req/user.req";
 import {Confirm} from "../component/prompts/Confirm";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
+import {use_file_to_running} from "./store.util";
 
 const localStorageEffect = key => ({setSelf, onSet}) => {
     const savedValue = localStorage.getItem(key);
@@ -32,6 +33,11 @@ export const $stroe = {
             folders: [{name: "文件夹1"}, {name: "文件夹2"}],
             files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
         } as GetFilePojo // 初始值
+    }),
+    // 当前因为各种原因正在运行的文件
+    to_running_files:atom({
+       key: 'to_running_files',
+       default: new Set<string>(),
     }),
     // 按下的键盘按键
     enterKey: atom({
@@ -251,6 +257,15 @@ export const $stroe = {
     nav_index_add_item_by_now_list: atom({
         key: 'nav_index_add_item_by_now_list',
         default: undefined as any
+    }),
+    // workflow
+    workflow_show:atom({
+        key: 'workflow_show',
+        default: false
+    }),
+    workflow_realtime_show:atom({
+        key: 'workflow_realtime_show',
+        default: {} as {open:boolean,filename?:string}
     })
 }
 
