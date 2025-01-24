@@ -108,13 +108,17 @@ function Layout() {
                     <SysInfo/>
                 </Suspense>
                 {/*ddns*/}
-                <Suspense fallback={<div></div>}>
-                    {check_user_auth(UserAuth.ddns) && <Ddns/>}
-                </Suspense>
+                {check_user_auth(UserAuth.ddns) &&
+                    <Suspense fallback={<div></div>}>
+                        <Ddns/>
+                    </Suspense>
+                }
                 {/*网络*/}
-                <Suspense fallback={<div></div>}>
-                    {check_user_auth(UserAuth.vir_net) && <Net/>}
-                </Suspense>
+                {check_user_auth(UserAuth.vir_net) &&
+                    <Suspense fallback={<div></div>}>
+                        <Net/>
+                    </Suspense>
+                }
                 {/*设置*/}
                 <Suspense fallback={<div></div>}>
                     <Settings/>
