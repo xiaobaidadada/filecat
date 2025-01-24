@@ -12,6 +12,7 @@
 
 import {word_detection_js} from "../../../common/word_detection_js";
 import {get_best_cmd, path_join} from "../../../common/path_util";
+import {SystemUtil} from "../sys/sys.utl";
 
 /**
  * 功能说明：
@@ -383,6 +384,7 @@ export class PtyShell {
         this.child_now_line = '';
         if (this.child) {
             this.child.kill(); // 不同平台信号不同 win 默认 SIGHUP
+            SystemUtil.killProcess(this.child.pid);
             this.child = undefined;
         }
     }
