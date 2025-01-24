@@ -18,7 +18,7 @@ import {SysPojo} from "../../../../common/req/sys.pojo";
 import {data_common_key, data_dir_tem_name} from "../../data/data_type";
 import {SysEnum, UserAuth} from "../../../../common/req/user.req";
 import {get_best_cmd} from "../../../../common/path_util";
-import {getSys, SYS_PATH} from "../../shell/shell.service";
+import {getSys, sysType} from "../../shell/shell.service";
 import {Base_data_util} from "../../data/basedata/base_data_util";
 import {removeTrailingPath} from "../../../../common/StringUtil";
 import {tree_list, workflow_realtime_tree_list} from "../../../../common/req/common.pojo";
@@ -47,7 +47,6 @@ class work_children {
     import_files_map: Map<string,import_files_item> = new Map<string, import_files_item>(); // 导入的其它文件 key 是对应文件的 name 值是 读到的数据
     name: string;
     "run-name": string;
-    repl = false;
     jobs_map: Map<string,job_item> = new Map();
 
 
@@ -137,7 +136,7 @@ class work_children {
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
         this.env = yaml_data.env;
             // 获取用户 id
-        let user_id = yaml_data.user_id;
+        let user_id = `${yaml_data.user_id??""}`;
         if (!user_id) {
             user_id = userService.get_user_id(`${yaml_data.username}`);
         }
@@ -193,12 +192,9 @@ class work_children {
                 }
             }
         }
-        if(yaml_data.repl !== undefined) {
-            this.repl = yaml_data.repl;
-        }
-        yaml_data['run-name'] = Mustache.render(yaml_data['run-name'], this.env);
-        this["run-name"] = yaml_data['run-name'];
-        this.name = yaml_data.name;
+        this["run-name"] = `${yaml_data['run-name']??""}`;
+        yaml_data['run-name'] = Mustache.render(this["run-name"], this.env??"");
+        this.name = `${yaml_data.name}`;
         if (param?.env) {
             for (const key of Object.keys(param.env)) {
                 this.env[key] = param.env[key];
@@ -220,6 +216,9 @@ class work_children {
 
                 }).catch(e=>{
                     console.error(e);
+                    job.running_type = running_type.fail;
+                    job.fail_message = JSON.stringify(e);
+                    job.code = 1;
                     resolve(-1);
                 });
             }
@@ -262,6 +261,7 @@ class work_children {
     // 完成job 以失败的方式
     private done_fail_job_handle(job: job_item,fail_message:string) {
          job.running_type = running_type.fail;
+         job.code = 1;
          this.send_all_wss();
          job.fail_message = fail_message;
          this.close();
@@ -308,35 +308,29 @@ class work_children {
             const run_exec_resolve = (code,message?:string)=>{
                 now_step.code = code;
                 if(code===0) {
-                    if(!this.repl) {
-                        now_step.success_message = message ?? out_context;
-                    }
-                    if(job.code === undefined) {
-                        // 没有失败过就设置为成功
-                        job.code = 0;
-                    }
+                    now_step.success_message = message ?? out_context;
+                    job.code = 0;
                 } else {
                     job.code = code; // 任务整体也失败
-                    if(!this.repl) {
-                        now_step.fail_message = message ?? out_context;
-                    }
+                    now_step.fail_message = message ?? out_context;
                 }
-                if(!this.repl) {
+                if(job.repl) {
                     out_context = "";
                 }
                 if(exec_resolve)
                 {
                     exec_resolve(code);
+                    exec_resolve = undefined;
                 }
-                exec_resolve = undefined;
             }
             let out_context = "";
-            job.cwd = Mustache.render(job.cwd, this.env);
+            job.cwd = Mustache.render(job.cwd??"", this.env??{});
             userService.check_user_path_by_user_id(this.user_id, job.cwd);
+            const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
             const ptyshell = new PtyShell({
                 cwd: job.cwd,
                 node_pty: pty,
-                env: {SYS_PATH},
+                env: {PATH},
                 node_pty_shell_list: settingService.get_pty_cmd(),
                 check_exe_cmd: (exe_cmd, params) => {
                     // 命令和路径检查
@@ -369,13 +363,6 @@ class work_children {
             if(!this.not_log) {
                 ptyshell.set_on_call((cmdData)=>{
                     out_context+=cmdData;
-                    if(this.repl) {
-                        if(exec_resolve)
-                        {
-                            exec_resolve(0);
-                        }
-                        exec_resolve = undefined;
-                    }
                 })
             }
             ptyshell.on_child_kill((code)=>{
@@ -383,71 +370,107 @@ class work_children {
                 run_exec_resolve(code);
             })
             const start_time = Date.now();
-            // 开始多个命令执行 有前后顺序的
-            for (const step of job.steps) {
-                step.running_type = running_type.running;
-                const step_satrt_time = Date.now();
-                if (step["use-yml"]) {
-                    // 执行另一个文件
-                    const yaml = this.import_files_map.get(step["use-yml"]);
-                    if(yaml) {
-                        const worker = new work_children(undefined, this.workflow_dir_path);
-                        await worker.init({env:step['with-env'],yaml_data:yaml.yaml_data,yaml_path:yaml.yaml_path});
-                        this.worker_children_use_yml_map.set(step["use-yml"],worker);
-                        let success_list,fail_list;
-                        try {
-                            const v = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
-                            success_list = v.success_list;
-                            fail_list = v.fail_list;
-                        } catch(e){
-                            step.running_type = running_type.fail;
-                            this.worker_children_use_yml_map.delete(step["use-yml"]);
-                            throw e;
+
+            if(job.repl) {
+                try {
+                    job.code = await new Promise(resolve => {
+                        exec_resolve = resolve;
+                        if(job.steps) {
+                            now_step = job.steps[0]; // 交互式的给第一个
+                            for (let i=0;i<job.steps.length;i++) {
+                                const step = job.steps[i];
+                                step.running_type = running_type.running;
+                                step.run = Mustache.render(`${step.run??""}`, this.env??{});
+                                ptyshell.write(`${step.run}\r`);
+                            }
+                        } else {
+                            exec_resolve(1);
                         }
-                        this.worker_children_use_yml_map.delete(step["use-yml"]);
-                        step.use_job_children_list = [...success_list,...fail_list]
-                        step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                        this.send_all_wss();
-                        if(fail_list.length !== 0){
-                            job.code = -1;
-                            step.code = -1;
-                            step.running_type = running_type.fail;
-                            this.done_fail_job_handle(job,"fail");
-                            break;
-                        }
+
+                    })
+                    for (const step of job.steps??[]) { // 都完成
                         step.running_type = running_type.success;
                         step.code = 0;
-                        continue;
                     }
-                    step.running_type = running_type.fail;
-                    this.send_all_wss();
-                    step.code = -1;
-                    step.fail_message = `not have yaml use name ${step['use-yml']}`;
-                    job.code = -1;
+                } catch (error) {
+                    for (const step of job.steps??[]) { // 都完成
+                        step.running_type = running_type.fail;
+                        step.code = 1;
+                    }
+                }
+
+            }  else {
+                // 开始多个命令执行 有前后顺序的
+                for (const step of job.steps) {
+                    // @ts-ignore
+                    if(job.running_type === running_type.fail) {
+                        break;
+                    }
+                    step.running_type = running_type.running;
+                    const step_satrt_time = Date.now();
+                    if (step["use-yml"]) {
+                        // 执行另一个文件
+                        const yaml = this.import_files_map.get(step["use-yml"]);
+                        if(yaml) {
+                            const worker = new work_children(undefined, this.workflow_dir_path);
+                            await worker.init({env:step['with-env'],yaml_data:yaml.yaml_data,yaml_path:yaml.yaml_path});
+                            this.worker_children_use_yml_map.set(step["use-yml"],worker);
+                            let success_list,fail_list;
+                            try {
+                                const v = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
+                                success_list = v.success_list;
+                                fail_list = v.fail_list;
+                            } catch(e){
+                                step.running_type = running_type.fail;
+                                this.worker_children_use_yml_map.delete(step["use-yml"]);
+                                throw e;
+                            }
+                            this.worker_children_use_yml_map.delete(step["use-yml"]);
+                            step.use_job_children_list = [...success_list,...fail_list]
+                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                            this.send_all_wss();
+                            if(fail_list.length !== 0){
+                                job.code = -1;
+                                step.code = -1;
+                                step.running_type = running_type.fail;
+                                this.done_fail_job_handle(job,"fail");
+                                break;
+                            }
+                            step.running_type = running_type.success;
+                            step.code = 0;
+                            continue;
+                        }
+                        step.running_type = running_type.fail;
+                        this.send_all_wss();
+                        step.code = -1;
+                        step.fail_message = `not have yaml use name ${step['use-yml']}`;
+                        job.code = -1;
+                        step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                        this.done_fail_job_handle(job,"fail");
+                        break; // 剩下的也不需要执行了
+                    }
+                    // 普通的执行
+                    now_step = step;
+                    // 等待执行完执行下一条
+                    const code = await new Promise(resolve => {
+                        exec_resolve = resolve;
+                        step.run = Mustache.render(`${step.run??""}`, this.env??{});
+                        ptyshell.write(`${step.run}\r`);
+                    })
                     step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                    this.done_fail_job_handle(job,"fail");
-                    break; // 剩下的也不需要执行了
+                    step.code = code as number;
+                    step.running_type = running_type.success;
+                    this.send_all_wss();
+                    if(code !==0 ) {
+                        step.running_type = running_type.fail;
+                        // 终止后面的行为
+                        break;
+                    }
                 }
-                // 普通的执行
-                now_step = step;
-                // 等待执行完执行下一条
-                const code = await new Promise(resolve => {
-                    exec_resolve = resolve;
-                    step.run = Mustache.render(step.run, this.env);
-                    ptyshell.write(`${step.run}\r`);
-                })
-                step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                step.code = code as number;
-                step.running_type = running_type.success;
-                this.send_all_wss();
-                if(code !==0 ) {
-                    step.running_type = running_type.fail;
-                    // 终止后面的行为
-                    break;
-                }
+
             }
             this.pty_shell_set.delete(ptyshell);
-            if(this.repl) {
+            if(job.repl) {
                 if(job.code === 0) {
                     job.success_message = out_context;
                 } else {

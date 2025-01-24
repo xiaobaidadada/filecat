@@ -77,7 +77,6 @@ const reset = '\x1b[0m';   // 重置颜色
 
 let word_detection = new word_detection_js();
 // let word_detection_map = new Map<string, string>(); // 暂时不需要完整的路径
-export let SYS_PATH = "";
 const s_f = (sysType === "win" ? ";" : ":");
 let PATH_file_total = 0; // win我的电脑 也就三千多个没必要上 c++版的了
 const exec_map = {// windwos文件命令执行优先级
@@ -94,7 +93,7 @@ export class ShellService {
             word_detection.clear();
             word_detection = new word_detection_js();
             PATH_file_total = 0;
-            SYS_PATH = process.env.PATH +s_f + settingService.get_env_list();
+            const SYS_PATH = process.env.PATH +s_f + settingService.get_env_list();
             for (const item of SYS_PATH.split(s_f)) {
                 try {
                     if (fs.existsSync(item)) {

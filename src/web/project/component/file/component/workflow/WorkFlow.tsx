@@ -278,7 +278,7 @@ export function WorkFlow(props) {
                                 const new_list = [
                                     <p>{item.name}</p>,
                                     <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />{item.code ===0?t("成功"):t('失败')}</div>,
-                                    <p>{item.cwd}</p>,
+                                    <TextTip>{item.cwd}</TextTip>,
                                     <span>{item.duration}</span>,
                                     <div>
                                         <ActionButton icon={"details"} title={t("详情")} onClick={() => {job_click(item)}}/>
