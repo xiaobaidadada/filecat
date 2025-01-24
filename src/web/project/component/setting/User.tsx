@@ -151,8 +151,8 @@ export function User() {
         return false;
     }
 
-    const is_selected= (auth:UserAuth)=> {
-        if(is_root === true) return true;
+    const is_selected= (auth:UserAuth,not_root?:boolean)=> {
+        if(!not_root && is_root === true) return true;
         return auth_list?.find(v => v === auth) !== undefined;
     }
     const select_auth = (auth:UserAuth)=>{

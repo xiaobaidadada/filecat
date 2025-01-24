@@ -1,3 +1,4 @@
+import {MaterialIcon} from "material-icons";
 
 export enum FileTypeEnum {
     audio = "audio",
@@ -25,6 +26,7 @@ export interface FileItemData {
     size?: any, // 数字和字符串
     isLink?: boolean,
     path?: string,
+    icon?: MaterialIcon,
 }
 
 export interface FileInfoItemData {

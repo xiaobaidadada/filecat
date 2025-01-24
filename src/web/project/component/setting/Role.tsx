@@ -67,7 +67,7 @@ export function Role() {
     }, []);
 
 
-    const is_selected= (auth:UserAuth)=> {
+    const is_selected= (auth:UserAuth,not_root?:boolean)=> {
         return auth_list?.find(v => v === auth) !== undefined;
     }
     const select_auth = (auth:UserAuth)=>{

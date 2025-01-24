@@ -11,8 +11,9 @@ import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../common/ValueUtil";
-import ace, {Ace as AceItem, version as ace_version} from "ace-builds";
+import {Ace as AceItem, version as ace_version} from "ace-builds";
 import {UserAuth} from "../../../common/req/user.req";
+import {useEffect} from "react";
 
 async function get_file_context(path, is_sys_path) {
     if (is_sys_path) {
@@ -149,6 +150,18 @@ export const use_auth_check = () => {
     }
 
     return {check_user_auth};
+}
+
+export const use_file_to_running = () => {
+    const [to_running_files_set, set_to_runing_files_set] = useRecoilState($stroe.to_running_files);
+        useEffect(()=>{
+            // console.log(to_runing_files_set)
+        },[to_running_files_set])
+    const file_is_running = (filename: string) => {
+        return to_running_files_set.has(filename);
+    }
+
+    return {file_is_running};
 }
 
 export class editor_data {

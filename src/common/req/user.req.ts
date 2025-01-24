@@ -56,6 +56,14 @@ export enum UserAuth {
     pty_cmd_update = 31, // pty cmd 环境更新
     sys_protection_dir = 32 ,// 系统保护路径  所有用户都有的
     recycle_file_save = 33, // 文件垃圾回收
+    ssh_proxy, // ssh 代理功能
+    http_proxy, // http 代理功能
+    browser_proxy, // 浏览器代理功能
+    rdp_proxy, // rdp 代理功能
+    wol_proxy, // 网络唤醒功能
+    rtsp_proxy, // rtsp 功能
+    workflow_exe, // workflow 执行 功能
+    workflow_exe_user, // 能被设置执行的 workflow 用户
 }
 
 export class UserData extends UserLogin {

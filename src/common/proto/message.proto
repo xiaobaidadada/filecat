@@ -1,7 +1,9 @@
 syntax = "proto2";
 
 message WsMessage {
-  optional int32 code = 1;
+  optional int32 cmd_type  = 1;
   optional string context = 2;
   optional bytes bin_context = 3;
+  optional string message = 4;
+  optional int32 code = 5;
 }

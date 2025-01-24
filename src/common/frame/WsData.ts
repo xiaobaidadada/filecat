@@ -102,6 +102,14 @@ export enum CmdType {
     // rtsp
     rtsp_get,
     rtsp_cancel,
+
+    // workflow
+    workflow_exec,
+    workflow_get,
+    workflow_realtime,
+    workflow_realtime_one_req,
+    workflow_realtime_one_rsq
+
 }
 
 export enum WsConnectType {
@@ -114,8 +122,8 @@ export class WsData<T> {
     public context: T|any;
     public bin_context: Uint8Array;
     public wss:Wss|null|WebSocket;
-    public code:RCode; // 返回用的
-    public message; // 错误时候的信息
+    public code:RCode; // 只有返回的时候用
+    public message:string; // 只有返回的时候用 错误时候的信息
 
     constructor(cmdType: CmdType);
     constructor(cmdType: CmdType,context:T);
@@ -124,20 +132,22 @@ export class WsData<T> {
         this.cmdType = cmdType;
         this.context = context;
         this.bin_context = bin_context;
-        this.code = RCode.Sucess;
+        this.code = RCode.Sucess; // 默认成功
     }
 
     public encode(){
         if (protocolIsProto2) {
             return proto.WsMessage.encode(proto.WsMessage.create({
-                code: this.cmdType,
+                cmdType:this.cmdType,
                 context: JsonUtil.getJson(this.context),
+                code: this.code,
+                message: this.message,
                 binContext: this.bin_context
             })).finish();
         } else {
             const p = {
                 type:PacketType.EVENT,
-                data:[this.cmdType,this.context]
+                data:[this.cmdType,this.context,this.code,this.message]
             }
             return encoder.encode(p as Packet);
         }
@@ -146,7 +156,10 @@ export class WsData<T> {
 
     public static decode(buffer) {
         const data = proto.WsMessage.decode(buffer);
-        return new WsData(data.code,JsonUtil.fromJson(data.context),data.binContext);
+        const v = new WsData(data.cmdType,JsonUtil.fromJson(data.context),data.binContext);
+        v.code = data.code;
+        v.message = data.message;
+        return v;
 
         // const data = JsonUtil.fromJson(buffer.toString());
         // return new WsData(data[0],data[1]?JSON.parse(data[1]):null);

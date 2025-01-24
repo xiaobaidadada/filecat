@@ -45,8 +45,8 @@ export function Menu(props) {
             </div>
         </div>
         {/*标签内容路由*/}
-        <SimpleRoutes rtos={props.optionList.map(value => value.rto)}
-                      children={!Array.isArray(props.children) ? [props.children] : props.children}/>
+        <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
+                      children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
     </div>
 }
 

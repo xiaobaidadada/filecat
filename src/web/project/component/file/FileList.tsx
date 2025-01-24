@@ -14,17 +14,21 @@ import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
 import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
-import Noty from "noty";
 import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
-import {NotyFail} from "../../util/noty";
+import {NotyFail, NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
-import {user_click_file} from "../../util/store.util";
+import {use_file_to_running, user_click_file} from "../../util/store.util";
 import { formatFileSize } from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextTip} from "../../../meta/component/Card";
+import {WorkFlow} from "./component/workflow/WorkFlow";
+import {workflow_dir_name, WorkFlowRealTimeReq} from "../../../../common/req/file.req";
+import {ws} from "../../util/ws";
+import {CmdType} from "../../../../common/frame/WsData";
+import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
 
 
 export enum FileListShowTypeEmum {
@@ -39,6 +43,8 @@ const fileTypes = Object.values(FileListShowTypeEmum);
 const columnWidth = 280;
 
 let pre_search:GetFilePojo;
+
+let to_running_files_set_value;
 
 export default function FileList() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
@@ -66,13 +72,34 @@ export default function FileList() {
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
     const [itemWidth,setItemWidth] = useState(undefined);
     const [search,setSearch] = useState("");
+    const [workflow_show,set_workflow_show] = useRecoilState($stroe.workflow_show);
+    const [workflow_realtime_show,set_workflow_realtime_show] = useRecoilState($stroe.workflow_realtime_show);
+    const [workflow_show_click,set_workflow_show_click] = useState(false);
 
     const {reloadUserInfo} = useContext(GlobalContext);
     const { click_file } = user_click_file();
 
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
+    const {file_is_running} = use_file_to_running();
+    const [to_running_files_set, set_to_running_files_set] = useRecoilState($stroe.to_running_files);
 
+    const workflow_watcher = async () => {
+        const p = new WorkFlowRealTimeReq();
+        p.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        ws.addMsg(CmdType.workflow_realtime,(data)=>{
+            // console.log(data.context??[])
+            const set = new Set<string>(data.context??[]);
+            for (const it of to_running_files_set_value??[]) {
+                if(!set.has(it)) {
+                    NotySucess(`${it.slice(0,-13)} done!`);
+                }
+            }
+            to_running_files_set_value = set;
+            set_to_running_files_set(set)
+        })
+        await ws.sendData(CmdType.workflow_realtime,p);
+    }
     const fileHandler = async () => {
         // 文件列表初始化界面
         const rsp = await fileHttp.get(encodeURIComponent(getRouterAfter('file',getRouterPath()))); // 方式错误路径 因为没有使用  # 路由 这里加上去 location.hash
@@ -87,9 +114,25 @@ export default function FileList() {
             return;
         }
         const data :GetFilePojo = rsp.data;
+        let have_workflow_water  = false;
         for (const item of data.files??[]) {
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
+            if(item.name.endsWith('workflow.yml') && !have_workflow_water) {
+                set_workflow_show_click(true)
+                have_workflow_water = true;
+                workflow_watcher();
+            }
+        }
+        for (const folder of data.folders??[]) {
+            if(folder.name === workflow_dir_name) {
+                // 如果有workflow
+                if(!have_workflow_water) {
+                    set_workflow_show_click(true)
+                    workflow_watcher()
+                }
+
+            }
         }
         setNowFileList(rsp.data)
         pre_search =rsp.data;
@@ -110,7 +153,12 @@ export default function FileList() {
         // @ts-ignore
         setEditorSetting({open: false});
         setFilePreview({open:false});
-
+        set_workflow_show_click(false);
+        to_running_files_set_value = undefined;
+        return async ()=>{
+            await ws.unConnect();
+            set_to_running_files_set(new Set())
+        }
     }, [location]);
     const drop = async (event) => {
         event.preventDefault();
@@ -169,12 +217,7 @@ export default function FileList() {
             }
     }
     function ok(txt) {
-        new Noty({
-            type: 'success',
-            text: txt,
-            timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-            layout:"bottomLeft"
-        }).show();
+        NotySucess(txt)
     }
 
 
@@ -355,6 +398,7 @@ export default function FileList() {
                 }
                 const list = [];
                 if(folder_upload) {
+                    // @ts-ignore
                     for (const file of dirs) {
                         list.push({
                             isDir:true,
@@ -384,6 +428,7 @@ export default function FileList() {
                 {selectedFile.length > 0 && <ActionButton icon={"compress"} title={t("压缩")} onClick={compress}/>}
                 {selectedFile.length === 1 &&
                     <ActionButton icon={"edit_attributes"} title={t("重命名")} onClick={updateFile}/>}
+                {workflow_show_click && <ActionButton icon={"api"} title={"workflow"} onClick={()=>{set_workflow_show(!workflow_show)}}/>}
                 <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
                 <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
@@ -406,12 +451,15 @@ export default function FileList() {
                     // @ts-ignore
                     (<div onClick={clickBlank}>
                         {nowFileList.files.map((v, index) => (
-                        // @ts-ignore
-                        <FileItem itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
+                        // @ts-ignore 这里使用的就是  nowFileList.folders
+                        <FileItem icon={file_is_running(v.name)?"refresh":undefined} itemWidth={itemWidth} index={index + nowFileList.folders.length} key={index} {...v}  />))}
                     </div>)
                 }
             </div>
             <FileShell />
+            {workflow_show && <WorkFlow />}
+            {workflow_realtime_show.open &&  <WorkFlowRealTime />}
+
         </div>
     )
 }

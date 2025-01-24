@@ -12,7 +12,6 @@ import {NotyFail, NotyWaring} from "../../../util/noty";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {deleteList} from "../../../../../common/ListUtil";
-import {search_file_cancel} from "../../../../../main/domain/file/file.search";
 import {LongText} from "../../../../meta/component/Card";
 // const insert_data = (data:string)=> {
 //     if(!data)return;
@@ -423,6 +422,7 @@ export default function LogViewer(props) {
         set_search_file_progress(0);
     }
     const search_file_next = async () =>{
+        if(search_all_index_r.length === 0)return;
         req.line = history_max_line;
         req.context = "";
         req.context_list = [];
@@ -442,6 +442,7 @@ export default function LogViewer(props) {
         await send();
     }
     const search_file_back = async ()=>{
+        if(search_all_index_r.length === 0)return;
         req.line = history_max_line;
         req.context = "";
         req.context_list = [];

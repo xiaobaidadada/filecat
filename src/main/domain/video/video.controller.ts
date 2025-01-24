@@ -16,6 +16,7 @@ export class VideoController {
 
     @otherMsg(CmdType.rtsp_get)
     getRtsp(ws: WebSocket,query:{[key: string]: string}) {
+        userService.check_user_auth(query['token'], UserAuth.rtsp_proxy);
         videoService.getRtsp(decodeURIComponent(query["url"]),ws);
     }
 
@@ -27,7 +28,8 @@ export class VideoController {
     }
 
     @Get("/tag")
-    get() {
+    get(@Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.rtsp_proxy);
         let list = DataUtil.get(navindex_video_key);
         return Sucess(list || []);
     }

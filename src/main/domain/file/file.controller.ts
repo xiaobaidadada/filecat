@@ -21,15 +21,25 @@ import {
 } from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Fail, Result, Sucess} from "../../other/Result";
-import {cutCopyReq, fileInfoReq, fileReq, saveTxtReq} from "../../../common/req/file.req";
+import {
+    cutCopyReq,
+    fileInfoReq,
+    fileReq,
+    saveTxtReq,
+    WorkflowGetReq, WorkFlowRealTimeOneReq,
+    WorkFlowRealTimeReq,
+    WorkflowReq
+} from "../../../common/req/file.req";
 import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {settingService} from "../setting/setting.service";
 import {Request, Response} from 'express';
-import {search_file, search_file_cancel} from "./file.search";
+import {search_file, search_file_cancel} from "./search/file.search";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
+import {workflowService} from "./workflow/workflow.service";
+import {Wss} from "../../../common/frame/ws.server";
 
 
 @JsonController("/file")
@@ -218,6 +228,33 @@ export class FileController {
     @Post("/studio/get/item")
     async studio_get_item(@Body() data: { path: string }, @Req() ctx) {
         return Sucess(await FileServiceImpl.studio_get_item(data.path, ctx.headers.authorization));
+    }
+
+
+    // workflow 执行
+    @msg(CmdType.workflow_exec)
+    async workflow_exec(data: WsData<WorkflowReq>) {
+        userService.check_user_auth((data.wss as Wss).token, UserAuth.workflow_exe);
+        // todo 数据库位置查找失败
+        await workflowService.workflow_exec(data);
+        return "";
+    }
+
+    // worflow 查询
+    @msg(CmdType.workflow_get)
+    async workflow_get(data: WsData<WorkflowGetReq>) {
+        return workflowService.workflow_get(data);
+    }
+
+    // 实时监听
+    @msg(CmdType.workflow_realtime)
+    async workflow_realtime(data: WsData<WorkFlowRealTimeReq>) {
+        return workflowService.workflow_realtime(data);
+    }
+
+    @msg(CmdType.workflow_realtime_one_req)
+    async workflow_realtime_one(data: WsData<WorkFlowRealTimeOneReq>) {
+        return workflowService.workflow_realtime_one(data);
     }
 
 }

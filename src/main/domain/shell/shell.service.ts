@@ -77,7 +77,7 @@ const reset = '\x1b[0m';   // 重置颜色
 
 let word_detection = new word_detection_js();
 // let word_detection_map = new Map<string, string>(); // 暂时不需要完整的路径
-let PATH = "";
+export let SYS_PATH = "";
 const s_f = (sysType === "win" ? ";" : ":");
 let PATH_file_total = 0; // win我的电脑 也就三千多个没必要上 c++版的了
 const exec_map = {// windwos文件命令执行优先级
@@ -94,8 +94,8 @@ export class ShellService {
             word_detection.clear();
             word_detection = new word_detection_js();
             PATH_file_total = 0;
-            PATH = process.env.PATH +s_f + settingService.get_env_list();
-            for (const item of PATH.split(s_f)) {
+            SYS_PATH = process.env.PATH +s_f + settingService.get_env_list();
+            for (const item of SYS_PATH.split(s_f)) {
                 try {
                     if (fs.existsSync(item)) {
                         // 如果路径存在，使用 fs.statSync() 判断是否为目录
@@ -134,6 +134,7 @@ export class ShellService {
         const pojo = data.context as ShellInitPojo;
         if(pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
+        userService.check_user_path((data.wss as Wss).token,sysPath); // 系统路径也检查一下
         const user_data = userService.get_user_info_by_token((data.wss as Wss).token);
         const ptyProcess = new PtyShell({
             cols: pojo.cols,
