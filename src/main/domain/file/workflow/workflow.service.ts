@@ -560,7 +560,7 @@ export class WorkflowService {
         const token: string = (data.wss as Wss).token;
         const pojo = data.context as WorkflowGetReq;
         const root_path = settingService.getFileRootPath(token);
-        const dir_path = path.join(root_path, pojo.dir_path,workflow_dir_name);
+        const dir_path = path.join(root_path, decodeURIComponent(pojo.dir_path),workflow_dir_name);
         const basedata = new Base_data_util({base_dir:dir_path});
         const r = new WorkflowGetRsq();
         if(pojo.index !== undefined) {
@@ -593,7 +593,7 @@ export class WorkflowService {
         const root_path = settingService.getFileRootPath(token);
         const dir_path = path.join(root_path, pojo.dir_path);
         const runing_filename_list = [];
-        const parent = removeTrailingPath(dir_path);
+        const parent = removeTrailingPath(decodeURIComponent(dir_path));
         for (const key of work_exec_map.keys()) {
             const child = removeTrailingPath(path.dirname(key));
             if(parent === child) {

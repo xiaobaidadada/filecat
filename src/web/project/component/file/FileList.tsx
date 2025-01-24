@@ -119,7 +119,6 @@ export default function FileList() {
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
             if(item.name.endsWith('workflow.yml') && !have_workflow_water) {
-                set_workflow_show_click(true)
                 have_workflow_water = true;
                 workflow_watcher();
             }
@@ -127,8 +126,8 @@ export default function FileList() {
         for (const folder of data.folders??[]) {
             if(folder.name === workflow_dir_name) {
                 // 如果有workflow
+                set_workflow_show_click(true)
                 if(!have_workflow_water) {
-                    set_workflow_show_click(true)
                     workflow_watcher()
                 }
 
