@@ -144,7 +144,7 @@ class work_children {
         this.filename = path.basename(this.yaml_path);
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
         // 环境变量设置
-        this.env = yaml_data.env;
+        this.env = yaml_data.env??{};
         this.env['filecat_user_id'] = param.filecat_user_id;
         this.env['filecat_user_name'] = param.filecat_user_name;
         this.env['filecat_user_note'] = param.filecat_user_note;
@@ -558,7 +558,7 @@ export class WorkflowService {
             work_exec_map.set(file_path, worker);
             try {
                 await worker.init({
-                    filecat_user_id:user_info.user_id,
+                    filecat_user_id:userService.get_user_id(user_info.username),
                     filecat_user_name:user_info.username,
                     filecat_user_note:user_info.note
                 });
