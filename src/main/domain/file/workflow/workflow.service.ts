@@ -420,6 +420,7 @@ class work_children {
                         break;
                     }
                     step.running_type = running_type.running;
+                    this.send_all_wss();
                     const step_satrt_time = Date.now();
                     if (step["use-yml"]) {
                         // 执行另一个文件
