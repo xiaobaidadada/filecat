@@ -64,7 +64,7 @@ export interface job_item {
     key: string; // 是job的key属性
     cwd: string;
     name: string;
-    need_job: string | undefined;
+    "need-job": string | undefined;
     steps: step_item[];
     repl?:boolean;
 
