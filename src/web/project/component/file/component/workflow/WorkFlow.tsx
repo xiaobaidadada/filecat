@@ -247,11 +247,11 @@ export function WorkFlow(props) {
                                           }}
                                               handlerEnter={(v)=>{search_run_name(v)}}
                                           />
-                                          <ActionButton icon={"refresh"} title={t("刷新")} onClick={()=>{}}/>
+                                          {/*<ActionButton icon={"refresh"} title={t("刷新")} onClick={()=>{}}/>*/}
                             </div>}
                             rightBottomCom={<span className={" div-row "}>
-                                <span>total {total} ;</span>
-                                <span>now {Math.abs(page_num)} </span>
+                                {/*<span>total {total} ;</span>*/}
+                                <span>{Math.abs(page_num)}/{total}</span>
                                 <InputText placeholder={`max page ${max_page_num}`} handleInputChange={(v) => {
                                     input_page_num = parseInt(v);
                                 }}
@@ -260,7 +260,9 @@ export function WorkFlow(props) {
                                                    NotyFail("illegal page num")
                                                    return;
                                                }
-                                               get_page(0 - input_page_num)
+                                               const page = 0 - input_page_num;
+                                               set_page_num(page)
+                                               get_page(page)
                                            }}
                                 />
                                 <ActionButton icon={"navigate_before"} onClick={() => {
