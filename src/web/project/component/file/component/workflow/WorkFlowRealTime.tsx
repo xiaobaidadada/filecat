@@ -29,11 +29,6 @@ export function WorkFlowRealTime(props) {
     const [terminalState,setTerminalState] = useState(undefined)
     const [step_tree_list, set_step_tree_list] = useState([] as workflow_realtime_tree_list);
 
-
-    const task_headers = [t("序号"),t("运行名称"), t("状态"), t("运行时长"),t("日期"), t("操作"),];
-    const job_headers = [t("名称"), t("状态"),t("cwd"),t("运行时长"), t("操作")];
-
-
     const render_list = (list:workflow_realtime_tree_list)=>{
         for(const item of list){
             if(item?.extra_data?.running_type === running_type.success){
