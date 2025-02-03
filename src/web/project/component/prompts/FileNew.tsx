@@ -20,6 +20,10 @@ run-name: 构建项目 # 用于日志显示的名字
 env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量 {{{ }}} 是非转义方式 采用 Mustache js
   version: 1
   cmd_install: npm install
+  # 有几个参数是每次执行自动添加的
+#  filecat_user_id: 1 # 用户id
+#  filecat_user_name: admin # 用户名字
+#  filecat_user_note: 备注 #用户备注
 
 username: admin # 需要执行用户的账号 该脚本需要运行在某个用户下
 user_id: 1 # 会覆盖 username 对应的用户 id 只允许特定设置的用户在这里可以被设置 运行

@@ -22,6 +22,7 @@ import {getSys, sysType} from "../../shell/shell.service";
 import {Base_data_util} from "../../data/basedata/base_data_util";
 import {removeTrailingPath} from "../../../../common/StringUtil";
 import {tree_list, workflow_realtime_tree_list} from "../../../../common/req/common.pojo";
+import {formatter_time} from "../../../../common/ValueUtil";
 
 const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
@@ -128,14 +129,26 @@ class work_children {
         }
     }
 
-    public async init(param?: { env: any,not_log?:boolean,yaml_data?:any,yaml_path?:string }) {
+    public async init(param?: {
+        env?: any,
+        not_log?:boolean,
+        yaml_data?:any,
+        yaml_path?:string,
+        filecat_user_id?:string,
+        filecat_user_name?:string,
+        filecat_user_note?:string
+    }) {
         if(param?.yaml_path) {
             this.yaml_path = param.yaml_path;
         }
         this.filename = path.basename(this.yaml_path);
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
+        // 环境变量设置
         this.env = yaml_data.env;
-            // 获取用户 id
+        this.env['filecat_user_id'] = param.filecat_user_id;
+        this.env['filecat_user_name'] = param.filecat_user_name;
+        this.env['filecat_user_note'] = param.filecat_user_note;
+        // 获取用户 id
         let user_id = `${yaml_data.user_id??""}`;
         if (!user_id) {
             user_id = userService.get_user_id(`${yaml_data.username}`);
@@ -192,8 +205,8 @@ class work_children {
                 }
             }
         }
+        yaml_data['run-name'] = Mustache.render(yaml_data['run-name'], this.env??"");
         this["run-name"] = `${yaml_data['run-name']??""}`;
-        yaml_data['run-name'] = Mustache.render(this["run-name"], this.env??"");
         this.name = `${yaml_data.name}`;
         if (param?.env) {
             for (const key of Object.keys(param.env)) {
@@ -250,7 +263,7 @@ class work_children {
                 name:this.name,
                 "run-name":this["run-name"],
                 is_success: fail_list.length === 0,
-                timestamp:new Date().toISOString(),
+                timestamp:formatter_time(new Date()),
                 duration:`${((Date.now() - start_time)/1000).toFixed(2)} s` // s 秒
             }));
         } catch (error) {
@@ -413,7 +426,14 @@ class work_children {
                         const yaml = this.import_files_map.get(step["use-yml"]);
                         if(yaml) {
                             const worker = new work_children(undefined, this.workflow_dir_path);
-                            await worker.init({env:step['with-env'],yaml_data:yaml.yaml_data,yaml_path:yaml.yaml_path});
+                            await worker.init({
+                                env:step['with-env'],
+                                yaml_data:yaml.yaml_data,
+                                yaml_path:yaml.yaml_path,
+                                filecat_user_name: this.env['filecat_user_name'],
+                                filecat_user_id: this.env['filecat_user_id'],
+                                filecat_user_note: this.env['filecat_user_note'],
+                            });
                             this.worker_children_use_yml_map.set(step["use-yml"],worker);
                             let success_list,fail_list;
                             try {
@@ -530,13 +550,18 @@ export class WorkflowService {
         const pojo = data.context as WorkflowReq;
         const root_path = settingService.getFileRootPath(token);
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+        const user_info = userService.get_user_info_by_token(token);
         if (pojo.run_type === WorkRunType.start) {
             if (work_exec_map.get(file_path))
                 throw "Workflow exec task already exists";
             const worker = new work_children(file_path);
             work_exec_map.set(file_path, worker);
             try {
-                await worker.init();
+                await worker.init({
+                    filecat_user_id:user_info.user_id,
+                    filecat_user_name:user_info.username,
+                    filecat_user_note:user_info.note
+                });
             } catch (e){
                 work_exec_map.delete(file_path);
                 this.online_change_push();
@@ -606,6 +631,23 @@ export class WorkflowService {
             });
         }
         r.list = [...running_list,...basedata.find_page(pojo.page_num,pojo.page_size,true)];
+        r.total = basedata.find_num();
+        return r;
+    }
+
+    public async workflow_search_by_run_name(data:WsData<WorkflowGetReq>) {
+        const token: string = (data.wss as Wss).token;
+        const pojo = data.context as WorkflowGetReq;
+        const root_path = settingService.getFileRootPath(token);
+        const dir_path = path.join(root_path, decodeURIComponent(pojo.dir_path),workflow_dir_name);
+        const basedata = new Base_data_util({base_dir:dir_path});
+        const r = new WorkflowGetRsq();
+        const regex = new RegExp(pojo.search_name);
+        // @ts-ignore
+        r.list = basedata.find_list((index,meta)=>{
+            if(!meta)return false;
+            return regex.test(JSON.parse(meta)['run-name']);
+        });
         r.total = basedata.find_num();
         return r;
     }

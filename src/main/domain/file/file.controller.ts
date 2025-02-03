@@ -235,7 +235,6 @@ export class FileController {
     @msg(CmdType.workflow_exec)
     async workflow_exec(data: WsData<WorkflowReq>) {
         userService.check_user_auth((data.wss as Wss).token, UserAuth.workflow_exe);
-        // todo 数据库位置查找失败
         await workflowService.workflow_exec(data);
         return "";
     }
@@ -255,6 +254,11 @@ export class FileController {
     @msg(CmdType.workflow_realtime_one_req)
     async workflow_realtime_one(data: WsData<WorkFlowRealTimeOneReq>) {
         return workflowService.workflow_realtime_one(data);
+    }
+
+    @msg(CmdType.workflow_search_by_run_name)
+    async workflow_search_by_run_name(data: WsData<WorkFlowRealTimeOneReq>) {
+        return workflowService.workflow_search_by_run_name(data);
     }
 
 }
