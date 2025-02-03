@@ -15,6 +15,7 @@ import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySucess} from "../../util/noty";
+import {Http_controller_router} from "../../../../common/req/http_controller_router";
 
 
 export function  Sys() {
@@ -24,6 +25,7 @@ export function  Sys() {
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
 
@@ -34,6 +36,7 @@ export function  Sys() {
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
     const [language,set_language] =  useState("");
+
 
     const update = async () =>{
         if (!username || !password) {
@@ -56,7 +59,7 @@ export function  Sys() {
                 return;
             }
         }
-        const result = await settingHttp.post("sys_option/status/save", {type:status_open.cyc,value:recycle_dir,open:recycle_open});
+        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:status_open.cyc,value:recycle_dir,open:recycle_open});
         if (result.code === RCode.Sucess) {
             NotySucess("修改成功")
         }
@@ -192,7 +195,15 @@ export function  Sys() {
         </Column>
         <Column widthPer={30}>
             <Dashboard>
-                <Card title={t("文件回收站")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={set_recycle_save}/>}>
+                <Card
+                      self_title={<span className={" div-row "}><h2>{t("文件回收站")}</h2> <ActionButton icon={"info"} onClick={()=>{
+                          set_prompt_card({open:true,title:"信息",context_div : (
+                                  <div >
+                                      {t(`格式：[被删除的文件所在父目录] 回收站目录 [; ...]`)}
+                                  </div>
+                              )})
+                      }} title={"信息"}/></span>}
+                      rightBottomCom={<ButtonText text={t('确定修改')} clickFun={set_recycle_save}/>}>
                     <InputText placeholder={t('目录')}  value={recycle_dir} handleInputChange={(value)=>{set_recycle_dir(value)}} />
                     <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
 

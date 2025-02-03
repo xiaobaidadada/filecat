@@ -182,19 +182,32 @@ class FileService extends FileCompress {
         }
         // 回收站判断
         if(settingService.get_recycle_bin_status()) {
-            let cyc_path = settingService.get_recycle_dir();
-            cyc_path = removeTrailingPath(cyc_path);
             sysPath = removeTrailingPath(sysPath);
-            if(cyc_path === sysPath) {
-                throw "cyc dir not to del"; // 回收站不能被删除
-            }
-            if(!userService.isSubPath(cyc_path,sysPath) && !!cyc_path) {
-                // 如果不是回收站内的文件 不做真的删除 而是剪切 且回收站路径存在
+            const cyc_map_list = settingService.get_recycle_dir_map_list();
+            for (const it of cyc_map_list) {
+                let cyc_p;
+                let check_cyc_p= "";
+                if(it.length >1 && !!it[1]) {
+                    cyc_p = removeTrailingPath(it[1]);
+                    check_cyc_p = it[0];
+                } else {
+                    cyc_p = removeTrailingPath(it[0]); // 没有设置预先被删除目录
+                }
+                if(cyc_p === sysPath) {
+                    throw "cyc dir not to del"; // 回收站不能被删除
+                }
+                if(check_cyc_p !== "" && !userService.isSubPath(check_cyc_p,sysPath)) {
+                    continue; // 不属于这个回收站目录
+                }
+                if(userService.isSubPath(cyc_p,sysPath)) {
+                    continue; // 是回收站内的文件
+                }
+                // 开始回收
                 const ext_name = path.extname(sysPath);
                 const fileName = path.basename(filePath, ext_name);
-                let p = path.join(cyc_path,`${fileName}${ext_name}`);
+                let p = path.join(cyc_p,`${fileName}${ext_name}`);
                 if(fs.existsSync(p)) {
-                    p = path.join(cyc_path,`${fileName}_${Date.now()}${ext_name}`);
+                    p = path.join(cyc_p,`${fileName}_${Date.now()}${ext_name}`);
                     if(fs.existsSync(p)) {
                         throw "try again";
                     }
@@ -202,6 +215,27 @@ class FileService extends FileCompress {
                 this.cut_exec(sysPath,p);
                 return Sucess("1");
             }
+            // 如果不是回收站内的文件 不做真的删除 而是剪切
+
+            // let cyc_path = settingService.get_recycle_dir_str();
+            // cyc_path = removeTrailingPath(cyc_path);
+            // if(cyc_path === sysPath) {
+            //     throw "cyc dir not to del"; // 回收站不能被删除
+            // }
+            // if(!userService.isSubPath(cyc_path,sysPath) && !!cyc_path) {
+            //     // 如果不是回收站内的文件 不做真的删除 而是剪切 且回收站路径存在
+            //     const ext_name = path.extname(sysPath);
+            //     const fileName = path.basename(filePath, ext_name);
+            //     let p = path.join(cyc_path,`${fileName}${ext_name}`);
+            //     if(fs.existsSync(p)) {
+            //         p = path.join(cyc_path,`${fileName}_${Date.now()}${ext_name}`);
+            //         if(fs.existsSync(p)) {
+            //             throw "try again";
+            //         }
+            //     }
+            //     this.cut_exec(sysPath,p);
+            //     return Sucess("1");
+            // }
         }
         // 真的删除
         const stats = fs.statSync(sysPath);

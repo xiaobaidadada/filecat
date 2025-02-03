@@ -190,8 +190,32 @@ export class SettingService {
         return DataUtil.get(data_common_key.recycle_bin_status)??false;
     }
 
-    public get_recycle_dir():string{
-        return DataUtil.get(data_common_key.recycle_bin_key) ?? "";
+    public get_recycle_dir_str():string{
+        let v = DataUtil.get(data_common_key.recycle_bin_key) ?? "";
+        if(typeof v !== "string"){
+            const l = v as string[][];
+            v= "";
+            const item_l = [];
+            for (const item of l) {
+                item_l.push(item.join(' '));
+            }
+            v = item_l.join(";");
+        }
+        return v as string;
+    }
+
+    public get_recycle_dir_map_list():string[][]{
+        let v = DataUtil.get(data_common_key.recycle_bin_key) ?? []
+        if(typeof v === "string"){
+            const list = v.split(";");
+            const key_map_list:string[][] = [];
+            for (const item of list) {
+                const l = item.split(' ');
+                key_map_list.push(l);
+            }
+            v = key_map_list;
+        }
+        return v as string[][];
     }
 
     getToken() {
