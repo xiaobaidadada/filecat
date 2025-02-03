@@ -65,7 +65,7 @@ export function WorkFlow(props) {
             v.index = value.index;
             return v}))
         set_total(pojo.total);
-        set_max_page_num(parseInt((pojo.total / page_size).toFixed(0)))
+        set_max_page_num(parseInt(((pojo.total / page_size)+1).toFixed(0)))
     }
 
     const search_run_name = async (search_name)=>{
@@ -76,14 +76,13 @@ export function WorkFlow(props) {
         const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_search_by_run_name,req);
         if(!data)return;
         const pojo = data.context as WorkflowGetRsq;
-        // console.log(pojo.list)
         set_task_rows(pojo.list.map(value => {
             // @ts-ignore
             const v = typeof value.meta === "string"?JSON.parse(value.meta):value.meta;
             v.index = value.index;
             return v}))
         set_total(pojo.total);
-        set_max_page_num(parseInt((pojo.total / page_size).toFixed(0)))
+        set_max_page_num(parseInt(((pojo.total / page_size)+1).toFixed(0)))
         set_page_num(0)
         set_search_name_status(false);
     }

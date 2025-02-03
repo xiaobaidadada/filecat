@@ -105,7 +105,7 @@ export class Base_data_util {
             let start = buffer.readUInt32LE(0);
             const meta = this.get_meata(start,data_fd);
             if(judge_handle(num,meta)) {
-                r.push({meta: meta, data: this.get_data(start,data_fd)})
+                r.push({meta: meta, data: this.get_data(start,data_fd),index:num})
             }
             position+=4;
         }
