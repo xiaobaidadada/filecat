@@ -52,7 +52,7 @@ class work_children {
 
 
     done_jobs = new Set<string>();
-    need_job_map:Map<string,string> = new Map(); // 对方的key 自己的key job.need_job,job.key
+    need_job_map:Map<string,string> = new Map(); // 对方的key 自己的key job['need-job'],job.key
 
     all_job_resolve;
 
@@ -291,15 +291,15 @@ class work_children {
                 return;
             }
             // 某些 是否需要其它job执行完成 提前做个map
-            if (job.need_job) {
-                if(!this.jobs_map.has(job.need_job)) {
+            if (job['need-job']) {
+                if(!this.jobs_map.has(job['need-job'])) {
                     // 需要的job不存在
-                    this.done_fail_job_handle(job,`job not found ${job.need_job}`);
+                    this.done_fail_job_handle(job,`job not found ${job['need-job']}`);
                     return;
                 }
-                if (!this.done_jobs.has(job.need_job)) {
+                if (!this.done_jobs.has(job['need-job'])) {
                     // need没有完成
-                    this.need_job_map.set(job.need_job,job.key);
+                    this.need_job_map.set(job['need-job'],job.key);
                     // 检测循环依赖
                     let v = this.need_job_map.get(job.key); // 自己是否被依赖
                     const start_v = v;
