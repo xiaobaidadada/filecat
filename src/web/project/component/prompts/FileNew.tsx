@@ -17,7 +17,7 @@ run-name: 构建项目 # 用于日志显示的名字
 # import-files: # 导入多个文件的配置 用于下面的 use-yml 指令
 #     - ./ok.yml
 
-env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量
+env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量 {{{ }}} 是非转义方式 采用 Mustache js
   version: 1
   cmd_install: npm install
 
@@ -63,7 +63,7 @@ export function FileNew(props) {
     const select_item = [
         {title:`${t("空")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".excalidraw"},
-        {title: 'workflow', value:".workflow.yml"},
+        {title: `workflow${t("格式")}`, value:".workflow.yml"},
     ]
     const cancel=()=> {
         setShowPrompt({show: false,type: "",overlay: false,data:{}})
