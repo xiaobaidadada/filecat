@@ -167,7 +167,7 @@ export class ShellService {
                     const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode,data_dir_tem_name.sys_file_dir);
                     // 开启了自定义的处理
                     if (selfHandler) {
-                        const ok = selfHandler.handler((data.wss as Wss).token,exe_cmd,params);
+                        const ok =  selfHandler.handler((data.wss as Wss).token,exe_cmd,params);
                         if(ok !== exec_type.continue) {
                             return ok;
                         }

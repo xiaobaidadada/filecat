@@ -13,6 +13,7 @@ import {userService} from "../user/user.service";
 import fs from "fs"
 import path from "path"
 import {rimraf} from "rimraf";
+import {Http_controller_router} from "../../../common/req/http_controller_router";
 
 @Service()
 @JsonController("/setting")
@@ -253,31 +254,41 @@ export class SettingController {
             self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
             shell_cmd_check_open:settingService.get_shell_cmd_check(), // 自定义cmd判断
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
-            recycle_dir: settingService.get_recycle_dir() // 目录也返回
+            recycle_dir: settingService.get_recycle_dir_str() // 垃圾回收站 目录也返回
         }
         return Sucess(r);
     }
 
-    // 获取系统所有的开关状态
-    @Post("/sys_option/status/save")
-    save_sys_option_status(@Req() ctx,@Body() body:{type:status_open,value:any,open:boolean}) {
+    // 保存系统所有的开关状态
+    @Post(`/${Http_controller_router.setting_sys_option_status_save}`)
+    save_sys_option_status(@Req() ctx,@Body() body:{type:status_open,value:string,open:boolean}) {
         // 获取系统所有功能的状态
         if(body.type === status_open.cyc) {
+            // 文件回收站
             userService.check_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
             DataUtil.set(data_common_key.recycle_bin_status, body.open)
-            if(body.value) {
-                if (!fs.existsSync(body.value)) {
-                   throw "dir not found"
-                }
-                const stats = fs.statSync(body.value);
-                if (!stats.isDirectory()) {
-                    throw "dir not a dir"
-                }
-                if(!path.isAbsolute(body.value)) {
-                    throw "dir not absolute"
-                }
+            if(!body.value) {
+                return Fail("empty value")
             }
-            DataUtil.set(data_common_key.recycle_bin_key, body.value)
+            const list = body.value.split(";");
+            const key_map_list:string[][] = [];
+            for (const item of list) {
+                const l = item.split(' ');
+                for (const it of l) {
+                    if (!fs.existsSync(it)) {
+                        throw "dir not found"
+                    }
+                    const stats = fs.statSync(it);
+                    if (!stats.isDirectory()) {
+                        throw "dir not a dir"
+                    }
+                    if(!path.isAbsolute(it)) {
+                        throw "dir not absolute"
+                    }
+                }
+                key_map_list.push(l);
+            }
+            DataUtil.set(data_common_key.recycle_bin_key, key_map_list);
         }
         return Sucess("1");
     }

@@ -776,6 +776,7 @@ export class PtyShell {
             return;
         }
         const {exe, params} = this.get_exec(this.line);
+        this.history_line_index = -1;
         try {
             let use_noe_pty = false;
             if (this.check_exe_cmd) {
@@ -972,27 +973,47 @@ export class PtyShell {
     }
 
 
+    // 解析命令与参数
     private get_exec(str: string) {
         let exe = "", params = [];
         if (!str) {
             return {exe, params};
         }
         let start = -1;
+        let mate = 0;
         for (let i = 0; i < str.length; i++) {
-            const is_empty = this.is_empty(str[i]);
+            let is_empty = this.is_empty(str[i]);
+            if(mate % 2 !==0 ) {
+                // 已经有特殊字符串开始
+                is_empty = false;
+            }
             if (start === -1 && !is_empty) {
-                // 没有开始 且有非空字符
+                // 开始 没有开始 且有非空字符
                 start = i;
+                if(str[i]==='\''|| str[i]==='"') {
+                    mate = 1;
+                }
             } else if (start !== -1 && (is_empty || i === str.length - 1)) {
-                // 已经开始且遇上空白字符 或者结尾
+                // 结束 已经开始且遇上空白字符 或者结尾
                 const i_p = (i === str.length - 1 && !is_empty) ? str.length : i;
-                if (!exe) {
+                if (exe === "") {
                     exe = str.substring(start, i_p);
+                    mate = 0;
                 } else {
-                    params.push(str.substring(start, i_p));
+                    if(mate === 0) {
+                        // 没有 " ' 括起来的特殊字符串
+                        params.push(str.substring(start, i_p));
+                    } else  {
+                        mate = 0;
+                        params.push(str.substring(start+1, i_p-1));
+                    }
                 }
                 start = -1;
+            } else if(mate !== 0  && (str[i]==='\''|| str[i]==='"')) {
+                // 不是结束也不是开始
+                mate++;
             }
+
         }
         if(start !== -1) {
             params.push(str.substring(start));
