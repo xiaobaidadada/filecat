@@ -38,10 +38,10 @@ export class WorkflowReq {
 export const workflow_dir_name = ".filecat_work_flows";
 
 export enum running_type {
-    not,
-    running,
-    success,
-    fail
+    not = 0,
+    running= 1,
+    success= 2,
+    fail= 3
 }
 export interface step_item {
      run: string; // 运行命令
@@ -66,6 +66,7 @@ export interface job_item {
     name: string;
     need_job: string | undefined;
     steps: step_item[];
+    repl?:boolean;
 
     // 额外字段
     fail_message?: string;
