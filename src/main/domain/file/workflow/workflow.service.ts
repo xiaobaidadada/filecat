@@ -52,7 +52,7 @@ class work_children {
 
 
     done_jobs = new Set<string>();
-    need_job_map:Map<string,string> = new Map(); // 对方的key 自己的key job['need-job'],job.key
+    need_job_map:Map<string,Set<string>> = new Map(); // 对方的key 自己的key job['need-job'],job.key value是某个Job被依赖(need-job指向它)的集合
 
     all_job_resolve;
 
@@ -281,6 +281,19 @@ class work_children {
          this.all_job_resolve("ok"); // 只要有一个失败 全部都失败 不再继续执行了
     }
 
+    private have_need_job_loop(start_job_name:string,job_name:string) {
+        const other_need_me_set = this.need_job_map.get(job_name);
+        if(other_need_me_set) {
+            if(other_need_me_set.has(start_job_name)) return true; // job依赖最开始的job(这个job有依赖循环)
+            for (const name of other_need_me_set) {
+                if(this.have_need_job_loop(start_job_name,name)) {
+                    return true; // 检测是否存在 依赖自己的还依赖别人
+                }
+            }
+        }
+        return false;
+    }
+
     public async run_job(job: job_item) {
         try {
             job.running_type = running_type.running;
@@ -299,19 +312,20 @@ class work_children {
                 }
                 if (!this.done_jobs.has(job['need-job'])) {
                     // need没有完成
-                    this.need_job_map.set(job['need-job'],job.key);
-                    // 检测循环依赖
-                    let v = this.need_job_map.get(job.key); // 自己是否被依赖
-                    const start_v = v;
-                    while (v) {
-                        v = this.need_job_map.get(v);
-                        if(v === start_v) {
-                            // 出现了循环依赖
-                            this.done_fail_job_handle(job,"have cyclic need")
-                            return;
-                        }
+                    let set = this.need_job_map.get(job['need-job']);
+                    if(!set) {
+                        set = new Set();
+                        this.need_job_map.set(job['need-job'], set);
                     }
-                    // 先不执行了
+                    set.add(job.key);
+                    // this.need_job_map.set(job['need-job'],job.key);
+                    // 检测循环依赖
+                    if(this.have_need_job_loop(job.key,job.key)) {
+                        // 出现了循环依赖
+                        this.done_fail_job_handle(job,"have cyclic need")
+                        return;
+                    }
+                    // need的情况 先不执行
                     return;
                 }
             }
@@ -502,17 +516,29 @@ class work_children {
             // 标记自己完成 有step 失败了 整体还是会完成
             this.done_jobs.add(job.key);
             // 推送进度
-            job.running_type = running_type.success;
+            if(job.code === 0) {
+                job.running_type = running_type.success;
+            } else {
+                job.running_type = running_type.fail;
+            }
             this.send_all_wss();
             // 判断need中是否有可以执行的了
-            const job_key = this.need_job_map.get(job.key);
-            if (job_key) {
-                if(job_key === job.key) {
-                    // 是自己
-                    this.need_job_map.delete(job.key);
+            const job_set = this.need_job_map.get(job.key);
+            if (job_set) {
+                if(job_set.has(job.key)) {
+                    // 是自己 循环的情况不会出现
+                    // this.need_job_map.delete(job.key);
+                    job_set.delete(job.key);
                 } else {
                     // 需要自己的 不是自己 执行它
-                    await this.run_job(this.jobs_map.get(job_key));
+                    for (const it of job_set) {
+                        this.run_job(this.jobs_map.get(it)).catch(e=>{
+                            throw e;
+                        }).then(()=>{
+
+                        })
+                    }
+                    // await this.run_job(this.jobs_map.get(job_key));
                 }
             }
             // 判断是否完全完成 如果有循环依赖无法走到这里
