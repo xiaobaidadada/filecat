@@ -108,7 +108,8 @@ export enum CmdType {
     workflow_get,
     workflow_realtime,
     workflow_realtime_one_req,
-    workflow_realtime_one_rsq
+    workflow_realtime_one_rsq,
+    workflow_search_by_run_name,
 
 }
 

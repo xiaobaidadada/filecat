@@ -52,7 +52,7 @@ function Input(props: {
     type?: string,
     handleInputChange?: (event: string, target: any) => void,
     value?: string,
-    handlerEnter?:()=>void,
+    handlerEnter?:(v)=>void,
     focus?:boolean,
     no_border?:boolean,
     left_placeholder?:string,
@@ -98,7 +98,7 @@ function Input(props: {
                     onKeyPress={(event) => {
                         if (event.key === 'Enter') {
                             if (props.handlerEnter) {
-                                props.handlerEnter();
+                                props.handlerEnter(event.target.value);
                             }
                         }
                     }}
@@ -124,7 +124,7 @@ export function InputText(props: {
     placeholderOut?: string,
     handleInputChange?: (value: string) => void,
     value?: string,
-    handlerEnter?: () => void,
+    handlerEnter?: (v) => void,
     no_border?: boolean,
     left_placeholder?: string,
     right_placeholder?:string

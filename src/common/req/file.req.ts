@@ -98,6 +98,8 @@ export class WorkflowGetReq {
 
     index:number; // 数据的索引 如果存在忽略 page参数
 
+    search_name:string;
+
 }
 export type work_flow_record = base_data_record<
     {

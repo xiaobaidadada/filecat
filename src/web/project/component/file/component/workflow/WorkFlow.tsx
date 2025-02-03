@@ -40,6 +40,8 @@ export function WorkFlow(props) {
     const [page_size,set_page_size] = useState(10);
     const [total,set_total] = useState(0);
     const [max_page_num,set_max_page_num] = useState(0);
+    const [search_name,set_search_name] = useState("")
+    const [search_name_status,set_search_name_status] = useState(false)
 
     const task_headers = [t("序号"),t("运行名称"), t("状态"), t("运行时长"),t("日期"), t("操作"),];
     const job_headers = [t("名称"), t("状态"),t("cwd"),t("运行时长"), t("操作")];
@@ -64,6 +66,26 @@ export function WorkFlow(props) {
             return v}))
         set_total(pojo.total);
         set_max_page_num(parseInt((pojo.total / page_size).toFixed(0)))
+    }
+
+    const search_run_name = async (search_name)=>{
+        const req = new WorkflowGetReq();
+        req.search_name = search_name;
+        req.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        set_search_name_status(true);
+        const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_search_by_run_name,req);
+        if(!data)return;
+        const pojo = data.context as WorkflowGetRsq;
+        // console.log(pojo.list)
+        set_task_rows(pojo.list.map(value => {
+            // @ts-ignore
+            const v = typeof value.meta === "string"?JSON.parse(value.meta):value.meta;
+            v.index = value.index;
+            return v}))
+        set_total(pojo.total);
+        set_max_page_num(parseInt((pojo.total / page_size).toFixed(0)))
+        set_page_num(0)
+        set_search_name_status(false);
     }
 
     const initTerminal =  async () => {
@@ -216,32 +238,43 @@ export function WorkFlow(props) {
                             <CardFull self_title={<span className={" div-row "}><h2>{t("历史记录")}</h2>
                                 {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
-                                      titleCom={<div><ActionButton icon={"refresh"} title={t("刷新")} onClick={()=>{}}/></div>}
+                                      titleCom={<div className={" div-row "}>
+                                          <InputText
+                                              disabled={search_name_status}
+                                              value={search_name}
+                                              placeholder={"搜索运行名称(支持正则)"} handleInputChange={(v)=>{
+                                              set_search_name(search_name)
+                                          }}
+                                              handlerEnter={(v)=>{search_run_name(v)}}
+                                          />
+                                          <ActionButton icon={"refresh"} title={t("刷新")} onClick={()=>{}}/>
+                            </div>}
                             rightBottomCom={<span className={" div-row "}>
-                                <span>total {total} </span>
-                                <InputText  placeholder={`max page ${max_page_num}`} handleInputChange={(v)=>{
+                                <span>total {total} ;</span>
+                                <span>now {Math.abs(page_num)} </span>
+                                <InputText placeholder={`max page ${max_page_num}`} handleInputChange={(v) => {
                                     input_page_num = parseInt(v);
                                 }}
-                                            handlerEnter={()=>{
-                                                if(input_page_num<1 || input_page_num> max_page_num) {
-                                                    NotyFail("illegal page num")
-                                                    return;
-                                                }
-                                                get_page(0-input_page_num)
-                                            }}
+                                           handlerEnter={() => {
+                                               if (input_page_num < 1 || input_page_num > max_page_num) {
+                                                   NotyFail("illegal page num")
+                                                   return;
+                                               }
+                                               get_page(0 - input_page_num)
+                                           }}
                                 />
-                                <ActionButton icon={"navigate_before"} onClick={()=>{
-                                    const n = page_num+1;
-                                    if(n>-1) {
+                                <ActionButton icon={"navigate_before"} onClick={() => {
+                                    const n = page_num + 1;
+                                    if (n > -1) {
                                         NotyFail("max page num")
                                         return;
                                     }
                                     set_page_num(n)
                                     get_page(n)
                                 }} title={"上一页"}/>
-                                <ActionButton icon={"navigate_next"} onClick={()=>{
-                                    const n = page_num-1;
-                                    if(Math.abs(n)>max_page_num) {
+                                <ActionButton icon={"navigate_next"} onClick={() => {
+                                    const n = page_num - 1;
+                                    if (Math.abs(n) > max_page_num) {
                                         NotyFail("min page num")
                                         return
                                     }
@@ -249,7 +282,7 @@ export function WorkFlow(props) {
                                     get_page(n)
                                 }} title={"下一页"}/>
                 </span>}>
-                                <Table headers={task_headers} rows={task_rows.map((item, index) => {
+                            <Table headers={task_headers} rows={task_rows.map((item, index) => {
                                     let div;
                                     if(item.is_running) {
                                         div = <div><StatusCircle />{t('正在运行')}</div>
@@ -260,7 +293,9 @@ export function WorkFlow(props) {
                                     }
                                     const new_list = [
                                         <p>{item.index}</p>,
-                                        <p>{item['run-name']}</p>,
+                                        <p style={{
+                                            wordWrap: 'break-word',
+                                        }}>{item['run-name']}</p>,
                                         div,
                                         <span>{item.duration}</span>,
                                         <span>{item.timestamp}</span>,

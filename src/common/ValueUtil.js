@@ -55,3 +55,17 @@ export function formatFileSize(bytes) {
     }
 }
 
+// 格式化时间 2025/02/04 03:37:07
+export function formatter_time(date){
+    const formatter = new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false // 使用24小时制
+    });
+    return formatter.format(date);
+}
+

@@ -77,12 +77,21 @@ export class Base_data_util {
      * @returns {null}
      */
     find_one(judge_handle) {
+        const list = this.find_list(judge_handle);
+        if(list.size === 0) {
+            return null;
+        }
+        return list[0];
+    }
+
+    // 从头到尾的搜索没有索引 索引功能以后再添加
+    find_list(judge_handle){
         let position = 0;
         let buffer = Buffer.alloc(4); // 每个元素 都是 4
         let num = 0; // 元素位置从1开始
         const list_fd = fs.openSync(path.join(this.base_dir,filecat_meta_list_filename), "r");
         const data_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r');
-        let r = null;
+        const r = [];
         while (1) {
             const bytesRead = fs.readSync(list_fd, buffer,
                 0, // 相对于当前的偏移位置
@@ -90,18 +99,15 @@ export class Base_data_util {
                 position // 当前位置 往前推进了一点
             );
             if(bytesRead < 4) {
-                return null;
+                return r;
             }
             num++;
             let start = buffer.readUInt32LE(0);
             const meta = this.get_meata(start,data_fd);
             if(judge_handle(num,meta)) {
-                r = {meta: meta, data: this.get_data(start,data_fd)};
-                break;
+                r.push({meta: meta, data: this.get_data(start,data_fd)})
             }
-            // return {meta: meta, data: this.get_data(start,data_fd)};
             position+=4;
-            // break
         }
         fs.closeSync(list_fd);
         fs.closeSync(data_fd);
