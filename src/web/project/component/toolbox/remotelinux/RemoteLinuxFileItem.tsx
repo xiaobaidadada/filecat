@@ -99,11 +99,11 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
-                let model = getEditModelType(name);
-                if (!model) {
-                    model = "txt"
-                }
-                if (model) {
+                // let model = getEditModelType(name);
+                // if (!model) {
+                //     model = "txt"
+                // }
+                // if (model) {
                     // 双击文件
                     const open_file = async ()=>{
                         const req = new SshPojo();
@@ -111,7 +111,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                         req.file = joinPaths(...shellNowDir,name);
                         const rsq = await sshHttp.post("get/file/text",req);
                         setEditorSetting({
-                            model,
+                            // model,
                             open: true,
                             fileName: props.name,
                             save: async (context) => {
@@ -119,7 +119,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                                 const rsq = await sshHttp.post("update/file/text",req);
                                 if (rsq.code === 0) {
                                     editor_data.set_value_temp('')
-                                    setEditorSetting({open: false, model: '', fileName: '', save: null})
+                                    setEditorSetting({open: false,  fileName: '', save: null})
                                 }
                             }
                         })
@@ -139,7 +139,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                     }
                     await open_file();
                     return;
-                }
+                // }
             }
         }
     }
