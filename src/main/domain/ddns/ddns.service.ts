@@ -1,4 +1,3 @@
-import si from "systeminformation";
 import {Ali, DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, getIpType, Tengxun} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {Fail, Sucess} from "../../other/Result";

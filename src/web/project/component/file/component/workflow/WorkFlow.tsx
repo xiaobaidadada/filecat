@@ -23,6 +23,7 @@ import TreeView from "../../../../../meta/component/TreeView";
 import {tree_list} from "../../../../../../common/req/common.pojo";
 import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
+import { max_pages } from "../../../../../../common/ValueUtil";
 
 let terminal_init_resolve;
 let terminal_value;
@@ -65,7 +66,7 @@ export function WorkFlow(props) {
             v.index = value.index;
             return v}))
         set_total(pojo.total);
-        set_max_page_num(parseInt(((pojo.total / page_size)+1).toFixed(0)))
+        set_max_page_num(max_pages(pojo.total,page_size))
     }
 
     const search_run_name = async (search_name)=>{
@@ -82,7 +83,7 @@ export function WorkFlow(props) {
             v.index = value.index;
             return v}))
         set_total(pojo.total);
-        set_max_page_num(parseInt(((pojo.total / page_size)+1).toFixed(0)))
+        set_max_page_num(max_pages(pojo.total,page_size))
         set_page_num(0)
         set_search_name_status(false);
     }
