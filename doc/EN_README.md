@@ -1,95 +1,87 @@
-Here’s the translation of the provided document into English:
+Here's the English translation of the `filecat` README:
 
 ---
 
 # ![](./src/web/meta/resources/img/logo-70.png) filecat
 
 - 中文 | [English](./doc/EN_README.md)
-- Use [filebrowser](https://github.com/filebrowser/filebrowser) with an attractive UI to browse files, and also has server management capabilities.
-- Install with `npm install filecat -g` and then run `filecat`. Use the parameter `filecat --help` to get more information on available options. It also supports running via **binary** directly. For more usage details, please refer to the sections below.
+- FileCat helps developers manage their Linux servers and provides nearly all the essential tools related to development. Features include a remote terminal with permissions (supporting RDP desktop and command interception), SSH proxy, online file browsing, editing, decompression, whiteboard drawing, automation build, system monitoring, Docker management, real-time log viewing for large files, and more (currently supports Linux and Windows but not macOS).
+- It is a service program accessible via the web. You can globally install it with the npm command `npm install filecat -g`, then run it with the `filecat` command. Use `filecat --help` for more information on parameters. It also supports **binary** execution, and more usage and parameters are explained below.
 
-## I. Screenshot
-![Demo](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+## 1. Screenshot
+![Showcase](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
-## II. Usage
+## 2. Usage
 ### 1. Experience
-URL: http://116.198.245.137:5569/
-Username/Password: `admin`/`admin`
+URL: [http://116.198.245.137:5569/](http://116.198.245.137:5569/)  
+Username and password: `admin` / `admin`
 
-### 2. Running via npm
-- If your server has Node.js and npm installed, use `npm install filecat -g` for global installation, then run with the `filecat` command, or use `npm install filecat` to install it in the current project and run with `npx filecat`.
-- If your network connection is not stable, you can use the Taobao mirror source: `npm config set registry https://registry.npmmirror.com`. Alternatively, you can install using the mirror temporarily with `npm install -g filecat --registry https://registry.npmmirror.com`.
-- Many dependencies are prebuilt and hosted on GitHub (supporting Node versions 16, 18, 20, 22). If your host has slow access to GitHub (retrying might help), you'll need to compile them manually. If you can't access GitHub at all, you can use the binary or Docker methods below. For compilation issues on Windows, refer to this link: [Compilation issues on Windows](https://blog.csdn.net/jjocwc/article/details/134152602).
+### 2. Run via npm
+- If Node.js and npm are already installed on your server, use `npm install filecat -g` for global installation and run the program with the `filecat` command. Alternatively, you can install it locally with `npm install filecat` and use `npx filecat` to run it.
+- For slower network speeds, you can use the Taobao mirror with the command: `npm config set registry https://registry.npmmirror.com`. Or install using the Taobao mirror temporarily: `npm install -g filecat --registry https://registry.npmmirror.com`.
+- Some dependencies are pre-built on GitHub (supporting Node versions 16, 18, 20, 22). If accessing GitHub is slow, you may need to compile them manually. After seeing errors, you might need to install dependencies like `npm -g install node-addon-api`. If GitHub is completely inaccessible, you can use the binary or Docker method. For Windows compilation issues, you can check this link: [CSDN Blog](https://blog.csdn.net/jjocwc/article/details/134152602).
 
-### 3. Running via Binary Files
-Download the [latest release](https://github.com/xiaobaidadada/filecat/releases) and run the executable for your platform (on Windows, check the processor type to determine if it’s AMD/x64 or ARM, or use `uname -m` on Linux to identify the architecture).
-1. Run `filecat.exe --port 5567 --base_folder /home` (default username/password is admin if no username is set).
-2. Use the example configuration file and run `filecat --env ./env`.
-3. On Linux, you may need to run `sudo chmod +x ./filecat-linux` to give execution permissions.
+### 3. Run via Binary
+Download the [latest release](https://github.com/xiaobaidadada/filecat/releases) and run the executable program for your platform (check your CPU architecture in system info, for example, if you're on Windows, an AMD processor is x64, or use `uname -m` on Linux to check the architecture).
+1. Execute the command: `filecat.exe --port 5567 --base_folder /home`. If no username is set, the default username and password are both `admin`.
+2. Use the example configuration file by running: `filecat --env ./env`. On Linux, you may need to give executable permissions: `sudo chmod +x ./filecat-linux`.
 
-### 4. Installing to systemd for Linux (running in the background)
-This installation installs to systemd as a background process, which requires root privileges. The recommended method for Linux is to use the automatic installation feature:
-1. Download the latest version of `filecat-linux`, grant executable permissions, then run `./filecat-linux --install linux`.
-2. If you installed via npm, you can directly use `filecat --install linux` to install it to systemd.
+### 4. Install on systemd (Linux)
+This method installs FileCat as a background process under systemd, which requires root privileges. The automatic installation option is available for Linux systems. It's recommended to use this method. Simply download the latest `filecat-linux` executable, grant executable permissions, and run `./filecat-linux --install linux`. Alternatively, if you installed FileCat via npm, you can use `filecat --install linux` to install it on systemd.
 
-### 5. Running via Docker
-Run with the following command:
-```bash
-docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home
-```
-Explanation:
-1. All executable parameters are available here. You can omit parameters, and they will be set from the project's env file.
-2. You can map a configuration file to the program using the `-v` parameter (`-v /home:/home` is necessary for file management, as it sets the base folder).
-3. The `--net=host` parameter enables network-related features (virtual networks, DDNS, etc.), but note that some system information may not be accessible inside the container, though CPU and memory usage can still be retrieved from the host.
-4. If you only need file management, Docker is sufficient. However, for full functionality, it's recommended to install the program on a physical machine.
+### 5. Run via Docker
+Run with the following command:  
+`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`.
 
-## III. Development
-- Installation might fail on macOS (untested), but you can use `npm install --ignore-scripts` to bypass issues.
-- This project uses Node.js, and web pages are built using React, with no UI framework. Instead, it uses the [filebrowser](https://github.com/filebrowser/filebrowser) project’s CSS. During local development, the server proxies Webpack services. In production, the web page is bundled and served as static assets. The server uses `routing-controllers` for HTTP routing, and the WebSocket handling code is located in the `common` folder. WebSocket uses a modified version of `socket.io-parser` to handle JSON messages. This library supports the `protocolIsProto2` option for using the proto protocol. The original choice of proto over socket.io was made for code reuse.
+**Explanation:**
+1. All executable parameters are available here. If no parameters are passed, the program will use the configuration from the `env` file.
+2. You can mount an `env` configuration file using the `-v` option, e.g., `-v /home:/home` is necessary for managing files (set by the `base_folder` parameter); otherwise, only temporary container files are visible.
+3. Use the `--net=host` option to enable network-related features like virtual networks and DDNS. Although some system information cannot be obtained in a container, memory and CPU usage will still reflect the physical machine.
+4. If you only need file management functionality, using Docker is fine, but for other features, it's better to run it on a physical machine.
 
-## IV. Main Features
-- **File Management**
-  1. Preview file formats like images, videos, markdown, etc.
-  2. Code editor with selectable file opening modes.
-  3. Image editor that can be accessed by right-clicking on images (uses [Filerobot Image Editor](https://github.com/scaleflex/filerobot-image-editor)).
-  4. Studio editor, similar to VS Code, can be used as a temporary Linux development environment.
-  5. [Excalidraw](https://github.com/excalidraw/excalidraw) drawing editor, a great whiteboard tool.
-  6. Root directory switching—add multiple folder paths in settings and switch the root directory at the top right for a session.
-  7. Terminal: A custom terminal that allows filtering of commands and prevents harmful commands like `rm -rf /`. Non-PTY software (like node) requires `-i` or a custom handler.
-  8. Large text log viewer: Right-click on any large text file to view it as a log. Supports real-time output and quick scrolling.
-  9. Workflow: A local automation build tool, similar to GitHub Actions. You can create workflows, right-click to run, or create `.workflow.yml` files (without pre-processing prompts).
-- **SSH Proxy, FTP Proxy**: Manage multiple Linux servers like WinSCP, making terminal and file management more convenient.
-- **HTTP Proxy**: Similar to Postman, allows sending HTTP requests.
-- **Websites**: A bookmark tool for saving other websites hosted on the server.
-- **DDNS**
-- **HTTP Web Proxy, RDP Proxy (Windows Remote Desktop), RTSP Proxy Player**: Supports real-time web playback of monitoring streams or live sources.
-- **Docker Container**: Image management, viewing logs, and more.
-- **System Information**: Real-time CPU and memory usage, process info (like Task Manager on Windows).
-- **WOL (Wake on LAN)**: Wake up computers over the network.
-- **Virtual Networks**: P2P and VPN functionality (using `tun` to create virtual IPs on the host).
-- **Permissions**: Supports various system, file operation, and command permissions.
+## 3. Key Features
+- **File Management:**
+  1. Online preview of image, video, markdown, and other formats.
+  2. Code editor with selectable file open methods.
+  3. Image editor (right-click an image to enter [Filerobot Image Editor](https://github.com/scaleflex/filerobot-image-editor)).
+  4. Studio editor: right-click a folder to open an editor similar to VS Code for temporary Linux development environments.
+  5. [Excalidraw](https://github.com/excalidraw/excalidraw) whiteboard drawing editor, a useful tool for drawing and brainstorming.
+  6. Switch root directory: after adding multiple folder paths in the settings, you can switch root directories in the top right corner (only for the current session).
+  7. Terminal: Custom terminal to filter any command to prevent harmful commands like `rm -rf /`. For software like Node that requires interaction, you need to add `-i` or provide custom handling functions.
+  8. Real-time log viewer: Right-click on any large text file to view it as a log file, with the ability to scroll quickly through it and output real-time content.
+  9. Workflow: Similar to GitHub Actions or Jenkins, a local automation build tool. Right-click a file to run it, or manually input a `.workflow.yml` file (requires appropriate permissions).
 
-## V. Feature Notes
-1. Some features, such as virtual networks, are **not available on macOS** (and may fail installation). Windows requires admin privileges, and Linux requires root for certain features. Many features have not been tested on macOS.
-2. Some features are still in demo phase and will be optimized over time.
+- **SSH and FTP Proxy:** Manage multiple Linux servers, similar to WinSCP, for more convenient terminal and file management.
+- **HTTP Proxy:** Similar to Postman, allows sending HTTP requests.
+- **Websites:** A bookmark feature to store other server URLs.
+- **DDNS, HTTP Web Proxy, RDP Proxy (Windows remote control), RTSP Proxy Player:** Allows real-time viewing of streaming sources such as surveillance camera URLs.
+- **Docker Container Management:** Manage Docker containers and images, view logs, etc.
+- **System Info:** View system memory, CPU usage, and per-process CPU information (using low resources for real-time monitoring, similar to Windows Task Manager). Includes systemd management (only on Linux).
+- **Wake-on-LAN (WOL):** Network wake-up feature.
+- **Virtual Network:** Provides P2P and VPN functionality (not port forwarding, but using TUN to create a virtual IP on the host).
+- **Permissions:** Supports various system permissions for file operations and commands.
 
-## VI. Roadmap
-1. Optimize operational details.
-2. Support more file formats for viewing.
-3. Add more streaming media features.
-4. Support more DDNS platforms.
-5. Add an automated web crawler.
-6. Support mobile devices.
+## 4. Additional Notes
+1. Due to some libraries not supporting macOS (e.g., virtual networks), **macOS cannot directly install** FileCat. On Windows, it requires administrator mode, and on Linux, root permissions are necessary for certain features. Additionally, many features haven't been tested on macOS, so only Windows and Linux are supported.
+2. Some features are still in demo stage and will be continuously optimized.
 
-## VII. QQ Group
+## 5. Roadmap
+1. Optimize more operational details.
+2. Support additional file formats for browsing.
+3. Add more streaming features.
+4. Support additional DDNS platforms.
+5. Automate web crawling.
+6. Mobile support.
+
+## 6. QQ Group
 824838674
 
-## VIII. Acknowledgments
-Some features of this project are based on or inspired by the following projects:
+## 7. Acknowledgments
+This project is based on or inspired by the following projects:
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
-- [mstsc.js](https://github.com/citronneur/mstsc.js)
+- [mstsc](https://github.com/citronneur/mstsc.js)
 
----
+--- 
 
-This is a direct translation of the original text. Let me know if you need further clarification or adjustments!
+Let me know if you need more details or help with anything!

@@ -2,8 +2,8 @@
 # ![](./src/web/meta/resources/img/logo-70.png) filecat
 
 - 中文 | [English ](./doc/EN_README.md)
-- 使用[filebrowser](https://github.com/filebrowser/filebrowser)好看的ui来浏览文件，同时具备服务器管理能力。
-- 安装`npm install filecat -g`然后执行 `filecat`，使用参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式请参考下文。
+- FileCat 用于帮助开发者搭建一个文件服务器并控制自己的服务器，并提供众多与程序开发人员相关的必备功能。包括带有权限的远程终端(支持rdp桌面、终端命令拦截)、SSH代理、文件在线浏览\编辑\解压缩、白板绘图、自动化构建、系统监控、docker管理、超大日志实时读取等功能(目前可以运行在linux与windows系统下，不支持mac os系统)。
+- 它是一个服务程序，使用web访问。可以使用npm执行`npm install filecat -g`全局安装命令，然后执行 `filecat`命令运行，使用参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式与参数请参考下文。
 ## 一. 截图
 ![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
 
@@ -30,11 +30,7 @@ url: http://116.198.245.137:5569/
 2. 可以使用`-v`参数映射一个env配置文件给程序， `-v /home:/home`是管理文件的必要参数(使用`base_folder`参数设置)，否则能够看到的只是容器内的临时文件。
 3. `--net=host`参数可以使用项目的所有关于网络的功能(虚拟网络，ddns等)，由于在容器内运行，系统基本信息有些获取不到，但是内存和cpu使用率还是可以获取到物理机的。
 4. 如果只是想用文件管理功能，使用docker是可以的，否则还是建议在物理机上安装此程序。
-## 三. 开发
-- 目前在mac上 直接install会失败(没有测试过)，可以使用`npm install --ignore-scripts`。
-- 本项目所有需要编译的依赖都使用了预构建，会从github下载编译好的文件，如果你电脑上的网络安装的时候无法访问github则会退化成编译。如果是在windows上需要编译编译可能遇到的问题可以参考这个链接https://blog.csdn.net/jjocwc/article/details/134152602
-- 项目使用nodejs， web网页构建使用react,没有使用Ui框架，而是使用[filebrowser](https://github.com/filebrowser/filebrowser)项目的css,本地dev开发的时候服务端是转发webpack的服务，打包环境下是把web网页作为资源加载的，服务器的路由使用routing-controllers来处理http，使用common下的frame处理websocket（使用和socket.io解析json一样的库socket.io-parser，有一个参数`export const protocolIsProto2 = true;`可选择使用proto协议，为什么不直接使用socket.io呢，是因为当时本来采用的proto，想更多的复用一下代码），都支持修饰器用法，打包的时候前后端都会使用webpack打包。
-## 四. 主要特性
+## 三. 主要特性
 -  文件管理
   1. 图片，视频，markdown 等文件格式在线预览。
   2. 代码编辑器，可选择文件打开方式。
@@ -55,19 +51,19 @@ url: http://116.198.245.137:5569/
 - wol网络唤醒
 - 虚拟网络，可以实现p2p,vpn功能。(不是端口转发，而是利用tun在主机上创建虚拟ip)
 - 权限，支持各种系统权限，文件操作权限，命令权限.
-## 五. 功能说明
+## 四. 功能说明
 1. 由于一些库目前不支持mac(比如虚拟网络) **mac下无法使用**上面的安装方式直接安装成功，在windows需要管理员模式下运行，linux需要root权限才可以使用该功能。此外还很多功能没有在macos下测试过，只支持windows和Linux;
 2. 部分功能目前处于demo阶段，未来会持续优化；
-## 六. 路线
+## 五. 路线
 1. 优化更多操作细节 
 2. 支持更多的文件格式浏览
 3. 支持更多的流媒体功能
 4. 支持更多的ddns平台
 5. 自动化爬虫
 6. 支持移动端
-## 七. qq群
+## 六. qq群
 824838674
-## 八. 致谢
+## 七. 致谢
 本项目部分功能还基于或者借鉴于以下项目
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
