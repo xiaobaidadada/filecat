@@ -35,7 +35,7 @@ export function UnCompress(props) {
     const confirm = ()=> {
         const extension = StringUtil.getFileExtension(showPrompt.data.filename) ?? "" as string;
 
-        const sourceFileName = `${encodeURIComponent(getRouterAfter('file',getRouterPath()))}${showPrompt.data.filename}`;
+        const sourceFileName = `${getRouterAfter('file',getRouterPath())}${showPrompt.data.filename}`;
 
         const req = new FileCompressPojo();
         let format;

@@ -3,9 +3,10 @@ import {FileCompressType} from "../../../common/file.pojo";
 import {loadWasm} from "../bin/bin";
 
 const fs = require('fs');
-const unzipper = require('unzipper');
+// const unzipper = require('unzipper'); // 对于流会有损坏的问题
+const unzip_stream = require('unzip-stream');
 const tar = require('tar');
-const zlib = require('zlib');
+// const zlib = require('zlib');
 const archiver = require('archiver');
 const unrar = require("node-unrar-js");
 
@@ -17,7 +18,7 @@ export class FileCompress {
         let processedSize = 0;
         // 创建文件读取流
         const readStream = fs.createReadStream(filePath);
-        const extractStream = unzipper.Extract({path: targetFolder});
+        const extractStream = unzip_stream.Extract({path: targetFolder});
         // 监听读取流的 data 事件来计算进度
         readStream.on('data', (chunk) => {
             processedSize += chunk.length;

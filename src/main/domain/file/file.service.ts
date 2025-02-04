@@ -446,7 +446,7 @@ class FileService extends FileCompress {
         const pojo = data.context as FileCompressPojo;
         const source_file = decodeURIComponent(pojo.source_file);
         const tar_dir = decodeURIComponent(pojo.tar_dir ?? "");
-        const directoryPath = path.dirname(source_file);
+        const directoryPath = decodeURIComponent(path.dirname(source_file));
         const root_path = settingService.getFileRootPath(pojo.token);
         const targetFolder = path.join(root_path, directoryPath, tar_dir);
         const wss = data.wss as Wss;
