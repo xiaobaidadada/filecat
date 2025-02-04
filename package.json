@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "2.4.8",
+  "version": "2.4.9",
   "description": "filecat 文件管理器",
   "author": "xiaobaidadada",
   "scripts": {
@@ -151,7 +151,7 @@
     "ts-node": "^10.9.2",
     "typedi": "^0.10.0",
     "typescript": "^5.6.3",
-    "unzipper": "^0.12.3",
+    "unzip-stream": "^0.3.4",
     "video.js": "^8.17.2",
     "videojs-hotkeys": "^0.2.28",
     "webpack": "^5.96.1",
