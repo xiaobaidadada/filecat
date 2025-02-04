@@ -69,3 +69,10 @@ export function formatter_time(date){
     return formatter.format(date);
 }
 
+export function  max_pages(total, pageSize) {
+    if (total <= 0 || pageSize <= 0) {
+        return 0;
+    }
+    return Math.ceil(total / pageSize);
+}
+
