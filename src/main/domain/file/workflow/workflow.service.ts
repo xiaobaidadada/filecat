@@ -136,10 +136,14 @@ class work_children {
         yaml_path?:string,
         filecat_user_id?:string,
         filecat_user_name?:string,
-        filecat_user_note?:string
+        filecat_user_note?:string,
+        send_all_wss?:(done?:boolean)=>void
     }) {
         if(param?.yaml_path) {
             this.yaml_path = param.yaml_path;
+        }
+        if(param?.send_all_wss) {
+            this.send_all_wss = param.send_all_wss;
         }
         this.filename = path.basename(this.yaml_path);
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
@@ -448,6 +452,7 @@ class work_children {
                                 filecat_user_name: this.env['filecat_user_name'],
                                 filecat_user_id: this.env['filecat_user_id'],
                                 filecat_user_note: this.env['filecat_user_note'],
+                                send_all_wss:this.send_all_wss.bind(this)
                             });
                             this.worker_children_use_yml_map.set(step["use-yml"],worker);
                             let success_list,fail_list;
