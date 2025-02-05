@@ -114,7 +114,8 @@
 { content: 'album' }
 
 /* 绘图 */
-.file-icons [aria-label$=".excalidraw"] i::before
+.file-icons [aria-label$=".excalidraw"] i::before,
+.file-icons [aria-label$=".draw"] i::before
 { content: 'draw' }
 
 /* #999 - Font */
@@ -204,7 +205,8 @@
 .file-icons [aria-label$=".iso"] i,
 .file-icons [aria-label$=".php"] i,
 .file-icons [aria-label$=".rar"] i,
-.file-icons [aria-label$=".excalidraw"] i
+.file-icons [aria-label$=".excalidraw"] i,
+.file-icons [aria-label$=".draw"] i
 { color: var(--icon-violet) }
 
 .file-icons [aria-label$=".md"] i::before
@@ -220,8 +222,11 @@
 
 /*特殊的 filecat work flow*/
 .file-icons [aria-label$=".workflow.yml"] i { color: var(--icon-blue) }
-.file-icons [aria-label$=".workflow.yml"] i::before
-{ content: 'api' }
+.file-icons [aria-label$=".workflow.yml"] i::before { content: 'api' }
+
+.file-icons [aria-label$=".act"] i { color: var(--icon-blue) }
+.file-icons [aria-label$=".act"] i::before { content: 'api' }
+
 
 
 

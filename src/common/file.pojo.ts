@@ -15,6 +15,8 @@ export enum FileTypeEnum {
     uncompress = "uncompress", // 压缩文件
     md = "md",
     excalidraw = "excalidraw",
+    draw = "draw",
+    workflow_act = "act",
     dev = "dev" // linux设备 不是文件或者目录
 }
 

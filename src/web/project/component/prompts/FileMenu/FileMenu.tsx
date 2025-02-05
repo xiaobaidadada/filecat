@@ -123,7 +123,7 @@ export function FileMenu() {
         case FileTypeEnum.unknow:
         default:
         {
-            if(pojo.filename.endsWith("workflow.yml")) {
+            if(pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
                 if(file_is_running(pojo.filename)) {
                     items.unshift({r: t("停止workflow"),v:4})
                     items.unshift({r: t("实时查看workflow"),v:5})

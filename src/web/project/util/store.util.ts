@@ -1,7 +1,7 @@
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {getFileNameByLocation} from "../component/file/FileUtil";
-import {cryptoHttp, fileHttp} from "./config";
-import {NotyFail, NotySucess} from "./noty";
+import {fileHttp} from "./config";
+import {NotyFail} from "./noty";
 import {getEditModelType} from "../../../common/StringUtil";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {getRouterAfter, getRouterPath} from "./WebPath";
@@ -11,7 +11,7 @@ import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../common/ValueUtil";
-import {Ace as AceItem, version as ace_version} from "ace-builds";
+import {Ace as AceItem} from "ace-builds";
 import {UserAuth} from "../../../common/req/user.req";
 import {useEffect} from "react";
 
@@ -75,9 +75,15 @@ export const user_click_file = () => {
             // if (!model) {
             //     model = "text";
             // }
+            let m = undefined;
+            if(type === FileTypeEnum.workflow_act){
+                m = "ace/mode/yaml"
+            } else if(type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw){
+                m = "ace/mode/json"
+            }
             setEditorSetting({
                 menu_list: param.menu_list,
-                // model,
+                model:m,
                 open: true,
                 fileName: name,
                 save: async (context) => {
@@ -97,6 +103,7 @@ export const user_click_file = () => {
         } else {
             let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
             switch (type) {
+                case FileTypeEnum.draw:
                 case FileTypeEnum.excalidraw:
                     set_excalidraw_editor({path: "", name});
                     break;
@@ -110,6 +117,10 @@ export const user_click_file = () => {
                 case FileTypeEnum.image:
                 case FileTypeEnum.pdf:
                     setFilePreview({open: true, type: type, name, url})
+                    break;
+                case FileTypeEnum.workflow_act:
+                    param.model = "text";
+                    click_file(param);
                     break;
                 case FileTypeEnum.unknow:
                 default:

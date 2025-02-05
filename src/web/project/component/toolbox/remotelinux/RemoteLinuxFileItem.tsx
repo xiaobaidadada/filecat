@@ -110,8 +110,14 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                         Object.assign(req,sshInfo);
                         req.file = joinPaths(...shellNowDir,name);
                         const rsq = await sshHttp.post("get/file/text",req);
+                        let m = undefined;
+                        if(name.endsWith(FileTypeEnum.workflow_act)){
+                            m = "ace/mode/yaml"
+                        } else if(name.endsWith(FileTypeEnum.draw)  || name.endsWith(FileTypeEnum.excalidraw)){
+                            m = "ace/mode/json"
+                        }
                         setEditorSetting({
-                            // model,
+                            model:m,
                             open: true,
                             fileName: props.name,
                             save: async (context) => {

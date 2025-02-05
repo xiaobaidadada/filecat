@@ -73,8 +73,8 @@ export function FileNew(props) {
 
     const select_item = [
         {title:`${t("空")}`,value:""},
-        {title:`excalidraw${t("格式")}`,value:".excalidraw"},
-        {title: `workflow${t("格式")}`, value:".workflow.yml"},
+        {title:`excalidraw${t("格式")}`,value:".draw"},
+        {title: `workflow${t("格式")}`, value:".act"},
     ]
     const cancel=()=> {
         setShowPrompt({show: false,type: "",overlay: false,data:{}})
@@ -90,9 +90,9 @@ export function FileNew(props) {
             if (!name.endsWith(format)) {
                 r_name = name+format;
             }
-            if (format === ".excalidraw") {
+            if (format === ".draw" ) {
                 context = "{}";
-            } else if (format === ".workflow.yml") {
+            } else if (format === ".act") {
                 context = workflow_txt;
             }
         }
