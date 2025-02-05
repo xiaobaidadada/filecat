@@ -309,6 +309,17 @@ class work_children {
     public async run_job(job: job_item) {
         try {
                 if(!job.if || vm.runInContext(job.if,sandbox_context)) {
+                    if(job['sys-env']) {
+                        for (const key of Object.keys(job['sys-env'])) {
+                            job['sys-env'][key] = Mustache.render(`${job['sys-env'][key]??""}`, this.env??{});
+                        }
+                    }
+                    if(job.env) {
+                        for (const key of Object.keys(job.env)) {
+                            job.env[key] = Mustache.render(`${job.env[key]??""}`, this.env??{});
+                        }
+                    }
+                    job.cwd = Mustache.render(job.cwd??"", {...this.env,...job.env});
                     job.running_type = running_type.running;
                     // 目录处理判断
                     if (!path.isAbsolute(job.cwd)) {
@@ -364,17 +375,6 @@ class work_children {
                         }
                     }
                     let out_context = "";
-                    if(job['sys-env']) {
-                        for (const key of Object.keys(job['sys-env'])) {
-                            job['sys-env'][key] = Mustache.render(`${job['sys-env'][key]??""}`, this.env??{});
-                        }
-                    }
-                    if(job.env) {
-                        for (const key of Object.keys(job.env)) {
-                            job.env[key] = Mustache.render(`${job.env[key]??""}`, this.env??{});
-                        }
-                    }
-                    job.cwd = Mustache.render(job.cwd??"", {...this.env,...job.env});
                     userService.check_user_path_by_user_id(this.user_id, job.cwd);
                     const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
                     const ptyshell = new PtyShell({
