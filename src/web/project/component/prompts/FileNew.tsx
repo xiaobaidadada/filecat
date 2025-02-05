@@ -40,7 +40,7 @@ jobs:
     sys-env: # 这里的token 会在执行的添加到shell的环境变量中
       token: {{{token}}}
     env:
-      temp: {{token}}123 # 用于设置一些临时变量
+      temp: '{{token}}123' # 用于设置一些临时变量
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
         with-env:

@@ -164,8 +164,9 @@ export function WorkFlow(props) {
             }
         } else if(job_list) {
             for (const item of job_list??[]){
+                const name =  <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />${item.name}</div>
                 r_list.push({
-                    name:item.name,
+                    name:name,
                     extra_data: {code:item.code,is_job:true,job_data:item}
                 })
             }
