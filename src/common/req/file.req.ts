@@ -58,6 +58,7 @@ export interface step_item {
     use_job_children_list?:job_item[];
 
     running_type?: running_type;
+    if?:string;
 }
 
 export interface job_item {
@@ -77,6 +78,7 @@ export interface job_item {
     duration?:string; // 运行时长
 
     running_type?: running_type; // 是否正在运行
+    if?:string;
 }
 
 // 目录下所有正在执行的任务实时输出

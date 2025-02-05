@@ -33,8 +33,9 @@ import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
 
 export enum FileListShowTypeEmum {
     block = "",
+    list = "list",
     gallery = "gallery",
-    list = "list"
+
 }
 
 
