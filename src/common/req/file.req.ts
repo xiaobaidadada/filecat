@@ -67,6 +67,7 @@ export interface job_item {
     name: string;
     "need-job": string | undefined;
     "sys-env":any; // 设置系统的token
+    env:any; // 用于设置变量
     steps: step_item[];
     repl?:boolean;
 
