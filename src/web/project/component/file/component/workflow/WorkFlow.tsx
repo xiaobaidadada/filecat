@@ -195,7 +195,7 @@ export function WorkFlow(props) {
             });
         }
         if(message) {
-            terminal_value.clear()
+            terminal_value.reset()
             terminal_value.write(message);
         }
 
