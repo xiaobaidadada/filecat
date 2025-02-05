@@ -70,7 +70,7 @@ export class FileController {
 
     @Put('/:path([^"]{0,})')
     async uploadFile(@Req() req: Request, @Res() res: Response, @Param("path") path?: string) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
+        userService.check_user_auth(req.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
     }
@@ -85,7 +85,7 @@ export class FileController {
     @Post('/save/:path([^"]{0,})')
     async save(@Req() ctx, @Param("path") path?: string, @Body() data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
         if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
-            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy,false) ) {
+            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
             await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
             return Sucess("1");
         }
@@ -99,7 +99,7 @@ export class FileController {
         type: base64UploadType
     }) {
         if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
-            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy,false) ) {
+            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
             await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
             return Sucess("1");
         }
@@ -123,21 +123,21 @@ export class FileController {
 
     @Post('/copy')
     async copy(@Req() ctx, @Body() data?: cutCopyReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.copy(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/file')
     async newFile(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newFile(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/dir')
     async newDir(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy);
+        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newDir(ctx.headers.authorization, data);
         return Sucess("1");
     }

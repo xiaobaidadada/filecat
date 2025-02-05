@@ -37,6 +37,7 @@ export function User() {
     const [cwd, setwd] = useState("");
     const [access_dirs, set_access_dirs] = useState([]);
     const [not_access_dirs,set_not_access_dirs] = useState([]);
+    const [only_read_dirs,set_only_read_dirs] = useState([]);
     const [access_cmd,set_access_cmd] = useState("");
     const [language, setLanguage] = useState("en");
     const [auth_list,set_auth_list] = useState([]);
@@ -89,6 +90,7 @@ export function User() {
         setwd(item?.cwd??"");
         set_access_dirs(item?.access_dirs??[])
         set_not_access_dirs(item?.not_access_dirs??[])
+        set_only_read_dirs(item?.only_read_dirs??[])
         set_access_cmd(item?.access_cmd??"");
         setLanguage(item?.language??"");
         set_auth_list(item?.auth_list??[]);
@@ -123,6 +125,8 @@ export function User() {
                 set_access_dirs(role.access_dirs)
             if(role.not_access_dirs && role.not_access_dirs.length >0)
                 set_not_access_dirs(role.not_access_dirs)
+            if(role.only_read_dirs && role.only_read_dirs.length>0)
+                set_only_read_dirs(role.only_read_dirs)
             if(role.access_cmd)
                 set_access_cmd(role.access_cmd);
             if(role.language)
@@ -196,6 +200,7 @@ export function User() {
         user_data.username = username;
         user_data.password = password;
         user_data.not_access_dirs = not_access_dirs;
+        user_data.only_read_dirs = only_read_dirs;
         user_data.cwd = cwd;
         user_data.note = note;
         user_data.access_cmd = access_cmd;
@@ -349,6 +354,32 @@ export function User() {
                                         icon={"delete"} onClick={() => {
                                         not_access_dirs.splice(index, 1);
                                         set_not_access_dirs([...not_access_dirs]);
+                                    }} title={t("删除")}/>
+                                }
+                            </div>
+                        })}
+
+                        <label>
+                            {!bind_role_item?.only_read_dirs?.length &&
+                                <ActionButton icon={"add"} onClick={() => {
+                                    set_only_read_dirs([...only_read_dirs, ""])
+                                }} title={t("添加")}/>
+                            }
+                            {t("只读目录范围")}</label>
+                        {(only_read_dirs ?? []).map((item, index) => {
+                            return <div key={index} style={{display: "flex",}}>
+                                <div style={{width: "90%"}}>
+                                    <InputText
+                                        disabled={bind_role_item?.only_read_dirs?.length !== 0 && bind_role_item?.only_read_dirs?.length!==undefined}
+                                        value={item} handleInputChange={(value) => {
+                                        only_read_dirs[index] = value;
+                                        set_only_read_dirs([...only_read_dirs]);
+                                    }}/></div>
+                                {bind_role_item?.only_read_dirs?.length === 0 || bind_role_item?.only_read_dirs?.length ===undefined &&
+                                    <ActionButton
+                                        icon={"delete"} onClick={() => {
+                                        only_read_dirs.splice(index, 1);
+                                        set_only_read_dirs([...only_read_dirs]);
                                     }} title={t("删除")}/>
                                 }
                             </div>

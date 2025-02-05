@@ -48,7 +48,7 @@ export enum UserAuth {
     filecat_file_delete_cut_rename = 23, // 非命令的filecat文件删除功能 剪切 重命名
     // filecat_file_cut = 24, // 废弃
     // filecat_file_rename = 25,  // 废弃
-    filecat_file_context_update_upload_created_copy =26,// 文件创建 文件内容更新 上传 复制
+    filecat_file_context_update_upload_created_copy_decompression =26,// 文件创建 文件内容更新 上传 复制 解压缩
     filecat_file_context_update = 27 , // 仅仅是内容更新 这个和上一个有一个可以，就可以更新
     shell_cmd_check = 28 , // cmd shell 命令 检测是否能运行
     role_manage = 29 , //角色管理
@@ -70,6 +70,7 @@ export class UserData extends UserLogin {
     cwd: string; // 目录顶级范围 (role 作用)
     access_dirs: string[] = []; // cwd 是第一个 这里是其它的可访问的 (role 作用)
     not_access_dirs:string[] = []; // 禁止访问的目录 (role 作用)
+    only_read_dirs:string[] = []; // 只读的目录
     note: string; // 备注
     id: string; // 用户 id
     language: string; // (role 作用)

@@ -371,7 +371,15 @@ export class UserService {
         }
         let ok = false;
         // 检测是否是合法路径
-        for (const item of  [user_data.cwd,...user_data.access_dirs]) {
+        const p_l = [];
+        p_l.push(user_data.cwd);
+        if(user_data.access_dirs) {
+            p_l.push(...user_data.access_dirs);
+        }
+        if(user_data.only_read_dirs) {
+            p_l.push(...user_data.only_read_dirs);
+        }
+        for (const item of  p_l) {
             if (this.isSubPath(item, path)) {
                 ok = true;
                 break;
@@ -385,6 +393,22 @@ export class UserService {
     public check_user_path(token: string, path: string,auto_throw = true) {
         const user_data = userService.get_user_info_by_token(token);
         return this.check_user_path_by_user_id(user_data.id, path,auto_throw);
+    }
+
+    // 检测只读路径 如果属于只读路径 则报错 或者返回true
+    public check_user_only_path(token: string, path: string,auto_throw = true) {
+        const user_data = userService.get_user_info_by_token(token);
+        let ok = false;
+        for (const item of  [
+            ...user_data.only_read_dirs??[] // 只读路径
+        ]) {
+            if (this.isSubPath(item, path)) {
+                ok = true;
+                break;
+            }
+        }
+        if(auto_throw===true && ok===true) throw "path is only read "
+        return ok;
     }
 
     // 检测命令是否能执行 管理员有设置任意的权限 但是也要做校验
@@ -409,7 +433,7 @@ export class UserService {
         const user_data = this.get_user_info_by_token(token);
         if(user_data.is_root) return true;
         const v = user_data?.auth_list.find(v => v === auth);
-        if (auto_throw && !v) throw "no permission"
+        if (auto_throw && !v) throw "no permission";
         return !!v;
     }
 
@@ -544,6 +568,9 @@ export class UserService {
             }
             if(role.access_dirs && role.access_dirs.length >0) {
                 user_data.access_dirs = role.access_dirs;
+            }
+            if(role.only_read_dirs && role.only_read_dirs.length >0) {
+                user_data.only_read_dirs = role.only_read_dirs;
             }
             if(role.not_access_dirs && role.not_access_dirs.length >0) {
                 user_data.not_access_dirs = role.not_access_dirs;

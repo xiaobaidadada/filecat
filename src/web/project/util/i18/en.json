@@ -199,7 +199,7 @@
   "ssh密钥保存到磁盘": "Save SSH Key to Disk",
   "外部软件路径": "External Software Path",
   "文件删除、剪切、重命名": "File Deletion, Cut, Rename",
-  "文件创建、上传、内容更新": "File Creation, Upload, Content Update",
+  "文件创建、上传、内容更新、解压缩": "File creation, upload, content update, decompression.",
   "内容更新": "Content Update",
   "shell命令检测": "Shell Command Detection",
   "标签编辑权限": "Tag Edit Permissions",

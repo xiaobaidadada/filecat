@@ -32,6 +32,7 @@ export function Role() {
     const [cwd, setwd] = useState("");
     const [access_dirs, set_access_dirs] = useState([]);
     const [not_access_dirs,set_not_access_dirs] = useState([]);
+    const [only_read_dirs,set_only_read_dirs] = useState([]);
     const [access_cmd,set_access_cmd] = useState("");
     const [language, setLanguage] = useState("");
     const [auth_list,set_auth_list] = useState([]);
@@ -54,6 +55,7 @@ export function Role() {
         setwd(item?.cwd??"");
         set_access_dirs(item?.access_dirs??[])
         set_not_access_dirs(item?.not_access_dirs??[])
+        set_only_read_dirs(item?.only_read_dirs??[])
         set_access_cmd(item?.access_cmd??"");
         setLanguage(item?.language??"");
         set_auth_list(item?.auth_list??[]);
@@ -102,6 +104,7 @@ export function Role() {
         user_data.access_dirs = access_dirs;
         user_data.role_name = role_name;
         user_data.not_access_dirs = not_access_dirs;
+        user_data.only_read_dirs = only_read_dirs;
         user_data.cwd = cwd;
         user_data.access_cmd = access_cmd;
         user_data.auth_list = auth_list;
@@ -223,6 +226,22 @@ export function Role() {
                                 <ActionButton icon={"delete"} onClick={() => {
                                     not_access_dirs.splice(index, 1);
                                     set_not_access_dirs([...not_access_dirs]);
+                                }} title={"删除"}/>
+                            </div>
+                        })}
+
+                        <label><ActionButton icon={"add"} onClick={() => {
+                            set_only_read_dirs([...only_read_dirs, ""])
+                        }} title={"添加"}/>只读目录范围</label>
+                        {(only_read_dirs ?? []).map((item, index) => {
+                            return <div key={index} style={{display: "flex",}}>
+                                <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
+                                    only_read_dirs[index] = value;
+                                    set_only_read_dirs([...only_read_dirs]);
+                                }}/></div>
+                                <ActionButton icon={"delete"} onClick={() => {
+                                    only_read_dirs.splice(index, 1);
+                                    set_only_read_dirs([...only_read_dirs]);
                                 }} title={"删除"}/>
                             </div>
                         })}
