@@ -65,6 +65,7 @@ export interface job_item {
     cwd: string;
     name: string;
     "need-job": string | undefined;
+    "sys-env":any; // 设置系统的token
     steps: step_item[];
     repl?:boolean;
 

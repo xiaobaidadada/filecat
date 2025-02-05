@@ -8,6 +8,7 @@ run-name: 构建项目 # 用于日志显示的名字
 env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量 {{{ }}} 是非转义方式 采用 Mustache js
   version: 1
   cmd_install: npm install
+  token: 123
   # 有几个参数是每次执行自动添加的
 #  filecat_user_id: 1 # 用户id
 #  filecat_user_name: admin # 用户名字
@@ -23,6 +24,8 @@ jobs:
     name: 第一阶段执行
     repl: false # 交互式运行 当上一个step 运行没有结束 有输出的时候 就执行下一个 step 默认是 false 必须要自己设置好流程 避免出现一直等待 那么只能手动关闭了
     # need-job: build-job2 # 需要别的job先完成 只能是本文件内的
+    sys-env: # 这里的token 会在执行的添加到shell的环境变量中
+      token: {{{token}}}
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
         with-env:

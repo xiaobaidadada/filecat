@@ -358,10 +358,15 @@ class work_children {
             job.cwd = Mustache.render(job.cwd??"", this.env??{});
             userService.check_user_path_by_user_id(this.user_id, job.cwd);
             const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
+            if(job['sys-env']) {
+                for (const key of Object.keys(job['sys-env'])) {
+                    job['sys-env'][key] = Mustache.render(`${job['sys-env'][key]??""}`, this.env??{});
+                }
+            }
             const ptyshell = new PtyShell({
                 cwd: job.cwd,
                 node_pty: pty,
-                env: {PATH},
+                env: {PATH,...job['sys-env']},
                 node_pty_shell_list: settingService.get_pty_cmd(),
                 check_exe_cmd: (exe_cmd, params) => {
                     // 命令和路径检查
