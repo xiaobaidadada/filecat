@@ -133,12 +133,12 @@ export function Permission(props:{
             </div>
             <div>
                 <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.filecat_file_context_update_upload_created_copy)}
-                       checked={props.is_selected(UserAuth.filecat_file_context_update_upload_created_copy)}
+                       disabled={props.is_disable(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
+                       checked={props.is_selected(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
                        onChange={() => {
-                           props.select_auth(UserAuth.filecat_file_context_update_upload_created_copy)
+                           props.select_auth(UserAuth.filecat_file_context_update_upload_created_copy_decompression)
                        }}/>
-                {t("文件创建、上传、内容更新")}
+                {t("文件创建、上传、内容更新、解压缩")}
             </div>
             <div>
                 <input type="checkbox"

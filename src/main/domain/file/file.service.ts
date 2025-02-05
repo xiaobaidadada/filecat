@@ -148,7 +148,8 @@ class FileService extends FileCompress {
     public uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
-        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token,sysPath);
+        userService.check_user_only_path(token,sysPath);
         // if (!file) {
         //     // 目录
             if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
@@ -251,8 +252,9 @@ class FileService extends FileCompress {
         if (context === null || context === undefined) {
             return;
         }
-        const sysPath = is_sys_path === 1 ? `/${decodeURIComponent(filePath)}` : path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
-        userService.check_user_path(token,sysPath)
+        const sysPath = is_sys_path === 1 ? `/${filePath}` : path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
+        userService.check_user_path(token,sysPath);
+        userService.check_user_only_path(token,sysPath);
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
@@ -263,8 +265,9 @@ class FileService extends FileCompress {
     // }
 
     public common_base64_save(token: string, filepath: string, base64_context: string, type: base64UploadType) {
-        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filepath));
-        userService.check_user_path(token,sysPath)
+        const sysPath = path.join(settingService.getFileRootPath(token), filepath);
+        userService.check_user_path(token,sysPath);
+        userService.check_user_only_path(token,sysPath);
         const binaryData = Buffer.from(base64_context, 'base64');
         if (type === base64UploadType.all || type === base64UploadType.start) {
             fs.writeFileSync(sysPath, binaryData);
@@ -300,7 +303,9 @@ class FileService extends FileCompress {
         const sysPath = path.join(root_path);
         const toSysPath = path.join(root_path, data.to ? decodeURIComponent(data.to) : "");
         userService.check_user_path(token,sysPath)
+        userService.check_user_only_path(token,sysPath);
         userService.check_user_path(token,toSysPath)
+        userService.check_user_only_path(token,toSysPath);
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             // 覆盖
@@ -324,7 +329,8 @@ class FileService extends FileCompress {
             return
         }
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.name));
-        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token,sysPath);
+        userService.check_user_only_path(token,sysPath);
         if (fs.existsSync(sysPath)) {
             return;
         }
@@ -444,16 +450,22 @@ class FileService extends FileCompress {
 
     async uncompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
+        userService.check_user_auth(pojo.token,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+
         const source_file = decodeURIComponent(pojo.source_file);
         const tar_dir = decodeURIComponent(pojo.tar_dir ?? "");
         const directoryPath = decodeURIComponent(path.dirname(source_file));
         const root_path = settingService.getFileRootPath(pojo.token);
         const targetFolder = path.join(root_path, directoryPath, tar_dir);
+        userService.check_user_path(pojo.token,targetFolder);
+        userService.check_user_only_path(pojo.token,targetFolder);
+
         const wss = data.wss as Wss;
         if (tar_dir) {
             fs.mkdirSync(path.join(targetFolder), {recursive: true});
         }
         const sysSourcePath = path.join(root_path, source_file);
+        userService.check_user_path(pojo.token,sysSourcePath)
         const outHanle = (value) => {
             if (value === -1) {
                 wss.ws.close();
@@ -482,12 +494,16 @@ class FileService extends FileCompress {
 
     FileCompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
+        userService.check_user_auth(pojo.token,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+
         const files = pojo.filePaths;
         const root_path = settingService.getFileRootPath(pojo.token);
         const wss = data.wss as Wss;
         const filePaths: string[] = [], directorys: string[] = [];
         for (const file of files) {
             const name = path.join(root_path, decodeURIComponent(file));
+            userService.check_user_path(pojo.token,name);
+            userService.check_user_only_path(pojo.token,name);
             try {
                 const stats = fs.statSync(name);
                 if (stats.isFile()) {
