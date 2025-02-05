@@ -364,14 +364,19 @@ class work_children {
                         }
                     }
                     let out_context = "";
-                    job.cwd = Mustache.render(job.cwd??"", this.env??{});
-                    userService.check_user_path_by_user_id(this.user_id, job.cwd);
-                    const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
                     if(job['sys-env']) {
                         for (const key of Object.keys(job['sys-env'])) {
                             job['sys-env'][key] = Mustache.render(`${job['sys-env'][key]??""}`, this.env??{});
                         }
                     }
+                    if(job.env) {
+                        for (const key of Object.keys(job.env)) {
+                            job.env[key] = Mustache.render(`${job.env[key]??""}`, this.env??{});
+                        }
+                    }
+                    job.cwd = Mustache.render(job.cwd??"", {...this.env,...job.env});
+                    userService.check_user_path_by_user_id(this.user_id, job.cwd);
+                    const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
                     const ptyshell = new PtyShell({
                         cwd: job.cwd,
                         node_pty: pty,
@@ -425,7 +430,7 @@ class work_children {
                                     for (let i=0;i<job.steps.length;i++) {
                                         const step = job.steps[i];
                                         step.running_type = running_type.running;
-                                        step.run = Mustache.render(`${step.run??""}`, this.env??{});
+                                        step.run = Mustache.render(`${step.run??""}`, {...this.env,...job.env});
                                         ptyshell.write(`${step.run}\r`);
                                     }
                                 } else {
@@ -515,7 +520,7 @@ class work_children {
                             // 等待执行完执行下一条
                             const code = await new Promise(resolve => {
                                 exec_resolve = resolve;
-                                step.run = Mustache.render(`${step.run??""}`, this.env??{});
+                                step.run = Mustache.render(`${step.run??""}`, {...this.env,...job.env});
                                 ptyshell.write(`${step.run}\r`);
                             })
                             step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
