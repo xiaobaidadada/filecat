@@ -482,6 +482,11 @@ class work_children {
                                 // 执行另一个文件
                                 const yaml = this.import_files_map.get(step["use-yml"]);
                                 if(yaml) {
+                                    if(step['with-env']) {
+                                        for (const key of Object.keys(step['with-env'])) {
+                                            step['with-env'][key] = Mustache.render(`${step['with-env'][key]??""}`, {...this.env,...job.env});
+                                        }
+                                    }
                                     const worker = new work_children(undefined, this.workflow_dir_path);
                                     await worker.init({
                                         env:step['with-env'],
@@ -538,12 +543,13 @@ class work_children {
                             step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             step.code = code as number;
                             step.running_type = running_type.success;
-                            this.send_all_wss();
                             if(code !==0 ) {
                                 step.running_type = running_type.fail;
                                 // 终止后面的行为
+                                this.send_all_wss();
                                 break;
                             }
+                            this.send_all_wss();
                         }
 
                     }
