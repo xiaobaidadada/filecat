@@ -426,9 +426,18 @@ class work_children {
                             job.code = await new Promise(resolve => {
                                 exec_resolve = resolve;
                                 if(job.steps) {
-                                    now_step = job.steps[0]; // 交互式的给第一个
+
                                     for (let i=0;i<job.steps.length;i++) {
                                         const step = job.steps[i];
+                                        if(step.if) {
+                                            if(!vm.runInContext(step.if,sandbox_context)) {
+                                                step.running_type = running_type.not;
+                                                continue;
+                                            }
+                                        }
+                                        if(!now_step) {
+                                            now_step = step; // 交互式的给第一个可以执行命令
+                                        }
                                         step.running_type = running_type.running;
                                         step.run = Mustache.render(`${step.run??""}`, {...this.env,...job.env});
                                         ptyshell.write(`${step.run}\r`);
@@ -439,6 +448,9 @@ class work_children {
 
                             })
                             for (const step of job.steps??[]) { // 都完成
+                                if(step.running_type === running_type.not) {
+                                    continue;
+                                }
                                 step.running_type = running_type.success;
                                 step.code = 0;
                             }
