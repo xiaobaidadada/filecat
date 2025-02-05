@@ -258,13 +258,13 @@ class work_children {
                 fail_list.push(it);
             }
         }
+        if(return_steps) {
+            return {success_list: success_list,fail_list};
+        }
         if(fail_list.length === 0) {
             this.send_all_wss(true);
         } else {
             this.send_all_wss(false);
-        }
-        if(return_steps) {
-            return {success_list: success_list,fail_list};
         }
         try {
             const base_data_util = new Base_data_util({base_dir:this.workflow_dir_path});
@@ -365,9 +365,7 @@ class work_children {
                             job.code = code; // 任务整体也失败
                             now_step.fail_message = message ?? out_context;
                         }
-                        if(job.repl) {
-                            out_context = "";
-                        }
+                        out_context = "";
                         if(exec_resolve)
                         {
                             exec_resolve(code);
