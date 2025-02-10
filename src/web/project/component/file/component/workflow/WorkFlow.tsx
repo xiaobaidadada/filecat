@@ -252,7 +252,7 @@ export function WorkFlow(props) {
                             </div>}
                             rightBottomCom={<span className={" div-row "}>
                                 {/*<span>total {total} ;</span>*/}
-                                <span>{Math.abs(page_num)}/{total}</span>
+                                <span>{Math.abs(page_num)}/{max_page_num}</span>
                                 <InputText placeholder={`max page ${max_page_num}`} handleInputChange={(v) => {
                                     input_page_num = parseInt(v);
                                 }}
