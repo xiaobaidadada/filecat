@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {ActionButton} from "../../../meta/component/Button";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -20,10 +20,14 @@ export function FilesUpload() {
     const [open, setOpen] = React.useState(false);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
     const [nowProgress, setNowProgress] = useRecoilState($stroe.nowProgress);
+    const [speed, setSpeed] = useState(0); // 上传速度 MB/s
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null); // 用于存储 `setTimeout` 渲染期间内保持 且不会被渲染
 
     function click() {
         setOpen(!open);
     }
+
+
     useEffect(() => {
         (async () => {
             const newList: any = Array.from(uploadFiles);
@@ -31,6 +35,7 @@ export function FilesUpload() {
                 let value: any = newList[index];
                 try {
                     // console.log(`${getRouterAfter('file',location.pathname)}${value.fullPath}`)
+                    const startTime = Date.now();
                     const rsp = await fileHttp.put(`${encodeURIComponent(`${getRouterAfter('file',getRouterPath())}${value.fullPath}`)}?dir=${value.isDir?1:0}`, value, (progressEvent) => {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                         setNowProgress({
@@ -38,6 +43,20 @@ export function FilesUpload() {
                             value: percentCompleted,
                             index: index
                         })
+                        const elapsedTime = (Date.now() - startTime) / 1000; // seconds
+
+                        // 计算上传速度（MB/s）
+                        if (elapsedTime > 0) {
+                            const uploadSpeed = (progressEvent.loaded / (1024 * 1024) / elapsedTime).toFixed(2);
+                            setSpeed(parseFloat(uploadSpeed));
+                        }
+
+                        // **清除旧的 `setTimeout` 并重置**
+                        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                        // **如果 1 秒后没有新的 `onUploadProgress` 触发，则设为 0**
+                        timeoutRef.current = setTimeout(() => {
+                            setSpeed(0);
+                        }, 1000);
                     })
                     if (rsp.code === 0) {
                         // @ts-ignore
@@ -65,10 +84,12 @@ export function FilesUpload() {
         <div className="card floating">
             <div className="card-title">
                 <h2>{uploadFiles.length}{t("个文件正在上传")}</h2>
-                <ActionButton icon={open ? "keyboard_arrow_down" : "keyboard_arrow_up"} title={"Toggle file upload list"} onClick={click}/>
+                <ActionButton icon={open ? "keyboard_arrow_down" : "keyboard_arrow_up"}
+                              title={"Toggle file upload list"} onClick={click}/>
+                <div className="upload-speed">{speed} MB/s</div>
             </div>
             {open && <div className="card-content file-icons">
-                {
+            {
                     uploadFiles.map((v: any, index) => (
                         <div className="file" key={index}>
                             <div className="file-name">

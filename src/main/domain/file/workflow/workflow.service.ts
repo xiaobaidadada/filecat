@@ -633,31 +633,7 @@ export class WorkflowService {
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
         const user_info = userService.get_user_info_by_token(token);
         if (pojo.run_type === WorkRunType.start) {
-            if (work_exec_map.get(file_path))
-                throw "Workflow exec task already exists";
-            const worker = new work_children(file_path);
-            work_exec_map.set(file_path, worker);
-            try {
-                await worker.init({
-                    filecat_user_id:userService.get_user_id(user_info.username),
-                    filecat_user_name:user_info.username,
-                    filecat_user_note:user_info.note
-                });
-            } catch (e){
-                work_exec_map.delete(file_path);
-                this.online_change_push();
-                throw e;
-            }
-            this.online_change_push(); // 在init后不然没有 filename
-            worker.run_jobs().then(e=>{
-                work_exec_map.delete(file_path);
-                this.online_change_push();
-            }).catch(e=>{
-                console.log('任务执行失败',e)
-                work_exec_map.delete(file_path);
-                worker.close();
-                this.online_change_push();
-            });
+            await this.exec_file(file_path,user_info);
         } else if (pojo.run_type === WorkRunType.stop) {
             const worker = work_exec_map.get(file_path);
             if (!worker)
@@ -666,6 +642,34 @@ export class WorkflowService {
             work_exec_map.delete(file_path);
             this.online_change_push();
         }
+    }
+
+    public async exec_file(file_path,user_info) {
+        if (work_exec_map.get(file_path))
+            throw "Workflow exec task already exists";
+        const worker = new work_children(file_path);
+        work_exec_map.set(file_path, worker);
+        try {
+            await worker.init({
+                filecat_user_id:userService.get_user_id(user_info.username),
+                filecat_user_name:user_info.username,
+                filecat_user_note:user_info.note
+            });
+        } catch (e){
+            work_exec_map.delete(file_path);
+            this.online_change_push();
+            throw e;
+        }
+        this.online_change_push(); // 在init后不然没有 filename
+        worker.run_jobs().then(e=>{
+            work_exec_map.delete(file_path);
+            this.online_change_push();
+        }).catch(e=>{
+            console.log('任务执行失败',e)
+            work_exec_map.delete(file_path);
+            worker.close();
+            this.online_change_push();
+        });
     }
 
     public async workflow_realtime_one(data: WsData<WorkFlowRealTimeOneReq>) {

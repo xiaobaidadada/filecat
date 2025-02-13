@@ -182,7 +182,7 @@ export class NetService {
                         console.error('Error:', err);
                         resolve(res.status(500).send(err.code));
                     } else {
-                        resolve(res.header('filecat_remote_raw_headers',needle_res.rawHeaders).status(needle_res.statusCode).send(needle_res.raw));
+                        resolve(res.header('filecat_remote_raw_headers',needle_res.rawHeaders).header("filecat_remote_code",needle_res.statusCode).status(200).send(needle_res.raw));
                     }
                     if(pojo.form_data_list) {
                         for(const item of pojo.form_data_list as HttpFormData[]) {
@@ -206,7 +206,7 @@ export class NetService {
                     }
                     switch (pojo.method) {
                         case 'get':
-                            needle(pojo.method,pojo.url,option, call);
+                            needle.get(pojo.url,option, call); // needle("get"...) 就会报错 。。。
                             break;
                         case 'put':
                         case 'post': {

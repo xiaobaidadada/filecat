@@ -130,7 +130,7 @@ export class Http {
             return rsq.data
         } catch (e) {
             NotyFail(JSON.stringify(e));
-            return null;
+            throw e;
         }
     }
 

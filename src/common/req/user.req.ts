@@ -64,6 +64,7 @@ export enum UserAuth {
     rtsp_proxy, // rtsp 功能
     workflow_exe, // workflow 执行 功能
     workflow_exe_user, // 能被设置执行的 workflow 用户
+    workflow_api, // workflow 自定义触发api
 }
 
 export class UserData extends UserLogin {
