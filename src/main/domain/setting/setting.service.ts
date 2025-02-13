@@ -61,116 +61,128 @@ export class SettingService {
     }
 
     public async intercept(ctx: Request) {
-        let c_url = ctx.originalUrl;
-        if (ctx.originalUrl.includes("?")) {
-            c_url = ctx.originalUrl.split("?")[0];
-        }
-        const workflow_list_router = this.get_workflow_router() as [][];
-        if (!!workflow_list_router && workflow_list_router.length > 0) {
-            for (let item of workflow_list_router) {
-                // @ts-ignore
-                const router = item[0];
-                if (router === c_url) {
+        try {
+            let c_url = ctx.originalUrl;
+            if (ctx.originalUrl.includes("?")) {
+                c_url = ctx.originalUrl.split("?")[0];
+            }
+            const workflow_list_router = this.get_workflow_router() as [][];
+            if (!!workflow_list_router && workflow_list_router.length > 0) {
+                for (let item of workflow_list_router) {
                     // @ts-ignore
-                    const location = item[1];
-                    if (location && fs.existsSync(location)) {
+                    const router = item[0];
+                    if (router === c_url) {
                         // @ts-ignore
-                        const token = item[2];
-                        if(token) {
-                            // token验证
-                            if(token !== ctx.headers.authorization) {
-                                ctx.res.status(500).send("token is invalid");
-                                return true;
+                        const location = item[1];
+                        if (location && fs.existsSync(location)) {
+                            // @ts-ignore
+                            const token = item[2];
+                            if(token) {
+                                // token验证
+                                if(path.isAbsolute(token)) {
+                                    const context = fs.readFileSync(token).toString();
+                                    if(context !== ctx.headers.authorization) {
+                                        ctx.res.status(500).send("token is invalid");
+                                        return true;
+                                    }
+                                } else if(token !== ctx.headers.authorization) {
+                                    ctx.res.status(500).send("token is invalid");
+                                    return true;
+                                }
                             }
-                        }
-                        // workflow文件存在
-                        try {
-                            // @ts-ignore
-                            const user_info = userService.get_user_info_by_user_id(item[3]);
-                            // @ts-ignore
-                            userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
-                            workflowService.exec_file(location,user_info).catch((e)=>{
-                                console.log("workflow触发失败",e)
+                            // workflow文件存在
+                            try {
+                                // @ts-ignore
+                                const user_info = userService.get_user_info_by_user_id(item[3]);
+                                // @ts-ignore
+                                userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
+                                workflowService.exec_file(location,user_info).catch((e)=>{
+                                    console.log("workflow触发失败",e)
+                                    ctx.res.status(500).send(JSON.stringify(e));
+                                }).then(()=>{
+                                    ctx.res.status(200).send("ok");
+                                });
+                            } catch (e){
                                 ctx.res.status(500).send(JSON.stringify(e));
-                            }).then(()=>{
-                                ctx.res.status(200).send("ok");
-                            });
-                        } catch (e){
-                            ctx.res.status(500).send(JSON.stringify(e));
-                        }
-                        return true;
-                    }
-                }
-            }
-        }
-        const list_router = DataUtil.get<[][]>(customer_router_key);
-        if (!!list_router && list_router.length > 0) {
-            for (let item of list_router) {
-                // @ts-ignore
-                const router = item[0];
-                if (router === c_url) {
-                    // @ts-ignore
-                    const location = item[1];
-                    if (location) {
-                        if ((location as string).startsWith("http")) {
-                            const response = await needle('get', location, ctx.headers);
-                            for (let key in response.headers) {
-                                ctx.res.setHeader(key, response.headers[key]);
-                                // ctx.set(key, response.headers[key]);
                             }
-                            ctx.res.status(response.statusCode).send(response.body);
-
-                        } else {
-                            const url = path.join(location);
-                            if ((location as string).includes(".htm")) {
-                                ctx.res.setHeader("Content-Type", "text/html");
-                                // ctx.type = 'html';
-                            }
-                            fs.accessSync(url, fs.constants.F_OK,)
-                            fs.createReadStream(url).pipe(ctx.res);
-                        }
-                        return true;
-                    }
-                }
-            }
-        }
-        const list_api_router = DataUtil.get<CustomerApiRouterPojo[]>(customer_api_router_key);
-        if (!!list_api_router && list_api_router.length > 0) {
-            for (let item of list_api_router) {
-                if (item.router === c_url) {
-                    if (item.needAuth) {
-                        const token = ctx.headers.authorization;
-                        if (!await this.check(token)) {
-                            ctx.res.send(AuthFail('失败'));
                             return true;
                         }
                     }
-                    try {
-
-                        const instance = this.getHandlerClass(item.router, data_dir_tem_name.all_user_api_file_dir);
-                        // 监听 'data' 事件以接收数据块
-                        let data = '';
-                        ctx.on('data', (chunk) => {
-                            data += chunk;
-                        });
-                        // 等待 'end' 事件完成
-                        await new Promise((resolve) => {
-                            ctx.on('end', resolve);
-                        });
-                        const r = await instance.handler(ctx.headers, data, ctx);
-                        if (r !== null && r !== undefined) {
-                            ctx.res.send(r);
-                        }
-                    } catch (e) {
-                        ctx.res.send(Sucess(e.toString()))
-                    }
-                    return true;
                 }
             }
+            const list_router = DataUtil.get<[][]>(customer_router_key);
+            if (!!list_router && list_router.length > 0) {
+                for (let item of list_router) {
+                    // @ts-ignore
+                    const router = item[0];
+                    if (router === c_url) {
+                        // @ts-ignore
+                        const location = item[1];
+                        if (location) {
+                            if ((location as string).startsWith("http")) {
+                                const response = await needle('get', location, ctx.headers);
+                                for (let key in response.headers) {
+                                    ctx.res.setHeader(key, response.headers[key]);
+                                    // ctx.set(key, response.headers[key]);
+                                }
+                                ctx.res.status(response.statusCode).send(response.body);
+
+                            } else {
+                                const url = path.join(location);
+                                if ((location as string).includes(".htm")) {
+                                    ctx.res.setHeader("Content-Type", "text/html");
+                                    // ctx.type = 'html';
+                                }
+                                fs.accessSync(url, fs.constants.F_OK,)
+                                fs.createReadStream(url).pipe(ctx.res);
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+            const list_api_router = DataUtil.get<CustomerApiRouterPojo[]>(customer_api_router_key);
+            if (!!list_api_router && list_api_router.length > 0) {
+                for (let item of list_api_router) {
+                    if (item.router === c_url) {
+                        if (item.needAuth) {
+                            const token = ctx.headers.authorization;
+                            if (!await this.check(token)) {
+                                ctx.res.send(AuthFail('失败'));
+                                return true;
+                            }
+                        }
+                        try {
+
+                            const instance = this.getHandlerClass(item.router, data_dir_tem_name.all_user_api_file_dir);
+                            // 监听 'data' 事件以接收数据块
+                            let data = '';
+                            ctx.on('data', (chunk) => {
+                                data += chunk;
+                            });
+                            // 等待 'end' 事件完成
+                            await new Promise((resolve) => {
+                                ctx.on('end', resolve);
+                            });
+                            const r = await instance.handler(ctx.headers, data, ctx);
+                            if (r !== null && r !== undefined) {
+                                ctx.res.send(r);
+                            }
+                        } catch (e) {
+                            ctx.res.send(Sucess(e.toString()))
+                        }
+                        return true;
+                    }
+                }
+            }
+
+            // 拦截失败
+            return false;
+        } catch (e) {
+            console.log(e);
+            return true;
         }
 
-        // 拦截失败
-        return false;
     }
 
     // 每次都会重新读取文件没有必要缓存 todo 更合适方案
