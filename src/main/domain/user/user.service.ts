@@ -442,7 +442,9 @@ export class UserService {
         root_check?:boolean // 为 true 是连root都要检查
     }) {
         const user_data = this.get_user_info_by_user_id(user_id);
-        if(!param.root_check && user_data.is_root) return true;
+        if(param?.root_check && user_data.is_root) {
+            return true;
+        }
         const v = user_data?.auth_list.find(v => v === auth);
         if (!!param?.auto_throw && !v) throw "no permission"
         return !!v;
