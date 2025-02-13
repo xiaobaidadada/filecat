@@ -92,8 +92,10 @@ export default function FileList() {
             // console.log(data.context??[])
             const set = new Set<string>(data.context??[]);
             for (const it of to_running_files_set_value??[]) {
-                if(!set.has(it)) {
+                if(it.endsWith('.workflow.yml') && !set.has(it)) {
                     NotySucess(`${it.slice(0,-13)} done!`);
+                } else if(it.endsWith('.act') && !set.has(it)) {
+                    NotySucess(`${it.slice(0,-4)} done!`);
                 }
             }
             to_running_files_set_value = set;
