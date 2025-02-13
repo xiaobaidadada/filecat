@@ -211,6 +211,14 @@ export function Permission(props:{
                        }}/>
                 {t("workflow 执行用户")}
             </div>
+            <div>
+                <input type="checkbox"
+                       checked={props.is_selected(UserAuth.workflow_api,true)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.workflow_api)
+                       }}/>
+                {t("workflow触发api 修改")}
+            </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

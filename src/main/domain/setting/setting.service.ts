@@ -15,6 +15,9 @@ import * as vm from "node:vm";
 import {userController} from "../user/user.controller";
 import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
+import {workflowService} from "../file/workflow/workflow.service";
+import {Wss} from "../../../common/frame/ws.server";
+import {UserAuth} from "../../../common/req/user.req";
 
 const needle = require('needle');
 
@@ -48,10 +51,57 @@ export class SettingService {
         DataUtil.set(customer_router_key, req);
     }
 
+    get_workflow_router() {
+        const list = DataUtil.get(data_common_key.customer_workflow_router_key);
+        return list ?? [];
+    }
+
+    save_workflow_router(req: any) {
+        DataUtil.set(data_common_key.customer_workflow_router_key, req);
+    }
+
     public async intercept(ctx: Request) {
         let c_url = ctx.originalUrl;
         if (ctx.originalUrl.includes("?")) {
             c_url = ctx.originalUrl.split("?")[0];
+        }
+        const workflow_list_router = this.get_workflow_router() as [][];
+        if (!!workflow_list_router && workflow_list_router.length > 0) {
+            for (let item of workflow_list_router) {
+                // @ts-ignore
+                const router = item[0];
+                if (router === c_url) {
+                    // @ts-ignore
+                    const location = item[1];
+                    if (location && fs.existsSync(location)) {
+                        // @ts-ignore
+                        const token = item[2];
+                        if(token) {
+                            // token验证
+                            if(token !== ctx.headers.authorization) {
+                                ctx.res.status(500).send("token is invalid");
+                                return true;
+                            }
+                        }
+                        // workflow文件存在
+                        try {
+                            // @ts-ignore
+                            const user_info = userService.get_user_info_by_user_id(item[3]);
+                            // @ts-ignore
+                            userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
+                            workflowService.exec_file(location,user_info).catch((e)=>{
+                                console.log("workflow触发失败",e)
+                                ctx.res.status(500).send(JSON.stringify(e));
+                            }).then(()=>{
+                                ctx.res.status(200).send("ok");
+                            });
+                        } catch (e){
+                            ctx.res.status(500).send(JSON.stringify(e));
+                        }
+                        return true;
+                    }
+                }
+            }
         }
         const list_router = DataUtil.get<[][]>(customer_router_key);
         if (!!list_router && list_router.length > 0) {

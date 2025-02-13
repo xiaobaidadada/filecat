@@ -252,10 +252,11 @@ export function Http() {
         }).then((r: AxiosResponse) => {
             if (!r) return;
             // debugger
-            if (r.status === 200) {
+            const status = JSON.parse(r.headers.filecat_remote_code);
+            if (status === 200) {
                 set_status_code((<span style={{color: 'green'}}>200</span>));
             } else {
-                set_status_code(r.status);
+                set_status_code(status);
             }
             // console.log(r.headers.filecat_remote_raw_headers)
             if (typeof r.data === 'object') {

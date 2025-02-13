@@ -21,16 +21,29 @@ export class SettingController {
 
 
     // 获取页面路由
-    @Get("/customer_router")
+    @Get(`/${Http_controller_router.setting_customer_router}`)
     getRouter() {
         return Sucess(settingService.getCustomerRouter());
     }
 
     // 设置页面路由
-    @Post('/customer_router/save')
+    @Post(`/${Http_controller_router.setting_customer_router_save}`)
     saveRouter(@Body() req: any, @Req() r) {
         userService.check_user_auth(r.headers.authorization, UserAuth.code_resource);
         settingService.setCustomerRouter(req);
+        return Sucess("1");
+    }
+
+    @Get(`/${Http_controller_router.setting_customer_workflow_router}`)
+    get_workflow_router() {
+        return Sucess(settingService.get_workflow_router());
+    }
+
+    // 设置workflow路由
+    @Post(`/${Http_controller_router.setting_customer_workflow_router_save}`)
+    save_workflow_router(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.workflow_api);
+        settingService.save_workflow_router(req);
         return Sucess("1");
     }
 
