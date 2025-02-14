@@ -26,8 +26,7 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
                 res.send(JSON.stringify(AuthFail('失败')));
                 return
             }
-            // FileServiceImpl.download(req);
-            FileServiceImpl.download2(req);
+            FileServiceImpl.download(req);
             return ;
         }
         // 校验可以用params
