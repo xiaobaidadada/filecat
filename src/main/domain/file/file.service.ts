@@ -416,6 +416,62 @@ class FileService extends FileCompress {
         }
     }
 
+    // 函数仅实现需求,可能需要进一步代码规范的优化
+    async download2(ctx) {
+        const file = ctx.query.file;
+        if (!file || !file.length) {
+            ctx.res.status(404).send('File not found');
+            return;
+        }
+        const token = ctx.query['token'];
+        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+        const stats = fs.statSync(sysPath);
+        if (stats.isDirectory()) {
+            ctx.res.attachment(path.basename(sysPath) + ".zip");
+            const archive = archiver('zip', { zlib: { level: 5 } });
+            archive.pipe(ctx.res);
+            archive.directory(sysPath, path.basename(sysPath));
+            archive.finalize();
+            return;
+        }
+        const fileName = path.basename(sysPath);
+        const fileSize = stats.size;
+        const range = ctx.header("Range");
+        const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
+        if (range) {
+            const [start, end] = range.replace(/bytes=/, "").split("-");
+            const startByte = parseInt(start, 10);
+            const endByte = end ? parseInt(end, 10) : fileSize - 1;
+            if (startByte >= fileSize) {
+                ctx.res.status(416).send("Requested range not satisfiable");
+                return;
+            }
+            const chunkSize = endByte - startByte + 1;
+            const readStream = fs.createReadStream(sysPath, { start: startByte, end: endByte });
+            ctx.res.status(206); 
+            ctx.res.set({
+                "Content-Range": `bytes ${startByte}-${endByte}/${fileSize}`,
+                "Accept-Ranges": "bytes",
+                "Content-Length": chunkSize,
+                "Content-Type": mime.lookup(fileName) || "application/octet-stream",
+                "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+            });
+            readStream.pipe(ctx.res);
+            return;
+        }
+        ctx.res.set({
+            "Content-Type": mime.lookup(fileName) || "application/octet-stream",
+            "Content-Length": fileSize,
+            "Cache-Control": "public, max-age=3600",
+            "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+        });
+        if (!fileName.endsWith('.pdf')) {
+            ctx.res.attachment(fileName);
+        }
+        const readStream = fs.createReadStream(sysPath);
+        readStream.pipe(ctx.res);
+    }
+
     file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
         const pojo = data.context as FileVideoFormatTransPojo;
         const wss = data.wss as Wss;
