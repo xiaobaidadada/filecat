@@ -67,7 +67,7 @@ export function FilesUpload() {
         setProgresses(uploadFiles.map(() => 0));
         speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
 
-        const MAX_CONCURRENT = 20;  // 最大并发数
+        const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了
         let currentIndex = 0;
         let activeWorkers = 0;
         let hasError = false;

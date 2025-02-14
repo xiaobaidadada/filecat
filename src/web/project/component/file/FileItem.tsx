@@ -22,6 +22,7 @@ import { MAX_SIZE_TXT } from '../../../../common/ValueUtil';
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
+    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
     const { click_file } = user_click_file();
     const {t} = useTranslation();
@@ -72,6 +73,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                 navigate(webPathJoin(getRouterPath(), name))
                 setSelectList([])
                 setClickList([])
+                setNowFileList({files:[],folders:[]});
                 return;
             }
         } else {
