@@ -54,7 +54,7 @@ export function CustomerRouter() {
     }
     const worlfow_api_info_click = ()=>{
         let context = <div>
-            需要以 "/api" 开头的路由，文件路径是有效的workflow路径。token也可以是文件绝对路径
+            需要以 "/api" 开头的路由，文件路径是有效的workflow路径。token也可以是文件绝对路径，请求的时候请设置同样的authorization请求头字段。
         </div>;
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >

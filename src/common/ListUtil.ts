@@ -3,7 +3,7 @@ export function getNextByLoop(list, value) {
     const index = getIndexByList(list, value);
 
     if (index === null) {
-        return null;
+        return list[0]; // 默认第一个
     }
     if (index === list.length - 1) {
         return list[0];

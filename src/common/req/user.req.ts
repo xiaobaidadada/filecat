@@ -67,6 +67,14 @@ export enum UserAuth {
     workflow_api, // workflow 自定义触发api
 }
 
+
+export enum FileListShowTypeEmum {
+    block = "",
+    list = "list",
+    gallery = "gallery",
+
+}
+
 export class UserData extends UserLogin {
     cwd: string; // 目录顶级范围 (role 作用)
     access_dirs: string[] = []; // cwd 是第一个 这里是其它的可访问的 (role 作用)
@@ -84,6 +92,8 @@ export class UserData extends UserLogin {
     folder_item_now:number; // 当前使用的哪个选项 一般是默认的位置
     protection_directory:any[]; // 保护目录
     bind_role_id:string; // 绑定的角色id
+
+    file_list_show_type:FileListShowTypeEmum;
 
 
     // 用于角色的
