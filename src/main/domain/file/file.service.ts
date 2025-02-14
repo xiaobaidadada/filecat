@@ -33,6 +33,7 @@ import multer from 'multer';
 import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
+
 const chokidar = require('chokidar');
 
 class FileService extends FileCompress {
@@ -42,11 +43,11 @@ class FileService extends FileCompress {
             files: [],
             folders: [],
         };
-        if(is_sys_path === 1 && decodeURIComponent(param_path) === "etc/fstab") {
-            userService.check_user_auth(token,UserAuth.sys_disk_mount);
+        if (is_sys_path === 1 && decodeURIComponent(param_path) === "etc/fstab") {
+            userService.check_user_auth(token, UserAuth.sys_disk_mount);
         }
         const sysPath = is_sys_path === 1 ? `/${decodeURIComponent(param_path)}` : path.join(settingService.getFileRootPath(token), param_path ? decodeURIComponent(param_path) : "");
-        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token, sysPath)
         if (!fs.existsSync(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
@@ -113,7 +114,7 @@ class FileService extends FileCompress {
     public async getFileInfo(type: FileTypeEnum, fpath: string, token) {
         let info: FileInfoItemData = {};
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
-        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token, sysPath)
         switch (type) {
             case FileTypeEnum.folder:
                 info = await this.getDiskSizeForPath(sysPath);
@@ -148,15 +149,15 @@ class FileService extends FileCompress {
     public uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
-        userService.check_user_path(token,sysPath);
-        userService.check_user_only_path(token,sysPath);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
         // if (!file) {
         //     // 目录
-            if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
-                // 目录不存在，创建目录
-                fs.mkdirSync(sysPath, {recursive: true});
-                return;
-            }
+        if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
+            // 目录不存在，创建目录
+            fs.mkdirSync(sysPath, {recursive: true});
+            return;
+        }
         //     return;
         // }
         req['fileDir'] = path.dirname(sysPath);
@@ -177,43 +178,43 @@ class FileService extends FileCompress {
             return Sucess("1");
         }
         let sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(filePath));
-        userService.check_user_path(token,sysPath)
-        if (userService.protectionCheck(sysPath,token) || settingService.protectionCheck(sysPath)) {
+        userService.check_user_path(token, sysPath)
+        if (userService.protectionCheck(sysPath, token) || settingService.protectionCheck(sysPath)) {
             return Fail("1", RCode.PROTECT_FILE);
         }
         // 回收站判断
-        if(settingService.get_recycle_bin_status()) {
+        if (settingService.get_recycle_bin_status()) {
             sysPath = removeTrailingPath(sysPath);
             const cyc_map_list = settingService.get_recycle_dir_map_list();
             for (const it of cyc_map_list) {
                 let cyc_p;
-                let check_cyc_p= "";
-                if(it.length >1 && !!it[1]) {
+                let check_cyc_p = "";
+                if (it.length > 1 && !!it[1]) {
                     cyc_p = removeTrailingPath(it[1]);
                     check_cyc_p = it[0];
                 } else {
                     cyc_p = removeTrailingPath(it[0]); // 没有设置预先被删除目录
                 }
-                if(cyc_p === sysPath) {
+                if (cyc_p === sysPath) {
                     throw "cyc dir not to del"; // 回收站不能被删除
                 }
-                if(check_cyc_p !== "" && !userService.isSubPath(check_cyc_p,sysPath)) {
+                if (check_cyc_p !== "" && !userService.isSubPath(check_cyc_p, sysPath)) {
                     continue; // 不属于这个回收站目录
                 }
-                if(userService.isSubPath(cyc_p,sysPath)) {
+                if (userService.isSubPath(cyc_p, sysPath)) {
                     continue; // 是回收站内的文件
                 }
                 // 开始回收
                 const ext_name = path.extname(sysPath);
                 const fileName = path.basename(filePath, ext_name);
-                let p = path.join(cyc_p,`${fileName}${ext_name}`);
-                if(fs.existsSync(p)) {
-                    p = path.join(cyc_p,`${fileName}_${Date.now()}${ext_name}`);
-                    if(fs.existsSync(p)) {
+                let p = path.join(cyc_p, `${fileName}${ext_name}`);
+                if (fs.existsSync(p)) {
+                    p = path.join(cyc_p, `${fileName}_${Date.now()}${ext_name}`);
+                    if (fs.existsSync(p)) {
                         throw "try again";
                     }
                 }
-                this.cut_exec(sysPath,p);
+                this.cut_exec(sysPath, p);
                 return Sucess("1");
             }
             // 如果不是回收站内的文件 不做真的删除 而是剪切
@@ -253,8 +254,8 @@ class FileService extends FileCompress {
             return;
         }
         const sysPath = is_sys_path === 1 ? `/${filePath}` : path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
-        userService.check_user_path(token,sysPath);
-        userService.check_user_only_path(token,sysPath);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         fs.writeFileSync(sysPath, context);
@@ -266,8 +267,8 @@ class FileService extends FileCompress {
 
     public common_base64_save(token: string, filepath: string, base64_context: string, type: base64UploadType) {
         const sysPath = path.join(settingService.getFileRootPath(token), filepath);
-        userService.check_user_path(token,sysPath);
-        userService.check_user_only_path(token,sysPath);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
         const binaryData = Buffer.from(base64_context, 'base64');
         if (type === base64UploadType.all || type === base64UploadType.start) {
             fs.writeFileSync(sysPath, binaryData);
@@ -283,14 +284,14 @@ class FileService extends FileCompress {
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path);
         const toSysPath = path.join(root_path, data.to ? decodeURIComponent(data.to) : "");
-        userService.check_user_path(token,sysPath)
-        userService.check_user_path(token,toSysPath)
+        userService.check_user_path(token, sysPath)
+        userService.check_user_path(token, toSysPath)
         for (const file of data.files) {
-            this.cut_exec(decodeURIComponent(path.join(sysPath, file)),decodeURIComponent(path.join(toSysPath, path.basename(file))))
+            this.cut_exec(decodeURIComponent(path.join(sysPath, file)), decodeURIComponent(path.join(toSysPath, path.basename(file))))
         }
     }
 
-    public cut_exec(source_path:string,to_file:string) {
+    public cut_exec(source_path: string, to_file: string) {
         fs.renameSync(source_path, to_file);
         rimraf(source_path);
     }
@@ -302,10 +303,10 @@ class FileService extends FileCompress {
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path);
         const toSysPath = path.join(root_path, data.to ? decodeURIComponent(data.to) : "");
-        userService.check_user_path(token,sysPath)
-        userService.check_user_only_path(token,sysPath);
-        userService.check_user_path(token,toSysPath)
-        userService.check_user_only_path(token,toSysPath);
+        userService.check_user_path(token, sysPath)
+        userService.check_user_only_path(token, sysPath);
+        userService.check_user_path(token, toSysPath)
+        userService.check_user_only_path(token, toSysPath);
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
             // 覆盖
@@ -329,8 +330,8 @@ class FileService extends FileCompress {
             return
         }
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.name));
-        userService.check_user_path(token,sysPath);
-        userService.check_user_only_path(token,sysPath);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
         if (fs.existsSync(sysPath)) {
             return;
         }
@@ -348,7 +349,7 @@ class FileService extends FileCompress {
         }
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path, decodeURIComponent(data.name));
-        userService.check_user_path(token,sysPath)
+        userService.check_user_path(token, sysPath)
         const sysPathNew = path.join(root_path, decodeURIComponent(data.newName));
         await fse.rename(sysPath, sysPathNew);
     }
@@ -362,29 +363,51 @@ class FileService extends FileCompress {
         }
         const token = ctx.query['token'];
         if (!Array.isArray(file)) {
-
+            // 单个文件
             const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
             const fileName = path.basename(sysPath)
             const stats = fs.statSync(sysPath);
-            ctx.res.set('Content-Type', mime.lookup(fileName) || 'application/octet-stream');
+            const range = ctx.header("Range");
+            const fileSize = stats.size;
+            const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
+            if (range) {
+                const [start, end] = range.replace(/bytes=/, "").split("-");
+                const startByte = parseInt(start, 10);
+                const endByte = end ? parseInt(end, 10) : fileSize - 1;
+                if (startByte >= fileSize) {
+                    ctx.res.status(416).send("Requested range not satisfiable");
+                    return;
+                }
+                const chunkSize = endByte - startByte + 1;
+                const readStream = fs.createReadStream(sysPath, {start: startByte, end: endByte});
+                ctx.res.status(206);
+                ctx.res.set({
+                    "Content-Range": `bytes ${startByte}-${endByte}/${fileSize}`,
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": chunkSize,
+                    "Content-Type": mime.lookup(fileName) || "application/octet-stream",
+                    "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+                });
+                readStream.pipe(ctx.res);
+                return;
+            }
             if (!fileName.endsWith('.pdf')) {
                 ctx.res.attachment(fileName); // 设置文件名
             }
             if (stats.isFile()) {
-                ctx.res.set('Cache-Control', 'public, max-age=3600'); // 一个小时的缓存
+                ctx.res.set({
+                    "Content-Type": mime.lookup(fileName) || "application/octet-stream",
+                    "Content-Length": fileSize,
+                    // "Cache-Control": "public, max-age=3600",
+                    "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+                });
                 // 发送文件
                 const readStream = fs.createReadStream(sysPath);
                 readStream.pipe(ctx.res);
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
-                ctx.res.attachment(fileName + ".zip");
-                const archive = archiver('zip', {
-                    zlib: {level: 5} // 设置压缩级别
-                });
-                // const stream = new Stream.PassThrough()
-                // stream.pipe(ctx.res)
-                // ctx.res.body = stream
-                // 将压缩后的文件流发送给客户端
+                ctx.res.attachment(path.basename(sysPath) + ".zip");
+                const archive = archiver('zip', { zlib: { level: 5 } });
                 archive.pipe(ctx.res);
                 archive.directory(sysPath, path.basename(sysPath));
                 archive.finalize();
@@ -416,61 +439,6 @@ class FileService extends FileCompress {
         }
     }
 
-    // 函数仅实现需求,可能需要进一步代码规范的优化
-    async download2(ctx) {
-        const file = ctx.query.file;
-        if (!file || !file.length) {
-            ctx.res.status(404).send('File not found');
-            return;
-        }
-        const token = ctx.query['token'];
-        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
-        const stats = fs.statSync(sysPath);
-        if (stats.isDirectory()) {
-            ctx.res.attachment(path.basename(sysPath) + ".zip");
-            const archive = archiver('zip', { zlib: { level: 5 } });
-            archive.pipe(ctx.res);
-            archive.directory(sysPath, path.basename(sysPath));
-            archive.finalize();
-            return;
-        }
-        const fileName = path.basename(sysPath);
-        const fileSize = stats.size;
-        const range = ctx.header("Range");
-        const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
-        if (range) {
-            const [start, end] = range.replace(/bytes=/, "").split("-");
-            const startByte = parseInt(start, 10);
-            const endByte = end ? parseInt(end, 10) : fileSize - 1;
-            if (startByte >= fileSize) {
-                ctx.res.status(416).send("Requested range not satisfiable");
-                return;
-            }
-            const chunkSize = endByte - startByte + 1;
-            const readStream = fs.createReadStream(sysPath, { start: startByte, end: endByte });
-            ctx.res.status(206); 
-            ctx.res.set({
-                "Content-Range": `bytes ${startByte}-${endByte}/${fileSize}`,
-                "Accept-Ranges": "bytes",
-                "Content-Length": chunkSize,
-                "Content-Type": mime.lookup(fileName) || "application/octet-stream",
-                "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
-            });
-            readStream.pipe(ctx.res);
-            return;
-        }
-        ctx.res.set({
-            "Content-Type": mime.lookup(fileName) || "application/octet-stream",
-            "Content-Length": fileSize,
-            "Cache-Control": "public, max-age=3600",
-            "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
-        });
-        if (!fileName.endsWith('.pdf')) {
-            ctx.res.attachment(fileName);
-        }
-        const readStream = fs.createReadStream(sysPath);
-        readStream.pipe(ctx.res);
-    }
 
     file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
         const pojo = data.context as FileVideoFormatTransPojo;
@@ -506,22 +474,22 @@ class FileService extends FileCompress {
 
     async uncompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
-        userService.check_user_auth(pojo.token,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
 
         const source_file = decodeURIComponent(pojo.source_file);
         const tar_dir = decodeURIComponent(pojo.tar_dir ?? "");
         const directoryPath = decodeURIComponent(path.dirname(source_file));
         const root_path = settingService.getFileRootPath(pojo.token);
         const targetFolder = path.join(root_path, directoryPath, tar_dir);
-        userService.check_user_path(pojo.token,targetFolder);
-        userService.check_user_only_path(pojo.token,targetFolder);
+        userService.check_user_path(pojo.token, targetFolder);
+        userService.check_user_only_path(pojo.token, targetFolder);
 
         const wss = data.wss as Wss;
         if (tar_dir) {
             fs.mkdirSync(path.join(targetFolder), {recursive: true});
         }
         const sysSourcePath = path.join(root_path, source_file);
-        userService.check_user_path(pojo.token,sysSourcePath)
+        userService.check_user_path(pojo.token, sysSourcePath)
         const outHanle = (value) => {
             if (value === -1) {
                 wss.ws.close();
@@ -550,7 +518,7 @@ class FileService extends FileCompress {
 
     FileCompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
-        userService.check_user_auth(pojo.token,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
 
         const files = pojo.filePaths;
         const root_path = settingService.getFileRootPath(pojo.token);
@@ -558,8 +526,8 @@ class FileService extends FileCompress {
         const filePaths: string[] = [], directorys: string[] = [];
         for (const file of files) {
             const name = path.join(root_path, decodeURIComponent(file));
-            userService.check_user_path(pojo.token,name);
-            userService.check_user_only_path(pojo.token,name);
+            userService.check_user_path(pojo.token, name);
+            userService.check_user_only_path(pojo.token, name);
             try {
                 const stats = fs.statSync(name);
                 if (stats.isFile()) {
@@ -688,14 +656,14 @@ class FileService extends FileCompress {
     }
 
 
-    go_forward_log( pojo : LogViewerPojo ,file_path) {
+    go_forward_log(pojo: LogViewerPojo, file_path) {
         // 开始查找
         let linesRead = 0; // 行数
         let haveReadSize = 0; // 已经读取的字节数
         const fd = fs.openSync(file_path, "r");
         let max_count = 100;
         while (haveReadSize < pojo.once_max_size) {
-            if (max_count<=0) {
+            if (max_count <= 0) {
                 break;
             }
             max_count--;
@@ -703,29 +671,29 @@ class FileService extends FileCompress {
             const buffer = Buffer.alloc(10240);
             // 返回实际读取的字节数
             let bytesRead = fs.readSync(fd, buffer,
-                    0, // 相对于当前的偏移位置
-                    buffer.length, // 读取的长度
-                    pojo.position // 当前位置
-                );
+                0, // 相对于当前的偏移位置
+                buffer.length, // 读取的长度
+                pojo.position // 当前位置
+            );
             // 遍历 buffer 中的每一个字节
             let done = false;
             let last_h = -1; // 上一个/n 未开始的也算 /n 都是不包括
-            for (let i = 0,ch_byte_i = bytesRead-1; i < bytesRead; i++) {
+            for (let i = 0, ch_byte_i = bytesRead - 1; i < bytesRead; i++) {
                 // 如果字节是换行符 '\n'（ASCII值为 10）
-                if (buffer[i] === 10 || i === ch_byte_i ) { // 换行或者 最后一个字符
+                if (buffer[i] === 10 || i === ch_byte_i) { // 换行或者 最后一个字符
                     let index = i;
-                    if(i === ch_byte_i && (buffer[i] & 0x80) !== 0) {
+                    if (i === ch_byte_i && (buffer[i] & 0x80) !== 0) {
                         // 最后一位 不是单字节字符 需要找到首字节
                         for (let j = i; j > last_h; j--) {
                             if (this.isFirstByte(buffer[j])) {
-                                index = j-1;
+                                index = j - 1;
                                 break;
                             }
                         }
                     }
                     linesRead++;
                     // 以/n做字符串结尾，扫描到的/n 或者文件的最后一个字符
-                    const now_str_start = last_h+1;
+                    const now_str_start = last_h + 1;
                     const next_str_start = index + 1;
                     pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start)); // i 不包括 /n
                     pojo.context_start_position_list.push(pojo.position + now_str_start); // 开始位置
@@ -743,7 +711,7 @@ class FileService extends FileCompress {
             } else {
                 haveReadSize += last_h;
                 // 更新文件位置
-                pojo.position += last_h +1; // 往前进一个字符
+                pojo.position += last_h + 1; // 往前进一个字符
             }
         }
         // 关闭文件
@@ -763,7 +731,7 @@ class FileService extends FileCompress {
      * @param file_path
      * @param max_len 往后最长的距离
      */
-    find_back_enter_index(pojo : LogViewerPojo ,file_path,max_len = 10240) {
+    find_back_enter_index(pojo: LogViewerPojo, file_path, max_len = 10240) {
         const fd = fs.openSync(file_path, "r");
         let buffer_len = max_len;
         if (pojo.position < buffer_len) {
@@ -780,18 +748,18 @@ class FileService extends FileCompress {
         for (let i = bytesRead; i >= 0; i--) {
             let index = i;
             // 如果字节是换行符 '\n'（ASCII值为 10）
-            if (buffer[i] === 10 || i===0) {
-                if((buffer[i] & 0x80) !== 0) {
+            if (buffer[i] === 10 || i === 0) {
+                if ((buffer[i] & 0x80) !== 0) {
                     // 找到首字节
                     for (let j = 0; j < bytesRead; j++) {
                         if (this.isFirstByte(buffer[j])) {
-                            index = j -1;
+                            index = j - 1;
                             break;
                         }
                     }
                 }
-                const now_str_start = index ===0 && pojo.position ===0 ?0:index+1;
-                pojo.position = position + now_str_start ;
+                const now_str_start = index === 0 && pojo.position === 0 ? 0 : index + 1;
+                pojo.position = position + now_str_start;
                 fs.closeSync(fd);
                 return;
             }
@@ -800,7 +768,7 @@ class FileService extends FileCompress {
         pojo.position = position;
     }
 
-    go_back_log( pojo : LogViewerPojo ,file_path ) {
+    go_back_log(pojo: LogViewerPojo, file_path) {
         // 开始查找
         let linesRead = 0; // 行数
         let haveReadSize = 0; // 已经读取的字节数
@@ -808,7 +776,7 @@ class FileService extends FileCompress {
         let buffer_len = 10240;
         let max_count = 100;
         while (haveReadSize < pojo.once_max_size) {
-            if (max_count<=0) {
+            if (max_count <= 0) {
                 break;
             }
             max_count--;
@@ -831,18 +799,18 @@ class FileService extends FileCompress {
             for (let i = bytesRead; i >= 0; i--) {
                 let index = i;
                 // 如果字节是换行符 '\n'（ASCII值为 10）
-                if (buffer[i] === 10 || i===0) {
-                    if(i === 0 && pojo.position !==0 && (buffer[i] & 0x80) !== 0) {
+                if (buffer[i] === 10 || i === 0) {
+                    if (i === 0 && pojo.position !== 0 && (buffer[i] & 0x80) !== 0) {
                         // 找到首字节
                         for (let j = 0; j < last_h; j++) {
                             if (this.isFirstByte(buffer[j])) {
-                                index = j -1;
+                                index = j - 1;
                                 break;
                             }
                         }
                     }
                     linesRead++;
-                    const now_str_start = index ===0 && pojo.position ===0 ?0:index+1;
+                    const now_str_start = index === 0 && pojo.position === 0 ? 0 : index + 1;
                     const next_str_start = last_h + 1;
                     pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start));
                     pojo.context_start_position_list.push(pojo.position + now_str_start);
@@ -855,12 +823,12 @@ class FileService extends FileCompress {
                 }
             }
 
-            if (done || bytesRead === 0 || (last_h<=0  && pojo.position ===0)) {
+            if (done || bytesRead === 0 || (last_h <= 0 && pojo.position === 0)) {
                 break;
             } else {
-                haveReadSize += (bytesRead-last_h);
+                haveReadSize += (bytesRead - last_h);
                 // 更新文件位置
-                pojo.position -= last_h -1;
+                pojo.position -= last_h - 1;
             }
         }
         // 关闭文件
@@ -885,16 +853,16 @@ class FileService extends FileCompress {
             pojo.context = '';
             return pojo;
         }
-        if (pojo.back) return this.go_back_log(pojo,file_path);
-        if(pojo.find_back_enter_index)this.find_back_enter_index(pojo,file_path,100);
-        return  this.go_forward_log(pojo, file_path);
+        if (pojo.back) return this.go_back_log(pojo, file_path);
+        if (pojo.find_back_enter_index) this.find_back_enter_index(pojo, file_path, 100);
+        return this.go_forward_log(pojo, file_path);
     }
 
     file_change_watcher_map = new Map();
 
     log_viewer_watch(data: WsData<LogViewerPojo>) {
         const pojo = data.context as LogViewerPojo;
-        if(this.file_change_watcher_map.has(pojo.token)) {
+        if (this.file_change_watcher_map.has(pojo.token)) {
             return;
         }
 
@@ -911,8 +879,8 @@ class FileService extends FileCompress {
             usePolling: true, // 使用事件驱动模式（默认是）
             // interval: 100,     // 轮询间隔（如果启用了轮询模式）
         });
-        this.file_change_watcher_map.set(pojo.token,watcher);
-        wss.setClose(()=>{
+        this.file_change_watcher_map.set(pojo.token, watcher);
+        wss.setClose(() => {
             watcher.close();
             this.file_change_watcher_map.delete(pojo.token);
         })
@@ -931,26 +899,26 @@ class FileService extends FileCompress {
                     }
                     if (stats.size > bytesRead) {  // 文件变大
                         // 文件变大，创建新的读取流
-                        const newStream = fs.createReadStream(file_path, { encoding: 'utf8', start: bytesRead });
+                        const newStream = fs.createReadStream(file_path, {encoding: 'utf8', start: bytesRead});
                         newStream.on('data', (chunk) => {
                             const str = chunk.toString();
                             let now_str_start = bytesRead;
-                            let next_str_start = bytesRead + chunk.length+1; // todo +1?
+                            let next_str_start = bytesRead + chunk.length + 1; // todo +1?
                             let index = 0;
-                            for (let i =0 ;i <str.length; i++) {
-                                if(!/^\s$/.test(str[i]) ) {
+                            for (let i = 0; i < str.length; i++) {
+                                if (!/^\s$/.test(str[i])) {
                                     // 不是空白字符
                                     break;
-                                } else if (str[i] === '\n' && chunk.length-1 > i) {
-                                    index = i+1;
+                                } else if (str[i] === '\n' && chunk.length - 1 > i) {
+                                    index = i + 1;
                                     now_str_start = bytesRead + index;
                                     next_str_start + index;
                                     break;
                                 }
                             }
                             // send
-                            pojo.context_list.push(str.slice(index,chunk.length));
-                            pojo.context_start_position_list.push(now_str_start );
+                            pojo.context_list.push(str.slice(index, chunk.length));
+                            pojo.context_start_position_list.push(now_str_start);
                             pojo.context_position_list.push(next_str_start);
                             pojo.max_size = bytesRead + chunk.length;
                             const result = new WsData<SysPojo>(CmdType.log_viewer_watch);
