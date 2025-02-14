@@ -43,6 +43,7 @@ export class UserService {
     }
 
     public get_user_id(username: string): string {
+        username = `${username}`;
         const root_username = this.get_root_name();
         if (username === root_username) {
             // root 账号 使用 -1
@@ -141,6 +142,16 @@ export class UserService {
         mapping[id] = this.user_data_reset_check(mapping[id]);
         DataUtil.set(data_common_key.user_id_info_data_mapping, mapping);
         this.load_user_cmd_path(id); // 权限更新
+    }
+
+    // 更新用户数据不做校验
+    public only_update_user_data(id: string, data: UserData){
+        let mapping = DataUtil.get(data_common_key.user_id_info_data_mapping);
+        if (!mapping) {
+            mapping = {}
+        }
+        mapping[id] = {...mapping[id], ...data}; // 覆盖之前的属性
+        DataUtil.set(data_common_key.user_id_info_data_mapping, mapping);
     }
 
     // 重新设置用户路径数据

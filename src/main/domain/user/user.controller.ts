@@ -102,10 +102,10 @@ export class UserController {
         if(!user_data) {
             throw "user data not found";
         }
-        if(user.username)
-        user_data.username = user.username;
-        user_data.hash_password = hash_string(user.password);
-        userService.save_user_info(user.user_id,user_data);
+        // if(user.username)
+        // user_data.username = user.username;
+        // user_data.hash_password = hash_string(user.password);
+        userService.save_user_info(user.user_id,{username:user.username,hash_password:hash_string(user.password)} as UserData);
         return Sucess('ok');
     }
 
@@ -161,6 +161,15 @@ export class UserController {
         }
         if(!user.cwd) throw "cwd not found";
         userService.save_user_info(user.id,user)
+        return Sucess("");
+    }
+
+    // 用户样式类型
+    @Post('/save_user_file_list_show_type')
+    save_user_file_list_show_type(@Body() body: {type:string},@Req() req: Request) {
+        const user_data = userService.get_user_info_by_token(req.headers.authorization);
+        const user_id = userService.get_user_id(user_data.username);
+        userService.only_update_user_data(user_id,{file_list_show_type:body.type} as UserData);
         return Sucess("");
     }
 

@@ -3,7 +3,7 @@ import {FileItem} from "./FileItem";
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {fileHttp} from "../../util/config";
+import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
@@ -29,14 +29,9 @@ import {workflow_dir_name, WorkFlowRealTimeReq} from "../../../../common/req/fil
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
 import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
+import {FileListShowTypeEmum} from "../../../../common/req/user.req";
 
 
-export enum FileListShowTypeEmum {
-    block = "",
-    list = "list",
-    gallery = "gallery",
-
-}
 
 
 const fileTypes = Object.values(FileListShowTypeEmum);
@@ -58,7 +53,7 @@ export default function FileList() {
     const navigate = useNavigate();
 
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
+    // const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
@@ -78,6 +73,8 @@ export default function FileList() {
     const [workflow_show_click,set_workflow_show_click] = useState(false);
 
     const {reloadUserInfo} = useContext(GlobalContext);
+    const {initUserInfo} = useContext(GlobalContext);
+    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
     const { click_file } = user_click_file();
 
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
@@ -198,8 +195,11 @@ export default function FileList() {
             }
         }
     }, []);
-    function switchGridView() {
-        setFileType(getNextByLoop(fileTypes, fileType))
+    async function switchGridView() {
+        // setFileType(getNextByLoop(fileTypes, fileType));
+        const type = getNextByLoop(fileTypes, user_base_info?.user_data?.file_list_show_type??'');
+        await userHttp.post('save_user_file_list_show_type',{type});
+        initUserInfo();
     }
     function routerClick() {
         setSelectList([])
@@ -441,7 +441,7 @@ export default function FileList() {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>
             </Header>
-            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
+            <div id={"listing"} className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type??''}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
                 {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
                 {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>{t("文件夹")}</h2>}
                 {(nowFileList.folders) &&
