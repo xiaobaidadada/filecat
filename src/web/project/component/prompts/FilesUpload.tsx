@@ -119,16 +119,20 @@ export function FilesUpload() {
                 </div>
                 {open && (
                     <div className="card-content file-icons">
-                        {uploadFiles.map((v: any, index) => (
-                            <div className="file" key={index}>
-                                <div className="file-name">
-                                    {v.name}
+                        {/* 修改这里：过滤已完成的文件 */}
+                        {uploadFiles.map((v: any, index) => {
+                            if (progresses[index] >= 100) return null;
+                            return (
+                                <div className="file" key={index}>
+                                    <div className="file-name">
+                                        {v.name}
+                                    </div>
+                                    <div className="file-progress">
+                                        <div style={{ width: `${progresses[index] || 0}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="file-progress">
-                                    <div style={{ width: `${progresses[index] || 0}%` }}></div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
