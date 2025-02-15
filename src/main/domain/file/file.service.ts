@@ -391,15 +391,16 @@ class FileService extends FileCompress {
                 readStream.pipe(ctx.res);
                 return;
             }
-            if (!fileName.endsWith('.pdf')) {
-                ctx.res.attachment(fileName); // 设置文件名
-            }
             if (stats.isFile()) {
+                let handle_type = "attachment";
+                if (fileName.endsWith('.pdf')) {
+                    handle_type = "inline";
+                }
                 ctx.res.set({
                     "Content-Type": mime.lookup(fileName) || "application/octet-stream",
                     "Content-Length": fileSize,
                     // "Cache-Control": "public, max-age=3600",
-                    "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+                    "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
                 });
                 // 发送文件
                 const readStream = fs.createReadStream(sysPath);
