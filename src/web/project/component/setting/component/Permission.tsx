@@ -205,7 +205,7 @@ export function Permission(props:{
             </div>
             <div>
                 <input type="checkbox"
-                       checked={props.is_selected(UserAuth.workflow_exe_user,true)}
+                       checked={props.is_selected(UserAuth.workflow_exe_user, true)}
                        onChange={() => {
                            props.select_auth(UserAuth.workflow_exe_user)
                        }}/>
@@ -213,7 +213,8 @@ export function Permission(props:{
             </div>
             <div>
                 <input type="checkbox"
-                       checked={props.is_selected(UserAuth.workflow_api,true)}
+                       disabled={props.is_disable(UserAuth.workflow_api)}
+                       checked={props.is_selected(UserAuth.workflow_api)}
                        onChange={() => {
                            props.select_auth(UserAuth.workflow_api)
                        }}/>
