@@ -7,7 +7,7 @@ import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
-import {getNewDeleteByList, getNextByLoop} from "../../../../common/ListUtil";
+import {getNextByLoop} from "../../../../common/ListUtil";
 import {scanFiles} from "../../util/file";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
@@ -21,17 +21,17 @@ import {NotyFail, NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {use_file_to_running, user_click_file} from "../../util/store.util";
-import { formatFileSize } from '../../../../common/ValueUtil';
+import {formatFileSize} from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextTip} from "../../../meta/component/Card";
 import {WorkFlow} from "./component/workflow/WorkFlow";
 import {workflow_dir_name, WorkFlowRealTimeReq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
-import {CmdType} from "../../../../common/frame/WsData";
+import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
 import {FileListShowTypeEmum} from "../../../../common/req/user.req";
-
-
+import {isAbsolutePath, path_join} from '../../../../common/path_util';
+import {SysPojo} from "../../../../common/req/sys.pojo";
 
 
 const fileTypes = Object.values(FileListShowTypeEmum);
@@ -41,7 +41,7 @@ const columnWidth = 280;
 let pre_search:GetFilePojo;
 
 let to_running_files_set_value;
-
+let dir_info = {} as any;
 export default function FileList() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
@@ -100,11 +100,16 @@ export default function FileList() {
         })
         await ws.sendData(CmdType.workflow_realtime,p);
     }
-    const fileHandler = async () => {
+    const fileHandler = async (path?:string) => {
         // 文件列表初始化界面
-        const rsp = await fileHttp.get(encodeURIComponent(getRouterAfter('file',getRouterPath()))); // 方式错误路径 因为没有使用  # 路由 这里加上去 location.hash
+        if(path) {
+            path = encodeURIComponent(path)+"?is_sys_path=1"
+        } else {
+            path = encodeURIComponent(getRouterAfter('file',getRouterPath()))
+        }
+        const rsp = await fileHttp.get(path); // 方式错误路径 因为没有使用  # 路由 这里加上去 location.hash
         if (rsp.code === RCode.PreFile) {
-            click_file({name:rsp.message,context:rsp.data}); // 对于非文本类型的暂时不能用这种长路径url直接打开
+            click_file({name:rsp.message,context:rsp.data,opt_shell:true }); // 对于非文本类型的暂时不能用这种长路径url直接打开
             return;
         }
         if (rsp.code !== RCode.Sucess) {
@@ -122,6 +127,10 @@ export default function FileList() {
                 have_workflow_water = true;
                 workflow_watcher();
             }
+        }
+        if(data.relative_user_path) {
+            navigate(data.relative_user_path);
+            return;
         }
         for (const folder of data.folders??[]) {
             if(folder.name === workflow_dir_name) {
@@ -153,12 +162,18 @@ export default function FileList() {
         setEditorSetting({open: false});
         setFilePreview({open:false});
         set_workflow_show_click(false);
+        dir_info = {};
         to_running_files_set_value = undefined;
+
+    }, [location]);
+    useEffect(() => {
         return async ()=>{
-            await ws.unConnect();
+            if (!shellShow.show) {
+                await ws.unConnect();
+            }
             set_to_running_files_set(new Set())
         }
-    }, [location]);
+    }, [shellShow]);
     const drop = async (event) => {
         event.preventDefault();
         let dt = event.dataTransfer;
@@ -305,23 +320,37 @@ export default function FileList() {
         }
         setNowFileList({files,folders});
     }
-
+    const update_dir_info = (show_info) => {
+        set_prompt_card({open:true,title:"信息",context_div : (
+                <div >
+                    <TextLine left={t("挂载位置磁盘")} right={ show_info?.total_size}/>
+                    <TextLine left={`${t("磁盘剩余")}`} right={ show_info?.left_size}/>
+                    <TextLine left={`${t("文件系统")}`} right={ show_info?.fs_type}/>
+                    <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
+                    <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
+                    <TextLine left={`${t("当前位置")}`} right={<TextTip context={show_info?.now_absolute_path}/>}/>
+                </div>
+            )})
+    }
     // 文件夹信息
     const folder_info = async ()=>{
-        const rsq = await fileHttp.post("file/info",{type:FileTypeEnum.folder,path:getRouterAfter('file',getRouterPath())})
-        if(rsq.code === RCode.Sucess) {
-            set_prompt_card({open:true,title:"信息",context_div : (
-                    <div >
-                        <TextLine left={t("挂载位置磁盘")} right={ rsq.data && rsq.data.total_size}/>
-                        <TextLine left={`${t("磁盘剩余")}`} right={ rsq.data && rsq.data.left_size}/>
-                        <TextLine left={`${t("文件系统")}`} right={ rsq.data && rsq.data.fs_type}/>
-                        <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
-                        <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
-                        <TextLine left={`${t("当前位置")}`} right={<TextTip context={rsq?.data?.now_absolute_path}/>}/>
-                    </div>
-                )})
+        let show_info ;
+        if(!dir_info.now_absolute_path) {
+            ws.addMsg(CmdType.file_info, (wsData: WsData<SysPojo>) => {
+                const pojo = wsData.context;
+                if(show_info) {
+                    dir_info = { ...dir_info, ...pojo };
+                    // 排除第一次
+                    ws.removeMsg(CmdType.file_info);
+                    update_dir_info(dir_info);
+                }
+            })
+            const result = await ws.sendData(CmdType.file_info,{type:FileTypeEnum.folder,path:getRouterAfter('file',getRouterPath())});
+            show_info = result.context;
+            dir_info = show_info;
+            update_dir_info(dir_info);
         }
-
+        update_dir_info(dir_info);
     }
 
 
@@ -415,6 +444,16 @@ export default function FileList() {
             }
             }});
     }
+    const routeBreadcrumbsEnter = (path)=>{
+        if(isAbsolutePath(path)){
+            fileHandler(path);
+        } else {
+            navigate(path_join(getRouterPath(), path))
+        }
+        setSelectList([])
+        setClickList([])
+        setNowFileList({files:[],folders:[]});
+    }
     return (
         <div className={"not-select-div"} >
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
@@ -441,8 +480,8 @@ export default function FileList() {
                     baseSwitch(v);
                 }} pre_value={file_root_path}/>
             </Header>
+            <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick} input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             <div id={"listing"} className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type??''}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
-                {<RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}></RouteBreadcrumbs>}
                 {(nowFileList.folders && nowFileList.folders.length > 0) && <h2>{t("文件夹")}</h2>}
                 {(nowFileList.folders) &&
                     // @ts-ignore

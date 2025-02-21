@@ -8,13 +8,26 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {editor_data} from "../../../util/store.util";
 import {NotySucess} from "../../../util/noty";
 import Ace from "./Ace";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 
 
 
 export default function FileEditor() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [have_update,set_have_update] = useState(false);
+    const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
+    const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
 
+    function shellClick() {
+        if (!shellShow.show) {
+            setShellShow({
+                show: true,
+                path: getRouterAfter('file',getRouterPath())
+            })
+        } else {
+            set_file_shell_hidden(!file_shell_hidden);
+        }
+    }
     function handleEditorChange() {
         if (!have_update) {
             set_have_update(true);
@@ -58,6 +71,7 @@ export default function FileEditor() {
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
             <title key={2}>{editorSetting.fileName}</title>]}>
             {editorSetting.menu_list && editorSetting.menu_list}
+            {editorSetting.opt_shell && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
         </Header>
         <Ace name={editorSetting.fileName} model={editorSetting.model} on_change={handleEditorChange} />

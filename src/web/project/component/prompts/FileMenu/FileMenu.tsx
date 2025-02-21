@@ -40,7 +40,7 @@ export function FileMenu() {
     const textClick = async (v) => {
         if ( v===1 ) {
             const name = showPrompt.data.filename;
-            click_file({name, model: "text",size:showPrompt.data.size});
+            click_file({name, model: "text",size:showPrompt.data.size,opt_shell:true});
             close();
         } else if ( v===2 ) {
             set_file_log({show: true,fileName: showPrompt.data.filename})

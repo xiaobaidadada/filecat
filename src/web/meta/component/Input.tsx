@@ -58,6 +58,8 @@ function Input(props: {
     left_placeholder?:string,
     right_placeholder?:string,
     disabled?:boolean,
+    maxWidth?:string,
+    width?:string,
 }) {
     const inputRef = useRef(null);
     const [value, setValue] = React.useState("");
@@ -71,11 +73,13 @@ function Input(props: {
             setCss(`${css} input--no_border`);
         }
     }, [props.value]);
-    return (<div >
+    return (<React.Fragment >
             {props.placeholderOut && <p>{props.placeholderOut}</p>}
             <div style={{
                 display: "flex",
                 alignItems: "center",
+                width: props.width,
+                maxWidth:props.maxWidth
             }}>
                 {props.left_placeholder && <div style={{
                     "paddingRight":".3rem",
@@ -85,6 +89,9 @@ function Input(props: {
                     {props.left_placeholder}
                 </div>}
                 <input
+                    onClick={(event)=>{
+                        event.stopPropagation();
+                    }}
                     disabled={!!props.disabled}
                     className={css}
                     type={props.type}
@@ -114,7 +121,7 @@ function Input(props: {
                 </div>}
 
             </div>
-        </div>
+        </React.Fragment>
 
     )
 }
@@ -129,6 +136,8 @@ export function InputText(props: {
     left_placeholder?: string,
     right_placeholder?:string
     disabled?: boolean,
+    maxWidth?:string,
+    width?:string,
 }) {
     return Input({
         ...props
@@ -138,13 +147,17 @@ export function InputText(props: {
 export function InputPassword(props: {
     placeholder?: string,
     handleInputChange?: (value: string) => void,
-    handleEnterPress?: () => void
+    handleEnterPress?: () => void,
+    maxWidth?:string,
+    width?:string,
 }) {
     return Input({
         placeholder: props.placeholder,
         type: "password",
         handleInputChange: props.handleInputChange,
-        handlerEnter: props.handleEnterPress
+        handlerEnter: props.handleEnterPress,
+        maxWidth:props.maxWidth,
+        width:props.width,
     });
 }
 

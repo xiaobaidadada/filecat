@@ -57,6 +57,12 @@ export class FileController {
         return await FileServiceImpl.getFile(decodeURIComponent(path), ctx.headers.authorization, is_sys_path);
     }
 
+    @msg(CmdType.file_info)
+    async wsGetFileInfo(data: WsData<any>) {
+        const pojo = data.context as {type: FileTypeEnum, path: string};
+        return await FileServiceImpl.getFileInfo(pojo.type, pojo.path, (data.wss as Wss).token,(data.wss as Wss));
+    }
+
     @Post('/file/info')
     async getFileInfo(@Req() ctx, @Body() data: { type: FileTypeEnum, path: string }) {
         return Sucess(await FileServiceImpl.getFileInfo(data.type, data.path, ctx.headers.authorization));
