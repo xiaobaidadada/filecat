@@ -129,7 +129,11 @@ export default function FileList() {
                 workflow_watcher();
             }
         }
-        if(data.relative_user_path) {
+        if(data.relative_user_path !== undefined) {
+            if(data.relative_user_path.startsWith("\\") || data.relative_user_path.startsWith("/")) {
+                data.relative_user_path = data.relative_user_path.slice(1);
+            }
+            console.log(data.relative_user_path)
             navigate(data.relative_user_path);
             return;
         }
