@@ -14,7 +14,7 @@ import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
 import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
-import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
+import {DropdownTag, Overlay, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySucess} from "../../util/noty";
@@ -63,6 +63,7 @@ export default function FileList() {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
+    const [windows_width, set_windows_width] = useRecoilState($stroe.windows_width);
 
     const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
@@ -151,6 +152,7 @@ export default function FileList() {
         );
         if (columns === 0) columns = 1;
         setItemWidth(`calc(${100 / columns}% - 1em)`)
+        // set_windows_width({width: window.innerWidth,is_mobile: window.innerWidth <= 736})
     };
     // 在组件挂载后执行的逻辑
     useEffect(() => {
@@ -454,9 +456,11 @@ export default function FileList() {
         setClickList([])
         setNowFileList({files:[],folders:[]});
     }
+
     return (
         <div className={"not-select-div"} >
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""} handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
+            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")} icon={"search"} value={""}
+                                              handleInputChange={(v) => {setSearch(v)}} max_width={"25em"}/> }>
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {}})
                 }}/>}
@@ -500,7 +504,6 @@ export default function FileList() {
             <FileShell />
             {workflow_show && <WorkFlow />}
             {workflow_realtime_show.open &&  <WorkFlowRealTime />}
-
         </div>
     )
 }

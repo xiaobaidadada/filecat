@@ -134,6 +134,13 @@ export const $stroe = {
             opt_shell?: boolean,
         }
     }),
+    windows_width:atom({
+       key: 'windows_width',
+       default: {
+           width: window.innerWidth,
+           is_mobile: window.innerWidth <= 736,
+       }
+    }),
     // shell是否开启 并传递初始目录
     fileShellShow: atom({
         key: "shellShow",
@@ -267,6 +274,15 @@ export const $stroe = {
     workflow_realtime_show:atom({
         key: 'workflow_realtime_show',
         default: {} as {open:boolean,filename?:string}
+    }),
+    // nav 效果
+    nav_style:atom({
+        key: 'nav_style',
+        default: {
+
+        } as {
+            is_mobile ? :boolean,
+        }
     })
 }
 

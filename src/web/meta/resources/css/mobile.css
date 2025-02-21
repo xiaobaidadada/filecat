@@ -1,5 +1,5 @@
 @media (max-width: 1024px) {
-  .nav {
+  nav {
     width: 10em
   }
 }
@@ -94,7 +94,7 @@
   }
   nav {
     top: 0;
-    z-index: 999;
+    z-index: 1002;
     background: #fff;
     height: 100%;
     width: 16em;
@@ -127,6 +127,11 @@
   header img {
     display: none;
   }
+
+  .header .header-menu {
+    display: block;
+  }
+
   #listing {
     margin-bottom: 5em;
   }
