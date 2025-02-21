@@ -8,7 +8,7 @@ export const CommonBody: React.FC<NavProps & {children: ReactNode[]}> = (props) 
 
     return (<div>
         {/*网页功能选择 | 不管什么位置都是位于左边*/}
-        <Nav  navList={props.navList}/>
+        <Nav  nav_is_mobile={props.nav_is_mobile} navList={props.navList}/>
         {/*网页主要内容 | 不管什么位置都是位于右边*/}
         {/*{JSON.stringify(flatten(props.list).map(v=>v.rto+"*"))}*/}
         <Main>

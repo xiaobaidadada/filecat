@@ -68,7 +68,7 @@ export const user_click_file = () => {
             if (context) {
                 value = context;
             } else {
-                value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, param.sys_path);
+                value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, !!param.sys_path);
                 // if (!value) {
                 //     return;
                 // }

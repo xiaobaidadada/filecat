@@ -1,6 +1,7 @@
 /*@import "_variables.css";*/
 /*@import "_shell.css";*/
 /*@import "_share.css";*/
+
 @import "base.css";
 @import "buttons.css";
 @import "layout/dashboard.css";
@@ -11,7 +12,6 @@
 @import "layout/nav.css";
 @import "listing.css";
 @import "listing-icons.css";
-@import "mobile.css";
 @import "action.css";
 @import "upload-files.css";
 @import "layout/main.css";
@@ -27,3 +27,5 @@
 @import "./image_editor.css";
 @import "./excalidraw.css";
 @import "./common.css";
+
+@import "mobile.css";

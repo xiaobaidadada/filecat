@@ -79,7 +79,7 @@ export function DiskMount() {
     const diskheaders = [t("挂载点"), "uuid", t("类型"), t("文件系统类型"), t("文件系统容量"), t("卷容量"), t("设备路径"), t("分区表类型")];
 
     const get_blk = async () => {
-        const rsq2 = await sysHttp.get("/disk/blk");
+        const rsq2 = await sysHttp.get(encodeURIComponent("/disk/blk"));
         if (rsq2.code === RCode.Sucess) {
             set_list(rsq2.data)
         }
@@ -87,7 +87,7 @@ export function DiskMount() {
     }
 
     const get_lvm = async () => {
-        const rsq2 = await sysHttp.get("/disk/lvm");
+        const rsq2 = await sysHttp.get(encodeURIComponent("/disk/lvm"));
         if (rsq2.code === RCode.Sucess) {
             set_lvm_list(rsq2.data)
         }
@@ -147,7 +147,7 @@ export function DiskMount() {
                                     click_file({
                                         name: "fstab(谨慎修改，内容错误会导致系统无法启动)",
                                         model: "text",
-                                        sys_path: "/etc/fstab",
+                                        sys_path: encodeURIComponent("/etc/fstab"),
                                         menu_list: [
                                             <ActionButton icon={"info"} title={t("提示")} onClick={async () => {
                                                 set_prompt_card({

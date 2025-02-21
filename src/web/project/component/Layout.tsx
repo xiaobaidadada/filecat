@@ -9,6 +9,7 @@ import {routerConfig} from "../../../common/RouterConfig";
 import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../util/store.util";
 import {UserAuth} from "../../../common/req/user.req";
+import {Overlay} from "../../meta/component/Dashboard";
 
 const Ddns = React.lazy(() => import("./ddns/Ddns"))
 const FileList = React.lazy(() => import("./file/FileList"))
@@ -33,6 +34,7 @@ function Layout() {
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
     const [custom_fun_opt,set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
+    const [nav_style,set_nav_style] = useRecoilState($stroe.nav_style);
     const {check_user_auth} = use_auth_check();
 
     function logout() {
@@ -65,8 +67,9 @@ function Layout() {
         // @ts-ignore
         MainNavList[MainNavList.length-1].push(custom_fun_opt);
     }
-
-
+    const nav_close = () => {
+        set_nav_style({is_mobile:false})
+    }
     return (
         <div>
             {/*全局显示*/}
@@ -94,7 +97,7 @@ function Layout() {
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
-            <CommonBody navList={MainNavList}>
+            <CommonBody navList={MainNavList} nav_is_mobile={nav_style.is_mobile}>
                 {/*文件*/}
                 <FileList/>
                 {/*网站 索引*/}
@@ -124,6 +127,7 @@ function Layout() {
                     <Settings/>
                 </Suspense>
             </CommonBody>
+            {nav_style.is_mobile && <Overlay click={nav_close}/>}
         </div>
     )
         ;
