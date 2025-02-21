@@ -42,11 +42,13 @@ class FileService extends FileCompress {
         const result: GetFilePojo = {
             files: [],
             folders: [],
+            relative_user_path:undefined
         };
-        if (is_sys_path === 1 && decodeURIComponent(param_path) === "etc/fstab") {
+        if (is_sys_path === 1 && decodeURIComponent(param_path) === "/etc/fstab") {
             userService.check_user_auth(token, UserAuth.sys_disk_mount);
         }
-        const sysPath = is_sys_path === 1 ? `/${decodeURIComponent(param_path)}` : path.join(settingService.getFileRootPath(token), param_path ? decodeURIComponent(param_path) : "");
+        const root_path = settingService.getFileRootPath(token);
+        const sysPath = is_sys_path === 1 ? `${decodeURIComponent(param_path)}` : path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
         if (!fs.existsSync(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
@@ -68,6 +70,12 @@ class FileService extends FileCompress {
             }
         }
 
+        if(is_sys_path === 1) {
+            if (sysPath.startsWith(root_path)) {
+                result.relative_user_path = sysPath.substring(root_path.length);
+            }
+            return Sucess(result); // 只返回相对路径
+        }
         const items = fs.readdirSync(sysPath);// 读取目录内容
         for (const item of items) {
             const filePath = path.join(sysPath, item);
@@ -111,13 +119,23 @@ class FileService extends FileCompress {
         return Sucess(result);
     }
 
-    public async getFileInfo(type: FileTypeEnum, fpath: string, token) {
+    public async getFileInfo(type: FileTypeEnum, fpath: string, token,wss?:Wss) {
         let info: FileInfoItemData = {};
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
         userService.check_user_path(token, sysPath)
         switch (type) {
             case FileTypeEnum.folder:
-                info = await this.getDiskSizeForPath(sysPath);
+                if(wss) {
+                    this.getDiskSizeForPath(sysPath).then(data=>{
+                        const result = new WsData<SysPojo>(CmdType.file_info);
+                        result.context = data;
+                        wss.sendData(result.encode())
+                    }).catch(error=>{
+                        console.log(error);
+                    })
+                } else {
+                    info = await this.getDiskSizeForPath(sysPath);
+                }
                 break;
             default:
                 break;

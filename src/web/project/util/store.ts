@@ -131,6 +131,7 @@ export const $stroe = {
             open?: boolean,
             fileName?: string,
             save?: any,
+            opt_shell?: boolean,
         }
     }),
     // shell是否开启 并传递初始目录

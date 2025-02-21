@@ -87,4 +87,16 @@ export function get_best_cmd(list) {
     return ok;
 }
 
+export function isAbsolutePath(path) {
+    if (typeof path!== 'string') {
+        return false;
+    }
+    // 检查是否为 Windows 绝对路径，以盘符（如 C:）开头
+    const windowsRegex = /^[a-zA-Z]:[\\\/]/;
+    // 检查是否为 Unix/Linux 绝对路径，以斜杠 / 开头
+    const unixRegex = /^\//;
+
+    return windowsRegex.test(path) || unixRegex.test(path);
+}
+
 // console.log(get_best_cmd(['ab','ab.bat','ab.exe']))

@@ -43,7 +43,8 @@ export const user_click_file = () => {
         context?: string,
         model?: string,
         sys_path?: string,
-        menu_list?: any[]
+        menu_list?: any[],
+        opt_shell?: boolean
     }) => {
         if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
             setShowPrompt({
@@ -96,7 +97,8 @@ export const user_click_file = () => {
                         editor_data.set_value_temp('')
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
-                }
+                },
+                opt_shell:param.opt_shell
             })
             editor_data.set_value_temp(value)
             return;

@@ -76,8 +76,10 @@ body.rtl .action {
 
 
 .breadcrumbs {
+  padding-top: 1rem;
   height: 3em;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  width: 100%;
 }
 
 .breadcrumbs span,

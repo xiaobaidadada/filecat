@@ -73,6 +73,9 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                 const req = new SshPojo();
                 Object.assign(req,sshInfo);
                 req.dir = joinPaths(...shellNowDir,name);
+                setSelectList([])
+                setClickList([])
+                setNowFileList({files:[],folders:[]});
                 const rsp = await sshHttp.post("get/dir",req);
                 if (rsp.code !== RCode.Sucess) {
                     return;
@@ -91,8 +94,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                         path: req.dir
                     })
                 }
-                setSelectList([])
-                setClickList([])
+
                 return;
             }
         } else {
