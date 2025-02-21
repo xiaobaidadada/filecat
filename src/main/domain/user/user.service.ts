@@ -349,6 +349,7 @@ export class UserService {
 
     // 一个路径是不是另一个路径的子路径
     public isSubPath(parent, child) {
+        if(parent === "/") return true;
         parent = removeTrailingPath(parent);
         child = removeTrailingPath(child);
         const relativePath = path.relative(parent, child);
