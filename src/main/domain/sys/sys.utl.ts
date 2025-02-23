@@ -1,5 +1,6 @@
 import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
+import {getProcessAddon} from "../bin/bin";
 
 export class SystemUtil {
 
@@ -14,8 +15,10 @@ export class SystemUtil {
     }
 
     public static killProcess(pid): void {
-        if (sysType === 'win') {
-            SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`) // todo 关闭一个控制台进程下的所有子进程
+        if(!pid)return;
+        if (sysType === 'win' || sysType === 'linux') {
+            // SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`) // todo 关闭一个控制台进程下的所有子进程
+            getProcessAddon().kill_process(pid,true);
         } else {
             SystemUtil.commandIsExist(`kill -9 ${pid} `)
         }

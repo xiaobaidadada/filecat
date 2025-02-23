@@ -44,7 +44,7 @@ body.rtl .dashboard .row {
 
 @media(max-width: 1200px) {
     .dashboard .row .column {
-        width: 100%;
+        width: 100% !important;
     }
 }
 

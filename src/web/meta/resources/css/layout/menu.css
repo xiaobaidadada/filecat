@@ -11,7 +11,13 @@
     flex-grow: 1;
     border-bottom: 2px solid rgba(0, 0, 0, 0.05);
 }
-
+@media(max-width: 1200px) {
+    .menu .wrapper {
+        overflow: auto !important; /*  暂时使用这种滚动方式 */
+        /*-ms-overflow-style: none;  !* 对 IE 和 Edge 浏览器隐藏滚动条 *!*/
+        /*scrollbar-width: none;     !* 对 Firefox 浏览器隐藏滚动条 *!*/
+    }
+}
 body.rtl .menu .wrapper {
     margin-right: 16em;
 }

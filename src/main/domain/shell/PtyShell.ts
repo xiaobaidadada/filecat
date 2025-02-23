@@ -202,16 +202,26 @@ export class PtyShell {
         const max_index = str.length - 1;
         const list = [];
 
-        let last_index = 0;
+        let last_index = 0; // 上一次位置
         let index = PtyShell.readFullCharIndex(str, 0, this.cols);
-
+        let count = 0;
         while (index < max_index) {
+            if (count > max_index) break; // 防止错误的一直循环
+            count++;
             if (!this.is_empty(str[index]) && (!this.is_empty(str[index - 1]) || !this.is_empty(str[index + 1]))) {
+                // 一个单词前后都不是空的
                 for (let f = index - 1; f >= last_index; f--) {
-                    if (this.is_empty(str[f]) || f === 0) {
+                    if (this.is_empty(str[f])) {
                         list.push(str.substring(last_index, f + 1));
-                        last_index = f;
-                        index = f + PtyShell.readFullCharIndex(str, f + 1, this.cols);
+                        last_index = f+1;
+                        index = f +1 + PtyShell.readFullCharIndex(str, f + 1, this.cols);
+                        continue;
+                    }
+                    if(f === last_index) {
+                        // 最后一位 直接把本行全部添加进去
+                        list.push(str.substring(last_index, index));
+                        last_index = index ;
+                        index = index + PtyShell.readFullCharIndex(str, index, this.cols);
                     }
                 }
             } else {
