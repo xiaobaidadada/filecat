@@ -183,9 +183,10 @@ export class SysProcessService {
 
 
     async processClose(data: WsData<any>) {
-        clearInterval(processJobInterval);
-        processJobInterval = null;
-        this.killSpwn();
+        // clearInterval(processJobInterval);
+        // processJobInterval = null;
+        // this.killSpwn();
+        SystemUtil.killProcess(data.context.pid);
     }
 
 }
