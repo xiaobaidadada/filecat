@@ -393,8 +393,8 @@ export class PtyShell {
     private close_child() {
         this.child_now_line = '';
         if (this.child) {
-            this.child.kill(); // 不同平台信号不同 win 默认 SIGHUP
             SystemUtil.killProcess(this.child.pid);
+            // this.child.kill(); // 不同平台信号不同 win 默认 SIGHUP
             this.child = undefined;
         }
     }

@@ -175,7 +175,8 @@ export class SysProcessService {
             return;
         }
         (data.wss as Wss).setClose(()=>{
-            this.processClose(data);
+            this.killSpwn();
+            // this.processClose(data);
         })
         processWssMap.set((data.wss as Wss).id, (data.wss as Wss))
         await this.openProcessPush((data.wss as Wss));

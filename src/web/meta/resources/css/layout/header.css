@@ -21,7 +21,9 @@
 }
 @media(max-width: 1200px) {
   .header {
-    overflow: auto !important; /*  暂时使用这种滚动方式 */
+    overflow-x: auto !important; /*  暂时使用这种滚动方式 */
+    overflow-y: hidden;
+
     /*-ms-overflow-style: none;  !* 对 IE 和 Edge 浏览器隐藏滚动条 *!*/
     /*scrollbar-width: none;     !* 对 Firefox 浏览器隐藏滚动条 *!*/
   }

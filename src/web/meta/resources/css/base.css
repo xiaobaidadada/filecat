@@ -136,3 +136,26 @@ body.rtl .breadcrumbs a {
 li:hover {
   cursor: pointer;
 }
+
+/* 自定义滚动条整体样式 */
+::-webkit-scrollbar {
+  /*width: 2px; !* 滚动条宽度，变细 *!*/
+  height: 0.4rem;
+  width: 0.4rem;
+}
+
+/* 滚动条轨道 */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 轨道背景颜色 */
+}
+
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  background: rgb(210, 211, 212); /* 滑块颜色改为蓝色 */
+  border-radius: 4px; /* 滑块圆角 */
+}
+
+/* 滚动条滑块悬停状态 */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(210, 211, 212); /* 悬停时滑块颜色 */
+}
