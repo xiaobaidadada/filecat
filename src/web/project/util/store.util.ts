@@ -167,9 +167,9 @@ export const use_auth_check = () => {
 
 export const use_file_to_running = () => {
     const [to_running_files_set, set_to_runing_files_set] = useRecoilState($stroe.to_running_files);
-        useEffect(()=>{
-            // console.log(to_runing_files_set)
-        },[to_running_files_set])
+        // useEffect(()=>{
+        //     // console.log(to_runing_files_set)
+        // },[to_running_files_set])
     const file_is_running = (filename: string) => {
         return to_running_files_set.has(filename);
     }

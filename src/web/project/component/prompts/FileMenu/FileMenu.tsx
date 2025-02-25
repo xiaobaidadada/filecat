@@ -6,7 +6,7 @@ import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
-import {Dropdown, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {FileMenuItem, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
@@ -111,6 +111,7 @@ export function FileMenu() {
             break;
         case FileTypeEnum.studio_file:
         case FileTypeEnum.studio_folder:
+        case FileTypeEnum.directory:
             // 自定义的
             div = <div onWheel={() => {
                 close();
@@ -143,63 +144,4 @@ export function FileMenu() {
     return (div);
 }
 
-export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v) => void }) {
-    const divRef = useRef(null);
-    const [visible, setVisible] = useState(false); // 控制显示与否
-    const [position, setPosition] = useState({ top: props.y, left: props.x });
 
-    // 确保 div 不超出屏幕的函数
-    const adjustPosition = () => {
-        const divElement = divRef.current;
-        const { innerWidth, innerHeight } = window;
-
-        if (divElement) {
-            const rect = divElement.getBoundingClientRect();
-
-            let newTop = position.top;
-            let newLeft = position.left;
-
-            // 检查右侧是否超出屏幕
-            if (rect.right > innerWidth) {
-                newLeft = innerWidth - rect.width;
-            }
-            // 检查左侧是否超出屏幕
-            if (rect.left < 0) {
-                newLeft = 0;
-            }
-            // 检查底部是否超出屏幕
-            if (rect.bottom > innerHeight) {
-                newTop = innerHeight - rect.height;
-            }
-            // 检查顶部是否超出屏幕
-            if (rect.top < 0) {
-                newTop = 0;
-            }
-
-            // 更新位置
-            setPosition({ top: newTop, left: newLeft });
-            setVisible(true); // 位置调整后再显示
-        }
-    };
-    // 在组件挂载后获取宽高并调整位置
-    useEffect(() => {
-        adjustPosition();
-    }, []);
-
-    return <div
-        ref={divRef}
-        style={{
-            position: 'fixed',
-            top: `${position.top}px`,
-            left: `${position.left}px`,
-            // backgroundColor: 'white',
-            // border: '1px solid black',
-            padding: '5px',
-            zIndex: 1002,
-            visibility: visible ? 'visible' : 'hidden', // 使用 visibility 控制显示
-            // display: visible ? 'block' : 'none', // 通过 display 控制显示
-        }}
-    >
-        <Dropdown items={props.items} click={props.click}/>
-    </div>
-}

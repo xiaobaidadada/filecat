@@ -394,13 +394,13 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 {(!!nowFileList && !!nowFileList.folders) &&
                     (<div onClick={clickBlank}>{nowFileList.folders.map((v, index) => (
                         // @ts-ignore
-                        <RemoteLinuxFileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
+                        <RemoteLinuxFileItem fileHandler={fileHandler} itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
                 {(!!nowFileList && !!nowFileList.folders && nowFileList.files.length > 0) && <h2 onClick={clickBlank}>文件</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&
                     // @ts-ignore
                     (<div onClick={clickBlank}>{nowFileList.files.map((v, index) => (
-                        <RemoteLinuxFileItem itemWidth={itemWidth} index={index + nowFileList.folders.length}
+                        <RemoteLinuxFileItem fileHandler={fileHandler}  itemWidth={itemWidth} index={index + nowFileList.folders.length}
                             // @ts-ignore
                                              key={index} {...v}/>))}</div>)
                 }

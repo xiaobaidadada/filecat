@@ -1,7 +1,7 @@
 import {StringUtil} from "./StringUtil";
 import {FileTypeEnum} from "./file.pojo";
 
-
+type menu_item = {r?:string,v?:any,items?:menu_item[]}
 export class FileMenuData {
     x?:number;
     y?:number;
@@ -10,7 +10,7 @@ export class FileMenuData {
     path?:string;
     textClick?:(v) => void;
     type?:FileTypeEnum;
-    items?:{r?:string,v?:any}[];
+    items?:menu_item[];
     files?:any;
     dir?:string;
     call?:(e?:any)=>void;

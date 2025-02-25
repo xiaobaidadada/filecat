@@ -17,9 +17,10 @@ import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
 import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
+import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 
 
-export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string }) {
+export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string,fileHandler:()=>any }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
@@ -151,7 +152,20 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
             }
         }
     }
-
-    return <BaseFileItem  name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} itemWidth={props.itemWidth}
+    const draggable_handle = async ( to_file_name: string) => {
+        const req = new SshPojo();
+        Object.assign(req,sshInfo);
+        req.target = joinPaths(...shellNowDir,to_file_name);
+        const files = getFilesByIndexs(nowFileList, selectList);
+        const up_files = files.map(file => joinPaths(...shellNowDir, file.name));
+        for (const file of up_files) {
+            req.source = file;
+            if(!await sshHttp.post('move',req))return false;
+        }
+        setSelectList([])
+        setShowPrompt({open:false,handle:null});
+        await props.fileHandler()
+    }
+    return <BaseFileItem draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} itemWidth={props.itemWidth}
     click={clickHandler}/>
 }

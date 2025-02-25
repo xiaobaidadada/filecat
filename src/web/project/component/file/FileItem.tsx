@@ -6,25 +6,24 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
 import {fileHttp} from "../../util/config";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
-import {saveTxtReq} from "../../../../common/req/file.req";
 import {BaseFileItem} from "./component/BaseFileItem";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotyFail} from "../../util/noty";
 import {PromptEnum} from "../prompts/Prompt";
-import {getEditModelType} from "../../../../common/StringUtil";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
-import {getFileNameByLocation} from "./FileUtil";
 import {user_click_file} from "../../util/store.util";
-import { MAX_SIZE_TXT } from '../../../../common/ValueUtil';
+import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 
 
+// @ts-ignore
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
-    const { click_file } = user_click_file();
+    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
+
+    const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
+    const {click_file} = user_click_file();
     const {t} = useTranslation();
 
     const navigate = useNavigate();
@@ -37,18 +36,18 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             setSelectList(getNewDeleteByList(selectList, index))
             // console.log('取消')
         } else {
-            if (enterKey ==="ctrl") {
+            if (enterKey === "ctrl") {
                 // @ts-ignore 选中
                 setSelectList([...selectList, index])
-            } else if(enterKey ==="shift") {
-                const {max,min} = getMaxByList(selectList);
-                const list:number[] = [];
-                if(index >= max) {
-                    for(let i=max; i<=index; i++) {
+            } else if (enterKey === "shift") {
+                const {max, min} = getMaxByList(selectList);
+                const list: number[] = [];
+                if (index >= max) {
+                    for (let i = max; i <= index; i++) {
                         list.push(i);
                     }
                 } else {
-                    for(let i=min; i >= index; i--) {
+                    for (let i = min; i >= index; i--) {
                         list.push(i);
                     }
                 }
@@ -73,14 +72,14 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                 navigate(webPathJoin(getRouterPath(), name))
                 setSelectList([])
                 setClickList([])
-                setNowFileList({files:[],folders:[]});
+                setNowFileList({files: [], folders: []});
                 return;
             }
         } else {
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
-                click_file({name,size:props.origin_size,opt_shell:true});
+                click_file({name, size: props.origin_size, opt_shell: true});
             }
         }
     }
@@ -89,8 +88,9 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
 
 
-    const handleContextMenu = (event, name, isDir,size) => {
+    const handleContextMenu = (event, name, isDir, size) => {
         event.preventDefault();
+        event.stopPropagation(); // 阻止事件冒泡
         const pojo = new FileMenuData();
         pojo.path = webPathJoin(getRouterPath(), name)
         pojo.filename = name;
@@ -100,13 +100,23 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
         pojo.size = size;
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
-
+    const draggable_handle = async ( to: string) => {
+        const files = getFilesByIndexs(nowFileList, selectList);
+        const up_files = files.map(file=>getFileNameByLocation(file.name));
+        const rsp = await fileHttp.post('cut', {
+            files: up_files,
+            to:`${getRouterAfter('file',getRouterPath())}/${to}`
+        });
+        setSelectList([])
+        set_confirm({open:false,handle:null});
+        navigate(getRouterPath())
+    }
 
     return <BaseFileItem extraAttr={{
         onContextMenu: (event) => {
-            handleContextMenu(event, props.name, props.type === FileTypeEnum.folder,props.origin_size)
+            handleContextMenu(event, props.name, props.type === FileTypeEnum.folder, props.origin_size)
         }
-    }} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
+    }} draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
                          isLink={props.isLink} path={props.path} icon={props.icon}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>

@@ -3,7 +3,13 @@ import {FileItemData, FileTypeEnum} from "../../../../../common/file.pojo";
 import {useRecoilState} from "recoil";
 import {getByList} from "../../../../../common/ListUtil";
 import {$stroe} from "../../../util/store";
-import {fileHttp} from "../../../util/config";
+import {fileHttp, userHttp} from "../../../util/config";
+import {UserData} from "../../../../../common/req/user.req";
+import {RCode} from "../../../../../common/Result.pojo";
+import {NotySucess} from "../../../util/noty";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {useNavigate} from "react-router-dom";
+import {getFileNameByLocation, getFilesByIndexs} from "../FileUtil";
 
 
 export function BaseFileItem(props: FileItemData & {
@@ -11,9 +17,14 @@ export function BaseFileItem(props: FileItemData & {
     index?: number;
     click: (index: number, name: string) => void,
     itemWidth?: string,
-    children?: React.ReactNode
+    children?: React.ReactNode,
+    draggable_handle?: (to:string) => any
 }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
+    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
+
+    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+
 
     async function click(index: number) {
         if (props.click) {
@@ -21,6 +32,24 @@ export function BaseFileItem(props: FileItemData & {
         }
     }
 
+    const handleronDrop = (event, index) => {
+        // console.log(index)
+        if (nowFileList.folders.length <= index) {
+            return; // 拖拽到的不是文件夹而是文件
+        }
+        setShowPrompt({
+            open: true,
+            title: `确定将文件移动并覆盖到${nowFileList.folders[index].name}吗?`,
+            // sub_title: ``,
+            handle: async () => {
+                await props.draggable_handle(nowFileList.folders[index].name);
+            }
+        })
+    }
+    const handleDragStart = (event, index) => {
+        if(!selectList.find(v=>v===index))
+        setSelectList([...selectList, index]);
+    };
     return (<div {...props.extraAttr} onClick={() => {
         click(props.index)
     }} className={"item"} role="button"
@@ -31,6 +60,9 @@ export function BaseFileItem(props: FileItemData & {
                  style={{
                      "--filewidth": props.itemWidth ?? "33%"
                  }}
+                 onDragStart={(event) => handleDragStart(event, props.index)}
+                 onDrop={(event) => handleronDrop(event, props.index)}
+                 draggable = {props.draggable_handle !== undefined}
     >
         {props.icon === undefined &&
             <div >

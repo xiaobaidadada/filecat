@@ -372,6 +372,27 @@ class FileService extends FileCompress {
         await fse.rename(sysPath, sysPathNew);
     }
 
+    download_one_file(file_name:string,file_size:number,file_path: string,res:Response ,handle_type_?:"attachment"|"inline") {
+        const encodedFileName = encodeURIComponent(file_name).replace(/%20/g, '+');
+        let handle_type = "";
+        if(handle_type_ !== undefined) {
+            handle_type = handle_type_;
+        } else {
+            let handle_type = "attachment";
+            if (file_name.endsWith('.pdf')) {
+                handle_type = "inline";
+            }
+        }
+        res.set({
+            "Content-Type": mime.lookup(file_name) || "application/octet-stream",
+            "Content-Length": file_size,
+            // "Cache-Control": "public, max-age=3600",
+            "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
+        });
+        // 发送文件
+        const readStream = fs.createReadStream(file_path);
+        readStream.pipe(res);
+    }
 
     async download(ctx) {
         const file = ctx.query.file;
@@ -387,8 +408,8 @@ class FileService extends FileCompress {
             const stats = fs.statSync(sysPath);
             const range = ctx.header("Range");
             const fileSize = stats.size;
-            const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
             if (range) {
+                const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
                 const [start, end] = range.replace(/bytes=/, "").split("-");
                 const startByte = parseInt(start, 10);
                 const endByte = end ? parseInt(end, 10) : fileSize - 1;
@@ -410,19 +431,7 @@ class FileService extends FileCompress {
                 return;
             }
             if (stats.isFile()) {
-                let handle_type = "attachment";
-                if (fileName.endsWith('.pdf')) {
-                    handle_type = "inline";
-                }
-                ctx.res.set({
-                    "Content-Type": mime.lookup(fileName) || "application/octet-stream",
-                    "Content-Length": fileSize,
-                    // "Cache-Control": "public, max-age=3600",
-                    "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
-                });
-                // 发送文件
-                const readStream = fs.createReadStream(sysPath);
-                readStream.pipe(ctx.res);
+                this.download_one_file(fileName,fileSize,sysPath,ctx.res);
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
                 ctx.res.attachment(path.basename(sysPath) + ".zip");

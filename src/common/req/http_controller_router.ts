@@ -5,4 +5,5 @@ export enum Http_controller_router {
     setting_customer_router_save = "customer_router/save",
     setting_customer_workflow_router = "customer_router/workflow",
     setting_customer_workflow_router_save = "customer_router/workflow/save",
+    user_save_user_file_list_show_type = "save_user_file_list_show_type"
 }

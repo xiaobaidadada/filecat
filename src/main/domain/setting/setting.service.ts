@@ -18,6 +18,7 @@ import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
+import {FileServiceImpl} from "../file/file.service";
 
 const needle = require('needle');
 
@@ -60,12 +61,14 @@ export class SettingService {
         DataUtil.set(data_common_key.customer_workflow_router_key, req);
     }
 
+    // 甚至可以替代系统的 api
     public async intercept(ctx: Request) {
         try {
             let c_url = ctx.originalUrl;
             if (ctx.originalUrl.includes("?")) {
                 c_url = ctx.originalUrl.split("?")[0];
             }
+            if(!c_url || !c_url.startsWith("/api")) return ;
             const workflow_list_router = this.get_workflow_router() as [][];
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
@@ -114,8 +117,8 @@ export class SettingService {
             if (!!list_router && list_router.length > 0) {
                 for (let item of list_router) {
                     // @ts-ignore
-                    const router = item[0];
-                    if (router === c_url) {
+                    const router = item[0] as string;
+                    if (c_url.startsWith(router)) { // 使用包含 可以用于目录的情况
                         // @ts-ignore
                         const location = item[1];
                         if (location) {
@@ -126,15 +129,26 @@ export class SettingService {
                                     // ctx.set(key, response.headers[key]);
                                 }
                                 ctx.res.status(response.statusCode).send(response.body);
-
                             } else {
-                                const url = path.join(location);
-                                if ((location as string).includes(".htm")) {
-                                    ctx.res.setHeader("Content-Type", "text/html");
-                                    // ctx.type = 'html';
+                                let sys_file_path = path.join(location);
+                                let stats = fs.statSync(location);
+                                if(stats.isDirectory()) {
+                                    const p = c_url.slice(router.length);
+                                    if(p === "/" || !p) {
+                                        const list = fs.readdirSync(sys_file_path);
+                                        const ok_file_name = list.find((v=> v.startsWith("index.htm") || v=== "index"));
+                                        if(ok_file_name) {
+                                            sys_file_path = path.join(location, ok_file_name);
+                                            stats = fs.statSync(sys_file_path);
+                                        } else {
+                                            throw " 404 ";
+                                        }
+                                    } else {
+                                        sys_file_path = path.join(location, p);
+                                        stats = fs.statSync(sys_file_path);
+                                    }
                                 }
-                                fs.accessSync(url, fs.constants.F_OK,)
-                                fs.createReadStream(url).pipe(ctx.res);
+                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,"inline");
                             }
                             return true;
                         }
@@ -179,6 +193,7 @@ export class SettingService {
             // 拦截失败
             return false;
         } catch (e) {
+            ctx.res.send(Fail(e.toString()))
             console.log(e);
             return true;
         }

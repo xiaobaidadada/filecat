@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Dropdown, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
 import {useRecoilState} from "recoil";
@@ -13,7 +13,6 @@ import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {FileMenuData} from "../../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
-import {FileMenuItem} from "./FileMenu";
 
 
 export function VideoTrans(props) {

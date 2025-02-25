@@ -14,13 +14,15 @@ import {CustomerApiRouter} from "./CustomerApiRouter";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
+import {NotyFail, NotyWaring} from "../../util/noty";
 
 
 export function CustomerRouter() {
     const {t} = useTranslation();
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
 
-    const headers = [t("路由"), `${t("文件")}|http${t("路径")}`, t("备注"),];
+    const headers = [t("路由"), t("路径"), t("备注"),];
     const headers_workflow = [t("路由"), t("文件路径"),"token","user id", t("备注"),];
 
     const save = async (req: [[]]) => {
@@ -37,6 +39,17 @@ export function CustomerRouter() {
     const getItems = async () => {
         const result = await settingHttp.get(Http_controller_router.setting_customer_router);
         if (result.code === RCode.Sucess) {
+            if(router_jump?.page_self_router_api_data) {
+                for (const it of result.data) {
+                    if(it[1] === router_jump?.page_self_router_api_data[1]) {
+                        NotyWaring("已经存在的页面资源路由配置目录设置")
+                    }
+                }
+                const target = {}
+                Object.assign(target,router_jump?.page_self_router_api_data)
+                result.data = [target,...result.data];
+                set_router_jump({})
+            }
             return result.data;
         }
         return [];
@@ -44,7 +57,7 @@ export function CustomerRouter() {
 
     const soft_ware_info_click = ()=>{
         let context = <div>
-            需要以 "/api" 开头的路由，会自动识别文件地址和http地址，将页面转到对应结果。
+            需要以 "/api" 开头的路由，会自动识别地址，将页面转到对应结果。路径支持文件路径（如果是文件夹路径的最后最后一个名字将会成为资源实际地址，整个目录将会变成一个http目录），http地址。
         </div>;
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >

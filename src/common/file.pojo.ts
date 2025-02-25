@@ -11,6 +11,7 @@ export enum FileTypeEnum {
     folder = 'folder',
     studio_file = 'studio_file',
     studio_folder = 'studio_folder',
+    directory = 'directory',
     unknow = "text",
     uncompress = "uncompress", // 压缩文件
     md = "md",

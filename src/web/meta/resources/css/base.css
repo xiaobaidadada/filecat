@@ -152,10 +152,21 @@ li:hover {
 /* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
   background: rgb(210, 211, 212); /* 滑块颜色改为蓝色 */
-  border-radius: 4px; /* 滑块圆角 */
+  border-radius: 0; /* 滑块圆角 */
+
 }
 
 /* 滚动条滑块悬停状态 */
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(210, 211, 212); /* 悬停时滑块颜色 */
+}
+
+/* 修改滚动条轨道背景 */
+::-webkit-scrollbar-track {
+  background-color: transparent;  /* 设置滚动条背景颜色 */
+  border-radius: 0; /* 轨道也是直角 */
+}
+/* 鼠标悬停时，滚动条轨道变成灰色 */
+::-webkit-scrollbar-track:hover {
+  background: #f0f0f0; /* 灰色 */
 }

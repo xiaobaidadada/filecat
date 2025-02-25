@@ -283,6 +283,13 @@ export const $stroe = {
         } as {
             is_mobile ? :boolean,
         }
+    }),
+    // router jump 跳转资源
+    router_jump : atom({
+        key: 'router_jump',
+        default: {} as {
+            page_self_router_api_data?:any; // 页面资源路由添加
+        }
     })
 }
 
