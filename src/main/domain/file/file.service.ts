@@ -137,6 +137,16 @@ class FileService extends FileCompress {
                     info = await this.getDiskSizeForPath(sysPath);
                 }
                 break;
+            case FileTypeEnum.upload_folder:
+            {
+                const list = settingService.get_dir_upload_max_num();
+                for (const it of list) {
+                    if(userService.isSubPath(it.path,sysPath)) {
+                        info.max_upload_num = it.user_upload_num;
+                    }
+                }
+            }
+                break;
             default:
                 break;
         }
@@ -164,7 +174,8 @@ class FileService extends FileCompress {
         // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制
     }).single('file');
 
-    public uploadFile(filePath, req: Request, res: Response, token) {
+    upload_num_set = {} as any;
+    public async uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         userService.check_user_path(token, sysPath);
@@ -178,14 +189,49 @@ class FileService extends FileCompress {
         }
         //     return;
         // }
+        let upload_max_key;
+        let max_num;
+        for (const it of settingService.get_dir_upload_max_num()) {
+            if(userService.isSubPath(it.path,sysPath) && it.sys_upload_num !== undefined) {
+                upload_max_key = it.path;
+                max_num = it.sys_upload_num;
+            }
+        }
+        if(upload_max_key) {
+            let v = this.upload_num_set[upload_max_key];
+            if (v === undefined ) {
+                v = 1;
+            } else {
+                v++;
+            }
+            if (v > max_num) throw " upload file num max ";
+            this.upload_num_set[upload_max_key] = v;
+        }
         req['fileDir'] = path.dirname(sysPath);
         req['fileName'] = path.basename(sysPath);
-        this.upload(req, res, (err) => {
-            if (err) {
-
+        return new Promise((resolve)=>{
+            try {
+                this.upload(req, res, (err) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    // 成功上传
+                    if(upload_max_key) {
+                        if(this.upload_num_set[upload_max_key]) {
+                            this.upload_num_set[upload_max_key] --;
+                        }
+                    }
+                    resolve(1);
+                });
+            } catch (e) {
+                if(upload_max_key) {
+                    if(this.upload_num_set[upload_max_key]) {
+                        this.upload_num_set[upload_max_key] --;
+                    }
+                }
+                resolve(1);
             }
-            // 成功上传
-        });
+        })
         // 写入文件
         // fs.writeFileSync(sysPath, file.buffer);
         //multer 默认使用 return new Multer({}) 默认memoryStorage 这种方式 buffer 不属于v8内存管理  所以内存释放的比较慢

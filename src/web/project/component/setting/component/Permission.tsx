@@ -220,6 +220,15 @@ export function Permission(props:{
                        }}/>
                 {t("workflow触发api 修改")}
             </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.dir_upload_max_num)}
+                       checked={props.is_selected(UserAuth.dir_upload_max_num)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.dir_upload_max_num)
+                       }}/>
+                {t("目录文件上传数量限制修改")}
+            </div>
         </div>
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

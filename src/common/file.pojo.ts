@@ -9,6 +9,7 @@ export enum FileTypeEnum {
     video = 'video',
     invalid_link = 'invalid_link',
     folder = 'folder',
+    upload_folder = 'upload_folder',
     studio_file = 'studio_file',
     studio_folder = 'studio_folder',
     directory = 'directory',
@@ -40,6 +41,7 @@ export interface FileInfoItemData {
     used_size?:any;
     fs_type?:string;
     now_absolute_path?:string; // 当前决定路径
+    max_upload_num?: number;
 }
 
 export interface GetFilePojo {

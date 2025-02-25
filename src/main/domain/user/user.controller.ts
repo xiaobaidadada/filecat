@@ -133,6 +133,7 @@ export class UserController {
         pojo.sysSoftWare = map;
         pojo.runing_time_length = getShortTime(this.start_server_time)
         pojo.user_data = userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username);
+        pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
         return Sucess(pojo);
     }
 

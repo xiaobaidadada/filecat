@@ -23,6 +23,7 @@ export function Env() {
     // const [env_path,set_env_path] = useState("");
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
     const [protection_sys_dir_rows,set_protection_sys_dir_rows] = useState([]);
+    const [dir_upload_rows,set_dir_upload_rows] = useState([]);
     const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
     const [pty_cmd,set_pty_cmd] = useState("");
 
@@ -30,6 +31,7 @@ export function Env() {
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
     const env_path_dir_headers = [t("编号"),t("路径"),t("备注")];
+    const dir_upload_headers = [t("编号"),t("路径"),t("单用户并发数量"),t("系统并发数量"),t("备注")];
     const {check_user_auth} = use_auth_check();
 
     const getItems = async () => {
@@ -62,6 +64,12 @@ export function Env() {
         const result5 = await settingHttp.get("protection_dir/sys");
         if (result5.code === RCode.Sucess) {
             set_protection_sys_dir_rows(result5.data ?? []);
+        }
+
+        // 并发数量限制系统保护目录
+        const result6 = await settingHttp.get("dir_upload_max_num");
+        if (result6.code === RCode.Sucess) {
+            set_dir_upload_rows(result6.data ?? []);
         }
     }
     useEffect(() => {
@@ -103,6 +111,14 @@ export function Env() {
         }
     }
 
+    const dir_upload_max_num_save = async () => {
+        const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+            reloadUserInfo();
+        }
+    }
+
     const add = ()=>{
         setRows([...rows,{note:"",default:false,path:""}]);
     }
@@ -116,6 +132,9 @@ export function Env() {
     const protection_sys_dir_add = ()=>{
         set_protection_sys_dir_rows([...protection_sys_dir_rows,{path:"",note:""}]);
     }
+    const dir_upload_rows_add = ()=>{
+        set_dir_upload_rows([...dir_upload_rows,{path:"",note:""}]);
+    }
     const protection_dir_del = (index)=>{
         protection_dir_rows.splice(index, 1);
         set_protection_dir_rows([...protection_dir_rows]);
@@ -123,6 +142,10 @@ export function Env() {
     const protection_sys_dir_del = (index)=>{
         protection_sys_dir_rows.splice(index, 1);
         set_protection_sys_dir_rows([...protection_sys_dir_rows]);
+    }
+    const dir_upload_rows_del = (index)=>{
+        dir_upload_rows.splice(index, 1);
+        set_dir_upload_rows([...dir_upload_rows]);
     }
     const env_path_dir_add = ()=>{
         set_env_path_dir_rows([...env_path_dir_rows,{path:"",note:""}]);
@@ -187,6 +210,10 @@ export function Env() {
         } else if(id === "pty") {
             context = <div>
                 一些需要Pty环境的命令
+            </div>
+        } else if (id === "文件上传" ) {
+            context = <div>
+                对于不同的目录(包括所有子目录)，可能是机械或者固态硬盘，机械硬盘在处理多个小文件的时候会做随机i/o,由于一般只有一个盘头所以会影响整体效率，特别是写操作，这里提供了上传时候的最大数量限制，对于下载数量目前不做限制.
             </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
@@ -267,6 +294,27 @@ export function Env() {
                                 item.note = value;
                             }} no_border={true}/>,
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_sys_dir_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件上传")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={dir_upload_rows_add}/><ActionButton icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
+                    <Table headers={dir_upload_headers} rows={dir_upload_rows.map((item, index) => {
+                        const new_list = [
+                            <div>{index}</div>,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.user_upload_num} handleInputChange={(value) => {
+                                item.user_upload_num = parseInt(value);
+                            }} no_border={true}/>,
+                            <InputText value={item.sys_upload_num} handleInputChange={(value) => {
+                                item.sys_upload_num = parseInt(value);
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => dir_upload_rows_del(index)}/> ,
                         ];
                         return new_list;
                     })} width={"10rem"}/>

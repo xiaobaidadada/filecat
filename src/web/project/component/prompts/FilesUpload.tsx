@@ -9,11 +9,15 @@ import { getNewDeleteByList } from "../../../../common/ListUtil";
 import { getRouterAfter, getRouterPath } from "../../util/WebPath";
 import { useTranslation } from "react-i18next";
 import { NotyFail } from "../../util/noty";
+import {ws} from "../../util/ws";
+import {CmdType} from "../../../../common/frame/WsData";
+import {FileInfoItemData, FileTypeEnum} from "../../../../common/file.pojo";
 
 export function FilesUpload() {
     const { t } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
+    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [open, setOpen] = React.useState(false);
@@ -42,17 +46,22 @@ export function FilesUpload() {
                     });
 
                     const now = Date.now();
-                    const timeDiff = (now - speedRef.current.lastTime) / 1000;
-                    speedRef.current.totalLoaded += progressEvent.loaded - (speedRef.current.totalLoaded / uploadFiles.length);
-                    
-                    if (timeDiff > 0.5) {
-                        const uploadSpeed = (speedRef.current.totalLoaded / (1024 * 1024)) / timeDiff;
-                        setSpeed(parseFloat(uploadSpeed.toFixed(2)));
+                    const timeDiff = (now - speedRef.current.lastTime) / 1000;  // 时间差，单位秒
+
+                    // 累加已上传的数据量
+                    speedRef.current.totalLoaded += progressEvent.loaded;
+
+                    if (timeDiff > 0.5) {  // 每 0.5 秒计算一次网速
+                        const uploadSpeed = (speedRef.current.totalLoaded / (1024 * 1024)) / timeDiff;  // 转换为 MB/s
+                        setSpeed(parseFloat(uploadSpeed.toFixed(2)));  // 设置当前网速，保留两位小数
+
+                        // 重置速度计算的时间和已上传数据量
                         speedRef.current = { totalLoaded: 0, lastTime: now };
                     }
 
+                    // 防止网速停留为上次的速度
                     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    timeoutRef.current = setTimeout(() => setSpeed(0), 1000);
+                    timeoutRef.current = setTimeout(() => setSpeed(0), 1000);  // 1秒后重置速度为0
                 }
             );
         } catch (e) {
@@ -61,13 +70,19 @@ export function FilesUpload() {
         }
     };
 
-    useEffect(() => {
+    const up = async ()=>{
         const initialPath = `${getRouterAfter('file', getRouterPath())}`;
-        
+
         setProgresses(uploadFiles.map(() => 0));
         speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
 
-        const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了
+        const result = await ws.sendData(CmdType.file_info, {
+            type: FileTypeEnum.upload_folder,
+            path: getRouterAfter('file', getRouterPath())
+        });
+        const v:FileInfoItemData = result.context;
+        const MAX_CONCURRENT = v.max_upload_num === undefined ? 3 : v.max_upload_num;
+        // const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了
         let currentIndex = 0;
         let activeWorkers = 0;
         let hasError = false;
@@ -100,6 +115,10 @@ export function FilesUpload() {
             })
             .catch(() => {});
 
+    }
+
+    useEffect( () => {
+        up();
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };

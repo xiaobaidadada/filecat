@@ -259,6 +259,19 @@ export class SettingController {
         return Sucess("1");
     }
 
+    // 获取并发数量限制
+    @Get("/dir_upload_max_num")
+    get_dir_upload_max_num(@Req() ctx) {
+        return Sucess(settingService.get_dir_upload_max_num());
+    }
+
+    @Post("/dir_upload_max_num/save")
+    save_dir_upload_max_num(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.dir_upload_max_num);
+        settingService.save_dir_upload_max_num(req);
+        return Sucess("1");
+    }
+
     // 获取系统所有的开关状态
     @Get("/sys_option/status")
     get_sys_option_status(@Req() ctx) {

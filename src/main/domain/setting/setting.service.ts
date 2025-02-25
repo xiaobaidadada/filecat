@@ -130,7 +130,7 @@ export class SettingService {
                                 }
                                 ctx.res.status(response.statusCode).send(response.body);
                             } else {
-                                let sys_file_path = path.join(location);
+                                let sys_file_path = path.join(location); // 可以删除 .. 符号
                                 let stats = fs.statSync(location);
                                 if(stats.isDirectory()) {
                                     const p = c_url.slice(router.length);
@@ -147,6 +147,9 @@ export class SettingService {
                                         sys_file_path = path.join(location, p);
                                         stats = fs.statSync(sys_file_path);
                                     }
+                                }
+                                if(!userService.isSubPath(location,sys_file_path)) {
+                                    throw " 404 ";
                                 }
                                 FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,"inline");
                             }
@@ -467,6 +470,10 @@ export class SettingService {
         return DataUtil.get(data_common_key.protection_directory) ?? [];
     }
 
+    get_dir_upload_max_num():{ path: string ,user_upload_num?:number,sys_upload_num?:number }[] {
+        return DataUtil.get(data_common_key.dir_upload_max_num) ?? [];
+    }
+
     get_pty_cmd(): string[] {
         return DataUtil.get(data_common_key.cmd_use_pty_key) ?? [];
     }
@@ -488,6 +495,21 @@ export class SettingService {
         DataUtil.set(data_common_key.protection_directory, data);
     }
 
+    save_dir_upload_max_num(data) {
+        const list = data ?? [];
+        for (const item of list) {
+            if(!item.path) {
+                throw "path is empty";
+            }
+            if(typeof item.user_upload_num === "string") {
+                item.user_upload_num = parseInt(item.user_upload_num);
+            }
+            if(typeof item.sys_upload_num === "string") {
+                item.sys_upload_num = parseInt(item.sys_upload_num);
+            }
+        }
+        DataUtil.set(data_common_key.dir_upload_max_num, list);
+    }
 
     protectionCheck(sys_path:string) {
         const list = this.protectionSysDirGet() ?? [];

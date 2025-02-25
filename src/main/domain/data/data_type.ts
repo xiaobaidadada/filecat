@@ -44,6 +44,7 @@ export enum data_common_key {
     sys_software = "sys_software",
     // extra_env_path = "extra_env_path",
     protection_directory = "sys_protection_directory", // 系统保护路路径
+    dir_upload_max_num = "dir_upload_max_num", // 上传并发数量限制
     self_auth_jscode = "self_auth_jscode",
     navindex_video_key = "navindex_video_tag_key",
     systemd_key = "systemd_key",

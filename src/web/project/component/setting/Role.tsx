@@ -21,7 +21,6 @@ import {Permission} from "./component/Permission";
 export function Role() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
     const [rows, setRows] = useState([]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const [is_create,set_is_create] = useState(false);

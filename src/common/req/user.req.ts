@@ -19,6 +19,7 @@ export class UserBaseInfo {
     sysSoftWare: { [key in SysSoftware]: SysSoftwareItem } | {};
     runing_time_length: any; // 系统运行的时间
     user_data: UserData; // 用户数据
+    dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
 }
 
 
@@ -65,6 +66,7 @@ export enum UserAuth {
     workflow_exe, // workflow 执行 功能
     workflow_exe_user, // 能被设置执行的 workflow 用户
     workflow_api, // workflow 自定义触发api
+    dir_upload_max_num = 43, // 目录上传数量限制
 }
 
 
