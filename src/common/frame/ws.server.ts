@@ -41,7 +41,7 @@ export class Wss {
     }
 
     /**
-     * 暂时有不少 通过 on('close', 设置的函数没有使用这里
+     * 暂时有不少 通过 on('close', 设置的函数没有使用这里 只执行一次函数然后被删除
      * @param close
      */
     public setClose(close: Function) {

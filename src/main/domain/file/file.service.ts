@@ -33,7 +33,8 @@ import multer from 'multer';
 import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
-
+import {SshPojo} from "../../../common/req/ssh.pojo";
+import {sftp_client} from "../ssh/ssh.ssh2";
 
 const chokidar = require('chokidar');
 
@@ -252,12 +253,12 @@ class FileService extends FileCompress {
         upload_data_size: number,
         wss: Wss,
         lastModified: number,
-        buffer:Buffer,
+        buffer_list:Buffer[],
         sys_file_max_num?: number,
         sys_file_upload_max_key? :string,
-        parallel_done_num : number
+        parallel_done_num : number,
     }>();
-    file_upload_map = new Map<string, ws_file_upload_req>();
+    // file_upload_map = new Map<string, ws_file_upload_req>();
 
     file_upload_pre(data: WsData<ws_file_upload_req>) {
         const param = data.context as ws_file_upload_req;
@@ -265,20 +266,6 @@ class FileService extends FileCompress {
         const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
-        let value = this.file_upload_count_map.get(sysPath);
-        if (value) {
-            if (param.lastModified !== value.lastModified) {
-                if (fs.existsSync(sysPath)) {
-                    fs.unlinkSync(sysPath);  // 删除文件
-                }
-            } else {
-                // 返回历史
-                return { upload_data_size: value.upload_data_size};
-            }
-        }
-        // if (fs.existsSync(sysPath)) {
-        //     fs.unlinkSync(sysPath);  // 删除文件
-        // }
 
         // 系统文件数量限制
         let max_num;
@@ -299,33 +286,46 @@ class FileService extends FileCompress {
             if (v > max_num) throw " upload file num max ";
             this.upload_num_set[upload_max_key] = v;
         }
-        this.lifeStart(sysPath, upload_max_key, async (key) => {
-            if (key) {
-                if (this.upload_num_set[key]) {
-                    this.upload_num_set[key]--;
+        (data.wss as Wss).setClose(() => {
+            // 虽然会添加多个 但是断开的时候都会消失
+            if (upload_max_key) {
+                if (this.upload_num_set[upload_max_key]) {
+                    this.upload_num_set[upload_max_key]--;
                 }
             }
+        })
+
+        let value = this.file_upload_count_map.get(sysPath);
+        if (value) {
+            value.buffer_list = new Array(param.parallel_done_num).fill(undefined);
+            value.parallel_done_num = 0;
+            if (param.lastModified !== value.lastModified) {
+                if (fs.existsSync(sysPath)) {
+                    fs.unlinkSync(sysPath);  // 删除文件
+                }
+            } else {
+                // 返回历史
+                return { upload_data_size: value.upload_data_size};
+            }
+        }
+        // if (fs.existsSync(sysPath)) {
+        //     fs.unlinkSync(sysPath);  // 删除文件
+        // }
+        this.lifeStart(sysPath, upload_max_key, async (key) => {
+            this.file_upload_count_map.delete(key);
         });
-        // (data.wss as Wss).setClose(() => {
-        //     // 虽然会添加多个 但是断开的时候都会消失
-        //     if (upload_max_key) {
-        //         if (this.upload_num_set[upload_max_key]) {
-        //             this.upload_num_set[upload_max_key]--;
-        //         }
-        //     }
-        // })
         if (fs.existsSync(sysPath)) {
             fs.truncateSync(sysPath); // 清空内容
         }
         param.file_full_path = sysPath;
-        this.file_upload_map.set(sysPath, param);
+        // this.file_upload_map.set(sysPath, param);
         // const part_size = 2; // 先写死为 2
         value = {
             // part_size: part_size,
             upload_data_size: 0,
             wss: (data.wss as Wss),
             lastModified: param.lastModified,
-            buffer: Buffer.alloc(0),
+            buffer_list: new Array(param.parallel_done_num).fill(undefined),
             sys_file_max_num:max_num,
             sys_file_upload_max_key:upload_max_key,
             parallel_done_num: 0
@@ -351,21 +351,22 @@ class FileService extends FileCompress {
         const num_value = this.file_upload_count_map.get(sysPath);
         try {
             const chunkData = Buffer.from(data.bin_context);
-            num_value.buffer = Buffer.concat([num_value.buffer,chunkData]);
+            num_value.buffer_list[param.part_count] = chunkData; // Buffer.concat([num_value.buffer,chunkData]);
             // console.log(param.chunk_index)
-            if(param.part_count !== param.part_count) {
+            num_value.parallel_done_num ++;
+            if(num_value.parallel_done_num !== param.parallel_done_num) {
                 return;
             }
-            num_value.parallel_done_num ++;
+            num_value.parallel_done_num = 0;
             // console.log(param.chunk_index);
             // 写入块数据到文件
-            // const chunkData = Buffer.from(data.bin_context);
-            fs.appendFileSync(sysPath, num_value.buffer);
-            num_value.upload_data_size += num_value.buffer.length;
-            num_value.buffer = Buffer.alloc(0);
+            const add_chunk = Buffer.concat(num_value.buffer_list);
+            fs.appendFileSync(sysPath,add_chunk );
+            num_value.upload_data_size += add_chunk.length;
+            num_value.buffer_list = new Array(param.parallel_done_num).fill(undefined);
 
             // 如果所有块都上传完
-            if (param.chunk_index === param.total_chunk_index -1 && param.parallel_done_num === num_value.parallel_done_num) {
+            if (param.chunk_index === param.total_chunk_index -1) {
                 if (num_value.sys_file_upload_max_key) {
                     if (this.upload_num_set[num_value.sys_file_upload_max_key]) {
                         this.upload_num_set[num_value.sys_file_upload_max_key]--;
@@ -373,8 +374,6 @@ class FileService extends FileCompress {
                 }
                 this.file_upload_count_map.delete(sysPath);
             }
-            if(param.parallel_done_num === num_value.parallel_done_num)
-            num_value.parallel_done_num = 0;
         } catch (e) {
             console.log(e);
             if (num_value.sys_file_upload_max_key) {

@@ -49,7 +49,10 @@ export function FilesUpload() {
         setOpen(!open);
     }
 
-    const send_ws = async (wss, chunkData, file_path, totalChunks, currentChunk, part_index, total_part_size,part_size) => {
+    const send_ws = async (
+                            wss, chunkData, file_path,
+                           totalChunks, currentChunk, part_index,
+                           total_part_size, part_size) => {
         const pojo = new WsData(CmdType.file_upload);
         pojo.bin_context = new Uint8Array(chunkData);
         const file_p = new ws_file_upload_req();
@@ -63,7 +66,7 @@ export function FilesUpload() {
         return wss.send(pojo);
     }
 
-    const ws_upload_file = async (value: any, index: number, initialPath: string,dir_upload_max_num_value: dir_upload_max_num_item) => {
+    const ws_upload_file = async (value: any, index: number, initialPath: string, dir_upload_max_num_value: dir_upload_max_num_item) => {
         const part_size = dir_upload_max_num_value.ws_file_parallel_num; // 并发数量
         let upload_size = 0;
         const total_size = value.size;
@@ -71,6 +74,7 @@ export function FilesUpload() {
         const file_p = new ws_file_upload_req();
         file_p.lastModified = value.lastModified;
         file_p.file_path = `${initialPath}${value.fullPath}`;
+        file_p.parallel_done_num = part_size;
         const ws_pre_data = (await ws.sendData(CmdType.file_upload_pre, file_p)).context as {
             upload_data_size: number
         };
@@ -92,7 +96,7 @@ export function FilesUpload() {
         }
 
         // const chunkSize = 1024 * 1024 * 10; // 每块大小（5MB）
-        const  chunkSize = dir_upload_max_num_value.ws_file_block_mb_size;
+        const chunkSize = dir_upload_max_num_value.ws_file_block_mb_size;
         let file = value; // 假设 file 是你要上传的文件
         let totalChunks; // 总的块数
         let currentChunk = 0; // 当前块索引
@@ -109,20 +113,20 @@ export function FilesUpload() {
             const size = Math.ceil(d.length / part_size);
             let part_index = 0;
             const list = [];
-            const path = file_p.file_path ;
+            const path = file_p.file_path;
             for (let i = 0; i < part_size; i++) {
                 const start = part_index;
                 const end = Math.min(start + chunkSize, d.length); // 确保不超出范围
                 const chunk = d.slice(start, end);  // 获取当前分块
                 part_index = end;  // 更新下一个块的起始位置
-                list.push(send_ws(all_wss_list[i], chunk, path, totalChunks, currentChunk, i + 1, size,part_size))
+                list.push(send_ws(all_wss_list[i], chunk, path, totalChunks, currentChunk, i, size, part_size))
                 // console.log(currentChunk,totalChunks)
             }
 
             let startTime = new Date().getTime();  // 用于记录开始时间
             let timeout;
             await Promise.all(list);
-            upload_size+=d.length;
+            upload_size += d.length;
             const timeElapsed = (new Date().getTime() - startTime) / 1000;  // 时间差（秒）
             // 计算传输的字节数
             // 计算网速（字节/秒）
@@ -178,7 +182,7 @@ export function FilesUpload() {
                 `${encodeURIComponent(`${initialPath}${value.fullPath}`)}?dir=${value.isDir ? 1 : 0}`,
                 value,
                 (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total)* 100);
+                    const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
                     setProgresses(prev => {
                         const newProgresses = [...prev];
                         newProgresses[index] = percentCompleted;
@@ -244,7 +248,7 @@ export function FilesUpload() {
             path: getRouterAfter('file', getRouterPath())
         });
         const v: FileInfoItemData = result.context;
-        const MAX_CONCURRENT = v.dir_upload_max_num_value === undefined ? 3 : v.dir_upload_max_num_value.user_upload_num;
+        const MAX_CONCURRENT = v.dir_upload_max_num_value.user_upload_num === undefined ? 3 : v.dir_upload_max_num_value.user_upload_num;
         // const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了
         let currentIndex = 0;
         let activeWorkers = 0;
@@ -255,9 +259,9 @@ export function FilesUpload() {
                 const index = currentIndex++;
                 activeWorkers++;
                 try {
-                    if(v.dir_upload_max_num_value !==undefined && v.dir_upload_max_num_value.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size ) {
+                    if (v.dir_upload_max_num_value.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
                         // 开启了 并超过了最大值
-                        await ws_upload_file(uploadFiles[index], index, initialPath,v.dir_upload_max_num_value);
+                        await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value);
                     } else {
                         await uploadFile(uploadFiles[index], index, initialPath);
                     }
@@ -277,10 +281,10 @@ export function FilesUpload() {
             .then(() => {
                 if (!hasError) {
                     setUploadFiles([]);
-                    setShowPrompt({ show: false, type: '', overlay: false, data: {} });
+                    setShowPrompt({show: false, type: '', overlay: false, data: {}});
                     navigate(getRouterPath());
                     // console.log(`耗时${((Date.now() - now) / 1000).toFixed(2)}`)
-                    all_wss_list.map(v=>{
+                    all_wss_list.map(v => {
                         v.unConnect(); // 关闭全部的ws
                     })
                 }

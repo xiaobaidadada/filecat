@@ -139,7 +139,7 @@ export class ws_file_upload_req {
     total_chunk_index:number; // 总索引块数
     lastModified:number;
     part_count:number; // 1 2 3
-    total_part_size:number;
+    total_part_size:number; // 并发的总数
     size:number;
-    parallel_done_num: number;
+    parallel_done_num: number; // 总并发数量
 }
