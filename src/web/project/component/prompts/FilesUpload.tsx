@@ -162,7 +162,7 @@ export function FilesUpload() {
                         title={"Toggle file upload list"} 
                         onClick={click}
                     />
-                    <div className="upload-speed">{(progresses_speed.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/progresses.length).toFixed(2)} MB/s</div>
+                    {/*<div className="upload-speed">{(progresses_speed.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/progresses.length).toFixed(2)} MB/s</div>*/}
                 </div>
                 {open && (
                     <div className="card-content file-icons">

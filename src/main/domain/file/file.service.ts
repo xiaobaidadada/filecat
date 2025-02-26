@@ -209,6 +209,14 @@ class FileService extends FileCompress {
         }
         req['fileDir'] = path.dirname(sysPath);
         req['fileName'] = path.basename(sysPath);
+        req.on('close', () => {
+            console.log('PUT 请求上传断开（连接意外关闭）');
+            if(upload_max_key) {
+                if(this.upload_num_set[upload_max_key]) {
+                    this.upload_num_set[upload_max_key] --;
+                }
+            }
+        });
         return new Promise((resolve)=>{
             try {
                 this.upload(req, res, (err) => {
