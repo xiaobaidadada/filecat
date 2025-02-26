@@ -248,7 +248,7 @@ export function FilesUpload() {
             path: getRouterAfter('file', getRouterPath())
         });
         const v: FileInfoItemData = result.context;
-        const MAX_CONCURRENT = v.dir_upload_max_num_value.user_upload_num === undefined ? 3 : v.dir_upload_max_num_value.user_upload_num;
+        const MAX_CONCURRENT = v?.dir_upload_max_num_value?.user_upload_num === undefined ? 3 : v.dir_upload_max_num_value.user_upload_num;
         // const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了
         let currentIndex = 0;
         let activeWorkers = 0;
@@ -259,7 +259,7 @@ export function FilesUpload() {
                 const index = currentIndex++;
                 activeWorkers++;
                 try {
-                    if (v.dir_upload_max_num_value.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
+                    if (v?.dir_upload_max_num_value?.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
                         // 开启了 并超过了最大值
                         await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value);
                     } else {

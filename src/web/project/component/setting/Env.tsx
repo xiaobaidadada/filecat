@@ -258,16 +258,16 @@ export function Env() {
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件上传")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={dir_upload_rows_add}/><ActionButton icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
                 <Table headers={dir_upload_headers} rows={dir_upload_rows.map((item:dir_upload_max_num_item, index) => {
                     const new_list = [
-                        <InputText value={`${item.index}`} placeholder={index} handleInputChange={(value) => {
+                        <InputText value={item.index} placeholder={index} handleInputChange={(value) => {
                             item.index = parseInt(value);
                         }} no_border={true}/>,
                         <InputText value={item.path} handleInputChange={(value) => {
                             item.path = value;
                         }} no_border={true}/>,
-                        <InputText value={`${item.user_upload_num}`} handleInputChange={(value) => {
+                        <InputText value={item.user_upload_num} handleInputChange={(value) => {
                             item.user_upload_num = parseInt(value);
                         }} no_border={true}/>,
-                        <InputText value={`${item.sys_upload_num}`} handleInputChange={(value) => {
+                        <InputText value={item.sys_upload_num} handleInputChange={(value) => {
                             item.sys_upload_num = parseInt(value);
                         }} no_border={true}/>,
 
