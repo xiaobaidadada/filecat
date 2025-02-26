@@ -49,14 +49,19 @@ export function WorkFlowRealTime(props) {
         req.filename_path = `${getRouterAfter('file', getRouterPath())}${workflow_show.filename}`
         ws.addMsg(CmdType.workflow_realtime_one_rsq,(data)=>{
             // console.log(data.context)
-            if(data.context.done === true) {
-                NotySucess("done!");
-            } else if(data.context.done === false) {
-                NotyFail("done!");
+            // if(data.context.done === true) {
+            //     NotySucess("done!");
+            // } else if(data.context.done === false) {
+            //     NotyFail("done!");
+            // }
+            if(data.context.list && data.context.list.length > 0) {
+                const list = data.context.list as workflow_realtime_tree_list;
+                render_list(list)
+                set_step_tree_list(list);
             }
-            const list = data.context.list as workflow_realtime_tree_list;
-            render_list(list)
-            set_step_tree_list(list);
+            if(data.context.new_log) {
+                print(data.context.new_log);
+            }
         })
         ws.sendData(CmdType.workflow_realtime_one_req,req);
 
@@ -144,7 +149,7 @@ export function WorkFlowRealTime(props) {
     }
     const print =async (message)=>{
         // 判断终端展示是否初始化
-        if(!terminalState) {
+        if(!terminal_value) {
             await new Promise(resolve => {
                 terminal_init_resolve = resolve;
                 setShellShow(true)
@@ -152,7 +157,6 @@ export function WorkFlowRealTime(props) {
             });
         }
         if(message) {
-            terminal_value.clear()
             terminal_value.write(message);
         }
 

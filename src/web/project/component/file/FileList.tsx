@@ -25,7 +25,7 @@ import {formatFileSize} from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextTip} from "../../../meta/component/Card";
 import {WorkFlow} from "./component/workflow/WorkFlow";
-import {workflow_dir_name, WorkFlowRealTimeReq} from "../../../../common/req/file.req";
+import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
@@ -42,7 +42,6 @@ const columnWidth = 280;
 
 let pre_search: GetFilePojo;
 
-let to_running_files_set_value;
 let dir_info = {} as any;
 export default function FileList() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
@@ -91,17 +90,23 @@ export default function FileList() {
         const p = new WorkFlowRealTimeReq();
         p.dir_path = `${getRouterAfter('file', getRouterPath())}`
         ws.addMsg(CmdType.workflow_realtime, (data) => {
-            // console.log(data.context??[])
-            const set = new Set<string>(data.context ?? []);
-            for (const it of to_running_files_set_value ?? []) {
-                if (it.endsWith('.workflow.yml') && !set.has(it)) {
+            // console.log(data.context)
+            const pojo = data.context as WorkFlowRealTimeRsq;
+            for (const it of pojo.sucess_file_list) {
+                if (it.endsWith('.workflow.yml') ) {
                     NotySucess(`${it.slice(0, -13)} done!`);
-                } else if (it.endsWith('.act') && !set.has(it)) {
+                } else if (it.endsWith('.act')) {
                     NotySucess(`${it.slice(0, -4)} done!`);
                 }
             }
-            to_running_files_set_value = set;
-            set_to_running_files_set(set)
+            for (const it of pojo.failed_file_list) {
+                if (it.endsWith('.workflow.yml') ) {
+                    NotyFail(`${it.slice(0, -13)} failed!`);
+                } else if (it.endsWith('.act')) {
+                    NotyFail(`${it.slice(0, -4)} failed!`);
+                }
+            }
+            set_to_running_files_set(new Set(pojo.running_file_list));
         })
         await ws.sendData(CmdType.workflow_realtime, p);
     }
@@ -201,7 +206,6 @@ export default function FileList() {
         setFilePreview({open: false});
         set_workflow_show_click(false);
         dir_info = {};
-        to_running_files_set_value = undefined;
 
     }, [location]);
     useEffect(() => {
@@ -603,7 +607,7 @@ export default function FileList() {
             });
             await initUserInfo();
             setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-            navigate("/file/");
+            navigate(getRouterPath());
         }
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };

@@ -18,15 +18,15 @@ export function FileMenu() {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
     const [items, setItems,] = useState([
-        {r: t("以文本打开"),v:1},
-        {r: t("以日志打开"),v:2}
+        {r: t("以文本打开"), v: 1},
+        {r: t("以日志打开"), v: 2}
     ]);
     // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
-    const [shell_file_log,set_file_log] = useRecoilState($stroe.log_viewer);
-    const [workflow_show,set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
+    const [shell_file_log, set_file_log] = useRecoilState($stroe.log_viewer);
+    const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
 
     const items_folder = [{r: t("以studio打开")}];
     const items_images = [{r: t("以图片编辑器打开")}];
@@ -38,22 +38,23 @@ export function FileMenu() {
     let div; // useEffect 是已经渲染过了再执行
     const pojo = showPrompt.data;
     const textClick = async (v) => {
-        if ( v===1 ) {
+        close();
+        if (v === 1) {
             const name = showPrompt.data.filename;
-            click_file({name, model: "text",size:showPrompt.data.size,opt_shell:true});
-            close();
-        } else if ( v===2 ) {
-            set_file_log({show: true,fileName: showPrompt.data.filename})
-            close();
-        } else if ( v===3 || v===4 || v===5 ) {
-            if(v===5) {
-                set_workflow_show({open:true,filename:showPrompt.data.filename});
+            click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true});
+        } else if (v === 2) {
+            set_file_log({show: true, fileName: showPrompt.data.filename})
+        } else if (v === 3 || v === 4 || v === 5) {
+            if (v === 5) {
+                set_workflow_show({open: true, filename: showPrompt.data.filename});
             } else {
-                run_workflow(showPrompt.data.filename,v);
+                run_workflow(showPrompt.data.filename, v);
             }
-            close();
+        } else if (v === "3_1") {
+            // 实时运行worlkflow
+            await run_workflow(showPrompt.data.filename, 3);
+            set_workflow_show({open: true, filename: showPrompt.data.filename});
         }
-
     }
     switch (pojo.type) {
         case FileTypeEnum.video:
@@ -117,19 +118,19 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close}
-                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={showPrompt.data.items}
+                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                                            items={showPrompt.data.items}
                                                             click={showPrompt.data.textClick}/>}/>
             </div>
             break;
         case FileTypeEnum.unknow:
-        default:
-        {
-            if(pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
-                if(file_is_running(pojo.filename)) {
-                    items.unshift({r: t("停止workflow"),v:4})
-                    items.unshift({r: t("实时查看workflow"),v:5})
+        default: {
+            if (pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
+                if (file_is_running(pojo.filename)) {
+                    items.unshift({r: t("停止workflow"), v: 4})
+                    items.unshift({r: t("实时查看workflow"), v: 5})
                 } else {
-                    items.unshift({r: t("运行workflow"),v:3})
+                    items.unshift({r: t("运行workflow"), v: 3, items: [{r: t("运行并实时查看"), v: "3_1"}]})
                 }
             }
             div = <div onWheel={() => {

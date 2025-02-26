@@ -13,6 +13,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotySucess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
+import {sort} from "../../../../common/ListUtil";
 
 export function Env() {
     const { t, i18n } = useTranslation();
@@ -112,6 +113,7 @@ export function Env() {
     }
 
     const dir_upload_max_num_save = async () => {
+        sort(dir_upload_rows,v=>v.index);
         const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
         if (result.code === RCode.Sucess) {
             NotySucess("保存成功")
@@ -301,7 +303,9 @@ export function Env() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件上传")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={dir_upload_rows_add}/><ActionButton icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
                     <Table headers={dir_upload_headers} rows={dir_upload_rows.map((item, index) => {
                         const new_list = [
-                            <div>{index}</div>,
+                            <InputText value={item.index} placeholder={index} handleInputChange={(value) => {
+                                item.index = parseInt(value);
+                            }} no_border={true}/>,
                             <InputText value={item.path} handleInputChange={(value) => {
                                 item.path = value;
                             }} no_border={true}/>,

@@ -87,6 +87,12 @@ export class WorkFlowRealTimeReq {
     dir_path:string;
 }
 
+export class WorkFlowRealTimeRsq {
+    sucess_file_list:string[] = [];
+    failed_file_list:string[] = [];
+    running_file_list:string[] =  [];
+}
+
 export class WorkFlowRealTimeOneReq {
     filename_path:string;
 

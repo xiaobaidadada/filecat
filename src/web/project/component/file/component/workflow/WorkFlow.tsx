@@ -187,7 +187,7 @@ export function WorkFlow(props) {
     }
     const print =async (message)=>{
         // 判断终端展示是否初始化
-        if(!terminalState) {
+        if(!terminal_value) {
             await new Promise(resolve => {
                 terminal_init_resolve = resolve;
                 setShellShow(true)

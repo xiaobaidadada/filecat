@@ -23,9 +23,10 @@ export function FilesUpload() {
     const [open, setOpen] = React.useState(false);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
     const [progresses, setProgresses] = useState<number[]>([]);
+    const [progresses_speed, set_progresses_speed] = useState<number[]>([]);
     const [speed, setSpeed] = useState(0);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const speedRef = useRef<{ totalLoaded: number; lastTime: number }>({ totalLoaded: 0, lastTime: Date.now() });
+    // const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // const speedRef = useRef<{ totalLoaded: number; lastTime: number }>({ totalLoaded: 0, lastTime: Date.now() });
     const remaining = uploadFiles.length - (progresses?.filter(p => p >= 100).length || 0);
 
     function click() {
@@ -34,6 +35,9 @@ export function FilesUpload() {
 
     const uploadFile = async (value: any, index: number,initialPath:string) => {
         try {
+            let startTime = new Date().getTime();  // 用于记录开始时间
+            let previousLoaded = 0;  // 上一次的已加载字节数
+            let timeout;
             await fileHttp.put(
                 `${encodeURIComponent(`${initialPath}${value.fullPath}`)}?dir=${value.isDir?1:0}`,
                 value,
@@ -45,23 +49,46 @@ export function FilesUpload() {
                         return newProgresses;
                     });
 
-                    const now = Date.now();
-                    const timeDiff = (now - speedRef.current.lastTime) / 1000;  // 时间差，单位秒
+                    const currentTime = new Date().getTime();  // 当前时间（毫秒）
+                    const loaded = progressEvent.loaded;  // 已上传字节数
+                    // const total = progressEvent.total;  // 文件总字节数
+                    // debugger
+                    // 计算时间差（秒）
+                    // if (!startTime) startTime = currentTime;  // 初始化开始时间
+                    const timeElapsed = (currentTime - startTime) / 1000;  // 时间差（秒）
+                    startTime = currentTime;
 
-                    // 累加已上传的数据量
-                    speedRef.current.totalLoaded += progressEvent.loaded;
+                    // 计算传输的字节数
+                    const bytesTransferred = loaded - previousLoaded;
 
-                    if (timeDiff > 0.5) {  // 每 0.5 秒计算一次网速
-                        const uploadSpeed = (speedRef.current.totalLoaded / (1024 * 1024)) / timeDiff;  // 转换为 MB/s
-                        setSpeed(parseFloat(uploadSpeed.toFixed(2)));  // 设置当前网速，保留两位小数
+                    // 计算网速（字节/秒）
+                    const speed = bytesTransferred / timeElapsed;  // 字节/秒
 
-                        // 重置速度计算的时间和已上传数据量
-                        speedRef.current = { totalLoaded: 0, lastTime: now };
-                    }
+                    // 转换成 KB/s 或 MB/s
+                    const speedInKBps = speed / (1024 * 1024);  // 转换为千字节每秒
+
+                    // 更新 UI 显示网速
+                    // speedDisplay.textContent = `网速: ${speedInKBps.toFixed(2)} KB/s`;
+                    set_progresses_speed(prev => {
+                        const newProgresses = [...prev];
+                        newProgresses[index] = speedInKBps;
+                        return newProgresses;
+                    });
+                    // setSpeed(speedInKBps.toFixed(2))
+
+                    // 更新已加载字节数
+                    previousLoaded = loaded;
 
                     // 防止网速停留为上次的速度
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    timeoutRef.current = setTimeout(() => setSpeed(0), 1000);  // 1秒后重置速度为0
+                    if (timeout) clearTimeout(timeout);
+                    timeout = setTimeout(() =>
+                    {
+                        set_progresses_speed(prev => {
+                            const newProgresses = [...prev];
+                            newProgresses[index] = 0;
+                            return newProgresses;
+                        });
+                    }, 1000);  // 1秒后重置速度为0
                 }
             );
         } catch (e) {
@@ -74,7 +101,8 @@ export function FilesUpload() {
         const initialPath = `${getRouterAfter('file', getRouterPath())}`;
 
         setProgresses(uploadFiles.map(() => 0));
-        speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
+        set_progresses_speed(uploadFiles.map(() => 0));
+        // speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
 
         const result = await ws.sendData(CmdType.file_info, {
             type: FileTypeEnum.upload_folder,
@@ -108,9 +136,9 @@ export function FilesUpload() {
         Promise.all(workers)
             .then(() => {
                 if (!hasError) {
-                    navigate(getRouterPath());
                     setUploadFiles([]);
                     setShowPrompt({ show: false, type: '', overlay: false, data: {} });
+                    navigate(getRouterPath());
                 }
             })
             .catch(() => {});
@@ -120,7 +148,7 @@ export function FilesUpload() {
     useEffect( () => {
         up();
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            // if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
@@ -134,18 +162,24 @@ export function FilesUpload() {
                         title={"Toggle file upload list"} 
                         onClick={click}
                     />
-                    <div className="upload-speed">{speed} MB/s</div>
+                    <div className="upload-speed">{(progresses_speed.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/progresses.length).toFixed(2)} MB/s</div>
                 </div>
                 {open && (
                     <div className="card-content file-icons">
                         {uploadFiles.map((v: any, index) => (
-                            <div className="file" key={index}>
-                                <div className="file-name">
+                            <div className="file div-row" key={index}>
+                                <div className="file-name" style={{fontSize:".8rem"}}>
                                     {v.name}
+                                    <span style={{
+                                        paddingLeft:".3rem",
+                                        color:progresses[index]===100?"green":progresses[index]>0?"var(--blue)":"var(--surfaceSecondary)"}}>
+                                        {`${progresses[index] || 0}% ${progresses_speed[index].toFixed(2)} MB/s  `}
+                                    </span>
                                 </div>
-                                <div className="file-progress">
-                                    <div style={{ width: `${progresses[index] || 0}%` }}></div>
+                                <div className="file-progress ">
+                                    <div style={{ width: `${progresses[index]  || 0}%` }}></div>
                                 </div>
+
                             </div>
                         ))}
                     </div>
