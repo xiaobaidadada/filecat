@@ -19,8 +19,8 @@ on:
 jobs:
   push-npm: # 执行node的 预构建
     if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'push-all' }}
-    runs-on: windows-2022
-    name: Prebuild on windows-2022
+    runs-on: windows-2019
+    name: Prebuild on windows-2019
     # needs: test
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
