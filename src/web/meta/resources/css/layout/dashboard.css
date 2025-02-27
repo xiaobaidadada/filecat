@@ -169,8 +169,10 @@ table tr>*:last-child {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1002;
-    max-width: 25em;
-    width: 90%;
+    /*max-width: 25em;*/
+    /*width: 90%;*/
+    max-width: 50%;
+    min-width: 25em;
     max-height: 95%;
     animation: .1s show forwards;
 }

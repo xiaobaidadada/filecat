@@ -5,7 +5,13 @@ import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/custo
 import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
-import {FileSettingItem, SysSoftware, SysSoftwareItem, TokenTimeMode} from "../../../common/req/setting.req";
+import {
+    dir_upload_max_num_item,
+    FileSettingItem,
+    SysSoftware,
+    SysSoftwareItem,
+    TokenTimeMode
+} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
 import {SystemUtil} from "../sys/sys.utl";
 import {Body} from "routing-controllers";
@@ -470,7 +476,7 @@ export class SettingService {
         return DataUtil.get(data_common_key.protection_directory) ?? [];
     }
 
-    get_dir_upload_max_num():{ path: string ,user_upload_num?:number,sys_upload_num?:number }[] {
+    get_dir_upload_max_num():dir_upload_max_num_item[] {
         return DataUtil.get(data_common_key.dir_upload_max_num) ?? [];
     }
 
@@ -495,7 +501,7 @@ export class SettingService {
         DataUtil.set(data_common_key.protection_directory, data);
     }
 
-    save_dir_upload_max_num(data) {
+    save_dir_upload_max_num(data:dir_upload_max_num_item[]) {
         const list = data ?? [];
         for (const item of list) {
             if(!item.path) {
@@ -506,6 +512,20 @@ export class SettingService {
             }
             if(typeof item.sys_upload_num === "string") {
                 item.sys_upload_num = parseInt(item.sys_upload_num);
+            }
+            if(typeof item.open_ws_file === "string") {
+                item.open_ws_file = item.open_ws_file === "true";
+            }
+            if(item.open_ws_file) {
+                if(!item.ws_file_block_mb_size) {
+                    throw `编号:${item.index} 文件块的大小设置有问题`;
+                }
+                if(!item.ws_file_parallel_num) {
+                    throw `编号:${item.index} 并发数量设置有问题`;
+                }
+                if(!item.ws_file_standard_size) {
+                    throw `编号:${item.index} 大文件size设置有问题`;
+                }
             }
         }
         DataUtil.set(data_common_key.dir_upload_max_num, list);

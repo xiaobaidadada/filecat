@@ -28,7 +28,7 @@ import {
     saveTxtReq,
     WorkflowGetReq, WorkFlowRealTimeOneReq,
     WorkFlowRealTimeReq,
-    WorkflowReq
+    WorkflowReq, ws_file_upload_req
 } from "../../../common/req/file.req";
 import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
@@ -79,6 +79,17 @@ export class FileController {
         userService.check_user_auth(req.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
+    }
+
+    @msg(CmdType.file_upload_pre)
+    async file_upload_pre(data: WsData<ws_file_upload_req>) {
+        return FileServiceImpl.file_upload_pre(data);
+    }
+
+    @msg(CmdType.file_upload)
+    async file_upload(data: WsData<ws_file_upload_req>) {
+        await FileServiceImpl.file_upload(data);
+        return ""
     }
 
 

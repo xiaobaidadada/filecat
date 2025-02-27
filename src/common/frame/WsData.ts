@@ -93,6 +93,8 @@ export enum CmdType {
     file_uncompress_progress,
     file_compress,
     file_compress_progress,
+    file_upload_pre,
+    file_upload,
     log_viewer,
     log_viewer_watch,
     search_file,

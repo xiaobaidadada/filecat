@@ -129,3 +129,17 @@ export class WorkflowGetRsq {
     total:number;
     one_data?:work_flow_record;
 }
+
+
+export class ws_file_upload_req {
+    is_dir:boolean;
+    file_path:string;
+    file_full_path:string;
+    chunk_index:number; // 当前块数
+    total_chunk_index:number; // 总索引块数
+    lastModified:number;
+    part_count:number; // 1 2 3
+    total_part_size:number;
+    size:number;
+    parallel_done_num: number;
+}

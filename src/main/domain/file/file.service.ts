@@ -12,7 +12,7 @@ import fse from 'fs-extra'
 import path from "path";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {rimraf} from "rimraf";
-import {cutCopyReq, fileInfoReq} from "../../../common/req/file.req";
+import {cutCopyReq, fileInfoReq, ws_file_upload_req} from "../../../common/req/file.req";
 import {formatFileSize, getShortTime} from "../../../common/ValueUtil";
 import * as Stream from "node:stream";
 import {Env} from "../../../common/Env";
@@ -24,7 +24,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {getEditModelType, removeTrailingPath} from "../../../common/StringUtil";
+import {generateRandomHash, getEditModelType, removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
 
 const archiver = require('archiver');
@@ -34,6 +34,7 @@ import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 
+
 const chokidar = require('chokidar');
 
 class FileService extends FileCompress {
@@ -42,7 +43,7 @@ class FileService extends FileCompress {
         const result: GetFilePojo = {
             files: [],
             folders: [],
-            relative_user_path:undefined
+            relative_user_path: undefined
         };
         if (is_sys_path === 1 && decodeURIComponent(param_path) === "/etc/fstab") {
             userService.check_user_auth(token, UserAuth.sys_disk_mount);
@@ -70,7 +71,7 @@ class FileService extends FileCompress {
             }
         }
 
-        if(is_sys_path === 1) {
+        if (is_sys_path === 1) {
             if (sysPath.startsWith(root_path)) {
                 result.relative_user_path = sysPath.substring(root_path.length);
             }
@@ -86,14 +87,15 @@ class FileService extends FileCompress {
             } catch (e) {
                 console.log("读取错误", e);
             }
-            const formattedCreationTime = stats ? getShortTime(new Date(stats.mtime).getTime()) : "";
+            const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+            // const formattedCreationTime = stats ? getShortTime(new Date(stats.mtime).getTime()) : "";
             // const size = stats ? formatFileSize(stats.size) : "";
             if (stats && stats.isFile()) {
                 const type = getFileFormat(item);
                 result.files?.push({
                     type: type,
                     name: item,
-                    mtime: formattedCreationTime,
+                    mtime: mtime,
                     size: stats.size,
                     isLink: stats?.isSymbolicLink(),
                     path: path.join(param_path, item)
@@ -102,7 +104,7 @@ class FileService extends FileCompress {
                 result.folders?.push({
                     type: FileTypeEnum.folder,
                     name: item,
-                    mtime: formattedCreationTime,
+                    mtime: mtime,
                     isLink: stats?.isSymbolicLink(),
                     path: param_path
                 })
@@ -110,7 +112,7 @@ class FileService extends FileCompress {
                 result.files?.push({
                     type: FileTypeEnum.dev,
                     name: item,
-                    mtime: formattedCreationTime,
+                    mtime: mtime,
                     size: stats?.size,
                     path: path.join(param_path, item)
                 })
@@ -119,30 +121,29 @@ class FileService extends FileCompress {
         return Sucess(result);
     }
 
-    public async getFileInfo(type: FileTypeEnum, fpath: string, token,wss?:Wss) {
+    public async getFileInfo(type: FileTypeEnum, fpath: string, token, wss?: Wss) {
         let info: FileInfoItemData = {};
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
         userService.check_user_path(token, sysPath)
         switch (type) {
             case FileTypeEnum.folder:
-                if(wss) {
-                    this.getDiskSizeForPath(sysPath).then(data=>{
+                if (wss) {
+                    this.getDiskSizeForPath(sysPath).then(data => {
                         const result = new WsData<SysPojo>(CmdType.file_info);
                         result.context = data;
                         wss.sendData(result.encode())
-                    }).catch(error=>{
+                    }).catch(error => {
                         console.log(error);
                     })
                 } else {
                     info = await this.getDiskSizeForPath(sysPath);
                 }
                 break;
-            case FileTypeEnum.upload_folder:
-            {
+            case FileTypeEnum.upload_folder: {
                 const list = settingService.get_dir_upload_max_num();
                 for (const it of list) {
-                    if(userService.isSubPath(it.path,sysPath)) {
-                        info.max_upload_num = it.user_upload_num;
+                    if (userService.isSubPath(it.path, sysPath)) {
+                        info.dir_upload_max_num_value = it;
                     }
                 }
             }
@@ -175,6 +176,7 @@ class FileService extends FileCompress {
     }).single('file');
 
     upload_num_set = {} as any;
+
     public async uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
@@ -192,14 +194,14 @@ class FileService extends FileCompress {
         let upload_max_key;
         let max_num;
         for (const it of settingService.get_dir_upload_max_num()) {
-            if(userService.isSubPath(it.path,sysPath) && it.sys_upload_num !== undefined) {
+            if (userService.isSubPath(it.path, sysPath) && it.sys_upload_num !== undefined) {
                 upload_max_key = it.path;
                 max_num = it.sys_upload_num;
             }
         }
-        if(upload_max_key) {
+        if (upload_max_key) {
             let v = this.upload_num_set[upload_max_key];
-            if (v === undefined ) {
+            if (v === undefined) {
                 v = 1;
             } else {
                 v++;
@@ -210,31 +212,31 @@ class FileService extends FileCompress {
         req['fileDir'] = path.dirname(sysPath);
         req['fileName'] = path.basename(sysPath);
         req.on('close', () => {
-            console.log('PUT 请求上传断开（连接意外关闭）');
-            if(upload_max_key) {
-                if(this.upload_num_set[upload_max_key]) {
-                    this.upload_num_set[upload_max_key] --;
+            // console.log('PUT 请求上传断开（连接意外关闭）');
+            if (upload_max_key) {
+                if (this.upload_num_set[upload_max_key]) {
+                    this.upload_num_set[upload_max_key]--;
                 }
             }
         });
-        return new Promise((resolve)=>{
+        return new Promise((resolve) => {
             try {
                 this.upload(req, res, (err) => {
                     if (err) {
                         console.log(err);
                     }
                     // 成功上传
-                    if(upload_max_key) {
-                        if(this.upload_num_set[upload_max_key]) {
-                            this.upload_num_set[upload_max_key] --;
+                    if (upload_max_key) {
+                        if (this.upload_num_set[upload_max_key]) {
+                            this.upload_num_set[upload_max_key]--;
                         }
                     }
                     resolve(1);
                 });
             } catch (e) {
-                if(upload_max_key) {
-                    if(this.upload_num_set[upload_max_key]) {
-                        this.upload_num_set[upload_max_key] --;
+                if (upload_max_key) {
+                    if (this.upload_num_set[upload_max_key]) {
+                        this.upload_num_set[upload_max_key]--;
                     }
                 }
                 resolve(1);
@@ -243,6 +245,145 @@ class FileService extends FileCompress {
         // 写入文件
         // fs.writeFileSync(sysPath, file.buffer);
         //multer 默认使用 return new Multer({}) 默认memoryStorage 这种方式 buffer 不属于v8内存管理  所以内存释放的比较慢
+    }
+
+    file_upload_count_map = new Map<string, {
+        // part_size: number,
+        upload_data_size: number,
+        wss: Wss,
+        lastModified: number,
+        buffer:Buffer,
+        sys_file_max_num?: number,
+        sys_file_upload_max_key? :string,
+        parallel_done_num : number
+    }>();
+    file_upload_map = new Map<string, ws_file_upload_req>();
+
+    file_upload_pre(data: WsData<ws_file_upload_req>) {
+        const param = data.context as ws_file_upload_req;
+        const token = (data.wss as Wss).token;
+        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
+        let value = this.file_upload_count_map.get(sysPath);
+        if (value) {
+            if (param.lastModified !== value.lastModified) {
+                if (fs.existsSync(sysPath)) {
+                    fs.unlinkSync(sysPath);  // 删除文件
+                }
+            } else {
+                // 返回历史
+                return { upload_data_size: value.upload_data_size};
+            }
+        }
+        // if (fs.existsSync(sysPath)) {
+        //     fs.unlinkSync(sysPath);  // 删除文件
+        // }
+
+        // 系统文件数量限制
+        let max_num;
+        let upload_max_key;
+        for (const it of settingService.get_dir_upload_max_num()) {
+            if (userService.isSubPath(it.path, sysPath) && it.sys_upload_num !== undefined) {
+                upload_max_key = it.path;
+                max_num = it.sys_upload_num;
+            }
+        }
+        if (upload_max_key) {
+            let v = this.upload_num_set[upload_max_key];
+            if (v === undefined) {
+                v = 1;
+            } else {
+                v++;
+            }
+            if (v > max_num) throw " upload file num max ";
+            this.upload_num_set[upload_max_key] = v;
+        }
+        this.lifeStart(sysPath, upload_max_key, async (key) => {
+            if (key) {
+                if (this.upload_num_set[key]) {
+                    this.upload_num_set[key]--;
+                }
+            }
+        });
+        // (data.wss as Wss).setClose(() => {
+        //     // 虽然会添加多个 但是断开的时候都会消失
+        //     if (upload_max_key) {
+        //         if (this.upload_num_set[upload_max_key]) {
+        //             this.upload_num_set[upload_max_key]--;
+        //         }
+        //     }
+        // })
+        if (fs.existsSync(sysPath)) {
+            fs.truncateSync(sysPath); // 清空内容
+        }
+        param.file_full_path = sysPath;
+        this.file_upload_map.set(sysPath, param);
+        // const part_size = 2; // 先写死为 2
+        value = {
+            // part_size: part_size,
+            upload_data_size: 0,
+            wss: (data.wss as Wss),
+            lastModified: param.lastModified,
+            buffer: Buffer.alloc(0),
+            sys_file_max_num:max_num,
+            sys_file_upload_max_key:upload_max_key,
+            parallel_done_num: 0
+        }
+        this.file_upload_count_map.set(sysPath, value);
+        return { upload_data_size: value.upload_data_size};
+    }
+
+    async file_upload(data: WsData<ws_file_upload_req>) {
+        const param = data.context as ws_file_upload_req;
+        const token = (data.wss as Wss).token;
+
+        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
+        this.lifeHeart(sysPath);
+        const have_file = fs.existsSync(sysPath);
+        if (param.is_dir && have_file) {
+            // 目录不存在，创建目录
+            fs.mkdirSync(sysPath, {recursive: true});
+            return;
+        }
+        const num_value = this.file_upload_count_map.get(sysPath);
+        try {
+            const chunkData = Buffer.from(data.bin_context);
+            num_value.buffer = Buffer.concat([num_value.buffer,chunkData]);
+            // console.log(param.chunk_index)
+            if(param.part_count !== param.part_count) {
+                return;
+            }
+            num_value.parallel_done_num ++;
+            // console.log(param.chunk_index);
+            // 写入块数据到文件
+            // const chunkData = Buffer.from(data.bin_context);
+            fs.appendFileSync(sysPath, num_value.buffer);
+            num_value.upload_data_size += num_value.buffer.length;
+            num_value.buffer = Buffer.alloc(0);
+
+            // 如果所有块都上传完
+            if (param.chunk_index === param.total_chunk_index -1 && param.parallel_done_num === num_value.parallel_done_num) {
+                if (num_value.sys_file_upload_max_key) {
+                    if (this.upload_num_set[num_value.sys_file_upload_max_key]) {
+                        this.upload_num_set[num_value.sys_file_upload_max_key]--;
+                    }
+                }
+                this.file_upload_count_map.delete(sysPath);
+            }
+            if(param.parallel_done_num === num_value.parallel_done_num)
+            num_value.parallel_done_num = 0;
+        } catch (e) {
+            console.log(e);
+            if (num_value.sys_file_upload_max_key) {
+                if (this.upload_num_set[num_value.sys_file_upload_max_key]) {
+                    this.upload_num_set[num_value.sys_file_upload_max_key]--;
+                }
+            }
+            this.file_upload_count_map.delete(sysPath);
+        }
     }
 
     public deletes(token, filePath?: string) {
@@ -426,10 +567,10 @@ class FileService extends FileCompress {
         await fse.rename(sysPath, sysPathNew);
     }
 
-    download_one_file(file_name:string,file_size:number,file_path: string,res:Response ,handle_type_?:"attachment"|"inline") {
+    download_one_file(file_name: string, file_size: number, file_path: string, res: Response, handle_type_?: "attachment" | "inline") {
         const encodedFileName = encodeURIComponent(file_name).replace(/%20/g, '+');
         let handle_type = "";
-        if(handle_type_ !== undefined) {
+        if (handle_type_ !== undefined) {
             handle_type = handle_type_;
         } else {
             let handle_type = "attachment";
@@ -485,11 +626,11 @@ class FileService extends FileCompress {
                 return;
             }
             if (stats.isFile()) {
-                this.download_one_file(fileName,fileSize,sysPath,ctx.res);
+                this.download_one_file(fileName, fileSize, sysPath, ctx.res);
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
                 ctx.res.attachment(path.basename(sysPath) + ".zip");
-                const archive = archiver('zip', { zlib: { level: 5 } });
+                const archive = archiver('zip', {zlib: {level: 5}});
                 archive.pipe(ctx.res);
                 archive.directory(sysPath, path.basename(sysPath));
                 archive.finalize();

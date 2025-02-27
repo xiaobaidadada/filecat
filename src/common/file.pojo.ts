@@ -1,4 +1,5 @@
 import {MaterialIcon} from "material-icons";
+import {dir_upload_max_num_item} from "./req/setting.req";
 
 export enum FileTypeEnum {
     audio = "audio",
@@ -25,7 +26,7 @@ export enum FileTypeEnum {
 export interface FileItemData {
     type?: FileTypeEnum,
     name: string,
-    mtime?: string,
+    mtime?: string|number,
     origin_size?:any,
     size?: any, // 数字和字符串
     isLink?: boolean,
@@ -41,7 +42,7 @@ export interface FileInfoItemData {
     used_size?:any;
     fs_type?:string;
     now_absolute_path?:string; // 当前决定路径
-    max_upload_num?: number;
+    dir_upload_max_num_value?: dir_upload_max_num_item;
 }
 
 export interface GetFilePojo {

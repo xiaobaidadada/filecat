@@ -21,7 +21,7 @@ import {NotyFail, NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {use_auth_check, use_file_to_running, user_click_file} from "../../util/store.util";
-import {formatFileSize} from '../../../../common/ValueUtil';
+import {formatFileSize, getShortTime} from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextTip} from "../../../meta/component/Card";
 import {WorkFlow} from "./component/workflow/WorkFlow";
@@ -156,9 +156,10 @@ export default function FileList() {
 
         let have_workflow_water = false;
         for (const item of data.files ?? []) {
+            item.mtime = item.mtime ? getShortTime(item.mtime) :"";
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
-            if (item.name.endsWith('workflow.yml') && !have_workflow_water) {
+            if (!have_workflow_water && item.name.endsWith('workflow.yml')) {
                 have_workflow_water = true;
                 Promise.resolve().then(() => {
                     workflow_watcher();
@@ -173,10 +174,12 @@ export default function FileList() {
             return;
         }
         for (const folder of data.folders ?? []) {
-            if (folder.name === workflow_dir_name) {
+            folder.mtime = folder.mtime ? getShortTime(folder.mtime) :"";
+            if (!have_workflow_water && folder.name === workflow_dir_name) {
                 // 如果有workflow
                 set_workflow_show_click(true)
                 if (!have_workflow_water) {
+                    have_workflow_water = true;
                     Promise.resolve().then(() => {
                         workflow_watcher();
                     })

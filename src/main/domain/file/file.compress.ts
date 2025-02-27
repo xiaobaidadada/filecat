@@ -1,6 +1,7 @@
 import path from "path";
 import {FileCompressType} from "../../../common/file.pojo";
 import {loadWasm} from "../bin/bin";
+import {LifecycleRecordService} from "../pre/lifeRecordService";
 
 const fs = require('fs');
 // const unzipper = require('unzipper'); // 对于流会有损坏的问题
@@ -10,7 +11,7 @@ const tar = require('tar');
 const archiver = require('archiver');
 const unrar = require("node-unrar-js");
 
-export class FileCompress {
+export class FileCompress extends LifecycleRecordService{
 
     unZip(filePath: string, targetFolder: string, progress: (value: number) => void) {
         const stat = fs.statSync(filePath);

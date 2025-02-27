@@ -130,7 +130,7 @@ export function InputText(props: {
     placeholder?: string,
     placeholderOut?: string,
     handleInputChange?: (value: string) => void,
-    value?: string,
+    value?: any,
     handlerEnter?: (v) => void,
     no_border?: boolean,
     left_placeholder?: string,
