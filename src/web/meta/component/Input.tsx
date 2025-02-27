@@ -65,7 +65,7 @@ function Input(props: {
     const [value, setValue] = React.useState("");
     const [css, setCss] = React.useState("input input--block");
     useEffect(() => {
-        setValue(props.value || "");
+        setValue(props.value === undefined || props.value === null ? "" : props.value);
         if (props.focus) {
             inputRef.current.focus(); //获得焦点
         }

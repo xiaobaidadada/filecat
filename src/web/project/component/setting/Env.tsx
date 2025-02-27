@@ -115,16 +115,17 @@ export function Env() {
     const dir_upload_max_num_save = async () => {
         for (const it of dir_upload_rows) {
             if(it.open_ws_file) {
-                if(!it.ws_file_block_mb_size) {
-                    NotyFail(`编号:${it.index} 文件块的大小设置有问题`)
+                // debugger
+                if(typeof it.ws_file_block_mb_size !== "number") {
+                    NotyFail(`编号:${it.index??""} 文件块的大小设置有问题`)
                     return;
                 }
-                if(!it.ws_file_parallel_num) {
-                    NotyFail(`编号:${it.index} 并发数量设置有问题`)
+                if(typeof it.ws_file_parallel_num !== "number") {
+                    NotyFail(`编号:${it.index??""} 并发数量设置有问题`)
                     return;
                 }
-                if(!it.ws_file_standard_size) {
-                    NotyFail(`编号:${it.index} 大文件size设置有问题`)
+                if(typeof it.ws_file_standard_size !== "number") {
+                    NotyFail(`编号:${it.index??""} 大文件size设置有问题`)
                     return;
                 }
             }
@@ -275,13 +276,13 @@ export function Env() {
                             item.open_ws_file = value === "true";
                             set_dir_upload_rows([...dir_upload_rows])
                         }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
-                        <InputText value={item.ws_file_standard_size ? item.ws_file_standard_size / 1024 /1024 :undefined } handleInputChange={(value) => {
+                        <InputText value={typeof item.ws_file_standard_size === "number" ? item.ws_file_standard_size / 1024 /1024 :undefined } handleInputChange={(value) => {
                             item.ws_file_standard_size = parseInt(value) * 1024 * 1024;
                         }} no_border={true}/>,
                         <InputText value={item.ws_file_parallel_num} handleInputChange={(value) => {
                             item.ws_file_parallel_num = parseInt(value);
                         }} no_border={true}/>,
-                        <InputText value={item.ws_file_block_mb_size ? item.ws_file_block_mb_size / 1024 /1024 :undefined } handleInputChange={(value) => {
+                        <InputText value={typeof item.ws_file_block_mb_size === "number" ? item.ws_file_block_mb_size / 1024 /1024 :undefined } handleInputChange={(value) => {
                             item.ws_file_block_mb_size = parseInt(value) * 1024 * 1024;
                         }} no_border={true}/>,
 

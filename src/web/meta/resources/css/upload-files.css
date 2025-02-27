@@ -5,6 +5,7 @@
   right: 0;
   bottom: 0;
   transform: none;
+  overflow-y: auto;
 }
 
 .upload-files .file {

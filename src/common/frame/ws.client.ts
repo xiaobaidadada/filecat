@@ -2,6 +2,7 @@ import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
 import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
+import {generateRandomHash} from "../StringUtil";
 
 const decoder = new parser.Decoder();
 
@@ -20,19 +21,20 @@ export class WsClient {
     private _msgResolveTimeoutMap = new Map();
 
     handMsg(cmdType: CmdType,data : WsData<any>) {
-        // console.log(data)
+        // console.log(data.random_id)
         if(data.code === RCode.Fail) {
             NotyFail(data.message);
         }
-        const resolve = this._msgResolveMap.get(data.cmdType)
+        // console.log(data.random_id||data.cmdType)
+        const resolve = this._msgResolveMap.get(data.random_id||data.cmdType)
         if (resolve) {
             resolve(data);
-            this._msgResolveMap.delete(data.cmdType)
+            this._msgResolveMap.delete(data.random_id||data.cmdType)
         }
-        const timeout = this._msgResolveTimeoutMap.get(cmdType);
+        const timeout = this._msgResolveTimeoutMap.get(data.random_id||cmdType);
         if(timeout) {
             clearTimeout(timeout);
-            this._msgResolveTimeoutMap.delete(cmdType);
+            this._msgResolveTimeoutMap.delete(data.random_id||cmdType);
         }
         const fun = this._msgHandlerMap.get(data.cmdType)
         if (fun) {
@@ -149,9 +151,12 @@ export class WsClient {
 
     }
 
-    public async sendData(cmdType: CmdType,context: any) {
+    public async sendData(cmdType: CmdType,context: any,set_random_id?:boolean) {
         const wsData = new WsData(cmdType);
         wsData.context = context;
+        if(set_random_id) {
+            wsData.random_id = generateRandomHash(9);
+        }
         return this.send(wsData);
     };
 
@@ -163,20 +168,21 @@ export class WsClient {
         }
         await this.connect()
         const data = wsData.encode();
-        if (Array.isArray(data)) {
-            for (let i = 0; i < data.length; i++) {
-                this._socket!.send(data[i]);
-            }
-        } else {
-            this._socket!.send(data);
-        }
         return new Promise((resolve,reject)=>{
             const timeout = setTimeout(()=>{
                 resolve(null);
-                console.log('ws超时',wsData.cmdType)
+                console.log('ws超时',wsData.random_id||wsData.cmdType)
             },1000 * 6);
-            this._msgResolveMap.set(wsData.cmdType,resolve);
-            this._msgResolveTimeoutMap.set(wsData.cmdType,timeout);
+            this._msgResolveMap.set(wsData.random_id||wsData.cmdType,resolve);
+            this._msgResolveTimeoutMap.set(wsData.random_id||wsData.cmdType,timeout);
+            // console.log(wsData.random_id||wsData.cmdType)
+            if (Array.isArray(data)) {
+                for (let i = 0; i < data.length; i++) {
+                    this._socket!.send(data[i]);
+                }
+            } else {
+                this._socket!.send(data);
+            }
         })
     }
     // 可以作为锁，控制两个路由之前的跳转处理函数的先后顺序

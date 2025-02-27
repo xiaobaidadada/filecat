@@ -68,7 +68,7 @@ class WsPreHandler {
                 if (handle) {
                     const rsq: string = await handle(data);
                     // 发送消息给客户端
-                    wss.sendData(new WsData(data.cmdType, rsq).encode());
+                    wss.sendData(new WsData(data.cmdType, rsq,undefined,data.random_id).encode());
                 } else {
                     console.log("没有匹配到路由")
                 }
@@ -87,12 +87,13 @@ class WsPreHandler {
                     try {
                         const rsq: string = await handle(data);
                         // 发送消息给客户端
-                        wss.sendData(new WsData(data.cmdType, rsq).encode());
+                        wss.sendData(new WsData(data.cmdType, rsq,undefined,data.random_id).encode());
                     } catch (e) {
                         console.log(e)
                         const p = new WsData(data.cmdType);
                         p.code = RCode.Fail;
                         p.message = JSON.stringify(e)
+                        p.random_id = data.random_id;
                         wss.sendData(p.encode());
                     }
                 } else {

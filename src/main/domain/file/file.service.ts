@@ -1,21 +1,22 @@
 import {
     base64UploadType,
     FileCompressPojo,
-    FileCompressType, FileTreeList,
+    FileCompressType,
+    FileInfoItemData,
+    FileTreeList,
     FileTypeEnum,
-    FileVideoFormatTransPojo, FileInfoItemData,
-    GetFilePojo, LogViewerPojo
+    FileVideoFormatTransPojo,
+    GetFilePojo,
+    LogViewerPojo
 } from "../../../common/file.pojo";
 // import {config} from "../../other/config";
-import fs, {Stats} from "fs";
+import fs, {Stats, WriteStream} from "fs";
 import fse from 'fs-extra'
 import path from "path";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {rimraf} from "rimraf";
 import {cutCopyReq, fileInfoReq, ws_file_upload_req} from "../../../common/req/file.req";
-import {formatFileSize, getShortTime} from "../../../common/ValueUtil";
-import * as Stream from "node:stream";
-import {Env} from "../../../common/Env";
+import {formatFileSize} from "../../../common/ValueUtil";
 import {settingService} from "../setting/setting.service";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
@@ -24,17 +25,15 @@ import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {generateRandomHash, getEditModelType, removeTrailingPath} from "../../../common/StringUtil";
+import {removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
-
-const archiver = require('archiver');
-const mime = require('mime-types');
 import multer from 'multer';
 import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
-import {SshPojo} from "../../../common/req/ssh.pojo";
-import {sftp_client} from "../ssh/ssh.ssh2";
+
+const archiver = require('archiver');
+const mime = require('mime-types');
 
 const chokidar = require('chokidar');
 
@@ -185,9 +184,9 @@ class FileService extends FileCompress {
         userService.check_user_only_path(token, sysPath);
         // if (!file) {
         //     // 目录
-        if ((req.query.dir === "1") && !fs.existsSync(sysPath)) {
+        if ((req.query.dir === "1") ) {
             // 目录不存在，创建目录
-            fs.mkdirSync(sysPath, {recursive: true});
+            if(!fs.existsSync(sysPath)) fs.mkdirSync(sysPath, {recursive: true});
             return;
         }
         //     return;
@@ -253,20 +252,27 @@ class FileService extends FileCompress {
         upload_data_size: number,
         wss: Wss,
         lastModified: number,
-        buffer_list:Buffer[],
+        buffer_list:Uint8Array[],
         sys_file_max_num?: number,
         sys_file_upload_max_key? :string,
         parallel_done_num : number,
+        writeStream:WriteStream
     }>();
     // file_upload_map = new Map<string, ws_file_upload_req>();
 
     file_upload_pre(data: WsData<ws_file_upload_req>) {
         const param = data.context as ws_file_upload_req;
         const token = (data.wss as Wss).token;
-        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        // const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path ? decodeURIComponent(param.file_path) : "");
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
-
+        if (param.is_dir) {
+            // 目录不存在，创建目录
+            if(!fs.existsSync(sysPath))
+            fs.mkdirSync(sysPath, {recursive: true});
+            return ;
+        }
         // 系统文件数量限制
         let max_num;
         let upload_max_key;
@@ -312,7 +318,8 @@ class FileService extends FileCompress {
         //     fs.unlinkSync(sysPath);  // 删除文件
         // }
         this.lifeStart(sysPath, upload_max_key, async (key) => {
-            this.file_upload_count_map.delete(key);
+            this.file_upload_count_map.delete(upload_max_key);
+            value.writeStream.end();
         });
         if (fs.existsSync(sysPath)) {
             fs.truncateSync(sysPath); // 清空内容
@@ -328,7 +335,8 @@ class FileService extends FileCompress {
             buffer_list: new Array(param.parallel_done_num).fill(undefined),
             sys_file_max_num:max_num,
             sys_file_upload_max_key:upload_max_key,
-            parallel_done_num: 0
+            parallel_done_num: 0,
+            writeStream: fs.createWriteStream(sysPath)
         }
         this.file_upload_count_map.set(sysPath, value);
         return { upload_data_size: value.upload_data_size};
@@ -338,20 +346,16 @@ class FileService extends FileCompress {
         const param = data.context as ws_file_upload_req;
         const token = (data.wss as Wss).token;
 
-        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        // const sysPath = path.join(settingService.getFileRootPath(token), param.file_path);
+        const sysPath = path.join(settingService.getFileRootPath(token), param.file_path ? decodeURIComponent(param.file_path) : "");
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
         this.lifeHeart(sysPath);
-        const have_file = fs.existsSync(sysPath);
-        if (param.is_dir && have_file) {
-            // 目录不存在，创建目录
-            fs.mkdirSync(sysPath, {recursive: true});
-            return;
-        }
+
         const num_value = this.file_upload_count_map.get(sysPath);
         try {
-            const chunkData = Buffer.from(data.bin_context);
-            num_value.buffer_list[param.part_count] = chunkData; // Buffer.concat([num_value.buffer,chunkData]);
+            num_value.buffer_list[param.part_count] = data.bin_context; // Buffer.concat([num_value.buffer,chunkData]);
+            delete data.bin_context;
             // console.log(param.chunk_index)
             num_value.parallel_done_num ++;
             if(num_value.parallel_done_num !== param.parallel_done_num) {
@@ -360,9 +364,13 @@ class FileService extends FileCompress {
             num_value.parallel_done_num = 0;
             // console.log(param.chunk_index);
             // 写入块数据到文件
-            const add_chunk = Buffer.concat(num_value.buffer_list);
-            fs.appendFileSync(sysPath,add_chunk );
-            num_value.upload_data_size += add_chunk.length;
+            // const add_chunk = Buffer.concat(num_value.buffer_list);
+            for (const add_chunk of num_value.buffer_list) {
+                // fs.appendFileSync(sysPath,add_chunk );
+                num_value.writeStream.write(add_chunk);
+                num_value.upload_data_size += add_chunk.length;
+            }
+            num_value.buffer_list.length = 0;
             num_value.buffer_list = new Array(param.parallel_done_num).fill(undefined);
 
             // 如果所有块都上传完
@@ -373,6 +381,7 @@ class FileService extends FileCompress {
                     }
                 }
                 this.file_upload_count_map.delete(sysPath);
+                num_value.writeStream.end();
             }
         } catch (e) {
             console.log(e);
@@ -381,6 +390,7 @@ class FileService extends FileCompress {
                     this.upload_num_set[num_value.sys_file_upload_max_key]--;
                 }
             }
+            num_value.writeStream.end();
             this.file_upload_count_map.delete(sysPath);
         }
     }

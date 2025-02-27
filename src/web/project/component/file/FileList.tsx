@@ -221,6 +221,7 @@ export default function FileList() {
     }, []);
     const drop = async (event) => {
         event.preventDefault();
+        event.stopPropagation();
         let dt = event.dataTransfer;
         // console.log(dt)
         let el = event.target;

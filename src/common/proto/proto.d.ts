@@ -17,6 +17,9 @@ export interface IWsMessage {
 
     /** WsMessage code */
     code?: (number|null);
+
+    /** WsMessage randomId */
+    randomId?: (string|null);
 }
 
 /** Represents a WsMessage. */
@@ -42,6 +45,9 @@ export class WsMessage implements IWsMessage {
 
     /** WsMessage code. */
     public code: number;
+
+    /** WsMessage randomId. */
+    public randomId: string;
 
     /**
      * Creates a new WsMessage instance using the specified properties.

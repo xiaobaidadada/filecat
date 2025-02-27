@@ -20,6 +20,7 @@ $root.WsMessage = (function() {
      * @property {Uint8Array|null} [binContext] WsMessage binContext
      * @property {string|null} [message] WsMessage message
      * @property {number|null} [code] WsMessage code
+     * @property {string|null} [randomId] WsMessage randomId
      */
 
     /**
@@ -78,6 +79,14 @@ $root.WsMessage = (function() {
     WsMessage.prototype.code = 0;
 
     /**
+     * WsMessage randomId.
+     * @member {string} randomId
+     * @memberof WsMessage
+     * @instance
+     */
+    WsMessage.prototype.randomId = "";
+
+    /**
      * Creates a new WsMessage instance using the specified properties.
      * @function create
      * @memberof WsMessage
@@ -111,6 +120,8 @@ $root.WsMessage = (function() {
             writer.uint32(/* id 4, wireType 2 =*/34).string(message.message);
         if (message.code != null && Object.hasOwnProperty.call(message, "code"))
             writer.uint32(/* id 5, wireType 0 =*/40).int32(message.code);
+        if (message.randomId != null && Object.hasOwnProperty.call(message, "randomId"))
+            writer.uint32(/* id 6, wireType 2 =*/50).string(message.randomId);
         return writer;
     };
 
@@ -165,6 +176,10 @@ $root.WsMessage = (function() {
                     message.code = reader.int32();
                     break;
                 }
+            case 6: {
+                    message.randomId = reader.string();
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -215,6 +230,9 @@ $root.WsMessage = (function() {
         if (message.code != null && message.hasOwnProperty("code"))
             if (!$util.isInteger(message.code))
                 return "code: integer expected";
+        if (message.randomId != null && message.hasOwnProperty("randomId"))
+            if (!$util.isString(message.randomId))
+                return "randomId: string expected";
         return null;
     };
 
@@ -243,6 +261,8 @@ $root.WsMessage = (function() {
             message.message = String(object.message);
         if (object.code != null)
             message.code = object.code | 0;
+        if (object.randomId != null)
+            message.randomId = String(object.randomId);
         return message;
     };
 
@@ -271,6 +291,7 @@ $root.WsMessage = (function() {
             }
             object.message = "";
             object.code = 0;
+            object.randomId = "";
         }
         if (message.cmdType != null && message.hasOwnProperty("cmdType"))
             object.cmdType = message.cmdType;
@@ -282,6 +303,8 @@ $root.WsMessage = (function() {
             object.message = message.message;
         if (message.code != null && message.hasOwnProperty("code"))
             object.code = message.code;
+        if (message.randomId != null && message.hasOwnProperty("randomId"))
+            object.randomId = message.randomId;
         return object;
     };
 

@@ -128,15 +128,18 @@ export class WsData<T> {
     public wss:Wss|null|WebSocket;
     public code:RCode; // 只有返回的时候用
     public message:string; // 只有返回的时候用 错误时候的信息
+    public random_id:string;
 
     constructor(cmdType: CmdType);
     constructor(cmdType: CmdType,context:T);
     constructor(cmdType: CmdType,context:T,bin_context: Uint8Array);
-    constructor(cmdType: CmdType,context?:T,bin_context?: Uint8Array) {
+    constructor(cmdType: CmdType,context:T,bin_context: Uint8Array,random_id:string);
+    constructor(cmdType: CmdType,context?:T,bin_context?: Uint8Array,random_id?:string) {
         this.cmdType = cmdType;
         this.context = context;
         this.bin_context = bin_context;
         this.code = RCode.Sucess; // 默认成功
+        this.random_id = random_id;
     }
 
     public encode(){
@@ -146,7 +149,8 @@ export class WsData<T> {
                 context: JsonUtil.getJson(this.context),
                 code: this.code,
                 message: this.message,
-                binContext: this.bin_context
+                binContext: this.bin_context,
+                randomId:this.random_id
             })).finish();
         } else {
             const p = {
@@ -163,6 +167,7 @@ export class WsData<T> {
         const v = new WsData(data.cmdType,JsonUtil.fromJson(data.context),data.binContext);
         v.code = data.code;
         v.message = data.message;
+        v.random_id = data.randomId;
         return v;
 
         // const data = JsonUtil.fromJson(buffer.toString());

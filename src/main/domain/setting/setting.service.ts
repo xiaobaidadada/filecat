@@ -517,13 +517,13 @@ export class SettingService {
                 item.open_ws_file = item.open_ws_file === "true";
             }
             if(item.open_ws_file) {
-                if(!item.ws_file_block_mb_size) {
+                if(typeof item.ws_file_block_mb_size !== "number") {
                     throw `编号:${item.index} 文件块的大小设置有问题`;
                 }
-                if(!item.ws_file_parallel_num) {
+                if(typeof item.ws_file_parallel_num !== "number") {
                     throw `编号:${item.index} 并发数量设置有问题`;
                 }
-                if(!item.ws_file_standard_size) {
+                if(typeof item.ws_file_standard_size !== "number") {
                     throw `编号:${item.index} 大文件size设置有问题`;
                 }
             }

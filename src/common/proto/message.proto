@@ -6,4 +6,5 @@ message WsMessage {
   optional bytes bin_context = 3;
   optional string message = 4;
   optional int32 code = 5;
+  optional string random_id = 6;
 }

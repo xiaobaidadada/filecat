@@ -14,8 +14,9 @@ import {ws_file_upload_req} from "../../../../common/req/file.req";
 import {fileHttp} from "../../util/config";
 import {WsClient} from "../../../../common/frame/ws.client";
 import {dir_upload_max_num_item} from "../../../../common/req/setting.req";
+import {generateRandomHash} from "../../../../common/StringUtil";
 
-const all_wss_list: WsClient[] = [];
+// const all_wss_list: WsClient[] = [];
 const readAsArrayBufferAsync = (chunk, reader) => {
     return new Promise((resolve, reject) => {
         reader.onload = () => {
@@ -63,10 +64,11 @@ export function FilesUpload() {
         file_p.total_part_size = total_part_size;
         file_p.parallel_done_num = part_size;
         pojo.context = file_p;
+        // pojo.random_id = generateRandomHash(9)
         return wss.send(pojo);
     }
 
-    const ws_upload_file = async (value: any, index: number, initialPath: string, dir_upload_max_num_value: dir_upload_max_num_item) => {
+    const ws_upload_file = async (value: any, index: number, initialPath: string, dir_upload_max_num_value: dir_upload_max_num_item,all_wss_list: WsClient[] ) => {
         const part_size = dir_upload_max_num_value.ws_file_parallel_num; // 并发数量
         let upload_size = 0;
         const total_size = value.size;
@@ -75,13 +77,26 @@ export function FilesUpload() {
         file_p.lastModified = value.lastModified;
         file_p.file_path = `${initialPath}${value.fullPath}`;
         file_p.parallel_done_num = part_size;
-        const ws_pre_data = (await ws.sendData(CmdType.file_upload_pre, file_p)).context as {
+        file_p.is_dir = value.isDir;
+        const ws_pre_data = (await ws.sendData(CmdType.file_upload_pre, file_p,true)).context as {
             upload_data_size: number
         };
+        if(value.isDir || !ws_pre_data) {
+            setProgresses(prev => {
+                const newProgresses = [...prev];
+                newProgresses[index] = 100;
+                // console.log(percentCompleted)
+                return newProgresses;
+            });
+            return;
+        }
+        // console.log(ws_pre_data)
+        // console.log(value)
         if (ws_pre_data.upload_data_size > 0) {
             upload_size = ws_pre_data.upload_data_size;
             value = value.slice(ws_pre_data.upload_data_size);
         }
+        // const all_wss_list: WsClient[] = [];
         if (all_wss_list.length < part_size) {
             for (let i = all_wss_list.length; i <= part_size; i++) {
                 all_wss_list.push(new WsClient(window.location.host, (socket) => {
@@ -243,7 +258,14 @@ export function FilesUpload() {
         set_progresses_speed(uploadFiles.map(() => 0));
         // speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
 
-        const result = await ws.sendData(CmdType.file_info, {
+        const result = await (new WsClient(window.location.host, (socket) => {
+            // const data = new WsData(CmdType.auth);
+            // data.context = {
+            //     Authorization: localStorage.getItem('token')
+            // }
+            //  // @ts-ignore
+            // socket.send(data.encode())
+        })).sendData(CmdType.file_info, {
             type: FileTypeEnum.upload_folder,
             path: getRouterAfter('file', getRouterPath())
         });
@@ -254,14 +276,17 @@ export function FilesUpload() {
         let activeWorkers = 0;
         let hasError = false;
 
-        const processNextFile = async () => {
+        const processNextFile = async (ok_index) => {
+            // console.log(ok_index,"开始")
+            const all_wss_list: WsClient[] = [];
             while (currentIndex < uploadFiles.length && !hasError) {
                 const index = currentIndex++;
                 activeWorkers++;
+                // console.log(ok_index,index)
                 try {
                     if (v?.dir_upload_max_num_value?.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
                         // 开启了 并超过了最大值
-                        await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value);
+                        await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value,all_wss_list);
                     } else {
                         await uploadFile(uploadFiles[index], index, initialPath);
                     }
@@ -271,11 +296,14 @@ export function FilesUpload() {
                     activeWorkers--;
                 }
             }
+            for (const it of all_wss_list) {
+                it.unConnect(); // 关闭全部的ws
+            }
         };
 
         const workers = Array(Math.min(MAX_CONCURRENT, uploadFiles.length))
             .fill(null)
-            .map(() => processNextFile());
+            .map((v,index) => processNextFile(index));
         // const now = Date.now();
         Promise.all(workers)
             .then(() => {
@@ -284,9 +312,9 @@ export function FilesUpload() {
                     setShowPrompt({show: false, type: '', overlay: false, data: {}});
                     navigate(getRouterPath());
                     // console.log(`耗时${((Date.now() - now) / 1000).toFixed(2)}`)
-                    all_wss_list.map(v => {
-                        v.unConnect(); // 关闭全部的ws
-                    })
+                    // all_wss_list.map(v => {
+                    //     v.unConnect(); // 关闭全部的ws
+                    // })
                 }
             })
             .catch(() => {
