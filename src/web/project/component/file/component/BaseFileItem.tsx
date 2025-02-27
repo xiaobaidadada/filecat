@@ -32,8 +32,21 @@ export function BaseFileItem(props: FileItemData & {
         }
     }
 
-    const handleronDrop = (event, index) => {
+    const handleronDrop = (e, index) => {
         // console.log(index)
+        const dataTransfer = e.dataTransfer;
+
+        // 检查是否有文件类型的数据项
+        let hasFiles = false;
+        for (let i = 0; i < dataTransfer.items.length; i++) {
+            if (dataTransfer.items[i].kind === 'file') {
+                hasFiles = true;
+                break;
+            }
+        }
+        if (hasFiles) {
+            return;
+        }
         if (nowFileList.folders.length <= index) {
             return; // 拖拽到的不是文件夹而是文件
         }

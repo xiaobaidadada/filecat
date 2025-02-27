@@ -7,10 +7,10 @@ import {RCode} from "../Result.pojo";
 
 const url = require('url');
 
-const decoder = new parser.Decoder();
 
 // 连接期间内一直存在
 export class Wss {
+    decoder = new parser.Decoder();
 
     private _ws: WebSocket;
     // 0 是未验证,1是验证过的 目前不需要心跳
@@ -58,7 +58,7 @@ class WsPreHandler {
         const wss = new Wss(ws);
         wss.token = token;
         if (!protocolIsProto2) {
-            decoder.on("decoded", async (packet) => {
+            wss.decoder.on("decoded", async (packet) => {
                 // if(packet.data[0] === CmdType.connection) {
                 //     return;
                 // }
@@ -101,7 +101,7 @@ class WsPreHandler {
                 }
             } else {
                 // 暂时都是字符串
-                decoder.add(message.toString());
+                wss.decoder.add(message.toString());
             }
         });
         // 监听客户端断开连接事件

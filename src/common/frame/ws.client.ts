@@ -4,9 +4,10 @@ import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
 import {generateRandomHash} from "../StringUtil";
 
-const decoder = new parser.Decoder();
 
 export class WsClient {
+    decoder = new parser.Decoder();
+
     private  _socket;
     private _url;
     // 0 是未连接
@@ -58,8 +59,8 @@ export class WsClient {
             }
             const unConnect =()=> {
                 this._status = 0;
-                decoder.removeAllListeners();
-                decoder.destroy();
+                this.decoder.removeAllListeners();
+                this.decoder.destroy();
                 if (this._subscribeUnconnect && !this._self_close) {
                     this._subscribeUnconnect();
                 }
@@ -73,7 +74,7 @@ export class WsClient {
                 }
                 this._status = 1;
                 resolve(true);
-                decoder.on("decoded",(d)=>{
+                this.decoder.on("decoded",(d)=>{
                     const data = new WsData(d.data[0],d.data[1]);
                     data.code = d.data[2];
                     data.message = d.data[3];
@@ -89,7 +90,7 @@ export class WsClient {
                     data.wss = this._socket;
                     this.handMsg(data.cmdType,data);
                 } else {
-                    decoder.add(rowData);
+                    this.decoder.add(rowData);
                 }
                 handle();
             }
