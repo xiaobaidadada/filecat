@@ -4,14 +4,20 @@ import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
 import {generateRandomHash} from "../StringUtil";
 
-
+enum connect_status {
+    not,
+    connecting,
+    connected,
+}
 export class WsClient {
     decoder = new parser.Decoder();
 
+    private name;
     private  _socket;
     private _url;
     // 0 是未连接
-    private  _status = 0;
+    private  _status:connect_status = connect_status.not;
+    private _connect_await_promise = [];
     private _self_close  = false;
     private _authHandle;
     private _subscribeUnconnect;
@@ -27,15 +33,16 @@ export class WsClient {
             NotyFail(data.message);
         }
         // console.log(data.random_id||data.cmdType)
-        const resolve = this._msgResolveMap.get(data.random_id||data.cmdType)
+        const key = data.random_id||cmdType;
+        const resolve = this._msgResolveMap.get(key)
         if (resolve) {
             resolve(data);
-            this._msgResolveMap.delete(data.random_id||data.cmdType)
+            this._msgResolveMap.delete(key)
         }
-        const timeout = this._msgResolveTimeoutMap.get(data.random_id||cmdType);
+        const timeout = this._msgResolveTimeoutMap.get(key);
         if(timeout) {
             clearTimeout(timeout);
-            this._msgResolveTimeoutMap.delete(data.random_id||cmdType);
+            this._msgResolveTimeoutMap.delete(key);
         }
         const fun = this._msgHandlerMap.get(data.cmdType)
         if (fun) {
@@ -44,21 +51,26 @@ export class WsClient {
 
     }
 
-    constructor(url:string,authHandle:(socket:WebSocket)=>void) {
+    constructor(url:string,authHandle:(socket:WebSocket)=>void,name?:string) {
         this._url = url;
         this._authHandle = authHandle;
+        this.name = name;
     }
 
 
 
     public async connect():Promise<boolean> {
         const handle = (resolve)=>{
-            if (this._status !==0) {
+            if (this._status === connect_status.connected) {
                 resolve(true);
                 return;
+            } else if (this._status === connect_status.connecting) {
+                this._connect_await_promise.push(resolve);
+                return;
             }
+            this._status = connect_status.connecting;
             const unConnect =()=> {
-                this._status = 0;
+                this._status = connect_status.not;
                 this.decoder.removeAllListeners();
                 this.decoder.destroy();
                 if (this._subscribeUnconnect && !this._self_close) {
@@ -67,20 +79,33 @@ export class WsClient {
                 this._self_close = false;
             }
             const open = async (event) => {
-                console.log('ws连接成功');
+                console.log('ws连接成功',this.name);
+                this._status = connect_status.connected;
                 // 身份验证发送
                 if (this._authHandle) {
                     this._authHandle(this._socket)
                 }
-                this._status = 1;
                 resolve(true);
-                this.decoder.on("decoded",(d)=>{
-                    const data = new WsData(d.data[0],d.data[1]);
-                    data.code = d.data[2];
-                    data.message = d.data[3];
-                    data.wss = this._socket;
-                    this.handMsg(data.cmdType,data);
-                })
+                if(this._connect_await_promise.length) {
+                    while (true) {
+                        const connect_await = this._connect_await_promise.pop();
+                        if (connect_await) {
+                            connect_await(true);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if(!protocolIsProto2) {
+                    this.decoder.on("decoded",(d)=>{
+                        const data = new WsData(d.data[0],d.data[1]);
+                        data.code = d.data[2];
+                        data.message = d.data[3];
+                        data.random_id = d.data[4];
+                        data.wss = this._socket;
+                        this.handMsg(data.cmdType,data);
+                    })
+                }
             }
             let dataList = [];
             let processing = false;
@@ -124,6 +149,7 @@ export class WsClient {
                 }
             }
             if (!this.isAilive()) {
+                const name = this.name;
                 // 创建 WebSocket 连接
                 const socket = new WebSocket(`ws://${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`);
                 // 监听连接成功事件
@@ -134,7 +160,7 @@ export class WsClient {
 
                 // 监听连接关闭事件
                 socket.addEventListener('close', async function (event) {
-                    console.log('Disconnected from WebSocket server');
+                    console.log('Disconnected from WebSocket server',name);
                     await unConnect()
                 });
 
@@ -167,15 +193,17 @@ export class WsClient {
             await this._promise;
             this._promise = null;
         }
-        await this.connect()
+        // console.log(wsData,this.name)
+        await this.connect();
         const data = wsData.encode();
         return new Promise((resolve,reject)=>{
+            const key = wsData.random_id||wsData.cmdType;
             const timeout = setTimeout(()=>{
                 resolve(null);
-                console.log('ws超时',wsData.random_id||wsData.cmdType)
+                console.log('ws超时',key)
             },1000 * 6);
-            this._msgResolveMap.set(wsData.random_id||wsData.cmdType,resolve);
-            this._msgResolveTimeoutMap.set(wsData.random_id||wsData.cmdType,timeout);
+            this._msgResolveMap.set(key,resolve);
+            this._msgResolveTimeoutMap.set(key,timeout);
             // console.log(wsData.random_id||wsData.cmdType)
             if (Array.isArray(data)) {
                 for (let i = 0; i < data.length; i++) {
@@ -194,7 +222,7 @@ export class WsClient {
     }
 
     public isAilive() {
-        if (this._status === 1 && !!this._socket && this._socket.readyState===WebSocket.OPEN) {
+        if (this._status === connect_status.connected && !!this._socket && this._socket.readyState===WebSocket.OPEN) {
             return true;
         }
         return false;
@@ -208,11 +236,11 @@ export class WsClient {
     }
     public async unConnect() {
         if (this.isAilive()) {
-            console.log('主动关闭客户端')
+            console.log('主动关闭客户端',this.name)
             this._self_close = true;
             this._socket.close();
         }
-        this._status = 0;
+        this._status = connect_status.not;
     }
 
     // 多次add相同的 key 只会add一次

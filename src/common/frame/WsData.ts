@@ -155,7 +155,7 @@ export class WsData<T> {
         } else {
             const p = {
                 type:PacketType.EVENT,
-                data:[this.cmdType,this.context,this.code,this.message]
+                data:[this.cmdType,this.context,this.code,this.message,this.random_id]
             }
             return encoder.encode(p as Packet);
         }

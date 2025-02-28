@@ -1,5 +1,6 @@
 import React, {ReactNode,Suspense} from 'react';
 import {Route, Routes} from "react-router-dom";
+import Layout from "../../project/component/Layout";
 
 
 export interface RouteContainerProps {
@@ -8,7 +9,7 @@ export interface RouteContainerProps {
     rtos: string[];
     children: ReactNode[];
 }
-export const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
+const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
     return ( <Routes>
         {props.children.map((value, index) => {
             return (
@@ -19,3 +20,5 @@ export const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
         ( <Route  path={"/"} element={(props.children[0])}/>)
     </Routes>)
 }
+
+export default SimpleRoutes;

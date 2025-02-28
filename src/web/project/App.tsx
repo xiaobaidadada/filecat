@@ -1,25 +1,20 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {Suspense, useContext, useEffect, useState} from 'react';
 import {
-    Route,
-    HashRouter as Router,
-    Routes,
-    Link,
-    HashRouter,
-    useNavigation,
-    BrowserRouter,
     useNavigate
 } from "react-router-dom";
-import Login from "./component/Login";
-import Layout from "./component/Layout";
-import {SimpleRoutes} from "../meta/component/SimpleRoutes";
+// import Login from "./component/Login";
+// import Layout from "./component/Layout";
+// import SimpleRoutes from "../meta/component/SimpleRoutes";
 import { useLocation   } from 'react-router-dom';
-import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "./util/store";
 import {GlobalContext} from "./GlobalProvider";
 import {getRouterPath} from "./util/WebPath";
+import '../meta/resources/css/all.css'
 
-
+const Layout = React.lazy(() => import("./component/Layout"));
+const Login = React.lazy(() => import("./component/Login"));
+const SimpleRoutes = React.lazy(() => import("../meta/component/SimpleRoutes"))
 
 
 function App() {
@@ -49,9 +44,15 @@ function App() {
 
     return (
         <SimpleRoutes rtos={["/","/login","/*"]}>
-            <Login/>
-            <Login/>
-            <Layout/>
+            <Suspense fallback={<div></div>}>
+                <Login/>
+            </Suspense>
+            <Suspense fallback={<div></div>}>
+                <Login/>
+            </Suspense>
+            <Suspense fallback={<div></div>}>
+                <Layout/>
+            </Suspense>
         </SimpleRoutes>
     );
 }

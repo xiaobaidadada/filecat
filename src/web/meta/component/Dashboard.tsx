@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Link, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
 import Login from "../../project/component/Login";
 import Layout from "../../project/component/Layout";
-import {SimpleRoutes} from "./SimpleRoutes";
+import SimpleRoutes from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
 import {getRouterPath} from "../../project/util/WebPath";
 

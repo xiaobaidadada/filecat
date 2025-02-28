@@ -1,5 +1,5 @@
-import React, {ReactNode, useEffect} from 'react';
-import {RouteContainerProps, SimpleRoutes} from "./SimpleRoutes";
+import React, {ReactNode} from 'react';
+import SimpleRoutes from "./SimpleRoutes";
 import {Nav, NavProps} from "./NavProps";
 import {Main} from "./Main";
 import {flatten} from "../../project/util/ListUitl";

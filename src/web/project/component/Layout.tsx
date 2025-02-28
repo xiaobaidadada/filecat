@@ -1,5 +1,4 @@
 import React, {Suspense} from 'react'
-import '../../meta/resources/css/all.css'
 import Header from "../../meta/component/Header";
 import {CommonBody} from "../../meta/component/Body";
 import {NavItem} from "../../meta/component/NavProps";

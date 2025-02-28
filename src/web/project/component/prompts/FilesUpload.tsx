@@ -258,17 +258,10 @@ export function FilesUpload() {
         set_progresses_speed(uploadFiles.map(() => 0));
         // speedRef.current = { totalLoaded: 0, lastTime: Date.now() };
 
-        const result = await (new WsClient(window.location.host, (socket) => {
-            // const data = new WsData(CmdType.auth);
-            // data.context = {
-            //     Authorization: localStorage.getItem('token')
-            // }
-            //  // @ts-ignore
-            // socket.send(data.encode())
-        })).sendData(CmdType.file_info, {
+        const result = await ws.sendData(CmdType.file_info, {
             type: FileTypeEnum.upload_folder,
             path: getRouterAfter('file', getRouterPath())
-        });
+        },true);
         const v: FileInfoItemData = result.context;
         const MAX_CONCURRENT = v?.dir_upload_max_num_value?.user_upload_num === undefined ? 3 : v.dir_upload_max_num_value.user_upload_num;
         // const MAX_CONCURRENT = 3;  // 最大并发数 对于机械硬盘 3 个已经可以了

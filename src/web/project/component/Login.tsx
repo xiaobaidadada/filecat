@@ -2,14 +2,14 @@ import React, {useContext, useEffect, useState} from 'react'
 import {useRecoilState} from "recoil";
 import {InputPassword, InputText} from "../../meta/component/Input";
 import {Button} from "../../meta/component/Button";
-import {Link, useLocation, useNavigate} from "react-router-dom";
-import Noty from 'noty';
-import { userHttp} from "../util/config";
+import {useNavigate} from "react-router-dom";
+import {userHttp} from "../util/config";
 import {UserLogin} from "../../../common/req/user.req";
 import {$stroe} from "../util/store";
-import {SelfCenter, WinCenter} from "../../meta/component/Dashboard";
+import {WinCenter} from "../../meta/component/Dashboard";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../GlobalProvider";
+import {NotyFail} from "../util/noty";
 
 
 function Login() {
@@ -17,28 +17,23 @@ function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const {initUserInfo} = useContext(GlobalContext);
-    const [custom_fun_opt,set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
+    const [custom_fun_opt, set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
 
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
     async function login() {
-        const data : UserLogin = {
-            username:username,
+        const data: UserLogin = {
+            username: username,
             password: password
         }
-        const rsq = await userHttp.post("login",data,false );
+        const rsq = await userHttp.post("login", data, false);
         if (rsq.code === 0) {
-            localStorage.setItem('token',rsq.data)
+            localStorage.setItem('token', rsq.data)
             initUserInfo();
             set_custom_fun_opt("")
             navigate('/file')
         } else {
-            new Noty({
-                type: 'error',
-                text: rsq.message,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail(rsq.message)
         }
     }
 

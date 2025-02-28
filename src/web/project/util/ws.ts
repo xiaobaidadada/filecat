@@ -8,4 +8,4 @@ export const ws = new WsClient(window.location.host,  (socket)=>{
     // }
     //  // @ts-ignore
     // socket.send(data.encode())
-});
+},"全局");
