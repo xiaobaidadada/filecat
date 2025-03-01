@@ -9,7 +9,8 @@ export function InputTextIcon(props: {
     value?: string,
     icon:MaterialIcon,
     max_width?:string,
-    handleEnterPress?:Function
+    handleEnterPress?:Function,
+    not_mobile?: boolean,
 }) {
     const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
@@ -21,7 +22,7 @@ export function InputTextIcon(props: {
         inputRef.current.value = v;
         setValue(props.value || "");
     }, [props.value]);
-    return <div id="search" className="" style={{"maxWidth":props.max_width,display:"block"}} >
+    return <div id="search" className="" style={{"maxWidth":props.max_width,display:props.not_mobile?"block":undefined}} >
         {/*display:"block"取消移动样式下的搜索隐藏*/}
         <div id="input">
             <i className="material-icons">{props.icon}</i>

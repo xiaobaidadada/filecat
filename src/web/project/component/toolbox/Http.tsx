@@ -418,11 +418,11 @@ export function Http() {
                               <ActionButton icon={"add"} title={t("添加")} onClick={add}/>}
                     >
                         <div className={'http_url'}>
-                            <InputTextIcon max_width={'15%'} placeholder={t("协议")} icon={"http"} value={url_type}
+                            <InputTextIcon not_mobile={true} max_width={'15%'} placeholder={t("协议")} icon={"http"} value={url_type}
                                            handleInputChange={(v) => {
                                                set_url_type(v);
                                            }}/>
-                            <InputTextIcon max_width={'80%'} placeholder={t("http url")} icon={"link"} value={url}
+                            <InputTextIcon not_mobile={true} max_width={'80%'} placeholder={t("http url")} icon={"link"} value={url}
                                            handleInputChange={(v) => {
                                                set_url(v);
                                            }}/>
