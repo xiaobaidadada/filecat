@@ -17,6 +17,7 @@ import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {word_detection_js} from "../../../common/word_detection_js";
 import fs from "fs";
 import {get_best_cmd} from "../../../common/path_util";
+import {FileUtil} from "../file/FileUtil";
 
 const {spawn, exec} = require('child_process');
 export const sysType = os.platform() === 'win32' ? "win" : "linux";
@@ -88,7 +89,7 @@ const exec_map = {// windwos文件命令执行优先级
 export class ShellService {
 
 
-    path_init() {
+    async path_init() {
         try {
             word_detection.clear();
             word_detection = new word_detection_js();
@@ -96,11 +97,11 @@ export class ShellService {
             const SYS_PATH = process.env.PATH +s_f + settingService.get_env_list();
             for (const item of SYS_PATH.split(s_f)) {
                 try {
-                    if (fs.existsSync(item)) {
+                    if (await FileUtil.access(item)) {
                         // 如果路径存在，使用 fs.statSync() 判断是否为目录
-                        const stats = fs.statSync(item);
+                        const stats = await FileUtil.statSync(item);
                         if (stats.isDirectory()) {
-                            const items = fs.readdirSync(item);
+                            const items = await FileUtil.readdirSync(item);
                             for (const filename of items ?? []) {
                                 if(getSys()===SysEnum.win && filename.endsWith(".dll")) {
                                     continue;

@@ -3,6 +3,7 @@ import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {UserBaseInfo} from "../../../common/req/user.req";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
+import {http_download_map} from "../../../common/req/net.pojo";
 
 const localStorageEffect = key => ({setSelf, onSet}) => {
     const savedValue = localStorage.getItem(key);
@@ -286,6 +287,7 @@ export const $stroe = {
         key: 'router_jump',
         default: {} as {
             page_self_router_api_data?:any; // 页面资源路由添加
+            http_download_map_path?:string , //http代理下载资源路由添加
         }
     })
 }

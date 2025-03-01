@@ -125,22 +125,6 @@ export function Permission(props:{
                 {t("外部软件路径")}
             </div>
             <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.filecat_file_delete_cut_rename)}
-                       checked={props.is_selected(UserAuth.filecat_file_delete_cut_rename)} onChange={() => {
-                    props.select_auth(UserAuth.filecat_file_delete_cut_rename)
-                }}/>
-                {t("文件删除、剪切、重命名")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
-                       checked={props.is_selected(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.filecat_file_context_update_upload_created_copy_decompression)
-                       }}/>
-                {t("文件创建、上传、内容更新、解压缩")}
-            </div>
-            <div>
                 <input type="checkbox"
                        disabled={props.is_disable(UserAuth.filecat_file_context_update)}
                        checked={props.is_selected(UserAuth.filecat_file_context_update)}
@@ -185,15 +169,7 @@ export function Permission(props:{
                        }}/>
                 {t("系统保护路径更新")}
             </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.recycle_file_save)}
-                       checked={props.is_selected(UserAuth.recycle_file_save)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.recycle_file_save)
-                       }}/>
-                {t("文件回收站修改")}
-            </div>
+
             <div>
                 <input type="checkbox"
                        disabled={props.is_disable(UserAuth.workflow_exe)}
@@ -229,7 +205,44 @@ export function Permission(props:{
                        }}/>
                 {t("目录文件上传数量限制修改")}
             </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.customer_api_pre_key)}
+                       checked={props.is_selected(UserAuth.customer_api_pre_key)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.customer_api_pre_key)
+                       }}/>
+                {t("自定义api前缀修改")}
+            </div>
         </div>
+
+        <h3>{t("文件权限")}</h3>
+        <div>
+            <input type="checkbox" disabled={props.is_disable(UserAuth.filecat_file_delete_cut_rename)}
+                   checked={props.is_selected(UserAuth.filecat_file_delete_cut_rename)} onChange={() => {
+                props.select_auth(UserAuth.filecat_file_delete_cut_rename)
+            }}/>
+            {t("文件删除、剪切、重命名")}
+        </div>
+        <div>
+            <input type="checkbox"
+                   disabled={props.is_disable(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
+                   checked={props.is_selected(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
+                   onChange={() => {
+                       props.select_auth(UserAuth.filecat_file_context_update_upload_created_copy_decompression)
+                   }}/>
+            {t("文件创建、上传、内容更新、解压缩")}
+        </div>
+        <div>
+            <input type="checkbox"
+                   disabled={props.is_disable(UserAuth.recycle_file_save)}
+                   checked={props.is_selected(UserAuth.recycle_file_save)}
+                   onChange={() => {
+                       props.select_auth(UserAuth.recycle_file_save)
+                   }}/>
+            {t("文件回收站修改")}
+        </div>
+
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>
             <div>
@@ -296,6 +309,13 @@ export function Permission(props:{
                     props.select_auth(UserAuth.http_proxy)
                 }}/>
                 {t("http代理")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.http_proxy_download_cancel)}
+                       checked={props.is_selected(UserAuth.http_proxy_download_cancel)} onChange={() => {
+                    props.select_auth(UserAuth.http_proxy_download_cancel)
+                }}/>
+                {t("http代理下载关闭")}
             </div>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.browser_proxy)}

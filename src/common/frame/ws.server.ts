@@ -4,6 +4,7 @@ import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import * as parser from "socket.io-parser"
 import {settingService} from "../../main/domain/setting/setting.service";
 import {RCode} from "../Result.pojo";
+import {generateRandomHash} from "../StringUtil";
 
 const url = require('url');
 
@@ -23,7 +24,7 @@ export class Wss {
 
     constructor(ws: WebSocket) {
         this._ws = ws;
-        this.id = Date.now().toString();
+        this.id = `${Date.now().toString()}_${generateRandomHash(4)}`;
     }
 
     get ws() {

@@ -18,6 +18,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {settingService} from "../setting/setting.service";
 import multer from 'multer';
 import {Request, Response} from "express";
+import {FileUtil} from "../file/FileUtil";
 
 
 
@@ -270,13 +271,13 @@ export class SshService extends SshSsh2 {
         await this.uploadFileAsync(req, res);
         return new Promise((resolve, reject) => {
             // 上传文件
-            sftp.fastPut(localFilePath, remoteFilePath, (err) => { // 比下面的更快
+            sftp.fastPut(localFilePath, remoteFilePath, async (err) => { // 比下面的更快
                 if (err) {
                     reject(err);
                 } else {
                     resolve(1);
                 }
-                fs.unlinkSync(localFilePath);
+                await FileUtil.unlinkSync(localFilePath);
             });
         });
         //

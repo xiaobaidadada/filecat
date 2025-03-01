@@ -8,6 +8,7 @@ const EventEmitter = require('events');
 
 import {Client} from '@xiaobaidadada/ssh2-prebuilt';
 import fs from "fs";
+import {FileUtil} from "../file/FileUtil";
 
 export const sftp_client = "sftp_client_key";
 
@@ -28,7 +29,7 @@ export class SshSsh2 extends LifecycleRecordService {
             keepaliveCountMax: 10 // 尝试10次keepalive后如果没有响应则断开连接
         };
         if (req.private_path) {
-            options['privateKey'] = fs.readFileSync(req.private_path);
+            options['privateKey'] = await FileUtil.readFileSync(req.private_path);
         } else if (req.password) {
             options['password'] = req.password;
         }

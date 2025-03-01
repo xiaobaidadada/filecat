@@ -78,7 +78,7 @@ export function CustomerApiRouter() {
     }
     const soft_ware_info_click = ()=>{
         let context = <div>
-            需要以 "/api" 开头的路由。
+            默认需要以 "/api" 开头的路由。
         </div>;
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >

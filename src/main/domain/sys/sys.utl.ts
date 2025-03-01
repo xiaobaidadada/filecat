@@ -17,7 +17,7 @@ export class SystemUtil {
     public static killProcess(pid): void {
         if(!pid)return;
         if (sysType === 'win' || sysType === 'linux') {
-            // SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`) // todo 关闭一个控制台进程下的所有子进程
+            // SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
             getProcessAddon().kill_process(pid,true);
         } else {
             SystemUtil.commandIsExist(`kill -9 ${pid} `)

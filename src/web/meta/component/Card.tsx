@@ -46,13 +46,14 @@ export function CardFull(props: CardProps) {
 
 export interface TextProps {
     context?: string,
+    tip_context?: string,
     children?: any
 }
 
 export function TextTip(props: TextProps) {
     const copyRef = useRef<HTMLDivElement>(null);
     const click = () => {
-        copyToClipboard(props.context ?? props.children)
+        copyToClipboard(props.tip_context ?? props.context ?? props.children)
         new Noty({
             type: 'info',
             text: '复制完成',
@@ -63,7 +64,7 @@ export function TextTip(props: TextProps) {
     return (
         <div className="card-text">
             <div className={"card-text-context"}>{props.context ?? props.children}</div>
-            <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.context ?? props.children}</div>
+            <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.tip_context ?? props.context ?? props.children}</div>
         </div>
     )
 }

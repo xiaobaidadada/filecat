@@ -64,5 +64,17 @@ export class HttpFormPojo {
     // 表单数据
     // form_data:{[key:string]:HttpFormData} | string;
     form_data_list :HttpFormData[] | string;
+    local_download_path:string; // 本地下载地址
 
+}
+
+export class http_download_map {
+    seep?:any; // 下载速度
+    // last_load_time:number, // 上一次的统计时间
+    loaded:number; // 已下载的大小
+    progresses?:any; // 进度百分比
+    last_loaded:number; // 上一秒统计时候的大小
+    total?:number; // 总大小
+    filename:string; // 文件名字
+    local_download_path:string; // 实际文件地址
 }

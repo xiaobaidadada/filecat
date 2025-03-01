@@ -97,7 +97,7 @@ export class UserController {
 
 
     @Post('/updatePassword')
-    updatePassword(@Body()user:UserLogin,@Req()req) {
+    async updatePassword(@Body()user:UserLogin,@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.update_password);
         const user_data = userService.get_user_info_by_user_id(user.user_id);
         if(!user_data) {
@@ -106,16 +106,16 @@ export class UserController {
         // if(user.username)
         // user_data.username = user.username;
         // user_data.hash_password = hash_string(user.password);
-        userService.save_user_info(user.user_id,{username:user.username,hash_password:hash_string(user.password)} as UserData);
+        await userService.save_user_info(user.user_id,{username:user.username,hash_password:hash_string(user.password)} as UserData);
         return Sucess('ok');
     }
 
 
     @Post('/language/save')
-    languageSetting(@Body() req:{language:string},@Req()r) {
+    async languageSetting(@Body() req:{language:string},@Req()r) {
         const user_data = userService.get_user_info_by_token(r.headers.authorization);
         user_data.language = req.language
-        userService.save_user_info(user_data.id, user_data);
+        await userService.save_user_info(user_data.id, user_data);
         return Sucess("1");
     }
 
@@ -146,23 +146,23 @@ export class UserController {
 
     // 创建用户
     @Post('/create_user')
-    create_user(@Body() user: UserData,@Req() req: Request) {
+    async create_user(@Body() user: UserData,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.user_manage);
         if(!user.cwd) throw "cwd not found";
-        userService.create_user(user)
+        await userService.create_user(user)
         return Sucess("");
     }
 
     // 修改保存用户
     @Post('/save_user')
-    save_user(@Body() user: UserData,@Req() req: Request) {
+    async save_user(@Body() user: UserData,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.user_manage);
         if(user.password) {
             user.hash_password = hash_string(user.password);
             delete user.password;
         }
         if(!user.cwd) throw "cwd not found";
-        userService.save_user_info(user.id,user)
+        await userService.save_user_info(user.id,user)
         return Sucess("");
     }
 
@@ -197,9 +197,9 @@ export class UserController {
 
     // 已经绑定用户不允许删除
     @Post('/create_role')
-    create_role(@Body() user: UserData,@Req() req: Request) {
+    async create_role(@Body() user: UserData,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.role_manage);
-        userService.create_role(user);
+        await userService.create_role(user);
         return Sucess("1");
     }
 
@@ -211,9 +211,9 @@ export class UserController {
     }
 
     @Post('/save_role')
-    save_role(@Body() user: UserData,@Req() req: Request) {
+    async save_role(@Body() user: UserData,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.role_manage);
-        userService.update_role(user)
+        await userService.update_role(user)
         return Sucess("");
     }
 

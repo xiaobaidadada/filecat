@@ -171,7 +171,7 @@ export class FileController {
     async switchBasePath(@Body() data: { root_index: number }, @Req() ctx) {
         const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
         user_data.folder_item_now = data.root_index;
-        userService.save_user_info(user_data.id,user_data);
+        await userService.save_user_info(user_data.id,user_data);
         // const obj = Cache.getValue(ctx.headers.authorization);
         // if (obj) {
         //     obj["root_index"] = data.root_index;
@@ -213,7 +213,7 @@ export class FileController {
 
     @msg(CmdType.file_compress)
     async compress(data: WsData<FileCompressPojo>) {
-        FileServiceImpl.FileCompress(data);
+        await FileServiceImpl.FileCompress(data);
         return ""
     }
 

@@ -21,7 +21,8 @@ export function InputTextIcon(props: {
         inputRef.current.value = v;
         setValue(props.value || "");
     }, [props.value]);
-    return <div id="search" className="" style={{"maxWidth":props.max_width}}>
+    return <div id="search" className="" style={{"maxWidth":props.max_width,display:"block"}} >
+        {/*display:"block"取消移动样式下的搜索隐藏*/}
         <div id="input">
             <i className="material-icons">{props.icon}</i>
             <input

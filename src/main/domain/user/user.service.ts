@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import {Cache} from "../../other/cache";
 import {deleteList} from "../../../common/ListUtil";
+import {FileUtil} from "../file/FileUtil";
 
 const root_id = "1";
 
@@ -118,12 +119,12 @@ export class UserService {
      * @param id
      * @param data
      */
-    public save_user_info(id: string, data: UserData) {
+     public async save_user_info(id: string, data: UserData) {
         let mapping = DataUtil.get(data_common_key.user_id_info_data_mapping);
         if (!mapping) {
             mapping = {}
         }
-        this.check_data_path(data);
+        await this.check_data_path(data);
         if (!mapping[id]) {
             throw "User id not found";
         }
@@ -175,7 +176,7 @@ export class UserService {
      * 创建用户 同时生成  id
      * @param data
      */
-    public create_user(data: UserData) {
+    public async create_user(data: UserData) {
         if (have_empty_char(data.username) || have_empty_char(data.password)) {
             throw " not empty char";
         }
@@ -183,7 +184,7 @@ export class UserService {
             data.hash_password = hash_string(data.password);
             delete data.password;
         }
-        this.check_data_path(data);
+        await this.check_data_path(data);
         let id = this.get_user_id(data.username);
         const rootName = this.get_root_name();
         if (!!id || rootName === data.username) {
@@ -260,7 +261,7 @@ export class UserService {
         return list;
     }
 
-    public root_init() {
+    public async root_init() {
         try {
             // 以前的账号密码
             let root_name:string = DataUtil.get(data_common_key.username);
@@ -299,12 +300,12 @@ export class UserService {
             }
             if (Env.reset_root_username) {
                 value.username = Env.reset_root_username;
-                this.save_user_info(value.id, value);
+                await this.save_user_info(value.id, value);
                 Env.updateEnv([{key: "reset_root_username"}]);
             }
             if (Env.reset_root_password) {
                 value.hash_password = hash_string(Env.reset_root_password);
-                this.save_user_info(value.id, value);
+                await this.save_user_info(value.id, value);
                 Env.updateEnv([{key: "reset_root_password"}]);
             }
 
@@ -316,23 +317,23 @@ export class UserService {
     }
 
 
-    public path_exists(str:string) {
+    public async path_exists(str:string) {
         if (!path.isAbsolute(str)) {
             throw " not a valid absolute path";
         }
-        if (!fs.existsSync(str)) {
-            throw "  path is not exists";
+        if (!await FileUtil.access(str)) {
+            throw `${str} path is not exists`;
         }
     }
 
-    public check_data_path(data:UserData) {
+    public async check_data_path(data:UserData) {
         if(data.cwd)
-            this.path_exists(data.cwd);
+            await this.path_exists(data.cwd);
         for (const item of data.access_dirs ?? []) {
-            this.path_exists(item);
+            await this.path_exists(item);
         }
         for (const item of data.not_access_dirs ?? []) {
-            this.path_exists(item);
+            await this.path_exists(item);
         }
     }
 
@@ -510,8 +511,8 @@ export class UserService {
     }
 
     // 创建角色
-    public create_role(role:UserData) {
-        this.check_data_path(role);
+    public async create_role(role:UserData) {
+        await this.check_data_path(role);
         role.role_id = this.create_unique_reole_id();
         const all_roles:UserData[]  = DataUtil.get(data_common_key.sys_all_roles) ??[];
         all_roles.push(role);
@@ -534,8 +535,8 @@ export class UserService {
     }
 
     // 更新角色
-    public update_role(role:UserData) {
-        this.check_data_path(role);
+    public async update_role(role:UserData) {
+        await this.check_data_path(role);
         let all_roles:UserData[]  = DataUtil.get(data_common_key.sys_all_roles) ??[];
         let id;
         let auth_list:UserAuth[];

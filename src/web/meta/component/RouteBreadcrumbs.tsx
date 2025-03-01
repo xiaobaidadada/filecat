@@ -75,6 +75,7 @@ export function RouteBreadcrumbs(props: {
                 </React.Fragment>
                 :
                 <InputText width={"100%"} maxWidth={"60%"}
+                           placeholder={"输入跳转的目录回车(点击空白处取消)"}
                 handlerEnter={(v) => {
                     if(props.input_path_enter) {
                         props.input_path_enter(v);

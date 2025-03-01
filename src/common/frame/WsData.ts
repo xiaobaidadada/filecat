@@ -101,6 +101,8 @@ export enum CmdType {
     search_file_progress,
     search_file_index, // 结果输出
     search_file_cancel ,
+    http_download_water,
+    http_download_cancel,
 
     // rtsp
     rtsp_get,
@@ -146,7 +148,7 @@ export class WsData<T> {
         if (protocolIsProto2) {
             return proto.WsMessage.encode(proto.WsMessage.create({
                 cmdType:this.cmdType,
-                context: JsonUtil.getJson(this.context),
+                context: JSON.stringify(this.context),
                 code: this.code,
                 message: this.message,
                 binContext: this.bin_context,
@@ -164,7 +166,16 @@ export class WsData<T> {
 
     public static decode(buffer) {
         const data = proto.WsMessage.decode(buffer);
-        const v = new WsData(data.cmdType,JsonUtil.fromJson(data.context),data.binContext);
+        let context = data.context;
+        if (typeof context === 'string' && context) {
+            try {
+                context = JSON.parse(context);
+            } catch (e) {
+                console.log(e);
+                context = data.context;
+            }
+        }
+        const v = new WsData(data.cmdType,context,data.binContext);
         v.code = data.code;
         v.message = data.message;
         v.random_id = data.randomId;

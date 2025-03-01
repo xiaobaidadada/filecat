@@ -34,6 +34,7 @@ import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
+import {http_download_map} from "../../../../common/req/net.pojo";
 
 
 const fileTypes = Object.values(FileListShowTypeEmum);
@@ -93,14 +94,14 @@ export default function FileList() {
             // console.log(data.context)
             const pojo = data.context as WorkFlowRealTimeRsq;
             for (const it of pojo.sucess_file_list) {
-                if (it.endsWith('.workflow.yml') ) {
+                if (it.endsWith('.workflow.yml')) {
                     NotySucess(`${it.slice(0, -13)} done!`);
                 } else if (it.endsWith('.act')) {
                     NotySucess(`${it.slice(0, -4)} done!`);
                 }
             }
             for (const it of pojo.failed_file_list) {
-                if (it.endsWith('.workflow.yml') ) {
+                if (it.endsWith('.workflow.yml')) {
                     NotyFail(`${it.slice(0, -13)} failed!`);
                 } else if (it.endsWith('.act')) {
                     NotyFail(`${it.slice(0, -4)} failed!`);
@@ -156,10 +157,10 @@ export default function FileList() {
 
         let have_workflow_water = false;
         for (const item of data.files ?? []) {
-            item.mtime = item.mtime ? getShortTime(item.mtime) :"";
+            item.mtime = item.mtime ? getShortTime(item.mtime) : "";
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
-            if (!have_workflow_water && item.name.endsWith('workflow.yml')) {
+            if (!have_workflow_water && item.name.endsWith('.workflow.yml') || item.name.endsWith('.act')) {
                 have_workflow_water = true;
                 Promise.resolve().then(() => {
                     workflow_watcher();
@@ -173,18 +174,14 @@ export default function FileList() {
             navigate(data.relative_user_path);
             return;
         }
+
+        have_workflow_water = false;
         for (const folder of data.folders ?? []) {
-            folder.mtime = folder.mtime ? getShortTime(folder.mtime) :"";
+            folder.mtime = folder.mtime ? getShortTime(folder.mtime) : "";
             if (!have_workflow_water && folder.name === workflow_dir_name) {
                 // 如果有workflow
                 set_workflow_show_click(true)
-                if (!have_workflow_water) {
-                    have_workflow_water = true;
-                    Promise.resolve().then(() => {
-                        workflow_watcher();
-                    })
-                }
-
+                have_workflow_water = true;
             }
         }
         setNowFileList(rsp.data)
@@ -391,7 +388,7 @@ export default function FileList() {
     const update_dir_info = (show_info) => {
         set_prompt_card({
             open: true, title: "信息", context_div: (
-                <div>
+                <div style={{maxWidth: "25rem"}}>
                     <TextLine left={t("挂载位置磁盘")} right={show_info?.total_size}/>
                     <TextLine left={`${t("磁盘剩余")}`} right={show_info?.left_size}/>
                     <TextLine left={`${t("文件系统")}`} right={show_info?.fs_type}/>
@@ -560,7 +557,7 @@ export default function FileList() {
                 v: DirListShowTypeEmum.size_max_min
             }
         ]
-        const list:any[] = [
+        const list: any[] = [
             {
                 r: "文件排序",
                 v: "",
@@ -589,20 +586,32 @@ export default function FileList() {
             },
 
         ];
-        if(check_user_auth(UserAuth.code_resource)) {
-            list.push({ r:"添加http资源根目录",v:"code_resource"})
+        if (check_user_auth(UserAuth.code_resource)) {
+            list.push({r: "添加http资源根目录", v: "code_resource"})
+        }
+        if (check_user_auth(UserAuth.http_proxy)) {
+            list.push({r: "在此目录下载http资源", v: "http_resource"})
         }
         pojo.items = list;
         pojo.textClick = async (v) => {
-            if(v === false)return;
-            if(v === "code_resource") {
+            if (v === false) return;
+            if (v === "code_resource") {
                 const result = await ws.sendData(CmdType.file_info, {
                     // type: "",
                     path: getRouterAfter('file', getRouterPath())
                 });
-                set_router_jump({page_self_router_api_data:["",result.context.now_absolute_path]});
+                set_router_jump({page_self_router_api_data: ["", result.context.now_absolute_path]});
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate("/setting/customer_router/");
+                return;
+            } else if (v === "http_resource") {
+                const result = await ws.sendData(CmdType.file_info, {
+                    // type: "",
+                    path: getRouterAfter('file', getRouterPath())
+                });
+                set_router_jump({http_download_map_path: result.context.now_absolute_path});
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                navigate("/toolbox/http/");
                 return;
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
@@ -643,9 +652,18 @@ export default function FileList() {
                 <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
                 <ActionButton icon="upload_file" title={"上传"} onClick={uploadFile}/>
                 <ActionButton icon={"info"} title={t("信息")} onClick={folder_info}/>
-                <DropdownTag title={t("切换目录")} items={file_paths} click={(v) => {
-                    baseSwitch(v);
-                }} pre_value={file_root_path}/>
+                <ActionButton icon={"more_vert"} title={t("切换目录")} onClick={(event) => {
+                    const pojo = new FileMenuData();
+                    pojo.x = event.clientX;
+                    pojo.y = event.clientY;
+                    pojo.type = FileTypeEnum.directory;
+                    pojo.items = file_paths;
+                    pojo.textClick = async (v) => {
+                        baseSwitch(v);
+                        setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                    }
+                    setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
+                }}/>
             </Header>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>

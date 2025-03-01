@@ -1,4 +1,4 @@
-import {Body, Controller, Get, JsonController, Param, Post, Put, Req, Res} from "routing-controllers";
+import {Body, Controller, Get, JsonController, Param, Post, Put, QueryParam, Req, Res} from "routing-controllers";
 import {UserAuth, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -128,8 +128,21 @@ export class NetController {
     }
 
     @Post('/http/send')
-    async httpSend(@Req() req: Request, @Res() res: Response) {
+    async httpSend(@Req() req: Request, @Res() res: Response,@QueryParam("local_download_path", {required: false}) local_download_path?: string) {
         userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
-        return netService.httpSend(req, res);
+        return netService.httpSend(req, res,local_download_path);
     }
+
+    @msg(CmdType.http_download_water)
+    http_download_water(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy);
+        return netService.http_download_water(data);
+    }
+
+    @msg(CmdType.http_download_cancel)
+    http_download_cancel(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy_download_cancel);
+        return netService.http_download_cancel(data);
+    }
+
 }

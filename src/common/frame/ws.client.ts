@@ -10,7 +10,7 @@ enum connect_status {
     connected,
 }
 export class WsClient {
-    decoder = new parser.Decoder();
+    decoder = !protocolIsProto2?new parser.Decoder():undefined;
 
     private name;
     private  _socket;
@@ -71,8 +71,10 @@ export class WsClient {
             this._status = connect_status.connecting;
             const unConnect =()=> {
                 this._status = connect_status.not;
-                this.decoder.removeAllListeners();
-                this.decoder.destroy();
+                if(this.decoder) {
+                    this.decoder.removeAllListeners();
+                    this.decoder.destroy();
+                }
                 if (this._subscribeUnconnect && !this._self_close) {
                     this._subscribeUnconnect();
                 }

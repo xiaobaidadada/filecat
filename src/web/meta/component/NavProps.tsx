@@ -18,7 +18,7 @@ export interface NavProps {
 
 export function Nav(props: NavProps) {
     return (
-        <nav className={`${props.nav_is_mobile && "active"}  not-select-div`}>
+        <nav className={`${props.nav_is_mobile? "active" :""}  not-select-div`}>
             {props.navList.map((item, index) => {
                 return (<div key={index} className=" nav_1">
                     {item.map((item2, index) => {

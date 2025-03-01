@@ -38,6 +38,7 @@ export enum data_common_key {
     navindex_wol_key = "navindex_wol_key",
     customer_router_key = "customer_router_key",
     customer_workflow_router_key = "customer_workflow_router_key",
+    customer_api_pre_key = "customer_api_pre_key", // 自定义apikey
     customer_api_router_key = "customer_api_router_key",
     token_setting = "token_setting",
     files_pre_mulu_key = "files_pre_mulu_key", // 废弃 文件目录

@@ -29,6 +29,7 @@ import {removeTrailingPath} from "../../../../common/StringUtil";
 import {workflow_realtime_tree_list} from "../../../../common/req/common.pojo";
 import {formatter_time} from "../../../../common/ValueUtil";
 import vm from "node:vm";
+import {FileUtil} from "../FileUtil";
 
 const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
@@ -195,7 +196,7 @@ class work_children {
             let find_p = path.dirname(this.yaml_path);
             let have_find = false;
             while (true) {
-                if (fs.existsSync(path.join(find_p, workflow_dir_name))) {
+                if (await FileUtil.access(path.join(find_p, workflow_dir_name))) {
                     have_find = true; // 找到
                     break;
                 }
@@ -214,7 +215,7 @@ class work_children {
                 this.workflow_dir_path = path.join(find_p, workflow_dir_name);
             } else {
                 this.workflow_dir_path = path.join(path.dirname(this.yaml_path), workflow_dir_name); // 找不到就在当前目录下创建
-                fse.ensureDirSync(this.workflow_dir_path)
+                await fse.ensureDir(this.workflow_dir_path)
             }
         }
         // 获取多个任务
@@ -289,8 +290,8 @@ class work_children {
         this.running_type = fail_list.length === 0 ? running_type.success : running_type.fail;
         try {
             const base_data_util = new Base_data_util({base_dir: this.workflow_dir_path});
-            base_data_util.init();
-            base_data_util.insert(JSON.stringify({
+            await base_data_util.init();
+            await base_data_util.insert(JSON.stringify({
                 success_list: success_list, fail_list,
             }), JSON.stringify({
                 name: this.name,
@@ -722,7 +723,7 @@ export class WorkflowService {
         const r = new WorkflowGetRsq();
         if (pojo.index !== undefined) {
             // @ts-ignore
-            r.one_data = basedata.find_one_by_index(pojo.index);
+            r.one_data = await basedata.find_one_by_index(pojo.index);
             return r;
         }
         const running_list: work_flow_record[] = [];
@@ -739,8 +740,8 @@ export class WorkflowService {
                 index: -1
             });
         }
-        r.list = [...running_list, ...basedata.find_page(pojo.page_num, pojo.page_size, true)];
-        r.total = basedata.find_num();
+        r.list = [...running_list, ... await basedata.find_page(pojo.page_num, pojo.page_size, true)];
+        r.total = await basedata.find_num();
         return r;
     }
 
@@ -753,11 +754,11 @@ export class WorkflowService {
         const r = new WorkflowGetRsq();
         const regex = new RegExp(pojo.search_name);
         // @ts-ignore
-        r.list = basedata.find_list((index, meta) => {
+        r.list = await basedata.find_list((index, meta) => {
             if (!meta) return false;
             return regex.test(JSON.parse(meta)['run-name']);
         });
-        r.total = basedata.find_num();
+        r.total = await basedata.find_num();
         return r;
     }
 

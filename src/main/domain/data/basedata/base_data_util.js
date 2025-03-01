@@ -23,12 +23,20 @@ export class Base_data_util {
         this.base_dir = config.base_dir;
     }
 
-    init() {
-        if (!fs.existsSync(path.join(this.base_dir, filecat_meta_list_filename))) {
-            fs.writeFileSync(path.join(this.base_dir, filecat_meta_list_filename), '');
+    async init() {
+        try {
+            await fs.promises.access(path.join(this.base_dir, filecat_meta_list_filename),fs.constants.F_OK);
+            return true;
+        } catch {
+            // 不存在
+            await fs.promises.writeFile(path.join(this.base_dir, filecat_meta_list_filename), '');
         }
-        if (!fs.existsSync(path.join(this.base_dir, filecat_data_filename))) {
-            fs.writeFileSync(path.join(this.base_dir, filecat_data_filename), '');
+        try {
+            await fs.promises.access(path.join(this.base_dir, filecat_data_filename),fs.constants.F_OK);
+            return true;
+        } catch {
+            // 不存在
+            await fs.promises.writeFile(path.join(this.base_dir, filecat_data_filename), '');
         }
     }
 
@@ -37,11 +45,11 @@ export class Base_data_util {
      * @param str_data 数据 字符串
      * @param meta_str_data 元数据 字符串
      */
-    insert(str_data,meta_str_data) {
-        const meta_list_stats = fs.statSync(path.join(this.base_dir, filecat_data_filename));
+    async insert(str_data,meta_str_data) {
+        const meta_list_stats = fs.promises.stat(path.join(this.base_dir, filecat_data_filename));
 
         const start_postion = meta_list_stats.size; // 目前使用追加 直接 写入到文件的底部 没有删除功能
-        const fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r+');  // 'r+' 表示可读写
+        const fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r+');  // 'r+' 表示可读写
 
         // 元数据
         const meta = Buffer.from(meta_str_data);
@@ -57,17 +65,20 @@ export class Base_data_util {
 
         const insert_buffer = Buffer.concat([version_buffer,meta_buffer_len,data_buffer_len,meta, buffer ]);
 
-        fs.writeSync(fd, insert_buffer, 0, insert_buffer.length,start_postion );
-        fs.closeSync(fd);
+        await fd.write( insert_buffer, 0, insert_buffer.length,start_postion)
+        // fs.writeSync(fd, insert_buffer, 0, insert_buffer.length,start_postion );
+        // fs.closeSync(fd);
+        await fd.close();
 
         // 记录添加
         let buffer_start = Buffer.alloc(4);
         buffer_start.writeUInt32LE(start_postion, 0);
-        fs.appendFileSync(path.join(this.base_dir, filecat_meta_list_filename),buffer_start);
+        await fs.promises.appendFile(path.join(this.base_dir, filecat_meta_list_filename),buffer_start);
+        // fs.appendFileSync(path.join(this.base_dir, filecat_meta_list_filename),buffer_start);
     }
 
-    find_num() {
-        const meta_list_stats = fs.statSync(path.join(this.base_dir, filecat_meta_list_filename));
+    async find_num() {
+        const meta_list_stats = await fs.promises.stat(path.join(this.base_dir, filecat_meta_list_filename));
         return meta_list_stats.size / 4;
     }
 
@@ -76,8 +87,8 @@ export class Base_data_util {
      * @param judge_handle 过滤函数 参数为 index ， meta
      * @returns {null}
      */
-    find_one(judge_handle) {
-        const list = this.find_list(judge_handle);
+    async find_one(judge_handle) {
+        const list = await this.find_list(judge_handle);
         if(list.size === 0) {
             return null;
         }
@@ -85,15 +96,15 @@ export class Base_data_util {
     }
 
     // 从头到尾的搜索没有索引 索引功能以后再添加
-    find_list(judge_handle){
+    async find_list(judge_handle){
         let position = 0;
         let buffer = Buffer.alloc(4); // 每个元素 都是 4
         let num = 0; // 元素位置从1开始
-        const list_fd = fs.openSync(path.join(this.base_dir,filecat_meta_list_filename), "r");
-        const data_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r');
+        const list_fd = await fs.promises.open(path.join(this.base_dir,filecat_meta_list_filename), "r");
+        const data_fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r');
         const r = [];
         while (1) {
-            const bytesRead = fs.readSync(list_fd, buffer,
+            const {bytesRead} = await list_fd.read( buffer,
                 0, // 相对于当前的偏移位置
                 buffer.length, // 读取的长度
                 position // 当前位置 往前推进了一点
@@ -103,35 +114,41 @@ export class Base_data_util {
             }
             num++;
             let start = buffer.readUInt32LE(0);
-            const meta = this.get_meata(start,data_fd);
+            const meta = await this.get_meata(start,data_fd);
             if(judge_handle(num,meta)) {
-                r.push({meta: meta, data: this.get_data(start,data_fd),index:num})
+                r.push({meta: meta, data: await this.get_data(start,data_fd),index:num})
             }
             position+=4;
         }
-        fs.closeSync(list_fd);
-        fs.closeSync(data_fd);
+        await list_fd.close();
+        await data_fd.close();
+        // fs.closeSync(list_fd);
+        // fs.closeSync(data_fd);
         return r;
     }
 
     // 从1开始
-    find_one_by_index(index) {
-        if( index > this.find_num() ) {
+    async find_one_by_index(index) {
+        if( index > await this.find_num() ) {
             return null;
         }
-        const list_fd = fs.openSync(path.join(this.base_dir,filecat_meta_list_filename), "r");
-        const data_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r');
+        const list_fd = await fs.promises.open(path.join(this.base_dir,filecat_meta_list_filename), "r");
+        const data_fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r');
         let data_postion_buffer = Buffer.alloc(4);
-        const bytesRead = fs.readSync(list_fd, data_postion_buffer,
+        const { bytesRead} = await list_fd.read( data_postion_buffer,
             0, // 相对于当前的偏移位置
             data_postion_buffer.length, // 读取的长度
             (index-1) *4 // 当前位置 往前推进了一点
         );
+        await list_fd.close();
         if(bytesRead<4) {
+            await data_fd.close();
             return null;
         }
         let start = data_postion_buffer.readUInt32LE(0);
-        return {meta:this.get_meata(start,data_fd),data:this.get_data(start,data_fd)};
+        const result = {meta: await this.get_meata(start,data_fd),data: await this.get_data(start,data_fd)};
+        await data_fd.close();
+        return result;
     }
 
     /**
@@ -141,13 +158,13 @@ export class Base_data_util {
      * @param not_data 不要数据 只要元数据
      * @returns {*[]}
      */
-    find_page(page_num,page_size,not_data = false) {
+    async find_page(page_num,page_size,not_data = false) {
         if(page_size <= 0 && page_size !== -1) {
             page_size = 1;
         }
-        const total_size = this.find_num();
-        const list_fd = fs.openSync(path.join(this.base_dir,filecat_meta_list_filename), "r");
-        const data_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r');
+        const total_size = await this.find_num();
+        const list_fd = await fs.promises.open(path.join(this.base_dir,filecat_meta_list_filename), "r");
+        const data_fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r');
         const r_list = [];
         if(page_num >= 0) {
             if(page_num === 0)page_num =1;
@@ -163,7 +180,7 @@ export class Base_data_util {
             let position =0;
             for (let i=start_index; i<total;i++) {
                 position = i*4;
-                const bytesRead = fs.readSync(list_fd, buffer,
+                const  { bytesRead} = await list_fd.read(buffer,
                     0, // 相对于当前的偏移位置
                     buffer.length, // 读取的长度
                     position // 当前位置 往前推进了一点
@@ -172,11 +189,11 @@ export class Base_data_util {
                     break;
                 }
                 let start = buffer.readUInt32LE(0);
-                const meta = this.get_meata(start);
+                const meta = await this.get_meata(start,data_fd);
                 if(not_data) {
                     r_list.push({index:i+1,meta: meta});
                 } else {
-                    r_list.push({index:i+1,meta: meta, data: this.get_data(start,data_fd)});
+                    r_list.push({index:i+1,meta: meta, data: await this.get_data(start,data_fd)});
                 }
             }
         } else {
@@ -190,7 +207,7 @@ export class Base_data_util {
             start_index--;
             let position = 4*start_index;
             while (position>=0) {
-                const bytesRead = fs.readSync(list_fd, buffer,
+                const {bytesRead} = await list_fd.read( buffer,
                     0, // 相对于当前的偏移位置
                     buffer.length, // 读取的长度
                     position // 当前位置 往前推进了一点
@@ -199,11 +216,11 @@ export class Base_data_util {
                     break;
                 }
                 let start = buffer.readUInt32LE(0);
-                const meta = this.get_meata(start);
+                const meta = await this.get_meata(start,data_fd);
                 if(not_data) {
                     r_list.push({index:Math.abs(start_index)+1,meta: meta});
                 } else {
-                    r_list.push({index:Math.abs(start_index)+1,meta: meta, data: this.get_data(start,data_fd)});
+                    r_list.push({index:Math.abs(start_index)+1,meta: meta, data: await this.get_data(start,data_fd)});
                 }
                 if(page_size !== -1 && r_list.length === page_size) {
                     break;
@@ -213,52 +230,55 @@ export class Base_data_util {
                 position = start_index*4;
             }
         }
-
-        fs.closeSync(list_fd);
-        fs.closeSync(data_fd);
+        await list_fd.close();
+        await data_fd.close();
+        // fs.closeSync(list_fd);
+        // fs.closeSync(data_fd);
         return r_list;
     }
 
-    get_data(start,fd) {
+    async get_data(start,fd) {
         if(start === undefined) {
             return null;
         }
         let file_fd = fd;
         if(!fd) {
-            file_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r');  // 'r+' 表示可读写
+            file_fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r');  // 'r+' 表示可读写
         }
         // meta 大小数据
         let meta_buffer_len = Buffer.alloc(4);
-        fs.readSync(file_fd, meta_buffer_len, 0, 4, start+skip_headers_version_num);
+        await file_fd.read( meta_buffer_len, 0, 4, start+skip_headers_version_num);
         let meta_len = meta_buffer_len.readUInt32LE(0);  // 从 buffer 中读取小端字节序的数字
 
         // 内容 大小数据
         let data_buffer_len = Buffer.alloc(4);
-        fs.readSync(file_fd, data_buffer_len, 0, 4, start+skip_headers_metalen_num);
+        await file_fd.read( data_buffer_len, 0, 4, start+skip_headers_metalen_num);
         let data_len = data_buffer_len.readUInt32LE(0);  // 从 buffer 中读取小端字节序的数字
 
         let data_buffer = Buffer.alloc(data_len);
-        fs.readSync(file_fd,data_buffer,0,data_buffer.length,start+skip_headers_metalen_datalen_num+meta_len);
-        if(!fd)
-            fs.closeSync(file_fd);
+        await file_fd.read(data_buffer,0,data_buffer.length,start+skip_headers_metalen_datalen_num+meta_len);
+        if(!fd) // 自己创建的需要关闭
+            await file_fd.close();
+            // fs.closeSync(file_fd);
         return data_buffer.toString();
     }
 
-    get_meata(start,fd) {
+    async get_meata(start,fd) {
         let file_fd = fd;
         if(start === undefined) {
             return null;
         }
         let readBuffer = Buffer.alloc(4);  // 创建一个 4 字节的 buffer 用来存储读取的数据
         if(fd === undefined)
-            file_fd = fs.openSync(path.join(this.base_dir, filecat_data_filename), 'r+');  // 'r+' 表示可读写
-        fs.readSync(file_fd, readBuffer, 0, 4, start+skip_headers_version_num);
+            file_fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r+');  // 'r+' 表示可读写
+        await file_fd.read( readBuffer, 0, 4, start+skip_headers_version_num);
         let data_len = readBuffer.readUInt32LE(0);  // 从 buffer 中读取小端字节序的数字
 
         let data_buffer = Buffer.alloc(data_len);
-        fs.readSync(file_fd,data_buffer,0,data_buffer.length,start+skip_headers_metalen_datalen_num); // 跳过 内容的4个字节
-        if(!fd)
-            fs.closeSync(file_fd);
+        await file_fd.read(data_buffer,0,data_buffer.length,start+skip_headers_metalen_datalen_num); // 跳过 内容的4个字节
+        if(!fd) // 自己创建的需要关闭
+            await file_fd.close();
+            // fs.closeSync(file_fd);
         return data_buffer.toString();
     }
 

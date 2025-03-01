@@ -29,6 +29,8 @@ import {Request, Response} from 'express';
 import {DataUtil} from "./domain/data/DataUtil";
 import {userService} from "./domain/user/user.service";
 import {shellServiceImpl} from "./domain/shell/shell.service";
+import {FileUtil} from "./domain/file/FileUtil";
+import {settingService} from "./domain/setting/setting.service";
 
 const WebSocket = require('ws');
 
@@ -37,7 +39,7 @@ async function start() {
 
     await Env.parseArgs();
     DataUtil.handle_history_data();
-    userService.root_init();
+    await userService.root_init();
     shellServiceImpl.path_init();
     // console.log(process.pid);
 // 环境变量加载
@@ -78,7 +80,8 @@ async function start() {
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
         app.use(async (req: Request, res: Response, next) => {
-            if (req.originalUrl && req.originalUrl.includes("/api/")) {
+            const self_pre = settingService.get_customer_api_pre_key();
+            if (req.originalUrl && (req.originalUrl.startsWith("/api/") || req.originalUrl.startsWith(self_pre))) {
                 next();
                 return;
             }
@@ -93,7 +96,10 @@ async function start() {
                 } else {
                     url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 }
-                fs.accessSync(url, fs.constants.F_OK,)
+                if(!await FileUtil.access(url)) {
+                    throw "";
+                }
+                // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
                 readStream.pipe(res);
             } catch (e) {
@@ -104,7 +110,9 @@ async function start() {
     } else {
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
-        app.use(/^(?!\/api)/, createProxyMiddleware({
+        const self_pre = settingService.get_customer_api_pre_key();
+        const regex = new RegExp(`^(?!(\/api|${self_pre}))`);
+        app.use(regex, createProxyMiddleware({
             target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
             // changeOrigin: true,
             pathRewrite: (path, req) => {

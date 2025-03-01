@@ -181,8 +181,8 @@ export class SettingController {
 
     // 设置文件路由设置
     @Post('/filesSetting/save')
-    saveFilesSetting(@Body() req: any, @Req() ctx) {
-        settingService.saveFilesSetting(req, ctx.headers.authorization);
+    async saveFilesSetting(@Body() req: any, @Req() ctx) {
+        await settingService.saveFilesSetting(req, ctx.headers.authorization);
         return Sucess("1");
     }
 
@@ -240,8 +240,8 @@ export class SettingController {
 
     // 保存保护目录
     @Post('/protection_dir/save')
-    protectionDirSave(@Body() req: any, @Req() ctx) {
-        settingService.protectionDirSave(req, ctx.headers.authorization);
+    async protectionDirSave(@Body() req: any, @Req() ctx) {
+        await settingService.protectionDirSave(req, ctx.headers.authorization);
         return Sucess("1");
     }
 
@@ -283,6 +283,18 @@ export class SettingController {
             recycle_dir: settingService.get_recycle_dir_str() // 垃圾回收站 目录也返回
         }
         return Sucess(r);
+    }
+
+    @Get("/customer_api_pre_key")
+    get_customer_api_pre_key(@Req() ctx) {
+            return Sucess(settingService.get_customer_api_pre_key());
+    }
+
+    @Post("/customer_api_pre_key/save")
+    customer_api_pre_key_save(@Req() ctx,@Body() req: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.customer_api_pre_key);
+        settingService.customer_api_pre_key_save(req);
+        return Sucess("1");
     }
 
     // 保存系统所有的开关状态

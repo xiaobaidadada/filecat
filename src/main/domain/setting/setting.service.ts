@@ -24,7 +24,8 @@ import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
-import {FileServiceImpl} from "../file/file.service";
+import { FileServiceImpl} from "../file/file.service";
+import {FileUtil} from "../file/FileUtil";
 
 const needle = require('needle');
 
@@ -74,7 +75,8 @@ export class SettingService {
             if (ctx.originalUrl.includes("?")) {
                 c_url = ctx.originalUrl.split("?")[0];
             }
-            if(!c_url || !c_url.startsWith("/api")) return ;
+            const self_pre = settingService.get_customer_api_pre_key();
+            if(!c_url || !c_url.startsWith(self_pre)) return ;
             const workflow_list_router = this.get_workflow_router() as [][];
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
@@ -83,13 +85,13 @@ export class SettingService {
                     if (router === c_url) {
                         // @ts-ignore
                         const location = item[1];
-                        if (location && fs.existsSync(location)) {
+                        if (location && await FileUtil.access(location)) {
                             // @ts-ignore
                             const token = item[2];
                             if(token) {
                                 // token验证
                                 if(path.isAbsolute(token)) {
-                                    const context = fs.readFileSync(token).toString();
+                                    const context = (await FileUtil.readFileSync(token)).toString();
                                     if(context !== ctx.headers.authorization) {
                                         ctx.res.status(500).send("token is invalid");
                                         return true;
@@ -137,21 +139,21 @@ export class SettingService {
                                 ctx.res.status(response.statusCode).send(response.body);
                             } else {
                                 let sys_file_path = path.join(location); // 可以删除 .. 符号
-                                let stats = fs.statSync(location);
+                                let stats = await FileUtil.statSync(location);
                                 if(stats.isDirectory()) {
                                     const p = c_url.slice(router.length);
                                     if(p === "/" || !p) {
-                                        const list = fs.readdirSync(sys_file_path);
+                                        const list = await FileUtil.readdirSync(sys_file_path);
                                         const ok_file_name = list.find((v=> v.startsWith("index.htm") || v=== "index"));
                                         if(ok_file_name) {
                                             sys_file_path = path.join(location, ok_file_name);
-                                            stats = fs.statSync(sys_file_path);
+                                            stats = await FileUtil.statSync(sys_file_path);
                                         } else {
                                             throw " 404 ";
                                         }
                                     } else {
                                         sys_file_path = path.join(location, p);
-                                        stats = fs.statSync(sys_file_path);
+                                        stats = await FileUtil.statSync(sys_file_path);
                                     }
                                 }
                                 if(!userService.isSubPath(location,sys_file_path)) {
@@ -276,6 +278,14 @@ export class SettingService {
         return DataUtil.get(data_common_key.recycle_bin_status)??false;
     }
 
+    public get_customer_api_pre_key():string {
+        return DataUtil.get(data_common_key.customer_api_pre_key)??"/api";
+    }
+
+    customer_api_pre_key_save(req) {
+        return DataUtil.set(data_common_key.customer_api_pre_key, req.pre);
+    }
+
     public get_recycle_dir_str():string{
         let v = DataUtil.get(data_common_key.recycle_bin_key) ?? "";
         if(typeof v !== "string"){
@@ -363,7 +373,7 @@ export class SettingService {
         return [base, ...user_data?.folder_items ?? []];
     }
 
-    public saveFilesSetting(items: FileSettingItem[], token: string) {
+    public async saveFilesSetting(items: FileSettingItem[], token: string) {
         if (!Array.isArray(items) || items.length === 0) {
             return;
         }
@@ -383,7 +393,7 @@ export class SettingService {
         if (index === undefined || index === null) {
             user_data.folder_item_now = 0; // 回到默认
         }
-        userService.save_user_info(user_data.id, user_data);
+        await userService.save_user_info(user_data.id, user_data);
         // DataUtil.set(files_pre_mulu_key, items);
         // const obj = Cache.getValue(token);
         // obj["root_index"] = 0; // 回到默认
@@ -491,10 +501,10 @@ export class SettingService {
     }
 
 
-    protectionDirSave(data, token) {
+    async protectionDirSave(data, token) {
         const user_data = userService.get_user_info_by_token(token);
         user_data.protection_directory = data;
-        userService.save_user_info(user_data.id, user_data);
+        await userService.save_user_info(user_data.id, user_data);
     }
 
     protectionSysDirSave(data) {

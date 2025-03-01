@@ -1,30 +1,30 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
-import {TimeConverTer} from "./TimeConverTer";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {InputRadio, InputText, InputTextIcon, Select} from "../../../meta/component/Input";
+import {ActionButton} from "../../../meta/component/Button";
+import {InputRadio, InputText, InputTextIcon} from "../../../meta/component/Input";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
 import {Rows, Table} from "../../../meta/component/Table";
-import {Card} from "../../../meta/component/Card";
-import {cryptoHttp, netHttp, sysHttp} from "../../util/config";
+import {Card, TextTip} from "../../../meta/component/Card";
+import {netHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {copyToClipboard} from "../../util/FunUtil";
 import Noty from "noty";
-import {TokenTimeMode} from "../../../../common/req/setting.req";
 import Ace from "../file/component/Ace";
 import {editor_data, use_auth_check} from "../../util/store.util";
-import {http_body_type, HttpFormData, HttpFormPojo} from "../../../../common/req/net.pojo";
+import {http_body_type, http_download_map, HttpFormData, HttpFormPojo} from "../../../../common/req/net.pojo";
 import {PromptEnum} from "../prompts/Prompt";
-import {removeLastDir} from '../../util/ListUitl';
 import {generateRandomHash} from "../../../../common/StringUtil";
 import axios, {AxiosResponse} from "axios";
 import {UserAuth} from "../../../../common/req/user.req";
+import {ws} from "../../util/ws";
+import {CmdType, WsData} from "../../../../common/frame/WsData";
+import { formatFileSize } from '../../../../common/ValueUtil';
 
 let http_header_value;
 let http_json_value;
@@ -41,12 +41,15 @@ export function Http() {
     const {check_user_auth} = use_auth_check();
 
     const [status_body, set_status_body] = useState('');
+    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
 
 
     const [url_type, set_url_type] = useState('get');
     const [url, set_url] = useState('');
+    const [local_download_path, set_local_download_path] = useState(undefined);
 
     const [form_data_list, set_form_data_list] = useState([] as HttpFormData[]);
+    const [download_list,set_download_list] = useState<http_download_map[]>([]);
 
     const [header_or_body_type, set_header_or_body_type] = useState(1); // 1 请求头 2 请求体
     const [body_type, set_body_type] = useState(1); // 2 是json 3 是 form 表单 1 是 row
@@ -65,7 +68,23 @@ export function Http() {
         http_row_value = "";
         respone_body = "";
         respone_headers = "";
-        editor_data.get_editor().session.setMode('ace/mode/json')
+        editor_data.get_editor().session.setMode('ace/mode/json');
+        if(router_jump.http_download_map_path) {
+            set_local_download_path(router_jump.http_download_map_path)
+            set_router_jump({});
+        }
+        ws.sendData(CmdType.http_download_water,undefined).then(()=>{
+
+            ws.addMsg(CmdType.http_download_water, (wsData:WsData<http_download_map[]>)=>{
+                const list:http_download_map[] = wsData.context;
+                set_download_list(list);
+                console.log(list)
+            })
+        });
+
+        return ()=>{
+            ws.unConnect();
+        }
     }, []);
     const getItems = async () => {
         const result = await netHttp.get("http/tag");
@@ -88,6 +107,7 @@ export function Http() {
     const clickItem = async (item: { url?: string, name?: string } & HttpFormPojo) => {
         set_url(item.url);
         set_url_type(item.method);
+        set_local_download_path(item.local_download_path)
         if (item.header_type) {
             switch_header_type(item.header_type)
         }
@@ -117,7 +137,6 @@ export function Http() {
             }
 
         }
-
     }
     const switch_header_type = (type) => {
         try {
@@ -241,7 +260,11 @@ export function Http() {
         set_status_body('');
         const formData = new FormData();
         formData.append('data', JSON.stringify(get_send_pojo(formData)));
-        axios.post(netHttp.getUrl("http/send"), formData,
+        let target = `http/send`;
+        if(local_download_path) {
+            target+=`?local_download_path=${local_download_path}`
+        }
+        axios.post(netHttp.getUrl(target), formData,
             {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -252,11 +275,17 @@ export function Http() {
         }).then((r: AxiosResponse) => {
             if (!r) return;
             // debugger
-            const status = JSON.parse(r.headers.filecat_remote_code);
-            if (status === 200) {
-                set_status_code((<span style={{color: 'green'}}>200</span>));
-            } else {
-                set_status_code(status);
+            if (r.headers.filecat_remote_code) {
+                try {
+                    const status = JSON.parse(r.headers.filecat_remote_code);
+                    if (status === 200) {
+                        set_status_code((<span style={{color: 'green'}}>200</span>));
+                    } else {
+                        set_status_code(status);
+                    }
+                } catch (e) {
+                    console.log(e)
+                }
             }
             // console.log(r.headers.filecat_remote_raw_headers)
             if (typeof r.data === 'object') {
@@ -264,7 +293,12 @@ export function Http() {
             } else {
                 respone_body = r.data;
             }
-            respone_headers = JSON.stringify(r.headers.filecat_remote_raw_headers);
+            try {
+                if(r.headers.filecat_remote_raw_headers)
+                respone_headers = JSON.stringify(JSON.parse(r.headers.filecat_remote_raw_headers),null,2);
+            } catch (e) {
+                respone_headers = JSON.stringify(r.headers.filecat_remote_raw_headers);
+            }
             if (respone_type === 1) {
                 set_status_body(respone_body);
             } else if (respone_type === 2) {
@@ -294,6 +328,7 @@ export function Http() {
     }
     const get_pre_add_item = async () => {
         const pojo = get_send_pojo();
+        pojo.local_download_path = local_download_path;
         if (form_data_list) {
             for (const item of form_data_list) {
                 if (item.is_file) {
@@ -349,6 +384,35 @@ export function Http() {
             </Header>
             <Row>
                 <Column>
+                    {
+                        download_list.length!==0 && <Card title={"正在下载"}>
+                            <div>
+                                {download_list.map((value, index) => {
+                                    return (<div  key={index}>
+                                        <div className={"div-row"}>
+                                            <ActionButton icon={"cancel"} title={t("取消")} onClick={()=>{
+                                                ws.sendData(CmdType.http_download_cancel, value.local_download_path)
+                                            }}/>
+                                            <TextTip context={value.filename} tip_context={value.local_download_path}/>
+                                            <span style={{
+                                                paddingLeft: ".3rem",
+                                                color: "green"
+                                            }}>
+                                        {`${(value.progresses??0)}%  ${value.loaded?formatFileSize(value.loaded):""}MB / ${value.seep??""}MB/s  `}
+                                    </span>
+                                        </div>
+                                        <div style={{
+                                            width: value.progresses?`${value.progresses}%`:"0",
+                                            backgroundColor: "#40c4ff",
+                                            height: "5px",
+                                            transition: "0.2s ease width",
+                                            borderRadius: "10px",
+                                        }}></div>
+                                    </div>)
+                                })}
+                            </div>
+                        </Card>
+                    }
                     <Card title={""}
                           rightBottomCom={body_type === 3 && header_or_body_type === 2 &&
                               <ActionButton icon={"add"} title={t("添加")} onClick={add}/>}
@@ -415,6 +479,19 @@ export function Http() {
                                 return new_list;
                             })} width={"10rem"}/>
                         </div>
+                        <div style={{paddingTop: "1rem"}}>
+                            {local_download_path === undefined ? <span onClick={() => {
+                                    set_local_download_path("")
+                                }}>下载到本地目录</span> :
+                                <InputText placeholder={t("本地地址")} value={local_download_path}
+                                           handleInputChange={(v) => {
+                                               set_local_download_path(v);
+                                           }} handlerEnter={()=>{
+                                               if(!local_download_path) {
+                                                   set_local_download_path(undefined);
+                                               }
+                                }}/>}
+                        </div>
 
                     </Card>
                     <Card title={status_code} titleCom={
@@ -450,16 +527,18 @@ export function Http() {
                     </Card>
                 </Column>
                 <Column>
-                    <NavIndexContainer  getItems={getItems} save={saveItems}
-                                        have_auth_edit={check_user_auth(UserAuth.http_proxy_tag_update)}
-                                        clickItem={clickItem}
-                                        items={[
-                                            {key: "name", preName: t("名字")},
-                                            {key: "url", preName: "url"},
-                                            {key: "method", preName: "method"},
-                                            {key: "headers", preName: "headers"},
-                                            {key: "data", preName: "data"},
-                                            {key: "form_data_list", preName: "form_data_list"}]}/>
+                    <NavIndexContainer getItems={getItems} save={saveItems}
+                                       have_auth_edit={check_user_auth(UserAuth.http_proxy_tag_update)}
+                                       clickItem={clickItem}
+                                       items={[
+                                           {key: "name", preName: t("名字")},
+                                           {key: "url", preName: "url"},
+                                           {key: "method", preName: "method"},
+                                           {key: "headers", preName: "headers"},
+                                           {key: "data", preName: "data"},
+                                           {key: "form_data_list", preName: "form_data_list"},
+                                           {key: "local_download_path", preName: "local_download_path"}
+                                       ]}/>
                 </Column>
             </Row>
         </Dashboard>
