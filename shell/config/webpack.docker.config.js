@@ -4,6 +4,7 @@ const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 var prebuild_file_path_1 = require("./prebuild-file-path");
+const {base_url} = require("./env");
 const plugins = [
     new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('production'),
@@ -19,7 +20,10 @@ const plugins = [
     }),
     new webpack.IgnorePlugin({
         resourceRegExp: /Debug/,
-    })
+    }),
+    new webpack.DefinePlugin({
+        'process.env.base_url': JSON.stringify(base_url),
+    }),
 ];
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下

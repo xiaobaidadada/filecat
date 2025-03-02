@@ -2,6 +2,7 @@ const path = require("path");
 const package_data = require("../../package.json")
 const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
+const {base_url} = require("./env");
 
 const plugins = [
     new webpack.DefinePlugin({
@@ -18,7 +19,10 @@ const plugins = [
     }),
     new webpack.IgnorePlugin({
         resourceRegExp: /Debug/,
-    })
+    }),
+    new webpack.DefinePlugin({
+        'process.env.base_url': JSON.stringify(base_url),
+    }),
 ];
 const npm_externals =[
     {
