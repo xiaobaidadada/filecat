@@ -81,7 +81,7 @@ export class WsClient {
                 this._self_close = false;
             }
             const open = async (event) => {
-                console.log('ws连接成功',this.name);
+                console.info('ws连接成功',this.name);
                 this._status = connect_status.connected;
                 // 身份验证发送
                 if (this._authHandle) {
@@ -162,7 +162,7 @@ export class WsClient {
 
                 // 监听连接关闭事件
                 socket.addEventListener('close', async function (event) {
-                    console.log('Disconnected from WebSocket server',name);
+                    console.info('Disconnected from WebSocket server',name);
                     await unConnect()
                 });
 
@@ -202,7 +202,7 @@ export class WsClient {
             const key = wsData.random_id||wsData.cmdType;
             const timeout = setTimeout(()=>{
                 resolve(null);
-                console.log('ws超时',key)
+                console.info('ws超时',key)
             },1000 * 6);
             this._msgResolveMap.set(key,resolve);
             this._msgResolveTimeoutMap.set(key,timeout);
@@ -238,7 +238,7 @@ export class WsClient {
     }
     public async unConnect() {
         if (this.isAilive()) {
-            console.log('主动关闭客户端',this.name)
+            console.info('主动关闭客户端',this.name)
             this._self_close = true;
             this._socket.close();
         }

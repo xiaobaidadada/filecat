@@ -42,6 +42,12 @@ export function isNumeric(str) {
     return /^\d+$/.test(str);
 }
 
+const sys_pre = process.env.base_url??"";
 export function getRouterPath() {
-    return window.location.pathname + window.location.hash;
+    let path  = window.location.pathname + window.location.hash;
+    // 去掉 BASENAME
+    if (sys_pre && path.startsWith(sys_pre)) {
+        path = path.slice(sys_pre.length) || "/";
+    }
+    return path;
 }

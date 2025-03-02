@@ -112,7 +112,8 @@ export const $stroe = {
         default: {open: false} as {
             context_div?: any,
             open: boolean,
-            title?: string
+            title?: string,
+            cancel?:()=>any
         }
     }),
     // 编辑器设置

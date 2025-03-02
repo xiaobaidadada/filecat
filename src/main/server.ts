@@ -31,6 +31,7 @@ import {userService} from "./domain/user/user.service";
 import {shellServiceImpl} from "./domain/shell/shell.service";
 import {FileUtil} from "./domain/file/FileUtil";
 import {settingService} from "./domain/setting/setting.service";
+import {SystemUtil} from "./domain/sys/sys.utl";
 
 const WebSocket = require('ws');
 
@@ -50,11 +51,10 @@ async function start() {
 //         config[key] = value;
 //     }
 // })
-
     // 创建 Koa 应用并注册控制器
     const app = createExpressServer({
         cors: false,
-        routePrefix: '/api',
+        routePrefix: SystemUtil.get_sys_base_url_pre(),
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
         controllers:[
@@ -79,9 +79,10 @@ async function start() {
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
+        const sys_pre =  SystemUtil.get_sys_base_url_pre();
+        const self_pre = settingService.get_customer_api_pre_key();
         app.use(async (req: Request, res: Response, next) => {
-            const self_pre = settingService.get_customer_api_pre_key();
-            if (req.originalUrl && (req.originalUrl.startsWith("/api/") || req.originalUrl.startsWith(self_pre))) {
+            if (req.originalUrl && (req.originalUrl.startsWith(sys_pre) || req.originalUrl.startsWith(self_pre))) {
                 next();
                 return;
             }
@@ -111,7 +112,8 @@ async function start() {
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
         const self_pre = settingService.get_customer_api_pre_key();
-        const regex = new RegExp(`^(?!(\/api|${self_pre}))`);
+        const sys_pre =  SystemUtil.get_sys_base_url_pre();
+        const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
         app.use(regex, createProxyMiddleware({
             target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
             // changeOrigin: true,

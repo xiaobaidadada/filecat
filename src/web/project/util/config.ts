@@ -4,7 +4,7 @@ import {Http} from "./http";
 
 export const config = {
     // baseUrl: " http://localhost:5566/api/"
-    baseUrl: "/api/"
+    baseUrl: `${process.env.base_url}/api/`
 }
 
 export const fileUrl = `${config.baseUrl}file/`

@@ -78,7 +78,7 @@ export function Http() {
             ws.addMsg(CmdType.http_download_water, (wsData:WsData<http_download_map[]>)=>{
                 const list:http_download_map[] = wsData.context;
                 set_download_list(list);
-                console.log(list)
+                // console.log(list)
             })
         });
 

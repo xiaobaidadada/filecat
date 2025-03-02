@@ -396,7 +396,10 @@ export default function FileList() {
                     <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
                     <TextLine left={`${t("当前位置")}`} right={<TextTip context={show_info?.now_absolute_path}/>}/>
                 </div>
-            )
+            ),
+            cancel:()=>{
+                ws.removeMsg(CmdType.file_info);
+            }
         })
     }
     // 文件夹信息

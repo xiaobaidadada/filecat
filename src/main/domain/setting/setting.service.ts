@@ -279,7 +279,7 @@ export class SettingService {
     }
 
     public get_customer_api_pre_key():string {
-        return DataUtil.get(data_common_key.customer_api_pre_key)??"/api";
+        return DataUtil.get(data_common_key.customer_api_pre_key)??SystemUtil.get_sys_base_url_pre();
     }
 
     customer_api_pre_key_save(req) {

@@ -52,6 +52,9 @@ export default function Prompt() {
     function click() {
         setShowPrompt({show: false, type: '', overlay: false, data: {}});
         set_confirm({open: false, handle: null})
+        if(prompt_card.cancel){
+            prompt_card.cancel();
+        }
         set_prompt_card({open: false})
     }
 
