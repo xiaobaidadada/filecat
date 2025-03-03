@@ -29,7 +29,7 @@ export function Nav(props: NavProps) {
                         );
                         return (
                             <To rto={item2.rto} key={index} clickFun={item2.clickFun} className=" nav_2 ">
-                                <i className="material-icons action">{item2.icon}</i>
+                                <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>
                                 <span className=" nav_3">{item2.name}</span>
                             </To>)
                     })}

@@ -134,7 +134,10 @@ export function NavIndexContainer(props: {
         setEdit_index([]);
         setEdit(false);
         if(itemp_recover)
-        setItems(itemp_recover);
+        {
+            setItems(itemp_recover);
+            update_list(itemp_recover);
+        }
         set_unfold(false)
     }
     const click_dir = (item:SiteIndexItem)=>{
