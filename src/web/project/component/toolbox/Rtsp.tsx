@@ -119,7 +119,7 @@ export default function Rtsp() {
             {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
             {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
         </Header>
-            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rtsp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}]}/>}
+            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rtsp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")},{key:"color",preName:"color"}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         <div style={{
             "display":status?"block":"none"

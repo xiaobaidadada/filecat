@@ -135,7 +135,7 @@ export function Rdp() {
             {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
         </Header>
         <FullScreenDiv isFull={fullScreen}>
-            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}, {key: "username", preName: t("账号")}, {key: "password", preName: t("密码")}]}/>}
+            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}, {key: "username", preName: t("账号")}, {key: "password", preName: t("密码")},{key:"color",preName:"color"}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         </FullScreenDiv>
 

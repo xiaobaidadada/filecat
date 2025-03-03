@@ -90,9 +90,9 @@ export function NavIndexContainer(props: {
                 return;
             }
             const list = await props.getItems();
-            list.map((v, i) => {
-                v['color'] = getByListRandom(colorList);
-            });
+            // list.map((v, i) => {
+            //     v['color'] = getByListRandom(colorList);
+            // });
             rootList = list;
             setItems(rootList);
         }
@@ -126,7 +126,7 @@ export function NavIndexContainer(props: {
         }
     }, [nav_index_add_item_by_now_list]);
     const addDirItem = () => {
-        const list = [...items, {name: "",_type:"dir",_children:[],  color: getByListRandom(colorList)}];
+        const list = [...items, {name: "",_type:"dir",_children:[],  color: "#c1edfb"}];
         update_list(list);
         setItems(list)
     }
@@ -169,9 +169,14 @@ export function NavIndexContainer(props: {
                 <NavIndexItem name={item.name} item={item} {...item} div={edit} target={"_blank"} click_dir={click_dir} clickItem={props.clickItem}/>
                 {edit && (edit_index.find(v => v === index) !== undefined || unfold) && <div className={!unfold ?' site_edit ':''}>
                     { item._type === "dir" ?
-                        <InputText value={item.name} handleInputChange={(value) => {
-                            item.name = value;
-                        }} placeholder={"输入类目名"} no_border={true}/>
+                        <React.Fragment>
+                            <InputText value={item.name} handleInputChange={(value) => {
+                                item.name = value;
+                            }} placeholder={"输入类目名"} no_border={true}/>
+                            <InputText value={item.color} handleInputChange={(value) => {
+                                item.color = value;
+                            }} placeholder={"color"} no_border={true}/>
+                        </React.Fragment>
                         :
                         (props.items.map((v, i) => (
                             <div key={i}>

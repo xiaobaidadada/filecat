@@ -1,10 +1,10 @@
 
 .nav_list_a {
     --link-border-style: none;
-    --link-color: var(--c-transparent-black_900);
+    --link-color: var(--blue);
     align-items: center;
     background: rgba(0, 0, 0, .05);
-    border-radius: 24px;
+    border-radius: .2em;
     display: flex;
     flex-shrink: 0;
     padding-bottom: 0.6rem;
@@ -31,7 +31,7 @@
     opacity: 0;
     /* 过渡效果 */
     transition: opacity 0.3s ease;
-    border-radius: 24px;
+    border-radius: .2em;
 }
 
 /* 在链接上悬停时显示灰色遮罩 */

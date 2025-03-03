@@ -111,7 +111,7 @@ export function BrowserProxy(props) {
 
         <FullScreenDiv isFull={fullScreen}>
             <div id="browser">
-                {!gourl && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.browser_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>}
+                {!gourl && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.browser_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"},{key:"color",preName:"color"}]}/>}
                 <iframe id="webview" src={gourl}></iframe>
             </div>
         </FullScreenDiv>

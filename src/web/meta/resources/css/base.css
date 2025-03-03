@@ -140,8 +140,8 @@ li:hover {
 /* 自定义滚动条整体样式 */
 ::-webkit-scrollbar {
   /*width: 2px; !* 滚动条宽度，变细 *!*/
-  height: 0.4rem;
-  width: 0.4rem;
+  height: 0.7rem;
+  width: 0.7rem;
 }
 
 /* 滚动条轨道 */

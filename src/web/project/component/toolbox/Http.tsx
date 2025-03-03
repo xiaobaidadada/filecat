@@ -537,7 +537,8 @@ export function Http() {
                                            {key: "headers", preName: "headers"},
                                            {key: "data", preName: "data"},
                                            {key: "form_data_list", preName: "form_data_list"},
-                                           {key: "local_download_path", preName: "local_download_path"}
+                                           {key: "local_download_path", preName: "local_download_path"},
+                                           {key:"color",preName:"color"}
                                        ]}/>
                 </Column>
             </Row>

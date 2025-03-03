@@ -50,6 +50,10 @@ export default function NavIndex() {
         <Header>
             {/*<ButtonLittle text={t("添加")} clickFun={add}/>*/}
         </Header>
-        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.net_site_tag_update)} getItems={getItems}  save={save} items={[{key:"name",preName:t("名字")},{key:"url",preName:"url"}]}/>
+        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.net_site_tag_update)} getItems={getItems}  save={save} items={[
+            {key:"name",preName:t("名字")},
+            {key:"url",preName:"url"},
+            {key:"color",preName:"color"}
+        ]}/>
     </div>
 }

@@ -68,6 +68,6 @@ export function NetWol(props) {
             <InputTextIcon placeholder={t("目标设备mac地址")} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
         </Header>
 
-        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.wol_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")}]}/>
+        <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.wol_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")},{key:"color",preName:"color"}]}/>
     </div>
 }
