@@ -102,6 +102,11 @@ jobs:
       - run: node -v
       - run: npx run tsc
       - run: npx webpack  --config shell/config/webpack.web.config.js
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 打包文件  # 会覆盖之前的同名文件
+          path: build/
       - run: node build/main.js
 #      - if: ${{ startsWith(matrix.os, 'windows')}}
 #        run: |
