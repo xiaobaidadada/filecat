@@ -100,7 +100,7 @@ jobs:
           node-version: 18
       - run: npm install -d
       - run: node -v
-      - run: npx run tsc
+      - run: npm run build-ts
       - run: npx webpack  --config shell/config/webpack.web.config.js
       - name: Upload artifact
         uses: actions/upload-artifact@v4
