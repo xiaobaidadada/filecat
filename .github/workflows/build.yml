@@ -37,7 +37,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
     if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container: node:18-alpine
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
@@ -62,10 +62,10 @@ jobs:
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v3
       - name: build
-        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
+        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本 
           npm install 
-          npm run build
-#          npm install --omit=dev
+          npm run exe-build
+#          npm install --omit=dev # 构建完不要node_moule了
       - name: Login to Docker Hub # login to Docker Hub, automatically logout at the end of job
         uses: docker/login-action@v3
         with:
