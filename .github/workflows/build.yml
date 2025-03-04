@@ -1,10 +1,10 @@
 name: "Run prebuild's and Create GitHub and NPM release"
-run-name: Package against ${{ github.ref_name }} # 每次运行的时候显示的名字
+run-name: 任务参数:${{ inputs.job }} ;分支:${{ github.ref_name }} # 每次运行的时候显示的名字
 
 # 本yml参考于 https://github.com/WiseLibs/better-sqlite3/blob/master/.github/workflows/build.yml
 on:
-  workflow_dispatch: # 手动触发
-    inputs: # 定义触发的时候可以输入的参数
+  workflow_dispatch: # 手动触发 push(推送时候) pull_request(pr创建的时候)
+    inputs: # 只有这个属性 用于接收多个参数 可能是为了预留功能 一个属性也设置
       job: # 参数名称 通过 ${{ github.event.inputs.job }} 访问值 下面是参数的要求描述
         description: "任务类型"
         required: true
@@ -14,17 +14,23 @@ on:
         description: '发布docker可选的docker标签'
         required: false
         default: ''
+      ubuntu_version:
+        description: 'ubuntu版本'
+        required: false
+        default: 'ubuntu-latest' #  ${{ inputs.ubuntu_version || 'ubuntu-20.04' }} 也可以
+      win_version:
+        description: 'windows版本'
+        required: false
+        default: 'windows-latest'
 
 
-# 所有的jobs下的任务都会被执行
 jobs:
-  push-npm: # 执行node的 预构建
+  push-npm:
     if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'push-all' }}
     runs-on: windows-2022
-    name: Prebuild on windows-2022
-
+    name: 使用
     steps:
-      - uses: actions/checkout@v4 # 使用社区的指令
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -37,7 +43,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
     if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{inputs.ubuntu_version}}
     container: node:18-alpine
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
@@ -90,14 +96,14 @@ jobs:
     if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'push-all'}}
     strategy:
       matrix:
-        os: [ ubuntu-latest , windows-latest ]
+        os: [ "${{inputs.ubuntu_version}}" , "${{inputs.win_version}}"  ]
     name: 构建在 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: 18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
       - run: npm install
       - if: ${{ startsWith(matrix.os, 'windows')}}
         run: |
