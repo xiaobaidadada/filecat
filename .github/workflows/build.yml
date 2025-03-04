@@ -87,7 +87,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   build-exe:
-    if: ${{ github.event.inputs.job == 'build-exe'  }}
+    if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'push-all'}}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-2019 ]
