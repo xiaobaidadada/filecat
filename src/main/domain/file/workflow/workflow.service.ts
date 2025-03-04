@@ -238,7 +238,7 @@ class work_children {
                 }
             }
         }
-        yaml_data['run-name'] = Mustache.render(yaml_data['run-name'], this.env ?? "");
+        yaml_data['run-name'] = Mustache.render(yaml_data['run-name'], this.env ?? {});
         this["run-name"] = `${yaml_data['run-name'] ?? ""}`;
         this.name = `${yaml_data.name}`;
         if (param?.env) {

@@ -41,7 +41,7 @@ export enum data_common_key {
     customer_api_pre_key = "customer_api_pre_key", // 自定义apikey
     customer_api_router_key = "customer_api_router_key",
     token_setting = "token_setting",
-    files_pre_mulu_key = "files_pre_mulu_key", // 废弃 文件目录
+    // files_pre_mulu_key = "files_pre_mulu_key", // 废弃 文件目录
     sys_software = "sys_software",
     // extra_env_path = "extra_env_path",
     protection_directory = "sys_protection_directory", // 系统保护路路径

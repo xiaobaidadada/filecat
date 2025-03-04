@@ -61,7 +61,7 @@ export class FileVideoFormatTransPojo {
 export enum FileCompressType {
     zip = "zip",
     tar = "tar",
-    gzip = "gz",
+    gzip = "gz", // 不使用 实际使用 tar + zip 开启
     rar = "rar"// 只解压
 }
 

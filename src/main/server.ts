@@ -33,6 +33,8 @@ import {FileUtil} from "./domain/file/FileUtil";
 import {settingService} from "./domain/setting/setting.service";
 import {SystemUtil} from "./domain/sys/sys.utl";
 import mime from "mime-types";
+import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
+const Mustache = require('mustache');
 
 const WebSocket = require('ws');
 
@@ -52,10 +54,11 @@ async function start() {
 //         config[key] = value;
 //     }
 // })
+
     // 创建 Koa 应用并注册控制器
     const app = createExpressServer({
         cors: false,
-        routePrefix: SystemUtil.get_sys_base_url_pre(),
+        routePrefix: get_sys_base_url_pre(),
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
         controllers:[
@@ -80,7 +83,15 @@ async function start() {
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-        const sys_pre =  SystemUtil.get_sys_base_url_pre();
+        const index_path = path.join(__dirname, 'dist', "index.html");
+        let index_text = await FileUtil.readFileSync(index_path);
+        index_text = Mustache.render(index_text.toString(),{
+            Windows_FileCat: JSON.stringify({
+                base_url:get_base()
+            }) // 给前端
+        });
+
+        const sys_pre =  get_sys_base_url_pre();
         const self_pre = settingService.get_customer_api_pre_key();
         app.use(async (req: Request, res: Response, next) => {
             if (req.originalUrl && (req.originalUrl.startsWith(sys_pre) || req.originalUrl.startsWith(self_pre))) {
@@ -106,15 +117,16 @@ async function start() {
                 const readStream = fs.createReadStream(url);
                 readStream.pipe(res);
             } catch (e) {
-                res.type('html');
-                fs.createReadStream(path.join(__dirname, 'dist', "index.html")).pipe(res);
+                res.type('text/html').send(index_text);
+                // fs.createReadStream(path.join(__dirname, 'dist', "index.html")).pipe(res);
             }
         });
     } else {
+
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
         const self_pre = settingService.get_customer_api_pre_key();
-        const sys_pre =  SystemUtil.get_sys_base_url_pre();
+        const sys_pre =  get_sys_base_url_pre();
         const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
         app.use(regex, createProxyMiddleware({
             target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标

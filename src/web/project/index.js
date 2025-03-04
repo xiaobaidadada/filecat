@@ -13,7 +13,7 @@ if(process.env.NODE_ENV === "production") {
     console.log = ()=>{};
 }
 root.render(<RecoilRoot>
-        <BrowserRouter basename={process.env.base_url??""} >
+        <BrowserRouter basename={window.FileCat.base_url||process.env.base_url} >
             <GlobalProvider>
             <App/>
             </GlobalProvider>

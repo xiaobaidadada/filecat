@@ -1,15 +1,13 @@
 const {Listr} = require("listr2");
 const webpack = require('webpack');
 const os = require("os");
-const config = require('./config/webpack.config.js');
+const config = require('./config/webpack.web.config.js');
 const args = process.argv.slice(2);  // slice to remove the first two default values
 let serverConfig ;
 if (args.length ===0 || args[0]==="npm") {
     serverConfig = require('./config/webpack.npm.config.js');
-} else if (args[0]==="pkg") {
-    serverConfig = require('./config/webpack.pkg.config.js');
-} else if (args[0]==="docker") {
-    serverConfig = require('./config/webpack.docker.config.js');
+} else if (args[0]==="exe") {
+    serverConfig = require('./config/webpack.exe.config.js');
 }
 const {copyFileSync} = require("fs");
 const fs = require("fs");
@@ -88,6 +86,7 @@ const tasksLister = new Listr(
                         // 因为不一定不是windows环境 所以都复制一下，发布npm 在windows环境下，不然没有这个dll
                         copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))
                         rimraf(path.join(__dirname,"..","build","server"));
+
                         res(true);
                     });
 

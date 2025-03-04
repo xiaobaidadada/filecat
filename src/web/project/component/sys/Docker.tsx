@@ -227,6 +227,7 @@ export function Docker(props) {
             } else {
                 init();
                 set_rows_images([]);
+                set_images_selected({});
             }
         }}/>}>
             {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={"删除镜像"} onClick={delete_image}/>}

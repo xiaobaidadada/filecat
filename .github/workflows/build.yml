@@ -14,10 +14,6 @@ on:
         description: '发布docker可选的docker标签'
         required: false
         default: ''
-      pkgv:
-        description: '发布pkg二进制包用的'
-        required: false
-        default: ''
 
 
 # 所有的jobs下的任务都会被执行
@@ -26,7 +22,7 @@ jobs:
     if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'push-all' }}
     runs-on: windows-2022
     name: Prebuild on windows-2022
-    # needs: test
+
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
       - uses: actions/setup-node@v4
@@ -47,16 +43,8 @@ jobs:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
       DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台
     steps:
-      - uses: actions/checkout@v4 # 使用社区的指令
+      - uses: actions/checkout@v4 
       - run: apk add docker build-base linux-headers git python3 py3-setuptools --update-cache
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: 18
-#          registry-url: https://registry.npmjs.org
-#      - run: |
-#          sudo apt update
-#          sudo apt install gcc-10 g++-10 -y
-#          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
       - name: Docker meta # 镜像仓库
         id: meta
         uses: docker/metadata-action@v5
@@ -76,7 +64,8 @@ jobs:
       - name: build
         run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
           npm install 
-          npm run docker-build
+          npm run build
+          npm install --omit=dev
       - name: Login to Docker Hub # login to Docker Hub, automatically logout at the end of job
         uses: docker/login-action@v3
         with:
@@ -97,35 +86,26 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  build-pkg:
-    if: ${{ github.event.inputs.job == 'build-pkg'  || github.event.inputs.job == 'push-all' }}
+  build-exe:
+    if: ${{ github.event.inputs.job == 'build-exe'  }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-2019 ]
-        architecture: [ x64, arm64 ]
-        node: [ 16 ]
-    name: Prebuild on ${{ matrix.os }},${{ matrix.architecture }}
+    name: 构建在 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4 # 使用社区的指令
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
       - run: npm install
-      - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'x64' }}
+      - run: npm install
+      - if: ${{ startsWith(matrix.os, 'windows')}}
         run: |
-          npm run pkg-build && npx pkg . --no-dependencies --targets node16-win-x64 --output filecat-win-x64.exe --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
-      - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
-        run: | 
-          npm run pkg-build && npx pkg . --no-dependencies --targets node16-win-arm64 --output filecat-win-arm64.exe --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-win-arm64.exe" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
-      - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
-        run: | 
-          npm run pkg-build && npx pkg . --no-dependencies --targets node16-linux-x64 --output filecat-linux-x64 --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-linux-x64" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
-      - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'arm64' }}
+          npm run build-exe-win-x64 
+          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
         run: |
-          npm run pkg-build && npx pkg . --no-dependencies --targets node16-linux-arm64 --output filecat-linux-arm64 --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
-
+          npm run build-exe-linux-x64 
+          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+#

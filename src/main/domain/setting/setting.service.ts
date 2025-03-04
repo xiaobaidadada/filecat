@@ -26,6 +26,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
 import { FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
+import {get_sys_base_url_pre} from "../bin/bin";
 
 const needle = require('needle');
 
@@ -35,7 +36,7 @@ const customer_api_router_key = data_common_key.customer_api_router_key;
 
 const token_setting = data_common_key.token_setting;
 
-const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
+// const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
 
 const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 
@@ -279,7 +280,7 @@ export class SettingService {
     }
 
     public get_customer_api_pre_key():string {
-        return DataUtil.get(data_common_key.customer_api_pre_key)??SystemUtil.get_sys_base_url_pre();
+        return DataUtil.get(data_common_key.customer_api_pre_key)??get_sys_base_url_pre();
     }
 
     customer_api_pre_key_save(req) {

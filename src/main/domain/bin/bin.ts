@@ -9,8 +9,8 @@ import {Env} from "../../../common/Env";
 const fs = require('fs');
 import fse from 'fs-extra'
 
-const {createRequire} = require('node:module');
-export const require_c = createRequire(__filename);
+// const {createRequire} = require('node:module');
+// export const require_c = createRequire(__filename); // 之前为了兼容 pkg
 // import {node_process_watcher} from "node-process-watcher";
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -47,17 +47,20 @@ export function get_wintun_dll_path(): string {
         }
         const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
         // pkg  env
-        if (process.env.run_env === "docker") {
+        if (process.env.run_env === "exe") {
+            // 在main.js的根目录下
             return path.resolve(winfilename);
-        } else if (process.env.run_env === "pkg") {
-            const p = path.join(relp, winfilename);
-            if (!fs.existsSync(p)) {
-                writeToStorage(path.join(__dirname,winfilename),p);
-                // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
-                // writeToStorage(path.resolve(winfilename), p)
-            }
-            return p;
-        } else {
+        }
+        // else if (process.env.run_env === "pkg") {
+        //     const p = path.join(relp, winfilename);
+        //     if (!fs.existsSync(p)) {
+        //         writeToStorage(path.join(__dirname,winfilename),p);
+        //         // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
+        //         // writeToStorage(path.resolve(winfilename), p)
+        //     }
+        //     return p;
+        // }
+        else {
             // npm env
             return path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename)
         }
@@ -123,4 +126,37 @@ export function loadWasm() {
         wasmBinary = fs.readFileSync(path.join(__dirname,'unrar.wasm'));
     }
     return wasmBinary;
+}
+
+let sys_pre ;
+let base_url ;
+
+function init_pre_path () {
+    if(process.env.NODE_ENV==="production") {
+        sys_pre = `${Env.base_url||process.env.base_url||""}/api`;
+        base_url= Env.base_url||process.env.base_url||"";
+    } else {
+        try {
+            sys_pre = `${Env.base_url||require("../../../../shell/config/env").base_url||""}/api`;
+            base_url= Env.base_url||require("../../../../shell/config/env").base_url||"";
+        } catch(e) {
+            sys_pre = "/api"
+            base_url = "";
+        }
+    }
+}
+
+
+export function get_sys_base_url_pre() {
+    if(sys_pre === undefined) {
+        init_pre_path();
+    }
+    return sys_pre;
+}
+
+export function get_base() {
+    if(base_url === undefined) {
+        init_pre_path();
+    }
+    return base_url;
 }

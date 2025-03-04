@@ -1,17 +1,10 @@
 import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
+import {Env} from "../../../common/Env";
 
-let sys_pre = "/api";
-if(process.env.NODE_ENV==="production") {
-    sys_pre = `${process.env.base_url??""}/api`;
-} else {
-    try {
-        sys_pre = `${require("../../../../shell/config/env").base_url}/api`;
-    } catch(e) {
-        sys_pre = "/api"
-    }
-}
+
+
 export class SystemUtil {
 
     // 检查某个程序有没有安装到path可以使用
@@ -34,7 +27,4 @@ export class SystemUtil {
         }
     }
 
-    public static  get_sys_base_url_pre() {
-        return sys_pre;
-    }
 }

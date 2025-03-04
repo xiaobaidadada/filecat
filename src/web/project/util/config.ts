@@ -1,11 +1,10 @@
-import {$stroe} from "./store";
-import {useRecoilState} from "recoil";
 import {Http} from "./http";
 
 export const config = {
     // baseUrl: " http://localhost:5566/api/"
-    baseUrl: `${process.env.base_url}/api/`
+    baseUrl: `${window['FileCat'].base_url||process.env.base_url||""}/api/`
 }
+
 
 export const fileUrl = `${config.baseUrl}file/`
 

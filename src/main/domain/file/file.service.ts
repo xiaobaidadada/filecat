@@ -38,7 +38,7 @@ const mime = require('mime-types');
 
 const chokidar = require('chokidar');
 
-class FileService extends FileCompress {
+export class FileService extends FileCompress {
 
     public async getFile(param_path, token, is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
         const result: GetFilePojo = {

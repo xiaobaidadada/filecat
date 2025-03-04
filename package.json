@@ -1,7 +1,7 @@
 {
   "name": "filecat",
-  "version": "3.7.1",
-  "description": "filecat 文件管理器",
+  "version": "4.0.0",
+  "description": "filecat",
   "author": "xiaobaidadada",
   "scripts": {
     "dev": "node  --require ts-node/register ./shell/dev.js --env ./env",
@@ -9,18 +9,18 @@
     "dev-inspect": "node --inspect=0.0.0.0:9001 --require ts-node/register ./shell/dev.js --env ./env",
     "server-dev-inspect": "node --inspect=0.0.0.0:9001 --require ts-node/register ./src/main/server.ts --env ./env ",
     "server-dev": "node --require ts-node/register ./src/main/server.ts --env ./env",
-    "webpack-dev": "npx webpack serve --mode development --config shell/config/webpack.config.js",
+    "webpack-dev": "npx webpack serve --mode development --config shell/config/webpack.web.config.js",
     "generate-proto": "node --require ts-node/register ./src/common/proto/proto.generate.ts",
     "hot-server-dev": "node --require ts-node/register ./src/main/piping.main.ts ",
-    "webpack-build": "npx webpack  --config shell/config/webpack.config.js",
+    "webpack-build": "npx webpack  --config shell/config/webpack.web.config.js",
     "i-dev": "npm i --omit=dev",
     "build": "npm run npm-build",
     "npm-build": "tsc && node shell/build.js npm",
-    "docker-build": "tsc && node shell/build.js docker",
-    "pkg-build": "tsc && node shell/build.js pkg",
+    "exe-build": "tsc && node shell/build.js exe",
+    "build-exe-linux-x64": "npm run exe-build && node --require ts-node/register shell/pkg.ts filecat-linux-x64.tar.gz",
+    "build-exe-win-x64": "npm run exe-build && node --require ts-node/register shell/pkg.ts filecat-win-x64.tar.gz",
     "start": "node build/main.js",
-    "pkg-win-amd64": "npm run pkg-build && pkg . --no-dependencies --targets node18-win-x64 --output filecat-win.exe",
-    "pkg-linux-amd64": "npm run pkg-build && pkg . --no-dependencies --targets node18-linux-x64 --output filecat-linux"
+    "test": "prebuild --upload-files-gz filecat-linux --set-version \"\" -u 11234 "
   },
   "pkg": {
     "assets": [
@@ -83,7 +83,7 @@
     "@xiaobaidadada/node-pty-prebuilt": "^1.0.4",
     "@xiaobaidadada/node-tuntap2-wintun": "^1.0.6",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
-    "node-process-watcher": "^1.1.0"
+    "node-process-watcher": "^1.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
@@ -93,12 +93,12 @@
     "@babel/preset-typescript": "^7.24.1",
     "@excalidraw/excalidraw": "^0.17.6",
     "@koa/cors": "^5.0.0",
-    "@xiaobaidadada/prebuild": "^13.0.1-7",
+    "@xiaobaidadada/prebuild": "^13.0.1-9",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "ace-builds": "^1.32.9",
     "archiver": "^7.0.1",
-    "axios": "^1.7.7",
+    "axios": "^1.7.8",
     "babel-loader": "^9.1.3",
     "chart.js": "^4.4.2",
     "chokidar": "^4.0.3",
@@ -110,6 +110,7 @@
     "github-markdown-css": "^5.6.1",
     "html-webpack-plugin": "^5.6.0",
     "http-proxy-middleware": "^3.0.3",
+    "https-proxy-agent": "^7.0.6",
     "i18next": "^23.12.2",
     "koa-proxies": "^0.12.4",
     "listr2": "^8.2.1",
@@ -130,7 +131,6 @@
     "normalize.css": "^8.0.1",
     "noty": "^3.2.0-beta-deprecated",
     "piping": "^1.0.0-rc.4",
-    "pkg": "^5.8.1",
     "protobufjs-cli": "^1.1.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
