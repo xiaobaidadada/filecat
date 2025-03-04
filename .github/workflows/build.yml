@@ -99,7 +99,6 @@ jobs:
         with:
           node-version: 16
       - run: npm install
-      - run: npm install
       - if: ${{ startsWith(matrix.os, 'windows')}}
         run: |
           npm run build-exe-win-x64 
