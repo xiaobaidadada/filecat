@@ -37,7 +37,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   push-docker:
     if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'push-all' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container: node:18-alpine
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
@@ -90,7 +90,7 @@ jobs:
     if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'push-all'}}
     strategy:
       matrix:
-        os: [ ubuntu-24.04 , windows-2019 ]
+        os: [ ubuntu-22.04 , windows-2019 ]
     name: 构建在 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
