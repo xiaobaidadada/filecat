@@ -32,6 +32,7 @@ import {shellServiceImpl} from "./domain/shell/shell.service";
 import {FileUtil} from "./domain/file/FileUtil";
 import {settingService} from "./domain/setting/setting.service";
 import {SystemUtil} from "./domain/sys/sys.utl";
+import mime from "mime-types";
 
 const WebSocket = require('ws');
 
@@ -100,6 +101,7 @@ async function start() {
                 if(!await FileUtil.access(url)) {
                     throw "";
                 }
+                res.type(mime.lookup(url))
                 // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
                 readStream.pipe(res);

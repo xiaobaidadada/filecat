@@ -14,13 +14,18 @@ on:
         description: '发布docker可选的docker标签'
         required: false
         default: ''
+      pkgv:
+        description: '发布pkg二进制包用的'
+        required: false
+        default: ''
+
 
 # 所有的jobs下的任务都会被执行
 jobs:
   push-npm: # 执行node的 预构建
     if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'push-all' }}
-    runs-on: windows-2019
-    name: Prebuild on windows-2019
+    runs-on: windows-2022
+    name: Prebuild on windows-2022
     # needs: test
     steps:
       - uses: actions/checkout@v4 # 使用社区的指令
@@ -110,17 +115,17 @@ jobs:
       - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'x64' }}
         run: |
           npm run pkg-build && npx pkg . --no-dependencies --targets node16-win-x64 --output filecat-win-x64.exe --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-win-x64.exe" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
       - if: ${{ startsWith(matrix.os, 'windows') && matrix.architecture == 'arm64' }}
         run: | 
           npm run pkg-build && npx pkg . --no-dependencies --targets node16-win-arm64 --output filecat-win-arm64.exe --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-win-arm64.exe" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-win-arm64.exe" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
       - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'x64' }}
         run: | 
           npm run pkg-build && npx pkg . --no-dependencies --targets node16-linux-x64 --output filecat-linux-x64 --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-linux-x64" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-linux-x64" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
       - if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.architecture == 'arm64' }}
         run: |
           npm run pkg-build && npx pkg . --no-dependencies --targets node16-linux-arm64 --output filecat-linux-arm64 --no-input
-          npx --no-install prebuild --upload-files-gz "filecat-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }}
+          npx --no-install prebuild --upload-files-gz "filecat-linux-arm64" -u ${{ secrets.GITHUB_TOKEN }} --vesion ${{ github.event.inputs.pkv && github.event.inputs.pkv || '' }}
 
