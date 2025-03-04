@@ -98,7 +98,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: npm install
+      - run: npm install --verbose
 #      - run: node -v
 #      - run: npm run build-ts
 #      - run: npx webpack  --config shell/config/webpack.web.config.js
@@ -108,12 +108,12 @@ jobs:
 #          name: 打包文件  # 会覆盖之前的同名文件
 #          path: build/
 #      - run: node build/main.js
-      - if: ${{ startsWith(matrix.os, 'windows')}}
-        run: |
-          npm run build-exe-win-x64
-          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
-        run: |
-          npm run build-exe-linux-x64
-          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+#      - if: ${{ startsWith(matrix.os, 'windows')}}
+#        run: |
+#          npm run build-exe-win-x64
+#          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+#      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
+#        run: |
+#          npm run build-exe-linux-x64
+#          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
 #
