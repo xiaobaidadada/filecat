@@ -90,30 +90,30 @@ jobs:
     if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'push-all'}}
     strategy:
       matrix:
-        os: [ ubuntu-22.04 , windows-2019 ]
+        os: [ ubuntu-20.04 , windows-2019 ]
     name: 构建在 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: 18
-      - run: npm install -d
-      - run: node -v
-      - run: npm run build-ts
-      - run: npx webpack  --config shell/config/webpack.web.config.js
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: 打包文件  # 会覆盖之前的同名文件
-          path: build/
-      - run: node build/main.js
-#      - if: ${{ startsWith(matrix.os, 'windows')}}
-#        run: |
-#          npm run build-exe-win-x64
-#          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
-#      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
-#        run: |
-#          npm run build-exe-linux-x64
-#          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+          node-version: 18
+      - run: npm install -d
+#      - run: node -v
+#      - run: npm run build-ts
+#      - run: npx webpack  --config shell/config/webpack.web.config.js
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: 打包文件  # 会覆盖之前的同名文件
+#          path: build/
+#      - run: node build/main.js
+      - if: ${{ startsWith(matrix.os, 'windows')}}
+        run: |
+          npm run build-exe-win-x64
+          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
+        run: |
+          npm run build-exe-linux-x64
+          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
 #
