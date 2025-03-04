@@ -90,7 +90,7 @@ jobs:
     if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'push-all'}}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2019 ]
+        os: [ ubuntu-24.04 , windows-2019 ]
     name: 构建在 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
