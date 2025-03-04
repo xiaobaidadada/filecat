@@ -97,14 +97,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
       - run: npm install
-      - if: ${{ startsWith(matrix.os, 'windows')}}
-        run: |
-          npm run build-exe-win-x64 
-          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
-        run: |
-          npm run build-exe-linux-x64 
-          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+      - run: node -v
+      - run: npx run tsc
+      - run: npx webpack  --config shell/config/webpack.web.config.js
+      - run: node build/main.js
+#      - if: ${{ startsWith(matrix.os, 'windows')}}
+#        run: |
+#          npm run build-exe-win-x64
+#          npx --no-install prebuild --upload-files "filecat-win-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
+#      - if: ${{ startsWith(matrix.os, 'ubuntu')}}
+#        run: |
+#          npm run build-exe-linux-x64
+#          npx --no-install prebuild --upload-files "filecat-linux-x64.tar.gz" -u ${{ secrets.GITHUB_TOKEN }}
 #
