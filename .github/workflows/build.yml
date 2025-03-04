@@ -65,7 +65,7 @@ jobs:
         run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
           npm install 
           npm run build
-          npm install --omit=dev
+#          npm install --omit=dev
       - name: Login to Docker Hub # login to Docker Hub, automatically logout at the end of job
         uses: docker/login-action@v3
         with:
