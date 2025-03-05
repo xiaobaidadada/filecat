@@ -92,7 +92,7 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  build-exe:
+  build-exe: # 在大于20.04 版本的ubuntu上经常出现 进程监控的二进制包下载编译后 .node 缺失version `GLIBC_2.34‘ not found的错误 多构建几次就好了 todo 有空解决这个entire
     if: ${{ github.event.inputs.job == 'build-exe'  || github.event.inputs.job == 'all'}}
     strategy:
       matrix:
