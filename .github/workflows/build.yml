@@ -28,7 +28,7 @@ jobs:
   push-npm:
     if: ${{ github.event.inputs.job == 'push-npm' || github.event.inputs.job == 'all' }}
     runs-on: windows-2022
-    name: 使用
+    name: 推送到npm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
