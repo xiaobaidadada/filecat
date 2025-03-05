@@ -1,8 +1,9 @@
 import {Http} from "./http";
-
+import {Global} from "./global";
+Global.init(); // 先执行
 export const config = {
     // baseUrl: " http://localhost:5566/api/"
-    baseUrl: `${window['FileCat'].base_url||process.env.base_url||""}/api/`
+    baseUrl: `${Global.base_url}/api/`
 }
 
 

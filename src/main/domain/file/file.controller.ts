@@ -40,6 +40,7 @@ import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {workflowService} from "./workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
+import path from "path";
 
 
 @JsonController("/file")
@@ -247,6 +248,13 @@ export class FileController {
         return Sucess(await FileServiceImpl.studio_get_item(data.path, ctx.headers.authorization));
     }
 
+    // 获取 workflow 的输入值
+    @Post("/workflow/get/pre_inputs")
+    async workflow_get_pre_inputs(@Body() data: { path: string }, @Req() ctx) {
+        const sysPath = path.join(settingService.getFileRootPath(ctx.headers.authorization), data.path ? decodeURIComponent(data.path) : "");
+        userService.check_user_path(ctx.headers.authorization, sysPath);
+        return Sucess(await workflowService.workflow_get_pre_inputs(sysPath));
+    }
 
     // workflow 执行
     @msg(CmdType.workflow_exec)

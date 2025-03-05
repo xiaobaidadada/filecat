@@ -80,7 +80,7 @@ export function CustomerRouter() {
         const res = await settingHttp.get("customer_api_pre_key");
         let pre = res.data;
         set_prompt_card({
-            open: true, title: "信息", context_div: (
+            open: true, title: "pre", context_div: (
                 <div>
                     <div className="card-content">
                         其它路由设置仍需要要包括pre路由
@@ -89,11 +89,14 @@ export function CustomerRouter() {
 
                     </div>
                     <div className="card-action">
+                        <button className="button button--flat button--grey" onClick={()=>{ set_prompt_card({open: false});}}>
+                            {t("取消")}
+                        </button>
                         <button className="button button--flat" onClick={async () => {
                             await settingHttp.post("customer_api_pre_key/save",{pre})
                             set_prompt_card({open: false});
                         }}>
-                            {"确定"}
+                            {t("确定")}
                         </button>
                     </div>
                 </div>

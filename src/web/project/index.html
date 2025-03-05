@@ -22,17 +22,10 @@
 <body >
 <div id="root" ></div>
 </body>
-<script id="template" type="text/template">
+<script id="pre_code" type="text/template">
       return {{{Windows_FileCat}}};
 </script>
 <script>
     window.EXCALIDRAW_ASSET_PATH = "/";window.FileCat;
-    const code = document.getElementById("template").innerHTML;
-    try {
-        const obj = new Function(code)();
-        window.FileCat = obj;
-    } catch (e) {
-        window.FileCat = {base_url:""};
-    }
 </script>
 </html>

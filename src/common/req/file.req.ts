@@ -21,6 +21,12 @@ export interface fileInfoReq {
 }
 
 
+export class workflow_pre_input {
+    key:string; // 必须有
+    description?:string; // 描述显示
+    required?:boolean; // 是否必须要有
+    default?:any; // 默认值
+}
 
 export enum WorkRunType {
     start, // 开始
@@ -31,6 +37,7 @@ export class WorkflowReq {
     // token 已经可以通用获得了
     run_type:WorkRunType;
 
+    inputs:workflow_pre_input[] ; // 输入参数
 }
 
 

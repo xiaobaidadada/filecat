@@ -16,6 +16,11 @@ run-name: 构建项目 # 用于日志显示的名字
 
 # import-files: # 导入多个文件的配置 用于下面的 use-yml 指令
 #     - ./ok.yml
+inputs:
+  job: # 输入参数的 key 子字段只是为了修饰 调用的时候 使用  {{{job}}} 会添加并覆盖到 env 中的值
+    description: "任务参数"
+    required: true # 是否必须
+    default: build # 默认值
 
 env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量 {{{ }}} 是非转义方式 采用 Mustache js
   version: 1

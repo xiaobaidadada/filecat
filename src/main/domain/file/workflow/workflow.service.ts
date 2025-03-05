@@ -4,7 +4,7 @@ import {
     running_type,
     step_item,
     work_flow_record,
-    workflow_dir_name,
+    workflow_dir_name, workflow_pre_input,
     WorkflowGetReq,
     WorkflowGetRsq,
     WorkFlowRealTimeOneReq,
@@ -163,7 +163,8 @@ class work_children {
         filecat_user_id?: string,
         filecat_user_name?: string,
         filecat_user_note?: string,
-        send_all_wss?: (done?: send_ws_type) => void
+        send_all_wss?: (done?: send_ws_type) => void,
+        pre_env?: any
     }) {
         if (param?.yaml_path) {
             this.yaml_path = param.yaml_path;
@@ -175,11 +176,16 @@ class work_children {
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
         // 环境变量设置
         this.env = yaml_data.env ?? {};
+        if(param.pre_env) {
+            for (const key of Object.keys(param.pre_env)) {
+                this.env[key] = param.pre_env[key];
+            }
+        }
         this.env['filecat_user_id'] = param.filecat_user_id;
         this.env['filecat_user_name'] = param.filecat_user_name;
         this.env['filecat_user_note'] = param.filecat_user_note;
         // 获取用户 id
-        let user_id = `${yaml_data.user_id ?? ""}`;
+        let user_id = `${yaml_data.user_id||yaml_data['user-id']|| ""}`;
         if (!user_id) {
             user_id = userService.get_user_id(`${yaml_data.username}`);
         }
@@ -238,7 +244,7 @@ class work_children {
                 }
             }
         }
-        yaml_data['run-name'] = Mustache.render(yaml_data['run-name'], this.env ?? {});
+        yaml_data['run-name'] = Mustache.render(`${yaml_data['run-name']??""}`, this.env ?? {});
         this["run-name"] = `${yaml_data['run-name'] ?? ""}`;
         this.name = `${yaml_data.name}`;
         if (param?.env) {
@@ -645,6 +651,23 @@ const realtime_user_dir_wss_map = new Map<string, Set<Wss>>(); // 路径和对�
 
 export class WorkflowService {
 
+    async workflow_get_pre_inputs(path:string) {
+        const list:workflow_pre_input[] = [];
+        const yml_data = await readYamlFile(path);
+        if(yml_data.inputs && typeof yml_data.inputs === "object") {
+            for (const key of Object.keys(yml_data.inputs)) {
+                const v = yml_data.inputs[key];
+                list.push({
+                    key: key,
+                    description:v.description,
+                    required:v.required,
+                    default:v.default
+                })
+            }
+        }
+        return list;
+    }
+
     /**
      *  不需要子线程 因为每个命令都是用子进程执行的
      * @param data
@@ -656,7 +679,7 @@ export class WorkflowService {
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
         const user_info = userService.get_user_info_by_token(token);
         if (pojo.run_type === WorkRunType.start) {
-            await this.exec_file(file_path, user_info);
+            await this.exec_file(file_path, user_info,pojo.inputs);
         } else if (pojo.run_type === WorkRunType.stop) {
             const worker = work_exec_map.get(file_path);
             if (!worker)
@@ -667,16 +690,23 @@ export class WorkflowService {
         }
     }
 
-    public async exec_file(file_path, user_info) {
+    public async exec_file(file_path, user_info,inputs?:workflow_pre_input[]) {
         if (work_exec_map.get(file_path))
             throw "Workflow exec task already exists";
         const worker = new work_children(file_path);
         work_exec_map.set(file_path, worker);
         try {
+            const pre_env = {};
+            if(inputs) {
+                for (const it of inputs) {
+                    pre_env[it.key] = it.default;
+                }
+            }
             await worker.init({
                 filecat_user_id: userService.get_user_id(user_info.username),
                 filecat_user_name: user_info.username,
-                filecat_user_note: user_info.note
+                filecat_user_note: user_info.note,
+                pre_env
             });
         } catch (e) {
             worker.running_type = running_type.fail;

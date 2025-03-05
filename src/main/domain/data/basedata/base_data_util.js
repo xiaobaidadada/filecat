@@ -46,7 +46,7 @@ export class Base_data_util {
      * @param meta_str_data 元数据 字符串
      */
     async insert(str_data,meta_str_data) {
-        const meta_list_stats = fs.promises.stat(path.join(this.base_dir, filecat_data_filename));
+        const meta_list_stats = await fs.promises.stat(path.join(this.base_dir, filecat_data_filename));
 
         const start_postion = meta_list_stats.size; // 目前使用追加 直接 写入到文件的底部 没有删除功能
         const fd = await fs.promises.open(path.join(this.base_dir, filecat_data_filename), 'r+');  // 'r+' 表示可读写
