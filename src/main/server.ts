@@ -80,6 +80,7 @@ async function start() {
             router.add(`/${item}`)
             router.add(`${item}`)
         }
+        router.add(get_base()); // base_url
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
@@ -109,12 +110,13 @@ async function start() {
                 } else {
                     url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 }
-                if(!await FileUtil.access(url)) {
-                    throw "";
-                }
-                res.type(mime.lookup(url))
+                // if(!await FileUtil.access(url)) {
+                //     throw "";
+                // }
+
                 // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
+                res.type(mime.lookup(url));
                 readStream.pipe(res);
             } catch (e) {
                 res.type('text/html').send(index_text);
