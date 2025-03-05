@@ -255,11 +255,11 @@ export class WsClient {
     }
 
     public static getOtherWebSocket(code:CmdType) {
-        return new WebSocket(`ws://${window.location.host}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
+        return new WebSocket(`ws://${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
     }
 
     public static getOtherWebSocketUrl(code:CmdType,query:{[key: string]: string}) {
-        let url  = `ws://${window.location.host}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
+        let url  = `ws://${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
         for (const key of Object.keys(query)) {
             url += `&${key}=${encodeURIComponent(query[key])}`;
         }

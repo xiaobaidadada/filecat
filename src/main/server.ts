@@ -100,7 +100,7 @@ async function start() {
                 return;
             }
             try {
-                if (router.has(getWebFirstKey(req.originalUrl))) {
+                if (router.has(req.originalUrl) || router.has(getWebFirstKey(req.originalUrl))) {
                     throw "";
                 }
                 let url;
@@ -110,9 +110,9 @@ async function start() {
                 } else {
                     url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 }
-                // if(!await FileUtil.access(url)) {
-                //     throw "";
-                // }
+                if(!await FileUtil.access(url)) {
+                    throw "";
+                }
 
                 // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);

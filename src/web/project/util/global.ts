@@ -12,6 +12,7 @@ export class Global {
                 const obj = new Function(code)();
                 this._base_url = obj.base_url;
             } catch (e) {
+                console.debug(e);
                 this._base_url = process.env.base_url;
             }
         } else {

@@ -99,7 +99,7 @@ export function FilesUpload() {
         // const all_wss_list: WsClient[] = [];
         if (all_wss_list.length < part_size) {
             for (let i = all_wss_list.length; i <= part_size; i++) {
-                all_wss_list.push(new WsClient(window.location.host, (socket) => {
+                all_wss_list.push(new WsClient(window.location.host+window.location.pathname, (socket) => {
                     // const data = new WsData(CmdType.auth);
                     // data.context = {
                     //     Authorization: localStorage.getItem('token')
