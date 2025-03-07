@@ -20,7 +20,7 @@ const FileEditor = React.lazy(() => import("./file/component/FileEditor"))
 const Preview = React.lazy(() => import("./file/component/Preview"))
 const MarkDown = React.lazy(() => import("./file/component/MarkDown"))
 const ExcalidrawEditor = React.lazy(() => import("./file/component/ExcalidrawEditor"))
-const Studio = React.lazy(() => import("./file/component/studio/Studio"))
+const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
@@ -88,7 +88,7 @@ function Layout() {
                 <MarkDown/>
             </Suspense>
             <Suspense fallback={<div></div>}>
-                <Studio/>
+                <StudioLazy/>
             </Suspense>
             {image_editor.path !== undefined && <Suspense fallback={<div></div>}><ImageEditor/></Suspense>}
             {excalidraw_editor.path !== undefined && <Suspense fallback={<div></div>}>

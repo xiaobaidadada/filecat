@@ -15,7 +15,7 @@ import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {copyToClipboard} from "../../util/FunUtil";
 import Noty from "noty";
-import Ace from "../file/component/Ace";
+// import Ace from "../file/component/Ace";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {http_body_type, http_download_map, HttpFormData, HttpFormPojo} from "../../../../common/req/net.pojo";
 import {PromptEnum} from "../prompts/Prompt";
@@ -25,6 +25,9 @@ import {UserAuth} from "../../../../common/req/user.req";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import { formatFileSize } from '../../../../common/ValueUtil';
+
+const Ace = React.lazy(() => import("../file/component/Ace"));
+
 
 let http_header_value;
 let http_json_value;

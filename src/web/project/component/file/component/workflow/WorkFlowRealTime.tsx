@@ -12,15 +12,18 @@ import {job_item, running_type, step_item, WorkFlowRealTimeOneReq} from "../../.
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
 import TreeView from "../../../../../meta/component/TreeView";
 import {tree_list, workflow_realtime_tree_list} from "../../../../../../common/req/common.pojo";
-import {Shell} from "../../../shell/Shell";
+// import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
 import {NotyFail, NotySucess} from "../../../../util/noty";
+
+const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))
+
 
 let terminal_init_resolve;
 let terminal_value;
 let input_page_num = -1;
 
-export function WorkFlowRealTime(props) {
+export default function WorkFlowRealTime(props) {
     const {t} = useTranslation();
     const [workflow_show,set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
     const [task_rows,set_task_rows] = useState([]);
@@ -200,7 +203,7 @@ export function WorkFlowRealTime(props) {
         <div style={{
             display: shellShow?"":"none",
         }}>
-            <Shell show={true} terminal={terminalState} init={terminal_init}/>
+            <ShellLazy show={true} terminal={terminalState} init={terminal_init}/>
         </div>
     </div>
 }

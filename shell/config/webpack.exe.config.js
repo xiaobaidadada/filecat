@@ -7,22 +7,16 @@ const {base_url} = require("./env");
 const plugins = [
     new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('production'),
-    }),
-    new webpack.DefinePlugin({
         'process.env.version': JSON.stringify(package_data.version),
+        'process.env.base_url': JSON.stringify(base_url),
+        'process.env.run_env': JSON.stringify("exe") // 必须用 JSON.stringify
     }),
     // new webpack.DefinePlugin({
     //     'process.platform': JSON.stringify(process.platform) // 这里将 process.platform 替换为实际的值 在遇到动态打包的时候require 可以判断类型 函数内部的无法判断
     // }),
-    new webpack.DefinePlugin({
-        'process.env.run_env': JSON.stringify("exe") // 必须用 JSON.stringify
-    }),
     new webpack.IgnorePlugin({
         resourceRegExp: /Debug/,
-    }),
-    new webpack.DefinePlugin({
-        'process.env.base_url': JSON.stringify(base_url),
-    }),
+    })
 ];
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
@@ -57,7 +51,7 @@ module.exports = {
         minimize: true, // 压缩Js代码
         minimizer: [
             new TerserPlugin({
-                extractComments: true,//不将注释提取到单独的文件中
+                // extractComments: true,//不将注释提取到单独的文件中
             }),
         ],
     }

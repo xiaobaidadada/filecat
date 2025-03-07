@@ -15,7 +15,7 @@ export interface ShellProps {
     rows_clos?:(rows:number,cols:number) => void
 }
 
-export function Shell(props:ShellProps) {
+export default function Shell(props:ShellProps) {
     const [shellHeight,setShellHeight] = useState(25);
     const shellDividerRef = useRef(null);
     // @ts-ignore

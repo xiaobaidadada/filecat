@@ -1,11 +1,13 @@
 import React from 'react';
-import {VideoPlayer} from "./VideoPlayer";
+// import VideoPlayer from "./VideoPlayer";
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {ExtendedImage} from "./ExtendedImage";
+
+const VideoPlayer = React.lazy(() => import("./VideoPlayer"))
 
 export default function Preview(props: any) {
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);

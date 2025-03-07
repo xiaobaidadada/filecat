@@ -16,9 +16,10 @@ import lodash from "lodash";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
-import Ace from "../Ace";
+// import Ace from "../Ace";
 
 
+const Ace = React.lazy(() => import("../Ace"));
 
 
 export default function Studio(props) {
@@ -179,9 +180,7 @@ export default function Studio(props) {
         studio_nav_ref.current.removeEventListener("pointermove", handleDrag);
 
     };
-    if (!studio.folder_path) {
-        return;
-    }
+
 
     const items_folder = [{r: t("创建文件"), v: "创建文件"},{r: t("创建目录"), v: "创建目录"},{r: t("重命名"), v: "重命名"},{r: t("删除"), v: "删除"}];
     const items_file = [{r: t("重命名"), v: "重命名"}, {r: t("删除"), v: "删除"}];

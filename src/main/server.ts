@@ -37,6 +37,7 @@ import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
 const Mustache = require('mustache');
 
 const WebSocket = require('ws');
+const compression = require('compression'); // webpack-dev-server 包含的有
 
 
 async function start() {
@@ -71,6 +72,8 @@ async function start() {
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
     });
+    app.use(compression());
+
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start();
 
@@ -117,6 +120,9 @@ async function start() {
                 // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
                 res.type(mime.lookup(url));
+                if(url.endsWith('.js') || url.endsWith(".woff2")) {
+                    res.setHeader('Cache-Control', 'public, max-age=86400 '); // 让js类型的数据缓存一下 有一些类库的资源请求 js 除非版本变了否则不会更改 webpack打包的有版本hash会变名字
+                }
                 readStream.pipe(res);
             } catch (e) {
                 res.type('text/html').send(index_text);

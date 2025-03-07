@@ -35,7 +35,7 @@ const getSourceType = (source: string) => {
     return  "video/mp4";
 };
 let player:Player;
-export function VideoPlayer(props: {source:string,options:any}) {
+export default function VideoPlayer(props: {source:string,options:any}) {
     const videoPlayer = useRef(null);
 
 

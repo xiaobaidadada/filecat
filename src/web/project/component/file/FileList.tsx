@@ -12,7 +12,7 @@ import {scanFiles} from "../../util/file";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
-import {FileShell} from "../shell/FileShell";
+// import {FileShell} from "../shell/FileShell";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
@@ -24,11 +24,11 @@ import {use_auth_check, use_file_to_running, user_click_file} from "../../util/s
 import {formatFileSize, getShortTime} from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextTip} from "../../../meta/component/Card";
-import {WorkFlow} from "./component/workflow/WorkFlow";
+// import {WorkFlow} from "./component/workflow/WorkFlow";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
-import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
+// import {WorkFlowRealTime} from "./component/workflow/WorkFlowRealTime";
 import {DirListShowTypeEmum, FileListShowTypeEmum, UserAuth} from "../../../../common/req/user.req";
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {SysPojo} from "../../../../common/req/sys.pojo";
@@ -36,6 +36,9 @@ import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {http_download_map} from "../../../../common/req/net.pojo";
 
+const WorkFlow = React.lazy(()=> import("./component/workflow/WorkFlow"));
+const WorkFlowRealTime = React.lazy(()=> import("./component/workflow/WorkFlowRealTime"));
+const FileShell = React.lazy(()=> import("../shell/FileShell"));
 
 const fileTypes = Object.values(FileListShowTypeEmum);
 

@@ -6,8 +6,11 @@ import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {Shell} from "./Shell";
+// import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
+
+const ShellLazy = React.lazy(() => import("./ShellLazy"))
+
 
 export function SystemdShell(props) {
     const [terminalState,setTerminalState] = useState(null)
@@ -79,6 +82,6 @@ export function SystemdShell(props) {
         ws.send(data)
     }
     return (
-        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
+        <ShellLazy show={shellShow.show} terminal={terminalState} init={init}/>
     )
 }

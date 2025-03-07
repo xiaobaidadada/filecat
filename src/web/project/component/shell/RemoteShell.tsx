@@ -5,9 +5,11 @@ import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {Shell} from "./Shell";
+// import {Shell} from "./Shell";
 import {ShellInitPojo, SshPojo} from "../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../common/ListUtil";
+
+const ShellLazy = React.lazy(() => import("./ShellLazy"))
 
 export function RemoteShell(props) {
     const [terminalState,setTerminalState] = useState(null)
@@ -107,6 +109,6 @@ export function RemoteShell(props) {
         ws.send(data)
     }
     return (
-        <Shell show={shellShow.show} terminal={terminalState} init={init}/>
+        <ShellLazy show={shellShow.show} terminal={terminalState} init={init}/>
     )
 }

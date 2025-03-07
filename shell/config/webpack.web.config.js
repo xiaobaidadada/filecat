@@ -2,6 +2,8 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const TerserPlugin = require("terser-webpack-plugin");
+
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
 module.exports = {
@@ -9,7 +11,8 @@ module.exports = {
     entry: path.join(__dirname, "..", "..", "src", "web", "project", 'index.js'),
     output: {
         // path: path.resolve(__dirname, '..','..','dist'),
-        filename: 'bundle.js',
+        // filename: 'bundle.js',
+        filename: '[name].[contenthash].js',  // 使用 contenthash 进行文件名哈希 下次更新代码 浏览器缓存也会更新
         path: path.resolve(__dirname, '..', "..", 'build', 'dist'),
     },
     module: {
@@ -43,15 +46,22 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             'process.env': JSON.stringify(process.env),
-        }),
-        new webpack.DefinePlugin({
             'process.env.version': JSON.stringify(package_data.version),
-        }),
-        new webpack.DefinePlugin({
             'process.env.base_url': JSON.stringify(base_url),
         }),
-        // new BundleAnalyzerPlugin()
+        // new BundleAnalyzerPlugin({
+        //     analyzerMode: 'server',  // 启动本地服务器查看分析报告
+        //     openAnalyzer: true,      // 是否自动打开浏览器
+        // })
     ],
+    optimization: {
+        minimize: true, // 压缩Js代码
+        minimizer: [
+            new TerserPlugin({
+                // extractComments: true,//不将注释提取到单独的文件中
+            }),
+        ],
+    },
     devServer: {
         static: [
             {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
