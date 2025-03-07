@@ -6,7 +6,7 @@ export function Folder(props: FileTree & {
     pre_path: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
     handleContextMenu?: (event, name, path, isDir, toggleExpansion) => void
-    fatherNowToggleExpansion?:()=>void
+    fatherNowToggleExpansion?:()=>void,
 }): React.JSX.Element {
     {
         // 这里的pre_path 是以/结尾的
@@ -60,7 +60,7 @@ export function Folder(props: FileTree & {
                     <div style={{marginLeft: 20}}>
                         {children.map((child, index) => (
                             <React.Fragment key={index}>
-                                {<Folder type={child.type} click={props.click} name={child.name} key={index}
+                                {<Folder type={child.type} size={child.size} click={props.click} name={child.name} key={index}
                                          children={child.children} pre_path={`${props.pre_path}${child.name}${child.type===FileTypeEnum.folder ? "/":""}`}
                                          handleContextMenu={props.handleContextMenu}
                                          fatherNowToggleExpansion={nowToggleExpansion}

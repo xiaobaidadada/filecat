@@ -20,7 +20,7 @@ export function FolderTree(props: {
             return <Folder pre_path={`${props.pre_path}${value.name}${value.type===FileTypeEnum.folder ? "/":""}`} key={index} name={value.name} type={value.type}
                            handleContextMenu={props.handleContextMenu}
                            fatherNowToggleExpansion={props.fatherNowToggleExpansion}
-                           children={value.children} click={props.click}/>
+                           children={value.children} click={props.click} size={value.size}/>
         })}
     </div>
 }

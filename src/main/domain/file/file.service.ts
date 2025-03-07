@@ -833,7 +833,8 @@ export class FileService extends FileCompress {
             }
             result.list.push({
                 type: stats.isFile() ? "file" : "folder",
-                name: item
+                name: item,
+                size: stats.size
             })
         }
         return result;

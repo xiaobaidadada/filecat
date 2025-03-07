@@ -78,6 +78,7 @@ export class FileCompressPojo {
 export interface FileTree {
     type: string & "folder" | "file";
     name: string;
+    size: number;
     children?: FileTree[];
 }
 

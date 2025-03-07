@@ -7,10 +7,10 @@ import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {editor_data} from "../../../util/store.util";
 import {NotySucess} from "../../../util/noty";
-// import Ace from "./Ace";
+import Ace from "./Ace";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 
-const Ace = React.lazy(() => import("./Ace"));
+// const Ace = React.lazy(() => import("./Ace"));
 
 
 export default function FileEditor() {

@@ -16,6 +16,7 @@ import lodash from "lodash";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
+import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
 // import Ace from "../Ace";
 
 
@@ -66,7 +67,16 @@ export default function Studio(props) {
         set_pre_path(p);
         const rsp = await fileHttp.post('studio/get/item', {path: p});
         if (rsp.code === RCode.Sucess) {
-            set_list(rsp.data.list);
+            const folder_list = [];
+            const file_list = [];
+            for (const item of rsp.data.list) {
+                if(item.type === "folder") {
+                    folder_list.push(item);
+                } else if (item.type === "file") {
+                    file_list.push(item);
+                }
+            }
+            set_list([...folder_list,...file_list]);
         }
     }
     useEffect(() => {
@@ -92,34 +102,53 @@ export default function Studio(props) {
         // const model = getEditModelType(name) ?? "text";
         // set_edit_model(model);
         const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
-        if (rsq.code === RCode.File_Max) {
-            NotyFail("超过20MB");
-            return;
-        }
         setEditorValue(rsq.data);
         editor_data.set_value_temp(rsq.data);
         set_edit_filename({path: pre_path, name});
         set_edit_file_path(pre_path);
     }
+    const open_file = (pojo: FileTree,pre_path)=>{
+        if(pojo.size > MAX_SIZE_TXT) {
+            set_confirm({
+                open: true, handle: () => {
+                    load_file(pojo.name, pre_path);
+                    set_confirm({open: false, handle: null});
+                    set_have_update(false);
+                }, title: "超过20MB了还要打开吗?"
+            });
+        } else {
+             load_file(pojo.name, pre_path);
+        }
+    }
     const click = async (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => {
         if (pojo.type === "folder") {
             const rsp = await fileHttp.post('studio/get/item', {path: `${pre_path}`});
             if (rsp.code === RCode.Sucess) {
-                set_children(rsp.data.list);
+                const folder_list = [];
+                const file_list = [];
+                for (const item of rsp.data.list) {
+                    if(item.type === "folder") {
+                        folder_list.push(item);
+                    } else if (item.type === "file") {
+                        file_list.push(item);
+                    }
+                }
+                set_children([...folder_list,...file_list]);
+                // set_children(rsp.data.list);
             }
         } else {
+            // 点击文件
             if (have_update) {
                 set_confirm({
                     open: true, handle: () => {
-                        load_file(pojo.name, pre_path);
                         set_confirm({open: false, handle: null});
                         set_have_update(false);
+                        open_file(pojo,pre_path);
                     }, title: "确定不保存就切换吗?"
                 });
                 return;
             }
-            // 点击文件
-            await load_file(pojo.name, pre_path);
+            open_file(pojo,pre_path);
         }
     }
 

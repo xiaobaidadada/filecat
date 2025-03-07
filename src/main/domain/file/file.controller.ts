@@ -100,8 +100,8 @@ export class FileController {
         return await FileServiceImpl.deletes(ctx.headers.authorization, path);
     }
 
-    @Post('/save/:path([^"]{0,})')
-    async save(@Req() ctx, @Param("path") path?: string, @Body() data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
+    @Post('/save/:path([^"]{0,})') // 保存的是文本 最大50MB
+    async save(@Req() ctx, @Param("path") path?: string, @Body({options:{limit: 6250000}}) data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
         if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
             userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
             await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
