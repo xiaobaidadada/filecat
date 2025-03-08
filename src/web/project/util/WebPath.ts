@@ -1,4 +1,6 @@
+import {Global} from "./global";
 
+Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
 export function getRouterAfter(keyRouter,router) {
     let result = '';
@@ -42,7 +44,7 @@ export function isNumeric(str) {
     return /^\d+$/.test(str);
 }
 
-const sys_pre = process.env.base_url??"";
+const sys_pre = Global.base_url;
 export function getRouterPath() {
     let path  = window.location.pathname + window.location.hash;
     // 去掉 BASENAME
