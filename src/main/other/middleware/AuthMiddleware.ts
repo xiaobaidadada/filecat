@@ -10,15 +10,13 @@ import {DataUtil} from "../../domain/data/DataUtil";
 import {settingService} from "../../domain/setting/setting.service";
 import {sshService} from "../../domain/ssh/ssh.service";
 import {Request, Response} from 'express';
-// import {get_sys_base_url_pre} from "../../domain/bin/bin";
+import {get_sys_base_url_pre} from "../../domain/bin/bin";
 
 // const pathRegex = /^(?!.*\/api).*$/;
 // const pathRegex = new RegExp(`^(?!(\/${get_sys_base_url_pre()}))`);
 
 // const base_pre = get_sys_base_url_pre();
-function get_sys_base_url_pre(){
-    return "/filecat/api"
-}
+
 
 @Middleware({type: 'before'})
 export class AuthMiddleware implements ExpressMiddlewareInterface {
