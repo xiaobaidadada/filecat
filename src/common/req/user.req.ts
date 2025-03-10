@@ -68,7 +68,7 @@ export enum UserAuth {
     workflow_api, // workflow 自定义触发api
     dir_upload_max_num = 43, // 目录上传数量限制
     http_proxy_download_cancel, // 关闭下载
-    customer_api_pre_key, // 自定义api前缀修改
+    // customer_api_pre_key, // 自定义api前缀修改 todo 放弃了 下次用 46开始
 }
 
 

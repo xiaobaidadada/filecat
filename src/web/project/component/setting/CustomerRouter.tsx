@@ -76,36 +76,36 @@ export function CustomerRouter() {
                 </div>
             )})
     }
-    const pre_api = async ()=>{
-        const res = await settingHttp.get("customer_api_pre_key");
-        let pre = res.data;
-        set_prompt_card({
-            open: true, title: "pre", context_div: (
-                <div>
-                    <div className="card-content">
-                        其它路由设置仍需要要包括pre路由
-                        <InputText placeholderOut={t("输入自定义全局pre路由,以 / 开头")} value={pre}
-                                   handleInputChange={(value) => {pre=value}}/>
-
-                    </div>
-                    <div className="card-action">
-                        <button className="button button--flat button--grey" onClick={()=>{ set_prompt_card({open: false});}}>
-                            {t("取消")}
-                        </button>
-                        <button className="button button--flat" onClick={async () => {
-                            await settingHttp.post("customer_api_pre_key/save",{pre})
-                            set_prompt_card({open: false});
-                        }}>
-                            {t("确定")}
-                        </button>
-                    </div>
-                </div>
-            )
-        })
-    }
+    // const pre_api = async ()=>{
+    //     const res = await settingHttp.get("customer_api_pre_key");
+    //     let pre = res.data;
+    //     set_prompt_card({
+    //         open: true, title: "pre", context_div: (
+    //             <div>
+    //                 <div className="card-content">
+    //                     其它路由设置仍需要要包括pre路由
+    //                     <InputText placeholderOut={t("输入自定义全局pre路由,以 / 开头")} value={pre}
+    //                                handleInputChange={(value) => {pre=value}}/>
+    //
+    //                 </div>
+    //                 <div className="card-action">
+    //                     <button className="button button--flat button--grey" onClick={()=>{ set_prompt_card({open: false});}}>
+    //                         {t("取消")}
+    //                     </button>
+    //                     <button className="button button--flat" onClick={async () => {
+    //                         await settingHttp.post("customer_api_pre_key/save",{pre})
+    //                         set_prompt_card({open: false});
+    //                     }}>
+    //                         {t("确定")}
+    //                     </button>
+    //                 </div>
+    //             </div>
+    //         )
+    //     })
+    // }
     return <React.Fragment>
         <Header>
-            <ActionButton icon={"http"} title={t("pre路由")} onClick={pre_api} />
+            {/*<ActionButton icon={"http"} title={t("pre路由")} onClick={pre_api} />*/}
         </Header>
         <Row>
             <Column>

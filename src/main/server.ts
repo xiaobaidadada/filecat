@@ -96,9 +96,9 @@ async function start() {
         });
 
         const sys_pre =  get_sys_base_url_pre();
-        const self_pre = settingService.get_customer_api_pre_key();
+        // const self_pre = settingService.get_customer_api_pre_key();
         app.use(async (req: Request, res: Response, next) => {
-            if (req.originalUrl && (req.originalUrl.startsWith(sys_pre) || req.originalUrl.startsWith(self_pre))) {
+            if (req.originalUrl && (req.originalUrl.startsWith(sys_pre))) {
                 next();
                 return;
             }
@@ -133,9 +133,10 @@ async function start() {
 
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
-        const self_pre = settingService.get_customer_api_pre_key();
+        // const self_pre = settingService.get_customer_api_pre_key();
         const sys_pre =  get_sys_base_url_pre();
-        const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
+        // const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
+        const regex = new RegExp(`^(?!(\/${sys_pre}))`);
         app.use(regex, createProxyMiddleware({
             target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
             // changeOrigin: true,

@@ -285,17 +285,17 @@ export class SettingController {
         return Sucess(r);
     }
 
-    @Get("/customer_api_pre_key")
-    get_customer_api_pre_key(@Req() ctx) {
-            return Sucess(settingService.get_customer_api_pre_key());
-    }
-
-    @Post("/customer_api_pre_key/save")
-    customer_api_pre_key_save(@Req() ctx,@Body() req: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.customer_api_pre_key);
-        settingService.customer_api_pre_key_save(req);
-        return Sucess("1");
-    }
+    // @Get("/customer_api_pre_key")
+    // get_customer_api_pre_key(@Req() ctx) {
+    //         return Sucess(settingService.get_customer_api_pre_key());
+    // }
+    //
+    // @Post("/customer_api_pre_key/save")
+    // customer_api_pre_key_save(@Req() ctx,@Body() req: any) {
+    //     userService.check_user_auth(ctx.headers.authorization, UserAuth.customer_api_pre_key);
+    //     settingService.customer_api_pre_key_save(req);
+    //     return Sucess("1");
+    // }
 
     // 保存系统所有的开关状态
     @Post(`/${Http_controller_router.setting_sys_option_status_save}`)

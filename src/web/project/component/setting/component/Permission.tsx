@@ -205,15 +205,7 @@ export function Permission(props:{
                        }}/>
                 {t("目录文件上传数量限制修改")}
             </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.customer_api_pre_key)}
-                       checked={props.is_selected(UserAuth.customer_api_pre_key)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.customer_api_pre_key)
-                       }}/>
-                {t("自定义api前缀修改")}
-            </div>
+
         </div>
 
         <h3>{t("文件权限")}</h3>

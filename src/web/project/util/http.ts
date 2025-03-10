@@ -4,6 +4,7 @@ import {useNavigate} from "react-router-dom";
 import Noty from "noty";
 import {Result} from "../../../main/other/Result";
 import {NotyFail} from "./noty";
+import {config} from "./config";
 
 let now = Date.now();
 export class Http {
@@ -51,7 +52,7 @@ export class Http {
     }
 
     getDownloadUrl(files) {
-        let url = "/api/download?";
+        let url = config.baseUrl+"download?";
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
                 if (file.endsWith("/")  || file.endsWith("\\")) {

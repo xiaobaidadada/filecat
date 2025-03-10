@@ -69,6 +69,8 @@ export class SettingService {
         DataUtil.set(data_common_key.customer_workflow_router_key, req);
     }
 
+    base_pre = get_sys_base_url_pre();
+
     // 甚至可以替代系统的 api
     public async intercept(ctx: Request) {
         try {
@@ -76,8 +78,7 @@ export class SettingService {
             if (ctx.originalUrl.includes("?")) {
                 c_url = ctx.originalUrl.split("?")[0];
             }
-            const self_pre = settingService.get_customer_api_pre_key();
-            if(!c_url || !c_url.startsWith(self_pre)) return ;
+            if(!c_url || !c_url.startsWith(this.base_pre)) return ;
             const workflow_list_router = this.get_workflow_router() as [][];
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
@@ -279,13 +280,13 @@ export class SettingService {
         return DataUtil.get(data_common_key.recycle_bin_status)??false;
     }
 
-    public get_customer_api_pre_key():string {
-        return DataUtil.get(data_common_key.customer_api_pre_key)??get_sys_base_url_pre();
-    }
-
-    customer_api_pre_key_save(req) {
-        return DataUtil.set(data_common_key.customer_api_pre_key, req.pre);
-    }
+    // public get_customer_api_pre_key():string {
+    //     return DataUtil.get(data_common_key.customer_api_pre_key)??get_sys_base_url_pre(); // 必须属于 get_sys_base_url_pre 获取的前缀内 也就是要包括 ***/api
+    // }
+    //
+    // customer_api_pre_key_save(req) {
+    //     return DataUtil.set(data_common_key.customer_api_pre_key, req.pre);
+    // }
 
     public get_recycle_dir_str():string{
         let v = DataUtil.get(data_common_key.recycle_bin_key) ?? "";
