@@ -10,7 +10,7 @@ import {Env} from "../../../common/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
 import {SysEnum} from "../../../common/req/user.req";
-import {exec_type, PtyShell} from "./PtyShell";
+import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {userService} from "../user/user.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
@@ -81,11 +81,12 @@ let word_detection = new word_detection_js();
 const s_f = (sysType === "win" ? ";" : ":");
 let PATH_file_total = 0; // win我的电脑 也就三千多个没必要上 c++版的了
 const exec_map = {// windwos文件命令执行优先级
-    ".com":4, // 越大优先
-    ".exe":3,
-    ".bat":2,
-    ".cmd":1
+    ".com": 4, // 越大优先
+    ".exe": 3,
+    ".bat": 2,
+    ".cmd": 1
 }
+
 export class ShellService {
 
 
@@ -94,7 +95,7 @@ export class ShellService {
             word_detection.clear();
             word_detection = new word_detection_js();
             PATH_file_total = 0;
-            const SYS_PATH = process.env.PATH +s_f + settingService.get_env_list();
+            const SYS_PATH = process.env.PATH + s_f + settingService.get_env_list();
             for (const item of SYS_PATH.split(s_f)) {
                 try {
                     if (await FileUtil.access(item)) {
@@ -103,7 +104,7 @@ export class ShellService {
                         if (stats.isDirectory()) {
                             const items = await FileUtil.readdirSync(item);
                             for (const filename of items ?? []) {
-                                if(getSys()===SysEnum.win && filename.endsWith(".dll")) {
+                                if (getSys() === SysEnum.win && filename.endsWith(".dll")) {
                                     continue;
                                 }
                                 word_detection.add(filename);
@@ -115,7 +116,7 @@ export class ShellService {
                             console.log('path加载 路径存在，但它不是一个目录');
                         }
                     } else {
-                        console.log('path加载 目录不存在',item);
+                        console.log('path加载 目录不存在', item);
                     }
                 } catch (err) {
                     console.error('path加载 检查目录时发生错误:', err);
@@ -130,87 +131,91 @@ export class ShellService {
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        const PATH = process.env.PATH +(sysType === "win" ? ";" : ":")  + settingService.get_env_list();
+        const PATH = process.env.PATH + (sysType === "win" ? ";" : ":") + settingService.get_env_list();
         const pojo = data.context as ShellInitPojo;
-        if(pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
+        if (pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
-        userService.check_user_path((data.wss as Wss).token,sysPath); // 系统路径也检查一下
+        userService.check_user_path((data.wss as Wss).token, sysPath); // 系统路径也检查一下
         const user_data = userService.get_user_info_by_token((data.wss as Wss).token);
-        const ptyProcess = new PtyShell({
+        const ptyShell = new PtyShell({
             cols: pojo.cols,
             rows: pojo.rows,
             cwd: sysPath,
-            node_pty:pty,
-            env:{PATH},
-            // prompt_call:()=>{
-            //     re
-            // },
-            node_pty_shell_list:settingService.get_pty_cmd(),
-            prompt_call:(cwd)=>{
+            node_pty: pty,
+            env: {PATH},
+            node_pty_shell_list: settingService.get_pty_cmd(),
+            on_prompt_call: (cwd) => {
                 // 输出格式化的命令提示符
                 const p = path.basename(cwd);
                 const c = `${green}${user_data.username}${reset}:${blue}${p}${reset}:# `;
                 const len = PtyShell.get_full_char_num(`${user_data.username}:${p}:# `); // 计算纯字符
-                return {str:c,char_num:len};
+                return {str: c, char_num: len};
             },
-            on_call:(cmdData) => {
+            on_call: (cmdData) => {
                 const result = new WsData<SysPojo>(CmdType.shell_getting);
                 result.context = cmdData;
                 (data.wss as Wss).sendData(result.encode())
             },
-            copy_handle:(p)=>{
-                const result = new WsData<SysPojo>(CmdType.shell_copy);
-                result.context = p;
-                (data.wss as Wss).sendData(result.encode())
+            on_control_cmd: (type, str) => {
+                if (exec_cmd_type.copy_text === type) {
+                    const result = new WsData<SysPojo>(CmdType.shell_copy);
+                    result.context = str;
+                    (data.wss as Wss).sendData(result.encode())
+                }
             },
-            check_exe_cmd:(exe_cmd,params)=>{
+            check_exe_cmd: async (exe_cmd, params) => {
                 if (settingService.get_shell_cmd_check()) {
-                    const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode,data_dir_tem_name.sys_file_dir);
+                    const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
                     // 开启了自定义的处理
                     if (selfHandler) {
-                        const ok =  selfHandler.handler((data.wss as Wss).token,exe_cmd,params);
-                        if(ok !== exec_type.continue) {
+                        const ok = selfHandler.handler((data.wss as Wss).token, exe_cmd, params);
+                        if (ok !== exec_type.continue) {
                             return ok;
                         }
                         // 继续接下来的判断
                     }
                 }
-                if(!userService.check_user_cmd((data.wss as Wss).token,exe_cmd,false)) {
+                if (!userService.check_user_cmd((data.wss as Wss).token, exe_cmd, false)) {
                     // 检测命令能不能执行
                     return exec_type.not;
                 }
                 // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
-                if(exe_cmd === 'cd') {
+                if (exe_cmd === 'cd') {
                     // cd 需要检测一下目录
-                    if(userService.check_user_path((data.wss as Wss).token,path.isAbsolute(params[0])?params[0]:path.join(ptyProcess.cwd,params[0]))) {
+                    if (userService.check_user_path((data.wss as Wss).token, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
                         return exec_type.auto_child_process;
                     }
                 }
                 return exec_type.auto_child_process;
             }
         });
-        ptyProcess.cmd_exe_detection = (exe)=>{
+        ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测
-            let v = word_detection.detection_next_one_word(exe,".");
-            if(v!==undefined){
+            let v = word_detection.detection_next_one_word(exe, ".");
+            if (v !== undefined) {
                 return v;
             }
             // 本目录下再检测一下
-            v = ptyProcess.cmd_params_detection(exe);
-            if(v!==undefined){
+            v = ptyShell.cmd_params_auto_completion(exe);
+            if (v !== undefined) {
                 return v;
             }
             // windwos 的话判断一下特殊情况再检测一下
-            if(getSys()===SysEnum.win) {
+            if (getSys() === SysEnum.win) {
                 // windows 可能出现多个同名带后缀的或者不带后缀的词
-                const list = word_detection.detection_next_list_word(exe,".");
+                const list = word_detection.detection_next_list_word(exe, ".");
                 return get_best_cmd(list);
+            }
+        }
+        ptyShell.on_child_kill = (code, pid) => {
+            if (pid !== undefined) {
+                SystemUtil.killProcess(pid)
             }
         }
         // const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         // const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
         // ptyProcess.write(cm);
-        socketMap.set(socketId, ptyProcess);
+        socketMap.set(socketId, ptyShell);
         (data.wss as Wss).ws.on('close', function close() {
             const pty = socketMap.get(socketId);
             if (pty) {
@@ -336,7 +341,7 @@ export class ShellService {
         }
 
         // 创建
-        const ptyProcess = pty.spawn(getSys() === SysEnum.win?"docker.exe":"docker", ['exec','-it',pojo.dockerId,dshell], {
+        const ptyProcess = pty.spawn(getSys() === SysEnum.win ? "docker.exe" : "docker", ['exec', '-it', pojo.dockerId, dshell], {
             name: 'xterm-color',
             cols: pojo.cols,
             rows: pojo.rows,

@@ -19,7 +19,7 @@ import path from "path";
 import fs from "fs";
 import fse from 'fs-extra'
 import {userService} from "../../user/user.service";
-import {exec_type, PtyShell} from "../../shell/PtyShell";
+import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {data_common_key, data_dir_tem_name} from "../../data/data_type";
 import {UserAuth} from "../../../../common/req/user.req";
@@ -30,6 +30,7 @@ import {workflow_realtime_tree_list} from "../../../../common/req/common.pojo";
 import {formatter_time} from "../../../../common/ValueUtil";
 import vm from "node:vm";
 import {FileUtil} from "../FileUtil";
+import {SystemUtil} from "../../sys/sys.utl";
 
 const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
@@ -176,7 +177,7 @@ class work_children {
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
         // 环境变量设置
         this.env = yaml_data.env ?? {};
-        if(param.pre_env) {
+        if (param.pre_env) {
             for (const key of Object.keys(param.pre_env)) {
                 this.env[key] = param.pre_env[key];
             }
@@ -185,7 +186,7 @@ class work_children {
         this.env['filecat_user_name'] = param.filecat_user_name;
         this.env['filecat_user_note'] = param.filecat_user_note;
         // 获取用户 id
-        let user_id = `${yaml_data.user_id||yaml_data['user-id']|| ""}`;
+        let user_id = `${yaml_data.user_id || yaml_data['user-id'] || ""}`;
         if (!user_id) {
             user_id = userService.get_user_id(`${yaml_data.username}`);
         }
@@ -244,7 +245,7 @@ class work_children {
                 }
             }
         }
-        yaml_data['run-name'] = Mustache.render(`${yaml_data['run-name']??""}`, this.env ?? {});
+        yaml_data['run-name'] = Mustache.render(`${yaml_data['run-name'] ?? ""}`, this.env ?? {});
         this["run-name"] = `${yaml_data['run-name'] ?? ""}`;
         this.name = `${yaml_data.name}`;
         if (param?.env) {
@@ -436,16 +437,27 @@ class work_children {
                 });
                 this.pty_shell_set.add(ptyshell);
                 if (!this.not_log) {
-                    ptyshell.set_on_call((cmdData) => {
+                    ptyshell.on_call = (cmdData) => {
                         this.running_log = cmdData;
                         this.send_all_wss(send_ws_type.new_log);
                         out_context += cmdData;
-                    })
+                    }
+                    // ptyshell.set_on_call((cmdData) => {
+                    //     this.running_log = cmdData;
+                    //     this.send_all_wss(send_ws_type.new_log);
+                    //     out_context += cmdData;
+                    // })
                 }
-                ptyshell.on_child_kill((code) => {
-                    // 任何命令结束都有的
+                // ptyshell.on_child_kill((code) => {
+                //     // 任何命令结束都有的
+                //     run_exec_resolve(code);
+                // })
+                ptyshell.on_child_kill = (code, pid) => {
                     run_exec_resolve(code);
-                })
+                    if (pid !== undefined) {
+                        SystemUtil.killProcess(pid);
+                    }
+                }
                 const start_time = Date.now();
 
                 if (job.repl) {
@@ -651,17 +663,17 @@ const realtime_user_dir_wss_map = new Map<string, Set<Wss>>(); // 路径和对�
 
 export class WorkflowService {
 
-    async workflow_get_pre_inputs(path:string) {
-        const list:workflow_pre_input[] = [];
+    async workflow_get_pre_inputs(path: string) {
+        const list: workflow_pre_input[] = [];
         const yml_data = await readYamlFile(path);
-        if(yml_data.inputs && typeof yml_data.inputs === "object") {
+        if (yml_data.inputs && typeof yml_data.inputs === "object") {
             for (const key of Object.keys(yml_data.inputs)) {
                 const v = yml_data.inputs[key];
                 list.push({
                     key: key,
-                    description:v.description,
-                    required:v.required,
-                    default:v.default
+                    description: v.description,
+                    required: v.required,
+                    default: v.default
                 })
             }
         }
@@ -679,7 +691,7 @@ export class WorkflowService {
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
         const user_info = userService.get_user_info_by_token(token);
         if (pojo.run_type === WorkRunType.start) {
-            await this.exec_file(file_path, user_info,pojo.inputs);
+            await this.exec_file(file_path, user_info, pojo.inputs);
         } else if (pojo.run_type === WorkRunType.stop) {
             const worker = work_exec_map.get(file_path);
             if (!worker)
@@ -690,14 +702,14 @@ export class WorkflowService {
         }
     }
 
-    public async exec_file(file_path, user_info,inputs?:workflow_pre_input[]) {
+    public async exec_file(file_path, user_info, inputs?: workflow_pre_input[]) {
         if (work_exec_map.get(file_path))
             throw "Workflow exec task already exists";
         const worker = new work_children(file_path);
         work_exec_map.set(file_path, worker);
         try {
             const pre_env = {};
-            if(inputs) {
+            if (inputs) {
                 for (const it of inputs) {
                     pre_env[it.key] = it.default;
                 }
@@ -770,7 +782,7 @@ export class WorkflowService {
                 index: -1
             });
         }
-        r.list = [...running_list, ... await basedata.find_page(pojo.page_num, pojo.page_size, true)];
+        r.list = [...running_list, ...await basedata.find_page(pojo.page_num, pojo.page_size, true)];
         r.total = await basedata.find_num();
         return r;
     }

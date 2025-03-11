@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 const path = require("path");
 const Webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
-const webpackConfig = require('./config/webpack.config.js');
+const webpackConfig = require('./config/webpack.web.config.js');
 const {findAvailablePort} = require("../src/common/findPort");
 
 // const temLog = console.log;
