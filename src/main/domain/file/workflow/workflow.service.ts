@@ -617,28 +617,32 @@ class work_children {
                 }
             }
             this.send_all_wss();
-            // 判断need中是否有可以执行的了
-            const job_set = this.need_job_map.get(job.key);
-            if (job_set) {
-                if (job_set.has(job.key)) {
-                    // 是自己 循环的情况不会出现
-                    // this.need_job_map.delete(job.key);
-                    job_set.delete(job.key);
-                } else {
-                    // 需要自己的 不是自己 执行它
-                    for (const it of job_set) {
-                        this.run_job(this.jobs_map.get(it)).catch(e => {
-                            throw e;
-                        }).then(() => {
-
-                        })
-                    }
-                    // await this.run_job(this.jobs_map.get(job_key));
-                }
-            }
-            // 判断是否完全完成 如果有循环依赖无法走到这里
-            if (this.done_jobs.size === this.jobs_map.size) {
+            if(job.running_type === running_type.fail) {
                 this.all_job_resolve("ok");
+            } else {
+                // 判断need中是否有可以执行的了
+                const job_set = this.need_job_map.get(job.key);
+                if (job_set) {
+                    if (job_set.has(job.key)) {
+                        // 是自己 循环的情况不会出现
+                        // this.need_job_map.delete(job.key);
+                        job_set.delete(job.key);
+                    } else {
+                        // 需要自己的 不是自己 执行它
+                        for (const it of job_set) {
+                            this.run_job(this.jobs_map.get(it)).catch(e => {
+                                throw e;
+                            }).then(() => {
+
+                            })
+                        }
+                        // await this.run_job(this.jobs_map.get(job_key));
+                    }
+                }
+                // 判断是否完全完成 如果有循环依赖无法走到这里
+                if (this.done_jobs.size === this.jobs_map.size) {
+                    this.all_job_resolve("ok");
+                }
             }
         } catch (error) {
             console.log('workflows job error ', error)
