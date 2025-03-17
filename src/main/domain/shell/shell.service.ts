@@ -232,7 +232,7 @@ export class ShellService {
         const pty = socketMap.get(socketId);
         if (pty) {
             if (data.context !== null && data.context !== "null") {
-                pty.write(data.context);
+                await pty.write(data.context);
             }
         } else {
             const result = new WsData<SysPojo>(CmdType.shell_getting);

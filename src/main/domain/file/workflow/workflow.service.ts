@@ -462,7 +462,7 @@ class work_children {
 
                 if (job.repl) {
                     try {
-                        job.code = await new Promise(resolve => {
+                        job.code = await new Promise(async resolve => {
                             exec_resolve = resolve;
                             if (job.steps) {
 
@@ -479,7 +479,7 @@ class work_children {
                                     }
                                     step.running_type = running_type.running;
                                     step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                                    ptyshell.write(`${step.run}\r`);
+                                    await ptyshell.write(`${step.run}\r`);
                                 }
                             } else {
                                 exec_resolve(1);
@@ -577,7 +577,8 @@ class work_children {
                         const code = await new Promise(resolve => {
                             exec_resolve = resolve;
                             step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                            ptyshell.write(`${step.run}\r`);
+                            ptyshell.write(`${step.run}\r`); // 这里没有必要使用 await
+                            this.send_all_wss();
                         })
                         step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                         step.code = code as number;
