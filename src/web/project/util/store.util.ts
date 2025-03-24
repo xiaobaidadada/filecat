@@ -44,7 +44,8 @@ export const user_click_file = () => {
         model?: string,
         sys_path?: string,
         menu_list?: any[],
-        opt_shell?: boolean
+        opt_shell?: boolean,
+        mtime?: any,
     }) => {
         if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
             setShowPrompt({
@@ -116,9 +117,11 @@ export const user_click_file = () => {
                     })
                     break;
                 case FileTypeEnum.video:
-                case FileTypeEnum.image:
                 case FileTypeEnum.pdf:
                     setFilePreview({open: true, type: type, name, url})
+                    break;
+                case FileTypeEnum.image:
+                    setFilePreview({open: true, type: type, name, url:fileHttp.getDownloadUrl(getFileNameByLocation(name),{mtime:param.mtime,cache:1})})
                     break;
                 case FileTypeEnum.workflow_act:
                     param.model = "text";

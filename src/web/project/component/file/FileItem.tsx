@@ -78,7 +78,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
-                click_file({name, size: props.origin_size, opt_shell: true});
+                click_file({name, size: props.origin_size, opt_shell: true,mtime:props.mtime});
             }
         }
     }

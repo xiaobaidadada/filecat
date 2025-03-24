@@ -23,6 +23,7 @@
     "skipLibCheck": true,
     "jsx": "react",
     "resolveJsonModule": true,
+    "incremental": true
   },
   "include": [
 //    "libs",

@@ -39,7 +39,7 @@ export class UserController {
             }
             // 开启了自定义处理
             try {
-                const result = await selfHandler.handler(req.headers);
+                const result = await selfHandler.handler(req.headers,req);
                 if (result) {
                     const uuid = generateSaltyUUID(user_data.username+user_data.hash_password);
                     const cache :UserLoginData = {username:user.username,id:user_data.id};
