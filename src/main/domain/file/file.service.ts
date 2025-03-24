@@ -185,9 +185,9 @@ export class FileService extends FileCompress {
         userService.check_user_only_path(token, sysPath);
         // if (!file) {
         //     // 目录
-        if ((req.query.dir === "1") ) {
+        if ((req.query.dir === "1")) {
             // 目录不存在，创建目录
-            if(! await FileUtil.access(sysPath)) await FileUtil.mkdirSync(sysPath, {recursive: true});
+            if (!await FileUtil.access(sysPath)) await FileUtil.mkdirSync(sysPath, {recursive: true});
             return;
         }
         //     return;
@@ -253,12 +253,13 @@ export class FileService extends FileCompress {
         upload_data_size: number,
         wss: Wss,
         lastModified: number,
-        buffer_list:Uint8Array[],
+        buffer_list: Uint8Array[],
         sys_file_max_num?: number,
-        sys_file_upload_max_key? :string,
-        parallel_done_num : number,
-        writeStream:WriteStream
+        sys_file_upload_max_key?: string,
+        parallel_done_num: number,
+        writeStream: WriteStream
     }>();
+
     // file_upload_map = new Map<string, ws_file_upload_req>();
 
     async file_upload_pre(data: WsData<ws_file_upload_req>) {
@@ -270,9 +271,9 @@ export class FileService extends FileCompress {
         userService.check_user_only_path(token, sysPath);
         if (param.is_dir) {
             // 目录不存在，创建目录
-            if(! await FileUtil.access(sysPath))
-            await FileUtil.mkdirSync(sysPath, {recursive: true});
-            return ;
+            if (!await FileUtil.access(sysPath))
+                await FileUtil.mkdirSync(sysPath, {recursive: true});
+            return;
         }
         // 系统文件数量限制
         let max_num;
@@ -311,9 +312,9 @@ export class FileService extends FileCompress {
                 if (await FileUtil.access(sysPath)) {
                     await FileUtil.unlinkSync(sysPath);  // 删除文件
                 }
-            } else if(await FileUtil.access(sysPath)){
+            } else if (await FileUtil.access(sysPath)) {
                 // 文件存在 返回历史 文件
-                return { upload_data_size: value.upload_data_size};
+                return {upload_data_size: value.upload_data_size};
             }
         }
         // if (fs.existsSync(sysPath)) {
@@ -335,13 +336,13 @@ export class FileService extends FileCompress {
             wss: (data.wss as Wss),
             lastModified: param.lastModified,
             buffer_list: new Array(param.parallel_done_num).fill(undefined),
-            sys_file_max_num:max_num,
-            sys_file_upload_max_key:upload_max_key,
+            sys_file_max_num: max_num,
+            sys_file_upload_max_key: upload_max_key,
             parallel_done_num: 0,
             writeStream: fs.createWriteStream(sysPath)
         }
         this.file_upload_count_map.set(sysPath, value);
-        return { upload_data_size: value.upload_data_size};
+        return {upload_data_size: value.upload_data_size};
     }
 
     async file_upload(data: WsData<ws_file_upload_req>) {
@@ -359,8 +360,8 @@ export class FileService extends FileCompress {
             num_value.buffer_list[param.part_count] = data.bin_context; // Buffer.concat([num_value.buffer,chunkData]);
             delete data.bin_context;
             // console.log(param.chunk_index)
-            num_value.parallel_done_num ++;
-            if(num_value.parallel_done_num !== param.parallel_done_num) {
+            num_value.parallel_done_num++;
+            if (num_value.parallel_done_num !== param.parallel_done_num) {
                 return;
             }
             num_value.parallel_done_num = 0;
@@ -376,7 +377,7 @@ export class FileService extends FileCompress {
             num_value.buffer_list = new Array(param.parallel_done_num).fill(undefined);
 
             // 如果所有块都上传完
-            if (param.chunk_index === param.total_chunk_index -1) {
+            if (param.chunk_index === param.total_chunk_index - 1) {
                 if (num_value.sys_file_upload_max_key) {
                     if (this.upload_num_set[num_value.sys_file_upload_max_key]) {
                         this.upload_num_set[num_value.sys_file_upload_max_key]--;
@@ -576,13 +577,16 @@ export class FileService extends FileCompress {
         await fse.rename(sysPath, sysPathNew);
     }
 
-    download_one_file(file_name: string, file_size: number, file_path: string, res: Response, handle_type_?: "attachment" | "inline") {
+    download_one_file(file_name: string, file_size: number, file_path: string, res: Response, param?: {
+        handle_type_?: "attachment" | "inline",
+        cache?: boolean
+    }) {
         const encodedFileName = encodeURIComponent(file_name).replace(/%20/g, '+');
         let handle_type = "";
-        if (handle_type_ !== undefined) {
-            handle_type = handle_type_;
+        if (param?.handle_type_ !== undefined) {
+            handle_type = param.handle_type_;
         } else {
-            let handle_type = "attachment";
+            handle_type = "attachment";
             if (file_name.endsWith('.pdf')) {
                 handle_type = "inline";
             }
@@ -593,6 +597,8 @@ export class FileService extends FileCompress {
             // "Cache-Control": "public, max-age=3600",
             "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
         });
+        if (param?.cache)
+            res.setHeader('Cache-Control', 'public, max-age=86400 '); // 24 小时
         // 发送文件
         const readStream = fs.createReadStream(file_path);
         readStream.pipe(res);
@@ -605,6 +611,8 @@ export class FileService extends FileCompress {
             return;
         }
         const token = ctx.query['token'];
+        const cache = ctx.query['cache'];
+        const show = ctx.query['show'];
         if (!Array.isArray(file)) {
             // 单个文件
             const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
@@ -635,7 +643,7 @@ export class FileService extends FileCompress {
                 return;
             }
             if (stats.isFile()) {
-                this.download_one_file(fileName, fileSize, sysPath, ctx.res);
+                this.download_one_file(fileName, fileSize, sysPath, ctx.res, {cache: cache === "1",handle_type_:show==="1"?"inline":"attachment"});
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
                 ctx.res.attachment(path.basename(sysPath) + ".zip");
@@ -904,7 +912,7 @@ export class FileService extends FileCompress {
             // 创建一个 10 kb字节的缓冲区
             const buffer = Buffer.alloc(10240);
             // 返回实际读取的字节数
-            let {bytesRead} = await fd.read( buffer,
+            let {bytesRead} = await fd.read(buffer,
                 0, // 相对于当前的偏移位置
                 buffer.length, // 读取的长度
                 pojo.position // 当前位置
@@ -967,7 +975,7 @@ export class FileService extends FileCompress {
      * @param max_len 往后最长的距离
      */
     async find_back_enter_index(pojo: LogViewerPojo, file_path, max_len = 10240) {
-        const fd =  await FileUtil.open(file_path, "r");//fs.openSync(file_path, "r");
+        const fd = await FileUtil.open(file_path, "r");//fs.openSync(file_path, "r");
         let buffer_len = max_len;
         if (pojo.position < buffer_len) {
             buffer_len = pojo.position; // 全部读完
@@ -975,7 +983,7 @@ export class FileService extends FileCompress {
         let buffer = Buffer.alloc(buffer_len); // 缓冲区满足当前位置往前移动的距离
         const position = pojo.position - buffer.length; // 位置前移
         // 返回实际读取的字节数
-        const {bytesRead} = await fd.read( buffer,
+        const {bytesRead} = await fd.read(buffer,
             0, // 相对于当前的偏移位置
             buffer.length, // 读取的长度
             position // 当前位置 往前推进了一点
@@ -1009,7 +1017,7 @@ export class FileService extends FileCompress {
         // 开始查找
         let linesRead = 0; // 行数
         let haveReadSize = 0; // 已经读取的字节数
-        const fd =  await FileUtil.open(file_path, "r"); // fs.openSync(file_path, "r");
+        const fd = await FileUtil.open(file_path, "r"); // fs.openSync(file_path, "r");
         let buffer_len = 10240;
         let max_count = 100;
         while (haveReadSize < pojo.once_max_size) {
@@ -1024,7 +1032,7 @@ export class FileService extends FileCompress {
             let buffer = Buffer.alloc(buffer_len); // 缓冲区满足当前位置往前移动的距离
             pojo.position = pojo.position - buffer.length; // 位置前移
             // 返回实际读取的字节数
-            const {bytesRead} = await fd.read( buffer,
+            const {bytesRead} = await fd.read(buffer,
                 0, // 相对于当前的偏移位置
                 buffer.length, // 读取的长度
                 pojo.position // 当前位置 往前推进了一点

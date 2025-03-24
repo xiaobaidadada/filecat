@@ -168,11 +168,13 @@ export class UserController {
 
     // 用户样式类型
     @Post(`/${Http_controller_router.user_save_user_file_list_show_type}`)
-    save_user_file_list_show_type(@Body() body: {type:string,is_file_list_type?:boolean, is_dir_list_type?:boolean},@Req() req: Request) {
+    save_user_file_list_show_type(@Body() body: {type:string,is_file_list_type?:boolean, is_dir_list_type?:boolean,not_pre_show_image?:boolean},@Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
         const user_id = userService.get_user_id(user_data.username);
         if(body.is_dir_list_type) {
             userService.only_update_user_data(user_id,{dir_show_type:body.type} as UserData);
+        } else if (body.not_pre_show_image !== undefined) {
+            userService.only_update_user_data(user_id,{not_pre_show_image:body.not_pre_show_image} as UserData);
         } else {
             userService.only_update_user_data(user_id,{file_list_show_type:body.type} as UserData);
         }

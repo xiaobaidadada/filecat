@@ -112,5 +112,6 @@ export class UserData extends UserLogin {
 
     // 用于额外的属性
     file_list_show_type: FileListShowTypeEmum;
-    dir_show_type: DirListShowTypeEmum;
+    dir_show_type: DirListShowTypeEmum; // 目录列表样式
+    not_pre_show_image:boolean; // 是否预览图片
 }

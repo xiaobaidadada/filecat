@@ -96,6 +96,7 @@ export default function FileList() {
         ws.addMsg(CmdType.workflow_realtime, (data) => {
             // console.log(data.context)
             const pojo = data.context as WorkFlowRealTimeRsq;
+            if(!data.context) return;
             for (const it of pojo.sucess_file_list) {
                 if (it.endsWith('.workflow.yml')) {
                     NotySucess(`${it.slice(0, -13)} done!`);
@@ -160,10 +161,10 @@ export default function FileList() {
 
         let have_workflow_water = false;
         for (const item of data.files ?? []) {
-            item.mtime = item.mtime ? getShortTime(item.mtime) : "";
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
-            if (!have_workflow_water && item.name.endsWith('.workflow.yml') || item.name.endsWith('.act')) {
+            if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
                 have_workflow_water = true;
                 Promise.resolve().then(() => {
                     workflow_watcher();
@@ -180,7 +181,7 @@ export default function FileList() {
 
         have_workflow_water = false;
         for (const folder of data.folders ?? []) {
-            folder.mtime = folder.mtime ? getShortTime(folder.mtime) : "";
+            folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
             if (!have_workflow_water && folder.name === workflow_dir_name) {
                 // 如果有workflow
                 set_workflow_show_click(true)

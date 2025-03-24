@@ -97,12 +97,12 @@ export class SshSsh2 extends LifecycleRecordService {
                     const name = file.filename;
                     // const size = formatFileSize(file.attrs.size);
                     const mtime = file.attrs.mtime;
-                    const formattedCreationTime = getShortTime(new Date(mtime).getTime());
+                    // const formattedCreationTime = getShortTime(new Date(mtime).getTime());
                     if (!isDirectory) {
                         result.files?.push({
                             type: FileTypeEnum.text,
                             name: name,
-                            mtime: formattedCreationTime,
+                            mtime: file.attrs.mtime,
                             size:file.attrs.size,
                             isLink
                         })
@@ -110,7 +110,7 @@ export class SshSsh2 extends LifecycleRecordService {
                         result.folders?.push({
                             type: FileTypeEnum.folder,
                             name: name,
-                            mtime: formattedCreationTime,
+                            mtime: file.attrs.mtime,
                             isLink
                         })
                     }

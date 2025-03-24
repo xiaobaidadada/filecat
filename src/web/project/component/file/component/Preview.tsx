@@ -26,7 +26,7 @@ export default function Preview(props: any) {
             opt_div = <ExtendedImage path={file_preview.url}/>
             break;
         case FileTypeEnum.pdf:
-            opt_div = <object className={"pdf"} data={file_preview.url} type="application/pdf"></object>
+            opt_div = <object className={"pdf"} data={file_preview.url+"&show=1"} type="application/pdf"></object>
             break;
     }
     const div = <div id={"previewer"}>

@@ -160,7 +160,7 @@ export class SettingService {
                                 if(!userService.isSubPath(location,sys_file_path)) {
                                     throw " 404 ";
                                 }
-                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,"inline");
+                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,{handle_type_:"inline"});
                             }
                             return true;
                         }

@@ -51,7 +51,7 @@ export class Http {
         }
     }
 
-    getDownloadUrl(files) {
+    getDownloadUrl(files,params?:any) {
         let url = config.baseUrl+"download?";
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
@@ -64,7 +64,13 @@ export class Http {
         if (url.endsWith("&") || url.endsWith("/")  || url.endsWith("\\")) {
             url = url.slice(0, -1);
         }
-        return url +`&token=${encodeURIComponent(localStorage.getItem('token'))}`;
+        url = url +`&token=${encodeURIComponent(localStorage.getItem('token'))}`
+        if(params) {
+            for (let key of Object.keys(params)) {
+                url += `&${key}=${encodeURIComponent(params[key])}`
+            }
+        }
+        return url;
     }
 
     async post(url,jsonData = {},notCheck= true):Promise<Result<any>> {

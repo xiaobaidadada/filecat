@@ -15,7 +15,6 @@ import {user_click_file} from "../../util/store.util";
 import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 
 
-// @ts-ignore
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
@@ -117,7 +116,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             handleContextMenu(event, props.name, props.type === FileTypeEnum.folder, props.origin_size)
         }
     }} draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
-                         isLink={props.isLink} path={props.path} icon={props.icon}
+                         isLink={props.isLink} path={props.path} icon={props.icon} show_mtime={props.show_mtime}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

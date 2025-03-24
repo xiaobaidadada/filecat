@@ -21,7 +21,7 @@ import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
-import { formatFileSize } from '../../../../../common/ValueUtil';
+import { formatFileSize, getShortTime } from '../../../../../common/ValueUtil';
 import { removeLastDir } from '../../../util/ListUitl';
 
 export enum FileListShowTypeEmum {
@@ -91,6 +91,10 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         for (const item of files??[]) {
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+        }
+        for (const item of folders??[]) {
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
         }
         const data = {folders: folders || [], files: files || []};
         setNowFileList(data);

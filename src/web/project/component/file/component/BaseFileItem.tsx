@@ -24,7 +24,7 @@ export function BaseFileItem(props: FileItemData & {
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
-
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
 
     async function click(index: number) {
         if (props.click) {
@@ -79,8 +79,8 @@ export function BaseFileItem(props: FileItemData & {
     >
         {props.icon === undefined &&
             <div >
-                {(props.type === FileTypeEnum.image && props.path != undefined) ? (
-                        <img loading="lazy" src={fileHttp.getDownloadUrl(props.path)} alt={props.name}/>) :
+                {(props.type === FileTypeEnum.image && props.path != undefined && !user_base_info?.user_data?.not_pre_show_image) ? (
+                        <img loading="lazy" src={fileHttp.getDownloadUrl(props.path,{mtime:props.mtime,cache:1})} alt={props.name}/>) :
                     <i className="material-icons"></i>
                 }
             </div>
@@ -95,7 +95,7 @@ export function BaseFileItem(props: FileItemData & {
             <p className="name">{props.name}</p>
             {props.size ? <p>{props.size}</p> : <p>&mdash;</p>}
             {/*<p>34MB</p>*/}
-            <p>{props.mtime}</p>
+            <p>{props.show_mtime}</p>
         </div>
         {props.children}
     </div>)

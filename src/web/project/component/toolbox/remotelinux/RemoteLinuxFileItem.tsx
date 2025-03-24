@@ -166,6 +166,6 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
         setShowPrompt({open:false,handle:null});
         await props.fileHandler()
     }
-    return <BaseFileItem draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} itemWidth={props.itemWidth}
+    return <BaseFileItem draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type} itemWidth={props.itemWidth} show_mtime={props.show_mtime}
     click={clickHandler}/>
 }

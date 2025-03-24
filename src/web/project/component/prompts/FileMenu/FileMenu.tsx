@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
@@ -11,10 +11,13 @@ import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {run_workflow} from "./handle.service";
-import {fileHttp, settingHttp} from "../../../util/config";
+import {fileHttp, settingHttp, userHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {InputText} from "../../../../meta/component/Input";
 import {workflow_pre_input} from "../../../../../common/req/file.req";
+import {Http_controller_router} from "../../../../../common/req/http_controller_router";
+import {GlobalContext} from "../../../GlobalProvider";
+import {useNavigate} from "react-router-dom";
 
 enum common_menu_type {
     stop_workflow = 4,
@@ -26,6 +29,7 @@ enum common_menu_type {
     run_workflow_by_pre_inputs = 6,
 
 }
+
 export function FileMenu() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
@@ -41,9 +45,11 @@ export function FileMenu() {
     const [shell_file_log, set_file_log] = useRecoilState($stroe.log_viewer);
     const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const {initUserInfo} = useContext(GlobalContext);
 
+    const navigate = useNavigate();
     const items_folder = [{r: t("以studio打开")}];
-    const items_images = [{r: t("以图片编辑器打开")}];
+    const items_images = [{r: t("以图片编辑器打开"), v: "open"}, {r: t(`${user_base_info?.user_data?.not_pre_show_image?"开启":"关闭"}预览图片`), v: "pre"}];
     const {file_is_running} = use_file_to_running();
 
     const close = () => {
@@ -68,12 +74,12 @@ export function FileMenu() {
             // 实时运行worlkflow
             await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow);
             set_workflow_show({open: true, filename: showPrompt.data.filename});
-        } else if(v === common_menu_type.run_workflow_by_pre_inputs) {
-            const rsq = await fileHttp.post("workflow/get/pre_inputs",{path:`${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
+        } else if (v === common_menu_type.run_workflow_by_pre_inputs) {
+            const rsq = await fileHttp.post("workflow/get/pre_inputs", {path: `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
             let list: workflow_pre_input [] = rsq.data;
-            const send_start_check = ()=>{
+            const send_start_check = () => {
                 for (const it of list) {
-                    if(it.required && !it.default) {
+                    if (it.required && !it.default) {
                         NotyFail(`${it.description} is required`);
                         return;
                     }
@@ -83,20 +89,24 @@ export function FileMenu() {
                 open: true, title: "inputs", context_div: (
                     <div>
                         <div className="card-content">
-                            {list.map((item,index) => {
+                            {list.map((item, index) => {
                                 // @ts-ignore
                                 return <InputText key={index} placeholderOut={item.description} value={item.default}
-                                                  handleInputChange={(value) => {item.default = value}}/>
+                                                  handleInputChange={(value) => {
+                                                      item.default = value
+                                                  }}/>
                             })}
                         </div>
 
                         <div className="card-action">
-                            <button className="button button--flat button--grey" onClick={()=>{ set_prompt_card({open: false});}}>
+                            <button className="button button--flat button--grey" onClick={() => {
+                                set_prompt_card({open: false});
+                            }}>
                                 {t("取消")}
                             </button>
                             <button className="button button--flat" onClick={async () => {
                                 send_start_check();
-                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow,list);
+                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
                                 set_prompt_card({open: false});
                                 set_workflow_show({open: true, filename: showPrompt.data.filename});
                             }}>
@@ -104,7 +114,7 @@ export function FileMenu() {
                             </button>
                             <button className="button button--flat" onClick={async () => {
                                 send_start_check();
-                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow,list);
+                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
                                 set_prompt_card({open: false});
                             }}>
                                 {"运行"}
@@ -152,8 +162,16 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_images} click={() => {
-                    set_image_editor({path: showPrompt.data.path, name: showPrompt.data.filename});
+                                                                          items={items_images} click={async (v) => {
+                    if (v == "open") {
+                        set_image_editor({path: showPrompt.data.path, name: showPrompt.data.filename});
+                    } else if(v == "pre") {
+                        await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
+                            not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
+                        });
+                        await initUserInfo();
+                        navigate(getRouterPath());
+                    }
                     close();
                 }}/>}/>
             </div>
@@ -189,9 +207,14 @@ export function FileMenu() {
                     items.unshift({r: t("停止workflow"), v: common_menu_type.stop_workflow})
                     items.unshift({r: t("实时查看workflow"), v: common_menu_type.real_time_workflow})
                 } else {
-                    items.unshift({r: t("运行workflow"), v: common_menu_type.run_workflow, items: [
-                        {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow}, {r: t("输入参数运行"), v: common_menu_type.run_workflow_by_pre_inputs }
-                        ]})
+                    items.unshift({
+                        r: t("运行workflow"), v: common_menu_type.run_workflow, items: [
+                            {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow}, {
+                                r: t("输入参数运行"),
+                                v: common_menu_type.run_workflow_by_pre_inputs
+                            }
+                        ]
+                    })
                 }
             }
             div = <div onWheel={() => {

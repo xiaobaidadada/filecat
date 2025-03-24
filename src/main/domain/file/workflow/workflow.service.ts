@@ -812,6 +812,7 @@ export class WorkflowService {
     public workflow_realtime(data: WsData<WorkFlowRealTimeReq>) {
         const token: string = (data.wss as Wss).token;
         const pojo = data.context as WorkflowGetReq;
+        const wss = (data.wss as Wss);
         const root_path = settingService.getFileRootPath(token);
         const dir_path = path.join(root_path, pojo.dir_path);
         const runing_filename_list = [];
@@ -826,15 +827,23 @@ export class WorkflowService {
         // const result = new WsData<SysPojo>(CmdType.workflow_realtime);
         // result.context = runing_filename_list;
         // (data.wss as Wss).sendData(result.encode());
+        const pre_path = wss.dataMap.get("pre_path");
+        if (pre_path) {
+            let set = realtime_user_dir_wss_map.get(pre_path);
+            if (set) {
+                set.delete(wss);
+            }
+        }
         let set = realtime_user_dir_wss_map.get(parent);
         if (!set) {
             set = new Set<Wss>();
             realtime_user_dir_wss_map.set(parent, set);
         }
-        set.add(data.wss as Wss);
-        (data.wss as Wss).setClose(() => {
-            set.delete(data.wss as Wss);
-        })
+        set.add(wss);
+        wss.setClose(() => {
+            set.delete(wss);
+        });
+        wss.dataMap.set("pre_path",parent);
         const rsq = new WorkFlowRealTimeRsq();
         rsq.running_file_list = runing_filename_list;
         return rsq;
