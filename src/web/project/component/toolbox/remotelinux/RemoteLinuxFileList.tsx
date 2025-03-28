@@ -242,6 +242,10 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         const {folders, files} = rsp.data || {};
         for (const item of files??[]) {
             item.size = formatFileSize(item.size);
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+        }
+        for (const item of folders??[]) {
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
         }
         setNowFileList({folders: folders || [], files: files || []});
         if (shellShow.show) {
