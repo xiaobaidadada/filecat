@@ -16,7 +16,7 @@ import {NotyFail} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
-import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
+import { formatFileSize, getShortTime, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 
 
@@ -84,6 +84,10 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                 for (const item of rsp.data.files??[]) {
                     item.origin_size = item.size;
                     item.size = formatFileSize(item.size);
+                    item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+                }
+                for (const item of rsp.data.folders??[]) {
+                    item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
                 }
                 setNowFileList(rsp.data)
                 setPreSearch(rsp.data);
