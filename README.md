@@ -9,7 +9,7 @@
 
 ## 二. 使用
 ### 1. 体验
-url: http://116.198.245.137:5569/
+url: http://filecat.xiaobaidadada.fun:5569/
 - 账号密码: `admin`/`admin`
 ### 2. npm 方式运行
 - 如果你的服务器上已经安装了node和npm，使用 `npm install filecat -g`全局安装，后然后使用`filecat`命令即可运行，或者`npm install filecat`安装到本项目下，使用`npx filecat `运行；
