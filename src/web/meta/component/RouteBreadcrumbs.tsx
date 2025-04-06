@@ -75,7 +75,7 @@ export function RouteBreadcrumbs(props: {
                     }
                 </React.Fragment>
                 :
-                <DivOverlayTransparent click={close}
+                <DivOverlayTransparent click={()=>{set_input_path(undefined)}}
                                     children={
                                         <InputText width={"100%"} maxWidth={"60%"}
                                                    placeholder={"输入跳转的目录"}
