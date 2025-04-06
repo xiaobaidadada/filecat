@@ -3,6 +3,7 @@ import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {webPathJoin} from "../../../common/ListUtil";
 import {getRouterPath} from "../../project/util/WebPath";
 import {InputText} from "./Input";
+import {DivOverlayTransparent, FileMenuItem, OverlayTransparent} from "./Dashboard";
 // import '../resources/css/all.css'
 // 依靠路由的面包屑
 
@@ -74,15 +75,19 @@ export function RouteBreadcrumbs(props: {
                     }
                 </React.Fragment>
                 :
-                <InputText width={"100%"} maxWidth={"60%"}
-                           placeholder={"输入跳转的目录回车(点击空白处取消)"}
-                handlerEnter={(v) => {
-                    if(props.input_path_enter) {
-                        props.input_path_enter(v);
-                    }
-                    set_input_path(undefined)
-                }}
-                ></InputText>
+                <DivOverlayTransparent click={close}
+                                    children={
+                                        <InputText width={"100%"} maxWidth={"60%"}
+                                                   placeholder={"输入跳转的目录"}
+                                                   handlerEnter={(v) => {
+                                                       if(props.input_path_enter) {
+                                                           props.input_path_enter(v);
+                                                       }
+                                                       set_input_path(undefined)
+                                                   }}
+                                        ></InputText>
+                                    }/>
+
             }
         </React.Fragment>
     </div>

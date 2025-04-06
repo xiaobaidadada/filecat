@@ -208,7 +208,7 @@ export class FileController {
 
     @msg(CmdType.file_uncompress)
     async uncompress(data: WsData<FileCompressPojo>) {
-        FileServiceImpl.uncompress(data);
+        await FileServiceImpl.uncompress(data);
         return ""
     }
 

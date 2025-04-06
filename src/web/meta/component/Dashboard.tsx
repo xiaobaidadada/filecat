@@ -304,6 +304,13 @@ export function OverlayTransparent(props: { click: () => void, children?: React.
     return <div className="overlay_trans" onClick={props.click}>{props.children}</div>
 }
 
+export function DivOverlayTransparent(props: { click: () => void, children?: React.ReactNode }) {
+    return <div className="overlay_trans_container" onClick={props.click}>
+        <div className={"overlay_trans_overlay "}></div>
+        <div className={"overlay_trans_content"}>{props.children}</div>
+    </div>
+}
+
 export function FullScreenDiv(props: { isFull?: boolean; children?: React.ReactNode; more?:boolean}) {
     let className = props.isFull ? "full_screen " : "not_screen ";
     if(props.more) {
