@@ -579,7 +579,8 @@ export class FileService extends FileCompress {
 
     download_one_file(file_name: string, file_size: number, file_path: string, res: Response, param?: {
         handle_type_?: "attachment" | "inline",
-        cache?: boolean
+        cache?: boolean,
+        cache_length?: number, // 过期时间长度
     }) {
         const encodedFileName = encodeURIComponent(file_name).replace(/%20/g, '+');
         let handle_type = "";
@@ -597,8 +598,11 @@ export class FileService extends FileCompress {
             // "Cache-Control": "public, max-age=3600",
             "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
         });
-        if (param?.cache)
+        if (param?.cache) {
             res.setHeader('Cache-Control', 'public, max-age=86400 '); // 24 小时
+        } else if(param?.cache_length) {
+            res.setHeader('Cache-Control', `public, max-age=${param.cache_length}`);
+        }
         // 发送文件
         const readStream = fs.createReadStream(file_path);
         readStream.pipe(res);

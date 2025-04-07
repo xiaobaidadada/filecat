@@ -122,13 +122,11 @@ export class SettingService {
                     }
                 }
             }
-            const list_router = DataUtil.get<[][]>(customer_router_key);
+            const list_router:any[] = DataUtil.get<[][]>(customer_router_key);
             if (!!list_router && list_router.length > 0) {
                 for (let item of list_router) {
-                    // @ts-ignore
                     const router = item[0] as string;
                     if (c_url.startsWith(router)) { // 使用包含 可以用于目录的情况
-                        // @ts-ignore
                         const location = item[1];
                         if (location) {
                             if ((location as string).startsWith("http")) {
@@ -142,7 +140,8 @@ export class SettingService {
                                 let sys_file_path = path.join(location); // 可以删除 .. 符号
                                 let stats = await FileUtil.statSync(location);
                                 if(stats.isDirectory()) {
-                                    const p = c_url.slice(router.length);
+                                    let p = c_url.slice(router.length);
+                                    p = decodeURIComponent(p);
                                     if(p === "/" || !p) {
                                         const list = await FileUtil.readdirSync(sys_file_path);
                                         const ok_file_name = list.find((v=> v.startsWith("index.htm") || v=== "index"));
@@ -160,7 +159,7 @@ export class SettingService {
                                 if(!userService.isSubPath(location,sys_file_path)) {
                                     throw " 404 ";
                                 }
-                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,{handle_type_:"inline"});
+                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,{handle_type_:"inline",cache_length:item[2]});
                             }
                             return true;
                         }

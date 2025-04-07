@@ -23,7 +23,7 @@ export function CustomerRouter() {
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
 
-    const headers = [t("路由"), t("路径"), t("备注"),];
+    const headers = [t("路由"), t("路径"), t("过期时间(s)"),t("备注"),];
     const headers_workflow = [t("路由"), t("文件路径"),"token","user id", t("备注"),];
 
     const save = async (req: [[]]) => {
