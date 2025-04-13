@@ -30,7 +30,7 @@ class VirtualServerService {
         })
         const list:any[] = [];
         clientMap.forEach(v=>{
-            list.push([v.vir_ip,`${v.tcp_real_address}:${v.tcp_real_port}`,v.tcp_real_address?"在线":"离线"])
+            list.push([v.vir_ip,`${v.tcp_real_address}:${v.tcp_real_port}`,v?.tcpUtil.connect_success?"在线":"离线"])
         })
         return list;
     }
