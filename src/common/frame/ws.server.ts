@@ -5,9 +5,12 @@ import * as parser from "socket.io-parser"
 import {settingService} from "../../main/domain/setting/setting.service";
 import {RCode} from "../Result.pojo";
 import {generateRandomHash} from "../StringUtil";
+import {SysPojo} from "../req/sys.pojo";
 
 const url = require('url');
 
+
+const allWssSet = new Set<Wss>;
 
 // 连接期间内一直存在
 export class Wss {
@@ -41,6 +44,21 @@ export class Wss {
         }
     }
 
+    send(cmdType:CmdType,data:any) {
+        const result = new WsData<SysPojo>(cmdType);
+        result.context = data;
+        this._ws.send(result.encode());
+    }
+
+    // 发送给所有在线的客户端
+    public static sendToAllClient(cmdType:CmdType,data:any) {
+        const result = new WsData<SysPojo>(cmdType);
+        result.context = data;
+        for (const wss of allWssSet.values()) {
+            wss.sendData(result);
+        }
+    }
+
     /**
      * 暂时有不少 通过 on('close', 设置的函数没有使用这里 只执行一次函数然后被删除
      * @param close
@@ -50,6 +68,7 @@ export class Wss {
     }
 }
 
+
 class WsPreHandler {
 
     @msg(CmdType.connection)
@@ -57,6 +76,7 @@ class WsPreHandler {
         console.log('ws客户端连接');
         // 该ws只创建一次
         const wss = new Wss(ws);
+        allWssSet.add(wss);
         wss.token = token;
         if (!protocolIsProto2) {
             wss.decoder.on("decoded", async (packet) => {
@@ -108,6 +128,7 @@ class WsPreHandler {
         // 监听客户端断开连接事件
         wss.ws.on('close', function close() {
             console.log('ws客户端断开');
+            allWssSet.delete(wss);
             if (wss._close.length > 0) {
                 while (true) {
                     const close = wss._close.pop();

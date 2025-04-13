@@ -2,16 +2,47 @@ export class TcpUtil {
     // 协议头两个字节，数据长度4字节(int), 自定义头
     private protocal = Buffer.from([0x19,0x98]);
     private headLength:number;
+    private head_0:Buffer;
     private buffer:Buffer = Buffer.alloc(0);
     private onData:(head:Buffer,data:Buffer)=>void;
     private socket;
     private processing = false;
-    constructor(socket) {
+
+    public  connect_success = true;
+    public  extra_data_map:Map<string, any> = new Map();
+
+    private checkTimerInterval: any;
+    private last_connect_time: number = 0;
+
+    /**
+     *
+     * @param socket
+     * @param open_heart  客户端不需要心跳
+     */
+    constructor(socket,open_heart= false) {
         this.socket = socket;
+        if(open_heart){
+            this.checkTimerInterval = setInterval(() => {
+                if ((Date.now() - this.last_connect_time ) > 5000 ) {
+                    console.log('超时');
+                    clearInterval(this.checkTimerInterval);
+                    this.checkTimerInterval = null;
+                    this.connect_success = false;
+                    this.socket?.end();
+                }
+            },1000 * 10);
+        }
     }
+
+
+    public update_heart_time() {
+        this.last_connect_time = Date.now();
+    }
+
     // 设置头长度
     public setHead(length:number) {
         this.headLength = length;
+        this.head_0 = Buffer.alloc(length)
     }
     // 设置包处理函数
     public setOn(handle:(head:Buffer,data:Buffer)=>void) {
@@ -25,6 +56,7 @@ export class TcpUtil {
             this.handleBuffer();
         }
     }
+
     private handleBuffer () {
         if (!(this.buffer[0]=== this.protocal[0] && this.buffer[1]=== this.protocal[1])) {
             this.buffer = Buffer.alloc(0);// 丢弃所有包
@@ -32,6 +64,12 @@ export class TcpUtil {
             return;
         }
         const dataLen = this.bufferToInt(this.buffer.subarray(2,6));
+        const totalLength = 6 + this.headLength + dataLen;
+        // 如果 buffer 不足以读取完整数据包，暂不处理，等待更多数据
+        if (this.buffer.length < totalLength) {
+            this.processing = false;
+            return;
+        }
         const head = this.buffer.subarray(6, 6+this.headLength);
         const data = this.buffer.subarray(6+this.headLength, 6+this.headLength+dataLen);
         this.onData(head,data);
@@ -41,6 +79,7 @@ export class TcpUtil {
         }
         this.processing = false;
     }
+
     private intToBuffer(value) {
         const buffer = Buffer.alloc(4); // 创建一个长度为4的新 Buffer
         // 写入整数到 Buffer，使用大端序（Most Significant Byte first）
@@ -73,5 +112,9 @@ export class TcpUtil {
      */
     public sendToSocket(head:Buffer,data:Buffer) {
         this.socket.write(this.getPackage(head,data));
+    }
+
+    public sendData(data:Buffer) {
+        this.socket.write(this.getPackage(this.head_0,data));
     }
 }

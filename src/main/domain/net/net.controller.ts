@@ -9,12 +9,13 @@ import {NetPojo, VirClientPojo, VirNetItem, VirServerPojo} from "../../../common
 import {netService} from "./net.service";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import { DataUtil} from "../data/DataUtil";
-import {virtualService} from "./net.virtual.service";
+import {virtualClientService} from "./virtual/virtual.client.service";
 import {Wss} from "../../../common/frame/ws.server";
 import {Request, Response} from "express";
 import {FileServiceImpl} from "../file/file.service";
 import {data_common_key, file_key} from "../data/data_type";
 import {userService} from "../user/user.service";
+import {virtualServerService} from "./virtual/virtual.server.service";
 
 const navindex_net_key_list = data_common_key.navindex_net_key_list;
 
@@ -78,39 +79,34 @@ export class NetController {
     @Get("/vir/server/get")
     virServerGet(@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        return Sucess(virtualService.virServerGet());
+        return Sucess(virtualServerService.virServerGet());
     }
 
     @Post("/vir/server/save")
     virServerSave(@Body() data: VirServerPojo,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.vir_net); userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        virtualService.virServerSave(data);
+        virtualServerService.virServerSave(data);
         return Sucess("1");
+    }
+
+    @msg(CmdType.vir_net_serverIno_get)
+    getServerInfos(data: WsData<any>) {
+        return virtualServerService.getServerInfos(data);
     }
 
     @Get("/vir/client/get")
     virClientGet(@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        return Sucess(virtualService.virClientGet());
+        return Sucess(virtualClientService.virClientGet());
     }
 
     @Post("/vir/client/save")
     virClientSave(@Body() data: VirClientPojo,@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        virtualService.virClientSave(data);
+        virtualClientService.virClientSave(data);
         return Sucess("1");
     }
 
-    // todo 实时推送
-    @msg(CmdType.vir_net_serverIno_get)
-    getServerInfos(data: WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token,UserAuth.vir_net);
-        const list:any[] = [];
-        virtualService.serverRealMap.forEach(v=>{
-            list.push([v.vir_ip,v.to_address,v.to_address?"在线":"离线"])
-        })
-        return list;
-    }
 
     // http 的tag
     @Get("/http/tag")

@@ -466,7 +466,7 @@ export class FileService extends FileCompress {
         if (stats.isFile()) {
             await FileUtil.unlinkSync(sysPath)
         } else {
-            rimraf(sysPath);
+            await rimraf(sysPath);
         }
         return Sucess("1");
     }
@@ -515,7 +515,7 @@ export class FileService extends FileCompress {
 
     public async cut_exec(source_path: string, to_file: string) {
         await FileUtil.renameSync(source_path, to_file);
-        rimraf(source_path);
+        await rimraf(source_path);
     }
 
     public async copy(token, data?: cutCopyReq) {

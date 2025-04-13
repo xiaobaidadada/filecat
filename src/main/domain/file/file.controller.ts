@@ -116,6 +116,7 @@ export class FileController {
         base64_context: string,
         type: base64UploadType
     }) {
+        path = decodeURIComponent(path);
         if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
             userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
             await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);

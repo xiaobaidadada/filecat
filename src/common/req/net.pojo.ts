@@ -14,9 +14,10 @@ export enum VirServerEnum {
 
 export class VirServerPojo {
     open: boolean = false; // 开启状态
-    model:VirServerEnum = VirServerEnum.udp; // 运行模式
+
     port:number; // 服务器的端口
     key:string = ""; // 通信密钥
+    // udp_port:number = 888; // udp 暂时放弃
 }
 
 export class VirClientPojo {
@@ -26,6 +27,7 @@ export class VirClientPojo {
     serverIp:string;
     serverPort:number;
     key:string = "";
+    model:VirServerEnum = VirServerEnum.udp; // 运行模式
 }
 
 export class VirNetItem {

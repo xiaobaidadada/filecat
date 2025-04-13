@@ -1,11 +1,11 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {ddnsHttp, netHttp} from "../../util/config";
-import {NotySucess,NotyFail} from "../../util/noty";
+import React, {useEffect, useState} from 'react'
+import {netHttp} from "../../util/config";
+import {NotyFail, NotySucess} from "../../util/noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {Column, Row} from "../../../meta/component/Dashboard";
 import {Card} from "../../../meta/component/Card";
 import {InputRadio, InputText} from "../../../meta/component/Input";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
+import {ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
 import {VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {ws} from "../../util/ws";
@@ -16,18 +16,23 @@ export function NetServer(props) {
     const { t } = useTranslation();
 
     const [serverPort, setServerPort] = useState(undefined);
+    // const [udp_port, set_udp_port] = useState(undefined);
     const [isOpen,setIsOpen] = useState(false);
-    const [isUdp, setIsUdp] = useState(false);
+
     const [key,setKey] = useState("");
-    const [headers, setHeaders] = useState([t(`${t("虚拟")}ip`), `${t("物理")}ip`,t("在线状态")]);
+    const [headers, setHeaders] = useState([t(`${t("虚拟")}ip`), `${t("物理")}信息`,t("在线状态")]);
     const [rows, setRows] = useState([]);
 
     useEffect(() => {
         const getItems = async ()=>{
             const data = new WsData(CmdType.vir_net_serverIno_get);
             const list = await ws.send(data);
-            // @ts-ignore
-            setRows(list);
+            if(list) {
+                setRows(list.context);
+                ws.addMsg(CmdType.vir_net_serverIno_get,(data)=>{
+                    setRows(data.context);
+                })
+            }
         }
         getItems();
         const init = async ()=>{
@@ -38,8 +43,8 @@ export function NetServer(props) {
             const data = result.data as VirServerPojo;
             setServerPort(data.port);
             setKey(data.key);
-            setIsUdp(data.model===VirServerEnum.udp);
             setIsOpen(data.open);
+            // set_udp_port(data.udp_port);
             setInterval(getItems,1000 * 30)
         }
         init();
@@ -50,9 +55,11 @@ export function NetServer(props) {
     const save = async ()=>{
         const pojo = new VirServerPojo();
         pojo.open = isOpen;
-        pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         pojo.key = key;
+        if(serverPort)
         pojo.port = parseInt(serverPort);
+        // if(udp_port)
+        // pojo.udp_port = parseInt(udp_port)
         const result = await netHttp.post("vir/server/save", pojo);
         if (result.code !== RCode.Sucess) {
             NotyFail("网络错误")
@@ -67,6 +74,7 @@ export function NetServer(props) {
                 <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
 
                     <InputText placeholder={"port"} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
+                    {/*<InputText placeholder={"udp port 不设置p2p服务将无法使用 "} value={udp_port} handleInputChange={(d)=>{set_udp_port(d)}}/>*/}
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
                     <form>
                         {t("状态")}:<Rows isFlex={true} columns={[
@@ -74,17 +82,10 @@ export function NetServer(props) {
                         <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
                     ]}/>
                     </form>
-                    <form>
-                        {t("模式")}
-                        <Rows isFlex={true} columns={[
-                            <InputRadio value={1} context={`tcp${t("流量转发")}`} selected={!isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>,
-                            <InputRadio value={1} context={`udp${t("点对点")}`} selected={isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>
-                        ]}/>
-                    </form>
 
                 </Card>
                 <Card title={""} >
-                    <Table headers={headers} rows={[]} width={"10rem"}/>
+                    <Table headers={headers} rows={rows} width={"10rem"}/>
                 </Card>
             </Column>
         </Row>

@@ -12,7 +12,6 @@ import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_co
 import {userService} from "../user/user.service";
 import fs from "fs"
 import path from "path"
-import {rimraf} from "rimraf";
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 
 @Service()

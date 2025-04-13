@@ -18,6 +18,7 @@ export function NetClient(props) {
     const [serverIp, setServerIp] = useState("");
     const [serverPort, setServerPort] = useState(undefined);
     const [isOpen,setIsOpen] = useState(false);
+    // const [isUdp, setIsUdp] = useState(false);
     const [key,setKey] = useState("");
 
     useEffect(() => {
@@ -33,6 +34,7 @@ export function NetClient(props) {
             setMask(data.mask);
             setKey(data.key);
             setIsOpen(data.open);
+            // setIsUdp(data.model===VirServerEnum.udp);
         }
         init();
     }, []);
@@ -44,6 +46,7 @@ export function NetClient(props) {
         pojo.serverIp = serverIp;
         pojo.serverPort = parseInt(serverPort);
         pojo.open = isOpen;
+        // pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         const result = await netHttp.post("vir/client/save", pojo);
         if (result.code !== RCode.Sucess) {
             NotyFail("网络错误")
@@ -62,10 +65,20 @@ export function NetClient(props) {
                     <InputText placeholder={`${t("服务器")}part`} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
 
-                    <Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
-                        <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
-                    ]}/>
+                    <form>
+                        {t("状态")}
+                        <Rows isFlex={true} columns={[
+                            <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
+                            <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>
+                        ]}/>
+                    </form>
+                    {/*<form>*/}
+                    {/*    {t("模式")}*/}
+                    {/*    <Rows isFlex={true} columns={[*/}
+                    {/*        <InputRadio value={1} context={`tcp${t("流量转发")}`} selected={!isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>,*/}
+                    {/*        <InputRadio value={1} context={`udp${t("点对点")}`} selected={isUdp}  onchange={()=>{setIsUdp(!isUdp)}}/>*/}
+                    {/*    ]}/>*/}
+                    {/*</form>*/}
                 </Card>
                 <Card title={""} >
                     <div>
