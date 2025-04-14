@@ -13,7 +13,8 @@ url: http://demo.filecat.xiaobaidadada.fun:5569/
 账号密码: `admin`/`admin`
 
 ##  截图
-![展示](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+![filecat](https://github.com/user-attachments/assets/e1cd2e78-7ff3-4c91-abb5-10f1ee68811a)
+
 ##  路线
 1. 优化更多操作细节
 2. 支持更多的文件格式浏览
