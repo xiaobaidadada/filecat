@@ -14,7 +14,7 @@ Here’s the English translation of your document:
 ## 2. Usage
 
 ### 1. Demo
-URL: http://filecat.xiaobaidadada.fun:5569/
+URL: http://demo.filecat.xiaobaidadada.fun:5569/
 
 - **account:** `en_admin` / `en_admin`
 
