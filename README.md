@@ -1,11 +1,17 @@
 
-# ![](./src/web/meta/resources/img/logo-70.png) filecat
+# ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
--  [English ](./doc/EN_README.md)
-- FileCat 用于帮助开发者搭建一个文件服务器，并提供众多与程序开发人员相关的必备功能。包括带有权限的远程终端(支持rdp桌面、终端命令拦截)、SSH代理、文件在线浏览\编辑\解压缩、白板绘图、自动化构建、系统监控、docker管理、超大日志实时读取等功能(目前可以运行在linux与windows系统下，不支持mac os系统)。
-- 它是一个服务程序，使用web访问。可以使用npm执行`npm install filecat -g`全局安装命令，然后执行 `filecat`命令运行，使用参数`filecat --help`可以获取更多参数说明。也支持**二进制**方式直接运行，更多使用方式与参数请参考下文。
-- 官网文档: https://filecat.xiaobaidadada.fun/
-- [docs](https://filecat.xiaobaidadada.fun/#/en/home.md)
+[English Readme](./doc/EN_README.md)
+
+[English Docs](https://filecat.xiaobaidadada.fun/#/en/home.md)
+
+FileCat 是一个基于web的**服务器管理**工具。提供文件管理、超大日志查看、远程终端、系统进程监控、ssh\rdp\http\tcp等各种网络代理。
+
+## 详细功能
+请参考文档: https://filecat.xiaobaidadada.fun/
+
+## 安装
+不同的安装方式请参考: https://filecat.xiaobaidadada.fun/#/zh-CN/%E5%AE%89%E8%A3%85.md
 
 ##  体验
 url: http://demo.filecat.xiaobaidadada.fun:5569/
@@ -15,13 +21,6 @@ url: http://demo.filecat.xiaobaidadada.fun:5569/
 ##  截图
 ![filecat](https://github.com/user-attachments/assets/e1cd2e78-7ff3-4c91-abb5-10f1ee68811a)
 
-##  路线
-1. 优化更多操作细节
-2. 支持更多的文件格式浏览
-3. 支持更多的流媒体功能
-4. 支持更多的ddns平台
-5. 自动化爬虫
-6. 优化虚拟网络，分布式文件同步
 ##  qq群
 824838674
 ##  致谢
