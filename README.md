@@ -7,15 +7,15 @@ FileCat 是一个基于web的**服务器管理**工具。提供文件管理、�
 
 
 ## Install
-不同的安装方式请参考: https://filecat.xiaobaidadada.fun/#/zh-CN/%E5%AE%89%E8%A3%85.md
+不同的安装方式请参考: https://filecat.xiaobaidadada.fun/#/zh-CN/install.md
 
-English: https://filecat.xiaobaidadada.fun/#/en/%E5%AE%89%E8%A3%85.md
+English: https://filecat.xiaobaidadada.fun/#/en/install.md
 
 
 ## Detailed Features
 请参考文档: https://filecat.xiaobaidadada.fun/
 
-备份地址：https://docs.filecat.xiaobaidadada.fun/
+备用地址：https://docs.filecat.xiaobaidadada.fun/
 
 ##  Demo Experience
 url: http://demo.filecat.xiaobaidadada.fun:5569/
