@@ -20,7 +20,7 @@ export function NetServer(props) {
     const [isOpen,setIsOpen] = useState(false);
 
     const [key,setKey] = useState("");
-    const [headers, setHeaders] = useState([t(`${t("虚拟")}ip`), `${t("物理")}信息`,t("在线状态")]);
+    const [headers, setHeaders] = useState([t(`${t("名称")}`),t(`${t("虚拟")}ip`), `${t("物理")}信息`,t("在线状态")]);
     const [rows, setRows] = useState([]);
 
     useEffect(() => {

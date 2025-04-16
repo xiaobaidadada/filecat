@@ -22,25 +22,25 @@ class VirtualServerService {
 
     wssSet:Set<Wss> = new Set();
 
+    get_all_client_info() {
+        const list:any[] = [];
+        clientMap.forEach(v=>{
+            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.is_alive ?"在线":"离线"])
+        })
+        return list;
+    }
     getServerInfos(data: WsData<any>) {
         const wss = data.wss as Wss;
         this.wssSet.add(wss);
         wss.setClose(()=>{
             this.wssSet.delete(wss);
         })
-        const list:any[] = [];
-        clientMap.forEach(v=>{
-            list.push([v.vir_ip,`${v.tcp_real_address}:${v.tcp_real_port}`,v?.tcpUtil.connect_success?"在线":"离线"])
-        })
-        return list;
+        return this.get_all_client_info();
     }
 
     // 推送最新连接
     pushConnectInfo() {
-        const list:any[] = [];
-        clientMap.forEach(v=>{
-            list.push([v.vir_ip,v.tcp_real_address,v?.tcpUtil.connect_success ?"在线":"离线"])
-        })
+        const list = this.get_all_client_info();
         for (const wss of this.wssSet.values()) {
             wss.send(CmdType.vir_net_serverIno_get, list);
         }
@@ -80,7 +80,7 @@ class VirtualServerService {
     }
 
     public async udpServerStart(port?: number) {
-       await NetClientUtil.start_dup_client(port);
+        await NetClientUtil.start_dup_client(port);
     }
 
 

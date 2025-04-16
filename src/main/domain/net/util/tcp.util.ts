@@ -8,11 +8,12 @@ export class TcpUtil {
     private socket;
     private processing = false;
 
-    public  connect_success = true;
+    public  connect_success = false;
     public  extra_data_map:Map<string, any> = new Map();
 
     private checkTimerInterval: any;
     private last_connect_time: number = 0;
+    private close_list:(()=>void)[] = [];
 
     /**
      *
@@ -25,15 +26,34 @@ export class TcpUtil {
             this.checkTimerInterval = setInterval(() => {
                 if ((Date.now() - this.last_connect_time ) > 5000 ) {
                     console.log('超时');
-                    clearInterval(this.checkTimerInterval);
-                    this.checkTimerInterval = null;
-                    this.connect_success = false;
-                    this.socket?.end();
+                    this.close();
                 }
             },1000 * 10);
         }
     }
 
+    public close() {
+        clearInterval(this.checkTimerInterval);
+        this.checkTimerInterval = null;
+        this.connect_success = false;
+        this.socket?.end();
+        this.socket?.destroy();
+        for (const c of this.close_list) {
+            c();
+        }
+    }
+
+    public start() {
+        this.connect_success = true;
+    }
+
+    public get is_alive() {
+        return this.connect_success;
+    }
+
+    public add_close_call(call:()=>void){
+        this.close_list.push(call);
+    }
 
     public update_heart_time() {
         this.last_connect_time = Date.now();

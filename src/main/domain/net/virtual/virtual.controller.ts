@@ -30,19 +30,21 @@ class VirtualController {
     register(data: Buffer, util: TcpUtil) {
         const socket = util.getSocket();
         const info = new CLientInfo();
-        const tcpData = JSON.parse(data.toString());
+        const tcpData:{client_name:string,ip:string,hashKey:string} = JSON.parse(data.toString());
         const hashKey = tcpData.hashKey;
         const serverHashKey = virtualClientService.getServerHashKey();
         if (hashKey !== serverHashKey) {
             socket.end();
-            util.connect_success = false;
+            util.close();
             return;
         }
+        util.start();
         // info.heart = true;
         info.vir_ip = tcpData.ip;
         info.tcp_real_port = socket.remotePort;
         info.tcp_real_address = socket.remoteAddress;
         info.tcpUtil = util;
+        info.client_name = tcpData.client_name;
         clientMap.set(tcpData.ip, info); // 更新会覆盖之前的值
         // info.checkTimerInterval = setInterval(() => {
         //     if(Date.now() - info.last_connect_time > 2000) {
@@ -50,6 +52,9 @@ class VirtualController {
         //     }
         // },1000 * 2);
         NetServerUtil.connect_success(util.getSocket());
+        util.add_close_call(()=>{
+            virtualServerService.pushConnectInfo();
+        })
         // util.extra_data_map.set('info', info);
         virtualServerService.pushConnectInfo();
     }

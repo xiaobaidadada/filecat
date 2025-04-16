@@ -11,6 +11,7 @@ import {data_common_key} from "../../data/data_type";
 import {virtualServerService} from "./virtual.server.service";
 import {NetMsgType, NetUtil} from "../util/NetUtil";
 import {NetClientUtil} from "../util/NetClientUtil";
+import {SysProcessServiceImpl} from "../../sys/sys.process.service";
 
 const crypto = require('crypto');
 const {LinuxTun, LinuxTap, Wintun} = require('@xiaobaidadada/node-tuntap2-wintun');
@@ -30,6 +31,7 @@ export const haertTime = 2000;
 export class CLientInfo extends UdpUtil {
     // 基本tcp工具变量
     tcpUtil: TcpUtil;
+    client_name:string;
 
     vir_ip: string; // 虚拟ip
     tcp_real_address: string; // 物理ip
@@ -139,7 +141,7 @@ export class VirtualClientService extends UdpUtil {
         if (clientData) {
             if (clientData.open) {
                 this.clientStatus = clientData.open;
-                this.tunStart(clientData);
+                await this.tunStart(clientData);
             }
         }
     }
@@ -238,13 +240,17 @@ export class VirtualClientService extends UdpUtil {
         // }
     }
 
+
     private async tunStart(data: VirClientPojo) {
         const {ip, mask} = data;
         this.server_info.is_tcp = data.model !== VirServerEnum.udp;
-        await this.tcpConnect(data.ip, data.serverPort, data.serverIp);
+        await this.tcpConnect(data.ip, data.serverPort, data.serverIp,data.client_name);
         // if (data.model === VirServerEnum.udp && this.server_info.is_tcp) {
         //     throw "服务器不支持udp";
         // }
+        if(await SysProcessServiceImpl.isIpActive(ip)) {
+            throw `${ip} ip is active`;
+        }
         try {
             if (sysType === 'win') {
                 Wintun.set_dll_path(get_wintun_dll_path());
@@ -285,20 +291,22 @@ export class VirtualClientService extends UdpUtil {
     }
 
     // tcp连接
-    async tcpConnect(ip: string, serverPort: number, serverIp: string) {
+    async tcpConnect(ip: string, serverPort: number, serverIp: string,client_name: string) {
         this.server_info.server_tcp_ip = serverIp;
         this.server_info.server_tcp_port = serverPort;
         this.server_info.self_vir_ip = ip;
         await NetClientUtil.start_tcp_client(serverPort, serverIp,()=>{
             NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
                 ip,
-                hashKey: this.getClientHashKey()
+                hashKey: this.getClientHashKey(),
+                client_name
             }))));
         });
         // 发送自己的虚拟注册信息
         NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
             ip,
-            hashKey: this.getClientHashKey()
+            hashKey: this.getClientHashKey(),
+            client_name
         }))));
         // 定时发送心跳
         // this.heartInterval = setInterval(() => {
@@ -378,6 +386,10 @@ export class VirtualClientService extends UdpUtil {
 }
 
 export const virtualClientService = new VirtualClientService();
-ServerEvent.on("start", (data) => {
-    virtualClientService.init();
+ServerEvent.on("start", async (data) => {
+    try {
+        await virtualClientService.init();
+    } catch (e) {
+        console.error('启动虚拟网网络vpn失败',e);
+    }
 })

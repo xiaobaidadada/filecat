@@ -103,21 +103,29 @@ export class NetClientUtil {
 
     public static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void) {
         try {
-            if(this.tcp_client ) return ;
+            if(this.tcp_client && this.tcp_client.is_alive ) return ;
             let try_timeout ;
             const try_fun = ()=>{
-                console.log('5秒后重连tcp服务器');
-                this.tcp_client = undefined;
-                clearInterval(this.tcp_client_interval);
-                try_timeout = setTimeout(async ()=>{
-                    await this.start_tcp_client(serverPort,serverIp,close_call);
-                    close_call();
-                },5000)
+                if(this.tcp_client !== undefined && try_timeout === undefined) {
+                    // 不是主动关闭
+                    console.log('5秒后重连tcp服务器');
+                    clearInterval(this.tcp_client_interval);
+                    try_timeout = setTimeout(async ()=>{
+                        try_timeout = undefined;
+                        await this.start_tcp_client(serverPort,serverIp,close_call);
+                        close_call();
+                    },5000)
+                }
             }
+            console.log('开始尝试连接tcp服务器');
             const client = new net.Socket();
             const tcpUtil = new TcpUtil(client);
             tcpUtil.setHead(NetUtil.head_len);
             this.tcp_client = tcpUtil;
+            tcpUtil.add_close_call(()=>{
+                clearTimeout(this.tcp_client_interval);
+                this.tcp_client_interval = undefined;
+            })
             // 客户端不做超时处理了
             // 监听数据事件
             client.on('data', (buffer) => {
@@ -126,25 +134,22 @@ export class NetClientUtil {
             // 监听连接关闭事件
             client.on('close', () => {
                 console.log('服务器关闭或者异常');
-                if(this.tcp_client) {
-                    // 不是主动关闭
-                    try_fun();
-                }
+                tcpUtil.close();
+                try_fun();
             });
             // 处理错误事件
             client.on('error', (err) => {
                 console.error('Socket 错误:', err);
-                if(this.tcp_client) {
-                    // 不是主动关闭
-                    try_fun();
-                }
+                tcpUtil.close();
+                try_fun();
             });
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(()=>{
-                    this.tcp_client = undefined;
+                    try_fun();
                     reject(false);
                 },3000)
                 client.connect(serverPort, serverIp, () => {
+                    tcpUtil.start();
                     if(try_timeout) {
                         clearTimeout(try_timeout);
                         try_timeout = undefined;
@@ -188,10 +193,8 @@ export class NetClientUtil {
     }
 
     public static  close_tcp() {
-        clearInterval(this.tcp_client_interval);
         if(this.tcp_client) {
-            this.tcp_client_interval = undefined;
-            this.tcp_client.getSocket().end();
+            this.tcp_client.close();
             this.tcp_client = undefined;
         }
     }

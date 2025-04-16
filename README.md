@@ -3,7 +3,7 @@
 
 FileCat is a **web-based server management** tool. It offers features like file management, large-scale log viewing, remote terminal access, system process monitoring, and various network proxies including SSH, RDP, HTTP, and TCP.
 
-FileCat 是一个基于web的**服务器管理**工具。提供文件管理、超大日志查看、远程终端、系统进程监控、ssh\rdp\http\tcp等各种网络代理。
+FileCat 是一个基于web的**服务器管理**工具。提供文件管理、超大日志查看、远程终端、系统进程监控,vpn、ssh\rdp\http\tcp各种网络代理等功能。
 
 
 ## Install
@@ -13,7 +13,7 @@ English: https://filecat.xiaobaidadada.fun/#/en/install.md
 
 
 ## Detailed Features
-请参考文档: https://filecat.xiaobaidadada.fun/
+详细的功能特性请参考文档: https://filecat.xiaobaidadada.fun/
 
 备用地址：https://docs.filecat.xiaobaidadada.fun/
 

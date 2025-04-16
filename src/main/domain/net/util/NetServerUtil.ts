@@ -18,17 +18,22 @@ export class NetServerUtil {
     static call_resolve_map:{[key:number]:any} = {};
     static call_timeout_map:{[key:number]:any} = {};
 
+    static tcp_util_set:Set<TcpUtil> = new Set<TcpUtil>();
+
     public static connect_success(socket: net.Socket) {
         clearTimeout(this.socket_timeout_map.get(socket));
     }
 
     public static close_server():void {
-        // todo 保证彻底断开 拒绝断开的数据请求
+        for (const c of this.tcp_util_set) {
+            c.close();
+        }
         if(this.tcp_server) {
-            this.tcp_server.close();
+            this.tcp_server.close(() => {
+                console.log('服务器已停止接受新的连接');
+            });
             this.tcp_server = undefined;
         }
-        console.log('关闭tcp服务器')
     }
 
     public static async send_data_async(socket_util:TcpUtil,type:NetMsgType,data:Buffer):Promise<Buffer> {
@@ -67,33 +72,33 @@ export class NetServerUtil {
         this.tcp_server = net.createServer((socket) => {
             console.log('客户端连接');
             const tcpUtil = new TcpUtil(socket,true);
+            tcpUtil.add_close_call(()=>{
+                this.tcp_util_set.delete(tcpUtil);
+            })
+            this.tcp_util_set.add(tcpUtil);
             tcpUtil.setHead(NetUtil.head_len); // 协议头
             let check_token = false;
             this.socket_timeout_map.set(socket,setTimeout(() => {
+                // 超时未验证
                 if (!check_token) {
-                    socket.end();
+                    tcpUtil.close();
                 }
-                tcpUtil.connect_success = false;
             }, 3000));
             // 监听数据事件
             socket.on('data', (buffer) => {
                 tcpUtil.handleSocket(buffer)
             });
             socket.on('end', () => {
-                tcpUtil.connect_success = false;
+                tcpUtil.close();
                 console.log('客户端断开连接',socket.remoteAddress);
             });
             // 处理错误事件
             socket.on('error', (err) => {
                 console.log('Socket 错误:',socket.remoteAddress);
-                tcpUtil.connect_success = false;
+                tcpUtil.close();
             });
             tcpUtil.setOn((head, bufferData) => {
                 try {
-                    if(!tcpUtil.connect_success) {
-                        socket.end();
-                        return;
-                    }
                     const {code, tcpBuffer} = NetUtil.getTcpData(bufferData);
                     const h_code = NetUtil.getHedValueByBuffer(head);
                     if (h_code !== 0 && this.call_resolve_map[h_code]) {

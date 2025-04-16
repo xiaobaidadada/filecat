@@ -16,6 +16,7 @@ export function NetClient(props) {
     const [ip, setIp] = useState("");
     const [mask, setMask] = useState(undefined);
     const [serverIp, setServerIp] = useState("");
+    const [client_name, set_client_name] = useState("");
     const [serverPort, setServerPort] = useState(undefined);
     const [isOpen,setIsOpen] = useState(false);
     // const [isUdp, setIsUdp] = useState(false);
@@ -34,6 +35,7 @@ export function NetClient(props) {
             setMask(data.mask);
             setKey(data.key);
             setIsOpen(data.open);
+            set_client_name(data.client_name);
             // setIsUdp(data.model===VirServerEnum.udp);
         }
         init();
@@ -46,6 +48,7 @@ export function NetClient(props) {
         pojo.serverIp = serverIp;
         pojo.serverPort = parseInt(serverPort);
         pojo.open = isOpen;
+        pojo.client_name = client_name;
         // pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         const result = await netHttp.post("vir/client/save", pojo);
         if (result.code !== RCode.Sucess) {
@@ -63,8 +66,8 @@ export function NetClient(props) {
                     <InputText placeholder={"mask"} value={mask} handleInputChange={(d)=>{setMask(d)}}/>
                     <InputText placeholder={`${t("服务器")}ip`} value={serverIp} handleInputChange={(d)=>{setServerIp(d)}}/>
                     <InputText placeholder={`${t("服务器")}part`} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
+                    <InputText placeholder={"名称 "} value={client_name} handleInputChange={(d)=>{set_client_name(d)}}/>
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
-
                     <form>
                         {t("状态")}
                         <Rows isFlex={true} columns={[

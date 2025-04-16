@@ -9,6 +9,7 @@ import path from "path";
 import {getProcessAddon} from "../bin/bin";
 import {SysEnum} from "../../../common/req/user.req";
 import WebSocket from "ws";
+const { exec } = require('child_process');
 
 let sysJobInterval: any = null;
 
@@ -140,6 +141,21 @@ export class SysProcessService {
             SystemUtil.killProcess(spawnChild.pid);
         }
 
+    }
+
+    async  isIpActive(ip) {
+        return new Promise((resolve) => {
+            const sys = getSys();
+            let cmd;
+            if (sys == SysEnum.win) {
+                cmd = `ping -n 1 -w 1000 ${ip}`;
+            } else {
+                cmd = `ping -c 1 -W 1 ${ip}`;
+            }
+            exec(cmd, (error, stdout, stderr) => {
+                resolve(!error);
+            });
+        });
     }
 
     private getProcessInfo() {
