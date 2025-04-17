@@ -448,7 +448,7 @@ export class SettingService {
     }
 
     public setSoftware(req, token) {
-        DataUtil.set("sys_software", req);
+        DataUtil.set(data_common_key.sys_software, req);
         this.cacheSysSoftwareItem = null;
         this.getFilesSetting(token);
     }

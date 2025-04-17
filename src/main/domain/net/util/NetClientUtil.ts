@@ -101,7 +101,7 @@ export class NetClientUtil {
         })
     }
 
-    public static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void) {
+    public static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
         try {
             if(this.tcp_client && this.tcp_client.is_alive ) return ;
             let try_timeout ;
@@ -112,7 +112,7 @@ export class NetClientUtil {
                     clearInterval(this.tcp_client_interval);
                     try_timeout = setTimeout(async ()=>{
                         try_timeout = undefined;
-                        await this.start_tcp_client(serverPort,serverIp,close_call);
+                        await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
                         close_call();
                     },5000)
                 }
@@ -125,6 +125,7 @@ export class NetClientUtil {
             tcpUtil.add_close_call(()=>{
                 clearTimeout(this.tcp_client_interval);
                 this.tcp_client_interval = undefined;
+                state_call(false);
             })
             // 客户端不做超时处理了
             // 监听数据事件
@@ -159,6 +160,7 @@ export class NetClientUtil {
                     this.tcp_client_interval = setInterval(()=>{
                         this.send_for_tcp(NetMsgType.heart,Buffer.alloc(0));
                     },3000)
+                    state_call(true);
                     console.log('tcp服务器握手完成');
                     tcpUtil.setOn((head:Buffer,bufferData:Buffer)=>{
                         const {code, tcpBuffer} = NetUtil.getTcpData(bufferData);

@@ -1,7 +1,9 @@
 export class TcpUtil {
     // 协议头两个字节，数据长度4字节(int), 自定义头
     private protocal = Buffer.from([0x19,0x98]);
-    private headLength:number;
+    private proto_head_length = 2 + 4; // 协议头长度
+    private total_head_length = 0; // 总协议头长度
+    private self_headLength:number; // 自定义头长度
     private head_0:Buffer;
     private buffer:Buffer = Buffer.alloc(0);
     private onData:(head:Buffer,data:Buffer)=>void;
@@ -61,8 +63,9 @@ export class TcpUtil {
 
     // 设置头长度
     public setHead(length:number) {
-        this.headLength = length;
+        this.self_headLength = length;
         this.head_0 = Buffer.alloc(length)
+        this.total_head_length = this.proto_head_length + length;
     }
     // 设置包处理函数
     public setOn(handle:(head:Buffer,data:Buffer)=>void) {
@@ -71,33 +74,35 @@ export class TcpUtil {
     // 处理buffer
     public handleSocket(buffer:Buffer) {
         this.buffer = Buffer.concat([this.buffer,buffer]);
-        if (this.buffer.length >= this.headLength+3 &&  !this.processing) {
-            this.processing = true;
+        if (this.buffer.length > this.total_head_length &&  !this.processing) {
             this.handleBuffer();
         }
     }
 
     private handleBuffer () {
-        if (!(this.buffer[0]=== this.protocal[0] && this.buffer[1]=== this.protocal[1])) {
-            this.buffer = Buffer.alloc(0);// 丢弃所有包
-            this.processing = false;
-            return;
+        this.processing = true;
+        while (true) {
+            if (!(this.buffer[0]=== this.protocal[0] && this.buffer[1]=== this.protocal[1])) {
+                this.buffer = Buffer.alloc(0);// 丢弃所有包
+                this.processing = false;
+                return;
+            }
+            const dataLen = this.bufferToInt(this.buffer.subarray(2,6));
+            const totalLength = 6 + this.self_headLength + dataLen;
+            // 如果 buffer 不足以读取完整数据包，暂不处理，等待更多数据
+            if (this.buffer.length < totalLength) {
+                this.processing = false;
+                return;
+            }
+            const head = this.buffer.subarray(6, 6+this.self_headLength);
+            const data = this.buffer.subarray(6+this.self_headLength, 6+this.self_headLength+dataLen);
+            this.onData(head,data);
+            this.buffer = this.buffer.subarray(6+this.self_headLength+dataLen);
+            if (this.buffer.length < this.total_head_length) {
+                this.processing = false;
+                return;
+            }
         }
-        const dataLen = this.bufferToInt(this.buffer.subarray(2,6));
-        const totalLength = 6 + this.headLength + dataLen;
-        // 如果 buffer 不足以读取完整数据包，暂不处理，等待更多数据
-        if (this.buffer.length < totalLength) {
-            this.processing = false;
-            return;
-        }
-        const head = this.buffer.subarray(6, 6+this.headLength);
-        const data = this.buffer.subarray(6+this.headLength, 6+this.headLength+dataLen);
-        this.onData(head,data);
-        this.buffer = this.buffer.subarray(6+this.headLength+dataLen);
-        if (this.buffer.length >= this.headLength+3) {
-            this.handleBuffer();
-        }
-        this.processing = false;
     }
 
     private intToBuffer(value) {

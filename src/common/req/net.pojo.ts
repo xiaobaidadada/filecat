@@ -81,3 +81,14 @@ export class http_download_map {
     filename:string; // 文件名字
     local_download_path:string; // 实际文件地址
 }
+
+
+export class TcpPorxyITem {
+    index:number;
+    port:number;
+    target_port:number;
+    target_ip:string;
+    open:boolean;
+    status:boolean;
+    note:string;
+}

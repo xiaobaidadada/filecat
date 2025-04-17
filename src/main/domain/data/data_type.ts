@@ -66,6 +66,8 @@ export enum data_common_key {
     recycle_bin_key = "recycle_bin_key", // 文件回收站目录
     recycle_bin_status = "recycle_bin_status", // 文件回收站 功能是否开启
 
+    guid_key = "guid_key",
+    tcp_proxy_key = "tcp_proxy_key",
 }
 
 

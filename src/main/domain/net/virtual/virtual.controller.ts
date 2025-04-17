@@ -29,8 +29,7 @@ class VirtualController {
     @tcpServerMsg(NetMsgType.register)
     register(data: Buffer, util: TcpUtil) {
         const socket = util.getSocket();
-        const info = new CLientInfo();
-        const tcpData:{client_name:string,ip:string,hashKey:string} = JSON.parse(data.toString());
+        const tcpData:{client_name:string,ip:string,hashKey:string,guid:string } = JSON.parse(data.toString());
         const hashKey = tcpData.hashKey;
         const serverHashKey = virtualClientService.getServerHashKey();
         if (hashKey !== serverHashKey) {
@@ -39,7 +38,17 @@ class VirtualController {
             return;
         }
         util.start();
+        let info = clientMap.get(tcpData.ip);
+        if(info) {
+            if(info.guid !== tcpData.guid){
+                util.close();
+                return;
+            }
+        } else {
+            info = new CLientInfo();
+        }
         // info.heart = true;
+        info.guid = tcpData.guid;
         info.vir_ip = tcpData.ip;
         info.tcp_real_port = socket.remotePort;
         info.tcp_real_address = socket.remoteAddress;
