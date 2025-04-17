@@ -12,13 +12,18 @@ export class NetClientUtil {
     static tcp_client_interval;
 
     static udp_client:Socket;
+    static is_run:boolean = false;
 
     static call_resolve_map:{[key:number]:any} = {}; // 临时方案 下次改成 uuid
     static call_timeout_map:{[key:number]:any} = {}; // 临时方案 下次改成 uuid
 
     public static send_for_tcp(type:NetMsgType,data:Buffer) {
         const buffer = NetUtil.getTcpBuffer(type,data);
-        this.tcp_client.sendToSocket(NetUtil.head_0,buffer);
+        try {
+            this.tcp_client.sendToSocket(NetUtil.head_0,buffer);
+        }catch(e){
+            console.log(e)
+        }
     }
 
     // 发送到服务器 并 await 服务器返回的数据 服务器需要 根据 head 返回数据
@@ -101,9 +106,17 @@ export class NetClientUtil {
         })
     }
 
-    public static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
+    public static is_alive():boolean {
+        return !!this.tcp_client?.is_alive;
+    }
+
+    public static async start_tcp(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
+        this.is_run = true;
+        this.start_tcp_client(serverPort,serverIp,close_call,state_call);
+    }
+    private static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
         try {
-            if(this.tcp_client && this.tcp_client.is_alive ) return ;
+            if((this.tcp_client && this.tcp_client.is_alive ) || !this.is_run) return ;
             let try_timeout ;
             const try_fun = ()=>{
                 if(this.tcp_client !== undefined && try_timeout === undefined) {
@@ -112,8 +125,10 @@ export class NetClientUtil {
                     clearInterval(this.tcp_client_interval);
                     try_timeout = setTimeout(async ()=>{
                         try_timeout = undefined;
-                        await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
-                        close_call();
+                        if(this.is_run) {
+                            await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
+                            close_call();
+                        }
                     },5000)
                 }
             }
@@ -141,8 +156,6 @@ export class NetClientUtil {
             // 处理错误事件
             client.on('error', (err) => {
                 console.error('Socket 错误:', err);
-                tcpUtil.close();
-                try_fun();
             });
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(()=>{
@@ -158,6 +171,11 @@ export class NetClientUtil {
                     clearTimeout(timeout);
                     // 心跳
                     this.tcp_client_interval = setInterval(()=>{
+                        if(this.is_run === false) {
+                            clearInterval(this.tcp_client_interval);
+                            this.tcp_client_interval = undefined;
+                            return;
+                        }
                         this.send_for_tcp(NetMsgType.heart,Buffer.alloc(0));
                     },3000)
                     state_call(true);
@@ -195,6 +213,7 @@ export class NetClientUtil {
     }
 
     public static  close_tcp() {
+        this.is_run = false;
         if(this.tcp_client) {
             this.tcp_client.close();
             this.tcp_client = undefined;

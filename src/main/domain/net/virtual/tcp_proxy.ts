@@ -31,10 +31,10 @@ export class TcpProxy {
         for (const config of this.proxies) {
             try {
                 const server = net.createServer((clientSocket) => {
-                    console.log(`客户端连接到代理端口: ${config.proxyPort}`);
+                    // console.log(`客户端连接到代理端口: ${config.proxyPort}`);
                     // 创建与目标服务器的连接
                     const targetSocket = net.createConnection(config.targetPort, config.targetHost, () => {
-                        console.log(`已连接到目标服务器: ${config.targetHost}:${config.targetPort}`);
+                        // console.log(`已连接到目标服务器: ${config.targetHost}:${config.targetPort}`);
                         config.status = true; // 目标 会经常断开连接 但是只要请求服务器端口 就会重连
                         done_call();
                     });
@@ -50,25 +50,25 @@ export class TcpProxy {
 
                     // 错误处理
                     clientSocket.on('error', (err) => {
-                        console.error(`客户端连接错误: ${err.message}`);
+                        // console.error(`客户端连接错误: ${err.message}`);
                         targetSocket.end();
                     });
 
                     targetSocket.on('error', (err) => {
-                        console.error(`目标服务器连接错误: ${err.message}`);
+                        // console.error(`目标服务器连接错误: ${err.message}`);
                         clientSocket.end();
                     });
 
                     // 客户端关闭连接
                     clientSocket.on('end', () => {
-                        console.log('客户端已关闭连接');
+                        // console.log('客户端已关闭连接');
                         targetSocket.end();
                         config.status = false;
                     });
 
                     // 目标服务器关闭连接
                     targetSocket.on('end', () => {
-                        console.log('目标服务器已关闭连接');
+                        // console.log('目标服务器已关闭连接');
                         clientSocket.end();
                         config.status = false;
                     });

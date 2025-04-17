@@ -232,12 +232,16 @@ export class VirtualClientService extends UdpUtil {
 
     // 处理ip信息
     private async handleTunPackage(buffer: Buffer,is_tcp:boolean) {
-        const destIP = this.getDestIpByTunPackage(buffer);
-        if (!destIP) {
-            return;
+        try {
+            const destIP = this.getDestIpByTunPackage(buffer);
+            if (!destIP) {
+                return;
+            }
+            // if (is_tcp) {
+            await NetClientUtil.send_for_tcp(NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, buffer));
+        } catch (e) {
+            console.log(e);
         }
-        // if (is_tcp) {
-        await NetClientUtil.send_for_tcp(NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, buffer));
         // } else {
         //     // udp
         //     const info = await this.udpClientCreateAndGet(destIP);
@@ -338,7 +342,7 @@ export class VirtualClientService extends UdpUtil {
         this.server_info.server_tcp_ip = serverIp;
         this.server_info.server_tcp_port = serverPort;
         this.server_info.self_vir_ip = ip;
-        await NetClientUtil.start_tcp_client(serverPort, serverIp,()=>{
+        await NetClientUtil.start_tcp(serverPort, serverIp,()=>{
             NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
                 ip,
                 hashKey: this.getClientHashKey(),
@@ -351,12 +355,12 @@ export class VirtualClientService extends UdpUtil {
                 this.push_clinet_info();
             });
         // 发送自己的虚拟注册信息
-        NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
+        NetClientUtil.send_for_tcp(NetMsgType.register, Buffer.from(JSON.stringify({
             ip,
             hashKey: this.getClientHashKey(),
             client_name,
             guid
-        }))));
+        })));
         // 定时发送心跳
         // this.heartInterval = setInterval(() => {
         //     NetClientUtil.tcp_client.sendToSocket(Buffer.alloc(0), this.getTcpBuffer(NetMsgType.heart, Buffer.alloc(0)));
@@ -400,7 +404,7 @@ export class VirtualClientService extends UdpUtil {
     }
 
     closeTun() {
-        if (!this.client_status) {
+        if (!this.tun_status) {
             return;
         }
         if (sysType === 'win') {
@@ -421,10 +425,9 @@ export class VirtualClientService extends UdpUtil {
             NetClientUtil.close_tcp();
             this.tunStart(data);
         } else {
-            if(!this.tun_status)return;
             try {
-                this.closeTun();
                 NetClientUtil.close_tcp();
+                this.closeTun();
             } catch (e) {
                 console.log('客户端关闭失败')
             }
