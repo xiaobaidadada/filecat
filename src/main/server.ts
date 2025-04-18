@@ -87,13 +87,21 @@ async function start() {
         // 配置静态资源代理
         // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
         // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-        const index_path = path.join(__dirname, 'dist', "index.html");
-        let index_text = await FileUtil.readFileSync(index_path);
-        index_text = Mustache.render(index_text.toString(),{
-            Windows_FileCat: JSON.stringify({
-                base_url:get_base()
-            }) // 给前端
-        });
+        // const index_path = path.join(__dirname, 'dist', "index.html");
+        // let index_text = await FileUtil.readFileSync(index_path);
+        // const web_site_title = settingService.get_sys_env().web_site_title;
+        // index_text = Mustache.render(index_text.toString(),{
+        //     Windows_FileCat: JSON.stringify({
+        //         base_url:get_base(),
+        //         web_site_title
+        //     }), // 给前端
+        //     web_site_title
+        // });
+
+        let index_text = await settingService.get_index_html();
+        ServerEvent.on("sys_env_update", async (data) => {
+             index_text = await settingService.get_index_html();
+        })
 
         const sys_pre =  get_sys_base_url_pre();
         // const self_pre = settingService.get_customer_api_pre_key();

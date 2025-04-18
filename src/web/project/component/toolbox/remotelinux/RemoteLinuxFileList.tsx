@@ -21,7 +21,8 @@ import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
-import { formatFileSize, getShortTime } from '../../../../../common/ValueUtil';
+import { formatFileSize } from '../../../../../common/ValueUtil';
+import {getShortTime} from "../../../../project/util/comm_util";
 import { removeLastDir } from '../../../util/ListUitl';
 
 export enum FileListShowTypeEmum {

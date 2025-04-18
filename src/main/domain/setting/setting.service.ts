@@ -24,11 +24,12 @@ import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
-import { FileServiceImpl} from "../file/file.service";
+import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
-import {get_sys_base_url_pre} from "../bin/bin";
+import {get_base, get_sys_base_url_pre} from "../bin/bin";
 
 const needle = require('needle');
+const Mustache = require('mustache');
 
 const customer_router_key = data_common_key.customer_router_key;
 
@@ -77,7 +78,7 @@ export class SettingService {
             if (ctx.originalUrl.includes("?")) {
                 c_url = ctx.originalUrl.split("?")[0];
             }
-            if(!c_url || !c_url.startsWith(get_sys_base_url_pre())) return ;
+            if (!c_url || !c_url.startsWith(get_sys_base_url_pre())) return;
             const workflow_list_router = this.get_workflow_router() as [][];
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
@@ -89,15 +90,15 @@ export class SettingService {
                         if (location && await FileUtil.access(location)) {
                             // @ts-ignore
                             const token = item[2];
-                            if(token) {
+                            if (token) {
                                 // token验证
-                                if(path.isAbsolute(token)) {
+                                if (path.isAbsolute(token)) {
                                     const context = (await FileUtil.readFileSync(token)).toString();
-                                    if(context !== ctx.headers.authorization) {
+                                    if (context !== ctx.headers.authorization) {
                                         ctx.res.status(500).send("token is invalid");
                                         return true;
                                     }
-                                } else if(token !== ctx.headers.authorization) {
+                                } else if (token !== ctx.headers.authorization) {
                                     ctx.res.status(500).send("token is invalid");
                                     return true;
                                 }
@@ -108,13 +109,13 @@ export class SettingService {
                                 const user_info = userService.get_user_info_by_user_id(item[3]);
                                 // @ts-ignore
                                 userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
-                                workflowService.exec_file(location,user_info).catch((e)=>{
-                                    console.log("workflow触发失败",e)
+                                workflowService.exec_file(location, user_info).catch((e) => {
+                                    console.log("workflow触发失败", e)
                                     ctx.res.status(500).send(JSON.stringify(e));
-                                }).then(()=>{
+                                }).then(() => {
                                     ctx.res.status(200).send("ok");
                                 });
-                            } catch (e){
+                            } catch (e) {
                                 ctx.res.status(500).send(JSON.stringify(e));
                             }
                             return true;
@@ -122,7 +123,7 @@ export class SettingService {
                     }
                 }
             }
-            const list_router:any[] = DataUtil.get<[][]>(customer_router_key);
+            const list_router: any[] = DataUtil.get<[][]>(customer_router_key);
             if (!!list_router && list_router.length > 0) {
                 for (let item of list_router) {
                     const router = item[0] as string;
@@ -139,13 +140,13 @@ export class SettingService {
                             } else {
                                 let sys_file_path = path.join(location); // 可以删除 .. 符号
                                 let stats = await FileUtil.statSync(location);
-                                if(stats.isDirectory()) {
+                                if (stats.isDirectory()) {
                                     let p = c_url.slice(router.length);
                                     p = decodeURIComponent(p);
-                                    if(p === "/" || !p) {
+                                    if (p === "/" || !p) {
                                         const list = await FileUtil.readdirSync(sys_file_path);
-                                        const ok_file_name = list.find((v=> v.startsWith("index.htm") || v=== "index"));
-                                        if(ok_file_name) {
+                                        const ok_file_name = list.find((v => v.startsWith("index.htm") || v === "index"));
+                                        if (ok_file_name) {
                                             sys_file_path = path.join(location, ok_file_name);
                                             stats = await FileUtil.statSync(sys_file_path);
                                         } else {
@@ -156,10 +157,13 @@ export class SettingService {
                                         stats = await FileUtil.statSync(sys_file_path);
                                     }
                                 }
-                                if(!userService.isSubPath(location,sys_file_path)) {
+                                if (!userService.isSubPath(location, sys_file_path)) {
                                     throw " 404 ";
                                 }
-                                FileServiceImpl.download_one_file(path.basename(sys_file_path),stats.size,sys_file_path,ctx.res,{handle_type_:"inline",cache_length:item[2]});
+                                FileServiceImpl.download_one_file(path.basename(sys_file_path), stats.size, sys_file_path, ctx.res, {
+                                    handle_type_: "inline",
+                                    cache_length: item[2]
+                                });
                             }
                             return true;
                         }
@@ -274,8 +278,8 @@ export class SettingService {
         return DataUtil.set(self_auth_jscode, req.open);
     }
 
-    public get_recycle_bin_status(){
-        return DataUtil.get(data_common_key.recycle_bin_status)??false;
+    public get_recycle_bin_status() {
+        return DataUtil.get(data_common_key.recycle_bin_status) ?? false;
     }
 
     // public get_customer_api_pre_key():string {
@@ -286,11 +290,11 @@ export class SettingService {
     //     return DataUtil.set(data_common_key.customer_api_pre_key, req.pre);
     // }
 
-    public get_recycle_dir_str():string{
+    public get_recycle_dir_str(): string {
         let v = DataUtil.get(data_common_key.recycle_bin_key) ?? "";
-        if(typeof v !== "string"){
+        if (typeof v !== "string") {
             const l = v as string[][];
-            v= "";
+            v = "";
             const item_l = [];
             for (const item of l) {
                 item_l.push(item.join(' '));
@@ -300,11 +304,34 @@ export class SettingService {
         return v as string;
     }
 
-    public get_recycle_dir_map_list():string[][]{
+
+    public async get_index_html() {
+        const index_path = path.join(__dirname, 'dist', "index.html");
+        let index_text = await FileUtil.readFileSync(index_path);
+        const web_site_title = this.get_sys_env().web_site_title;
+        index_text = Mustache.render(index_text.toString(),{
+            Windows_FileCat: JSON.stringify({
+                base_url:get_base(),
+                web_site_title
+            }), // 给前端
+            web_site_title
+        });
+        return index_text;
+    }
+
+    public get_sys_env(): { web_site_title: string } {
+        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'filecat'};
+    }
+
+    public set_sys_env(req) {
+        return DataUtil.set(data_common_key.sys_env_key, req);
+    }
+
+    public get_recycle_dir_map_list(): string[][] {
         let v = DataUtil.get(data_common_key.recycle_bin_key) ?? []
-        if(typeof v === "string"){
+        if (typeof v === "string") {
             const list = v.split(";");
-            const key_map_list:string[][] = [];
+            const key_map_list: string[][] = [];
             for (const item of list) {
                 const l = item.split(' ');
                 key_map_list.push(l);
@@ -486,7 +513,7 @@ export class SettingService {
         return DataUtil.get(data_common_key.protection_directory) ?? [];
     }
 
-    get_dir_upload_max_num():dir_upload_max_num_item[] {
+    get_dir_upload_max_num(): dir_upload_max_num_item[] {
         return DataUtil.get(data_common_key.dir_upload_max_num) ?? [];
     }
 
@@ -511,29 +538,29 @@ export class SettingService {
         DataUtil.set(data_common_key.protection_directory, data);
     }
 
-    save_dir_upload_max_num(data:dir_upload_max_num_item[]) {
+    save_dir_upload_max_num(data: dir_upload_max_num_item[]) {
         const list = data ?? [];
         for (const item of list) {
-            if(!item.path) {
+            if (!item.path) {
                 throw "path is empty";
             }
-            if(typeof item.user_upload_num === "string") {
+            if (typeof item.user_upload_num === "string") {
                 item.user_upload_num = parseInt(item.user_upload_num);
             }
-            if(typeof item.sys_upload_num === "string") {
+            if (typeof item.sys_upload_num === "string") {
                 item.sys_upload_num = parseInt(item.sys_upload_num);
             }
-            if(typeof item.open_ws_file === "string") {
+            if (typeof item.open_ws_file === "string") {
                 item.open_ws_file = item.open_ws_file === "true";
             }
-            if(item.open_ws_file) {
-                if(typeof item.ws_file_block_mb_size !== "number") {
+            if (item.open_ws_file) {
+                if (typeof item.ws_file_block_mb_size !== "number") {
                     throw `编号:${item.index} 文件块的大小设置有问题`;
                 }
-                if(typeof item.ws_file_parallel_num !== "number") {
+                if (typeof item.ws_file_parallel_num !== "number") {
                     throw `编号:${item.index} 并发数量设置有问题`;
                 }
-                if(typeof item.ws_file_standard_size !== "number") {
+                if (typeof item.ws_file_standard_size !== "number") {
                     throw `编号:${item.index} 大文件size设置有问题`;
                 }
             }
@@ -541,10 +568,10 @@ export class SettingService {
         DataUtil.set(data_common_key.dir_upload_max_num, list);
     }
 
-    protectionCheck(sys_path:string) {
+    protectionCheck(sys_path: string) {
         const list = this.protectionSysDirGet() ?? [];
         for (const item of list) {
-            if(UserService.path_check_is_child(item.path,sys_path)) {
+            if (UserService.path_check_is_child(item.path, sys_path)) {
                 // 是子路径
                 return true;
             }

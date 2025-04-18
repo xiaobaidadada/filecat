@@ -49,7 +49,7 @@ export function FileMenu() {
 
     const navigate = useNavigate();
     const items_folder = [{r: t("以studio打开")}];
-    const items_images = [{r: t("以图片编辑器打开"), v: "open"}, {r: t(`${user_base_info?.user_data?.not_pre_show_image?"开启":"关闭"}预览图片`), v: "pre"}];
+    const items_images = [{r: t("以图片编辑器打开"), v: "open"}, {r: t(`${user_base_info?.user_data?.not_pre_show_image?t("开启"):t("关闭")} ${t("预览图片")}`), v: "pre"}];
     const {file_is_running} = use_file_to_running();
 
     const close = () => {
@@ -110,14 +110,14 @@ export function FileMenu() {
                                 set_prompt_card({open: false});
                                 set_workflow_show({open: true, filename: showPrompt.data.filename});
                             }}>
-                                {"运行并实时查看"}
+                                {t("运行并实时查看")}
                             </button>
                             <button className="button button--flat" onClick={async () => {
                                 send_start_check();
                                 await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
                                 set_prompt_card({open: false});
                             }}>
-                                {"运行"}
+                                {t("运行")}
                             </button>
                         </div>
                     </div>
@@ -128,7 +128,7 @@ export function FileMenu() {
     switch (pojo.type) {
         case FileTypeEnum.video:
             if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ffmpeg] || !user_base_info.sysSoftWare[SysSoftware.ffmpeg].installed) {
-                NotyFail(t("找不到ffmpeg"))
+                NotyFail("not ffmpeg")
                 // setTimeout(()=>{
                 //     close(); // 等下不然会报错 只要不是顺序的执行应都可以 0秒表示只是加入队列
                 // },0)
@@ -204,11 +204,11 @@ export function FileMenu() {
         default: {
             if (pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
                 if (file_is_running(pojo.filename)) {
-                    items.unshift({r: t("停止workflow"), v: common_menu_type.stop_workflow})
-                    items.unshift({r: t("实时查看workflow"), v: common_menu_type.real_time_workflow})
+                    items.unshift({r: t("停止")+" workflow", v: common_menu_type.stop_workflow})
+                    items.unshift({r: t("实时查看")+" workflow", v: common_menu_type.real_time_workflow})
                 } else {
                     items.unshift({
-                        r: t("运行workflow"), v: common_menu_type.run_workflow, items: [
+                        r: t("运行")+" workflow", v: common_menu_type.run_workflow, items: [
                             {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow}, {
                                 r: t("输入参数运行"),
                                 v: common_menu_type.run_workflow_by_pre_inputs

@@ -200,8 +200,8 @@ export function Sys(props) {
                         <TextLine left={`cpu ${t("逻辑核心")}`} right={sys.cpu_core_num}/>
                         <TextLine left={`cpu ${t("物理核心")}`} right={sys.cpu_phy_core_num}/>
                         <TextLine left={`cpu ${t("最大")}hz`} right={sys.cpu_speed_hz}/>
-                        <TextLine left={`当前系统:pid;ppid`} right={sys.pid_ppid}/>
-                        <TextLine left={`运行用户`} right={sys.user}/>
+                        <TextLine left={`${t("当前系统")}:pid;ppid`} right={sys.pid_ppid}/>
+                        <TextLine left={t('运行用户')} right={sys.user}/>
                     </Card>
                 </Column>}
                 {disk && <Column>

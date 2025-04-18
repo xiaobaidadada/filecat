@@ -190,7 +190,7 @@ export function Docker(props) {
     const delete_image = async ()=>{
         set_show_confirm({
             open: true,
-            title: "确定删除选中的镜像吗",
+            title: t("确定删除选中的镜像吗"),
             // sub_title: ``,
             handle: async () => {
                 const keys = Object.keys(images_selected);
@@ -230,32 +230,32 @@ export function Docker(props) {
                 set_images_selected({});
             }
         }}/>}>
-            {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={"删除镜像"} onClick={delete_image}/>}
+            {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={t("删除镜像")} onClick={delete_image}/>}
             {optRow.length > 0 && <div>
                 {optRow[1].props.context}
             </div>}
             {optRow.length > 0 && <div>
-                {check_user_auth(UserAuth.docker_container_update) && <ActionButton  icon={"delete"} title={"删除容器"} onClick={del}/>}
+                {check_user_auth(UserAuth.docker_container_update) && <ActionButton  icon={"delete"} title={t("删除容器")} onClick={del}/>}
 
-                <ActionButton icon={"print"} title={"打印日志"} onClick={logs}/>
-                {check_user_auth(UserAuth.docker_container_update) && <ActionButton icon={"personal_video"} title={"执行命令"} onClick={exec}/>}
-                {(check_user_auth(UserAuth.docker_container_update) && optRow[4].props.context.includes("Up") ) && <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>}
-                {(check_user_auth(UserAuth.docker_container_update) && !optRow[4].props.context.includes("Up") ) &&  <ActionButton icon={"play_arrow"} title={"开启"} onClick={() => {
+                <ActionButton icon={"print"} title={t("打印日志")} onClick={logs}/>
+                {check_user_auth(UserAuth.docker_container_update) && <ActionButton icon={"personal_video"} title={t("执行命令")} onClick={exec}/>}
+                {(check_user_auth(UserAuth.docker_container_update) && optRow[4].props.context.includes("Up") ) && <ActionButton icon={"stop"} title={t("停止")} onClick={() => dswitch("stop")}/>}
+                {(check_user_auth(UserAuth.docker_container_update) && !optRow[4].props.context.includes("Up") ) &&  <ActionButton icon={"play_arrow"} title={t("开启")} onClick={() => {
                     dswitch("start")
                 }}
                 />}
 
             </div>}
             {(rows.length !== 0 || filterKey) && !show_iamges && (
-                <ActionButton icon={"refresh"} title={"列表更新"} onClick={updat_list}/>
+                <ActionButton icon={"refresh"} title={t("列表更新")} onClick={updat_list}/>
             )}
         </Header>
         <Dashboard>
             {show_iamges &&
                 <Row>
                     <Column widthPer={80}>
-                        <CardFull title={`镜像(${rows_images.length})`}
-                                  titleCom={<InputText placeholder={"过滤镜像"} value={images_filterkey}
+                        <CardFull title={`${t('镜像')} (${rows_images.length})`}
+                                  titleCom={<InputText placeholder={t('过滤镜像')} value={images_filterkey}
                                                        handleInputChange={(value) => {
                                                            set_images_filterkey(value);
                                                        }} handlerEnter={search_image}/>}>
@@ -271,12 +271,12 @@ export function Docker(props) {
                     </Column>
                 </Row>
             }
-            {rows.length === 0 && !filterKey && !show_iamges && <Blank context={"检测不到docker，主机可能没有安装docker or 容器为空"}/>}
+            {rows.length === 0 && !filterKey && !show_iamges && <Blank context={t("检测不到docker，主机可能没有安装docker or 容器为空")}/>}
             {(rows.length !== 0 || filterKey) && !show_iamges && (
                 <Row>
                     <Column widthPer={80}>
-                        <CardFull title={`容器(${rows.length})`}
-                                  titleCom={<InputText placeholder={"过滤"} value={filterKey}
+                        <CardFull title={`${t("容器")} (${rows.length})`}
+                                  titleCom={<InputText placeholder={t("过滤")} value={filterKey}
                                                        handleInputChange={(value) => {
                                                            setFilterKey(value)
                                                        }}/>}>

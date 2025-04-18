@@ -127,7 +127,17 @@ export class ShellService {
             console.log(ex)
         }
     }
+    user_history_line_map: Map<string, string[]> = new Map();
 
+    get_user_history_line(token: string) {
+        const user_data = userService.get_user_info_by_token(token);
+        let line = this.user_history_line_map.get(user_data.id);
+        if (!line) {
+            line = [];
+            this.user_history_line_map.set(user_data.id, line);
+        }
+        return line;
+    }
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
@@ -143,6 +153,7 @@ export class ShellService {
             cwd: sysPath,
             node_pty: pty,
             env: {PATH},
+            history_line:this.get_user_history_line((data.wss as Wss).token),
             node_pty_shell_list: settingService.get_pty_cmd(),
             on_prompt_call: (cwd) => {
                 // 输出格式化的命令提示符

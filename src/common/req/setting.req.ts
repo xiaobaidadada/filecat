@@ -38,10 +38,12 @@ export class systemdPojo {
     isSys: boolean; // 是系统创建的(或者加入到filecat监管的)
 }
 
-export const enum status_open {
+// 系统设置类型
+export const enum sys_setting_type {
     auth,
     cmd,
     cyc, // 垃圾站
+    sys_env
 }
 
 export interface dir_upload_max_num_item {

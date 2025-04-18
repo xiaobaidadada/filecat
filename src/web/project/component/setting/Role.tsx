@@ -191,14 +191,14 @@ export function Role() {
                                   <ActionButton icon={"add_circle"} title={t("添加")} onClick={create_user_api}/>}
                               {is_save && <ActionButton icon={"save"} title={t("保存")} onClick={save_user_api}/>}
                           </div>}>
-                        <label>角色名</label>
+                        <label>{t("角色名")}</label>
                         <InputText value={role_name} handleInputChange={(value) => set_role_name(value)}/>
-                        <label>角色备注</label>
+                        <label>{t("角色备注")}</label>
                         <InputText value={role_note} handleInputChange={(value) => set_role_note(value)}/>
 
                         <label><ActionButton icon={"add"} onClick={() => {
                             set_access_dirs([...access_dirs, ""])
-                        }} title={"添加"}/>目录范围</label>
+                        }} title={"添加"}/>{t("目录范围")}</label>
                         <InputText value={cwd} handleInputChange={(value) => setwd(value)}/>
                         {(access_dirs ?? []).map((item, index) => {
                             return <div key={index} style={{display: "flex",}}>
@@ -225,13 +225,13 @@ export function Role() {
                                 <ActionButton icon={"delete"} onClick={() => {
                                     not_access_dirs.splice(index, 1);
                                     set_not_access_dirs([...not_access_dirs]);
-                                }} title={"删除"}/>
+                                }} title={t("删除")}/>
                             </div>
                         })}
 
                         <label><ActionButton icon={"add"} onClick={() => {
                             set_only_read_dirs([...only_read_dirs, ""])
-                        }} title={"添加"}/>只读目录范围</label>
+                        }} title={t("添加")}/>{t("只读目录范围")}</label>
                         {(only_read_dirs ?? []).map((item, index) => {
                             return <div key={index} style={{display: "flex",}}>
                                 <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
@@ -245,14 +245,14 @@ export function Role() {
                             </div>
                         })}
 
-                        <label>可执行的命令</label>
+                        <label>{t("可执行的命令")}</label>
                         <InputText value={access_cmd} placeholder={"use blank split"}
                                    handleInputChange={(value) => set_access_cmd(value)}/>
-                        <label>语言</label>
+                        <label>{t("语言")}</label>
                         <Select value={language} onChange={(value) => {
                             setLanguage(value);
                         }} options={[{title: "NOT", value: ""},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
-                        <p className="small">标签编辑是所有人都可见的的数据</p>
+                        <p className="small">{t("标签编辑是所有人都可见的的数据")}</p>
 
                         <Permission is_disable={() => {
                             return false

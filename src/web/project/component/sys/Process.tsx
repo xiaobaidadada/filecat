@@ -24,11 +24,11 @@ export function Process(props) {
     const [optRow, setOptRow] = useState([]);
     const [count, setCount] = useState(0);
     const [filterKey,setFilterKey] = useState("");
-    const [headers, setHeaders] = useState(["pid", t("名字"),"创建用户",
-        (<span>{t("内存")}<ActionButton icon={"sort"} title={"升序"}  onClick={()=>{
+    const [headers, setHeaders] = useState(["pid", t("名字"),t("创建用户"),
+        (<span>{t("内存")}<ActionButton icon={"sort"} title={t("升序")}  onClick={()=>{
             sortMem=!sortMem;
         }}/></span>)
-        ,(<span>cpu%<ActionButton icon={"sort"} title={"升序"}  onClick={()=>{
+        ,(<span>cpu%<ActionButton icon={"sort"} title={t("升序")}  onClick={()=>{
             sortCpu=!sortCpu;
         }}/></span>),
         t("选择"),]);
@@ -63,7 +63,7 @@ export function Process(props) {
                 for (let index2 = 0; index2 < row.length; index2++) {
                     row[index2] = (<TextTip context={index2===3?formatFileSize(row[index2]):row[index2]}/>);
                 }
-                row.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
+                row.push((<ActionButton icon={"place"} title={t("选中")} onClick={() => {
                     setOptRow(row);
                 }}/>))
             }
@@ -100,16 +100,16 @@ export function Process(props) {
                 {optRow[1].props.context}
             </div>}
             {(optRow.length > 0 && check_user_auth(UserAuth.sys_process_close)) && <div>
-                <ActionButton icon={"stop"} title={"停止"} onClick={close}/>
+                <ActionButton icon={"stop"} title={t("停止")} onClick={close}/>
             </div>}
 
         </Header>
         <Dashboard>
-            {rows.length === 0 && !filter ? (<Blank context={"加载中请等待..."}/>) : (
+            {rows.length === 0 && !filter ? (<Blank context={t("加载中请等待...")}/>) : (
                 <Row>
                     <Column widthPer={80}>
-                        <CardFull title={`进程(${count})`}
-                                  titleCom={<InputText placeholder={"过滤"} value={filterKey} handleInputChange={(value) => {
+                        <CardFull title={`${t('进程')} (${count})`}
+                                  titleCom={<InputText placeholder={t("过滤")} value={filterKey} handleInputChange={(value) => {
                                       setFilterKey(value);
                                   }}/>}>
                             <Table headers={headers} rows={rows} width={"10rem"}/>

@@ -46,15 +46,15 @@ export function Crypto() {
         }
         setShowPrompt({
             open: true,
-            title: "将覆盖密钥文件",
-            sub_title: `将会作为 ${name} 文件保存到系统上的"${home_path}"目录下，此目录会作为openssh(git)所使用的默认目录。之前的密钥将作废。`,
+            title: t("将覆盖密钥文件"),
+            sub_title: `之前的密钥将作废。 将会作为 ${name} 文件保存到系统上的"${home_path}"目录下，此目录会作为openssh(git)所使用的默认目录。`,
             handle: async () => {
                 const result = await cryptoHttp.post("save_openssh", {
                     name,
                     context: type === "pub" ? publicKey : privateKey,
                 });
                 if (result.code === RCode.Sucess) {
-                    NotySucess("保存成功");
+                    NotySucess("完成");
                     setShowPrompt({open:false,handle:null});
                 }
             }
@@ -80,7 +80,7 @@ export function Crypto() {
                     <Card title={"公钥"} titleCom={<ActionButton title={"复制"} icon={"copy_all"} onClick={()=>{
                         if (publicKey) {
                             copyToClipboard(publicKey);
-                            NotySucess("复制完成")
+                            NotySucess("完成")
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&
@@ -104,7 +104,7 @@ export function Crypto() {
                     <Card title={"私钥"} titleCom={<ActionButton title={"复制"} icon={"copy_all"} onClick={()=>{
                         if (privateKey) {
                             copyToClipboard(privateKey);
-                            NotySucess("复制成功")
+                            NotySucess("成功")
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&

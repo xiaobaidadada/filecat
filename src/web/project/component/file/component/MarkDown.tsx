@@ -6,10 +6,12 @@ import Header from "../../../../meta/component/Header";
 import {NotySucess} from "../../../util/noty";
 import {join_url} from "../../../../../common/StringUtil";
 import {copyToClipboard} from "../../../util/FunUtil";
+import {useTranslation} from "react-i18next";
 
 const Md = React.lazy(() => import("./markdown/Md"));
 
 export default function MarkDown(props) {
+    const {t} = useTranslation();
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const copy = (text) => {
         copyToClipboard(text)
@@ -46,7 +48,7 @@ export default function MarkDown(props) {
 
     return <div id={"md-container"}>
         <Header ignore_tags={true}
-                left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
+                left_children={[<ActionButton key={1} title={t("取消")} icon={"close"} onClick={cancel}/>,
                     <title key={2}>{markdown.filename}</title>]}>
         </Header>
         <div className={"md-context markdown-body "}>

@@ -68,6 +68,7 @@ export enum data_common_key {
 
     guid_key = "guid_key",
     tcp_proxy_key = "tcp_proxy_key",
+    sys_env_key = "sys_env_key", // 系统全局变量
 }
 
 

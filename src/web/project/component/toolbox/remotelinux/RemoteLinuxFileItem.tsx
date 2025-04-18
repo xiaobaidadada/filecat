@@ -16,7 +16,8 @@ import {NotyFail} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
-import { formatFileSize, getShortTime, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
+import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
+import {getShortTime} from "../../../../project/util/comm_util";
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 
 

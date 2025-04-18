@@ -353,13 +353,13 @@ export function Http() {
         }
         for (const item of form_data_list) {
             if (item.is_file) {
-                NotyFail('表单中含有文件，浏览器限制不能添加');
+                NotyFail(t('表单中含有文件，浏览器限制不能添加'));
                 return;
             }
         }
         let name;
         set_prompt_card({
-            open: true, title: "信息", context_div: (
+            open: true, title: t("信息"), context_div: (
                 <div>
                     <div className="card-content">
                         <InputText placeholderOut={t("输入标签名")}
@@ -372,7 +372,7 @@ export function Http() {
                             set_nav_index_add_item_by_now_list(pojo)
                             set_prompt_card({open: false});
                         }}>
-                            {"确定"}
+                            {t("确定")}
                         </button>
                     </div>
                 </div>
@@ -431,7 +431,7 @@ export function Http() {
                                            }}/>
                             <ActionButton icon={"send"} title={t("发送")} onClick={send}/>
                             {check_user_auth(UserAuth.http_proxy_tag_update) &&
-                                <ActionButton title={"添加"} icon={"save_as"} onClick={save_as}/>}
+                                <ActionButton title={t("添加")} icon={"save_as"} onClick={save_as}/>}
                         </div>
                         <Rows isFlex={true} columns={[
                             <InputRadio value={1} name={'h_or_body'} context={t("请求头")}
@@ -485,7 +485,7 @@ export function Http() {
                         <div style={{paddingTop: "1rem"}}>
                             {local_download_path === undefined ? <span onClick={() => {
                                     set_local_download_path("")
-                                }}>下载到本地目录</span> :
+                                }}>{t("下载到本地目录")}</span> :
                                 <InputText placeholder={t("本地地址")} value={local_download_path}
                                            handleInputChange={(v) => {
                                                set_local_download_path(v);
@@ -512,7 +512,7 @@ export function Http() {
                             <ActionButton title={"复制"} icon={"copy_all"} onClick={() => {
                                 if (status_body) {
                                     copyToClipboard(status_body);
-                                    NotySucess("复制完成")
+                                    NotySucess("完成")
                                 }
                             }}/>
                         </div>}

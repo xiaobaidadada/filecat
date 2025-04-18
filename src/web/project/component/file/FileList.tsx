@@ -21,8 +21,9 @@ import {NotyFail, NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {use_auth_check, use_file_to_running, user_click_file} from "../../util/store.util";
-import {formatFileSize, getShortTime} from '../../../../common/ValueUtil';
+import {formatFileSize} from '../../../../common/ValueUtil';
 import {removeLastDir} from "../../../project/util/ListUitl";
+import {getShortTime} from "../../../project/util/comm_util";
 import {TextTip} from "../../../meta/component/Card";
 // import {WorkFlow} from "./component/workflow/WorkFlow";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
@@ -391,7 +392,7 @@ export default function FileList() {
     }
     const update_dir_info = (show_info) => {
         set_prompt_card({
-            open: true, title: "信息", context_div: (
+            open: true, title: t("信息"), context_div: (
                 <div style={{maxWidth: "25rem"}}>
                     <TextLine left={t("挂载位置磁盘")} right={show_info?.total_size}/>
                     <TextLine left={`${t("磁盘剩余")}`} right={show_info?.left_size}/>
@@ -657,7 +658,7 @@ export default function FileList() {
                 <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
                 <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
                 <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
-                <ActionButton icon="upload_file" title={"上传"} onClick={uploadFile}/>
+                <ActionButton icon="upload_file" title={t("上传")} onClick={uploadFile}/>
                 <ActionButton icon={"info"} title={t("信息")} onClick={folder_info}/>
                 <ActionButton icon={"more_vert"} title={t("切换目录")} onClick={(event) => {
                     const pojo = new FileMenuData();

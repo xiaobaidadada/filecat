@@ -1,6 +1,5 @@
 import {SshPojo} from "../../../common/req/ssh.pojo";
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
-import {formatFileSize, getShortTime} from "../../../common/ValueUtil";
 import {LifecycleRecordService} from "../pre/lifeRecordService";
 
 const EventEmitter = require('events');

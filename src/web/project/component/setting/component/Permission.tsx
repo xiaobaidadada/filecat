@@ -158,7 +158,7 @@ export function Permission(props:{
                        onChange={() => {
                            props.select_auth(UserAuth.pty_cmd_update)
                        }}/>
-                {t("pty cmd 更新")}
+                {"pty cmd " +t("更新")}
             </div>
             <div>
                 <input type="checkbox"
@@ -177,7 +177,7 @@ export function Permission(props:{
                        onChange={() => {
                            props.select_auth(UserAuth.workflow_exe)
                        }}/>
-                {t("workflow 执行")}
+                {t("workflow ")+t("执行")}
             </div>
             <div>
                 <input type="checkbox"
@@ -185,7 +185,7 @@ export function Permission(props:{
                        onChange={() => {
                            props.select_auth(UserAuth.workflow_exe_user)
                        }}/>
-                {t("workflow 执行用户")}
+                {t("workflow ")+t("执行用户")}
             </div>
             <div>
                 <input type="checkbox"
@@ -233,6 +233,15 @@ export function Permission(props:{
                        props.select_auth(UserAuth.recycle_file_save)
                    }}/>
             {t("文件回收站修改")}
+        </div>
+        <div>
+            <input type="checkbox"
+                   disabled={props.is_disable(UserAuth.sys_env_setting_key)}
+                   checked={props.is_selected(UserAuth.sys_env_setting_key)}
+                   onChange={() => {
+                       props.select_auth(UserAuth.sys_env_setting_key)
+                   }}/>
+            {t("全局变量设置")}
         </div>
 
         <h3>{t("标签编辑权限")}</h3>

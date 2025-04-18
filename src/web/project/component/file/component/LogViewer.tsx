@@ -465,7 +465,7 @@ export default function LogViewer(props) {
     return <div id={'editor-container'}>
         <Header ignore_tags={true}
                 left_children={[
-                    <ActionButton key={1} title={"取消"} icon={"close"} onClick={() => {
+                    <ActionButton key={1} title={t("取消")} icon={"close"} onClick={() => {
                         setShellShow({show: false})
                     }}/>,
                     <div key={2} style={{
@@ -479,7 +479,7 @@ export default function LogViewer(props) {
                     search && <div key={6} style={{paddingLeft: '1.5rem', cursor: 'pointer'}} onClick={search_file_back}>↑</div>,
                     search && <div key={7} style={{paddingLeft: '1.5rem'}}>{search_index}/{search_all_index_r.length}</div>,
                     search && <div key={8} style={{paddingLeft: '1.5rem'}}>搜索进度${search_file_progress}%</div>,
-                    search_file_progress !==0 && search_file_progress!== 100 && <ActionButton key={4} title={"取消"} icon={"cancel"} onClick={() => {
+                    search_file_progress !==0 && search_file_progress!== 100 && <ActionButton key={4} title={t("取消")} icon={"cancel"} onClick={() => {
                         search_file_cancel();
                     }}/>
                 ]}>

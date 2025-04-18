@@ -77,7 +77,7 @@ export function FileNew(props) {
     const location = useLocation();
 
     const select_item = [
-        {title:`${t("空")}`,value:""},
+        {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
         {title: `workflow${t("格式")}`, value:".act"},
     ]

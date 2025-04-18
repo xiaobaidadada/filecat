@@ -4,12 +4,16 @@ import {Card} from "../../../meta/component/Card";
 import {Button, ButtonText} from "../../../meta/component/Button";
 import {isNumeric} from "../../util/WebPath";
 import Noty from "noty";
+import {useTranslation} from "react-i18next";
 
 
 export function TimeConverTer(props) {
-    const [type, setType] = useState('毫秒');
+    const {t} = useTranslation();
+
+    const [type, setType] = useState(t('毫秒'));
     const [stamp, setStamp] = useState('');
     const [time, setTime] = useState('');
+
     function changeType(type) {
         setType(type);
     }
@@ -59,9 +63,9 @@ export function TimeConverTer(props) {
             setStamp(type==='毫秒'?stamppp:stamppp/1000)
         }
     }
-    return <Card title={"时间转换器"} rightBottomCom={<ButtonText text={'确定'} clickFun={switchTime}/>}>
-        <Select options={[{title:"毫秒",value:"毫秒"},{title:"分秒",value:"分秒"}]} onChange={changeType}/>
+    return <Card title={t("时间转换器")} rightBottomCom={<ButtonText text={t('确定')} clickFun={switchTime}/>}>
+        <Select options={[{title:t("毫秒"),value:"毫秒"},{title:t("分秒"),value:"分秒"}]} onChange={changeType}/>
         <InputText placeholder={type} value={stamp} handleInputChange={(value)=>{setStamp(value)}} />
-        <InputText placeholder={'格式化时间'}  value={time} handleInputChange={(value)=>{setTime(value)}}/>
+        <InputText placeholder={t('格式化时间')}  value={time} handleInputChange={(value)=>{setTime(value)}}/>
     </Card>
 }

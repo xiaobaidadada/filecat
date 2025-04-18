@@ -6,10 +6,12 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {ExtendedImage} from "./ExtendedImage";
+import {useTranslation} from "react-i18next";
 
 const VideoPlayer = React.lazy(() => import("./VideoPlayer"))
 
 export default function Preview(props: any) {
+    const {t} = useTranslation();
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
     if (!file_preview.open) {
         return ;
@@ -30,7 +32,7 @@ export default function Preview(props: any) {
             break;
     }
     const div = <div id={"previewer"}>
-        <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>]}>
+        <Header ignore_tags={true} left_children={[<ActionButton key={1} title={t("取消")} icon={"close"} onClick={cancel}/>]}>
         </Header>
         {/*<div className="loading delayed" v-if="layoutStore.loading">*/}
         {/*    <div className="spinner">*/}

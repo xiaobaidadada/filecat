@@ -10,15 +10,17 @@ import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
-import {status_open, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
+import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
+import {getShortTime} from "../../../project/util/comm_util";
 
 
 export function  Sys() {
+    const [web_site_title, set_web_site_title] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [authopen, setAuthopen] = useState(false);
@@ -59,7 +61,7 @@ export function  Sys() {
                 return;
             }
         }
-        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:status_open.cyc,value:recycle_dir,open:recycle_open});
+        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.cyc,value:recycle_dir,open:recycle_open});
         if (result.code === RCode.Sucess) {
             NotySucess("修改成功")
         }
@@ -71,7 +73,9 @@ export function  Sys() {
                 setAuthopen(all_open_result.data.self_auth_open);
                 set_shell_cmd_open(all_open_result.data.shell_cmd_check_open);
                 set_recycle_open(all_open_result.data.recycle_open);
-                set_recycle_dir(all_open_result.data.recycle_dir)
+                set_recycle_dir(all_open_result.data.recycle_dir);
+                const sys_env = all_open_result.data.sys_env;
+                set_web_site_title(sys_env?.web_site_title);
             }
             // const result = await settingHttp.get("self_auth_open");
             // setAuthopen(result.data);
@@ -175,7 +179,14 @@ export function  Sys() {
             NotySucess("清理完成，重新登录")
         }
     }
-
+    const save_sys_env = async () =>{
+        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.sys_env,value:{
+                web_site_title
+            }});
+        if (result.code === RCode.Sucess) {
+            NotySucess("修改成功")
+        }
+    }
 
     return <Row>
         <Column widthPer={30}>
@@ -226,7 +237,15 @@ export function  Sys() {
                 </Card>
             </Dashboard>
         </Column>
+
+        <Column widthPer={30}>
+            <Dashboard>
+                <Card title={t("全局变量")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                    <InputText placeholder={t('web site title')}  value={web_site_title} handleInputChange={(value)=>{set_web_site_title(value)}} />
+                </Card>
+            </Dashboard>
+        </Column>
         <Header left_children={<span> <span className={"credits"}>{`version:${process.env.version}`}</span><span
-            className={"credits"}>系统运行于:{userInfo.runing_time_length}</span></span>}/>
+            className={"credits"}>{t('系统运行于')}:{getShortTime(userInfo.runing_time_length)}</span></span>}/>
     </Row>
 }

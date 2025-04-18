@@ -1,11 +1,12 @@
 import React from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
+import {useTranslation} from "react-i18next";
 
 export function UploadFile(props) {
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-
+    const {t} = useTranslation();
     return (
         <div>
             {showPrompt.data?.extra_data?.only_file ?
@@ -39,11 +40,11 @@ export function UploadFile(props) {
             <div className={"overlay"}></div>
             <div className="card floating">
                 <div className="card-title">
-                    <h2>上传</h2>
+                    <h2>{t("上传")}</h2>
                 </div>
 
                 <div className="card-content">
-                    <p>文件选项</p>
+                    <p>{t("文件选项")}</p>
                 </div>
 
                 <div className="card-action full">
@@ -54,7 +55,7 @@ export function UploadFile(props) {
                         document.getElementById("upload-input").click();
                     }}>
                         <i className="material-icons">insert_drive_file</i>
-                        <div className="title">文件</div>
+                        <div className="title">{t("文件")}</div>
                     </div>
                     {!showPrompt.data?.extra_data?.only_file &&
                         <div className="action" onClick={() => {
@@ -64,7 +65,7 @@ export function UploadFile(props) {
                             document.getElementById("upload-input-directory").click();
                         }}>
                             <i className="material-icons">folder</i>
-                            <div className="title">文件夹</div>
+                            <div className="title">{t("文件夹")}</div>
                         </div>
                     }
                 </div>

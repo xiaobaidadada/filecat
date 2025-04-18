@@ -6,6 +6,7 @@ import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component
 import {useLocation, useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
+import {useTranslation} from "react-i18next";
 
 
 const colorList = ["#ffffff",
@@ -54,7 +55,7 @@ export function NavIndexContainer(props: {
     const location = useLocation();
     const [edit, setEdit,] = useState<boolean>(false);
     const [unfold,set_unfold] = useState<boolean>(false);
-
+    const {t} = useTranslation();
     const [edit_index, setEdit_index] = useState<number[]>([]);
 
     const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useRecoilState($stroe.nav_index_add_item_by_now_list);
@@ -175,7 +176,7 @@ export function NavIndexContainer(props: {
                         <React.Fragment>
                             <InputText value={item.name} handleInputChange={(value) => {
                                 item.name = value;
-                            }} placeholder={"输入类目名"} no_border={true}/>
+                            }} placeholder={t("输入类目名")} no_border={true}/>
                             <InputText value={item.color} handleInputChange={(value) => {
                                 item.color = value;
                             }} placeholder={"color"} no_border={true}/>
@@ -189,16 +190,16 @@ export function NavIndexContainer(props: {
                             </div>
                         )))
                     }
-                    {!unfold && <ButtonText text={"折叠"} clickFun={() => {
+                    {!unfold && <ButtonText text={t("折叠")} clickFun={() => {
                         setEdit_index(getNewDeleteByList(edit_index,index));
                     }}/>}
                 </div>}
                 {edit && <div style={{"display": "block"}} >
                     <span className={"div-row "}>
-                        <ButtonText text={"删除"} clickFun={() => {
+                        <ButtonText text={t("删除")} clickFun={() => {
                             del(index)
                         }}/>
-                    <ButtonText text={"编辑"} clickFun={() => {
+                    <ButtonText text={t("编辑")} clickFun={() => {
                         if (edit_index.find(v => v === index) !== undefined) {
                             return;
                         }
@@ -210,13 +211,13 @@ export function NavIndexContainer(props: {
             </div>
             ))}
         {edit && <div style={{"display": "block"}}>
-            <ActionButton title={"取消"} icon={"cancel"} onClick={cancel}/>
-            <ActionButton title={"添加"} icon={"add"} onClick={addItem}/>
-            <ActionButton title={"添加类目"} icon={"add_box"} onClick={addDirItem}/>
-            <ActionButton title={"全部编辑"} icon={unfold?"unfold_less":'unfold_more'} onClick={()=>{set_unfold(!unfold)}}/>
+            <ActionButton title={t("取消")} icon={"cancel"} onClick={cancel}/>
+            <ActionButton title={t("添加")} icon={"add"} onClick={addItem}/>
+            <ActionButton title={t("添加类目")} icon={"add_box"} onClick={addDirItem}/>
+            <ActionButton title={t("全部编辑")} icon={unfold?"unfold_less":'unfold_more'} onClick={()=>{set_unfold(!unfold)}}/>
         </div>}
         {
-            (props.have_auth_edit === undefined || props.have_auth_edit === true) &&   <ActionButton icon={!edit ? "edit" : "save"} title={!edit ? "编辑" : "保存"} onClick={editHander}/>
+            (props.have_auth_edit === undefined || props.have_auth_edit === true) &&   <ActionButton icon={!edit ? "edit" : "save"} title={!edit ? t("编辑") : t("保存")} onClick={editHander}/>
         }
     </div>
 }

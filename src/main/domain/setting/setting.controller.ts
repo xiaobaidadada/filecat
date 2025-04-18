@@ -6,13 +6,14 @@ import {Service} from "typedi";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {status_open, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
 import fs from "fs"
 import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
+import {ServerEvent} from "../../other/config";
 
 @Service()
 @JsonController("/setting")
@@ -271,7 +272,7 @@ export class SettingController {
         return Sucess("1");
     }
 
-    // 获取系统所有的开关状态
+    // 获取系统所有的配置
     @Get("/sys_option/status")
     get_sys_option_status(@Req() ctx) {
         // 获取系统所有功能的状态
@@ -279,7 +280,8 @@ export class SettingController {
             self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
             shell_cmd_check_open:settingService.get_shell_cmd_check(), // 自定义cmd判断
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
-            recycle_dir: settingService.get_recycle_dir_str() // 垃圾回收站 目录也返回
+            recycle_dir: settingService.get_recycle_dir_str(), // 垃圾回收站 目录也返回
+            sys_env: settingService.get_sys_env(),
         }
         return Sucess(r);
     }
@@ -298,9 +300,9 @@ export class SettingController {
 
     // 保存系统所有的开关状态
     @Post(`/${Http_controller_router.setting_sys_option_status_save}`)
-    save_sys_option_status(@Req() ctx,@Body() body:{type:status_open,value:string,open:boolean}) {
+    save_sys_option_status(@Req() ctx,@Body() body:{type:sys_setting_type,value:string,open:boolean}) {
         // 获取系统所有功能的状态
-        if(body.type === status_open.cyc) {
+        if(body.type === sys_setting_type.cyc) {
             // 文件回收站
             userService.check_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
             DataUtil.set(data_common_key.recycle_bin_status, body.open)
@@ -326,6 +328,10 @@ export class SettingController {
                 key_map_list.push(l);
             }
             DataUtil.set(data_common_key.recycle_bin_key, key_map_list);
+        } else if(body.type === sys_setting_type.sys_env) {
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+            settingService.set_sys_env(body.value);
+            ServerEvent.emit("sys_env_update");
         }
         return Sucess("1");
     }
