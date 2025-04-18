@@ -28,8 +28,8 @@ function writeToStorage(virtualFilePath, realInstallPath) {
 
 export function get_wintun_dll_path(): string {
     try {
-        const relp = path.join(Env.work_dir, "packges","filecat_dlls");
-        fse.ensureDirSync(relp);
+        // const relp = path.join(Env.work_dir, "packges","filecat_dlls");
+        // fse.ensureDirSync(relp);
         let cpuArch = os.arch();
         switch (cpuArch) {
             case 'arm':
@@ -47,9 +47,9 @@ export function get_wintun_dll_path(): string {
         }
         const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
         // pkg  env
-        if (process.env.run_env === "exe") {
+        if (process.env.NODE_ENV==="production") {
             // 在main.js的根目录下
-            return path.resolve(winfilename);
+            return path.join(__dirname,winfilename);
         }
         // else if (process.env.run_env === "pkg") {
         //     const p = path.join(relp, winfilename);

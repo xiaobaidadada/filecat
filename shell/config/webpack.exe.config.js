@@ -9,7 +9,7 @@ const plugins = [
         'process.env.NODE_ENV': JSON.stringify('production'),
         'process.env.version': JSON.stringify(package_data.version),
         'process.env.base_url': JSON.stringify(base_url),
-        'process.env.run_env': JSON.stringify("exe") // 必须用 JSON.stringify
+        // 'process.env.run_env': JSON.stringify("exe") // 必须用 JSON.stringify
     }),
     // new webpack.DefinePlugin({
     //     'process.platform': JSON.stringify(process.platform) // 这里将 process.platform 替换为实际的值 在遇到动态打包的时候require 可以判断类型 函数内部的无法判断

@@ -40,7 +40,7 @@ module.exports = {
             'process.env.NODE_ENV': JSON.stringify('production'),
             'process.env.version': JSON.stringify(package_data.version),
             'process.env.base_url': JSON.stringify(base_url),
-            'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify
+            // 'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify
         }),
         // new webpack.IgnorePlugin({ // 前面已经排除了可能含义.node的项目 这里就不需要了
         //     resourceRegExp: /\.node$/
