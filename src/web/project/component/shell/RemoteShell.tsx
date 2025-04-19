@@ -15,7 +15,7 @@ export function RemoteShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
     const [shellShowInit,setShellShowInit] = useState(false);
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
 
     const initTerminal =  async () => {
@@ -50,8 +50,11 @@ export function RemoteShell(props) {
         })
         // 交互效果完全发送到服务器
         terminal.onData(async (data) => {
+            const req = new SshPojo();
+            req.key = sshInfo.key;
+            req.cmd = data;
             const obj = new WsData(CmdType.remote_shell_send);
-            obj.context=data;
+            obj.context=req;
             await ws.send(obj)
         });
         setTerminalState(terminal)
@@ -87,11 +90,11 @@ export function RemoteShell(props) {
         }
         if (terminalState) {
             //已经开启了
-            if (shellShowInit) {
-                const data = new WsData(CmdType.remote_shell_cd);
-                data.context=shellShow.path
-                ws.send(data)
-            }
+            // if (shellShowInit) {
+            //     const data = new WsData(CmdType.remote_shell_cd);
+            //     data.context=shellShow.path
+            //     ws.send(data)
+            // }
             return;
         }
         initTerminal();
@@ -101,8 +104,9 @@ export function RemoteShell(props) {
         terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
         const data = new WsData(CmdType.remote_shell_open);
         const req = new SshPojo();
-        Object.assign(req,sshInfo);
-        req.init_path = joinPaths(...shellNowDir);
+        req.key = sshInfo.key;
+        // Object.assign(req,sshInfo);
+        req.init_path = shellShow.path;
         req.rows = rows;
         req.cols = cols;
         data.context= req;

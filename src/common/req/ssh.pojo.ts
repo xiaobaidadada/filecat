@@ -7,6 +7,7 @@ export class ShellInitPojo {
 }
 
 export class SshPojo extends ShellInitPojo{
+    key:string; // 用于链接的key
     username:string;
     password:string;
     private_path:string; //密码和私钥文件地址二选一

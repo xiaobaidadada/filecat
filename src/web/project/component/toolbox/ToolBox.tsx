@@ -21,7 +21,7 @@ export default function ToolBox(props) {
 
     const menuRots = [];
     if(check_user_auth(UserAuth.ssh_proxy)) {
-        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/"})
+        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/*"})
     }
     if(check_user_auth(UserAuth.http_proxy)) {
         menuRots.push({index: 1, name: t("http代理"),rto:'http/'})

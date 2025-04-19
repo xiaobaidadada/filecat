@@ -123,12 +123,12 @@ export class SSHController {
     //     return ""
     // }
 
-    @msg(CmdType.remote_shell_cd)
-    async cd(data: WsData<SshPojo>) {
-        userService.check_user_auth((data.wss as Wss).token,UserAuth.ssh_proxy_tag_update);
-        sshService.cd(data);
-        return ""
-    }
+    // @msg(CmdType.remote_shell_cd)
+    // async cd(data: WsData<SshPojo>) {
+    //     userService.check_user_auth((data.wss as Wss).token,UserAuth.ssh_proxy_tag_update);
+    //     sshService.cd(data);
+    //     return ""
+    // }
 
     @Post('/tag/save')
     save(@Body() items: NavIndexItem[],@Req() r: Request) {

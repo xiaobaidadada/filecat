@@ -80,10 +80,10 @@ export class SshSsh2 extends LifecycleRecordService {
     }
 
     // 获取目录下文件
-    async sftGetDir(req: SshPojo, client: Client) {
+    async sftGetDir(dir: string, client: Client) {
         return this.asyncExec((resolve, reject) => {
             const sftp = this.sftGet(client);
-            const remotePath = req.dir;
+            const remotePath = dir;
             const result: GetFilePojo = {
                 files: [],
                 folders: []
@@ -122,12 +122,12 @@ export class SshSsh2 extends LifecycleRecordService {
     }
 
     // 读文本文件
-    async sftGetFileText(req: SshPojo, client: Client) {
+    async sftGetFileText(file: string, client: Client) {
         return this.asyncExec((resolve, reject) => {
             const sftp = this.sftGet(client);
             let fileContent = '';
             // 创建一个读取流，从远程文件读取
-            const readStream = sftp.createReadStream(req.file);
+            const readStream = sftp.createReadStream(file);
             // 监听数据事件，将数据块累加到 fileContent 字符串
             readStream.on('data', (chunk) => {
                 fileContent += chunk.toString();
@@ -150,7 +150,7 @@ export class SshSsh2 extends LifecycleRecordService {
         return this.asyncExec((resolve, reject) => {
             const sftp = this.sftGet(client);
             // 创建一个写入流，写入到远程文件
-            const writeStream = sftp.createWriteStream(req.file);
+            const writeStream = sftp.createWriteStream(decodeURIComponent(req.file));
             // 将字符串内容写入写入流
             writeStream.write(req.context, 'utf-8');
             // 结束写入流
@@ -173,11 +173,12 @@ export class SshSsh2 extends LifecycleRecordService {
         return this.asyncExec((resolve, reject) => {
             // 创建文件夹
             const sftp = this.sftGet(client);
-            sftp.mkdir(req.dir, (err) => {
+            const dir = decodeURIComponent(req.dir);
+            sftp.mkdir(dir, (err) => {
                 if (err) {
                     console.error('Error creating folder:', err);
                 } else {
-                    console.log('ssh Folder created successfully',req.dir);
+                    console.log('ssh Folder created successfully',dir);
                 }
                 resolve(true);
             });
@@ -213,10 +214,10 @@ export class SshSsh2 extends LifecycleRecordService {
         });
     }
 
-    async sftDeletes(req: SshPojo, client: Client) {
+    async sftDeletes(dir: string, client: Client) {
         let files1 = [];
         let folders1 = [];
-        const result = await this.sftGetDir(req, client);
+        const result = await this.sftGetDir(dir, client);
         if (result) {
             // @ts-ignore
             const {files, folders} = result;

@@ -1,3 +1,5 @@
+
+const max_life_len = 1000 * 60 * 5;
 // 生命周期管理
 export class LifecycleRecordService {
     // 数据map
@@ -34,7 +36,7 @@ export class LifecycleRecordService {
                     }
                     for (const key of this.heatMap.keys()) {
                         const stamp = this.heatMap.get(key);
-                        if (now - stamp > 1000 * 60 * 5) {
+                        if (now - stamp > max_life_len) {
                             // 超过五分钟了
                             await this.lifeClose(key);
                         }
@@ -55,7 +57,9 @@ export class LifecycleRecordService {
      * @param key
      */
     lifeHeart(key: string) {
-        this.heatMap.set(key, Date.now());
+        if(this.heatMap.has(key)) {
+            this.heatMap.set(key, Date.now());
+        }
     }
 
     /**

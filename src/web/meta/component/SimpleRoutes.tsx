@@ -13,8 +13,8 @@ const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
     return ( <Routes>
         {props.children.map((value, index) => {
             return (
-                // @ts-ignore
-                <Route key={index} path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>}/>
+
+                <React.Fragment key={index}><Route  path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>}/></React.Fragment>
             )
         })}
         ( <Route  path={"/"} element={(props.children[0])}/>)

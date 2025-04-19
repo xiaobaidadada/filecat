@@ -5,20 +5,21 @@ import {$stroe} from "../../../util/store";
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, joinPaths, webPathJoin} from "../../../../../common/ListUtil";
 import {fileHttp, sshHttp} from "../../../util/config";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import Noty from "noty";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {BaseFileItem} from "../../file/component/BaseFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RCode} from "../../../../../common/Result.pojo";
 import path from "path";
-import {NotyFail} from "../../../util/noty";
+import {NotyFail, NotySucess} from "../../../util/noty";
 import {setPreSearch} from "./RemoteLinuxFileList";
 import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
 import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
 import {getShortTime} from "../../../../project/util/comm_util";
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
+import {useTranslation} from "react-i18next";
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string,fileHandler:()=>any }) {
@@ -26,11 +27,12 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
     const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+    const navigate = useNavigate();
+    const { t } = useTranslation();
 
     // const match = useMatch('/:pre/file/*');
     const clickHandler = async (index, name) => {
@@ -73,34 +75,14 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
             if (item !== undefined) {
                 // 双击文件夹
                 const req = new SshPojo();
-                Object.assign(req,sshInfo);
-                req.dir = joinPaths(...shellNowDir,name);
+                req.key = sshInfo.key;
+                req.dir = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+                // Object.assign(req,sshInfo);
+                // req.dir = joinPaths(...shellNowDir,name);
+                navigate(webPathJoin(getRouterPath(), name))
                 setSelectList([])
                 setClickList([])
-                setNowFileList({files:[],folders:[]});
-                const rsp = await sshHttp.post("get/dir",req);
-                if (rsp.code !== RCode.Sucess) {
-                    return;
-                }
-                for (const item of rsp.data.files??[]) {
-                    item.origin_size = item.size;
-                    item.size = formatFileSize(item.size);
-                    item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
-                }
-                for (const item of rsp.data.folders??[]) {
-                    item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
-                }
-                setNowFileList(rsp.data)
-                setPreSearch(rsp.data);
-                setShellNowDir([...shellNowDir,name])
-
-                if (shellShow.show) {
-                    setShellShow({
-                        show: true,
-                        path: req.dir
-                    })
-                }
-
+                setNowFileList({files: [], folders: []});
                 return;
             }
         } else {
@@ -115,8 +97,10 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                     // 双击文件
                     const open_file = async ()=>{
                         const req = new SshPojo();
-                        Object.assign(req,sshInfo);
-                        req.file = joinPaths(...shellNowDir,name);
+                        req.key = sshInfo.key;
+                        req.file = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+                        // Object.assign(req,sshInfo);
+                        // req.file = joinPaths(...shellNowDir,name);
                         const rsq = await sshHttp.post("get/file/text",req);
                         let m = undefined;
                         if(name.endsWith(FileTypeEnum.workflow_act)){
@@ -133,7 +117,8 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                                 const rsq = await sshHttp.post("update/file/text",req);
                                 if (rsq.code === 0) {
                                     editor_data.set_value_temp('')
-                                    setEditorSetting({open: false,  fileName: '', save: null})
+                                    NotySucess("success");
+                                    // setEditorSetting({open: false,  fileName: '', save: null})
                                 }
                             }
                         })
@@ -142,7 +127,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                     if (typeof props.origin_size === "number" && props.origin_size > MAX_SIZE_TXT) {
                         setShowPrompt({
                             open: true,
-                            title: "提示",
+                            title: t("提示"),
                             sub_title: `文件超过20MB了确定要打开吗?`,
                             handle: async () => {
                                 setShowPrompt({open:false,handle:null});

@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react'
 import {InputText, InputTextIcon, Select} from "../../../../meta/component/Input";
 import {Card} from "../../../../meta/component/Card";
 import {ActionButton, Button, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
-import {isNumeric} from "../../../util/WebPath";
+import {getRouterPath, isNumeric} from "../../../util/WebPath";
 import Noty from "noty";
 import Header from "../../../../meta/component/Header";
 import {FullScreenDiv} from "../../../../meta/component/Dashboard";
@@ -19,11 +19,14 @@ import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../../../util/store.util";
 import {UserAuth} from "../../../../../common/req/user.req";
+import {useNavigate} from "react-router-dom";
+import {path_join} from "pty-shell/dist/path_util";
 
 
 
 export function RemoteLinux(props) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
     //连接信息
     const [username,setUsername] = useState('');
@@ -32,19 +35,21 @@ export function RemoteLinux(props) {
     const [domain,setDomain] = useState('');
     const [port,setPort] = useState(undefined);
     const [dir,setDir] = useState('');
-    const [status,setStatus] = useState<boolean>(false);
+    // const [status,setStatus] = useState<boolean>(false);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const {check_user_auth} = use_auth_check();
 
     const close = async () => {
         const req = new SshPojo();
-        req.password = password;
-        req.domain = domain;
-        req.port = port;
-        req.username = username;
+        req.key = sshInfo.key;
+        // req.password = password;
+        // req.domain = domain;
+        // req.port = port;
+        // req.username = username;
         const res = await sshHttp.post("close", req);
-        setStatus(false)
+        // setStatus(false)
+        setSSHInfo({})
     }
     const go = async (item?:SshPojo)=>{
         const req = new SshPojo();
@@ -56,9 +61,10 @@ export function RemoteLinux(props) {
         const res = await sshHttp.post("start", req);
         if (res && res.code === RCode.Sucess) {
             req.dir = item?item.dir:dir;
-            setSSHInfo(req);
+            navigate(path_join('/toolbox/remoteShell', item.dir))
             setShellNowDir([req.dir]);
-            setStatus(true)
+            setSSHInfo(res.data);
+            // setStatus(true)
         }
     }
     const getItems = async ()=>{
@@ -113,7 +119,10 @@ export function RemoteLinux(props) {
             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
             <ActionButton icon={"play_arrow"} title={t("连接")} onClick={()=>{go()}}/>
         </Header>
-        {!status ? <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.ssh_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")},{key:"color",preName:"color"}]}/>
+        {!sshInfo.key ?
+
+            <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.ssh_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")},{key:"color",preName:"color"}]}/>
+
             : <RemoteLinuxFileList close={close} data={{port,password,username,domain,dir}}/>}
     </div>
 }

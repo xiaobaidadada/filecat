@@ -2,7 +2,7 @@ import React, {useEffect} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useNavigate} from "react-router-dom";
 import {joinPaths} from "../../../../../common/ListUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
@@ -14,8 +14,9 @@ export function SshPaste(props) {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [copyedFileList,setCopyedFileList] = useRecoilState($stroe.copyedFileList);
     const [cutedFileList,setCutedFileList] = useRecoilState($stroe.cutedFileList);
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const navigate = useNavigate();
 
     function cancel(){
         setShowPrompt({
@@ -29,8 +30,10 @@ export function SshPaste(props) {
     }
     async function ok() {
         const req = new SshPojo();
-        Object.assign(req,sshInfo);
-        req.target = joinPaths(...shellNowDir);
+        req.key = sshInfo.key;
+        // Object.assign(req,sshInfo);
+        req.target = `/${getRouterAfter('remoteShell', getRouterPath())}`
+        // req.target = joinPaths(...shellNowDir);
         if (cutedFileList.length > 0) {
             for (const file of cutedFileList) {
                 req.source = file;
@@ -45,6 +48,7 @@ export function SshPaste(props) {
             setCopyedFileList([])
         }
         cancel();
+        navigate(getRouterPath());
     }
     return <div className="card floating">
         <div className="card-content">

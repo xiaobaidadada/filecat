@@ -8,6 +8,8 @@ import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
 import {CardPrompt} from "../../../../meta/component/Card";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {useNavigate} from "react-router-dom";
 
 export function SshReName(props) {
     const { t } = useTranslation();
@@ -16,8 +18,9 @@ export function SshReName(props) {
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
     const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
     const [name, setName] = useState("");
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const navigate = useNavigate();
 
     const cancel=()=> {
         setSelectedFile([]);
@@ -27,19 +30,27 @@ export function SshReName(props) {
         const files = getFilesByIndexs(nowFileList, selectedFile);
         return files[0].name;
     }
+    useEffect(()=>{
+        setName(getName());
+    },[])
     const dirnew = async ()=>{
         if (!name || selectedFile.length!==1) {
             cancel()
             return;
         }
         const req = new SshPojo();
-        Object.assign(req,sshInfo);
+        req.key = sshInfo.key;
+        // req.dir = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+        // Object.assign(req,sshInfo);
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        req.target = joinPaths(...shellNowDir,name);
-        req.source = joinPaths(...shellNowDir,files[0].name);
+        req.target = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+        req.source = `/${getRouterAfter('remoteShell', getRouterPath())}${files[0].name}`
+        // req.target = joinPaths(...shellNowDir,name);
+        // req.source = joinPaths(...shellNowDir,files[0].name);
         const rsq = await sshHttp.post('move', req);
         if (rsq.code === 0) {
             cancel();
+            navigate(getRouterPath());
         }
     }
 

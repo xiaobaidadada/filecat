@@ -189,7 +189,10 @@ export const $stroe = {
     // ssh工具连接信息
     sshInfo: atom({
         key: 'sshInfo',
-        default: {}
+        default: {},
+        effects: [
+            localStorageEffect("linux_key")
+        ]
     }),
     // 文件根路径主
     file_root_index: atom({

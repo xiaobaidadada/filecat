@@ -3,7 +3,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {InputText} from "../../../../meta/component/Input";
 import {fileHttp, sshHttp} from "../../../util/config";
-import {getRouterAfter} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {joinPaths} from "../../../../../common/ListUtil";
@@ -14,11 +14,11 @@ export function SshNewDir(props) {
     const { t } = useTranslation();
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
 
     const [name, setName] = useState("");
-
+    const navigate = useNavigate();
 
     const cancel=()=> {
         setShowPrompt({show: false,type: "",overlay: false,data:{ok:true}})
@@ -29,12 +29,15 @@ export function SshNewDir(props) {
             return;
         }
         const req = new SshPojo();
-        Object.assign(req,sshInfo);
-        req.dir = joinPaths(...shellNowDir,name);
+        req.key = sshInfo.key;
+        req.dir = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+        // Object.assign(req,sshInfo);
+        // req.dir = joinPaths(...shellNowDir,name);
         req.file = null;
         const rsq = await sshHttp.post('create', req)
         if (rsq.code === 0) {
             cancel();
+            navigate(getRouterPath());
         }
     }
 

@@ -4,7 +4,7 @@ import {RouteBreadcrumbs} from "../../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
-import {Link, useLocation, useMatch} from "react-router-dom";
+import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
 import {getNextByLoop, joinPaths} from "../../../../../common/ListUtil";
@@ -24,6 +24,8 @@ import {NotyFail} from "../../../util/noty";
 import { formatFileSize } from '../../../../../common/ValueUtil';
 import {getShortTime} from "../../../../project/util/comm_util";
 import { removeLastDir } from '../../../util/ListUitl';
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {isAbsolutePath, path_join} from "pty-shell/dist/path_util";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -57,7 +59,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const {t} = useTranslation();
 
     const inputRef = useRef(undefined);
-    // let location = useLocation();
+    const location = useLocation();
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
@@ -70,19 +72,22 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [shellShow, setShellShow] = useRecoilState($stroe.remoteShellShow);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [sshInfo, setSSHInfo] = useRecoilState($stroe.sshInfo);
+    const [sshInfo, setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
 
     const [itemWidth, setItemWidth] = useState(undefined);
     const [search, setSearch] = useState("");
+    const navigate = useNavigate();
 
-    const fileHandler = async () => {
+    const fileHandler = async (path?:string) => {
         // 文件列表初始化界面
         const req = new SshPojo();
-        req.dir = joinPaths(...shellNowDir);
-        req.username = props.data.username;
-        req.password = props.data.password;
-        req.domain = props.data.domain;
-        req.port = props.data.port;
+        req.key = sshInfo.key;
+        req.dir = path?path:`/${getRouterAfter('remoteShell', getRouterPath())}`
+        // req.dir = joinPaths(...shellNowDir);
+        // req.username = props.data.username;
+        // req.password = props.data.password;
+        // req.domain = props.data.domain;
+        // req.port = props.data.port;
         const rsp = await sshHttp.post("get/dir", req);
         if (rsp.code !== RCode.Sucess) {
             NotyFail("连接失败")
@@ -111,6 +116,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         if (columns === 0) columns = 1;
         setItemWidth(`calc(${100 / columns}% - 1em)`)
     };
+
     // 在组件挂载后执行的逻辑
     useEffect(() => {
         routerClick();
@@ -120,7 +126,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         return () => {
             window.removeEventListener('resize', handleResize);
         }
-    }, []); //location 暂时不做监听，也无法监听
+    }, [location]);
     const drop = async (event) => {
         event.preventDefault();
         let dt = event.dataTransfer;
@@ -166,7 +172,8 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         if (!shellShow.show) {
             setShellShow({
                 show: true,
-                path: joinPaths(...shellNowDir)
+                path: `/${getRouterAfter('remoteShell', getRouterPath())}`
+                // path: joinPaths(...shellNowDir)
             })
         } else {
             setShellShow({
@@ -187,14 +194,14 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
     function copy() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        setCopyedFileList(files.map(file => joinPaths(...shellNowDir, file.name)));
+        setCopyedFileList(files.map(file => `/${getRouterAfter('remoteShell', getRouterPath())}${file.name}`));
         setCutedFileList([]);
         ok('已复制')
     }
 
     function cut() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        setCutedFileList(files.map(file => joinPaths(...shellNowDir, file.name)));
+        setCutedFileList(files.map(file => `/${getRouterAfter('remoteShell', getRouterPath())}${file.name}`));
         setCopyedFileList([])
         ok('已剪切')
     }
@@ -211,15 +218,16 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         setShowPrompt({show: true, type: PromptEnum.SshNewFile, overlay: true, data: {}});
     }
 
-    useEffect(() => {
-        if (showPrompt && showPrompt.data && showPrompt.data.ok) {
-            fetchData();
-        }
-    }, [showPrompt]);
+    // useEffect(() => {
+    //     if (showPrompt && showPrompt.data && showPrompt.data.ok) {
+    //         fetchData();
+    //     }
+    // }, [showPrompt]);
 
     function downloadFile() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        const url = `/api/ssh/download?file=${joinPaths(...shellNowDir, files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}&token=${localStorage.getItem('token')}`;
+        const target = `/${getRouterAfter('remoteShell', getRouterPath())}${decodeURIComponent(files[0]['name'])}`
+        const url = `/api/ssh/download?file=${target}&key=${sshInfo['key']}&token=${localStorage.getItem('token')}`;
         window.open(url);
     }
 
@@ -227,35 +235,35 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         setShowPrompt({show: true, type: PromptEnum.SshReName, overlay: true, data: {}});
     }
 
-    const backDir = async () => {
-        const req = new SshPojo();
-        Object.assign(req, sshInfo);
-        if (shellNowDir.length <= 1) {
-            return;
-        }
-        const newList = shellNowDir.slice(0, shellNowDir.length - 1)
-        setShellNowDir(newList)
-        req.dir = joinPaths(...newList);
-        const rsp = await sshHttp.post("get/dir", req);
-        if (rsp.code !== RCode.Sucess) {
-            return;
-        }
-        const {folders, files} = rsp.data || {};
-        for (const item of files??[]) {
-            item.size = formatFileSize(item.size);
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
-        }
-        for (const item of folders??[]) {
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
-        }
-        setNowFileList({folders: folders || [], files: files || []});
-        if (shellShow.show) {
-            setShellShow({
-                show: true,
-                path: joinPaths(...newList)
-            })
-        }
-    }
+    // const backDir = async () => {
+    //     const req = new SshPojo();
+    //     Object.assign(req, sshInfo);
+    //     if (shellNowDir.length <= 1) {
+    //         return;
+    //     }
+    //     const newList = shellNowDir.slice(0, shellNowDir.length - 1)
+    //     setShellNowDir(newList)
+    //     req.dir = joinPaths(...newList);
+    //     const rsp = await sshHttp.post("get/dir", req);
+    //     if (rsp.code !== RCode.Sucess) {
+    //         return;
+    //     }
+    //     const {folders, files} = rsp.data || {};
+    //     for (const item of files??[]) {
+    //         item.size = formatFileSize(item.size);
+    //         item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+    //     }
+    //     for (const item of folders??[]) {
+    //         item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+    //     }
+    //     setNowFileList({folders: folders || [], files: files || []});
+    //     if (shellShow.show) {
+    //         setShellShow({
+    //             show: true,
+    //             path: joinPaths(...newList)
+    //         })
+    //     }
+    // }
 
     // 搜索
     const searchHanle = () => {
@@ -369,6 +377,16 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 }
             }});
     }
+    const routeBreadcrumbsEnter = (path) => {
+        if (isAbsolutePath(path)) {
+            fileHandler(path);
+        } else {
+            navigate(path_join(getRouterPath(), path))
+        }
+        setSelectList([])
+        setClickList([])
+        setNowFileList({files: [], folders: []});
+    }
     return (
         <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
@@ -376,7 +394,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 setSearch(v)
             }} max_width={"25em"}/>}>
 
-                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>
+                {/*<ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>*/}
                 {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                     setShowPrompt({show: true, type: PromptEnum.SshDelete, overlay: true, data: {}})
                 }}/>}
@@ -398,6 +416,8 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                     props.close();
                 }}/>
             </Header>
+            <RouteBreadcrumbs baseRoute={"remoteShell"} clickFun={routerClick}
+                              input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
                 {(!!nowFileList && !!nowFileList.folders && nowFileList.folders.length > 0) && <h2>文件夹</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&

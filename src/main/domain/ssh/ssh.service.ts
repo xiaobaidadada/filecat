@@ -24,68 +24,73 @@ import {FileUtil} from "../file/FileUtil";
 
 export class SshService extends SshSsh2 {
 
+    map: Map<string, SshPojo> = new Map();
     async start(req: SshPojo) {
-        const data = this.lifeGetData(SshPojo.getKey(req));
+        let key = SshPojo.getKey(req);
+        const data = this.lifeGetData(key);
         if (data) {
-            return true;
+            return {key};
         }
         const client = await this.connect(req);
         if (!client) {
             throw "连接失败";
         }
-        this.lifeStart(SshPojo.getKey(req), client, async (c) => {
+        this.lifeStart(key, client, async (c) => {
             try {
                 client[sftp_client].end();
                 client.end();
+                this.map.delete(key);
             } catch (e) {
                 console.log('触发', e)
             }
         })
-        return true;
+        this.map.set(key, req);
+        return {key};
     }
 
     async close(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req));
+        const client = this.lifeGetData(req.key);
         if (client) {
-            this.lifeClose(SshPojo.getKey(req));
+            this.lifeClose(req.key);
         }
+        this.map.delete(req.key);
         return true;
     }
 
 
     async getDir(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return [];
         }
-        this.lifeHeart(SshPojo.getKey(req));
-        return this.sftGetDir(req, client);
+        this.lifeHeart(req.key);
+        return this.sftGetDir(decodeURIComponent(req.dir), client);
     }
 
     async getFileText(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
-        this.lifeHeart(SshPojo.getKey(req));
+        this.lifeHeart(req.key);
         const stats = await this.sftGetFileStats(req.file,client);
         // if (stats.size > MAX_SIZE_TXT) {
         //     return Fail("超过20MB",RCode.File_Max);
         // }
-        return Sucess(await this.sftGetFileText(req, client));
+        return Sucess(await this.sftGetFileText(decodeURIComponent(req.file), client));
     }
 
     async updateFileText(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
-        this.lifeHeart(SshPojo.getKey(req));
+        this.lifeHeart(req.key);
         return this.sftUpdateFileText(req, client);
     }
 
     async create(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
@@ -95,41 +100,41 @@ export class SshService extends SshSsh2 {
             req.context = "";
             await this.sftUpdateFileText(req, client);
         }
-        this.lifeHeart(SshPojo.getKey(req));
+        this.lifeHeart(req.key);
         return;
     }
 
     async deletes(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
         if (req.dir) {
-            await this.sftDelteFolder(req.dir, client);
+            await this.sftDelteFolder(decodeURIComponent(req.dir), client);
         } else if (req.file) {
-            await this.sftDelteFile(req.file, client);
+            await this.sftDelteFile(decodeURIComponent(req.file), client);
         }
-        this.lifeHeart(SshPojo.getKey(req));
+        this.lifeHeart(req.key);
         return;
     }
 
     async move(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
-        await this.sftMoveFile(req.source, req.target, client);
-        this.lifeHeart(SshPojo.getKey(req));
+        await this.sftMoveFile(decodeURIComponent(req.source), decodeURIComponent(req.target), client);
+        this.lifeHeart(req.key);
         return;
     }
 
     async copy(req: SshPojo) {
-        const client = this.lifeGetData(SshPojo.getKey(req)) as Client;
+        const client = this.lifeGetData(req.key) as Client;
         if (!client) {
             return "";
         }
-        await this.sftCopyFile(req.source, req.target, client);
-        this.lifeHeart(SshPojo.getKey(req));
+        await this.sftCopyFile(decodeURIComponent(req.source), decodeURIComponent(req.target), client);
+        this.lifeHeart(req.key);
         return;
     }
 
@@ -138,8 +143,8 @@ export class SshService extends SshSsh2 {
             const pojo = data.context as SshPojo;
             const wss = (data.wss as Wss);
             let emitter = new EventEmitter();
-            wss.dataMap.set("emitter", emitter);
-            const client = this.lifeGetData(SshPojo.getKey(pojo)) as Client;
+            wss.dataMap.set(`emitter_${pojo.key}`, emitter);
+            const client = this.lifeGetData(pojo.key) as Client;
             if (!client) {
                 return "";
             }
@@ -175,10 +180,10 @@ export class SshService extends SshSsh2 {
         try {
             const pojo = data.context as SshPojo;
             const wss = (data.wss as Wss);
-            let emitter = wss.dataMap.get("emitter");
+            let emitter = wss.dataMap.get(`emitter_${pojo.key}`);
             if (emitter) {
-                if (data.context !== null && data.context !== "null") {
-                    emitter.emit("data", data.context)
+                if (pojo.cmd!== null && pojo.cmd !== "null") {
+                    emitter.emit("data", pojo.cmd)
                 }
             }
         } catch (e) {
@@ -195,15 +200,15 @@ export class SshService extends SshSsh2 {
     //     }
     // }
 
-    cd(data: WsData<SshPojo>) {
-        const wss = (data.wss as Wss);
-        const emitter = wss.dataMap.get("emitter");
-        if (emitter) {
-            if (data.context) {
-                emitter.emit("data", `cd '${data.context}' \r`);
-            }
-        }
-    }
+    // cd(data: WsData<SshPojo>) {
+    //     const wss = (data.wss as Wss);
+    //     const emitter = wss.dataMap.get("emitter");
+    //     if (emitter) {
+    //         if (data.context) {
+    //             emitter.emit("data", `cd '${data.context}' \r`);
+    //         }
+    //     }
+    // }
 
     download(ctx) {
         const file = ctx.query.file;
@@ -215,9 +220,9 @@ export class SshService extends SshSsh2 {
         ctx.res.set('Content-Type', 'application/octet-stream');
         // const stream = new Stream.PassThrough()
         // ctx.res.body = stream
-        const client = this.lifeGetData(SshPojo.getKey(ctx.query)) as Client;
+        const client = this.lifeGetData(decodeURIComponent(ctx.query.key)) as Client;
         if (!client) {
-            ctx.status(200).res.send('');
+            ctx.status(200).send('not connect ssh');
             return ;
         }
         const sftp = this.sftGet(client);
@@ -255,7 +260,7 @@ export class SshService extends SshSsh2 {
     }
 
     public async uploadFile(req:any,res:Response) {
-        const client = this.lifeGetData(SshPojo.getKey(req.query)) as Client;
+        const client = this.lifeGetData(decodeURIComponent(req.query.key)) as Client;
         const sftp = this.sftGet(client);
         const remoteFilePath = decodeURIComponent(req.query.target);
         if (req.query.dir === "1") {
