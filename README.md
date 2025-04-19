@@ -1,23 +1,22 @@
 
 # ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
-FileCat is a **web-based server management** tool. It offers features like file management, large-scale log viewing, remote terminal access, system process monitoring, and various network proxies including SSH, RDP, HTTP, and TCP.
+FileCat 是一个基于 Web 的服务器管理工具，集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 VPN、SSH、RDP、HTTP、TCP 等多种网络代理功能。
 
-FileCat 是一个基于web的**服务器管理**工具。提供文件管理、超大日志查看、远程终端、系统进程监控,vpn、ssh\rdp\http\tcp各种网络代理等功能。
+FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including VPN, SSH, RDP, HTTP, and TCP.
 
-
-## Install
+## 安装方式 / Installation
 不同的安装方式请参考: https://filecat.xiaobaidadada.fun/#/zh-CN/install.md
 
 English: https://filecat.xiaobaidadada.fun/#/en/install.md
 
 
-## Detailed Features
+## 功能概览 / Features
 详细的功能特性请参考文档: https://filecat.xiaobaidadada.fun/
 
 备用地址：https://docs.filecat.xiaobaidadada.fun/
 
-##  Demo Experience
+##  在线演示 / Demo
 url: http://demo.filecat.xiaobaidadada.fun:5569/
 
 账号密码: `admin`/`admin`
@@ -35,8 +34,7 @@ english account: `en_admin`/`en_admin`
 ##  qq群
 824838674
 ##  Thanks
-Some features of this project are based on or inspired by the following projects.
-
+以下项目为 FileCat 提供了灵感或基础
 
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)

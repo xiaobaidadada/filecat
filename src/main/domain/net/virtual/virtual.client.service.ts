@@ -440,9 +440,10 @@ export class VirtualClientService extends UdpUtil {
         this.restart_tcp_proxy(req);
     }
 
+
     private restart_tcp_proxy(req:TcpPorxyITem[]) {
         if(this.tcp_proxy) {
-            this.tcp_proxy.close();
+            this.tcp_proxy.close(true);
         }
         const list = req.filter(v=>v.open && v.port>0 && !!v.target_ip && v.target_port>0 ).map(v=>{
             return {
