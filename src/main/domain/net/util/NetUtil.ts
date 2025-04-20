@@ -106,7 +106,7 @@ export  class NetUtil {
         if (head.length !== 2) {
             throw new Error("head 必须是 2 字节长度");
         }
-        const codeBuffer = Buffer.alloc(1);
+        const codeBuffer = Buffer.allocUnsafe(1);
         codeBuffer[0] = code;
         return Buffer.concat([codeBuffer, head, buffer]);
     }
@@ -123,10 +123,16 @@ export  class NetUtil {
     }
 
 
-    public static getTcpBuffer(code: number, buffer: Buffer) {
-        const buffer1 = Buffer.alloc(1);
-        buffer1[0] = code;
+    public static getTcpBuffer(code_type: number, buffer: Buffer) {
+        const buffer1 = Buffer.allocUnsafe(1);
+        buffer1[0] = code_type;
         return Buffer.concat([buffer1, buffer]);
+    }
+
+    public static geRawTcpBufferList(code_type: number, buffer: Buffer) {
+        const buffer1 = Buffer.allocUnsafe(1);
+        buffer1[0] = code_type;
+        return [buffer1, buffer];
     }
 
     public static getTcpData(buffer: Buffer) {

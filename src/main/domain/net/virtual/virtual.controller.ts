@@ -81,7 +81,8 @@ class VirtualController {
         if (!info) {
             return;
         }
-        info.tcpUtil.sendData(NetUtil.getTcpBuffer(NetMsgType.data, data));
+        // info.tcpUtil.sendData(NetUtil.getTcpBuffer(NetMsgType.data, data));
+        info.tcpUtil.fastSendData(NetUtil.geRawTcpBufferList(NetMsgType.data, data));
     }
 
     // 写入数据

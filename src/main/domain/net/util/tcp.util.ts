@@ -64,7 +64,7 @@ export class TcpUtil {
     // 设置头长度
     public setHead(length:number) {
         this.self_headLength = length;
-        this.head_0 = Buffer.alloc(length)
+        this.head_0 = Buffer.allocUnsafe(length)
         this.total_head_length = this.proto_head_length + length;
     }
     // 设置包处理函数
@@ -73,7 +73,8 @@ export class TcpUtil {
     }
     // 处理buffer
     public handleSocket(buffer:Buffer) {
-        this.buffer = Buffer.concat([this.buffer,buffer]);
+        // this.buffer = Buffer.concat([this.buffer,buffer]);
+        this.buffer = TcpUtil.fastBufferConcat([this.buffer,buffer]);
         if (this.buffer.length > this.total_head_length &&  !this.processing) {
             this.handleBuffer();
         }
@@ -142,4 +143,37 @@ export class TcpUtil {
     public sendData(data:Buffer) {
         this.socket.write(this.getPackage(this.head_0,data));
     }
+
+    // 更快速的写入
+    public fastSendData(data:Buffer[]) {
+        let length:number = 0;
+        for (let i = 0; i < data.length; i++) {
+            length += data[i].length;
+        }
+        this.writeData(TcpUtil.fastBufferConcat([this.protocal,this.intToBuffer(length),this.head_0,...data]));
+    }
+
+    // 直接写入
+    public writeData(data:Buffer) {
+        this.socket.write(data);
+    }
+
+    // 比 concat更快
+    static  fastBufferConcat(buffers:Buffer[], totalLength?:number) {
+        // 自动计算总长度（如果你不传）
+        if (typeof totalLength !== 'number') {
+            totalLength = 0;
+            for (let buf of buffers) {
+                totalLength += buf.length;
+            }
+        }
+        const result = Buffer.allocUnsafe(totalLength);
+        let offset = 0;
+        for (let buf of buffers) {
+            buf.copy(result, offset);
+            offset += buf.length;
+        }
+        return result;
+    }
+
 }

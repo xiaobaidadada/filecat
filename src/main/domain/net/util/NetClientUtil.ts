@@ -18,9 +18,10 @@ export class NetClientUtil {
     static call_timeout_map:{[key:number]:any} = {}; // 临时方案 下次改成 uuid
 
     public static send_for_tcp(type:NetMsgType,data:Buffer) {
-        const buffer = NetUtil.getTcpBuffer(type,data);
+        // const buffer = NetUtil.getTcpBuffer(type,data);
         try {
-            this.tcp_client.sendToSocket(NetUtil.head_0,buffer);
+            // this.tcp_client.sendToSocket(NetUtil.head_0,buffer);
+            this.tcp_client.fastSendData(NetUtil.geRawTcpBufferList(type, data));
         }catch(e){
             console.log(e)
         }
