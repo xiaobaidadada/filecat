@@ -269,7 +269,7 @@ export class VirtualClientService extends UdpUtil {
         // if (data.model === VirServerEnum.udp && this.server_info.is_tcp) {
         //     throw "服务器不支持udp";
         // }
-        if (!this.tun_status) {
+        if (this.tun_status) {
             return;
         }
         if(await SysProcessServiceImpl.isIpActive(ip)) {

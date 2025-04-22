@@ -96,10 +96,10 @@ export class DataUtil {
     public static set(k, v, file:file_key = file_key.data) {
         this.init(file);
         this.data_map[file][k] = v;
-        FileUtil.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file])).catch(err=>{
-            console.log(`数据持久化错误`,err)
-        });
-        // fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
+        // FileUtil.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file])).catch(err=>{
+        //     console.log(`数据持久化错误`,err)
+        // });
+        fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
     }
 
     public static getFile(k,dir:data_dir_tem_name): string {
