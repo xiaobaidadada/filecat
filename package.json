@@ -83,7 +83,7 @@
   ],
   "dependencies": {
     "@xiaobaidadada/node-pty-prebuilt": "^1.0.4",
-    "@xiaobaidadada/node-tuntap2-wintun": "^2.0.1",
+    "@xiaobaidadada/node-tuntap2-wintun": "^2.1.0",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "node-process-watcher": "^1.1.8"
   },
