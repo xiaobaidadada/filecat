@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "4.10.2",
+  "version": "4.10.3",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -83,7 +83,7 @@
   ],
   "dependencies": {
     "@xiaobaidadada/node-pty-prebuilt": "^1.0.4",
-    "@xiaobaidadada/node-tuntap2-wintun": "^2.0.0",
+    "@xiaobaidadada/node-tuntap2-wintun": "^2.0.1",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "node-process-watcher": "^1.1.8"
   },

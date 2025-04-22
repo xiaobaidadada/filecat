@@ -219,6 +219,7 @@ export class NetClientUtil {
             this.tcp_client.close();
             this.tcp_client = undefined;
         }
+        console.log('tcp客户端关闭')
     }
 
 }
