@@ -424,6 +424,7 @@ export class VirtualClientService extends UdpUtil {
         } else {
             this.tun.linuxTun.release();
         }
+        this.tun_status = false;
         console.log('关闭适配器')
     }
 
