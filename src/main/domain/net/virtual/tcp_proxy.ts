@@ -61,8 +61,13 @@ export class TcpProxy {
                 server.listen(config.proxyPort, () => {
                     console.log(`TCP 代理服务器启动，监听端口: ${config.proxyPort}`);
                 });
-
-                this.serverList.push(server);
+                server.on('error', (err) => {
+                    console.log(err);
+                });
+                server.on('listening', () => {
+                    console.log(`TCP 服务器正在监听${config.proxyPort}...`);
+                    this.serverList.push(server);
+                });
             } catch (err) {
                 console.error(err);
             }

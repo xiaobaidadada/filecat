@@ -75,56 +75,7 @@ export class NetController {
         return Sucess("");
     }
 
-    // 虚拟网络
-    @Get("/vir/server/get")
-    virServerGet(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        return Sucess(virtualServerService.virServerGet());
-    }
 
-    @Post("/vir/server/save")
-    virServerSave(@Body() data: VirServerPojo,@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.vir_net); userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        virtualServerService.virServerSave(data);
-        return Sucess("1");
-    }
-
-    @msg(CmdType.vir_net_serverIno_get)
-    getServerInfos(data: WsData<any>) {
-        return virtualServerService.getServerInfos(data);
-    }
-
-    @msg(CmdType.vir_net_client_get)
-    vir_net_client_get(data: WsData<any>) {
-        return virtualClientService.vir_net_client_get(data);
-    }
-
-
-    @Get("/vir/client/get")
-    virClientGet(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        return Sucess(virtualClientService.virClientGet());
-    }
-
-    @Post("/vir/client/save")
-    virClientSave(@Body() data: VirClientPojo,@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.vir_net);
-        virtualClientService.virClientSave(data);
-        return Sucess("1");
-    }
-
-    @Post('/vir/client/tcp_proxy/save')
-    tcp_proxy_save(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
-        virtualClientService.save_tcp_proxy(req);
-        return Sucess("");
-    }
-
-    @Post('/vir/client/tcp_proxy/get')
-    tcp_proxy_get(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
-        return Sucess(virtualClientService.get_tcp_proxy());
-    }
 
     // http 的tag
     @Get("/http/tag")

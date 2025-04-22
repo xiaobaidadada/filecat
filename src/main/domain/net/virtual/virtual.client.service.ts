@@ -269,6 +269,9 @@ export class VirtualClientService extends UdpUtil {
         // if (data.model === VirServerEnum.udp && this.server_info.is_tcp) {
         //     throw "服务器不支持udp";
         // }
+        if (!this.tun_status) {
+            return;
+        }
         if(await SysProcessServiceImpl.isIpActive(ip)) {
             throw `${ip} ip is active`;
         }
@@ -403,6 +406,15 @@ export class VirtualClientService extends UdpUtil {
         }
     }
 
+    public async_server_info_to_client(port: number,key:string) {
+        const data = this.virClientGet();
+        data.key = key;
+        data.serverPort = port;
+        this.virClientSave(data).catch(err=>{
+            console.log(err);
+        });
+    }
+
     closeTun() {
         if (!this.tun_status) {
             return;
@@ -423,7 +435,7 @@ export class VirtualClientService extends UdpUtil {
         if (data.open) {
             // 重新启动
             NetClientUtil.close_tcp();
-            this.tunStart(data);
+            await this.tunStart(data);
         } else {
             try {
                 NetClientUtil.close_tcp();

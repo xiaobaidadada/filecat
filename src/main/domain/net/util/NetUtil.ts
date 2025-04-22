@@ -16,10 +16,11 @@ export enum NetMsgType {
     register, // 注册
     data, // tcp 传输数据
     trans_data, // 转发通信数据
-    get_server_info , // 获取服务器信息
-    client_register_udp, // 客户端注册 udp
+    async_server_info_to_client, // 服务器信息同步给客户端 密钥 端口
 
     // udp 协议
+    get_server_info , // 获取服务器信息
+    client_register_udp, // 客户端注册 udp
     register_udp_info , // 注册udp 信息
     get_udp_info , // 获取对方的udp信息
     udp_data, // udp 写入数据

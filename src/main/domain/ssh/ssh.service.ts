@@ -24,7 +24,7 @@ import {FileUtil} from "../file/FileUtil";
 
 export class SshService extends SshSsh2 {
 
-    map: Map<string, SshPojo> = new Map();
+    // map: Map<string, SshPojo> = new Map();
     async start(req: SshPojo) {
         let key = SshPojo.getKey(req);
         const data = this.lifeGetData(key);
@@ -39,12 +39,12 @@ export class SshService extends SshSsh2 {
             try {
                 client[sftp_client].end();
                 client.end();
-                this.map.delete(key);
+                // this.map.delete(key);
             } catch (e) {
                 console.log('触发', e)
             }
         })
-        this.map.set(key, req);
+        // this.map.set(key, req);
         return {key};
     }
 
@@ -53,7 +53,7 @@ export class SshService extends SshSsh2 {
         if (client) {
             this.lifeClose(req.key);
         }
-        this.map.delete(req.key);
+        // this.map.delete(req.key);
         return true;
     }
 

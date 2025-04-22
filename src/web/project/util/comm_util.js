@@ -24,14 +24,14 @@ export function getShortTime(startStamp) {
     if (minutesDiff < minute_1) {
         return i18n.t("小于一分钟");
     } else if (minutesDiff < hour_1) {
-        return `${minutesDiff.toFixed(0)}${i18n.t("分钟前")}`;
+        return `${minutesDiff.toFixed(0)} ${i18n.t("分钟前")}`;
     } else if (minutesDiff < day_1) {
-        return `${(minutesDiff/ hour_1).toFixed(0)}${i18n.t("小时前")}`;
+        return `${(minutesDiff/ hour_1).toFixed(0)} ${i18n.t("小时前")}`;
     } else if (minutesDiff < month_1) {
-        return `${(minutesDiff/ day_1).toFixed(0)}${i18n.t("天前")}`;
+        return `${(minutesDiff/ day_1).toFixed(0)} ${i18n.t("天前")}`;
     }else if (minutesDiff < year_1){
-        return `${(minutesDiff/ month_1).toFixed(0)}${i18n.t("月前")}`;
+        return `${(minutesDiff/ month_1).toFixed(0)} ${i18n.t("月前")}`;
     } else {
-        return `${(minutesDiff/ year_1).toFixed(0)}${i18n.t("年前")}`;
+        return `${(minutesDiff/ year_1).toFixed(0)} ${i18n.t("年前")}`;
     }
 }

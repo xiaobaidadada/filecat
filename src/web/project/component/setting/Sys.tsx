@@ -246,6 +246,6 @@ export function  Sys() {
             </Dashboard>
         </Column>
         <Header left_children={<span> <span className={"credits"}>{`version:${process.env.version}`}</span><span
-            className={"credits"}>{t('系统运行于')}:{getShortTime(userInfo.runing_time_length)}</span></span>}/>
+            className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span></span>}/>
     </Row>
 }

@@ -1,7 +1,7 @@
 {
   "name": "filecat",
-  "version": "4.9.1",
-  "description": "filecat",
+  "version": "4.10.0",
+  "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
     "dev": "node  --require ts-node/register ./shell/dev.js --env ./env",

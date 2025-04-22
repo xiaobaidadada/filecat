@@ -13,7 +13,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
 // import {FileShell} from "../shell/FileShell";
-import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {file_sort, getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -134,31 +134,9 @@ export default function FileList() {
             }
             return;
         }
-        const data: GetFilePojo = rsp.data;
         // 排序一下
-        switch (user_base_info.user_data.dir_show_type) {
-            case DirListShowTypeEmum.size_max_min:
-            case DirListShowTypeEmum.size_min_max:
-                // 从大到小排序
-            {
-                const asc = user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max;
-                sort(data.files, v => v.size, asc);
-                sort(data.folders, v => v.size, asc);
-            }
-                break;
-            case DirListShowTypeEmum.time_minx_max:
-            case DirListShowTypeEmum.time_max_min: {
-                const asc = user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max;
-                sort(data.files, v => v.mtime, asc);
-                sort(data.folders, v => v.mtime, asc);
-            }
-                break;
-            case DirListShowTypeEmum.name:
-                sort(data.folders, v => v.name);
-                break;
-            default:
-                break;
-        }
+        const data: GetFilePojo = rsp.data;
+        file_sort(data,user_base_info.user_data.dir_show_type)
 
         let have_workflow_water = false;
         for (const item of data.files ?? []) {
@@ -544,61 +522,61 @@ export default function FileList() {
         const time_sort = [
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max ? "green" : undefined}}>时间顺序</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max ? "green" : undefined}}>{t("时间逆序")}</span>),
                 v: DirListShowTypeEmum.time_minx_max
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}>时间逆序</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}>{t("时间顺序")}</span>),
                 v: DirListShowTypeEmum.time_max_min
             }
         ]
         const size_sort = [
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>大小顺序</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>{t("大小逆序")}</span>),
                 v: DirListShowTypeEmum.size_min_max
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>大小逆序</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>{t("大小顺序")}</span>),
                 v: DirListShowTypeEmum.size_max_min
             }
         ]
         const list: any[] = [
             {
-                r: "文件排序",
+                r: t("文件排序"),
                 v: "",
                 items: [
                     {
                         r: (<span
-                            style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>系统默认</span>),
+                            style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>{t("系统默认")}</span>),
                         v: DirListShowTypeEmum.defualt
                     },
                     {
                         r: (<span
-                            style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>名字</span>),
+                            style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>{t("名字")}</span>),
                         v: DirListShowTypeEmum.name
                     },
                     {
                         r: (<span
                             style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}
-                        >修改时间</span>), v: false, items: time_sort
+                        >{t("修改时间")}</span>), v: false, items: time_sort
                     },
                     {
                         r: (<span
                             style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}
-                        >文件大小</span>), v: false, items: size_sort
+                        >{t("文件大小")}</span>), v: false, items: size_sort
                     },
                 ]
             },
 
         ];
         if (check_user_auth(UserAuth.code_resource)) {
-            list.push({r: "添加http资源根目录", v: "code_resource"})
+            list.push({r: t("添加http资源根目录"), v: "code_resource"})
         }
         if (check_user_auth(UserAuth.http_proxy)) {
-            list.push({r: "在此目录下载http资源", v: "http_resource"})
+            list.push({r: t("在此目录下载http资源"), v: "http_resource"})
         }
         pojo.items = list;
         pojo.textClick = async (v) => {

@@ -34,6 +34,7 @@ import {settingService} from "./domain/setting/setting.service";
 import {SystemUtil} from "./domain/sys/sys.utl";
 import mime from "mime-types";
 import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
+import {VirtualController} from "./domain/net/virtual/virtual.controller";
 const Mustache = require('mustache');
 
 const WebSocket = require('ws');
@@ -63,8 +64,8 @@ async function start() {
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
         controllers:[
-            UserController, SysController, ShellController, FileController, DdnsController, NetController,
-            NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController
+            UserController, SysController, ShellController, FileController, DdnsController, NetController,VirtualController,
+            NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController,
         ],
         // controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController,
         // NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController],

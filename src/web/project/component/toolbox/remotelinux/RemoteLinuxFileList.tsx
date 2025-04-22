@@ -16,7 +16,7 @@ import Noty from "noty";
 import {RemoteLinuxFileItem} from "./RemoteLinuxFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteShell} from "../../shell/RemoteShell";
-import {getFilesByIndexs} from "../../file/FileUtil";
+import {file_sort, getFilesByIndexs} from "../../file/FileUtil";
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
@@ -77,6 +77,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [itemWidth, setItemWidth] = useState(undefined);
     const [search, setSearch] = useState("");
     const navigate = useNavigate();
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
 
     const fileHandler = async (path?:string) => {
         // 文件列表初始化界面
@@ -103,6 +104,8 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
             item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
         }
         const data = {folders: folders || [], files: files || []};
+        // 排序一下
+        file_sort(data,user_base_info.user_data.dir_show_type)
         setNowFileList(data);
         pre_search = data;
     }

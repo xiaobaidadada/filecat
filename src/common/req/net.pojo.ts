@@ -17,6 +17,7 @@ export class VirServerPojo {
 
     port:number; // 服务器的端口
     key:string = ""; // 通信密钥
+    async_ips:string[] = [];
     // udp_port:number = 888; // udp 暂时放弃
 }
 

@@ -312,5 +312,16 @@
   "文件创建、上传、内容更新、解压缩": "File creation, upload, content update, decompress",
   "只读目录范围": "Scope of the read-only directory",
   "更新": "update",
-  "默认使用环境变量": "Environment variables are used by default"
+  "默认使用环境变量": "Environment variables are used by default",
+  "同步信息给选中服务器": "sync message to selected server",
+  "添加http资源根目录": "Add the HTTP Resource Root Directory",
+  "在此目录下载http资源": "Download the HTTP resources in this directory",
+  "文件排序": "file sort",
+  "系统默认": "sys default",
+  "修改时间": "mtime",
+  "时间逆序": "time desc",
+  "时间顺序": "time asc",
+  "大小逆序": "size desc",
+  "大小顺序": "size asc",
+  "文件大小": "file size"
 }

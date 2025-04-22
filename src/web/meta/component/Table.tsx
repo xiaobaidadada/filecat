@@ -7,7 +7,7 @@ export interface TableProps {
 }
 
 // 当引用table的页面有任何状态更新的时候，所有元素都会更新，也会包括这个列表，特别是对于实时渲染的页面会出现这个问题。要注意停止ws请求
-export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: ReactNode[], width?: string }) {
+export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: ReactNode[], width?: string,handleContextMenu?: (row:any) => void }) {
     const [rows, setRows] = React.useState([]);
     useEffect(() => {
         //优先
@@ -26,7 +26,11 @@ export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: R
 
         <tbody>
         {rows.map((row, index) => {
-                return (<tr key={index}>
+                return (<tr key={index} onContextMenu={()=>{
+                    if(props.handleContextMenu) {
+                        props.handleContextMenu(row);
+                    }
+                }}>
                     {row.map((row, index) =>
                         (<td style={{
                             width: props.width ?? "auto",
