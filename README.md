@@ -36,8 +36,8 @@ english account: `en_admin`/`en_admin`
 ## 支持一下
 
 <p>
-  <img src="https://github.com/user-attachments/assets/4e89b019-35c7-47be-a419-c83283b841e8" alt="支付宝" width="150" style="margin-right: 10px;" />
-  <img src="https://github.com/user-attachments/assets/69af3b89-9a91-4f44-b511-c4094c1064ab" alt="微信" width="150" />
+  <img src="https://github.com/user-attachments/assets/4e89b019-35c7-47be-a419-c83283b841e8" alt="支付宝" width="180" style="margin-right: 10px;" />
+  <img src="https://github.com/user-attachments/assets/69af3b89-9a91-4f44-b511-c4094c1064ab" alt="微信" width="180" />
 </p>
 
 ##  Thanks
