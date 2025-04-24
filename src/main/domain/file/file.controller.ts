@@ -110,9 +110,9 @@ export class FileController {
         return Fail("no permission")
     }
 
-    // base保存支持分片 这个框架post默认最大只支持1mb
+    // base保存支持分片
     @Post('/base64/save/:path([^"]{0,})')
-    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body() data?: {
+    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options:{limit: 6250000}}) data?: {
         base64_context: string,
         type: base64UploadType
     }) {
