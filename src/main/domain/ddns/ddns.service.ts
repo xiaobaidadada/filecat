@@ -60,9 +60,9 @@ export class DdnsService extends DdnsPre {
         const data = await DataUtil.get<DdnsConnection>(key);
         result.ips = list;
         if (!!data && !!data.ips && data.ips.length > 0) {
-            const map = getMapByList(data.ips, (v) => v.ifaceOrWww + v.isIPv4);
+            const map = getMapByList(data.ips, (v) => v.ifaceOrWww + v.ip);
             for (const ip of result.ips) {
-                const item = map.get(ip.ifaceOrWww + ip.isIPv4);
+                const item = map.get(ip.ifaceOrWww + ip.ip);
                 if (item) {
                     ip.ddnsHost = item.ddnsHost;
                 }

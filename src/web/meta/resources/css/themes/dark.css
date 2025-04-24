@@ -24,7 +24,7 @@ body {
   background: var(--background);
 }
 
-header {
+.header {
   background: var(--surfacePrimary);
 }
 
@@ -183,9 +183,13 @@ table th {
 .shell__result {
   border-top: 1px solid var(--divider);
 }
+.xterm-screen {
+  background: var(--surfacePrimary);
+}
+
 
 #editor-container {
-  background: var(--background);
+  background: var(--background)!important;
 }
 
 #editor-container .bar {
@@ -214,4 +218,38 @@ table th {
 
 .share__box__element {
   border-top-color: var(--divider);
+}
+
+.dropdown_item {
+  background: var(--surfacePrimary);
+  margin: 0;
+}
+.dropdown > div:hover {
+  background: var(--surfaceSecondary);
+}
+.menu ul li:hover {
+  background: var(--surfacePrimary);
+}
+.md-context div{
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+}
+#md-container .md-context{
+  background: var(--surfacePrimary);
+}
+.card-content  textarea {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+}
+
+.nav_list_a,.nav_list_a a {
+  background: var(--surfacePrimary);
+}
+
+.studio .studio-nav,.studio-nav div,.studio-body {
+  background: var(--surfacePrimary) !important;
+}
+
+.studio-item-title:hover * {
+  color: rgba(255, 255, 255, 0.4)
 }

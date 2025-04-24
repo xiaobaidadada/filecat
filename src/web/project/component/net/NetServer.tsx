@@ -3,7 +3,7 @@ import {netHttp} from "../../util/config";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {Column, Row} from "../../../meta/component/Dashboard";
-import {Card} from "../../../meta/component/Card";
+import {Card, TextTip} from "../../../meta/component/Card";
 import {InputCheckbox, InputRadio, InputText} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
@@ -113,7 +113,10 @@ export function NetServer(props) {
 
                 </Card>
                 <Card title={""}>
-                    <Table headers={headers} rows={rows.map(row => {
+                    <Table headers={headers} rows={rows.map((row:any[] )=> {
+                        for (let i = 0;i<row.length;i++) {
+                            row[i] = <TextTip context={row[i]}/>
+                        }
                         return [...row, <InputCheckbox context={t("")} selected={opt_row[row[1]]}
                                                        onchange={() => {
                                                            const set = {...opt_row}

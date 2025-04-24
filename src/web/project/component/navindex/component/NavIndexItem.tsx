@@ -1,6 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {NavItem, SiteIndexItem,} from "./NavIndexContainer";
 import {list} from "tar";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../../util/store";
 
 
 export function NavIndexItem(props: {
@@ -15,12 +17,15 @@ export function NavIndexItem(props: {
     click_dir : (list)=>void;
     item:SiteIndexItem
 }) {
+
+    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+
     return <div>
         {props.div ?
             <div className={"nav_list_a"} style={{
-                background: props.color
+                // background: props.color
             }}>{props.name}</div> : props.clickItem || props['_type'] === 'dir' ? <div className={"nav_list_a"} style={{
-                    background: props.color
+                    background: userInfo.user_data.theme !=='dark'?props.color:null
                 }} onClick={() => {
                     if (props['_type'] === "dir") {
                         props.click_dir(props.item);
@@ -33,7 +38,7 @@ export function NavIndexItem(props: {
                     {props.name}
                 </div> :
                 <a href={props.url} target={props.target} className={"nav_list_a"} style={{
-                    background: props.color
+                    background: userInfo.user_data.theme !=='dark'?props.color:null
                 }}>{props.name}</a>}
     </div>
 }

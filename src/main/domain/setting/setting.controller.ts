@@ -93,7 +93,7 @@ export class SettingController {
     @Get("/shell_cmd_check_open")
     get_shell_cmd_check() {
         const result = settingService.get_shell_cmd_check();
-        return Sucess(result );
+        return Sucess(result);
     }
 
     // 保存 自定义 shell cmd 开启状态
@@ -276,9 +276,9 @@ export class SettingController {
     @Get("/sys_option/status")
     get_sys_option_status(@Req() ctx) {
         // 获取系统所有功能的状态
-        const r ={
+        const r = {
             self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
-            shell_cmd_check_open:settingService.get_shell_cmd_check(), // 自定义cmd判断
+            shell_cmd_check_open: settingService.get_shell_cmd_check(), // 自定义cmd判断
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
             recycle_dir: settingService.get_recycle_dir_str(), // 垃圾回收站 目录也返回
             sys_env: settingService.get_sys_env(),
@@ -300,17 +300,17 @@ export class SettingController {
 
     // 保存系统所有的开关状态
     @Post(`/${Http_controller_router.setting_sys_option_status_save}`)
-    save_sys_option_status(@Req() ctx,@Body() body:{type:sys_setting_type,value:string,open:boolean}) {
+    async save_sys_option_status(@Req() ctx, @Body() body: { type: sys_setting_type, value: any, open: boolean }) {
         // 获取系统所有功能的状态
-        if(body.type === sys_setting_type.cyc) {
+        if (body.type === sys_setting_type.cyc) {
             // 文件回收站
             userService.check_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
             DataUtil.set(data_common_key.recycle_bin_status, body.open)
-            if(!body.value) {
+            if (!body.value) {
                 return Fail("empty value")
             }
             const list = body.value.split(";");
-            const key_map_list:string[][] = [];
+            const key_map_list: string[][] = [];
             for (const item of list) {
                 const l = item.split(' ');
                 for (const it of l) {
@@ -321,17 +321,22 @@ export class SettingController {
                     if (!stats.isDirectory()) {
                         throw "dir not a dir"
                     }
-                    if(!path.isAbsolute(it)) {
+                    if (!path.isAbsolute(it)) {
                         throw "dir not absolute"
                     }
                 }
                 key_map_list.push(l);
             }
             DataUtil.set(data_common_key.recycle_bin_key, key_map_list);
-        } else if(body.type === sys_setting_type.sys_env) {
+        } else if (body.type === sys_setting_type.sys_env) {
             userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
-            settingService.set_sys_env(body.value);
+            settingService.set_sys_env({web_site_title: body.value.web_site_title});
             ServerEvent.emit("sys_env_update");
+            // 语言
+            const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
+            user_data.language = body.value.language;
+            user_data.theme = body.value.theme;
+            await userService.save_user_info(user_data.id, user_data);
         }
         return Sucess("1");
     }

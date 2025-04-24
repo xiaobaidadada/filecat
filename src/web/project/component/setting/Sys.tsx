@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
 import {settingHttp, userHttp} from "../../util/config";
-import {UserAuth, UserLogin} from "../../../../common/req/user.req";
+import {themes, UserAuth, UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {useRecoilState} from "recoil";
@@ -17,6 +17,8 @@ import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {getShortTime} from "../../../project/util/comm_util";
+import {setTheme} from "../../util/FunUtil";
+import {GlobalContext} from "../../GlobalProvider";
 
 
 export function  Sys() {
@@ -38,7 +40,8 @@ export function  Sys() {
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
     const [language,set_language] =  useState("");
-
+    const [theme,set_theme] =  useState<themes>("");
+    const {initUserInfo} = useContext(GlobalContext);
 
     const update = async () =>{
         if (!username || !password) {
@@ -99,6 +102,7 @@ export function  Sys() {
         }
         getOpen();
         set_language(userInfo?.user_data?.language);
+        set_theme(userInfo?.user_data?.theme);
     }, []);
     const jscode = async () =>{
         const res = await settingHttp.get(`self_auth_open/jscode`);
@@ -168,10 +172,9 @@ export function  Sys() {
     }
 
     // 语言国际化
-    const switchLanguage = async () =>{
-        i18n.changeLanguage(language)
-        await userHttp.post("language/save",{language});
-    }
+    // const switchLanguage = async () =>{
+    //
+    // }
 
     const tokenClearAll = async () => {
         const result1 = await settingHttp.get("token/clear");
@@ -180,12 +183,22 @@ export function  Sys() {
         }
     }
     const save_sys_env = async () =>{
+
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.sys_env,value:{
-                web_site_title
+                web_site_title,
+                language,
+                theme
             }});
         if (result.code === RCode.Sucess) {
             NotySucess("修改成功")
+        } else {
+            return;
         }
+        // if(userInfo?.user_data?.language !== language) {
+        //     i18n.changeLanguage(language)
+        // }
+        // setTheme(theme);
+        initUserInfo();
     }
 
     return <Row>
@@ -219,11 +232,9 @@ export function  Sys() {
                     <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
 
                 </Card>
-                <Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>
-                    <Select value={language} onChange={(value)=>{
-                        set_language(value);
-                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"}]}/>
-                </Card>
+                {/*<Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>*/}
+
+                {/*</Card>*/}
                 <Card title={t("token过期时间")} rightBottomCom={<Rows isFlex={true} columns={[
                     <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,
                     <ButtonText text={t('保存')} clickFun={tokenUpdate}/>]}/>}>
@@ -238,10 +249,19 @@ export function  Sys() {
             </Dashboard>
         </Column>
 
-        <Column widthPer={30}>
+        <Column widthPer={40}>
             <Dashboard>
-                <Card title={t("全局变量")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
-                    <InputText placeholder={t('web site title')}  value={web_site_title} handleInputChange={(value)=>{set_web_site_title(value)}} />
+                <Card title={t("通用设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                    {t("语言")}
+                    <Select  value={language} onChange={(value)=>{
+                        set_language(value);
+                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"}]}/>
+                    {t("主题")}
+                    <Select  value={theme} onChange={(value)=>{
+                        set_theme(value);
+                    }} options={[{title:"light",value:"light"},{title:"dark",value:"dark"}]}/>
+                    {t("网站标题")}
+                    <InputText   value={web_site_title} handleInputChange={(value)=>{set_web_site_title(value)}} />
                 </Card>
             </Dashboard>
         </Column>

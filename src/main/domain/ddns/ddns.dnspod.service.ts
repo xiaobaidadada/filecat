@@ -1,6 +1,6 @@
 import {HttpRequest} from "../../../common/http";
 import { DataUtil} from "../data/DataUtil";
-import {DdnsConnection, DnsPod} from "../../../common/req/ddns.pojo";
+import {DdnsConnection, DdnsIPPojo, DnsPod} from "../../../common/req/ddns.pojo";
 import {getMapByList} from "../../../common/ListUtil";
 import {parse} from "tldts";
 import {DdnsPre, updateDns} from "./ddns.pre";
@@ -49,16 +49,16 @@ export class DnsPodService extends DdnsPre implements updateDns{
         },true);
         return req;
     }
-    public async Run(netList:any[]) {
+    public async Run(netList:DdnsIPPojo[]) {
         try {
             const data = await DataUtil.get<DdnsConnection>(data_common_key.ddns_dnspod_key);
             if (data && data.isOpen && data.ips && data.ips.length > 0) {
 
-                const map = getMapByList(netList,(v)=>v.ifaceOrWww+v.isIPv4);
+                const map = getMapByList(netList,(v)=>v.ifaceOrWww+v.ip);
                 let change = false;
                 for (const ip of data.ips) {
                     try {
-                        const item = map.get(ip.ifaceOrWww+ip.isIPv4);
+                        const item = map.get(ip.ifaceOrWww+ip.ip);
                         if (item) {
                             if (ip.ip === item.ip && async_have) {
                                 // ip相等，且不是第一次同步就跳过；是第一次不管相等不相等都要更新

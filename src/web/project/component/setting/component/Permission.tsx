@@ -241,7 +241,7 @@ export function Permission(props:{
                    onChange={() => {
                        props.select_auth(UserAuth.sys_env_setting_key)
                    }}/>
-            {t("全局变量设置")}
+            {t("通用设置")}
         </div>
 
         <h3>{t("标签编辑权限")}</h3>

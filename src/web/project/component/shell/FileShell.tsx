@@ -17,7 +17,8 @@ export default function FileShell(props) {
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
     const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
     const [shellShowInit,setShellShowInit] = useState(false);
-
+    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const color =  userInfo.user_data.theme === "dark"?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
         const terminal = new Terminal({
             // fontSize: 15,
@@ -25,8 +26,8 @@ export default function FileShell(props) {
             fontFamily: "Monaco, Menlo, Consolas, 'Courier New', monospace",
             theme: {
                 background: '#FFFFFF',
-                foreground: '#000000',
-                cursor:'#000000',
+                foreground: color,
+                cursor:color,
                 selectionBackground:"#a6d2ff"
             },
             cursorBlink: true,

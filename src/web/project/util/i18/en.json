@@ -323,5 +323,8 @@
   "时间顺序": "time asc",
   "大小逆序": "size desc",
   "大小顺序": "size asc",
-  "文件大小": "file size"
+  "文件大小": "file size",
+  "网站标题": "web site title",
+  "通用设置": "Common Setting",
+  "主题": "theme"
 }

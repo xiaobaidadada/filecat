@@ -69,7 +69,7 @@ export enum UserAuth {
     dir_upload_max_num = 43, // 目录上传数量限制
     http_proxy_download_cancel, // 关闭下载
     // customer_api_pre_key, // 自定义api前缀修改 todo 放弃了 下次用 46开始
-    sys_env_setting_key, // 全局变量设置
+    sys_env_setting_key, // 全局变量设置 通用设置
 }
 
 
@@ -88,6 +88,8 @@ export enum DirListShowTypeEmum {
     name = "name" // 按字母顺序排序
 }
 
+export type themes = "light" | "dark" | "" | undefined;
+
 export class UserData extends UserLogin {
     cwd: string; // 目录顶级范围 (role 作用)
     access_dirs: string[] = []; // cwd 是第一个 这里是其它的可访问的 (role 作用)
@@ -97,6 +99,7 @@ export class UserData extends UserLogin {
     id: string; // 用户 id
     language: string; // (role 作用)
     access_cmd: string; // 可以执行的命令 使用 空格区分多个 (role 作用)
+    theme: themes; // 主题
 
     auth_list: UserAuth[] = [];  // 权限 (role 作用)
     is_root: boolean; // 是否是root账号

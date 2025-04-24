@@ -110,13 +110,13 @@ export class UserController {
     }
 
 
-    @Post('/language/save')
-    async languageSetting(@Body() req:{language:string},@Req()r) {
-        const user_data = userService.get_user_info_by_token(r.headers.authorization);
-        user_data.language = req.language
-        await userService.save_user_info(user_data.id, user_data);
-        return Sucess("1");
-    }
+    // @Post('/language/save')
+    // async languageSetting(@Body() req:{language:string},@Req()r) {
+    //     const user_data = userService.get_user_info_by_token(r.headers.authorization);
+    //     user_data.language = req.language
+    //     await userService.save_user_info(user_data.id, user_data);
+    //     return Sucess("1");
+    // }
 
     start_server_time = Date.now();
     @Get("/userInfo/get")

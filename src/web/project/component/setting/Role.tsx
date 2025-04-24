@@ -215,7 +215,7 @@ export function Role() {
 
                         <label><ActionButton icon={"add"} onClick={() => {
                             set_not_access_dirs([...not_access_dirs, ""])
-                        }} title={"添加"}/>禁止目录范围</label>
+                        }} title={"添加"}/>{t("禁止目录范围")}</label>
                         {(not_access_dirs ?? []).map((item, index) => {
                             return <div key={index} style={{display: "flex",}}>
                                 <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {

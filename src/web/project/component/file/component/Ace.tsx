@@ -9,6 +9,7 @@ import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-sh";
 import "ace-builds/src-noconflict/mode-yaml";
 import "ace-builds/src-noconflict/theme-cloud9_day";
+import "ace-builds/src-noconflict/theme-cloud_editor_dark";
 ace.config.set("basePath", `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
 ace.config.set('modePath', `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
 ace.config.set('themePath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
@@ -17,19 +18,20 @@ import modelist from "ace-builds/src-noconflict/ext-modelist";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
-import "ace-builds/src-noconflict/ext-language_tools";
+// import "ace-builds/src-noconflict/ext-language_tools";
 
 
 // name 是用于获取 类型的方式
 export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>}) {
     const editorRef = useRef(null);
-
+    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const theme = userInfo.user_data.theme ===  "dark"? "cloud_editor_dark" : "cloud9_day";
     useEffect(() => {
         const editor = ace.edit(editorRef.current, {
             value: editor_data.get_value_temp(),
             showPrintMargin: false,
             // readOnly: true,
-            theme: "ace/theme/cloud9_day",
+            theme: `ace/theme/${theme}`,
             mode: props.model ?? modelist.getModeForPath(props.name ?? '').mode,
             wrap: false,
             highlightActiveLine:false, // 鼠标放在一行上的高亮

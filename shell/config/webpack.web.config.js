@@ -69,7 +69,8 @@ module.exports = {
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "toolbox", "rdp", "client", "js")},
-            {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "img", "./",)}
+            {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "img", "./",)},
+            {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "css", "themes",)}
         ],
         port: 3301,
         open: false,

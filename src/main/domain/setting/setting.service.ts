@@ -323,7 +323,7 @@ export class SettingService {
         return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'filecat'};
     }
 
-    public set_sys_env(req) {
+    public set_sys_env(req:{web_site_title: string }) {
         return DataUtil.set(data_common_key.sys_env_key, req);
     }
 
