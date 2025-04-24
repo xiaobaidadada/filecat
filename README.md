@@ -35,8 +35,10 @@ english account: `en_admin`/`en_admin`
 824838674
 ## 请作者和喝咖啡
 
-![支付宝](https://github.com/user-attachments/assets/4e89b019-35c7-47be-a419-c83283b841e8)
-![微信](https://github.com/user-attachments/assets/69af3b89-9a91-4f44-b511-c4094c1064ab)
+<p>
+  <img src="https://github.com/user-attachments/assets/4e89b019-35c7-47be-a419-c83283b841e8" alt="支付宝" width="150" style="margin-right: 10px;" />
+  <img src="https://github.com/user-attachments/assets/69af3b89-9a91-4f44-b511-c4094c1064ab" alt="微信" width="150" />
+</p>
 
 ##  Thanks
 以下项目为 FileCat 提供了灵感或基础
