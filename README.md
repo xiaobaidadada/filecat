@@ -33,7 +33,7 @@ english account: `en_admin`/`en_admin`
 
 ##  qq群
 824838674
-## 请作者和喝咖啡
+## 支持一下
 
 <p>
   <img src="https://github.com/user-attachments/assets/4e89b019-35c7-47be-a419-c83283b841e8" alt="支付宝" width="150" style="margin-right: 10px;" />
