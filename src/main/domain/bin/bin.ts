@@ -65,7 +65,7 @@ export function get_wintun_dll_path(): string {
             //     return p;
         // }
         else {
-            // npm env
+            // npm env 本地
             return path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename)
         }
     } catch (e) {
@@ -80,8 +80,12 @@ export function init_wintun_dll() {
         if (getSys() !== SysEnum.win) return;
         const cpuArch = get_wintun_dll_arch();
         const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
-        const sourcePath = path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename);
+        // 获取模块的根目录
+        const modPath = path.dirname(eval("require").resolve("@xiaobaidadada/node-tuntap2-wintun/package.json"));
+        // 拼接你需要的路径
+        const sourcePath = path.join(modPath, "wintun_dll", winfilename);
         const destPath = path.join(__dirname, winfilename);
+        // console.log("目录",sourcePath,destPath)
         if (!fs.existsSync(destPath)) {
             fs.copyFileSync(sourcePath, destPath);
         }
