@@ -17,7 +17,6 @@ import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {getShortTime} from "../../../project/util/comm_util";
-import {setTheme} from "../../util/FunUtil";
 import {GlobalContext} from "../../GlobalProvider";
 
 

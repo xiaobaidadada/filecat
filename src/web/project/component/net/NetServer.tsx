@@ -115,7 +115,7 @@ export function NetServer(props) {
                 <Card title={""}>
                     <Table headers={headers} rows={rows.map((row:any[] )=> {
                         for (let i = 0;i<row.length;i++) {
-                            row[i] = <TextTip context={row[i]}/>
+                            row[i] = <TextTip context={row[i]} tip_context={row[i]} />
                         }
                         return [...row, <InputCheckbox context={t("")} selected={opt_row[row[1]]}
                                                        onchange={() => {

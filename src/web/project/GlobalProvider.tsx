@@ -44,10 +44,11 @@ export const GlobalProvider = ({ children }) => {
         const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Sucess) {
             const p :UserBaseInfo = result.data;
+            if(user_base_info?.user_data?.theme  !== p.user_data.theme)
+                setTheme(p.user_data.theme);
             setUser_base_info(p)
             i18n.changeLanguage(p?.user_data?.language);
             auth_key_map.clear();
-            setTheme(p.user_data.theme);
         }
     }
 
