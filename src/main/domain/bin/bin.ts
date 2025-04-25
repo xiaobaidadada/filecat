@@ -25,44 +25,65 @@ function writeToStorage(virtualFilePath, realInstallPath) {
     // return realInstallPath;
 }
 
+function get_wintun_dll_arch() {
+    let cpuArch = os.arch();
+    switch (cpuArch) {
+        case 'arm':
+        case 'arm64':
+            break;
+        case 'ia32':
+            cpuArch = "x86";
+            break;
+        case 'x64':
+            cpuArch = "amd64";
+            break;
+        default:
+            // console.log('未知架构:', arch);
+            break;
+    }
+    return cpuArch;
+}
 
 export function get_wintun_dll_path(): string {
     try {
         // const relp = path.join(Env.work_dir, "packges","filecat_dlls");
         // fse.ensureDirSync(relp);
-        let cpuArch = os.arch();
-        switch (cpuArch) {
-            case 'arm':
-            case 'arm64':
-                break;
-            case 'ia32':
-                cpuArch = "x86";
-                break;
-            case 'x64':
-                cpuArch = "amd64";
-                break;
-            default:
-                // console.log('未知架构:', arch);
-                break;
-        }
+        const cpuArch = get_wintun_dll_arch();
         const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
         // pkg  env
-        if (process.env.NODE_ENV==="production") {
+        if (process.env.NODE_ENV === "production") {
             // 在main.js的根目录下
-            return path.join(__dirname,winfilename);
+            return path.join(__dirname, winfilename); // 避免升级的时候dll正在被使用无法升级
         }
-        // else if (process.env.run_env === "pkg") {
-        //     const p = path.join(relp, winfilename);
-        //     if (!fs.existsSync(p)) {
-        //         writeToStorage(path.join(__dirname,winfilename),p);
-        //         // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
-        //         // writeToStorage(path.resolve(winfilename), p)
-        //     }
-        //     return p;
+            // else if (process.env.run_env === "pkg") {
+            //     const p = path.join(relp, winfilename);
+            //     if (!fs.existsSync(p)) {
+            //         writeToStorage(path.join(__dirname,winfilename),p);
+            //         // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
+            //         // writeToStorage(path.resolve(winfilename), p)
+            //     }
+            //     return p;
         // }
         else {
             // npm env
             return path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename)
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+
+// windonw下拷贝wintun dll
+export function init_wintun_dll() {
+    try {
+        if (getSys() !== SysEnum.win) return;
+        const cpuArch = get_wintun_dll_arch();
+        const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
+        const sourcePath = path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename);
+        const destPath = path.join(__dirname, winfilename);
+        if (!fs.existsSync(destPath)) {
+            fs.copyFileSync(sourcePath, destPath);
         }
     } catch (e) {
         console.log(e);
@@ -120,26 +141,27 @@ export function getProcessAddon() {
 }
 
 let wasmBinary;
+
 export function loadWasm() {
     if (!wasmBinary) {
         // 读取 .wasm 文件的二进制内容
-        wasmBinary = fs.readFileSync(path.join(__dirname,'unrar.wasm'));
+        wasmBinary = fs.readFileSync(path.join(__dirname, 'unrar.wasm'));
     }
     return wasmBinary;
 }
 
-let sys_pre ;
-let base_url ;
+let sys_pre;
+let base_url;
 
-function init_pre_path () {
-    if(process.env.NODE_ENV==="production") {
-        sys_pre = `${Env.base_url||process.env.base_url||""}/api`;
-        base_url= Env.base_url||process.env.base_url||"";
+function init_pre_path() {
+    if (process.env.NODE_ENV === "production") {
+        sys_pre = `${Env.base_url || process.env.base_url || ""}/api`;
+        base_url = Env.base_url || process.env.base_url || "";
     } else {
         try {
-            sys_pre = `${Env.base_url||require("../../../../shell/config/env").base_url||""}/api`;
-            base_url= Env.base_url||require("../../../../shell/config/env").base_url||"";
-        } catch(e) {
+            sys_pre = `${Env.base_url || require("../../../../shell/config/env").base_url || ""}/api`;
+            base_url = Env.base_url || require("../../../../shell/config/env").base_url || "";
+        } catch (e) {
             sys_pre = "/api"
             base_url = "";
         }
@@ -148,15 +170,17 @@ function init_pre_path () {
 
 
 export function get_sys_base_url_pre() {
-    if(sys_pre === undefined) {
+    if (sys_pre === undefined) {
         init_pre_path();
     }
     return sys_pre;
 }
 
 export function get_base() {
-    if(base_url === undefined) {
+    if (base_url === undefined) {
         init_pre_path();
     }
     return base_url;
 }
+
+

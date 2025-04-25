@@ -570,6 +570,8 @@ class work_children {
                             step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             this.done_fail_job_handle(job, "fail");
                             break; // 剩下的也不需要执行了
+                        } else if(step["process_exit"] !== undefined) {
+                            process.exit(step["process_exit"]);
                         }
                         // 普通的执行
                         now_step = step;

@@ -13,6 +13,7 @@ import {$stroe} from "../../util/store";
 import {useRecoilState} from "recoil";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {NotyFail} from "../../util/noty";
 
 
 export function BrowserProxy(props) {
@@ -43,6 +44,10 @@ export function BrowserProxy(props) {
         // }
         const req = new NetPojo();
         req.targetProxyUrl = typeof url === "string" ?url: showUrl;
+        if(!req.targetProxyUrl.startsWith("http")) {
+            NotyFail("must start with http[s]://");
+            return;
+        }
         req.sysProxyPort = sysPort;
         const rsp = await netHttp.post("start", req);
         if (rsp.code !== RCode.Sucess) {

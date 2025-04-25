@@ -320,9 +320,9 @@ export class NetService {
                             headers:pojo.headers
                         };
                         try {
-                            if (pojo.body_type === http_body_type.json) {
-                                pojo.data = pojo.json_data;
-                            }
+                            // if (pojo.body_type === http_body_type.json) {
+                            //     pojo.data = pojo.json_data;
+                            // }
                             var stream;
                             switch (pojo.method) {
                                 case 'get':

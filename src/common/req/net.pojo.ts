@@ -64,7 +64,7 @@ export class HttpFormPojo {
     // 字符串数据
     data:string;
     // json 数据
-    json_data:string;
+    // json_data:string;
     // 表单数据
     // form_data:{[key:string]:HttpFormData} | string;
     form_data_list :HttpFormData[] | string;

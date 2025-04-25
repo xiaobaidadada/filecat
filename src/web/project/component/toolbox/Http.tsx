@@ -14,7 +14,6 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {copyToClipboard} from "../../util/FunUtil";
-import Noty from "noty";
 // import Ace from "../file/component/Ace";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {http_body_type, http_download_map, HttpFormData, HttpFormPojo} from "../../../../common/req/net.pojo";
@@ -24,14 +23,14 @@ import axios, {AxiosResponse} from "axios";
 import {UserAuth} from "../../../../common/req/user.req";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
-import { formatFileSize } from '../../../../common/ValueUtil';
+import {formatFileSize} from '../../../../common/ValueUtil';
 
 const Ace = React.lazy(() => import("../file/component/Ace"));
 
 
 let http_header_value;
-let http_json_value;
-let http_row_value;
+// let http_json_value;
+let http_body_value;
 
 let respone_body;
 let respone_headers;
@@ -52,7 +51,7 @@ export function Http() {
     const [local_download_path, set_local_download_path] = useState(undefined);
 
     const [form_data_list, set_form_data_list] = useState([] as HttpFormData[]);
-    const [download_list,set_download_list] = useState<http_download_map[]>([]);
+    const [download_list, set_download_list] = useState<http_download_map[]>([]);
 
     const [header_or_body_type, set_header_or_body_type] = useState(1); // 1 请求头 2 请求体
     const [body_type, set_body_type] = useState(1); // 2 是json 3 是 form 表单 1 是 row
@@ -63,29 +62,31 @@ export function Http() {
     const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useRecoilState($stroe.nav_index_add_item_by_now_list);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
-    editor_data.set_value_temp("{}");
-
+    //两个编辑器的初始值
+    editor_data.set_value_temp("{}",0);
+    // editor_data.get_editor(0).session.setMode('ace/mode/json')
+    editor_data.set_value_temp("",1);
+    http_header_value = {};
+    http_body_value = "";
+    respone_body = "";
+    respone_headers = "";
     useEffect(() => {
-        http_header_value = {};
-        http_json_value = {};
-        http_row_value = "";
-        respone_body = "";
-        respone_headers = "";
-        editor_data.get_editor().session.setMode('ace/mode/json');
-        if(router_jump.http_download_map_path) {
+        // 做一些初始化值 还要监听下载变化
+        editor_data.get_editor(0).session.setMode('ace/mode/json');
+        if (router_jump.http_download_map_path) {
             set_local_download_path(router_jump.http_download_map_path)
             set_router_jump({});
         }
-        ws.sendData(CmdType.http_download_water,undefined).then(()=>{
+        ws.sendData(CmdType.http_download_water, undefined).then(() => {
 
-            ws.addMsg(CmdType.http_download_water, (wsData:WsData<http_download_map[]>)=>{
-                const list:http_download_map[] = wsData.context;
+            ws.addMsg(CmdType.http_download_water, (wsData: WsData<http_download_map[]>) => {
+                const list: http_download_map[] = wsData.context;
                 set_download_list(list);
                 // console.log(list)
             })
         });
 
-        return ()=>{
+        return () => {
             ws.unConnect();
         }
     }, []);
@@ -117,90 +118,35 @@ export function Http() {
         if (item.headers) {
             http_header_value = JSON.parse(item.headers);
             if (item.header_type === 1) {
-                editor_data.get_editor().setValue(item.headers, -1);
-                editor_data.get_editor().session.setMode('ace/mode/json');
+                editor_data.get_editor(0).setValue(item.headers, -1);
+                editor_data.get_editor(0).session.setMode('ace/mode/json');
             }
         }
-        if(item.form_data_list )
+        if (item.form_data_list)
             set_form_data_list(JSON.parse(item.form_data_list as string))
-        if (item.json_data)
-            http_json_value = JSON.parse(item.json_data);
-        if(item.data)
-            http_row_value = item.data;
+        if (item.data)
+            http_body_value = item.data;
         if (item.body_type) {
             set_body_type(item.body_type);
-            if (item.header_type === 2) {
-                if (item.body_type === 1) {
-                    editor_data.get_editor().setValue(http_row_value, -1)
-                    editor_data.get_editor().session.setMode('ace/mode/text')
-                } else if (item.body_type === 2) {
-                    editor_data.get_editor().setValue(JSON.stringify(http_json_value, null, 2), -1)
-                    editor_data.get_editor().session.setMode('ace/mode/json')
-                }
+            editor_data.get_editor(1).setValue(item.data, -1)
+            if (item.body_type === 1) {
+                editor_data.get_editor(1).session.setMode('ace/mode/text')
+            } else if (item.body_type === 2) {
+                editor_data.get_editor(1).session.setMode('ace/mode/json')
             }
 
         }
     }
     const switch_header_type = (type) => {
-        try {
-            if (header_or_body_type === 1) {
-                http_header_value = JSON.parse(editor_data.get_editor_value());
-            } else if (header_or_body_type === 2) {
-                if (body_type === 1) {
-                    http_row_value = editor_data.get_editor_value();
-                } else if (body_type === 2) {
-                    http_json_value = JSON.parse(editor_data.get_editor_value());
-                }
-            }
-        } catch (e) {
-            NotyFail(e.message);
-        }
-
         set_header_or_body_type(type);
-
-        // 还原之前的值
-        if (type === 1) {
-            editor_data.get_editor().setValue(JSON.stringify(http_header_value, null, 2), -1)
-            editor_data.get_editor().session.setMode('ace/mode/json')
-        } else if (type === 2) {
-            // 还原 body 之前的值
-            if (body_type === 1) {
-                editor_data.get_editor().setValue(http_row_value, -1)
-                editor_data.get_editor().session.setMode('ace/mode/text')
-            } else if (body_type === 2) {
-                editor_data.get_editor().setValue(JSON.stringify(http_json_value, null, 2), -1)
-                editor_data.get_editor().session.setMode('ace/mode/json')
-            }
-        }
     }
     const switch_type = (type) => {
-        if (header_or_body_type !== 2) {
-            return;
-        }
-        const value = editor_data.get_editor_value();
-        // 保留之前的值
-        if (value) {
-            try {
-                if (body_type === 1) {
-                    http_row_value = editor_data.get_editor_value();
-                } else if (body_type === 2) {
-                    http_json_value = JSON.parse(editor_data.get_editor_value());
-                }
-            } catch (e) {
-                NotyFail(e.message);
-                return;
-            }
-        }
-
         set_body_type(type);
-
         // 还原之前的值
         if (type === 1) {
-            editor_data.get_editor().setValue(http_row_value, -1)
-            editor_data.get_editor().session.setMode('ace/mode/text')
+            editor_data.get_editor(1).session.setMode('ace/mode/text')
         } else if (type === 2) {
-            editor_data.get_editor().setValue(JSON.stringify(http_json_value, null, 2), -1)
-            editor_data.get_editor().session.setMode('ace/mode/json')
+            editor_data.get_editor(1).session.setMode('ace/mode/json')
         }
     }
     const add = () => {
@@ -216,26 +162,20 @@ export function Http() {
         pojo.url = url;
         pojo.method = url_type;
         if (header_or_body_type === 1) {
-            http_header_value = JSON.parse(editor_data.get_editor_value());
+            http_header_value = JSON.parse(editor_data.get_editor_value(0));
         }
         pojo.headers = http_header_value;
         pojo.body_type = body_type;
         pojo.header_type = header_or_body_type;
         if (body_type === http_body_type.row) {
-            if (header_or_body_type === 2) {
-                http_row_value = editor_data.get_editor_value();
-            }
-            pojo.data = http_row_value;
-            pojo.json_data = JSON.stringify(http_json_value);
+            // 原始数据
+            http_body_value = editor_data.get_editor_value(1);
+            pojo.data = http_body_value;
         } else if (body_type === http_body_type.json) {
+            // json 数据
             http_header_value['Content-Type'] = 'application/json';
-            if (header_or_body_type === 1)
-                editor_data.get_editor().setValue(JSON.stringify(http_header_value), -1)
-            if (header_or_body_type === 2) {
-                http_json_value = JSON.parse(editor_data.get_editor_value());
-            }
-            pojo.json_data = JSON.stringify(http_json_value);
-            pojo.data = http_row_value;
+            http_body_value = editor_data.get_editor_value(1);
+            pojo.data = http_body_value;
         } else if (body_type === http_body_type.form) {
             // 表单 非 application/x-www-form-urlencoded
             http_header_value['Content-Type'] = 'multipart/form-data';
@@ -264,8 +204,8 @@ export function Http() {
         const formData = new FormData();
         formData.append('data', JSON.stringify(get_send_pojo(formData)));
         let target = `http/send`;
-        if(local_download_path) {
-            target+=`?local_download_path=${local_download_path}`
+        if (local_download_path) {
+            target += `?local_download_path=${local_download_path}`
         }
         axios.post(netHttp.getUrl(target), formData,
             {
@@ -297,8 +237,8 @@ export function Http() {
                 respone_body = r.data;
             }
             try {
-                if(r.headers.filecat_remote_raw_headers)
-                respone_headers = JSON.stringify(JSON.parse(r.headers.filecat_remote_raw_headers),null,2);
+                if (r.headers.filecat_remote_raw_headers)
+                    respone_headers = JSON.stringify(JSON.parse(r.headers.filecat_remote_raw_headers), null, 2);
             } catch (e) {
                 respone_headers = JSON.stringify(r.headers.filecat_remote_raw_headers);
             }
@@ -347,7 +287,7 @@ export function Http() {
         return pojo;
     }
     const save_as = () => {
-        if(!check_user_auth(UserAuth.http_proxy_tag_update)) {
+        if (!check_user_auth(UserAuth.http_proxy_tag_update)) {
             NotyFail("no permission")
             return;
         }
@@ -388,12 +328,12 @@ export function Http() {
             <Row>
                 <Column>
                     {
-                        download_list.length!==0 && <Card title={"正在下载"}>
+                        download_list.length !== 0 && <Card title={"正在下载"}>
                             <div>
                                 {download_list.map((value, index) => {
-                                    return (<div  key={index}>
+                                    return (<div key={index}>
                                         <div className={"div-row"}>
-                                            <ActionButton icon={"cancel"} title={t("取消")} onClick={()=>{
+                                            <ActionButton icon={"cancel"} title={t("取消")} onClick={() => {
                                                 ws.sendData(CmdType.http_download_cancel, value.local_download_path)
                                             }}/>
                                             <TextTip context={value.filename} tip_context={value.local_download_path}/>
@@ -401,11 +341,11 @@ export function Http() {
                                                 paddingLeft: ".3rem",
                                                 color: "green"
                                             }}>
-                                        {`${(value.progresses??0)}%  ${value.loaded?formatFileSize(value.loaded):""}MB / ${value.seep??""}MB/s  `}
+                                        {`${(value.progresses ?? 0)}%  ${value.loaded ? formatFileSize(value.loaded) : ""}MB / ${value.seep ?? ""}MB/s  `}
                                     </span>
                                         </div>
                                         <div style={{
-                                            width: value.progresses?`${value.progresses}%`:"0",
+                                            width: value.progresses ? `${value.progresses}%` : "0",
                                             backgroundColor: "#40c4ff",
                                             height: "5px",
                                             transition: "0.2s ease width",
@@ -421,11 +361,13 @@ export function Http() {
                               <ActionButton icon={"add"} title={t("添加")} onClick={add}/>}
                     >
                         <div className={'http_url'}>
-                            <InputTextIcon not_mobile={true} max_width={'15%'} placeholder={t("协议")} icon={"http"} value={url_type}
+                            <InputTextIcon not_mobile={true} max_width={'15%'} placeholder={t("协议")} icon={"http"}
+                                           value={url_type}
                                            handleInputChange={(v) => {
                                                set_url_type(v);
                                            }}/>
-                            <InputTextIcon not_mobile={true} max_width={'80%'} placeholder={t("http url")} icon={"link"} value={url}
+                            <InputTextIcon not_mobile={true} max_width={'80%'} placeholder={t("http url")} icon={"link"}
+                                           value={url}
                                            handleInputChange={(v) => {
                                                set_url(v);
                                            }}/>
@@ -443,23 +385,29 @@ export function Http() {
                                 switch_header_type(2)
                             }}/>,
                         ]}/>
-                        <Rows isFlex={true} columns={[
-                            <InputRadio value={1} name={'body'} context={t("row")} selected={body_type === 1}
-                                        onchange={() => {
-                                            switch_type(1)
-                                        }}/>,
-                            <InputRadio value={2} name={'body'} context={t("json")} selected={body_type === 2}
-                                        onchange={() => {
-                                            switch_type(2)
-                                        }}/>,
-                            <InputRadio value={3} name={'body'} context={t("form")} selected={body_type === 3}
-                                        onchange={() => {
-                                            switch_type(3)
-                                        }}/>,
-                        ]}/>
+                        {header_or_body_type === 2 &&
+                            <Rows isFlex={true} columns={[
+                                <InputRadio value={1} name={'body'} context={t("row")} selected={body_type === 1}
+                                            onchange={() => {
+                                                switch_type(1)
+                                            }}/>,
+                                <InputRadio value={2} name={'body'} context={t("json")} selected={body_type === 2}
+                                            onchange={() => {
+                                                switch_type(2)
+                                            }}/>,
+                                <InputRadio value={3} name={'body'} context={t("form")} selected={body_type === 3}
+                                            onchange={() => {
+                                                switch_type(3)
+                                            }}/>,
+                            ]}/>
+                        }
                         <div className={'http_ace'}
-                             style={{display: body_type === 3 && header_or_body_type === 2 ? "none" : ''}}>
-                            <Ace name={''}/>
+                             style={{display: header_or_body_type === 1 ? "" : 'none'}}>
+                            <Ace name={''} editor_id={0} />
+                        </div>
+                        <div className={'http_ace'}
+                             style={{display: header_or_body_type === 2 && body_type !==3 ? "" : 'none'}}>
+                            <Ace name={''} editor_id={1} />
                         </div>
                         <div style={{display: !(body_type === 3 && header_or_body_type === 2) ? "none" : ''}}>
                             <Table headers={['key', t("值")]} rows={form_data_list.map((item, index) => {
@@ -489,10 +437,10 @@ export function Http() {
                                 <InputText placeholder={t("本地地址")} value={local_download_path}
                                            handleInputChange={(v) => {
                                                set_local_download_path(v);
-                                           }} handlerEnter={()=>{
-                                               if(!local_download_path) {
-                                                   set_local_download_path(undefined);
-                                               }
+                                           }} handlerEnter={() => {
+                                    if (!local_download_path) {
+                                        set_local_download_path(undefined);
+                                    }
                                 }}/>}
                         </div>
 
@@ -541,7 +489,7 @@ export function Http() {
                                            {key: "data", preName: "data"},
                                            {key: "form_data_list", preName: "form_data_list"},
                                            {key: "local_download_path", preName: "local_download_path"},
-                                           {key:"color",preName:"color"}
+                                           {key: "color", preName: "color"}
                                        ]}/>
                 </Column>
             </Row>

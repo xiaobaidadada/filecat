@@ -66,6 +66,7 @@ export interface step_item {
 
     running_type?: running_type;
     if?:string;
+    process_exit:number; // 程序 退出
 }
 
 export interface job_item {

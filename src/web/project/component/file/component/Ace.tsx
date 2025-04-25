@@ -1,5 +1,6 @@
 import React, {ReactNode, useEffect, useRef, useState} from 'react';
-import ace, {Ace as AceItem, version as ace_version} from "ace-builds";
+import {Ace as AceItem, version as ace_version} from "ace-builds";
+import * as ace from "ace-builds";
 import "ace-builds/src-noconflict/mode-json"; // 几个常用的不需要网络
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-typescript";
@@ -22,13 +23,13 @@ import {editor_data} from "../../../util/store.util";
 
 
 // name 是用于获取 类型的方式
-export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>}) {
+export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number}) {
     const editorRef = useRef(null);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const theme = userInfo.user_data.theme ===  "dark"? "cloud_editor_dark" : "cloud9_day";
     useEffect(() => {
         const editor = ace.edit(editorRef.current, {
-            value: editor_data.get_value_temp(),
+            value: editor_data.get_value_temp(props.editor_id),
             showPrintMargin: false,
             // readOnly: true,
             theme: `ace/theme/${theme}`,
@@ -56,10 +57,10 @@ export default function Ace(props:{name: string,model?:string,on_change?:()=>voi
             }
         });
         editorRef.current = editor;
-        editor_data.set_editor_temp(editor);
+        editor_data.set_editor_temp(editor,props.editor_id);
 
         return () => {
-            editor_data.set_editor_temp(null);
+            editor_data.delete_editor_temp(props.editor_id);
             editor.destroy();
         };
     }, []);

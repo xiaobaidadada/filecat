@@ -182,55 +182,60 @@ export const use_file_to_running = () => {
 
 export class editor_data {
 
-    static cache_str: string = "";
-    static editor: AceItem.Editor | null = null;
+    static cache_str_map: Map<number,string> = new Map();
+    static editor_map: Map<number,AceItem.Editor>  = new Map();
 
-    public static set_value_temp(v: string) {
-        editor_data.cache_str = v;
+    //  设置临时值 用于全局传递
+    public static set_value_temp(v: string,editor_id?:number) {
+        editor_data.cache_str_map.set(editor_id===undefined?0:editor_id, v)
     }
 
-    public static set_editor_temp(v: AceItem.Editor | null) {
-        editor_data.editor = v;
+    public static get_value_temp(editor_id?:number) {
+        return editor_data.cache_str_map.get(editor_id===undefined?0:editor_id);
     }
 
-    public static get_editor_value() {
-        if (!editor_data.editor) {
-            throw "不存在编辑器";
-        }
-        return editor_data.editor.getValue();
+    public static set_editor_temp(v: AceItem.Editor ,editor_id?:number) {
+        editor_data.editor_map.set(editor_id===undefined?0:editor_id, v);
     }
 
-    public static get_editor() {
-        return this.editor;
+    public static delete_editor_temp(editor_id?:number) {
+        editor_data.editor_map.delete(editor_id===undefined?0:editor_id);
     }
 
-    public static get_value_temp() {
-        return editor_data.cache_str;
+    public static get_editor_value(editor_id?:number) {
+        // if (!editor_data.editor_map.has(editor_id)) {
+        //     throw "不存在编辑器";
+        // }
+        return editor_data.editor_map.get(editor_id===undefined?0:editor_id).getValue();
     }
 
-    public static set_value(v: string, filename?: string) {
-        if (filename) {
-            localStorage.setItem(filename, v);
-        } else {
-            localStorage.setItem("cache_str", v);
-        }
+    public static get_editor(editor_id?:number) {
+        return this.editor_map.get(editor_id===undefined?0:editor_id);
     }
 
-    public static get_value(filename?: string) {
-        if (filename) {
-            localStorage.getItem(filename);
-        } else {
-            localStorage.getItem("cache_str");
-        }
-    }
+    // public static set_value(v: string, filename?: string) {
+    //     if (filename) {
+    //         localStorage.setItem(filename, v);
+    //     } else {
+    //         localStorage.setItem("cache_str", v);
+    //     }
+    // }
 
-    public static delete_value(filename?: string) {
-        if (filename) {
-            localStorage.removeItem(filename);
-        } else {
-            localStorage.removeItem("cache_str");
-        }
-    }
+    // public static get_value(filename?: string) {
+    //     if (filename) {
+    //         localStorage.getItem(filename);
+    //     } else {
+    //         localStorage.getItem("cache_str");
+    //     }
+    // }
+
+    // public static delete_value(filename?: string) {
+    //     if (filename) {
+    //         localStorage.removeItem(filename);
+    //     } else {
+    //         localStorage.removeItem("cache_str");
+    //     }
+    // }
 }
 
 

@@ -8,7 +8,19 @@ import {RecoilRoot} from "recoil";
 import {BrowserRouter} from "react-router-dom";
 import "./util/in18resource"
 import {GlobalProvider} from "./GlobalProvider";
-
+import {setTheme} from "./util/FunUtil";
+const init = ()=>{
+    try {
+        const str = localStorage.getItem("user_base_info");
+        if(str){
+            const user_info = (JSON.parse(str));
+            setTheme(user_info?.user_data?.theme);
+        }
+    } catch(error){
+        console.error(error);
+    }
+}
+init();
 
 const container = document.getElementById('root');
 const root = createRoot(container);
