@@ -86,9 +86,9 @@ export function init_wintun_dll() {
         const sourcePath = path.join(modPath, "wintun_dll", winfilename);
         const destPath = path.join(__dirname, winfilename);
         // console.log("目录",sourcePath,destPath)
-        if (!fs.existsSync(destPath)) {
+        // if (!fs.existsSync(destPath)) {
             fs.copyFileSync(sourcePath, destPath);
-        }
+        // }
     } catch (e) {
         console.log(e);
     }

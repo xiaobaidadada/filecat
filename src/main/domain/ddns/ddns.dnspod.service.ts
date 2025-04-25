@@ -54,11 +54,11 @@ export class DnsPodService extends DdnsPre implements updateDns{
             const data = await DataUtil.get<DdnsConnection>(data_common_key.ddns_dnspod_key);
             if (data && data.isOpen && data.ips && data.ips.length > 0) {
 
-                const map = getMapByList(netList,(v)=>v.ifaceOrWww+v.ip);
+                const map = getMapByList(netList,(v)=>v.ifaceOrWww+v.scopeid);
                 let change = false;
                 for (const ip of data.ips) {
                     try {
-                        const item = map.get(ip.ifaceOrWww+ip.ip);
+                        const item = map.get(ip.ifaceOrWww+ip.scopeid);
                         if (item) {
                             if (ip.ip === item.ip && async_have) {
                                 // ip相等，且不是第一次同步就跳过；是第一次不管相等不相等都要更新

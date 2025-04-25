@@ -16,12 +16,19 @@ import {data_common_key} from "../data/data_type";
 
 const dnspodTest = "https://dnsapi.cn/User.Detail";
 
+let ok;
 
 export class DdnsService extends DdnsPre {
 
-
+    public close_ddns_task() {
+        if(ok) {
+            clearInterval(ok);
+            ok = undefined;
+        }
+    }
     public ddnsTask() {
-        const ok = setInterval(() => {
+        if(ok) return;
+        ok = setInterval(() => {
             (async () => {
                 const netList = await this.updateAndGetIps();
                 let handle_num = 0;
@@ -60,9 +67,9 @@ export class DdnsService extends DdnsPre {
         const data = await DataUtil.get<DdnsConnection>(key);
         result.ips = list;
         if (!!data && !!data.ips && data.ips.length > 0) {
-            const map = getMapByList(data.ips, (v) => v.ifaceOrWww + v.ip);
+            const map = getMapByList(data.ips, (v) => v.ifaceOrWww + v.scopeid);
             for (const ip of result.ips) {
-                const item = map.get(ip.ifaceOrWww + ip.ip);
+                const item = map.get(ip.ifaceOrWww + ip.scopeid);
                 if (item) {
                     ip.ddnsHost = item.ddnsHost;
                 }
@@ -140,6 +147,8 @@ export class DdnsService extends DdnsPre {
             ddnsService.ddnsTask();
             await DataUtil.set(key, data);
             return Sucess("身份信息正确");
+        } else {
+            ddnsService.close_ddns_task();
         }
         await DataUtil.set(key, data);
         return Sucess("保存成功");

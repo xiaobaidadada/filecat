@@ -21,6 +21,7 @@ export class DdnsIPPojo {
     ddnsHost?:string;
     source_type?:ip_source_type;
     source_value?:string;
+    scopeid:number;
 }
 
 export class DnsPod {
