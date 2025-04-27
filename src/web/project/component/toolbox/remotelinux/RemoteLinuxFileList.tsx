@@ -12,7 +12,6 @@ import {scanFiles} from "../../../util/file";
 import { PromptEnum} from "../../prompts/Prompt";
 
 import {RCode} from "../../../../../common/Result.pojo";
-import Noty from "noty";
 import {RemoteLinuxFileItem} from "./RemoteLinuxFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteShell} from "../../shell/RemoteShell";
@@ -20,7 +19,7 @@ import {file_sort, getFilesByIndexs} from "../../file/FileUtil";
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail} from "../../../util/noty";
+import {NotyFail, NotySucess} from "../../../util/noty";
 import { formatFileSize } from '../../../../../common/ValueUtil';
 import {getShortTime} from "../../../../project/util/comm_util";
 import { removeLastDir } from '../../../util/ListUitl';
@@ -187,12 +186,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     }
 
     function ok(txt) {
-        new Noty({
-            type: 'success',
-            text: txt,
-            timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-            layout: "bottomLeft"
-        }).show();
+        NotySucess(txt);
     }
 
     function copy() {
@@ -406,7 +400,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 {(copyedFileList.length > 0 || cutedFileList.length > 0) &&
                     <ActionButton onClick={paste} icon={"content_paste"} title={t("粘贴到此处")}
                                   tip={copyedFileList.length + cutedFileList.length}/>}
-                {(selectedFile.length === 1 && nowFileList.files.length >= 1 && nowFileList.folders.length >= 1 && getFilesByIndexs(nowFileList, selectedFile)[0]['type'] !== FileTypeEnum.folder) &&
+                {(selectedFile.length === 1 && nowFileList.files.length >= 1 && getFilesByIndexs(nowFileList, selectedFile)[0]['type'] !== FileTypeEnum.folder) &&
                     <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
                 {selectedFile.length === 1 &&
                     <ActionButton icon={"edit_attributes"} title={t("重命名")} onClick={updateFile}/>}
