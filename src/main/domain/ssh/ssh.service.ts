@@ -141,13 +141,14 @@ export class SshService extends SshSsh2 {
     async open(data: WsData<SshPojo>) {
         try {
             const pojo = data.context as SshPojo;
-            const wss = (data.wss as Wss);
-            let emitter = new EventEmitter();
-            wss.dataMap.set(`emitter_${pojo.key}`, emitter);
             const client = this.lifeGetData(pojo.key) as Client;
             if (!client) {
                 return "";
             }
+            this.forEveryLifeHeart(pojo.key);
+            const wss = (data.wss as Wss);
+            let emitter = new EventEmitter();
+            wss.dataMap.set(`emitter_${pojo.key}`, emitter);
             client.shell((err, stream) => {
                 // 设置初始终端大小
                 stream.setWindow(pojo.rows, pojo.cols);
@@ -163,11 +164,14 @@ export class SshService extends SshSsh2 {
                 emitter.on('data', (data) => {
                     stream.write(data);
                 });
-
-                wss.ws.on('close', function close() {
+                wss.setClose(()=>{
+                    this.endForEveryLifeHeart(pojo.key);
                     // 发送命令以关闭shell会话
                     stream.end('exit\r');
-                });
+                })
+                // wss.ws.on('close', function close() {
+                //
+                // });
             })
 
         } catch (e) {
@@ -275,6 +279,7 @@ export class SshService extends SshSsh2 {
         req['fileName'] = path.basename(localFilePath);
         await this.uploadFileAsync(req, res);
         return new Promise((resolve, reject) => {
+            this.lifeHeart(req.query.key);
             // 上传文件
             sftp.fastPut(localFilePath, remoteFilePath, async (err) => { // 比下面的更快
                 if (err) {

@@ -66,11 +66,13 @@ export function Http() {
     editor_data.set_value_temp("{}",0);
     // editor_data.get_editor(0).session.setMode('ace/mode/json')
     editor_data.set_value_temp("",1);
-    http_header_value = {};
-    http_body_value = "";
-    respone_body = "";
-    respone_headers = "";
+
     useEffect(() => {
+        http_header_value = {};
+        http_body_value = "";
+        respone_body = "";
+        respone_headers = "";
+
         // 做一些初始化值 还要监听下载变化
         editor_data.get_editor(0).session.setMode('ace/mode/json');
         if (router_jump.http_download_map_path) {
@@ -456,6 +458,7 @@ export function Http() {
                                         selected={respone_type === 2} onchange={() => {
                                 set_respone_type(2)
                                 set_status_body(respone_headers)
+
                             }}/>
                             <ActionButton title={"复制"} icon={"copy_all"} onClick={() => {
                                 if (status_body) {

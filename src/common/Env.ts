@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import {UserLanguage} from "./req/user.req";
 
 const {execSync} = require('child_process');
 const help = `
@@ -23,6 +24,7 @@ const help = `
 15. reset_root_username 重新生成管理员的账号 (启动完请删除这个参数下次要再使用，下面的密码也是)
 16. reset_root_password
 17. base_url 路由前缀
+18. lan 语言，只在第一次创建账号的时候生效 目前支持  zh(简体) en
 `;
 
 export class Env {
@@ -36,6 +38,7 @@ export class Env {
     public static reset_root_username: string;
     public static reset_root_password: string;
     public static base_url: string ; // 本地 dev的时候这个参数没有用  env.j会生效
+    public static lan: UserLanguage = "en";
 
     public static async parseArgs() {
         return new Promise((resolve, reject) => {

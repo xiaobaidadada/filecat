@@ -120,7 +120,7 @@ export class UserController {
 
     start_server_time = Date.now();
     @Get("/userInfo/get")
-    getLanguage(@Req() req: Request) {
+    getUserInfo(@Req() req: Request) {
         const pojo = new UserBaseInfo();
         // pojo.language = DataUtil.get(this.language)??"zh";
         pojo.sys = getSys();

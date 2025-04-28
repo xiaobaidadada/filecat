@@ -17,11 +17,17 @@ English: https://filecat.xiaobaidadada.fun/#/en/install.md
 备用地址：https://docs.filecat.xiaobaidadada.fun/
 
 ##  在线演示 / Demo
-url: http://demo.filecat.xiaobaidadada.fun:5569/
+
+[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)
 
 账号密码: `admin`/`admin`
 
 english account: `en_admin`/`en_admin`
+
+### Demo Sponsor by [亚洲云](https://www.asiayun.com/)
+本演示主机由[亚洲云](https://www.asiayun.com/)提供：高防服务器|美国服务器|海外服务器 - 亚洲云安全可靠的云服务。
+
+Alternative Address(备用地址): [http://sample.filecat.xiaobaidadada.fun:5569/](http://sample.filecat.xiaobaidadada.fun:5569/)
 
 ## English Doc
 [English Readme](./doc/EN_README.md)

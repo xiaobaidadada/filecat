@@ -24,6 +24,7 @@ nav  {
     top: 4em;
     left: 0;
     z-index: 1;
+    overflow-y: auto;
 }
 
 nav  .nav_2 {

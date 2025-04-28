@@ -8,6 +8,8 @@ export class LifecycleRecordService {
     private heatMap: Map<string, number> = new Map();
     // 结束事件
     private endMap: Map<string, (data: any) => Promise<void>> = new Map();
+    // 一直不过期
+    private forEveryMap: Set<string> = new Set<string>();
     private timer;
 
     /**
@@ -26,7 +28,6 @@ export class LifecycleRecordService {
         }
         this.heatMap.set(id, Date.now());
         if (!this.timer) {
-            const now = Date.now();
             this.timer = setInterval(async () => {
                 try {
                     if (this.heatMap.size === 0) {
@@ -34,9 +35,10 @@ export class LifecycleRecordService {
                         this.timer = null;
                         return;
                     }
+                    const now = Date.now();
                     for (const key of this.heatMap.keys()) {
                         const stamp = this.heatMap.get(key);
-                        if (now - stamp > max_life_len) {
+                        if (!this.forEveryMap.has(key) && ((now - stamp) > max_life_len)) {
                             // 超过五分钟了
                             await this.lifeClose(key);
                         }
@@ -57,9 +59,17 @@ export class LifecycleRecordService {
      * @param key
      */
     lifeHeart(key: string) {
-        if(this.heatMap.has(key)) {
+        if (this.heatMap.has(key)) {
             this.heatMap.set(key, Date.now());
         }
+    }
+
+    forEveryLifeHeart(key: string) {
+        this.forEveryMap.add(key);
+    }
+
+    endForEveryLifeHeart(key: string) {
+        this.forEveryMap.delete(key);
     }
 
     /**

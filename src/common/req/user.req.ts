@@ -13,6 +13,8 @@ export enum SysEnum {
     linux
 }
 
+export type UserLanguage = "zh"|"en";
+
 export class UserBaseInfo {
     language: string; // 废弃字段
     sys: SysEnum; // 系统

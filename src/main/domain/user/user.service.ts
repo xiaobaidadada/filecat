@@ -288,7 +288,7 @@ export class UserService {
                 value.hash_password = hash_string(`${root_password}`);
                 value.id = root_id;
                 value.is_root = true;
-                value.language = "en";
+                value.language = Env.lan;
                 // 创建
                 let mapping = DataUtil.get(data_common_key.user_id_info_data_mapping);
                 if (!mapping) {
