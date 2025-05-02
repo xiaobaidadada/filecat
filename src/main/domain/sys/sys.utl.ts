@@ -7,9 +7,10 @@ import {Env} from "../../../common/Env";
 
 export class SystemUtil {
 
-    // 检查某个程序有没有安装到path可以使用
+    // 执行某个命令 并返回 是否执行成功结果
     public static commandIsExist(cmd: string): boolean {
         try {
+            // 异步的方式暂时没有跨平台的方式判断 exec会堵塞 bash等命令
             execSync (cmd, { stdio: 'pipe' });
             return true;
         } catch (e) {

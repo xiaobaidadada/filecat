@@ -20,6 +20,7 @@ export class FileUtil {
         return fs.promises.open(path,flags,mode);
     }
 
+    // 判断文件是否存在
     static async access(path: string) {
         try {
             await fs.promises.access(path,fs.constants.F_OK);

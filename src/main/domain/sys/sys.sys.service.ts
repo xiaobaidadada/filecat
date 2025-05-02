@@ -78,6 +78,9 @@ class SysSystemService {
     public async diskSmartctl(disk:string) {
         const result = new DiskCheckInfo();
         let pojo;
+        if(disk.includes(" ")) {
+            throw "error params";
+        }
         try {
             const jsonstr = execSync(`${getSmartctl()} -a --json ${disk}`).toString();
             pojo = JSON.parse(jsonstr)

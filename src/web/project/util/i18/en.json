@@ -326,5 +326,10 @@
   "文件大小": "file size",
   "网站标题": "web site title",
   "通用设置": "Common Setting",
-  "主题": "theme"
+  "主题": "theme",
+  "时区": "time zone",
+  "时间": "time",
+  "服务器时间": "server time",
+  "在线": "online",
+  "离线": "offline"
 }

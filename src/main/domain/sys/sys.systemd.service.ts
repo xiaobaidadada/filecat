@@ -229,6 +229,9 @@ export class SysSystemdService {
 
 
     async delete_sys_systemd(name:string) {
+        if(name.includes(" ")) {
+            throw "error name";
+        }
         const sdtout = execSync(`systemctl show ${name} --property=FragmentPath`).toString();
         const filePath = sdtout.split("=")[1].replaceAll("\n","");
         execSync(`sudo systemctl stop ${name}`);

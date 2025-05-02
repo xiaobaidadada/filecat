@@ -175,4 +175,16 @@ export class SysController {
         await SysSystemServiceImpl.cmd_exe(pojo);
         return Sucess("");
     }
+
+    // 获取系统时间
+    @Get("/sys_time/get")
+    async get_sys_time() {
+        const now = new Date();
+        const timestamp = now.getTime(); // 毫秒时间戳
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // 系统时区，比如 Asia/Shanghai
+        return Sucess({
+            timezone,
+            timestamp,
+        })
+    }
 }

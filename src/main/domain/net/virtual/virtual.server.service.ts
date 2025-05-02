@@ -25,7 +25,7 @@ class VirtualServerService {
     get_all_client_info() {
         const list:any[] = [];
         clientMap.forEach(v=>{
-            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.is_alive ?"在线":"离线"])
+            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.is_alive])
         })
         return list;
     }

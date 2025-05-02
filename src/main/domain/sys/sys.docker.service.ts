@@ -198,6 +198,11 @@ class SysDockerService {
     }
 
     async check_image_delete(ids: string[]) {
+        for (const it of ids) {
+            if(it.includes(" ")) {
+                throw "error params";
+            }
+        }
         const not_delete_ids: string[] = [];
         for (const id of ids) {
             const stdout = execSync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
@@ -210,6 +215,11 @@ class SysDockerService {
     }
 
     async delete_image(ids: string[]) {
+        for (const it of ids) {
+            if(it.includes(" ")) {
+                throw "error params";
+            }
+        }
         const param = ids.join(" ");
         execSync(`docker rmi  ${param}`)
     }

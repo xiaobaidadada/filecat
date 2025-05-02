@@ -3,7 +3,7 @@ import {netHttp} from "../../util/config";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {Column, Row} from "../../../meta/component/Dashboard";
-import {Card, TextTip} from "../../../meta/component/Card";
+import {Card, StatusCircle, TextTip} from "../../../meta/component/Card";
 import {InputCheckbox, InputRadio, InputText} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
@@ -12,6 +12,7 @@ import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
+
 
 export function NetServer(props) {
     const {t} = useTranslation();
@@ -26,13 +27,22 @@ export function NetServer(props) {
     const [opt_row, set_opt_row] = useState({});
     const [opt_server_async, set_opt_server_async] = useState(false);
 
+    const status_handle = (list:any[][])=> {
+        for (const item of list) {
+            const v = item[item.length - 1];
+            item[item.length - 1] = <><StatusCircle ok={v} />{v?t("在线"):t("离线")}</>
+        }
+    }
+
     useEffect(() => {
         const getItems = async () => {
             const data = new WsData(CmdType.vir_net_serverIno_get);
             const list = await ws.send(data);
             if (list) {
+                status_handle(list.context);
                 setRows(list.context);
                 ws.addMsg(CmdType.vir_net_serverIno_get, (data) => {
+                    status_handle(data.context);
                     setRows(data.context);
                 })
             }

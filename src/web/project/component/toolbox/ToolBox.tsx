@@ -54,19 +54,7 @@ export default function ToolBox(props) {
             </Suspense>
             }
             <Crypto />
-            <Dashboard>
-                <Row>
-                    <Column>
-                        <TimeConverTer />
-                    </Column>
-                    {/*<Column>*/}
-                    {/*    <Card title={"测试"}>*/}
-                    {/*        <div>ok</div>*/}
-                    {/*    </Card>*/}
-
-                    {/*</Column>*/}
-                </Row>
-            </Dashboard>
+            <TimeConverTer />
         </Menu>
 
     )

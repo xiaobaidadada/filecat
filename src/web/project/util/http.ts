@@ -1,7 +1,5 @@
 import axios from "axios";
 import {RCode} from "../../../common/Result.pojo";
-import {useNavigate} from "react-router-dom";
-import Noty from "noty";
 import {Result} from "../../../main/other/Result";
 import {NotyFail} from "./noty";
 import {config} from "./config";
@@ -14,12 +12,7 @@ export class Http {
             localStorage.removeItem('token')
         }
         if (data && data.code===RCode.Fail) {
-            new Noty({
-                type: 'error',
-                text: data.message ?? '请求错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail(data.message);
         }
         if (data && data.code===RCode.AuthFail) {
             if (Date.now() - now < 2000) {
