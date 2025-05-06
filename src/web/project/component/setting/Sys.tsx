@@ -264,7 +264,10 @@ export function  Sys() {
                 </Card>
             </Dashboard>
         </Column>
-        <Header left_children={<span> <span className={"credits"}>{`version:${process.env.version}`}</span><span
-            className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span></span>}/>
+        <Header left_children={<span>
+            <span className={"credits"}>{`version:${process.env.version}`}</span>
+            <span className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span>
+            <span className={"credits"}><a href={t("官网地址")}>{t("功能文档")}</a></span>
+        </span>}/>
     </Row>
 }

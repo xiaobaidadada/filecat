@@ -331,5 +331,7 @@
   "时间": "time",
   "服务器时间": "server time",
   "在线": "online",
-  "离线": "offline"
+  "离线": "offline",
+  "功能文档": "Function Specification",
+  "官网地址": "https://filecat.xiaobaidadada.fun/#/en"
 }

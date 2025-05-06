@@ -31,7 +31,10 @@ export function NetServer(props) {
         for (const item of list) {
             const v = item[item.length - 1];
             item[item.length - 1] = <><StatusCircle ok={v} />{v?t("在线"):t("离线")}</>
+            item[0] = <TextTip context={item[0]} tip_context={item[0]} />
+            item[2] = <TextTip context={item[2]} tip_context={item[2]} />
         }
+
     }
 
     useEffect(() => {
@@ -124,9 +127,9 @@ export function NetServer(props) {
                 </Card>
                 <Card title={""}>
                     <Table headers={headers} rows={rows.map((row:any[] )=> {
-                        for (let i = 0;i<row.length;i++) {
-                            row[i] = <TextTip context={row[i]} tip_context={row[i]} />
-                        }
+                        // for (let i = 0;i<row.length;i++) {
+                        //     row[i] = <TextTip context={row[i]} tip_context={row[i]} />
+                        // }
                         return [...row, <InputCheckbox context={t("")} selected={opt_row[row[1]]}
                                                        onchange={() => {
                                                            const set = {...opt_row}
