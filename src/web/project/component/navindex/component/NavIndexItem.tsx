@@ -23,9 +23,9 @@ export function NavIndexItem(props: {
     return <div>
         {props.div ?
             <div className={"nav_list_a"} style={{
-                // background: props.color
+                background: userInfo.user_data.theme !=='dark'?props.color:null
             }}>{props.name}</div> : props.clickItem || props['_type'] === 'dir' ? <div className={"nav_list_a"} style={{
-                    background: userInfo.user_data.theme !=='dark'?props.color:null
+                    // background: userInfo.user_data.theme !=='dark'?props.color:null
                 }} onClick={() => {
                     if (props['_type'] === "dir") {
                         props.click_dir(props.item);

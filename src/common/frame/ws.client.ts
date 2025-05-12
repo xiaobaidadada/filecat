@@ -243,6 +243,7 @@ export class WsClient {
             this._socket.close();
         }
         this._status = connect_status.not;
+        this._msgHandlerMap.clear();
     }
 
     // 多次add相同的 key 只会add一次

@@ -40,15 +40,11 @@ export function NetServer(props) {
     useEffect(() => {
         const getItems = async () => {
             const data = new WsData(CmdType.vir_net_serverIno_get);
-            const list = await ws.send(data);
-            if (list) {
-                status_handle(list.context);
-                setRows(list.context);
-                ws.addMsg(CmdType.vir_net_serverIno_get, (data) => {
-                    status_handle(data.context);
-                    setRows(data.context);
-                })
-            }
+            ws.addMsg(CmdType.vir_net_serverIno_get, (data) => {
+                status_handle(data.context);
+                setRows(data.context);
+            })
+            await ws.send(data);
         }
         getItems();
         const init = async () => {

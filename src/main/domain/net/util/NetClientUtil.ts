@@ -157,6 +157,7 @@ export class NetClientUtil {
             // 处理错误事件
             client.on('error', (err) => {
                 console.error('Socket 错误:', err);
+                // 如果有域名解析失败之类的错误 不做重连
             });
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(()=>{
