@@ -23,9 +23,9 @@ export function NavIndexItem(props: {
     return <div>
         {props.div ?
             <div className={"nav_list_a"} style={{
-                background: userInfo.user_data.theme !=='dark'?props.color:null
+                background: userInfo.user_data.theme !=='dark'?props.color:null // 编辑背景
             }}>{props.name}</div> : props.clickItem || props['_type'] === 'dir' ? <div className={"nav_list_a"} style={{
-                    // background: userInfo.user_data.theme !=='dark'?props.color:null
+                    background: userInfo.user_data.theme !=='dark'?props.color:null // 集合颜色
                 }} onClick={() => {
                     if (props['_type'] === "dir") {
                         props.click_dir(props.item);
@@ -38,7 +38,7 @@ export function NavIndexItem(props: {
                     {props.name}
                 </div> :
                 <a href={props.url} target={props.target} className={"nav_list_a"} style={{
-                    background: userInfo.user_data.theme !=='dark'?props.color:null
+                    background: userInfo.user_data.theme !=='dark'?props.color:null // 普通链接
                 }}>{props.name}</a>}
     </div>
 }
