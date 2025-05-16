@@ -58,36 +58,36 @@ Alternative Address(备用地址): [http://sample.filecat.xiaobaidadada.fun:5569
 
 The UI of this project is based on filebrowser
 
-| Application Name                                | <img width="48" src="./src/web/meta/resources/img/logo-70.png" > Filecat | <img width="48" src="https://github.com/filebrowser/filebrowser/blob/master/frontend/public/img/logo.svg" > Filebrowser |
-| ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| File Manager 文件管理                           | ✅                                                            | ✅                                                            |
-| Linux                                           | ✅                                                            | ✅                                                            |
-| Windows                                         | ✅                                                            | ✅                                                            |
-| Mac                                             | ❌ 暂时不支持                                                 | ✅                                                            |
-| vpn                                             | ✅                                                            | ❌                                                            |
-| tcp proxy                                       | ✅                                                            | ❌                                                            |
-| Scope of the file search 文件搜索范围           | ❎current directory 当前                                      | ✅ all                                                        |
-| process information 进程信息                    | ✅                                                            | ❌                                                            |
-| Terminal 终端 ssh                               | ✅  Permissions are supported . using [pty-shell]([pty-shell - npm](https://www.npmjs.com/package/pty-shell)) | ✅ Permissions are supported                                  |
-| Docker Manager                                  | ✅                                                            | ❌                                                            |
-| WorkFlow CI/CD                                  | ✅ 工作流自动构建                                             | ❌                                                            |
-| http proxy                                      | ✅类似 postman                                                | ❌                                                            |
-| browser proxy                                   | ✅                                                            | ❌                                                            |
-| rtsp proxy                                      | ✅                                                            | ❌                                                            |
-| ssh proxy                                       | ✅                                                            | ❌                                                            |
-| rdp proxy windows 远程桌面代理                  | ✅                                                            | ❌                                                            |
-| wol 网络唤醒                                    | ✅                                                            | ❌                                                            |
-| ddns                                            | ✅                                                            | ❌                                                            |
-| file recycle 文件回收站                         | ✅                                                            | ❌                                                            |
-| Customize the way you log on 自定义登录方式 api | ✅                                                            | ❌                                                            |
-| Multiple sources support 多磁盘路径支持         | ✅                                                            | ❌                                                            |
-| Internationalization                            | ❎ zh en                                                      | ✅ all                                                        |
-| File Sharing                                    | ❌                                                            | ✅                                                            |
-| Memory 最低内存要求                             | 100MB作左右                                                  | 100MB作左右                                                  |
-| File decompression 文件解压缩                   | ✅                                                            | ❌                                                            |
-| filerobot-image-editor 图片编辑                 | ✅                                                            | ❌                                                            |
-| excalidraw                                      | ✅                                                            | ❌                                                            |
-| Super Log View 超大日志查看                     | ✅                                                            | ❌                                                            |
-| web site tag 网站收藏                           | ✅                                                            | ❌                                                            |
-| systemd manager                                 | ✅                                                            | ❌                                                            |
+| Application Name                                | <img width="48" src="./src/web/meta/resources/img/logo-70.png" > Filecat                                     | <img width="48" src="https://github.com/filebrowser/filebrowser/blob/master/frontend/public/img/logo.svg" > Filebrowser |
+| ----------------------------------------------- |--------------------------------------------------------------------------------------------------------------| ----------------------------------------------------------- |
+| File Manager 文件管理                           | ✅                                                                                                            | ✅                                                           |
+| Linux                                           | ✅                                                                                                            | ✅                                                           |
+| Windows                                         | ✅                                                                                                            | ✅                                                           |
+| Mac                                             | ❌ Not supported yet 暂时不支持                                                                                    | ✅                                                           |
+| vpn                                             | ✅                                                                                                            | ❌                                                           |
+| tcp proxy                                       | ✅                                                                                                            | ❌                                                           |
+| Scope of the file search 文件搜索范围           | ❎current directory 当前                                                                                        | ✅ all                                                       |
+| process information 进程信息                    | ✅                                                                                                            | ❌                                                           |
+| Terminal 终端 ssh                               | ✅  Permissions are supported . using [pty-shell]([pty-shell - npm](https://www.npmjs.com/package/pty-shell)) | ✅ Permissions are supported                                 |
+| Docker Manager                                  | ✅                                                                                                            | ❌                                                           |
+| WorkFlow CI/CD                                  | ✅ Automatic construction of workflow 工作流自动构建                                                                 | ❌                                                           |
+| http proxy                                      | ✅类似 postman                                                                                                  | ❌                                                           |
+| browser proxy                                   | ✅                                                                                                            | ❌                                                           |
+| rtsp proxy                                      | ✅                                                                                                            | ❌                                                           |
+| ssh proxy                                       | ✅                                                                                                            | ❌                                                           |
+| rdp proxy windows 远程桌面代理                  | ✅                                                                                                            | ❌                                                           |
+| wol 网络唤醒                                    | ✅                                                                                                            | ❌                                                           |
+| ddns                                            | ✅                                                                                                            | ❌                                                           |
+| file recycle 文件回收站                         | ✅                                                                                                            | ❌                                                           |
+| Customize the way you log on 自定义登录方式 api | ✅                                                                                                            | ❌                                                           |
+| Multiple sources support 多磁盘路径支持         | ✅                                                                                                            | ❌                                                           |
+| Internationalization                            | ❎ zh en                                                                                                      | ✅ all                                                       |
+| File Sharing                                    | ❌                                                                                                            | ✅                                                           |
+| Memory 最低内存要求                             | 100MB左右                                                                                                      | 100MB左右                                                  |
+| File decompression 文件解压缩                   | ✅                                                                                                            | ❌                                                           |
+| filerobot-image-editor 图片编辑                 | ✅                                                                                                            | ❌                                                           |
+| excalidraw                                      | ✅                                                                                                            | ❌                                                           |
+| Super Log View 超大日志查看                     | ✅                                                                                                            | ❌                                                           |
+| web site tag 网站收藏                           | ✅                                                                                                            | ❌                                                           |
+| systemd manager                                 | ✅                                                                                                            | ❌                                                           |
 
