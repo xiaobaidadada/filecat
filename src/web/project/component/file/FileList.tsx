@@ -597,7 +597,7 @@ export default function FileList() {
                 });
                 set_router_jump({http_download_map_path: result.context.now_absolute_path});
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate("/toolbox/http/");
+                navigate("/proxy/http/");
                 return;
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
