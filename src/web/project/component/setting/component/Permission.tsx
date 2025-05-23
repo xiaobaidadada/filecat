@@ -205,7 +205,15 @@ export function Permission(props:{
                        }}/>
                 {t("目录文件上传数量限制修改")}
             </div>
-
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.sys_env_setting_key)}
+                       checked={props.is_selected(UserAuth.sys_env_setting_key)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.sys_env_setting_key)
+                       }}/>
+                {t("通用设置")}
+            </div>
         </div>
 
         <h3>{t("文件权限")}</h3>
@@ -234,15 +242,7 @@ export function Permission(props:{
                    }}/>
             {t("文件回收站修改")}
         </div>
-        <div>
-            <input type="checkbox"
-                   disabled={props.is_disable(UserAuth.sys_env_setting_key)}
-                   checked={props.is_selected(UserAuth.sys_env_setting_key)}
-                   onChange={() => {
-                       props.select_auth(UserAuth.sys_env_setting_key)
-                   }}/>
-            {t("通用设置")}
-        </div>
+
 
         <h3>{t("标签编辑权限")}</h3>
         <div className={"checkbox_container"}>

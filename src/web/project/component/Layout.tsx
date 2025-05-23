@@ -15,6 +15,7 @@ const FileList = React.lazy(() => import("./file/FileList"))
 const Prompt = React.lazy(() => import("./prompts/Prompt"))
 const ImageEditor = React.lazy(() => import("./file/component/image/ImageEditor"))
 const ToolBox = React.lazy(() => import("./toolbox/ToolBox"))
+const Proxy = React.lazy(() => import("./proxy/Proxy"))
 const SysInfo = React.lazy(() => import("./sys/SysInfo"))
 const FileEditor = React.lazy(() => import("./file/component/FileEditor"))
 const Preview = React.lazy(() => import("./file/component/Preview"))
@@ -40,12 +41,13 @@ function Layout() {
         localStorage.setItem('token', '')
     }
     const seconds:NavItem[] = [
-        {icon: "home", name: t("网址"), rto: `${routerConfig.navindex}/`},
+        {icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`},
+        {icon: "computer", name: t("系统管理"), rto: `${routerConfig.info}/`},
+        {icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`},
         {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
-        {icon: "computer", name: t("系统信息"), rto: `${routerConfig.info}/`},
     ];
     if(check_user_auth(UserAuth.ddns)) {
-        seconds.push({icon: "cloud", name: "ddns", rto: `${routerConfig.ddns}/`})
+        seconds.push({icon: "dns", name: "ddns", rto: `${routerConfig.ddns}/`})
     }
     let three:NavItem[] = [
         {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
@@ -53,11 +55,11 @@ function Layout() {
         // {component:(<div>测试</div>)}
     ]
     if(check_user_auth(UserAuth.vir_net)) {
-        three = [{icon: "network_ping", name: t("虚拟网络"), rto: `${routerConfig.net}/`},...three];
+        three = [{icon: "vpn_lock", name: t("虚拟网络"), rto: `${routerConfig.net}/`},...three];
     }
     const MainNavList: NavItem[][] = [
         [
-            {icon: "folder", name: t("文件夹"), rto: `${routerConfig.file}/`,},
+            {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
         ],
         seconds,
         three
@@ -101,13 +103,17 @@ function Layout() {
                 <FileList/>
                 {/*网站 索引*/}
                 <NavIndex/>
-                {/*工具箱*/}
-                <Suspense fallback={<div></div>}>
-                    <ToolBox/>
-                </Suspense>
                 {/*系统信息*/}
                 <Suspense fallback={<div></div>}>
                     <SysInfo/>
+                </Suspense>
+                {/*代理*/}
+                <Suspense fallback={<div></div>}>
+                    <Proxy />
+                </Suspense>
+                {/*工具箱*/}
+                <Suspense fallback={<div></div>}>
+                    <ToolBox/>
                 </Suspense>
                 {/*ddns*/}
                 {check_user_auth(UserAuth.ddns) &&
