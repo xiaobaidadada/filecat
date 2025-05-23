@@ -16,8 +16,10 @@ export function Menu(props) {
     const [selectedIndex, setSelectedIndex] = React.useState(0);
     useEffect(() => {
         let have = true;
+        const all_router = getRouterPath();
         for (let index = 0; index < props.optionList.length; index++) {
-            if (getRouterPath().includes(props.optionList[index].rto)) {
+            let rto = props.optionList[index].rto.replace("*","");
+            if (all_router.includes(rto)) {
                 setSelectedIndex(index);
                 have = false;
                 break;

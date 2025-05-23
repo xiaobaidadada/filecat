@@ -21,7 +21,7 @@ export default function Proxy(props) {
         menuRots.push({index: 1, name: t("http代理"),rto:'http/'})
     }
     if(check_user_auth(UserAuth.ssh_proxy)) {
-        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/"})
+        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/*"})
     }
     if(check_user_auth(UserAuth.browser_proxy)) {
         menuRots.push({index: 1, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/"})
