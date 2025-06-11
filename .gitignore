@@ -8,5 +8,12 @@
 /dist/
 package-lock.json
 /data/
-/filecat-win.zip
-filecat-win-x64.exe
+/.vs/
+filecat-linux-amd64
+filecat-win-amd64.exe
+filecat-win.zip
+filecat-win-amd64.zip
+filecat-win-x64.tar.gz
+build-exe-linux-x64
+/test/
+

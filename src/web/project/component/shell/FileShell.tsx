@@ -92,18 +92,13 @@ export default function FileShell(props) {
             return
         }
         if (terminalState) {
-            // todo 这个功能暂时不要了
-            if (shellShowInit) {
-                const data = new WsData(CmdType.shell_cd);
-                const pojo = new ShellInitPojo();
-                pojo.init_path = shellShow.path;
-                pojo.http_token = localStorage.getItem('token');
-                data.context=pojo;
-                ws.send(data)
+            if(shellShow.cmd) {
+                ws.sendData(CmdType.shell_send,shellShow.cmd);
             }
             return;
+        } else {
+            initTerminal();
         }
-        initTerminal();
         setShellShowInit(true);
     }, [shellShow])
     const init = (rows:number,cols:number)=>{
@@ -117,6 +112,9 @@ export default function FileShell(props) {
 
         data.context= pojo;
         ws.send(data)
+        if(shellShow.cmd) {
+            ws.sendData(CmdType.shell_send,shellShow.cmd);
+        }
     }
     return (
         <ShellLazy show={shellShow.show} file_shell_hidden={file_shell_hidden} terminal={terminalState} init={init}/>

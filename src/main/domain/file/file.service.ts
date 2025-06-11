@@ -37,6 +37,20 @@ const archiver = require('archiver');
 const mime = require('mime-types');
 
 const chokidar = require('chokidar');
+const iconv = require('iconv-lite');
+
+// const encodings = [
+//     'utf8', 'utf-8', 'utf16le', 'ucs2',
+//     'ascii', 'latin1', 'iso-8859-1', 'windows1252',
+//     'iso-8859-2', 'iso-8859-3', 'iso-8859-4', 'iso-8859-5',
+//     'iso-8859-6', 'iso-8859-7', 'iso-8859-8', 'iso-8859-9',
+//     'iso-8859-10', 'iso-8859-13', 'iso-8859-14', 'iso-8859-15',
+//     'iso-8859-16',
+//     'windows-1250', 'windows-1251', 'windows-1252', 'windows-1253',
+//     'windows-1254', 'windows-1255', 'windows-1256', 'windows-1257',
+//     'windows-1258',
+//     'gbk', 'gb2312', 'gb18030', 'big5',
+// ];
 
 export class FileService extends FileCompress {
 
@@ -323,6 +337,8 @@ export class FileService extends FileCompress {
         this.lifeStart(sysPath, upload_max_key, async (key) => {
             this.file_upload_count_map.delete(upload_max_key);
             value.writeStream.end();
+            value.buffer_list = null;
+            this.file_upload_count_map.delete(sysPath);
         });
         if (await FileUtil.access(sysPath)) {
             await FileUtil.truncateSync(sysPath); // 清空内容
@@ -890,19 +906,73 @@ export class FileService extends FileCompress {
         return pojo;
     }
 
-    isFirstByte(byte) {
-        // 确保 byte 是一个有效的字节 (0 - 255)
-        if (byte === undefined || byte < 0 || byte > 255) {
-            throw 'Invalid byte';
+    // isFirstByte(byte) {
+    //     // 确保 byte 是一个有效的字节 (0 - 255)
+    //     if (byte === undefined || byte < 0 || byte > 255) {
+    //         throw 'Invalid byte';
+    //     }
+    //     // 1 字节: 0xxxxxxx (0x00 ~ 0x7F)  不需要校验
+    //     // 2 字节: 110xxxxx (0x80 ~ 0x7FF)
+    //     // 3 字节: 1110xxxx (0x800 ~ 0xFFFF)
+    //     // 4 字节: 11110xxx (0x10000 ~ 0x10FFFF)
+    //     // 使用掩码和位运算判断
+    //     return (byte & 0xE0) === 0xC0 || (byte & 0xF0) === 0xE0 || (byte & 0xF8) === 0xF0;
+    // }
+    isFirstByte(byte, encoding:string = "utf8") {
+        if (byte === undefined || byte < 0 || byte > 255) throw 'Invalid byte';
+
+        switch (encoding.toLowerCase()) {
+            case 'utf8':
+            case 'utf-8':
+                // UTF-8 判断（和你写的一样）
+                // if ((byte & 0x80) === 0) return true; // ASCII单字节
+                return (byte & 0xE0) === 0xC0 || (byte & 0xF0) === 0xE0 || (byte & 0xF8) === 0xF0;
+
+            case 'ascii':
+            case 'latin1':
+            case 'iso-8859-1':
+            case 'windows-1252':
+                // 单字节编码，所有字节都是首字节
+                return true;
+
+            case 'gbk':
+            case 'gb2312':
+                // GBK 双字节编码，首字节范围 0x81-0xFE，尾字节范围 0x40-0xFE（除0x7F）
+                return byte >= 0x81 && byte <= 0xFE;
+
+            case 'big5':
+                // Big5 双字节编码，首字节范围 0x81-0xFE
+                return byte >= 0x81 && byte <= 0xFE;
+
+            // 其他编码可根据规范添加
+
+            default:
+                throw 'Unsupported encoding for isFirstByte';
         }
-        // 1 字节: 0xxxxxxx (0x00 ~ 0x7F)  不需要校验
-        // 2 字节: 110xxxxx (0x80 ~ 0x7FF)
-        // 3 字节: 1110xxxx (0x800 ~ 0xFFFF)
-        // 4 字节: 11110xxx (0x10000 ~ 0x10FFFF)
-        // 使用掩码和位运算判断
-        return (byte & 0xE0) === 0xC0 || (byte & 0xF0) === 0xE0 || (byte & 0xF8) === 0xF0;
     }
 
+
+    convertToUtf8(input, fromEncoding) {
+        if (fromEncoding === 'utf8' || fromEncoding === 'utf-8') {
+            // 如果是 utf8 编码，直接返回字符串（如果 input 是 Buffer，先转成字符串）
+            return Buffer.isBuffer(input) ? input.toString('utf8') : input;
+        }
+
+        let buf;
+        if (typeof input === 'string') {
+            // 用 iconv-lite 编码字符串成对应编码的 Buffer
+            buf = iconv.encode(input, fromEncoding);
+        } else if (Buffer.isBuffer(input)) {
+            buf = input;
+        } else {
+            throw new Error('输入必须是 Buffer 或字符串');
+        }
+
+        // 再用 iconv-lite 解码 Buffer 为 JS 字符串
+        const str = iconv.decode(buf, fromEncoding);
+
+        return str;
+    }
 
     async go_forward_log(pojo: LogViewerPojo, file_path) {
         // 开始查找
@@ -933,7 +1003,7 @@ export class FileService extends FileCompress {
                     if (i === ch_byte_i && (buffer[i] & 0x80) !== 0) {
                         // 最后一位 不是单字节字符 需要找到首字节
                         for (let j = i; j > last_h; j--) {
-                            if (this.isFirstByte(buffer[j])) {
+                            if (this.isFirstByte(buffer[j],pojo.encoding)) {
                                 index = j - 1;
                                 break;
                             }
@@ -943,7 +1013,7 @@ export class FileService extends FileCompress {
                     // 以/n做字符串结尾，扫描到的/n 或者文件的最后一个字符
                     const now_str_start = last_h + 1;
                     const next_str_start = index + 1;
-                    pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start)); // i 不包括 /n
+                    pojo.context_list.push(this.convertToUtf8(buffer.subarray( now_str_start, next_str_start),pojo.encoding)); // i 不包括 /n
                     pojo.context_start_position_list.push(pojo.position + now_str_start); // 开始位置
                     pojo.context_position_list.push(pojo.position + next_str_start); // 结束位置 是/n的位置
                     if (linesRead >= pojo.line) {
@@ -999,9 +1069,9 @@ export class FileService extends FileCompress {
             // 如果字节是换行符 '\n'（ASCII值为 10）
             if (buffer[i] === 10 || i === 0) {
                 if ((buffer[i] & 0x80) !== 0) {
-                    // 找到首字节
+                    // 多字节编码 找到首字节
                     for (let j = 0; j < bytesRead; j++) {
-                        if (this.isFirstByte(buffer[j])) {
+                        if (this.isFirstByte(buffer[j],pojo.encoding)) {
                             index = j - 1;
                             break;
                         }
@@ -1054,7 +1124,7 @@ export class FileService extends FileCompress {
                     if (i === 0 && pojo.position !== 0 && (buffer[i] & 0x80) !== 0) {
                         // 找到首字节
                         for (let j = 0; j < last_h; j++) {
-                            if (this.isFirstByte(buffer[j])) {
+                            if (this.isFirstByte(buffer[j],pojo.encoding)) {
                                 index = j - 1;
                                 break;
                             }
@@ -1063,7 +1133,7 @@ export class FileService extends FileCompress {
                     linesRead++;
                     const now_str_start = index === 0 && pojo.position === 0 ? 0 : index + 1;
                     const next_str_start = last_h + 1;
-                    pojo.context_list.push(buffer.toString('utf8', now_str_start, next_str_start));
+                    pojo.context_list.push(this.convertToUtf8(buffer.subarray( now_str_start, next_str_start),pojo.encoding));
                     pojo.context_start_position_list.push(pojo.position + now_str_start);
                     pojo.context_position_list.push(pojo.position + next_str_start);
                     if (linesRead >= pojo.line) {
@@ -1087,6 +1157,9 @@ export class FileService extends FileCompress {
         await fd.close();
         return pojo;
     }
+
+
+
 
     async log_viewer(data: WsData<LogViewerPojo>) {
         const pojo = data.context as LogViewerPojo;

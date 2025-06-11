@@ -29,7 +29,7 @@ export enum CmdType {
     // 取消命令
     // shell_cancel,
     // cd命令
-    shell_cd,
+    // shell_cd,
     // docker订阅
     docker_get,
     docker_getting,

@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.5.0",
+  "version": "5.6.0",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -114,6 +114,7 @@
     "http-proxy-middleware": "^3.0.3",
     "https-proxy-agent": "^7.0.6",
     "i18next": "^23.12.2",
+    "iconv-lite": "^0.6.3",
     "koa-proxies": "^0.12.4",
     "listr2": "^8.2.1",
     "lodash": "^4.17.21",

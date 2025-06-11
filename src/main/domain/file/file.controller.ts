@@ -222,7 +222,7 @@ export class FileController {
     @msg(CmdType.log_viewer)
     async log_viewer(data: WsData<LogViewerPojo>) {
         // 如果一行太长 现在会进行截断成多个分裂的行
-        return FileServiceImpl.log_viewer(data);
+        return await FileServiceImpl.log_viewer(data);
     }
 
     @msg(CmdType.log_viewer_watch)

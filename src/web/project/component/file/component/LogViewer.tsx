@@ -149,6 +149,7 @@ export default function LogViewer(props) {
     }
 
     const send = async () => {
+        req.encoding = shellShow.encoding;
         req.context = '';
         const data = await ws.sendData(CmdType.log_viewer, req);
         if (data) {
@@ -483,6 +484,7 @@ export default function LogViewer(props) {
                         search_file_cancel();
                     }}/>
                 ]}>
+            <span style={{paddingRight:".5rem"}}>{shellShow.encoding}</span>
             {tip && <span style={{color: 'var(--icon-green)', whiteSpace: 'pre'}}>正在实时监听   </span>}
             <span>当前加载进度{progress}</span>
             <InputTextIcon max_width={"10rem"} placeholder={t('跳转进度')} icon={"percent"} value={go_progress}

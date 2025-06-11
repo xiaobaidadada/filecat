@@ -13,7 +13,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
 // import {FileShell} from "../shell/FileShell";
-import {file_sort, getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {create_quick_cmd_items, file_sort, getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 import {DropdownTag, TextLine} from "../../../meta/component/Dashboard";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -578,6 +578,15 @@ export default function FileList() {
         if (check_user_auth(UserAuth.http_proxy)) {
             list.push({r: t("在此目录下载http资源"), v: "http_resource"})
         }
+        if(user_base_info?.user_data?.quick_cmd) {
+            const cmd = {
+                r: t("快捷命令"),
+                v: "",
+                items:[]
+            }
+            create_quick_cmd_items([...user_base_info.user_data.quick_cmd],cmd.items);
+            list.push(cmd);
+        }
         pojo.items = list;
         pojo.textClick = async (v) => {
             if (v === false) return;
@@ -599,6 +608,19 @@ export default function FileList() {
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate("/proxy/http/");
                 return;
+            } else if(typeof v === "object" && v.tag === "quick_cmd") {
+                let cmd = v.cmd;
+                if(cmd) {
+                    if(!cmd.endsWith("\r")) {
+                        cmd+="\r";
+                        setShellShow({
+                            show: true,
+                            path: getRouterAfter('file', getRouterPath()),
+                            cmd: cmd
+                        })
+                    }
+                }
+
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
                 type: v,

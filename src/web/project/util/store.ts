@@ -145,7 +145,12 @@ export const $stroe = {
         key: "shellShow",
         default: {
             show: false,
-            path: ''
+            path: '',
+            cmd:""
+        } as {
+            show: boolean,
+            path: string,
+            cmd?:string
         }
     }),
     // 只是隐藏不消失
@@ -183,7 +188,8 @@ export const $stroe = {
        key: 'log_viewer',
        default: {} as {
            show: boolean,
-           fileName?: string
+           fileName?: string,
+           encoding?: string
        }
     }),
     // ssh工具连接信息

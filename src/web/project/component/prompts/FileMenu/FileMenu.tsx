@@ -25,9 +25,18 @@ enum common_menu_type {
     run_workflow = 3,
     run_real_time_workflow = "3_1",
     open_text = 1,
-    logviwer_text = 2,
     run_workflow_by_pre_inputs = 6,
-
+    logviwer_text = "utf8",
+    logviwer_utf8 = "utf8",
+    logviwer_utf16 = "utf16",
+    logviwer_utf32 = "utf32",
+    logviwer_gbk = "gbk",
+    logviwer_gb2312 = "gb2312",
+    logviwer_gb18030 = "gb18030",
+    logviwer_usc2 = "usc2",
+    logviwer_windows1252 = "windows1252",
+    logviwer_big5 = "big5",
+    logviwer_ios_8859_1 = "ios-8859-1",
 }
 
 export function FileMenu() {
@@ -36,7 +45,19 @@ export function FileMenu() {
     const {t} = useTranslation();
     const [items, setItems,] = useState([
         {r: t("以文本打开"), v: common_menu_type.open_text},
-        {r: t("以日志打开"), v: common_menu_type.logviwer_text}
+        {r: t("以日志打开"), v: common_menu_type.logviwer_text,items:
+                [
+                    {r:"utf8",v: common_menu_type.logviwer_utf8},
+                    {r:"utf16",v: common_menu_type.logviwer_utf16},
+                    {r:"utf32",v: common_menu_type.logviwer_utf32},
+                    {r:"gbk",v: common_menu_type.logviwer_gbk},
+                    {r:"gb2312",v: common_menu_type.logviwer_gb2312},
+                    {r:"gb18030",v: common_menu_type.logviwer_gb18030},
+                    {r:"usc2",v: common_menu_type.logviwer_usc2},
+                    {r:"windows1252",v: common_menu_type.logviwer_windows1252},
+                    {r:"big5",v: common_menu_type.logviwer_big5},
+                    {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
+            ]}
     ]);
     // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
@@ -59,70 +80,98 @@ export function FileMenu() {
     const pojo = showPrompt.data;
     const textClick = async (v) => {
         close();
-        if (v === common_menu_type.open_text) {
-            const name = showPrompt.data.filename;
-            click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true});
-        } else if (v === common_menu_type.logviwer_text) {
-            set_file_log({show: true, fileName: showPrompt.data.filename})
-        } else if (v === common_menu_type.run_workflow || v === common_menu_type.stop_workflow || v === common_menu_type.real_time_workflow) {
-            if (v === common_menu_type.real_time_workflow) {
-                set_workflow_show({open: true, filename: showPrompt.data.filename});
-            } else {
-                run_workflow(showPrompt.data.filename, v);
+        switch (v) {
+            case common_menu_type.open_text:
+            {
+                const name = showPrompt.data.filename;
+                click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true});
             }
-        } else if (v === common_menu_type.run_real_time_workflow) {
-            // 实时运行worlkflow
-            await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow);
-            set_workflow_show({open: true, filename: showPrompt.data.filename});
-        } else if (v === common_menu_type.run_workflow_by_pre_inputs) {
-            const rsq = await fileHttp.post("workflow/get/pre_inputs", {path: `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
-            let list: workflow_pre_input [] = rsq.data;
-            const send_start_check = () => {
-                for (const it of list) {
-                    if (it.required && !it.default) {
-                        NotyFail(`${it.description} is required`);
-                        return;
-                    }
+            break;
+            case common_menu_type.logviwer_text:
+            case common_menu_type.logviwer_utf8:
+            case common_menu_type.logviwer_utf16:
+            case common_menu_type.logviwer_utf32:
+            case common_menu_type.logviwer_gbk:
+            case common_menu_type.logviwer_gb2312:
+            case common_menu_type.logviwer_gb18030:
+            case common_menu_type.logviwer_usc2:
+            case common_menu_type.logviwer_windows1252:
+            case common_menu_type.logviwer_big5:
+            case common_menu_type.logviwer_ios_8859_1:
+            {
+                set_file_log({show: true, fileName: showPrompt.data.filename,encoding:v})
+            }
+                break;
+            case common_menu_type.run_workflow:
+            case common_menu_type.stop_workflow:
+            case common_menu_type.real_time_workflow:
+            {
+                if (v === common_menu_type.real_time_workflow) {
+                    set_workflow_show({open: true, filename: showPrompt.data.filename});
+                } else {
+                    run_workflow(showPrompt.data.filename, v);
                 }
             }
-            set_prompt_card({
-                open: true, title: "inputs", context_div: (
-                    <div>
-                        <div className="card-content">
-                            {list.map((item, index) => {
-                                // @ts-ignore
-                                return <InputText key={index} placeholderOut={item.description} value={item.default}
-                                                  handleInputChange={(value) => {
-                                                      item.default = value
-                                                  }}/>
-                            })}
-                        </div>
+            break;
+            case common_menu_type.run_real_time_workflow:
+            {
+                // 实时运行worlkflow
+                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow);
+                set_workflow_show({open: true, filename: showPrompt.data.filename});
+            }
+            break;
+            case common_menu_type.run_workflow_by_pre_inputs:
+            {
+                const rsq = await fileHttp.post("workflow/get/pre_inputs", {path: `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
+                let list: workflow_pre_input [] = rsq.data;
+                const send_start_check = () => {
+                    for (const it of list) {
+                        if (it.required && !it.default) {
+                            NotyFail(`${it.description} is required`);
+                            return;
+                        }
+                    }
+                }
+                set_prompt_card({
+                    open: true, title: "inputs", context_div: (
+                        <div>
+                            <div className="card-content">
+                                {list.map((item, index) => {
+                                    // @ts-ignore
+                                    return <InputText key={index} placeholderOut={item.description} value={item.default}
+                                                      handleInputChange={(value) => {
+                                                          item.default = value
+                                                      }}/>
+                                })}
+                            </div>
 
-                        <div className="card-action">
-                            <button className="button button--flat button--grey" onClick={() => {
-                                set_prompt_card({open: false});
-                            }}>
-                                {t("取消")}
-                            </button>
-                            <button className="button button--flat" onClick={async () => {
-                                send_start_check();
-                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
-                                set_prompt_card({open: false});
-                                set_workflow_show({open: true, filename: showPrompt.data.filename});
-                            }}>
-                                {t("运行并实时查看")}
-                            </button>
-                            <button className="button button--flat" onClick={async () => {
-                                send_start_check();
-                                await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
-                                set_prompt_card({open: false});
-                            }}>
-                                {t("运行")}
-                            </button>
+                            <div className="card-action">
+                                <button className="button button--flat button--grey" onClick={() => {
+                                    set_prompt_card({open: false});
+                                }}>
+                                    {t("取消")}
+                                </button>
+                                <button className="button button--flat" onClick={async () => {
+                                    send_start_check();
+                                    await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
+                                    set_prompt_card({open: false});
+                                    set_workflow_show({open: true, filename: showPrompt.data.filename});
+                                }}>
+                                    {t("运行并实时查看")}
+                                </button>
+                                <button className="button button--flat" onClick={async () => {
+                                    send_start_check();
+                                    await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow, list);
+                                    set_prompt_card({open: false});
+                                }}>
+                                    {t("运行")}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )
-            })
+                    )
+                })
+            }
+            break;
         }
     }
     switch (pojo.type) {

@@ -98,6 +98,7 @@ export class LogViewerPojo {
     position: number = 0; // 文件读取的偏移位置
     line: number = 1000; // 读取一千行
     once_max_size: number = 1024 * 60; // 一次读取最大的字节数 60 KB
+    encoding:string;
 
     back: boolean; // 往回查找
 

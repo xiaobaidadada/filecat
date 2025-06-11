@@ -1,4 +1,4 @@
-import {FileSettingItem, SysSoftware, SysSoftwareItem} from "./setting.req";
+import {FileSettingItem, QuickCmdItem, SysSoftware, SysSoftwareItem} from "./setting.req";
 
 export class UserLogin {
     username: string;
@@ -110,6 +110,7 @@ export class UserData extends UserLogin {
     folder_item_now: number; // 当前使用的哪个选项 一般是默认的位置
     protection_directory: any[]; // 保护目录
     bind_role_id: string; // 绑定的角色id
+    quick_cmd: QuickCmdItem[]; // 多个快捷命令
 
     // 用于角色的
     role_id: string;

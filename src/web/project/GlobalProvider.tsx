@@ -23,9 +23,9 @@ export const GlobalProvider = ({ children }) => {
         const result = await settingHttp.get("filesSetting");
         const list = [];
         if (result.code === RCode.Sucess) {
-            for (let i=0; i<result.data.length; i++) {
+            for (let i=0; i<result.data.dirs.length; i++) {
                 list.push({
-                    r:(<div>{result.data[i].note}</div>),
+                    r:(<div>{result.data.dirs[i].note}</div>),
                     v:i
                 })
             }

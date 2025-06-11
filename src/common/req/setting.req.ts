@@ -15,6 +15,12 @@ export class FileSettingItem {
     note: string;
     index: number;
 }
+export class QuickCmdItem {
+    cmd: string;
+    note: string;
+    index?: number;
+    father_index?:number;
+}
 
 export enum SysSoftware {
     ffmpeg = "ffmpeg",

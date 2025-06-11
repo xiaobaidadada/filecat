@@ -25,11 +25,11 @@ export class ShellController {
     //     shellServiceImpl.cancel(data);
     //     return ""
     // }
-    @msg(CmdType.shell_cd)
-    async cd(data:WsData<ShellInitPojo>) {
-        shellServiceImpl.cd(data);
-        return ""
-    }
+    // @msg(CmdType.shell_cd)
+    // async cd(data:WsData<ShellInitPojo>) {
+    //     shellServiceImpl.cd(data);
+    //     return ""
+    // }
 
 
     // 日志

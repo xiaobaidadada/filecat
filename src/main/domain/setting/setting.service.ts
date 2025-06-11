@@ -7,7 +7,7 @@ import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
     dir_upload_max_num_item,
-    FileSettingItem,
+    FileSettingItem, QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
     TokenTimeMode
@@ -397,28 +397,38 @@ export class SettingService {
             }
         }
         if (ok) base.default = true;
-        return [base, ...user_data?.folder_items ?? []];
+        return {
+            dirs:[base, ...user_data?.folder_items ?? []],
+            quick_cmd:[...user_data?.quick_cmd ?? []]
+        };
     }
 
-    public async saveFilesSetting(items: FileSettingItem[], token: string) {
-        if (!Array.isArray(items) || items.length === 0) {
-            return;
-        }
-        items.shift(); // 删除系统的
+    public async saveFilesSetting(data:{dirs: FileSettingItem[],quick_cmd:QuickCmdItem[]}, token: string) {
         const user_data = userService.get_user_info_by_token(token);
-        // 校验路径是否合法
-        for (const item of items) {
-            userService.check_user_path(token, item.path)
-        }
-        user_data.folder_items = items;
-        let index;
-        for (const v of items) {
-            if (v.default)
-                index = v.index
-        }
-        user_data.folder_item_now = index; // 使用默认的 cwd
-        if (index === undefined || index === null) {
-            user_data.folder_item_now = 0; // 回到默认
+        if(data.dirs) {
+            const items = data.dirs;
+            if (!Array.isArray(items) || items.length === 0) {
+                return;
+            }
+            items.shift(); // 删除系统的
+
+            // 校验路径是否合法
+            for (const item of items) {
+                userService.check_user_path(token, item.path)
+            }
+            user_data.folder_items = items;
+            let index;
+            for (const v of items) {
+                if (v.default)
+                    index = v.index
+            }
+            user_data.folder_item_now = index; // 使用默认的 cwd
+            if (index === undefined || index === null) {
+                user_data.folder_item_now = 0; // 回到默认
+            }
+
+        } else if(data.quick_cmd) {
+            user_data.quick_cmd = data.quick_cmd;
         }
         await userService.save_user_info(user_data.id, user_data);
         // DataUtil.set(files_pre_mulu_key, items);

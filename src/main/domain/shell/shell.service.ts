@@ -264,15 +264,15 @@ export class ShellService {
     //     }
     // }
 
-    cd(data: WsData<ShellInitPojo>) {
-        const socketId = (data.wss as Wss).id;
-        const pty = socketMap.get(socketId);
-        if (pty) {
-            const sysPath = path.join(settingService.getFileRootPath(data.context.http_token), decodeURIComponent(data.context.init_path));
-            const cm = `cd '${sysPath}' ${cr}`;
-            pty.write(cm);
-        }
-    }
+    // cd(data: WsData<ShellInitPojo>) {
+    //     const socketId = (data.wss as Wss).id;
+    //     const pty = socketMap.get(socketId);
+    //     if (pty) {
+    //         const sysPath = path.join(settingService.getFileRootPath(data.context.http_token), decodeURIComponent(data.context.init_path));
+    //         const cm = `cd '${sysPath}' ${cr}`;
+    //         pty.write(cm);
+    //     }
+    // }
 
     async dockerShellLogs(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
