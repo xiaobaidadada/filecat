@@ -54,6 +54,30 @@ const iconv = require('iconv-lite');
 
 export class FileService extends FileCompress {
 
+    utf8ToEncoding(utf8Str, targetEncoding, outputFormat = 'buffer') {
+        // 1. 将 UTF-8 字符串编码为目标编码的 Buffer
+        const buffer = iconv.encode(utf8Str, targetEncoding);
+
+        // 2. 根据 outputFormat 返回不同格式
+        switch (outputFormat.toLowerCase()) {
+            case 'buffer':
+                return buffer; // 直接返回 Buffer
+            case 'hex':
+                return buffer.toString('hex'); // 返回 Hex 字符串
+            case 'base64':
+                return buffer.toString('base64'); // 返回 Base64 字符串
+            case 'string':
+                // 仅部分编码（如 'latin1'）可以直接转字符串，其他可能乱码
+                if (['latin1', 'iso-8859-1'].includes(targetEncoding.toLowerCase())) {
+                    return buffer.toString('binary'); // 'binary' 是 Latin1 的别名
+                } else {
+                    throw new Error(`outputFormat 'string' 仅支持 'latin1' 或 'iso-8859-1' 编码`);
+                }
+            default:
+                throw new Error(`不支持的 outputFormat: ${outputFormat}，可选 'buffer' | 'hex' | 'base64' | 'string'`);
+        }
+    }
+
     public async getFile(param_path, token, is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
         const result: GetFilePojo = {
             files: [],

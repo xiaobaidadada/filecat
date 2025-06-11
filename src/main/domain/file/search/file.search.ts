@@ -7,6 +7,7 @@ import path from "path";
 import {ws} from "../../../../web/project/util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {FileWorkMessage} from "./file.type";
+import {FileServiceImpl} from "../file.service";
 
 const fs = require("fs");
 
@@ -34,7 +35,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
     const file_path = path.join(root_path, decodeURIComponent(pojo.path));
     // 获取文件的元数据
     const stats = fs.statSync(file_path);
-    const query_text_buffer = Buffer.from(pojo.query_text)
+    const query_text_buffer = pojo.encoding === null || pojo.encoding === "utf8" ? Buffer.from(pojo.query_text): FileServiceImpl.utf8ToEncoding(pojo.query_text,pojo.encoding); // Buffer.from(pojo.query_text)
     if(stats.size <= query_text_buffer.length || query_text_buffer.length === 0) {
         const result = new WsData<SysPojo>(CmdType.search_file_progress);
         result.context = 100;

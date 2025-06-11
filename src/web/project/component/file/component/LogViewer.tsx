@@ -415,6 +415,7 @@ export default function LogViewer(props) {
         search_index_r = -1;
         search_all_index_r = [];
         req.query_text = search;
+        req.encoding = shellShow.encoding;
         ws.sendData(CmdType.search_file,req);
     }
     const search_file_cancel = () =>{
