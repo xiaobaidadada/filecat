@@ -26,7 +26,7 @@ function writeToStorage(virtualFilePath, realInstallPath) {
 }
 
 function get_wintun_dll_arch() {
-    let cpuArch = os.arch();
+    let cpuArch:any = os.arch();
     switch (cpuArch) {
         case 'arm':
         case 'arm64':
