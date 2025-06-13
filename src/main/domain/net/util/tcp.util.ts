@@ -25,18 +25,22 @@ export class TcpUtil {
     constructor(socket,open_heart= false) {
         this.socket = socket;
         if(open_heart){
-            this.checkTimerInterval = setInterval(() => {
+            const interval  = setInterval(() => {
                 if ((Date.now() - this.last_connect_time ) > 5000 ) {
                     console.log('超时');
                     this.close();
+                    clearInterval(interval);
                 }
             },1000 * 10);
+            this.checkTimerInterval = interval;
         }
     }
 
     public close() {
-        clearInterval(this.checkTimerInterval);
-        this.checkTimerInterval = null;
+        if(this.checkTimerInterval) {
+            clearInterval(this.checkTimerInterval);
+            this.checkTimerInterval = null;
+        }
         this.connect_success = false;
         this.socket?.end();
         this.socket?.destroy();
