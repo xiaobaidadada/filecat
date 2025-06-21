@@ -33,10 +33,10 @@ enum common_menu_type {
     logviwer_gbk = "gbk",
     logviwer_gb2312 = "gb2312",
     logviwer_gb18030 = "gb18030",
-    logviwer_usc2 = "usc2",
+    // logviwer_usc2 = "usc2",
     logviwer_windows1252 = "windows1252",
-    logviwer_big5 = "big5",
-    logviwer_ios_8859_1 = "ios-8859-1",
+    // logviwer_big5 = "big5",
+    // logviwer_ios_8859_1 = "ios-8859-1",
 }
 
 export function FileMenu() {
@@ -53,10 +53,10 @@ export function FileMenu() {
                     {r:"gbk",v: common_menu_type.logviwer_gbk},
                     {r:"gb2312",v: common_menu_type.logviwer_gb2312},
                     {r:"gb18030",v: common_menu_type.logviwer_gb18030},
-                    {r:"usc2",v: common_menu_type.logviwer_usc2},
+                    // {r:"usc2",v: common_menu_type.logviwer_usc2},
                     {r:"windows1252",v: common_menu_type.logviwer_windows1252},
-                    {r:"big5",v: common_menu_type.logviwer_big5},
-                    {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
+                    // {r:"big5",v: common_menu_type.logviwer_big5},
+                    // {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
             ]}
     ]);
     // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
@@ -94,10 +94,10 @@ export function FileMenu() {
             case common_menu_type.logviwer_gbk:
             case common_menu_type.logviwer_gb2312:
             case common_menu_type.logviwer_gb18030:
-            case common_menu_type.logviwer_usc2:
+            // case common_menu_type.logviwer_usc2:
             case common_menu_type.logviwer_windows1252:
-            case common_menu_type.logviwer_big5:
-            case common_menu_type.logviwer_ios_8859_1:
+            // case common_menu_type.logviwer_big5:
+            // case common_menu_type.logviwer_ios_8859_1:
             {
                 set_file_log({show: true, fileName: showPrompt.data.filename,encoding:v})
             }

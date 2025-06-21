@@ -42,7 +42,7 @@ function Layout() {
     }
     const seconds:NavItem[] = [
         {icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`},
-        {icon: "computer", name: t("系统管理"), rto: `${routerConfig.info}/`},
+        {icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`},
         {icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`},
         {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
     ];

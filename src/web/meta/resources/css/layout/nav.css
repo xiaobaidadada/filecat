@@ -54,3 +54,6 @@ nav > .nav_1 {
 nav .nav_2 > * {
     vertical-align: middle;
 }
+nav .nav_2_active {
+    background-color: rgba(0, 0, 0, 0.05);
+}

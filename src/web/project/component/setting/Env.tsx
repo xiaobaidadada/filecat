@@ -111,7 +111,8 @@ export function Env() {
         const result = await settingHttp.post("filesSetting/save", {quick_cmd:quick_cmd_rows});
         if (result.code === RCode.Sucess) {
             NotySucess("保存成功")
-            reloadUserInfo();
+            // reloadUserInfo();
+            initUserInfo();
         }
     }
     // 保护目录保存
@@ -327,6 +328,7 @@ export function Env() {
         <Row>
 
         <Column widthPer={50}>
+            {t("系统设置")}
             <Dashboard>
                 <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")} onClick={save_outside_software}/>}>
                     <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
@@ -341,7 +343,50 @@ export function Env() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("PATH")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("环境路径")}} title={"信息"}/></span>}
+                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={env_path_dir_add}/>
+                              <ActionButton icon={"save"} title={t("保存")} onClick={update_env_path}/></div>}>
+                    <Table headers={env_path_dir_headers} rows={env_path_dir_rows.map((item, index) => {
+                        const new_list = [
+                            <div>{index}</div>,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => env_path_dir_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+                <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("pty")}} title={"信息"}/></span>}
+                      rightBottomCom={<ButtonText text={t('更新')} clickFun={save_pty_cmd}/>}>
+                    <InputText placeholder={t('cmd need pty env')}  value={pty_cmd} handleInputChange={(value)=>{set_pty_cmd(value)}} />
+                </Card>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_sys_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
+                    <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
+                        const new_list = [
+                            <div>{index}</div>,
+                            <InputText value={item.path} handleInputChange={(value) => {
+                                item.path = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_sys_dir_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+
             </Dashboard>
+
+        </Column>
+        <Column>
+            {t("个人设置")}
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("文件夹路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件夹路径")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                     <Table headers={headers} rows={rows.map((item, index) => {
@@ -378,50 +423,7 @@ export function Env() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
-                <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("保护目录")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_sys_dir_add}/><ActionButton icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
-                    <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
-                        const new_list = [
-                            <div>{index}</div>,
-                            <InputText value={item.path} handleInputChange={(value) => {
-                                item.path = value;
-                            }} no_border={true}/>,
-                            <InputText value={item.note} handleInputChange={(value) => {
-                                item.note = value;
-                            }} no_border={true}/>,
-                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => protection_sys_dir_del(index)}/> ,
-                        ];
-                        return new_list;
-                    })} width={"10rem"}/>
-                </CardFull>
 
-            </Dashboard>
-
-        </Column>
-        <Column>
-            <Dashboard>
-                <CardFull self_title={<span className={" div-row "}><h2>{t("PATH")}</h2>
-                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("环境路径")}} title={"信息"}/></span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={env_path_dir_add}/>
-                              <ActionButton icon={"save"} title={t("保存")} onClick={update_env_path}/></div>}>
-                    <Table headers={env_path_dir_headers} rows={env_path_dir_rows.map((item, index) => {
-                        const new_list = [
-                            <div>{index}</div>,
-                            <InputText value={item.path} handleInputChange={(value) => {
-                                item.path = value;
-                            }} no_border={true}/>,
-                            <InputText value={item.note} handleInputChange={(value) => {
-                                item.note = value;
-                            }} no_border={true}/>,
-                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => env_path_dir_del(index)}/> ,
-                        ];
-                        return new_list;
-                    })} width={"10rem"}/>
-                </CardFull>
-                <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
-                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("pty")}} title={"信息"}/></span>}
-                      rightBottomCom={<ButtonText text={t('更新')} clickFun={save_pty_cmd}/>}>
-                    <InputText placeholder={t('cmd need pty env')}  value={pty_cmd} handleInputChange={(value)=>{set_pty_cmd(value)}} />
-                </Card>
 
                 <CardFull self_title={<span className={" div-row "}><h2>{t("快捷命令")}</h2>
                     <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("快捷命令")}}
