@@ -25,6 +25,9 @@ export function Nav(props: NavProps) {
         for (let index = 0; index < props.navList.length; index++) {
             let ok = false;
             for (let i=0;i<props.navList[index].length;i++) {
+                if (!props.navList[index][i]?.rto) {
+                    continue;
+                }
                 let rto = props.navList[index][i].rto.replace("*","");
                 if (all_router.includes(rto) && rto!=="/") {
                     setSelectedIndex(`${index}_${i}`);
