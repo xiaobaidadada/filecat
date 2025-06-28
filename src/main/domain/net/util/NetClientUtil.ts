@@ -112,6 +112,10 @@ export class NetClientUtil {
     }
 
     public static async start_tcp(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
+        if(this.tcp_client) {
+            // 先关闭
+            this.close_tcp();
+        }
         this.is_run = true;
         this.start_tcp_client(serverPort,serverIp,close_call,state_call);
     }

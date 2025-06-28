@@ -29,7 +29,7 @@ export function Nav(props: NavProps) {
                     continue;
                 }
                 let rto = props.navList[index][i].rto.replace("*","");
-                if (all_router.includes(rto) && rto!=="/") {
+                if (all_router.includes(rto)  && rto!=="/") {
                     setSelectedIndex(`${index}_${i}`);
                     have = false;
                     ok = true;

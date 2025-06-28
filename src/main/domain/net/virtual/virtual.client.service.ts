@@ -265,16 +265,18 @@ export class VirtualClientService extends UdpUtil {
         const {ip, mask} = data;
         // this.server_info.is_tcp = data.model !== VirServerEnum.udp;
         const guid = this.get_guid();
+        if (this.tun_status) {
+            return;
+        }
+        // ip是否激活
+        if(await SysProcessServiceImpl.isIpActive(ip)) {
+            throw `${ip} ip is active`;
+        }
         await this.tcpConnect(data.ip, data.serverPort, data.serverIp,data.client_name,guid);
         // if (data.model === VirServerEnum.udp && this.server_info.is_tcp) {
         //     throw "服务器不支持udp";
         // }
-        if (this.tun_status) {
-            return;
-        }
-        if(await SysProcessServiceImpl.isIpActive(ip)) {
-            throw `${ip} ip is active`;
-        }
+        this.tun_status = true;
         try {
             if (sysType === 'win') {
                 Wintun.set_dll_path(get_wintun_dll_path());
@@ -295,7 +297,6 @@ export class VirtualClientService extends UdpUtil {
                 tun.isUp = true;
                 this.tun.linuxTun = tun;
             }
-            this.tun_status = true;
         } catch (e) {
             console.log('error: ', e);
         }
