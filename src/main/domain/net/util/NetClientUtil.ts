@@ -9,7 +9,8 @@ export const net_timeout = 1000 * 5;
 export class NetClientUtil {
 
     static tcp_client:TcpUtil;
-    static tcp_client_interval;
+    static tcp_client_interval; // 客户端心跳
+    static tcp_client_timeout; // 客户端重试连接
 
     static udp_client:Socket;
     static is_run:boolean = false;
@@ -112,31 +113,54 @@ export class NetClientUtil {
     }
 
     public static async start_tcp(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
+        // todo 暂时只支持单服务器
         if(this.tcp_client) {
             // 先关闭
             this.close_tcp();
         }
         this.is_run = true;
-        this.start_tcp_client(serverPort,serverIp,close_call,state_call);
+        await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
     }
+
+    private static success_connect_handle() {
+        // 客户端重试连接
+        if(this.tcp_client_timeout) {
+            clearTimeout(this.tcp_client_timeout);
+            this.tcp_client_timeout = undefined;
+        }
+        // 心跳
+        this.tcp_client_interval = setInterval(()=>{
+            if(this.is_run === false) {
+                clearInterval(this.tcp_client_interval);
+                this.tcp_client_interval = undefined;
+                return;
+            }
+            this.send_for_tcp(NetMsgType.heart,Buffer.alloc(0));
+        },3000)
+    }
+
+    private static try_fun (serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void){
+        if(this.tcp_client != null && this.tcp_client_timeout == null) {
+            // 不是主动关闭
+            console.log('5秒后重连tcp服务器');
+            clearInterval(this.tcp_client_interval);
+            this.tcp_client_timeout = setTimeout(async ()=>{
+                try {
+                    this.tcp_client_timeout = undefined;
+                    if(this.is_run) {
+                        await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
+                        close_call();
+                    }
+                } catch (e) {
+                    console.log(e);
+                }
+            },5000)
+        }
+    }
+
     private static async  start_tcp_client(serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void) {
         try {
-            if((this.tcp_client && this.tcp_client.is_alive ) || !this.is_run) return ;
-            let try_timeout ;
-            const try_fun = ()=>{
-                if(this.tcp_client !== undefined && try_timeout === undefined) {
-                    // 不是主动关闭
-                    console.log('5秒后重连tcp服务器');
-                    clearInterval(this.tcp_client_interval);
-                    try_timeout = setTimeout(async ()=>{
-                        try_timeout = undefined;
-                        if(this.is_run) {
-                            await this.start_tcp_client(serverPort,serverIp,close_call,state_call);
-                            close_call();
-                        }
-                    },5000)
-                }
-            }
+            if((this.tcp_client != null && this.tcp_client.is_alive ) || !this.is_run) return ;
             console.log('开始尝试连接tcp服务器');
             const client = new net.Socket();
             const tcpUtil = new TcpUtil(client);
@@ -156,7 +180,7 @@ export class NetClientUtil {
             client.on('close', () => {
                 console.log('服务器关闭或者异常');
                 tcpUtil.close();
-                try_fun();
+                this.try_fun(serverPort,serverIp,close_call,state_call);
             });
             // 处理错误事件
             client.on('error', (err) => {
@@ -165,27 +189,13 @@ export class NetClientUtil {
             });
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(()=>{
-                    try_fun();
+                    this.try_fun(serverPort,serverIp,close_call,state_call);
                     reject(false);
                 },3000)
                 client.connect(serverPort, serverIp, () => {
-                    tcpUtil.start();
-                    if(try_timeout) {
-                        clearTimeout(try_timeout);
-                        try_timeout = undefined;
-                    }
                     clearTimeout(timeout);
-                    // 心跳
-                    this.tcp_client_interval = setInterval(()=>{
-                        if(this.is_run === false) {
-                            clearInterval(this.tcp_client_interval);
-                            this.tcp_client_interval = undefined;
-                            return;
-                        }
-                        this.send_for_tcp(NetMsgType.heart,Buffer.alloc(0));
-                    },3000)
-                    state_call(true);
-                    console.log('tcp服务器握手完成');
+                    tcpUtil.start();
+                    this.success_connect_handle();
                     tcpUtil.setOn((head:Buffer,bufferData:Buffer)=>{
                         const {code, tcpBuffer} = NetUtil.getTcpData(bufferData);
                         try {
@@ -209,8 +219,11 @@ export class NetClientUtil {
                             console.log(e)
                         }
                     })
+                    state_call(true);
+                    console.log('tcp服务器握手完成');
+                    resolve (true);
                 });
-                resolve (true);
+
             })
         } catch(err) {
             console.log(err);
@@ -220,6 +233,8 @@ export class NetClientUtil {
 
     public static  close_tcp() {
         this.is_run = false;
+        clearTimeout(this.tcp_client_timeout);
+        this.tcp_client_timeout = undefined;
         if(this.tcp_client) {
             this.tcp_client.close();
             this.tcp_client = undefined;
