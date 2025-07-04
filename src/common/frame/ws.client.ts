@@ -3,7 +3,7 @@ import * as parser from "socket.io-parser"
 import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
 import {generateRandomHash} from "../StringUtil";
-
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 enum connect_status {
     not,
     connecting,
@@ -153,7 +153,7 @@ export class WsClient {
             if (!this.isAilive()) {
                 const name = this.name;
                 // 创建 WebSocket 连接
-                const socket = new WebSocket(`ws://${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`);
+                const socket = new WebSocket(`${protocol}//${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`);
                 // 监听连接成功事件
                 socket.addEventListener('open', open);
 
@@ -256,11 +256,11 @@ export class WsClient {
     }
 
     public static getOtherWebSocket(code:CmdType) {
-        return new WebSocket(`ws://${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
+        return new WebSocket(`${protocol}//${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
     }
 
     public static getOtherWebSocketUrl(code:CmdType,query:{[key: string]: string}) {
-        let url  = `ws://${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
+        let url  = `${protocol}//${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
         for (const key of Object.keys(query)) {
             url += `&${key}=${encodeURIComponent(query[key])}`;
         }
