@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
@@ -6,18 +6,21 @@ import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
-import {FileMenuItem, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {run_workflow} from "./handle.service";
-import {fileHttp, settingHttp, userHttp} from "../../../util/config";
+import {fileHttp, userHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {InputText} from "../../../../meta/component/Input";
 import {workflow_pre_input} from "../../../../../common/req/file.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../../GlobalProvider";
 import {useNavigate} from "react-router-dom";
+import {ws} from "../../../util/ws";
+import {CmdType} from "../../../../../common/frame/WsData";
+import {PromptEnum} from "../Prompt";
 
 enum common_menu_type {
     stop_workflow = 4,
@@ -37,6 +40,9 @@ enum common_menu_type {
     logviwer_windows1252 = "windows1252",
     // logviwer_big5 = "big5",
     // logviwer_ios_8859_1 = "ios-8859-1",
+
+    sutdio = "sutdio",
+    folder_size_info = "folder_size_info"
 }
 
 export function FileMenu() {
@@ -67,9 +73,10 @@ export function FileMenu() {
     const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const {initUserInfo} = useContext(GlobalContext);
+    const [folder_info_list_data,set_folder_info_list_data] =  useRecoilState($stroe.folder_info_list_data);
 
     const navigate = useNavigate();
-    const items_folder = [{r: t("以studio打开")}];
+    const items_folder = [{r: t("以studio打开"),v:common_menu_type.sutdio},{r: t("统计信息"),v:common_menu_type.folder_size_info}];
     const items_images = [{r: t("以图片编辑器打开"), v: "open"}, {r: t(`${user_base_info?.user_data?.not_pre_show_image?t("开启"):t("关闭")} ${t("预览图片")}`), v: "pre"}];
     const {file_is_running} = use_file_to_running();
 
@@ -230,9 +237,18 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_folder} click={() => {
-                    set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
-                    close();
+                                                                          items={items_folder} click={(v) => {
+                    if (v === common_menu_type.sutdio ) {
+                        set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
+                        close();
+                    }  else if ( v === common_menu_type.folder_size_info) {
+                        ws.addMsg(CmdType.folder_size_info, (data)=>{
+                            set_folder_info_list_data([data.context[0],data.context[1]]);
+                        })
+                        const p = getRouterAfter('file', showPrompt.data.path);
+                        ws.sendData(CmdType.folder_size_info,{path:p})
+                        setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
+                    }
                 }}/>}/>
             </div>
             break;

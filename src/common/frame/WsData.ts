@@ -104,6 +104,8 @@ export enum CmdType {
     search_file_cancel ,
     http_download_water,
     http_download_cancel,
+    folder_size_info,
+    folder_size_info_close,
 
     // rtsp
     rtsp_get,

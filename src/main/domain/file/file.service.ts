@@ -32,6 +32,7 @@ import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {FileUtil} from "./FileUtil";
+import {node_process_watcher} from "node-process-watcher";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -158,6 +159,24 @@ export class FileService extends FileCompress {
             }
         }
         return Sucess(result);
+    }
+
+    // folder_size_info:Map<string,{num:number,size:number}> = new Map();
+    public async get_folder_info(fpath: string, token, wss: Wss) {
+        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
+        userService.check_user_path(token, sysPath);
+        node_process_watcher.on_folder_size(sysPath,(file_num:number,total_size:number)=>{
+            wss.send(CmdType.folder_size_info, [file_num,total_size]);
+        });
+        wss.setClose(()=>{
+            node_process_watcher.stop_folder_size(sysPath);
+        })
+    }
+
+    public async stop_folder_info(fpath: string, token) {
+        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
+        userService.check_user_path(token, sysPath);
+        node_process_watcher.stop_folder_size(sysPath);
     }
 
     public async getFileInfo(type: FileTypeEnum, fpath: string, token, wss?: Wss) {

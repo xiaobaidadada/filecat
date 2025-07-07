@@ -299,6 +299,11 @@ export const $stroe = {
             page_self_router_api_data?:any; // 页面资源路由添加
             http_download_map_path?:string , //http代理下载资源路由添加
         }
+    }),
+    // 文件夹信息
+    folder_info_list_data: atom({
+        key:"folder_info_list_data",
+        default:[0,0]
     })
 }
 

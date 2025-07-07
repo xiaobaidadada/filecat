@@ -1,36 +1,25 @@
 // 定义一个控制器
-import {
-    Body,
-    Controller, Ctx,
-    Delete,
-    Get, JsonController,
-    Param,
-    Patch,
-    Post,
-    Put, QueryParam, Req,
-    Res,
-    UploadedFile,
-    UseBefore
-} from "routing-controllers";
+import {Body, Delete, Get, JsonController, Param, Post, Put, QueryParam, Req, Res} from "routing-controllers";
 import {
     base64UploadType,
     FileCompressPojo,
     FileTypeEnum,
     FileVideoFormatTransPojo,
-    GetFilePojo, LogViewerPojo
+    GetFilePojo,
+    LogViewerPojo
 } from "../../../common/file.pojo";
 import {FileServiceImpl} from "./file.service";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {
     cutCopyReq,
     fileInfoReq,
-    fileReq,
     saveTxtReq,
-    WorkflowGetReq, WorkFlowRealTimeOneReq,
+    WorkflowGetReq,
+    WorkFlowRealTimeOneReq,
     WorkFlowRealTimeReq,
-    WorkflowReq, ws_file_upload_req
+    WorkflowReq,
+    ws_file_upload_req
 } from "../../../common/req/file.req";
-import {Cache} from "../../other/cache";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {settingService} from "../setting/setting.service";
@@ -287,4 +276,14 @@ export class FileController {
         return workflowService.workflow_search_by_run_name(data);
     }
 
+    // 统计文件大小
+    @msg(CmdType.folder_size_info)
+    async folder_size_info(data:WsData<any>) {
+        await FileServiceImpl.get_folder_info(data.context.path,  (data.wss as Wss).token,(data.wss as Wss));
+        return [0,0];
+    }
+    @msg(CmdType.folder_size_info_close)
+    async folder_size_info_close(data:WsData<any>) {
+        await FileServiceImpl.stop_folder_info(data.context.path,  (data.wss as Wss).token);
+    }
 }
