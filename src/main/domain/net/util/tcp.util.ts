@@ -31,7 +31,7 @@ export class TcpUtil {
                     this.close();
                     clearInterval(interval);
                 }
-            },1000 * 10);
+            },1000 * 15);
             this.checkTimerInterval = interval;
         }
     }
