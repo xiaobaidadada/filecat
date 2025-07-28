@@ -22,7 +22,8 @@ FileCat is a web-based server management platform that provides file management,
 Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases) 
 
 ## 运行/Running
-`filecat --port 5567`
+运行 `filecat --port 5567`
+
 更多参数可以使用 `filecat --help` 查看
 
 ##  在线演示 / Demo
@@ -42,10 +43,12 @@ Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases
 |:------------------------:|:------------------------:|:------------------------:|
 | ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![image](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
 
-- 终端功能相比filebrowser使用了xterm.js，并且采用了[虚拟shell](https://www.npmjs.com/package/pty-shell)完美实现命令的权限过滤，避免用户执行类似 rm -r / 的危险命令
-- 在文件操作功能上，添加了 白板绘图，markdown预览，图片编辑等功能
-- 内置了一个模仿github workflow 语法实现的自动化构建功能，作用于以.act结尾的文件
-- 支持 系统、docker、进程 等信息的监控，对于系统进程查询，采用了高效的实现方式，监控全部进程的状态只需要非常小的cpu占用率
+- **文件管理**: 支持断点分块上传、多个根目录、代码\图片编辑、编辑器模式、白板绘图...
+- **终端**：相比filebrowser使用了xterm.js，并且采用了虚拟shell完美实现命令的权限过滤，避免用户执行类似 rm -r / 的危险命令
+- **CI/CD自动化构建**：内置了一个模仿github workflow 语法实现的自动化构建功能，作用于以.act结尾的文件
+- **ssh代理**: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。除此之外还支持http代理，rdp远程桌面(windows)等代理
+- **网站导航**: 记录管理自己的多个链接地址
+- **系统、docker、进程 等信息的监控**: 对于系统进程查询，采用了高效的实现方式，监控全部进程的状态只需要非常小的cpu占用率
 ##  qq群
 824838674
 
