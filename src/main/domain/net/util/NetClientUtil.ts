@@ -142,7 +142,7 @@ export class NetClientUtil {
     private static try_fun (serverPort: number, serverIp: string,close_call:()=>void,state_call:(state:boolean)=>void){
         if(this.tcp_client != null && this.tcp_client_timeout == null) {
             // 不是主动关闭
-            console.log('5秒后重连tcp服务器');
+            console.log('30秒后重连tcp服务器');
             clearInterval(this.tcp_client_interval);
             this.tcp_client_timeout = setTimeout(async ()=>{
                 try {
@@ -154,7 +154,7 @@ export class NetClientUtil {
                 } catch (e) {
                     console.log(e);
                 }
-            },5000)
+            },30 *1000)
         }
     }
 
