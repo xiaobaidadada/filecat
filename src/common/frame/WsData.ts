@@ -1,5 +1,4 @@
 import {Wss} from "./ws.server";
-import {JsonUtil} from "../JsonUtil";
 import * as proto from "../proto/proto"
 import * as parser from "socket.io-parser"
 import {Packet, PacketType} from "socket.io-parser"
