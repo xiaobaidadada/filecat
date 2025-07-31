@@ -26,13 +26,6 @@ Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases
 
 更多参数可以使用 `filecat --help` 查看
 
-##  在线演示 / Demo
-
-[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)
-
-账号密码: `admin`/`admin`. english account: `en_admin`/`en_admin`. 演示主机由[亚洲云](https://www.asiayun.com/)提供.
-
-
 ## 功能概览 / Features
 |           文件管理           |                                         代码编辑                                         |          多用户管理           |
 |:------------------------:|:------------------------------------------------------------------------------------:|:------------------------:|
