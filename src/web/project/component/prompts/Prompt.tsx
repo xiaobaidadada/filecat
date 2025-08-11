@@ -117,6 +117,7 @@ export default function Prompt() {
             break;
         case PromptEnum.UploadFile:
             div = <UploadFile/>
+            break;
         case PromptEnum.FolderInfo:
             div = <FolderInfo/>
     }
