@@ -22,6 +22,13 @@ FileCat is a web-based server management platform that provides file management,
 ### 3. Binary 二进制
 Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases) 
 
+### 4. git clone
+`git clone https://github.com/xiaobaidadada/filecat.git`
+
+`npm install`
+
+`npm run dev` or `npm run build && node dist/main.js`
+
 ## 运行/Running
 运行 `filecat --port 5567`
 
