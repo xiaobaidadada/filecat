@@ -1,6 +1,5 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {Service} from "typedi";
 import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {SyserviceImpl} from "./sys.service";
 import {SysSystemServiceImpl} from "./sys.sys.service";
@@ -14,7 +13,6 @@ import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
 import {Request} from "express";
 
-@Service()
 @JsonController("/sys")
 export class SysController {
 

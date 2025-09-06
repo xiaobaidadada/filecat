@@ -1,6 +1,6 @@
 import {DataUtil} from "../../data/DataUtil";
 import {TcpPorxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
-import {sysType} from "../../shell/shell.service";
+import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
 import {UdpUtil} from "../util/udp.util";
 import {findAvailablePort} from "../../../../common/findPort";
@@ -14,9 +14,11 @@ import {NetClientUtil} from "../util/NetClientUtil";
 import {SysProcessServiceImpl} from "../../sys/sys.process.service";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {TcpProxy} from "./tcp_proxy";
+import {SysEnum} from "../../../../common/req/user.req";
 
 const crypto = require('crypto');
-const {LinuxTun, LinuxTap, Wintun} = require('@xiaobaidadada/node-tuntap2-wintun');
+const {LinuxTun, LinuxTap, Wintun} = getSys() !== SysEnum.mac ? require('@xiaobaidadada/node-tuntap2-wintun') : {} as any;
+
 const path = require("path");
 
 export const vir_server_data_key = data_common_key.vir_server_data_key;
@@ -33,7 +35,7 @@ export const haertTime = 2000;
 export class CLientInfo extends UdpUtil {
     // 基本tcp工具变量
     tcpUtil: TcpUtil;
-    client_name:string;
+    client_name: string;
 
     guid: string;
     vir_ip: string; // 虚拟ip
@@ -54,7 +56,7 @@ interface TunInfo {
 export class VirtualClientService extends UdpUtil {
 
     clientIPAndUdpMap = new Map<string, CLientInfo>(); // 对方虚拟 ip和地址
-    udp_addr_allow_set:Set<string> = new Set(); // 合法的udp 地址
+    udp_addr_allow_set: Set<string> = new Set(); // 合法的udp 地址
 
 
     // client
@@ -81,7 +83,6 @@ export class VirtualClientService extends UdpUtil {
     }
 
 
-
     getClientHashKey(): string {
         return DataUtil.get(vir_data_client_hash_key);
     }
@@ -97,7 +98,7 @@ export class VirtualClientService extends UdpUtil {
     async client_register_udp() {
         // 被动注册
         const udp_buffer = await NetClientUtil.send_for_udp_async(NetMsgType.register_udp_info, Buffer.from(JSON.stringify({vir_ip: this.server_info.self_vir_ip})), this.server_info.server_tcp_ip, this.server_info.server_tcp_port);
-        const udp_data:{udp_real_address:string,udp_real_port:number} = JSON.parse(udp_buffer.toString());
+        const udp_data: { udp_real_address: string, udp_real_port: number } = JSON.parse(udp_buffer.toString());
         this.server_info.self_udp_ip = udp_data.udp_real_address;
         this.server_info.self_udp_port = udp_data.udp_real_port;
         console.log('被动注册');
@@ -231,7 +232,7 @@ export class VirtualClientService extends UdpUtil {
     }
 
     // 处理ip信息
-    private async handleTunPackage(buffer: Buffer,is_tcp:boolean) {
+    private async handleTunPackage(buffer: Buffer, is_tcp: boolean) {
         try {
             const destIP = this.getDestIpByTunPackage(buffer);
             if (!destIP) {
@@ -252,9 +253,9 @@ export class VirtualClientService extends UdpUtil {
         // }
     }
 
-    get_guid():string {
-        let guid:string = DataUtil.get(data_common_key.guid_key);
-        if(!guid) {
+    get_guid(): string {
+        let guid: string = DataUtil.get(data_common_key.guid_key);
+        if (!guid) {
             guid = crypto.randomUUID();
             DataUtil.set(data_common_key.guid_key, guid);
         }
@@ -269,10 +270,10 @@ export class VirtualClientService extends UdpUtil {
             return;
         }
         // ip是否激活
-        if(await SysProcessServiceImpl.isIpActive(ip)) {
+        if (await SysProcessServiceImpl.isIpActive(ip)) {
             throw `${ip} ip is active`;
         }
-        await this.tcpConnect(data.ip, data.serverPort, data.serverIp,data.client_name,guid);
+        await this.tcpConnect(data.ip, data.serverPort, data.serverIp, data.client_name, guid);
         // if (data.model === VirServerEnum.udp && this.server_info.is_tcp) {
         //     throw "服务器不支持udp";
         // }
@@ -281,9 +282,9 @@ export class VirtualClientService extends UdpUtil {
             if (sysType === 'win') {
                 Wintun.set_dll_path(get_wintun_dll_path());
                 Wintun.init();
-                Wintun.set_ipv4("filecat", ip, mask,guid);
+                Wintun.set_ipv4("filecat", ip, mask, guid);
                 Wintun.on_data((buf) => {
-                    this.handleTunPackage(buf,data.model === VirServerEnum.tcp);
+                    this.handleTunPackage(buf, data.model === VirServerEnum.tcp);
                 });
             } else {
                 const tun = new LinuxTun();
@@ -292,7 +293,7 @@ export class VirtualClientService extends UdpUtil {
                 // tun.ipv6 = 'abcd:1:2:3::/64';
                 tun.on('data', (buf) => {
                     // console.log(buf)
-                    this.handleTunPackage(buf,data.model === VirServerEnum.tcp);
+                    this.handleTunPackage(buf, data.model === VirServerEnum.tcp);
                 })
                 tun.isUp = true;
                 this.tun.linuxTun = tun;
@@ -316,7 +317,8 @@ export class VirtualClientService extends UdpUtil {
         self_udp_port: 0,
     }
 
-    wssSet:Set<Wss> = new Set();
+    wssSet: Set<Wss> = new Set();
+
     get_all_client_info() {
         return {
             state: this.client_status,
@@ -328,13 +330,13 @@ export class VirtualClientService extends UdpUtil {
     vir_net_client_get(data: WsData<any>) {
         const wss = data.wss as Wss;
         this.wssSet.add(wss);
-        wss.setClose(()=>{
+        wss.setClose(() => {
             this.wssSet.delete(wss);
         })
         return this.get_all_client_info();
     }
 
-    push_clinet_info(){
+    push_clinet_info() {
         const info = this.get_all_client_info();
         for (const wss of this.wssSet.values()) {
             wss.send(CmdType.vir_net_client_get, info);
@@ -342,19 +344,19 @@ export class VirtualClientService extends UdpUtil {
     }
 
     // tcp连接
-    async tcpConnect(ip: string, serverPort: number, serverIp: string,client_name: string,guid:string) {
+    async tcpConnect(ip: string, serverPort: number, serverIp: string, client_name: string, guid: string) {
         this.server_info.server_tcp_ip = serverIp;
         this.server_info.server_tcp_port = serverPort;
         this.server_info.self_vir_ip = ip;
-        await NetClientUtil.start_tcp(serverPort, serverIp,()=>{
-            NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
-                ip,
-                hashKey: this.getClientHashKey(),
-                client_name,
-                guid
-            }))));
-        },
-            (state)=>{
+        await NetClientUtil.start_tcp(serverPort, serverIp, () => {
+                NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
+                    ip,
+                    hashKey: this.getClientHashKey(),
+                    client_name,
+                    guid
+                }))));
+            },
+            (state) => {
                 this.client_status = state;
                 this.push_clinet_info();
             });
@@ -375,7 +377,7 @@ export class VirtualClientService extends UdpUtil {
         // this.server_info.server_udp_port = tcpData.udp_port;
     }
 
-    public writeToTunByUdp(buffer: Buffer,remoteAddr:string) {
+    public writeToTunByUdp(buffer: Buffer, remoteAddr: string) {
         try {
             if (!this.client_status || !this.udp_addr_allow_set.has(remoteAddr)) {
                 return;
@@ -407,11 +409,11 @@ export class VirtualClientService extends UdpUtil {
         }
     }
 
-    public async_server_info_to_client(port: number,key:string) {
+    public async_server_info_to_client(port: number, key: string) {
         const data = this.virClientGet();
         data.key = key;
         data.serverPort = port;
-        this.virClientSave(data).catch(err=>{
+        this.virClientSave(data).catch(err => {
             console.log(err);
         });
     }
@@ -448,18 +450,19 @@ export class VirtualClientService extends UdpUtil {
         }
     }
 
-    private tcp_proxy:TcpProxy;
-    public save_tcp_proxy(req:TcpPorxyITem[]) {
+    private tcp_proxy: TcpProxy;
+
+    public save_tcp_proxy(req: TcpPorxyITem[]) {
         DataUtil.set(data_common_key.tcp_proxy_key, req);
         this.restart_tcp_proxy(req);
     }
 
 
-    private restart_tcp_proxy(req:TcpPorxyITem[]) {
-        if(this.tcp_proxy) {
+    private restart_tcp_proxy(req: TcpPorxyITem[]) {
+        if (this.tcp_proxy) {
             this.tcp_proxy.close(true);
         }
-        const list = req.filter(v=>v.open && v.port>0 && !!v.target_ip && v.target_port>0 ).map(v=>{
+        const list = req.filter(v => v.open && v.port > 0 && !!v.target_ip && v.target_port > 0).map(v => {
             return {
                 proxyPort: v.port,
                 targetHost: v.target_ip,
@@ -467,17 +470,17 @@ export class VirtualClientService extends UdpUtil {
                 param: v.index
             }
         })
-        if(!list.length ){
+        if (!list.length) {
             return;
         }
         this.tcp_proxy = new TcpProxy(list);
-        this.tcp_proxy.start(()=>{
+        this.tcp_proxy.start(() => {
             this.push_clinet_info();
         });
     }
 
-    public get_tcp_proxy() :TcpPorxyITem[]{
-        return DataUtil.get(data_common_key.tcp_proxy_key) ??[];
+    public get_tcp_proxy(): TcpPorxyITem[] {
+        return DataUtil.get(data_common_key.tcp_proxy_key) ?? [];
     }
 }
 
@@ -487,6 +490,6 @@ ServerEvent.on("start", async (data) => {
         init_wintun_dll();
         await virtualClientService.init();
     } catch (e) {
-        console.error('启动虚拟网网络vpn失败',e);
+        console.error('启动虚拟网网络vpn失败', e);
     }
 })

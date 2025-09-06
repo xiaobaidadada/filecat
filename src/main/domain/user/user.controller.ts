@@ -2,11 +2,8 @@ import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {UserAuth, UserBaseInfo, UserData, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
-import {Service} from "typedi";
-import {Env} from "../../../common/Env";
-import {DataUtil} from "../data/DataUtil";
 import {generateSaltyUUID} from "../../../common/StringUtil";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {data_dir_tem_name} from "../data/data_type";
 import {hash_string} from "./user.hash";
 import {userService} from "./user.service";
 import {getSys} from "../shell/shell.service";
@@ -20,7 +17,6 @@ interface UserLoginData {
     id:string;
 }
 
-@Service()
 @JsonController("/user")
 export class UserController {
 

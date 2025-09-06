@@ -2,7 +2,6 @@ import {Body, Get, JsonController, Param, Post, Req} from "routing-controllers";
 import {UserAuth} from "../../../common/req/user.req";
 import {Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
-import {Service} from "typedi";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
@@ -15,7 +14,6 @@ import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {ServerEvent} from "../../other/config";
 
-@Service()
 @JsonController("/setting")
 export class SettingController {
 

@@ -1,21 +1,16 @@
-import {Body, Controller, Get, JsonController, Param, Post, Put, QueryParam, Req, Res} from "routing-controllers";
-import {UserAuth, UserLogin} from "../../../common/req/user.req";
-import {AuthFail, Fail, Sucess} from "../../other/Result";
-import {Cache} from "../../other/cache";
+import {Body, Get, JsonController, Post, QueryParam, Req, Res} from "routing-controllers";
+import {UserAuth} from "../../../common/req/user.req";
+import {Sucess} from "../../other/Result";
 import {msg} from "../../../common/frame/router";
-import {Service} from "typedi";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {NetPojo, VirClientPojo, VirNetItem, VirServerPojo} from "../../../common/req/net.pojo";
+import {NetPojo} from "../../../common/req/net.pojo";
 import {netService} from "./net.service";
 import {NavIndexItem} from "../../../common/req/common.pojo";
-import { DataUtil} from "../data/DataUtil";
-import {virtualClientService} from "./virtual/virtual.client.service";
+import {DataUtil} from "../data/DataUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {Request, Response} from "express";
-import {FileServiceImpl} from "../file/file.service";
 import {data_common_key, file_key} from "../data/data_type";
 import {userService} from "../user/user.service";
-import {virtualServerService} from "./virtual/virtual.server.service";
 
 const navindex_net_key_list = data_common_key.navindex_net_key_list;
 

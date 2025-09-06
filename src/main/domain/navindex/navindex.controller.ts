@@ -1,13 +1,11 @@
 import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {Sucess} from "../../other/Result";
-import {Service} from "typedi";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import { DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 
-@Service()
 @JsonController("/navindex")
 export class NavindexController {
 

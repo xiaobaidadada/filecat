@@ -20,16 +20,24 @@ import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 
 const {spawn, exec} = require('child_process');
-export const sysType = os.platform() === 'win32' ? "win" : "linux";
+const platform = os.platform()
+export let sysType = 'linux'
+if (platform === "win32") {
+    sysType = "win32";
+} else if (platform === "linux") {
+    sysType = "linux";
+} else if (platform === "darwin") {
+    sysType = "darwin";
+}
 let cr = '\r'; // xterm.js 按下 enter 是这个值
 
 export function getSys() {
     if (sysType === "win") {
         return SysEnum.win
-    } else if (sysType === "linux") {
-        return SysEnum.linux
+    } else if (sysType === "darwin") {
+        return SysEnum.mac
     } else {
-        return;
+        return SysEnum.linux
     }
 }
 
@@ -127,6 +135,7 @@ export class ShellService {
             console.log(ex)
         }
     }
+
     user_history_line_map: Map<string, string[]> = new Map();
 
     get_user_history_line(token: string) {
@@ -138,6 +147,7 @@ export class ShellService {
         }
         return line;
     }
+
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
@@ -153,7 +163,7 @@ export class ShellService {
             cwd: sysPath,
             node_pty: pty,
             env: {PATH},
-            history_line:this.get_user_history_line((data.wss as Wss).token),
+            history_line: this.get_user_history_line((data.wss as Wss).token),
             node_pty_shell_list: settingService.get_pty_cmd(),
             on_prompt_call: (cwd) => {
                 // 输出格式化的命令提示符

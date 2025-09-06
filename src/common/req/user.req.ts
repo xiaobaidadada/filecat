@@ -10,7 +10,8 @@ export class UserLogin {
 
 export enum SysEnum {
     win,
-    linux
+    linux,
+    mac
 }
 
 export type UserLanguage = "zh"|"en";
