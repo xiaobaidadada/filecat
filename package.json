@@ -81,7 +81,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@xiaobaidadada/node-pty-prebuilt": "^1.0.6",
+    "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
     "@xiaobaidadada/node-tuntap2-wintun": "^2.1.1",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "node-process-watcher": "^1.3.2"
