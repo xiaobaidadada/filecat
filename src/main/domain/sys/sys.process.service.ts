@@ -134,12 +134,12 @@ export class SysProcessService {
 
     private killSpwn() {
         const sys = getSys();
-        if (sys === SysEnum.linux || sys == SysEnum.win) {
+        // if (sys === SysEnum.linux || sys == SysEnum.win) {
             spawnChild.close("process");
-        } else {
-            spawnChild.kill('SIGTERM');
-            SystemUtil.killProcess(spawnChild.pid);
-        }
+        // } else {
+        //     spawnChild.kill('SIGTERM');
+        //     SystemUtil.killProcess(spawnChild.pid);
+        // }
 
     }
 

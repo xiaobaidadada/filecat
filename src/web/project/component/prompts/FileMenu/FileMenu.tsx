@@ -260,9 +260,10 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close}
-                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} pre_value={showPrompt.data.item_pre_value}
                                                             items={showPrompt.data.items}
-                                                            click={showPrompt.data.textClick}/>}/>
+                                                            click={showPrompt.data.textClick}/>}
+                                                            />
             </div>
             break;
         case FileTypeEnum.unknow:

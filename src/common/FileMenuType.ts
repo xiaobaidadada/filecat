@@ -11,6 +11,7 @@ export class FileMenuData {
     textClick?:(v) => void;
     type?:FileTypeEnum;
     items?:menu_item[];
+    item_pre_value?: any
     files?:any;
     dir?:string;
     call?:(e?:any)=>void;

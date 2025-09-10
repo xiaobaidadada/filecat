@@ -115,7 +115,7 @@ export function TextLine(props: {
 }
 
 
-export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v) => void }) {
+export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v) => void ,pre_value?: any}) {
     const divRef = useRef(null);
     const [visible, setVisible] = useState(false); // 控制显示与否
     const [position, setPosition] = useState({ top: props.y, left: props.x });
@@ -170,7 +170,7 @@ export function FileMenuItem(props: { x: number, y: number, items?: any, click?:
             // display: visible ? 'block' : 'none', // 通过 display 控制显示
         }}
     >
-        <Dropdown items={props.items} click={props.click}/>
+        <Dropdown items={props.items} click={props.click} pre_value={props.pre_value}/>
     </div>
 }
 

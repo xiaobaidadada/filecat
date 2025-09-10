@@ -666,6 +666,7 @@ export default function FileList() {
                     pojo.y = event.clientY;
                     pojo.type = FileTypeEnum.directory;
                     pojo.items = file_paths;
+                    pojo.item_pre_value = file_root_path
                     pojo.textClick = async (v) => {
                         baseSwitch(v);
                         setShowPrompt({data: undefined, overlay: false, type: "", show: false});

@@ -20,6 +20,10 @@ export const GlobalProvider = ({ children }) => {
     const { t, i18n } = useTranslation();
 
     const getItems = async () => {
+        const switch_result = await fileHttp.post("base_switch/get");
+        if (switch_result.code === RCode.Sucess) {
+            setFile_root_path(switch_result.data);
+        }
         const result = await settingHttp.get("filesSetting");
         const list = [];
         if (result.code === RCode.Sucess) {
@@ -30,10 +34,6 @@ export const GlobalProvider = ({ children }) => {
                 })
             }
             setFile_paths(list);
-        }
-        const swith_result = await fileHttp.post("base_switch/get");
-        if (swith_result.code === RCode.Sucess) {
-            setFile_root_path(swith_result.data);
         }
     }
     const reloadFileRoot = async ()=>{

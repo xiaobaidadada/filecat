@@ -134,11 +134,11 @@ export function getProcessAddon() {
     //     return child;
     // }
     const type = getSys();
-    if (type === SysEnum.linux || type === SysEnum.win) {
+    // if (type === SysEnum.linux || type === SysEnum.win) {
         // child = require_c(path.join(__dirname,'linux-process.node'));
         const {node_process_watcher} = require("node-process-watcher");
         return node_process_watcher;
-    }
+    // }
     // else if(getSys()===SysEnum.win) {
     //     child = require_c(path.join(__dirname,'win-process.node'));
     // }
