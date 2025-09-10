@@ -61,7 +61,7 @@ export function RemoteLinux(props) {
         const res = await sshHttp.post("start", req);
         if (res && res.code === RCode.Sucess) {
             req.dir = item?item.dir:dir;
-            navigate(path_join('/proxy/remoteShell', item.dir))
+            navigate(path_join('/proxy/remoteShell', req.dir))
             setShellNowDir([req.dir]);
             setSSHInfo(res.data);
             // setStatus(true)
