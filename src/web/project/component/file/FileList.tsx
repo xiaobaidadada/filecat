@@ -579,13 +579,13 @@ export default function FileList() {
             list.push({r: t("在此目录下载http资源"), v: "http_resource"})
         }
         if(user_base_info?.user_data?.quick_cmd) {
-            const cmd = {
-                r: t("快捷命令"),
-                v: "",
-                items:[]
-            }
-            create_quick_cmd_items([...user_base_info.user_data.quick_cmd],cmd.items);
-            list.push(cmd);
+            // const cmd = {
+            //     r: t("快捷命令"),
+            //     v: "",
+            //     items:[]
+            // }
+            create_quick_cmd_items([...user_base_info.user_data.quick_cmd],list);
+            // list.push(cmd);
         }
         pojo.items = list;
         pojo.textClick = async (v) => {
