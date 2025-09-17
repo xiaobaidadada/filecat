@@ -42,29 +42,48 @@ enum common_menu_type {
     // logviwer_ios_8859_1 = "ios-8859-1",
 
     sutdio = "sutdio",
-    folder_size_info = "folder_size_info"
+    folder_size_info = "folder_size_info",
+    file_quick_cmd = "file_quick_cmd",
 }
 
 export function FileMenu() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
-    const [items, setItems,] = useState([
+    const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
-        {r: t("以日志打开"), v: common_menu_type.logviwer_text,items:
+        {
+            r: t("以日志打开"), v: common_menu_type.logviwer_text, items:
                 [
-                    {r:"utf8",v: common_menu_type.logviwer_utf8},
-                    {r:"utf16",v: common_menu_type.logviwer_utf16},
-                    {r:"utf32",v: common_menu_type.logviwer_utf32},
-                    {r:"gbk",v: common_menu_type.logviwer_gbk},
-                    {r:"gb2312",v: common_menu_type.logviwer_gb2312},
-                    {r:"gb18030",v: common_menu_type.logviwer_gb18030},
+                    {r: "utf8", v: common_menu_type.logviwer_utf8},
+                    {r: "utf16", v: common_menu_type.logviwer_utf16},
+                    {r: "utf32", v: common_menu_type.logviwer_utf32},
+                    {r: "gbk", v: common_menu_type.logviwer_gbk},
+                    {r: "gb2312", v: common_menu_type.logviwer_gb2312},
+                    {r: "gb18030", v: common_menu_type.logviwer_gb18030},
                     // {r:"usc2",v: common_menu_type.logviwer_usc2},
-                    {r:"windows1252",v: common_menu_type.logviwer_windows1252},
+                    {r: "windows1252", v: common_menu_type.logviwer_windows1252},
                     // {r:"big5",v: common_menu_type.logviwer_big5},
                     // {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
-            ]}
-    ]);
+                ]
+        }
+    ]
+    if (user_base_info.user_data?.file_quick_cmd) {
+        for (const it of user_base_info.user_data.file_quick_cmd) {
+            for (const key of (it.file_suffix ?? "").split(" ")) {
+                if (showPrompt.data.filename?.endsWith(key)) {
+                    show_items.push({
+                        r: `${it.note}`,
+                        v: common_menu_type.file_quick_cmd,
+                        extra_value: it
+                    })
+                    break
+                }
+            }
+        }
+    }
+    const [items, setItems,] = useState(show_items);
     // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
     const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();
@@ -73,11 +92,17 @@ export function FileMenu() {
     const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const {initUserInfo} = useContext(GlobalContext);
-    const [folder_info_list_data,set_folder_info_list_data] =  useRecoilState($stroe.folder_info_list_data);
+    const [folder_info_list_data, set_folder_info_list_data] = useRecoilState($stroe.folder_info_list_data);
 
     const navigate = useNavigate();
-    const items_folder = [{r: t("以studio打开"),v:common_menu_type.sutdio},{r: t("统计信息"),v:common_menu_type.folder_size_info}];
-    const items_images = [{r: t("以图片编辑器打开"), v: "open"}, {r: t(`${user_base_info?.user_data?.not_pre_show_image?t("开启"):t("关闭")} ${t("预览图片")}`), v: "pre"}];
+    const items_folder = [{r: t("以studio打开"), v: common_menu_type.sutdio}, {
+        r: t("统计信息"),
+        v: common_menu_type.folder_size_info
+    }];
+    const items_images = [{
+        r: t("以图片编辑器打开"),
+        v: "open"
+    }, {r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`), v: "pre"}];
     const {file_is_running} = use_file_to_running();
 
     const close = () => {
@@ -85,15 +110,14 @@ export function FileMenu() {
     }
     let div; // useEffect 是已经渲染过了再执行
     const pojo = showPrompt.data;
-    const textClick = async (v) => {
+    const textClick = async (v, item) => {
         close();
         switch (v) {
-            case common_menu_type.open_text:
-            {
+            case common_menu_type.open_text: {
                 const name = showPrompt.data.filename;
                 click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true});
             }
-            break;
+                break;
             case common_menu_type.logviwer_text:
             case common_menu_type.logviwer_utf8:
             case common_menu_type.logviwer_utf16:
@@ -103,32 +127,29 @@ export function FileMenu() {
             case common_menu_type.logviwer_gb18030:
             // case common_menu_type.logviwer_usc2:
             case common_menu_type.logviwer_windows1252:
-            // case common_menu_type.logviwer_big5:
-            // case common_menu_type.logviwer_ios_8859_1:
+                // case common_menu_type.logviwer_big5:
+                // case common_menu_type.logviwer_ios_8859_1:
             {
-                set_file_log({show: true, fileName: showPrompt.data.filename,encoding:v})
+                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v})
             }
                 break;
             case common_menu_type.run_workflow:
             case common_menu_type.stop_workflow:
-            case common_menu_type.real_time_workflow:
-            {
+            case common_menu_type.real_time_workflow: {
                 if (v === common_menu_type.real_time_workflow) {
                     set_workflow_show({open: true, filename: showPrompt.data.filename});
                 } else {
                     run_workflow(showPrompt.data.filename, v);
                 }
             }
-            break;
-            case common_menu_type.run_real_time_workflow:
-            {
+                break;
+            case common_menu_type.run_real_time_workflow: {
                 // 实时运行worlkflow
                 await run_workflow(showPrompt.data.filename, common_menu_type.run_workflow);
                 set_workflow_show({open: true, filename: showPrompt.data.filename});
             }
-            break;
-            case common_menu_type.run_workflow_by_pre_inputs:
-            {
+                break;
+            case common_menu_type.run_workflow_by_pre_inputs: {
                 const rsq = await fileHttp.post("workflow/get/pre_inputs", {path: `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
                 let list: workflow_pre_input [] = rsq.data;
                 const send_start_check = () => {
@@ -178,7 +199,14 @@ export function FileMenu() {
                     )
                 })
             }
-            break;
+                break;
+            case common_menu_type.file_quick_cmd:
+                setShellShow({
+                    show: true,
+                    path: getRouterAfter('file', getRouterPath()),
+                    cmd: `${item.extra_value.cmd} ${showPrompt.data.filename} ${item.extra_value.params??""}\r`,
+                })
+                break;
         }
     }
     switch (pojo.type) {
@@ -221,7 +249,7 @@ export function FileMenu() {
                                                                           items={items_images} click={async (v) => {
                     if (v == "open") {
                         set_image_editor({path: showPrompt.data.path, name: showPrompt.data.filename});
-                    } else if(v == "pre") {
+                    } else if (v == "pre") {
                         await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
                             not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
                         });
@@ -238,15 +266,15 @@ export function FileMenu() {
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
                                                                           items={items_folder} click={(v) => {
-                    if (v === common_menu_type.sutdio ) {
+                    if (v === common_menu_type.sutdio) {
                         set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
                         close();
-                    }  else if ( v === common_menu_type.folder_size_info) {
-                        ws.addMsg(CmdType.folder_size_info, (data)=>{
-                            set_folder_info_list_data([data.context[0],data.context[1]]);
+                    } else if (v === common_menu_type.folder_size_info) {
+                        ws.addMsg(CmdType.folder_size_info, (data) => {
+                            set_folder_info_list_data([data.context[0], data.context[1]]);
                         })
                         const p = getRouterAfter('file', showPrompt.data.path);
-                        ws.sendData(CmdType.folder_size_info,{path:p})
+                        ws.sendData(CmdType.folder_size_info, {path: p})
                         setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
                     }
                 }}/>}/>
@@ -260,21 +288,22 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close}
-                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} pre_value={showPrompt.data.item_pre_value}
+                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                                            pre_value={showPrompt.data.item_pre_value}
                                                             items={showPrompt.data.items}
                                                             click={showPrompt.data.textClick}/>}
-                                                            />
+                />
             </div>
             break;
         case FileTypeEnum.unknow:
         default: {
             if (pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
                 if (file_is_running(pojo.filename)) {
-                    items.unshift({r: t("停止")+" workflow", v: common_menu_type.stop_workflow})
-                    items.unshift({r: t("实时查看")+" workflow", v: common_menu_type.real_time_workflow})
+                    items.unshift({r: t("停止") + " workflow", v: common_menu_type.stop_workflow})
+                    items.unshift({r: t("实时查看") + " workflow", v: common_menu_type.real_time_workflow})
                 } else {
                     items.unshift({
-                        r: t("运行")+" workflow", v: common_menu_type.run_workflow, items: [
+                        r: t("运行") + " workflow", v: common_menu_type.run_workflow, items: [
                             {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow}, {
                                 r: t("输入参数运行"),
                                 v: common_menu_type.run_workflow_by_pre_inputs

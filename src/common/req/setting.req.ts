@@ -15,11 +15,19 @@ export class FileSettingItem {
     note: string;
     index: number;
 }
+
 export class QuickCmdItem {
     cmd: string;
     note: string;
     index?: number;
-    father_index?:number;
+    father_index?: number;
+}
+
+export class FileQuickCmdItem {
+    file_suffix: string;
+    cmd: string;
+    note: string;
+    params: string;
 }
 
 export enum SysSoftware {

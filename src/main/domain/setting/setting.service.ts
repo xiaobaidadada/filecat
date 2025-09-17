@@ -6,7 +6,7 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
-    dir_upload_max_num_item,
+    dir_upload_max_num_item, FileQuickCmdItem,
     FileSettingItem, QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
@@ -399,11 +399,12 @@ export class SettingService {
         if (ok) base.default = true;
         return {
             dirs:[base, ...user_data?.folder_items ?? []],
-            quick_cmd:[...user_data?.quick_cmd ?? []]
+            quick_cmd:[...user_data?.quick_cmd ?? []],
+            file_quick_cmd:[...user_data?.file_quick_cmd ?? []]
         };
     }
 
-    public async saveFilesSetting(data:{dirs: FileSettingItem[],quick_cmd:QuickCmdItem[]}, token: string) {
+    public async saveFilesSetting(data:{dirs: FileSettingItem[],quick_cmd:QuickCmdItem[],file_quick_cmd:FileQuickCmdItem[]}, token: string) {
         const user_data = userService.get_user_info_by_token(token);
         if(data.dirs) {
             const items = data.dirs;
@@ -429,6 +430,8 @@ export class SettingService {
 
         } else if(data.quick_cmd) {
             user_data.quick_cmd = data.quick_cmd;
+        } else if(data.file_quick_cmd) {
+            user_data.file_quick_cmd = data.file_quick_cmd;
         }
         await userService.save_user_info(user_data.id, user_data);
         // DataUtil.set(files_pre_mulu_key, items);

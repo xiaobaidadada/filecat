@@ -7,7 +7,13 @@ import {InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {dir_upload_max_num_item, QuickCmdItem, SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
+import {
+    dir_upload_max_num_item,
+    FileQuickCmdItem,
+    QuickCmdItem,
+    SysSoftware,
+    TokenSettingReq
+} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -25,6 +31,7 @@ export function Env() {
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
     const [protection_sys_dir_rows,set_protection_sys_dir_rows] = useState([]);
     const [quick_cmd_rows,set_quick_cmd_rows] = useState([] as QuickCmdItem[]);
+    const [file_quick_cmd_rows,set_file_quick_cmd_rows] = useState([] as FileQuickCmdItem[]);
     const [dir_upload_rows,set_dir_upload_rows] = useState<dir_upload_max_num_item[]>([]);
     const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
     const [pty_cmd,set_pty_cmd] = useState("");
@@ -33,6 +40,7 @@ export function Env() {
     const headers_outside_software = [t("软件"),t("是否安装"), t("路径") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
     const quick_cmd_headers = [t("编号"),t("命令"),t("父编号"),t("备注")];
+    const file_quick_cmd_headers = [t("文件后缀"),t("命令"),t("其他参数"),t("备注")];
     const env_path_dir_headers = [t("编号"),t("路径"),t("备注")];
     const dir_upload_headers = [t("编号"),t("路径"),t("单用户并发数量"),t("系统并发数量"),t("是否开启大文件断点"),t("大文件判断大小MB"),t("大文件并发数量"),t("大文件分块大小MB"),t("备注")];
     const {check_user_auth} = use_auth_check();
@@ -43,6 +51,7 @@ export function Env() {
         if (result.code === RCode.Sucess) {
             setRows(result.data.dirs);
             set_quick_cmd_rows(result.data.quick_cmd);
+            set_file_quick_cmd_rows(result.data.file_quick_cmd);
         }
         const result1 = await settingHttp.get("outside/software/get");
         if (result1.code === RCode.Sucess) {
@@ -115,6 +124,13 @@ export function Env() {
             initUserInfo();
         }
     }
+    const file_quick_cmd_save = async () => {
+        const result = await settingHttp.post("filesSetting/save", {file_quick_cmd:file_quick_cmd_rows});
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+            initUserInfo();
+        }
+    }
     // 保护目录保存
     const protection_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/save", protection_dir_rows);
@@ -173,6 +189,9 @@ export function Env() {
     const quick_cmd_add = ()=>{
         set_quick_cmd_rows([...quick_cmd_rows,{cmd:"",note:""}]);
     }
+    const file_quick_cmd_add = ()=>{
+        set_file_quick_cmd_rows([...file_quick_cmd_rows,{cmd:"",note:"",file_suffix:"",params:""}]);
+    }
     const dir_upload_rows_add = ()=>{
         set_dir_upload_rows([...dir_upload_rows,{path:"",note:""}]);
     }
@@ -187,6 +206,10 @@ export function Env() {
     const quick_cmd_del = (index)=>{
         quick_cmd_rows.splice(index, 1);
         set_quick_cmd_rows([...quick_cmd_rows]);
+    }
+    const file_quick_cmd_del = (index)=>{
+        file_quick_cmd_rows.splice(index, 1);
+        set_file_quick_cmd_rows([...file_quick_cmd_rows]);
     }
     const dir_upload_rows_del = (index)=>{
         dir_upload_rows.splice(index, 1);
@@ -265,9 +288,13 @@ export function Env() {
                     大文件支持断点和分块并发传输，建议并发数量设置为2，分块大小设置为10MB，大文件判断为500MB，设置过大的话会上传的时候会占据较大内存
                 </li>
             </div>
-        } else if(id === "快捷命令") {
+        } else if(id === "目录快捷命令") {
             context = <div>
                 右键文件夹空白处用于，打开终端快捷执行命令
+            </div>
+        } else if(id === "文件快捷命令") {
+            context = <div>
+                用于右键特定后缀的文件，执行一些快捷命令，文件后缀可以是多个，用空格分割
             </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
@@ -425,8 +452,8 @@ export function Env() {
                 </CardFull>
 
 
-                <CardFull self_title={<span className={" div-row "}><h2>{t("快捷命令")}</h2>
-                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("快捷命令")}}
+                <CardFull self_title={<span className={" div-row "}><h2>{t("目录快捷命令")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("目录快捷命令")}}
                            title={"info"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={quick_cmd_add}/>
                     <ActionButton icon={"save"} title={t("保存")} onClick={quick_cmd_save}/>
                 </div>}>
@@ -445,6 +472,31 @@ export function Env() {
                                 item.note = value;
                             }} no_border={true}/>,
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => quick_cmd_del(index)}/> ,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </CardFull>
+
+                <CardFull self_title={<span className={" div-row "}><h2>{t("文件快捷命令")}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件快捷命令")}}
+                                  title={"info"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={file_quick_cmd_add}/>
+                    <ActionButton icon={"save"} title={t("保存")} onClick={file_quick_cmd_save}/>
+                </div>}>
+                    <Table headers={file_quick_cmd_headers} rows={file_quick_cmd_rows.map((item, index) => {
+                        const new_list = [
+                            <InputText value={item.file_suffix} handleInputChange={(value) => {
+                                item.file_suffix = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.cmd} handleInputChange={(value) => {
+                                item.cmd = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.params} handleInputChange={(value) => {
+                                item.params = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => file_quick_cmd_del(index)}/> ,
                         ];
                         return new_list;
                     })} width={"10rem"}/>

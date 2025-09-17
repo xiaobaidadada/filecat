@@ -115,7 +115,7 @@ export function TextLine(props: {
 }
 
 
-export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v) => void ,pre_value?: any}) {
+export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v,item) => void ,pre_value?: any}) {
     const divRef = useRef(null);
     const [visible, setVisible] = useState(false); // 控制显示与否
     const [position, setPosition] = useState({ top: props.y, left: props.x });
@@ -200,7 +200,7 @@ export function DropdownTag(props: {
 
 }
 
-function DropdownItem(props: { key, value, click, context, pre_value, c?: React.ReactNode }) {
+function DropdownItem(props: { key, value,item, click, context, pre_value, c?: React.ReactNode }) {
     const parentRef = useRef(null); // 父容器的引用
     const childRef = useRef(null);  // 子容器的引用
     const [isOutOfScreen, setIsOutOfScreen] = useState(false);
@@ -253,7 +253,7 @@ function DropdownItem(props: { key, value, click, context, pre_value, c?: React.
                 onClick={(e) => {
                     e.stopPropagation()
                     e.nativeEvent.stopImmediatePropagation()
-                    if (props.click) props.click(props.value)
+                    if (props.click) props.click(props.value,props.item)
                 }}
                  onMouseEnter={handleMouseEnter} // 监听鼠标进入
                  onMouseLeave={handleMouseLeave} // 监听鼠标离开
@@ -289,11 +289,11 @@ function DropdownItem(props: { key, value, click, context, pre_value, c?: React.
 export type DropdownItemsPojo = { r: React.ReactNode, v: any, items?: DropdownItemsPojo }[];
 
 
-export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v) => void, pre_value?: any }) {
+export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v,item) => void, pre_value?: any }) {
 
     return <div className={"dropdown"}  >
         {props.items && props.items.map((v, index) => (
-            <DropdownItem key={index} value={v.v} click={props.click} context={v.r} pre_value={props.pre_value}
+            <DropdownItem key={index} value={v.v} item={v} click={props.click} context={v.r} pre_value={props.pre_value}
                           c={(<Dropdown items={v.items} click={props.click} pre_value={props.pre_value}/>)}/>))}
     </div>
 }
