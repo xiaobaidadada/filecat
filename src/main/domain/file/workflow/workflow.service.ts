@@ -570,7 +570,7 @@ class work_children {
                             step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             this.done_fail_job_handle(job, "fail");
                             break; // 剩下的也不需要执行了
-                        } else if(step["process_exit"] !== undefined) {
+                        } else if (step["process_exit"] !== undefined) {
                             process.exit(step["process_exit"]);
                         }
                         // 普通的执行
@@ -620,7 +620,7 @@ class work_children {
                 }
             }
             this.send_all_wss();
-            if(job.running_type === running_type.fail) {
+            if (job.running_type === running_type.fail) {
                 this.all_job_resolve("ok");
             } else {
                 // 判断need中是否有可以执行的了
@@ -680,7 +680,8 @@ export class WorkflowService {
                     key: key,
                     description: v.description,
                     required: v.required,
-                    default: v.default
+                    default: v.default,
+                    options: v.options
                 })
             }
         }
@@ -845,7 +846,7 @@ export class WorkflowService {
         wss.setClose(() => {
             set.delete(wss);
         });
-        wss.dataMap.set("pre_path",parent);
+        wss.dataMap.set("pre_path", parent);
         const rsq = new WorkFlowRealTimeRsq();
         rsq.running_file_list = runing_filename_list;
         return rsq;

@@ -166,7 +166,7 @@ export function FileMenu() {
                             <div className="card-content">
                                 {list.map((item, index) => {
                                     // @ts-ignore
-                                    return <InputText key={index} placeholderOut={item.description} value={item.default}
+                                    return <InputText key={index} placeholderOut={item.description} value={item.default} options={item.options}
                                                       handleInputChange={(value) => {
                                                           item.default = value
                                                       }}/>

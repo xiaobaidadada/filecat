@@ -1,5 +1,11 @@
 @import "../_variables.css";
 
+.awesomplete {
+    /*position: absolute;*/
+    /*display: none;*/
+    min-width: 100%;
+}
+
 .input {
     border-radius: .1em;
     padding: .5em 1em;
