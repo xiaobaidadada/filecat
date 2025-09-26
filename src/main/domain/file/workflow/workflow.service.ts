@@ -337,7 +337,14 @@ class work_children {
 
     public async run_job(job: job_item) {
         try {
-            if (!job.if || vm.runInContext(job.if, sandbox_context)) {
+            let job_can_run = false
+            if (!job.if) {
+                job_can_run = true;
+            } else  {
+                const js_code = Mustache.render(job.if , this.env ?? {});
+                job_can_run = vm.runInContext(js_code, sandbox_context)
+            }
+            if (job_can_run) {
                 if (job['sys-env']) {
                     for (const key of Object.keys(job['sys-env'])) {
                         job['sys-env'][key] = Mustache.render(`${job['sys-env'][key] ?? ""}`, this.env ?? {});
@@ -469,7 +476,8 @@ class work_children {
                                 for (let i = 0; i < job.steps.length; i++) {
                                     const step = job.steps[i];
                                     if (step.if) {
-                                        if (!vm.runInContext(step.if, sandbox_context)) {
+                                        const js_code = Mustache.render(step.if , this.env ?? {});
+                                        if (!vm.runInContext(js_code, sandbox_context)) {
                                             step.running_type = running_type.not;
                                             continue;
                                         }
@@ -508,7 +516,8 @@ class work_children {
                             break;
                         }
                         if (step.if) {
-                            if (!vm.runInContext(step.if, sandbox_context)) {
+                            const js_code = Mustache.render(step.if , this.env ?? {});
+                            if (!vm.runInContext(js_code, sandbox_context)) {
                                 step.running_type = running_type.not;
                                 this.send_all_wss();
                                 continue;
