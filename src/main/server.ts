@@ -63,8 +63,8 @@ async function start() {
         routePrefix: get_sys_base_url_pre(),
         classTransformer: true,
         // controllers: [`${__dirname}/domain/**/*.*s`],
-        controllers:[
-            UserController, SysController, ShellController, FileController, DdnsController, NetController,VirtualController,
+        controllers: [
+            UserController, SysController, ShellController, FileController, DdnsController, NetController, VirtualController,
             NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController,
         ],
         // controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController,
@@ -101,10 +101,10 @@ async function start() {
 
         let index_text = await settingService.get_index_html();
         ServerEvent.on("sys_env_update", async (data) => {
-             index_text = await settingService.get_index_html();
+            index_text = await settingService.get_index_html();
         })
 
-        const sys_pre =  get_sys_base_url_pre();
+        const sys_pre = get_sys_base_url_pre();
         // const self_pre = settingService.get_customer_api_pre_key();
         app.use(async (req: Request, res: Response, next) => {
             if (req.originalUrl && (req.originalUrl.startsWith(sys_pre))) {
@@ -122,14 +122,14 @@ async function start() {
                 } else {
                     url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 }
-                if(!await FileUtil.access(url)) {
+                if (!await FileUtil.access(url)) {
                     throw "";
                 }
 
                 // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
                 res.type(mime.lookup(url));
-                if(url.endsWith('.js') || url.endsWith(".woff2")) {
+                if (url.endsWith('.js') || url.endsWith(".woff2")) {
                     res.setHeader('Cache-Control', 'public, max-age=86400 '); // 让js类型的数据缓存一下 有一些类库的资源请求 js 除非版本变了否则不会更改 webpack打包的有版本hash会变名字
                 }
                 readStream.pipe(res);
@@ -143,7 +143,7 @@ async function start() {
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
         // const self_pre = settingService.get_customer_api_pre_key();
-        const sys_pre =  get_sys_base_url_pre();
+        const sys_pre = get_sys_base_url_pre();
         // const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
         const regex = new RegExp(`^(?!(\/${sys_pre}))`);
         app.use(regex, createProxyMiddleware({
@@ -152,7 +152,9 @@ async function start() {
             pathRewrite: (path, req) => {
                 if (path.endsWith(".md")) {
                     return "/"; // md 特殊文件
-                } else if (path.indexOf('.') !== -1) {
+                }
+                const dot_index = path.indexOf('.')
+                if (dot_index !== -1 && dot_index > 0 && path[dot_index - 1] !== '/') {
                     const paths = path.split('/') // 带后缀的静态文件
                     return '/' + paths[paths.length - 1]
                 } else {

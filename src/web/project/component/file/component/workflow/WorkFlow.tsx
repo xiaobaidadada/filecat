@@ -127,6 +127,7 @@ export default function WorkFlow(props) {
         }
     }, [])
     const task_click = async (item)=>{
+        // console.log(item)
         if(item.is_running) {
             return;
         }
@@ -140,8 +141,9 @@ export default function WorkFlow(props) {
         const v = typeof pojo.one_data.data === "string"?JSON.parse(pojo.one_data.data):pojo.one_data.data;
         const successList:job_item[] = v.success_list;
         const fail_list:job_item[] = v.fail_list;
-        set_job_list([...fail_list,...successList])
         // console.log([...fail_list,...successList])
+        set_job_list([...fail_list,...successList])
+
     }
     const get_children_list = (r_list:tree_list,list?:step_item[],job_list?:job_item[])=>{
         if(list){
@@ -188,6 +190,7 @@ export default function WorkFlow(props) {
         }
     }
     const print =async (message)=>{
+        // console.log(message)
         // 判断终端展示是否初始化
         if(!terminal_value) {
             await new Promise(resolve => {
@@ -318,7 +321,7 @@ export default function WorkFlow(props) {
                                 const new_list = [
                                     <p>{item.name}</p>,
                                     <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />{item.code ===0?t("成功"):t('失败')}</div>,
-                                    <TextTip>{item.cwd}</TextTip>,
+                                    <TextTip>{String(item.cwd)}</TextTip>,
                                     <span>{item.duration}</span>,
                                     <div>
                                         <ActionButton icon={"details"} title={t("详情")} onClick={() => {job_click(item)}}/>
