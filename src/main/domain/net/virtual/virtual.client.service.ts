@@ -279,7 +279,7 @@ export class VirtualClientService extends UdpUtil {
         // }
         this.tun_status = true;
         try {
-            if (sysType === 'win') {
+            if (sysType === SysEnum.win) {
                 Wintun.set_dll_path(get_wintun_dll_path());
                 Wintun.init();
                 Wintun.set_ipv4("filecat", ip, mask, guid);
@@ -383,13 +383,13 @@ export class VirtualClientService extends UdpUtil {
                 return;
             }
             // 接收到数据转发到网卡
-            if (sysType === 'win') {
+            if (sysType === SysEnum.win) {
                 Wintun.send_data(buffer);
             } else {
                 this.tun.linuxTun.write(buffer);
             }
         } catch (e) {
-            console.log('写入网卡失败')
+            console.log('写入网卡失败',e)
         }
     }
 
@@ -399,13 +399,13 @@ export class VirtualClientService extends UdpUtil {
                 return;
             }
             // 接收到数据转发到网卡
-            if (sysType === 'win') {
+            if (sysType === SysEnum.win) {
                 Wintun.send_data(buffer);
             } else {
                 this.tun.linuxTun.write(buffer);
             }
         } catch (e) {
-            console.log('写入网卡失败')
+            console.log('写入网卡失败',e)
         }
     }
 
@@ -422,7 +422,7 @@ export class VirtualClientService extends UdpUtil {
         if (!this.tun_status) {
             return;
         }
-        if (sysType === 'win') {
+        if (sysType === SysEnum.win) {
             Wintun.close()
         } else {
             this.tun.linuxTun.release();

@@ -23,7 +23,7 @@ import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
-import {UserAuth} from "../../../common/req/user.req";
+import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
 import {get_base, get_sys_base_url_pre} from "../bin/bin";
@@ -501,7 +501,7 @@ export class SettingService {
 
     public get_env_list() {
         const list: any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
-        const s = sysType === "win" ? ";" : ":";
+        const s = sysType === SysEnum.win ? ";" : ":";
         return list.map(v => v.path).join(s);
     }
 

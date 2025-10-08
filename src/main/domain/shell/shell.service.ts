@@ -21,28 +21,22 @@ import {FileUtil} from "../file/FileUtil";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
-export let sysType = 'linux'
+export let sysType:SysEnum = SysEnum.unknown
 if (platform === "win32") {
-    sysType = "win32";
+    sysType = SysEnum.win;
 } else if (platform === "linux") {
-    sysType = "linux";
+    sysType = SysEnum.linux;
 } else if (platform === "darwin") {
-    sysType = "darwin";
+    sysType = SysEnum.mac;
 }
 let cr = '\r'; // xterm.js 按下 enter 是这个值
 
 export function getSys() {
-    if (sysType === "win") {
-        return SysEnum.win
-    } else if (sysType === "darwin") {
-        return SysEnum.mac
-    } else {
-        return SysEnum.linux
-    }
+    return sysType
 }
 
 function getSysShell() {
-    if (sysType === 'win') {
+    if (sysType === SysEnum.win) {
         if (SystemUtil.commandIsExist("pwsh")) {
             return "pwsh.exe";
         } else if (SystemUtil.commandIsExist("powershell")) {
@@ -86,7 +80,7 @@ const reset = '\x1b[0m';   // 重置颜色
 
 let word_detection = new word_detection_js();
 // let word_detection_map = new Map<string, string>(); // 暂时不需要完整的路径
-const s_f = (sysType === "win" ? ";" : ":");
+const s_f = (sysType === SysEnum.win ? ";" : ":");
 let PATH_file_total = 0; // win我的电脑 也就三千多个没必要上 c++版的了
 const exec_map = {// windwos文件命令执行优先级
     ".com": 4, // 越大优先
@@ -151,7 +145,7 @@ export class ShellService {
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        const PATH = process.env.PATH + (sysType === "win" ? ";" : ":") + settingService.get_env_list();
+        const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
         const pojo = data.context as ShellInitPojo;
         if (pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");

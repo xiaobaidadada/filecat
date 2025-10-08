@@ -22,7 +22,7 @@ import {userService} from "../../user/user.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {data_common_key, data_dir_tem_name} from "../../data/data_type";
-import {UserAuth} from "../../../../common/req/user.req";
+import {SysEnum, UserAuth} from "../../../../common/req/user.req";
 import {sysType} from "../../shell/shell.service";
 import {Base_data_util} from "../../data/basedata/base_data_util";
 import {removeTrailingPath} from "../../../../common/StringUtil";
@@ -409,7 +409,7 @@ class work_children {
                 }
                 let out_context = "";
                 userService.check_user_path_by_user_id(this.user_id, job.cwd);
-                const PATH = process.env.PATH + (sysType === "win" ? ";" : ":") + settingService.get_env_list();
+                const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
                 const ptyshell = new PtyShell({
                     cwd: job.cwd,
                     node_pty: pty,
