@@ -15,9 +15,15 @@ import {SysProcessServiceImpl} from "../../sys/sys.process.service";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {TcpProxy} from "./tcp_proxy";
 import {SysEnum} from "../../../../common/req/user.req";
+import * as fs from "fs"
 
 const crypto = require('crypto');
-const {LinuxTun, LinuxTap, Wintun} = getSys() !== SysEnum.mac ? require('@xiaobaidadada/node-tuntap2-wintun') : {} as any;
+const {
+    LinuxTun,
+    LinuxTap,
+    Wintun,
+    MacTun
+} = require('@xiaobaidadada/node-tuntap2-wintun');
 
 const path = require("path");
 
@@ -51,7 +57,12 @@ export class CLientInfo extends UdpUtil {
 
 interface TunInfo {
     linuxTun: any
+    macTun: { fd: number; name: string, readStream: any, writeStream: any, ip: string }
 }
+
+// 创建 4 字节 AF 前缀
+const mac_prefix = Buffer.alloc(4);
+mac_prefix.writeUInt32BE(2, 0); // AF_INET = 2
 
 export class VirtualClientService extends UdpUtil {
 
@@ -215,10 +226,26 @@ export class VirtualClientService extends UdpUtil {
     }
 
     private getDestIpByTunPackage(buffer: Buffer) {
+        if (sysType === SysEnum.mac) {
+            // macos
+            const family = buffer.readUInt32BE(0);
+            if (family !== 2) return; // 只处理 IPv4
+
+            const ipBuf = buffer.subarray(4);
+            if (ipBuf.length < 20) return;
+
+            const version = ipBuf[0] >> 4;
+            if (version !== 4) return;
+
+            // const d1 = ipBuf[16], d2 = ipBuf[17], d3 = ipBuf[18], d4 = ipBuf[19];
+            // console.log(`Dest IP: ${d1}.${d2}.${d3}.${d4}`);
+            return `${ipBuf[16]}.${ipBuf[17]}.${ipBuf[18]}.${ipBuf[19]}`
+        }
         // 解析 IP 头部
         const version = buffer[0] >> 4;
         // const headerLength = (buf[0] & 0x0f) * 4;
         // const protocol = buf[9];
+        // console.log(version);
         if (version !== 4) {
             return;
         }
@@ -234,12 +261,13 @@ export class VirtualClientService extends UdpUtil {
     // 处理ip信息
     private async handleTunPackage(buffer: Buffer, is_tcp: boolean) {
         try {
-            const destIP = this.getDestIpByTunPackage(buffer);
+            const destIP = this.getDestIpByTunPackage(buffer); // todo 改成非函数调用会增加性能
             if (!destIP) {
                 return;
             }
             // if (is_tcp) {
-            await NetClientUtil.send_for_tcp(NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, buffer));
+            // console.log(buffer.subarray(4) )
+            await NetClientUtil.send_for_tcp(NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, sysType === SysEnum.mac ? buffer.subarray(4) : buffer));
         } catch (e) {
             console.log(e);
         }
@@ -270,7 +298,7 @@ export class VirtualClientService extends UdpUtil {
             return;
         }
         // ip是否激活
-        if (await SysProcessServiceImpl.isIpActive(ip)) {
+        if (await SysProcessServiceImpl.isIpAssigned(ip)) {
             throw `${ip} ip is active`;
         }
         await this.tcpConnect(data.ip, data.serverPort, data.serverIp, data.client_name, guid);
@@ -279,17 +307,17 @@ export class VirtualClientService extends UdpUtil {
         // }
         this.tun_status = true;
         try {
-            if (sysType === SysEnum.win) {
+            if (getSys() === SysEnum.win) {
                 Wintun.set_dll_path(get_wintun_dll_path());
                 Wintun.init();
                 Wintun.set_ipv4("filecat", ip, mask, guid);
                 Wintun.on_data((buf) => {
                     this.handleTunPackage(buf, data.model === VirServerEnum.tcp);
                 });
-            } else {
+            } else if (getSys() === SysEnum.linux) {
                 const tun = new LinuxTun();
                 tun.mtu = 4096;
-                tun.ipv4 = `${ip}/${mask}'`
+                tun.ipv4 = `${ip}/${mask}`
                 // tun.ipv6 = 'abcd:1:2:3::/64';
                 tun.on('data', (buf) => {
                     // console.log(buf)
@@ -297,6 +325,19 @@ export class VirtualClientService extends UdpUtil {
                 })
                 tun.isUp = true;
                 this.tun.linuxTun = tun;
+            } else if (getSys() === SysEnum.mac) {
+                const tun = MacTun.createTun();
+                this.tun.macTun = tun;
+                this.tun.macTun.ip = `${ip}/${mask}`
+                // console.log(ip)
+                MacTun.setIPv4(ip, ip);
+                MacTun.applyGlobalMask({subnet: this.tun.macTun.ip}, tun.name);
+                this.tun.macTun.readStream = fs.createReadStream(null, {fd: tun.fd, highWaterMark: 4096});
+                this.tun.macTun.writeStream = fs.createWriteStream(null, {fd: tun.fd});
+                this.tun.macTun.readStream.on('data', (buf) => {
+                    // console.log(buf)
+                    this.handleTunPackage(buf, data.model === VirServerEnum.tcp);
+                })
             }
         } catch (e) {
             console.log('error: ', e);
@@ -377,35 +418,41 @@ export class VirtualClientService extends UdpUtil {
         // this.server_info.server_udp_port = tcpData.udp_port;
     }
 
-    public writeToTunByUdp(buffer: Buffer, remoteAddr: string) {
-        try {
-            if (!this.client_status || !this.udp_addr_allow_set.has(remoteAddr)) {
-                return;
-            }
-            // 接收到数据转发到网卡
-            if (sysType === SysEnum.win) {
-                Wintun.send_data(buffer);
-            } else {
-                this.tun.linuxTun.write(buffer);
-            }
-        } catch (e) {
-            console.log('写入网卡失败',e)
-        }
-    }
+    // public writeToTunByUdp(buffer: Buffer, remoteAddr: string) {
+    //     try {
+    //         if (!this.client_status || !this.udp_addr_allow_set.has(remoteAddr)) {
+    //             return;
+    //         }
+    //         // 接收到数据转发到网卡
+    //         if (getSys() === SysEnum.win) {
+    //             Wintun.send_data(buffer);
+    //         } else if (getSys() === SysEnum.linux) {
+    //             this.tun.linuxTun.write(buffer);
+    //         } else if (getSys() === SysEnum.mac) {
+    //             this.tun.macTun.writeStream.write(buffer);
+    //         }
+    //     } catch (e) {
+    //         console.log('写入网卡失败')
+    //     }
+    // }
 
     public writeToTun(buffer: Buffer) {
         try {
+            // console.log(buffer)
             if (this.client_status === false) {
                 return;
             }
             // 接收到数据转发到网卡
-            if (sysType === SysEnum.win) {
+            if (getSys() === SysEnum.win) {
                 Wintun.send_data(buffer);
-            } else {
+            } else if (getSys() === SysEnum.linux) {
                 this.tun.linuxTun.write(buffer);
+            } else if (getSys() === SysEnum.mac) {
+                // console.log(buffer)
+                this.tun.macTun.writeStream.write(Buffer.concat([mac_prefix,buffer]));
             }
         } catch (e) {
-            console.log('写入网卡失败',e)
+            console.log('写入网卡失败')
         }
     }
 
@@ -422,10 +469,15 @@ export class VirtualClientService extends UdpUtil {
         if (!this.tun_status) {
             return;
         }
-        if (sysType === SysEnum.win) {
+        if (getSys() === SysEnum.win) {
             Wintun.close()
-        } else {
+        } else if (getSys() === SysEnum.linux) {
             this.tun.linuxTun.release();
+        } else if (getSys() === SysEnum.mac) {
+            MacTun.removeGlobalMask({subnet: this.tun.macTun.ip}, this.tun.macTun.name);
+            MacTun.closeTun();
+            this.tun.macTun.readStream.destroy()
+            this.tun.macTun.writeStream.destroy()
         }
         this.tun_status = false;
         console.log('关闭适配器')
@@ -493,3 +545,18 @@ ServerEvent.on("start", async (data) => {
         console.error('启动虚拟网网络vpn失败', e);
     }
 })
+
+function cleanup() {
+    try {
+        if (virtualClientService.tun_status) {
+            virtualClientService.closeTun()
+        }
+        console.log('TUN stopped, exiting process.');
+        process.exit(0);
+    } catch (e) {
+        console.error('Error during cleanup:', e);
+    }
+}
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);

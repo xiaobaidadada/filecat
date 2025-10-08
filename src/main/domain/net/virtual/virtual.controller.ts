@@ -179,6 +179,7 @@ export class VirtualController {
     // 写入数据
     @tcpClientMsg(NetMsgType.data)
     data(data: Buffer, util: TcpUtil) {
+        // console.log(data)
         virtualClientService.writeToTun(data);
     }
 

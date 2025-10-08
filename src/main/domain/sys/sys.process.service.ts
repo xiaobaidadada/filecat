@@ -9,6 +9,7 @@ import path from "path";
 import {getProcessAddon} from "../bin/bin";
 import {SysEnum} from "../../../common/req/user.req";
 import WebSocket from "ws";
+import os from "os";
 const { exec } = require('child_process');
 
 let sysJobInterval: any = null;
@@ -142,21 +143,54 @@ export class SysProcessService {
         // }
 
     }
-
-    async  isIpActive(ip) {
+    // 不够准确，对于ip转发ping也会生效
+    async isIpActive(ip) {
         return new Promise((resolve) => {
             const sys = getSys();
             let cmd;
             if (sys == SysEnum.win) {
                 cmd = `ping -n 1 -w 1000 ${ip}`;
-            } else {
+            } else if (sys == SysEnum.linux) {
                 cmd = `ping -c 1 -W 1 ${ip}`;
+            } else if (sys == SysEnum.mac) {
+                // macOS: -c 表示次数，-t 是 TTL（不是超时），所以用外部 timeout 包裹
+                cmd = `ping -c 1 -t 1 ${ip}`;
             }
-            exec(cmd, (error, stdout, stderr) => {
+            exec(cmd, { timeout: 1500 }, (error, stdout, stderr) => {
                 resolve(!error);
             });
         });
     }
+    async  isIpAssigned(ip: string): Promise<boolean> {
+        if (sysType === SysEnum.win || sysType === SysEnum.linux || sysType === SysEnum.mac) {
+            // 统一使用 Node 自带 os.networkInterfaces() 查询
+            const nets = os.networkInterfaces();
+            for (const name of Object.keys(nets)) {
+                for (const net of nets[name]!) {
+                    if (net.address === ip) return true;
+                }
+            }
+            return false;
+        } else {
+            // fallback: 使用系统命令
+            return new Promise((resolve) => {
+                let cmd: string;
+                if (sysType === SysEnum.mac || sysType === SysEnum.linux) {
+                    cmd = `ifconfig`;
+                } else if (sysType === SysEnum.win) {
+                    cmd = `ipconfig`;
+                } else {
+                    resolve(false);
+                    return;
+                }
+                exec(cmd, (err, stdout) => {
+                    if (err) return resolve(false);
+                    resolve(stdout.includes(ip));
+                });
+            });
+        }
+    }
+
 
     private getProcessInfo() {
         try {
