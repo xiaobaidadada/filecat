@@ -31,17 +31,21 @@ import {formatter_time} from "../../../../common/ValueUtil";
 import vm from "node:vm";
 import {FileUtil} from "../FileUtil";
 import {SystemUtil} from "../../sys/sys.utl";
+const needle = require('needle');
 
 const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 const Mustache = require('mustache');
 
+const frozenEnv = Object.freeze({ ...process.env });
 const sandbox = {
-    // needle: needle, // needle http 请求工具
+    needle: needle, // needle http 请求工具
+    fetch,
+    sys_env:frozenEnv
     // fs: fs,
     // path: path,
 };
-const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
+
 
 interface import_files_item {
     yaml_data: any;
@@ -51,6 +55,18 @@ interface import_files_item {
 enum send_ws_type {
     done,// 结束
     new_log, // 最新日志
+}
+
+class workflow_util {
+
+    public static run_js(js_code:string,filecat_env:any) {
+        js_code = Mustache.render(js_code , filecat_env ?? {});
+        const sandbox_context = vm.createContext({
+            ...sandbox,
+            "filecat_env":filecat_env
+        }); // 创建沙箱上下文
+        return vm.runInContext(js_code, sandbox_context)
+    }
 }
 
 class work_children {
@@ -164,14 +180,14 @@ class work_children {
         filecat_user_id?: string,
         filecat_user_name?: string,
         filecat_user_note?: string,
-        send_all_wss?: (done?: send_ws_type) => void,
+        wss_call_set?: Set<Wss>,
         pre_env?: any
     }) {
         if (param?.yaml_path) {
             this.yaml_path = param.yaml_path;
         }
-        if (param?.send_all_wss) {
-            this.send_all_wss = param.send_all_wss;
+        if (param?.wss_call_set) {
+            this.wss_call_set = param.wss_call_set;
         }
         this.filename = path.basename(this.yaml_path);
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
@@ -337,12 +353,14 @@ class work_children {
 
     public async run_job(job: job_item) {
         try {
+            if(job["run-js"]) {
+                workflow_util.run_js(job['run-js'], this.env);
+            }
             let job_can_run = false
             if (!job.if) {
                 job_can_run = true;
             } else  {
-                const js_code = Mustache.render(job.if , this.env ?? {});
-                job_can_run = vm.runInContext(js_code, sandbox_context)
+                job_can_run = workflow_util.run_js(job.if,this.env)
             }
             if (job_can_run) {
                 if (job['sys-env']) {
@@ -356,7 +374,6 @@ class work_children {
                     }
                 }
                 job.cwd = Mustache.render(job.cwd ?? "", {...this.env, ...job.env});
-                job.running_type = running_type.running;
                 // 目录处理判断
                 if (!path.isAbsolute(job.cwd)) {
                     this.done_fail_job_handle(job, "cwd not absolute")
@@ -389,6 +406,8 @@ class work_children {
                         return;
                     }
                 }
+                //可以开始执行了
+                job.running_type = running_type.running;
                 // 开始执行能执行的多个命令 创建ptyshell
                 let now_step: step_item;
                 let exec_resolve;
@@ -475,9 +494,11 @@ class work_children {
 
                                 for (let i = 0; i < job.steps.length; i++) {
                                     const step = job.steps[i];
+                                    if(step["run-js"]) {
+                                        workflow_util.run_js(job['run-js'], this.env);
+                                    }
                                     if (step.if) {
-                                        const js_code = Mustache.render(step.if , this.env ?? {});
-                                        if (!vm.runInContext(js_code, sandbox_context)) {
+                                        if (!workflow_util.run_js(step.if,this.env)) {
                                             step.running_type = running_type.not;
                                             continue;
                                         }
@@ -515,9 +536,11 @@ class work_children {
                         if (job.running_type === running_type.fail) {
                             break;
                         }
+                        if(step["run-js"]) {
+                            workflow_util.run_js(job['run-js'], this.env);
+                        }
                         if (step.if) {
-                            const js_code = Mustache.render(step.if , this.env ?? {});
-                            if (!vm.runInContext(js_code, sandbox_context)) {
+                            if (!workflow_util.run_js(step.if, this.env)) {
                                 step.running_type = running_type.not;
                                 this.send_all_wss();
                                 continue;
@@ -543,7 +566,7 @@ class work_children {
                                     filecat_user_name: this.env['filecat_user_name'],
                                     filecat_user_id: this.env['filecat_user_id'],
                                     filecat_user_note: this.env['filecat_user_note'],
-                                    send_all_wss: this.send_all_wss.bind(this)
+                                    wss_call_set: this.wss_call_set
                                 });
                                 this.worker_children_use_yml_map.set(step["use-yml"], worker);
                                 let success_list, fail_list;

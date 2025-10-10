@@ -40,6 +40,10 @@ export default function WorkFlowRealTime(props) {
                 item.name = <div><StatusCircle success={false} />{item.name}</div>
             } else if(item?.extra_data?.running_type === running_type.running) {
                 item.name = <div><StatusCircle running={true} />{item.name}</div>
+            } else {
+                // 没有任何状态 还没开始 不展示子数据
+                delete item.children
+                continue
             }
             if(item.children) {
                 render_list(item.children);

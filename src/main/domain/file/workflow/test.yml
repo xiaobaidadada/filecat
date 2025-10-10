@@ -37,6 +37,7 @@ jobs:
       token: {{{token}}}
     env:
       temp: '{{token}}123' # 用于设置一些临时变量
+    run-js: filecat_env.version = 1 # 在step中也有run-js属性，仅仅是执行js代码，沙箱环境中有fetch neele filecat_env(本环节的变量) sys_env 四个可以使用的变量，且是最优先执行的属性
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
         with-env:

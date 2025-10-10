@@ -1,7 +1,7 @@
 
 # ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
-FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 VPN、SSH、RDP、HTTP、TCP 等多种网络代理功能。
+FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 VPN、SSH、RDP、HTTP、TCP 等多种网络代理功能。支持windows、linux、mac。
 
 本项目是对[filebrowser](https://github.com/filebrowser/filebrowser)的功能增强，使用和filebrowser一样的ui，以服务器文件管理为基础添加一些服务器控制功能。
 

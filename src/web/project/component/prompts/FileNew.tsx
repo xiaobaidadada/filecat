@@ -43,7 +43,7 @@ jobs:
     if: 1==1 # 判断这个job要不要执行
     cwd: E:\\test # 需要一个实际的执行目录 默认是当前的yml所在目录 目录内的文件清理需要自己使用命令操作 必须是绝对路径
     name: 第一阶段执行
-    repl: false # 交互式运行 当上一个step 运行没有结束 有输出的时候 就执行下一个 step 默认是 false 必须要自己设置好流程 避免出现一直等待 那么只能手动关闭了
+    repl: false # 交互式运行 当上一个step 运行没有结束 有输出的时候 就执行下一个 step 默认是 false 必须要自己设置好流程 避免出现一直等待 那么只能手动关闭了，使用repl 无法使用 use-yml if process_exit 等特殊 指令
     # need-job: build-job2 # 需要别的job先完成 只能是本文件内的
     sys-env: # 这里的token 会在执行的添加到shell的环境变量中
       token: {{{token}}}
@@ -65,7 +65,7 @@ jobs:
     steps:
       - if: 1==2 # 判断这个step要不要执行
         run: ls
-
+        process_exit: 0  # 程序 退出 输入数字  0 -1
 
 
 `
