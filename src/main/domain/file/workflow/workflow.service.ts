@@ -31,17 +31,18 @@ import {formatter_time} from "../../../../common/ValueUtil";
 import vm from "node:vm";
 import {FileUtil} from "../FileUtil";
 import {SystemUtil} from "../../sys/sys.utl";
+
 const needle = require('needle');
 
 const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 const Mustache = require('mustache');
 
-const frozenEnv = Object.freeze({ ...process.env });
+const frozenEnv = Object.freeze({...process.env});
 const sandbox = {
     needle: needle, // needle http 请求工具
     fetch,
-    sys_env:frozenEnv
+    sys_env: frozenEnv
     // fs: fs,
     // path: path,
 };
@@ -59,26 +60,52 @@ enum send_ws_type {
 
 class workflow_util {
 
-    public static run_js(js_code:string,filecat_env:any) {
-        js_code = Mustache.render(js_code , filecat_env ?? {});
+    public static run_js(js_code: string, filecat_env: any) {
+        js_code = Mustache.render(js_code, filecat_env ?? {});
         const sandbox_context = vm.createContext({
             ...sandbox,
-            "filecat_env":filecat_env
+            "filecat_env": filecat_env
         }); // 创建沙箱上下文
-        return vm.runInContext(js_code, sandbox_context)
+        try {
+            return vm.runInContext(js_code, sandbox_context)
+        } catch (e) {
+            console.log(e)
+            return false;
+        }
+    }
+
+    public static run_and_get_code(js_code: string, filecat_env: any) {
+        js_code = Mustache.render(js_code, filecat_env ?? {});
+        const sandbox_context = vm.createContext({
+            ...sandbox,
+            "filecat_env": filecat_env
+        }); // 创建沙箱上下文
+        try {
+            return {
+                r: vm.runInContext(js_code, sandbox_context),
+                js_code
+            }
+        } catch (e) {
+            console.log(e)
+            return {
+                r: false,
+                js_code
+            }
+        }
     }
 }
 
 class work_children {
 
-    // 临时变量
+    // 临时变量 在一个job内执行step的时候 step都是有顺序的执行
     running_type: running_type = running_type.running;
     running_log: string; // 当前最新的日志输出
+    running_step: step_item; // 当前最新的step
 
     wss_call_set: Set<Wss>;
 
     filename;
-    not_log = false;
+    // not_log = false;
     workflow_dir_path: string;
 
     yaml_path: string;
@@ -174,7 +201,7 @@ class work_children {
 
     public async init(param?: {
         env?: any,
-        not_log?: boolean,
+        // not_log?: boolean,
         yaml_data?: any,
         yaml_path?: string,
         filecat_user_id?: string,
@@ -269,9 +296,6 @@ class work_children {
                 this.env[key] = param.env[key];
             }
         }
-        if (param?.not_log !== undefined) {
-            this.not_log = param?.not_log;
-        }
         return this;
     }
 
@@ -353,14 +377,15 @@ class work_children {
 
     public async run_job(job: job_item) {
         try {
-            if(job["run-js"]) {
-                workflow_util.run_js(job['run-js'], this.env);
+            if (job["run-js"]) {
+                const code_r = workflow_util.run_and_get_code(job['run-js'], this.env);
+                job['run-js'] = code_r.js_code
             }
             let job_can_run = false
             if (!job.if) {
                 job_can_run = true;
-            } else  {
-                job_can_run = workflow_util.run_js(job.if,this.env)
+            } else {
+                job_can_run = workflow_util.run_js(job.if, this.env)
             }
             if (job_can_run) {
                 if (job['sys-env']) {
@@ -462,18 +487,23 @@ class work_children {
                     }
                 });
                 this.pty_shell_set.add(ptyshell);
-                if (!this.not_log) {
+                // if (!this.not_log) {
                     ptyshell.on_call = (cmdData) => {
                         this.running_log = cmdData;
-                        this.send_all_wss(send_ws_type.new_log);
                         out_context += cmdData;
+                        this.send_all_wss(send_ws_type.new_log);
+                    }
+                    ptyshell.on_call_child_raw = (data): any  => {
+                        if (this.running_step?.["out-env"] != null && this.env != null) {
+                            this.env[this.running_step["out-env"]] = data.toString();
+                        }
                     }
                     // ptyshell.set_on_call((cmdData) => {
                     //     this.running_log = cmdData;
                     //     this.send_all_wss(send_ws_type.new_log);
                     //     out_context += cmdData;
                     // })
-                }
+                // }
                 // ptyshell.on_child_kill((code) => {
                 //     // 任何命令结束都有的
                 //     run_exec_resolve(code);
@@ -494,11 +524,20 @@ class work_children {
 
                                 for (let i = 0; i < job.steps.length; i++) {
                                     const step = job.steps[i];
-                                    if(step["run-js"]) {
-                                        workflow_util.run_js(job['run-js'], this.env);
+                                    const step_satrt_time = Date.now();
+                                    if (step["run-js"]) {
+                                        const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
+                                        step['run-js'] = code_r.js_code
+                                        if (code_r.r) {
+                                            step.running_type = running_type.running;
+                                        } else {
+                                            step.running_type = running_type.fail;
+                                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                                            continue
+                                        }
                                     }
                                     if (step.if) {
-                                        if (!workflow_util.run_js(step.if,this.env)) {
+                                        if (!workflow_util.run_js(step.if, this.env)) {
                                             step.running_type = running_type.not;
                                             continue;
                                         }
@@ -507,8 +546,17 @@ class work_children {
                                         now_step = step; // 交互式的给第一个可以执行命令
                                     }
                                     step.running_type = running_type.running;
-                                    step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                                    await ptyshell.write(`${step.run}\r`);
+                                    if(step.run) {
+                                        step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
+                                        this.running_step = step;
+                                        await ptyshell.write(`${step.run}\r`);
+                                    }
+                                    step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                                    if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
+                                        // 再执行一次
+                                        i--;
+                                        continue;
+                                    }
                                 }
                             } else {
                                 exec_resolve(1);
@@ -531,13 +579,26 @@ class work_children {
 
                 } else {
                     // 开始多个命令执行 有前后顺序的
-                    for (const step of job.steps) {
+                    for (let i = 0; i < job.steps.length; i++) {
+                        const step = job.steps[i];
+
                         // @ts-ignore
                         if (job.running_type === running_type.fail) {
                             break;
                         }
-                        if(step["run-js"]) {
-                            workflow_util.run_js(job['run-js'], this.env);
+                        const step_satrt_time = Date.now();
+                        if (step["run-js"]) {
+                            const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
+                            step['run-js'] = code_r.js_code
+                            if (code_r.r) {
+                                step.running_type = running_type.running;
+                            } else {
+                                step.running_type = running_type.fail;
+                            }
+                            step.code = -1;
+                            job.code = -1;
+                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                            continue
                         }
                         if (step.if) {
                             if (!workflow_util.run_js(step.if, this.env)) {
@@ -548,7 +609,6 @@ class work_children {
                         }
                         step.running_type = running_type.running;
                         this.send_all_wss();
-                        const step_satrt_time = Date.now();
                         if (step["use-yml"]) {
                             // 执行另一个文件
                             const yaml = this.import_files_map.get(step["use-yml"]);
@@ -599,21 +659,28 @@ class work_children {
                             step.code = -1;
                             step.fail_message = `not have yaml use name ${step['use-yml']}`;
                             job.code = -1;
-                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             this.done_fail_job_handle(job, "fail");
                             break; // 剩下的也不需要执行了
-                        } else if (step["process_exit"] !== undefined) {
-                            process.exit(step["process_exit"]);
                         }
                         // 普通的执行
                         now_step = step;
                         // 等待执行完执行下一条
                         const code = await new Promise(resolve => {
-                            exec_resolve = resolve;
-                            step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                            ptyshell.write(`${step.run}\r`); // 这里没有必要使用 await
-                            this.send_all_wss();
+                            if(step.run) {
+                                exec_resolve = resolve;
+                                step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
+                                this.running_step = step;
+                                ptyshell.write(`${step.run}\r`); // 这里没有必要使用 await
+                                this.send_all_wss();
+                            } else {
+                                resolve(1)
+                            }
                         })
+                        if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
+                            // 再执行一次
+                            i--;
+                            continue;
+                        }
                         step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                         step.code = code as number;
                         step.running_type = running_type.success;

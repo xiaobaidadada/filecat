@@ -68,9 +68,10 @@ export interface step_item {
 
     running_type?: running_type;
     if?: string; // 配合 run
-    process_exit: number; // 程序 退出
+    while?: string; // 是否在执行一次
 
     "run-js"?: string; // 纯执行js代码，可以操作环境变量
+    "out-env"?: string; // run执行后输出的日志保存到这个变量
 }
 
 export interface job_item {

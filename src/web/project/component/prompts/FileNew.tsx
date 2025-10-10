@@ -10,7 +10,7 @@ import {FileCompressType} from "../../../../common/file.pojo";
 import {CardPrompt} from "../../../meta/component/Card";
 
 const workflow_txt = `
-
+# 对于js python 脚本也可以实现，这种配置文件的作用是 提供一个脚本编排系统，侧重命令有顺序的执行，最重要的是，符合某个平台（github,gitlab,filecat)的规范，可以和这个平台做出很多好玩的可视化搭配操作
 name: test  # 名字 不支持 {{}}
 run-name: 构建项目 # 用于日志显示的名字
 
@@ -29,6 +29,7 @@ env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 
   version: 1
   cmd_install: npm install
   token: 123
+  info: "{a:1}"
   # 有几个参数是每次执行自动添加的
 #  filecat_user_id: 1 # 用户id
 #  filecat_user_name: admin # 用户名字
@@ -49,6 +50,7 @@ jobs:
       token: {{{token}}}
     env:
       temp: '{{token}}123' # 用于设置一些临时变量
+    run-js: filecat_env.version = 1 # 在step中也有run-js属性，仅仅是执行js代码，沙箱环境中有fetch neele filecat_env(本环节的变量) sys_env 四个可以使用的变量，且是最优先执行的属性
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
         with-env:
@@ -62,10 +64,13 @@ jobs:
   build-job2:
     cwd: E:\\test2
     name: 第二阶段
+    # while:  2 > 1 #是否再执行一次
     steps:
       - if: 1==2 # 判断这个step要不要执行
         run: ls
-        process_exit: 0  # 程序 退出 输入数字  0 -1
+      - run: node a.js
+        out-env: info # 可选的，执行后将输出（多次会覆盖）的值输出到这个env中，暂时不支持ls cd pwd 等pty-shell的内建命令输出
+        while: 1 > 2 # 是否再执行一次
 
 
 `

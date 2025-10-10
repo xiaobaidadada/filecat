@@ -120,7 +120,7 @@ export default function WorkFlowRealTime(props) {
                     get_children_list(children,undefined,item.use_job_children_list)
                     name = `${item['use-yml']}  ;${item.duration??-1}`
                 } else {
-                    name = `${item.run}  ;${item.duration??-1}`
+                    name = `${item.run ?? item['run-js']}  ;${item.duration??-1}`
                 }
                 name = <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />${name}</div>
                 r_list.push({
