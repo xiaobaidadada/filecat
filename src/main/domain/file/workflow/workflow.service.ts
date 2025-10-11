@@ -237,6 +237,8 @@ class work_children {
             throw "user not exists";
         }
         this.user_id = user_id;
+        if(param?.yaml_path)
+        userService.check_user_path_by_user_id(this.user_id, param?.yaml_path);
         userService.check_user_auth_by_user_id(this.user_id, UserAuth.workflow_exe_user, {
             auto_throw: true,
             root_check: true
@@ -278,14 +280,13 @@ class work_children {
         }
         if (yaml_data['import-files']) {
             for (const p of yaml_data['import-files']) {
-                if (path.isAbsolute(p)) {
-                    const d = await readYamlFile(p);
-                    this.import_files_map.set(d.name, {yaml_path: p, yaml_data: d});
-                } else {
-                    const p1 = path.join(path.dirname(this.yaml_path), p);
-                    const d = await readYamlFile(p1);
-                    this.import_files_map.set(d.name, {yaml_path: p1, yaml_data: d});
+                let p1 = p
+                if (!path.isAbsolute(p)) {
+                    p1 = path.join(path.dirname(this.yaml_path), p);
                 }
+                userService.check_user_path_by_user_id(this.user_id, p1);
+                const d = await readYamlFile(p1);
+                this.import_files_map.set(d.name, {yaml_path: p1, yaml_data: d});
             }
         }
         yaml_data['run-name'] = Mustache.render(`${yaml_data['run-name'] ?? ""}`, this.env ?? {});
@@ -294,6 +295,17 @@ class work_children {
         if (param?.env) {
             for (const key of Object.keys(param.env)) {
                 this.env[key] = param.env[key];
+            }
+        }
+        // file-env 处理
+        if(yaml_data['file-env']) {
+            for (const key of Object.keys(yaml_data['file-env'])) {
+                let p1 = yaml_data['file-env'][key];
+                if (!path.isAbsolute(p1)) {
+                    p1 = path.join(path.dirname(this.yaml_path), p1);
+                }
+                userService.check_user_path_by_user_id(this.user_id, p1);
+                this.env[key] = (await FileUtil.readFileSync(p1)).toString();
             }
         }
         return this;
@@ -865,7 +877,7 @@ export class WorkflowService {
         const pojo = data.context as WorkFlowRealTimeOneReq;
         const root_path = settingService.getFileRootPath(token);
         const file_path = path.join(root_path, decodeURIComponent(pojo.filename_path));
-
+        userService.check_user_path((data.wss as Wss).token, file_path)
         const v = work_exec_map.get(file_path);
         if (!v) {
             return;
@@ -881,6 +893,7 @@ export class WorkflowService {
         const pojo = data.context as WorkflowGetReq;
         const root_path = settingService.getFileRootPath(token);
         const dir_path = path.join(root_path, decodeURIComponent(pojo.dir_path), workflow_dir_name);
+        userService.check_user_path((data.wss as Wss).token, dir_path)
         const basedata = new Base_data_util({base_dir: dir_path});
         const r = new WorkflowGetRsq();
         if (pojo.index !== undefined) {
@@ -912,6 +925,7 @@ export class WorkflowService {
         const pojo = data.context as WorkflowGetReq;
         const root_path = settingService.getFileRootPath(token);
         const dir_path = path.join(root_path, decodeURIComponent(pojo.dir_path), workflow_dir_name);
+        userService.check_user_path((data.wss as Wss).token, dir_path)
         const basedata = new Base_data_util({base_dir: dir_path});
         const r = new WorkflowGetRsq();
         const regex = new RegExp(pojo.search_name);
@@ -930,6 +944,7 @@ export class WorkflowService {
         const wss = (data.wss as Wss);
         const root_path = settingService.getFileRootPath(token);
         const dir_path = path.join(root_path, pojo.dir_path);
+        userService.check_user_path((data.wss as Wss).token, dir_path)
         const runing_filename_list = [];
         const parent = removeTrailingPath(decodeURIComponent(dir_path));
         for (const key of work_exec_map.keys()) {

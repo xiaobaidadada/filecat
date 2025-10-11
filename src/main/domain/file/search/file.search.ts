@@ -8,6 +8,7 @@ import {ws} from "../../../../web/project/util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
 import {FileWorkMessage} from "./file.type";
 import {FileServiceImpl} from "../file.service";
+import {userService} from "../../user/user.service";
 
 const fs = require("fs");
 
@@ -33,6 +34,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
     const pojo = data.context as LogViewerPojo;
     const root_path = settingService.getFileRootPath(pojo.token);
     const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+    userService.check_user_path(wss.token, file_path)
     // 获取文件的元数据
     const stats = fs.statSync(file_path);
     const query_text_buffer = pojo.encoding === null || pojo.encoding === "utf8" ? Buffer.from(pojo.query_text): FileServiceImpl.utf8ToEncoding(pojo.query_text,pojo.encoding); // Buffer.from(pojo.query_text)
@@ -42,7 +44,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
         wss.sendData(result.encode());
         return;
     }
-    const worker = new Worker(path.join(__dirname,'file.search.worker'));
+    const worker = new Worker(path.join(__dirname,'file.search.worker')); // mac下debug有问题
     wss.dataMap.set('worker', worker);
     const close = ()=>{
         worker.postMessage({type: 4});

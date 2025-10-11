@@ -165,10 +165,10 @@ export class FileService extends FileCompress {
     public async get_folder_info(fpath: string, token, wss: Wss) {
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
         userService.check_user_path(token, sysPath);
-        node_process_watcher.on_folder_size(sysPath,(file_num:number,total_size:number)=>{
-            wss.send(CmdType.folder_size_info, [file_num,total_size]);
+        node_process_watcher.on_folder_size(sysPath, (file_num: number, total_size: number) => {
+            wss.send(CmdType.folder_size_info, [file_num, total_size]);
         });
-        wss.setClose(()=>{
+        wss.setClose(() => {
             node_process_watcher.stop_folder_size(sysPath);
         })
     }
@@ -659,7 +659,7 @@ export class FileService extends FileCompress {
         });
         if (param?.cache) {
             res.setHeader('Cache-Control', 'public, max-age=86400 '); // 24 小时
-        } else if(param?.cache_length) {
+        } else if (param?.cache_length) {
             res.setHeader('Cache-Control', `public, max-age=${param.cache_length}`);
         }
         // 发送文件
@@ -706,7 +706,10 @@ export class FileService extends FileCompress {
                 return;
             }
             if (stats.isFile()) {
-                this.download_one_file(fileName, fileSize, sysPath, ctx.res, {cache: cache === "1",handle_type_:show==="1"?"inline":"attachment"});
+                this.download_one_file(fileName, fileSize, sysPath, ctx.res, {
+                    cache: cache === "1",
+                    handle_type_: show === "1" ? "inline" : "attachment"
+                });
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
                 ctx.res.attachment(path.basename(sysPath) + ".zip");
@@ -887,6 +890,7 @@ export class FileService extends FileCompress {
             list: []
         };
         const sysPath = path.join(settingService.getFileRootPath(token), param_path ? decodeURIComponent(param_path) : "");
+        userService.check_user_path(token, sysPath)
         if (!await FileUtil.access(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
@@ -961,7 +965,7 @@ export class FileService extends FileCompress {
     //     // 使用掩码和位运算判断
     //     return (byte & 0xE0) === 0xC0 || (byte & 0xF0) === 0xE0 || (byte & 0xF8) === 0xF0;
     // }
-    isFirstByte(byte, encoding:string = "utf8") {
+    isFirstByte(byte, encoding: string = "utf8") {
         if (byte === undefined || byte < 0 || byte > 255) throw 'Invalid byte';
 
         switch (encoding.toLowerCase()) {
@@ -1046,7 +1050,7 @@ export class FileService extends FileCompress {
                     if (i === ch_byte_i && (buffer[i] & 0x80) !== 0) {
                         // 最后一位 不是单字节字符 需要找到首字节
                         for (let j = i; j > last_h; j--) {
-                            if (this.isFirstByte(buffer[j],pojo.encoding)) {
+                            if (this.isFirstByte(buffer[j], pojo.encoding)) {
                                 index = j - 1;
                                 break;
                             }
@@ -1056,7 +1060,7 @@ export class FileService extends FileCompress {
                     // 以/n做字符串结尾，扫描到的/n 或者文件的最后一个字符
                     const now_str_start = last_h + 1;
                     const next_str_start = index + 1;
-                    pojo.context_list.push(this.convertToUtf8(buffer.subarray( now_str_start, next_str_start),pojo.encoding)); // i 不包括 /n
+                    pojo.context_list.push(this.convertToUtf8(buffer.subarray(now_str_start, next_str_start), pojo.encoding)); // i 不包括 /n
                     pojo.context_start_position_list.push(pojo.position + now_str_start); // 开始位置
                     pojo.context_position_list.push(pojo.position + next_str_start); // 结束位置 是/n的位置
                     if (linesRead >= pojo.line) {
@@ -1114,7 +1118,7 @@ export class FileService extends FileCompress {
                 if ((buffer[i] & 0x80) !== 0) {
                     // 多字节编码 找到首字节
                     for (let j = 0; j < bytesRead; j++) {
-                        if (this.isFirstByte(buffer[j],pojo.encoding)) {
+                        if (this.isFirstByte(buffer[j], pojo.encoding)) {
                             index = j - 1;
                             break;
                         }
@@ -1167,7 +1171,7 @@ export class FileService extends FileCompress {
                     if (i === 0 && pojo.position !== 0 && (buffer[i] & 0x80) !== 0) {
                         // 找到首字节
                         for (let j = 0; j < last_h; j++) {
-                            if (this.isFirstByte(buffer[j],pojo.encoding)) {
+                            if (this.isFirstByte(buffer[j], pojo.encoding)) {
                                 index = j - 1;
                                 break;
                             }
@@ -1176,7 +1180,7 @@ export class FileService extends FileCompress {
                     linesRead++;
                     const now_str_start = index === 0 && pojo.position === 0 ? 0 : index + 1;
                     const next_str_start = last_h + 1;
-                    pojo.context_list.push(this.convertToUtf8(buffer.subarray( now_str_start, next_str_start),pojo.encoding));
+                    pojo.context_list.push(this.convertToUtf8(buffer.subarray(now_str_start, next_str_start), pojo.encoding));
                     pojo.context_start_position_list.push(pojo.position + now_str_start);
                     pojo.context_position_list.push(pojo.position + next_str_start);
                     if (linesRead >= pojo.line) {
@@ -1202,8 +1206,6 @@ export class FileService extends FileCompress {
     }
 
 
-
-
     async log_viewer(data: WsData<LogViewerPojo>) {
         const pojo = data.context as LogViewerPojo;
         pojo.context = "";
@@ -1212,6 +1214,7 @@ export class FileService extends FileCompress {
         pojo.context_start_position_list = [];
         const root_path = settingService.getFileRootPath(pojo.token);
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+        userService.check_user_path((data.wss as Wss).token, file_path)
         // 获取文件的元数据
         const stats = await FileUtil.statSync(file_path);
         // 文件当前的最大大小
@@ -1241,6 +1244,7 @@ export class FileService extends FileCompress {
         pojo.context_start_position_list = [];
         const root_path = settingService.getFileRootPath(pojo.token);
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
+        userService.check_user_path(wss.token, file_path)
         // 使用 chokidar 监控文件变化
         let watcher = chokidar.watch(file_path, {
             persistent: true,  // 持续监听

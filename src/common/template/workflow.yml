@@ -23,6 +23,9 @@ env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 
 #  filecat_user_name: admin # 用户名字
 #  filecat_user_note: 备注 #用户备注
 
+file-env: # 这个env是用于读取文件的，将文件变成一个环境变量
+  name: ./ok.txt
+
 username: admin # 需要执行用户的账号 该脚本需要运行在某个用户下
 user_id: 1 # 会覆盖 username 对应的用户 id 只允许特定设置的用户在这里可以被设置 运行
 
