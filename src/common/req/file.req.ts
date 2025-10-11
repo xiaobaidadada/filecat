@@ -95,6 +95,7 @@ export interface job_item {
     if?: string; // 执行js代码返回布尔值
 
     "run-js"?: string; // 纯执行js代码，可以操作环境变量
+    while?: string; // 是否在执行一次
 }
 
 // 目录下所有正在执行的任务实时输出

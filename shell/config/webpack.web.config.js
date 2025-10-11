@@ -34,6 +34,10 @@ module.exports = {
             {
                 test: /\.svg/,
                 type: 'asset/inline'
+            },
+            {
+                test: /\.(txt|yml)$/i,
+                type: 'asset/source', // 直接把文件内容导出为字符串
             }
         ],
     },

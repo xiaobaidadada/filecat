@@ -8,72 +8,10 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {FileCompressType} from "../../../../common/file.pojo";
 import {CardPrompt} from "../../../meta/component/Card";
+// @ts-ignore
+import ymlRaw  from "../../../../common/template/workflow.yml?raw"
 
-const workflow_txt = `
-# 对于js python 脚本也可以实现，这种配置文件的作用是 提供一个脚本编排系统，侧重命令有顺序的执行，最重要的是，符合某个平台（github,gitlab,filecat)的规范，可以和这个平台做出很多好玩的可视化搭配操作
-name: test  # 名字 不支持 {{}}
-run-name: 构建项目 # 用于日志显示的名字
-
-# import-files: # 导入多个文件的配置 用于下面的 use-yml 指令
-#     - ./ok.yml
-inputs:
-  job: # 输入参数的 key 子字段只是为了修饰 调用的时候 使用  {{{job}}} 会添加并覆盖到 env 中的值
-    description: "任务参数"
-    required: true # 是否必须
-    default: build # 默认值
-    options:
-      - false
-      - '1232'
-
-env: # 定义一些环境变量 这些 环境变量可以在 run 或者 cwd 中 或者 run-name 中使用  {{}} 来表达 使用的时候 必须要用 '' 字符串括起来，不然会被处理成变量 {{{ }}} 是非转义方式 采用 Mustache js
-  version: 1
-  cmd_install: npm install
-  token: 123
-  info: "{a:1}"
-  # 有几个参数是每次执行自动添加的
-#  filecat_user_id: 1 # 用户id
-#  filecat_user_name: admin # 用户名字
-#  filecat_user_note: 备注 #用户备注
-
-username: admin # 需要执行用户的账号 该脚本需要运行在某个用户下
-user_id: 1 # 会覆盖 username 对应的用户 id 只允许特定设置的用户在这里可以被设置 运行
-
-# 所有的jobs下的任务都会被并行执行
-jobs:
-  build-job1:
-    if: 1==1 # 判断这个job要不要执行
-    cwd: E:\\test # 需要一个实际的执行目录 默认是当前的yml所在目录 目录内的文件清理需要自己使用命令操作 必须是绝对路径
-    name: 第一阶段执行
-    repl: false # 交互式运行 当上一个step 运行没有结束 有输出的时候 就执行下一个 step 默认是 false 必须要自己设置好流程 避免出现一直等待 那么只能手动关闭了，使用repl 无法使用 use-yml if process_exit 等特殊 指令
-    # need-job: build-job2 # 需要别的job先完成 只能是本文件内的
-    sys-env: # 这里的token 会在执行的添加到shell的环境变量中
-      token: {{{token}}}
-    env:
-      temp: '{{token}}123' # 用于设置一些临时变量
-    run-js: filecat_env.version = 1 # 在step中也有run-js属性，仅仅是执行js代码，沙箱环境中有fetch neele filecat_env(本环节的变量) sys_env 四个可以使用的变量，且是最优先执行的属性
-    steps: # 这些脚本会按顺序执行
-      - use-yml: test2 # 使用其它 yml 文件中的 name
-        with-env:
-             version: 18 # 使用其它文件的时候 给一些环境变量参数
-      #   - run: pip.exe install setuptools
-      #   - run: npm.cmd install
-      #   - run: ok1
-      #   - run: ls
-      - run: npm run build
-    #   - run: npm publish # 执行一些脚本
-  build-job2:
-    cwd: E:\\test2
-    name: 第二阶段
-    # while:  2 > 1 #是否再执行一次
-    steps:
-      - if: 1==2 # 判断这个step要不要执行
-        run: ls
-      - run: node a.js
-        out-env: info # 可选的，执行后将输出（多次会覆盖）的值输出到这个env中，暂时不支持ls cd pwd 等pty-shell的内建命令输出
-        while: 1 > 2 # 是否再执行一次
-
-
-`
+const workflow_txt = ymlRaw
 
 export function FileNew(props) {
     const { t } = useTranslation();

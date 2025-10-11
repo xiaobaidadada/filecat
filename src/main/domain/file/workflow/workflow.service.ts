@@ -303,10 +303,15 @@ class work_children {
         const start_time = Date.now();
         await new Promise(resolve => {
             this.all_job_resolve = resolve;
-            for (const job of this.jobs_map.values()) {
+            const v_List = [...this.jobs_map.values()]
+            for (let i=0; i<v_List.length; i++) {
+                const job = v_List[i];
                 // 并行执行多个job
                 this.run_job(job).then((e) => {
-
+                    if(job.while != null && workflow_util.run_js(job.while,this.env)) {
+                        // 再执行一次
+                        i--;
+                    }
                 }).catch(e => {
                     console.error(e);
                     job.running_type = running_type.fail;
@@ -528,11 +533,12 @@ class work_children {
                                     if (step["run-js"]) {
                                         const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
                                         step['run-js'] = code_r.js_code
+                                        step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                                         if (code_r.r) {
-                                            step.running_type = running_type.running;
+                                            step.running_type = running_type.success;
                                         } else {
                                             step.running_type = running_type.fail;
-                                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
+                                            resolve(-1)
                                             continue
                                         }
                                     }
@@ -555,7 +561,6 @@ class work_children {
                                     if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
                                         // 再执行一次
                                         i--;
-                                        continue;
                                     }
                                 }
                             } else {
@@ -590,14 +595,16 @@ class work_children {
                         if (step["run-js"]) {
                             const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
                             step['run-js'] = code_r.js_code
+                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             if (code_r.r) {
-                                step.running_type = running_type.running;
+                                step.running_type = running_type.success;
+                                step.code = 0;
+                                job.code = 0;
                             } else {
                                 step.running_type = running_type.fail;
+                                step.code = -1;
+                                job.code = -1;
                             }
-                            step.code = -1;
-                            job.code = -1;
-                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
                             continue
                         }
                         if (step.if) {
@@ -731,14 +738,20 @@ class work_children {
                         job_set.delete(job.key);
                     } else {
                         // 需要自己的 不是自己 执行它
-                        for (const it of job_set) {
-                            this.run_job(this.jobs_map.get(it)).catch(e => {
+                        const v_List = [...job_set]
+                        for (let i=0;i<v_List.length;i++) {
+                            const it = v_List[i];
+                            const job = this.jobs_map.get(it);
+                            this.run_job(job).catch(e => {
                                 throw e;
                             }).then(() => {
-
+                                if(job.while != null && workflow_util.run_js(job.while,this.env)) {
+                                    // 再执行一次
+                                    i--;
+                                }
                             })
+                            // await this.run_job(this.jobs_map.get(job_key));
                         }
-                        // await this.run_job(this.jobs_map.get(job_key));
                     }
                 }
                 // 判断是否完全完成 如果有循环依赖无法走到这里
