@@ -39,12 +39,11 @@ export function file_sort(data: GetFilePojo,type:DirListShowTypeEmum) {
     }
 }
 
-export function create_quick_cmd_items(quick_cmd:QuickCmdItem[],its:any[],father_index?:any) {
+export function create_quick_cmd_items(quick_cmd:QuickCmdItem[],its:any[]) {
+    const index_map = {}
+    const left_map = {}
     for (let i = 0;i<quick_cmd.length;i++) {
         const it = quick_cmd[i];
-        if(father_index !== undefined && it.index !== father_index) {
-            continue;
-        }
         const ok = {
             r:it.note,
             items:[],
@@ -53,19 +52,21 @@ export function create_quick_cmd_items(quick_cmd:QuickCmdItem[],its:any[],father
                 cmd: it.cmd,
             }
         }
+        // 看看是否属于某个子集
+        if(it.father_index != null) {
+            left_map[it.father_index] = ok
+            const v = index_map[it.father_index]
+            if(v) {
+                v.items.push(ok);
+            }
+            continue
+        }
         its.push(ok);
-        for (let j = i+1; j < quick_cmd.length; j++) {
-            const it1 = quick_cmd[j];
-            if(it.index === it1.father_index) {
-                ok.items.push({
-                    r:it1.note,
-                    items:[],
-                    v: {
-                        tag: "quick_cmd",
-                        cmd:it1.cmd,
-                    }
-                });
-                quick_cmd.splice(j,1);
+        if(it.index != null) {
+            index_map[it.index] = ok;
+            // 有自己的子集
+            if(left_map[it.index] != null) {
+                ok.items.push(left_map[it.index]);
             }
         }
     }

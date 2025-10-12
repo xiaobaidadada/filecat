@@ -353,7 +353,20 @@ export function Permission(props:{
                 }}/>
                 {t("ssh密钥保存到磁盘")}
             </div>
-
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.nav_net_tag)}
+                       checked={props.is_selected(UserAuth.nav_net_tag)} onChange={() => {
+                    props.select_auth(UserAuth.nav_net_tag)
+                }}/>
+                {t("网址导航")}
+            </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.all_sys)}
+                       checked={props.is_selected(UserAuth.all_sys)} onChange={() => {
+                    props.select_auth(UserAuth.all_sys)
+                }}/>
+                {t("系统")}
+            </div>
         </div>
     </React.Fragment>)
 }

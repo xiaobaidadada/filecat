@@ -6,7 +6,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../util/store";
 import {routerConfig} from "../../../common/RouterConfig";
 import {useTranslation} from "react-i18next";
-import {use_auth_check} from "../util/store.util";
+import {get_proxy_menuRots, use_auth_check} from "../util/store.util";
 import {UserAuth} from "../../../common/req/user.req";
 import {Overlay} from "../../meta/component/Dashboard";
 
@@ -33,29 +33,39 @@ function Layout() {
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
-    const [custom_fun_opt,set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
-    const [nav_style,set_nav_style] = useRecoilState($stroe.nav_style);
+    const [custom_fun_opt, set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
+    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
     const {check_user_auth} = use_auth_check();
+    const {menuRots} = get_proxy_menuRots()
 
     function logout() {
         localStorage.setItem('token', '')
     }
-    const seconds:NavItem[] = [
-        {icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`},
-        {icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`},
-        {icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`},
-        {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`},
-    ];
-    if(check_user_auth(UserAuth.ddns)) {
+
+    const seconds: NavItem[] = []
+    if (check_user_auth(UserAuth.nav_net_tag)) {
+        seconds.push({icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`})
+    }
+    if (check_user_auth(UserAuth.all_sys)) {
+        seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`})
+    }
+    if (menuRots?.length > 0) {
+        seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`})
+    }
+    // @ts-ignore
+    seconds.push(...[
+        {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`}
+    ])
+    if (check_user_auth(UserAuth.ddns)) {
         seconds.push({icon: "dns", name: "ddns", rto: `${routerConfig.ddns}/`})
     }
-    let three:NavItem[] = [
+    let three: NavItem[] = [
         {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
         {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
         // {component:(<div>测试</div>)}
     ]
-    if(check_user_auth(UserAuth.vir_net)) {
-        three = [{icon: "vpn_lock", name: t("虚拟网络"), rto: `${routerConfig.net}/`},...three];
+    if (check_user_auth(UserAuth.vir_net)) {
+        three = [{icon: "vpn_lock", name: t("虚拟网络"), rto: `${routerConfig.net}/`}, ...three];
     }
     const MainNavList: NavItem[][] = [
         [
@@ -64,18 +74,18 @@ function Layout() {
         seconds,
         three
     ]
-    if(custom_fun_opt) {
+    if (custom_fun_opt) {
         // @ts-ignore
-        MainNavList[MainNavList.length-1].push(custom_fun_opt);
+        MainNavList[MainNavList.length - 1].push(custom_fun_opt);
     }
     const nav_close = () => {
-        set_nav_style({is_mobile:false})
+        set_nav_style({is_mobile: false})
     }
     return (
         <div>
             {/*全局显示*/}
             <Suspense fallback={<div></div>}>
-                <FileLog />
+                <FileLog/>
             </Suspense>
             <Suspense fallback={<div></div>}>
                 <Prompt></Prompt>
@@ -102,15 +112,24 @@ function Layout() {
                 {/*文件*/}
                 <FileList/>
                 {/*网站 索引*/}
-                <NavIndex/>
+                {check_user_auth(UserAuth.nav_net_tag) &&
+                    <Suspense fallback={<div></div>}>
+                        <NavIndex/>
+                    </Suspense>
+                }
                 {/*系统信息*/}
-                <Suspense fallback={<div></div>}>
-                    <SysInfo/>
-                </Suspense>
+                {check_user_auth(UserAuth.all_sys) &&
+                    <Suspense fallback={<div></div>}>
+                        <SysInfo/>
+                    </Suspense>
+                }
                 {/*代理*/}
-                <Suspense fallback={<div></div>}>
-                    <Proxy />
-                </Suspense>
+                {
+                    menuRots?.length > 0 &&
+                    <Suspense fallback={<div></div>}>
+                        <Proxy menuRots={menuRots}/>
+                    </Suspense>
+                }
                 {/*工具箱*/}
                 <Suspense fallback={<div></div>}>
                     <ToolBox/>

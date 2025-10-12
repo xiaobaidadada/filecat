@@ -30,7 +30,8 @@ export class NavindexController {
     }
 
     @Get()
-    get() {
+    get(@Req()req) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.nav_net_tag);
         let list = DataUtil.get(data_common_key.navindex_key,file_key.navindex_key);
         return Sucess(list || []);
     }

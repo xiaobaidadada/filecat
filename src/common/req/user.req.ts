@@ -74,6 +74,8 @@ export enum UserAuth {
     http_proxy_download_cancel, // 关闭下载
     // customer_api_pre_key, // 自定义api前缀修改 todo 放弃了 下次用 46开始
     sys_env_setting_key, // 全局变量设置 通用设置
+    nav_net_tag   , // 网址导航页面
+    all_sys = 47, // 系统页面
 }
 
 
