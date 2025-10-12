@@ -63,7 +63,7 @@ export class WorkflowProcess {
         ptyshell.on_call = (cmdData) => {
             instance.logger.running_log = cmdData;
             this.job_all_step_out_context += cmdData;
-            if(this.now_step.message == null) this.now_step.message = ""
+            if (this.now_step.message == null) this.now_step.message = ""
             this.now_step.message += cmdData;
             instance.logger.send_all_wss(send_ws_type.new_log);
         }
@@ -85,13 +85,21 @@ export class WorkflowProcess {
         this.pty = ptyshell;
     }
 
-    public run_step(step: step_item):Promise<number> {
+    public run_step(step: step_item): Promise<number> {
         this.now_step = step;
         this.step_start_time = Date.now();
+        let runs: string[]
+        if (step.run) {
+            runs = [step.run]
+        } else if (step.runs) {
+            runs = step.runs
+        }
         return new Promise((resolve, reject) => {
             this.run_exec_resolve = resolve;
             step.run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
-            this.pty.write(`${step.run}\r`); // 这里没有必要使用 await
+            for (const cmd of runs) {
+                this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
+            }
             this.instance.logger.send_all_wss();
         })
     }

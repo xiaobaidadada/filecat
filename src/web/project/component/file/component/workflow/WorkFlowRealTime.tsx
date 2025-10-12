@@ -15,6 +15,7 @@ import {tree_list, workflow_realtime_tree_list} from "../../../../../../common/r
 // import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
 import {NotyFail, NotySucess} from "../../../../util/noty";
+import { get_children_list } from "./workflow.util";
 
 const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))
 
@@ -114,37 +115,7 @@ export default function WorkFlowRealTime(props) {
         }
     }, [])
 
-    const get_children_list = (r_list:tree_list,list?:step_item[],job_list?:job_item[])=>{
-        if(list){
-            for (const item of list??[]){
-                let name;
-                const children:tree_list = [];
-                if(item['use-yml']) {
-                    get_children_list(children,undefined,item.use_job_children_list)
-                    name = `${item['use-yml']}  ;${item.duration??-1}`
-                } else {
-                    name = `${item.run ?? item['run-js']}  ;${item.duration??-1}`
-                }
-                name = <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />${name}</div>
-                r_list.push({
-                    name:name,
-                    children,
-                    extra_data: {
-                        code:item.code,
-                        context:item.message
-                    }
-                })
-            }
-        } else if(job_list) {
-            for (const item of job_list??[]){
-                r_list.push({
-                    name:item.name,
-                    extra_data: {code:item.code,is_job:true,job_data:item}
-                })
-            }
-        }
 
-    }
     const job_click = async (item)=>{
         const steps:step_item[] = item.steps;
         const list:tree_list = [];

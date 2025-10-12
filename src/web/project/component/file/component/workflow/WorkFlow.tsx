@@ -24,7 +24,7 @@ import {tree_list} from "../../../../../../common/req/common.pojo";
 // import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
 import { max_pages } from "../../../../../../common/ValueUtil";
-import {WorkFlowStatus} from "./workflow.util";
+import {get_children_list, WorkFlowStatus} from "./workflow.util";
 
 const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))
 
@@ -146,38 +146,6 @@ export default function WorkFlow(props) {
         // console.log([...fail_list,...successList])
         // console.log(v)
         set_job_list(v.all_jobs)
-
-    }
-    const get_children_list = (r_list:tree_list,list?:step_item[],job_list?:job_item[])=>{
-        if(list){
-            for (const item of list??[]){
-                let name;
-                const children:tree_list = [];
-                if(item['use-yml']) {
-                    get_children_list(children,undefined,item.use_job_children_list)
-                    name = `${item['use-yml']}  ;${item.duration??-1}`
-                } else {
-                    name = `${item.run ?? item["run-js"]}  ;${item.duration??-1}`
-                }
-                name = <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />${name}</div>
-                r_list.push({
-                    name:name,
-                    children,
-                    extra_data: {
-                        code:item.code,
-                        context:item.message
-                    }
-                })
-            }
-        } else if(job_list) {
-            for (const item of job_list??[]){
-                const name =  <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />${item.name}</div>
-                r_list.push({
-                    name:name,
-                    extra_data: {code:item.code,is_job:true,job_data:item}
-                })
-            }
-        }
 
     }
     const job_click = async (item)=>{

@@ -149,17 +149,19 @@ export class work_children {
                 const children: any[] = [];
                 for (const step of it.steps ?? []) {
                     let name = ''
-                    if(step.run) {
+                    if (step.run) {
                         name = step.run
-                    } else  if(step["use-yml"]) {
+                    } else if (step["use-yml"]) {
                         name = step["use-yml"]
-                    } else if(step["run-js"]) {
+                    } else if (step["run-js"]) {
                         name = step["run-js"]
-                    } else if(step["sleep"]) {
+                    } else if (step["sleep"]) {
                         name = `sleep ${step.sleep}`
+                    } else if (step["runs"]) {
+                        name = JSON.stringify(step.runs)
                     }
                     const p = {
-                        name: name ,
+                        name: name,
                         extra_data: {running_type: step.running_type},
                         code: step.code,
                         children: []
@@ -349,7 +351,7 @@ export class work_children {
             if (!job.if) {
                 job_can_run = true;
             } else {
-                job_can_run = workflow_util.run_js(job.if, this.env)
+                job_can_run = await workflow_util.run_js(job.if, this.env)
             }
             if (job_can_run) {
                 workflow_util.handle_job_pre(job, this)
@@ -366,109 +368,80 @@ export class work_children {
                 const start_time = Date.now();
                 const process_runner = new WorkflowProcess(this, job);
                 this.pty_shell_set.add(process_runner.pty);
-                if (job.repl) {
-                    // 交互式支持的格式很少
-                    job.code = await new Promise(async resolve => {
-                        let done_count = job.steps.length
-                        for (let i = 0; i < job.steps.length; i++) {
-                            const step = job.steps[i];
-                            if (step.if) {
-                                if (!workflow_util.run_js(step.if, this.env)) {
-                                    continue;
-                                }
-                            }
-                            step.running_type = running_type.running;
-                            process_runner.run_step(step).then((code) => {
-                                done_count--
-                                step.code = code
-                                if (code !== 0) {
-                                    resolve(code);
-                                } else if (done_count === 0) {
-                                    resolve(1);
-                                }
-                            })
-                        }
-                    })
-                    if (job.code !== 0) {
-                        throw process_runner.job_all_step_out_context
-                    }
-                } else {
-                    // 开始多个命令执行 有前后顺序的
-                    for (let i = 0; i < job.steps.length; i++) {
-                        const step = job.steps[i];
-                        if (step.if) {
-                            if (!workflow_util.run_js(step.if, this.env)) {
-                                this.logger.send_all_wss();
-                                continue;
-                            }
-                        }
-                        step.running_type = running_type.running;
-                        this.logger.send_all_wss();
-                        if (step['sleep']) {
-                            await CommonUtil.sleep(step['sleep']);
-                        }
-                        if (step["run-js"]) {
-                            workflow_util.run_code_js_by_step(step, job, this.env)
-                        } else if (step["use-yml"]) {
-                            // 执行另一个文件
-                            const yaml = this.import_files_map.get(step["use-yml"]);
-                            if (step['with-env']) {
-                                for (const key of Object.keys(step['with-env'])) {
-                                    step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, this.env);
-                                }
-                            }
-                            const worker = new work_children(undefined, this.workflow_dir_path);
-                            await worker.init({
-                                env: step['with-env'],
-                                yaml_data: yaml.yaml_data,
-                                yaml_path: yaml.yaml_path,
-                                filecat_user_name: this.env['filecat_user_name'],
-                                filecat_user_id: this.env['filecat_user_id'],
-                                filecat_user_note: this.env['filecat_user_note'],
-                                workflow_logger: this.logger
-                            });
-                            this.worker_children_use_yml_map.set(step["use-yml"], worker);
-                            const step_start_time = Date.now();
-                            const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
-                            step.use_job_children_list = r.all_jobs
-                            step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
-                            if (r.failed) {
-                                step.code = -1;
-                                this.logger.send_all_wss();
-                                throw ""
-                            }
-                            step.code = 0;
+
+                // 开始多个命令执行 有前后顺序的
+                for (let i = 0; i < job.steps.length; i++) {
+                    const step = job.steps[i];
+                    if (step.if) {
+                        if (!await workflow_util.run_js(step.if, this.env)) {
                             this.logger.send_all_wss();
-                        } else if(step.run) {
-                            // 执行普通的 run
-                            step.code = await process_runner.run_step(step)
-                            if (step.code !== 0) {
-                                // 终止后面的行为
-                                throw step.message
-                            }
-                        } else {
-                            // 只执行了sleep
-                            step.code = 0;
-                        }
-                        if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
-                            // 再执行一次
-                            i--;
-                            await CommonUtil.sleep(100);
                             continue;
                         }
-                        this.logger.send_all_wss();
                     }
+                    step.running_type = running_type.running;
+                    this.logger.send_all_wss();
+                    if (step['sleep']) {
+                        await CommonUtil.sleep(step['sleep']);
+                    }
+                    if (step["run-js"]) {
+                        await workflow_util.run_code_js_by_step(step, job, this.env)
+                    } else if (step["use-yml"]) {
+                        // 执行另一个文件
+                        const yaml = this.import_files_map.get(step["use-yml"]);
+                        if (step['with-env']) {
+                            for (const key of Object.keys(step['with-env'])) {
+                                step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, this.env);
+                            }
+                        }
+                        const worker = new work_children(undefined, this.workflow_dir_path);
+                        await worker.init({
+                            env: step['with-env'],
+                            yaml_data: yaml.yaml_data,
+                            yaml_path: yaml.yaml_path,
+                            filecat_user_name: this.env['filecat_user_name'],
+                            filecat_user_id: this.env['filecat_user_id'],
+                            filecat_user_note: this.env['filecat_user_note'],
+                            workflow_logger: this.logger
+                        });
+                        this.worker_children_use_yml_map.set(step["use-yml"], worker);
+                        const step_start_time = Date.now();
+                        const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
+                        step.use_job_children_list = r.all_jobs
+                        step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
+                        if (r.failed) {
+                            step.code = -1;
+                            this.logger.send_all_wss();
+                            throw ""
+                        }
+                        step.code = 0;
+                        this.logger.send_all_wss();
+                    } else if (step.run !=null || step.runs!= null) {
+                        // 执行普通的 run
+                        step.code = await process_runner.run_step(step)
+                        if (step.code !== 0) {
+                            // 终止后面的行为
+                            throw step.message
+                        }
+                    } else {
+                        // 只执行了sleep
+                        step.code = 0;
+                    }
+                    if (step["while"] != null && this.running_type === running_type.running && await workflow_util.run_js(step["while"], this.env)) {
+                        // 再执行一次
+                        i--;
+                        await CommonUtil.sleep(100);
+                        continue;
+                    }
+                    this.logger.send_all_wss();
                 }
+
                 // step 全部处理完了
                 this.pty_shell_set.delete(process_runner.pty);
-                if (job.repl) {
-                    job.message = process_runner.job_all_step_out_context;
-                }
                 job.duration = `${((Date.now() - start_time) / 1000).toFixed(2)} s`;
             } else {
                 job.duration = `0 s`;
             }
-            if (job.while != null && this.running_type === running_type.running && workflow_util.run_js(job.while, this.env)) {
+            if (job.while != null && this.running_type === running_type.running && await workflow_util.run_js(job.while, this.env)) {
                 // 再执行一次自己
                 workflow_util.reset_all_step_status(job)
                 await CommonUtil.sleep(100);

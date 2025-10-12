@@ -31,7 +31,6 @@ jobs:
     if: 1==1 # 判断这个job要不要执行
     cwd: E:\test # 需要一个实际的执行目录 默认是当前的yml所在目录 目录内的文件清理需要自己使用命令操作 必须是绝对路径
     name: 第一阶段执行
-    repl: false # 交互式运行 当上一个step 运行没有结束 有输出的时候 就执行下一个 step 默认是 false 必须要自己设置好流程 避免出现一直等待 那么只能手动关闭了，使用repl 无法使用 use-yml if process_exit 等特殊 指令，只支持很少的而语法，比如If
     # need-jobs: [build-job2] # 需要别的job先完成 只能是本文件内的
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
@@ -51,6 +50,7 @@ jobs:
     steps:
       - if: 1==2 # 判断这个step要不要执行
         run: ls # run run-js use-yml 这三个只能执行一个, run-js
+        runs: [sudo node a.js,dsijie33s] # 多个命令同时被输出，可以用于像sudo这样需要下一次输入密码的情况
       - sleep: 1000 # 随眠一秒继续执行
       - run: node a.js
         out-env: info # 可选的，执行后将输出（多次会覆盖）的值输出到这个env中，暂时不支持ls cd pwd 等pty-shell的内建命令输出,debug开发可能会有多余输出

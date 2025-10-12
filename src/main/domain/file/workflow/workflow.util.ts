@@ -19,14 +19,17 @@ const sandbox = {
 export class workflow_util {
 
     // 不管结果
-    public static run_js(js_code: string, filecat_env: any) {
+    public static async run_js(js_code: string, filecat_env: any) {
         js_code = Mustache.render(js_code, filecat_env ?? {});
         const sandbox_context = vm.createContext({
             ...sandbox,
             "filecat_env": filecat_env
         }); // 创建沙箱上下文
         try {
-            vm.runInContext(js_code, sandbox_context)
+            const result = vm.runInContext(js_code, sandbox_context)
+            if (result && typeof result.then === 'function') {
+                await result;
+            }
             return true
         } catch (e) {
             console.log(e)
@@ -35,14 +38,17 @@ export class workflow_util {
     }
 
     // 保存结果
-    public static run_and_get_code(js_code: string, filecat_env: any) {
+    public static async run_and_get_code(js_code: string, filecat_env: any) {
         js_code = Mustache.render(js_code, filecat_env ?? {});
         const sandbox_context = vm.createContext({
             ...sandbox,
             "filecat_env": filecat_env
         }); // 创建沙箱上下文
         try {
-            vm.runInContext(js_code, sandbox_context)
+            const result = vm.runInContext(js_code, sandbox_context)
+            if (result && typeof result.then === 'function') {
+                await result;
+            }
             return {
                 r: true,
                 js_code
@@ -58,9 +64,9 @@ export class workflow_util {
     }
 
     // 执行Js
-    public static run_code_js_by_step(step: step_item, job: job_item, env) {
+    public static async run_code_js_by_step(step: step_item, job: job_item, env) {
         const step_start_time = Date.now();
-        const code_r = workflow_util.run_and_get_code(step['run-js'], env)
+        const code_r = await workflow_util.run_and_get_code(step['run-js'], env)
         step['run-js'] = code_r.js_code
         step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
         if (code_r.r) {
@@ -99,7 +105,7 @@ export class workflow_util {
     }
 
 
-    public static reset_all_step_status(job:job_item) {
+    public static reset_all_step_status(job: job_item) {
         for (const step of job.steps) {
             delete step.code
             delete step.running_type

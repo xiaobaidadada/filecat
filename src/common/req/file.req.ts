@@ -53,10 +53,12 @@ export enum running_type {
 }
 
 export interface step_item {
-    // 这四个命令只能执行一个
+    // 这几个命令只能执行一个
     run: string; // 运行命令
     'use-yml': string; // 运行其它配置文件中的元素
     "run-js"?: string; // 纯执行js代码，可以操作环境变量
+    runs?: string[] // 多个cmd命令一起直接被执行
+
     sleep?:number;
 
     "with-env": any; // use 使用的环境变量 覆盖对方的环境变量
@@ -82,7 +84,7 @@ export interface job_item {
     name: string;
     "need-jobs": string []| undefined;
     steps: step_item[];
-    repl?: boolean;
+    // repl?: boolean;
 
     // 额外字段
     // fail_message?: string;
