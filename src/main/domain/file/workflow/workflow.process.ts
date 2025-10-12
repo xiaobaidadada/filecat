@@ -95,9 +95,14 @@ export class WorkflowProcess {
             runs = step.runs
         }
         return new Promise((resolve, reject) => {
+            if(!runs) {
+                resolve(-1)
+                this.instance.logger.running_log = 'not run or runs'
+                return
+            }
             this.run_exec_resolve = resolve;
-            step.run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
-            for (const cmd of runs) {
+            for (let cmd of runs) {
+                cmd = Mustache.render(`${cmd ?? ""}`, this.instance.env);
                 this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
             }
             this.instance.logger.send_all_wss();
