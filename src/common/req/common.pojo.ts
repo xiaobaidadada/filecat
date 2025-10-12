@@ -11,6 +11,7 @@ export interface tree_item<T=any> {
     name: string;
     children?: tree_item<T>[];
     extra_data?:T; // 额外的字段数据
+    code?:number;
 }
 
 export type tree_list = tree_item[];

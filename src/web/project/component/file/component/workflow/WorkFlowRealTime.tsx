@@ -33,13 +33,15 @@ export default function WorkFlowRealTime(props) {
     const [step_tree_list, set_step_tree_list] = useState([] as workflow_realtime_tree_list);
 
     const render_list = (list:workflow_realtime_tree_list)=>{
+        // console.log(list)
         for(const item of list){
-            if(item?.extra_data?.running_type === running_type.success){
-                item.name = <div><StatusCircle success={true} />{item.name}</div>
-            } else if(item?.extra_data?.running_type === running_type.fail) {
-                item.name = <div><StatusCircle success={false} />{item.name}</div>
-            } else if(item?.extra_data?.running_type === running_type.running) {
+            if(item.code == null && item?.extra_data?.running_type === running_type.running) {
+                // 正在运行中
                 item.name = <div><StatusCircle running={true} />{item.name}</div>
+            } else if(item.code === 0) {
+                item.name = <div><StatusCircle success={true} />{item.name}</div>
+            } else if(item.code < 1){
+                item.name = <div><StatusCircle success={false} />{item.name}</div>
             } else {
                 // 没有任何状态 还没开始 不展示子数据
                 delete item.children
@@ -63,6 +65,7 @@ export default function WorkFlowRealTime(props) {
             // }
             if(data.context.list && data.context.list.length > 0) {
                 const list = data.context.list as workflow_realtime_tree_list;
+                // console.log(list)
                 render_list(list)
                 set_step_tree_list(list);
             }
@@ -128,7 +131,7 @@ export default function WorkFlowRealTime(props) {
                     children,
                     extra_data: {
                         code:item.code,
-                        context:item.success_message ?? item.fail_message
+                        context:item.message
                     }
                 })
             }

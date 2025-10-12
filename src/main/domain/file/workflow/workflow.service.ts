@@ -31,6 +31,9 @@ import {formatter_time} from "../../../../common/ValueUtil";
 import vm from "node:vm";
 import {FileUtil} from "../FileUtil";
 import {SystemUtil} from "../../sys/sys.utl";
+import {workflow_util} from "./workflow.util";
+import {WorkflowProcess} from "./workflow.process";
+import {CommonUtil} from "../../../../common/common.util";
 
 const needle = require('needle');
 
@@ -38,71 +41,71 @@ const readYamlFile = require('read-yaml-file')
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 const Mustache = require('mustache');
 
-const frozenEnv = Object.freeze({...process.env});
-const sandbox = {
-    needle: needle, // needle http 请求工具
-    fetch,
-    sys_env: frozenEnv
-    // fs: fs,
-    // path: path,
-};
 
-
-interface import_files_item {
+export interface import_files_item {
     yaml_data: any;
     yaml_path: string;
 }
 
-enum send_ws_type {
+export enum send_ws_type {
     done,// 结束
     new_log, // 最新日志
 }
 
-class workflow_util {
+export class workflow_logger {
 
-    public static run_js(js_code: string, filecat_env: any) {
-        js_code = Mustache.render(js_code, filecat_env ?? {});
-        const sandbox_context = vm.createContext({
-            ...sandbox,
-            "filecat_env": filecat_env
-        }); // 创建沙箱上下文
-        try {
-            return vm.runInContext(js_code, sandbox_context)
-        } catch (e) {
-            console.log(e)
-            return false;
+    wss_call_set: Set<Wss> = new Set<Wss>();
+    instance: work_children // 一直是最外层
+    running_log: string
+
+    constructor(instance: work_children) {
+        this.instance = instance;
+    }
+
+    send_wss(type?: send_ws_type, ...wss: Wss[]) {
+        const r_list: workflow_realtime_tree_list = [];
+        if (type !== send_ws_type.new_log) {
+            work_children.get_workflow_realtime_tree_list(r_list, this.instance);
+        }
+        for (const w of wss) {
+            const result = new WsData<SysPojo>(CmdType.workflow_realtime_one_rsq);
+            result.context = {
+                done: type === undefined ? undefined : type === send_ws_type.done,
+                list: r_list,
+                new_log: this.running_log
+            };
+            w.sendData(result.encode());
         }
     }
 
-    public static run_and_get_code(js_code: string, filecat_env: any) {
-        js_code = Mustache.render(js_code, filecat_env ?? {});
-        const sandbox_context = vm.createContext({
-            ...sandbox,
-            "filecat_env": filecat_env
-        }); // 创建沙箱上下文
-        try {
-            return {
-                r: vm.runInContext(js_code, sandbox_context),
-                js_code
-            }
-        } catch (e) {
-            console.log(e)
-            return {
-                r: false,
-                js_code
-            }
+    // 应该使用最外层的实例，这样才能每次显示全部的结构
+    send_all_wss(type?: send_ws_type) {
+        if (this.wss_call_set) {
+            this.send_wss(type, ...this.wss_call_set.values());
+        }
+    }
+
+    add_wss(wss: Wss) {
+        if (!this.wss_call_set.has(wss)) {
+            this.wss_call_set.add(wss);
+        }
+        this.send_wss(undefined, wss);
+    }
+
+
+    remove_wss(wss: Wss) {
+        if (!this.wss_call_set) {
+            this.wss_call_set.delete(wss);
         }
     }
 }
 
-class work_children {
+export class work_children {
 
     // 临时变量 在一个job内执行step的时候 step都是有顺序的执行
     running_type: running_type = running_type.running;
-    running_log: string; // 当前最新的日志输出
-    running_step: step_item; // 当前最新的step
 
-    wss_call_set: Set<Wss>;
+    logger: workflow_logger // 保证深层结构依然调用的同一个打印对象
 
     filename;
     // not_log = false;
@@ -118,7 +121,7 @@ class work_children {
 
 
     done_jobs = new Set<string>();
-    need_job_map: Map<string, Set<string>> = new Map(); // 对方的key 自己的key job['need-job'],job.key value是某个Job被依赖(need-job指向它)的集合
+    need_job_set: Set<job_item> = new Set<job_item>(); // 对方的key 自己的key job['need-job'],job.key value是某个Job被依赖(need-job指向它)的集合
 
     all_job_resolve;
 
@@ -131,6 +134,7 @@ class work_children {
         if (workflow_dir_path) {
             this.workflow_dir_path = workflow_dir_path;
         }
+        this.logger = new workflow_logger(this)
     }
 
     public static get_workflow_realtime_tree_list(r_list: workflow_realtime_tree_list, worker: work_children) {
@@ -138,14 +142,26 @@ class work_children {
             const v = {
                 name: it.name,
                 extra_data: {running_type: it.running_type},
+                code: it.code,
                 children: []
             };
             if (it.steps) {
                 const children: any[] = [];
                 for (const step of it.steps ?? []) {
+                    let name = ''
+                    if(step.run) {
+                        name = step.run
+                    } else  if(step["use-yml"]) {
+                        name = step["use-yml"]
+                    } else if(step["run-js"]) {
+                        name = step["run-js"]
+                    } else if(step["sleep"]) {
+                        name = `sleep ${step.sleep}`
+                    }
                     const p = {
-                        name: step.run ?? step["use-yml"],
+                        name: name ,
                         extra_data: {running_type: step.running_type},
+                        code: step.code,
                         children: []
                     }
                     const children_worker = worker.worker_children_use_yml_map.get(step['use-yml']);
@@ -160,44 +176,6 @@ class work_children {
         }
     }
 
-    send_wss(type?: send_ws_type, ...wss: Wss[]) {
-        const r_list: workflow_realtime_tree_list = [];
-        if (type !== send_ws_type.new_log) {
-            work_children.get_workflow_realtime_tree_list(r_list, this);
-        }
-        for (const w of wss) {
-            const result = new WsData<SysPojo>(CmdType.workflow_realtime_one_rsq);
-            result.context = {
-                done: type === undefined ? undefined : type === send_ws_type.done,
-                list: r_list,
-                new_log: this.running_log
-            };
-            w.sendData(result.encode());
-        }
-    }
-
-    send_all_wss(type?: send_ws_type) {
-        if (this.wss_call_set) {
-            this.send_wss(type, ...this.wss_call_set.values());
-        }
-    }
-
-    add_wss(wss: Wss) {
-        if (!this.wss_call_set) {
-            this.wss_call_set = new Set();
-        }
-        if (!this.wss_call_set.has(wss)) {
-            this.wss_call_set.add(wss);
-        }
-        this.send_wss(undefined, wss);
-    }
-
-
-    remove_wss(wss: Wss) {
-        if (!this.wss_call_set) {
-            this.wss_call_set.delete(wss);
-        }
-    }
 
     public async init(param?: {
         env?: any,
@@ -207,14 +185,14 @@ class work_children {
         filecat_user_id?: string,
         filecat_user_name?: string,
         filecat_user_note?: string,
-        wss_call_set?: Set<Wss>,
+        workflow_logger?: any,// 打印全部的结构
         pre_env?: any
     }) {
         if (param?.yaml_path) {
             this.yaml_path = param.yaml_path;
         }
-        if (param?.wss_call_set) {
-            this.wss_call_set = param.wss_call_set;
+        if (param?.workflow_logger) {
+            this.logger = param.workflow_logger;
         }
         this.filename = path.basename(this.yaml_path);
         const yaml_data = param?.yaml_data ?? await readYamlFile(this.yaml_path);
@@ -237,8 +215,8 @@ class work_children {
             throw "user not exists";
         }
         this.user_id = user_id;
-        if(param?.yaml_path)
-        userService.check_user_path_by_user_id(this.user_id, param?.yaml_path);
+        if (param?.yaml_path)
+            userService.check_user_path_by_user_id(this.user_id, param?.yaml_path);
         userService.check_user_auth_by_user_id(this.user_id, UserAuth.workflow_exe_user, {
             auto_throw: true,
             root_check: true
@@ -298,7 +276,7 @@ class work_children {
             }
         }
         // file-env 处理
-        if(yaml_data['file-env']) {
+        if (yaml_data['file-env']) {
             for (const key of Object.keys(yaml_data['file-env'])) {
                 let p1 = yaml_data['file-env'][key];
                 if (!path.isAbsolute(p1)) {
@@ -311,56 +289,42 @@ class work_children {
         return this;
     }
 
+    // 运行jobs return_steps 不要保存数据而是返回成功失败
     public async run_jobs(return_steps = false) {
         const start_time = Date.now();
         await new Promise(resolve => {
             this.all_job_resolve = resolve;
             const v_List = [...this.jobs_map.values()]
-            for (let i=0; i<v_List.length; i++) {
+            for (let i = 0; i < v_List.length; i++) {
                 const job = v_List[i];
                 // 并行执行多个job
-                this.run_job(job).then((e) => {
-                    if(job.while != null && workflow_util.run_js(job.while,this.env)) {
-                        // 再执行一次
-                        i--;
-                    }
-                }).catch(e => {
-                    console.error(e);
-                    job.running_type = running_type.fail;
-                    job.fail_message = JSON.stringify(e);
-                    job.code = 1;
-                    resolve(-1);
-                });
+                this.run_job(job).then(() => {
+                })
             }
         })
         // console.log('全部执行完成')
-        const success_list = [];
-        const fail_list = [];
+        const all_jobs = []
+        let failed = false;
         for (const it of this.jobs_map.values()) {
-            if (it.code === 0 || it.code === undefined) {
-                success_list.push(it);
-            } else {
-                fail_list.push(it);
+            all_jobs.push(it)
+            if (it.code !== 0 && it.code !== undefined) {
+                failed = true;
             }
         }
         if (return_steps) {
-            return {success_list: success_list, fail_list};
+            return {all_jobs, failed};
         }
-        if (fail_list.length === 0) {
-            this.send_all_wss(send_ws_type.done);
-        } else {
-            this.send_all_wss();
-        }
-        this.running_type = fail_list.length === 0 ? running_type.success : running_type.fail;
+        this.logger.send_all_wss(failed === true ? send_ws_type.done : undefined);
+        this.running_type = failed === false ? running_type.success : running_type.fail;
         try {
             const base_data_util = new Base_data_util({base_dir: this.workflow_dir_path});
             await base_data_util.init();
             await base_data_util.insert(JSON.stringify({
-                success_list: success_list, fail_list,
+                all_jobs
             }), JSON.stringify({
                 name: this.name,
                 "run-name": this["run-name"],
-                is_success: fail_list.length === 0,
+                is_success: failed === false,
                 timestamp: formatter_time(new Date()),
                 duration: `${((Date.now() - start_time) / 1000).toFixed(2)} s` // s 秒
             }));
@@ -371,33 +335,16 @@ class work_children {
 
     // 完成job 以失败的方式
     private done_fail_job_handle(job: job_item, fail_message: string) {
-        job.running_type = running_type.fail;
-        job.code = 1;
-        this.send_all_wss();
-        job.fail_message = fail_message;
+        job.code = -1;
+        this.logger.send_all_wss();
+        job.message = fail_message;
         this.close();
         this.all_job_resolve("ok"); // 只要有一个失败 全部都失败 不再继续执行了
     }
 
-    private have_need_job_loop(start_job_name: string, job_name: string) {
-        const other_need_me_set = this.need_job_map.get(job_name);
-        if (other_need_me_set) {
-            if (other_need_me_set.has(start_job_name)) return true; // job依赖最开始的job(这个job有依赖循环)
-            for (const name of other_need_me_set) {
-                if (this.have_need_job_loop(start_job_name, name)) {
-                    return true; // 检测是否存在 依赖自己的还依赖别人
-                }
-            }
-        }
-        return false;
-    }
 
     public async run_job(job: job_item) {
         try {
-            if (job["run-js"]) {
-                const code_r = workflow_util.run_and_get_code(job['run-js'], this.env);
-                job['run-js'] = code_r.js_code
-            }
             let job_can_run = false
             if (!job.if) {
                 job_can_run = true;
@@ -405,379 +352,157 @@ class work_children {
                 job_can_run = workflow_util.run_js(job.if, this.env)
             }
             if (job_can_run) {
-                if (job['sys-env']) {
-                    for (const key of Object.keys(job['sys-env'])) {
-                        job['sys-env'][key] = Mustache.render(`${job['sys-env'][key] ?? ""}`, this.env ?? {});
-                    }
-                }
-                if (job.env) {
-                    for (const key of Object.keys(job.env)) {
-                        job.env[key] = Mustache.render(`${job.env[key] ?? ""}`, this.env ?? {});
-                    }
-                }
-                job.cwd = Mustache.render(job.cwd ?? "", {...this.env, ...job.env});
-                // 目录处理判断
-                if (!path.isAbsolute(job.cwd)) {
-                    this.done_fail_job_handle(job, "cwd not absolute")
-                    // 参数错误
-                    return;
-                }
+                workflow_util.handle_job_pre(job, this)
                 // 某些 是否需要其它job执行完成 提前做个map
-                if (job['need-job']) {
-                    if (!this.jobs_map.has(job['need-job'])) {
-                        // 需要的job不存在
-                        this.done_fail_job_handle(job, `job not found ${job['need-job']}`);
-                        return;
-                    }
-                    if (!this.done_jobs.has(job['need-job'])) {
-                        // need没有完成
-                        let set = this.need_job_map.get(job['need-job']);
-                        if (!set) {
-                            set = new Set();
-                            this.need_job_map.set(job['need-job'], set);
-                        }
-                        set.add(job.key);
-                        // this.need_job_map.set(job['need-job'],job.key);
-                        // 检测循环依赖
-                        if (this.have_need_job_loop(job.key, job.key)) {
-                            // 出现了循环依赖
-                            this.done_fail_job_handle(job, "have cyclic need")
-                            return;
-                        }
-                        // need的情况 先不执行
+                if (job['need-jobs']) {
+                    if (!workflow_util.all_jobs_done(job['need-jobs'], this)) {
+                        // 没有全部完成
+                        this.need_job_set.add(job)
                         return;
                     }
                 }
                 //可以开始执行了
                 job.running_type = running_type.running;
-                // 开始执行能执行的多个命令 创建ptyshell
-                let now_step: step_item;
-                let exec_resolve;
-                const run_exec_resolve = (code, message?: string) => {
-                    now_step.code = code;
-                    if (code === 0) {
-                        now_step.success_message = message ?? out_context;
-                        job.code = 0;
-                    } else {
-                        job.code = code; // 任务整体也失败
-                        now_step.fail_message = message ?? out_context;
-                    }
-                    out_context = "";
-                    if (exec_resolve) {
-                        exec_resolve(code);
-                        exec_resolve = undefined;
-                    }
-                }
-                let out_context = "";
-                userService.check_user_path_by_user_id(this.user_id, job.cwd);
-                const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
-                const ptyshell = new PtyShell({
-                    cwd: job.cwd,
-                    node_pty: pty,
-                    env: {PATH, ...job['sys-env']},
-                    node_pty_shell_list: settingService.get_pty_cmd(),
-                    check_exe_cmd: (exe_cmd, params) => {
-                        // 命令和路径检查
-                        if (settingService.get_shell_cmd_check()) {
-                            const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
-                            // 开启了自定义的处理
-                            if (selfHandler) {
-                                const ok = selfHandler.handler("", exe_cmd, params); // token 只能空了
-                                if (ok !== exec_type.continue) {
-                                    return ok;
-                                }
-                                // 继续接下来的判断
-                            }
-                        }
-                        if (!userService.check_user_cmd_by_id(this.user_id, exe_cmd, false)) {
-                            // 检测命令能不能执行
-                            return exec_type.not;
-                        }
-                        // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
-                        if (exe_cmd === 'cd') {
-                            // cd 需要检测一下目录
-                            if (userService.check_user_path_by_user_id(this.user_id, path.isAbsolute(params[0]) ? params[0] : path.join(ptyshell.cwd, params[0]))) {
-                                return exec_type.auto_child_process;
-                            }
-                        }
-                        return exec_type.auto_child_process;
-                    }
-                });
-                this.pty_shell_set.add(ptyshell);
-                // if (!this.not_log) {
-                    ptyshell.on_call = (cmdData) => {
-                        this.running_log = cmdData;
-                        out_context += cmdData;
-                        this.send_all_wss(send_ws_type.new_log);
-                    }
-                    ptyshell.on_call_child_raw = (data): any  => {
-                        if (this.running_step?.["out-env"] != null && this.env != null) {
-                            this.env[this.running_step["out-env"]] = data.toString();
-                        }
-                    }
-                    // ptyshell.set_on_call((cmdData) => {
-                    //     this.running_log = cmdData;
-                    //     this.send_all_wss(send_ws_type.new_log);
-                    //     out_context += cmdData;
-                    // })
-                // }
-                // ptyshell.on_child_kill((code) => {
-                //     // 任何命令结束都有的
-                //     run_exec_resolve(code);
-                // })
-                ptyshell.on_child_kill = (code, pid) => {
-                    run_exec_resolve(code);
-                    if (pid !== undefined) {
-                        SystemUtil.killProcess(pid);
-                    }
-                }
                 const start_time = Date.now();
-
+                const process_runner = new WorkflowProcess(this, job);
+                this.pty_shell_set.add(process_runner.pty);
                 if (job.repl) {
-                    try {
-                        job.code = await new Promise(async resolve => {
-                            exec_resolve = resolve;
-                            if (job.steps) {
-
-                                for (let i = 0; i < job.steps.length; i++) {
-                                    const step = job.steps[i];
-                                    const step_satrt_time = Date.now();
-                                    if (step["run-js"]) {
-                                        const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
-                                        step['run-js'] = code_r.js_code
-                                        step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                                        if (code_r.r) {
-                                            step.running_type = running_type.success;
-                                        } else {
-                                            step.running_type = running_type.fail;
-                                            resolve(-1)
-                                            continue
-                                        }
-                                    }
-                                    if (step.if) {
-                                        if (!workflow_util.run_js(step.if, this.env)) {
-                                            step.running_type = running_type.not;
-                                            continue;
-                                        }
-                                    }
-                                    if (!now_step) {
-                                        now_step = step; // 交互式的给第一个可以执行命令
-                                    }
-                                    step.running_type = running_type.running;
-                                    if(step.run) {
-                                        step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                                        this.running_step = step;
-                                        await ptyshell.write(`${step.run}\r`);
-                                    }
-                                    step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                                    if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
-                                        // 再执行一次
-                                        i--;
-                                    }
+                    // 交互式支持的格式很少
+                    job.code = await new Promise(async resolve => {
+                        let done_count = job.steps.length
+                        for (let i = 0; i < job.steps.length; i++) {
+                            const step = job.steps[i];
+                            if (step.if) {
+                                if (!workflow_util.run_js(step.if, this.env)) {
+                                    continue;
                                 }
-                            } else {
-                                exec_resolve(1);
                             }
-
-                        })
-                        for (const step of job.steps ?? []) { // 都完成
-                            if (step.running_type === running_type.not) {
-                                continue;
-                            }
-                            step.running_type = running_type.success;
-                            step.code = 0;
+                            step.running_type = running_type.running;
+                            process_runner.run_step(step).then((code) => {
+                                done_count--
+                                step.code = code
+                                if (code !== 0) {
+                                    resolve(code);
+                                } else if (done_count === 0) {
+                                    resolve(1);
+                                }
+                            })
                         }
-                    } catch (error) {
-                        for (const step of job.steps ?? []) { // 都完成
-                            step.running_type = running_type.fail;
-                            step.code = 1;
-                        }
+                    })
+                    if (job.code !== 0) {
+                        throw process_runner.job_all_step_out_context
                     }
-
                 } else {
                     // 开始多个命令执行 有前后顺序的
                     for (let i = 0; i < job.steps.length; i++) {
                         const step = job.steps[i];
-
-                        // @ts-ignore
-                        if (job.running_type === running_type.fail) {
-                            break;
-                        }
-                        const step_satrt_time = Date.now();
-                        if (step["run-js"]) {
-                            const code_r = workflow_util.run_and_get_code(step['run-js'], this.env)
-                            step['run-js'] = code_r.js_code
-                            step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                            if (code_r.r) {
-                                step.running_type = running_type.success;
-                                step.code = 0;
-                                job.code = 0;
-                            } else {
-                                step.running_type = running_type.fail;
-                                step.code = -1;
-                                job.code = -1;
-                            }
-                            continue
-                        }
                         if (step.if) {
                             if (!workflow_util.run_js(step.if, this.env)) {
-                                step.running_type = running_type.not;
-                                this.send_all_wss();
+                                this.logger.send_all_wss();
                                 continue;
                             }
                         }
                         step.running_type = running_type.running;
-                        this.send_all_wss();
-                        if (step["use-yml"]) {
+                        this.logger.send_all_wss();
+                        if (step['sleep']) {
+                            await CommonUtil.sleep(step['sleep']);
+                        }
+                        if (step["run-js"]) {
+                            workflow_util.run_code_js_by_step(step, job, this.env)
+                        } else if (step["use-yml"]) {
                             // 执行另一个文件
                             const yaml = this.import_files_map.get(step["use-yml"]);
-                            if (yaml) {
-                                if (step['with-env']) {
-                                    for (const key of Object.keys(step['with-env'])) {
-                                        step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, {...this.env, ...job.env});
-                                    }
+                            if (step['with-env']) {
+                                for (const key of Object.keys(step['with-env'])) {
+                                    step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, this.env);
                                 }
-                                const worker = new work_children(undefined, this.workflow_dir_path);
-                                await worker.init({
-                                    env: step['with-env'],
-                                    yaml_data: yaml.yaml_data,
-                                    yaml_path: yaml.yaml_path,
-                                    filecat_user_name: this.env['filecat_user_name'],
-                                    filecat_user_id: this.env['filecat_user_id'],
-                                    filecat_user_note: this.env['filecat_user_note'],
-                                    wss_call_set: this.wss_call_set
-                                });
-                                this.worker_children_use_yml_map.set(step["use-yml"], worker);
-                                let success_list, fail_list;
-                                try {
-                                    const v = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
-                                    success_list = v.success_list;
-                                    fail_list = v.fail_list;
-                                } catch (e) {
-                                    step.running_type = running_type.fail;
-                                    this.worker_children_use_yml_map.delete(step["use-yml"]);
-                                    throw e;
-                                }
-                                this.worker_children_use_yml_map.delete(step["use-yml"]);
-                                step.use_job_children_list = [...success_list, ...fail_list]
-                                step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                                this.send_all_wss();
-                                if (fail_list.length !== 0) {
-                                    job.code = -1;
-                                    step.code = -1;
-                                    step.running_type = running_type.fail;
-                                    this.done_fail_job_handle(job, "fail");
-                                    break;
-                                }
-                                step.running_type = running_type.success;
-                                step.code = 0;
-                                continue;
                             }
-                            step.running_type = running_type.fail;
-                            this.send_all_wss();
-                            step.code = -1;
-                            step.fail_message = `not have yaml use name ${step['use-yml']}`;
-                            job.code = -1;
-                            this.done_fail_job_handle(job, "fail");
-                            break; // 剩下的也不需要执行了
+                            const worker = new work_children(undefined, this.workflow_dir_path);
+                            await worker.init({
+                                env: step['with-env'],
+                                yaml_data: yaml.yaml_data,
+                                yaml_path: yaml.yaml_path,
+                                filecat_user_name: this.env['filecat_user_name'],
+                                filecat_user_id: this.env['filecat_user_id'],
+                                filecat_user_note: this.env['filecat_user_note'],
+                                workflow_logger: this.logger
+                            });
+                            this.worker_children_use_yml_map.set(step["use-yml"], worker);
+                            const step_start_time = Date.now();
+                            const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
+                            step.use_job_children_list = r.all_jobs
+                            step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
+                            if (r.failed) {
+                                step.code = -1;
+                                this.logger.send_all_wss();
+                                throw ""
+                            }
+                            step.code = 0;
+                            this.logger.send_all_wss();
+                        } else if(step.run) {
+                            // 执行普通的 run
+                            step.code = await process_runner.run_step(step)
+                            if (step.code !== 0) {
+                                // 终止后面的行为
+                                throw step.message
+                            }
+                        } else {
+                            // 只执行了sleep
+                            step.code = 0;
                         }
-                        // 普通的执行
-                        now_step = step;
-                        // 等待执行完执行下一条
-                        const code = await new Promise(resolve => {
-                            if(step.run) {
-                                exec_resolve = resolve;
-                                step.run = Mustache.render(`${step.run ?? ""}`, {...this.env, ...job.env});
-                                this.running_step = step;
-                                ptyshell.write(`${step.run}\r`); // 这里没有必要使用 await
-                                this.send_all_wss();
-                            } else {
-                                resolve(1)
-                            }
-                        })
                         if (step["while"] != null && workflow_util.run_js(step["while"], this.env)) {
                             // 再执行一次
                             i--;
+                            await CommonUtil.sleep(100);
                             continue;
                         }
-                        step.duration = `${((Date.now() - step_satrt_time) / 1000).toFixed(2)} s`;
-                        step.code = code as number;
-                        step.running_type = running_type.success;
-                        if (code !== 0) {
-                            step.running_type = running_type.fail;
-                            // 终止后面的行为
-                            this.send_all_wss();
-                            break;
-                        }
-                        this.send_all_wss();
+                        this.logger.send_all_wss();
                     }
-
                 }
-                this.pty_shell_set.delete(ptyshell);
+                // step 全部处理完了
+                this.pty_shell_set.delete(process_runner.pty);
                 if (job.repl) {
-                    if (job.code === 0) {
-                        job.success_message = out_context;
-                    } else {
-                        job.fail_message = out_context;
-                    }
+                    job.message = process_runner.job_all_step_out_context;
                 }
                 job.duration = `${((Date.now() - start_time) / 1000).toFixed(2)} s`;
             } else {
                 job.duration = `0 s`;
-                job.running_type = running_type.not;
             }
-
-            // 标记自己完成 有step 失败了 整体还是会完成
+            if (job.while != null && this.running_type === running_type.running && workflow_util.run_js(job.while, this.env)) {
+                // 再执行一次自己
+                workflow_util.reset_all_step_status(job)
+                await CommonUtil.sleep(100);
+                this.run_job(job);
+                console.log('run again job')
+                return
+            }
+            // 标记自己完成
+            job.code = 0
             this.done_jobs.add(job.key);
-            // 推送进度
-            if (job.code !== undefined) {
-                if (job.code === 0) {
-                    job.running_type = running_type.success;
-                } else {
-                    job.running_type = running_type.fail;
+            this.logger.send_all_wss();
+            if (this.need_job_set.size) {
+                // 判断need中是否有可以执行的了
+                const v_List = [...this.need_job_set]
+                for (let i = 0; i < v_List.length; i++) {
+                    const job = v_List[i];
+                    this.need_job_set.delete(job);
+                    this.run_job(job).catch(e => {
+                        throw e;
+                    }).then(() => {
+                    })
                 }
             }
-            this.send_all_wss();
-            if (job.running_type === running_type.fail) {
+            if (this.done_jobs.size === this.jobs_map.size) {
                 this.all_job_resolve("ok");
-            } else {
-                // 判断need中是否有可以执行的了
-                const job_set = this.need_job_map.get(job.key);
-                if (job_set) {
-                    if (job_set.has(job.key)) {
-                        // 是自己 循环的情况不会出现
-                        // this.need_job_map.delete(job.key);
-                        job_set.delete(job.key);
-                    } else {
-                        // 需要自己的 不是自己 执行它
-                        const v_List = [...job_set]
-                        for (let i=0;i<v_List.length;i++) {
-                            const it = v_List[i];
-                            const job = this.jobs_map.get(it);
-                            this.run_job(job).catch(e => {
-                                throw e;
-                            }).then(() => {
-                                if(job.while != null && workflow_util.run_js(job.while,this.env)) {
-                                    // 再执行一次
-                                    i--;
-                                }
-                            })
-                            // await this.run_job(this.jobs_map.get(job_key));
-                        }
-                    }
-                }
-                // 判断是否完全完成 如果有循环依赖无法走到这里
-                if (this.done_jobs.size === this.jobs_map.size) {
-                    this.all_job_resolve("ok");
-                }
             }
         } catch (error) {
             console.log('workflows job error ', error)
-            this.done_fail_job_handle(job, JSON.stringify(error));
+            this.done_fail_job_handle(job, typeof error === 'string' ? error : error?.message ?? JSON.stringify(error));
         }
     }
 
     public close() {
+        this.running_type = running_type.fail
         for (const it of this.pty_shell_set) {
             it.close();
         }
@@ -785,6 +510,7 @@ class work_children {
         for (const worker of this.worker_children_use_yml_map.values()) {
             worker.close();
         }
+        this.all_job_resolve("ok")
     }
 }
 
@@ -882,9 +608,9 @@ export class WorkflowService {
         if (!v) {
             return;
         }
-        v.add_wss(data.wss as Wss);
+        v.logger.add_wss(data.wss as Wss);
         (data.wss as Wss).setClose(() => {
-            v.remove_wss(data.wss as Wss);
+            v.logger.remove_wss(data.wss as Wss);
         })
     }
 

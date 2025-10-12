@@ -53,13 +53,16 @@ export enum running_type {
 }
 
 export interface step_item {
+    // 这四个命令只能执行一个
     run: string; // 运行命令
     'use-yml': string; // 运行其它配置文件中的元素
+    "run-js"?: string; // 纯执行js代码，可以操作环境变量
+    sleep?:number;
+
     "with-env": any; // use 使用的环境变量 覆盖对方的环境变量
 
     // 额外字段
-    fail_message?: string;
-    success_message?: string;
+    message?: string;
 
     duration?: string; // 运行时长
     code?: number; // 运行的结果 后面的可能都是空 因为没有执行
@@ -70,7 +73,6 @@ export interface step_item {
     if?: string; // 配合 run
     while?: string; // 是否在执行一次
 
-    "run-js"?: string; // 纯执行js代码，可以操作环境变量
     "out-env"?: string; // run执行后输出的日志保存到这个变量
 }
 
@@ -78,20 +80,19 @@ export interface job_item {
     key: string; // 是job的key属性
     cwd: string;
     name: string;
-    "need-job": string | undefined;
-    "sys-env": any; // 设置系统的token
-    env: any; // 用于设置变量
+    "need-jobs": string []| undefined;
     steps: step_item[];
     repl?: boolean;
 
     // 额外字段
-    fail_message?: string;
-    success_message?: string;
-    code?: number; // 完成的code 整体 要么为0 要么为1
+    // fail_message?: string;
+    // success_message?: string;
+    message?: string;
+    code?: number; // 完成的code
 
     duration?: string; // 运行时长
 
-    running_type?: running_type; // 是否正在运行
+    running_type?: running_type; // 是否正在运行  空是不在运行，有值是正在运行，结果是code
     if?: string; // 执行js代码返回布尔值
 
     "run-js"?: string; // 纯执行js代码，可以操作环境变量

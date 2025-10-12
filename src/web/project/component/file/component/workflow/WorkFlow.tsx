@@ -17,13 +17,14 @@ import CircleChart from "../../../../../meta/component/CircleChart";
 import {Table} from "../../../../../meta/component/Table";
 import {FullScreenDiv} from "../../../../../meta/component/Dashboard";
 import {InputText} from "../../../../../meta/component/Input";
-import {job_item, step_item, WorkflowGetReq, WorkflowGetRsq} from "../../../../../../common/req/file.req";
+import {job_item, running_type, step_item, WorkflowGetReq, WorkflowGetRsq} from "../../../../../../common/req/file.req";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
 import TreeView from "../../../../../meta/component/TreeView";
 import {tree_list} from "../../../../../../common/req/common.pojo";
 // import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
 import { max_pages } from "../../../../../../common/ValueUtil";
+import {WorkFlowStatus} from "./workflow.util";
 
 const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))
 
@@ -59,6 +60,8 @@ export default function WorkFlow(props) {
         const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_get,req);
         if(!data)return;
         const pojo = data.context as WorkflowGetRsq;
+        if(!pojo)return;
+        // console.log(pojo)
         // console.log(pojo.list.map(value => {
         //     // @ts-ignore
         //     return JSON.parse(value.meta)}))
@@ -127,7 +130,6 @@ export default function WorkFlow(props) {
         }
     }, [])
     const task_click = async (item)=>{
-        // console.log(item)
         if(item.is_running) {
             return;
         }
@@ -139,10 +141,11 @@ export default function WorkFlow(props) {
         const pojo = data.context as WorkflowGetRsq;
         // @ts-ignore
         const v = typeof pojo.one_data.data === "string"?JSON.parse(pojo.one_data.data):pojo.one_data.data;
-        const successList:job_item[] = v.success_list;
-        const fail_list:job_item[] = v.fail_list;
+        // const successList:job_item[] = v.all_jobs;
+        // const fail_list:job_item[] = v.fail_list;
         // console.log([...fail_list,...successList])
-        set_job_list([...fail_list,...successList])
+        // console.log(v)
+        set_job_list(v.all_jobs)
 
     }
     const get_children_list = (r_list:tree_list,list?:step_item[],job_list?:job_item[])=>{
@@ -162,7 +165,7 @@ export default function WorkFlow(props) {
                     children,
                     extra_data: {
                         code:item.code,
-                        context:item.success_message ?? item.fail_message
+                        context:item.message
                     }
                 })
             }
@@ -178,6 +181,7 @@ export default function WorkFlow(props) {
 
     }
     const job_click = async (item)=>{
+
         const steps:step_item[] = item.steps;
         const list:tree_list = [];
         get_children_list(list,steps??[])
@@ -320,13 +324,13 @@ export default function WorkFlow(props) {
                             <Table headers={job_headers} rows={job_list.map((item, index) => {
                                 const new_list = [
                                     <p>{item.name}</p>,
-                                    <div><StatusCircle success={item.code === undefined?undefined:item.code === 0} />{item.code ===0?t("成功"):t('失败')}</div>,
+                                    <WorkFlowStatus item={item}/>,
                                     <TextTip>{String(item.cwd)}</TextTip>,
                                     <span>{item.duration}</span>,
                                     <div>
                                         <ActionButton icon={"details"} title={t("详情")} onClick={() => {job_click(item)}}/>
-                                        {(!!item.success_message || !!item.fail_message) && <ActionButton icon={"print"} title={t("日志")} onClick={() => {
-                                            print(item.success_message??item.fail_message)
+                                        {(!!item.message) && <ActionButton icon={"print"} title={t("日志")} onClick={() => {
+                                            print(item.message)
                                         }}/>}
                                     </div>,
                                 ];
