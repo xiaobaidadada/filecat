@@ -87,6 +87,7 @@ export interface job_item {
     steps: step_item[];
     // repl?: boolean;
 
+    env:any
     // 额外字段
     // fail_message?: string;
     // success_message?: string;

@@ -27,10 +27,19 @@ export class WorkflowProcess {
     constructor(instance: work_children, job: job_item) {
         this.instance = instance;
         const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
+        let env ;
+        if(job.env) {
+            env = {}
+            for (const key of Object.keys(job.env)) {
+                env[key] = Mustache.render(`${job.env[key] ?? ""}`, instance.env);
+            }
+        } else {
+            env = instance.env
+        }
         const ptyshell = new PtyShell({
             cwd: job.cwd,
             node_pty: pty,
-            env: {PATH, ...instance.env},
+            env: {PATH, ...env},
             node_pty_shell_list: settingService.get_pty_cmd(),
             check_exe_cmd: (exe_cmd, params) => {
                 // 命令和路径检查

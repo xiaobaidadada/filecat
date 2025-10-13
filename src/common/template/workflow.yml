@@ -46,6 +46,8 @@ jobs:
   build-job2:
     cwd: E:\test2
     name: 第二阶段
+    env: # 默认传全部，如果有这个传这个
+      a: { { 1 } }
     # while:  2 > 1 #是否再执行一次
     steps:
       - if: 1==2 # 判断这个step要不要执行
