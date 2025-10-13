@@ -46,6 +46,7 @@ jobs:
   build-job2:
     cwd: E:\test2
     name: 第二阶段
+    include-env: true # 开启了就会使用外部的env
     env: # 默认传全部，如果有这个传这个
       a: { { 1 } }
     # while:  2 > 1 #是否再执行一次

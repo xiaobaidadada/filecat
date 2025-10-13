@@ -88,6 +88,7 @@ export interface job_item {
     // repl?: boolean;
 
     env:any
+    "exclude-env"?: boolean; // 是否排除外部的env引入进来，默认不排除直接引入
     // 额外字段
     // fail_message?: string;
     // success_message?: string;

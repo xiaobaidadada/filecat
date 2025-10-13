@@ -10,6 +10,7 @@ import {userService} from "../../user/user.service";
 import path from "path";
 import {SystemUtil} from "../../sys/sys.utl";
 import {job_item, step_item} from "../../../../common/req/file.req";
+
 const Mustache = require('mustache');
 
 
@@ -27,14 +28,11 @@ export class WorkflowProcess {
     constructor(instance: work_children, job: job_item) {
         this.instance = instance;
         const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
-        let env ;
-        if(job.env) {
-            env = {}
+        const env = job['exclude-env'] ? {} : instance.env;
+        if (job.env) {
             for (const key of Object.keys(job.env)) {
                 env[key] = Mustache.render(`${job.env[key] ?? ""}`, instance.env);
             }
-        } else {
-            env = instance.env
         }
         const ptyshell = new PtyShell({
             cwd: job.cwd,
@@ -99,16 +97,16 @@ export class WorkflowProcess {
         this.step_start_time = Date.now();
         let runs: string[]
         if (step.run) {
-            step.run = Mustache.render(`${step.run  ?? ""}`, this.instance.env);
+            step.run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
             runs = [step.run]
         } else if (step.runs) {
             for (let i = 0; i < step.runs.length; i++) {
-               step.runs[i] = Mustache.render(`${step.runs[i]  ?? ""}`, this.instance.env);
+                step.runs[i] = Mustache.render(`${step.runs[i] ?? ""}`, this.instance.env);
             }
             runs = step.runs
         }
         return new Promise((resolve, reject) => {
-            if(!runs) {
+            if (!runs) {
                 resolve(-1)
                 this.instance.logger.running_log = 'not run or runs'
                 return
