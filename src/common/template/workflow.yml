@@ -54,6 +54,8 @@ jobs:
       - if: 1==2 # 判断这个step要不要执行
         run: ls # run run-js use-yml 这三个只能执行一个, run-js
         runs: [sudo node a.js,dsijie33s] # 多个命令同时被输出，可以用于像sudo这样需要下一次输入密码的情况
+        then-log: 'ok' # 输出打印一些东西
+        then-log-file: 'ok' # 输出打印一些东西到某个文件 也是需要then-log
       - sleep: 1000 # 随眠一秒继续执行
       - run: node a.js
         out-env: info # 可选的，执行后将输出（多次会覆盖）的值输出到这个env中，暂时不支持ls cd pwd 等pty-shell的内建命令输出,debug开发可能会有多余输出

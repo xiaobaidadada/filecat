@@ -306,7 +306,7 @@ export class work_children {
                 failed = true;
             }
         }
-        this.close( failed? running_type.fail: running_type.success)
+        this.close(failed ? running_type.fail : running_type.success)
         if (return_steps) {
             return {all_jobs, failed};
         }
@@ -410,7 +410,7 @@ export class work_children {
                             }
                             step.code = 0;
                             this.logger.send_all_wss();
-                        } else if (step.run !=null || step.runs!= null) {
+                        } else if (step.run != null || step.runs != null) {
                             // 执行普通的 run
                             step.code = await process_runner.run_step(step)
                             if (step.code !== 0) {
@@ -422,10 +422,28 @@ export class work_children {
                             step.code = 0;
                         }
                     } catch (e) {
-                        if(step['catch-js'] != null && await workflow_util.run_js(step['catch-js'], this.env)) {
+                        if (step['catch-js'] != null && await workflow_util.run_js(step['catch-js'], this.env)) {
                             // 不做任何处理继续执行
                         } else {
                             throw e
+                        }
+                    }
+                    if (step['then-log']) {
+                        const log = Mustache.render(`${step['then-log'] ?? ""}`, this.env);
+                        this.logger.running_log = log
+                        if (!step.message) {
+                            step.message = ''
+                        }
+                        step.message += log
+                        this.logger.send_all_wss()
+                        if (step['then-log-file']) {
+                            const p = step['then-log-file']
+                            let p1 = p
+                            if (!path.isAbsolute(p)) {
+                                p1 = path.join(path.dirname(this.yaml_path), p);
+                            }
+                            userService.check_user_path_by_user_id(this.user_id, p1);
+                            await FileUtil.writeFileSync(p1, log);
                         }
                     }
                     if (step["while"] != null && this.running_type === running_type.running && await workflow_util.run_js(step["while"], this.env)) {
@@ -471,7 +489,7 @@ export class work_children {
                 this.all_job_resolve("ok");
             }
         } catch (error) {
-            if(job['catch-js'] != null && await workflow_util.run_js(job['catch-js'], this.env)) {
+            if (job['catch-js'] != null && await workflow_util.run_js(job['catch-js'], this.env)) {
                 // 不做任何处理继续执行
             } else {
                 console.log('workflows job error ', error)

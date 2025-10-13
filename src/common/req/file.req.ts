@@ -60,11 +60,10 @@ export interface step_item {
     runs?: string[] // 多个cmd命令一起直接被执行
 
     "catch-js"?: string;
-    sleep?:number;
+    sleep?: number;
 
     "with-env": any; // use 使用的环境变量 覆盖对方的环境变量
 
-    // 额外字段
     message?: string;
 
     duration?: string; // 运行时长
@@ -77,17 +76,20 @@ export interface step_item {
     while?: string; // 是否在执行一次
 
     "out-env"?: string; // run执行后输出的日志保存到这个变量
+
+    "then-log-file"?: string; // 输出一些内容到这个文件
+    "then-log"?: string;
 }
 
 export interface job_item {
     key: string; // 是job的key属性
     cwd: string;
     name: string;
-    "need-jobs": string []| undefined;
+    "need-jobs": string [] | undefined;
     steps: step_item[];
     // repl?: boolean;
 
-    env:any
+    env: any
     "exclude-env"?: boolean; // 是否排除外部的env引入进来，默认不排除直接引入
     // 额外字段
     // fail_message?: string;
