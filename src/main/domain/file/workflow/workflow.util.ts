@@ -4,9 +4,9 @@ import vm from "node:vm";
 import path from "path";
 import {work_children} from "./workflow.service";
 import {userService} from "../../user/user.service";
-import {CommonUtil} from "../../../../common/common.util";
-
 const Mustache = require('mustache');
+
+
 const frozenEnv = Object.freeze({...process.env});
 const sandbox = {
     needle: needle, // needle http 请求工具

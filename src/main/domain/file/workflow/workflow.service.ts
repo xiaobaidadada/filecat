@@ -2,9 +2,9 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {
     job_item,
     running_type,
-    step_item,
     work_flow_record,
-    workflow_dir_name, workflow_pre_input,
+    workflow_dir_name,
+    workflow_pre_input,
     WorkflowGetReq,
     WorkflowGetRsq,
     WorkFlowRealTimeOneReq,
@@ -16,29 +16,22 @@ import {
 import {Wss} from "../../../../common/frame/ws.server";
 import {settingService} from "../../setting/setting.service";
 import path from "path";
-import fs from "fs";
 import fse from 'fs-extra'
 import {userService} from "../../user/user.service";
-import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
+import {PtyShell} from "pty-shell";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {data_common_key, data_dir_tem_name} from "../../data/data_type";
-import {SysEnum, UserAuth} from "../../../../common/req/user.req";
-import {sysType} from "../../shell/shell.service";
+import {UserAuth} from "../../../../common/req/user.req";
 import {Base_data_util} from "../../data/basedata/base_data_util";
 import {removeTrailingPath} from "../../../../common/StringUtil";
 import {workflow_realtime_tree_list} from "../../../../common/req/common.pojo";
 import {formatter_time} from "../../../../common/ValueUtil";
-import vm from "node:vm";
 import {FileUtil} from "../FileUtil";
-import {SystemUtil} from "../../sys/sys.utl";
 import {workflow_util} from "./workflow.util";
 import {WorkflowProcess} from "./workflow.process";
 import {CommonUtil} from "../../../../common/common.util";
 
-const needle = require('needle');
 
 const readYamlFile = require('read-yaml-file')
-const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 const Mustache = require('mustache');
 
 
@@ -313,6 +306,7 @@ export class work_children {
                 failed = true;
             }
         }
+        this.close( failed? running_type.fail: running_type.success)
         if (return_steps) {
             return {all_jobs, failed};
         }
@@ -383,48 +377,56 @@ export class work_children {
                     if (step['sleep']) {
                         await CommonUtil.sleep(step['sleep']);
                     }
-                    if (step["run-js"]) {
-                        await workflow_util.run_code_js_by_step(step, job, this.env)
-                    } else if (step["use-yml"]) {
-                        // 执行另一个文件
-                        const yaml = this.import_files_map.get(step["use-yml"]);
-                        if (step['with-env']) {
-                            for (const key of Object.keys(step['with-env'])) {
-                                step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, this.env);
+                    try {
+                        if (step["run-js"]) {
+                            await workflow_util.run_code_js_by_step(step, job, this.env)
+                        } else if (step["use-yml"]) {
+                            // 执行另一个文件
+                            const yaml = this.import_files_map.get(step["use-yml"]);
+                            if (step['with-env']) {
+                                for (const key of Object.keys(step['with-env'])) {
+                                    step['with-env'][key] = Mustache.render(`${step['with-env'][key] ?? ""}`, this.env);
+                                }
                             }
-                        }
-                        const worker = new work_children(undefined, this.workflow_dir_path);
-                        await worker.init({
-                            env: step['with-env'],
-                            yaml_data: yaml.yaml_data,
-                            yaml_path: yaml.yaml_path,
-                            filecat_user_name: this.env['filecat_user_name'],
-                            filecat_user_id: this.env['filecat_user_id'],
-                            filecat_user_note: this.env['filecat_user_note'],
-                            workflow_logger: this.logger
-                        });
-                        this.worker_children_use_yml_map.set(step["use-yml"], worker);
-                        const step_start_time = Date.now();
-                        const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
-                        step.use_job_children_list = r.all_jobs
-                        step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
-                        if (r.failed) {
-                            step.code = -1;
+                            const worker = new work_children(undefined, this.workflow_dir_path);
+                            await worker.init({
+                                env: step['with-env'],
+                                yaml_data: yaml.yaml_data,
+                                yaml_path: yaml.yaml_path,
+                                filecat_user_name: this.env['filecat_user_name'],
+                                filecat_user_id: this.env['filecat_user_id'],
+                                filecat_user_note: this.env['filecat_user_note'],
+                                workflow_logger: this.logger
+                            });
+                            this.worker_children_use_yml_map.set(step["use-yml"], worker);
+                            const step_start_time = Date.now();
+                            const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
+                            step.use_job_children_list = r.all_jobs
+                            step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
+                            if (r.failed) {
+                                step.code = -1;
+                                this.logger.send_all_wss();
+                                throw ""
+                            }
+                            step.code = 0;
                             this.logger.send_all_wss();
-                            throw ""
+                        } else if (step.run !=null || step.runs!= null) {
+                            // 执行普通的 run
+                            step.code = await process_runner.run_step(step)
+                            if (step.code !== 0) {
+                                // 终止后面的行为
+                                throw step.message
+                            }
+                        } else {
+                            // 只执行了sleep
+                            step.code = 0;
                         }
-                        step.code = 0;
-                        this.logger.send_all_wss();
-                    } else if (step.run !=null || step.runs!= null) {
-                        // 执行普通的 run
-                        step.code = await process_runner.run_step(step)
-                        if (step.code !== 0) {
-                            // 终止后面的行为
-                            throw step.message
+                    } catch (e) {
+                        if(step['catch-js'] != null && await workflow_util.run_js(step['catch-js'], this.env)) {
+                            // 不做任何处理继续执行
+                        } else {
+                            throw e
                         }
-                    } else {
-                        // 只执行了sleep
-                        step.code = 0;
                     }
                     if (step["while"] != null && this.running_type === running_type.running && await workflow_util.run_js(step["while"], this.env)) {
                         // 再执行一次
@@ -469,19 +471,23 @@ export class work_children {
                 this.all_job_resolve("ok");
             }
         } catch (error) {
-            console.log('workflows job error ', error)
-            this.done_fail_job_handle(job, typeof error === 'string' ? error : error?.message ?? JSON.stringify(error));
+            if(job['catch-js'] != null && await workflow_util.run_js(job['catch-js'], this.env)) {
+                // 不做任何处理继续执行
+            } else {
+                console.log('workflows job error ', error)
+                this.done_fail_job_handle(job, typeof error === 'string' ? error : error?.message ?? JSON.stringify(error));
+            }
         }
     }
 
-    public close() {
-        this.running_type = running_type.fail
+    public close(type?: running_type) {
+        this.running_type = type ?? running_type.fail
         for (const it of this.pty_shell_set) {
             it.close();
         }
         // 可以递归的关闭所有的 worker
         for (const worker of this.worker_children_use_yml_map.values()) {
-            worker.close();
+            worker.close(type);
         }
         this.all_job_resolve("ok")
     }

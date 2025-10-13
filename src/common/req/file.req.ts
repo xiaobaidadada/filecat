@@ -59,6 +59,7 @@ export interface step_item {
     "run-js"?: string; // 纯执行js代码，可以操作环境变量
     runs?: string[] // 多个cmd命令一起直接被执行
 
+    "catch-js"?: string;
     sleep?:number;
 
     "with-env": any; // use 使用的环境变量 覆盖对方的环境变量
@@ -99,6 +100,7 @@ export interface job_item {
 
     "run-js"?: string; // 纯执行js代码，可以操作环境变量
     while?: string; // 是否在执行一次
+    "catch-js"?: string;
 }
 
 // 目录下所有正在执行的任务实时输出

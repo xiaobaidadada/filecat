@@ -10,7 +10,7 @@ import {userService} from "../../user/user.service";
 import path from "path";
 import {SystemUtil} from "../../sys/sys.utl";
 import {job_item, step_item} from "../../../../common/req/file.req";
-import Mustache from "mustache/mustache.mjs";
+const Mustache = require('mustache');
 
 
 export class WorkflowProcess {
