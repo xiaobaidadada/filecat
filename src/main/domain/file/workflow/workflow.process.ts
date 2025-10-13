@@ -99,8 +99,12 @@ export class WorkflowProcess {
         this.step_start_time = Date.now();
         let runs: string[]
         if (step.run) {
+            step.run = Mustache.render(`${step.run  ?? ""}`, this.instance.env);
             runs = [step.run]
         } else if (step.runs) {
+            for (let i = 0; i < step.runs.length; i++) {
+               step.runs[i] = Mustache.render(`${step.runs[i]  ?? ""}`, this.instance.env);
+            }
             runs = step.runs
         }
         return new Promise((resolve, reject) => {
@@ -111,7 +115,6 @@ export class WorkflowProcess {
             }
             this.run_exec_resolve = resolve;
             for (let cmd of runs) {
-                cmd = Mustache.render(`${cmd ?? ""}`, this.instance.env);
                 this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
             }
             this.instance.logger.send_all_wss();
