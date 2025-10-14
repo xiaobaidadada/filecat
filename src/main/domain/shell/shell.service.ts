@@ -160,6 +160,7 @@ export class ShellService {
                         })) {
                             process.send('restart'); // 告诉主进程重启我
                         }
+                        return exec_type.continue
                     }
                     return exec_type.not // 如果不是watch模式下，不允许执行
             }

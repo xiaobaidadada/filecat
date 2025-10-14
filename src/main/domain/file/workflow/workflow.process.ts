@@ -83,17 +83,21 @@ export class WorkflowProcess {
             }
             runs = step.runs
         }
-        return new Promise((resolve, reject) => {
-            if (!runs) {
-                resolve(-1)
-                this.instance.logger.running_log = 'not run or runs'
-                return
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!runs) {
+                    resolve(-1)
+                    this.instance.logger.running_log = 'not run or runs'
+                    return
+                }
+                this.run_exec_resolve = resolve;
+                for (let cmd of runs) {
+                    await this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
+                }
+                this.instance.logger.send_all_wss();
+            } catch (e) {
+                reject(e)
             }
-            this.run_exec_resolve = resolve;
-            for (let cmd of runs) {
-                this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
-            }
-            this.instance.logger.send_all_wss();
         })
     }
 

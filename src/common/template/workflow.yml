@@ -51,7 +51,7 @@ jobs:
       a: { { 1 } }
     # while:  2 > 1 #是否再执行一次
     steps:
-      - if: 1==2 # 判断这个step要不要执行
+      - if: 1==2 # 判断这个step要不要执行 if while 属于判断的都是需要throw 抛出异常才是结束
         run: ls # run run-js use-yml 这三个只能执行一个, run-js
         runs: [sudo node a.js,dsijie33s] # 多个命令同时被输出，可以用于像sudo这样需要下一次输入密码的情况
         then-log: 'ok' # 输出打印一些东西
