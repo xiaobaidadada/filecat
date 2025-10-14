@@ -45,12 +45,14 @@ export class workflow_util {
             "filecat_env": filecat_env
         }); // 创建沙箱上下文
         try {
+            let r;
             const result = vm.runInContext(js_code, sandbox_context)
             if (result && typeof result.then === 'function') {
-                await result;
+                r = !!(await result);
             }
+            const r = !!result;
             return {
-                r: true,
+                r,
                 js_code
             }
         } catch (e) {
