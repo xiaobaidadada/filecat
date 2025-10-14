@@ -1,5 +1,5 @@
 import {send_ws_type, work_children} from "./workflow.service";
-import {sysType} from "../../shell/shell.service";
+import {shellServiceImpl, sysType} from "../../shell/shell.service";
 import {SysEnum} from "../../../../common/req/user.req";
 import {settingService} from "../../setting/setting.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
@@ -10,6 +10,7 @@ import {userService} from "../../user/user.service";
 import path from "path";
 import {SystemUtil} from "../../sys/sys.utl";
 import {job_item, step_item} from "../../../../common/req/file.req";
+import {Wss} from "../../../../common/frame/ws.server";
 
 const Mustache = require('mustache');
 
@@ -38,34 +39,11 @@ export class WorkflowProcess {
             cwd: job.cwd,
             node_pty: pty,
             env: {PATH, ...env},
-            node_pty_shell_list: settingService.get_pty_cmd(),
-            check_exe_cmd: (exe_cmd, params) => {
-                // 命令和路径检查
-                if (settingService.get_shell_cmd_check()) {
-                    const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
-                    // 开启了自定义的处理
-                    if (selfHandler) {
-                        const ok = selfHandler.handler("", exe_cmd, params); // token 只能空了
-                        if (ok !== exec_type.continue) {
-                            return ok;
-                        }
-                        // 继续接下来的判断
-                    }
-                }
-                if (!userService.check_user_cmd_by_id(instance.user_id, exe_cmd, false)) {
-                    // 检测命令能不能执行
-                    return exec_type.not;
-                }
-                // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
-                if (exe_cmd === 'cd') {
-                    // cd 需要检测一下目录
-                    if (userService.check_user_path_by_user_id(instance.user_id, path.isAbsolute(params[0]) ? params[0] : path.join(ptyshell.cwd, params[0]))) {
-                        return exec_type.auto_child_process;
-                    }
-                }
-                return exec_type.auto_child_process;
-            }
+            node_pty_shell_list: settingService.get_pty_cmd()
         });
+        ptyshell.check_exe_cmd = shellServiceImpl.check_exe_cmd({
+            user_id: instance.user_id, ptyShell:ptyshell
+        })
         instance.pty_shell_set.add(ptyshell);
         ptyshell.on_call = (cmdData) => {
             instance.logger.running_log = cmdData;

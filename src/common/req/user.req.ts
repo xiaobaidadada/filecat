@@ -24,6 +24,7 @@ export class UserBaseInfo {
     runing_time_length: any; // 系统运行的时间
     user_data: UserData; // 用户数据
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
+    watch:boolean
 }
 
 
@@ -76,6 +77,7 @@ export enum UserAuth {
     sys_env_setting_key, // 全局变量设置 通用设置
     nav_net_tag   , // 网址导航页面
     all_sys = 47, // 系统页面
+    shell_cmd_filecat_restart, // shell 重启命令
 }
 
 

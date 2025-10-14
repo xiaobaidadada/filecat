@@ -12,7 +12,8 @@ export function Permission(props:{
     select_auth:(auth: UserAuth) => void;
 }) {
     const {t, i18n} = useTranslation();
-    
+    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
+
 
     return (<React.Fragment>
         <h3>{t("功能权限")}</h3>
@@ -367,6 +368,17 @@ export function Permission(props:{
                 }}/>
                 {t("系统")}
             </div>
+
+
+            <h3>{t("pty shell")}</h3>
+            {user_base_info.watch && <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.shell_cmd_filecat_restart)}
+                       checked={props.is_selected(UserAuth.shell_cmd_filecat_restart)} onChange={() => {
+                    props.select_auth(UserAuth.shell_cmd_filecat_restart)
+                }}/>
+                {t("filecat-restart cmd open")}
+            </div>
+            }
         </div>
     </React.Fragment>)
 }

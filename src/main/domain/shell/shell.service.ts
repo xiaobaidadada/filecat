@@ -9,7 +9,7 @@ import {SystemUtil} from "../sys/sys.utl";
 import {Env} from "../../../common/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
-import {SysEnum} from "../../../common/req/user.req";
+import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {userService} from "../user/user.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
@@ -21,7 +21,7 @@ import {FileUtil} from "../file/FileUtil";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
-export let sysType:SysEnum = SysEnum.unknown
+export let sysType: SysEnum = SysEnum.unknown
 if (platform === "win32") {
     sysType = SysEnum.win;
 } else if (platform === "linux") {
@@ -142,6 +142,64 @@ export class ShellService {
         return line;
     }
 
+    check_exe_cmd({
+                      token, ptyShell, user_id
+                  }: {
+        token?: string, ptyShell: PtyShell, user_id?: string
+    }) {
+        return async (exe_cmd, params) => {
+            // 自定义命令
+            switch (exe_cmd) {
+                case "filecat-restart":
+                    // 重启filecat
+                    if (!!Env.watch  && process.send != null) {
+                        if (token != null && userService.check_user_auth(token, UserAuth.shell_cmd_filecat_restart, false)) {
+                            process.send('restart'); // 告诉主进程重启我
+                        } else if (user_id != null && userService.check_user_auth_by_user_id(user_id, UserAuth.shell_cmd_filecat_restart, {
+                            auto_throw: false
+                        })) {
+                            process.send('restart'); // 告诉主进程重启我
+                        }
+                    }
+                    return exec_type.not // 如果不是watch模式下，不允许执行
+            }
+            if (settingService.get_shell_cmd_check()) {
+                const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
+                // 开启了自定义的处理
+                if (selfHandler) {
+                    const ok = selfHandler.handler(token, exe_cmd, params);
+                    if (ok !== exec_type.continue) {
+                        return ok;
+                    }
+                    // 继续接下来的判断
+                }
+            }
+            if (token != null && !userService.check_user_cmd(token, exe_cmd, false)) {
+                // 检测命令能不能执行
+                return exec_type.not;
+            } else if (user_id != null && !userService.check_user_cmd_by_id(user_id, exe_cmd, false)) {
+                // 检测命令能不能执行
+                return exec_type.not;
+            }
+            // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
+            if (exe_cmd === 'cd') {
+                // cd 需要检测一下目录
+                if (token) {
+                    if (userService.check_user_path(token, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
+                        return exec_type.auto_child_process;
+                    }
+                } else if (user_id) {
+                    if (userService.check_user_path_by_user_id(user_id, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
+                        return exec_type.auto_child_process;
+                    }
+                } else {
+                    return exec_type.not;
+                }
+            }
+            return exec_type.auto_child_process;
+        }
+    }
+
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
@@ -177,33 +235,11 @@ export class ShellService {
                     result.context = str;
                     (data.wss as Wss).sendData(result.encode())
                 }
-            },
-            check_exe_cmd: async (exe_cmd, params) => {
-                if (settingService.get_shell_cmd_check()) {
-                    const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
-                    // 开启了自定义的处理
-                    if (selfHandler) {
-                        const ok = selfHandler.handler((data.wss as Wss).token, exe_cmd, params);
-                        if (ok !== exec_type.continue) {
-                            return ok;
-                        }
-                        // 继续接下来的判断
-                    }
-                }
-                if (!userService.check_user_cmd((data.wss as Wss).token, exe_cmd, false)) {
-                    // 检测命令能不能执行
-                    return exec_type.not;
-                }
-                // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
-                if (exe_cmd === 'cd') {
-                    // cd 需要检测一下目录
-                    if (userService.check_user_path((data.wss as Wss).token, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
-                        return exec_type.auto_child_process;
-                    }
-                }
-                return exec_type.auto_child_process;
             }
         });
+        ptyShell.check_exe_cmd = this.check_exe_cmd({
+            token: (data.wss as Wss).token, ptyShell
+        })
         ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测
             let v = word_detection.detection_next_one_word(exe, ".");

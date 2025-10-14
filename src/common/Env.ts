@@ -25,6 +25,8 @@ const help = `
 16. reset_root_password
 17. base_url 路由前缀
 18. lan 语言，只在第一次创建账号的时候生效 目前支持  zh(简体) en
+19. watch 内置参数
+对于shell支持filecat-restart 重启命令
 `;
 
 export class Env {
@@ -37,8 +39,9 @@ export class Env {
     public static env: string = "";
     public static reset_root_username: string;
     public static reset_root_password: string;
-    public static base_url: string ; // 本地 dev的时候这个参数没有用  env.j会生效
+    public static base_url: string; // 本地 dev的时候这个参数没有用  env.j会生效
     public static lan: UserLanguage = "en";
+    public static watch: boolean = false;
 
     public static async parseArgs() {
         return new Promise((resolve, reject) => {
@@ -115,6 +118,8 @@ export class Env {
                         execSync(`sudo systemctl daemon-reload`);
                         console.log("卸载完成")
                         process.exit();
+                    } else if (key === "watch") {
+                        this.watch = true;
                     }
                 }
             }

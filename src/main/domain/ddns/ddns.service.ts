@@ -1,14 +1,14 @@
 import {Ali, DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, getIpType, Tengxun} from "../../../common/req/ddns.pojo";
 import {HttpRequest} from "../../../common/http";
 import {Fail, Sucess} from "../../other/Result";
-import { DataUtil} from "../data/DataUtil";
+import {DataUtil} from "../data/DataUtil";
 import {RCode} from "../../../common/Result.pojo";
 import {getMapByList} from "../../../common/ListUtil";
-import { dnspodService} from "./ddns.dnspod.service";
+import {dnspodService} from "./ddns.dnspod.service";
 import {DdnsPre} from "./ddns.pre";
 import {IResult} from "tldts-core";
-import { tengxunService} from "./ddns.tengxun.service";
-import {aliService,generateAliSignature, alidnsEndpoint} from "./ddns.ali.server";
+import {tengxunService} from "./ddns.tengxun.service";
+import {aliService, generateAliSignature, alidnsEndpoint} from "./ddns.ali.server";
 // const tencentcloud = require("tencentcloud-sdk-nodejs")
 // const txClient = tencentcloud.dnspod.v20210323.Client;
 import {Client as txClient} from "./tx/dnspod_client"
@@ -21,13 +21,14 @@ let ok;
 export class DdnsService extends DdnsPre {
 
     public close_ddns_task() {
-        if(ok) {
+        if (ok) {
             clearInterval(ok);
             ok = undefined;
         }
     }
+
     public ddnsTask() {
-        if(ok) return;
+        if (ok) return;
         ok = setInterval(() => {
             (async () => {
                 const netList = await this.updateAndGetIps();
@@ -46,12 +47,12 @@ export class DdnsService extends DdnsPre {
                 console.log(e)
             })
             // 五分钟分钟检测一次
-        }, 1000*60*10);
+        }, 1000 * 60 * 10);
     }
 
     async getIps(type: string) {
         const list: DdnsIPPojo[] = await this.getNowIps();
-        let key :data_common_key;
+        let key: data_common_key;
         switch (type) {
             case "dnspod":
                 key = data_common_key.ddns_dnspod_key;
@@ -65,8 +66,8 @@ export class DdnsService extends DdnsPre {
         }
         const result = new DdnsConnection();
         const data = await DataUtil.get<DdnsConnection>(key);
-        result.ips = list;
-        if (!!data && !!data.ips && data.ips.length > 0) {
+        result.ips = [...list.map(v=> {return {...v}})];
+        if (data!=null && data.ips?.length > 0) {
             const map = getMapByList(data.ips, (v) => v.ifaceOrWww + v.scopeid);
             for (const ip of result.ips) {
                 const item = map.get(ip.ifaceOrWww + ip.scopeid);

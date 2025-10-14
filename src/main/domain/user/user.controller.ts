@@ -11,6 +11,7 @@ import {settingService} from "../setting/setting.service";
 import {Request} from "express";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Http_controller_router} from "../../../common/req/http_controller_router";
+import { Env } from "../../../common/Env";
 
 interface UserLoginData {
     username:string;
@@ -129,6 +130,7 @@ export class UserController {
         pojo.runing_time_length = this.start_server_time;
         pojo.user_data = userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username);
         pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
+        pojo.watch = Env.watch
         return Sucess(pojo);
     }
 
