@@ -156,7 +156,8 @@ export class ShellService {
                         if (token != null && userService.check_user_auth(token, UserAuth.shell_cmd_filecat_restart, false)) {
                             process.send('restart'); // 告诉主进程重启我
                         } else if (user_id != null && userService.check_user_auth_by_user_id(user_id, UserAuth.shell_cmd_filecat_restart, {
-                            auto_throw: false
+                            auto_throw: false,
+                            root_check: true,
                         })) {
                             process.send('restart'); // 告诉主进程重启我
                         }
