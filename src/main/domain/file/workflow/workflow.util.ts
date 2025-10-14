@@ -26,11 +26,14 @@ export class workflow_util {
             "filecat_env": filecat_env
         }); // 创建沙箱上下文
         try {
+            let r;
             const result = vm.runInContext(js_code, sandbox_context)
             if (result && typeof result.then === 'function') {
-                await result;
-            }
-            return true
+                r = !!(await result);
+            } else {
+            r = !!result;
+               }
+            return r;
         } catch (e) {
             console.log(e)
             return false;
@@ -49,8 +52,9 @@ export class workflow_util {
             const result = vm.runInContext(js_code, sandbox_context)
             if (result && typeof result.then === 'function') {
                 r = !!(await result);
-            }
-            const r = !!result;
+            } else  {
+            r = !!result;
+             }
             return {
                 r,
                 js_code
