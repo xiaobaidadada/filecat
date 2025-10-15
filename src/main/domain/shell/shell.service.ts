@@ -160,10 +160,10 @@ export class ShellService {
                             root_check: true,
                         })) {
                             process.send('restart'); // 告诉主进程重启我
+                        } else {
+                            return exec_type.not // 如果不是watch模式下，不允许执行
                         }
-                        return exec_type.continue
                     }
-                    return exec_type.not // 如果不是watch模式下，不允许执行
             }
             if (settingService.get_shell_cmd_check()) {
                 const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
