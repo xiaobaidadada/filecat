@@ -18,7 +18,7 @@ function startServer() {
         return;
     }
     max --
-    console.log('🚀 启动子进程...');
+    console.log('🚀 启动子进程...', (new Date()).toLocaleString());
 
     if (isDev) {
         // dev 模式下 fork ts 文件，使用 ts-node/register

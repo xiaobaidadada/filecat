@@ -10,6 +10,8 @@ port=5567
 username=admin
 password=admin
 
+watch=true
+
 # 该程序需要一个目录来存放数据，最好是空目录
 # The program requires a directory to store data, preferably an empty directory.
 #work_dir=D:\data 或者 /home

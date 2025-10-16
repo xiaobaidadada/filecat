@@ -186,3 +186,8 @@ async function start() {
 
 start();
 
+
+const log = console.log.bind(console);
+console.log = (...args) => {
+    log((new Date()).toLocaleString(),...args);
+}
