@@ -12,12 +12,16 @@ const isDev = argv.includes('dev');
 const childScript = path.resolve(__dirname, isDev ? 'server.ts' : 'main.js');
 const childArgs = argv.slice(2); // 传递给子进程的参数
 
-let max = 1000
+let last = 0
+let running = false;
 function startServer() {
-    if(max <= 0) {
+    if(running === true && Date.now() - last <= 3000) {
+        // 最少3秒重启一次
+        console.log(`${last} server started`);
         return;
     }
-    max --
+    last = Date.now();
+    running = true;
     console.log('🚀 启动子进程...', (new Date()).toLocaleString());
 
     if (isDev) {
@@ -50,6 +54,7 @@ function startServer() {
 }
 
 function restartServer() {
+    running = false;
     if (child) {
         console.log('♻️ 正在重启子进程...');
         child.kill('SIGTERM'); // 发送信号让子进程优雅退出

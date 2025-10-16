@@ -227,7 +227,11 @@ export function FileMenu() {
                 copyToClipboard(path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())),showPrompt.data.filename))
                 break;
             case common_menu_type.file_copy_ab_path:
-                copyToClipboard(path_join(user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now].path,showPrompt.data.filename))
+                let path = user_base_info.user_data.cwd
+                if(user_base_info.user_data.folder_item_now !== 0) {
+                    path =user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now-1].path
+                }
+                copyToClipboard(path_join(path,showPrompt.data.filename))
                 break;
             case    common_menu_type.sutdio : {
                 set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
