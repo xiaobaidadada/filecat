@@ -21,6 +21,8 @@ import {useNavigate} from "react-router-dom";
 import {ws} from "../../../util/ws";
 import {CmdType} from "../../../../../common/frame/WsData";
 import {PromptEnum} from "../Prompt";
+import {copyToClipboard} from "../../../util/FunUtil";
+import {path_join} from "pty-shell/dist/path_util";
 
 enum common_menu_type {
     stop_workflow = 4,
@@ -44,6 +46,9 @@ enum common_menu_type {
     sutdio = "sutdio",
     folder_size_info = "folder_size_info",
     file_quick_cmd = "file_quick_cmd",
+    file_copy_name = "file_copy_name", // 复制名字
+    file_copy_ab_path = "file_copy_ab_path", // 复制绝对路径
+    file_copy_now_path = "file_copy_now_path", // 复制相对项目的路径
 }
 
 export function FileMenu() {
@@ -51,6 +56,13 @@ export function FileMenu() {
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
+    const file_copy = {
+        r: t("复制名字"), v: common_menu_type.file_copy_name, items:
+            [
+                {r: "复制绝对路径", v: common_menu_type.file_copy_ab_path},
+                {r: "复制当前路径", v: common_menu_type.file_copy_now_path}
+            ]
+    }
     const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
@@ -67,7 +79,8 @@ export function FileMenu() {
                     // {r:"big5",v: common_menu_type.logviwer_big5},
                     // {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
                 ]
-        }
+        },
+        file_copy
     ]
     if (user_base_info.user_data?.file_quick_cmd) {
         for (const it of user_base_info.user_data.file_quick_cmd) {
@@ -98,7 +111,7 @@ export function FileMenu() {
     const items_folder = [{r: t("以studio打开"), v: common_menu_type.sutdio}, {
         r: t("统计信息"),
         v: common_menu_type.folder_size_info
-    }];
+    },file_copy];
     const items_images = [{
         r: t("以图片编辑器打开"),
         v: "open"
@@ -207,6 +220,29 @@ export function FileMenu() {
                     cmd: `${item.extra_value.cmd} ${showPrompt.data.filename} ${item.extra_value.params??""}\r`,
                 })
                 break;
+            case common_menu_type.file_copy_name:
+                copyToClipboard(showPrompt.data.filename)
+                break;
+            case common_menu_type.file_copy_now_path:
+                copyToClipboard(path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())),showPrompt.data.filename))
+                break;
+            case common_menu_type.file_copy_ab_path:
+                copyToClipboard(path_join(user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now].path,showPrompt.data.filename))
+                break;
+            case    common_menu_type.sutdio : {
+                set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
+                close();
+            }
+            break;
+            case common_menu_type.folder_size_info: {
+                ws.addMsg(CmdType.folder_size_info, (data) => {
+                    set_folder_info_list_data([data.context[0], data.context[1]]);
+                })
+                const p = getRouterAfter('file', showPrompt.data.path);
+                ws.sendData(CmdType.folder_size_info, {path: p})
+                setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
+            }
+            break;
         }
     }
     switch (pojo.type) {
@@ -265,19 +301,7 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_folder} click={(v) => {
-                    if (v === common_menu_type.sutdio) {
-                        set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
-                        close();
-                    } else if (v === common_menu_type.folder_size_info) {
-                        ws.addMsg(CmdType.folder_size_info, (data) => {
-                            set_folder_info_list_data([data.context[0], data.context[1]]);
-                        })
-                        const p = getRouterAfter('file', showPrompt.data.path);
-                        ws.sendData(CmdType.folder_size_info, {path: p})
-                        setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
-                    }
-                }}/>}/>
+                                                                          items={items_folder} click={textClick}/>}/>
             </div>
             break;
         case FileTypeEnum.studio_file:
