@@ -4,6 +4,7 @@ import vm from "node:vm";
 import path from "path";
 import {work_children} from "./workflow.service";
 import {userService} from "../../user/user.service";
+
 const Mustache = require('mustache');
 
 
@@ -31,8 +32,8 @@ export class workflow_util {
             if (result && typeof result.then === 'function') {
                 r = !!(await result);
             } else {
-            r = !!result;
-               }
+                r = !!result;
+            }
             return r;
         } catch (e) {
             console.log(e)
@@ -52,9 +53,9 @@ export class workflow_util {
             const result = vm.runInContext(js_code, sandbox_context)
             if (result && typeof result.then === 'function') {
                 r = !!(await result);
-            } else  {
-            r = !!result;
-             }
+            } else {
+                r = !!result;
+            }
             return {
                 r,
                 js_code
@@ -70,12 +71,12 @@ export class workflow_util {
     }
 
     // 执行Js
-    public static async run_code_js_by_step(step: step_item, job: job_item, env) {
+    public static async run_code_js_by_step(step: step_item, job: job_item, env, ignore_return: boolean = false) {
         const step_start_time = Date.now();
         const code_r = await workflow_util.run_and_get_code(step['run-js'], env)
         step['run-js'] = code_r.js_code
         step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
-        if (code_r.r) {
+        if ((code_r.r || ignore_return === true) && code_r.message == null) {
             step.code = 0;
             job.code = 0;
         } else {

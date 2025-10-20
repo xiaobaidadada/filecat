@@ -379,7 +379,7 @@ export class work_children {
                     }
                     try {
                         if (step["run-js"]) {
-                            await workflow_util.run_code_js_by_step(step, job, this.env)
+                            await workflow_util.run_code_js_by_step(step, job, this.env,true)
                         } else if (step["use-yml"]) {
                             // 执行另一个文件
                             const yaml = this.import_files_map.get(step["use-yml"]);
