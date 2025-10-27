@@ -341,7 +341,7 @@ export default function FileList() {
     const baseSwitch = async (v) => {
         setFile_root_path(v);
         await fileHttp.post("base_switch", {root_index: v})
-        await reloadUserInfo();
+        await initUserInfo();
         navigate("/file/");
         setSelectList([])
         setClickList([])

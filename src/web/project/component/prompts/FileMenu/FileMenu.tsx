@@ -10,7 +10,7 @@ import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/compo
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
-import {run_workflow} from "./handle.service";
+import {common_menu_type, run_workflow} from "./handle.service";
 import {fileHttp, userHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {InputText} from "../../../../meta/component/Input";
@@ -23,33 +23,8 @@ import {CmdType} from "../../../../../common/frame/WsData";
 import {PromptEnum} from "../Prompt";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {path_join} from "pty-shell/dist/path_util";
+import {SysEnum} from "../../../../../common/req/user.req";
 
-enum common_menu_type {
-    stop_workflow = 4,
-    real_time_workflow = 5,
-    run_workflow = 3,
-    run_real_time_workflow = "3_1",
-    open_text = 1,
-    run_workflow_by_pre_inputs = 6,
-    logviwer_text = "utf8",
-    logviwer_utf8 = "utf8",
-    logviwer_utf16 = "utf16",
-    logviwer_utf32 = "utf32",
-    logviwer_gbk = "gbk",
-    logviwer_gb2312 = "gb2312",
-    logviwer_gb18030 = "gb18030",
-    // logviwer_usc2 = "usc2",
-    logviwer_windows1252 = "windows1252",
-    // logviwer_big5 = "big5",
-    // logviwer_ios_8859_1 = "ios-8859-1",
-
-    sutdio = "sutdio",
-    folder_size_info = "folder_size_info",
-    file_quick_cmd = "file_quick_cmd",
-    file_copy_name = "file_copy_name", // 复制名字
-    file_copy_ab_path = "file_copy_ab_path", // 复制绝对路径
-    file_copy_now_path = "file_copy_now_path", // 复制相对项目的路径
-}
 
 export function FileMenu() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
@@ -115,7 +90,9 @@ export function FileMenu() {
     const items_images = [{
         r: t("以图片编辑器打开"),
         v: "open"
-    }, {r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`), v: "pre"}];
+    },
+        {r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`), v: "pre"},
+        file_copy];
     const {file_is_running} = use_file_to_running();
 
     const close = () => {
@@ -231,7 +208,12 @@ export function FileMenu() {
                 if(user_base_info.user_data.folder_item_now !== 0) {
                     path =user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now-1].path
                 }
-                const fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
+                let fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
+                if(user_base_info.sys === SysEnum.win) {
+                    fp = fp.replaceAll("/", '\\')
+                } else if(fp.includes("\\")) {
+                    fp = fp.replaceAll("\\", '/')
+                }
                 copyToClipboard(path_join(fp,showPrompt.data.filename))
                 break;
             case    common_menu_type.sutdio : {
@@ -272,7 +254,7 @@ export function FileMenu() {
             div = <div onWheel={() => {
                 close();
             }}>
-                <UnCompress/>
+                <UnCompress list={[file_copy]} click={textClick}/>
             </div>
             break;
         case FileTypeEnum.dev:

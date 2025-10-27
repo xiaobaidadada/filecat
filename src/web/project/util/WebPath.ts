@@ -43,6 +43,23 @@ export function getRouterPrePath(path) {
 export function isNumeric(str) {
     return /^\d+$/.test(str);
 }
+function detectOS() {
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    if (userAgent.includes('windows')) {
+        return 'Windows';
+    } else if (userAgent.includes('macintosh') || userAgent.includes('mac os')) {
+        return 'macOS';
+    } else if (userAgent.includes('linux')) {
+        return 'Linux';
+    } else if (userAgent.includes('android')) {
+        return 'Android';
+    } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+        return 'iOS';
+    } else {
+        return 'Unknown';
+    }
+}
 
 const sys_pre = Global.base_url;
 export function getRouterPath() {

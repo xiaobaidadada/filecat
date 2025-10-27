@@ -12,12 +12,17 @@ import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../.
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
+import {common_menu_type} from "./handle.service";
 
-export function UnCompress(props) {
+export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
     const { t } = useTranslation();
+    const list = [{r:t("解压"),v:common_menu_type.un_compress}]
+    if(props.list) {
+        list.push(...props.list);
+    }
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [items, setItems,] = useState([{r:t("解压"),v:t("解压")}]);
+    const [items, setItems,] = useState(list);
     const [tarDir, setTarDir] = useState(undefined);
     const [is_opt, setIs_opt] = useState(true);
 
@@ -28,8 +33,13 @@ export function UnCompress(props) {
     const close = ()=>{
         setShowPrompt({show: false, type: '', overlay: false,data: {}});
     }
-    const click = async (v)=> {
-        setIs_opt(false);
+    const click = async (v,item)=> {
+        if (common_menu_type.un_compress === v) {
+            setIs_opt(false);
+        } else if(props.click){
+            props.click(v,item)
+        }
+
     }
     const confirm = ()=> {
         const extension = StringUtil.getFileExtension(showPrompt.data.filename) ?? "" as string;

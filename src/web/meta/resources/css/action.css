@@ -390,6 +390,7 @@ body.rtl .breadcrumbs .chevron {
 .credits a:hover {
   color: inherit;
   cursor: pointer;
+  text-decoration: underline;
 }
 
 /* * * * * * * * * * * * * * * *
