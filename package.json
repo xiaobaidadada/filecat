@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.15.5",
+  "version": "5.16.0",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -108,6 +108,7 @@
     "chokidar": "^4.0.3",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.10.0",
+    "dockerode": "^4.0.9",
     "fluent-ffmpeg": "^2.1.3",
     "flv.js": "^1.6.2",
     "fs-extra": "^11.2.0",
