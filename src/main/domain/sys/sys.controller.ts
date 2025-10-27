@@ -55,7 +55,7 @@ export class SysController {
     @Get("/docker/images")
     async get_all_images(@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        return Sucess(await SysDockerServiceImpl.get_all_images());
+        return Sucess( SysDockerServiceImpl.get_all_images());
     }
 
     // 删除容器镜像

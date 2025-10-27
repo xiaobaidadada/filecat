@@ -18,7 +18,6 @@ import {word_detection_js} from "../../../common/word_detection_js";
 import fs from "fs";
 import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
-import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -382,42 +381,11 @@ export class ShellService {
         const socketId = (data.wss as Wss).id;
         const pojo = data.context as ShellInitPojo;
         let dshell = "";
-
-        // 判断容器内可用的 shell
-        if (SysDockerServiceImpl.isUnixLike()) {
-            // Linux / Mac
-            const container = docker.getContainer(pojo.dockerId);
-            try {
-                const inspect = await container.inspect();
-                const shellTest = ["bash", "sh"];
-                for (const sh of shellTest) {
-                    const execInstance = await container.exec({
-                        Cmd: [sh, "-c", "echo ok"],
-                        AttachStdout: true,
-                        AttachStderr: true,
-                    });
-                    const stream = await execInstance.start({ hijack: true, stdin: true });
-                    let output = "";
-                    stream.on("data", (chunk: Buffer) => { output += chunk.toString(); });
-                    await new Promise(res => stream.on("end", res));
-                    if (output.includes("ok")) {
-                        dshell = sh;
-                        break;
-                    }
-                }
-            } catch (err) {
-                dshell = "";
-            }
+        if (SystemUtil.commandIsExist(`docker exec  ${pojo.dockerId} bash`)) {
+            dshell = "bash"
+        } else if (SystemUtil.commandIsExist(`docker exec  ${pojo.dockerId} sh`)) {
+            dshell = "sh"
         } else {
-            // Windows / fallback
-            if (SystemUtil.commandIsExist(`docker exec  ${pojo.dockerId} bash`)) {
-                dshell = "bash";
-            } else if (SystemUtil.commandIsExist(`docker exec  ${pojo.dockerId} sh`)) {
-                dshell = "sh";
-            }
-        }
-
-        if (!dshell) {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = '\x1b[38;2;29;153;243m容器内不存在任何shell\x1b[0m ';
             (data.wss as Wss).sendData(result.encode());
@@ -425,28 +393,28 @@ export class ShellService {
             return;
         }
 
-        // 创建交互式 shell
+        // 创建
         const ptyProcess = pty.spawn(getSys() === SysEnum.win ? "docker.exe" : "docker", ['exec', '-it', pojo.dockerId, dshell], {
             name: 'xterm-color',
             cols: pojo.cols,
             rows: pojo.rows,
             cwd: process.env.HOME,
+            // env: process.env,
             useConpty: process.env.NODE_ENV !== "production" ? false : undefined,
         });
-
+        // const cm = `docker exec -it ${pojo.dockerId} ${dshell} ${cr}`;
+        // ptyProcess.write(cm);
         ptyProcess.onData((cmdData) => {
             const result = new WsData<SysPojo>(CmdType.docker_shell_exec_getting);
             result.context = cmdData;
-            (data.wss as Wss).sendData(result.encode());
-        });
-
-        ptyProcess.onExit(({ exitCode, signal }) => {
+            (data.wss as Wss).sendData(result.encode())
+        })
+        ptyProcess.onExit(({exitCode, signal}) => {
             (data.wss as Wss).ws.close();
+            // ptyProcess.kill(); // 已经被kill
             socketMap.delete(socketId);
-        });
-
+        })
         socketMap.set(socketId, ptyProcess);
-
         (data.wss as Wss).ws.on('close', function close() {
             const pty = socketMap.get(socketId);
             if (pty) {
@@ -455,8 +423,8 @@ export class ShellService {
                 socketMap.delete(socketId);
             }
         });
-    }
 
+    }
 
     async dockerShellExec(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
