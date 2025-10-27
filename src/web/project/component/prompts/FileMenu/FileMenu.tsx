@@ -231,7 +231,8 @@ export function FileMenu() {
                 if(user_base_info.user_data.folder_item_now !== 0) {
                     path =user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now-1].path
                 }
-                copyToClipboard(path_join(path,path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())),showPrompt.data.filename)))
+                const fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
+                copyToClipboard(path_join(fp,showPrompt.data.filename))
                 break;
             case    common_menu_type.sutdio : {
                 set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
