@@ -13,7 +13,7 @@ import {editor_data} from "../../../../util/store.util";
 import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
 import lodash from "lodash";
-import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
+import {ableExtBeautify, FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
@@ -261,10 +261,15 @@ export default function Studio(props) {
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
 
+    function formatCode (){
+        editor_data.get_editor()?.['formatCode']()
+    }
+
     return <div className={"studio"}>
         <Header ignore_tags={true}
                 left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
                     <title key={2}>{edit_filename.name}</title>]}>
+            { ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
         </Header>

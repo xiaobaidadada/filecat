@@ -9,6 +9,7 @@ import {editor_data} from "../../../util/store.util";
 import {NotySucess} from "../../../util/noty";
 import Ace from "./Ace";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {ableExtBeautify} from "../../../../../common/FileMenuType";
 
 // const Ace = React.lazy(() => import("./Ace"));
 
@@ -47,6 +48,9 @@ export default function FileEditor() {
             // navigate(location.pathname);
         }
     }
+    function formatCode (){
+        editor_data.get_editor()?.['formatCode']()
+    }
     const handleKeyDown = (event) => {
         if (event.ctrlKey && event.key === 's') {
             event.preventDefault();
@@ -67,15 +71,14 @@ export default function FileEditor() {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [have_update,editorSetting]);
-
-    const div = <div id="editor-container">
+    return editorSetting.open && (<div id="editor-container">
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
             <title key={2}>{editorSetting.fileName}</title>]}>
             {editorSetting.menu_list && editorSetting.menu_list}
+            { ableExtBeautify(editorSetting.fileName) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             {editorSetting.opt_shell && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
         </Header>
         <Ace name={editorSetting.fileName} model={editorSetting.model} on_change={handleEditorChange} />
-    </div>;
-    return editorSetting.open && div
+    </div>)
 }
