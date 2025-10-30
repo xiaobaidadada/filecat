@@ -11,6 +11,9 @@ import {Wss} from "../../../common/frame/ws.server";
 import {Request, Response} from "express";
 import {data_common_key, file_key} from "../data/data_type";
 import {userService} from "../user/user.service";
+import {NetMsgType, tcpServerMsg} from "./util/NetUtil";
+import {TcpUtil} from "./util/tcp.util";
+import {virtualClientService} from "./virtual/virtual.client.service";
 
 const navindex_net_key_list = data_common_key.navindex_net_key_list;
 
@@ -105,4 +108,29 @@ export class NetController {
         return netService.http_download_cancel(data);
     }
 
+    @Post('/vir/client/tcp_proxy/save')
+    tcp_proxy_save(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        virtualClientService.save_tcp_proxy(req);
+        return Sucess("");
+    }
+
+    @Post('/vir/client/tcp_proxy/get')
+    tcp_proxy_get(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        return Sucess(virtualClientService.get_tcp_proxy());
+    }
+
+    @Post('/http/proxy/get')
+    proxyGet(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        return Sucess(netService.getWindowsProxy());
+    }
+
+    @Post('/http/proxy/set')
+    proxySet(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        netService.setWindowsProxy(req)
+        return Sucess("");
+    }
 }

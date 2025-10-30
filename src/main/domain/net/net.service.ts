@@ -1,4 +1,11 @@
-import {http_body_type, http_download_map, HttpFormData, HttpFormPojo, NetPojo} from "../../../common/req/net.pojo";
+import {
+    http_body_type,
+    http_download_map,
+    HttpFormData,
+    HttpFormPojo,
+    HttpProxy,
+    NetPojo
+} from "../../../common/req/net.pojo";
 import {findAvailablePort} from "../../../common/findPort";
 import {Fail, Sucess} from "../../other/Result";
 import proxy from 'koa-proxies';
@@ -6,7 +13,7 @@ import {Request, Response} from "express";
 import path from "path";
 import fs from "fs";
 import multer from 'multer';
-import { DataUtil} from "../data/DataUtil";
+import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name} from "../data/data_type";
 import {settingService} from "../setting/setting.service";
 import {userService} from "../user/user.service";
@@ -15,6 +22,10 @@ import {FileUtil} from "../file/FileUtil";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
+import {execSync} from "child_process";
+import {node_process_watcher} from "node-process-watcher";
+
+
 
 const needle = require('needle');
 
@@ -171,76 +182,80 @@ export class NetService {
         // limits: { fileSize: 1024 * 1024 * 2 }, // 限制文件大小为 2MB 无限制
     }).any();
 
-    http_download_map = new Map<string,http_download_map & {stream?:any}>();
+    http_download_map = new Map<string, http_download_map & { stream?: any }>();
     http_download_water_wss_map = new Map<string, Wss>();
 
     http_download_water_interval;
     http_download_water_time;
 
-    http_download_water_interval_start(){
-        if(! this.http_download_water_interval && this.http_download_map.size !==0 && this.http_download_water_wss_map.size !== 0) {
+    http_download_water_interval_start() {
+        if (!this.http_download_water_interval && this.http_download_map.size !== 0 && this.http_download_water_wss_map.size !== 0) {
             this.http_download_water_send_all();
             this.http_download_water_time = Date.now();
-            this.http_download_water_interval = setInterval(()=>{
+            this.http_download_water_interval = setInterval(() => {
                 this.http_download_water_send_all();
-                if(this.http_download_water_wss_map.size === 0 || this.http_download_map.size === 0) {
+                if (this.http_download_water_wss_map.size === 0 || this.http_download_map.size === 0) {
                     clearInterval(this.http_download_water_interval);
                     this.http_download_water_interval = undefined
                     return;
                 }
-            },1000)
+            }, 1000)
         }
     }
+
     http_download_water(data: WsData<any>) {
         const wss = data.wss as Wss;
-        if(this.http_download_water_wss_map.has(wss.id)) {
+        if (this.http_download_water_wss_map.has(wss.id)) {
             return;
         }
         this.http_download_water_wss_map.set(wss.id, wss);
-        wss.setClose(()=>{
+        wss.setClose(() => {
             this.http_download_water_wss_map.delete(wss.id);
         })
         this.http_download_water_interval_start();
-        if(!this.http_download_water_time) {
+        if (!this.http_download_water_time) {
             this.http_download_water_time = Date.now();
         }
         const now = Date.now();
         const timeElapsed = (now - this.http_download_water_time) / 1000;  // 时间差（秒）
         this.http_download_water_time = now;
-        return [...this.http_download_map.values()].map(it=>{
-            return this.get_http_download_info(it,timeElapsed)
+        return [...this.http_download_map.values()].map(it => {
+            return this.get_http_download_info(it, timeElapsed)
         });
     }
+
     http_download_cancel(data: WsData<any>) {
         const pojo = this.http_download_map.get(data.context);
-        if(pojo) {
+        if (pojo) {
             this.http_download_map.delete(data.context);
             pojo.stream.destroy(); // 终止请求
             pojo.stream['fileStream'].end();
         }
     }
-    get_http_download_info(it:http_download_map,timeElapsed) {
+
+    get_http_download_info(it: http_download_map, timeElapsed) {
         const speedInKBps = (it.loaded - it.last_loaded) / timeElapsed / (1024 * 1024); // mb 每秒
         it.last_loaded = it.loaded;
         it.seep = speedInKBps.toFixed(2);
-        const progresses = !it.total?0:((it.loaded / it.total) * 100 ).toFixed(2);
+        const progresses = !it.total ? 0 : ((it.loaded / it.total) * 100).toFixed(2);
         it.progresses = progresses;
         return {
-            seep:it.seep,
+            seep: it.seep,
             loaded: it.loaded,
             total: it.total,
             local_download_path: it.local_download_path,
-            progresses:progresses,
+            progresses: progresses,
             filename: it.filename,
         }
     }
+
     http_download_water_send_all() {
         const list = [];
         const now = Date.now();
         const timeElapsed = (now - this.http_download_water_time) / 1000;  // 时间差（秒）
         this.http_download_water_time = now;
         for (const it of this.http_download_map.values()) {
-            list.push(this.get_http_download_info(it,timeElapsed));
+            list.push(this.get_http_download_info(it, timeElapsed));
         }
         const result = new WsData<http_download_map[]>(CmdType.http_download_water);
         result.context = list;
@@ -250,29 +265,29 @@ export class NetService {
         }
     }
 
-    public httpSend(req: Request, res: Response,local_download_path?: string) {
+    public httpSend(req: Request, res: Response, local_download_path?: string) {
         try {
-            if(local_download_path) {
+            if (local_download_path) {
                 local_download_path = path.join(decodeURIComponent(local_download_path));
                 userService.check_user_path(req.headers.authorization, local_download_path)
             }
             const sysPath = path.join(DataUtil.get_tem_path(data_dir_tem_name.http_tempfile));
             req['fileDir'] = sysPath;
             // req['fileName'] = path.basename(sysPath);
-            return new Promise(async (resolve)=>{
+            return new Promise(async (resolve) => {
                 try {
                     let is_dir = false;
-                    if(local_download_path) {
-                        if(!await FileUtil.access(local_download_path)) {
+                    if (local_download_path) {
+                        if (!await FileUtil.access(local_download_path)) {
                             // 不存在 看看 它的父目录是否存在
                             const dir = path.dirname(local_download_path);
-                            if(!await FileUtil.access(dir)) {
+                            if (!await FileUtil.access(dir)) {
                                 // 父目录也不存在
                                 resolve(res.status(200).send(Fail("目录不存在")));
                                 return;
                             }
                             const stats = await FileUtil.statSync(dir);
-                            if(stats.isFile()) {
+                            if (stats.isFile()) {
                                 // 父目录居然不是个目录
                                 resolve(res.status(200).send(Fail("不合法的下载地址")));
                                 return;
@@ -294,14 +309,14 @@ export class NetService {
                                 console.error('Error:', err);
                                 resolve(res.status(200).send(Fail(err.message)));
                             } else {
-                                resolve(res.header('filecat_remote_raw_headers',JSON.stringify(needle_res.headers)).header("filecat_remote_code",needle_res.statusCode).status(200).send(needle_res.raw));
+                                resolve(res.header('filecat_remote_raw_headers', JSON.stringify(needle_res.headers)).header("filecat_remote_code", needle_res.statusCode).status(200).send(needle_res.raw));
                             }
                             try {
-                                if(pojo.form_data_list && pojo.form_data_list.length) {
-                                    for(const item of pojo.form_data_list as HttpFormData[]) {
+                                if (pojo.form_data_list && pojo.form_data_list.length) {
+                                    for (const item of pojo.form_data_list as HttpFormData[]) {
 
-                                        if(item.is_file) {
-                                            await FileUtil.unlinkSync(path.join(sysPath,item.fullPath))
+                                        if (item.is_file) {
+                                            await FileUtil.unlinkSync(path.join(sysPath, item.fullPath))
                                             // fs.unlinkSync(path.join(sysPath,item.fullPath))
                                         }
 
@@ -313,11 +328,11 @@ export class NetService {
                             }
 
                         };
-                        if(local_download_path) {
+                        if (local_download_path) {
                             call = undefined; // 当不提供 call 函数的时候 返回结果就不会留在内存中
                         }
                         const option = {
-                            headers:pojo.headers
+                            headers: pojo.headers
                         };
                         try {
                             // if (pojo.body_type === http_body_type.json) {
@@ -326,7 +341,7 @@ export class NetService {
                             var stream;
                             switch (pojo.method) {
                                 case 'get':
-                                    stream =  needle.get(pojo.url,option, call); // needle("get"...) 就会报错 。。。
+                                    stream = needle.get(pojo.url, option, call); // needle("get"...) 就会报错 。。。
                                     break;
                                 case 'put':
                                 case 'post': {
@@ -337,10 +352,10 @@ export class NetService {
                                         for (const f of req['files'] ?? []) {
                                             files[f['fieldname']] = f;
                                         }
-                                        for(const item of pojo.form_data_list as HttpFormData[]) {
-                                            if(item.is_file) {
+                                        for (const item of pojo.form_data_list as HttpFormData[]) {
+                                            if (item.is_file) {
                                                 form[item.key] = {
-                                                    file:path.join(sysPath,item.fullPath) ,
+                                                    file: path.join(sysPath, item.fullPath),
                                                     filename: item.fileName,
                                                     content_type: files[item.fullPath]?.mimetype
                                                 };
@@ -348,20 +363,20 @@ export class NetService {
                                                 form[item.key] = item.value;
                                             }
                                         }
-                                        stream =   needle[pojo.method](pojo.url,form,option, call);
+                                        stream = needle[pojo.method](pojo.url, form, option, call);
                                     } else {
-                                        stream =  needle[pojo.method](pojo.url,pojo.data,option, call);
+                                        stream = needle[pojo.method](pojo.url, pojo.data, option, call);
                                     }
                                 }
                                     break;
                                 default:
-                                    stream =   needle[pojo.method](pojo.url,pojo.data,option, call);
+                                    stream = needle[pojo.method](pojo.url, pojo.data, option, call);
                                     break;
                             }
-                            if(local_download_path) {
+                            if (local_download_path) {
                                 let new_path = local_download_path;
                                 // const stats = await FileUtil.statSync(local_download_path);
-                                await  new Promise((r)=>{
+                                await new Promise((r) => {
 
                                     stream.on('header', async (statusCode, headers) => {
                                         // console.log('接收到 header 事件：');
@@ -369,13 +384,13 @@ export class NetService {
                                         // console.log('响应头:', headers);
                                         // 名称获取
                                         if (is_dir) {
-                                            const contentDisposition = headers['content-disposition']||headers["contentDisposition"];
+                                            const contentDisposition = headers['content-disposition'] || headers["contentDisposition"];
                                             if (contentDisposition) {
                                                 const match = contentDisposition.match(/filename\*?=["']?(?:UTF-8'')?([^"';]+)/i);
                                                 if (match && match[1]) {
                                                     // console.log('文件名:', decodeURIComponent(match[1]));
-                                                    local_download_path = path.join(local_download_path,decodeURIComponent(match[1]));
-                                                }  else {
+                                                    local_download_path = path.join(local_download_path, decodeURIComponent(match[1]));
+                                                } else {
                                                     local_download_path = path.join(local_download_path, `temp_${generateRandomHash(15)}_${Date.now()}`);
                                                 }
                                             } else {
@@ -387,22 +402,22 @@ export class NetService {
                                         } else {
                                             new_path = local_download_path;
                                         }
-                                        resolve(res.header('filecat_remote_raw_headers',JSON.stringify(headers)).header("filecat_remote_code",statusCode).status(200).send(`文件: ${new_path}  正在下载...`));
+                                        resolve(res.header('filecat_remote_raw_headers', JSON.stringify(headers)).header("filecat_remote_code", statusCode).status(200).send(`文件: ${new_path}  正在下载...`));
                                         // 大小获取
-                                        const contentLength = headers['content-length']||headers['contentLength'];
+                                        const contentLength = headers['content-length'] || headers['contentLength'];
                                         let totalBytes;
-                                        if(contentLength) {
+                                        if (contentLength) {
                                             totalBytes = parseInt(contentLength, 10); // 获取文件总大小
                                         }
                                         const pojo = {
-                                            last_load_time:Date.now(),
-                                            filename:path.basename(new_path),
+                                            last_load_time: Date.now(),
+                                            filename: path.basename(new_path),
                                             local_download_path: new_path,
-                                            total:totalBytes,
-                                            loaded:0,
+                                            total: totalBytes,
+                                            loaded: 0,
                                             last_loaded: 0
                                         }
-                                        this.http_download_map.set(new_path,pojo);
+                                        this.http_download_map.set(new_path, pojo);
                                         r(true);
                                     });
                                 })
@@ -446,6 +461,30 @@ export class NetService {
             res.status(200).send(Fail(e.message));
         }
     }
+
+
+    getWindowsProxy(): HttpProxy {
+       return  node_process_watcher.get_system_proxy() as HttpProxy
+    }
+
+
+    refreshWinInetProxy() {
+        node_process_watcher.refresh_proxy();
+    }
+
+    setWindowsProxy(config: HttpProxy) {
+        try {
+            node_process_watcher.set_system_proxy(config)
+            this.refreshWinInetProxy();
+
+        } catch (err) {
+            console.error("❌ 设置代理失败:", err.message);
+        }
+    }
+
 }
 
 export const netService: NetService = new NetService();
+
+
+// console.log(netService.getWindowsProxy())

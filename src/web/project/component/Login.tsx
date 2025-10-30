@@ -21,6 +21,12 @@ function Login() {
 
     const {t} = useTranslation();
 
+    useEffect(() => {
+        if(localStorage.getItem('token')) {
+            navigate('/file')
+        }
+    }, []);
+
     async function login() {
         const data: UserLogin = {
             username: username,

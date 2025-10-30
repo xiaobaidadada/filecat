@@ -103,18 +103,6 @@ export class VirtualController {
         return Sucess("1");
     }
 
-    @Post('/vir/client/tcp_proxy/save')
-    tcp_proxy_save(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
-        virtualClientService.save_tcp_proxy(req);
-        return Sucess("");
-    }
-
-    @Post('/vir/client/tcp_proxy/get')
-    tcp_proxy_get(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
-        return Sucess(virtualClientService.get_tcp_proxy());
-    }
 
     // 注册ip信息 与鉴权
     @tcpServerMsg(NetMsgType.register)
