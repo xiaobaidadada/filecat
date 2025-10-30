@@ -117,7 +117,7 @@ export function TengXun(props: any) {
                         ipv4s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
                             <InputText
-                                right_placeholder={<div>{item.source_type}{item.source_type ===ip_source_type.http_get && <ActionButton icon={"delete"} title={t("删除")} onClick={()=>{delete_ipv(item)}}/>}</div>}
+                                // right_placeholder={<div>{item.source_type}{item.source_type ===ip_source_type.http_get && <ActionButton icon={"delete"} title={t("删除")} onClick={()=>{delete_ipv(item)}}/>}</div>}
                                 placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
@@ -127,7 +127,7 @@ export function TengXun(props: any) {
                         ipv6s.map((item,index) => {return <div key={index}>
                             {`${item.ifaceOrWww}(${item.ip})`}
                             <InputText
-                                right_placeholder={<div>{item.source_type}{item.source_type ===ip_source_type.http_get && <ActionButton icon={"delete"} title={t("删除")} onClick={()=>{delete_ipv(item)}}/>}</div>}
+                                // right_placeholder={<div>{item.source_type}{item.source_type ===ip_source_type.http_get && <ActionButton icon={"delete"} title={t("删除")} onClick={()=>{delete_ipv(item)}}/>}</div>}
                                 placeholder={"a.abc.com b.abc.com ..."} value={item.ddnsHost} handleInputChange={(d)=>{item.ddnsHost=d}}/>
                         </div>})
                     }
