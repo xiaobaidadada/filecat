@@ -7,7 +7,7 @@ import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
-import {HttpProxy, MacProxy, TcpPorxyITem} from "../../../../common/req/net.pojo";
+import {HttpProxy, HttpServerProxy, MacProxy, TcpPorxyITem} from "../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -21,6 +21,7 @@ export function NetProxy(props) {
     const [ignore_ips, setIgnoredIps] = useState("");
     const [enabled, setEnabled] = useState(false);
     const [useForLocal, setUseForLocal] = useState<boolean>(false);
+    const [httpServer, setHttpServer] = useState<HttpServerProxy>({port: 0, open: false,list:[]});
 
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
 
@@ -31,6 +32,8 @@ export function NetProxy(props) {
 
     const mac_proxy_list_header = [t("port"), t("ip"), t("type"), t("开启")];
     const [mac_proxies, setMacProxies] = useState<MacProxy[]>([]);
+
+    const http_proxy_list_header = [t("目标正则"), t("转换正则"), t("替换内容"), t("changeOrigin"), t("开启"), t("备注"), t("删除")];
 
 
     const win_proxy_init = async () => {
@@ -137,19 +140,19 @@ export function NetProxy(props) {
             target_ip: ""
         } as TcpPorxyITem]);
     }
-    const tcp_onChange = (item, value, index) => {
-        const list = [];
-        for (let i = 0; i < tcp_proxy_list.length; i++) {
-            if (i !== index) {
-                tcp_proxy_list[i].open = false;
-            } else {
-                tcp_proxy_list[i].open = value === "true";
-            }
-            list.push(tcp_proxy_list[i])
-        }
-        // setRows([]);
-        set_tcp_proxy_list(list);
-    }
+    // const tcp_onChange = (item, value, index) => {
+    //     const list = [];
+    //     for (let i = 0; i < tcp_proxy_list.length; i++) {
+    //         if (i !== index) {
+    //             tcp_proxy_list[i].open = false;
+    //         } else {
+    //             tcp_proxy_list[i].open = value === "true";
+    //         }
+    //         list.push(tcp_proxy_list[i])
+    //     }
+    //     // setRows([]);
+    //     set_tcp_proxy_list(list);
+    // }
 
     const mac_onChange = (index1, index2, value) => {
         const list = [...mac_proxies];
@@ -206,7 +209,9 @@ export function NetProxy(props) {
                         className={" div-row "}><h2>{proxy.name}</h2> </span>}
                                                                   titleCom={<div><ActionButton
                                                                       icon={"save"} title={t("保存")}
-                                                                      onClick={()=>{save_proxy_mac(index1)}}/></div>}>
+                                                                      onClick={() => {
+                                                                          save_proxy_mac(index1)
+                                                                      }}/></div>}>
                         <Table headers={mac_proxy_list_header} rows={proxy.proxies.map((item, index) => {
                             const new_list = [
                                 <InputText value={item.port} handleInputChange={(value) => {
@@ -249,7 +254,8 @@ export function NetProxy(props) {
                                 item.target_port = parseInt(value);
                             }} no_border={true}/>,
                             <Select value={item.open} onChange={(value) => {
-                                tcp_onChange(item, value, index);
+                                tcp_proxy_list[index].open = value === "true";
+                                set_tcp_proxy_list([...tcp_proxy_list]);
                             }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                     no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
@@ -262,7 +268,84 @@ export function NetProxy(props) {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
+
+
+                <CardFull self_title={<span className={" div-row "}><h2>{t("Http Proxy Server")}</h2> </span>}
+                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                              httpServer.list.push({
+                                  note: "",
+                                  changeOrigin: false,
+                                  url_regexp: "^http://localhost:888",
+                                  rewrite_target: "http://baidu.com",
+                                  rewrite_regexp_source: "^http://localhost:888/api",
+                                  open: false,
+                              })
+                              setHttpServer({...httpServer})
+                          }}/><ActionButton
+                              icon={"save"} title={t("保存")} onClick={save_outside_software}/></div>}>
+                    <Table headers={http_proxy_list_header} rows={httpServer.list.map((item, index) => {
+                        const new_list = [
+                            <InputText value={item.url_regexp} handleInputChange={(value) => {
+                                item.url_regexp = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.rewrite_regexp_source} handleInputChange={(value) => {
+                                item.rewrite_regexp_source = value;
+                            }} no_border={true}/>,
+                            <InputText value={item.rewrite_regexp_source} handleInputChange={(value) => {
+                                item.rewrite_regexp_source = value;
+                            }} no_border={true}/>,
+                            <Select value={item.changeOrigin} onChange={(value) => {
+                                httpServer.list[index].changeOrigin = value === "true";
+                                setHttpServer({...httpServer})
+                            }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                    no_border={true}/>,
+                            <Select value={item.open} onChange={(value) => {
+                                httpServer.list[index].open = value === "true";
+                                setHttpServer({...httpServer})
+                            }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                    no_border={true}/>,
+                            <InputText value={item.note} handleInputChange={(value) => {
+                                item.note = value;
+                            }} no_border={true}/>,
+                            <div>
+                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
+                                    httpServer.list.splice(index, 1);
+                                    setHttpServer({...httpServer})
+                                }}/>
+                            </div>,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+
+                    <form>
+                        {t("状态")}
+                        <Rows isFlex={true} columns={[
+                            <InputRadio value={1} context={t("开启")} selected={httpServer.open} onchange={() => {
+                                setHttpServer({
+                                    ...httpServer,
+                                    open: !httpServer.open
+                                })
+                            }}/>,
+                            <InputRadio value={1} context={t("关闭")} selected={!httpServer.open} onchange={() => {
+                                setHttpServer({
+                                    ...httpServer,
+                                    open: !httpServer.open
+                                })
+                            }}/>
+                        ]}/>
+                    </form>
+
+                    port
+                    <InputText value={httpServer.port} handleInputChange={(value) => {
+                        httpServer.port = value;
+                        setHttpServer({...httpServer})
+                    }} no_border={true}/>
+
+                </CardFull>
+
             </Column>
+
+
         </Row>
     </div>
 }

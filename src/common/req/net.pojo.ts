@@ -96,6 +96,21 @@ export class TcpPorxyITem {
     note: string;
 }
 
+export class HttpServerProxyItem {
+    url_regexp: string;
+    changeOrigin: boolean;
+    rewrite_regexp_source: string;
+    rewrite_target: string;
+    open: boolean;
+    note:string;
+}
+
+export class HttpServerProxy {
+    port: string;
+    list: HttpServerProxyItem[]
+    open:boolean
+}
+
 
 export class HttpProxy {
     enabled: boolean

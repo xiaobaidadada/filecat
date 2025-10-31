@@ -4,7 +4,7 @@ import {
     HttpFormData,
     HttpFormPojo,
     HttpProxy, MacProxy,
-    NetPojo
+    NetPojo, HttpServerProxyItem
 } from "../../../common/req/net.pojo";
 import {findAvailablePort} from "../../../common/findPort";
 import {Fail, Sucess} from "../../other/Result";
@@ -24,15 +24,71 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {execSync} from "child_process";
 import {node_process_watcher} from "node-process-watcher";
+import http, {IncomingMessage, ServerResponse} from 'http';
+import {URL} from 'url';
+import https from 'https';
 
 
 const needle = require('needle');
 
+let proxyServer: http.Server | null = null;
+// 证书和私钥作为字符串
+const cert = `-----BEGIN CERTIFICATE-----
+MIIDazCCAlOgAwIBAgIUBU8LWB+MaQnZD8detsI4OkZy5GEwDQYJKoZIhvcNAQEL
+BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNTEwMzExMzIxMDZaFw0yNjEw
+MzExMzIxMDZaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDegov3ho6qYBdc3tda54jNFJvivJ5oImfl31E7dy0p
+Vt97xRcUyZw95vaZHvrlwqh1rL/qqbo1nCAXbNMjefZLXWu504Aiuqv90OThQ2xA
++X1R2tYKBRdXZ/uoOJrCp4kFawSjmN2lcpZwuYdkzjdf44XNssW9BLohcurFk73f
+HWnaYVCVieowUTfowfgRYVW5OJUwVzgpZoW4LOanAnRfNxdzse4urONvVtB1IcGJ
+s6tSBdUpj8De0u5/NX+By5hS7sLA7UhYHKHG7epl71weieH+ntOEr0J5TP6KwINj
+/uwqz5ajqqlsln7KASVSg6rFH+XmXGn08cFKV8dbcbZDAgMBAAGjUzBRMB0GA1Ud
+DgQWBBSUhzPh9Ztb4RC4g0RHHIcPqrcobjAfBgNVHSMEGDAWgBSUhzPh9Ztb4RC4
+g0RHHIcPqrcobjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCb
+gX2NCoDW5qMOYfc9LQVW9HiiuPSbfOu1V+KYz6XXLvMoGiNRz/YJcl2SZtW4RWII
+MfG1Smucu3xv95fXYDQLTkNwHG4CdXruC6tJYFxp1scDRX8hijfDHVRtd6ps/D5G
+vk5mMvtpCUMtQRDfeBpOs2gK6pb/v5wz+cQNky2gf8SeligBBBQkWJZNOOXeBCDg
+52miBkk0idPDI/O7r/BYxn8yeKowN+x1veT7RHGbw/RPr+QjIO+pLHSN+CjOinCg
+E7yKgMo2KcSJnA0l/mHWcX5ph6x7fh/hOuuJJ72msCjcfGcnv42KBb3sipsYuBvU
+z9uHLgWM1IwR/DE/X0sN
+-----END CERTIFICATE-----`;
+
+const key = `-----BEGIN PRIVATE KEY-----
+MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDegov3ho6qYBdc
+3tda54jNFJvivJ5oImfl31E7dy0pVt97xRcUyZw95vaZHvrlwqh1rL/qqbo1nCAX
+bNMjefZLXWu504Aiuqv90OThQ2xA+X1R2tYKBRdXZ/uoOJrCp4kFawSjmN2lcpZw
+uYdkzjdf44XNssW9BLohcurFk73fHWnaYVCVieowUTfowfgRYVW5OJUwVzgpZoW4
+LOanAnRfNxdzse4urONvVtB1IcGJs6tSBdUpj8De0u5/NX+By5hS7sLA7UhYHKHG
+7epl71weieH+ntOEr0J5TP6KwINj/uwqz5ajqqlsln7KASVSg6rFH+XmXGn08cFK
+V8dbcbZDAgMBAAECggEAVKNx3GDpqbNNj70QS/rglanuNgwrcU8NGGqe+rC1lBEA
+h5ML2ZNrBDzztoELTRSDgeeJRRj0xOmzZ1W05rzAzCAoFxJ1nkBFphGszmcYKYr9
+eYJ1gnA3Vb8vAekuLTcPLulrZVODlCiHQy+/ab/rXmUsg3cqMmE27/xHg4pUYiaX
+UNSMJIBmxx9qCXbmn9doPJ4boYFH1+fD2SW7O0FMvvEdqvCZGjt6h/aP1q+6mwzN
+B42SK5kXx0h+ivhxunoyJcc6WwemwqJJJrcReGvLB/vbDob6uGnkFV45lCHjeaD6
+BFPhmmJ5vkCcPlPCaZ/4E3tCAIsTokfnNSDh5UV6QQKBgQD6jkRrbhmHzGx+aJM5
+3pKpBKE026O4NZUbMTWz8m2GeySRsrpkN4HGXD/5VNhonPazM8OPWybTsMyG5rgv
+gWmreFWpg/QNZ3OAIlHcISSEwVo1apahTuHBtEPiF2+qRkNeEo8iBQ0luDIoszoV
+tLJDf5j5EZpTXM8gwTvjtV9TIQKBgQDjWEXhMI1sM7/oc9w4E1efl2m/cqWfYmki
+ojlrhlrTian/JR6Psos8QepoXuGquI5ttO6iF/HUxCBocXeA1QmC9WLtaB/gELh0
+iSMnq2tvozE5b7rrCnNIhdYDJ2F8+dO2NpaDCOZ8YBF1g2T+P1PVy0JKlJCWzRZ7
+4nXDxYsA4wKBgQDEnoIYoATO6V+2bxAh2ITUt/pdhYLb2siQ1zQiazsBzn7rCwtz
++48Of3QAkFFm/s4l4Jg1Vj2I3/QQZNvjA7ZNxhfK9+672hPsWIJOsX974lONGYDt
+Qv6sSG8A7I1HXO4e04eZFce0cvCBuev5/pvplicQRX0KsAkm1hzOW5VboQKBgQDH
+KqAdhfF/Z16qgEXfAmLzNyy3QfMCzK4aX1A6eLu9Mo8xLQ23Cc2c/ooi4WyFqaVt
+SuL8Mkn0AdX6ad0tinUIu3ztSxkRrNRLk5Cuwige5zLKhK2WF9OjJ0yz+p4XZK4q
+pWv6Y6O4NllVP8UMT+JcG/N5bum0kvstkNlmpvr9zQKBgQCN34qfMlKvo0w8owJ8
+4CtuXLZQ7doZQdxxwuKuZYKmaa1OVGNZz2RMQmBGZ24dOog3TmXoLCpSAzy8zlyM
+nI7AlVSU3IC5DNJBLVQV3yrq18A6em+IUl6UJJd4k7JDTsVQ2lVjZz6nBIJKaQsG
+rRCH9e8jJu2lg/mNn3hlrm/Z7g==
+-----END PRIVATE KEY-----`;
 
 const Koa = require('koa');
 const cors = require('@koa/cors');
 const httpsProxyAgent = require('https-proxy-agent')
 const dgram = require('dgram');
+import express from 'express';
 
 let interval = null;
 
@@ -489,9 +545,97 @@ export class NetService {
         }
     }
 
+
+    httpServerStart(
+        list: HttpServerProxyItem[],
+        server_port: number,
+        useHttps: boolean = false
+    ) {
+        if (proxyServer) return;
+
+        const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
+            if (!req.url) return res.end();
+
+            const protocol = useHttps ? 'https:' : 'http:';
+            const host = req.headers.host;
+            const fullUrl = `${protocol}//${host}${req.url}`;
+
+            const item = list.find(i => new RegExp(i.url_regexp).test(fullUrl));
+            if (!item) {
+                res.writeHead(404);
+                return res.end('No matching proxy rule.');
+            }
+
+            const rewrittenUrl = fullUrl.replace(
+                new RegExp(item.rewrite_regexp_source),
+                item.rewrite_target
+            );
+            const targetUrl = new URL(rewrittenUrl);
+
+            const options: http.RequestOptions = {
+                hostname: targetUrl.hostname,
+                port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+                path: targetUrl.pathname + (targetUrl.search ? '?' + targetUrl.search : ''),
+                method: req.method,
+                headers: { ...req.headers },
+            };
+
+            if (item.changeOrigin) {
+                options.headers!['host'] = targetUrl.host;
+            }
+
+            const proxyReq = (targetUrl.protocol === 'https:' ? https : http).request(
+                options,
+                proxyRes => {
+                    res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+                    proxyRes.pipe(res, { end: true });
+                }
+            );
+
+            proxyReq.on('error', err => {
+                res.writeHead(500);
+                res.end('Proxy error: ' + err.message);
+            });
+
+            req.pipe(proxyReq, { end: true });
+        };
+
+        if (useHttps) {
+            proxyServer = https.createServer({ key, cert }, requestHandler);
+        } else {
+            proxyServer = http.createServer(requestHandler);
+        }
+
+        proxyServer.listen(server_port, () => {
+            console.log(`${useHttps ? 'HTTPS' : 'HTTP'} Proxy server running on port ${server_port}`);
+        });
+    }
+
+    /**
+     * 关闭 HTTP 代理服务
+     */
+    public httpServerProxyclose() {
+        if (proxyServer) {
+            proxyServer.close(() => console.log('Proxy server closed.'));
+            proxyServer = null;
+        }
+    }
+
 }
 
 export const netService: NetService = new NetService();
 
 
 // console.log(netService.getMacProxy())
+
+
+// const proxyList: HttpServerProxyItem[] = [
+//     {
+//         url_regexp: '^https://localhost:8080',
+//         changeOrigin: false,
+//         rewrite_regexp_source: '^https://localhost:8080',
+//         rewrite_target: 'http://localhost:80'
+//     }
+// ];
+//
+// netService.httpServerStart(proxyList, 8080,true);
