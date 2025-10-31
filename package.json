@@ -87,7 +87,7 @@
     "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
-    "node-process-watcher": "^1.4.2"
+    "node-process-watcher": "^1.4.7"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",

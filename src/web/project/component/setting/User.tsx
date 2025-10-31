@@ -409,7 +409,7 @@ export function User() {
                             setLanguage(value);
                         }} options={[{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
 
-                        <p className="small">{t("标签编辑是所有人都可见的的数据")}</p>
+                        {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 
                         <Permission is_disable={is_disable} is_selected={is_selected} select_auth={select_auth}/>
                         <label>{t("备注")}</label>

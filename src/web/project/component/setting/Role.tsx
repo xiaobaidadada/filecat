@@ -252,7 +252,7 @@ export function Role() {
                         <Select value={language} onChange={(value) => {
                             setLanguage(value);
                         }} options={[{title: "NOT", value: ""},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
-                        <p className="small">{t("标签编辑是所有人都可见的的数据")}</p>
+                        {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 
                         <Permission is_disable={() => {
                             return false

@@ -103,4 +103,12 @@ export class HttpProxy {
     port: number
     bypass: string
     useForLocal: boolean
+    type: number // 1 http, 2 https  mac 下
+}
+
+
+export class MacProxy {
+    name: string
+    proxies: HttpProxy[]
+    bypass?: string
 }

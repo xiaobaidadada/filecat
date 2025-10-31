@@ -26,74 +26,73 @@ const http_tag_key = data_common_key.http_tag_key;
 export class NetController {
 
     @Post('/start')
-    async start(@Body() data: NetPojo,@Req()req) {
+    async start(@Body() data: NetPojo, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         return netService.start(data);
     }
 
     @Post('/close')
-    async close(@Body() data: NetPojo,@Req()req) {
+    async close(@Body() data: NetPojo, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         await netService.close(data);
         return Sucess("1");
     }
 
     @Post('/tag/save')
-    save(@Body() items: NavIndexItem[],@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.browser_proxy_tag_update);
+    save(@Body() items: NavIndexItem[], @Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy_tag_update);
         DataUtil.set(navindex_net_key_list, items);
         return Sucess('ok');
     }
 
     @Get("/tag")
-    get(@Req()req) {
+    get(@Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         let list = DataUtil.get(navindex_net_key_list);
         return Sucess(list || []);
     }
 
     @Post('/wol/tag/save')
-    saveWolTag(@Body() items: NavIndexItem[],@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.wol_proxy_tag_update);
+    saveWolTag(@Body() items: NavIndexItem[], @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy_tag_update);
         DataUtil.set(navindex_wol_key, items);
         return Sucess('ok');
     }
 
     @Get("/wol/tag")
-    getWolTag(@Req()req) {
+    getWolTag(@Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         let list = DataUtil.get(navindex_wol_key);
         return Sucess(list || []);
     }
 
     @Post("/wol/exec")
-    wol(@Body() data: { mac: string },@Req()req) {
+    wol(@Body() data: { mac: string }, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         netService.wol(data.mac);
         return Sucess("");
     }
 
 
-
     // http 的tag
     @Get("/http/tag")
     get_http_tag(@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
-        let list = DataUtil.get(http_tag_key,file_key.http_tag);
+        let list = DataUtil.get(http_tag_key, file_key.http_tag);
         return Sucess(list || []);
     }
 
     @Post('/http/tag/save')
-    save_http_tag(@Body() items: NavIndexItem[],@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.http_proxy_tag_update);
-        DataUtil.set(http_tag_key, items,file_key.http_tag);
+    save_http_tag(@Body() items: NavIndexItem[], @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy_tag_update);
+        DataUtil.set(http_tag_key, items, file_key.http_tag);
         return Sucess('ok');
     }
 
     @Post('/http/send')
-    async httpSend(@Req() req: Request, @Res() res: Response,@QueryParam("local_download_path", {required: false}) local_download_path?: string) {
+    async httpSend(@Req() req: Request, @Res() res: Response, @QueryParam("local_download_path", {required: false}) local_download_path?: string) {
         userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
-        return netService.httpSend(req, res,local_download_path);
+        return netService.httpSend(req, res, local_download_path);
     }
 
     @msg(CmdType.http_download_water)
@@ -121,16 +120,29 @@ export class NetController {
         return Sucess(virtualClientService.get_tcp_proxy());
     }
 
-    @Post('/http/proxy/get')
-    proxyGet(@Body() req: any, @Req() ctx) {
+    @Post('/http/proxy/get/win')
+    proxyGetWin(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         return Sucess(netService.getWindowsProxy());
     }
 
-    @Post('/http/proxy/set')
-    proxySet(@Body() req: any, @Req() ctx) {
+    @Post('/http/proxy/set/win')
+    proxySetMac(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         netService.setWindowsProxy(req)
+        return Sucess("");
+    }
+
+    @Post('/http/proxy/get/mac')
+    proxyGetMac(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        return Sucess(netService.getMacProxy());
+    }
+
+    @Post('/http/proxy/set/mac')
+    proxySetWin(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        netService.setMacProxy(req)
         return Sucess("");
     }
 }

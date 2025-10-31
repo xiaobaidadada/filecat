@@ -3,7 +3,7 @@ import {
     http_download_map,
     HttpFormData,
     HttpFormPojo,
-    HttpProxy,
+    HttpProxy, MacProxy,
     NetPojo
 } from "../../../common/req/net.pojo";
 import {findAvailablePort} from "../../../common/findPort";
@@ -24,7 +24,6 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {execSync} from "child_process";
 import {node_process_watcher} from "node-process-watcher";
-
 
 
 const needle = require('needle');
@@ -464,19 +463,27 @@ export class NetService {
 
 
     getWindowsProxy(): HttpProxy {
-       return  node_process_watcher.get_system_proxy() as HttpProxy
+        return node_process_watcher.get_system_proxy_for_windows() as HttpProxy
     }
 
-
-    refreshWinInetProxy() {
-        node_process_watcher.refresh_proxy();
+    getMacProxy(): MacProxy {
+        // @ts-ignore
+        return node_process_watcher.get_system_proxy_for_mac() as MacProxy
     }
+
 
     setWindowsProxy(config: HttpProxy) {
         try {
-            node_process_watcher.set_system_proxy(config)
-            this.refreshWinInetProxy();
+            node_process_watcher.set_system_proxy_for_windows(config)
+        } catch (err) {
+            console.error("❌ 设置代理失败:", err.message);
+        }
+    }
 
+    setMacProxy(config: MacProxy[]) {
+        try {
+            // @ts-ignore
+            node_process_watcher.set_system_proxy_for_mac(config)
         } catch (err) {
             console.error("❌ 设置代理失败:", err.message);
         }
@@ -487,4 +494,4 @@ export class NetService {
 export const netService: NetService = new NetService();
 
 
-// console.log(netService.getWindowsProxy())
+// console.log(netService.getMacProxy())

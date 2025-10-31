@@ -363,7 +363,7 @@ export class VirtualClientService extends UdpUtil {
     get_all_client_info() {
         return {
             state: this.client_status,
-            tcp_proxy_list_status: this.tcp_proxy?.get_all_status(),
+            // tcp_proxy_list_status: this.tcp_proxy?.get_all_status(),
         }
     }
 

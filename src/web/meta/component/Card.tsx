@@ -9,6 +9,7 @@ export interface CardProps {
     titleCom?: React.ReactNode;
     children?: React.ReactNode;
     rightBottomCom?: React.ReactNode;
+    key?:any
 }
 
 enum Type {
