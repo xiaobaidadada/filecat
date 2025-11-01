@@ -3,8 +3,11 @@ import {
     http_download_map,
     HttpFormData,
     HttpFormPojo,
-    HttpProxy, MacProxy,
-    NetPojo, HttpServerProxyItem
+    HttpProxy,
+    HttpProxyITem,
+    HttpServerProxy,
+    MacProxy,
+    NetPojo
 } from "../../../common/req/net.pojo";
 import {findAvailablePort} from "../../../common/findPort";
 import {Fail, Sucess} from "../../other/Result";
@@ -14,81 +17,30 @@ import path from "path";
 import fs from "fs";
 import multer from 'multer';
 import {DataUtil} from "../data/DataUtil";
-import {data_dir_tem_name} from "../data/data_type";
-import {settingService} from "../setting/setting.service";
+import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {userService} from "../user/user.service";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {FileUtil} from "../file/FileUtil";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
-import {SysPojo} from "../../../common/req/sys.pojo";
-import {execSync} from "child_process";
 import {node_process_watcher} from "node-process-watcher";
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {URL} from 'url';
 import https from 'https';
+import {ServerEvent} from "../../other/config";
+import net from "net";
 
 
 const needle = require('needle');
 
 let proxyServer: http.Server | null = null;
-// 证书和私钥作为字符串
-const cert = `-----BEGIN CERTIFICATE-----
-MIIDazCCAlOgAwIBAgIUBU8LWB+MaQnZD8detsI4OkZy5GEwDQYJKoZIhvcNAQEL
-BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
-GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNTEwMzExMzIxMDZaFw0yNjEw
-MzExMzIxMDZaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
-HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDegov3ho6qYBdc3tda54jNFJvivJ5oImfl31E7dy0p
-Vt97xRcUyZw95vaZHvrlwqh1rL/qqbo1nCAXbNMjefZLXWu504Aiuqv90OThQ2xA
-+X1R2tYKBRdXZ/uoOJrCp4kFawSjmN2lcpZwuYdkzjdf44XNssW9BLohcurFk73f
-HWnaYVCVieowUTfowfgRYVW5OJUwVzgpZoW4LOanAnRfNxdzse4urONvVtB1IcGJ
-s6tSBdUpj8De0u5/NX+By5hS7sLA7UhYHKHG7epl71weieH+ntOEr0J5TP6KwINj
-/uwqz5ajqqlsln7KASVSg6rFH+XmXGn08cFKV8dbcbZDAgMBAAGjUzBRMB0GA1Ud
-DgQWBBSUhzPh9Ztb4RC4g0RHHIcPqrcobjAfBgNVHSMEGDAWgBSUhzPh9Ztb4RC4
-g0RHHIcPqrcobjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCb
-gX2NCoDW5qMOYfc9LQVW9HiiuPSbfOu1V+KYz6XXLvMoGiNRz/YJcl2SZtW4RWII
-MfG1Smucu3xv95fXYDQLTkNwHG4CdXruC6tJYFxp1scDRX8hijfDHVRtd6ps/D5G
-vk5mMvtpCUMtQRDfeBpOs2gK6pb/v5wz+cQNky2gf8SeligBBBQkWJZNOOXeBCDg
-52miBkk0idPDI/O7r/BYxn8yeKowN+x1veT7RHGbw/RPr+QjIO+pLHSN+CjOinCg
-E7yKgMo2KcSJnA0l/mHWcX5ph6x7fh/hOuuJJ72msCjcfGcnv42KBb3sipsYuBvU
-z9uHLgWM1IwR/DE/X0sN
------END CERTIFICATE-----`;
-
-const key = `-----BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDegov3ho6qYBdc
-3tda54jNFJvivJ5oImfl31E7dy0pVt97xRcUyZw95vaZHvrlwqh1rL/qqbo1nCAX
-bNMjefZLXWu504Aiuqv90OThQ2xA+X1R2tYKBRdXZ/uoOJrCp4kFawSjmN2lcpZw
-uYdkzjdf44XNssW9BLohcurFk73fHWnaYVCVieowUTfowfgRYVW5OJUwVzgpZoW4
-LOanAnRfNxdzse4urONvVtB1IcGJs6tSBdUpj8De0u5/NX+By5hS7sLA7UhYHKHG
-7epl71weieH+ntOEr0J5TP6KwINj/uwqz5ajqqlsln7KASVSg6rFH+XmXGn08cFK
-V8dbcbZDAgMBAAECggEAVKNx3GDpqbNNj70QS/rglanuNgwrcU8NGGqe+rC1lBEA
-h5ML2ZNrBDzztoELTRSDgeeJRRj0xOmzZ1W05rzAzCAoFxJ1nkBFphGszmcYKYr9
-eYJ1gnA3Vb8vAekuLTcPLulrZVODlCiHQy+/ab/rXmUsg3cqMmE27/xHg4pUYiaX
-UNSMJIBmxx9qCXbmn9doPJ4boYFH1+fD2SW7O0FMvvEdqvCZGjt6h/aP1q+6mwzN
-B42SK5kXx0h+ivhxunoyJcc6WwemwqJJJrcReGvLB/vbDob6uGnkFV45lCHjeaD6
-BFPhmmJ5vkCcPlPCaZ/4E3tCAIsTokfnNSDh5UV6QQKBgQD6jkRrbhmHzGx+aJM5
-3pKpBKE026O4NZUbMTWz8m2GeySRsrpkN4HGXD/5VNhonPazM8OPWybTsMyG5rgv
-gWmreFWpg/QNZ3OAIlHcISSEwVo1apahTuHBtEPiF2+qRkNeEo8iBQ0luDIoszoV
-tLJDf5j5EZpTXM8gwTvjtV9TIQKBgQDjWEXhMI1sM7/oc9w4E1efl2m/cqWfYmki
-ojlrhlrTian/JR6Psos8QepoXuGquI5ttO6iF/HUxCBocXeA1QmC9WLtaB/gELh0
-iSMnq2tvozE5b7rrCnNIhdYDJ2F8+dO2NpaDCOZ8YBF1g2T+P1PVy0JKlJCWzRZ7
-4nXDxYsA4wKBgQDEnoIYoATO6V+2bxAh2ITUt/pdhYLb2siQ1zQiazsBzn7rCwtz
-+48Of3QAkFFm/s4l4Jg1Vj2I3/QQZNvjA7ZNxhfK9+672hPsWIJOsX974lONGYDt
-Qv6sSG8A7I1HXO4e04eZFce0cvCBuev5/pvplicQRX0KsAkm1hzOW5VboQKBgQDH
-KqAdhfF/Z16qgEXfAmLzNyy3QfMCzK4aX1A6eLu9Mo8xLQ23Cc2c/ooi4WyFqaVt
-SuL8Mkn0AdX6ad0tinUIu3ztSxkRrNRLk5Cuwige5zLKhK2WF9OjJ0yz+p4XZK4q
-pWv6Y6O4NllVP8UMT+JcG/N5bum0kvstkNlmpvr9zQKBgQCN34qfMlKvo0w8owJ8
-4CtuXLZQ7doZQdxxwuKuZYKmaa1OVGNZz2RMQmBGZ24dOog3TmXoLCpSAzy8zlyM
-nI7AlVSU3IC5DNJBLVQV3yrq18A6em+IUl6UJJd4k7JDTsVQ2lVjZz6nBIJKaQsG
-rRCH9e8jJu2lg/mNn3hlrm/Z7g==
------END PRIVATE KEY-----`;
+let proxy_server_data: HttpServerProxy;
+let proxy_server_list_data: HttpProxyITem[] = []
 
 const Koa = require('koa');
 const cors = require('@koa/cors');
 const httpsProxyAgent = require('https-proxy-agent')
 const dgram = require('dgram');
-import express from 'express';
 
 let interval = null;
 
@@ -546,49 +498,74 @@ export class NetService {
     }
 
 
+    load_server_proxy() {
+        const data = this.getHttpServerProxy()
+        proxy_server_data = data
+        proxy_server_list_data = data.list
+            .filter(v => v.open)
+            .map(item => {
+                const context = DataUtil.getFile(
+                    `data_common_key.proxy_server_code_prefix_${item.random_key}`,
+                    data_dir_tem_name.http_proxy_server_dir
+                );
+                return JSON.parse(context);
+            })
+    }
+
+    findProxyRule(fullUrl: string): HttpProxyITem | undefined {
+        return proxy_server_list_data.find(i => new RegExp(i.url_regexp).test(fullUrl));
+    };
+
+
     httpServerStart(
-        list: HttpServerProxyItem[],
-        server_port: number,
-        useHttps: boolean = false
+        data: HttpServerProxy
     ) {
         if (proxyServer) return;
 
+
         const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
-            if (!req.url) return res.end();
+            // if (!req.url) return res.end();
 
-            const protocol = useHttps ? 'https:' : 'http:';
-            const host = req.headers.host;
-            const fullUrl = `${protocol}//${host}${req.url}`;
+            // const protocol = 'http:';
+            // const host = req.headers.host;
+            // const fullUrl = `${protocol}//${host}${req.url}`;
+            const fullUrl = req.url;
 
-            const item = list.find(i => new RegExp(i.url_regexp).test(fullUrl));
-            if (!item) {
-                res.writeHead(404);
-                return res.end('No matching proxy rule.');
+            const item = this.findProxyRule(fullUrl);
+
+            let targetUrl: URL;
+            let headers = {}
+            if (item) {
+                // 命中规则 → 改写 URL
+                const rewrittenUrl = fullUrl.replace(
+                    new RegExp(item.rewrite_regexp_source),
+                    item.rewrite_target
+                );
+                targetUrl = new URL(rewrittenUrl);
+                headers = {...item.headers};
+                if (item.changeOrigin) {
+                    headers!['host'] = targetUrl.host;
+                }
+            } else {
+                // 没匹配规则 → 直连
+                targetUrl = new URL(fullUrl);
             }
 
-            const rewrittenUrl = fullUrl.replace(
-                new RegExp(item.rewrite_regexp_source),
-                item.rewrite_target
-            );
-            const targetUrl = new URL(rewrittenUrl);
 
             const options: http.RequestOptions = {
                 hostname: targetUrl.hostname,
-                port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+                port: targetUrl.port,
                 path: targetUrl.pathname + (targetUrl.search ? '?' + targetUrl.search : ''),
                 method: req.method,
-                headers: { ...req.headers },
+                headers: {...req.headers, ...headers},
             };
 
-            if (item.changeOrigin) {
-                options.headers!['host'] = targetUrl.host;
-            }
 
-            const proxyReq = (targetUrl.protocol === 'https:' ? https : http).request(
+            const proxyReq = http.request(
                 options,
                 proxyRes => {
                     res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
-                    proxyRes.pipe(res, { end: true });
+                    proxyRes.pipe(res, {end: true});
                 }
             );
 
@@ -597,35 +574,155 @@ export class NetService {
                 res.end('Proxy error: ' + err.message);
             });
 
-            req.pipe(proxyReq, { end: true });
+            req.pipe(proxyReq, {end: true});
         };
 
-        if (useHttps) {
-            proxyServer = https.createServer({ key, cert }, requestHandler);
-        } else {
-            proxyServer = http.createServer(requestHandler);
-        }
+        // http 走requestHandler
+        proxyServer = http.createServer(requestHandler);
 
-        proxyServer.listen(server_port, () => {
-            console.log(`${useHttps ? 'HTTPS' : 'HTTP'} Proxy server running on port ${server_port}`);
+        // https 走connect  处理 HTTPS CONNECT 隧道
+        proxyServer.on('connect', (req, clientSocket, head) => {
+            const [targetHost, targetPortStr] = (req.url || '').split(':');
+            const targetPort = Number(targetPortStr || 443);
+            const fullUrl = `https://${targetHost}:${targetPort}/`;
+
+            const item = this.findProxyRule(fullUrl);
+
+            if (item) {
+                //
+                // ✅ 命中规则：走上游代理（例如 127.0.0.1:3067）
+                //
+                const rewritten = fullUrl.replace(
+                    new RegExp(item.rewrite_regexp_source),
+                    item.rewrite_target
+                );
+                const rewrittenUrl = new URL(rewritten);
+                const upstreamHost = rewrittenUrl.hostname;
+                const upstreamPort = Number(rewrittenUrl.port) || 443;
+
+                const upstreamSocket = net.connect(upstreamPort, upstreamHost, () => {
+                    const connectReq =
+                        `CONNECT ${targetHost}:${targetPort} HTTP/1.1\r\n` +
+                        `Host: ${targetHost}:${targetPort}\r\n` +
+                        `Connection: keep-alive\r\n\r\n`;
+                    upstreamSocket.write(connectReq);
+
+                    if (head && head.length) upstreamSocket.write(head);
+                });
+
+                let buffered = Buffer.alloc(0);
+                const onUpstreamData = (chunk: Buffer) => {
+                    buffered = Buffer.concat([buffered, chunk]);
+                    const str = buffered.toString('utf8', 0, Math.min(buffered.length, 4096));
+                    const headerEndIdx = str.indexOf('\r\n\r\n');
+                    if (headerEndIdx === -1) return;
+
+                    const headerText = str.slice(0, headerEndIdx);
+                    const statusLine = headerText.split('\r\n')[0];
+                    const m = statusLine.match(/^HTTP\/\d\.\d\s+(\d+)/);
+                    upstreamSocket.removeListener('data', onUpstreamData);
+
+                    if (!m) {
+                        clientSocket.end('HTTP/1.1 502 Bad Gateway\r\n\r\nInvalid upstream proxy response\r\n');
+                        upstreamSocket.destroy();
+                        return;
+                    }
+
+                    const statusCode = Number(m[1]);
+                    const rest = buffered.slice(headerEndIdx + 4);
+
+                    if (statusCode === 200) {
+                        clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                        if (rest.length) clientSocket.write(rest);
+                        upstreamSocket.pipe(clientSocket);
+                        clientSocket.pipe(upstreamSocket);
+                    } else {
+                        clientSocket.end(`HTTP/1.1 ${statusCode} Upstream Proxy Error\r\n\r\n${headerText}\r\n`);
+                        upstreamSocket.end();
+                    }
+                };
+
+                upstreamSocket.on('data', onUpstreamData);
+                upstreamSocket.setTimeout(10000, () => {
+                    clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nUpstream proxy timeout\r\n');
+                    upstreamSocket.destroy();
+                });
+                upstreamSocket.on('error', (err) => {
+                    clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nUpstream socket error: ${err.message}\r\n`);
+                });
+
+                clientSocket.on('error', () => upstreamSocket.destroy());
+                clientSocket.on('close', () => upstreamSocket.end());
+            } else {
+                //
+                // ✅ 未命中规则：直连目标网站（标准 HTTPS 隧道）
+                //
+                const directSocket = net.connect(targetPort, targetHost, () => {
+                    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                    if (head && head.length) directSocket.write(head);
+                    directSocket.pipe(clientSocket);
+                    clientSocket.pipe(directSocket);
+                });
+
+                directSocket.setTimeout(10000, () => {
+                    clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nDirect connection timeout\r\n');
+                    directSocket.destroy();
+                });
+
+                directSocket.on('error', (err) => {
+                    clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nDirect socket error: ${err.message}\r\n`);
+                });
+
+                clientSocket.on('error', () => directSocket.destroy());
+                clientSocket.on('close', () => directSocket.end());
+            }
+        });
+
+
+        proxyServer.listen(data.port, () => {
+            console.log(`HTTP Proxy server running on port ${data.port}`);
         });
     }
+
 
     /**
      * 关闭 HTTP 代理服务
      */
-    public httpServerProxyclose() {
+    public httpServerProxyClose() {
         if (proxyServer) {
             proxyServer.close(() => console.log('Proxy server closed.'));
             proxyServer = null;
         }
     }
 
+    public saveHttpServer(req: HttpServerProxy) {
+        DataUtil.set(data_common_key.http_server_key, req);
+        this.httpServerProxyClose()
+        if (req.open) {
+            this.httpServerStart(req)
+        }
+        this.load_server_proxy()
+    }
+
+    public getHttpServerProxy(): HttpServerProxy {
+        return DataUtil.get(data_common_key.http_server_key) ?? {open: false, port: "0", list: []};
+    }
+
 }
 
 export const netService: NetService = new NetService();
 
-
+ServerEvent.on("start", async (data) => {
+    try {
+        const req = netService.getHttpServerProxy()
+        if (req.open) {
+            netService.load_server_proxy()
+            netService.httpServerStart(req)
+        }
+    } catch (e) {
+        console.error('启动虚拟网网络vpn失败', e);
+    }
+})
 // console.log(netService.getMacProxy())
 
 

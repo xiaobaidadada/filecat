@@ -13,6 +13,7 @@ export enum data_dir_tem_name {
     http_tempfile = "http_tempfile", // http 请求的临时文件
     all_user_api_file_dir = "datafile" , // 用户的 自定义 api 临时目录 datafile 之前用过了 兼容一下
     sys_file_dir = "sys_file_dir", // 系统目录 和用户的临时分开 不让用户自定义的文件重复了
+    http_proxy_server_dir = "http_proxy_server_dir",
 }
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择
 // key
@@ -69,6 +70,8 @@ export enum data_common_key {
     guid_key = "guid_key",
     tcp_proxy_key = "tcp_proxy_key",
     sys_env_key = "sys_env_key", // 系统全局变量
+    http_server_key = "http_server_key",
+    proxy_server_code_prefix = "proxy_server_code_prefix",
 }
 
 

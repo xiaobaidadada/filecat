@@ -86,7 +86,7 @@ export class http_download_map {
 }
 
 
-export class TcpPorxyITem {
+export class TcpProxyITem {
     index: number;
     port: number;
     target_port: number;
@@ -96,19 +96,32 @@ export class TcpPorxyITem {
     note: string;
 }
 
-export class HttpServerProxyItem {
+export class HttpProxyITem {
     url_regexp: string;
     changeOrigin: boolean;
     rewrite_regexp_source: string;
     rewrite_target: string;
+    headers: { [key: string]: string };
+}
+
+export const http_proxy_item_sample = {
+    "url_regexp": "",
+    "changeOrigin": false,
+    "rewrite_regexp_source": "",
+    "rewrite_target": "",
+    "headers": {}
+} as HttpProxyITem;
+
+export class HttpServerProxyItem {
     open: boolean;
-    note:string;
+    note: string;
+    random_key: string;
 }
 
 export class HttpServerProxy {
     port: string;
     list: HttpServerProxyItem[]
-    open:boolean
+    open: boolean
 }
 
 

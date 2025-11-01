@@ -1,5 +1,5 @@
 import {DataUtil} from "../../data/DataUtil";
-import {TcpPorxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
+import {TcpProxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
 import {UdpUtil} from "../util/udp.util";
@@ -504,13 +504,13 @@ export class VirtualClientService extends UdpUtil {
 
     private tcp_proxy: TcpProxy;
 
-    public save_tcp_proxy(req: TcpPorxyITem[]) {
+    public save_tcp_proxy(req: TcpProxyITem[]) {
         DataUtil.set(data_common_key.tcp_proxy_key, req);
         this.restart_tcp_proxy(req);
     }
 
 
-    private restart_tcp_proxy(req: TcpPorxyITem[]) {
+    private restart_tcp_proxy(req: TcpProxyITem[]) {
         if (this.tcp_proxy) {
             this.tcp_proxy.close(true);
         }
@@ -531,7 +531,7 @@ export class VirtualClientService extends UdpUtil {
         });
     }
 
-    public get_tcp_proxy(): TcpPorxyITem[] {
+    public get_tcp_proxy(): TcpProxyITem[] {
         return DataUtil.get(data_common_key.tcp_proxy_key) ?? [];
     }
 }

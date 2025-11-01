@@ -124,6 +124,7 @@ export const $stroe = {
             open: false,
             fileName: '',
             save: null,
+            can_format: false
         } as {
             menu_list?: any[],
             model?: string,
@@ -131,6 +132,7 @@ export const $stroe = {
             fileName?: string,
             save?: any,
             opt_shell?: boolean,
+            can_format?: boolean,
         }
     }),
     windows_width:atom({

@@ -3,17 +3,19 @@ import {UserAuth} from "../../../common/req/user.req";
 import {Sucess} from "../../other/Result";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {NetPojo} from "../../../common/req/net.pojo";
+import {http_proxy_item_sample, NetPojo} from "../../../common/req/net.pojo";
 import {netService} from "./net.service";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {Request, Response} from "express";
-import {data_common_key, file_key} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {userService} from "../user/user.service";
 import {NetMsgType, tcpServerMsg} from "./util/NetUtil";
 import {TcpUtil} from "./util/tcp.util";
 import {virtualClientService} from "./virtual/virtual.client.service";
+import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
+import {self_auth_open_js_code_file} from "../setting/setting.prefile";
 
 const navindex_net_key_list = data_common_key.navindex_net_key_list;
 
@@ -143,6 +145,42 @@ export class NetController {
     proxySetWin(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         netService.setMacProxy(req)
+        return Sucess("");
+    }
+
+
+    @Post('/http/proxy/server/get')
+    httpProxyGet(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        return Sucess(netService.getHttpServerProxy());
+    }
+
+    @Post('/http/proxy/server/save')
+    httpProxySave(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        netService.saveHttpServer(req)
+        return Sucess("");
+    }
+
+    @Post("/http/proxy/server/code/get")
+    httpProxyCodeGet(@Body() req, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        const key = req.key;
+        const context = DataUtil.getFile(`data_common_key.proxy_server_code_prefix_${key}`, data_dir_tem_name.http_proxy_server_dir);
+        const pre = JSON.stringify(http_proxy_item_sample)
+        if (!context) {
+            DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${req.name}`, pre, data_dir_tem_name.http_proxy_server_dir);
+        }
+        return Sucess(context || pre);
+    }
+
+    @Post("/http/proxy/server/code/save")
+    httpProxyCodeSave(@Body() req, @Req() ctx) {
+        const key = req.key;
+        const context  = req.context;
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${key}`, context, data_dir_tem_name.http_proxy_server_dir);
+        netService.load_server_proxy()
         return Sucess("");
     }
 }
