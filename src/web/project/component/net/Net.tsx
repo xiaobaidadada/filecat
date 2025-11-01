@@ -12,14 +12,14 @@ import {NetProxy} from "./NetProxy";
 export default function  Net() {
     const { t } = useTranslation();
     const menuRots = [
-        {index: 2, name: "tun "+t("服务端"), rto: "server/"},
-        {index: 1, name:"tun "+ t("客户端"), rto: "client/"},
-        {index: 3, name:t("系统")+" "+ t("代理"), rto: "sys_proxy/"}
+        {index: 1, name:t("系统")+" "+ t("代理"), rto: "proxy_sys/"},
+        {index: 2, name:"tun "+ t("客户端"), rto: "client/"},
+        {index: 3, name: "tun "+t("服务端"), rto: "server/"}
     ];
 
     return  <Menu optionList={menuRots}>
+        <NetProxy />
         <NetClient />
         <NetServer />
-        <NetProxy />
     </Menu>
 }
