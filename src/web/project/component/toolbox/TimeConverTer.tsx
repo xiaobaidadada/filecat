@@ -75,7 +75,7 @@ export function TimeConverTer(props) {
             const data = await response.data;
             setServerTime(data.timestamp);
             setTimezone(data.timezone);
-            setLocalNow(Date.now());
+            setLocalNow(data.timestamp); // ← 用服务器时间初始化
         }
 
     };
