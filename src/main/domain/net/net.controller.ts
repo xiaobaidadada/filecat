@@ -167,7 +167,7 @@ export class NetController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         const key = req.key;
         const context = DataUtil.getFile(`data_common_key.proxy_server_code_prefix_${key}`, data_dir_tem_name.http_proxy_server_dir);
-        const pre = JSON.stringify(http_proxy_item_sample)
+        const pre = JSON.stringify([http_proxy_item_sample])
         if (!context) {
             DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${req.name}`, pre, data_dir_tem_name.http_proxy_server_dir);
         }
@@ -177,7 +177,7 @@ export class NetController {
     @Post("/http/proxy/server/code/save")
     httpProxyCodeSave(@Body() req, @Req() ctx) {
         const key = req.key;
-        const context  = req.context;
+        const context = req.context;
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${key}`, context, data_dir_tem_name.http_proxy_server_dir);
         netService.load_server_proxy()

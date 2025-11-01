@@ -501,15 +501,22 @@ export class NetService {
     load_server_proxy() {
         const data = this.getHttpServerProxy()
         proxy_server_data = data
-        proxy_server_list_data = data.list
-            .filter(v => v.open)
-            .map(item => {
+        const list = []
+        for (const it of data.list ?? []) {
+            if (it.open) {
                 const context = DataUtil.getFile(
-                    `data_common_key.proxy_server_code_prefix_${item.random_key}`,
+                    `data_common_key.proxy_server_code_prefix_${it.random_key}`,
                     data_dir_tem_name.http_proxy_server_dir
                 );
-                return JSON.parse(context);
-            })
+                const p = JSON.parse(context)
+                if (Array.isArray(p)) {
+                    list.push(...p);
+                } else {
+                    list.push(p);
+                }
+            }
+        }
+        proxy_server_list_data = list
     }
 
     findProxyRule(fullUrl: string): HttpProxyITem | undefined {
