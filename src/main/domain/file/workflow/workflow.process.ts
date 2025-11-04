@@ -75,7 +75,7 @@ export class WorkflowProcess {
         let runs: string[]
         if (step.run) {
             const run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
-            if(step["hidden-param"] != null && !step["hidden-param"]) {
+            if(!step["hidden-param"]) {
                 step.run = run;
             }
             runs = [run]
@@ -83,7 +83,7 @@ export class WorkflowProcess {
             const  list = []
             for (let i = 0; i < step.runs.length; i++) {
                 const run = Mustache.render(`${step.runs[i] ?? ""}`, this.instance.env);
-                if(step["hidden-param"] != null && !step["hidden-param"]) {
+                if(!step["hidden-param"]) {
                     step.runs[i] = run;
                 }
                 list.push(run);
