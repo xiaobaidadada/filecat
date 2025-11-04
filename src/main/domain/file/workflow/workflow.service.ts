@@ -377,6 +377,7 @@ export class work_children {
                     if (step['sleep']) {
                         await CommonUtil.sleep(step['sleep']);
                     }
+                    const step_start_time = Date.now();
                     try {
                         if (step["run-js"]) {
                             await workflow_util.run_code_js_by_step(step, job, this.env,true)
@@ -399,10 +400,8 @@ export class work_children {
                                 workflow_logger: this.logger
                             });
                             this.worker_children_use_yml_map.set(step["use-yml"], worker);
-                            const step_start_time = Date.now();
                             const r = await worker.run_jobs(true); //  只需要记录整个执行结果 日志不记录了
                             step.use_job_children_list = r.all_jobs
-                            step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
                             if (r.failed) {
                                 step.code = -1;
                                 this.logger.send_all_wss();
@@ -427,6 +426,8 @@ export class work_children {
                         } else {
                             throw e
                         }
+                    } finally {
+                        step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
                     }
                     if (step['then-log']) {
                         const log = Mustache.render(`${step['then-log'] ?? ""}`, this.env);

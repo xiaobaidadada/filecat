@@ -36,7 +36,7 @@ module.exports = {
                 type: 'asset/inline'
             },
             {
-                test: /\.(txt|yml)$/i,
+                test: /workflow.yml/,
                 type: 'asset/source', // 直接把文件内容导出为字符串
             }
         ],

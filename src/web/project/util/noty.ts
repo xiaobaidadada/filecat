@@ -1,11 +1,12 @@
 import Noty from "noty";
 
 let now = Date.now();
+const time_out = 500
 export function NotySucess(text) {
-    if (Date.now() - now < 500) {
-        return ;
-    }
-    now = Date.now();
+    // if (Date.now() - now < time_out) {
+    //     return ;
+    // }
+    // now = Date.now();
     return new Noty({
         type: 'success',
         text: text,
@@ -16,10 +17,10 @@ export function NotySucess(text) {
 }
 
 export function NotyFail(text) {
-    if (Date.now() - now < 500) {
-        return ;
-    }
-    now = Date.now();
+    // if (Date.now() - now < time_out) {
+    //     return ;
+    // }
+    // now = Date.now();
     new Noty({
         type: 'error',
         text: text,
@@ -29,10 +30,10 @@ export function NotyFail(text) {
 }
 
 export function NotyWaring(text) {
-    if (Date.now() - now < 500) {
-        return ;
-    }
-    now = Date.now();
+    // if (Date.now() - now < 100) {
+    //     return ;
+    // }
+    // now = Date.now();
     new Noty({
         type: 'warning',
         text: text,
@@ -43,10 +44,10 @@ export function NotyWaring(text) {
 }
 
 export function NotyInfo(text) {
-    if (Date.now() - now < 500) {
-        return ;
-    }
-    now = Date.now();
+    // if (Date.now() - now < time_out) {
+    //     return ;
+    // }
+    // now = Date.now();
     new Noty({
         type: 'info',
         text: text,
