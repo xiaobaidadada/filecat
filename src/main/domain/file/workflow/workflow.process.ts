@@ -75,13 +75,21 @@ export class WorkflowProcess {
         this.step_start_time = Date.now();
         let runs: string[]
         if (step.run) {
-            step.run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
-            runs = [step.run]
-        } else if (step.runs) {
-            for (let i = 0; i < step.runs.length; i++) {
-                step.runs[i] = Mustache.render(`${step.runs[i] ?? ""}`, this.instance.env);
+            const run = Mustache.render(`${step.run ?? ""}`, this.instance.env);
+            if(!step["hidden-param"]) {
+                step.run = run;
             }
-            runs = step.runs
+            runs = [run]
+        } else if (step.runs) {
+            const  list = []
+            for (let i = 0; i < step.runs.length; i++) {
+                const run = Mustache.render(`${step.runs[i] ?? ""}`, this.instance.env);
+                if(!step["hidden-param"]) {
+                    step.runs[i] = run;
+                }
+                list.push(run);
+            }
+            runs = list
         }
         return new Promise(async (resolve, reject) => {
             try {

@@ -34,7 +34,7 @@ jobs:
     # need-jobs: [build-job2] # 需要别的job先完成 只能是本文件内的
     steps: # 这些脚本会按顺序执行
       - use-yml: test2 # 使用其它 yml 文件中的 name
-        with-env:
+        with-env: # 默认全部传入 如果有传这个
              version: 18 # 使用其它文件的时候 给一些环境变量参数
       #   - run: pip.exe install setuptools
       #   - run: npm.cmd install
@@ -61,4 +61,5 @@ jobs:
         out-env: info # 可选的，执行后将输出（多次会覆盖）的值输出到这个env中，暂时不支持ls cd pwd 等pty-shell的内建命令输出,debug开发可能会有多余输出
         catch-js: '2 > 1' # 如果出错了，判断一下是否继续执行，job也支持，支持 run runs run-js
         while: 1 > 2 # 是否再执行一次
+        hidden-param: true # 隐藏 {{}} 的内容
 

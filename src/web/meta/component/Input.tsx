@@ -176,6 +176,7 @@ export function InputText(props: {
     maxWidth?: string,
     width?: string,
     options?: string[]
+    type?: string
 }) {
     return Input({
         ...props

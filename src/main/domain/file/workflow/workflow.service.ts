@@ -390,7 +390,7 @@ export class work_children {
                             }
                             const worker = new work_children(undefined, this.workflow_dir_path);
                             await worker.init({
-                                env: step['with-env'],
+                                env: step['with-env'] ?? this.env,
                                 yaml_data: yaml.yaml_data,
                                 yaml_path: yaml.yaml_path,
                                 filecat_user_name: this.env['filecat_user_name'],

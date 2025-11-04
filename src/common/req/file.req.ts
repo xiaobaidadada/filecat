@@ -79,6 +79,8 @@ export interface step_item {
 
     "then-log-file"?: string; // 输出一些内容到这个文件
     "then-log"?: string;
+
+    "hidden-param"?: boolean; // 隐藏参数显示
 }
 
 export interface job_item {

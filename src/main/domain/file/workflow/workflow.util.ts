@@ -74,7 +74,9 @@ export class workflow_util {
     public static async run_code_js_by_step(step: step_item, job: job_item, env, ignore_return: boolean = false) {
         const step_start_time = Date.now();
         const code_r = await workflow_util.run_and_get_code(step['run-js'], env)
-        step['run-js'] = code_r.js_code
+        if(!step['hidden-param']) {
+            step['run-js'] = code_r.js_code
+        }
         step.duration = `${((Date.now() - step_start_time) / 1000).toFixed(2)} s`;
         if ((code_r.r || ignore_return === true) && code_r.message == null) {
             step.code = 0;
