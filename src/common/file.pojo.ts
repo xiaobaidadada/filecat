@@ -20,7 +20,8 @@ export enum FileTypeEnum {
     excalidraw = "excalidraw",
     draw = "draw",
     workflow_act = "act",
-    dev = "dev" // linux设备 不是文件或者目录
+    dev = "dev", // linux设备 不是文件或者目录
+    url = "url"
 }
 
 export interface FileItemData {

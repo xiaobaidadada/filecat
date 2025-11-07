@@ -13,7 +13,6 @@ import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../common/ValueUtil";
 import {Ace as AceItem} from "ace-builds";
 import {UserAuth} from "../../../common/req/user.req";
-import {useEffect} from "react";
 
 async function get_file_context(path, is_sys_path) {
     if (is_sys_path) {
@@ -126,6 +125,9 @@ export const user_click_file = () => {
                 case FileTypeEnum.workflow_act:
                     param.model = "text";
                     click_file(param);
+                    break;
+                case FileTypeEnum.url:
+                    window.open( await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, false), '_blank');
                     break;
                 case FileTypeEnum.unknow:
                 default:

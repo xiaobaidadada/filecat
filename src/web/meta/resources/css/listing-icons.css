@@ -227,6 +227,9 @@
 .file-icons [aria-label$=".act"] i { color: var(--icon-blue) }
 .file-icons [aria-label$=".act"] i::before { content: 'api' }
 
+.file-icons [aria-label$=".url"] i { color: var(--icon-blue) }
+.file-icons [aria-label$=".url"] i::before { content: 'link' }
+
 
 
 

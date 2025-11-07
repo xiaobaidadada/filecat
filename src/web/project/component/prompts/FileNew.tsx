@@ -26,6 +26,7 @@ export function FileNew(props) {
         {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
         {title: `workflow${t("格式")}`, value:".act"},
+        {title: `url${t("格式")}`, value:".url"},
     ]
     const cancel=()=> {
         setShowPrompt({show: false,type: "",overlay: false,data:{}})
@@ -45,6 +46,8 @@ export function FileNew(props) {
                 context = "{}";
             } else if (format === ".act") {
                 context = workflow_txt;
+            } else if (format === ".url") {
+                context = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
             }
         }
         const fileName = `${showPrompt.data.dir}${r_name}`
