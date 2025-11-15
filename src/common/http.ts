@@ -13,13 +13,17 @@ export class HttpRequest {
         }
     }
 
-    public static async get(url: string,params?:{}): Promise<any> {
+    public static async get(url: string,params?:{}, timeout?:number): Promise<any> {
         try {
             const queryString = querystring.stringify(params);
             if (params) {
                 url = `${url}?${queryString}`;
             }
-            const rsq = await needle('get',url);
+            const options = {}
+            if (timeout) {
+                options["open_timeout"] = timeout;
+            }
+            const rsq = await needle('get',url,options);
             if (rsq.statusCode === 200) {
                 return rsq.body;
             }

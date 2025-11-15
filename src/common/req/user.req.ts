@@ -25,6 +25,7 @@ export class UserBaseInfo {
     user_data: UserData; // 用户数据
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
     watch:boolean
+    latest_version?:string;
 }
 
 
