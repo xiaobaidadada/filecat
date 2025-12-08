@@ -12,12 +12,12 @@ export class ShellController {
     // 文件
     @msg(CmdType.shell_open)
     async open(data:WsData<ShellInitPojo>) {
-        shellServiceImpl.open(data);
+        await shellServiceImpl.open(data);
         return ""
     }
     @msg(CmdType.shell_send)
     async send(data:WsData<any>) {
-        shellServiceImpl.send(data);
+        await shellServiceImpl.send(data);
         return ""
     }
     // @msg(CmdType.shell_cancel)

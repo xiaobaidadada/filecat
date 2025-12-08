@@ -187,7 +187,7 @@ export function NetProxy(props) {
         }
         const res = await netHttp.post(`http/proxy/server/code/get`, {key: httpServer.list[index].random_key});
         setEditorSetting({
-            model: "ace/mode/json",
+            model: "ace/mode/javascript",
             open: true,
             fileName: "",
             can_format: true,

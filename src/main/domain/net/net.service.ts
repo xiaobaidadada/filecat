@@ -29,6 +29,7 @@ import {URL} from 'url';
 import https from 'https';
 import {ServerEvent} from "../../other/config";
 import net from "net";
+import vm from "node:vm";
 
 
 const needle = require('needle');
@@ -49,6 +50,14 @@ interface proxyInterface {
     beforPort: number;
     heartbeat: boolean;
 }
+
+// 创建安全的沙盒环境
+const sandbox = {
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval
+};
 
 const proxyTargetUrlMap: Map<string, proxyInterface> = new Map();
 const checkTimeLength = 1000 * 60 * 10;// 十分钟没有触发，就关闭
@@ -504,15 +513,29 @@ export class NetService {
         const list = []
         for (const it of data.list ?? []) {
             if (it.open) {
-                const context = DataUtil.getFile(
-                    `data_common_key.proxy_server_code_prefix_${it.random_key}`,
-                    data_dir_tem_name.http_proxy_server_dir
-                );
-                const p = JSON.parse(context)
-                if (Array.isArray(p)) {
-                    list.push(...p);
-                } else {
-                    list.push(p);
+                try {
+                    const context = DataUtil.getFile(
+                        `data_common_key.proxy_server_code_prefix_${it.random_key}`,
+                        data_dir_tem_name.http_proxy_server_dir
+                    );
+                    let p
+                    try {
+                        p = JSON.parse(context)
+                    } catch (e) {
+                        const sandbox_context = vm.createContext({
+                            ...sandbox
+                        }); // 创建沙箱上下文
+                        p = vm.runInContext(context, sandbox_context)
+                    }
+                    if (p) {
+                        if (Array.isArray(p)) {
+                            list.push(...p);
+                        } else {
+                            list.push(p);
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
                 }
             }
         }

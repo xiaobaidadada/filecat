@@ -68,7 +68,7 @@ export function getShell() {
 const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 
-const socketMap: Map<string, any> = new Map();
+// const socketMap: Map<string, any> = new Map();
 
 // let line = "";
 //
@@ -269,13 +269,14 @@ export class ShellService {
         // const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         // const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
         // ptyProcess.write(cm);
-        socketMap.set(socketId, ptyShell);
+        // socketMap.set(socketId, ptyShell);
+        (data.wss as Wss).dataMap.set(socketId, ptyShell);
         (data.wss as Wss).ws.on('close', function close() {
-            const pty = socketMap.get(socketId);
+            const pty = (data.wss as Wss).dataMap.get(socketId);
             if (pty) {
                 console.log('意外断开pty');
                 pty.kill();
-                socketMap.delete(socketId);
+                // socketMap.delete(socketId);
             }
         });
     }
@@ -283,7 +284,7 @@ export class ShellService {
     async send(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
 
-        const pty = socketMap.get(socketId);
+        const pty = (data.wss as Wss).dataMap.get(socketId);
         if (pty) {
             if (data.context !== null && data.context !== "null") {
                 await pty.write(data.context);
@@ -336,30 +337,30 @@ export class ShellService {
             });
 
             exec.on('close', (code) => {
-                const exec = socketMap.get(socketId);
+                const exec = (data.wss as Wss).dataMap.get(socketId);
                 if (exec) {
                     console.log('意外断开exec');
                     exec.kill();
-                    socketMap.delete(socketId);
+                    // socketMap.delete(socketId);
                 }
                 (data.wss as Wss).ws.close();
             });
-            socketMap.set(socketId, exec);
+            (data.wss as Wss).dataMap.set(socketId, exec);
             (data.wss as Wss).ws.on('close', function close() {
-                const exec = socketMap.get(socketId);
+                const exec = (data.wss as Wss).dataMap.get(socketId);
                 if (exec) {
                     console.log('意外断开exec');
                     exec.kill();
-                    socketMap.delete(socketId);
+                    // socketMap.delete(socketId);
                 }
                 (data.wss as Wss).ws.close();
             });
         } catch (ex) {
-            const exec = socketMap.get(socketId);
+            const exec = (data.wss as Wss).dataMap.get(socketId);
             if (exec) {
                 console.log('意外断开exec');
                 exec.kill();
-                socketMap.delete(socketId);
+                // socketMap.delete(socketId);
                 (data.wss as Wss).ws.close();
             }
         }
@@ -370,11 +371,11 @@ export class ShellService {
     async dockerShellLogs_cancel(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
         (data.wss as Wss).ws.close();
-        const exec = socketMap.get(socketId);
+        const exec = (data.wss as Wss).dataMap.get(socketId);
         if (exec) {
             console.log('主动断开exec');
             exec.kill();
-            socketMap.delete(socketId);
+            // socketMap.delete(socketId);
         }
     }
 
@@ -442,17 +443,17 @@ export class ShellService {
 
         ptyProcess.onExit(({ exitCode, signal }) => {
             (data.wss as Wss).ws.close();
-            socketMap.delete(socketId);
+            // socketMap.delete(socketId);
         });
 
-        socketMap.set(socketId, ptyProcess);
+        (data.wss as Wss).dataMap.set(socketId, ptyProcess);
 
         (data.wss as Wss).ws.on('close', function close() {
-            const pty = socketMap.get(socketId);
+            const pty = (data.wss as Wss).dataMap.get(socketId);
             if (pty) {
                 console.log('ws客户端 意外断开pty');
                 pty.kill();
-                socketMap.delete(socketId);
+                // socketMap.delete(socketId);
             }
         });
     }
@@ -460,7 +461,7 @@ export class ShellService {
 
     async dockerShellExec(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
-        const pty = socketMap.get(socketId);
+        const pty = (data.wss as Wss).dataMap.get(socketId);
         if (pty) {
             if (data.context !== null && data.context !== "null") {
                 pty.write(data.context);
@@ -476,11 +477,11 @@ export class ShellService {
     dockerShellExecCancel(data: WsData<any>) {
         const socketId = (data.wss as Wss).id;
         (data.wss as Wss).ws.close();
-        const pty = socketMap.get(socketId);
+        const pty = (data.wss as Wss).dataMap.get(socketId);
         if (pty) {
             console.log('主动断开pty');
             pty.kill();
-            socketMap.delete(socketId);
+            // socketMap.delete(socketId);
         }
     }
 
