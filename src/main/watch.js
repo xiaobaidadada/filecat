@@ -50,6 +50,7 @@ function startServer() {
     // 子进程退出事件
     child.on('exit', (code, signal) => {
         console.log(`⚠️ 子进程退出：code=${code}, signal=${signal}`);
+        restartServer();
     });
 }
 

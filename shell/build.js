@@ -116,7 +116,7 @@ const tasksLister = new Listr(
                     });
                 })
             },
-            options: {persistentOutput: true},
+            // options: {persistentOutput: true},
         },
     ],
     {
