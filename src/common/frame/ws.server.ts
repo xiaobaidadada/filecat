@@ -5,7 +5,6 @@ import * as parser from "socket.io-parser"
 import {settingService} from "../../main/domain/setting/setting.service";
 import {RCode} from "../Result.pojo";
 import {generateRandomHash} from "../StringUtil";
-import {SysPojo} from "../req/sys.pojo";
 
 const url = require('url');
 
@@ -45,14 +44,14 @@ export class Wss {
     }
 
     send(cmdType:CmdType,data:any) {
-        const result = new WsData<SysPojo>(cmdType);
+        const result = new WsData<any>(cmdType);
         result.context = data;
         this._ws.send(result.encode());
     }
 
     // 发送给所有在线的客户端
     public static sendToAllClient(cmdType:CmdType,data:any) {
-        const result = new WsData<SysPojo>(cmdType);
+        const result = new WsData<any>(cmdType);
         result.context = data;
         for (const wss of allWssSet.values()) {
             wss.sendData(result);
