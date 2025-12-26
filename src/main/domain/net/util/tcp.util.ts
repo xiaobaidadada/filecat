@@ -76,7 +76,7 @@ export class TcpUtil {
         this.onData= handle;
     }
     // 处理buffer
-    public handleSocket(buffer:Buffer) {
+    public handleSocket(buffer:Buffer|Buffer<ArrayBufferLike>) {
         // this.buffer = Buffer.concat([this.buffer,buffer]);
         this.buffer = TcpUtil.fastBufferConcat([this.buffer,buffer]);
         if (this.buffer.length > this.total_head_length &&  !this.processing) {
