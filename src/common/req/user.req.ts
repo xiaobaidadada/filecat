@@ -97,6 +97,11 @@ export enum DirListShowTypeEmum {
     name = "name" // 按字母顺序排序
 }
 
+export enum FileListPaginationModeEmum {
+    all = "all", // 全部加载（默认）
+    pagination = "pagination" // 分页滚动加载
+}
+
 export type themes = "light" | "dark" | "" | undefined;
 
 export class UserData extends UserLogin {
@@ -129,4 +134,5 @@ export class UserData extends UserLogin {
     file_list_show_type: FileListShowTypeEmum;
     dir_show_type: DirListShowTypeEmum; // 目录列表样式
     not_pre_show_image:boolean; // 是否预览图片
+    file_list_pagination_mode?: FileListPaginationModeEmum; // 文件列表加载模式：全部加载或分页加载
 }

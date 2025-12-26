@@ -77,7 +77,7 @@ export function RouteBreadcrumbs(props: {
                 :
                 <DivOverlayTransparent click={()=>{set_input_path(undefined)}}
                                     children={
-                                        <InputText width={"100%"} maxWidth={"60%"}
+                                        <InputText width={"100%"}
                                                    placeholder={"输入跳转的目录"}
                                                    handlerEnter={(v) => {
                                                        if(props.input_path_enter) {

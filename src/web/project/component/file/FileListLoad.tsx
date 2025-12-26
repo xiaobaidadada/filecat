@@ -21,7 +21,7 @@ export function FileListLoad_file_folder_for_local(
         handleContextMenu: any, // 右键空白
         file_list?: file_show_item[],
         folder_list?: file_show_item[],
-        clickBlank: any // 点击文件
+        clickBlank: any // 点击空白
     }) {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const inputRef = useRef(null); // 用于保证 大小伸缩变化

@@ -156,3 +156,45 @@ export function using_file_quick_keyboard(file_list, folder_list, isFocused) {
         };
     }, [file_list, folder_list, isFocused]);
 }
+
+
+// 为dvi ref 添加滚动事件 需要在 useEffect 添加（只添加一次，没有删除事件，自己直接把ref删了就行)
+export function add_div_wheel_event(ref, bottom: () => void,up: () => void) {
+    let last_position = 0;
+
+    const handleScroll = () => {
+        const element = ref.current;
+        console.log(111)
+        if (element) {
+            if (last_position < element.scrollTop && element.scrollTop + element.clientHeight + 500 >= element.scrollHeight) {
+                // console.log("滚动到达底部");
+                bottom()
+            }
+            // 检测是否滚动到顶部
+            else if (last_position > element.scrollTop && element.scrollTop - 300 <= 0) {
+                // console.log("滚动到达顶部");
+                up()
+            }
+            last_position = element.scrollTop;
+        }
+    };
+    ref.current.addEventListener("scroll", handleScroll);
+    const handleWheel = (e: WheelEvent) => {
+        const element = ref.current;
+        console.log(element.scrollTop)
+        if (element) {
+            // 阻止默认滚动行为
+            // e.preventDefault();
+            // 获取一行的高度
+             // 你可以根据实际内容设置
+            const scrollAmount = 200;
+            // 根据滚轮滚动的方向来滚动
+            if (e.deltaY > 0) {
+                element.scrollTop += scrollAmount; // 向下滚动一行
+            } else {
+                element.scrollTop -= scrollAmount; // 向上滚动一行
+            }
+        }
+    };
+    ref.current.addEventListener("wheel", handleWheel, {passive: false});
+}

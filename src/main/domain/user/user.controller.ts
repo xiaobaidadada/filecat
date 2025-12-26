@@ -185,7 +185,8 @@ export class UserController {
         type: string,
         is_file_list_type?: boolean,
         is_dir_list_type?: boolean,
-        not_pre_show_image?: boolean
+        not_pre_show_image?: boolean,
+        is_pagination_mode?: boolean
     }, @Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
         const user_id = userService.get_user_id(user_data.username);
@@ -193,6 +194,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {dir_show_type: body.type} as UserData);
         } else if (body.not_pre_show_image !== undefined) {
             userService.only_update_user_data(user_id, {not_pre_show_image: body.not_pre_show_image} as UserData);
+        } else if (body.is_pagination_mode) {
+            userService.only_update_user_data(user_id, {file_list_pagination_mode: body.type} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

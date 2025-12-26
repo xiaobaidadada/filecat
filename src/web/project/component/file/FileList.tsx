@@ -20,7 +20,12 @@ import {getShortTime} from "../../../project/util/comm_util";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
-import {DirListShowTypeEmum, FileListShowTypeEmum, UserAuth} from "../../../../common/req/user.req";
+import {
+    DirListShowTypeEmum,
+    FileListPaginationModeEmum,
+    FileListShowTypeEmum,
+    UserAuth
+} from "../../../../common/req/user.req";
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
@@ -235,6 +240,19 @@ export default function FileList() {
                 v: DirListShowTypeEmum.size_max_min
             }
         ]
+        const pagination_mode = [
+            {
+                r: (<span
+                    style={{color: (!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all) ? "green" : undefined}}>{t("全部加载文件（默认）")}</span>),
+                v: FileListPaginationModeEmum.all
+            },
+            {
+                r: (<span
+                    style={{color: user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ? "green" : undefined}}>{t("分页滚动加载文件")}</span>),
+                v: FileListPaginationModeEmum.pagination
+            }
+        ];
+        
         const list: any[] = [
             {
                 r: t("文件排序"),
@@ -261,6 +279,11 @@ export default function FileList() {
                         >{t("文件大小")}</span>), v: false, items: size_sort
                     },
                 ]
+            },
+            {
+                r: t("文件加载方式"),
+                v: "",
+                items: pagination_mode
             },
 
         ];
