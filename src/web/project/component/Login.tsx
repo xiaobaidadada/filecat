@@ -1,3 +1,4 @@
+Global.init();
 import React, {useContext, useEffect, useState} from 'react'
 import {useRecoilState} from "recoil";
 import {InputPassword, InputText} from "../../meta/component/Input";
@@ -10,6 +11,7 @@ import {WinCenter} from "../../meta/component/Dashboard";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../GlobalProvider";
 import {NotyFail} from "../util/noty";
+import {Global} from "../util/global";
 
 
 function Login() {
@@ -45,7 +47,7 @@ function Login() {
 
     return (
         <WinCenter>
-            <h1>FileCat</h1>
+            <h1>{Global.web_site_title??'FileCat'}</h1>
             <div>
                 <InputText placeholder={t("账号")} handleInputChange={(value) => {
                     setUsername(value)

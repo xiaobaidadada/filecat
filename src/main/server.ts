@@ -47,29 +47,16 @@ async function start() {
     DataUtil.handle_history_data();
     await userService.root_init();
     shellServiceImpl.path_init();
-    // console.log(process.pid);
-// 环境变量加载
-// dotenv.config({ override: true });
-// Object.keys(config).forEach(key => {
-//     const value = process.env[key];
-//     if (value) {
-//         config[key] = value;
-//     }
-// })
 
     // 创建 Koa 应用并注册控制器
     const app = createExpressServer({
         cors: false,
         routePrefix: get_sys_base_url_pre(),
         classTransformer: true,
-        // controllers: [`${__dirname}/domain/**/*.*s`],
         controllers: [
             UserController, SysController, ShellController, FileController, DdnsController, NetController, VirtualController,
             NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController,
         ],
-        // controllers: [UserController, SysController, ShellController, FileController, DdnsController, NetController,
-        // NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController],
-        // middlewares: [`${__dirname}/other/middleware/**/*.*s`],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
     });
@@ -85,19 +72,6 @@ async function start() {
             router.add(`${item}`)
         }
         router.add(get_base()); // base_url
-        // 配置静态资源代理
-        // app.use(koa_static(path.join(__dirname,'dist')), { index: true });
-        // // // 当任何其他路由都不匹配时，返回单页应用程序的HTML文件
-        // const index_path = path.join(__dirname, 'dist', "index.html");
-        // let index_text = await FileUtil.readFileSync(index_path);
-        // const web_site_title = settingService.get_sys_env().web_site_title;
-        // index_text = Mustache.render(index_text.toString(),{
-        //     Windows_FileCat: JSON.stringify({
-        //         base_url:get_base(),
-        //         web_site_title
-        //     }), // 给前端
-        //     web_site_title
-        // });
 
         let index_text = await settingService.get_index_html();
         ServerEvent.on("sys_env_update", async (data) => {
@@ -105,7 +79,6 @@ async function start() {
         })
 
         const sys_pre = get_sys_base_url_pre();
-        // const self_pre = settingService.get_customer_api_pre_key();
         app.use(async (req: Request, res: Response, next) => {
             if (req.originalUrl && (req.originalUrl.startsWith(sys_pre))) {
                 next();
