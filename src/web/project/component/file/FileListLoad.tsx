@@ -70,9 +70,14 @@ export function FileListLoad_file_folder_for_local(
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
                 onMouseEnter={() => {
                     setIsFocused(true)
-                }} onMouseLeave={() => {
-        setIsFocused(false)
-    }}>
+                }}
+                onMouseLeave={() => {
+                     setIsFocused(false)
+                }}
+                // onScroll={()=>{
+                //     console.log(111)
+                // }}
+    >
         {(folder_list && folder_list.length > 0) && <h2>{t("文件夹")}</h2>}
         {(folder_list) &&
             (<div onClick={clickBlank}>{folder_list.map((v, index) => (

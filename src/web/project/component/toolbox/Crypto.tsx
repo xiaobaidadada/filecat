@@ -60,7 +60,7 @@ export function Crypto() {
             }
         })
     }
-    return (<div>
+    return (<React.Fragment>
         <Dashboard>
             <Header>
                 <Rows isFlex={true} columns={[
@@ -125,5 +125,5 @@ export function Crypto() {
                 </Column>
             </Row>
         </Dashboard>
-    </div>);
+    </React.Fragment>);
 }

@@ -348,7 +348,7 @@ export default function FileList() {
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
     return (
-        <div className={"not-select-div"}>
+        <React.Fragment>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                   icon={"search"} value={""}
                                                   handleInputChange={(v) => {
@@ -363,6 +363,6 @@ export default function FileList() {
             <FileShell/>
             {workflow_show && <WorkFlow/>}
             {workflow_realtime_show.open && <WorkFlowRealTime/>}
-        </div>
+        </React.Fragment>
     )
 }

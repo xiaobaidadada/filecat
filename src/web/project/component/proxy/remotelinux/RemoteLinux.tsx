@@ -109,7 +109,7 @@ export function RemoteLinux(props) {
         }
         setPort(parseInt(v));
     }
-    return <div>
+    return <React.Fragment>
         <Header>
             <InputTextIcon placeholder={t("目录")} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("账号")} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
@@ -124,5 +124,5 @@ export function RemoteLinux(props) {
             <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.ssh_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")},{key:"color",preName:"color"}]}/>
 
             : <RemoteLinuxFileList close={close} data={{port,password,username,domain,dir}}/>}
-    </div>
+    </React.Fragment>
 }

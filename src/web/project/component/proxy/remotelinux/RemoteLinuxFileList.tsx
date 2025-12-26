@@ -385,7 +385,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         setNowFileList({files: [], folders: []});
     }
     return (
-        <div className={"not-select-div"}>
+        <React.Fragment>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                   icon={"search"} value={""} handleInputChange={(v) => {
                 setSearch(v)
@@ -432,6 +432,6 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                 }
             </div>
             <RemoteShell/>
-        </div>
+        </React.Fragment>
     )
 }

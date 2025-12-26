@@ -1,3 +1,8 @@
+html, body, #root {
+  height: 100%;
+  overflow: hidden;  /* 整个文档不允许滚动，高度设置，如果内部div想要滚动需要自己设置*/
+}
+
 body {
   font-family: "Roboto", sans-serif;
   padding-top: 4em;

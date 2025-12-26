@@ -82,7 +82,7 @@ function Layout() {
         set_nav_style({is_mobile: false})
     }
     return (
-        <div>
+        <React.Fragment>
             {/*全局显示*/}
             <Suspense fallback={<div></div>}>
                 <FileLog/>
@@ -152,7 +152,7 @@ function Layout() {
                 </Suspense>
             </CommonBody>
             {nav_style.is_mobile && <Overlay click={nav_close}/>}
-        </div>
+        </React.Fragment>
     )
         ;
 }
