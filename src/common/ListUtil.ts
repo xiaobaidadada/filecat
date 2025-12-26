@@ -203,3 +203,31 @@ export function  deleteList<T>(list: T[], check: (data: T) => boolean): T | unde
     }
     return undefined;
 }
+
+export function list_paginate<T>(list: T[], page_num: number, page_size: number) {
+    const total = list.length;
+    const total_pages = Math.ceil(total / page_size);
+
+    // 如果没有数据或页码超出范围，返回空数组
+    if(page_num < 1) {
+        page_num = 1
+    } else if (total === 0 || page_num < 1 || page_num > total_pages) {
+        return {
+            list: [] as T[],
+            total,
+            page_num,
+            page_size,
+            total_pages,
+        };
+    }
+    const start = (page_num - 1) * page_size;
+    const end = start + page_size;
+
+    return {
+        list: list.slice(start, end),
+        total,
+        page_num,
+        page_size,
+        total_pages,
+    };
+}

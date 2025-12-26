@@ -50,7 +50,6 @@ export interface FileInfoItemData {
 export interface GetFilePojo {
     files?: FileItemData[],
     folders?: FileItemData[],
-    relative_user_path?: string; // 相对于用户当前token路径的相对路径 也就是token之后的路径 返回这个 文件夹内的数据就不返回了 前端通过这个相对路径再请求一次
 }
 
 export class FileVideoFormatTransPojo {

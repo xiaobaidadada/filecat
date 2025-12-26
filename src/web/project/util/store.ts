@@ -306,6 +306,14 @@ export const $stroe = {
     folder_info_list_data: atom({
         key:"folder_info_list_data",
         default:[0,0]
+    }),
+    // 用于分页的信息
+    file_page:atom({
+        key: 'file_page',
+        default:{
+            page_size:200,
+            page_num:1
+        }
     })
 }
 

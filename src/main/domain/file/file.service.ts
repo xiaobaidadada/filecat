@@ -33,6 +33,7 @@ import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {FileUtil} from "./FileUtil";
 import {node_process_watcher} from "node-process-watcher";
+import {list_paginate} from "../../../common/ListUtil";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -82,8 +83,7 @@ export class FileService extends FileCompress {
     public async getFile(param_path, token, is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
         const result: GetFilePojo = {
             files: [],
-            folders: [],
-            relative_user_path: undefined
+            folders: []
         };
         if (is_sys_path === 1 && decodeURIComponent(param_path) === "/etc/fstab") {
             userService.check_user_auth(token, UserAuth.sys_disk_mount);
@@ -105,18 +105,8 @@ export class FileService extends FileCompress {
             const pojo = Sucess(buffer.toString(), RCode.PreFile);
             pojo.message = name;
             return pojo;
-        } else {
-            if (!stats.isDirectory()) {
-                return Fail("不是文件", RCode.Fail);
-            }
         }
 
-        if (is_sys_path === 1) {
-            if (sysPath.startsWith(root_path)) {
-                result.relative_user_path = sysPath.substring(root_path.length);
-            }
-            return Sucess(result); // 只返回相对路径
-        }
         const items = await FileUtil.readdirSync(sysPath);// 读取目录内容
         for (const item of items) {
             const filePath = path.join(sysPath, item);
@@ -157,6 +147,52 @@ export class FileService extends FileCompress {
                     path: path.join(param_path, item)
                 })
             }
+        }
+        return Sucess(result);
+    }
+
+    public async ws_get_list(token: string,param_path:string,page_num:number,page_size:number,search?:string) {
+        const result: GetFilePojo = {
+            files: []
+        };
+        const root_path = settingService.getFileRootPath(token);
+        const sysPath = path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
+        userService.check_user_path(token, sysPath)
+        let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+        items = list_paginate(items, page_num,page_size).list;
+        for (const item of items) {
+            const filePath = path.join(sysPath, item);
+            // 获取文件或文件夹的元信息
+            let stats: null | Stats = null;
+            try {
+                stats = await FileUtil.statSync(filePath);
+            } catch (e) {
+                console.log("读取错误", e);
+            }
+            let type:FileTypeEnum
+            let p:string
+            if(!stats) continue;
+            if(stats.isFile()) {
+                type = getFileFormat(item);
+                p = path.join(param_path, item)
+            } else if(stats.isDirectory()) {
+                type = FileTypeEnum.folder;
+                p = param_path
+            } else {
+                type = FileTypeEnum.dev;
+                p = path.join(param_path, item)
+            }
+            const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+
+            const pojo = {
+                type,
+                name: item,
+                mtime: mtime,
+                size: stats.size,
+                isLink: stats?.isSymbolicLink(),
+                path: p
+            }
+            result.files.push(pojo)
         }
         return Sucess(result);
     }

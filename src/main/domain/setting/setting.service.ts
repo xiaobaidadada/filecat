@@ -27,6 +27,7 @@ import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
 import {get_base, get_sys_base_url_pre} from "../bin/bin";
+import {get_user_now_pwd} from "../../../common/DataUtil";
 
 const needle = require('needle');
 const Mustache = require('mustache');
@@ -455,7 +456,7 @@ export class SettingService {
         //     }
         // }
         const user_data = userService.get_user_info_by_token(token);
-        return user_data.folder_item_now === 0 || user_data.folder_item_now === undefined ? user_data.cwd : user_data.folder_items[user_data.folder_item_now - 1].path as string;
+        return get_user_now_pwd(user_data)
     }
 
     cacheSysSoftwareItem: SysSoftwareItem[];

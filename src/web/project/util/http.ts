@@ -40,7 +40,7 @@ export class Http {
             return rsq.data
         }catch(err) {
             NotyFail(JSON.stringify(err));
-            return null;
+            throw err;
         }
     }
 
@@ -80,7 +80,7 @@ export class Http {
             return rsq.data;
         } catch (e) {
             NotyFail(JSON.stringify(e));
-            return null;
+            throw e
         }
     }
 
@@ -146,7 +146,7 @@ export class Http {
            return rsq.data
        }catch (e) {
            NotyFail(JSON.stringify(e));
-           return null;
+           throw e
        }
     }
 

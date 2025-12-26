@@ -47,10 +47,15 @@ export class FileController {
         return await FileServiceImpl.getFile(decodeURIComponent(path), ctx.headers.authorization, is_sys_path);
     }
 
+    @Post('/file_get_page')
+    async ws_get_list(@Req() ctx, @Body() data: any) {
+        return FileServiceImpl.ws_get_list(ctx.headers.authorization, data.param_path,data.page_num,data.page_size,data.search);
+    }
+
     @msg(CmdType.file_info)
     async wsGetFileInfo(data: WsData<any>) {
-        const pojo = data.context as {type: FileTypeEnum, path: string};
-        return await FileServiceImpl.getFileInfo(pojo.type, pojo.path, (data.wss as Wss).token,(data.wss as Wss));
+        const pojo = data.context as { type: FileTypeEnum, path: string };
+        return await FileServiceImpl.getFileInfo(pojo.type, pojo.path, (data.wss as Wss).token, (data.wss as Wss));
     }
 
     @Post('/file/info')
@@ -66,7 +71,7 @@ export class FileController {
 
     @Put('/:path([^"]{0,})')
     async uploadFile(@Req() req: Request, @Res() res: Response, @Param("path") path?: string) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(req.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
     }
@@ -85,14 +90,14 @@ export class FileController {
 
     @Delete('/:path([^"]{0,})')
     async deletes(@Req() ctx, @Param("path") path?: string) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         return await FileServiceImpl.deletes(ctx.headers.authorization, path);
     }
 
     @Post('/save/:path([^"]{0,})') // 保存的是文本 最大50MB
-    async save(@Req() ctx, @Param("path") path?: string, @Body({options:{limit: 6250000}}) data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
-        if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
-            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
+    async save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
+        if (userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
             await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
             return Sucess("1");
         }
@@ -101,13 +106,13 @@ export class FileController {
 
     // base保存支持分片
     @Post('/base64/save/:path([^"]{0,})')
-    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options:{limit: 6250000}}) data?: {
+    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: {
         base64_context: string,
         type: base64UploadType
     }) {
         path = decodeURIComponent(path);
-        if(userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update,false) ||
-            userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression,false) ) {
+        if (userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
             await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
             return Sucess("1");
         }
@@ -124,35 +129,35 @@ export class FileController {
 
     @Post('/cut')
     async cut(@Req() ctx, @Body() data?: cutCopyReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.cut(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/copy')
     async copy(@Req() ctx, @Body() data?: cutCopyReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.copy(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/file')
     async newFile(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newFile(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/dir')
     async newDir(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newDir(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/rename')
     async rename(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization,UserAuth.filecat_file_delete_cut_rename);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.rename(ctx.headers.authorization, data);
         return Sucess("1");
     }
@@ -162,7 +167,7 @@ export class FileController {
     async switchBasePath(@Body() data: { root_index: number }, @Req() ctx) {
         const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
         user_data.folder_item_now = data.root_index;
-        await userService.save_user_info(user_data.id,user_data);
+        await userService.save_user_info(user_data.id, user_data);
         // const obj = Cache.getValue(ctx.headers.authorization);
         // if (obj) {
         //     obj["root_index"] = data.root_index;
@@ -187,7 +192,7 @@ export class FileController {
         //     }
         // }
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
-        return Sucess(user_data.folder_item_now === undefined ? 0 :user_data.folder_item_now);
+        return Sucess(user_data.folder_item_now === undefined ? 0 : user_data.folder_item_now);
     }
 
     @msg(CmdType.file_video_trans)
@@ -278,12 +283,13 @@ export class FileController {
 
     // 统计文件大小
     @msg(CmdType.folder_size_info)
-    async folder_size_info(data:WsData<any>) {
-        await FileServiceImpl.get_folder_info(data.context.path,  (data.wss as Wss).token,(data.wss as Wss));
-        return [0,0];
+    async folder_size_info(data: WsData<any>) {
+        await FileServiceImpl.get_folder_info(data.context.path, (data.wss as Wss).token, (data.wss as Wss));
+        return [0, 0];
     }
+
     @msg(CmdType.folder_size_info_close)
-    async folder_size_info_close(data:WsData<any>) {
-        await FileServiceImpl.stop_folder_info(data.context.path,  (data.wss as Wss).token);
+    async folder_size_info_close(data: WsData<any>) {
+        await FileServiceImpl.stop_folder_info(data.context.path, (data.wss as Wss).token);
     }
 }

@@ -10,14 +10,9 @@ import Noty from "noty";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {BaseFileItem} from "../../file/component/BaseFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
-import {RCode} from "../../../../../common/Result.pojo";
-import path from "path";
 import {NotyFail, NotySucess} from "../../../util/noty";
-import {setPreSearch} from "./RemoteLinuxFileList";
-import {getEditModelType} from "../../../../../common/StringUtil";
 import {editor_data} from "../../../util/store.util";
 import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
-import {getShortTime} from "../../../../project/util/comm_util";
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 import {useTranslation} from "react-i18next";
 

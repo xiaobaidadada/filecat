@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -8,29 +8,26 @@ import Header from "../../../meta/component/Header";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
-import {create_quick_cmd_items, file_sort, getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {create_quick_cmd_items, file_sort} from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
-import {use_auth_check, use_file_to_running, user_click_file} from "../../util/store.util";
+import {use_auth_check, user_click_file} from "../../util/store.util";
 import {formatFileSize} from '../../../../common/ValueUtil';
-import {getShortTime} from "../../../project/util/comm_util";
+import {getShortTime} from "../../../project/util/common_util";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
-import {CmdType, WsData} from "../../../../common/frame/WsData";
-import {
-    DirListShowTypeEmum,
-    FileListPaginationModeEmum,
-    FileListShowTypeEmum,
-    UserAuth
-} from "../../../../common/req/user.req";
+import {CmdType} from "../../../../common/frame/WsData";
+import {DirListShowTypeEmum, FileListPaginationModeEmum, UserAuth} from "../../../../common/req/user.req";
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
-import {FileListLoad_file_folder_for_local} from "./FileListLoad";
+import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_ws_page} from "./FileListLoad";
 import {FileMenu} from "./FileMenu";
+import {get_user_now_pwd} from "../../../../common/DataUtil";
+import {cloneDeep} from "lodash";
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
@@ -65,6 +62,8 @@ export default function FileList() {
     const [to_running_files_set, set_to_running_files_set] = useRecoilState($stroe.to_running_files);
     const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
 
+    const [file_page, set_file_page] = useRecoilState($stroe.file_page);
+
     const workflow_watcher = async () => {
         const p = new WorkFlowRealTimeReq();
         p.dir_path = `${getRouterAfter('file', getRouterPath())}`
@@ -91,22 +90,30 @@ export default function FileList() {
         await ws.sendData(CmdType.workflow_realtime, p);
     }
     const fileHandler = async (path?: string) => {
-        // 文件列表初始化界面
         if (path) {
-            path = encodeURIComponent(path) + "?is_sys_path=1"
+            // 有绝对目录的把前面替换掉
+            path = path.replace(get_user_now_pwd(user_base_info.user_data),"")
+            path = encodeURIComponent(path)
         } else {
             path = encodeURIComponent(getRouterAfter('file', getRouterPath()))
         }
-        const rsp = await fileHttp.get(path); // 方式错误路径 因为没有使用  # 路由 这里加上去 location.hash
-        if (rsp.code === RCode.PreFile) {
-            click_file({name: rsp.message, context: rsp.data, opt_shell: true}); // 对于非文本类型的暂时不能用这种长路径url直接打开
-            return;
-        }
-        if (rsp.code !== RCode.Sucess) {
-            if (rsp.message) {
-                NotyFail(rsp.message);
+        // 文件列表初始化界面
+        let rsp
+        if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
+            if(file_page.page_num<0) return
+            // 分页查询
+            rsp = await fileHttp.post("file_get_page",{
+                param_path: path,
+                page_num:file_page.page_num,
+                page_size:file_page.page_size,
+            });
+            const pojo = rsp.data as GetFilePojo
+            if(!pojo.files?.length) {
+                set_file_page({page_size: file_page.page_size,page_num: -1})
             }
-            return;
+            pojo.files = cloneDeep([...nowFileList.files,...pojo.files]);
+        } else {
+            rsp = await fileHttp.get(path);
         }
         // 排序一下
         const data: GetFilePojo = rsp.data;
@@ -124,14 +131,6 @@ export default function FileList() {
                 })
             }
         }
-        if (data.relative_user_path !== undefined) {
-            if (data.relative_user_path.startsWith("\\") || data.relative_user_path.startsWith("/")) {
-                data.relative_user_path = data.relative_user_path.slice(1);
-            }
-            navigate(data.relative_user_path);
-            return;
-        }
-
         have_workflow_water = false;
         for (const folder of data.folders ?? []) {
             folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
@@ -144,31 +143,42 @@ export default function FileList() {
         setNowFileList(rsp.data)
         pre_search = rsp.data;
     }
-
-    // 在组件挂载后执行的逻辑
+    const init_page =  () => {
+        set_file_page({
+            page_num: 1,
+            page_size: 200
+        })
+    }
     useEffect(() => {
-        const fetchData = async () => {
-            await fileHandler();
-        };
-        fetchData();
-        // @ts-ignore
-        setEditorSetting({open: false});
-        setFilePreview({open: false});
-        set_workflow_show_click(false);
-
-    }, [location]);
-    useEffect(() => {
+        init_page()
         return async () => {
             set_to_running_files_set(new Set())
         }
     }, []);
+    const init = () =>{
+        fileHandler();
+        setEditorSetting({open: false});
+        setFilePreview({open: false});
+        set_workflow_show_click(false);
+    }
+    // 在组件挂载后执行的逻辑
+    useEffect(() => {
+        setNowFileList({
+            files:[],
+            folders:[]
+        })
+        init_page()
+        init()
+    }, [location]);
+    useEffect(() => {
+        init()
+    }, [file_page]);
 
 
     function routerClick() {
         setSelectList([])
         setClickList([])
     }
-
 
     // 搜索
     const searchHanle = () => {
@@ -243,7 +253,7 @@ export default function FileList() {
         const pagination_mode = [
             {
                 r: (<span
-                    style={{color: (!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all) ? "green" : undefined}}>{t("全部加载文件（默认）")}</span>),
+                    style={{color: (!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all) ? "green" : undefined}}>{t("全部加载文件")}</span>),
                 v: FileListPaginationModeEmum.all
             },
             {
@@ -305,6 +315,7 @@ export default function FileList() {
         pojo.items = list;
         pojo.textClick = async (v) => {
             if (v === false) return;
+            const user_save_user_file_list_show_type_pojo:any = {}
             if (v === "code_resource") {
                 const result = await ws.sendData(CmdType.file_info, {
                     // type: "",
@@ -336,10 +347,15 @@ export default function FileList() {
                     }
                 }
 
+            } else if(v=== FileListPaginationModeEmum.all || v===FileListPaginationModeEmum.pagination) {
+                user_save_user_file_list_show_type_pojo['is_pagination_mode'] = true
+            } else {
+                // 默认是设置时间的
+                user_save_user_file_list_show_type_pojo['is_dir_list_type'] = true
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
                 type: v,
-                is_dir_list_type: true
+                ...user_save_user_file_list_show_type_pojo
             });
             await initUserInfo();
             setShowPrompt({data: undefined, overlay: false, type: "", show: false});
@@ -358,8 +374,13 @@ export default function FileList() {
             </Header>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
-            <FileListLoad_file_folder_for_local handleContextMenu={handleContextMenu} file_list={nowFileList.files}
-                                                folder_list={nowFileList.folders} clickBlank={clickBlank}/>
+            {
+                user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ?
+                    <FileListLoad_file_folder_for_local_by_ws_page handleContextMenu={handleContextMenu} clickBlank={clickBlank} list={nowFileList.files}/>
+                    :
+                    <FileListLoad_file_folder_for_local handleContextMenu={handleContextMenu} file_list={nowFileList.files}
+                                                        folder_list={nowFileList.folders} clickBlank={clickBlank}/>
+            }
             <FileShell/>
             {workflow_show && <WorkFlow/>}
             {workflow_realtime_show.open && <WorkFlowRealTime/>}

@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {ActionButton} from "../../../meta/component/Button";
 import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData} from "../../../../common/FileMenuType";
@@ -57,6 +57,18 @@ export function FileMenu() {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {click_file} = user_click_file();
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const file_num = useMemo(() => {
+        return nowFileList.files.reduce(
+            (count, v) => count + (v.type !== FileTypeEnum.folder ? 1 : 0),
+            0
+        );
+    },[nowFileList])
+    const folder_num = useMemo(() => {
+        return nowFileList.files.reduce(
+            (count, v) => count + (v.type === FileTypeEnum.folder ? 1 : 0),
+            0
+        ) + (nowFileList.folders?.length ?? 0)
+    },[nowFileList])
 
     useEffect(()=>{
         dir_info = {}
@@ -218,8 +230,8 @@ export function FileMenu() {
                     <TextLine left={t("挂载位置磁盘")} right={show_info?.total_size}/>
                     <TextLine left={`${t("磁盘剩余")}`} right={show_info?.left_size}/>
                     <TextLine left={`${t("文件系统")}`} right={show_info?.fs_type}/>
-                    <TextLine left={`${t("文件夹数")}`} right={nowFileList.folders.length}/>
-                    <TextLine left={`${t("文件数")}`} right={nowFileList.files.length}/>
+                    <TextLine left={`${t("文件夹数")}`} right={folder_num}/>
+                    <TextLine left={`${t("文件数")}`} right={file_num}/>
                     <TextLine left={`${t("当前位置")}`} right={<TextTip context={show_info?.now_absolute_path}/>}/>
                 </div>
             ),

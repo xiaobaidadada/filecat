@@ -21,7 +21,7 @@ import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import { formatFileSize } from '../../../../../common/ValueUtil';
-import {getShortTime} from "../../../../project/util/comm_util";
+import {getShortTime} from "../../../../project/util/common_util";
 import { removeLastDir } from '../../../util/ListUitl';
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {isAbsolutePath, path_join} from "pty-shell/dist/path_util";
