@@ -1,8 +1,8 @@
 .dashboard {
     margin: 1em 0;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    /*overflow-y: auto;*/
+    /*overflow-x: hidden;*/
 }
 
 .dashboard .row {

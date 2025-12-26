@@ -46,7 +46,7 @@ export default function NavIndex() {
         }
     }
 
-    return <div>
+    return <>
         <Header>
             {/*<ButtonLittle text={t("添加")} clickFun={add}/>*/}
         </Header>
@@ -55,5 +55,5 @@ export default function NavIndex() {
             {key:"url",preName:"url"},
             {key:"color",preName:"color"}
         ]}/>
-    </div>
+    </>
 }

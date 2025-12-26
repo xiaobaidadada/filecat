@@ -42,7 +42,7 @@
 .nav_list_div {
     padding: 2rem;
     -ms-overflow-style: none;
-    align-items: center;
+    align-items: flex-start;
     display: flex;
     gap: 8px;
     margin: 0 -20px;

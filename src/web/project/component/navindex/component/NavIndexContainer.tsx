@@ -155,7 +155,7 @@ export function NavIndexContainer(props: {
         set_last_queue_index(last_queue_index -1);
         last_queue.pop();
     }
-    return <div className={"nav_list_div"}>
+    return <div className={"nav_list_div scroll-div-y"}>
         {last_queue_index!==-1 && <ActionButton title={"返回"} icon={"arrow_back"} onClick={back_last}/>}
         {items.map((item, index) => (
             <div

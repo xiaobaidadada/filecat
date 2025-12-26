@@ -49,3 +49,13 @@
     font-size: 2rem;
 }
 
+
+.not-select-div {
+    user-select: none;
+}
+
+.scroll-div-y {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+}

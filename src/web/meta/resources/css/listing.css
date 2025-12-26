@@ -2,9 +2,6 @@ html[dir="rtl"] #listing {
   margin-right: 16em;
 }
 
-.not-select-div {
-  user-select: none;
-}
 #listing {
   overflow-y: auto;
   height: 100%;
