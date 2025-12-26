@@ -89,14 +89,8 @@ export default function FileList() {
         })
         await ws.sendData(CmdType.workflow_realtime, p);
     }
-    const fileHandler = async (path?: string) => {
-        if (path) {
-            // 有绝对目录的把前面替换掉
-            path = path.replace(get_user_now_pwd(user_base_info.user_data),"")
-            path = encodeURIComponent(path)
-        } else {
-            path = encodeURIComponent(getRouterAfter('file', getRouterPath()))
-        }
+    const fileHandler = async () => {
+        const path  = getRouterAfter('file', getRouterPath())
         // 文件列表初始化界面
         let rsp
         if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
@@ -211,7 +205,8 @@ export default function FileList() {
 
     const routeBreadcrumbsEnter = (path) => {
         if (isAbsolutePath(path)) {
-            fileHandler(path);
+            path = path.replace(get_user_now_pwd(user_base_info.user_data),"")
+            navigate(path)
         } else {
             navigate(path_join(getRouterPath(), path))
         }

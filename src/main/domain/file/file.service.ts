@@ -171,16 +171,19 @@ export class FileService extends FileCompress {
             }
             let type:FileTypeEnum
             let p:string
+            let size
             if(!stats) continue;
             if(stats.isFile()) {
                 type = getFileFormat(item);
                 p = path.join(param_path, item)
+                size = stats.size
             } else if(stats.isDirectory()) {
                 type = FileTypeEnum.folder;
                 p = param_path
             } else {
                 type = FileTypeEnum.dev;
                 p = path.join(param_path, item)
+                size = stats.size
             }
             const mtime = stats ? new Date(stats.mtime).getTime() : 0;
 
@@ -188,7 +191,7 @@ export class FileService extends FileCompress {
                 type,
                 name: item,
                 mtime: mtime,
-                size: stats.size,
+                size,
                 isLink: stats?.isSymbolicLink(),
                 path: p
             }
