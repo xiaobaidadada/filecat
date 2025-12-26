@@ -86,7 +86,7 @@ export class NetServerUtil {
             }, 3000));
             // 监听数据事件
             socket.on('data', (buffer) => {
-                tcpUtil.handleSocket(buffer)
+                tcpUtil.handleSocket(buffer as Buffer)
             });
             socket.on('end', () => {
                 tcpUtil.close();

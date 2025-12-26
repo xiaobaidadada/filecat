@@ -174,7 +174,7 @@ export class NetClientUtil {
             // 客户端不做超时处理了
             // 监听数据事件
             client.on('data', (buffer) => {
-                tcpUtil.handleSocket(buffer);
+                tcpUtil.handleSocket(buffer as Buffer);
             });
             // 监听连接关闭事件
             client.on('close', () => {
