@@ -47,7 +47,7 @@ jobs:
     container: node:18-alpine
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
-      DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台
+      DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台环境变量 构建的时候用
     steps:
       - uses: actions/checkout@v4 
       - run: apk add docker build-base linux-headers git python3 py3-setuptools --update-cache
