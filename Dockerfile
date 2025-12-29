@@ -1,6 +1,12 @@
 # 构建阶段
 FROM node:18-alpine AS builder
 WORKDIR /build-stage
+RUN apk add --no-cache \
+    build-base \
+    linux-headers \
+    git \
+    python3 \
+    py3-setuptools
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
