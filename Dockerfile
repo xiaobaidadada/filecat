@@ -7,8 +7,8 @@ RUN apk add --no-cache \
     git \
     python3 \
     py3-setuptools
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json  ./
+RUN npm install
 COPY . .
 RUN npm run exe-build
 
