@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.18.2",
+  "version": "5.18.3",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -25,11 +25,6 @@
     "test": "prebuild --upload-files-gz filecat-linux --set-version \"\" -u 11234 ",
     "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2"
   },
-  "pkg": {
-    "assets": [
-      "build/**/**"
-    ]
-  },
   "bin": {
     "filecat": "shell/filecat",
     "filecat-watch": "shell/filecat-watch"
@@ -43,52 +38,12 @@
     "url": "https://github.com/xiaobaidadada/filecat/issues"
   },
   "license": "Apache-2.0",
-  "keywords": [
-    "文件服务器",
-    "linux管理",
-    "运维面板",
-    "远程桌面",
-    "浏览器代理",
-    "简洁",
-    "日志",
-    "http代理工具",
-    "终端权限",
-    "持续集成",
-    "CD/CI",
-    "http",
-    "post",
-    "log",
-    "filebrowser",
-    "administrator",
-    "filemanager",
-    "cpu",
-    "docker",
-    "linux",
-    "rdp",
-    "rtsp",
-    "react",
-    "ssh",
-    "ftp",
-    "systeminfo",
-    "vpn",
-    "p2p",
-    "docker",
-    "ddns"
-  ],
-  "files": [
-    "build/**/*",
-    "shell",
-    "env",
-    "LICENSE.txt",
-    "README.md",
-    "package.json"
-  ],
   "dependencies": {
     "@xiaobaidadada/dockerode": "^4.0.9",
     "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
-    "node-process-watcher": "^1.5.0"
+    "node-process-watcher": "^1.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
@@ -166,5 +121,50 @@
     "webpack-dev-server": "^5.2.0",
     "webpack-node-externals": "^3.0.0",
     "ws": "^8.16.0"
+  },
+  "keywords": [
+    "文件服务器",
+    "linux管理",
+    "运维面板",
+    "远程桌面",
+    "浏览器代理",
+    "简洁",
+    "日志",
+    "http代理工具",
+    "终端权限",
+    "持续集成",
+    "CD/CI",
+    "http",
+    "post",
+    "log",
+    "filebrowser",
+    "administrator",
+    "filemanager",
+    "cpu",
+    "docker",
+    "linux",
+    "rdp",
+    "rtsp",
+    "react",
+    "ssh",
+    "ftp",
+    "systeminfo",
+    "vpn",
+    "p2p",
+    "docker",
+    "ddns"
+  ],
+  "files": [
+    "build/**/*",
+    "shell",
+    "env",
+    "LICENSE.txt",
+    "README.md",
+    "package.json"
+  ],
+  "pkg": {
+    "assets": [
+      "build/**/**"
+    ]
   }
 }
