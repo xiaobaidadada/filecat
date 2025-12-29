@@ -2,7 +2,7 @@
 FROM node:18-alpine AS builder
 WORKDIR /build-stage
 COPY package.json  ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run exe-build
 
