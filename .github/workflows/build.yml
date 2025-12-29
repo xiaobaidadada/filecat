@@ -67,10 +67,10 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v3
-      - name: build
-        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本 
-          npm install 
-          npm run exe-build
+#      - name: build
+#        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
+#          npm install
+#          npm run exe-build
 #          npm install --omit=dev # 构建完不要node_moule了
       - name: Login to Docker Hub # login to Docker Hub, automatically logout at the end of job
         uses: docker/login-action@v3

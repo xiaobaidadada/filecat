@@ -1,15 +1,18 @@
-FROM node:hydrogen-alpine3.20
+# 构建阶段
+FROM node:18-alpine AS builder
+WORKDIR /build-stage
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run exe-build
 
-WORKDIR /app
-
-COPY env /app/env
-COPY /build /app
-#COPY /node_modules /app/node_modules
-#COPY filecat-linux /app/filecat-linux
-# 给 filecat-linux 添加执行权限
-RUN #chmod +x /app/filecat-linux
+# 运行环境
+FROM node:18-alpine
+WORKDIR /filecat
+COPY --from=builder /build-stage/build /filecat
+COPY env /filecat/env
 
 EXPOSE 5567
-ENTRYPOINT ["node","/app/main.js"]
+ENTRYPOINT ["node","/filecat/main.js"]
 # 默认参数 有参数会被覆盖
-CMD ["--env", "/app/env","--base_folder","/home"]
+CMD ["--env", "/filecat/env","--base_folder","/filecat"]
