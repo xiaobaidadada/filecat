@@ -1,8 +1,8 @@
 # 构建阶段
 FROM node:18-alpine AS builder
 WORKDIR /build-stage
-COPY package.json  ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 RUN npm run exe-build
 
