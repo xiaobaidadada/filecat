@@ -47,8 +47,12 @@ export function Menu(props) {
         </div>
         {/*标签内容路由*/}
         <div className={" scroll-div-y "}>
-            <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
-                          children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
+            <div style={{
+                padding:".5rem"
+            }}>
+                <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
+                              children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
+            </div>
         </div>
     </div>
 }
