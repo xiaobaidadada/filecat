@@ -32,9 +32,13 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.node$|Addon$/,
-                loader: 'node-loader', // 会拷贝.node 并改变require路径 到build目录下 但是如果 .node 有更新 他是不会不更新的需要先删除?
+                test: /\.node$/,
+                loader: 'node-loader',
+                options: {
+                    name: '[path][name].[ext]'
+                }
             }
+
         ]
     },
     externalsPresets: { node: true },

@@ -9,6 +9,24 @@ import {Env} from "../../../common/Env";
 const fs = require('fs');
 import fse from 'fs-extra'
 
+let tuntap2 :any
+export function get_tun_require() {
+    if(tuntap2) return tuntap2
+    const {
+        LinuxTun,
+        LinuxTap,
+        Wintun,
+        MacTun
+    } = require('@xiaobaidadada/node-tuntap2-wintun');
+    tuntap2 = {
+        LinuxTun,
+        LinuxTap,
+        Wintun,
+        MacTun
+    }
+    return tuntap2
+}
+
 // const {createRequire} = require('node:module');
 // export const require_c = createRequire(__filename); // 之前为了兼容 pkg
 // import {node_process_watcher} from "node-process-watcher";
@@ -55,15 +73,6 @@ export function get_wintun_dll_path(): string {
             // 在main.js的根目录下
             return path.join(__dirname, winfilename); // 避免升级的时候dll正在被使用无法升级
         }
-            // else if (process.env.run_env === "pkg") {
-            //     const p = path.join(relp, winfilename);
-            //     if (!fs.existsSync(p)) {
-            //         writeToStorage(path.join(__dirname,winfilename),p);
-            //         // writeToStorage(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll",winfilename),p)
-            //         // writeToStorage(path.resolve(winfilename), p)
-            //     }
-            //     return p;
-        // }
         else {
             // npm env 本地
             return path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll", winfilename)

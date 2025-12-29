@@ -85,7 +85,6 @@ const tasksLister = new Listr(
                         copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
                         copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
                         // 因为不一定不是windows环境 所以都复制一下，发布npm 在windows环境下，不然没有这个dll
-                        // copyFiles(path.resolve("node_modules/@xiaobaidadada/node-tuntap2-wintun/wintun_dll"),path.join(__dirname, "..", "build"))
                         rimraf.sync(path.join(__dirname,"..","build","server"));
 
                         res(true);

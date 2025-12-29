@@ -6,7 +6,7 @@ import {UdpUtil} from "../util/udp.util";
 import {findAvailablePort} from "../../../../common/findPort";
 import {TcpUtil} from "../util/tcp.util";
 import {Wss} from "../../../../common/frame/ws.server";
-import {get_wintun_dll_path, init_wintun_dll} from "../../bin/bin";
+import {get_tun_require, get_wintun_dll_path, init_wintun_dll} from "../../bin/bin";
 import {data_common_key} from "../../data/data_type";
 import {virtualServerService} from "./virtual.server.service";
 import {NetMsgType, NetUtil} from "../util/NetUtil";
@@ -18,12 +18,7 @@ import {SysEnum} from "../../../../common/req/user.req";
 import * as fs from "fs"
 
 const crypto = require('crypto');
-const {
-    LinuxTun,
-    LinuxTap,
-    Wintun,
-    MacTun
-} = require('@xiaobaidadada/node-tuntap2-wintun');
+
 
 const path = require("path");
 
@@ -308,14 +303,14 @@ export class VirtualClientService extends UdpUtil {
         this.tun_status = true;
         try {
             if (getSys() === SysEnum.win) {
-                Wintun.set_dll_path(get_wintun_dll_path());
-                Wintun.init();
-                Wintun.set_ipv4("filecat", ip, mask, guid);
-                Wintun.on_data((buf) => {
+                get_tun_require().Wintun.set_dll_path(get_wintun_dll_path());
+                get_tun_require().Wintun.init();
+                get_tun_require().Wintun.set_ipv4("filecat", ip, mask, guid);
+                get_tun_require().Wintun.on_data((buf) => {
                     this.handleTunPackage(buf, data.model === VirServerEnum.tcp);
                 });
             } else if (getSys() === SysEnum.linux) {
-                const tun = new LinuxTun();
+                const tun = new (get_tun_require().LinuxTun)();
                 tun.mtu = 4096;
                 tun.ipv4 = `${ip}/${mask}`
                 // tun.ipv6 = 'abcd:1:2:3::/64';
@@ -326,12 +321,12 @@ export class VirtualClientService extends UdpUtil {
                 tun.isUp = true;
                 this.tun.linuxTun = tun;
             } else if (getSys() === SysEnum.mac) {
-                const tun = MacTun.createTun();
+                const tun = get_tun_require().MacTun.createTun();
                 this.tun.macTun = tun;
                 this.tun.macTun.ip = `${ip}/${mask}`
                 // console.log(ip)
-                MacTun.setIPv4(ip, ip);
-                MacTun.applyGlobalMask({subnet: this.tun.macTun.ip}, tun.name);
+                get_tun_require().MacTun.setIPv4(ip, ip);
+                get_tun_require().MacTun.applyGlobalMask({subnet: this.tun.macTun.ip}, tun.name);
                 this.tun.macTun.readStream = fs.createReadStream(null, {fd: tun.fd, highWaterMark: 4096});
                 this.tun.macTun.writeStream = fs.createWriteStream(null, {fd: tun.fd});
                 this.tun.macTun.readStream.on('data', (buf) => {
@@ -444,7 +439,7 @@ export class VirtualClientService extends UdpUtil {
             }
             // 接收到数据转发到网卡
             if (getSys() === SysEnum.win) {
-                Wintun.send_data(buffer);
+                get_tun_require().Wintun.send_data(buffer);
             } else if (getSys() === SysEnum.linux) {
                 this.tun.linuxTun.write(buffer);
             } else if (getSys() === SysEnum.mac) {
@@ -470,12 +465,12 @@ export class VirtualClientService extends UdpUtil {
             return;
         }
         if (getSys() === SysEnum.win) {
-            Wintun.close()
+            get_tun_require().Wintun.close()
         } else if (getSys() === SysEnum.linux) {
             this.tun.linuxTun.release();
         } else if (getSys() === SysEnum.mac) {
-            MacTun.removeGlobalMask({subnet: this.tun.macTun.ip}, this.tun.macTun.name);
-            MacTun.closeTun();
+            get_tun_require().MacTun.removeGlobalMask({subnet: this.tun.macTun.ip}, this.tun.macTun.name);
+            get_tun_require().MacTun.closeTun();
             this.tun.macTun.readStream.destroy()
             this.tun.macTun.writeStream.destroy()
         }
