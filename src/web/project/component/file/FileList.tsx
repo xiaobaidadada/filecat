@@ -54,7 +54,7 @@ export default function FileList() {
     const [search, setSearch] = useState("");
     const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_show);
     const [workflow_realtime_show, set_workflow_realtime_show] = useRecoilState($stroe.workflow_realtime_show);
-    const [workflow_show_click, set_workflow_show_click] = useState(false);
+    const [workflow_show_click, set_workflow_show_click] = useRecoilState($stroe.work_flow_show);
 
     const {initUserInfo} = useContext(GlobalContext);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
@@ -89,6 +89,30 @@ export default function FileList() {
         })
         await ws.sendData(CmdType.workflow_realtime, p);
     }
+    const file_after  = async (data)=>{
+        let have_workflow_water = false;
+        for (const item of data.files ?? []) {
+            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            item.origin_size = item.size;
+            item.size = formatFileSize(item.size);
+            if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
+                have_workflow_water = true;
+                Promise.resolve().then(() => {
+                    workflow_watcher();
+                })
+            }
+            if (item.name === workflow_dir_name) {
+                have_workflow_water = true;
+            }
+        }
+        for (const folder of data.folders ?? []) {
+            folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
+            if (folder.name === workflow_dir_name) {
+                have_workflow_water = true;
+            }
+        }
+        set_workflow_show_click(have_workflow_water)
+    }
     const fileHandler = async () => {
         const path  = getRouterAfter('file', getRouterPath())
         // 文件列表初始化界面
@@ -112,28 +136,7 @@ export default function FileList() {
         // 排序一下
         const data: GetFilePojo = rsp.data;
         file_sort(data, user_base_info.user_data.dir_show_type)
-
-        let have_workflow_water = false;
-        for (const item of data.files ?? []) {
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
-            item.origin_size = item.size;
-            item.size = formatFileSize(item.size);
-            if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
-                have_workflow_water = true;
-                Promise.resolve().then(() => {
-                    workflow_watcher();
-                })
-            }
-        }
-        have_workflow_water = false;
-        for (const folder of data.folders ?? []) {
-            folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
-            if (!have_workflow_water && folder.name === workflow_dir_name) {
-                // 如果有workflow
-                set_workflow_show_click(true)
-                have_workflow_water = true;
-            }
-        }
+        file_after(rsp.data)
         setNowFileList(rsp.data)
         pre_search = rsp.data;
     }

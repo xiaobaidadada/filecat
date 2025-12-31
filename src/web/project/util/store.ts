@@ -314,6 +314,11 @@ export const $stroe = {
             page_size:200,
             page_num:1
         }
+    }),
+    // workflow展示
+    work_flow_show:atom({
+        key: 'work_flow_show',
+        default: false as boolean
     })
 }
 

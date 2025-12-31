@@ -51,7 +51,7 @@ export function FileMenu() {
     const [search, setSearch] = useState("");
     const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_show);
     const [workflow_realtime_show, set_workflow_realtime_show] = useRecoilState($stroe.workflow_realtime_show);
-    const [workflow_show_click, set_workflow_show_click] = useState(false);
+    const [workflow_show_click, set_workflow_show_click] = useRecoilState($stroe.work_flow_show);
 
     const {initUserInfo} = useContext(GlobalContext);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
