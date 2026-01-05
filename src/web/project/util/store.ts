@@ -1,6 +1,6 @@
 import {atom, RecoilState, useRecoilState} from 'recoil';
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
-import {UserBaseInfo} from "../../../common/req/user.req";
+import {UserBaseInfo, UserData} from "../../../common/req/user.req";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 import {http_download_map} from "../../../common/req/net.pojo";
@@ -221,7 +221,10 @@ export const $stroe = {
     // 用户基本信息
     user_base_info: atom({
         key: 'user_base_info',
-        default: {} as UserBaseInfo,
+        default: {
+            user_data: new UserData(),
+            sysSoftWare:{}
+        } as UserBaseInfo,
         effects: [
             localStorageEffect("user_base_info")
         ]
