@@ -1,11 +1,11 @@
 
 # ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
-FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 VPN、SSH、RDP、HTTP、TCP 等多种网络代理功能。支持windows、linux、mac。
+FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 TUN、SSH、RDP、HTTP、TCP 等多种网络代理功能。支持windows、linux、mac。
 
 本项目是对[filebrowser](https://github.com/filebrowser/filebrowser)的功能增强，使用和filebrowser一样的ui，以服务器文件管理为基础添加一些服务器控制功能。
 
-FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including VPN, SSH, RDP, HTTP, and TCP.
+FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including TUN, SSH, RDP, HTTP, and TCP.
 
 ## 安装方式 / Installation
 小的bug修复与功能更新，只会在npm上实时发布同步
@@ -45,8 +45,8 @@ account/password: admin/admin
 | ![](https://github.com/user-attachments/assets/46b67603-db28-4751-b0c1-4e1ae9cef0d2) | ![](https://github.com/user-attachments/assets/aa6cf4d9-1a0f-4d47-b48d-21c509ec1554) | ![](https://github.com/user-attachments/assets/09d968e5-cd72-4aa3-8351-12ea3c0d7031) |
 
 
-|         10G 日志查看         |           系统信息           |           vpn            |
-|:------------------------:|:------------------------:|:------------------------:|
+|         10G 日志查看         |           系统信息           |                                      TUN客户端/服务器                                      |
+|:------------------------:|:------------------------:|:------------------------------------------------------------------------------------:|
 | ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![image](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
 
 - **文件管理**: 支持断点分块上传、多个根目录、代码\图片编辑、编辑器模式、白板绘图...
