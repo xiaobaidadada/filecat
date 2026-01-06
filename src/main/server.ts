@@ -34,7 +34,8 @@ import {settingService} from "./domain/setting/setting.service";
 import mime from "mime-types";
 import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
 import {VirtualController} from "./domain/net/virtual/virtual.controller";
-
+const http = require('http');
+const https = require('https');
 const Mustache = require('mustache');
 
 const WebSocket = require('ws');
@@ -61,6 +62,71 @@ async function start() {
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
     });
     app.use(compression());
+
+
+    //  todo 目前  还不能用，ws也需要代理
+    // const proxyConfigList  = [
+    //     {
+    //         url_regexp: 'abc\\.qq\\.fun', // 正则转义：. 需要写成 \\.
+    //         rewrite_regexp_source: '', // 不配置路径重写
+    //         rewrite_target: '',
+    //         headers: {
+    //             'X-Proxy-Source': 'Express-Server', // 自定义转发标识头
+    //             'Connection': 'keep-alive'
+    //         },
+    //         target_hostname:"179.116.1.1",
+    //         target_port:80
+    //     }
+    // ];
+
+    // app.use((req, res, next) => {
+    //     const matchedConfig = proxyConfigList.find((config) => {
+    //         if (!config.url_regexp) return false;
+    //
+    //         const urlRegex = new RegExp(config.url_regexp);
+    //         const requestFullAddress = `${req.headers.host}${req.originalUrl}`;
+    //
+    //         return urlRegex.test(requestFullAddress);
+    //     });
+    //
+    //     if (!matchedConfig) {
+    //         return next();
+    //     }
+    //
+    //     let targetPath = req.originalUrl;
+    //     const { rewrite_regexp_source, rewrite_target,target_hostname,target_port } = matchedConfig;
+    //     if(!target_hostname || !target_port) return next();
+    //     if (rewrite_regexp_source && rewrite_target !== undefined) {
+    //         const rewriteRegex = new RegExp(rewrite_regexp_source);
+    //         targetPath = targetPath.replace(rewriteRegex, rewrite_target);
+    //     }
+    //
+    //     const targetConfig = {
+    //         hostname: target_hostname,
+    //         port: target_port,
+    //         path: targetPath,
+    //         method: req.method,
+    //         headers: { ...req.headers, ...matchedConfig.headers },
+    //     };
+    //
+    //     const client = targetConfig.port === 443 ? https : http;
+    //
+    //     const proxyReq = client.request(targetConfig, (proxyRes) => {
+    //         res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    //         proxyRes.pipe(res, { end: true });
+    //     });
+    //
+    //     proxyReq.on('error', (err) => {
+    //         console.error(`转发请求失败（匹配配置：${JSON.stringify(matchedConfig)}）：`, err);
+    //         if (!res.headersSent) {
+    //             res.status(500).send('faile');
+    //         } else {
+    //             res.end();
+    //         }
+    //     });
+    //
+    //     req.pipe(proxyReq, { end: true });
+    // });
 
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start();
