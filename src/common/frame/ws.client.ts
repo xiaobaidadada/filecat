@@ -1,8 +1,14 @@
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
-import * as parser from "socket.io-parser"
 import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
-import {generateRandomHash} from "../StringUtil";
+function generateRandomHash(length = 16) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let hash = '';
+    for (let i = 0; i < length; i++) {
+        hash += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return hash;
+}
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 enum connect_status {
     not,
@@ -10,7 +16,6 @@ enum connect_status {
     connected,
 }
 export class WsClient {
-    decoder = !protocolIsProto2?new parser.Decoder():undefined;
 
     private name;
     private  _socket;
@@ -71,10 +76,6 @@ export class WsClient {
             this._status = connect_status.connecting;
             const unConnect =()=> {
                 this._status = connect_status.not;
-                if(this.decoder) {
-                    this.decoder.removeAllListeners();
-                    this.decoder.destroy();
-                }
                 if (this._subscribeUnconnect && !this._self_close) {
                     this._subscribeUnconnect();
                 }
@@ -98,27 +99,13 @@ export class WsClient {
                         }
                     }
                 }
-                if(!protocolIsProto2) {
-                    this.decoder.on("decoded",(d)=>{
-                        const data = new WsData(d.data[0],d.data[1]);
-                        data.code = d.data[2];
-                        data.message = d.data[3];
-                        data.random_id = d.data[4];
-                        data.wss = this._socket;
-                        this.handMsg(data.cmdType,data);
-                    })
-                }
             }
             let dataList = [];
             let processing = false;
             const handleData = async (rowData)=>{
-                if (protocolIsProto2) {
-                    const data = WsData.decode(rowData);
-                    data.wss = this._socket;
-                    this.handMsg(data.cmdType,data);
-                } else {
-                    this.decoder.add(rowData);
-                }
+                const data = WsData.decode(rowData);
+                data.wss = this._socket;
+                this.handMsg(data.cmdType,data);
                 handle();
             }
             const handle = ()=>{
@@ -207,6 +194,7 @@ export class WsClient {
             this._msgResolveMap.set(key,resolve);
             this._msgResolveTimeoutMap.set(key,timeout);
             // console.log(wsData.random_id||wsData.cmdType)
+            // console.log(data)
             if (Array.isArray(data)) {
                 for (let i = 0; i < data.length; i++) {
                     this._socket!.send(data[i]);

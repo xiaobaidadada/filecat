@@ -6,7 +6,6 @@ export const router_pre_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
 */
 
 class Api {  
@@ -32,8 +31,6 @@ export const self_auth_open_js_code_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
-* 4. create_user is function 
 */
  class Api {  
     
@@ -57,8 +54,6 @@ export const self_shell_cmd_check_js_code_file =
 * pre import
 * 1. fs path cache_map( a map object use to cache)
 * 2. needle (to http https://www.npmjs.com/package/needle)
-* 3. user_login is async function params is { username, password } It is best to enable custom AUTH to use custrom token
-* 4. create_user is function 
 */
  class Api {  
     

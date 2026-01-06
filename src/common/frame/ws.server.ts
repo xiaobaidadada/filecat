@@ -1,8 +1,6 @@
 import WebSocket from "ws";
 import {msg, otherRouterHandlerMap, routerHandlerMap} from "./router";
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
-import * as parser from "socket.io-parser"
-import {settingService} from "../../main/domain/setting/setting.service";
 import {RCode} from "../Result.pojo";
 import {generateRandomHash} from "../StringUtil";
 
@@ -13,7 +11,6 @@ const allWssSet = new Set<Wss>;
 
 // 连接期间内一直存在
 export class Wss {
-    decoder = new parser.Decoder();
 
     private _ws: WebSocket;
     // 0 是未验证,1是验证过的 目前不需要心跳
@@ -77,26 +74,10 @@ class WsPreHandler {
         const wss = new Wss(ws);
         allWssSet.add(wss);
         wss.token = token;
-        if (!protocolIsProto2) {
-            wss.decoder.on("decoded", async (packet) => {
-                // if(packet.data[0] === CmdType.connection) {
-                //     return;
-                // }
-                const data = new WsData(packet.data[0], packet.data[1]);
-                data.wss = wss;
-                const handle = routerHandlerMap.get(data.cmdType);
-                if (handle) {
-                    const rsq: string = await handle(data);
-                    // 发送消息给客户端
-                    wss.sendData(new WsData(data.cmdType, rsq,undefined,data.random_id).encode());
-                } else {
-                    console.log("没有匹配到路由")
-                }
-            })
-        }
+
         // 监听客户端发送的消息
         wss.ws.on('message', async function incoming(message: WebSocket.Data) {
-            if (protocolIsProto2) {
+
                 const data = WsData.decode(message);
                 // if(data.cmdType === CmdType.connection) {
                 //     return;
@@ -119,10 +100,7 @@ class WsPreHandler {
                 } else {
                     console.log("没有匹配到路由")
                 }
-            } else {
-                // 暂时都是字符串
-                wss.decoder.add(message.toString());
-            }
+
         });
         // 监听客户端断开连接事件
         wss.ws.on('close', function close() {
@@ -161,14 +139,14 @@ export class WsServer {
         this._wss = wss;
     }
 
-    public start() {
+    public start(check: (token?:string) => Promise<boolean>) {
         // 监听客户端连接事件
         this._wss.on('connection', async function connection(ws: WebSocket,request) {
             try {
                 // 解析查询参数
                 const parsedUrl = url.parse(request.url, true); // 使用 'true' 参数解析查询字符串
                 const { query } = parsedUrl; // 解析后的查询参数对象
-                if (!await settingService.check(query['token'])) {
+                if (!await check(query['token'])) {
                     ws.close();
                     console.log('未验证的ws请求')
                     return;

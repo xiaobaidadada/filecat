@@ -13,6 +13,7 @@ export class Http {
         }
         if (data && data.code===RCode.Fail) {
             NotyFail(data.message);
+            throw data.message;
         }
         if (data && data.code===RCode.AuthFail) {
             if (Date.now() - now < 2000) {

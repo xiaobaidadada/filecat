@@ -1,10 +1,7 @@
 import {Wss} from "./ws.server";
-import * as proto from "../proto/proto"
-import * as parser from "socket.io-parser"
-import {Packet, PacketType} from "socket.io-parser"
 import {RCode} from "../Result.pojo";
+import {DataEncode} from "./data.encode";
 
-const encoder = new parser.Encoder();
 export const protocolIsProto2 = true;
 export enum CmdType {
     // 连接
@@ -147,27 +144,18 @@ export class WsData<T> {
     }
 
     public encode(){
-        if (protocolIsProto2) {
-            return proto.WsMessage.encode(proto.WsMessage.create({
-                cmdType:this.cmdType,
-                context: JSON.stringify(this.context),
-                code: this.code,
-                message: this.message,
-                binContext: this.bin_context,
-                randomId:this.random_id
-            })).finish();
-        } else {
-            const p = {
-                type:PacketType.EVENT,
-                data:[this.cmdType,this.context,this.code,this.message,this.random_id]
-            }
-            return encoder.encode(p as Packet);
-        }
-        // return JsonUtil.getJson([this.cmdType, this.context ? JSON.stringify(this.context):""]);
+        return  DataEncode.encode({
+            cmdType:this.cmdType,
+            context: this.context?JSON.stringify(this.context):null,
+            code: this.code,
+            message: this.message,
+            binContext: this.bin_context,
+            randomId:this.random_id
+        })
     }
 
     public static decode(buffer) {
-        const data = proto.WsMessage.decode(buffer);
+        const data = DataEncode.decode(buffer);
         let context = data.context;
         if (typeof context === 'string' && context) {
             try {
@@ -182,9 +170,6 @@ export class WsData<T> {
         v.message = data.message;
         v.random_id = data.randomId;
         return v;
-
-        // const data = JsonUtil.fromJson(buffer.toString());
-        // return new WsData(data[0],data[1]?JSON.parse(data[1]):null);
     }
 
 }

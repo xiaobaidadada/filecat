@@ -12,17 +12,12 @@ import {
     SysSoftwareItem,
     TokenTimeMode
 } from "../../../common/req/setting.req";
-import {Env} from "../../../common/Env";
-import {SystemUtil} from "../sys/sys.utl";
-import {Body} from "routing-controllers";
-import {Request} from "express";
+import {SystemUtil} from "../sys/sys.utl";import {Request} from "express";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import * as vm from "node:vm";
-import {userController} from "../user/user.controller";
 import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
-import {Wss} from "../../../common/frame/ws.server";
 import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
@@ -45,7 +40,6 @@ const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 
 const sandbox = {
     needle: needle, // needle http 请求工具
-    user_login: userController.login,
     fs: fs,
     path: path,
     cache_map: customer_cache_map

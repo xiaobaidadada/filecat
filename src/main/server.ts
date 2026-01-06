@@ -129,7 +129,7 @@ async function start() {
     // });
 
     const wss = new WebSocket.Server({noServer: true});
-    (new WsServer(wss)).start();
+    (new WsServer(wss)).start(settingService.check.bind(settingService));
 
     if (process.env.NODE_ENV === "production") {
         const router = new Set();
