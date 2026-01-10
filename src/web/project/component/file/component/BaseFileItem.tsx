@@ -4,7 +4,7 @@ import {useRecoilState} from "recoil";
 import {getByList} from "../../../../../common/ListUtil";
 import {$stroe} from "../../../util/store";
 import {fileHttp, userHttp} from "../../../util/config";
-import {UserData} from "../../../../../common/req/user.req";
+import {FileListPaginationModeEmum, UserData} from "../../../../../common/req/user.req";
 import {RCode} from "../../../../../common/Result.pojo";
 import {NotySucess} from "../../../util/noty";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
@@ -47,15 +47,26 @@ export function BaseFileItem(props: FileItemData & {
         if (hasFiles) {
             return;
         }
-        if (nowFileList.folders.length <= index) {
-            return; // 拖拽到的不是文件夹而是文件
+        let file_item:FileItemData
+        if(user_base_info?.user_data?.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
+            // 分页模式
+            file_item = nowFileList.files[index]
+            if(nowFileList.files[index]?.type !== FileTypeEnum.folder) {
+                return; // 拖拽到的不是文件夹而是文件
+            }
+        } else {
+            file_item = nowFileList.folders[index]
+            if (nowFileList.folders.length <= index) {
+                return;
+            }
         }
+
         setShowPrompt({
             open: true,
-            title: `确定将文件移动并覆盖到${nowFileList.folders[index].name}吗?`,
+            title: `确定将文件移动并覆盖到${file_item?.name}吗?`,
             // sub_title: ``,
             handle: async () => {
-                await props.draggable_handle(nowFileList.folders[index].name);
+                await props.draggable_handle(file_item?.name);
             }
         })
     }

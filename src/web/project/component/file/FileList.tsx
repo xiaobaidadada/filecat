@@ -24,7 +24,7 @@ import {DirListShowTypeEmum, FileListPaginationModeEmum, UserAuth} from "../../.
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
-import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_ws_page} from "./FileListLoad";
+import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "./FileListLoad";
 import {FileMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
 import {cloneDeep} from "lodash";
@@ -375,7 +375,7 @@ export default function FileList() {
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             {
                 user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ?
-                    <FileListLoad_file_folder_for_local_by_ws_page handleContextMenu={handleContextMenu} clickBlank={clickBlank} list={nowFileList.files}/>
+                    <FileListLoad_file_folder_for_local_by_page handleContextMenu={handleContextMenu} clickBlank={clickBlank} list={nowFileList.files}/>
                     :
                     <FileListLoad_file_folder_for_local handleContextMenu={handleContextMenu} file_list={nowFileList.files}
                                                         folder_list={nowFileList.folders} clickBlank={clickBlank}/>

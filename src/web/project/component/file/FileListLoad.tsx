@@ -3,15 +3,14 @@ import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {
-     file_show_item,
-    using_add_div_wheel_event, using_drop_file_upload, using_file_quick_keyboard
+    file_show_item,
+    using_add_div_wheel_event, using_drop_file_upload, using_file_page_handle_width_auto, using_file_quick_keyboard
 } from "./FileUtil";
 import {useTranslation} from "react-i18next";
 import {use_file_to_running} from "../../util/store.util";
 import {PromptEnum} from "../prompts/Prompt";
 import {scanFiles} from "../../util/file";
 
-const columnWidth = 280;
 
 // 同时渲染文件夹和文件的基本列表 用于本地文件
 export function FileListLoad_file_folder_for_local(
@@ -29,10 +28,10 @@ export function FileListLoad_file_folder_for_local(
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const inputRef = useRef(null); // 用于保证 大小伸缩变化
     const {t} = useTranslation();
-    const [itemWidth, setItemWidth] = useState(undefined);
+    const itemWidth = using_file_page_handle_width_auto()
     const {file_is_running} = use_file_to_running();
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const {drop, dragover} = using_drop_file_upload()
+
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
 
@@ -40,28 +39,12 @@ export function FileListLoad_file_folder_for_local(
     const [isFocused, setIsFocused] = useState(false);
     const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
 
-
+    using_drop_file_upload(inputRef)
     using_file_quick_keyboard(file_list,folder_list,isFocused)
 
-    const handleResize = () => {
-        let columns = Math.floor(
-            document.querySelector("main").offsetWidth / columnWidth
-        );
-        if (columns === 0) columns = 1;
-        setItemWidth(`calc(${100 / columns}% - 1em)`)
-        // set_windows_width({width: window.innerWidth,is_mobile: window.innerWidth <= 736})
-    };
+
     useEffect(() => {
-        const element = inputRef.current;
-        const doc = element.ownerDocument;
-        doc.addEventListener("dragover", dragover);
-        doc.addEventListener("drop", drop);
-        handleResize();
-        window.addEventListener('resize', handleResize);
         return () => {
-            doc.removeEventListener("dragover", dragover);
-            doc.removeEventListener("drop", drop);
-            window.removeEventListener('resize', handleResize);
             if (shellShow.show) {
                 setShellShow({show: false, path: ''})
             }
@@ -103,7 +86,8 @@ export function FileListLoad_file_folder_for_local(
     </div>
 }
 
-export function FileListLoad_file_folder_for_local_by_ws_page(
+// 使用分页的方式
+export function FileListLoad_file_folder_for_local_by_page(
     {
         handleContextMenu,
         list,
@@ -116,10 +100,9 @@ export function FileListLoad_file_folder_for_local_by_ws_page(
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const inputRef = useRef(null); // 用于保证 大小伸缩变化
     const {t} = useTranslation();
-    const [itemWidth, setItemWidth] = useState(undefined);
+    const itemWidth = using_file_page_handle_width_auto()
     const {file_is_running} = use_file_to_running();
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const {drop, dragover} = using_drop_file_upload()
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
@@ -130,15 +113,8 @@ export function FileListLoad_file_folder_for_local_by_ws_page(
 
 
     // using_file_quick_keyboard(file_list,folder_list,isFocused)
+    using_drop_file_upload(inputRef)
 
-    const handleResize = () => {
-        let columns = Math.floor(
-            document.querySelector("main").offsetWidth / columnWidth
-        );
-        if (columns === 0) columns = 1;
-        setItemWidth(`calc(${100 / columns}% - 1em)`)
-        // set_windows_width({width: window.innerWidth,is_mobile: window.innerWidth <= 736})
-    };
     using_add_div_wheel_event(inputRef,()=>{
         set_file_page(prev => {
             if (prev.page_num < 0) return prev; // 没有下一项了
@@ -148,16 +124,7 @@ export function FileListLoad_file_folder_for_local_by_ws_page(
         // console.log('顶部')
     })
     useEffect(() => {
-        const element = inputRef.current;
-        const doc = element.ownerDocument;
-        doc.addEventListener("dragover", dragover);
-        doc.addEventListener("drop", drop);
-        handleResize();
-        window.addEventListener('resize', handleResize);
         return () => {
-            doc.removeEventListener("dragover", dragover);
-            doc.removeEventListener("drop", drop);
-            window.removeEventListener('resize', handleResize);
             if (shellShow.show) {
                 setShellShow({show: false, path: ''})
             }

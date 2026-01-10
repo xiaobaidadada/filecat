@@ -8,10 +8,17 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {debounce} from "../../util/common_util";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
-    return getByIndexs([...nowFileList.folders, ...nowFileList.files], selectedFileList);
+    const list = []
+    if(nowFileList.folders) {
+        list.push(...nowFileList.folders);
+    }
+    if(nowFileList.files) {
+        list.push(...nowFileList.files);
+    }
+    return getByIndexs(list, selectedFileList);
 }
 
 export function getFileNameByLocation(fileName) {
@@ -84,7 +91,7 @@ export type file_show_item = {
 }
 
 // 获取操作拖动文件上传 的函数方法
-export function using_drop_file_upload() {
+export function using_drop_file_upload(inputRef?:any) {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
 
@@ -109,6 +116,19 @@ export function using_drop_file_upload() {
     const dragover = (event) => {
         event.preventDefault();
     }
+    if(inputRef) {
+        useEffect(() => {
+            const element = inputRef.current;
+            const doc = element.ownerDocument;
+            doc.addEventListener("dragover", dragover);
+            doc.addEventListener("drop", drop);
+            return () => {
+                doc.removeEventListener("dragover", dragover);
+                doc.removeEventListener("drop", drop);
+            }
+        }, []);
+    }
+
     return {drop, dragover};
 }
 
@@ -203,4 +223,29 @@ export function using_add_div_wheel_event(ref, bottom: () => void,up: () => void
             // ref.current.removeEventListener('wheel', handleWheel);
         };
     },[]) // 只执行一次 组件周期内
+}
+
+const columnWidth = 280;
+
+// 让文件页面的文件可以子适应 （控制 width参数)
+export function using_file_page_handle_width_auto() {
+    const [itemWidth, setItemWidth] = useState($stroe.file_item_width_atom);
+
+    const handleResize = () => {
+        let columns = Math.floor(
+            document.querySelector("main").offsetWidth / columnWidth
+        );
+        if (columns === 0) columns = 1;
+        setItemWidth(`calc(${100 / columns}% - 1em)`)
+        // set_windows_width({width: window.innerWidth,is_mobile: window.innerWidth <= 736})
+    };
+
+    useEffect(() => {
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        }
+    }, []);
+    return itemWidth
 }

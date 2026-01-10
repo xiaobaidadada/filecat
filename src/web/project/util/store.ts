@@ -322,6 +322,11 @@ export const $stroe = {
     work_flow_show:atom({
         key: 'work_flow_show',
         default: false as boolean
+    }),
+    // 文件单元的长度
+    file_item_width_atom:atom({
+        key: 'file_item_width_atom',
+        default: 0
     })
 }
 
