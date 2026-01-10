@@ -133,9 +133,26 @@ export function using_drop_file_upload(inputRef?:any) {
 }
 
 // 多选文件快捷键
-export function using_file_quick_keyboard(file_list, folder_list, isFocused) {
+export function using_file_quick_keyboard(file_list, folder_list,inputRef) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
+    const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => {
+        const el = inputRef.current;
+        if (!el) return;
+
+        const handleMouseEnter = () => setIsFocused(true);
+        const handleMouseLeave = () => setIsFocused(false);
+
+        el.addEventListener("mouseenter", handleMouseEnter);
+        el.addEventListener("mouseleave", handleMouseLeave);
+
+        return () => {
+            el.removeEventListener("mouseenter", handleMouseEnter);
+            el.removeEventListener("mouseleave", handleMouseLeave);
+        };
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (event) => {

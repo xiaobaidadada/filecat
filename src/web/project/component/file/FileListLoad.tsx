@@ -35,12 +35,12 @@ export function FileListLoad_file_folder_for_local(
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
 
-    // 快捷键
-    const [isFocused, setIsFocused] = useState(false);
+
     const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
 
     using_drop_file_upload(inputRef)
-    using_file_quick_keyboard(file_list,folder_list,isFocused)
+    // 快捷键
+    using_file_quick_keyboard(file_list,folder_list,inputRef)
 
 
     useEffect(() => {
@@ -54,12 +54,6 @@ export function FileListLoad_file_folder_for_local(
 
     return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
-                onMouseEnter={() => {
-                    setIsFocused(true)
-                }}
-                onMouseLeave={() => {
-                     setIsFocused(false)
-                }}
                 // onScroll={()=>{
                 //     console.log(111)
                 // }}
@@ -108,7 +102,7 @@ export function FileListLoad_file_folder_for_local_by_page(
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
 
     // 快捷键
-    const [isFocused, setIsFocused] = useState(false);
+    using_file_quick_keyboard(list,[],inputRef)
     // const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
 
 
@@ -134,12 +128,6 @@ export function FileListLoad_file_folder_for_local_by_page(
 
     return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
-                onMouseEnter={() => {
-                    setIsFocused(true)
-                }}
-                onMouseLeave={() => {
-                    setIsFocused(false)
-                }}
         // onScroll={()=>{
         //     console.log(111)
         // }}
