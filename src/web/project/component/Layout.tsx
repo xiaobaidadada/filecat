@@ -26,6 +26,7 @@ const Net = React.lazy(() => import("./net/Net"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
+const ChatPage =   React.lazy(()=> import('./aichat/ChatPage'))
 
 
 function Layout() {
@@ -70,6 +71,7 @@ function Layout() {
     const MainNavList: NavItem[][] = [
         [
             {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
+            {icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,},
         ],
         seconds,
         three
@@ -111,6 +113,8 @@ function Layout() {
             <CommonBody navList={MainNavList} nav_is_mobile={nav_style.is_mobile}>
                 {/*文件*/}
                 <FileList/>
+                {/*ai聊天*/}
+                <ChatPage />
                 {/*网站 索引*/}
                 {check_user_auth(UserAuth.nav_net_tag) &&
                     <Suspense fallback={<div></div>}>

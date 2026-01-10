@@ -25,6 +25,7 @@ nav  {
     left: 0;
     z-index: 1;
     overflow-y: auto;
+    height: 100%;
 }
 
 nav  .nav_2 {

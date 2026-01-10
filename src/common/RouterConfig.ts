@@ -1,6 +1,7 @@
 
 export const routerConfig = {
     file :"file",
+    aichat:"aichat",
     navindex :"navindex",
     toolbox :"toolbox",
     proxy : "proxy",

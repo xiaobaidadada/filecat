@@ -1,0 +1,87 @@
+/* 页面布局 */
+.chat-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Arial', sans-serif;
+    background: #f7f7f8;
+}
+
+/* 头部 */
+.chat-header {
+    padding: 16px;
+    font-weight: 600;
+    font-size: 1.2em;
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+/* 消息列表 */
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 消息气泡 */
+.chat-message {
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 70%;
+    word-break: break-word;
+    line-height: 1.5em;
+}
+
+.chat-message.user {
+    background: #0078ff;
+    color: #fff;
+    align-self: flex-end;
+}
+
+.chat-message.bot {
+    background: #e5e5ea;
+    color: #000;
+    align-self: flex-start;
+}
+
+/* 输入区 */
+.chat-input-area {
+    display: flex;
+    padding: 12px 16px;
+    gap: 8px;
+    border-top: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.chat-input-area textarea.chat-input {
+    flex: 1;
+    min-height: 2.5em;
+    max-height: 10em;
+    padding: 10px;
+    font-size: 1em;
+    line-height: 1.4em;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    resize: none;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* 按钮 */
+.chat-input-area button {
+    padding: 0 16px;
+    background: #0078ff;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.chat-input-area button:hover {
+    background: #005bb5;
+}
