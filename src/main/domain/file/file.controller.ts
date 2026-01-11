@@ -48,8 +48,8 @@ export class FileController {
     }
 
     @Post('/file_get_page')
-    async ws_get_list(@Req() ctx, @Body() data: any) {
-        return FileServiceImpl.ws_get_list(ctx.headers.authorization, data.param_path,data.page_num,data.page_size,data.search);
+    async get_list(@Req() ctx, @Body() data: any) {
+        return FileServiceImpl.get_list(ctx.headers.authorization, data.param_path,data.page_num,data.page_size,data.search);
     }
 
     @msg(CmdType.file_info)

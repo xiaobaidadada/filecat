@@ -8,18 +8,24 @@ interface Message {
 }
 
 export default function ChatPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            id:1,
+            sender:'bot',
+            text:"hello filecat"
+        }
+    ]);
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // 自动滚动到底部
     const scrollToBottom = () => {
-        // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, []);
 
     const handleSend = () => {
         const text = inputValue.trim();
@@ -56,7 +62,7 @@ export default function ChatPage() {
 
     return (
         <div className="chat-page">
-            <div className="chat-header">询问服务器的一切</div>
+            {/*<div className="chat-header">询问服务器的一切</div>*/}
             <div className="chat-messages">
                 {messages.map(msg => (
                     <div

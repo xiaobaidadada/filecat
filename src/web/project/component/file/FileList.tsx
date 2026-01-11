@@ -8,7 +8,7 @@ import Header from "../../../meta/component/Header";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
-import {create_quick_cmd_items, file_sort} from "./FileUtil";
+import {create_quick_cmd_items, file_sort, title_workflow_file_fail, title_workflow_file_success} from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySucess} from "../../util/noty";
@@ -72,18 +72,10 @@ export default function FileList() {
             const pojo = data.context as WorkFlowRealTimeRsq;
             if (!data.context) return;
             for (const it of pojo.sucess_file_list) {
-                if (it.endsWith('.workflow.yml')) {
-                    NotySucess(`${it.slice(0, -13)} done!`);
-                } else if (it.endsWith('.act')) {
-                    NotySucess(`${it.slice(0, -4)} done!`);
-                }
+                title_workflow_file_success(it)
             }
             for (const it of pojo.failed_file_list) {
-                if (it.endsWith('.workflow.yml')) {
-                    NotyFail(`${it.slice(0, -13)} failed!`);
-                } else if (it.endsWith('.act')) {
-                    NotyFail(`${it.slice(0, -4)} failed!`);
-                }
+                title_workflow_file_fail(it)
             }
             set_to_running_files_set(new Set(pojo.running_file_list));
         })

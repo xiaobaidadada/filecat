@@ -94,7 +94,7 @@ export class FileService extends FileCompress {
         if (!await FileUtil.access(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
-        const stats = fs.statSync(sysPath);
+        const stats = await FileUtil.statSync(sysPath);
         if (stats.isFile()) {
             // 单个文件
             // if (stats.size > MAX_SIZE_TXT) {
@@ -151,7 +151,7 @@ export class FileService extends FileCompress {
         return Sucess(result);
     }
 
-    public async ws_get_list(token: string,param_path:string,page_num:number,page_size:number,search?:string) {
+    public async get_list(token: string, param_path:string, page_num:number, page_size:number, search?:string) {
         const result: GetFilePojo = {
             files: []
         };

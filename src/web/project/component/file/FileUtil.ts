@@ -9,6 +9,7 @@ import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {debounce} from "../../util/common_util";
 import {useEffect, useState} from "react";
+import {NotyFail, NotySucess} from "../../util/noty";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -265,4 +266,20 @@ export function using_file_page_handle_width_auto() {
         }
     }, []);
     return itemWidth
+}
+
+export function title_workflow_file_success(it){
+    if (it.endsWith('.workflow.yml')) {
+        NotySucess(`${it.slice(0, -13)} done!`);
+    } else if (it.endsWith('.act')) {
+        NotySucess(`${it.slice(0, -4)} done!`);
+    }
+}
+
+export function title_workflow_file_fail(it){
+    if (it.endsWith('.workflow.yml')) {
+        NotyFail(`${it.slice(0, -13)} failed!`);
+    } else if (it.endsWith('.act')) {
+        NotyFail(`${it.slice(0, -4)} failed!`);
+    }
 }
