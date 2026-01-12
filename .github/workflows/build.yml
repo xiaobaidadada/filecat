@@ -8,7 +8,7 @@ on:
       job: # 参数名称 通过 ${{ github.event.inputs.job }} 访问值 下面是参数的要求描述
         description: "任务类型,build-exe,push-docker,push-npm,all"
         required: true
-        default: build-exe
+        default: push-npm
         type: string
       tag:
         description: '发布docker可选的docker标签'
