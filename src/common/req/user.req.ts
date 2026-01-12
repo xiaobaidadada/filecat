@@ -26,7 +26,16 @@ export class UserBaseInfo {
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
     watch:boolean
     latest_version?:string;
+
+    public static get_now_dir(user_base_info:UserBaseInfo) {
+        let path = user_base_info.user_data.cwd
+        if(user_base_info.user_data.folder_item_now && user_base_info.user_data.folder_items?.length) {
+            path =user_base_info.user_data.folder_items[user_base_info.user_data.folder_item_now-1].path
+        }
+        return path;
+    }
 }
+
 
 
 export enum UserAuth {
