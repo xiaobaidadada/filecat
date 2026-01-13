@@ -16,11 +16,6 @@ module.exports = {
     },
     module: {
         rules: [
-            // {
-            //     test: /\.js$/,  // 处理 JS 文件
-            //     exclude: /node_modules/,  // 排除 node_modules 中的文件
-            //     use: 'babel-loader',  // 如果需要，可以用 Babel 转译 JS 文件
-            // }
         ]
     },
     externalsPresets: { node: true },
