@@ -1,5 +1,5 @@
-import {Worker, isMainThread, parentPort} from 'worker_threads';
-import {FileWorkMessage} from "./file.type";
+import {register_threads_worker_handler, threads_send} from "../../../threads/threads.work";
+import {threads_msg_type, WorkerMessage} from "../../../threads/threads.type";
 
 const fs = require("fs");
 
@@ -67,53 +67,69 @@ function boyerMooreSearch(text, pattern, list) {
         }
     }
 }
+const file_done_map = {}
 
-let done = false;
-parentPort.on("message", async (message: FileWorkMessage) => {
-    try {
-        switch (message.type) {
-            case 1: {
-                // 查询
-                const {start, end, file_path, query_text_buffer} = message;
-                let haveReadSize = 0; // 已经读取的字节数
-                let bufferContent = Buffer.alloc(0);
-                const fd = fs.openSync(file_path, "r");
-                const read_len = 1024 * 1024*2;
-                let text_start_index = 0;
-                while (haveReadSize < end) {
-                    if (done) break;
-                    const buffer = Buffer.alloc(read_len); // 2 MB
-                    // 返回实际读取的字节数
-                    let bytesRead = fs.readSync(fd, buffer,
-                        0, // 相对于当前的偏移位置
-                        buffer.length, // 读取的长度
-                        haveReadSize // 当前位置
-                    );
-                    if (bytesRead === 0) break;
-                    haveReadSize += bytesRead;
-                    bufferContent = Buffer.concat([bufferContent, buffer.subarray(0, bytesRead)]);
-                    parentPort.postMessage({type: 5, progress:(haveReadSize * 100/end).toFixed(0)}); // 发送进度
-                    const r_list = [];
-                    boyerMooreSearch(bufferContent, query_text_buffer, r_list); // 从头遍历到尾部
-                    if (r_list.length > 0) {
-                        for (let i=0;i<r_list.length;i++) {
-                            r_list[i] += text_start_index;
-                        }
-                        parentPort.postMessage({type: 2, find_index: r_list}); // 查询到结果
-                    }
-                    text_start_index += (bufferContent.length - query_text_buffer.length); // 加上删除的
-                    bufferContent = copySubarray(bufferContent,bufferContent.length - query_text_buffer.length,bufferContent.length); // 留下 文本长度再长一点 留下本次差一个字符就匹配成功的可能性
+export function file_search_start() {
+    register_threads_worker_handler(threads_msg_type.file_search, async (msg: WorkerMessage)=>{
+        // 查询
+        const {start, end, file_path, query_text_buffer,ram_id} = msg.data;
+        let haveReadSize = 0; // 已经读取的字节数
+        let bufferContent = Buffer.alloc(0);
+        const fd = fs.openSync(file_path, "r");
+        const read_len = 1024 * 1024*2;
+        let text_start_index = 0;
+        while (haveReadSize < end) {
+            if (file_done_map[ram_id]) break;
+            const buffer = Buffer.alloc(read_len); // 2 MB
+            // 返回实际读取的字节数
+            let bytesRead = fs.readSync(fd, buffer,
+                0, // 相对于当前的偏移位置
+                buffer.length, // 读取的长度
+                haveReadSize // 当前位置
+            );
+            if (bytesRead === 0) break;
+            haveReadSize += bytesRead;
+            bufferContent = Buffer.concat([bufferContent, buffer.subarray(0, bytesRead)]);
+            threads_send({
+                type: threads_msg_type.search_file_progress,
+                data: {
+                    progress:(haveReadSize * 100/end).toFixed(0),
+                    ram_id
                 }
-                parentPort.postMessage({type: 3}); // 结束
-                fs.closeSync(fd);
+            })
+            const r_list = [];
+            boyerMooreSearch(bufferContent, query_text_buffer, r_list); // 从头遍历到尾部
+            if (r_list.length > 0) {
+                for (let i=0;i<r_list.length;i++) {
+                    r_list[i] += text_start_index;
+                }
+                threads_send({
+                    type: threads_msg_type.search_file_index,
+                    data: {
+                        find_index: r_list,
+                        ram_id
+                    }
+                })
             }
-                break;
-            case 4:
-                done = true;
-                break;
+            text_start_index += (bufferContent.length - query_text_buffer.length); // 加上删除的
+            bufferContent = copySubarray(bufferContent,bufferContent.length - query_text_buffer.length,bufferContent.length); // 留下 文本长度再长一点 留下本次差一个字符就匹配成功的可能性
         }
-    } catch (e) {
-        console.log(e);
-    }
+        threads_send({
+            type: threads_msg_type.search_file_end,
+            data: { ram_id}
+        })
+        fs.closeSync(fd);
+        return "ok"
+    })
+    register_threads_worker_handler(threads_msg_type.file_search_close, async (msg: WorkerMessage)=>{
+        const {ram_id} = msg.data;
+        file_done_map[ram_id] = true;
+        return "ok"
+    })
+    register_threads_worker_handler(threads_msg_type.file_search_start, async (msg: WorkerMessage)=>{
+        const {ram_id} = msg.data;
+        delete file_done_map[ram_id];
+        return "ok"
+    })
+}
 
-});

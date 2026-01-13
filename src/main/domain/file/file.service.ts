@@ -115,7 +115,8 @@ export class FileService extends FileCompress {
             try {
                 stats = await FileUtil.statSync(filePath);
             } catch (e) {
-                console.log("读取错误", e);
+                continue
+                // console.log("读取错误", e);
             }
             const mtime = stats ? new Date(stats.mtime).getTime() : 0;
             // const formattedCreationTime = stats ? getShortTime(new Date(stats.mtime).getTime()) : "";

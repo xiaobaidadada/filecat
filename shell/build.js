@@ -46,8 +46,8 @@ const tasksLister = new Listr(
                 return  Promise.all([new Promise((res, rej) => {
                     // 第一个
                     webpack(get_webpack_work_config({
-                        entry_path:path.join(__dirname, "..", "build", "server", "main","domain","file","search", "file.search.worker.js"),
-                        output_name:'file.search.worker.js',
+                        entry_path:path.join(__dirname, "..", "build", "server", "main","threads","threads.work.js"),
+                        output_name:'threads.work.js',
                         pkg:args[0]==="npm",
                         docker:args[0]==="docker",
                     }), (err, stats) => {
