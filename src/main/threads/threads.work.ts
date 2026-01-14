@@ -1,6 +1,5 @@
 import { parentPort, workerData } from 'worker_threads';
 import { threads_msg_type, WorkerMessage } from './threads.type';
-import {file_search_start} from "../domain/file/search/file.search.worker";
 
 console.log('[worker] 子线程启动, workerData=', workerData);
 
@@ -68,5 +67,4 @@ register_threads_worker_handler(threads_msg_type.hello, async (msg) => {
         }, 500)
     );
 });
-file_search_start()
 console.log('[worker] ready and waiting for messages...');

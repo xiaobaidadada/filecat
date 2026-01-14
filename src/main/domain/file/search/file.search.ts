@@ -7,8 +7,8 @@ import {SysPojo} from "../../../../common/req/sys.pojo";
 import {FileServiceImpl} from "../file.service";
 import {userService} from "../../user/user.service";
 import {BinFileUtil} from "../../bin/bin.file.util";
-import {ThreadsMain} from "../../../threads/threads.main";
 import {threads_msg_type} from "../../../threads/threads.type";
+import {start_worker_threads, ThreadsFilecat} from "../../../threads/filecat/threads.filecat";
 
 const fs = require("fs");
 
@@ -17,7 +17,7 @@ export function search_file_cancel (data: WsData<LogViewerPojo>) {
     const wss = data.wss as Wss;
     const worker = wss.dataMap.get('worker');
     if(worker) {
-        ThreadsMain.emit(threads_msg_type.file_search_close, {ram_id:worker})
+        ThreadsFilecat.emit(threads_msg_type.file_search_close, {ram_id:worker})
         wss.dataMap.delete('worker');
     }
 }
@@ -39,25 +39,21 @@ export function search_file(data: WsData<LogViewerPojo>) {
         wss.sendData(result.encode());
         return;
     }
-    if(!ThreadsMain.is_running) {
-        const file_p = BinFileUtil.get_bin_path('threads.work.js')
-            || BinFileUtil.get_bin_path('threads.work.ts')
-        // console.log('文件',file_p)
-        if(!ThreadsMain.start_worker_threads(file_p)) return;
-    }
-    const ram_id = ThreadsMain.generate_random_id()
+    // 确保开启，并且不要第一次就开启
+    start_worker_threads()
+    const ram_id = ThreadsFilecat.generate_random_id()
     wss.dataMap.set('worker', ram_id);
     const close = ()=>{
-        ThreadsMain.emit(threads_msg_type.file_search_close,{file_path,ram_id})
+        ThreadsFilecat.emit(threads_msg_type.file_search_close,{file_path,ram_id})
         wss.dataMap.delete('worker');
-        ThreadsMain.off_by_listener_id(ram_id)
+        ThreadsFilecat.off_by_listener_id(ram_id)
     }
     wss.setClose(()=>{
         close();
     })
-    ThreadsMain.emit(threads_msg_type.file_search_start,{file_path,ram_id})
-    ThreadsMain.emit(threads_msg_type.file_search,{ram_id,start: 0, end: stats.size,file_path ,query_text_buffer})
-    ThreadsMain.on((msg)=>{
+    ThreadsFilecat.emit(threads_msg_type.file_search_start,{file_path,ram_id})
+    ThreadsFilecat.emit(threads_msg_type.file_search,{ram_id,start: 0, end: stats.size,file_path ,query_text_buffer})
+    ThreadsFilecat.on((msg)=>{
         const { type  } = msg
         const {find_index, progress,ram_id} = msg.data
         if(msg.data.ram_id !== ram_id) return;

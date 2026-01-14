@@ -1,14 +1,14 @@
 import * as path from 'path';
 import * as fs from 'fs'
 
-type files_type = 'threads.work.ts'|'threads.work.js'
+type files_type = 'threads.work.filecat.ts'|'threads.work.filecat.js'
 
 export class BinFileUtil {
 
     // 二进制文件可能存在的目录
     static base_dir = [
         path.resolve('build'), // 相对路径基于 cwd
-        path.resolve('src','main','threads'), // 相对路径基于 cwd
+        path.resolve('src','main','threads','filecat'), // 相对路径基于 cwd
         process.cwd(),
     ]
 

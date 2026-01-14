@@ -5,23 +5,23 @@ import {threads_msg_type, WorkerMessage} from "./threads.type";
 
 
 export class ThreadsMain {
-    private static worker_threads: NodeWorker[] = [];
-    private static next_msg_id = 1;
-    private static pending_resolves = new Map<number, (v: any) => void>();
-    private static global_listeners: ((msg: WorkerMessage, worker: NodeWorker) => void)[] = [];
-    private static global_listeners_id_map = new Map();
-    private static global_once_listeners: ((msg: WorkerMessage, worker: NodeWorker) => void)[] = [];
-    private static global_once_listeners_map = new Map<threads_msg_type,((msg: WorkerMessage, worker: NodeWorker) => void)>()
-    private static running = false;
+    private  worker_threads: NodeWorker[] = [];
+    private  next_msg_id = 1;
+    private  pending_resolves = new Map<number, (v: any) => void>();
+    private  global_listeners: ((msg: WorkerMessage, worker: NodeWorker) => void)[] = [];
+    private  global_listeners_id_map = new Map();
+    private  global_once_listeners: ((msg: WorkerMessage, worker: NodeWorker) => void)[] = [];
+    private  global_once_listeners_map = new Map<threads_msg_type,((msg: WorkerMessage, worker: NodeWorker) => void)>()
+    private  running = false;
 
-    public static  generate_random_id(): string {
+    public   generate_random_id(): string {
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     }
 
     /**
      * 启动 worker 线程
      */
-    public static start_worker_threads(worker_path: string = "threads.worker.js", num = 1) {
+    public  start_worker_threads(worker_path: string = "threads.worker.js", num = 1) {
         console.log('[main] 主线程启动');
         const absPath = worker_path;
         if(!fs.existsSync(absPath)) {
@@ -59,14 +59,14 @@ export class ThreadsMain {
         return true
     }
 
-    public static get is_running(): boolean {
+    public  get is_running(): boolean {
         return this.running;
     }
 
     /**
      * 关闭所有 worker
      */
-    public static async close() {
+    public  async close() {
         console.log('[main] closing all workers...');
         this.running = false;
         const closePromises = this.worker_threads.map(
@@ -85,14 +85,14 @@ export class ThreadsMain {
     /**
      * fire-and-forget 广播
      */
-    public static emit(msg_type: threads_msg_type, data: any) {
+    public  emit(msg_type: threads_msg_type, data: any) {
         const msg: WorkerMessage = { type: msg_type, data };
         for (const w of this.worker_threads) {
             w.postMessage(msg);
         }
     }
 
-    private static get_next_msg_id(): number {
+    private  get_next_msg_id(): number {
         if(this.next_msg_id > 1000000000) {
             this.next_msg_id = 0
         } else {
@@ -101,7 +101,7 @@ export class ThreadsMain {
         return this.next_msg_id;
     }
 
-    private static get_one_worker_threads(): number {
+    private  get_one_worker_threads(): number {
         if(this.worker_threads.length === 1) return 0
         // 采用随机返回
         return Math.floor(Math.random() * this.worker_threads.length)
@@ -110,7 +110,7 @@ export class ThreadsMain {
     /**
      * 发送消息并 await 子线程返回结果
      */
-    public static async post(msg_type: threads_msg_type, data: any, timeout_ms = 2000): Promise<any> {
+    public  async post(msg_type: threads_msg_type, data: any, timeout_ms = 2000): Promise<any> {
         if (this.worker_threads.length === 0) throw new Error('No worker threads started');
         const msg_id = this.get_next_msg_id()
         const msg: WorkerMessage = { id: msg_id, type: msg_type, data };
@@ -131,21 +131,21 @@ export class ThreadsMain {
     /**
      * 注册全局 listener（所有 worker 都能触发）
      */
-    public static on(listener: (msg: WorkerMessage, worker: NodeWorker) => void,on_id?:string) {
+    public  on(listener: (msg: WorkerMessage, worker: NodeWorker) => void,on_id?:string) {
         this.global_listeners.push(listener);
         if(on_id) {
             this.global_listeners_id_map.set(on_id, listener);
         }
     }
 
-    public static off_by_listener(listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
+    public  off_by_listener(listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
         const index = this.global_listeners.indexOf(listener);
         if (index >= 0) {
             this.global_listeners.splice(index, 1);
         }
     }
 
-    public static off_by_listener_id(on_id:string) {
+    public  off_by_listener_id(on_id:string) {
         const listener = this.global_listeners_id_map.get(on_id);
         const index = this.global_listeners.indexOf(listener);
         if (index >= 0) {
@@ -157,18 +157,18 @@ export class ThreadsMain {
     /**
      * 注册一次性 listener
      */
-    public static on_once(listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
+    public  on_once(listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
         this.global_once_listeners.push(listener);
     }
 
-    public static on_once_msg(type:threads_msg_type,listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
+    public  on_once_msg(type:threads_msg_type,listener: (msg: WorkerMessage, worker: NodeWorker) => void) {
         this.global_once_listeners_map.set(type, listener);
     }
 
     /**
      * 内部消息分发
      */
-    private static handle_message(msg: WorkerMessage, worker: NodeWorker) {
+    private  handle_message(msg: WorkerMessage, worker: NodeWorker) {
         // 如果带 id，则 resolve 对应 promise
         if (msg.id && this.pending_resolves.has(msg.id)) {
             const fn = this.pending_resolves.get(msg.id)!;
