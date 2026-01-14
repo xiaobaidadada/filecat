@@ -7,9 +7,9 @@ import {PromptEnum} from "../prompts/Prompt";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
-import {debounce} from "../../util/common_util";
 import {useEffect, useState} from "react";
 import {NotyFail, NotySucess} from "../../util/noty";
+import {debounce} from "../../../../common/fun.util";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
