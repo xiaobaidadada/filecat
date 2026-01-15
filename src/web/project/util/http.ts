@@ -1,4 +1,5 @@
 import axios from "axios";
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 import {RCode} from "../../../common/Result.pojo";
 import {Result} from "../../../main/other/Result";
 import {NotyFail} from "./noty";
@@ -153,6 +154,45 @@ export class Http {
 
     public   have_http_method(method_name) {
         return axios[method_name];
+    }
+
+    public async sse_post(
+        url: string,
+        jsonData: any = {},
+        {
+            onMessage,
+            onDone,
+            onError
+        }: {
+            onMessage?: (data: string) => void;
+            onDone?: () => void;
+            onError?: (err: any) => void;
+        } = {}
+    ) {
+        try {
+            await fetchEventSource(this.baseUrl + url,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' ,
+                    Authorization: localStorage.getItem('token')
+                },
+                body: JSON.stringify(jsonData),
+                onclose:onDone,
+                onmessage:(event)=>{
+                    if(event.event === '[DONE]' || event.event === 'done' ) {
+                        if(onDone)
+                            onDone();
+                    } else {
+                        onMessage(event.data);
+                    }
+                    console.log(event.data);
+                    // console.log(event.data,event.event);
+                },
+                onerror:onError
+            })
+        } catch (err) {
+            onError?.(err);
+        }
     }
 
 }

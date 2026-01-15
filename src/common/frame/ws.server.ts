@@ -69,7 +69,7 @@ class WsPreHandler {
 
     @msg(CmdType.connection)
     async connection(ws: WebSocket,token) {
-        console.log('ws客户端连接');
+        // console.log('ws客户端连接');
         // 该ws只创建一次
         const wss = new Wss(ws);
         allWssSet.add(wss);
@@ -104,7 +104,7 @@ class WsPreHandler {
         });
         // 监听客户端断开连接事件
         wss.ws.on('close', function close() {
-            console.log('ws客户端断开');
+            // console.log('ws客户端断开');
             allWssSet.delete(wss);
             if (wss._close.length > 0) {
                 while (true) {

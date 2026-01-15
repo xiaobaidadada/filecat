@@ -30,3 +30,5 @@ export const rdpHttp = new Http(`${config.baseUrl}rdp/`);
 export const videoHttp = new Http(`${config.baseUrl}video/`);
 
 export const cryptoHttp = new Http(`${config.baseUrl}crypto/`);
+
+export const ai_agentHttp = new Http(`${config.baseUrl}ai_agent/`);

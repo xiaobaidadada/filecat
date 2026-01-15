@@ -29,7 +29,7 @@
 
 /* 消息气泡 */
 .chat-message {
-    padding: 10px 14px;
+    padding: .1rem .5rem;
     border-radius: 12px;
     max-width: 70%;
     word-break: break-word;

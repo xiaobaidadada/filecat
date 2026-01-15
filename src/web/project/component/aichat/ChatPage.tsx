@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import {ai_agentHttp} from "../../util/config";
+import Md from "../file/component/markdown/Md";
 // import './ChatPage.css';
 
 interface Message {
@@ -15,6 +17,8 @@ export default function ChatPage() {
             text:"hello filecat"
         }
     ]);
+    const [sending, set_sending] = useState(false);
+
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -30,20 +34,48 @@ export default function ChatPage() {
     const handleSend = () => {
         const text = inputValue.trim();
         if (!text) return;
-
-        const userMessage: Message = { id: Date.now(), sender: 'user', text };
-        setMessages(prev => [...prev, userMessage]);
+        // 打印用户的
+        let new_messages = [
+                ...messages,
+            { id: Date.now(), sender: 'user', text }
+        ]
+        setMessages(new_messages);
         setInputValue('');
 
+        set_sending(true)
+        // 打印系统的
+        const call_pojo =  {
+            id:Date.now()+1,
+            sender:'bot',
+            text:""
+        }
+        new_messages.push(call_pojo);
+        setMessages(new_messages);
+        const messages_p = [
+            { role: "system", content: `
+        你是一个可以使用工具的 Agent。
+        ` }   ]
+        messages_p.push({ role: "user", content: text });
+        ai_agentHttp.sse_post("chat", {messages:messages_p},{
+            onMessage: (res) => {
+                // console.log(res)
+                call_pojo.text+=res;
+                setMessages([...new_messages]);
+            },
+            onDone:()=>{
+                set_sending(false)
+            }
+        });
+
         // 模拟 bot 回复
-        setTimeout(() => {
-            const botMessage: Message = {
-                id: Date.now() + 1,
-                sender: 'bot',
-                text: `你说的是: "${text}"`,
-            };
-            setMessages(prev => [...prev, botMessage]);
-        }, 600);
+        // setTimeout(() => {
+        //     const botMessage: Message = {
+        //         id: Date.now() + 1,
+        //         sender: 'bot',
+        //         text: `你说的是: "${text}"`,
+        //     };
+        //     setMessages(prev => [...prev, botMessage]);
+        // }, 600);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -69,7 +101,7 @@ export default function ChatPage() {
                         key={msg.id}
                         className={`chat-message ${msg.sender}`}
                     >
-                        {msg.text}
+                    <Md context={msg.text}/>
                     </div>
                 ))}
                 <div ref={messagesEndRef} />
@@ -83,7 +115,9 @@ export default function ChatPage() {
                     placeholder="输入消息，Shift+Enter换行"
                     className="chat-input"
                 />
-                <button onClick={handleSend}>发送</button>
+                {sending === false &&
+                    <button  onClick={handleSend}>发送</button>
+                }
             </div>
         </div>
     );

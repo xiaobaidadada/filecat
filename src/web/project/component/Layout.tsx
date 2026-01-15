@@ -71,7 +71,7 @@ function Layout() {
     const MainNavList: NavItem[][] = [
         [
             {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
-            // {icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,},
+            {icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,},
         ],
         seconds,
         three
@@ -114,7 +114,7 @@ function Layout() {
                 {/*文件*/}
                 <FileList/>
                 {/*ai聊天*/}
-                {/*<ChatPage />*/}
+                <ChatPage />
                 {/*网站 索引*/}
                 {check_user_auth(UserAuth.nav_net_tag) &&
                     <Suspense fallback={<div></div>}>

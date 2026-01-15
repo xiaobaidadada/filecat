@@ -34,6 +34,7 @@ import {settingService} from "./domain/setting/setting.service";
 import mime from "mime-types";
 import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
 import {VirtualController} from "./domain/net/virtual/virtual.controller";
+import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
 const http = require('http');
 const https = require('https');
 const Mustache = require('mustache');
@@ -55,8 +56,11 @@ async function start() {
         routePrefix: get_sys_base_url_pre(),
         classTransformer: true,
         controllers: [
-            UserController, SysController, ShellController, FileController, DdnsController, NetController, VirtualController,
-            NavindexController, SettingController, SSHController, RdpController, VideoController, CryptoController,
+            UserController, SysController, ShellController,
+            FileController, DdnsController, NetController,
+            VirtualController,NavindexController, SettingController,
+            SSHController, RdpController, VideoController,
+            CryptoController,Ai_AgentController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
