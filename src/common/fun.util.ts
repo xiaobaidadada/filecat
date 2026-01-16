@@ -51,7 +51,7 @@ export function debounce(fn, delay = 200) {
 }
 
 // 节流函数 时间时间内 后面的都不会触发 滚动中可以使用
-function throttle(fn, delay = 200) {
+export function throttle(fn, delay = 200) {
     let last = 0; // 上一次执行时间戳
 
     return function (...args) {

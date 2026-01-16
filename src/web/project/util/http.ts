@@ -169,27 +169,35 @@ export class Http {
             onError?: (err: any) => void;
         } = {}
     ) {
+        const controller = new AbortController();
+        // onerror	网络错误 / 500	默认：重试
+        // onclose	连接断开	默认：重试
         try {
-            await fetchEventSource(this.baseUrl + url,{
+            await fetchEventSource(this.baseUrl + url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json' ,
-                    Authorization: localStorage.getItem('token')
+                    'Content-Type': 'application/json',
+                    Authorization: localStorage.getItem('token') || ''
                 },
                 body: JSON.stringify(jsonData),
-                onclose:onDone,
-                onmessage:(event)=>{
-                    if(event.event === '[DONE]' || event.event === 'done' ) {
-                        if(onDone)
-                            onDone();
-                    } else {
-                        onMessage(event.data);
+                signal: controller.signal,
+
+                onmessage: (event) => {
+                    if (event.data === '[DONE]') {
+                        controller.abort();   // ⭐ 关键
+                        onDone?.();
+                        return;
                     }
-                    console.log(event.data);
-                    // console.log(event.data,event.event);
+                    onMessage?.(event.data);
                 },
-                onerror:onError
-            })
+
+                onerror: (err) => {
+                    controller.abort();       // ⭐ 防止无限重试
+                    onError?.(err);
+                },
+
+                openWhenHidden: true
+            });
         } catch (err) {
             onError?.(err);
         }

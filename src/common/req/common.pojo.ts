@@ -43,3 +43,12 @@ export class vg_item {
     lv_list:lv_item[] = [];
     pv_list:pv_item[] = [];
 }
+
+// ai
+type Role = 'system' | 'user' | 'assistant';
+export class ai_agent_message_item {
+    role:Role;
+    content:string;
+    tool_call_id?: string;
+}
+export type ai_agent_messages = ai_agent_message_item[];

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {ai_agentHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
+import {throttle} from "../../../../common/fun.util";
 // import './ChatPage.css';
 
 interface Message {
@@ -17,6 +18,7 @@ export default function ChatPage() {
             text:"hello filecat"
         }
     ]);
+    const set_messages = throttle(setMessages,50)
     const [sending, set_sending] = useState(false);
 
     const [inputValue, setInputValue] = useState('');
@@ -58,9 +60,10 @@ export default function ChatPage() {
         messages_p.push({ role: "user", content: text });
         ai_agentHttp.sse_post("chat", {messages:messages_p},{
             onMessage: (res) => {
-                // console.log(res)
-                call_pojo.text+=res;
-                setMessages([...new_messages]);
+                const json = JSON.parse(res);
+                call_pojo.text+=json?.choices[0]?.delta.content;
+                console.log(json);
+                set_messages([...new_messages]);
             },
             onDone:()=>{
                 set_sending(false)
