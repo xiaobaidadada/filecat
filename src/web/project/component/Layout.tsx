@@ -26,7 +26,7 @@ const Net = React.lazy(() => import("./net/Net"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
-const ChatPage =   React.lazy(()=> import('./aichat/ChatPage'))
+const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
 
 
 function Layout() {

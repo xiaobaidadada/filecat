@@ -327,6 +327,11 @@ export const $stroe = {
     file_item_width_atom:atom({
         key: 'file_item_width_atom',
         default: 0
+    }),
+    // ai设置相关
+    ai_agent_chat_setting:atom({
+        key: 'ai_agent_chat_setting',
+        default: false
     })
 }
 

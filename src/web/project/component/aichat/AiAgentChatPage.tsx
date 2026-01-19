@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import {ai_agentHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle} from "../../../../common/fun.util";
+import {ai_agent_message_item} from "../../../../common/req/common.pojo";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../util/store";
+import {AIAgentChatSetting} from "./AIAgentChatSetting";
+import Header from "../../../meta/component/Header";
+import {ActionButton} from "../../../meta/component/Button";
 // import './ChatPage.css';
 
 interface Message {
@@ -10,19 +16,20 @@ interface Message {
     text: string;
 }
 
-export default function ChatPage() {
+export default function AiAgentChatPage() {
     const [messages, setMessages] = useState<Message[]>([
-        {
-            id:1,
-            sender:'bot',
-            text:"hello filecat"
-        }
+        // {
+        //     id:1,
+        //     sender:'bot',
+        //     text:"hello filecat"
+        // }
     ]);
     const set_messages = throttle(setMessages,50)
     const [sending, set_sending] = useState(false);
 
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
 
     // 自动滚动到底部
     const scrollToBottom = () => {
@@ -49,17 +56,25 @@ export default function ChatPage() {
         const call_pojo =  {
             id:Date.now()+1,
             sender:'bot',
-            text:""
+            text:"AI思考中..."
         }
         new_messages.push(call_pojo);
         setMessages(new_messages);
-        const messages_p = [
-            { role: "system", content: `
-        你是一个可以使用工具的 Agent。
-        ` }   ]
+        const messages_p = messages.map((message) => {
+            return {
+                content: message.text,
+                role: message.sender === 'bot'? 'system': 'user'
+            } as ai_agent_message_item
+        })
         messages_p.push({ role: "user", content: text });
+        let thinking_start = true
+        scrollToBottom();
         ai_agentHttp.sse_post("chat", {messages:messages_p},{
             onMessage: (res) => {
+                if(thinking_start) {
+                    call_pojo.text = ""
+                    thinking_start = false
+                }
                 try {
                     const json = JSON.parse(res);
                     call_pojo.text+=json?.choices[0]?.delta.content;
@@ -70,6 +85,7 @@ export default function ChatPage() {
             },
             onDone:()=>{
                 set_sending(false)
+                scrollToBottom();
             }
         });
 
@@ -99,21 +115,30 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="chat-page">
-            {/*<div className="chat-header">询问服务器的一切</div>*/}
-            <div className="chat-messages">
-                {messages.map(msg => (
-                    <div
-                        key={msg.id}
-                        className={`chat-message ${msg.sender}`}
-                    >
-                    <Md context={msg.text}/>
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
+       <React.Fragment>
+           <Header>
+               <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
+                   set_ai_agent_chat_setting(true);
+               }}/>
+           </Header>
+           <div className="chat-page">
+               {
+                   messages?.length === 0 && <div className="chat-header">询问服务器的一切</div>
+               }
 
-            <div className="chat-input-area">
+               <div className="chat-messages">
+                   {messages.map(msg => (
+                       <div
+                           key={msg.id}
+                           className={`chat-message ${msg.sender}`}
+                       >
+                           <Md context={msg.text}/>
+                       </div>
+                   ))}
+                   <div ref={messagesEndRef} />
+               </div>
+
+               <div className="chat-input-area">
                 <textarea
                     value={inputValue}
                     onChange={handleChange}
@@ -121,10 +146,13 @@ export default function ChatPage() {
                     placeholder="输入消息，Shift+Enter换行"
                     className="chat-input"
                 />
-                {sending === false &&
-                    <button  onClick={handleSend}>发送</button>
-                }
-            </div>
-        </div>
+                   {sending === false &&
+                       <button  onClick={handleSend}>发送</button>
+                   }
+               </div>
+
+           </div>
+           { ai_agent_chat_setting && <AIAgentChatSetting />}
+       </React.Fragment>
     );
 }

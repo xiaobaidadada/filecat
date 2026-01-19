@@ -45,9 +45,12 @@ export class vg_item {
 }
 
 // ai
-type Role = 'system' | 'user' | 'assistant';
+type AI_Agent_Role =
+    'system' // 表示系统消息，用于设置上下文或给出指令，比如告诉AI它的角色或任务。
+    | 'user' // 代表用户发送的消息，是AI需要处理的输入。
+    | 'assistant'; //表示助手（如AI）发送的消息，是对用户消息的回应。
 export class ai_agent_message_item {
-    role:Role;
+    role:AI_Agent_Role;
     content:string;
     tool_call_id?: string;
 }

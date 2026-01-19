@@ -1,4 +1,5 @@
 
+// 为ai提供有限的系统信息
 export const ai_tools = [
     {
         "type": "function",
@@ -30,7 +31,7 @@ export const ai_tools = [
                         description: "要列出的目录路径，默认为当前目录"
                     }
                 },
-                required: []
+                required: ['path']
             }
         }
     },

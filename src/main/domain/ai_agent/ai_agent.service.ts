@@ -28,12 +28,15 @@ export class Ai_agentService {
         const user_id = userService.get_user_info_by_token(token).id
         const root_path = settingService.getFileRootPath(token);
         messages.push({
-            role:'assistant',
-            content:`当前的操作系统环境是 ${os.platform()}, 当前用的相对目录是 ${root_path}`
+            role:'system',
+            content:`你是一个服务器机器人，当前的操作系统环境是 ${os.platform()}, 当前用的相对目录是 ${root_path}，对用户的回答尽量以markdown的形式输出。`
         })
+        let tools_max = 7
         while (true) {
+            if(tools_max <= 0) break;
+            tools_max --;
             messages.push({
-                role:'assistant',
+                role:'system',
                 content:`如果有工具调用，不需要输出任何文本，直接返回函数`
             })
             const call_data = await this.callLLSync(messages);
@@ -87,7 +90,7 @@ export class Ai_agentService {
         }
         messages.push({
             role:'assistant',
-            content:'现在基于以上结果对用户进行简洁的回答'
+            content:'现在基于以上结果对用户进行简洁的回答。'
         })
         // 进行 流式输出 回调
         const aiResponse = await fetch(BASE_URL, {
