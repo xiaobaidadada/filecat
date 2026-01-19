@@ -16,6 +16,15 @@ export class FileSettingItem {
     index: number;
 }
 
+export class ai_agent_Item {
+    token: string;
+    open: boolean = false;
+    note: string;
+    index: number;
+    url: string;
+    model: string;
+}
+
 export class QuickCmdItem {
     cmd: string;
     note: string;

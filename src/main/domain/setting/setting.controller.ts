@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {ai_agent_Item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -13,6 +13,7 @@ import fs from "fs"
 import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {ServerEvent} from "../../other/config";
+import {ai_agentService} from "../ai_agent/ai_agent.service";
 
 @JsonController("/setting")
 export class SettingController {
@@ -180,6 +181,7 @@ export class SettingController {
     // 设置文件路由设置
     @Post('/filesSetting/save')
     async saveFilesSetting(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
         await settingService.saveFilesSetting(req, ctx.headers.authorization);
         return Sucess("1");
     }
@@ -188,6 +190,20 @@ export class SettingController {
     @Get("/filesSetting")
     getFilesSetting(@Req() ctx) {
         return Sucess(settingService.getFilesSetting(ctx.headers.authorization));
+    }
+
+    @Post('/ai_agent_setting/save')
+    async ai_agent_settingsave(@Body() req: {models:ai_agent_Item[]}, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        DataUtil.set(data_common_key.ai_agent_model_setting,req)
+        ai_agentService.load_key()
+        return Sucess("1");
+    }
+
+    // ai代理设置获取
+    @Get("/ai_agent_setting")
+    ai_agent_setting_get(@Req() ctx) {
+        return Sucess(settingService.ai_agent_setting());
     }
 
     // 系统软件设置

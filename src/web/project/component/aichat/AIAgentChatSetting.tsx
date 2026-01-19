@@ -1,26 +1,110 @@
 import {useTranslation} from "react-i18next";
-import React, {useEffect, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {FullScreenContext, FullScreenDiv} from "../../../meta/component/Dashboard";
+import {Column, FullScreenContext, FullScreenDiv} from "../../../meta/component/Dashboard";
+import {Table} from "../../../meta/component/Table";
+import {InputText, Select} from "../../../meta/component/Input";
+import {CardFull} from "../../../meta/component/Card";
+import {using_tip} from "../prompts/prompts.util";
+import {settingHttp} from "../../util/config";
+import {RCode} from "../../../../common/Result.pojo";
+import {NotySucess} from "../../util/noty";
+import {GlobalContext} from "../../GlobalProvider";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 
 
 export function AIAgentChatSetting() {
 
     const {t} = useTranslation();
+    const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
+    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("备注") ];
+    const [rows, setRows] = useState([]);
+    const tip = using_tip()
+    const {check_user_auth} = use_auth_check();
 
+    const getItems = async () => {
+        // 文件夹根路径
+        const result = await settingHttp.get("ai_agent_setting");
+        if (result.code === RCode.Sucess) {
+            setRows(result.data.models);
+        }
+    }
+    useEffect(()=>{
+        getItems()
+    },[])
+
+    const onChange = (item,value,index)=> {
+        const list = [];
+        for (let i=0; i<rows.length; i++) {
+            if (i !== index) {
+                rows[i].open = false;
+            } else {
+                rows[i].open = value === "true";
+            }
+            list.push(rows[i])
+        }
+        setRows(list);
+    }
+    const add = ()=>{
+        setRows([...rows,{note:"",open:false,path:""}]);
+    }
+    const del = (index) => {
+        rows.splice(index, 1);
+        setRows([...rows]);
+    }
+    const save = async () => {
+        for (let i =0; i<rows.length;i++) {
+            rows[i].index = i;
+        }
+        const result = await settingHttp.post("ai_agent_setting/save", {models:rows});
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+        }
+    }
     return <div>
         <Header>
-            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                set_ai_agent_chat_setting(false)
-            }}/>
+            {check_user_auth(UserAuth.ai_agent_setting) &&
+                <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
+                    set_ai_agent_chat_setting(false)
+                }}/>
+            }
         </Header>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
-                ai设置 3213123
+                <Column widthPer={70}>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip("只能使用符合openai风格的ai接口")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+                        <Table headers={headers} rows={rows.map((item, index) => {
+                            const new_list = [
+                                <div>{index}</div>,
+                                <InputText value={item.url} handleInputChange={(value) => {
+                                    item.url = value;
+                                }} no_border={true}/>,
+                                <Select value={item.open} onChange={(value) => {
+                                    onChange(item,value,index);
+                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                <InputText value={item.token} handleInputChange={(value) => {
+                                    item.token = value;
+                                }} no_border={true}/>,
+                                <InputText value={item.model} handleInputChange={(value) => {
+                                    item.model = value;
+                                }} no_border={true}/>,
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+                                <div>
+                                    {index!==0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/> }
+                                </div>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </CardFull>
+                </Column>
+
 
             </FullScreenContext>
         </FullScreenDiv>

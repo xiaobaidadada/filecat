@@ -88,6 +88,8 @@ export enum UserAuth {
     nav_net_tag   , // 网址导航页面
     all_sys = 47, // 系统页面
     shell_cmd_filecat_restart, // shell 重启命令
+    ai_agent_setting, // ai 模型设置
+    ai_agent_page, // ai 聊天页面
 }
 
 

@@ -12,18 +12,32 @@ import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth} from "../../../common/req/user.req";
 
-const API_KEY = process.env.API_KEY;
-const BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-const MODEL = "doubao-seed-1-6-251015";
+let API_KEY = process.env.AI_API_KEY;
+let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+let MODEL = "doubao-seed-1-6-251015";
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
  */
 export class Ai_agentService {
 
+    public load_key() {
+        const r = settingService.ai_agent_setting()
+        for (const it of r.models) {
+            if(it.open) {
+                MODEL = it.model
+                BASE_URL = it.url
+                API_KEY = it.token
+                return
+            }
+        }
+    }
 
     // 至少两次请求，先判断到不会需要tools，在输出，
     public async chat(messages:ai_agent_messages,res:Response,token) {
+        if(!API_KEY) {
+            throw "api 没有设置，请设置诸如豆包、openai的model api"
+        }
         // 先判断是否有工具调用
         const user_id = userService.get_user_info_by_token(token).id
         const root_path = settingService.getFileRootPath(token);
@@ -139,9 +153,14 @@ export class Ai_agentService {
 
         if (!res.ok) {
             const tr = await res.text()
-            throw new Error(tr);
+            try {
+                const json_ = JSON.parse(tr);
+                throw Error(json_.message ? json_.message :
+                    json_.error? json_.error.message : tr);
+            } catch (e) {
+                throw typeof e === 'string'  ? new Error(tr): e;
+            }
         }
-
         return res.json();
     }
 }

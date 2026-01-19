@@ -213,7 +213,25 @@ export function Permission(props:{
                        onChange={() => {
                            props.select_auth(UserAuth.sys_env_setting_key)
                        }}/>
-                {t("通用设置")}
+                {t("全局变量通用设置")}
+            </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.ai_agent_setting)}
+                       checked={props.is_selected(UserAuth.ai_agent_setting)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.ai_agent_setting)
+                       }}/>
+                {t("Ai 配置")}
+            </div>
+            <div>
+                <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.ai_agent_page)}
+                       checked={props.is_selected(UserAuth.ai_agent_page)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.ai_agent_page)
+                       }}/>
+                {t("Ai Chat Page")}
             </div>
         </div>
 

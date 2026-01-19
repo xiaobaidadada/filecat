@@ -8,6 +8,8 @@ import {$stroe} from "../../util/store";
 import {AIAgentChatSetting} from "./AIAgentChatSetting";
 import Header from "../../../meta/component/Header";
 import {ActionButton} from "../../../meta/component/Button";
+import {use_auth_check} from "../../util/store.util";
+import {UserAuth} from "../../../../common/req/user.req";
 // import './ChatPage.css';
 
 interface Message {
@@ -26,6 +28,7 @@ export default function AiAgentChatPage() {
     ]);
     const set_messages = throttle(setMessages,50)
     const [sending, set_sending] = useState(false);
+    const {check_user_auth} = use_auth_check();
 
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -117,15 +120,16 @@ export default function AiAgentChatPage() {
     return (
        <React.Fragment>
            <Header>
-               <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
-                   set_ai_agent_chat_setting(true);
-               }}/>
+               {check_user_auth(UserAuth.ai_agent_setting) &&
+                   <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
+                       set_ai_agent_chat_setting(true);
+                   }}/>
+               }
            </Header>
            <div className="chat-page">
                {
                    messages?.length === 0 && <div className="chat-header">询问服务器的一切</div>
                }
-
                <div className="chat-messages">
                    {messages.map(msg => (
                        <div

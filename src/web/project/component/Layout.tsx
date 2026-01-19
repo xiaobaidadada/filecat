@@ -68,11 +68,14 @@ function Layout() {
     if (check_user_auth(UserAuth.vir_net)) {
         three = [{icon: "vpn_lock", name: t("系统网络"), rto: `${routerConfig.net}/`}, ...three];
     }
-    const MainNavList: NavItem[][] = [
-        [
+    const main_list:NavItem[] = [
             {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
-            {icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,},
-        ],
+        ]
+    if (check_user_auth(UserAuth.ai_agent_page)) {
+        main_list.push({icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,})
+    }
+    const MainNavList: NavItem[][] = [
+        main_list,
         seconds,
         three
     ]
@@ -114,7 +117,11 @@ function Layout() {
                 {/*文件*/}
                 <FileList/>
                 {/*ai聊天*/}
-                <ChatPage />
+                {check_user_auth(UserAuth.ai_agent_page) &&
+                    <Suspense fallback={<div></div>}>
+                        <ChatPage />
+                    </Suspense>
+                }
                 {/*网站 索引*/}
                 {check_user_auth(UserAuth.nav_net_tag) &&
                     <Suspense fallback={<div></div>}>

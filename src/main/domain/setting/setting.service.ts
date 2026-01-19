@@ -6,6 +6,7 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
+    ai_agent_Item,
     dir_upload_max_num_item, FileQuickCmdItem,
     FileSettingItem, QuickCmdItem,
     SysSoftware,
@@ -23,6 +24,7 @@ import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
 import {get_base, get_sys_base_url_pre} from "../bin/bin";
 import {get_user_now_pwd} from "../../../common/DataUtil";
+import {ai_agentService} from "../ai_agent/ai_agent.service";
 
 const needle = require('needle');
 const Mustache = require('mustache');
@@ -365,9 +367,28 @@ export class SettingService {
         if (!DataUtil.get(data_common_key.cmd_use_pty_key)) {
             DataUtil.set(data_common_key.cmd_use_pty_key, shell_list);
         }
+        ai_agentService.load_key()
     }
 
     // update_files_setting: FileSettingItem[];
+    ai_agent_setting():{models:ai_agent_Item[]} {
+        const r = DataUtil.get(data_common_key.ai_agent_model_setting)as  any;
+        if(!r) {
+            const pojo = new ai_agent_Item()
+            // 默认添加豆包的 api
+            pojo.url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+            pojo.model = "doubao-seed-1-6-251015"
+            pojo.note = "豆包模型"
+            pojo.open = false
+            return {
+                models:[
+                    pojo
+                ]
+            }
+        } else {
+            return r
+        }
+    }
 
     public getFilesSetting(token) {
         // if (this.update_files_setting) {
