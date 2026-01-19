@@ -42,7 +42,7 @@ export class WorkflowProcess {
             node_pty_shell_list: settingService.get_pty_cmd()
         });
         ptyshell.check_exe_cmd = shellServiceImpl.check_exe_cmd({
-            user_id: instance.user_id, ptyShell:ptyshell
+            user_id: instance.user_id, cwd:ptyshell.cwd
         })
         instance.pty_shell_set.add(ptyshell);
         ptyshell.on_call = (cmdData) => {

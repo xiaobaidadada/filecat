@@ -194,6 +194,8 @@ export class Http {
                 onerror: (err) => {
                     controller.abort();       // ⭐ 防止无限重试
                     onError?.(err);
+                    onDone?.();
+                    throw err
                 },
 
                 openWhenHidden: true

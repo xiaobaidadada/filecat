@@ -1,28 +1,36 @@
 import { readFile, writeFile, readdir } from 'fs/promises';
+import {shellServiceImpl} from "../shell/shell.service";
+import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
+import {SystemUtil} from "../sys/sys.utl";
 
+export const Ai_agentTools = {
+    // 读取文件
+    read_file:async ({path})=> {
+            const content = await readFile(path, 'utf-8');
+            return content;
+    },
+    // 读取目录
+    list_files: async ({ path = '.' })=> {
+        const files = await readdir(path, { withFileTypes: true });
+        return files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n');
+    },
+    // 修改文件
+    edit_file: async ({ path, old_str, new_str })=> {
+        let orig = '';
+        try {
+            orig = await readFile(path, 'utf-8');
+        } catch {
+            orig = '';
+        }
+        const updated = orig.split(old_str).join(new_str);
+        await writeFile(path, updated, 'utf-8');
+        return 'OK';
+    },
+    // 执行命令
+    exec_cmd: async ({cmd}:{cmd: string})=> {
+        return SystemUtil.execAsync(cmd)
+    },
 
-// read_file 工具
-export async function read_file(text) {
-    const {path} = JSON.parse(text)
-    const content = await readFile(path, 'utf-8');
-    return content;
 }
 
-// list_files 工具
-export async function list_files({ path = '.' }) {
-    const files = await readdir(path, { withFileTypes: true });
-    return files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n');
-}
-
-// edit_file 工具
-export async function edit_file({ path, old_str, new_str }) {
-    let orig = '';
-    try {
-        orig = await readFile(path, 'utf-8');
-    } catch {
-        orig = '';
-    }
-    const updated = orig.split(old_str).join(new_str);
-    await writeFile(path, updated, 'utf-8');
-    return 'OK';
-}
+export type Ai_agentTools_type = keyof typeof Ai_agentTools;

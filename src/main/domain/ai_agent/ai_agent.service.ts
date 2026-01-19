@@ -1,8 +1,16 @@
 import {ai_tools} from "./ai_agent.constant";
-import * as ai_agent_tools from "./ai_agent.tools"
 import {ai_agent_messages} from "../../../common/req/common.pojo";
 import { Response } from "express";
 import {Readable} from "stream";
+import os from "os";
+import {Ai_agentTools, Ai_agentTools_type} from "./ai_agent.tools";
+import {settingService} from "../setting/setting.service";
+import path from "path";
+import {userService} from "../user/user.service";
+import {SystemUtil} from "../sys/sys.utl";
+import {exec_type} from "pty-shell";
+import {shellServiceImpl} from "../shell/shell.service";
+import {UserAuth} from "../../../common/req/user.req";
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -15,19 +23,52 @@ export class Ai_agentService {
 
 
     // 至少两次请求，先判断到不会需要tools，在输出，
-    public async chat(messages:ai_agent_messages,res:Response) {
+    public async chat(messages:ai_agent_messages,res:Response,token) {
         // 先判断是否有工具调用
+        const user_id = userService.get_user_info_by_token(token).id
+        const root_path = settingService.getFileRootPath(token);
+        messages.push({
+            role:'assistant',
+            content:`当前的操作系统环境是 ${os.platform()}, 当前用的相对目录是 ${root_path}`
+        })
         while (true) {
             messages.push({
                 role:'assistant',
-                content:'如果有工具调用，不需要输出任何文本，直接返回函数'
+                content:`如果有工具调用，不需要输出任何文本，直接返回函数`
             })
             const call_data = await this.callLLSync(messages);
             const msg = call_data.choices[0].message;
             if (msg.tool_calls) {
                 for (const call of msg.tool_calls) {
-                    const result = await ai_agent_tools[call.function.name](
-                        call.function.arguments
+                    const arguments_obj = JSON.parse(call.function.arguments)
+                    const call_name:Ai_agentTools_type = call.function.name
+                    // 权限判断
+                    switch (call_name) {
+                        case 'exec_cmd':
+                        {
+                            // todo 考虑改成 chevrotain 来进行解析
+                            const str_cmd = arguments_obj.cmd.trim().split(' ');
+                            const code =  await shellServiceImpl.check_exe_cmd({
+                                user_id: user_id, cwd: process.cwd()
+                            })(str_cmd,str_cmd.splice(1));
+                            if(exec_type.not === code) {
+                                return `没有权限执行 ${arguments_obj.cmd} 这个命令`
+                            }
+                            break;
+                        }
+                        case 'list_files':
+                        case 'read_file': {
+                            userService.check_user_path(token, arguments_obj.path)
+                            break;
+                        }
+                        case 'edit_file': {
+                            userService.check_user_path(token, arguments_obj.path)
+                            userService.check_user_auth(token, UserAuth.filecat_file_delete_cut_rename);
+                            break;
+                        }
+                    }
+                    const result = await Ai_agentTools[call.function.name](
+                        arguments_obj
                     );
                     messages.push({
                         role: "assistant",

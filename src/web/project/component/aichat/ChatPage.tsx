@@ -60,9 +60,12 @@ export default function ChatPage() {
         messages_p.push({ role: "user", content: text });
         ai_agentHttp.sse_post("chat", {messages:messages_p},{
             onMessage: (res) => {
-                const json = JSON.parse(res);
-                call_pojo.text+=json?.choices[0]?.delta.content;
-                console.log(json);
+                try {
+                    const json = JSON.parse(res);
+                    call_pojo.text+=json?.choices[0]?.delta.content;
+                } catch (e) {
+                    call_pojo.text+=res;
+                }
                 set_messages([...new_messages]);
             },
             onDone:()=>{

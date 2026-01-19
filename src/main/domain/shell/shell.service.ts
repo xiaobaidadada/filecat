@@ -144,9 +144,9 @@ export class ShellService {
     }
 
     check_exe_cmd({
-                      token, ptyShell, user_id
+                      token, cwd, user_id
                   }: {
-        token?: string, ptyShell: PtyShell, user_id?: string
+        token?: string, cwd: string, user_id?: string
     }) {
         return async (exe_cmd, params) => {
             // 自定义命令
@@ -188,11 +188,11 @@ export class ShellService {
             if (exe_cmd === 'cd') {
                 // cd 需要检测一下目录
                 if (token) {
-                    if (userService.check_user_path(token, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
+                    if (userService.check_user_path(token, path.isAbsolute(params[0]) ? params[0] : path.join(cwd, params[0]))) {
                         return exec_type.auto_child_process;
                     }
                 } else if (user_id) {
-                    if (userService.check_user_path_by_user_id(user_id, path.isAbsolute(params[0]) ? params[0] : path.join(ptyShell.cwd, params[0]))) {
+                    if (userService.check_user_path_by_user_id(user_id, path.isAbsolute(params[0]) ? params[0] : path.join(cwd, params[0]))) {
                         return exec_type.auto_child_process;
                     }
                 } else {
@@ -241,7 +241,7 @@ export class ShellService {
             }
         });
         ptyShell.check_exe_cmd = this.check_exe_cmd({
-            token: (data.wss as Wss).token, ptyShell
+            token: (data.wss as Wss).token, cwd:sysPath
         })
         ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测

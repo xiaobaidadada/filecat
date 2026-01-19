@@ -2,6 +2,9 @@ import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
 import {Env} from "../../../common/Env";
+const { exec } = require('child_process');
+const util = require('util');
+const exec_async = util.promisify(exec);
 
 
 export class SystemUtil {
@@ -25,6 +28,14 @@ export class SystemUtil {
         // } else {
         //     SystemUtil.commandIsExist(`kill -9 ${pid} `)
         // }
+    }
+
+    public static async  execAsync (cmd: string): Promise<any> {
+        const { stdout } = await exec_async(
+            cmd,
+            { encoding: "utf8" }
+        );
+        return stdout;
     }
 
 }
