@@ -120,7 +120,10 @@ export default function AiAgentChatPage() {
                 }
                 try {
                     const json = JSON.parse(res);
-                    call_pojo.text+=json?.choices[0]?.delta.content;
+                    const call_text_r = json?.choices[0]?.delta.content
+                    if(call_text_r) {
+                        call_pojo.text+=call_text_r;
+                    }
                 } catch (e) {
                     call_pojo.text+=res;
                 }
