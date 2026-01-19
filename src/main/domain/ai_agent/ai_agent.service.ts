@@ -34,79 +34,126 @@ export class Ai_agentService {
     }
 
     // 至少两次请求，先判断到不会需要tools，在输出，
-    public async chat(messages:ai_agent_messages,res:Response,token) {
-        if(!API_KEY) {
-            throw "api 没有设置，请设置诸如豆包、openai的model api"
+    public async chat(
+        originMessages: ai_agent_messages,
+        res: Response,
+        token: string
+    ) {
+        if (!API_KEY) {
+            throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
-        // 先判断是否有工具调用
-        const user_id = userService.get_user_info_by_token(token).id
-        const root_path = settingService.getFileRootPath(token);
-        messages.push({
-            role:'system',
-            content:`你是一个服务器机器人，当前的操作系统环境是 ${os.platform()}, 当前用的相对目录是 ${root_path}，对用户的回答尽量以markdown的形式输出。`
-        })
-        let tools_max = 7
-        while (true) {
-            if(tools_max <= 0) break;
-            tools_max --;
-            messages.push({
-                role:'system',
-                content:`如果有工具调用，不需要输出任何文本，直接返回函数`
-            })
-            const call_data = await this.callLLSync(messages);
-            const msg = call_data.choices[0].message;
-            if (msg.tool_calls) {
-                for (const call of msg.tool_calls) {
-                    const arguments_obj = JSON.parse(call.function.arguments)
-                    const call_name:Ai_agentTools_type = call.function.name
-                    // 权限判断
-                    switch (call_name) {
-                        case 'exec_cmd':
-                        {
-                            // todo 考虑改成 chevrotain 来进行解析
-                            const str_cmd = arguments_obj.cmd.trim().split(' ');
-                            const code =  await shellServiceImpl.check_exe_cmd({
-                                user_id: user_id, cwd: process.cwd()
-                            })(str_cmd,str_cmd.splice(1));
-                            if(exec_type.not === code) {
-                                return `没有权限执行 ${arguments_obj.cmd} 这个命令`
-                            }
-                            break;
-                        }
-                        case 'list_files':
-                        case 'read_file': {
-                            userService.check_user_path(token, arguments_obj.path)
-                            break;
-                        }
-                        case 'edit_file': {
-                            userService.check_user_path(token, arguments_obj.path)
-                            userService.check_user_auth(token, UserAuth.filecat_file_delete_cut_rename);
-                            break;
-                        }
-                    }
-                    const result = await Ai_agentTools[call.function.name](
-                        arguments_obj
-                    );
-                    messages.push({
-                        role: "assistant",
-                        tool_call_id: call.id,
-                        content: String(result)
-                    });
-                    messages.push({
-                        role: "assistant",
-                        content: "工具调用已完成，我将基于已有信息给出结论。"
-                    });
-                }
-                continue;
+
+        const user = userService.get_user_info_by_token(token);
+        const rootPath = settingService.getFileRootPath(token);
+
+        const trimMessages = (
+            messages: ai_agent_messages,
+            maxChars = 12000
+        ) => {
+            let total = 0;
+            const result: ai_agent_messages = [];
+
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const msg = messages[i];
+                const size = JSON.stringify(msg).length;
+                if (total + size > maxChars) break;
+                total += size;
+                result.unshift(msg);
             }
-            // 没有再进行工具调用
-            break;
+            return result;
+        };
+
+        const workMessages: ai_agent_messages = [
+            ...trimMessages(originMessages),
+            {
+                role: "system",
+                content: `你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}。`
+            },
+            {
+                role: "system",
+                content: `如果需要调用工具，只返回工具调用，不要输出任何文本。`
+            }
+        ];
+
+        let toolLoop = 5;
+        let fileEdited = false;
+
+        while (toolLoop-- > 0) {
+            const callData = await this.callLLSync(workMessages);
+            const msg = callData.choices[0].message;
+
+            // ✅ 必须先 push assistant
+            workMessages.push(msg);
+
+            if (!msg.tool_calls || msg.tool_calls.length === 0) {
+                break;
+            }
+
+            for (const call of msg.tool_calls) {
+                const args = JSON.parse(call.function.arguments || "{}");
+                const toolName = call.function.name as Ai_agentTools_type;
+
+                // 权限校验
+                switch (toolName) {
+                    case "exec_cmd": {
+                        const cmd = args.cmd?.trim();
+                        if (!cmd) throw new Error("cmd 不能为空");
+
+                        const argv = cmd.split(" ");
+                        const code = await shellServiceImpl.check_exe_cmd({
+                            user_id: user.id,
+                            cwd: process.cwd()
+                        })(argv, argv.slice(1));
+
+                        if (code === exec_type.not) {
+                            throw new Error(`没有权限执行命令：${cmd}`);
+                        }
+                        break;
+                    }
+
+                    case "list_files":
+                    case "read_file":
+                        userService.check_user_path(token, args.path);
+                        break;
+
+                    case "edit_file":
+                        if (fileEdited) {
+                            throw new Error("一次请求中只允许修改文件一次");
+                        }
+                        userService.check_user_path(token, args.path);
+                        userService.check_user_auth(
+                            token,
+                            UserAuth.filecat_file_delete_cut_rename
+                        );
+                        fileEdited = true;
+                        break;
+                }
+
+                let result = await Ai_agentTools[toolName](args);
+                let resultStr = String(result);
+
+                // todo 检查
+                if (resultStr.length > 5000) {
+                    resultStr =
+                        resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
+                }
+
+                // ✅ tool 必须紧跟 assistant(tool_calls)
+                workMessages.push({
+                    role: "tool",
+                    tool_call_id: call.id,
+                    content: resultStr
+                });
+            }
         }
-        messages.push({
+
+
+        const finalMessages: ai_agent_messages = trimMessages(workMessages);
+        finalMessages.push({
             role:'assistant',
-            content:'现在基于以上结果对用户进行简洁的回答。'
+            content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
         })
-        // 进行 流式输出 回调
+
         const aiResponse = await fetch(BASE_URL, {
             method: "POST",
             headers: {
@@ -115,20 +162,24 @@ export class Ai_agentService {
             },
             body: JSON.stringify({
                 model: MODEL,
-                messages: messages,
+                messages: finalMessages,
                 stream: true,
-                temperature: 0.7,
-                tools: ai_tools
+                temperature: 0.7
             })
         });
+
         if (!aiResponse.ok || !aiResponse.body) {
-            res.write(`event: error\ndata: AI 请求失败\n\n`);
+            res.write(
+                `event: error\ndata: ${aiResponse.status === 413
+                    ? "请求内容过大（413）"
+                    : "AI 请求失败"
+                }\n\n`
+            );
             res.end();
             return;
         }
-        // ⭐ 核心：WebStream → NodeStream → pipe
+
         const nodeStream = Readable.fromWeb(aiResponse.body as any);
-        // 客户端断开时，终止上游
         res.on("close", () => {
             nodeStream.destroy();
         });
@@ -136,15 +187,16 @@ export class Ai_agentService {
     }
 
 
-    private async  callLLSync(messages:ai_agent_messages) {
-        const res = await fetch(`${BASE_URL}`, {
+
+    private async callLLSync(messages: ai_agent_messages) {
+        const res = await fetch(BASE_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
-                model:MODEL,
+                model: MODEL,
                 messages,
                 tools: ai_tools,
                 temperature: 0.2
@@ -152,17 +204,18 @@ export class Ai_agentService {
         });
 
         if (!res.ok) {
-            const tr = await res.text()
+            const text = await res.text();
             try {
-                const json_ = JSON.parse(tr);
-                throw Error(json_.message ? json_.message :
-                    json_.error? json_.error.message : tr);
-            } catch (e) {
-                throw typeof e === 'string'  ? new Error(tr): e;
+                const json = JSON.parse(text);
+                throw new Error(json.message || json.error?.message || text);
+            } catch {
+                throw new Error(text);
             }
         }
+
         return res.json();
     }
+
 }
 
 export const ai_agentService = new Ai_agentService();

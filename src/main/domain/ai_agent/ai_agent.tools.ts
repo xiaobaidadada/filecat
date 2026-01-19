@@ -15,15 +15,8 @@ export const Ai_agentTools = {
         return files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n');
     },
     // 修改文件
-    edit_file: async ({ path, old_str, new_str })=> {
-        let orig = '';
-        try {
-            orig = await readFile(path, 'utf-8');
-        } catch {
-            orig = '';
-        }
-        const updated = orig.split(old_str).join(new_str);
-        await writeFile(path, updated, 'utf-8');
+    edit_file: async ({ path, new_content })=> {
+        await writeFile(path, new_content, 'utf-8');
         return 'OK';
     },
     // 执行命令

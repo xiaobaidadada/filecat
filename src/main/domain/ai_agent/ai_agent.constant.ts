@@ -39,7 +39,7 @@ export const ai_tools = [
         type: "function",
         function: {
             name: "edit_file",
-            description: "编辑文件内容，用 new_str 替换文件中的 old_str",
+            description: "编辑文件内容，用 new_content 替换文件中的内容",
             parameters: {
                 type: "object",
                 properties: {
@@ -47,16 +47,12 @@ export const ai_tools = [
                         type: "string",
                         description: "文件路径"
                     },
-                    old_str: {
+                    new_content: {
                         type: "string",
-                        description: "需要被替换的原始字符串"
-                    },
-                    new_str: {
-                        type: "string",
-                        description: "替换后的新字符串"
+                        description: "新的文件内容"
                     }
                 },
-                required: ["path", "old_str", "new_str"]
+                required: ["path", "new_content"]
             }
         }
     },

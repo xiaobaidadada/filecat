@@ -44,11 +44,19 @@ export class vg_item {
     pv_list:pv_item[] = [];
 }
 
-// ai
-type AI_Agent_Role =
-    'system' // 表示系统消息，用于设置上下文或给出指令，比如告诉AI它的角色或任务。
-    | 'user' // 代表用户发送的消息，是AI需要处理的输入。
-    | 'assistant'; //表示助手（如AI）发送的消息，是对用户消息的回应。
+/**
+ * AI Agent 消息角色类型
+ */
+export type AI_Agent_Role =
+/** 系统消息，通常用于设定上下文、规则、系统指令等 */
+    'system'
+    /** 用户消息，表示用户输入或请求 */
+    | 'user'
+    /** 模型助手的回复消息，可能包含工具调用指令 */
+    | 'assistant'
+    /** 工具输出消息，表示模型调用工具后的结果 */
+    | 'tool';
+
 export class ai_agent_message_item {
     role:AI_Agent_Role;
     content:string;
