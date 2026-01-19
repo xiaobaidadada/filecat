@@ -18,6 +18,41 @@ interface Message {
     text: string;
 }
 
+const MESSAGE_KEY = "chat_messages";
+const MAX_MESSAGES = 200;
+
+export function getMessagesFromLocal(): any[] {
+    try {
+        const data = localStorage.getItem(MESSAGE_KEY);
+        if (!data) return [];
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error("读取 messages 失败", e);
+        return [];
+    }
+}
+
+export function setMessagesToLocal(messages: any[]) {
+    try {
+        const truncated = messages.slice(-MAX_MESSAGES);
+        localStorage.setItem(MESSAGE_KEY, JSON.stringify(truncated));
+    } catch (e) {
+        console.error("保存 messages 到 localStorage 失败", e);
+    }
+}
+
+export function pushMessageToLocal(message: any) {
+    const messages = getMessagesFromLocal();
+    messages.push(message);
+    setMessagesToLocal(messages);
+}
+
+export function learAllMessages(): void {
+    setMessagesToLocal([]);
+}
+
+
 export default function AiAgentChatPage() {
     const [messages, setMessages] = useState<Message[]>([
         // {
@@ -38,19 +73,24 @@ export default function AiAgentChatPage() {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
     };
-
-    useEffect(() => {
+    const init = ()=>{
+        set_messages(getMessagesFromLocal())
         scrollToBottom();
+    }
+    useEffect(() => {
+        init()
     }, []);
 
     const handleSend = () => {
         const text = inputValue.trim();
         if (!text) return;
         // 打印用户的
+        const user_message = { id: Date.now(), sender: 'user', text }
         let new_messages = [
                 ...messages,
-            { id: Date.now(), sender: 'user', text }
+            user_message
         ]
+        pushMessageToLocal(user_message)
         setMessages(new_messages);
         setInputValue('');
 
@@ -89,6 +129,7 @@ export default function AiAgentChatPage() {
             onDone:()=>{
                 set_sending(false)
                 scrollToBottom();
+                pushMessageToLocal(call_pojo)
             }
         });
 
@@ -120,6 +161,10 @@ export default function AiAgentChatPage() {
     return (
        <React.Fragment>
            <Header>
+               <ActionButton icon={"delete_sweep"} title={"清空聊天历史"} onClick={()=>{
+                   learAllMessages()
+                   init()
+               }}/>
                {check_user_auth(UserAuth.ai_agent_setting) &&
                    <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
                        set_ai_agent_chat_setting(true);
