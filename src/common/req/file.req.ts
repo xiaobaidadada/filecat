@@ -97,7 +97,7 @@ export interface job_item {
     // fail_message?: string;
     // success_message?: string;
     message?: string;
-    code?: number; // 完成的code
+    code?: number; // 完成的code 0 完成 -1 失败
 
     duration?: string; // 运行时长
 

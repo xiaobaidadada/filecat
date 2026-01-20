@@ -138,7 +138,7 @@ export class work_children {
                 code: it.code,
                 children: []
             };
-            if (it.steps) {
+            if (it.code !== 0 && it.steps) {
                 const children: any[] = [];
                 for (const step of it.steps ?? []) {
                     let name = ''
