@@ -17,6 +17,10 @@ import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 
 
+const tip_text = `
+1. 只能使用符合openai风格的ai接口
+2. 对话的历史越长，消耗的大模型token费用越贵，目前不具备长期记忆简化能力
+`
 export function AIAgentChatSetting() {
 
     const {t} = useTranslation();
@@ -77,7 +81,7 @@ export function AIAgentChatSetting() {
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Column widthPer={70}>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip("只能使用符合openai风格的ai接口")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                         <Table headers={headers} rows={rows.map((item, index) => {
                             const new_list = [
                                 <div>{index}</div>,
