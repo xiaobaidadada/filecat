@@ -62,6 +62,9 @@ export function setMessagesToLocal(messages: any[]) {
 
 export function pushMessageToLocal(message: any) {
     const messages = getMessagesFromLocal();
+    if(messages?.length > 0 && messages[messages.length - 1].id === message.id) {
+        return;
+    }
     messages.push(message);
     setMessagesToLocal(messages);
 }
@@ -115,7 +118,7 @@ export default function AiAgentChatPage() {
         set_sending(true)
         // 打印系统的
         const call_pojo =  {
-            id:Date.now()+1,
+            id:user_message.id +1,
             sender:'bot',
             text:"AI思考中..."
         }
@@ -147,11 +150,11 @@ export default function AiAgentChatPage() {
                 }
                 set_messages([...new_messages]);
             },
-            onDone:()=>{
+            onDone:throttle(()=>{
                 set_sending(false)
                 scrollToBottom();
                 pushMessageToLocal(call_pojo)
-            }
+            },500)
         });
 
         // 模拟 bot 回复

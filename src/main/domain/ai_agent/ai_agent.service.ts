@@ -15,7 +15,7 @@ import {ai_agent_Item} from "../../../common/req/setting.req";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-let MODEL = "doubao-seed-1-6-251015";
+let MODEL = "doubao-seed-1-6";
 let config:ai_agent_Item
 
 /**
@@ -163,10 +163,19 @@ export class Ai_agentService {
             role:'system',
             content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
         })
-        let json_params:any = {}
+        let json_body :any = {
+            model: MODEL,
+            messages: finalMessages,
+            stream: true,
+            temperature: 0.7
+        }
         try {
-            if(config.json_params)
-            json_params = JSON.parse(config.json_params);
+            if(config.json_params) {
+                const obj = JSON.parse(config.json_params);
+                for (const key of Object.keys(obj)) {
+                    json_body[key] = obj[key];
+                }
+            }
         }catch(err) {
             console.log(err)
         }
@@ -176,13 +185,7 @@ export class Ai_agentService {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`
             },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: finalMessages,
-                stream: true,
-                temperature: 0.7,
-                ...json_params
-            })
+            body: JSON.stringify(json_body)
         });
         if (!aiResponse.ok || !aiResponse.body) {
             res.write(
@@ -194,7 +197,7 @@ export class Ai_agentService {
             res.end();
             return res;
         }
-        if(!json_params.stream) {
+        if(!json_body.stream) {
             const r = await aiResponse.json()
             const msg = r.choices[0].message;
             res.write(
