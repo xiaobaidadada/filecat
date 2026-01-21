@@ -34,6 +34,10 @@ export class Ai_agentService {
                 return
             }
         }
+        config = undefined
+        API_KEY = undefined
+        BASE_URL = undefined
+        MODEL = undefined
     }
 
     private trimMessages(
