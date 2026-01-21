@@ -11,10 +11,12 @@ import {SystemUtil} from "../sys/sys.utl";
 import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
+import {ai_agent_Item} from "../../../common/req/setting.req";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 let MODEL = "doubao-seed-1-6-251015";
+let config:ai_agent_Item
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
@@ -28,6 +30,7 @@ export class Ai_agentService {
                 MODEL = it.model
                 BASE_URL = it.url
                 API_KEY = it.token
+                config = it
                 return
             }
         }
@@ -153,9 +156,15 @@ export class Ai_agentService {
         }
         const finalMessages: ai_agent_messages = this.trimMessages(workMessages);
         finalMessages.push({
-            role:'assistant',
+            role:'system',
             content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
         })
+        let json_params:any = {}
+        try {
+            json_params = JSON.parse(config.json_params);
+        }catch(err) {
+            console.log(err)
+        }
         const aiResponse = await fetch(BASE_URL, {
             method: "POST",
             headers: {
@@ -166,7 +175,8 @@ export class Ai_agentService {
                 model: MODEL,
                 messages: finalMessages,
                 stream: true,
-                temperature: 0.7
+                temperature: 0.7,
+                ...json_params
             })
         });
         if (!aiResponse.ok || !aiResponse.body) {
@@ -177,7 +187,16 @@ export class Ai_agentService {
                 }\n\n`
             );
             res.end();
-            return;
+            return res;
+        }
+        if(!json_params.stream) {
+            const r = await aiResponse.json()
+            const msg = r.choices[0].message;
+            res.write(
+                `event: message\ndata: ${msg.content}\n\n`
+            );
+            res.end();
+            return res;
         }
         const nodeStream = Readable.fromWeb(aiResponse.body as any);
         res.on("close", () => {

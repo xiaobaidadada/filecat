@@ -23,6 +23,7 @@ export class ai_agent_Item {
     index: number;
     url: string;
     model: string;
+    json_params?: string;
 }
 
 export class QuickCmdItem {
