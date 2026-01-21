@@ -118,8 +118,8 @@ export function AIAgentChatSetting() {
                                             save:async (context)=>{
                                                 rows[index].json_params = context
                                                 setRows(rows)
-                                                editor_data.set_value_temp('')
-                                                console.log(context)
+                                                editor_data.set_value_temp('{}')
+                                                // console.log(context)
                                             }
                                         })
                                     }}/>

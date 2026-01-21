@@ -161,6 +161,7 @@ export class Ai_agentService {
         })
         let json_params:any = {}
         try {
+            if(config.json_params)
             json_params = JSON.parse(config.json_params);
         }catch(err) {
             console.log(err)
