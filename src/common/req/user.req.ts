@@ -124,6 +124,7 @@ export class UserData extends UserLogin {
     id: string; // 用户 id
     language: string; // (role 作用)
     access_cmd: string; // 可以执行的命令 使用 空格区分多个 (role 作用)
+    not_access_cmd: string; // 禁止执行的命令
     theme: themes; // 主题
 
     auth_list: UserAuth[] = [];  // 权限 (role 作用)

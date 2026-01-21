@@ -341,11 +341,13 @@ export class UserService {
     // user_access_path_map = new Map();
     // user_not_access_path_map = new Map();
     user_access_cmd_map = new Map();
+    user_not_access_cmd_map = new Map();
 
     // 加载单个用户的命令路径数据
     public load_user_cmd_path(id: string) {
         const user_data = this.get_user_info_by_user_id(id);
         this.user_access_cmd_map.set(id, new Set<string>( (user_data.access_cmd ?? "").split(/\s+/)));
+        this.user_not_access_cmd_map.set(id, new Set<string>( (user_data.not_access_cmd ?? "").split(/\s+/)));
     }
 
     // 一个路径是不是另一个路径的子路径
@@ -425,21 +427,37 @@ export class UserService {
     }
 
     // 检测命令是否能执行 管理员有设置任意的权限 但是也要做校验
-    public check_user_cmd(token: string, cmd: string,aotu_throw = true) {
+    public check_user_cmd(token: string, cmd: string,auto_throw = true) {
         const user_data = userService.get_user_info_by_token(token);
-        return this.check_user_cmd_by_id(user_data.id,cmd,aotu_throw)
+        return this.check_user_cmd_by_id(user_data.id,cmd,auto_throw)
     }
 
-    public check_user_cmd_by_id(user_id: string, cmd: string,aotu_throw = true) {
+    public check_user_cmd_by_id(user_id: string, cmd: string,auto_throw = true) {
         const set = this.user_access_cmd_map.get(user_id);
-        if(set.has("*")) {
-            return true; // * 所有命令支持
+        const not_set = this.user_not_access_cmd_map.get(user_id);
+        let is_forbid = false;
+        if(not_set.has("*") || not_set.has(cmd)) {
+            is_forbid = true;
         }
-        if(aotu_throw) {
-            if(!set.has(cmd)) throw "cmd is invalid"
+        if(is_forbid) {
+            if(auto_throw) {
+                throw "cmd is forbid"
+            } else {
+                return false;
+            }
         }
-        if (set) return set.has(cmd);
-        return false;
+        let is_invalid = false;
+        if(!set.has("*") && !set.has(cmd)) {
+            is_invalid = true;
+        }
+        if(is_invalid) {
+             if(auto_throw) {
+                 throw "cmd is invalid"
+             } else {
+                 return false;
+             }
+        }
+        return true;
     }
 
     public check_user_auth(token, auth: UserAuth, auto_throw = true) {
@@ -592,6 +610,9 @@ export class UserService {
             }
             if(role.access_cmd) {
                 user_data.access_cmd = role.access_cmd;
+            }
+            if(role.not_access_cmd) {
+                user_data.not_access_cmd = role.not_access_cmd;
             }
             if(role.language) {
                 user_data.language = role.language;

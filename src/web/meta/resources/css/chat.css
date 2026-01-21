@@ -85,3 +85,56 @@
 .chat-input-area button:hover {
     background: #005bb5;
 }
+
+
+.chat-message {
+    position: relative;
+    padding-right: 120px; /* 给按钮留位置 */
+}
+
+.message-actions {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.message-actions button {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.message-actions {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    display: flex;
+    gap: 6px;
+    opacity: 0; /* 默认隐藏 */
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.chat-message:hover .message-actions {
+    opacity: 1;
+    transform: scale(1); /* 变大到正常大小 */
+}
+
+.message-actions button {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-actions button:hover {
+    transform: scale(1.2); /* hover 变大 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}

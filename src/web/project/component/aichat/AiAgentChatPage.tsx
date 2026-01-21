@@ -10,6 +10,8 @@ import Header from "../../../meta/component/Header";
 import {ActionButton} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {copyToClipboard} from "../../util/FunUtil";
+import {NotySucess} from "../../util/noty";
 // import './ChatPage.css';
 
 interface Message {
@@ -20,6 +22,22 @@ interface Message {
 
 const MESSAGE_KEY = "chat_messages";
 const MAX_MESSAGES = 200;
+
+function MessageActions({
+                            onDelete,
+                            onCopy
+                        }: {
+    onDelete: () => void;
+    onCopy: () => void;
+}) {
+    return (
+        <div className="message-actions">
+            <button onClick={onDelete}>删除</button>
+            <button onClick={onCopy}>复制</button>
+        </div>
+    );
+}
+
 
 export function getMessagesFromLocal(): any[] {
     try {
@@ -161,6 +179,18 @@ export default function AiAgentChatPage() {
         setInputValue(el.value);
     };
 
+    const handleDelete = (id: number) => {
+        const newMessages = messages.filter(m => m.id !== id);
+        setMessages(newMessages);
+        setMessagesToLocal(newMessages);
+    };
+
+    const handleCopy = async (text: string) => {
+        copyToClipboard(text);
+        NotySucess('复制成功')
+    };
+
+
     return (
        <React.Fragment>
            <Header>
@@ -185,6 +215,10 @@ export default function AiAgentChatPage() {
                            className={`chat-message ${msg.sender}`}
                        >
                            <Md context={msg.text}/>
+                           <MessageActions
+                               onDelete={() => handleDelete(msg.id)}
+                               onCopy={() => handleCopy(msg.text)}
+                           />
                        </div>
                    ))}
                    <div ref={messagesEndRef} />

@@ -8,6 +8,7 @@ import footnote from 'markdown-it-footnote';
 import taskLists from 'markdown-it-task-lists';
 import 'github-markdown-css/github-markdown.css';
 import {join_url} from "../../../../../../common/StringUtil";
+import {using_add_md__copy_button} from "../../FileUtil";
 
 // import hljs from 'highlight.js' // https://highlightjs.org
 
@@ -78,5 +79,6 @@ md.use(emoji)       // 支持 Emoji
     .use(markdownItAddPrefixToLinks); // 使用自定义插件
 
 export default function Md(props:{context:string}) {
+    using_add_md__copy_button()
     return <div dangerouslySetInnerHTML={{__html: md.render(props.context)}}/>
 }

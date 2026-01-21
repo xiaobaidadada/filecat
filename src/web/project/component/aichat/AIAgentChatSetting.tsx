@@ -61,6 +61,9 @@ export function AIAgentChatSetting() {
         rows.splice(index, 1);
         setRows([...rows]);
     }
+    const copy = (index) => {
+        setRows([...rows,{...rows[index],open: false}]);
+    }
     const save = async () => {
         for (let i =0; i<rows.length;i++) {
             rows[i].index = i;
@@ -101,7 +104,8 @@ export function AIAgentChatSetting() {
                                     item.note = value;
                                 }} no_border={true}/>,
                                 <div>
-                                    {index!==0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/> }
+                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                                    <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
                                 </div>,
                             ];
                             return new_list;

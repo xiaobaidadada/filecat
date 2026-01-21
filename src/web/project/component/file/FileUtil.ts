@@ -9,7 +9,8 @@ import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {useEffect, useState} from "react";
 import {NotyFail, NotySucess} from "../../util/noty";
-import {debounce} from "../../../../common/fun.util";
+import {debounce, throttle} from "../../../../common/fun.util";
+import {copyToClipboard} from "../../util/FunUtil";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -282,4 +283,39 @@ export function title_workflow_file_fail(it){
     } else if (it.endsWith('.act')) {
         NotyFail(`${it.slice(0, -4)} failed!`);
     }
+}
+
+const copy = throttle((text) => {
+    copyToClipboard(text)
+    NotySucess('复制成功');
+});
+
+export function using_add_md__copy_button(){
+    useEffect(() => {
+        // 在组件渲染完成后为复制按钮添加事件处理
+        const copyButtons = document.querySelectorAll('.copy-btn');
+
+        // 先删除
+        const delete_all = ()=>{
+            copyButtons.forEach(button => {
+                button.removeEventListener('click', function () {
+                    const code = this.getAttribute('data-code');
+                    copy(code);
+                });
+            });
+        }
+        delete_all()
+
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const code = this.getAttribute('data-code');
+                copy(code);
+            });
+        });
+
+        // 清理事件绑定，防止重复绑定
+        return () => {
+            delete_all()
+        };
+    }, []);
 }

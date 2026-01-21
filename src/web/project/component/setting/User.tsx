@@ -39,6 +39,7 @@ export function User() {
     const [not_access_dirs,set_not_access_dirs] = useState([]);
     const [only_read_dirs,set_only_read_dirs] = useState([]);
     const [access_cmd,set_access_cmd] = useState("");
+    const [not_access_cmd,set_not_access_cmd] = useState("");
     const [language, setLanguage] = useState("en");
     const [auth_list,set_auth_list] = useState([]);
     const [note, set_note] = useState("");
@@ -92,6 +93,7 @@ export function User() {
         set_not_access_dirs(item?.not_access_dirs??[])
         set_only_read_dirs(item?.only_read_dirs??[])
         set_access_cmd(item?.access_cmd??"");
+        set_not_access_cmd(item.not_access_cmd??"")
         setLanguage(item?.language??"");
         set_auth_list(item?.auth_list??[]);
         set_note(item?.note??"");
@@ -129,6 +131,8 @@ export function User() {
                 set_only_read_dirs(role.only_read_dirs)
             if(role.access_cmd)
                 set_access_cmd(role.access_cmd);
+            if(role.not_access_cmd)
+                set_not_access_cmd(role.not_access_cmd);
             if(role.language)
                 setLanguage(role.language);
             if(role.auth_list && role.auth_list.length > 0) {
@@ -204,6 +208,7 @@ export function User() {
         user_data.cwd = cwd;
         user_data.note = note;
         user_data.access_cmd = access_cmd;
+        user_data.not_access_cmd = not_access_cmd;
         user_data.auth_list = auth_list;
         user_data.bind_role_id = bind_role_id;
         return user_data;
@@ -390,6 +395,12 @@ export function User() {
                             disabled={bind_role_item.access_cmd !== "" && bind_role_item.access_cmd !== undefined}
                             value={access_cmd} placeholder={"use blank split"}
                             handleInputChange={(value) => set_access_cmd(value)}/>
+
+                        <label>{t("禁止执行的命令")}</label>
+                        <InputText
+                            disabled={bind_role_item.not_access_cmd !== "" && bind_role_item.not_access_cmd !== undefined}
+                            value={not_access_cmd} placeholder={"use blank split"}
+                            handleInputChange={(value) => set_not_access_cmd(value)}/>
 
                         {
                             !is_root &&

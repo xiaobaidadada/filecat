@@ -33,6 +33,7 @@ export function Role() {
     const [not_access_dirs,set_not_access_dirs] = useState([]);
     const [only_read_dirs,set_only_read_dirs] = useState([]);
     const [access_cmd,set_access_cmd] = useState("");
+    const [not_access_cmd,set_not_access_cmd] = useState("");
     const [language, setLanguage] = useState("");
     const [auth_list,set_auth_list] = useState([]);
     const [role_id, set_role_id] = useState("");
@@ -56,6 +57,7 @@ export function Role() {
         set_not_access_dirs(item?.not_access_dirs??[])
         set_only_read_dirs(item?.only_read_dirs??[])
         set_access_cmd(item?.access_cmd??"");
+        set_not_access_cmd(item?.not_access_cmd??"");
         setLanguage(item?.language??"");
         set_auth_list(item?.auth_list??[]);
         set_role_id(item?.role_id??"");
@@ -106,6 +108,7 @@ export function Role() {
         user_data.only_read_dirs = only_read_dirs;
         user_data.cwd = cwd;
         user_data.access_cmd = access_cmd;
+        user_data.not_access_cmd = not_access_cmd;
         user_data.auth_list = auth_list;
         user_data.role_note = role_note;
         return user_data;
@@ -248,6 +251,11 @@ export function Role() {
                         <label>{t("可执行的命令")}</label>
                         <InputText value={access_cmd} placeholder={"use blank split"}
                                    handleInputChange={(value) => set_access_cmd(value)}/>
+
+                        <label>{t("禁止执行的命令")}</label>
+                        <InputText value={not_access_cmd} placeholder={"use blank split"}
+                                   handleInputChange={(value) => set_not_access_cmd(value)}/>
+
                         <label>{t("语言")}</label>
                         <Select value={language} onChange={(value) => {
                             setLanguage(value);
