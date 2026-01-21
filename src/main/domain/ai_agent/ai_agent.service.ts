@@ -184,6 +184,7 @@ export class Ai_agentService {
             nodeStream.destroy();
         });
         nodeStream.pipe(res);
+        return nodeStream;
     }
 
 
