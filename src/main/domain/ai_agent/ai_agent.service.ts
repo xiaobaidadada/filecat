@@ -106,15 +106,13 @@ export class Ai_agentService {
         const user = userService.get_user_info_by_token(token);
         const rootPath = settingService.getFileRootPath(token);
         const workMessages: ai_agent_messages = [
-            ...this.trimMessages(originMessages),
             {
                 role: "system",
-                content: `你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}。`
+                content: `
+                1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}。
+                2. 如果需要调用工具，只返回工具调用，不要输出任何文本`
             },
-            {
-                role: "system",
-                content: `如果需要调用工具，只返回工具调用，不要输出任何文本。`
-            }
+            ...this.trimMessages(originMessages)
         ];
         const env = {
             toolLoop: 5,
