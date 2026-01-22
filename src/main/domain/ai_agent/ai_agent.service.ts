@@ -117,7 +117,11 @@ export class Ai_agentService {
                 role: "system",
                 content: `
                 1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}。
-                2. 如果需要调用工具，只返回工具调用，不要输出任何文本`
+                2. 请直接提供答案，无需解释思考过程。
+                3. 使用markdown的格式，对用户进行简洁的回答。
+                
+                ${config.sys_prompt??''}
+                `
             },
             ...this.trimMessages(originMessages)
         ];
@@ -131,7 +135,11 @@ export class Ai_agentService {
             // ✅ 必须先 push assistant
             workMessages.push(msg);
             if (!msg.tool_calls || msg.tool_calls.length === 0) {
-                break;
+                this.write_to_res(res, msg.content);
+                this.end_to_res(res)
+                return res;
+            } else {
+                this.write_to_res(res, msg.content || msg.reasoning_content || "");
             }
             const fun_tasks = []
             for (const call of msg.tool_calls) {
@@ -158,64 +166,79 @@ export class Ai_agentService {
             }
             await Promise.all(fun_tasks);
         }
-        const finalMessages: ai_agent_messages = this.trimMessages(workMessages);
-        finalMessages.push({
-            role:'system',
-            content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
-        })
-        let json_body :any = {
-            model: MODEL,
-            messages: finalMessages,
-            stream: true,
-            temperature: 0.7
-        }
-        try {
-            if(config.json_params) {
-                const obj = JSON.parse(config.json_params);
-                for (const key of Object.keys(obj)) {
-                    json_body[key] = obj[key];
-                }
-            }
-        }catch(err) {
-            console.log(err)
-        }
-        const aiResponse = await fetch(BASE_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify(json_body)
-        });
-        if (!aiResponse.ok || !aiResponse.body) {
-            res.write(
-                `event: error\ndata: ${aiResponse.status === 413
-                    ? "请求内容过大（413）"
-                    : "AI 请求失败"
-                }\n\n`
-            );
-            res.end();
-            return res;
-        }
-        if(!json_body.stream) {
-            const r = await aiResponse.json()
-            const msg = r.choices[0].message;
-            res.write(
-                `event: message\ndata: ${msg.content}\n\n`
-            );
-            res.end();
-            return res;
-        }
-        const nodeStream = Readable.fromWeb(aiResponse.body as any);
-        res.on("close", () => {
-            nodeStream.destroy();
-        });
-        nodeStream.pipe(res);
-        return nodeStream;
+        this.write_to_res(res, "超出最大理解语义次数");
+        this.end_to_res(res)
+        return res;
+        // const finalMessages: ai_agent_messages = this.trimMessages(workMessages);
+        // finalMessages.push({
+        //     role:'system',
+        //     content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
+        // })
+        // let json_body :any = {
+        //     model: MODEL,
+        //     messages: finalMessages,
+        //     stream: true,
+        //     temperature: 0.7
+        // }
+        // try {
+        //     if(config.json_params) {
+        //         const obj = JSON.parse(config.json_params);
+        //         for (const key of Object.keys(obj)) {
+        //             json_body[key] = obj[key];
+        //         }
+        //     }
+        // }catch(err) {
+        //     console.log(err)
+        // }
+        // const l_time = Date.now();
+        // const aiResponse = await fetch(BASE_URL, {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //         "Authorization": `Bearer ${API_KEY}`
+        //     },
+        //     body: JSON.stringify(json_body)
+        // });
+        // console.log(`最终回答耗时: ${((Date.now() - l_time)/1000)} s`)
+        // if (!aiResponse.ok || !aiResponse.body) {
+        //     res.write(
+        //         `event: error\ndata: ${aiResponse.status === 413
+        //             ? "请求内容过大（413）"
+        //             : "AI 请求失败"
+        //         }\n\n`
+        //     );
+        //     res.end();
+        //     return res;
+        // }
+        // if(!json_body.stream) {
+        //     const r = await aiResponse.json()
+        //     const msg = r.choices[0].message;
+        //     this.write_to_res(res, msg.content);
+        //     res.end();
+        //     return res;
+        // }
+        // const nodeStream = Readable.fromWeb(aiResponse.body as any);
+        // res.on("close", () => {
+        //     nodeStream.destroy();
+        // });
+        // nodeStream.pipe(res);
+        // return nodeStream;
+    }
+
+    private write_to_res(res:Response,text:string) {
+        res.write(
+            `event: message\ndata: ${JSON.stringify(text)}\n\n`
+        );
+    }
+
+    private end_to_res(res:Response) {
+        res.write(`data: [DONE]\n\n`);
+        res.end();
     }
 
 
     private async callLLSync(messages: ai_agent_messages) {
+        // const l_time = Date.now();
         const res = await fetch(BASE_URL, {
             method: "POST",
             headers: {
@@ -229,7 +252,7 @@ export class Ai_agentService {
                 temperature: 0.2
             })
         });
-
+        // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
         if (!res.ok) {
             const text = await res.text();
             try {

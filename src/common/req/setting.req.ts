@@ -24,6 +24,7 @@ export class ai_agent_Item {
     url: string;
     model: string;
     json_params?: string;
+    sys_prompt?: string;
 }
 
 export class QuickCmdItem {

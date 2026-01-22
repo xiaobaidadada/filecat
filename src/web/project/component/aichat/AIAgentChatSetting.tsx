@@ -28,7 +28,7 @@ export function AIAgentChatSetting() {
     const {t} = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
-    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("备注") ];
+    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("系统prompt"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item>([]);
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
@@ -103,6 +103,20 @@ export function AIAgentChatSetting() {
                                 <InputText value={item.model} handleInputChange={(value) => {
                                     item.model = value;
                                 }} no_border={true}/>,
+                                <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
+                                    editor_data.set_value_temp(rows[index].sys_prompt??'')
+                                    setEditorSetting({
+                                        model: "ace/mode/text",
+                                        open: true,
+                                        fileName: "",
+                                        save:async (context)=>{
+                                            rows[index].sys_prompt = context
+                                            setRows(rows)
+                                            editor_data.set_value_temp('')
+                                            // console.log(context)
+                                        }
+                                    })
+                                }}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,
@@ -110,7 +124,7 @@ export function AIAgentChatSetting() {
                                     <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
                                     <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
                                     <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].json_params)
+                                        editor_data.set_value_temp(rows[index].json_params??'{}')
                                         setEditorSetting({
                                             model: "ace/mode/json",
                                             open: true,
@@ -118,7 +132,7 @@ export function AIAgentChatSetting() {
                                             save:async (context)=>{
                                                 rows[index].json_params = context
                                                 setRows(rows)
-                                                editor_data.set_value_temp('{}')
+                                                editor_data.set_value_temp('')
                                                 // console.log(context)
                                             }
                                         })

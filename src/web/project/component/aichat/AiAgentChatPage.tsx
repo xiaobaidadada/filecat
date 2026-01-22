@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {ai_agentHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
-import {throttle} from "../../../../common/fun.util";
+import {throttle,debounce} from "../../../../common/fun.util";
 import {ai_agent_message_item} from "../../../../common/req/common.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -12,6 +12,7 @@ import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {copyToClipboard} from "../../util/FunUtil";
 import {NotySucess} from "../../util/noty";
+import {useTranslation} from "react-i18next";
 // import './ChatPage.css';
 
 interface Message {
@@ -30,10 +31,13 @@ function MessageActions({
     onDelete: () => void;
     onCopy: () => void;
 }) {
+    const {t} = useTranslation();
+
+
     return (
         <div className="message-actions">
-            <button onClick={onDelete}>删除</button>
-            <button onClick={onCopy}>复制</button>
+            <button onClick={onDelete}>{t("删除")}</button>
+            <button onClick={onCopy}>{t("复制")}</button>
         </div>
     );
 }
@@ -82,7 +86,7 @@ export default function AiAgentChatPage() {
         //     text:"hello filecat"
         // }
     ]);
-    const set_messages = throttle(setMessages,50)
+    const set_messages = debounce(setMessages,50)
     const [sending, set_sending] = useState(false);
     const {check_user_auth} = use_auth_check();
 
@@ -95,7 +99,7 @@ export default function AiAgentChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
     };
     const init = ()=>{
-        set_messages(getMessagesFromLocal())
+        setMessages(getMessagesFromLocal())
         scrollToBottom();
     }
     useEffect(() => {
@@ -146,7 +150,11 @@ export default function AiAgentChatPage() {
                         call_pojo.text+=call_text_r;
                     }
                 } catch (e) {
-                    call_pojo.text+=res;
+                    try {
+                        call_pojo.text+=JSON.parse(res);
+                    } catch (e) {
+                        call_pojo.text+=res;
+                    }
                 }
                 set_messages([...new_messages]);
             },
