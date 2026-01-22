@@ -23,7 +23,99 @@ export const Ai_agentTools = {
     exec_cmd: async ({cmd}:{cmd: string})=> {
         return SystemUtil.execAsync(cmd)
     },
+    // 访问某个网页
+    http_request: async ({
+                             url,
+                             method = "GET",
+                             headers = {},
+                             query,
+                             body,
+                             timeout = 10000,
+                             max_length = 8000
+                         }: {
+        url: string;
+        method?: string;
+        headers?: Record<string, string>;
+        query?: Record<string, string | number | boolean>;
+        body?: any;
+        timeout?: number;
+        max_length?: number;
+    }) => {
+        // ---------- 安全校验 ----------
+        const u = new URL(url);
+        // if (!["http:", "https:"].includes(u.protocol)) {
+        //     throw new Error("仅允许 http/https 协议");
+        // }
+        // if (
+        //     u.hostname === "localhost" ||
+        //     u.hostname.startsWith("127.") ||
+        //     u.hostname.startsWith("192.168.") ||
+        //     u.hostname.startsWith("10.") ||
+        //     u.hostname.endsWith(".local")
+        // ) {
+        //     throw new Error("禁止访问本地或内网地址");
+        // }
 
+        // ---------- query ----------
+        if (query) {
+            for (const [k, v] of Object.entries(query)) {
+                u.searchParams.set(k, String(v));
+            }
+        }
+
+        // ---------- timeout ----------
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+
+        try {
+            const fetchOptions: any = {
+                method: method.toUpperCase(),
+                headers: {
+                    "User-Agent": "ai-agent/1.0",
+                    ...headers
+                },
+                signal: controller.signal
+            };
+
+            // ---------- body ----------
+            if (body !== undefined && fetchOptions.method !== "GET") {
+                if (
+                    typeof body === "object" &&
+                    !Buffer.isBuffer(body)
+                ) {
+                    fetchOptions.body = JSON.stringify(body);
+                    fetchOptions.headers["Content-Type"] =
+                        fetchOptions.headers["Content-Type"] ||
+                        "application/json";
+                } else {
+                    fetchOptions.body = String(body);
+                }
+            }
+
+            const res = await fetch(u.toString(), fetchOptions);
+
+            let text = await res.text();
+
+            if (text.length > max_length) {
+                text =
+                    text.slice(0, max_length) +
+                    "\n\n...（响应内容过长，已截断）";
+            }
+
+            return JSON.stringify(
+                {
+                    status: res.status,
+                    statusText: res.statusText,
+                    headers: Object.fromEntries(res.headers.entries()),
+                    body: text
+                },
+                null,
+                2
+            );
+        } finally {
+            clearTimeout(timer);
+        }
+    }
 }
 
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;

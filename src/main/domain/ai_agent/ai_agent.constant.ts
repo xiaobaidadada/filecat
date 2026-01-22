@@ -72,5 +72,51 @@ export const ai_tools = [
                 required: ["cmd"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "http_request",
+            description:
+                "发送 HTTP 请求以访问外部网络资源。支持 GET/POST/PUT/DELETE/PATCH 等方法，可设置请求头、查询参数和请求体。",
+            parameters: {
+                type: "object",
+                properties: {
+                    url: {
+                        type: "string",
+                        description: "请求的完整 URL（仅支持 http 或 https）"
+                    },
+                    method: {
+                        type: "string",
+                        description: "HTTP 方法，如 GET、POST、PUT、DELETE、PATCH，默认 GET"
+                    },
+                    headers: {
+                        type: "object",
+                        additionalProperties: { type: "string" },
+                        description: "请求头（键值对）"
+                    },
+                    query: {
+                        type: "object",
+                        additionalProperties: {
+                            oneOf: [{ type: "string" }, { type: "number" }, { type: "boolean" }]
+                        },
+                        description: "URL 查询参数"
+                    },
+                    body: {
+                        description: "请求体内容（对象将自动转为 JSON）"
+                    },
+                    timeout: {
+                        type: "number",
+                        description: "请求超时时间（毫秒），默认 10000"
+                    },
+                    max_length: {
+                        type: "number",
+                        description: "最大返回字符数，超出将被截断，默认 8000"
+                    }
+                },
+                required: ["url"]
+            }
+        }
     }
+
 ];

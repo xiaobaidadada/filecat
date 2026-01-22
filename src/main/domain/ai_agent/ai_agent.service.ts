@@ -150,7 +150,6 @@ export class Ai_agentService {
                     await this.permission_test(token,env,user,toolName,args);
                     let result = await Ai_agentTools[toolName](args);
                     let resultStr = String(result);
-                    // todo 检查
                     if (resultStr.length > 5000) {
                         resultStr =
                             resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
@@ -161,7 +160,6 @@ export class Ai_agentService {
                         tool_call_id: call.id,
                         content: resultStr
                     });
-                    // todo 实时输出内容
                 })())
             }
             await Promise.all(fun_tasks);
@@ -169,60 +167,7 @@ export class Ai_agentService {
         this.write_to_res(res, "超出最大理解语义次数");
         this.end_to_res(res)
         return res;
-        // const finalMessages: ai_agent_messages = this.trimMessages(workMessages);
-        // finalMessages.push({
-        //     role:'system',
-        //     content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
-        // })
-        // let json_body :any = {
-        //     model: MODEL,
-        //     messages: finalMessages,
-        //     stream: true,
-        //     temperature: 0.7
-        // }
-        // try {
-        //     if(config.json_params) {
-        //         const obj = JSON.parse(config.json_params);
-        //         for (const key of Object.keys(obj)) {
-        //             json_body[key] = obj[key];
-        //         }
-        //     }
-        // }catch(err) {
-        //     console.log(err)
-        // }
-        // const l_time = Date.now();
-        // const aiResponse = await fetch(BASE_URL, {
-        //     method: "POST",
-        //     headers: {
-        //         "Content-Type": "application/json",
-        //         "Authorization": `Bearer ${API_KEY}`
-        //     },
-        //     body: JSON.stringify(json_body)
-        // });
-        // console.log(`最终回答耗时: ${((Date.now() - l_time)/1000)} s`)
-        // if (!aiResponse.ok || !aiResponse.body) {
-        //     res.write(
-        //         `event: error\ndata: ${aiResponse.status === 413
-        //             ? "请求内容过大（413）"
-        //             : "AI 请求失败"
-        //         }\n\n`
-        //     );
-        //     res.end();
-        //     return res;
-        // }
-        // if(!json_body.stream) {
-        //     const r = await aiResponse.json()
-        //     const msg = r.choices[0].message;
-        //     this.write_to_res(res, msg.content);
-        //     res.end();
-        //     return res;
-        // }
-        // const nodeStream = Readable.fromWeb(aiResponse.body as any);
-        // res.on("close", () => {
-        //     nodeStream.destroy();
-        // });
-        // nodeStream.pipe(res);
-        // return nodeStream;
+
     }
 
     private write_to_res(res:Response,text:string) {
@@ -236,21 +181,95 @@ export class Ai_agentService {
         res.end();
     }
 
+    // 暂时不用
+    private async flow_call(res:Response,work_messages:ai_agent_messages ) {
+        const finalMessages: ai_agent_messages = this.trimMessages(work_messages);
+        finalMessages.push({
+            role:'system',
+            content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
+        })
+        let json_body :any = {
+            model: MODEL,
+            messages: finalMessages,
+            stream: true,
+            temperature: 0.7
+        }
+        try {
+            if(config.json_params) {
+                const obj = JSON.parse(config.json_params);
+                for (const key of Object.keys(obj)) {
+                    json_body[key] = obj[key];
+                }
+            }
+        }catch(err) {
+            console.log(err)
+        }
+        // const l_time = Date.now();
+        const aiResponse = await fetch(BASE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify(json_body)
+        });
+        // console.log(`最终回答耗时: ${((Date.now() - l_time)/1000)} s`)
+        if (!aiResponse.ok || !aiResponse.body) {
+            res.write(
+                `event: error\ndata: ${aiResponse.status === 413
+                    ? "请求内容过大（413）"
+                    : "AI 请求失败"
+                }\n\n`
+            );
+            res.end();
+            return res;
+        }
+        if(!json_body.stream) {
+            const r = await aiResponse.json()
+            const msg = r.choices[0].message;
+            this.write_to_res(res, msg.content);
+            res.end();
+            return res;
+        }
+        const nodeStream = Readable.fromWeb(aiResponse.body as any);
+        res.on("close", () => {
+            nodeStream.destroy();
+        });
+        nodeStream.pipe(res);
+        return nodeStream;
+    }
 
     private async callLLSync(messages: ai_agent_messages) {
         // const l_time = Date.now();
+        const json_body :any = {
+            model: MODEL,
+            messages,
+            tools: ai_tools,
+            temperature: 0.2,
+            // thinking : { // 豆包深度思考
+            //     "type":"disabled"
+            // }
+        }
+        try {
+            if(config.json_params) {
+                const obj = JSON.parse(config.json_params);
+                for (const key of Object.keys(obj)) {
+                    if(key === "messages" || key === "tools" || key === "stream") {
+                        continue
+                    }
+                    json_body[key] = obj[key];
+                }
+            }
+        } catch(err) {
+            console.log(err)
+        }
         const res = await fetch(BASE_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`
             },
-            body: JSON.stringify({
-                model: MODEL,
-                messages,
-                tools: ai_tools,
-                temperature: 0.2
-            })
+            body: JSON.stringify(json_body)
         });
         // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
         if (!res.ok) {
