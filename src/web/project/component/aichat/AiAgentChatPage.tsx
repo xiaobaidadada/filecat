@@ -93,17 +93,36 @@ export default function AiAgentChatPage() {
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const isUserScrollingRef = useRef(false);
 
     // 自动滚动到底部
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
+    const scrollToBottom = (call?:any) => {
+        setTimeout(()=>{
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
+            if(call) {
+                call()
+            }
+            setTimeout(()=>{
+                isUserScrollingRef.current =false;
+            },100)
+        },500)
     };
     const init = ()=>{
         setMessages(getMessagesFromLocal())
-        scrollToBottom();
     }
     useEffect(() => {
+        const el = chatContainerRef.current;
         init()
+        scrollToBottom(()=>{
+            setTimeout(()=>{
+                el?.addEventListener('scroll', onScroll);
+            },1000)
+        })
+        const onScroll = (el) => {
+            isUserScrollingRef.current = true
+        };
+        return () => el?.removeEventListener('scroll', onScroll);
     }, []);
 
     const handleSend = () => {
@@ -157,6 +176,9 @@ export default function AiAgentChatPage() {
                     }
                 }
                 set_messages([...new_messages]);
+                if(!isUserScrollingRef.current) {
+                    scrollToBottom();
+                }
             },
             onDone:throttle(()=>{
                 set_sending(false)
@@ -201,7 +223,6 @@ export default function AiAgentChatPage() {
         NotySucess('复制成功')
     };
 
-
     return (
        <React.Fragment>
            <Header>
@@ -219,7 +240,7 @@ export default function AiAgentChatPage() {
                {
                    messages?.length === 0 && <div className="chat-header">询问服务器的一切</div>
                }
-               <div className="chat-messages">
+               <div className="chat-messages" ref={chatContainerRef}>
                    {messages.map(msg => (
                        <div
                            key={msg.id}

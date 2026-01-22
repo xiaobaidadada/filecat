@@ -22,6 +22,11 @@ const tip_text = `
 1. 只能使用符合openai风格的ai接口
 2. 对话的历史越长，消耗的大模型token费用越贵，目前不具备长期记忆简化能力
 3. model请求参数json编写，里面只能编写json,来用于编写openai风格ai支持的属性，比如 temperature thinking（豆包的深度思考开关）等
+4. 深度思考现在会影响输出速度，建议设置\`{
+    "thinking" : { 
+                "type":"disabled"
+    }
+}\`关闭
 `
 export function AIAgentChatSetting() {
 
