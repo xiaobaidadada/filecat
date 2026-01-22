@@ -26,7 +26,7 @@ export class Ai_AgentController {
                         : err?.message || 'AI service error';
 
                 // 1️⃣ 先发 error 数据
-                res.write(`data: ${message}\n\n`);
+                ai_agentService.write_to_res(res, message);
 
                 // 2️⃣ 再发 DONE
                 res.write(`data: [DONE]\n\n`);

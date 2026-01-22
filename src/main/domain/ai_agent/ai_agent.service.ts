@@ -170,13 +170,13 @@ export class Ai_agentService {
 
     }
 
-    private write_to_res(res:Response,text:string) {
+    public write_to_res(res:Response,text:string) {
         res.write(
             `event: message\ndata: ${JSON.stringify(text)}\n\n`
         );
     }
 
-    private end_to_res(res:Response) {
+    public end_to_res(res:Response) {
         res.write(`data: [DONE]\n\n`);
         res.end();
     }
