@@ -13,6 +13,7 @@ import {UserAuth} from "../../../../common/req/user.req";
 import {copyToClipboard} from "../../util/FunUtil";
 import {NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
+import {using_confirm} from "../prompts/prompt.util";
 // import './ChatPage.css';
 
 interface Message {
@@ -95,6 +96,7 @@ export default function AiAgentChatPage() {
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const isUserScrollingRef = useRef(false);
+    const confirm_dell_all = using_confirm()
 
     // 自动滚动到底部
     const scrollToBottom = (call?:any) => {
@@ -227,8 +229,13 @@ export default function AiAgentChatPage() {
        <React.Fragment>
            <Header>
                <ActionButton icon={"delete_sweep"} title={"清空聊天历史"} onClick={()=>{
-                   learAllMessages()
-                   init()
+                   confirm_dell_all({
+                       sub_title:"确认删除全部聊天内容吗",
+                       confirm_fun:()=>{
+                           learAllMessages()
+                           init()
+                       }
+                   })
                }}/>
                {check_user_auth(UserAuth.ai_agent_setting) &&
                    <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{

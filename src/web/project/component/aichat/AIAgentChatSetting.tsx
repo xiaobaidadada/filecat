@@ -26,7 +26,7 @@ const tip_text = `
     "thinking" : { 
                 "type":"disabled"
     }
-}\`关闭
+}\`关闭(豆包例子)
 `
 export function AIAgentChatSetting() {
 
