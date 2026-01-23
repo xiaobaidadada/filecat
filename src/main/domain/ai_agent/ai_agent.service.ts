@@ -131,8 +131,14 @@ export class Ai_agentService {
             tool_error_max: config_env.tool_error_max
         }
         while (env.toolLoop-- > 0) {
-            const callData = await this.callLLSync(workMessages);
-            const msg = callData.choices[0].message;
+            await Promise((resolve,rej) => {
+                this.callLLSync(workMessages,()=>{
+                    const send_text =  msg.content || msg.reasoning_content || ""
+                    if(send_text)
+                        this.write_to_res(res, msg.content || msg.reasoning_content || "");
+                })
+            })
+            const msg = await this.callLLSync(workMessages);
             // ✅ 必须先 push assistant
             workMessages.push(msg);
             if (!msg.tool_calls || msg.tool_calls.length === 0) {
@@ -256,7 +262,11 @@ export class Ai_agentService {
         return nodeStream;
     }
 
-    private async callLLSync(messages: ai_agent_messages) {
+    private async callLLSync(messages: ai_agent_messages,
+                             call_data:(message:any)=>void,
+                             end_data:()=>void,
+                             error_call:(e)=>void,
+    ) {
         // const l_time = Date.now();
         const json_body :any = {
             model: MODEL,
@@ -271,7 +281,7 @@ export class Ai_agentService {
             if(config.json_params) {
                 const obj = JSON.parse(config.json_params);
                 for (const key of Object.keys(obj)) {
-                    if(key === "messages" || key === "tools" || key === "stream") {
+                    if(key === "messages" || key === "tools") {
                         continue
                     }
                     json_body[key] = obj[key];
@@ -289,17 +299,68 @@ export class Ai_agentService {
             body: JSON.stringify(json_body)
         });
         // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
+        if (json_body.stream) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                // SSE 按 \n\n 分段
+                let parts = buf.split('\n\n');
+                buf = parts.pop(); // 留下未完整的一段
+
+                for (const part of parts) {
+                    // 过滤空段
+                    if (!part.trim()) continue;
+
+                    // SSE 可能包含多行 data:
+                    const lines = part.split('\n');
+                    let dataLines: string[] = [];
+
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            dataLines.push(line.replace(/^data:\s*/, ''));
+                        }
+                    }
+                    const dataStr = dataLines.join('\n');
+
+                    // [DONE] 表示结束
+                    if (dataStr.trim() === '[DONE]') {
+                        end_data();
+                        return;
+                    }
+
+                    // 解析 JSON 并回调
+                    try {
+                        const json = JSON.parse(dataStr);
+                        // 你可以根据接口结构取你想要的字段
+                        const message = json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? dataStr;
+                        call_data(message);
+                    } catch (e) {
+                        // 不是 JSON 的情况直接返回字符串
+                        call_data(dataStr);
+                    }
+                }
+            }
+
+            // 如果读完了也结束
+            end_data();
+            return
+        }
+
         if (!res.ok) {
             const text = await res.text();
             try {
                 const json = JSON.parse(text);
-                throw new Error(json.message || json.error?.message || text);
+                error_call((json.message || json.error?.message || text))
             } catch {
-                throw new Error(text);
+                error_call(text)
             }
         }
-
-        return res.json();
+        call_data((await res.json()).choices[0].message)
+        end_data();
     }
 
 }
