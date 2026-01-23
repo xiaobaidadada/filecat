@@ -116,9 +116,9 @@ export class Ai_agentService {
             {
                 role: "system",
                 content: `
-                1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}。
+                1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}，当前系统登陆用户是${user.username}，用户的id为${user.user_id}，${user.note}。
                 2. 请直接提供答案，无需解释思考过程。
-                3. 使用markdown的格式，对用户进行简洁的回答。
+                3. 使用markdown的格式，在保证可以给全用户所需要的信息前提下，对用户进行简洁的回答。
                 
                 ${config.sys_prompt??''}
                 `
@@ -139,7 +139,9 @@ export class Ai_agentService {
                 this.end_to_res(res)
                 return res;
             } else {
-                this.write_to_res(res, msg.content || msg.reasoning_content || "");
+                const send_text =  msg.content || msg.reasoning_content || ""
+                if(send_text)
+                    this.write_to_res(res, msg.content || msg.reasoning_content || "");
             }
             const fun_tasks = []
             for (const call of msg.tool_calls) {

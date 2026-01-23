@@ -1,12 +1,15 @@
 import {Body, JsonController, Post, Req, Res} from "routing-controllers";
 import {Response} from "express";
 import {ai_agentService} from "./ai_agent.service";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
 
     @Post("/chat")
     async chat(@Body() data: any, @Res() res: Response, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
 
         // SSE headers
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
