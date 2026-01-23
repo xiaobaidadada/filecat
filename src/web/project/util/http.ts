@@ -197,7 +197,9 @@ export class Http {
                     onDone?.();
                     throw err
                 },
-
+                onclose:()=>{
+                    onDone?.();
+                },
                 openWhenHidden: true
             });
         } catch (err) {

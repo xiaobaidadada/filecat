@@ -11,12 +11,14 @@ import {SystemUtil} from "../sys/sys.utl";
 import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
-import {ai_agent_Item} from "../../../common/req/setting.req";
+import {ai_agent_Item, ai_agent_item_dotenv} from "../../../common/req/setting.req";
+import {Env} from "../../../common/Env";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 let MODEL = "doubao-seed-1-6";
 let config:ai_agent_Item
+let config_env = new ai_agent_item_dotenv()
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
@@ -31,6 +33,9 @@ export class Ai_agentService {
                 BASE_URL = it.url
                 API_KEY = it.token
                 config = it
+                if(it.dotenv) {
+                    Env.load(it.dotenv,config_env);
+                }
                 return
             }
         }
@@ -38,6 +43,7 @@ export class Ai_agentService {
         API_KEY = undefined
         BASE_URL = undefined
         MODEL = undefined
+        config_env = new ai_agent_item_dotenv()
     }
 
     private trimMessages(
@@ -57,7 +63,7 @@ export class Ai_agentService {
              return result;
         };
 
-    private async permission_test(token,env,user:UserData,toolName,args:any) {
+    private async permission_test(token,user:UserData,toolName,args:any) {
         switch (toolName) {
             case "exec_cmd": {
                 const cmd = args.cmd?.trim();
@@ -81,15 +87,11 @@ export class Ai_agentService {
                 break;
 
             case "edit_file":
-                if (env.fileEdited) {
-                    throw new Error("一次请求中只允许修改文件一次");
-                }
                 userService.check_user_path(token, args.path);
                 userService.check_user_auth(
                     token,
                     UserAuth.filecat_file_delete_cut_rename
                 );
-                env.fileEdited = true;
                 break;
         }
 
@@ -117,17 +119,16 @@ export class Ai_agentService {
                 role: "system",
                 content: `
                 1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}，当前系统登陆用户是${user.username}，用户的id为${user.user_id}，${user.note}。
-                2. 请直接提供答案，无需解释思考过程。
-                3. 使用markdown的格式，在保证可以给全用户所需要的信息前提下，对用户进行简洁的回答。
+                2. 使用markdown的格式，在保证可以给全用户所需要的信息前提下，对用户进行简洁的回答。
                 
                 ${config.sys_prompt??''}
                 `
             },
-            ...this.trimMessages(originMessages)
+            ...this.trimMessages(originMessages,config_env.char_max)
         ];
         const env = {
-            toolLoop: 5,
-            fileEdited:false
+            toolLoop: config_env.tool_call_max,
+            tool_error_max: config_env.tool_error_max
         }
         while (env.toolLoop-- > 0) {
             const callData = await this.callLLSync(workMessages);
@@ -149,19 +150,33 @@ export class Ai_agentService {
                     const args = JSON.parse(call.function.arguments || "{}");
                     const toolName = call.function.name as Ai_agentTools_type;
                     // 权限校验
-                    await this.permission_test(token,env,user,toolName,args);
-                    let result = await Ai_agentTools[toolName](args);
-                    let resultStr = String(result);
-                    if (resultStr.length > 5000) {
-                        resultStr =
-                            resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
+                    await this.permission_test(token,user,toolName,args);
+                    try {
+                        let result = await Ai_agentTools[toolName](args);
+                        let resultStr = String(result);
+                        if (resultStr.length > 5000) {
+                            resultStr =
+                                resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
+                        }
+                        // ✅ tool 必须紧跟 assistant(tool_calls)
+                        workMessages.push({
+                            role: "tool",
+                            tool_call_id: call.id,
+                            content: resultStr
+                        });
+                    } catch (e) {
+                        if(env.tool_error_max <=0) {
+                            throw e
+                        } else {
+                            workMessages.push({
+                                role: "tool",
+                                tool_call_id: call.id,
+                                content: JSON.stringify(e)
+                            });
+                            env.tool_error_max--
+                        }
                     }
-                    // ✅ tool 必须紧跟 assistant(tool_calls)
-                    workMessages.push({
-                        role: "tool",
-                        tool_call_id: call.id,
-                        content: resultStr
-                    });
+
                 })())
             }
             await Promise.all(fun_tasks);

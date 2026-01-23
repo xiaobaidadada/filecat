@@ -127,7 +127,8 @@ export class Env {
                 this[key] = result[key];
             }
             if (this.env) {
-                this.load(this.env);
+                const envData = fs.readFileSync(this.env, 'utf8');
+                this.load(envData,this);
             }
             resolve(1);
             // return result;
@@ -170,15 +171,14 @@ export class Env {
         return value;
     }
 
-    public static load(path: string): void {
-        const envData = fs.readFileSync(path, 'utf8');
+    public static load(envData: string,target:any): void {
         const envVariables = envData.split(/\r?\n/);
         for (const line of envVariables) {
             if (line.trim() === '' || line.trim().startsWith('#')) {
                 continue;
             }
             const [key, value] = line.split('=');
-            this[key.trim()] = this.parseValue(value.trim());
+            target[key.trim()] = this.parseValue(value.trim());
         }
     }
 }

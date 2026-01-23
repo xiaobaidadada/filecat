@@ -15,7 +15,7 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item} from "../../../../common/req/setting.req";
+import {ai_agent_Item, ai_agent_item_dotenv_default} from "../../../../common/req/setting.req";
 
 
 const tip_text = `
@@ -33,7 +33,7 @@ export function AIAgentChatSetting() {
     const {t} = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
-    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("系统prompt"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item>([]);
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
@@ -108,26 +108,21 @@ export function AIAgentChatSetting() {
                                 <InputText value={item.model} handleInputChange={(value) => {
                                     item.model = value;
                                 }} no_border={true}/>,
-                                <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
-                                    editor_data.set_value_temp(rows[index].sys_prompt??'')
-                                    setEditorSetting({
-                                        model: "ace/mode/text",
-                                        open: true,
-                                        fileName: "",
-                                        save:async (context)=>{
-                                            rows[index].sys_prompt = context
-                                            setRows(rows)
-                                            editor_data.set_value_temp('')
-                                            // console.log(context)
-                                        }
-                                    })
-                                }}/>,
-                                <InputText value={item.note} handleInputChange={(value) => {
-                                    item.note = value;
-                                }} no_border={true}/>,
                                 <div>
-                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
-                                    <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
+                                    <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
+                                        editor_data.set_value_temp(rows[index].sys_prompt??'')
+                                        setEditorSetting({
+                                            model: "ace/mode/text",
+                                            open: true,
+                                            fileName: "",
+                                            save:async (context)=>{
+                                                rows[index].sys_prompt = context
+                                                setRows(rows)
+                                                editor_data.set_value_temp('')
+                                                // console.log(context)
+                                            }
+                                        })
+                                    }}/>
                                     <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
                                         editor_data.set_value_temp(rows[index].json_params??'{}')
                                         setEditorSetting({
@@ -142,6 +137,28 @@ export function AIAgentChatSetting() {
                                             }
                                         })
                                     }}/>
+                                    <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
+                                        editor_data.set_value_temp(rows[index].dotenv??ai_agent_item_dotenv_default)
+                                        setEditorSetting({
+                                            model: "ace/mode/ini",
+                                            open: true,
+                                            fileName: "",
+                                            save:async (context)=>{
+                                                rows[index].dotenv = context
+                                                setRows(rows)
+                                                editor_data.set_value_temp('')
+                                                // console.log(context)
+                                            }
+                                        })
+                                    }}/>
+                                </div>
+                                ,
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+                                <div>
+                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                                    <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
                                 </div>,
                             ];
                             return new_list;

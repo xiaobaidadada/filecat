@@ -25,7 +25,23 @@ export class ai_agent_Item {
     model: string;
     json_params?: string;
     sys_prompt?: string;
+
+    dotenv?: string;
 }
+
+export class ai_agent_item_dotenv {
+    tool_error_max = 1 ; // 工具报错最大尝试次数
+    tool_call_max = 5; // 工具最多调用次数
+    char_max = 12000; // 单轮请求字符最大数量，多了会截断
+}
+export const ai_agent_item_dotenv_default = `
+# 工具报错最大尝试次数
+tool_error_max=1
+# 工具最多调用次数
+tool_call_max=5
+# 单轮请求字符最大数量，多了会截断前面的
+char_max=12000
+`
 
 export class QuickCmdItem {
     cmd: string;

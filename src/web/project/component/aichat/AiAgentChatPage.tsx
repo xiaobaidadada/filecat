@@ -186,7 +186,7 @@ export default function AiAgentChatPage() {
                 set_sending(false)
                 scrollToBottom();
                 pushMessageToLocal(call_pojo)
-            },500)
+            },600)
         });
 
         // 模拟 bot 回复
