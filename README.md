@@ -3,7 +3,7 @@
 
 FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 TUN、SSH、RDP、HTTP、TCP 等多种网络代理功能。支持windows、linux、mac。
 
-**支持AI Agent用问答的方式来查询服务器资源，不再需要记住复制的运维命令**。
+**支持AI Agent用问答的方式来查询服务器资源，不再需要记住复杂的运维命令**。
 
 本项目是对[filebrowser](https://github.com/filebrowser/filebrowser)的功能增强，使用和filebrowser一样的ui，以服务器文件管理为基础添加一些服务器控制功能。
 
@@ -50,6 +50,9 @@ account/password: admin/admin
 |         10G 日志查看         |           系统信息           |                                      TUN客户端/服务器                                      |
 |:------------------------:|:------------------------:|:------------------------------------------------------------------------------------:|
 | ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![image](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
+|                                                                                                                                                                                                                                                                                                                                                                                                      AI问答                                                                                                                                                                                                                                                                                                                                                                                                       |                      |                                                                                      |
+| ![](https://private-user-images.githubusercontent.com/61794688/539033957-14c7636e-ed6a-4f4e-ac3b-64b40f66b31f.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjkxMzIzMDYsIm5iZiI6MTc2OTEzMjAwNiwicGF0aCI6Ii82MTc5NDY4OC81MzkwMzM5NTctMTRjNzYzNmUtZWQ2YS00ZjRlLWFjM2ItNjRiNDBmNjZiMzFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAxMjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMTIzVDAxMzMyNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTA3ZjAzOWVkNDM4M2Y1OTkzY2RhYjg1YWY0NWU0ZTNlZTFmZDE0ODc0NzBhMTE1MWJhMjc0YTQzNmY5YzkzMDEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.mdpzQeQjx5WRj_8tLMwPKSTkXMyf9Iy-WnS0ggVljcY) |  |  |
+
 
 - **文件管理**: 支持断点分块上传、多个根目录、代码\图片编辑、编辑器模式、白板绘图...
 - **终端**：相比filebrowser使用了xterm.js，并且采用了虚拟shell完美实现命令的权限过滤，避免用户执行类似 rm -r / 的危险命令
