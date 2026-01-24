@@ -72,11 +72,11 @@ export function AIAgentChatSetting() {
     const copy = (index) => {
         setRows([...rows,{...rows[index],open: false}]);
     }
-    const save = async () => {
+    const save = async (data_rows?:any) => {
         for (let i =0; i<rows.length;i++) {
             rows[i].index = i;
         }
-        const result = await settingHttp.post("ai_agent_setting/save", {models:rows});
+        const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
         if (result.code === RCode.Sucess) {
             NotySucess("保存成功")
         }
@@ -119,6 +119,7 @@ export function AIAgentChatSetting() {
                                                 rows[index].sys_prompt = context
                                                 setRows(rows)
                                                 editor_data.set_value_temp('')
+                                                save(rows)
                                                 // console.log(context)
                                             }
                                         })
@@ -133,6 +134,7 @@ export function AIAgentChatSetting() {
                                                 rows[index].json_params = context
                                                 setRows(rows)
                                                 editor_data.set_value_temp('')
+                                                save(rows)
                                                 // console.log(context)
                                             }
                                         })
@@ -147,6 +149,7 @@ export function AIAgentChatSetting() {
                                                 rows[index].dotenv = context
                                                 setRows(rows)
                                                 editor_data.set_value_temp('')
+                                                save(rows)
                                                 // console.log(context)
                                             }
                                         })

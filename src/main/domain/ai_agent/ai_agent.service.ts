@@ -1,6 +1,6 @@
 import {ai_tools} from "./ai_agent.constant";
 import {ai_agent_messages} from "../../../common/req/common.pojo";
-import { Response } from "express";
+import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
 import {Ai_agentTools, Ai_agentTools_type} from "./ai_agent.tools";
@@ -17,7 +17,7 @@ import {Env} from "../../../common/Env";
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 let MODEL = "doubao-seed-1-6";
-let config:ai_agent_Item
+let config: ai_agent_Item
 let config_env = new ai_agent_item_dotenv()
 
 /**
@@ -28,13 +28,13 @@ export class Ai_agentService {
     public load_key() {
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
-            if(it.open) {
+            if (it.open) {
                 MODEL = it.model
                 BASE_URL = it.url
                 API_KEY = it.token
                 config = it
-                if(it.dotenv) {
-                    Env.load(it.dotenv,config_env);
+                if (it.dotenv) {
+                    Env.load(it.dotenv, config_env);
                 }
                 return
             }
@@ -49,21 +49,21 @@ export class Ai_agentService {
     private trimMessages(
         messages: ai_agent_messages,
         maxChars = 12000
-    )  {
-                let total = 0;
-                const result: ai_agent_messages = [];
+    ) {
+        let total = 0;
+        const result: ai_agent_messages = [];
 
-                for (let i = messages.length - 1; i >= 0; i--) {
-                const msg = messages[i];
-                const size = JSON.stringify(msg).length;
-                if (total + size > maxChars) break;
-                total += size;
-                result.unshift(msg);
-             }
-             return result;
-        };
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i];
+            const size = JSON.stringify(msg).length;
+            if (total + size > maxChars) break;
+            total += size;
+            result.unshift(msg);
+        }
+        return result;
+    };
 
-    private async permission_test(token,user:UserData,toolName,args:any) {
+    private async permission_test(token, user: UserData, toolName, args: any) {
         switch (toolName) {
             case "exec_cmd": {
                 const cmd = args.cmd?.trim();
@@ -112,119 +112,172 @@ export class Ai_agentService {
         if (!API_KEY) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
+
         const user = userService.get_user_info_by_token(token);
         const rootPath = settingService.getFileRootPath(token);
+
         const workMessages: ai_agent_messages = [
             {
                 role: "system",
                 content: `
-                1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，当前目录是 ${rootPath}，当前系统登陆用户是${user.username}，用户的id为${user.user_id}，${user.note}。
-                2. 使用markdown的格式，在保证可以给全用户所需要的信息前提下，对用户进行简洁的回答。
-                
-                ${config.sys_prompt??''}
-                `
+1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
+   当前目录是 ${rootPath}，
+   当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
+2. 使用 markdown，尽量简洁回答。
+
+${config.sys_prompt ?? ''}
+`
             },
-            ...this.trimMessages(originMessages,config_env.char_max)
+            ...this.trimMessages(originMessages, config_env.char_max)
         ];
+
         const env = {
             toolLoop: config_env.tool_call_max,
             tool_error_max: config_env.tool_error_max
-        }
+        };
+
         while (env.toolLoop-- > 0) {
-            await Promise((resolve,rej) => {
-                this.callLLSync(workMessages,()=>{
-                    const send_text =  msg.content || msg.reasoning_content || ""
-                    if(send_text)
-                        this.write_to_res(res, msg.content || msg.reasoning_content || "");
-                })
-            })
-            const msg = await this.callLLSync(workMessages);
-            // ✅ 必须先 push assistant
-            workMessages.push(msg);
-            if (!msg.tool_calls || msg.tool_calls.length === 0) {
-                this.write_to_res(res, msg.content);
-                this.end_to_res(res)
-                return res;
-            } else {
-                const send_text =  msg.content || msg.reasoning_content || ""
-                if(send_text)
-                    this.write_to_res(res, msg.content || msg.reasoning_content || "");
-            }
-            const fun_tasks = []
-            for (const call of msg.tool_calls) {
-                fun_tasks.push((async ()=>{
-                    const args = JSON.parse(call.function.arguments || "{}");
-                    const toolName = call.function.name as Ai_agentTools_type;
-                    // 权限校验
-                    await this.permission_test(token,user,toolName,args);
-                    try {
-                        let result = await Ai_agentTools[toolName](args);
-                        let resultStr = String(result);
-                        if (resultStr.length > 5000) {
-                            resultStr =
-                                resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
-                        }
-                        // ✅ tool 必须紧跟 assistant(tool_calls)
-                        workMessages.push({
-                            role: "tool",
-                            tool_call_id: call.id,
-                            content: resultStr
-                        });
-                    } catch (e) {
-                        if(env.tool_error_max <=0) {
-                            throw e
-                        } else {
-                            workMessages.push({
-                                role: "tool",
-                                tool_call_id: call.id,
-                                content: JSON.stringify(e)
-                            });
-                            env.tool_error_max--
-                        }
+
+            // 🔹 用来拼完整 assistant message
+            let assistantMessage: any = {
+                role: "assistant",
+                content: "",
+                tool_calls: []
+            };
+
+            const toolCallMap = new Map<number, any>();
+
+
+            // 🔹 调用 LLM（流式）
+            await this.callLLSync(
+                workMessages,
+                // ===== call_data =====
+                (chunk) => {
+                    if (!chunk) return;
+                    // ===== 1. 普通内容流 =====
+                    if (chunk.content) {
+                        assistantMessage.content += chunk.content;
+                        this.write_to_res(res, chunk.content);
                     }
 
-                })())
-            }
-            await Promise.all(fun_tasks);
-        }
-        this.write_to_res(res, "超出最大理解语义次数");
-        this.end_to_res(res)
-        return res;
+                    // ===== 2. tool_calls 流 =====
+                    if (chunk.tool_calls) {
+                        for (const tc of chunk.tool_calls) {
+                            const idx = tc.index;
 
+                            if (!toolCallMap.has(idx)) {
+                                toolCallMap.set(idx, {
+                                    id: tc.id,
+                                    type: "function",
+                                    function: {
+                                        name: tc.function?.name ?? "",
+                                        arguments: ""
+                                    }
+                                });
+                            }
+
+                            const call = toolCallMap.get(idx);
+
+                            // name 只会来一次
+                            if (tc.function?.name) {
+                                call.function.name = tc.function.name;
+                            }
+
+                            // arguments 是流式拼接的
+                            if (tc.function?.arguments) {
+                                call.function.arguments += tc.function.arguments;
+                            }
+                        }
+                    }
+                }
+                ,
+                // ===== error_call =====
+                (e) => {
+                    throw e
+                }
+            );
+            assistantMessage.tool_calls = Array.from(toolCallMap.values());
+
+            // ✅ 一次 LLM 完整结束，补 push assistant
+            workMessages.push(assistantMessage);
+
+            // ❌ 没有 tool_calls，直接结束
+            if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+                this.end_to_res(res);
+                return res;
+            }
+
+            // ✅ 有 tool_calls，开始执行工具
+            for (const call of assistantMessage.tool_calls) {
+                const args = JSON.parse(call.function.arguments || "{}");
+                const toolName = call.function.name as Ai_agentTools_type;
+
+                await this.permission_test(token, user, toolName, args);
+
+                try {
+                    let result = await Ai_agentTools[toolName](args);
+                    let resultStr = String(result);
+
+                    if (resultStr.length > 5000) {
+                        resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
+                    }
+
+                    workMessages.push({
+                        role: "tool",
+                        tool_call_id: call.id,
+                        content: resultStr
+                    });
+                } catch (e) {
+                    if (env.tool_error_max-- <= 0) throw e;
+
+                    workMessages.push({
+                        role: "tool",
+                        tool_call_id: call.id,
+                        content: String(e)
+                    });
+                }
+            }
+        }
+
+
+        this.write_to_res(res, "超出最大理解语义次数");
+        this.end_to_res(res);
+        return res;
     }
 
-    public write_to_res(res:Response,text:string) {
+
+    public write_to_res(res: Response, text: string) {
         res.write(
             `event: message\ndata: ${JSON.stringify(text)}\n\n`
         );
     }
 
-    public end_to_res(res:Response) {
+    public end_to_res(res: Response) {
         res.write(`data: [DONE]\n\n`);
         res.end();
     }
 
     // 暂时不用
-    private async flow_call(res:Response,work_messages:ai_agent_messages ) {
+    private async flow_call(res: Response, work_messages: ai_agent_messages) {
         const finalMessages: ai_agent_messages = this.trimMessages(work_messages);
         finalMessages.push({
-            role:'system',
-            content:'现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
+            role: 'system',
+            content: '现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
         })
-        let json_body :any = {
+        let json_body: any = {
             model: MODEL,
             messages: finalMessages,
             stream: true,
             temperature: 0.7
         }
         try {
-            if(config.json_params) {
+            if (config.json_params) {
                 const obj = JSON.parse(config.json_params);
                 for (const key of Object.keys(obj)) {
                     json_body[key] = obj[key];
                 }
             }
-        }catch(err) {
+        } catch (err) {
             console.log(err)
         }
         // const l_time = Date.now();
@@ -247,7 +300,7 @@ export class Ai_agentService {
             res.end();
             return res;
         }
-        if(!json_body.stream) {
+        if (!json_body.stream) {
             const r = await aiResponse.json()
             const msg = r.choices[0].message;
             this.write_to_res(res, msg.content);
@@ -263,33 +316,32 @@ export class Ai_agentService {
     }
 
     private async callLLSync(messages: ai_agent_messages,
-                             call_data:(message:any)=>void,
-                             end_data:()=>void,
-                             error_call:(e)=>void,
+                             call_data: (message: any) => void,
+                             error_call: (e) => void,
     ) {
         // const l_time = Date.now();
-        const json_body :any = {
-            model: MODEL,
+        const json_body: any = {
             messages,
             tools: ai_tools,
             temperature: 0.2,
+            model: MODEL,
             // thinking : { // 豆包深度思考
             //     "type":"disabled"
             // }
         }
         try {
-            if(config.json_params) {
+            if (config.json_params) {
                 const obj = JSON.parse(config.json_params);
                 for (const key of Object.keys(obj)) {
-                    if(key === "messages" || key === "tools") {
-                        continue
-                    }
                     json_body[key] = obj[key];
                 }
             }
-        } catch(err) {
+        } catch (err) {
             console.log(err)
         }
+        // 最后重新赋值确保不会被修改
+        json_body.tools = ai_tools
+        json_body.messages = messages
         const res = await fetch(BASE_URL, {
             method: "POST",
             headers: {
@@ -299,14 +351,16 @@ export class Ai_agentService {
             body: JSON.stringify(json_body)
         });
         // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
-        if (json_body.stream) {
+        const contentType = res.headers.get("content-type") || "";
+        const isSSE = contentType.includes("text/event-stream");
+        if (isSSE) {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buf = '';
             while (true) {
-                const { done, value } = await reader.read();
+                const {done, value} = await reader.read();
                 if (done) break;
-                buf += decoder.decode(value, { stream: true });
+                buf += decoder.decode(value, {stream: true});
                 // SSE 按 \n\n 分段
                 let parts = buf.split('\n\n');
                 buf = parts.pop(); // 留下未完整的一段
@@ -314,39 +368,33 @@ export class Ai_agentService {
                 for (const part of parts) {
                     // 过滤空段
                     if (!part.trim()) continue;
-
                     // SSE 可能包含多行 data:
                     const lines = part.split('\n');
                     let dataLines: string[] = [];
-
                     for (const line of lines) {
                         if (line.startsWith('data:')) {
                             dataLines.push(line.replace(/^data:\s*/, ''));
                         }
                     }
                     const dataStr = dataLines.join('\n');
-
                     // [DONE] 表示结束
                     if (dataStr.trim() === '[DONE]') {
-                        end_data();
                         return;
                     }
-
                     // 解析 JSON 并回调
                     try {
                         const json = JSON.parse(dataStr);
                         // 你可以根据接口结构取你想要的字段
-                        const message = json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? dataStr;
-                        call_data(message);
+                        const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
+                        if(message)
+                            call_data(message);
                     } catch (e) {
-                        // 不是 JSON 的情况直接返回字符串
-                        call_data(dataStr);
+                        error_call(e)
+                        return
                     }
                 }
             }
-
             // 如果读完了也结束
-            end_data();
             return
         }
 
@@ -358,9 +406,9 @@ export class Ai_agentService {
             } catch {
                 error_call(text)
             }
+            return
         }
         call_data((await res.json()).choices[0].message)
-        end_data();
     }
 
 }
