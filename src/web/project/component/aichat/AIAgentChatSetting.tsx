@@ -92,7 +92,9 @@ export function AIAgentChatSetting() {
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Column widthPer={70}>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                        save()
+                    }}/></div>}>
                         <Table headers={headers} rows={rows.map((item, index) => {
                             const new_list = [
                                 <div>{index}</div>,
