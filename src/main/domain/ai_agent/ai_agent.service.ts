@@ -135,6 +135,13 @@ ${config.sys_prompt ?? ''}
             toolLoop: config_env.tool_call_max,
             tool_error_max: config_env.tool_error_max
         };
+        const controller = new AbortController();
+
+        if (res) {
+            res.on("close", () => {
+                controller.abort();   // 👈 核心
+            });
+        }
 
         while (env.toolLoop-- > 0) {
 
@@ -177,6 +184,10 @@ ${config.sys_prompt ?? ''}
                             }
 
                             const call = toolCallMap.get(idx);
+                            if (tc.id) {
+                                call.id = tc.id;
+                            }
+
 
                             // name 只会来一次
                             if (tc.function?.name) {
@@ -194,9 +205,13 @@ ${config.sys_prompt ?? ''}
                 // ===== error_call =====
                 (e) => {
                     throw e
-                }
+                },
+                controller
             );
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
+            if (assistantMessage.tool_calls.length > 0) {
+                assistantMessage.content = null;
+            }
 
             // ✅ 一次 LLM 完整结束，补 push assistant
             workMessages.push(assistantMessage);
@@ -209,7 +224,12 @@ ${config.sys_prompt ?? ''}
 
             // ✅ 有 tool_calls，开始执行工具
             for (const call of assistantMessage.tool_calls) {
-                const args = JSON.parse(call.function.arguments || "{}");
+                let args: any = {};
+                try {
+                    args = JSON.parse(call.function.arguments || "{}");
+                } catch (e) {
+                    throw new Error(`工具参数 JSON 解析失败: ${call.function.arguments}`);
+                }
                 const toolName = call.function.name as Ai_agentTools_type;
 
                 await this.permission_test(token, user, toolName, args);
@@ -318,6 +338,7 @@ ${config.sys_prompt ?? ''}
     private async callLLSync(messages: ai_agent_messages,
                              call_data: (message: any) => void,
                              error_call: (e) => void,
+                             controller: AbortController
     ) {
         // const l_time = Date.now();
         const json_body: any = {
@@ -348,7 +369,8 @@ ${config.sys_prompt ?? ''}
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`
             },
-            body: JSON.stringify(json_body)
+            body: JSON.stringify(json_body),
+            signal: controller.signal   // 👈 绑定 signal
         });
         // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
         const contentType = res.headers.get("content-type") || "";
@@ -362,8 +384,8 @@ ${config.sys_prompt ?? ''}
                 if (done) break;
                 buf += decoder.decode(value, {stream: true});
                 // SSE 按 \n\n 分段
-                let parts = buf.split('\n\n');
-                buf = parts.pop(); // 留下未完整的一段
+                let parts = buf.split(/\r?\n\r?\n/);
+                buf = parts.pop()!; // 留下未完整的一段
 
                 for (const part of parts) {
                     // 过滤空段
@@ -389,6 +411,10 @@ ${config.sys_prompt ?? ''}
                         if(message)
                             call_data(message);
                     } catch (e) {
+                        if (e.name === "AbortError") {
+                            // 客户端断开，正常终止
+                            return;
+                        }
                         error_call(e)
                         return
                     }
