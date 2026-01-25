@@ -51,7 +51,7 @@ account/password: admin/admin
 |:------------------------:|:------------------------:|:------------------------------------------------------------------------------------:|
 | ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![image](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
 |                                                                                                                                                                                                                                                                                                                                                                                                      AI问答                                                                                                                                                                                                                                                                                                                                                                                                       |                      |                                                                                      |
-| ![](https://private-user-images.githubusercontent.com/61794688/539033957-14c7636e-ed6a-4f4e-ac3b-64b40f66b31f.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjkxMzIzMDYsIm5iZiI6MTc2OTEzMjAwNiwicGF0aCI6Ii82MTc5NDY4OC81MzkwMzM5NTctMTRjNzYzNmUtZWQ2YS00ZjRlLWFjM2ItNjRiNDBmNjZiMzFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAxMjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMTIzVDAxMzMyNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTA3ZjAzOWVkNDM4M2Y1OTkzY2RhYjg1YWY0NWU0ZTNlZTFmZDE0ODc0NzBhMTE1MWJhMjc0YTQzNmY5YzkzMDEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.mdpzQeQjx5WRj_8tLMwPKSTkXMyf9Iy-WnS0ggVljcY) |  |  |
+| ![](https://private-user-images.githubusercontent.com/61794688/539033957-14c7636e-ed6a-4f4e-ac3b-64b40f66b31f.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjkzMTkyOTEsIm5iZiI6MTc2OTMxODk5MSwicGF0aCI6Ii82MTc5NDY4OC81MzkwMzM5NTctMTRjNzYzNmUtZWQ2YS00ZjRlLWFjM2ItNjRiNDBmNjZiMzFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAxMjUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMTI1VDA1Mjk1MVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTQ0NDQ3YmJiM2Q1NTg4NTNlYmU3ZmFlOWRiMmM1ZGFhZjBlN2U2NzQ5OGUyZDBmNzQ4YmFiZWFkYTkzZDQzNWYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.yoHWE74aVOZOw6A8JdNNaZh767rGTUjeeJ2RELCSuuQ) |  |  |
 
 
 - **文件管理**: 支持断点分块上传、多个根目录、代码\图片编辑、编辑器模式、白板绘图...
@@ -60,7 +60,7 @@ account/password: admin/admin
 - **ssh代理**: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。除此之外还支持http代理，rdp远程桌面(windows)等代理
 - **网站导航**: 记录管理自己的多个链接地址
 - **系统、docker、进程 等信息的监控**: 对于系统进程查询，采用了高效的实现方式，监控全部进程的状态只需要非常小的cpu占用率
-- **AI 问答**,通过与ai进行交互来执行命令获取服务器资源，同时支持权限过滤，避免AI执行危险命令行为
+- **AI 问答**,通过与ai进行交互来执行命令获取服务器资源，同时支持权限过滤，避免AI执行危险命令行为，需要自己注册配置任何符合openai风格的模型api
 
 More: https://filecat.xiaobaidadada.fun
 ##  qq群
