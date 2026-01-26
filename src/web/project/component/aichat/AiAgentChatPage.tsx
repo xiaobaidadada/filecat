@@ -93,17 +93,19 @@ export default function AiAgentChatPage() {
         //     text:"hello filecat"
         // }
     ]);
-    const set_messages = debounce((mes)=>{
-        let next = mes;
-        if (mes.length > env_config.current.messages_show_max) {
-            next = mes.slice(-env_config.current.messages_show_max);
-        }
-        setMessages(next);
-        // ⭐ 只有在用户没往上翻时才自动滚
-        if (autoScrollRef.current) {
-            scrollToBottom(false); // auto，不卡
-        }
-    },50)
+    const set_messages = useRef(
+        debounce((mes) => {
+            let next = mes;
+            if (mes.length > env_config.current.messages_show_max) {
+                next = mes.slice(-env_config.current.messages_show_max);
+            }
+            setMessages(next);
+            if (autoScrollRef.current) {
+                scrollToBottom(false);
+            }
+        }, 50)
+    ).current;
+
     const [sending, set_sending] = useState(false);
     const {check_user_auth} = use_auth_check();
 
@@ -164,11 +166,12 @@ export default function AiAgentChatPage() {
         el.addEventListener("scroll", onScroll);
         return () => el.removeEventListener("scroll", onScroll);
     }, []);
-    // useLayoutEffect(() => {
-    //     if (autoScrollRef.current) {
-    //         scrollToBottom(false);
-    //     }
-    // }, [messages]);
+    useLayoutEffect(() => {
+        // 每次添加完消息后滚动
+        if (autoScrollRef.current) {
+            scrollToBottom(false);
+        }
+    }, [messages]);
 
     const get_message = (allMessages: Message[]): ai_agent_message_item[] => {
         const {
@@ -243,7 +246,7 @@ export default function AiAgentChatPage() {
 
                 // ⭐ 流结束再 smooth 一次
                 scrollToBottom(true);
-            },600)
+            },100)
         });
 
         // 模拟 bot 回复

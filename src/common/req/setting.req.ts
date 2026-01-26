@@ -48,6 +48,9 @@ messages_show_max=100
 # 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
 messages_current_max=100
 `
+export const json_params_default = JSON.stringify({
+    stream: false
+})
 
 export class QuickCmdItem {
     cmd: string;

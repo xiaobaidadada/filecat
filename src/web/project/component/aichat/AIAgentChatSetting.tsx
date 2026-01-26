@@ -15,14 +15,14 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_agent_item_dotenv_default} from "../../../../common/req/setting.req";
+import {ai_agent_Item, ai_agent_item_dotenv_default, json_params_default} from "../../../../common/req/setting.req";
 
 
 const tip_text = `
 1. 只能使用符合openai风格的ai接口
 2. 对话的历史越长，消耗的大模型token费用越贵，目前不具备长期记忆简化能力，可以在系统prompt中设置一下让AI回答的简洁一点，节省tokens
 3. model请求参数json编写，里面只能编写json,来用于编写openai风格ai支持的属性，比如 temperature thinking（豆包的深度思考开关）等
-4.可以再model请求参数中开启 "stream":true 提高响应速度
+4. 可以再model请求参数中开启 "stream":true 提高响应速度
 5. 深度思考现在会影响输出速度，建议设置\`{
     "thinking" : { 
                 "type":"disabled"
@@ -129,7 +129,7 @@ export function AIAgentChatSetting() {
                                         })
                                     }}/>
                                     <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].json_params??'{}')
+                                        editor_data.set_value_temp(rows[index].json_params??json_params_default)
                                         setEditorSetting({
                                             model: "ace/mode/json",
                                             open: true,
@@ -140,7 +140,8 @@ export function AIAgentChatSetting() {
                                                 editor_data.set_value_temp('')
                                                 save(rows)
                                                 // console.log(context)
-                                            }
+                                            },
+                                            can_format:true
                                         })
                                     }}/>
                                     <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
