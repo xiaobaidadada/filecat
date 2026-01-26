@@ -33,6 +33,8 @@ export class ai_agent_item_dotenv {
     tool_error_max = 1 ; // 工具报错最大尝试次数
     tool_call_max = 5; // 工具最多调用次数
     char_max = 12000; // 单轮请求字符最大数量，多了会截断
+    messages_show_max = 100; // 聊天消息最多展示多少条
+    messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
 }
 export const ai_agent_item_dotenv_default = `
 # 工具报错最大尝试次数
@@ -41,7 +43,14 @@ tool_error_max=1
 tool_call_max=5
 # 单轮请求字符最大数量，多了会截断前面的
 char_max=12000
+# 聊天消息最多展示多少条
+messages_show_max=100
+# 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
+messages_current_max=100
 `
+export const json_params_default = JSON.stringify({
+    stream: false
+})
 
 export class QuickCmdItem {
     cmd: string;

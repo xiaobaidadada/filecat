@@ -25,7 +25,12 @@ let config_env = new ai_agent_item_dotenv()
  */
 export class Ai_agentService {
 
+    get_env() {
+        return config_env;
+    }
+
     public load_key() {
+        config_env = new ai_agent_item_dotenv()
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
@@ -43,7 +48,6 @@ export class Ai_agentService {
         API_KEY = undefined
         BASE_URL = undefined
         MODEL = undefined
-        config_env = new ai_agent_item_dotenv()
     }
 
     private trimMessages(
@@ -123,7 +127,7 @@ export class Ai_agentService {
 1. 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
    当前目录是 ${rootPath}，
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
-2. 使用 markdown，尽量简洁回答。
+2. 使用 markdown格式回答用户。
 
 ${config.sys_prompt ?? ''}
 `
