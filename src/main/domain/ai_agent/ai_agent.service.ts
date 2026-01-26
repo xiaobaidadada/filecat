@@ -25,7 +25,12 @@ let config_env = new ai_agent_item_dotenv()
  */
 export class Ai_agentService {
 
+    get_env() {
+        return config_env;
+    }
+
     public load_key() {
+        config_env = new ai_agent_item_dotenv()
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
@@ -43,7 +48,6 @@ export class Ai_agentService {
         API_KEY = undefined
         BASE_URL = undefined
         MODEL = undefined
-        config_env = new ai_agent_item_dotenv()
     }
 
     private trimMessages(

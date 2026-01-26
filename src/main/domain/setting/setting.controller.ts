@@ -208,6 +208,11 @@ export class SettingController {
         return Sucess(settingService.ai_agent_setting());
     }
 
+    @Get("/ai_agent_setting/env")
+    ai_agent_setting_get_env(@Req() ctx) {
+        return Sucess(ai_agentService.get_env());
+    }
+
     // 系统软件设置
     @Get("/outside/software/get")
     getSoftware() {

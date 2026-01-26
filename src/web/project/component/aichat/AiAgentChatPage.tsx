@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
-import {ai_agentHttp} from "../../util/config";
+import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle,debounce} from "../../../../common/fun.util";
 import {ai_agent_message_item} from "../../../../common/req/common.pojo";
@@ -14,6 +14,8 @@ import {copyToClipboard} from "../../util/FunUtil";
 import {NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {using_confirm} from "../prompts/prompt.util";
+import {RCode} from "../../../../common/Result.pojo";
+import {ai_agent_item_dotenv} from "../../../../common/req/setting.req";
 // import './ChatPage.css';
 
 interface Message {
@@ -65,13 +67,17 @@ export function setMessagesToLocal(messages: any[]) {
     }
 }
 
-export function pushMessageToLocal(message: any) {
+export function pushMessageToLocal(message: any,messages_show_max) {
     const messages = getMessagesFromLocal();
     if(messages?.length > 0 && messages[messages.length - 1].id === message.id) {
         return;
     }
     messages.push(message);
-    setMessagesToLocal(messages);
+    let next = messages;
+    if (messages.length > messages_show_max) {
+        next = messages.slice(-messages_show_max);
+    }
+    setMessagesToLocal(next);
 }
 
 export function learAllMessages(): void {
@@ -88,7 +94,11 @@ export default function AiAgentChatPage() {
         // }
     ]);
     const set_messages = debounce((mes)=>{
-        setMessages(mes);
+        let next = mes;
+        if (mes.length > env_config.current.messages_show_max) {
+            next = mes.slice(-env_config.current.messages_show_max);
+        }
+        setMessages(next);
         // ⭐ 只有在用户没往上翻时才自动滚
         if (autoScrollRef.current) {
             scrollToBottom(false); // auto，不卡
@@ -104,6 +114,7 @@ export default function AiAgentChatPage() {
     const confirm_dell_all = using_confirm()
 
     const autoScrollRef = useRef(true); // 是否允许自动滚动
+    const env_config = useRef(new ai_agent_item_dotenv())
 
     const isNearBottom = (el: HTMLElement, threshold = 120) => {
         const { scrollTop, scrollHeight, clientHeight } = el;
@@ -126,8 +137,12 @@ export default function AiAgentChatPage() {
         });
     };
 
-    const init = ()=>{
+    const init = async ()=>{
         setMessages(getMessagesFromLocal())
+        const result = await settingHttp.get("ai_agent_setting/env");
+        if (result.code === RCode.Sucess) {
+            env_config.current = result.data
+        }
     }
     useEffect(() => {
         init();
@@ -149,11 +164,30 @@ export default function AiAgentChatPage() {
         el.addEventListener("scroll", onScroll);
         return () => el.removeEventListener("scroll", onScroll);
     }, []);
-    useLayoutEffect(() => {
-        if (autoScrollRef.current) {
-            scrollToBottom(false);
-        }
-    }, [messages.length]);
+    // useLayoutEffect(() => {
+    //     if (autoScrollRef.current) {
+    //         scrollToBottom(false);
+    //     }
+    // }, [messages]);
+
+    const get_message = (allMessages: Message[]): ai_agent_message_item[] => {
+        const {
+            messages_current_max
+        } = env_config.current;
+
+        // 1️⃣ 先截取“最近的 N 条”（保持顺序）
+        // console.log(allMessages.length , messages_current_max)
+        const sliced =
+            allMessages.length < messages_current_max
+                ? allMessages
+                : allMessages.slice(-messages_current_max);
+        // debugger
+        // 2️⃣ 映射为 LLM message
+        return sliced.map((m) => ({
+            content: m.text,
+            role: m.sender === 'bot' ? 'system' : 'user'
+        }));
+    };
 
 
     const handleSend = () => {
@@ -165,11 +199,13 @@ export default function AiAgentChatPage() {
                 ...messages,
             user_message
         ]
-        pushMessageToLocal(user_message)
+        pushMessageToLocal(user_message,env_config.current.messages_show_max)
         setMessages(new_messages);
         setInputValue('');
 
         set_sending(true)
+        const messages_p = get_message(new_messages)
+        // messages_p.push({ role: "user", content: text });
         // 打印系统的
         const call_pojo =  {
             id:user_message.id +1,
@@ -178,13 +214,6 @@ export default function AiAgentChatPage() {
         }
         new_messages.push(call_pojo);
         setMessages(new_messages);
-        const messages_p = messages.map((message) => {
-            return {
-                content: message.text,
-                role: message.sender === 'bot'? 'system': 'user'
-            } as ai_agent_message_item
-        })
-        messages_p.push({ role: "user", content: text });
         let thinking_start = true
         // scrollToBottom(false);
         ai_agentHttp.sse_post("chat", {messages:messages_p},{
@@ -210,7 +239,7 @@ export default function AiAgentChatPage() {
             },
             onDone:throttle(()=>{
                 set_sending(false)
-                pushMessageToLocal(call_pojo)
+                pushMessageToLocal(call_pojo,env_config.current.messages_show_max)
 
                 // ⭐ 流结束再 smooth 一次
                 scrollToBottom(true);
