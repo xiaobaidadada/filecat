@@ -203,6 +203,8 @@ export class SettingController {
     // ai代理设置获取
     @Get("/ai_agent_setting")
     ai_agent_setting_get(@Req() ctx) {
+        // 全部数据配置，需要编辑权限才能看到
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_agent_setting());
     }
 

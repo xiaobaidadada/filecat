@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
 import {ai_agentHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle,debounce} from "../../../../common/fun.util";
@@ -87,7 +87,13 @@ export default function AiAgentChatPage() {
         //     text:"hello filecat"
         // }
     ]);
-    const set_messages = debounce(setMessages,50)
+    const set_messages = debounce((mes)=>{
+        setMessages(mes);
+        // ⭐ 只有在用户没往上翻时才自动滚
+        if (autoScrollRef.current) {
+            scrollToBottom(false); // auto，不卡
+        }
+    },50)
     const [sending, set_sending] = useState(false);
     const {check_user_auth} = use_auth_check();
 
@@ -95,37 +101,60 @@ export default function AiAgentChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const isUserScrollingRef = useRef(false);
     const confirm_dell_all = using_confirm()
 
-    // 自动滚动到底部
-    const scrollToBottom = (call?:any) => {
-        setTimeout(()=>{
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth',block: 'end' });
-            if(call) {
-                call()
-            }
-            setTimeout(()=>{
-                isUserScrollingRef.current =false;
-            },100)
-        },500)
+    const autoScrollRef = useRef(true); // 是否允许自动滚动
+
+    const isNearBottom = (el: HTMLElement, threshold = 120) => {
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        return scrollHeight - (scrollTop + clientHeight) < threshold;
     };
+
+
+    // 自动滚动到底部
+    const scrollToBottom = (smooth = false) => {
+        const el = chatContainerRef.current;
+        if (!el) return;
+
+        el.scrollTo({
+            top: el.scrollHeight,
+            behavior: smooth ? "smooth" : "auto"
+            /**
+             * behavior: "auto"   // 立刻跳到目标位置（无动画）
+             * behavior: "smooth" // 带动画地滚过去
+             */
+        });
+    };
+
     const init = ()=>{
         setMessages(getMessagesFromLocal())
     }
     useEffect(() => {
-        const el = chatContainerRef.current;
-        init()
-        scrollToBottom(()=>{
-            setTimeout(()=>{
-                el?.addEventListener('scroll', onScroll);
-            },1000)
-        })
-        const onScroll = (el) => {
-            isUserScrollingRef.current = true
-        };
-        return () => el?.removeEventListener('scroll', onScroll);
+        init();
+
+        // 历史加载完成后直接定位到底
+        requestAnimationFrame(() => {
+            scrollToBottom(false);
+        });
     }, []);
+
+    useEffect(() => {
+        const el = chatContainerRef.current;
+        if (!el) return;
+
+        const onScroll = () => {
+            autoScrollRef.current = isNearBottom(el);
+        };
+
+        el.addEventListener("scroll", onScroll);
+        return () => el.removeEventListener("scroll", onScroll);
+    }, []);
+    useLayoutEffect(() => {
+        if (autoScrollRef.current) {
+            scrollToBottom(false);
+        }
+    }, [messages.length]);
+
 
     const handleSend = () => {
         const text = inputValue.trim();
@@ -157,7 +186,7 @@ export default function AiAgentChatPage() {
         })
         messages_p.push({ role: "user", content: text });
         let thinking_start = true
-        scrollToBottom();
+        // scrollToBottom(false);
         ai_agentHttp.sse_post("chat", {messages:messages_p},{
             onMessage: (res) => {
                 if(thinking_start) {
@@ -178,14 +207,13 @@ export default function AiAgentChatPage() {
                     }
                 }
                 set_messages([...new_messages]);
-                if(!isUserScrollingRef.current) {
-                    scrollToBottom();
-                }
             },
             onDone:throttle(()=>{
                 set_sending(false)
-                scrollToBottom();
                 pushMessageToLocal(call_pojo)
+
+                // ⭐ 流结束再 smooth 一次
+                scrollToBottom(true);
             },600)
         });
 
