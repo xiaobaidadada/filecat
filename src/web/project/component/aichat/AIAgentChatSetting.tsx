@@ -28,7 +28,7 @@ const tip_text = `
                 "type":"disabled"
     }
 }\`关闭(豆包例子)
-
+6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
 `
 export function AIAgentChatSetting() {
 
