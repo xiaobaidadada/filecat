@@ -7,6 +7,7 @@ export class BinFileUtil {
 
     // 二进制文件可能存在的目录
     static base_dir = [
+        path.join(__dirname),
         path.resolve('build'), // 相对路径基于 cwd
         path.resolve('src','main','threads','filecat'), // 相对路径基于 cwd
         process.cwd(),
