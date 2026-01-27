@@ -1265,7 +1265,7 @@ export class FileService extends FileCompress {
             return pojo;
         }
         if (pojo.back) return this.go_back_log(pojo, file_path);
-        if (pojo.find_back_enter_index) this.find_back_enter_index(pojo, file_path, 100);
+        if (pojo.find_back_enter_index) await this.find_back_enter_index(pojo, file_path, 100);
         return this.go_forward_log(pojo, file_path);
     }
 
