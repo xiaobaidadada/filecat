@@ -329,7 +329,7 @@ class SysDockerService {
         } else {
             // fallback: execSync
             for (const id of ids) {
-                const stdout = await SystemUtil.execAsync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
+                const stdout = (await SystemUtil.execAsync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`)).toString();
                 if (stdout.trim()) not_delete_ids.push(id);
             }
         }

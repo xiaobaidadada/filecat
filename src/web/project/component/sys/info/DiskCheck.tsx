@@ -89,13 +89,14 @@ export function DiskCheck(props: DiskDevicePojo) {
                     <Column widthPer={50}>
                         <Dashboard>
                             {
-                                list?.length &&
+                                list?.length ?
                                 <CardFull title={t("SMART详细信息")} >
                                     <Table headers={diskheaders} rows={list} width={"10rem"}/>
                                 </CardFull>
+                                    : <></>
                             }
                             {/* ===== NVMe SMART 信息 ===== */}
-                            {info.nvme_smart && (
+                            {info.nvme_smart ? (
                                 <Card>
                                     <TextLine
                                         left={t("NVMe 可用备用块(%)")}
@@ -134,7 +135,7 @@ export function DiskCheck(props: DiskDevicePojo) {
                                         right={info.nvme_smart.num_err_log_entries}
                                     />
                                 </Card>
-                            )}
+                            ) : <></>}
                         </Dashboard>
                     </Column>
                 </Row>

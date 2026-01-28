@@ -84,7 +84,7 @@ class SysSystemService {
         }
 
         try {
-            const jsonstr = await SystemUtil.execAsync(`${getSmartctl()} -a --json ${disk}`).toString();
+            const jsonstr = (await SystemUtil.execAsync(`${getSmartctl()} -a --json ${disk}`)).toString();
             pojo = JSON.parse(jsonstr);
         } catch (e: any) {
             if (e.status === 4 && e.stdout) {
@@ -167,7 +167,7 @@ class SysSystemService {
 
 
     public async get_lsblk_info() {
-        const jsonstr = await SystemUtil.execAsync(`  lsblk --output-all --json`).toString();
+        const jsonstr = (await SystemUtil.execAsync(`  lsblk --output-all --json`)).toString();
         const list = JSON.parse(jsonstr);
         const left_list = [];
         for (const v of list['blockdevices'] ?? []) {
@@ -184,7 +184,10 @@ class SysSystemService {
 
     public async get_lvm_info() {
         const pojo_list:vg_item[] = [];
-        const vg_list = JSON.parse(await SystemUtil.execAsync(`  vgs  --reportformat json`).toString()).report[0].vg;
+        const vg_list = JSON.parse(
+            (await SystemUtil.execAsync(`  vgs  --reportformat json`))
+                .toString()
+        ).report[0].vg;
         for (const item of vg_list) {
             const pojo = new vg_item();
             pojo.name = item.vg_name;
@@ -192,7 +195,10 @@ class SysSystemService {
             pojo.lv_count = item.lv_count;
             pojo.pv_cout = item.pv_count;
             pojo.free_size = item.vg_free;
-            const pvs = JSON.parse(await SystemUtil.execAsync(`pvs --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].pv;
+            const pvs = JSON.parse(
+                (await SystemUtil.execAsync(`pvs --select vg_name=${item.vg_name} --reportformat json`))
+                    .toString()
+            ).report[0].pv;
             for (const item1 of pvs ??[]) {
                 pojo.pv_list.push({
                     name:item1.pv_name,
@@ -200,7 +206,10 @@ class SysSystemService {
                     size:item1.pv_size
                 })
             }
-            const lvs = JSON.parse(await SystemUtil.execAsync(`lvs  --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].lv;
+            const lvs = JSON.parse(
+                (await SystemUtil.execAsync(`lvs  --select vg_name=${item.vg_name} --reportformat json`))
+                    .toString()
+            ).report[0].lv;
             for (const item1 of lvs ??[]) {
                 pojo.lv_list.push({
                     name:item1.lv_name,

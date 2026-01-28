@@ -22,7 +22,7 @@ let pid_name_map__ = new Map();
 //  这个只能用于linux系统
 export class SysSystemdService {
     public  async getAllSystemd() {
-        const stdoutlist = await SystemUtil.execAsync(`systemctl list-units --type=service --output=json`).toString();
+        const stdoutlist = (await SystemUtil.execAsync(`systemctl list-units --type=service --output=json`)).toString();
         return  JSON.parse(stdoutlist);
     }
     public getAllInsideSystemd() {
@@ -73,7 +73,7 @@ export class SysSystemdService {
                 return value+".service";
             }
         }).join('|');
-        const stdoutlist = await SystemUtil.execAsync(`systemctl list-units --type=service | grep -E '${grepPattern}'`).toString();
+        const stdoutlist = (await SystemUtil.execAsync(`systemctl list-units --type=service | grep -E '${grepPattern}'`)).toString();
         // 获取找到的服务列表
         const services = stdoutlist.split('\n').filter(line => line);
         for (const service of services) {
@@ -99,7 +99,7 @@ export class SysSystemdService {
             if (!serviceName) {
                 return;
             }
-            const stdoutpid = await SystemUtil.execAsync(`systemctl show ${serviceName} --property=MainPID`).toString();
+            const stdoutpid = (await SystemUtil.execAsync(`systemctl show ${serviceName} --property=MainPID`)).toString();
             // 提取并显示 PID
             const pid = stdoutpid.split('=')[1].trim();
             if (pid && pid !== '0') {
@@ -200,7 +200,7 @@ export class SysSystemdService {
                     this.clear();
                     return;
                 }
-                const stdoutlist = await SystemUtil.execAsync(`systemctl is-active  ${service_names}`).toString();
+                const stdoutlist = (await SystemUtil.execAsync(`systemctl is-active  ${service_names}`)).toString();
                 const avtives:string[] = stdoutlist.trim().split('\n');
                 for (const wss of processWssSet.values()) {
                     try {
@@ -219,7 +219,7 @@ export class SysSystemdService {
 
 
     async get_systemd_context(name:string) {
-        const sdtout = await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`).toString();
+        const sdtout = (await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`)).toString();
         const filePath = sdtout.split("=")[1].replaceAll("\n","");
         const buffer = fs.readFileSync(filePath);
         return {
@@ -233,7 +233,7 @@ export class SysSystemdService {
         if(name.includes(" ")) {
             throw "error name";
         }
-        const sdtout = await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`).toString();
+        const sdtout = (await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`)).toString();
         const filePath = sdtout.split("=")[1].replaceAll("\n","");
         await SystemUtil.execAsync(`sudo systemctl stop ${name}`);
         await SystemUtil.execAsync(`sudo systemctl disable  ${name}`);
