@@ -34,6 +34,8 @@ const _node_rules = [
 ]
 
 // 这些不需要打包，会被安装，运行的时候再使用
+// 动态的 加载需要使用 node_require=eval("require") 原本的动态函数内的require会被替换成webpack的 __webpack_require__
+// webpack会修改函数的位置，这也会导致一些看起来本来没有问题的 变量不存在问题
 const npm_externals =[
     {
         '@aws-sdk/client-s3': 'S3', // 假设全局变量名为 S3 是 @aws-sdk/client-s3带 @符号的话会无法压缩

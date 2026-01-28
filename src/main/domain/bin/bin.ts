@@ -206,10 +206,13 @@ export function get_bin_dependency(module:
 ) {
     let m :any = {};
     try {
-        m = require(module);
+        // webpack打包后会修改原本的 reuqire 加载函数
+        const node_require = eval("require")
+        m = node_require(module);
     } catch (e) {
         // 当前平台没有这个能力
         console.log(`模块没有安装成功，请手动安装 npm 依赖( -g 安装的就尝试全局安装，本地仓库安装的就在仓库内安装)：${module}`)
+        // console.log(e)
         if(auto_throw) throw e;
     }
     return m;
