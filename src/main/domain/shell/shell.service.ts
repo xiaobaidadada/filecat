@@ -19,6 +19,7 @@ import fs from "fs";
 import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
+import {get_bin_dependency} from "../bin/bin";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -65,7 +66,7 @@ export function getShell() {
 }
 
 // const pty:any = shell === 'powershell.exe'?require('../../../../local_node_modules/windows/node-pty'):require('../../../../local_node_modules/linux/node-pty');
-const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
+const pty: any = get_bin_dependency("@xiaobaidadada/node-pty-prebuilt",false)
 
 
 // const socketMap: Map<string, any> = new Map();

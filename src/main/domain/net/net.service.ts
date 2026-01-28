@@ -23,7 +23,7 @@ import {generateRandomHash} from "../../../common/StringUtil";
 import {FileUtil} from "../file/FileUtil";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
-import {node_process_watcher} from "node-process-watcher";
+import {get_bin_dependency} from "../bin/bin";
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {URL} from 'url';
 import https from 'https';
@@ -31,6 +31,8 @@ import {ServerEvent} from "../../other/config";
 import net from "net";
 import vm from "node:vm";
 
+
+const  {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 
 const needle = require('needle');
 

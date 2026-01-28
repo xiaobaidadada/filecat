@@ -3,8 +3,9 @@ import {shellServiceImpl, sysType} from "../../shell/shell.service";
 import {SysEnum} from "../../../../common/req/user.req";
 import {settingService} from "../../setting/setting.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
+import {get_bin_dependency} from "../../bin/bin";
 
-const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
+
 import {data_common_key, data_dir_tem_name} from "../../data/data_type";
 import {userService} from "../../user/user.service";
 import path from "path";
@@ -12,8 +13,9 @@ import {SystemUtil} from "../../sys/sys.utl";
 import {job_item, step_item} from "../../../../common/req/file.req";
 import {Wss} from "../../../../common/frame/ws.server";
 
-const Mustache = require('mustache');
 
+const Mustache = require('mustache');
+const pty: any = get_bin_dependency("@xiaobaidadada/node-pty-prebuilt",false)
 
 export class WorkflowProcess {
 

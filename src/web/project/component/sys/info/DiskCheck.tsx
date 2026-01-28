@@ -88,9 +88,53 @@ export function DiskCheck(props: DiskDevicePojo) {
                     </Column>
                     <Column widthPer={50}>
                         <Dashboard>
-                            <CardFull title={t("SMART详细信息")} >
-                                <Table headers={diskheaders} rows={list} width={"10rem"}/>
-                            </CardFull>
+                            {
+                                list?.length &&
+                                <CardFull title={t("SMART详细信息")} >
+                                    <Table headers={diskheaders} rows={list} width={"10rem"}/>
+                                </CardFull>
+                            }
+                            {/* ===== NVMe SMART 信息 ===== */}
+                            {info.nvme_smart && (
+                                <Card>
+                                    <TextLine
+                                        left={t("NVMe 可用备用块(%)")}
+                                        right={info.nvme_smart.available_spare}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 已使用寿命(%)")}
+                                        right={info.nvme_smart.percentage_used}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 读取量")}
+                                        right={info.nvme_smart.data_units_read}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 写入量")}
+                                        right={info.nvme_smart.data_units_written}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 通电次数")}
+                                        right={info.nvme_smart.power_cycles}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 通电时长(小时)")}
+                                        right={info.nvme_smart.power_on_hours}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 非正常关机")}
+                                        right={info.nvme_smart.unsafe_shutdowns}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 媒体错误")}
+                                        right={info.nvme_smart.media_errors}
+                                    />
+                                    <TextLine
+                                        left={t("NVMe 错误日志数")}
+                                        right={info.nvme_smart.num_err_log_entries}
+                                    />
+                                </Card>
+                            )}
                         </Dashboard>
                     </Column>
                 </Row>

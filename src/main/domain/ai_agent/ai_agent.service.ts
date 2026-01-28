@@ -325,7 +325,7 @@ ${config.sys_prompt ?? ''}
             return res;
         }
         if (!json_body.stream) {
-            const r = await aiResponse.json()
+            const r:any = await aiResponse.json()
             const msg = r.choices[0].message;
             this.write_to_res(res, msg.content);
             res.end();
@@ -438,7 +438,7 @@ ${config.sys_prompt ?? ''}
             }
             return
         }
-        call_data((await res.json()).choices[0].message)
+        call_data((await res.json() as any).choices[0].message)
     }
 
 }

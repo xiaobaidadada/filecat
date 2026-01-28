@@ -6,8 +6,8 @@ import {SystemUtil} from "./sys.utl";
 import {getShell, getSys} from "../shell/shell.service";
 import WebSocket from "ws";
 import os from "os";
-import Docker from "@xiaobaidadada/dockerode";
 import {SysEnum} from "../../../common/req/user.req";
+import {get_bin_dependency} from "../bin/bin";
 
 let sysJobInterval: any = null;
 let dockerJobInterval: any = null;
@@ -23,6 +23,7 @@ class SysDockerService {
         const type = getSys()
         const r = type === SysEnum.linux || type === SysEnum.mac;
         if (r === true && docker == null) {
+            const Docker = get_bin_dependency("@xiaobaidadada/dockerode")
             docker = new Docker({socketPath: "/var/run/docker.sock"})
         }
         return r;

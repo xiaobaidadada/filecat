@@ -17,7 +17,7 @@ export function get_tun_require() {
         LinuxTap,
         Wintun,
         MacTun
-    } = require('@xiaobaidadada/node-tuntap2-wintun');
+    } = get_bin_dependency('@xiaobaidadada/node-tuntap2-wintun');
     tuntap2 = {
         LinuxTun,
         LinuxTap,
@@ -145,7 +145,7 @@ export function getProcessAddon() {
     const type = getSys();
     // if (type === SysEnum.linux || type === SysEnum.win) {
         // child = require_c(path.join(__dirname,'linux-process.node'));
-        const {node_process_watcher} = require("node-process-watcher");
+        const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
         return node_process_watcher;
     // }
     // else if(getSys()===SysEnum.win) {
@@ -196,4 +196,22 @@ export function get_base() {
     return base_url;
 }
 
+export function get_bin_dependency(module:
+                                   "@xiaobaidadada/dockerode"
+                                    | "@xiaobaidadada/node-pty-prebuilt"
+                                   | "@xiaobaidadada/node-tuntap2-wintun"
+                                   | "@xiaobaidadada/ssh2-prebuilt"
+                                   | "node-process-watcher",
+                                   auto_throw = false
+) {
+    let m :any = {};
+    try {
+        m = require(module);
+    } catch (e) {
+        // 当前平台没有这个能力
+        console.log(`模块没有安装成功，请手动安装 npm 依赖( -g 安装的就尝试全局安装，本地仓库安装的就在仓库内安装)：${module}`)
+        if(auto_throw) throw e;
+    }
+    return m;
+}
 

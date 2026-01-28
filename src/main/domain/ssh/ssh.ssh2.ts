@@ -1,19 +1,22 @@
 import {SshPojo} from "../../../common/req/ssh.pojo";
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {LifecycleRecordService} from "../pre/lifeRecordService";
-
+import {get_bin_dependency} from "../bin/bin";
 const EventEmitter = require('events');
 
 
-import {Client} from '@xiaobaidadada/ssh2-prebuilt';
+// const {Client} = get_bin_dependency("@xiaobaidadada/ssh2-prebuilt");
+
+type Client = any
 import fs from "fs";
 import {FileUtil} from "../file/FileUtil";
 
+const {Client} = get_bin_dependency("@xiaobaidadada/ssh2-prebuilt",false)
 export const sftp_client = "sftp_client_key";
 
 export class SshSsh2 extends LifecycleRecordService {
 
-    async connect(req: SshPojo): Client {
+    async connect(req: SshPojo): Promise<any> {
         // 要传递的环境变量
         // const envVars = {
         //     PATH: process.env.PATH, // 传递 PATH 环境变量

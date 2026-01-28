@@ -23,7 +23,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
-import {getFfmpeg} from "../bin/bin";
+import {get_bin_dependency, getFfmpeg} from "../bin/bin";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
@@ -32,7 +32,7 @@ import {Request, Response} from "express";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {FileUtil} from "./FileUtil";
-import {node_process_watcher} from "node-process-watcher";
+const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 import {list_paginate} from "../../../common/ListUtil";
 
 const archiver = require('archiver');
