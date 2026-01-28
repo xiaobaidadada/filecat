@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.20.5",
+  "version": "5.20.6",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -22,7 +22,8 @@
     "build-exe-win-x64": "npm run exe-build && node --require ts-node/register shell/pkg.ts filecat-win-x64.tar.gz",
     "start": "node build/main.js",
     "test": "prebuild --upload-files-gz filecat-linux --set-version \"\" -u 11234 ",
-    "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2"
+    "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2",
+    "postinstall": "node shell/postinstall-optional.js"
   },
   "bin": {
     "filecat": "shell/filecat",
