@@ -1,7 +1,7 @@
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
-import {exec, execSync, spawn} from "child_process";
+import {exec, spawn} from "child_process";
 import {SystemUtil} from "./sys.utl";
 import {getShell, getSys} from "../shell/shell.service";
 import WebSocket from "ws";
@@ -87,7 +87,7 @@ class SysDockerService {
         } else {
             // fallback
             const images = [];
-            let cons: any = execSync('docker images --format "{{.ID}};;{{.Repository}}:{{.Tag}};;{{.CreatedAt}};;{{.Size}}"');
+            let cons: any = await SystemUtil.execAsync('docker images --format "{{.ID}};;{{.Repository}}:{{.Tag}};;{{.CreatedAt}};;{{.Size}}"');
             cons = cons.toString().split(/\n|\r\n/).filter(v => v.length > 0);
             for (let i = 0; i < cons.length; i++) {
                 const con = cons[i];
@@ -122,7 +122,7 @@ class SysDockerService {
         } else {
             const p_c = docker_result_list;
             docker_result_list = [];
-            let cons: any = execSync('docker ps -a --no-trunc --format "table {{.ID}};;{{.Names}};;{{.Image}};;{{.Command}};;{{.Status}}"');
+            let cons: any = await SystemUtil.execAsync('docker ps -a --no-trunc --format "table {{.ID}};;{{.Names}};;{{.Image}};;{{.Command}};;{{.Status}}"');
             cons = cons.toString().split(/\n|\r\n/).filter(v => v.length > 0);
             for (let i = 1; i < cons.length; i++) {
                 const con = cons[i];
@@ -328,7 +328,7 @@ class SysDockerService {
         } else {
             // fallback: execSync
             for (const id of ids) {
-                const stdout = execSync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
+                const stdout = await SystemUtil.execAsync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`).toString();
                 if (stdout.trim()) not_delete_ids.push(id);
             }
         }
@@ -355,7 +355,7 @@ class SysDockerService {
         } else {
             // fallback: execSync
             const param = ids.join(" ");
-            execSync(`docker rmi ${param}`);
+            await SystemUtil.execAsync(`docker rmi ${param}`);
         }
     }
 

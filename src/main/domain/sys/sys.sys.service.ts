@@ -5,9 +5,9 @@ import WebSocket from "ws";
 const fs = require('fs');
 import {diskCheckAttr, DiskCheckInfo, SysCmd, SysCmdExePojo, SysPojo} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
-import {execSync} from "child_process";
 import {get_ntfs_3g, getSmartctl} from "../bin/bin";
 import {lv_item, pv_item, vg_item} from "../../../common/req/common.pojo";
+import {SystemUtil} from "./sys.utl";
 let sysJobInterval: any = null;
 
 const sysWssMap = new Map<string, Wss>();
@@ -75,56 +75,99 @@ class SysSystemService {
         await this.openSysPush((data.wss as Wss));
     }
 
-    public async diskSmartctl(disk:string) {
+    public async diskSmartctl(disk: string) {
         const result = new DiskCheckInfo();
-        let pojo;
-        if(disk.includes(" ")) {
+        let pojo: any;
+
+        if (disk.includes(" ")) {
             throw "error params";
         }
+
         try {
-            const jsonstr = execSync(`${getSmartctl()} -a --json ${disk}`).toString();
-            pojo = JSON.parse(jsonstr)
-        } catch (e) {
-            if (e.status === 4) {
+            const jsonstr = await SystemUtil.execAsync(`${getSmartctl()} -a --json ${disk}`).toString();
+            pojo = JSON.parse(jsonstr);
+        } catch (e: any) {
+            if (e.status === 4 && e.stdout) {
                 // 内容过长
                 pojo = JSON.parse(e.stdout);
-            }else {
+            } else {
                 throw e;
             }
         }
-        result.model_name = pojo["model_name"];
-        result.serial_number = pojo["serial_number"];
-        result.firmware_version = pojo["firmware_version"];
-        result.rotation_rate = pojo["rotation_rate"];
-        if (pojo["smart_status"]) {
-            result.smart_status = pojo["smart_status"].passed;
+
+        /* ========= 基础通用信息 ========= */
+        result.model_name = pojo.model_name;
+        result.serial_number = pojo.serial_number;
+        result.firmware_version = pojo.firmware_version;
+        result.rotation_rate = pojo.rotation_rate;
+
+        if (pojo.smart_status) {
+            result.smart_status = pojo.smart_status.passed;
         }
-        result.power_cycle_count = pojo["power_cycle_count"];
-        if(pojo["power_on_time"]) {
-            result.power_on_time_hours = pojo["power_on_time"].hours;
+
+        if (pojo.power_cycle_count !== undefined) {
+            result.power_cycle_count = pojo.power_cycle_count;
         }
-        if(pojo["temperature"]) {
-            result.temperature = pojo["temperature"].current;
+
+        if (pojo.power_on_time) {
+            result.power_on_time_hours = pojo.power_on_time.hours;
         }
-        if(pojo["device"]) {
-            result.device_protocol = pojo["device"].protocol;
+
+        if (pojo.temperature) {
+            result.temperature = pojo.temperature.current;
         }
-        if(pojo["ata_smart_attributes"] && pojo["ata_smart_attributes"].table) {
-            const ata_smart_attributes:any[][] = [];
-            for (const value of pojo["ata_smart_attributes"].table) {
-                ata_smart_attributes.push([value.name,
+
+        if (pojo.device) {
+            result.device_protocol = pojo.device.protocol;
+        }
+
+        /* ========= ATA / SATA ========= */
+        if (
+            pojo.device?.protocol === "ATA" &&
+            pojo.ata_smart_attributes?.table
+        ) {
+            const ata_smart_attributes: any[][] = [];
+
+            for (const value of pojo.ata_smart_attributes.table) {
+                ata_smart_attributes.push([
+                    value.name,
                     value.value,
                     value.worst,
-                    value.thresh])
+                    value.thresh
+                ]);
             }
+
             result.ata_smart_attributes = ata_smart_attributes;
         }
-        return  result;
+
+        /* ========= NVMe ========= */
+        if (
+            pojo.device?.protocol === "NVMe" &&
+            pojo.nvme_smart_health_information_log
+        ) {
+            const nvme = pojo.nvme_smart_health_information_log;
+
+            result.nvme_smart = {
+                temperature: nvme.temperature,
+                available_spare: nvme.available_spare,
+                percentage_used: nvme.percentage_used,
+                data_units_read: nvme.data_units_read,
+                data_units_written: nvme.data_units_written,
+                power_cycles: nvme.power_cycles,
+                power_on_hours: nvme.power_on_hours,
+                unsafe_shutdowns: nvme.unsafe_shutdowns,
+                media_errors: nvme.media_errors,
+                num_err_log_entries: nvme.num_err_log_entries
+            };
+        }
+
+        return result;
     }
 
 
-    public get_lsblk_info() {
-        const jsonstr = execSync(`  lsblk --output-all --json`).toString();
+
+    public async get_lsblk_info() {
+        const jsonstr = await SystemUtil.execAsync(`  lsblk --output-all --json`).toString();
         const list = JSON.parse(jsonstr);
         const left_list = [];
         for (const v of list['blockdevices'] ?? []) {
@@ -139,9 +182,9 @@ class SysSystemService {
         return left_list;
     }
 
-    public get_lvm_info() {
+    public async get_lvm_info() {
         const pojo_list:vg_item[] = [];
-        const vg_list = JSON.parse(execSync(`  vgs  --reportformat json`).toString()).report[0].vg;
+        const vg_list = JSON.parse(await SystemUtil.execAsync(`  vgs  --reportformat json`).toString()).report[0].vg;
         for (const item of vg_list) {
             const pojo = new vg_item();
             pojo.name = item.vg_name;
@@ -149,7 +192,7 @@ class SysSystemService {
             pojo.lv_count = item.lv_count;
             pojo.pv_cout = item.pv_count;
             pojo.free_size = item.vg_free;
-            const pvs = JSON.parse(execSync(`pvs --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].pv;
+            const pvs = JSON.parse(await SystemUtil.execAsync(`pvs --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].pv;
             for (const item1 of pvs ??[]) {
                 pojo.pv_list.push({
                     name:item1.pv_name,
@@ -157,7 +200,7 @@ class SysSystemService {
                     size:item1.pv_size
                 })
             }
-            const lvs = JSON.parse(execSync(`lvs  --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].lv;
+            const lvs = JSON.parse(await SystemUtil.execAsync(`lvs  --select vg_name=${item.vg_name} --reportformat json`).toString()).report[0].lv;
             for (const item1 of lvs ??[]) {
                 pojo.lv_list.push({
                     name:item1.lv_name,
@@ -170,10 +213,10 @@ class SysSystemService {
     }
 
 
-    cmd_exe(pojo:SysCmdExePojo) {
+    async cmd_exe(pojo:SysCmdExePojo) {
         switch (pojo.type) {
             case SysCmd.mount:
-                execSync("sudo mount -a");
+                await SystemUtil.execAsync("sudo mount -a");
                 break;
             default:
                 break;

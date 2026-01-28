@@ -51,7 +51,99 @@ export class DiskCheckInfo {
     temperature?:number; // 当前温度 摄氏度（°C）
     // smart_support?:boolean; // 是否支持 SMART(硬盘联合制造商的标准)
     device_protocol?:string; // 通信协议
-    ata_smart_attributes:any[][]; // 各个属性，是实时更新的，如果进行自检，会进行更深度详细的检查  值按diskCheckAttr的属性从前往后排
+    ata_smart_attributes:any[][] = []; // 各个属性，是实时更新的，如果进行自检，会进行更深度详细的检查  值按diskCheckAttr的属性从前往后排
+
+    nvme_smart?: {
+        /**
+         * 当前控制器温度（单位：摄氏度 ℃）
+         *
+         * - 来自 NVMe SMART / Health Information Log
+         * - 通常是主控或最热点温度
+         * - 长期 > 70℃ 可能触发降速或寿命下降
+         */
+        temperature: number;
+
+        /**
+         * 剩余可用备用块百分比（0–100）
+         *
+         * - 100 表示备用块完全充足
+         * - 低于 available_spare_threshold 时：
+         *   NVMe 会设置 critical_warning
+         * - 越低表示 NAND 损耗越严重
+         */
+        available_spare: number;
+
+        /**
+         * 设备寿命已使用百分比（0–100）
+         *
+         * - 0   = 全新或几乎未磨损
+         * - 100 = 达到设计寿命（不代表立刻损坏）
+         * - >100 在部分厂商实现中可能继续增长
+         * - 这是 NVMe 判断“SSD 磨损”的核心指标
+         */
+        percentage_used: number;
+
+        /**
+         * 主机读取的数据量（单位：Data Unit）
+         *
+         * - 1 Data Unit = 512,000 字节（≈ 500 KB）
+         * - 这是逻辑读入量，不是 NAND 实际读
+         * - 可用于统计读负载
+         */
+        data_units_read: number;
+
+        /**
+         * 主机写入的数据量（单位：Data Unit）
+         *
+         * - 1 Data Unit = 512,000 字节（≈ 500 KB）
+         * - 是 SSD 寿命消耗的重要参考
+         * - 与 TBW（Total Bytes Written）强相关
+         */
+        data_units_written: number;
+
+        /**
+         * 上电次数
+         *
+         * - 包含正常开机、重启
+         * - 不包含睡眠 / 低功耗状态切换
+         */
+        power_cycles: number;
+
+        /**
+         * 累计通电时间（单位：小时）
+         *
+         * - 从设备首次通电开始累计
+         * - 不会因断电清零
+         */
+        power_on_hours: number;
+
+        /**
+         * 非正常关机次数
+         *
+         * - 例如：突然断电、系统崩溃、强制关机
+         * - 次数多可能增加数据损坏风险
+         */
+        unsafe_shutdowns: number;
+
+        /**
+         * 媒体错误计数
+         *
+         * - 表示发生过不可恢复的 NAND 读写错误
+         * - 非 0 通常意味着硬件层面已出现问题
+         * - 是 NVMe 中最严重的健康信号之一
+         */
+        media_errors: number;
+
+        /**
+         * 错误日志条目数
+         *
+         * - 记录在 NVMe Error Log 中的错误条目数量
+         * - 包含命令失败、超时等控制器级错误
+         * - 不一定都是致命错误，但异常增多需关注
+         */
+        num_err_log_entries: number;
+    };
+
 }
 
 

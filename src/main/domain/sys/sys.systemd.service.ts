@@ -6,9 +6,10 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {deleteList} from "../../../common/ListUtil";
 import fs from "fs";
-const { spawn ,execSync} = require('child_process');
+const { spawn } = require('child_process');
 import WebSocket from "ws";
 import {data_common_key} from "../data/data_type";
+import {SystemUtil} from "./sys.utl";
 const systemd_key = data_common_key.systemd_key;
 
 let  spawnChild = getProcessAddon();
@@ -20,8 +21,8 @@ let pid_name_map__ = new Map();
 
 //  这个只能用于linux系统
 export class SysSystemdService {
-    public  getAllSystemd() {
-        const stdoutlist = execSync(`systemctl list-units --type=service --output=json`).toString();
+    public  async getAllSystemd() {
+        const stdoutlist = await SystemUtil.execAsync(`systemctl list-units --type=service --output=json`).toString();
         return  JSON.parse(stdoutlist);
     }
     public getAllInsideSystemd() {
@@ -72,10 +73,10 @@ export class SysSystemdService {
                 return value+".service";
             }
         }).join('|');
-        const stdoutlist = execSync(`systemctl list-units --type=service | grep -E '${grepPattern}'`).toString();
+        const stdoutlist = await SystemUtil.execAsync(`systemctl list-units --type=service | grep -E '${grepPattern}'`).toString();
         // 获取找到的服务列表
         const services = stdoutlist.split('\n').filter(line => line);
-        services.forEach(service => {
+        for (const service of services) {
             const list = service.split(/\s+/);
             // 提取服务名称
             let serviceName;
@@ -98,7 +99,7 @@ export class SysSystemdService {
             if (!serviceName) {
                 return;
             }
-            const stdoutpid = execSync(`systemctl show ${serviceName} --property=MainPID`).toString();
+            const stdoutpid = await SystemUtil.execAsync(`systemctl show ${serviceName} --property=MainPID`).toString();
             // 提取并显示 PID
             const pid = stdoutpid.split('=')[1].trim();
             if (pid && pid !== '0') {
@@ -108,7 +109,7 @@ export class SysSystemdService {
             } else {
                 not_pid_names.push(serviceName);
             }
-        });
+        }
         return {pids,pid_name_map,not_pid_names};
     }
 
@@ -199,7 +200,7 @@ export class SysSystemdService {
                     this.clear();
                     return;
                 }
-                const stdoutlist = execSync(`systemctl is-active  ${service_names}`).toString();
+                const stdoutlist = await SystemUtil.execAsync(`systemctl is-active  ${service_names}`).toString();
                 const avtives:string[] = stdoutlist.trim().split('\n');
                 for (const wss of processWssSet.values()) {
                     try {
@@ -218,7 +219,7 @@ export class SysSystemdService {
 
 
     async get_systemd_context(name:string) {
-        const sdtout = execSync(`systemctl show ${name} --property=FragmentPath`).toString();
+        const sdtout = await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`).toString();
         const filePath = sdtout.split("=")[1].replaceAll("\n","");
         const buffer = fs.readFileSync(filePath);
         return {
@@ -232,13 +233,13 @@ export class SysSystemdService {
         if(name.includes(" ")) {
             throw "error name";
         }
-        const sdtout = execSync(`systemctl show ${name} --property=FragmentPath`).toString();
+        const sdtout = await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`).toString();
         const filePath = sdtout.split("=")[1].replaceAll("\n","");
-        execSync(`sudo systemctl stop ${name}`);
-        execSync(`sudo systemctl disable  ${name}`);
-        execSync(`sudo rm ${filePath}`);
-        execSync(`sudo systemctl daemon-reload`);
-        execSync(`sudo systemctl reset-failed`);
+        await SystemUtil.execAsync(`sudo systemctl stop ${name}`);
+        await SystemUtil.execAsync(`sudo systemctl disable  ${name}`);
+        await SystemUtil.execAsync(`sudo rm ${filePath}`);
+        await SystemUtil.execAsync(`sudo systemctl daemon-reload`);
+        await SystemUtil.execAsync(`sudo systemctl reset-failed`);
         await this.deleteSystemd(name);
     }
 

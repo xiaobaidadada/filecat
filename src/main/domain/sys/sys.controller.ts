@@ -120,7 +120,7 @@ export class SysController {
     @Get("/systemd/allget")
     async getAllSystemd(@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        return Sucess(systemd.getAllSystemd());
+        return Sucess(await systemd.getAllSystemd());
     }
 
     @Post("/systemd/add")
@@ -177,14 +177,14 @@ export class SysController {
     @Get("/disk/blk")
     async get_lsblk_info(@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        return Sucess(SysSystemServiceImpl.get_lsblk_info());
+        return Sucess(await SysSystemServiceImpl.get_lsblk_info());
     }
 
     // 获取卷组相关信息
     @Get("/disk/lvm")
     async get_lvm_info(@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        return Sucess(SysSystemServiceImpl.get_lvm_info());
+        return Sucess(await SysSystemServiceImpl.get_lvm_info());
     }
 
     // 执行特定系统上的命令

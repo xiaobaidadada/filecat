@@ -5,6 +5,7 @@ import {Env} from "../../../common/Env";
 import {execSync} from "child_process";
 import {getSys} from "../shell/shell.service";
 import {SysEnum} from "../../../common/req/user.req";
+import {SystemUtil} from "../sys/sys.utl";
 
 const crypto = require('crypto');
 const sshpk = require('sshpk');
@@ -107,12 +108,12 @@ export class CryptoService {
 
     }
 
-    save_openssh(name: string, context: string) {
+    async save_openssh(name: string, context: string) {
         fse.ensureDirSync(this.get_home_path());
         const rpath = path.join(this.get_home_path(), name);
         fs.writeFileSync(rpath, context);
         if (getSys() === SysEnum.linux) {
-            execSync(`chmod 600 ${rpath}`) // 保证权限不至于太宽松
+            await SystemUtil.execAsync(`chmod 600 ${rpath}`) // 保证权限不至于太宽松
         }
     }
 }
