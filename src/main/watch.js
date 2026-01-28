@@ -26,7 +26,7 @@ function startServer() {
 
     if (isDev) {
         // dev 模式下 fork ts 文件，使用 ts-node/register
-        child = fork(childScript, [...childArgs,'--watch'], {
+        child = fork(childScript, [...childArgs,'--watch','true'], {
             stdio: ['inherit', 'inherit', 'inherit', 'ipc'], // 输出 + 消息通道
             execArgv: ['-r', 'ts-node/register'],
             env: { ...process.env }

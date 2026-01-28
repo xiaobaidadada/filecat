@@ -100,7 +100,7 @@ export function DiskMount() {
 
     useEffect(() => {
         init();
-    }, [info]);
+    }, []);
 
     const handleContextMenu = (event, data) => {
         event.preventDefault();

@@ -53,7 +53,7 @@ export function DiskCheck(props: DiskDevicePojo) {
 
     useEffect(() => {
         init();
-    }, [info]);
+    }, []);
     return <div>
         <Header>
             <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
@@ -90,14 +90,14 @@ export function DiskCheck(props: DiskDevicePojo) {
                         <Dashboard>
                             {
                                 list?.length ?
-                                <CardFull title={t("SMART详细信息")} >
+                                <CardFull title={t("ATA/SATA详细信息")} >
                                     <Table headers={diskheaders} rows={list} width={"10rem"}/>
                                 </CardFull>
                                     : <></>
                             }
                             {/* ===== NVMe SMART 信息 ===== */}
                             {info.nvme_smart ? (
-                                <Card>
+                                <Card title={t("NVME详细信息")}>
                                     <TextLine
                                         left={t("NVMe 可用备用块(%)")}
                                         right={info.nvme_smart.available_spare}
