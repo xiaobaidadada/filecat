@@ -2,7 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "target": "ES2021",
-    "lib": ["ES2021"],
+    "lib": ["ES2021","DOM"],
     "module": "commonjs",
     "useUnknownInCatchVariables": false,
     "allowJs": true,

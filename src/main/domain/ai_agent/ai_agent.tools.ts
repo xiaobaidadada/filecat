@@ -102,16 +102,22 @@ export const Ai_agentTools = {
                     "\n\n...（响应内容过长，已截断）";
             }
 
+            const headersObj: Record<string, string> = {};
+            res.headers.forEach((value, key) => {
+                headersObj[key] = value;
+            });
+
             return JSON.stringify(
                 {
                     status: res.status,
                     statusText: res.statusText,
-                    headers: Object.fromEntries(res.headers.entries()),
+                    headers: headersObj,
                     body: text
                 },
                 null,
                 2
             );
+
         } finally {
             clearTimeout(timer);
         }
