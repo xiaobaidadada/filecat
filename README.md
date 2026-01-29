@@ -5,7 +5,6 @@ FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成�
 
 **支持AI Agent用问答的方式来查询服务器资源，不再需要记住复杂的运维命令**。
 
-本项目是对[filebrowser](https://github.com/filebrowser/filebrowser)的功能增强，使用和filebrowser一样的ui，以服务器文件管理为基础添加一些服务器控制功能。
 
 FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including TUN, SSH, RDP, HTTP, and TCP.
 
