@@ -218,3 +218,32 @@ export function get_bin_dependency(module:
     return m;
 }
 
+let package_;
+export function get_package_json() {
+    if(package_) {
+        return  package_;
+    }
+    let dir = __dirname;
+    let count = 5; // 最多尝试n次向上搜索
+    try {
+        while (count > 0) {
+            count--;
+            const pkgPath = path.join(dir, "package.json");
+            if (fs.existsSync(pkgPath)) {
+                package_ = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+                break;
+            }
+            const parent = path.dirname(dir);
+            if (parent === dir) break; // 到根目录了
+            dir = parent;
+        }
+    } catch (e) {
+        console.log(e)
+    }
+    if(!package_) {
+        // 没有找到
+        package_ = {}
+    }
+    return package_;
+}
+

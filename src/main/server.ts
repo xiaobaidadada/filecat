@@ -32,7 +32,7 @@ import {shellServiceImpl} from "./domain/shell/shell.service";
 import {FileUtil} from "./domain/file/FileUtil";
 import {settingService} from "./domain/setting/setting.service";
 import mime from "mime-types";
-import {get_base, get_sys_base_url_pre} from "./domain/bin/bin";
+import {get_base, get_package_json, get_sys_base_url_pre} from "./domain/bin/bin";
 import {VirtualController} from "./domain/net/virtual/virtual.controller";
 import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
 const http = require('http');
@@ -209,7 +209,7 @@ async function start() {
 
     // 启动服务器
     const server = app.listen(Env.port, () => {
-        const url = `http://localhost:${Env.port}/`;
+        const url = `version:${get_package_json().version} http://localhost:${Env.port}/`;
         console.log(`\x1b[31m服务器正在运行 click\x1b[0m  \x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
     });
 
