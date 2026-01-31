@@ -8,6 +8,13 @@ FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成�
 
 FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including TUN, SSH, RDP, HTTP, and TCP.
 
+## Demo
+http://demo.filecat.xiaobaidadada.fun/
+
+username/password: demo/demo
+中文账号 demo-zh/demo
+
+demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提供
 ## 安装方式 / Installation
 小的bug修复与功能更新，只会在npm上实时发布同步
 
