@@ -1,14 +1,15 @@
 import React, {useEffect, useState} from "react";
-import {Column, Dashboard, FullScreenDiv, Row} from "../../../../meta/component/Dashboard";
+import {Dashboard, FullScreenDiv} from "../../../../meta/component/Dashboard";
 import {CardFull} from "../../../../meta/component/Card";
-import {Table} from "../../../../meta/component/Table";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
-import {FileListLoad_file_folder_for_local} from "../FileListLoad";
+import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "../FileListLoad";
 import {ButtonText} from "../../../../meta/component/Button";
-import {FileTypeEnum} from "../../../../../common/file.pojo";
-import {getByList} from "../../../../../common/ListUtil";
 import {getFileFormat} from "../../../../../common/FileMenuType";
+import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {routerConfig} from "../../../../../common/RouterConfig";
+import {fileHttp} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
 
 type FileItem = {
     name: string;
@@ -18,24 +19,43 @@ type FileItem = {
 
 type ShareData = {
     is_dir: boolean;
-    name: string;
+    name?: string;
     size?: number;
     items?: FileItem[];
 };
 
 export default function Share() {
     const [data, setData] = useState<ShareData | null>(null);
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-
+    const get_file = async ()=>{
+        let id = `${getRouterAfter(routerConfig.share, getRouterPath())}`
+        if(id.endsWith("/")){
+            id = id.slice(0, -1);
+        }
+        const r = await fileHttp.post(`share`,{
+            id
+        })
+        if(r.code === RCode.Sucess) {
+            const p :ShareData = {
+                is_dir: r.data.is_dir
+            }
+            if(!p.is_dir) {
+                p.name = r.data.files[0].name
+            } else {
+                p.items = r.data.files
+            }
+            setData(p)
+        }
+    }
     /** mock：替换为真实接口 */
     useEffect(() => {
-        setTimeout(() => {
-            setData({
-                is_dir: true,
-                name: "shared-folder",
-                size:"12mb"
-            });
-        }, 300);
+        get_file()
+        // setTimeout(() => {
+        //     setData({
+        //         is_dir: true,
+        //         name: "shared-folder",
+        //         size:"12mb"
+        //     });
+        // }, 300);
     }, []);
 
     if (!data) {
@@ -91,11 +111,10 @@ export default function Share() {
                             </CardFull>
                             :
                             (
-                                <FileListLoad_file_folder_for_local handleContextMenu={() => {
-                                }} file_list={nowFileList.files}
-                                                                    folder_list={nowFileList.folders}
-                                                                    clickBlank={() => {
-                                                                    }}/>
+                                <FileListLoad_file_folder_for_local_by_page handleContextMenu={() => {
+                                }} list={data.items} clickBlank={()=>{
+
+                                }}                                />
                             )
                     }
                 </div>

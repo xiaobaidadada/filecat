@@ -35,6 +35,7 @@ import mime from "mime-types";
 import {get_base, get_package_json, get_sys_base_url_pre} from "./domain/bin/bin";
 import {VirtualController} from "./domain/net/virtual/virtual.controller";
 import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
+import {authorizationChecker} from "./other/middleware/decorator";
 const http = require('http');
 const https = require('https');
 const Mustache = require('mustache');
@@ -64,6 +65,7 @@ async function start() {
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
+        authorizationChecker
     });
     app.use(compression());
 

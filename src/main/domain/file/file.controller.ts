@@ -12,6 +12,7 @@ import {FileServiceImpl} from "./file.service";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {
     cutCopyReq,
+    file_share_item,
     fileInfoReq,
     saveTxtReq,
     WorkflowGetReq,
@@ -30,6 +31,12 @@ import {UserAuth} from "../../../common/req/user.req";
 import {workflowService} from "./workflow/workflow.service";
 import {Wss} from "../../../common/frame/ws.server";
 import path from "path";
+import {FileUtil} from "./FileUtil";
+import {RCode} from "../../../common/Result.pojo";
+import {list_paginate} from "../../../common/ListUtil";
+import {Stats} from "fs";
+import {getFileFormat} from "../../../common/FileMenuType";
+import {Public} from "../../other/middleware/decorator";
 
 
 @JsonController("/file")
@@ -291,5 +298,85 @@ export class FileController {
     @msg(CmdType.folder_size_info_close)
     async folder_size_info_close(data: WsData<any>) {
         await FileServiceImpl.stop_folder_info(data.context.path, (data.wss as Wss).token);
+    }
+
+    @Public()
+    @Post("/share")
+    async get_share_info(@Req() ctx, @Body() data: any) {
+        const list = settingService.get_share_file_list();
+        let item: file_share_item;
+        for (const i of list) {
+            if (i.id === data.id) {
+                item = i;
+                break
+            }
+        }
+        if (!item) throw "未知分享"
+        if (item.token) {
+            if (!data.token) {
+                return Sucess("", RCode.need_token_share)
+            }
+        }
+        const result = {
+            is_dir: true,
+            files: []
+        }
+        const sysPath = decodeURIComponent(item.path)
+        const stats = await FileUtil.statSync(item.path)
+        if(stats.isFile()) {
+            result.is_dir = false
+            const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+            const name = path.basename(sysPath);
+            const pojo = {
+                type:getFileFormat(name),
+                name: name,
+                mtime: mtime,
+                size: stats.size,
+                isLink: stats?.isSymbolicLink(),
+                path: sysPath
+            }
+            result.files.push(pojo)
+        } else {
+            let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+            const param_path =item.path
+            for (const item of items) {
+                const filePath = path.join(sysPath, item);
+                // 获取文件或文件夹的元信息
+                let stats: null | Stats = null;
+                try {
+                    stats = await FileUtil.statSync(filePath);
+                } catch (e) {
+                    console.log("读取错误", e);
+                }
+                let type:FileTypeEnum
+                let p:string
+                let size
+                if(!stats) continue;
+                if(stats.isFile()) {
+                    type = getFileFormat(item);
+                    p = path.join(param_path, item)
+                    size = stats.size
+                } else if(stats.isDirectory()) {
+                    type = FileTypeEnum.folder;
+                    p = param_path
+                } else {
+                    type = FileTypeEnum.dev;
+                    p = path.join(param_path, item)
+                    size = stats.size
+                }
+                const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+
+                const pojo = {
+                    type,
+                    name: item,
+                    mtime: mtime,
+                    size,
+                    isLink: stats?.isSymbolicLink(),
+                    path: p
+                }
+                result.files.push(pojo)
+            }
+        }
+        return Sucess(result);
     }
 }

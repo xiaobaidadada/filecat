@@ -8,6 +8,7 @@ import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {auth_key_map} from "./util/store.util";
 import {setTheme} from "./util/FunUtil";
+import {is_share} from "./util/WebPath";
 
 export const GlobalContext = createContext(undefined);
 
@@ -37,9 +38,11 @@ export const GlobalProvider = ({ children }) => {
         }
     }
     const reloadFileRoot = async ()=>{
+        if(is_share()) return
        await getItems();
     }
     const initUserInfo = async ()=> {
+        if(is_share()) return
         await reloadFileRoot();
         const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Sucess) {

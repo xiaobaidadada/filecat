@@ -6,4 +6,5 @@ export enum RCode {
     File_Max,
     PreFile,
     PROTECT_FILE,
+    need_token_share
 }

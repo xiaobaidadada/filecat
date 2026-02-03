@@ -9,6 +9,8 @@ import {file_share_item} from "../../../../../common/req/file.req";
 import {settingHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {NotySucess} from "../../../util/noty";
+import {routerConfig} from "../../../../../common/RouterConfig";
+import {copyToClipboard} from "../../../util/FunUtil";
 
 
 // 分享列表设置
@@ -60,7 +62,16 @@ export default function ShareListSetting() {
                         <InputText value={item.note} handleInputChange={(value) => {
                             item.note = value;
                         }} no_border={true}/>,
-                        <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/> ,
+                        <div>
+                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                            {
+                                item.id &&
+                                <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
+                                    const url = `${window.location.origin}/${routerConfig.share}/${item.id}`
+                                    copyToClipboard(url)
+                                }}/>
+                            }
+                        </div>
                     ];
                     return new_list;
                 })} width={"10rem"}/>

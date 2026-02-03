@@ -1,4 +1,5 @@
 import {Global} from "./global";
+import {routerConfig} from "../../../common/RouterConfig";
 
 Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
@@ -69,4 +70,10 @@ export function getRouterPath() {
         path = path.slice(sys_pre.length) || "/";
     }
     return path;
+}
+
+export function is_share (){
+    // todo
+   const abc = getRouterPath()
+    return abc.endsWith(routerConfig.share)
 }
