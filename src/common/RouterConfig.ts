@@ -9,6 +9,7 @@ export const routerConfig = {
     ddns:"ddns",
     net:"net",
     setting:"setting",
+    share:"share",
     "/":"/",
     "":""
 }

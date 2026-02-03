@@ -175,3 +175,29 @@ li:hover {
 ::-webkit-scrollbar-track:hover {
   background: #f0f0f0; /* 灰色 */
 }
+
+/* body 体*/
+.common-box {
+  width: 100%;
+  height: 100%;
+  /*border: 1px solid #ccc;*/
+  /*让元素在菜单头下部*/
+  padding-top: 5rem;
+  padding-right: .5rem;
+  padding-left: .5rem;
+}
+/*配合元素*/
+.common-box-top-left {
+  display: flex;
+  justify-content: flex-start; /* 水平左 */
+  align-items: flex-start;     /* 垂直上 */
+}
+.common-box-center-x {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: flex-start; /* 垂直不居中 */
+}
+.common-box-center {
+  display: grid;
+  place-items: center;
+}

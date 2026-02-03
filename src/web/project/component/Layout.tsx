@@ -27,6 +27,7 @@ const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
+const Share = React.lazy(()=> import('./file/component/Share'))
 
 
 function Layout() {
@@ -79,6 +80,11 @@ function Layout() {
         seconds,
         three
     ]
+    const hidden_navList : NavItem[][] = [
+        [
+            { rto: `${routerConfig.share}/`, component: <Share />}
+        ]
+    ]
     if (custom_fun_opt) {
         // @ts-ignore
         MainNavList[MainNavList.length - 1].push(custom_fun_opt);
@@ -113,7 +119,7 @@ function Layout() {
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
-            <CommonBody navList={MainNavList} nav_is_mobile={nav_style.is_mobile}>
+            <CommonBody navList={MainNavList} hidden_navList={hidden_navList} nav_is_mobile={nav_style.is_mobile}>
                 {/*文件*/}
                 <FileList/>
                 {/*ai聊天*/}

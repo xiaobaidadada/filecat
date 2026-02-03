@@ -5,15 +5,16 @@ import {To} from "./To";
 import {getRouterPath} from "../../project/util/WebPath";
 
 export interface NavItem {
-    icon: MaterialIcon,
-    name: string,
+    icon?: MaterialIcon, // 隐藏的不需要
+    name?: string, // 隐藏的也不需要
     rto: string,
-    clickFun?: Function,
+    clickFun?: Function, // 隐藏的也不需要
     component?:ReactNode
 }
 
 export interface NavProps {
     navList: NavItem[][],
+    hidden_navList?: NavItem[],
     nav_is_mobile: boolean,
 }
 

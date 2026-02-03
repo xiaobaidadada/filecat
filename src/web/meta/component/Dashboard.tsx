@@ -57,7 +57,7 @@ export function Menu(props) {
     </div>
 }
 
-// 普通容器
+// 普通容器 行列必须要在这个里面
 export function Dashboard(props) {
     return <div className={"dashboard"}>
         {props.children}
