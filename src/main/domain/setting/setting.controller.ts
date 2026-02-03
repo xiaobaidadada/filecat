@@ -213,6 +213,30 @@ export class SettingController {
         return Sucess(ai_agentService.get_env());
     }
 
+    @Get("/get_share_file_list")
+    get_share_file_list(@Req() ctx) {
+        // 全部数据配置，需要编辑权限才能看到
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        return Sucess(settingService.get_share_file_list());
+    }
+
+    @Post("/add_share_file_list")
+    add_share_file_list(@Body() req: any, @Req() ctx) {
+        // 全部数据配置，需要编辑权限才能看到
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        settingService.add_share_file(req,ctx.headers.authorization)
+        return Sucess("");
+    }
+
+    @Post("/set_share_file_list")
+    set_share_file_list(@Body() req: any, @Req() ctx) {
+        // 全部数据配置，需要编辑权限才能看到
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        settingService.set_share_file_list(req,ctx.headers.authorization)
+        return Sucess("");
+    }
+
+
     // 系统软件设置
     @Get("/outside/software/get")
     getSoftware() {

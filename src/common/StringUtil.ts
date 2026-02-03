@@ -128,6 +128,7 @@ export function generateSaltyUUID(context: string= "") {
     return result;
 }
 
+// 随机生成固定长度的字符串
 export function generateRandomHash(length = 16) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let hash = '';

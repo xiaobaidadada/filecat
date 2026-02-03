@@ -261,6 +261,15 @@ export function Permission(props:{
                    }}/>
             {t("文件回收站修改")}
         </div>
+        <div>
+            <input type="checkbox"
+                   disabled={props.is_disable(UserAuth.share_file)}
+                   checked={props.is_selected(UserAuth.share_file)}
+                   onChange={() => {
+                       props.select_auth(UserAuth.share_file)
+                   }}/>
+            {t("文件分享")}
+        </div>
 
 
         <h3>{t("标签编辑权限")}</h3>

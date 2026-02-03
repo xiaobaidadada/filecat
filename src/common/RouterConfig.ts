@@ -10,6 +10,7 @@ export const routerConfig = {
     net:"net",
     setting:"setting",
     share:"share",
+    share_list_setting_page:"share_list_setting_page",
     "/":"/",
     "":""
 }

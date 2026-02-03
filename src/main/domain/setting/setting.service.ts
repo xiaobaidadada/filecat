@@ -25,6 +25,8 @@ import {FileUtil} from "../file/FileUtil";
 import {get_base, get_sys_base_url_pre} from "../bin/bin";
 import {get_user_now_pwd} from "../../../common/DataUtil";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
+import {file_share_item} from "../../../common/req/file.req";
+import {generateRandomHash} from "../../../common/StringUtil";
 
 const needle = require('needle');
 const Mustache = require('mustache');
@@ -388,6 +390,31 @@ export class SettingService {
         } else {
             return r
         }
+    }
+
+    // 获取文件分享列表
+    get_share_file_list():file_share_item[] {
+        return DataUtil.get(data_common_key.share_file_list_key) ?? [];
+    }
+
+    add_share_file(item:file_share_item,token) {
+        const list = this.get_share_file_list()
+        list.push(item)
+        this.set_share_file_list(list,token)
+    }
+
+    set_share_file_list(list:file_share_item[],token) {
+        const time = Date.now()
+        for (const item of list) {
+            userService.check_user_path(token, item.path)
+            if(!item.id) {
+                item.id = generateRandomHash(8)
+            }
+            if(!item.time_stamp) {
+                item.time_stamp = time
+            }
+        }
+        DataUtil.set(data_common_key.share_file_list_key, list);
     }
 
     public getFilesSetting(token) {

@@ -89,7 +89,8 @@ export enum UserAuth {
     all_sys = 47, // 系统页面
     shell_cmd_filecat_restart, // shell 重启命令
     ai_agent_setting, // ai 模型设置
-    ai_agent_page, // ai 聊天页面
+    ai_agent_page= 50, // ai 聊天页面
+    share_file , // 文件分享功能
 }
 
 

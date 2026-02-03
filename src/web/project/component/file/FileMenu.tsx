@@ -18,10 +18,11 @@ import {Http_controller_router} from "../../../../common/req/http_controller_rou
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {FileListShowTypeEmum} from "../../../../common/req/user.req";
+import {FileListShowTypeEmum, UserAuth} from "../../../../common/req/user.req";
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextLine} from "../../../meta/component/Dashboard";
 import {TextTip} from "../../../meta/component/Card";
+import {routerConfig} from "../../../../common/RouterConfig";
 
 let dir_info = {} as any;
 const fileTypes = Object.values(FileListShowTypeEmum);
@@ -263,7 +264,9 @@ export function FileMenu() {
         }
         update_dir_info(dir_info);
     }
-
+    const file_share = ()=>{
+        navigate(`/${routerConfig.share_list_setting_page}`);
+    }
     return  <React.Fragment>
         {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
             setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {}})
@@ -281,6 +284,7 @@ export function FileMenu() {
             set_workflow_show(!workflow_show)
         }}/>}
         <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
+        {check_user_auth(UserAuth.share_file) && <ActionButton icon={"share"} title={"文件分享"} onClick={file_share}/>}
         <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
         <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
         <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>

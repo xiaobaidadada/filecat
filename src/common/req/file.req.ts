@@ -173,3 +173,13 @@ export class ws_file_upload_req {
     size: number;
     parallel_done_num: number; // 总并发数量
 }
+
+export class file_share_item {
+    path:string; // 文件的绝对路径
+    note:string;
+    left_hour:number; // 展示剩余小时
+    time_stamp:number; // 创建或者修改的时间戳
+    token?:string;
+    id:string;
+    is_dir?: boolean; // 加载的时候用到
+}

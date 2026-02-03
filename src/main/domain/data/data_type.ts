@@ -73,6 +73,7 @@ export enum data_common_key {
     http_server_key = "http_server_key",
     proxy_server_code_prefix = "proxy_server_code_prefix",
     ai_agent_model_setting = "ai_agent_model_setting", // ai模型的设置
+    share_file_list_key = "share_file_list_key",
 }
 
 

@@ -28,6 +28,7 @@ const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/Share'))
+const ShareListSetting = React.lazy(()=> import('./file/component/ShareListSetting'))
 
 
 function Layout() {
@@ -82,7 +83,8 @@ function Layout() {
     ]
     const hidden_navList : NavItem[][] = [
         [
-            { rto: `${routerConfig.share}/`, component: <Share />}
+            { rto: `${routerConfig.share}/`, component: <Share />},
+            { rto: `${routerConfig.share_list_setting_page}/`, component: <ShareListSetting />}
         ]
     ]
     if (custom_fun_opt) {
