@@ -47,4 +47,5 @@ export enum common_menu_type {
     file_copy_now_path = "file_copy_now_path", // 复制相对项目的路径
 
     un_compress = "un_compress",
+    share_file = "share_file",
 }

@@ -114,6 +114,7 @@ export const $stroe = {
             open: boolean,
             title?: string,
             cancel?:()=>any
+            confirm?:()=>any
         }
     }),
     // 编辑器设置

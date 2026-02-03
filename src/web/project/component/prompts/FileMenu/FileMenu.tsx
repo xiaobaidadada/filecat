@@ -4,17 +4,17 @@ import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
-import {NotyFail} from "../../../util/noty";
+import {NotyFail, NotySucess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
-import {FileTypeEnum} from "../../../../../common/file.pojo";
+import {FileCompressType, FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {common_menu_type, run_workflow} from "./handle.service";
-import {fileHttp, userHttp} from "../../../util/config";
+import {fileHttp, settingHttp, userHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import {InputText} from "../../../../meta/component/Input";
-import {workflow_pre_input} from "../../../../../common/req/file.req";
+import {InputText, Select} from "../../../../meta/component/Input";
+import {file_share_item, workflow_pre_input} from "../../../../../common/req/file.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../../GlobalProvider";
 import {useNavigate} from "react-router-dom";
@@ -24,6 +24,9 @@ import {PromptEnum} from "../Prompt";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {path_join} from "pty-shell/dist/path_util";
 import {SysEnum, UserBaseInfo} from "../../../../../common/req/user.req";
+import {CardPrompt} from "../../../../meta/component/Card";
+import {RCode} from "../../../../../common/Result.pojo";
+import {routerConfig} from "../../../../../common/RouterConfig";
 
 
 export function FileMenu() {
@@ -31,13 +34,24 @@ export function FileMenu() {
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
-    const file_copy = {
-        r: t("复制名字"), v: common_menu_type.file_copy_name, items:
-            [
-                {r: "复制绝对路径", v: common_menu_type.file_copy_ab_path},
-                {r: "复制当前路径", v: common_menu_type.file_copy_now_path}
-            ]
-    }
+    const navigate = useNavigate();
+
+
+    const must_needs = [
+        {
+            // 所有文件和目录都有的选项
+            r: t("复制名字"), v: common_menu_type.file_copy_name, items:
+                [
+                    {r: "复制绝对路径", v: common_menu_type.file_copy_ab_path},
+                    {r: "复制当前路径", v: common_menu_type.file_copy_now_path}
+                ]
+
+        },
+        {
+            // 所有文件和目录都有的选项
+            r: t("分享"), v: common_menu_type.share_file
+        }
+    ]
     const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
@@ -55,7 +69,7 @@ export function FileMenu() {
                     // {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
                 ]
         },
-        file_copy
+        ...must_needs
     ]
     if (user_base_info.user_data?.file_quick_cmd) {
         for (const it of user_base_info.user_data.file_quick_cmd) {
@@ -82,25 +96,39 @@ export function FileMenu() {
     const {initUserInfo} = useContext(GlobalContext);
     const [folder_info_list_data, set_folder_info_list_data] = useRecoilState($stroe.folder_info_list_data);
 
-    const navigate = useNavigate();
+
     const items_folder = [{r: t("以studio打开"), v: common_menu_type.sutdio}, {
         r: t("统计信息"),
         v: common_menu_type.folder_size_info
-    },file_copy];
+    },...must_needs];
     const items_images = [{
         r: t("以图片编辑器打开"),
         v: "open"
     },
         {r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`), v: "pre"},
-        file_copy];
+        ...must_needs];
     const {file_is_running} = use_file_to_running();
 
     const close = () => {
         setShowPrompt({show: false, type: '', overlay: false, data: {}});
     }
+
+
+    const get_ab_path = ()=>{
+        const path = UserBaseInfo.get_now_dir(user_base_info)
+        let fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
+        if(user_base_info.sys === SysEnum.win) {
+            fp = fp.replaceAll("/", '\\')
+        } else if(fp.includes("\\")) {
+            fp = fp.replaceAll("\\", '/')
+        }
+        return path_join(fp,showPrompt.data.filename)
+    }
+
     let div; // useEffect 是已经渲染过了再执行
     const pojo = showPrompt.data;
-    const textClick = async (v, item) => {
+    const right_click = async (v, item) => {
+        // 右键点击了某个选项
         close();
         switch (v) {
             case common_menu_type.open_text: {
@@ -204,14 +232,7 @@ export function FileMenu() {
                 copyToClipboard(path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())),showPrompt.data.filename))
                 break;
             case common_menu_type.file_copy_ab_path:
-                const path = UserBaseInfo.get_now_dir(user_base_info)
-                let fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
-                if(user_base_info.sys === SysEnum.win) {
-                    fp = fp.replaceAll("/", '\\')
-                } else if(fp.includes("\\")) {
-                    fp = fp.replaceAll("\\", '/')
-                }
-                copyToClipboard(path_join(fp,showPrompt.data.filename))
+                copyToClipboard(get_ab_path())
                 break;
             case    common_menu_type.sutdio : {
                 set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
@@ -225,6 +246,39 @@ export function FileMenu() {
                 const p = getRouterAfter('file', showPrompt.data.path);
                 ws.sendData(CmdType.folder_size_info, {path: p})
                 setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
+            }
+            break;
+            case common_menu_type.share_file:{
+                const item = new file_share_item()
+                item.path = get_ab_path()
+                item.left_hour = 0
+                const save_item = async () => {
+                    // 确定保存
+                    const result = await settingHttp.post("add_share_file_list", item);
+                    if (result.code === RCode.Sucess) {
+                        NotySucess("添加成功")
+                        set_prompt_card({open:false})
+                        navigate(`/${routerConfig.share_list_setting_page}`);
+                    }
+                }
+                set_prompt_card({
+                    open: true,
+                    title: "share file",
+                    confirm:save_item,
+                    context_div: (
+                        <div className="card-content">
+                            <InputText placeholderOut={t("路径")} value={item.path}
+                                       handleInputChange={(value) => item.path = value}/>
+                            <InputText placeholderOut={t("剩余过期时间（小时)")} value={item.left_hour}
+                                       handleInputChange={(value) => item.left_hour = parseInt(value)}/>
+                            <InputText placeholderOut={t("token(可以为空)")}
+                                       handleInputChange={(value) => item.token = value}/>
+                            <InputText placeholderOut={t("备注")}
+                                       handleInputChange={(value) => item.note = value}/>
+                        </div>
+                    ),
+
+                })
             }
             break;
         }
@@ -251,7 +305,7 @@ export function FileMenu() {
             div = <div onWheel={() => {
                 close();
             }}>
-                <UnCompress list={[file_copy]} click={textClick}/>
+                <UnCompress list={must_needs} click={right_click}/>
             </div>
             break;
         case FileTypeEnum.dev:
@@ -285,7 +339,7 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_folder} click={textClick}/>}/>
+                                                                          items={items_folder} click={right_click}/>}/>
             </div>
             break;
         case FileTypeEnum.studio_file:
@@ -325,7 +379,7 @@ export function FileMenu() {
             }}>
                 <OverlayTransparent click={close}
                                     children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items}
-                                                            click={textClick}/>}/>
+                                                            click={right_click}/>}/>
             </div>
         }
     }

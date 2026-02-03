@@ -100,7 +100,9 @@ export function CardPrompt(props: {
             <h2>{props.title}</h2>
         </div>
         <div className="card-content">
-            {props.context && props.context.map((value, index) => (<div key={index}>{value}</div>))}
+            {props.context && Array.isArray(props.context)
+            ? props.context.map((value, index) => (<React.Fragment key={index}>{value}</React.Fragment>))
+            : props.context}
         </div>
         <div className="card-action">
             <button className="button button--flat button--grey" onClick={props.cancel}>

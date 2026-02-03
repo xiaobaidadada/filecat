@@ -23,7 +23,7 @@ export class GlobalErrorHandler implements ExpressErrorMiddlewareInterface  {
     error(error: any, request: any, response: Response, next: (err: any) => any) {
         console.error("全局异常拦截", error);
         // next不再执行
-        response.status(200).send(Fail(JSON.stringify(error)));
+        response.status(200).send(Fail(JSON.stringify(error?.message ?? JSON.stringify(error))));
         return;
     }
 }
