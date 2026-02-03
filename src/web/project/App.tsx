@@ -9,7 +9,7 @@ import { useLocation   } from 'react-router-dom';
 import {useRecoilState} from "recoil";
 import {$stroe} from "./util/store";
 import {GlobalContext} from "./GlobalProvider";
-import {getRouterPath} from "./util/WebPath";
+import {getRouterPath, is_share} from "./util/WebPath";
 import '../meta/resources/css/all.css'
 
 const Layout = React.lazy(() => import("./component/Layout"));
@@ -30,7 +30,7 @@ function App() {
         }
     }, []);
     useEffect( () => {
-
+        if(is_share()) return
         if (befor === getRouterPath() || befor=== "/" || befor==='/login') {
             return;
         }

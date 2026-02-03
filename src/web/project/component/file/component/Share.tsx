@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Dashboard, FullScreenDiv} from "../../../../meta/component/Dashboard";
 import {CardFull} from "../../../../meta/component/Card";
 import {useRecoilState} from "recoil";
@@ -6,16 +6,13 @@ import {$stroe} from "../../../util/store";
 import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "../FileListLoad";
 import {ButtonText} from "../../../../meta/component/Button";
 import {getFileFormat} from "../../../../../common/FileMenuType";
-import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../util/WebPath";
 import {routerConfig} from "../../../../../common/RouterConfig";
 import {fileHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
+import {file_share_item} from "../../../../../common/req/file.req";
 
-type FileItem = {
-    name: string;
-    size: number;
-    type: "file" | "dir";
-};
+type FileItem = file_share_item
 
 type ShareData = {
     is_dir: boolean;
@@ -26,11 +23,12 @@ type ShareData = {
 
 export default function Share() {
     const [data, setData] = useState<ShareData | null>(null);
+    const share_id = useRef();
+    const share_token = useRef();
+
     const get_file = async ()=>{
-        let id = `${getRouterAfter(routerConfig.share, getRouterPath())}`
-        if(id.endsWith("/")){
-            id = id.slice(0, -1);
-        }
+        const id = remove_router_tail(`${getRouterAfter(routerConfig.share, getRouterPath())}`)
+        share_id.current = id;
         const r = await fileHttp.post(`share`,{
             id
         })
@@ -40,9 +38,8 @@ export default function Share() {
             }
             if(!p.is_dir) {
                 p.name = r.data.files[0].name
-            } else {
-                p.items = r.data.files
             }
+            p.items = r.data.files ??[]
             setData(p)
         }
     }
@@ -106,7 +103,13 @@ export default function Share() {
                                         </div>
                                     )}
 
-                                    <ButtonText text={"download"}/>
+                                    <ButtonText text={"download"} clickFun={()=>{
+                                        const url = fileHttp.getDownloadUrlV2(data.items[0].path,"share_download",{
+                                            share_id:share_id.current,
+                                            share_token:share_token.current
+                                        });
+                                        window.open(url);
+                                    }}/>
                                 </div>
                             </CardFull>
                             :

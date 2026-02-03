@@ -1,5 +1,6 @@
 import {Global} from "./global";
 import {routerConfig} from "../../../common/RouterConfig";
+import { path_join } from "../../../common/path_util";
 
 Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
@@ -18,6 +19,13 @@ export function getRouterAfter(keyRouter,router) {
         }
     }
     return result;
+}
+
+export function remove_router_tail(router) {
+    if(router.endsWith("/")){
+        router = router.slice(0, -1);
+    }
+    return router;
 }
 
 // 获取资源所在的路径上一级 会以/结尾
@@ -73,7 +81,6 @@ export function getRouterPath() {
 }
 
 export function is_share (){
-    // todo
    const abc = getRouterPath()
-    return abc.endsWith(routerConfig.share)
+    return path_join("/",abc).startsWith(`/${routerConfig.share}`)
 }

@@ -15,7 +15,7 @@ import fse from 'fs-extra'
 import path from "path";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {rimraf} from "rimraf";
-import {cutCopyReq, fileInfoReq, ws_file_upload_req} from "../../../common/req/file.req";
+import {cutCopyReq, file_share_item, fileInfoReq, ws_file_upload_req} from "../../../common/req/file.req";
 import {formatFileSize} from "../../../common/ValueUtil";
 import {settingService} from "../setting/setting.service";
 import {CmdType, WsData} from "../../../common/frame/WsData";
@@ -707,8 +707,8 @@ export class FileService extends FileCompress {
         readStream.pipe(res);
     }
 
-    async download(ctx) {
-        const file = ctx.query.file;
+    async download_for_private(ctx) {
+        let file = ctx.query.file;
         if (!file || !file.length) {
             ctx.res.status(404).send('File not found');
             return;
@@ -716,12 +716,77 @@ export class FileService extends FileCompress {
         const token = ctx.query['token'];
         const cache = ctx.query['cache'];
         const show = ctx.query['show'];
+        const range = ctx.header("Range");
+        const res = ctx.res
+        if (!Array.isArray(file)) {
+            const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+            file = sysPath;
+            userService.check_user_path(token, sysPath)
+        } else {
+            const files: string [] = file;
+            const new_files = []
+            for (const file of files) {
+                const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+                userService.check_user_path(token, sysPath)
+                new_files.push(sysPath);
+            }
+            file = new_files
+        }
+        this.download({file,token,cache,show,range,res})
+    }
+
+    async download_for_public(ctx) {
+        const file = ctx.query.file;
+        if (!file || !file.length) {
+            ctx.res.status(404).send('File not found');
+            return;
+        }
+        // const token = ctx.query['token'];
+        const cache = ctx.query['cache'];
+        const show = ctx.query['show'];
+        const range = ctx.header("Range");
+        const res = ctx.res
+
+        const share_id = ctx.query['share_id'];
+        const share_token = ctx.query['share_token'];
+
+        const list = settingService.get_share_file_list();
+        let item: file_share_item;
+        for (const i of list) {
+            if (i.id === share_id) {
+                item = i;
+                break
+            }
+        }
+        if (!item) {
+            res.status(400).send("未知分享");
+            return;
+        }
+        if(item.token) {
+            if(item.token !== share_token) {
+                res.status(400).send("token错误");
+                return;
+            }
+        }
+        this.download({file,cache,show,range,res})
+    }
+
+    private async download({file,cache,show,range,res}:any) {
+        // const file = ctx.query.file;
+        // if (!file || !file.length) {
+        //     ctx.res.status(404).send('File not found');
+        //     return;
+        // }
+        // const token = ctx.query['token'];
+        // const cache = ctx.query['cache'];
+        // const show = ctx.query['show'];
         if (!Array.isArray(file)) {
             // 单个文件
-            const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+            // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+            const sysPath = decodeURIComponent(file);
             const fileName = path.basename(sysPath)
             const stats = await FileUtil.statSync(sysPath);
-            const range = ctx.header("Range");
+            // const range = ctx.header("Range");
             const fileSize = stats.size;
             if (range) {
                 const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
@@ -729,32 +794,32 @@ export class FileService extends FileCompress {
                 const startByte = parseInt(start, 10);
                 const endByte = end ? parseInt(end, 10) : fileSize - 1;
                 if (startByte >= fileSize) {
-                    ctx.res.status(416).send("Requested range not satisfiable");
+                    res.status(416).send("Requested range not satisfiable");
                     return;
                 }
                 const chunkSize = endByte - startByte + 1;
                 const readStream = fs.createReadStream(sysPath, {start: startByte, end: endByte});
-                ctx.res.status(206);
-                ctx.res.set({
+                res.status(206);
+                res.set({
                     "Content-Range": `bytes ${startByte}-${endByte}/${fileSize}`,
                     "Accept-Ranges": "bytes",
                     "Content-Length": chunkSize,
                     "Content-Type": mime.lookup(fileName) || "application/octet-stream",
                     "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
                 });
-                readStream.pipe(ctx.res);
+                readStream.pipe(res);
                 return;
             }
             if (stats.isFile()) {
-                this.download_one_file(fileName, fileSize, sysPath, ctx.res, {
+                this.download_one_file(fileName, fileSize, sysPath, res, {
                     cache: cache === "1",
                     handle_type_: show === "1" ? "inline" : "attachment"
                 });
                 // ctx.res.body = fs.createReadStream(sysPath);
             } else {
-                ctx.res.attachment(path.basename(sysPath) + ".zip");
+                res.attachment(path.basename(sysPath) + ".zip");
                 const archive = archiver('zip', {zlib: {level: 5}});
-                archive.pipe(ctx.res);
+                archive.pipe(res);
                 archive.directory(sysPath, path.basename(sysPath));
                 archive.finalize();
             }
@@ -764,16 +829,17 @@ export class FileService extends FileCompress {
             const archive = archiver('zip', {
                 zlib: {level: 5} // 设置压缩级别
             });
-            ctx.res.attachment("output.zip");
-            ctx.res.set('Content-Type', 'application/octet-stream');
+            res.attachment("output.zip");
+            res.set('Content-Type', 'application/octet-stream');
             // ctx.set('Content-Type', 'application/zip');
             // ctx.set('Content-Disposition', 'attachment; filename=output.zip');
             // const stream = new Stream.PassThrough()
             // ctx.res.body = stream
             // 将压缩后的文件流发送给客户端
-            archive.pipe(ctx.res)
+            archive.pipe(res)
             for (const file of files) {
-                const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+                // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+                const sysPath = decodeURIComponent(file);
                 const stats = await FileUtil.statSync(sysPath);
                 if (stats.isFile()) {
                     archive.file(sysPath, {name: path.basename(sysPath)});
@@ -1352,6 +1418,84 @@ export class FileService extends FileCompress {
             watcher.close();
             this.file_change_watcher_map.delete(pojo.token);
         });
+    }
+
+    public async get_share_info(id:string,token:string) {
+        const list = settingService.get_share_file_list();
+        let item: file_share_item;
+        for (const i of list) {
+            if (i.id === id) {
+                item = i;
+                break
+            }
+        }
+        if (!item) throw "未知分享"
+        if (item.token) {
+            if (token !== item.token) {
+                return Sucess("", RCode.need_token_share)
+            }
+        }
+        const result = {
+            is_dir: true,
+            files: []
+        }
+        const sysPath = decodeURIComponent(item.path)
+        const stats = await FileUtil.statSync(item.path)
+        if(stats.isFile()) {
+            result.is_dir = false
+            const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+            const name = path.basename(sysPath);
+            const pojo = {
+                type:getFileFormat(name),
+                name: name,
+                mtime: mtime,
+                size: stats.size,
+                isLink: stats?.isSymbolicLink(),
+                path: sysPath
+            }
+            result.files.push(pojo)
+        } else {
+            let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+            const param_path =item.path
+            for (const item of items) {
+                const filePath = path.join(sysPath, item);
+                // 获取文件或文件夹的元信息
+                let stats: null | Stats = null;
+                try {
+                    stats = await FileUtil.statSync(filePath);
+                } catch (e) {
+                    console.log("读取错误", e);
+                }
+                let type:FileTypeEnum
+                let p:string
+                let size
+                if(!stats) continue;
+                if(stats.isFile()) {
+                    type = getFileFormat(item);
+                    p = path.join(param_path, item)
+                    size = stats.size
+                } else if(stats.isDirectory()) {
+                    type = FileTypeEnum.folder;
+                    p = param_path
+                } else {
+                    type = FileTypeEnum.dev;
+                    p = path.join(param_path, item)
+                    size = stats.size
+                }
+                const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+
+                const pojo = {
+                    type,
+                    name: item,
+                    mtime: mtime,
+                    size,
+                    isLink: stats?.isSymbolicLink(),
+                    path: p
+                }
+                result.files.push(pojo)
+            }
+        }
+        return Sucess(result);
     }
 }
 

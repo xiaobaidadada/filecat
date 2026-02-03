@@ -56,7 +56,7 @@ export class FileController {
 
     @Post('/file_get_page')
     async get_list(@Req() ctx, @Body() data: any) {
-        return FileServiceImpl.get_list(ctx.headers.authorization, data.param_path,data.page_num,data.page_size,data.search);
+        return FileServiceImpl.get_list(ctx.headers.authorization, data.param_path, data.page_num, data.page_size, data.search);
     }
 
     @msg(CmdType.file_info)
@@ -300,83 +300,11 @@ export class FileController {
         await FileServiceImpl.stop_folder_info(data.context.path, (data.wss as Wss).token);
     }
 
-    @Public()
+    @Public("/file/share")
     @Post("/share")
     async get_share_info(@Req() ctx, @Body() data: any) {
-        const list = settingService.get_share_file_list();
-        let item: file_share_item;
-        for (const i of list) {
-            if (i.id === data.id) {
-                item = i;
-                break
-            }
-        }
-        if (!item) throw "未知分享"
-        if (item.token) {
-            if (!data.token) {
-                return Sucess("", RCode.need_token_share)
-            }
-        }
-        const result = {
-            is_dir: true,
-            files: []
-        }
-        const sysPath = decodeURIComponent(item.path)
-        const stats = await FileUtil.statSync(item.path)
-        if(stats.isFile()) {
-            result.is_dir = false
-            const mtime = stats ? new Date(stats.mtime).getTime() : 0;
-            const name = path.basename(sysPath);
-            const pojo = {
-                type:getFileFormat(name),
-                name: name,
-                mtime: mtime,
-                size: stats.size,
-                isLink: stats?.isSymbolicLink(),
-                path: sysPath
-            }
-            result.files.push(pojo)
-        } else {
-            let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
-            const param_path =item.path
-            for (const item of items) {
-                const filePath = path.join(sysPath, item);
-                // 获取文件或文件夹的元信息
-                let stats: null | Stats = null;
-                try {
-                    stats = await FileUtil.statSync(filePath);
-                } catch (e) {
-                    console.log("读取错误", e);
-                }
-                let type:FileTypeEnum
-                let p:string
-                let size
-                if(!stats) continue;
-                if(stats.isFile()) {
-                    type = getFileFormat(item);
-                    p = path.join(param_path, item)
-                    size = stats.size
-                } else if(stats.isDirectory()) {
-                    type = FileTypeEnum.folder;
-                    p = param_path
-                } else {
-                    type = FileTypeEnum.dev;
-                    p = path.join(param_path, item)
-                    size = stats.size
-                }
-                const mtime = stats ? new Date(stats.mtime).getTime() : 0;
-
-                const pojo = {
-                    type,
-                    name: item,
-                    mtime: mtime,
-                    size,
-                    isLink: stats?.isSymbolicLink(),
-                    path: p
-                }
-                result.files.push(pojo)
-            }
-        }
-        return Sucess(result);
+        return FileServiceImpl.get_share_info(data.id, data.token)
     }
+
+
 }

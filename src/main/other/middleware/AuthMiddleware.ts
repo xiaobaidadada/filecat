@@ -5,6 +5,7 @@ import {settingService} from "../../domain/setting/setting.service";
 import {sshService} from "../../domain/ssh/ssh.service";
 import {Request, Response} from 'express';
 import {get_sys_base_url_pre} from "../../domain/bin/bin";
+import {public_list} from "./decorator";
 
 // const pathRegex = /^(?!.*\/api).*$/;
 // const pathRegex = new RegExp(`^(?!(\/${get_sys_base_url_pre()}))`);
@@ -16,18 +17,32 @@ import {get_sys_base_url_pre} from "../../domain/bin/bin";
 export class AuthMiddleware implements ExpressMiddlewareInterface {
 
      download_start_pre = get_sys_base_url_pre()+"/download";
+    share_download_start_pre = get_sys_base_url_pre()+"/share_download";
      ssh_download_start_pre = get_sys_base_url_pre()+"/ssh/download";
      login_start_pre = get_sys_base_url_pre()+"/user/login";
 
     async use(req: Request, res: Response, next: (err?: any) => Promise<any>): Promise<any> {
+        // 先对public方法路由判断
+        if(public_list.length) {
+            for (let i = 0; i < public_list.length; i++) {
+                if(req.originalUrl.startsWith(public_list[i])) {
+                    next()
+                    return ;
+                }
+            }
+        }
         // 下载拦截
+        if(req.originalUrl.startsWith(this.share_download_start_pre)) {
+            FileServiceImpl.download_for_public(req);
+            return ;
+        }
         if (req.originalUrl.startsWith(this.download_start_pre)) {
             const token:string = req.query['token'] as string;
             if (!await settingService.check(token)) {
                 res.send(JSON.stringify(AuthFail('失败')));
                 return
             }
-            FileServiceImpl.download(req);
+            FileServiceImpl.download_for_private(req);
             return ;
         }
         // 校验可以用params

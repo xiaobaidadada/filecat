@@ -47,7 +47,11 @@ export class Http {
     }
 
     getDownloadUrl(files,params?:any) {
-        let url = config.baseUrl+"download?";
+        return this.getDownloadUrlV2(files,"download",params);
+    }
+
+    getDownloadUrlV2(files,pre_url,params?:any) {
+        let url = config.baseUrl+`${pre_url}?`;
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
                 if (file.endsWith("/")  || file.endsWith("\\")) {
