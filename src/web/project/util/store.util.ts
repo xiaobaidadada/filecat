@@ -12,19 +12,21 @@ import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../common/ValueUtil";
 import {Ace as AceItem} from "ace-builds";
-import {UserAuth} from "../../../common/req/user.req";
+import {UserAuth, UserBaseInfo} from "../../../common/req/user.req";
+import {path_join} from "pty-shell/dist/path_util";
+import {Http} from "./http";
 
-async function get_file_context(path, is_sys_path) {
-    if (is_sys_path) {
-        path += "?is_sys_path=1"
-    }
-    const rsq = await fileHttp.get(path);
-    if (rsq.code === RCode.Sucess) {
-        NotyFail("超过20MB");
-        return;
-    }
-    return rsq.data;
-}
+// async function get_file_context(path, is_sys_path) {
+//     if (is_sys_path) {
+//         path += "?is_sys_path=1"
+//     }
+//     const rsq = await fileHttp.get(path);
+//     if (rsq.code === RCode.Sucess) {
+//         NotyFail("超过20MB");
+//         return;
+//     }
+//     return rsq.data;
+// }
 
 export const user_click_file = () => {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
@@ -32,20 +34,26 @@ export const user_click_file = () => {
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
-
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
 
     const click_file = async (param: {
         name,
         size?: number,
         ignore_size?: boolean,
-        context?: string,
         model?: string,
-        sys_path?: string,
         menu_list?: any[],
         opt_shell?: boolean,
         mtime?: any,
+        // 提供自定义的编辑来源 只用于txt文本编辑
+        file_path?: string,
+        file_url?: string,
+        context?: string,
+        get_file_fun?: () => Promise<string>,
+        save_file_fun?: (text: string) => Promise<void>,
     }) => {
+        const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
+
         if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
             setShowPrompt({
                 open: true,
@@ -62,13 +70,20 @@ export const user_click_file = () => {
         const {name, context} = param;
         let model = getEditModelType(name);
         const type = getFileFormat(name);
+        const file_path_ = param.file_path ?? path_join(ab_dir_path, `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`)
+        const url = param.file_url ?? fileHttp.getDownloadUrl(file_path_);
         if (param.model === "text") {
             // 双击文件
             let value;
             if (context) {
                 value = context;
+            } else if(param.get_file_fun) {
+                value = await param.get_file_fun()
             } else {
-                value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, !!param.sys_path);
+                value = await Http.get(url);
+                // console.log(value)
+                // console.log(url)
+                // value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, !!param.sys_path);
                 // if (!value) {
                 //     return;
                 // }
@@ -77,33 +92,37 @@ export const user_click_file = () => {
             //     model = "text";
             // }
             let m = undefined;
-            if(type === FileTypeEnum.workflow_act){
+            if (type === FileTypeEnum.workflow_act) {
                 m = "ace/mode/yaml"
-            } else if(type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw){
+            } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw) {
                 m = "ace/mode/json"
             }
             setEditorSetting({
                 menu_list: param.menu_list,
-                model:m,
+                model: m,
                 open: true,
                 fileName: name,
                 save: async (context) => {
+                    if(param.save_file_fun) {
+                        await param.save_file_fun(context);
+                        return;
+                    }
                     const data: saveTxtReq = {
                         context
                     }
-                    const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
-                    const rsq = await fileHttp.post(`save/${param.sys_path ?? `${v}${name}`}?is_sys_path=${param.sys_path ? 1 : 0}`, data)
+                    // const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
+                    const rsq = await fileHttp.post(`save/${file_path_}`, data)
                     if (rsq.code === 0) {
                         editor_data.set_value_temp('')
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
                 },
-                opt_shell:param.opt_shell
+                opt_shell: param.opt_shell
             })
             editor_data.set_value_temp(value)
             return;
         } else {
-            let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
+            // let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
             switch (type) {
                 case FileTypeEnum.draw:
                 case FileTypeEnum.excalidraw:
@@ -111,7 +130,7 @@ export const user_click_file = () => {
                     break;
                 case FileTypeEnum.md:
                     set_markdown({
-                        context: await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, false),
+                        context: await Http.get(url),
                         filename: name
                     })
                     break;
@@ -120,14 +139,19 @@ export const user_click_file = () => {
                     setFilePreview({open: true, type: type, name, url})
                     break;
                 case FileTypeEnum.image:
-                    setFilePreview({open: true, type: type, name, url:fileHttp.getDownloadUrl(getFileNameByLocation(name),{mtime:param.mtime,cache:1})})
+                    setFilePreview({
+                        open: true,
+                        type: type,
+                        name,
+                        url: fileHttp.getDownloadUrl(getFileNameByLocation(name), {mtime: param.mtime, cache: 1})
+                    })
                     break;
                 case FileTypeEnum.workflow_act:
                     param.model = "text";
                     click_file(param);
                     break;
                 case FileTypeEnum.url:
-                    window.open( await get_file_context(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, false), '_blank');
+                    window.open(await Http.get(url), '_blank');
                     break;
                 case FileTypeEnum.unknow:
                 default:
@@ -152,10 +176,10 @@ export const use_auth_check = () => {
 
     const check_user_auth = (auth: UserAuth) => {
         const v = auth_key_map.get(auth);
-        if(v !== undefined) {
+        if (v !== undefined) {
             return v;
         }
-        if(user_base_info?.user_data?.is_root) return true;
+        if (user_base_info?.user_data?.is_root) return true;
         for (const v of (user_base_info.user_data?.auth_list ?? [])) {
             if (v === auth) {
                 auth_key_map.set(auth, true);
@@ -172,9 +196,9 @@ export const use_auth_check = () => {
 
 export const use_file_to_running = () => {
     const [to_running_files_set, set_to_runing_files_set] = useRecoilState($stroe.to_running_files);
-        // useEffect(()=>{
-        //     // console.log(to_runing_files_set)
-        // },[to_running_files_set])
+    // useEffect(()=>{
+    //     // console.log(to_runing_files_set)
+    // },[to_running_files_set])
     const file_is_running = (filename: string) => {
         return to_running_files_set.has(filename);
     }
@@ -184,35 +208,35 @@ export const use_file_to_running = () => {
 
 export class editor_data {
 
-    static cache_str_map: Map<number,string> = new Map();
-    static editor_map: Map<number,AceItem.Editor>  = new Map();
+    static cache_str_map: Map<number, string> = new Map();
+    static editor_map: Map<number, AceItem.Editor> = new Map();
 
     //  设置临时值 用于全局传递
-    public static set_value_temp(v: string,editor_id?:number) {
-        editor_data.cache_str_map.set(editor_id===undefined?0:editor_id, v)
+    public static set_value_temp(v: string, editor_id?: number) {
+        editor_data.cache_str_map.set(editor_id === undefined ? 0 : editor_id, v)
     }
 
-    public static get_value_temp(editor_id?:number) {
-        return editor_data.cache_str_map.get(editor_id===undefined?0:editor_id);
+    public static get_value_temp(editor_id?: number) {
+        return editor_data.cache_str_map.get(editor_id === undefined ? 0 : editor_id);
     }
 
-    public static set_editor_temp(v: AceItem.Editor ,editor_id?:number) {
-        editor_data.editor_map.set(editor_id===undefined?0:editor_id, v);
+    public static set_editor_temp(v: AceItem.Editor, editor_id?: number) {
+        editor_data.editor_map.set(editor_id === undefined ? 0 : editor_id, v);
     }
 
-    public static delete_editor_temp(editor_id?:number) {
-        editor_data.editor_map.delete(editor_id===undefined?0:editor_id);
+    public static delete_editor_temp(editor_id?: number) {
+        editor_data.editor_map.delete(editor_id === undefined ? 0 : editor_id);
     }
 
-    public static get_editor_value(editor_id?:number) {
+    public static get_editor_value(editor_id?: number) {
         // if (!editor_data.editor_map.has(editor_id)) {
         //     throw "不存在编辑器";
         // }
-        return editor_data.editor_map.get(editor_id===undefined?0:editor_id).getValue();
+        return editor_data.editor_map.get(editor_id === undefined ? 0 : editor_id).getValue();
     }
 
-    public static get_editor(editor_id?:number) {
-        return this.editor_map.get(editor_id===undefined?0:editor_id);
+    public static get_editor(editor_id?: number) {
+        return this.editor_map.get(editor_id === undefined ? 0 : editor_id);
     }
 
     // public static set_value(v: string, filename?: string) {
@@ -256,22 +280,22 @@ export function createChunks(base64Str, size) {
 
 export function get_proxy_menuRots() {
     const {check_user_auth} = use_auth_check();
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
     const menuRots = [];
-    if(check_user_auth(UserAuth.http_proxy)) {
-        menuRots.push({index: 1, name: t("http代理"),rto:'http/'})
+    if (check_user_auth(UserAuth.http_proxy)) {
+        menuRots.push({index: 1, name: t("http代理"), rto: 'http/'})
     }
-    if(check_user_auth(UserAuth.ssh_proxy)) {
+    if (check_user_auth(UserAuth.ssh_proxy)) {
         menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/*"})
     }
-    if(check_user_auth(UserAuth.browser_proxy)) {
+    if (check_user_auth(UserAuth.browser_proxy)) {
         menuRots.push({index: 1, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/"})
     }
-    if(check_user_auth(UserAuth.rdp_proxy)) {
+    if (check_user_auth(UserAuth.rdp_proxy)) {
         menuRots.push({index: 1, name: `rdp${t("代理")}`, rto: "rdp/"})
     }
-    if(check_user_auth(UserAuth.rtsp_proxy)) {
+    if (check_user_auth(UserAuth.rtsp_proxy)) {
         menuRots.push({index: 1, name: t("rtsp播放器"), rto: "rtsp/"})
     }
     return {menuRots};

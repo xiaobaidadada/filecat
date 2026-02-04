@@ -1,5 +1,5 @@
 import axios from "axios";
-import { fetchEventSource } from '@microsoft/fetch-event-source';
+import {fetchEventSource} from '@microsoft/fetch-event-source';
 import {RCode} from "../../../common/Result.pojo";
 import {Result} from "../../../main/other/Result";
 import {NotyFail} from "./noty";
@@ -40,6 +40,27 @@ export class Http {
             });
             this.check(rsq.data);
             return rsq.data
+        }catch(err) {
+            NotyFail(JSON.stringify(err));
+            throw err;
+        }
+    }
+
+    // 返回的是文本
+    public static async get(path:string):Promise<string> {
+        try {
+            const res = await fetch(path,{
+                headers:{
+                    Authorization: localStorage.getItem('token')
+                }
+            });
+            // const rsq = await axios.get(path,{
+            //     headers: {
+            //         Authorization: localStorage.getItem('token')
+            //     }
+            // });
+            // return rsq.data
+            return await res.text();
         }catch(err) {
             NotyFail(JSON.stringify(err));
             throw err;

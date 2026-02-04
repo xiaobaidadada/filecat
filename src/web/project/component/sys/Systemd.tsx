@@ -199,7 +199,8 @@ export function Systemd(props) {
                     if (rsq.data.path[0] === "/") {
                         rsq.data.path =  rsq.data.path.slice(1);
                     }
-                    const rsq1 = await fileHttp.post(`save/${rsq.data.path}?is_sys_path=1`, data)
+                    // 取决于是否有修改这个文件的权限了
+                    const rsq1 = await fileHttp.post(`save/${rsq.data.path}`, data)
                     // const rsq1 = await fileHttp.post("common/save", data)
                     if (rsq1.code === RCode.Sucess) {
                         editor_data.set_value_temp('')

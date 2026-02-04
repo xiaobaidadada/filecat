@@ -196,6 +196,7 @@ export default function FileList() {
     const clickBlank = (event) => {
         if (event.target === event.currentTarget) {
             setSelectList([])
+            setClickList([])
         }
     }
 

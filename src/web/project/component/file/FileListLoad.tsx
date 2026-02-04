@@ -12,6 +12,8 @@ import {PromptEnum} from "../prompts/Prompt";
 import {scanFiles} from "../../util/file";
 import {RemoteLinuxFileItem} from "../proxy/remotelinux/RemoteLinuxFileItem";
 import {ShareFileItem} from "./component/share/ShareFileItem";
+import {file_share_item} from "../../../../common/req/file.req";
+import {FileItemData} from "../../../../common/file.pojo";
 
 
 // 同时渲染文件夹和文件的基本列表 用于文件分享
@@ -19,13 +21,15 @@ export function FileListLoad_file_folder_for_file_share(
     {
         handleContextMenu,
         file_list,
-        folder_list,
-        clickBlank
+        // folder_list,
+        clickBlank,
+        share
     }: {
         handleContextMenu: any, // 右键空白
-        file_list: file_show_item[],
-        folder_list?: file_show_item[],
+        file_list: FileItemData[],
+        // folder_list?: file_show_item[],
         clickBlank: any // 点击空白
+        share:{share_id:string,share_token:string}
     }) {
     // 基础信息 通用
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
@@ -36,12 +40,12 @@ export function FileListLoad_file_folder_for_file_share(
     const itemWidth = using_file_page_handle_width_auto()
     const {file_is_running} = use_file_to_running();
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
+    const folders_len = 0
 
     // 没有上传功能
     // using_drop_file_upload(inputRef, PromptEnum.SshUpload)
     // 快捷键
-    using_file_quick_keyboard(file_list, folder_list, inputRef)
+    using_file_quick_keyboard(file_list, [], inputRef)
 
 
     return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
@@ -53,7 +57,7 @@ export function FileListLoad_file_folder_for_file_share(
         <div onClick={clickBlank}>
             {file_list.map((v, index) => (
                 <React.Fragment key={index + folders_len}>
-                    <ShareFileItem item_list={file_list} icon={file_is_running(v.name) ? "refresh" : undefined} itemWidth={itemWidth}
+                    <ShareFileItem share={share} item_list={file_list} icon={file_is_running(v.name) ? "refresh" : undefined} itemWidth={itemWidth}
                                    index={index + folders_len}  {...v}  />
                 </React.Fragment>
             ))}

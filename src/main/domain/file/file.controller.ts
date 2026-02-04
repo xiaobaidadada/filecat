@@ -49,14 +49,29 @@ export class FileController {
     }
 
     @Get('/:path([^"]{0,})')
-    async getFile(@Req() ctx, @Param("path") path?: string, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
+    async getFile(@Req() ctx, @Param("path") path?: string): Promise<Result<GetFilePojo | string>> {
         // 默认已经对 url 解码了 这里不做也行
-        return await FileServiceImpl.getFile(decodeURIComponent(path), ctx.headers.authorization, is_sys_path);
+        return await FileServiceImpl.getFile(decodeURIComponent(path), ctx.headers.authorization);
     }
 
     @Post('/file_get_page')
     async get_list(@Req() ctx, @Body() data: any) {
         return FileServiceImpl.get_list(ctx.headers.authorization, data.param_path, data.page_num, data.page_size, data.search);
+    }
+
+    @Get("get_fstab")
+    async getFstab(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
+        const buffer = await FileUtil.readFileSync("/etc/fstab");
+        const pojo = Sucess(buffer.toString(), RCode.PreFile);
+        pojo.message = "fstab";
+        return pojo;
+    }
+
+    @Post("save_fstab")
+    async save_fstab(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
+        await FileUtil.writeFileSync("/etc/fstab", data.content);
     }
 
     @msg(CmdType.file_info)
@@ -102,10 +117,10 @@ export class FileController {
     }
 
     @Post('/save/:path([^"]{0,})') // 保存的是文本 最大50MB
-    async save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: saveTxtReq, @QueryParam("is_sys_path", {required: false}) is_sys_path?: number) {
+    async save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: saveTxtReq) {
         if (userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
             userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
-            await FileServiceImpl.save(ctx.headers.authorization, data?.context, path, is_sys_path);
+            await FileServiceImpl.save(ctx.headers.authorization, data?.context, path);
             return Sucess("1");
         }
         return Fail("no permission")

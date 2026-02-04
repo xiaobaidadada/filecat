@@ -6,10 +6,11 @@ import {useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList} from "../../../../../../common/ListUtil";
 import {BaseFileItem} from "../BaseFileItem";
 import {editor_data, user_click_file} from "../../../../util/store.util";
-import {file_show_item} from "../../FileUtil";
+import {fileHttp} from "../../../../util/config";
 
 
-export function ShareFileItem(props: FileItemData & {item_list:file_show_item[], index?: number, itemWidth?: string }) {
+
+export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], index?: number, itemWidth?: string,share:{share_id:string,share_token:string} }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
@@ -54,7 +55,11 @@ export function ShareFileItem(props: FileItemData & {item_list:file_show_item[],
             if (item !== undefined) {
                 // console.log(props.item_list[item])
                 // return
-                click_file({sys_path: item.path, name, size: props.origin_size, opt_shell: true, mtime: props.mtime});
+                click_file({file_path: props.item_list[item].path, file_url: fileHttp.getDownloadUrlV2(props.item_list[item].path,"share_download", {
+                        share_id: props.share.share_id,
+                        share_token: props.share.share_token
+                    }),
+                    name, size: props.origin_size, opt_shell: true, mtime: props.mtime});
             }
         }
     }

@@ -13,12 +13,12 @@ import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../../uti
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {fileHttp} from "../../../../util/config";
 import {RCode} from "../../../../../../common/Result.pojo";
-import {file_share_item} from "../../../../../../common/req/file.req";
 import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../../util/noty";
+import {FileItemData} from "../../../../../../common/file.pojo";
 
-type FileItem = file_share_item
+type FileItem = FileItemData
 
 type ShareData = {
     is_dir: boolean;
@@ -33,6 +33,8 @@ export default function Share() {
     const share_token = useRef();
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const {t} = useTranslation();
+    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
+    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
 
     const get_file = async () => {
         const r = await fileHttp.post(`share`, {
@@ -93,6 +95,12 @@ export default function Share() {
         );
     }
 
+    const clickBlank = (event) => {
+        if (event.target === event.currentTarget) {
+            setSelectList([])
+            setClickList([])
+        }
+    }
     return (
         <Dashboard>
             <FullScreenDiv isFull>
@@ -143,10 +151,13 @@ export default function Share() {
                             </CardFull>
                             :
                             (
-                                <FileListLoad_file_folder_for_file_share handleContextMenu={() => {
-                                }} file_list={data.items} clickBlank={() => {
-
-                                }}/>
+                                <FileListLoad_file_folder_for_file_share share={
+                                    {
+                                        share_id: share_id.current,
+                                        share_token: share_token.current,
+                                    }
+                                } handleContextMenu={() => {
+                                }} file_list={data.items} clickBlank={clickBlank}/>
                             )
                     }
                 </div>

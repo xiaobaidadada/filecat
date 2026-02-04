@@ -3,7 +3,7 @@ import React, {useEffect, useState} from "react";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {DiskCheckInfo, SysCmd} from "../../../../../common/req/sys.pojo";
-import {sysHttp} from "../../../util/config";
+import {fileHttp, sysHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {Card, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
@@ -131,6 +131,61 @@ export function DiskMount() {
         }
         return name;
     }
+    const menu_list = [
+        <ActionButton icon={"info"} title={t("提示")} onClick={async () => {
+            set_prompt_card({
+                open: true, title: "信息", context_div: (
+                    <div>
+                        <ul>
+                            <li>通用格式:{"<文件系统> <挂载点> <类型> <挂载选项> <dump> <fsck> "}</li>
+                            <li>文件系统，有多种格式
+                                <ul>
+                                    <li>1(usb口默认名称)./dev/sda1</li>
+                                    <li>2(唯一Id).UUID=123e4567-e89b-12d3-a456-426614174000</li>
+                                    <li>3.LABEL=DATA</li>
+                                </ul>
+                            </li>
+                            <li>挂载点，就是文件路径，例如 /mnt/data
+                                ，这个目录要提前创建，且为空
+                            </li>
+                            <li>类型，就是文件系统类型，对于系统不支持的类型，例如ntfs需要额外前提安装ntfs-3g</li>
+                            <li>挂载选项的值只能是以下这些，可以用 "," 同时使用多个选项
+                                <ul>
+                                    <li>defaults：使用默认挂载选项</li>
+                                    <li>noatime：不更新访问时间，提高性能</li>
+                                    <li>auto：系统启动时自动挂载</li>
+                                    <li>rw：以读写方式挂载</li>
+                                    <li>nofail：防止启动阻塞，挂载失败系统继续执行</li>
+                                    <li>...等</li>
+                                </ul>
+                            </li>
+                            <li>dump 0是需要备份 1是不需要备份</li>
+                            <li>Fsck 整数值0是不检查，文件系统检查顺序越小越先检查
+                            </li>
+                            <li>提示：只有含有文件系统的逻辑卷，或者分区才可以进行挂载。</li>
+                        </ul>
+                    </div>
+                )
+            })
+        }}/>,
+        <ActionButton key={1} icon={"update"} title={t("更新挂载")}
+                      onClick={async () => {
+                          const rsq2 = await sysHttp.post("cmd/exe", {type: SysCmd.mount});
+                          if (rsq2.code === RCode.Sucess) {
+                              NotySucess("挂载文件已生效")
+                          }
+                      }}/>
+    ]
+
+    const get_file_fun = async () => {
+        const r = await fileHttp.get("get_fstab")
+        return r.data
+    }
+    const save_file_fun = async (text: string) => {
+        await fileHttp.post("save_fstab", {
+            content: text
+        })
+    }
     return <div>
         <Header>
             <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
@@ -147,59 +202,16 @@ export function DiskMount() {
                                     click_file({
                                         name: "fstab(谨慎修改，内容错误会导致系统无法启动)",
                                         model: "text",
-                                        sys_path: "/etc/fstab",
-                                        menu_list: [
-                                            <ActionButton icon={"info"} title={t("提示")} onClick={async () => {
-                                                set_prompt_card({
-                                                    open: true, title: "信息", context_div: (
-                                                        <div>
-                                                            <ul>
-                                                                <li>通用格式:{"<文件系统> <挂载点> <类型> <挂载选项> <dump> <fsck> "}</li>
-                                                                <li>文件系统，有多种格式
-                                                                    <ul>
-                                                                        <li>1(usb口默认名称)./dev/sda1</li>
-                                                                        <li>2(唯一Id).UUID=123e4567-e89b-12d3-a456-426614174000</li>
-                                                                        <li>3.LABEL=DATA</li>
-                                                                    </ul>
-                                                                </li>
-                                                                <li>挂载点，就是文件路径，例如 /mnt/data
-                                                                    ，这个目录要提前创建，且为空
-                                                                </li>
-                                                                <li>类型，就是文件系统类型，对于系统不支持的类型，例如ntfs需要额外前提安装ntfs-3g</li>
-                                                                <li>挂载选项的值只能是以下这些，可以用 "," 同时使用多个选项
-                                                                    <ul>
-                                                                        <li>defaults：使用默认挂载选项</li>
-                                                                        <li>noatime：不更新访问时间，提高性能</li>
-                                                                        <li>auto：系统启动时自动挂载</li>
-                                                                        <li>rw：以读写方式挂载</li>
-                                                                        <li>nofail：防止启动阻塞，挂载失败系统继续执行</li>
-                                                                        <li>...等</li>
-                                                                    </ul>
-                                                                </li>
-                                                                <li>dump 0是需要备份 1是不需要备份</li>
-                                                                <li>Fsck 整数值0是不检查，文件系统检查顺序越小越先检查
-                                                                </li>
-                                                                <li>提示：只有含有文件系统的逻辑卷，或者分区才可以进行挂载。</li>
-                                                            </ul>
-                                                        </div>
-                                                    )
-                                                })
-                                            }}/>,
-                                            <ActionButton key={1} icon={"update"} title={t("更新挂载")}
-                                                          onClick={async () => {
-                                                              const rsq2 = await sysHttp.post("cmd/exe", {type: SysCmd.mount});
-                                                              if (rsq2.code === RCode.Sucess) {
-                                                                  NotySucess("挂载文件已生效")
-                                                              }
-                                                          }}/>
-                                        ]
+                                        get_file_fun,
+                                        save_file_fun,
+                                        menu_list: menu_list
                                     });
                                 }}/>}
-                                <ActionButton icon={"update"} title={t("刷新")} onClick={async () => {
-                                    if (await get_blk() === RCode.Sucess) {
-                                        NotySucess("刷新成功")
-                                    }
-                                }}/>
+                            <ActionButton icon={"update"} title={t("刷新")} onClick={async () => {
+                                if (await get_blk() === RCode.Sucess) {
+                                    NotySucess("刷新成功")
+                                }
+                            }}/>
                         </div>}>
                             <Table headers={diskheaders} rows={info_list} width={"10rem"}/>
                             <TreeView list={list} render={node_render_pd} onContextMenu={handleContextMenu}

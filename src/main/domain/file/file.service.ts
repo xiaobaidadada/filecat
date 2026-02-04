@@ -34,6 +34,7 @@ import {UserAuth} from "../../../common/req/user.req";
 import {FileUtil} from "./FileUtil";
 const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 import {list_paginate} from "../../../common/ListUtil";
+import {isAbsolutePath} from "../../../common/path_util";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -80,16 +81,19 @@ export class FileService extends FileCompress {
         }
     }
 
-    public async getFile(param_path, token, is_sys_path?: number): Promise<Result<GetFilePojo | string>> {
+    public async getFile(param_path, token): Promise<Result<GetFilePojo | string>> {
         const result: GetFilePojo = {
             files: [],
             folders: []
         };
-        if (is_sys_path === 1 && decodeURIComponent(param_path) === "/etc/fstab") {
-            userService.check_user_auth(token, UserAuth.sys_disk_mount);
-        }
         const root_path = settingService.getFileRootPath(token);
-        const sysPath = is_sys_path === 1 ? `${decodeURIComponent(param_path)}` : path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
+        let sysPath = decodeURIComponent(param_path)
+        if(isAbsolutePath(sysPath)) {
+
+        } else {
+            sysPath = path.join(root_path, sysPath);
+        }
+        // const sysPath = is_sys_path === 1 ? `${decodeURIComponent(param_path)}` : path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
         if (!await FileUtil.access(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
@@ -570,11 +574,16 @@ export class FileService extends FileCompress {
         return Sucess("1");
     }
 
-    public async save(token, context?: string, filePath?: string, is_sys_path?: number) {
+    public async save(token, context?: string, filePath?: string) {
         if (context === null || context === undefined) {
             return;
         }
-        const sysPath = is_sys_path === 1 ? `/${filePath}` : path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
+        let sysPath = decodeURIComponent(filePath)
+        if(isAbsolutePath(sysPath)) {
+
+        } else {
+            sysPath = path.join(settingService.getFileRootPath(token), sysPath);
+        }
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
@@ -719,14 +728,24 @@ export class FileService extends FileCompress {
         const range = ctx.header("Range");
         const res = ctx.res
         if (!Array.isArray(file)) {
-            const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
-            file = sysPath;
-            userService.check_user_path(token, sysPath)
+            const p = decodeURIComponent(file);
+            if(isAbsolutePath(p)) {
+                file = p;
+            } else {
+                file  = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+            }
+            userService.check_user_path(token, file)
         } else {
             const files: string [] = file;
             const new_files = []
             for (const file of files) {
-                const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
+                let sysPath = decodeURIComponent(file);
+                if(isAbsolutePath(sysPath)) {
+
+                } else {
+                    sysPath  = path.join(settingService.getFileRootPath(token), sysPath);
+                }
+                // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
                 userService.check_user_path(token, sysPath)
                 new_files.push(sysPath);
             }
