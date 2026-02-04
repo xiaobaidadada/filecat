@@ -251,7 +251,7 @@ export function FileMenu() {
             case common_menu_type.share_file:{
                 const item = new file_share_item()
                 item.path = get_ab_path()
-                item.left_hour = 0
+                // item.left_hour = 0
                 const save_item = async () => {
                     // 确定保存
                     const result = await settingHttp.post("add_share_file_list", item);

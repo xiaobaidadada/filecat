@@ -11,21 +11,40 @@ import {RCode} from "../../../../../../common/Result.pojo";
 import {NotySucess} from "../../../../util/noty";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../../util/FunUtil";
+import Header from "../../../../../meta/component/Header";
+import {useNavigate} from "react-router-dom";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../../../util/store";
 
 
 // 分享列表设置
 export default function ShareListSetting() {
     const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
 
     const headers = [t("编号"),t("路径"),t("剩余过期时间(h)"),t("token"),t("备注")];
     const [rows,set_rows] = useState<file_share_item>([]);
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+
     const add = ()=>{
         set_rows([...rows,{note:"",path:""}]);
     }
     const get_items = async () => {
         const result = await settingHttp.get("get_share_file_list");
         if (result.code === RCode.Sucess) {
-            set_rows(result.data ?? []);
+            const  p:file_share_item[] = result.data ?? []
+            const now = Date.now();
+            for (const i of p) {
+                try {
+                    if (i.left_hour) {
+                        const pastMs = now - i.time_stamp;  // 已过去毫秒
+                        const leftMs = i.left_hour * 3600000 - pastMs; // 剩余毫秒
+                        i.left_hour = parseFloat((leftMs / 3600000).toFixed(2)); // 转回小时
+                    }
+                } catch(err) {
+                }
+            }
+            set_rows(p);
         }
     }
     useEffect(()=>{
@@ -42,9 +61,27 @@ export default function ShareListSetting() {
         rows.splice(index, 1);
         set_rows([...rows]);
     }
+    const info_click = ()=>{
+        let context = <div>
+            小时设置为-1或者不设置就没有过期时间
+        </div>;
+        set_prompt_card({open:true,title:"信息",context_div : (
+                <div >
+                    {context}
+                </div>
+            )})
+    }
     return <div className="common-box ">
+        <Header>
+            <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={()=>{
+                navigate(-1);
+            }}/>
+        </Header>
         <RowColumn  widthPer={70} >
-            <CardFull self_title={<span className={" div-row "}><h2>{t("文件分享列表")}</h2> </span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+            <CardFull self_title={<span className={" div-row "}><h2>{t("文件分享列表")}</h2>
+            <ActionButton icon={"info"} title={t("提示")} onClick={info_click}/>
+            </span>}
+                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={headers} rows={rows.map((item:file_share_item, index) => {
                     const new_list = [
                         <div>

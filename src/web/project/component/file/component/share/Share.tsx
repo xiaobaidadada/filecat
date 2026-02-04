@@ -7,7 +7,7 @@ import {
     FileListLoad_file_folder_for_file_share,
     FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page
 } from "../../FileListLoad";
-import {ButtonText} from "../../../../../meta/component/Button";
+import {ActionButton, ButtonText} from "../../../../../meta/component/Button";
 import {getFileFormat} from "../../../../../../common/FileMenuType";
 import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../../util/WebPath";
 import {routerConfig} from "../../../../../../common/RouterConfig";
@@ -17,6 +17,11 @@ import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
+import Header from "../../../../../meta/component/Header";
+import {getFileNameByLocation, getFilesByIndexs} from "../../FileUtil";
+import {workflow_dir_name} from "../../../../../../common/req/file.req";
+import { getShortTime } from "../../../../util/common_util";
+import { formatFileSize } from "../../../../../../common/ValueUtil";
 
 type FileItem = FileItemData
 
@@ -24,6 +29,7 @@ type ShareData = {
     is_dir: boolean;
     name?: string;
     size?: number;
+    show_mtime?: string;
     items?: FileItem[];
 };
 
@@ -44,10 +50,17 @@ export default function Share() {
             const p: ShareData = {
                 is_dir: r.data.is_dir
             }
-            if (!p.is_dir) {
-                p.name = r.data.files[0].name
-            }
             p.items = r.data.files ?? []
+            for (const f of p.items) {
+                f.show_mtime = f.mtime ? getShortTime(f.mtime) : "";
+                f.size = formatFileSize(f.size);
+            }
+            if (!p.is_dir) {
+                const f = r.data.files[0]
+                p.name = f.name
+                p.size = f.size;
+                p.show_mtime = f.show_mtime
+            }
             setData(p)
             localStorage.setItem(`file_share_token_${share_id.current}`, share_token.current)
         } else if (r.code === RCode.need_token_share) {
@@ -101,67 +114,90 @@ export default function Share() {
             setClickList([])
         }
     }
+
+    function downloadFile() {
+        const file_paths:string[] = []
+        // console.log(data)
+        // return
+        for (let i = 0; i < selectList.length; i++) {
+            const file = data.items[selectList[i]];
+            file_paths.push(encodeURIComponent(file.path))
+        }
+        const url = fileHttp.getDownloadUrlV2(file_paths, "share_download", {
+            share_id: share_id.current,
+            share_token: share_token.current
+        });
+        window.open(url);
+    }
+
     return (
-        <Dashboard>
-            <FullScreenDiv isFull>
-                <div className="common-box ">
-                    {
-                        !data.is_dir ?
-                            <CardFull>
-                                <div style={{
-                                    height: "25rem",
+        <React.Fragment>
+            <Header>
+                {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
+            </Header>
+            <Dashboard>
+                <FullScreenDiv isFull>
+                    <div className="common-box ">
+                        {
+                            !data.is_dir ?
+                                <CardFull>
+                                    <div style={{
+                                        height: "25rem",
 
-                                }} className="common-box common-box-center">
-                                    <h2 className="">
-                                        {data.is_dir ? "下载文件夹" : "下载文件"}
-                                    </h2>
+                                    }} className="common-box common-box-center">
+                                        <h2 className="">
+                                            {data.is_dir ? "下载文件夹" : "下载文件"}
+                                        </h2>
 
-                                    <div className={"file-icons"}>
-                                        <div
-                                            data-type={getFileFormat(data.name)}
-                                            data-dir={data.is_dir}
-                                            aria-label={data.name}
-                                        >
-                                            <i
-                                                className="material-icons"
-                                                style={{fontSize: "10rem", display: "inline-block", lineHeight: 1}}
-                                                aria-label={data.name}  // 注意 aria-label 放在 <i> 上
+                                        <div className={"file-icons"}>
+                                            <div
+                                                data-type={getFileFormat(data.name)}
+                                                data-dir={data.is_dir}
+                                                aria-label={data.name}
                                             >
-                                            </i>
+                                                <i
+                                                    className="material-icons"
+                                                    style={{fontSize: "10rem", display: "inline-block", lineHeight: 1}}
+                                                    aria-label={data.name}  // 注意 aria-label 放在 <i> 上
+                                                >
+                                                </i>
+                                            </div>
                                         </div>
-                                    </div>
 
 
-                                    <div className="">{data.name}</div>
+                                        <div className="">{data.name}</div>
 
-                                    {!data.is_dir && (
                                         <div className="">
-                                            大小：{data.size} bytes
+                                            {data.size}
                                         </div>
-                                    )}
 
-                                    <ButtonText text={"download"} clickFun={() => {
-                                        const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                        <div className="">
+                                            {data.show_mtime}
+                                        </div>
+
+                                        <ButtonText text={"download"} clickFun={() => {
+                                            const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                                share_id: share_id.current,
+                                                share_token: share_token.current
+                                            });
+                                            window.open(url);
+                                        }}/>
+                                    </div>
+                                </CardFull>
+                                :
+                                (
+                                    <FileListLoad_file_folder_for_file_share share={
+                                        {
                                             share_id: share_id.current,
-                                            share_token: share_token.current
-                                        });
-                                        window.open(url);
-                                    }}/>
-                                </div>
-                            </CardFull>
-                            :
-                            (
-                                <FileListLoad_file_folder_for_file_share share={
-                                    {
-                                        share_id: share_id.current,
-                                        share_token: share_token.current,
-                                    }
-                                } handleContextMenu={() => {
-                                }} file_list={data.items} clickBlank={clickBlank}/>
-                            )
-                    }
-                </div>
-            </FullScreenDiv>
-        </Dashboard>
+                                            share_token: share_token.current,
+                                        }
+                                    } handleContextMenu={() => {
+                                    }} file_list={data.items} clickBlank={clickBlank}/>
+                                )
+                        }
+                    </div>
+                </FullScreenDiv>
+            </Dashboard>
+        </React.Fragment>
     );
 }

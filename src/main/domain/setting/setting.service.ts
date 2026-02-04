@@ -359,6 +359,43 @@ export class SettingService {
         DataUtil.set(token_setting, {mode, length});
     }
 
+    share_timer :NodeJS.Timeout[] = []
+
+    public init_share() {
+
+        // 清理旧timer
+        if (this.share_timer) {
+            for (const it of this.share_timer) {
+                clearTimeout(it);
+            }
+        }
+        this.share_timer = [];
+
+        const share_list = this.get_share_file_list();
+        const new_share_list = [];
+        for (const it of share_list) {
+            if (it.left_hour == null || it.left_hour < 0) {
+                new_share_list.push(it);
+                continue;
+            }
+            const now = Date.now();
+            const targetTime =
+                it.time_stamp + it.left_hour * 3600000;
+            if (targetTime <= now) {
+                // 过期直接跳过
+                continue;
+            }
+            new_share_list.push(it);
+            const delay = targetTime - now;
+            const timer = setTimeout(() => {
+                this.init_share();
+            }, delay);
+            this.share_timer.push(timer);
+        }
+        DataUtil.set(data_common_key.share_file_list_key, new_share_list);
+    }
+
+
     public init() {
         const data = DataUtil.get(token_setting);
         if (!!data && !!data['mode']) {
@@ -370,6 +407,9 @@ export class SettingService {
             DataUtil.set(data_common_key.cmd_use_pty_key, shell_list);
         }
         ai_agentService.load_key()
+
+        // 处理分享
+        this.init_share()
     }
 
     // update_files_setting: FileSettingItem[];
@@ -415,6 +455,8 @@ export class SettingService {
             }
         }
         DataUtil.set(data_common_key.share_file_list_key, list);
+        // 最后重置一下过期时间设置
+        this.init_share()
     }
 
     public getFilesSetting(token) {
