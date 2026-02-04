@@ -11,6 +11,10 @@ import {routerConfig} from "../../../../../common/RouterConfig";
 import {fileHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {file_share_item} from "../../../../../common/req/file.req";
+import {InputText} from "../../../../meta/component/Input";
+import {useTranslation} from "react-i18next";
+import {NotyFail} from "../../../util/noty";
+import {r} from "tar";
 
 type FileItem = file_share_item
 
@@ -25,26 +29,50 @@ export default function Share() {
     const [data, setData] = useState<ShareData | null>(null);
     const share_id = useRef();
     const share_token = useRef();
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const {t} = useTranslation();
 
-    const get_file = async ()=>{
-        const id = remove_router_tail(`${getRouterAfter(routerConfig.share, getRouterPath())}`)
-        share_id.current = id;
-        const r = await fileHttp.post(`share`,{
-            id
+    const get_file = async () => {
+        const r = await fileHttp.post(`share`, {
+            id: share_id.current, token: share_token.current,
         })
-        if(r.code === RCode.Sucess) {
-            const p :ShareData = {
+        if (r.code === RCode.Sucess) {
+            const p: ShareData = {
                 is_dir: r.data.is_dir
             }
-            if(!p.is_dir) {
+            if (!p.is_dir) {
                 p.name = r.data.files[0].name
             }
-            p.items = r.data.files ??[]
+            p.items = r.data.files ?? []
             setData(p)
+            localStorage.setItem(`file_share_token_${share_id.current}`, share_token.current)
+        } else if (r.code === RCode.need_token_share) {
+            localStorage.removeItem(`file_share_token_${share_id.current}`);
+            NotyFail(`需要正确的访问token`)
+            set_prompt_card({
+                open: true,
+                title: "share file",
+                confirm: () => {
+                    set_prompt_card({open: false})
+                    get_file()
+                },
+                context_div: (
+                    <div className="card-content">
+                        <InputText placeholderOut={t("请输入访问token")} value={''}
+                                   handleInputChange={(value) => {
+                                       share_token.current = value
+                                   }}/>
+                    </div>
+                ),
+
+            })
         }
     }
     /** mock：替换为真实接口 */
     useEffect(() => {
+        const id = remove_router_tail(`${getRouterAfter(routerConfig.share, getRouterPath())}`)
+        share_id.current = id;
+        share_token.current = localStorage.getItem(`file_share_token_${id}`)
         get_file()
         // setTimeout(() => {
         //     setData({
@@ -86,13 +114,12 @@ export default function Share() {
                                         >
                                             <i
                                                 className="material-icons"
-                                                style={{ fontSize: "10rem", display: "inline-block", lineHeight: 1 }}
+                                                style={{fontSize: "10rem", display: "inline-block", lineHeight: 1}}
                                                 aria-label={data.name}  // 注意 aria-label 放在 <i> 上
                                             >
                                             </i>
                                         </div>
                                     </div>
-
 
 
                                     <div className="">{data.name}</div>
@@ -103,10 +130,10 @@ export default function Share() {
                                         </div>
                                     )}
 
-                                    <ButtonText text={"download"} clickFun={()=>{
-                                        const url = fileHttp.getDownloadUrlV2(data.items[0].path,"share_download",{
-                                            share_id:share_id.current,
-                                            share_token:share_token.current
+                                    <ButtonText text={"download"} clickFun={() => {
+                                        const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                            share_id: share_id.current,
+                                            share_token: share_token.current
                                         });
                                         window.open(url);
                                     }}/>
@@ -115,9 +142,9 @@ export default function Share() {
                             :
                             (
                                 <FileListLoad_file_folder_for_local_by_page handleContextMenu={() => {
-                                }} list={data.items} clickBlank={()=>{
+                                }} list={data.items} clickBlank={() => {
 
-                                }}                                />
+                                }}/>
                             )
                     }
                 </div>
