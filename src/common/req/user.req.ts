@@ -94,11 +94,13 @@ export enum UserAuth {
 }
 
 
-export enum FileListShowTypeEmum {
+export enum FileListShowTypeEnum {
     block = "",
     list = "list",
     gallery = "gallery",
 }
+
+export const fileTypes = Object.values(FileListShowTypeEnum);
 
 export enum DirListShowTypeEmum {
     defualt = "", // 操作系统默认的 ； NTFS  默认按字母顺序存储目录项 Ext4、APFS、XFS 等 返回的文件顺序是 文件系统的原始存储顺序（不保证按字母顺序）
@@ -144,7 +146,7 @@ export class UserData extends UserLogin {
     role_note: string; // 角色备注
 
     // 用于额外的属性
-    file_list_show_type: FileListShowTypeEmum;
+    file_list_show_type: FileListShowTypeEnum;
     dir_show_type: DirListShowTypeEmum; // 目录列表样式
     not_pre_show_image:boolean; // 是否预览图片
     file_list_pagination_mode?: FileListPaginationModeEmum; // 文件列表加载模式：全部加载或分页加载

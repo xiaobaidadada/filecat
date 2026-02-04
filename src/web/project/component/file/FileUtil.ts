@@ -1,16 +1,19 @@
-import {getByIndexs, sort} from "../../../../common/ListUtil";
+import {getByIndexs, getNextByLoop, sort} from "../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
-import {DirListShowTypeEmum} from "../../../../common/req/user.req";
+import {DirListShowTypeEmum, fileTypes} from "../../../../common/req/user.req";
 import {QuickCmdItem} from "../../../../common/req/setting.req";
 import {PromptEnum} from "../prompts/Prompt";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
-import {useEffect, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
+import {userHttp} from "../../util/config";
+import {Http_controller_router} from "../../../../common/req/http_controller_router";
+import {GlobalContext} from "../../GlobalProvider";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -93,7 +96,7 @@ export type file_show_item = {
 }
 
 // 获取操作拖动文件上传 的函数方法
-export function using_drop_file_upload(inputRef?:any) {
+export function using_drop_file_upload(inputRef:any,call_fun_type:PromptEnum) {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
 
@@ -113,7 +116,7 @@ export function using_drop_file_upload(inputRef?:any) {
         // 文件名不会包含绝对路径
         let files = await scanFiles(dt);
         setUploadFiles(files);
-        setShowPrompt({show: true, type: PromptEnum.FilesUpload, overlay: false, data: {}});
+        setShowPrompt({show: true, type: call_fun_type, overlay: false, data: {}});
     }
     const dragover = (event) => {
         event.preventDefault();
@@ -318,4 +321,15 @@ export function using_add_md__copy_button(){
             delete_all()
         };
     }, []);
+}
+
+export function unsing_switch_grid_view () {
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const {initUserInfo} = useContext(GlobalContext);
+
+    return async () => {
+        const type = getNextByLoop(fileTypes, user_base_info?.user_data?.file_list_show_type ?? '');
+        await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {type});
+        initUserInfo();
+    }
 }

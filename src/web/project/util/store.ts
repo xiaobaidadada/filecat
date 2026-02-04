@@ -67,10 +67,10 @@ export const $stroe = {
         key: 'shellNowDir',
         default: []
     }),
-    fileShowType: atom({
-        key: 'fileShowType',
-        default: ""
-    }),
+    // fileShowType: atom({
+    //     key: 'fileShowType',
+    //     default: ""
+    // }),
 
     // 上传队列中的文件
     uploadFiles: atom({

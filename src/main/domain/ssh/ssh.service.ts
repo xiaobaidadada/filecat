@@ -154,7 +154,7 @@ export class SshService extends SshSsh2 {
                 // 设置初始终端大小
                 stream.setWindow(pojo.rows, pojo.cols);
                 // cd目录
-                stream.write(`cd '${pojo.init_path}' \r`);
+                stream.write(`cd '${decodeURIComponent(pojo.init_path)}' \r`);
                 //发送到web
                 stream.on('data', (cmdData) => {
                     const result = new WsData<SysPojo>(CmdType.remote_shell_getting);

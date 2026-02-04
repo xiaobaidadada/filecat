@@ -11,21 +11,20 @@ import {use_auth_check, user_click_file} from "../../util/store.util";
 import {GlobalContext} from "../../GlobalProvider";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {NotyFail, NotySucess} from "../../util/noty";
-import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "./FileUtil";
 import {fileHttp, userHttp} from "../../util/config";
 import {getNextByLoop} from "../../../../common/ListUtil";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {FileListShowTypeEmum, UserAuth} from "../../../../common/req/user.req";
+import {FileListShowTypeEnum, fileTypes, UserAuth} from "../../../../common/req/user.req";
 import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextLine} from "../../../meta/component/Dashboard";
 import {TextTip} from "../../../meta/component/Card";
 import {routerConfig} from "../../../../common/RouterConfig";
 
 let dir_info = {} as any;
-const fileTypes = Object.values(FileListShowTypeEmum);
 
 export function FileMenu() {
     const {t} = useTranslation();
@@ -170,12 +169,7 @@ export function FileMenu() {
         setSelectList([])
         setClickList([])
     }
-    async function switchGridView() {
-        // setFileType(getNextByLoop(fileTypes, fileType));
-        const type = getNextByLoop(fileTypes, user_base_info?.user_data?.file_list_show_type ?? '');
-        await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {type});
-        initUserInfo();
-    }
+    const  switchGridView = unsing_switch_grid_view()
 
     const uploadFile = () => {
         setShowPrompt({
