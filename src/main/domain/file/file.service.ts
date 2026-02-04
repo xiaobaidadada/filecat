@@ -1475,15 +1475,13 @@ export class FileService extends FileCompress {
                     p = path.join(param_path, item)
                     size = stats.size
                 } else if(stats.isDirectory()) {
-                    type = FileTypeEnum.folder;
-                    p = param_path
+                    continue;
                 } else {
                     type = FileTypeEnum.dev;
                     p = path.join(param_path, item)
                     size = stats.size
                 }
                 const mtime = stats ? new Date(stats.mtime).getTime() : 0;
-
                 const pojo = {
                     type,
                     name: item,

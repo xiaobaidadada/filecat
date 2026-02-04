@@ -1,16 +1,16 @@
 import React, {useEffect, useState} from "react";
-import {RowColumn} from "../../../../meta/component/Dashboard";
-import {CardFull} from "../../../../meta/component/Card";
-import {ActionButton} from "../../../../meta/component/Button";
-import {Table} from "../../../../meta/component/Table";
-import {InputText, Select} from "../../../../meta/component/Input";
+import {RowColumn} from "../../../../../meta/component/Dashboard";
+import {CardFull} from "../../../../../meta/component/Card";
+import {ActionButton} from "../../../../../meta/component/Button";
+import {Table} from "../../../../../meta/component/Table";
+import {InputText, Select} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {file_share_item} from "../../../../../common/req/file.req";
-import {settingHttp} from "../../../util/config";
-import {RCode} from "../../../../../common/Result.pojo";
-import {NotySucess} from "../../../util/noty";
-import {routerConfig} from "../../../../../common/RouterConfig";
-import {copyToClipboard} from "../../../util/FunUtil";
+import {file_share_item} from "../../../../../../common/req/file.req";
+import {settingHttp} from "../../../../util/config";
+import {RCode} from "../../../../../../common/Result.pojo";
+import {NotySucess} from "../../../../util/noty";
+import {routerConfig} from "../../../../../../common/RouterConfig";
+import {copyToClipboard} from "../../../../util/FunUtil";
 
 
 // 分享列表设置

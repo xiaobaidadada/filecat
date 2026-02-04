@@ -1,20 +1,22 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Dashboard, FullScreenDiv} from "../../../../meta/component/Dashboard";
-import {CardFull} from "../../../../meta/component/Card";
+import {Dashboard, FullScreenDiv} from "../../../../../meta/component/Dashboard";
+import {CardFull} from "../../../../../meta/component/Card";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../../util/store";
-import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "../FileListLoad";
-import {ButtonText} from "../../../../meta/component/Button";
-import {getFileFormat} from "../../../../../common/FileMenuType";
-import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../util/WebPath";
-import {routerConfig} from "../../../../../common/RouterConfig";
-import {fileHttp} from "../../../util/config";
-import {RCode} from "../../../../../common/Result.pojo";
-import {file_share_item} from "../../../../../common/req/file.req";
-import {InputText} from "../../../../meta/component/Input";
+import {$stroe} from "../../../../util/store";
+import {
+    FileListLoad_file_folder_for_file_share,
+    FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page
+} from "../../FileListLoad";
+import {ButtonText} from "../../../../../meta/component/Button";
+import {getFileFormat} from "../../../../../../common/FileMenuType";
+import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../../util/WebPath";
+import {routerConfig} from "../../../../../../common/RouterConfig";
+import {fileHttp} from "../../../../util/config";
+import {RCode} from "../../../../../../common/Result.pojo";
+import {file_share_item} from "../../../../../../common/req/file.req";
+import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail} from "../../../util/noty";
-import {r} from "tar";
+import {NotyFail} from "../../../../util/noty";
 
 type FileItem = file_share_item
 
@@ -141,8 +143,8 @@ export default function Share() {
                             </CardFull>
                             :
                             (
-                                <FileListLoad_file_folder_for_local_by_page handleContextMenu={() => {
-                                }} list={data.items} clickBlank={() => {
+                                <FileListLoad_file_folder_for_file_share handleContextMenu={() => {
+                                }} file_list={data.items} clickBlank={() => {
 
                                 }}/>
                             )

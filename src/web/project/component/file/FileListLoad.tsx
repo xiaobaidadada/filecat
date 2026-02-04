@@ -11,7 +11,55 @@ import {use_file_to_running} from "../../util/store.util";
 import {PromptEnum} from "../prompts/Prompt";
 import {scanFiles} from "../../util/file";
 import {RemoteLinuxFileItem} from "../proxy/remotelinux/RemoteLinuxFileItem";
+import {ShareFileItem} from "./component/share/ShareFileItem";
 
+
+// 同时渲染文件夹和文件的基本列表 用于文件分享
+export function FileListLoad_file_folder_for_file_share(
+    {
+        handleContextMenu,
+        file_list,
+        folder_list,
+        clickBlank
+    }: {
+        handleContextMenu: any, // 右键空白
+        file_list: file_show_item[],
+        folder_list?: file_show_item[],
+        clickBlank: any // 点击空白
+    }) {
+    // 基础信息 通用
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const inputRef = useRef(null); // 用于保证 大小伸缩变化
+    const {t} = useTranslation();
+
+    // 页面自适应 通用
+    const itemWidth = using_file_page_handle_width_auto()
+    const {file_is_running} = use_file_to_running();
+    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
+    const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
+
+    // 没有上传功能
+    // using_drop_file_upload(inputRef, PromptEnum.SshUpload)
+    // 快捷键
+    using_file_quick_keyboard(file_list, folder_list, inputRef)
+
+
+    return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
+                className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
+        // onScroll={()=>{
+        //     console.log(111)
+        // }}
+    >
+        <div onClick={clickBlank}>
+            {file_list.map((v, index) => (
+                <React.Fragment key={index + folders_len}>
+                    <ShareFileItem item_list={file_list} icon={file_is_running(v.name) ? "refresh" : undefined} itemWidth={itemWidth}
+                                   index={index + folders_len}  {...v}  />
+                </React.Fragment>
+            ))}
+        </div>
+    </div>
+}
 
 // 同时渲染文件夹和文件的基本列表 用于linux远程连接
 export function FileListLoad_file_folder_for_linux(
@@ -41,7 +89,7 @@ export function FileListLoad_file_folder_for_linux(
 
     using_drop_file_upload(inputRef, PromptEnum.SshUpload)
     // 快捷键
-    using_file_quick_keyboard(file_list,folder_list,inputRef)
+    using_file_quick_keyboard(file_list, folder_list, inputRef)
 
 
     useEffect(() => {
@@ -72,8 +120,10 @@ export function FileListLoad_file_folder_for_linux(
             (<div onClick={clickBlank}>
                 {file_list.map((v, index) => (
                     <React.Fragment key={index + folders_len}>
-                        <RemoteLinuxFileItem fileHandler={fileHandler} icon={file_is_running(v.name) ? "refresh" : undefined} itemWidth={itemWidth}
-                                  index={index + folders_len}  {...v}  />
+                        <RemoteLinuxFileItem fileHandler={fileHandler}
+                                             icon={file_is_running(v.name) ? "refresh" : undefined}
+                                             itemWidth={itemWidth}
+                                             index={index + folders_len}  {...v}  />
                     </React.Fragment>
                 ))}
             </div>)
@@ -107,9 +157,9 @@ export function FileListLoad_file_folder_for_local(
 
     const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
 
-    using_drop_file_upload(inputRef,PromptEnum.FilesUpload)
+    using_drop_file_upload(inputRef, PromptEnum.FilesUpload)
     // 快捷键
-    using_file_quick_keyboard(file_list,folder_list,inputRef)
+    using_file_quick_keyboard(file_list, folder_list, inputRef)
 
 
     useEffect(() => {
@@ -123,9 +173,9 @@ export function FileListLoad_file_folder_for_local(
 
     return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
-                // onScroll={()=>{
-                //     console.log(111)
-                // }}
+        // onScroll={()=>{
+        //     console.log(111)
+        // }}
     >
         {(folder_list && folder_list.length > 0) && <h2>{t("文件夹")}</h2>}
         {(folder_list) &&
@@ -171,19 +221,19 @@ export function FileListLoad_file_folder_for_local_by_page(
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
 
     // 快捷键
-    using_file_quick_keyboard(list,[],inputRef)
+    using_file_quick_keyboard(list, [], inputRef)
     // const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
 
 
     // using_file_quick_keyboard(file_list,folder_list,isFocused)
-    using_drop_file_upload(inputRef,PromptEnum.FilesUpload)
+    using_drop_file_upload(inputRef, PromptEnum.FilesUpload)
 
-    using_add_div_wheel_event(inputRef,()=>{
+    using_add_div_wheel_event(inputRef, () => {
         set_file_page(prev => {
             if (prev.page_num < 0) return prev; // 没有下一项了
-            return { page_size: prev.page_size, page_num: prev.page_num + 1 };
+            return {page_size: prev.page_size, page_num: prev.page_num + 1};
         });
-    },()=>{
+    }, () => {
         // console.log('顶部')
     })
     useEffect(() => {
@@ -204,7 +254,7 @@ export function FileListLoad_file_folder_for_local_by_page(
         {(list) &&
             (<div onClick={clickBlank}>
                 {list.map((v, index) => (
-                    <React.Fragment key={index }>
+                    <React.Fragment key={index}>
                         <FileItem icon={file_is_running(v.name) ? "refresh" : undefined} itemWidth={itemWidth}
                                   index={index}  {...v}  />
                     </React.Fragment>

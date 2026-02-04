@@ -27,8 +27,8 @@ const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
-const Share = React.lazy(()=> import('./file/component/Share'))
-const ShareListSetting = React.lazy(()=> import('./file/component/ShareListSetting'))
+const Share = React.lazy(()=> import('./file/component/share/Share'))
+const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
 
 
 function Layout() {

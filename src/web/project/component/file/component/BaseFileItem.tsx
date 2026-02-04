@@ -18,7 +18,7 @@ export function BaseFileItem(props: FileItemData & {
     click: (index: number, name: string) => void,
     itemWidth?: string,
     children?: React.ReactNode,
-    draggable_handle?: (to:string) => any
+    draggable_handle?: (to:string) => any // 拖拽文件到另一个地方
 }) {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
