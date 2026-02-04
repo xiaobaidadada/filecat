@@ -63,7 +63,7 @@ export class FileController {
     async getFstab(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
         const buffer = await FileUtil.readFileSync("/etc/fstab");
-        const pojo = Sucess(buffer.toString(), RCode.PreFile);
+        const pojo = Sucess(buffer.toString());
         pojo.message = "fstab";
         return pojo;
     }
@@ -72,6 +72,7 @@ export class FileController {
     async save_fstab(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
         await FileUtil.writeFileSync("/etc/fstab", data.content);
+        return Sucess("")
     }
 
     @msg(CmdType.file_info)
