@@ -8,7 +8,7 @@ import {NotyFail, NotySucess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
 import {FileCompressType, FileTypeEnum} from "../../../../../common/file.pojo";
-import {use_file_to_running, user_click_file} from "../../../util/store.util";
+import {use_auth_check, use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {common_menu_type, run_workflow} from "./handle.service";
 import {fileHttp, settingHttp, userHttp} from "../../../util/config";
@@ -23,7 +23,7 @@ import {CmdType} from "../../../../../common/frame/WsData";
 import {PromptEnum} from "../Prompt";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {path_join} from "pty-shell/dist/path_util";
-import {SysEnum, UserBaseInfo} from "../../../../../common/req/user.req";
+import {SysEnum, UserAuth, UserBaseInfo} from "../../../../../common/req/user.req";
 import {CardPrompt} from "../../../../meta/component/Card";
 import {RCode} from "../../../../../common/Result.pojo";
 import {routerConfig} from "../../../../../common/RouterConfig";
@@ -35,7 +35,7 @@ export function FileMenu() {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
     const navigate = useNavigate();
-
+    const {check_user_auth} = use_auth_check();
 
     const must_needs = [
         {
@@ -46,12 +46,15 @@ export function FileMenu() {
                     {r: "复制当前路径", v: common_menu_type.file_copy_now_path}
                 ]
 
-        },
-        {
-            // 所有文件和目录都有的选项
-            r: t("分享"), v: common_menu_type.share_file
         }
     ]
+    if(check_user_auth(UserAuth.share_file)) {
+        // @ts-ignore
+        must_needs.push({
+            // 所有文件和目录都有的选项
+            r: t("分享"), v: common_menu_type.share_file
+        })
+    }
     const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
