@@ -182,4 +182,6 @@ export class file_share_item {
     token?:string;
     id:string;
     is_dir?: boolean; // 加载的时候用到
+
+    show_left_hour?:number; // 展示剩余几个消失
 }

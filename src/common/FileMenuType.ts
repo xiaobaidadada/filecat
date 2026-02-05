@@ -19,6 +19,9 @@ export class FileMenuData {
     dockerId?:string;
     name?:string;
     extra_data?:any;
+    is_share?:boolean;
+    share_id?:string;
+    share_token?:string;
 }
 
 

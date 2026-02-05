@@ -4,6 +4,7 @@ import {UserBaseInfo, UserData} from "../../../common/req/user.req";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 import {http_download_map} from "../../../common/req/net.pojo";
+import {PromptEnum} from "../component/prompts/Prompt";
 
 const localStorageEffect = key => ({setSelf, onSet}) => {
     const savedValue = localStorage.getItem(key);
@@ -18,7 +19,7 @@ const localStorageEffect = key => ({setSelf, onSet}) => {
 
 export class ShowPromptData {
     show: boolean;
-    type: string;
+    type: PromptEnum|string;
     overlay: boolean;
     data: FileMenuData;
 }

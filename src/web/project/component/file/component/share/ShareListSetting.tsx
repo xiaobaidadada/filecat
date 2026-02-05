@@ -22,7 +22,7 @@ export default function ShareListSetting() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
 
-    const headers = [t("编号"),t("路径"),t("剩余过期时间(h)"),t("token"),t("备注")];
+    const headers = [t("编号"),t("路径"),t("过期小时"),t("token"),t("备注"),t("剩余时间(h)")];
     const [rows,set_rows] = useState<file_share_item>([]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
@@ -36,10 +36,12 @@ export default function ShareListSetting() {
             const now = Date.now();
             for (const i of p) {
                 try {
-                    if (i.left_hour) {
+                    if (i.left_hour != null && i.left_hour > 0) {
                         const pastMs = now - i.time_stamp;  // 已过去毫秒
                         const leftMs = i.left_hour * 3600000 - pastMs; // 剩余毫秒
-                        i.left_hour = parseFloat((leftMs / 3600000).toFixed(2)); // 转回小时
+                        i.show_left_hour = parseFloat((leftMs / 3600000).toFixed(2)); // 转回小时
+                    } else {
+                        i.show_left_hour = i.left_hour
                     }
                 } catch(err) {
                 }
@@ -91,7 +93,8 @@ export default function ShareListSetting() {
                             item.path = value;
                         }} no_border={true}/>,
                         <InputText value={item.left_hour} handleInputChange={(value) => {
-                            item.left_hour = parseInt(value);
+                            item.left_hour = parseFloat(value);
+                            item.time_stamp = Date.now()
                         }} no_border={true}/>,
                         <InputText value={item.token} handleInputChange={(value) => {
                             item.token = value;
@@ -99,6 +102,9 @@ export default function ShareListSetting() {
                         <InputText value={item.note} handleInputChange={(value) => {
                             item.note = value;
                         }} no_border={true}/>,
+                        <p>
+                            {item.show_left_hour}
+                        </p>,
                         <div>
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
                             {
@@ -106,6 +112,7 @@ export default function ShareListSetting() {
                                 <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
                                     const url = `${window.location.origin}/${routerConfig.share}/${item.id}`
                                     copyToClipboard(url)
+                                    NotySucess(url)
                                 }}/>
                             }
                         </div>

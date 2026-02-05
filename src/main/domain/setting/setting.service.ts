@@ -448,7 +448,7 @@ export class SettingService {
         for (const item of list) {
             userService.check_user_path(token, item.path)
             if(!item.id) {
-                item.id = generateRandomHash(8)
+                item.id = generateRandomHash(15)
             }
             if(!item.time_stamp) {
                 item.time_stamp = time

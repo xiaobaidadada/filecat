@@ -71,6 +71,15 @@ export class Http {
         return this.getDownloadUrlV2(files,"download",params);
     }
 
+    add_params(url:string,params?:any) {
+        if(params) {
+            for (let key of Object.keys(params)) {
+                url += `&${key}=${encodeURIComponent(params[key])}`
+            }
+        }
+        return url;
+    }
+
     getDownloadUrlV2(files,pre_url,params?:any) {
         let url = config.baseUrl+`${pre_url}?`;
         if (files ) {
@@ -85,11 +94,7 @@ export class Http {
             url = url.slice(0, -1);
         }
         url = url +`&token=${encodeURIComponent(localStorage.getItem('token'))}`
-        if(params) {
-            for (let key of Object.keys(params)) {
-                url += `&${key}=${encodeURIComponent(params[key])}`
-            }
-        }
+        url = this.add_params(url,params);
         return url;
     }
 

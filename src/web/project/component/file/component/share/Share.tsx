@@ -22,6 +22,7 @@ import {getFileNameByLocation, getFilesByIndexs} from "../../FileUtil";
 import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
+import {user_click_file} from "../../../../util/store.util";
 
 type FileItem = FileItemData
 
@@ -41,6 +42,8 @@ export default function Share() {
     const {t} = useTranslation();
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
+    const {click_file} = user_click_file();
+
 
     const get_file = async () => {
         const r = await fileHttp.post(`share`, {
@@ -132,7 +135,11 @@ export default function Share() {
 
     return (
         <React.Fragment>
-            <Header>
+            <Header left_children={<>
+                <h2>
+                    Share {data.is_dir?"Folder":"File"}
+                </h2>
+            </>}>
                 {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
             </Header>
             <Dashboard>
@@ -145,10 +152,6 @@ export default function Share() {
                                         height: "25rem",
 
                                     }} className="common-box common-box-center">
-                                        <h2 className="">
-                                            {data.is_dir ? "下载文件夹" : "下载文件"}
-                                        </h2>
-
                                         <div className={"file-icons"}>
                                             <div
                                                 data-type={getFileFormat(data.name)}
@@ -181,6 +184,21 @@ export default function Share() {
                                                 share_token: share_token.current
                                             });
                                             window.open(url);
+                                        }}/>
+
+                                        <ButtonText text={"preview"} clickFun={() => {
+                                            const item = data.items[0]
+                                            click_file({
+                                                file_path: item.path,
+                                                file_url: fileHttp.getDownloadUrlV2(item.path,"share_download", {
+                                                    share_id: share_id.current,
+                                                    share_token: share_token.current
+                                                }),
+                                                name:item.name, size: item.origin_size,
+                                                opt_shell: true,
+                                                mtime: item.mtime,
+                                                not_type_tip:t("未知类型，请下载查看")
+                                            });
                                         }}/>
                                     </div>
                                 </CardFull>
