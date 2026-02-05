@@ -93,7 +93,7 @@ export function User() {
         set_not_access_dirs(item?.not_access_dirs??[])
         set_only_read_dirs(item?.only_read_dirs??[])
         set_access_cmd(item?.access_cmd??"");
-        set_not_access_cmd(item.not_access_cmd??"")
+        set_not_access_cmd(item?.not_access_cmd??"")
         setLanguage(item?.language??"");
         set_auth_list(item?.auth_list??[]);
         set_note(item?.note??"");
