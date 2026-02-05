@@ -12,7 +12,7 @@
 
 @media (max-width: 736px) {
   body {
-    padding-bottom: 5em;
+    padding-bottom: 1em;
   }
   #listing.list .item .size {
     display: none;
