@@ -178,11 +178,11 @@ export function DiskMount() {
     ]
 
     const get_file_fun = async () => {
-        const r = await fileHttp.get("get_fstab")
+        const r = await sysHttp.get("get_fstab")
         return r.data
     }
     const save_file_fun = async (text: string) => {
-        await fileHttp.post("save_fstab", {
+        await sysHttp.post("save_fstab", {
             content: text
         })
     }

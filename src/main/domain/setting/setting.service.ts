@@ -320,7 +320,7 @@ export class SettingService {
     }
 
     public get_sys_env(): { web_site_title: string } {
-        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'filecat'};
+        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat'};
     }
 
     public set_sys_env(req:{web_site_title: string }) {

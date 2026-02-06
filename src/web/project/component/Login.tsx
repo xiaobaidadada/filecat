@@ -48,7 +48,7 @@ function Login() {
     return (
         <WinCenter>
             <h1>{Global.web_site_title??'FileCat'}</h1>
-            <div>
+            <div className={"self_win_center_content"}>
                 <InputText placeholder={t("账号")} handleInputChange={(value) => {
                     setUsername(value)
                 }}/>
