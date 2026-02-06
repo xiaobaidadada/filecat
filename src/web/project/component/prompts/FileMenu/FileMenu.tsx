@@ -302,7 +302,7 @@ export function FileMenu() {
         }}>
             <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
                                                                       items={[
-                                                                          {r: t("download"), v: common_menu_type.share_file_download}
+                                                                          {r: t("下载"), v: common_menu_type.share_file_download}
                                                                       ]} click={right_click}/>}/>
         </div>
         return (div);
