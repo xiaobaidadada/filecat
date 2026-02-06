@@ -5,11 +5,13 @@ const config = require('./config/webpack.web.config.js');
 const args = process.argv.slice(2)??[];  // slice to remove the first two default values
 let serverConfig ;
 const is_exe = args[0]==="exe"
-const is_npm = args[0]==="npm;"
+const is_npm = args[0]==="npm"
 if (args.length ===0 || is_npm) {
     serverConfig = require('./config/webpack.npm.config.js');
 } else if (is_exe) {
     serverConfig = require('./config/webpack.exe.config.js');
+} else {
+    console.error('无法识别打包环境')
 }
 const {copyFileSync} = require("fs");
 const fs = require("fs");
