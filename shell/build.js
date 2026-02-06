@@ -2,11 +2,13 @@ const {Listr} = require("listr2");
 const webpack = require('webpack');
 const os = require("os");
 const config = require('./config/webpack.web.config.js');
-const args = process.argv.slice(2);  // slice to remove the first two default values
+const args = process.argv.slice(2)??[];  // slice to remove the first two default values
 let serverConfig ;
-if (args.length ===0 || args[0]==="npm") {
+const is_exe = args[0]==="exe"
+const is_npm = args[0]==="npm;"
+if (args.length ===0 || is_npm) {
     serverConfig = require('./config/webpack.npm.config.js');
-} else if (args[0]==="exe") {
+} else if (is_exe) {
     serverConfig = require('./config/webpack.exe.config.js');
 }
 const {copyFileSync} = require("fs");
@@ -15,6 +17,7 @@ const path = require("path");
 const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
 const {get_webpack_work_config} = require('./config/webpack.worker.get.js');
+const {copy_wintun_dll} = require("./config/common-bin.config");
 
 // 只能复制文件
 function copyFiles(sourceDir,destDir) {
@@ -82,9 +85,13 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
                         // copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
-                        copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
+                        // copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
+                        if(is_exe) {
+                            copy_wintun_dll()
+                            fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
+                        }
+
                         copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
-                        // 因为不一定不是windows环境 所以都复制一下，发布npm 在windows环境下，不然没有这个dll
                         rimraf.sync(path.join(__dirname,"..","build","server"));
 
                         res(true);
