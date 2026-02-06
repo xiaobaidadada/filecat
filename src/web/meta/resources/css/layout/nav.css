@@ -21,10 +21,11 @@
 nav  {
     width: 16em;
     position: fixed;
-    top: 4em;
+    /*top: 4em;*/
     left: 0;
     z-index: 1;
     overflow-y: auto;
+    padding-top: var( --top-length);
     height: 100%;
 }
 

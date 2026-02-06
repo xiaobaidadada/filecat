@@ -34,7 +34,9 @@
   --dividerPrimary: rgba(255, 255, 255, 0.4);
   --dividerSecondary: rgba(255, 255, 255, 0.9);
 
-  --filewidth: 33%
+  --filewidth: 33%;
+
+  --top-length: 4rem;
 }
 
 :root.dark {
@@ -57,4 +59,6 @@
   --borderSecondary: rgba(255, 255, 255, 0.15);
   --dividerPrimary: rgba(30, 30, 30, 0.4);
   --dividerSecondary:rgba(30, 30, 30, 0.6);
+
+  --top-length: 4rem;
 }
