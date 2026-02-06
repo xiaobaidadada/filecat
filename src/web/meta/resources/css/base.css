@@ -201,3 +201,8 @@ li:hover {
   display: grid;
   place-items: center;
 }
+
+.common-tag-center {
+  display: flex;
+  align-items: center;
+}
