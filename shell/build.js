@@ -87,7 +87,9 @@ const tasksLister = new Listr(
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
                         // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
                         // copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
-                        // copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
+
+                        // 复制 子进程监控脚本
+                        copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
