@@ -5,7 +5,7 @@ html, body, #root {
 
 body {
   font-family: "Roboto", sans-serif;
-  padding-top: 4em;
+  /*padding-top: 4em;*/
   background-color: #fafafa;
   color: #333333;
 }
@@ -200,4 +200,9 @@ li:hover {
 .common-box-center {
   display: grid;
   place-items: center;
+}
+
+.common-tag-center {
+  display: flex;
+  align-items: center;
 }

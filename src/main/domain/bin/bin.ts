@@ -83,25 +83,7 @@ export function get_wintun_dll_path(): string {
 }
 
 
-// windonw下拷贝wintun dll
-export function init_wintun_dll() {
-    try {
-        if (getSys() !== SysEnum.win) return;
-        const cpuArch = get_wintun_dll_arch();
-        const winfilename = `wintun${cpuArch ? `-${cpuArch}` : ''}.dll`;
-        // 获取模块的根目录
-        const modPath = path.dirname(eval("require").resolve("@xiaobaidadada/node-tuntap2-wintun/package.json"));
-        // 拼接你需要的路径
-        const sourcePath = path.join(modPath, "wintun_dll", winfilename);
-        const destPath = path.join(__dirname, winfilename);
-        // console.log("目录",sourcePath,destPath)
-        // if (!fs.existsSync(destPath)) {
-            fs.copyFileSync(sourcePath, destPath);
-        // }
-    } catch (e) {
-        console.log(e);
-    }
-}
+
 
 export function getFfmpeg() {
     const list = settingService.getSoftware();
@@ -204,18 +186,34 @@ export function get_bin_dependency(module:
                                    | "node-process-watcher",
                                    auto_throw = false
 ) {
-    let m :any = {};
     try {
+        if(process.env.run_env === 'exe') {
+            //  防止 TDZ 错误 同时又可以 让 webpack打包 具体要不要忽略-在webpack中手动控制
+            switch (module) {
+                case "@xiaobaidadada/dockerode":
+                    return require("@xiaobaidadada/dockerode");
+                case "@xiaobaidadada/node-pty-prebuilt":
+                    return require("@xiaobaidadada/node-pty-prebuilt");
+                case "@xiaobaidadada/ssh2-prebuilt":
+                    return require("@xiaobaidadada/ssh2-prebuilt");
+                case "node-process-watcher":
+                    return require("node-process-watcher");
+                case "@xiaobaidadada/node-tuntap2-wintun":
+                    return require("@xiaobaidadada/node-tuntap2-wintun")
+                default:
+                    throw {message:"不存在的包"}
+            }
+        }
+
         // webpack打包后会修改原本的 reuqire 加载函数
-        const node_require = eval("require")
-        m = node_require(module);
+        return eval("require")(module);
     } catch (e) {
         // 当前平台没有这个能力
-        console.log(`模块没有安装成功，请手动安装 npm 依赖( -g 安装的就尝试全局安装，本地仓库安装的就在仓库内安装)：${module}`)
+        console.log(`${process.env.run_env} 模块没有加载失败，请手动安装 npm 依赖( -g 安装的就尝试全局安装，本地仓库安装的就在仓库内安装)：${module} error ${e.message}`)
         // console.log(e)
         if(auto_throw) throw e;
     }
-    return m;
+    return {};
 }
 
 let package_;

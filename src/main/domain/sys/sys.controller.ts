@@ -12,6 +12,9 @@ import {userService} from "../user/user.service";
 import {Wss} from "../../../common/frame/ws.server";
 import {UserAuth} from "../../../common/req/user.req";
 import {Request} from "express";
+import {FileTypeEnum} from "../../../common/file.pojo";
+import {FileServiceImpl} from "../file/file.service";
+import {FileUtil} from "../file/FileUtil";
 
 @JsonController("/sys")
 export class SysController {
@@ -208,5 +211,22 @@ export class SysController {
             timezone,
             timestamp,
         })
+    }
+
+
+    @Get("/get_fstab")
+    async getFstab(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
+        const buffer = await FileUtil.readFileSync("/etc/fstab");
+        const pojo = Sucess(buffer.toString());
+        pojo.message = "fstab";
+        return pojo;
+    }
+
+    @Post("/save_fstab")
+    async save_fstab(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
+        await FileUtil.writeFileSync("/etc/fstab", data.content);
+        return Sucess("")
     }
 }

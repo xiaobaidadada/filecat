@@ -253,3 +253,15 @@ table th {
 .studio-item-title:hover * {
   color: rgba(255, 255, 255, 0.4)
 }
+
+.chat-message.bot{
+  background: var(--textPrimary);
+}
+
+.chat-input-area ,.chat-input-area textarea {
+  background: var(--textPrimary);
+}
+
+.common-box  {
+  background: var(--background);
+}

@@ -7,4 +7,5 @@ main {
     margin: 0 1em 1em auto;
     width: calc(100% - 19em);
     height: 100%;
+    padding-top: var( --top-length);
 }

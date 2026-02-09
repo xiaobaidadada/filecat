@@ -35,7 +35,8 @@ import mime from "mime-types";
 import {get_base, get_package_json, get_sys_base_url_pre} from "./domain/bin/bin";
 import {VirtualController} from "./domain/net/virtual/virtual.controller";
 import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
-import {authorizationChecker} from "./other/middleware/decorator";
+import os from "os";
+// import {authorizationChecker} from "./other/middleware/decorator";
 const http = require('http');
 const https = require('https');
 const Mustache = require('mustache');
@@ -65,7 +66,7 @@ async function start() {
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
-        authorizationChecker
+        // authorizationChecker
     });
     app.use(compression());
 
@@ -211,8 +212,26 @@ async function start() {
 
     // 启动服务器
     const server = app.listen(Env.port, () => {
-        const url = `version:${get_package_json().version} http://localhost:${Env.port}/`;
-        console.log(`\x1b[31m服务器正在运行 click\x1b[0m  \x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
+        const version = get_package_json().version;
+
+        const urls = [`http://localhost:${Env.port}`];
+        try {
+            const interfaces = os.networkInterfaces();
+            for (const name of Object.keys(interfaces)) {
+                for (const iface of interfaces[name]) {
+                    // 只关心 IPv4 且非内部地址
+                    if (iface.family === "IPv4") {
+                        const ip = iface.address;
+                        urls.push(`http://${ip}:${Env.port}/`);
+                    }
+                }
+            }
+        } catch (error) {console.error(error?.message);}
+        // 打印
+        console.log(`\x1b[31m服务器正在运行 version: ${version}\x1b[0m`);
+        urls.forEach(url => {
+            console.log(`\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
+        });
     });
 
     // 将WebSocket服务器与Koa服务器绑定到同一个端口

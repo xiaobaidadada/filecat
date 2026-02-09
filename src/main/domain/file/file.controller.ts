@@ -59,21 +59,6 @@ export class FileController {
         return FileServiceImpl.get_list(ctx.headers.authorization, data.param_path, data.page_num, data.page_size, data.search);
     }
 
-    @Get("get_fstab")
-    async getFstab(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
-        const buffer = await FileUtil.readFileSync("/etc/fstab");
-        const pojo = Sucess(buffer.toString());
-        pojo.message = "fstab";
-        return pojo;
-    }
-
-    @Post("save_fstab")
-    async save_fstab(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_disk_mount);
-        await FileUtil.writeFileSync("/etc/fstab", data.content);
-        return Sucess("")
-    }
 
     @msg(CmdType.file_info)
     async wsGetFileInfo(data: WsData<any>) {

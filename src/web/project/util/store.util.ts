@@ -45,6 +45,7 @@ export const user_click_file = () => {
         menu_list?: any[],
         opt_shell?: boolean,
         mtime?: any,
+        not_type_tip?:string,
         // 提供自定义的编辑来源 只用于txt文本编辑
         file_path?: string,
         file_url?: string,
@@ -143,7 +144,7 @@ export const user_click_file = () => {
                         open: true,
                         type: type,
                         name,
-                        url: fileHttp.getDownloadUrl(getFileNameByLocation(name), {mtime: param.mtime, cache: 1})
+                        url: fileHttp.add_params(url,{mtime: param.mtime, cache: 1} )
                     })
                     break;
                 case FileTypeEnum.workflow_act:
@@ -160,7 +161,7 @@ export const user_click_file = () => {
                         click_file(param);
                         break;
                     }
-                    NotyFail(t("未知类型、请右键点击文件"))
+                    NotyFail(param.not_type_tip??t("未知类型、请右键点击文件"))
                     break;
             }
 

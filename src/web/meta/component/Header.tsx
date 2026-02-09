@@ -5,6 +5,7 @@ import {$stroe} from "../../project/util/store";
 // @ts-ignore
 import logo  from "../resources/img/logo.svg"
 import {ActionButton} from "./Button";
+import {is_share} from "../../project/util/WebPath";
 
 function Header(props: { ignore_tags?: boolean, children?: any, left_children?: any }) {
     const { t } = useTranslation();
@@ -18,9 +19,12 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
 
     return (
         <header className={`header not-select-div ${headerMin?"header-min":""}`}>
-            <div className={"header-menu"}>
-                <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
-            </div>
+            {
+                !is_share() &&
+                <div className={"header-menu"}>
+                    <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
+                </div>
+            }
             {props.ignore_tags !== true &&
                 <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank"><img src={logo } alt="FileCat"/></a></h3>
                 // <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{t("title")}</a></h3>

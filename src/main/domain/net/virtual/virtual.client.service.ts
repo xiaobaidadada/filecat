@@ -6,7 +6,7 @@ import {UdpUtil} from "../util/udp.util";
 import {findAvailablePort} from "../../../../common/findPort";
 import {TcpUtil} from "../util/tcp.util";
 import {Wss} from "../../../../common/frame/ws.server";
-import {get_tun_require, get_wintun_dll_path, init_wintun_dll} from "../../bin/bin";
+import {get_tun_require, get_wintun_dll_path} from "../../bin/bin";
 import {data_common_key} from "../../data/data_type";
 import {virtualServerService} from "./virtual.server.service";
 import {NetMsgType, NetUtil} from "../util/NetUtil";
@@ -534,7 +534,7 @@ export class VirtualClientService extends UdpUtil {
 export const virtualClientService = new VirtualClientService();
 ServerEvent.on("start", async (data) => {
     try {
-        init_wintun_dll();
+        // init_wintun_dll();
         await virtualClientService.init();
     } catch (e) {
         console.error('启动虚拟网网络vpn失败', e);

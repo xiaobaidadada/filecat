@@ -39,7 +39,7 @@ export function FileListLoad_file_folder_for_file_share(
     // 页面自适应 通用
     const itemWidth = using_file_page_handle_width_auto()
     const {file_is_running} = use_file_to_running();
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
+    // const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
     const folders_len = 0
 
     // 没有上传功能

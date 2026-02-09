@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
-const {plugins, _node_rules} = require("./base.webpack.config");
+const {plugins, _node_rules, get_exe_plugins} = require("./base.webpack.config");
 
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
@@ -29,7 +29,7 @@ module.exports = {
         }
     ],
     // externals: [nodeExternals()], // 将所有的外部模块排除打包
-    plugins,
+    plugins:get_exe_plugins(),
     optimization: {
         minimize: true, // 压缩Js代码
         minimizer: [

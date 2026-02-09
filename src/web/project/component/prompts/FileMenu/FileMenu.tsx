@@ -284,7 +284,31 @@ export function FileMenu() {
                 })
             }
             break;
+            case common_menu_type.share_file_download:
+                const url = fileHttp.getDownloadUrlV2(showPrompt.data.path, "share_download", {
+                    share_id: showPrompt.data.share_id,
+                    share_token: showPrompt.data.share_token
+                });
+                window.open(url);
+                break;
         }
+    }
+
+    // 开始展示右键选项
+    if(showPrompt.data?.is_share)  {
+        // 拦截
+        div = <div onWheel={() => {
+            close();
+        }}>
+            <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                                                      items={[
+                                                                          {r: <div className={"common-tag-center"}>
+                                                                                  <i className="material-icons icon">{"download"}</i>
+                                                                                  <span>{"download"}</span>
+                                                                          </div>, v: common_menu_type.share_file_download}
+                                                                      ]} click={right_click}/>}/>
+        </div>
+        return (div);
     }
     switch (pojo.type) {
         case FileTypeEnum.video:

@@ -320,7 +320,7 @@ export class SettingService {
     }
 
     public get_sys_env(): { web_site_title: string } {
-        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'filecat'};
+        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat'};
     }
 
     public set_sys_env(req:{web_site_title: string }) {
@@ -448,7 +448,7 @@ export class SettingService {
         for (const item of list) {
             userService.check_user_path(token, item.path)
             if(!item.id) {
-                item.id = generateRandomHash(8)
+                item.id = generateRandomHash(15)
             }
             if(!item.time_stamp) {
                 item.time_stamp = time
