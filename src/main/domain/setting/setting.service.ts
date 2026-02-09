@@ -7,14 +7,17 @@ import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
     ai_agent_Item,
-    dir_upload_max_num_item, FileQuickCmdItem,
-    FileSettingItem, QuickCmdItem,
+    dir_upload_max_num_item,
+    FileQuickCmdItem,
+    FileSettingItem,
+    QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
     TokenTimeMode
 } from "../../../common/req/setting.req";
-import {SystemUtil} from "../sys/sys.utl";import {Request} from "express";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {SystemUtil} from "../sys/sys.utl";
+import {Request} from "express";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import * as vm from "node:vm";
 import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
@@ -434,7 +437,12 @@ export class SettingService {
 
     // 获取文件分享列表
     get_share_file_list():file_share_item[] {
-        return DataUtil.get(data_common_key.share_file_list_key) ?? [];
+        const list:file_share_item[] = DataUtil.get(data_common_key.share_file_list_key) ?? []
+        const statics:any = DataUtil.get(data_common_key.share_file_list_key_download_statics,file_key.statics_tag) ?? {}
+        for (const item of list) {
+            item.download_num = statics[item.id]
+        }
+        return list;
     }
 
     add_share_file(item:file_share_item,token) {
@@ -445,6 +453,7 @@ export class SettingService {
 
     set_share_file_list(list:file_share_item[],token) {
         const time = Date.now()
+        const keys = new Set()
         for (const item of list) {
             userService.check_user_path(token, item.path)
             if(!item.id) {
@@ -453,8 +462,19 @@ export class SettingService {
             if(!item.time_stamp) {
                 item.time_stamp = time
             }
+            keys.add(item.id)
         }
         DataUtil.set(data_common_key.share_file_list_key, list);
+        // 清理一下统计
+        const statics :any = DataUtil.get(data_common_key.share_file_list_key_download_statics,file_key.statics_tag);
+        if(statics) {
+            for (const key of Object.keys(statics)) {
+                if(!keys.has(key)) {
+                    delete statics[key]
+                }
+            }
+            DataUtil.set(data_common_key.share_file_list_key_download_statics,statics,file_key.statics_tag);
+        }
         // 最后重置一下过期时间设置
         this.init_share()
     }

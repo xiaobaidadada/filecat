@@ -184,4 +184,6 @@ export class file_share_item {
     is_dir?: boolean; // 加载的时候用到
 
     show_left_hour?:number; // 展示剩余几个消失
+
+    download_num?:number;// 展示的时候用下载次数
 }

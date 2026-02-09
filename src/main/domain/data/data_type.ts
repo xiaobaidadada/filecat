@@ -5,7 +5,8 @@ export enum file_key {
     systemd = "systemd.json",
     http_tag = "http_tag.json", // 专门用于 http post 功能的
     navindex_key = "navindex_key.json", // 专门用于 网址 导航的
-    data_version = "data_version"
+    data_version = "data_version",
+    statics_tag = "statics_tag_json", // 统计用的
 }
 // 数据目录
 export enum data_dir_tem_name {
@@ -74,6 +75,7 @@ export enum data_common_key {
     proxy_server_code_prefix = "proxy_server_code_prefix",
     ai_agent_model_setting = "ai_agent_model_setting", // ai模型的设置
     share_file_list_key = "share_file_list_key",
+    share_file_list_key_download_statics = "share_file_list_key_download_statics",
 }
 
 

@@ -22,7 +22,7 @@ export default function ShareListSetting() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
 
-    const headers = [t("编号"),t("路径"),t("过期小时"),t("token"),t("备注"),t("剩余时间(h)")];
+    const headers = [t("编号"),t("路径"),t("过期小时"),t("token"),t("备注"),t("剩余时间(h)"),t("下载次数")];
     const [rows,set_rows] = useState<file_share_item>([]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
@@ -104,6 +104,9 @@ export default function ShareListSetting() {
                         }} no_border={true}/>,
                         <p>
                             {item.show_left_hour}
+                        </p>,
+                        <p>
+                            {item.download_num}
                         </p>,
                         <div>
                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>

@@ -35,6 +35,8 @@ import {FileUtil} from "./FileUtil";
 const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 import {list_paginate} from "../../../common/ListUtil";
 import {isAbsolutePath} from "../../../common/path_util";
+import {DataUtil} from "../data/DataUtil";
+import {data_common_key, file_key} from "../data/data_type";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -773,6 +775,9 @@ export class FileService extends FileCompress {
         let item: file_share_item;
         for (const i of list) {
             if (i.id === share_id) {
+                const statics: {} = DataUtil.get(data_common_key.share_file_list_key_download_statics, file_key.statics_tag) ?? {}
+                statics[i.id] = (statics[i.id] ?? 0) + 1
+                DataUtil.set(data_common_key.share_file_list_key_download_statics, statics, file_key.statics_tag);
                 item = i;
                 break
             }
