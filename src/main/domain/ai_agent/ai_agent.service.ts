@@ -72,7 +72,7 @@ export class Ai_agentService {
 
     init_search_docs_param() {
         const setting = settingService.ai_docs_setting()
-        Env.load(setting.param, config_env);
+        Env.load(setting.param, config_search_doc);
     }
 
     async init_search_docs() {
@@ -198,6 +198,10 @@ export class Ai_agentService {
 
     }
 
+    private is_use_local_data() {
+        return config_search_doc.force_use_local_data || this.docs_data_map.size > 0
+    }
+
     /**
      * 对话每一次都需要把之前全部的message填充过去，所以对话越长，每一次对话的时候消耗的token越多
      * todo 添加记忆能力，每一次对话都不断的让ai总结之前的聊天内容，节省token，现在可以通过让AI返回的时候内容尽量简洁一点，从而节省一点token
@@ -225,7 +229,7 @@ export class Ai_agentService {
    当前目录是 ${rootPath}，
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 2. 使用 markdown格式回答用户。
-${this.docs_data_map.size?`3. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料。`:''}
+${this.is_use_local_data()?`3. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料。`:''}
 
 ${config.sys_prompt ?? ''}
 `
@@ -444,7 +448,7 @@ ${config.sys_prompt ?? ''}
     ) {
         // const l_time = Date.now();
         const tools: any[] = [...ai_tools]
-        if (this.docs_data_map.size) {
+        if (this.is_use_local_data()) {
             tools.push(ai_tools_search_docs)
         }
         const json_body: any = {

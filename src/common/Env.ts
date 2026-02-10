@@ -172,6 +172,7 @@ export class Env {
     }
 
     public static load(envData: string,target:any): void {
+        if(!envData) return
         const envVariables = envData.split(/\r?\n/);
         for (const line of envVariables) {
             if (line.trim() === '' || line.trim().startsWith('#')) {

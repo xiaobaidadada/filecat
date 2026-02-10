@@ -41,11 +41,14 @@ export class ai_docs_setting {
 }
 export class ai_docs_setting_param {
     docs_max_num = 5
+    force_use_local_data = false;
 }
 
 export const ai_docs_setting_param_default = `
 # 获取最多文章数量
 docs_max_num=5
+# 强制每次聊天前都执行本地知识库搜索
+force_use_local_data=false
 `
 
 export class ai_agent_item_dotenv {
