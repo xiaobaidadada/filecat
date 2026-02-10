@@ -248,7 +248,7 @@ export class Ai_agentService {
     }
 
     private is_use_local_data() {
-        return config_search_doc.force_use_local_data || this.docs_data_map.size > 0
+        return  this.docs_data_map.size > 0
     }
 
     /**
@@ -285,6 +285,12 @@ ${config.sys_prompt ?? ''}
             },
             ...this.trimMessages(originMessages, config_env.char_max)
         ];
+
+        if(config_search_doc.force_use_local_data) {
+            const t_ = await this.search_docs({keywords:[workMessages[workMessages.length-1].content]})
+            workMessages[workMessages.length-1].content = `本地知识库搜到 ${t_} 
+            ${workMessages[workMessages.length-1].content}`
+        }
 
         const env = {
             toolLoop: config_env.tool_call_max,
