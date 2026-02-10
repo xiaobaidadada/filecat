@@ -101,6 +101,7 @@
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     transition: .1s ease left;
     left: -17em;
+    padding-top: 0;
   }
 
   body.rtl nav {
@@ -161,6 +162,9 @@
   }
   #search.active {
     display: block;
+  }
+  .chat-input-area {
+    padding: 0 16px;
   }
 }
 

@@ -91,6 +91,7 @@ export class Ai_agentService {
             for (const file of files) {
                 const file_path = path.join(it.dir, file);
                 const file_stats = await FileUtil.statSync(file_path);
+                if(!file_stats.isFile()) continue;
                 if (this.docs_data_map.has(file_path)) {
                     const it = this.docs_data_map.get(file_path);
                     if (it.time_stamp === file_stats.mtime.getTime()) {
@@ -98,7 +99,7 @@ export class Ai_agentService {
                     } else {
                         it.time_stamp = file_stats.mtime.getTime();
                         this.doc_index.remove(file_path);
-                        const content = (await FileUtil.readFileSync(file_path)).toString();
+                        const content = ` 文件${it.file_name} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
                         this.doc_index.update(file_path, content);
                     }
                 } else {

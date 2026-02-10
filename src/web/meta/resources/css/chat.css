@@ -51,7 +51,7 @@
 /* 输入区 */
 .chat-input-area {
     display: flex;
-    padding: 12px 16px;
+    padding: 1em 16px;
     gap: 8px;
     /*border-top: 1px solid #e0e0e0;*/
     background: #fff;
