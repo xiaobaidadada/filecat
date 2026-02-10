@@ -375,6 +375,11 @@ export class UserService {
 
     // ture 是合法
     public check_user_path_by_user_id(id: string, path: string,auto_throw = true) {
+        if(!path) {
+            if(auto_throw  ) {
+                throw "path is invalid"
+            } else return false;
+        }
         const user_data = userService.get_user_info_by_user_id(id);
         // if(user_data.is_root) return true;
         // 检测是否是非法路径

@@ -11,6 +11,7 @@ export const routerConfig = {
     setting:"setting",
     share:"share",
     share_list_setting_page:"share_list_setting_page",
+    ai_agent_setting_page:"ai_agent_setting_page",
     "/":"/",
     "":""
 }

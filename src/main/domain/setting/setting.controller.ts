@@ -208,6 +208,19 @@ export class SettingController {
         return Sucess(settingService.ai_agent_setting());
     }
 
+    @Get("/ai_docs_setting")
+    ai_docs_setting(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(settingService.ai_docs_setting());
+    }
+
+    @Post("/ai_docs_setting_save")
+    async ai_docs_setting_save(@Req() ctx,@Body() data) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        await settingService.ai_docs_setting_save(ctx.headers.authorization,data)
+        return Sucess("");
+    }
+
     @Get("/ai_agent_setting/env")
     ai_agent_setting_get_env(@Req() ctx) {
         return Sucess(ai_agentService.get_env());

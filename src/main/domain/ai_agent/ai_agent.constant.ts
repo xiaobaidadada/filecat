@@ -1,4 +1,24 @@
 
+export const ai_tools_search_docs = {
+    type: "function",
+    function: {
+        name: "search_docs",
+        description: "在本地知识库中搜索相关文档，根据关键词返回最匹配的文件内容",
+        parameters: {
+            type: "object",
+            properties: {
+                keywords: {
+                    type: "array",
+                    items: {
+                        type: "string"
+                    },
+                    description: "用于搜索知识库的关键词列表"
+                }
+            },
+            required: ["keywords"]
+        }
+    }
+}
 // 为ai提供有限的系统信息
 export const ai_tools = [
     {

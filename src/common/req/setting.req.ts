@@ -29,6 +29,25 @@ export class ai_agent_Item {
     dotenv?: string;
 }
 
+export class ai_docs_item {
+    dir:string;
+    open: boolean = false;
+    note: string;
+}
+
+export class ai_docs_setting {
+    list:ai_docs_item[];
+    param:''
+}
+export class ai_docs_setting_param {
+    docs_max_num = 5
+}
+
+export const ai_docs_setting_param_default = `
+# 获取最多文章数量
+docs_max_num=5
+`
+
 export class ai_agent_item_dotenv {
     tool_error_max = 1 ; // 工具报错最大尝试次数
     tool_call_max = 5; // 工具最多调用次数

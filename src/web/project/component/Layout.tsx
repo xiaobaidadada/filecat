@@ -29,7 +29,7 @@ const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/share/Share'))
 const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
-
+const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting'))
 
 function Layout() {
     const {t} = useTranslation();
@@ -84,7 +84,8 @@ function Layout() {
     const hidden_navList : NavItem[][] = [
         [
             { rto: `${routerConfig.share}/`, component: <Share />},
-            { rto: `${routerConfig.share_list_setting_page}/`, component: <ShareListSetting />}
+            { rto: `${routerConfig.share_list_setting_page}/`, component: <ShareListSetting />},
+            { rto: `${routerConfig.ai_agent_setting_page}/`, component: <AIAgentChatSetting />}
         ]
     ]
     if (custom_fun_opt) {

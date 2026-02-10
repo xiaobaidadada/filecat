@@ -5,7 +5,6 @@ import {throttle,debounce} from "../../../../common/fun.util";
 import {ai_agent_message_item} from "../../../../common/req/common.pojo";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {AIAgentChatSetting} from "./AIAgentChatSetting";
 import Header from "../../../meta/component/Header";
 import {ActionButton} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
@@ -16,6 +15,8 @@ import {useTranslation} from "react-i18next";
 import {using_confirm} from "../prompts/prompt.util";
 import {RCode} from "../../../../common/Result.pojo";
 import {ai_agent_item_dotenv} from "../../../../common/req/setting.req";
+import {routerConfig} from "../../../../common/RouterConfig";
+import {useNavigate} from "react-router-dom";
 // import './ChatPage.css';
 
 interface Message {
@@ -111,10 +112,9 @@ export default function AiAgentChatPage() {
 
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const confirm_dell_all = using_confirm()
-
+    const navigate = useNavigate();
     const autoScrollRef = useRef(true); // 是否允许自动滚动
     const env_config = useRef(new ai_agent_item_dotenv())
 
@@ -299,7 +299,8 @@ export default function AiAgentChatPage() {
                }}/>
                {check_user_auth(UserAuth.ai_agent_setting) &&
                    <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
-                       set_ai_agent_chat_setting(true);
+                       navigate(`/${routerConfig.ai_agent_setting_page}`);
+                       // set_ai_agent_chat_setting(true);
                    }}/>
                }
            </Header>
@@ -337,7 +338,6 @@ export default function AiAgentChatPage() {
                </div>
 
            </div>
-           { ai_agent_chat_setting && <AIAgentChatSetting />}
        </React.Fragment>
     );
 }

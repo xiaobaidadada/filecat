@@ -1,5 +1,5 @@
 import {useTranslation} from "react-i18next";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useRecoilState} from "recoil";
@@ -15,7 +15,13 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_agent_item_dotenv_default, json_params_default} from "../../../../common/req/setting.req";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv_default,
+    ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
+    json_params_default
+} from "../../../../common/req/setting.req";
+import {useNavigate} from "react-router-dom";
 
 
 const tip_text = `
@@ -30,22 +36,40 @@ const tip_text = `
 }\`关闭(豆包例子)
 6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
 `
-export function AIAgentChatSetting() {
+const docs_tip = `
+1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据
+2. 该功能只能用于小型知识库，作为本地小型或者公司内部资料使用还是没有问题的
+3. 会加载该目录下所有的文件，不会递归的读取文件
+4. 查询的效率取决于知识库中每个文件的大小
+5. 每次保存都会重新加载知识库中的文件，不会全部加载，而是检测哪些文件有变更
+`
+export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const [ai_agent_chat_setting, set_ai_agent_chat_setting] = useRecoilState($stroe.ai_agent_chat_setting);
     const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const headers_docs = [t("编号"),t("本地目录"), t("是否开启"),t("备注") ];
+
     const [rows, setRows] = useState<ai_agent_Item>([]);
+    const [docs_list,set_docs_list] = useState<ai_docs_item>([]);
+    const docs_param = useRef();
+
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
-
+    const navigate = useNavigate();
     const getItems = async () => {
         // 文件夹根路径
         const result = await settingHttp.get("ai_agent_setting");
         if (result.code === RCode.Sucess) {
             setRows(result.data.models);
+        }
+
+        const docs_result = await settingHttp.get("ai_docs_setting");
+        if (docs_result.code === RCode.Sucess) {
+            // console.log()
+            set_docs_list(docs_result.data.list);
+            docs_param.current = docs_result.data.param;
         }
     }
     useEffect(()=>{
@@ -67,9 +91,16 @@ export function AIAgentChatSetting() {
     const add = ()=>{
         setRows([...rows,{note:"",open:false,path:""}]);
     }
+    const add_docs = ()=>{
+        set_docs_list([...docs_list,{note:"",open:false,dir:""}]);
+    }
     const del = (index) => {
         rows.splice(index, 1);
         setRows([...rows]);
+    }
+    const del_docs = (index) => {
+        docs_list.splice(index, 1);
+        set_docs_list([...docs_list]);
     }
     const copy = (index) => {
         setRows([...rows,{...rows[index],open: false}]);
@@ -83,11 +114,29 @@ export function AIAgentChatSetting() {
             NotySucess("保存成功")
         }
     }
+    const save_docs = async (param?:any) => {
+        for (let i =0; i<rows.length;i++) {
+            rows[i].index = i;
+        }
+        let body:any = {
+            list:docs_list,
+            param:docs_param.current,
+        }
+        if(param) {
+            body = {
+                param:param
+            }
+        }
+        const result = await settingHttp.post("ai_docs_setting_save", body);
+        if (result.code === RCode.Sucess) {
+            NotySucess("保存成功")
+        }
+    }
     return <div>
         <Header>
             {check_user_auth(UserAuth.ai_agent_setting) &&
-                <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                    set_ai_agent_chat_setting(false)
+                <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => {
+                    navigate(-1)
                 }}/>
             }
         </Header>
@@ -145,7 +194,7 @@ export function AIAgentChatSetting() {
                                         })
                                     }}/>
                                     <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].dotenv??ai_agent_item_dotenv_default)
+                                        editor_data.set_value_temp(rows[index].dotenv||ai_agent_item_dotenv_default)
                                         setEditorSetting({
                                             model: "ace/mode/ini",
                                             open: true,
@@ -173,7 +222,49 @@ export function AIAgentChatSetting() {
                         })} width={"10rem"}/>
                     </CardFull>
                 </Column>
-
+                <Column>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
+                              titleCom={<div>
+                                  <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
+                                  <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                         save_docs()
+                                    }}
+                                  />
+                                  <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
+                                      editor_data.set_value_temp(docs_param.current||ai_docs_setting_param_default)
+                                      setEditorSetting({
+                                          model: "ace/mode/ini",
+                                          open: true,
+                                          fileName: "",
+                                          save:async (context)=>{
+                                              docs_param.current = context
+                                              editor_data.set_value_temp('')
+                                              save_docs(docs_param.current)
+                                          }
+                                      })
+                                  }}/>
+                    </div>}>
+                        <Table headers={headers_docs} rows={docs_list.map((item, index) => {
+                            const new_list = [
+                                <div>{index}</div>,
+                                <InputText value={item.dir} handleInputChange={(value) => {
+                                    item.dir = value;
+                                }} no_border={true}/>,
+                                <Select value={item.open} onChange={(value) => {
+                                    item.open = value === 'true';
+                                    set_docs_list([...docs_list]);
+                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+                                <div>
+                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_docs(index)}/>
+                                </div>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </CardFull>
+                </Column>
 
             </FullScreenContext>
         </FullScreenDiv>

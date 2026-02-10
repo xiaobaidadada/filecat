@@ -1,4 +1,4 @@
-import {ai_tools} from "./ai_agent.constant";
+import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
 import {ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
@@ -11,19 +11,115 @@ import {SystemUtil} from "../sys/sys.utl";
 import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
-import {ai_agent_Item, ai_agent_item_dotenv} from "../../../common/req/setting.req";
+import {ai_agent_Item, ai_agent_item_dotenv, ai_docs_setting_param} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
+import FlexSearch, {Charset, Index} from "flexsearch";
+import fs from "fs";
+import {FileUtil} from "../file/FileUtil";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 let MODEL = "doubao-seed-1-6";
 let config: ai_agent_Item
 let config_env = new ai_agent_item_dotenv()
+let config_search_doc = new ai_docs_setting_param()
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
  */
 export class Ai_agentService {
+
+    doc_index: Index
+    docs_data_map: Map<string, {
+        path: string,
+        // content:string,
+        file_name: string
+        time_stamp: number
+    }> = new Map()
+
+    public async search_docs({keywords}: { keywords: string[] }) {
+        const scoreMap = new Map<string, number>();
+        for (const k of keywords) {
+            const ids = this.doc_index.search(k, {
+                suggest: true, // 可以不完全匹配也返回 接近匹配就行
+                resolution: 9,
+                cache: true,
+                limit: config_search_doc.docs_max_num
+                // offset // 分页
+            }) as string[];
+            for (const id of ids) {
+                scoreMap.set(id, (scoreMap.get(id) || 0) + 1);
+            }
+        }
+        const sorted = [...scoreMap.entries()]
+            .sort((a, b) => b[1] - a[1]) // 从大到小排序 按得分排序
+            .map(([id]) => id); // 只保留 key也就是id
+        const results: {
+            file_name: string,
+            content: string
+        }[] = []
+        for (const id of sorted) {
+            const file = this.docs_data_map.get(id)
+            results.push({
+                file_name: file.file_name,
+                content: (await FileUtil.readFileSync(file.path)).toString(),
+            })
+        }
+        return JSON.stringify({
+            results
+        });
+    }
+
+    init_search_docs_param() {
+        const setting = settingService.ai_docs_setting()
+        Env.load(setting.param, config_env);
+    }
+
+    async init_search_docs() {
+        if (!this.doc_index) {
+            this.doc_index = new FlexSearch.Index({
+                tokenize: "strict",
+                encoder: Charset.CJK
+            });
+        }
+        const setting = settingService.ai_docs_setting()
+        const list = setting.list
+        const files_set = new Set<string>()
+        for (const it of list) {
+            if(!it.open) continue;
+            const files = await FileUtil.readdirSync(it.dir)
+            for (const file of files) {
+                const file_path = path.join(it.dir, file);
+                const file_stats = await FileUtil.statSync(file_path);
+                if (this.docs_data_map.has(file_path)) {
+                    const it = this.docs_data_map.get(file_path);
+                    if (it.time_stamp === file_stats.mtime.getTime()) {
+                        continue;
+                    } else {
+                        it.time_stamp = file_stats.mtime.getTime();
+                        this.doc_index.remove(file_path);
+                        const content = (await FileUtil.readFileSync(file_path)).toString();
+                        this.doc_index.update(file_path, content);
+                    }
+                } else {
+                    const content = (await FileUtil.readFileSync(file_path)).toString();
+                    this.doc_index.add(file_path, content)
+                    this.docs_data_map.set(file_path, {
+                        file_name: file,
+                        time_stamp: file_stats.mtime.getTime(),
+                        path: file_path,
+                    });
+                }
+                files_set.add(file_path)
+            }
+        }
+        // 删除不存在的文章
+        for (const key of this.docs_data_map.keys()) {
+            if (!files_set.has(key)) {
+                this.doc_index.remove(key)
+            }
+        }
+    }
 
     get_env() {
         return config_env;
@@ -128,6 +224,7 @@ export class Ai_agentService {
    当前目录是 ${rootPath}，
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 2. 使用 markdown格式回答用户。
+${this.docs_data_map.size?`3. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料。`:''}
 
 ${config.sys_prompt ?? ''}
 `
@@ -325,7 +422,7 @@ ${config.sys_prompt ?? ''}
             return res;
         }
         if (!json_body.stream) {
-            const r:any = await aiResponse.json()
+            const r: any = await aiResponse.json()
             const msg = r.choices[0].message;
             this.write_to_res(res, msg.content);
             res.end();
@@ -345,9 +442,13 @@ ${config.sys_prompt ?? ''}
                              controller: AbortController
     ) {
         // const l_time = Date.now();
+        const tools: any[] = [...ai_tools]
+        if (this.docs_data_map.size) {
+            tools.push(ai_tools_search_docs)
+        }
         const json_body: any = {
             messages,
-            tools: ai_tools,
+            tools: tools,
             temperature: 0.2,
             model: MODEL,
             // thinking : { // 豆包深度思考
@@ -365,7 +466,7 @@ ${config.sys_prompt ?? ''}
             console.log(err)
         }
         // 最后重新赋值确保不会被修改
-        json_body.tools = ai_tools
+        json_body.tools = tools
         json_body.messages = messages
         const res = await fetch(BASE_URL, {
             method: "POST",
@@ -412,7 +513,7 @@ ${config.sys_prompt ?? ''}
                         const json = JSON.parse(dataStr);
                         // 你可以根据接口结构取你想要的字段
                         const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
-                        if(message)
+                        if (message)
                             call_data(message);
                     } catch (e) {
                         if (e.name === "AbortError") {

@@ -6,7 +6,7 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
-    ai_agent_Item,
+    ai_agent_Item, ai_docs_item, ai_docs_setting,
     dir_upload_max_num_item,
     FileQuickCmdItem,
     FileSettingItem,
@@ -422,7 +422,7 @@ export class SettingService {
             const pojo = new ai_agent_Item()
             // 默认添加豆包的 api
             pojo.url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-            pojo.model = "doubao-seed-1-6-251015"
+            pojo.model = "doubao-seed-1-6"
             pojo.note = "豆包模型"
             pojo.open = false
             return {
@@ -432,6 +432,32 @@ export class SettingService {
             }
         } else {
             return r
+        }
+    }
+
+    ai_docs_setting():ai_docs_setting{
+        return DataUtil.get(data_common_key.ai_agent_docs_setting) ??{
+            list:[],
+            param:''
+        }
+    }
+
+    async ai_docs_setting_save(token,data:ai_docs_setting) {
+        const source_item = this.ai_docs_setting()
+        if(data.list) {
+            for (const it of data.list) {
+                userService.check_user_path(token, it.dir)
+            }
+            source_item.list = data.list
+        }
+        if (data.param) {
+            source_item.list = data.param
+        }
+        DataUtil.set(data_common_key.ai_agent_docs_setting, data);
+        if(data.list)
+        await ai_agentService.init_search_docs();
+        if(data.param) {
+            ai_agentService.init_search_docs_param()
         }
     }
 
@@ -703,4 +729,6 @@ export class SettingService {
 export const settingService: SettingService = new SettingService();
 ServerEvent.on("start", (data) => {
     settingService.init();
+    ai_agentService.init_search_docs_param()
+    ai_agentService.init_search_docs().catch(console.error);
 })
