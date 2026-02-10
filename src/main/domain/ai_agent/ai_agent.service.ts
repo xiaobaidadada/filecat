@@ -73,6 +73,7 @@ export class Ai_agentService {
     init_search_docs_param() {
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
+        console.log(`ai知识库参数`,JSON.stringify(config_search_doc))
     }
 
     async init_search_docs() {
@@ -82,45 +83,93 @@ export class Ai_agentService {
                 encoder: Charset.CJK
             });
         }
-        const setting = settingService.ai_docs_setting()
-        const list = setting.list
-        const files_set = new Set<string>()
-        for (const it of list) {
-            if(!it.open) continue;
-            const files = await FileUtil.readdirSync(it.dir)
-            for (const file of files) {
-                const file_path = path.join(it.dir, file);
-                const file_stats = await FileUtil.statSync(file_path);
-                if(!file_stats.isFile()) continue;
-                if (this.docs_data_map.has(file_path)) {
-                    const it = this.docs_data_map.get(file_path);
-                    if (it.time_stamp === file_stats.mtime.getTime()) {
-                        continue;
-                    } else {
-                        it.time_stamp = file_stats.mtime.getTime();
-                        this.doc_index.remove(file_path);
-                        const content = ` 文件${it.file_name} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
-                        this.doc_index.update(file_path, content);
-                    }
-                } else {
-                    const content = (await FileUtil.readFileSync(file_path)).toString();
-                    this.doc_index.add(file_path, content)
-                    this.docs_data_map.set(file_path, {
-                        file_name: file,
-                        time_stamp: file_stats.mtime.getTime(),
-                        path: file_path,
-                    });
-                }
-                files_set.add(file_path)
-            }
+        const dir_recursion_depth = config_search_doc.dir_recursion_depth
+        const setting = settingService.ai_docs_setting();
+        const list = setting.list;
+        if(!list) {
+            return;
         }
-        // 删除不存在的文章
+        const files_set = new Set<string>();
+        let update_file_num = 0
+        // 处理单个文件
+        const handleFile = async (file_path: string, file_name: string) => {
+            const file_stats = await FileUtil.statSync(file_path);
+            if (!file_stats.isFile()) return;
+
+            if (this.docs_data_map.has(file_path)) {
+                const it = this.docs_data_map.get(file_path)!;
+                const mtime = file_stats.mtime.getTime();
+
+                if (it.time_stamp === mtime) {
+                    // 文件没变，跳过
+                } else {
+                    it.time_stamp = mtime;
+                    this.doc_index.remove(file_path);
+
+                    const content = ` 文件 ${it.file_name} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
+                    this.doc_index.update(file_path, content);
+                    update_file_num++
+                }
+            } else {
+                const content = (await FileUtil.readFileSync(file_path)).toString();
+                this.doc_index.add(file_path, content);
+
+                this.docs_data_map.set(file_path, {
+                    file_name,
+                    time_stamp: file_stats.mtime.getTime(),
+                    path: file_path,
+                });
+                update_file_num++
+            }
+
+            files_set.add(file_path);
+        };
+
+        // 递归遍历目录
+        // 递归遍历目录（带深度控制）
+        const walkDir = async (dir: string, depth: number) => {
+            // 超过最大递归深度，直接返回
+            if (depth > dir_recursion_depth) {
+                return;
+            }
+
+            const entries = await FileUtil.readdirSync(dir);
+
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry);
+                const stat = await FileUtil.statSync(fullPath);
+
+                if (stat.isDirectory()) {
+                    // 只有在没超过深度时才递归
+                    if (depth < dir_recursion_depth) {
+                        await walkDir(fullPath, depth + 1);
+                    }
+                } else if (stat.isFile()) {
+                    await handleFile(fullPath, entry);
+                }
+            }
+        };
+
+
+        // 扫描配置中的目录
+        for (const it of list) {
+            if (!it.open) continue;
+            await walkDir(it.dir,0);
+        }
+
+        // 删除已经不存在的文件
         for (const key of this.docs_data_map.keys()) {
             if (!files_set.has(key)) {
-                this.doc_index.remove(key)
+                this.doc_index.remove(key);
+                this.docs_data_map.delete(key);
+                update_file_num++
             }
         }
+
+        console.log(`共扫描了 ${files_set.size} 个知识库文件`)
+        console.log(`共更新了 ${update_file_num} 个知识库文件`)
     }
+
 
     get_env() {
         return config_env;

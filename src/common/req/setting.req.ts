@@ -42,6 +42,7 @@ export class ai_docs_setting {
 export class ai_docs_setting_param {
     docs_max_num = 5
     force_use_local_data = false;
+    dir_recursion_depth = 10
 }
 
 export const ai_docs_setting_param_default = `
@@ -49,6 +50,8 @@ export const ai_docs_setting_param_default = `
 docs_max_num=5
 # 强制每次聊天前都执行本地知识库搜索
 force_use_local_data=false
+# 读取知识库目录的时候，递归最大深度
+dir_recursion_depth=10
 `
 
 export class ai_agent_item_dotenv {

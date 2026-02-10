@@ -39,8 +39,7 @@ const tip_text = `
 const docs_tip = `
 1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据
 2. 该功能只能用于小型知识库，作为本地小型或者公司内部资料使用还是没有问题的
-3. 会加载该目录下所有的文件，不会递归的读取文件
-4. 每次保存都会重新加载知识库中的文件，不会全部重新加载，而是检测哪些文件有变更
+3. 每次保存都会重新加载知识库中的文件，不会全部重新加载，而是检测哪些文件有变更，所有每次修改其中某个文件的后，需要来这里点一下保存触发全量更新
 `
 export default function AIAgentChatSetting() {
 
@@ -65,7 +64,7 @@ export default function AIAgentChatSetting() {
         }
 
         const docs_result = await settingHttp.get("ai_docs_setting");
-        if (docs_result.code === RCode.Sucess) {
+        if (docs_result.code === RCode.Sucess && docs_result.data.list?.length) {
             // console.log()
             set_docs_list(docs_result.data.list);
             docs_param.current = docs_result.data.param;

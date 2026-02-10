@@ -444,19 +444,20 @@ export class SettingService {
 
     async ai_docs_setting_save(token,data:ai_docs_setting) {
         const source_item = this.ai_docs_setting()
-        if(data.list) {
+        if(data.list != null) {
             for (const it of data.list) {
                 userService.check_user_path(token, it.dir)
             }
             source_item.list = data.list
         }
-        if (data.param) {
-            source_item.list = data.param
+        if (data.param != null) {
+            source_item.param = data.param
         }
-        DataUtil.set(data_common_key.ai_agent_docs_setting, data);
-        if(data.list)
-        await ai_agentService.init_search_docs();
-        if(data.param) {
+        DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
+        if(data.list != null) {
+            await ai_agentService.init_search_docs();
+        }
+        if(data.param != null) {
             ai_agentService.init_search_docs_param()
         }
     }
