@@ -179,7 +179,11 @@ export class Env {
                 continue;
             }
             const [key, value] = line.split('=');
-            target[key.trim()] = this.parseValue(value.trim());
+            try {
+                target[key.trim()] = JSON.parse(value.trim());
+            } catch (e) {
+                target[key.trim()] = this.parseValue(value.trim());
+            }
         }
     }
 }

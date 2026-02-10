@@ -155,3 +155,50 @@ export function removeTrailingPath(str) {
 
     return trimmedStr; // 返回没有尾部反斜杠和空白字符的字符串
 }
+
+export function matchGitignore(path: string, rule: string): boolean {
+    if (!path || !rule) return false;
+    // 统一路径分隔符
+    path = normalize(path);
+    rule = normalize(rule.trim());
+    const isDirRule = rule.endsWith("/");
+    if (isDirRule) rule = rule.slice(0, -1);
+    // 处理根路径规则
+    const isRootRule = rule.startsWith("/");
+    if (isRootRule) rule = rule.slice(1);
+    const regex = ignoreToRegex(rule, isDirRule, isRootRule);
+    return regex.test(path);
+}
+
+/* ---------------- 工具函数 ---------------- */
+
+function normalize(p: string) {
+    return p.replace(/\\/g, "/").replace(/^\/+/, "");
+}
+
+function ignoreToRegex(rule: string, isDir: boolean, isRoot: boolean): RegExp {
+    let r = rule
+        // 转义正则关键字符
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        // ** 匹配任意层级
+        .replace(/\\\*\\\*/g, "§§DOUBLE_STAR§§")
+        // * 匹配单层
+        .replace(/\\\*/g, "[^/]*")
+        // 还原 **
+        .replace(/§§DOUBLE_STAR§§/g, ".*");
+
+    if (isRoot) {
+        r = "^" + r;
+    } else {
+        // 任意路径段开始
+        r = "(^|/)" + r;
+    }
+
+    if (isDir) {
+        r += "(/|$)";
+    } else {
+        r += "$";
+    }
+
+    return new RegExp(r);
+}

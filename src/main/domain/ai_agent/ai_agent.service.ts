@@ -16,6 +16,7 @@ import {Env} from "../../../common/Env";
 import FlexSearch, {Charset, Index} from "flexsearch";
 import fs from "fs";
 import {FileUtil} from "../file/FileUtil";
+import {matchGitignore} from "../../../common/StringUtil";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -89,6 +90,17 @@ export class Ai_agentService {
         if(!list) {
             return;
         }
+        let ignore_list :string[] = []
+        let ignore_list_str = []
+        if(config_search_doc.ignore_dir) {
+            if(typeof config_search_doc.ignore_dir === 'string') {
+                ignore_list.push(config_search_doc.ignore_dir);
+            } else {
+                if(Array.isArray(config_search_doc.ignore_dir)) {
+                    ignore_list = config_search_doc.ignore_dir
+                }
+            }
+        }
         const files_set = new Set<string>();
         let update_file_num = 0
         // 处理单个文件
@@ -137,6 +149,15 @@ export class Ai_agentService {
 
             for (const entry of entries) {
                 const fullPath = path.join(dir, entry);
+                let ok = false;
+                for (const ignore of ignore_list) {
+                    if(matchGitignore(entry, ignore)) {
+                        ok = true;
+                        ignore_list_str.push(entry);
+                        break;
+                    }
+                }
+                if(ok) continue;
                 const stat = await FileUtil.statSync(fullPath);
 
                 if (stat.isDirectory()) {
@@ -168,6 +189,7 @@ export class Ai_agentService {
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
+        console.log(`忽略了以下文件夹 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
     }
 
 

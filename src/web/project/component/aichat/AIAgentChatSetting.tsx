@@ -117,8 +117,7 @@ export default function AIAgentChatSetting() {
             rows[i].index = i;
         }
         let body:any = {
-            list:docs_list,
-            param:docs_param.current,
+            list:docs_list
         }
         if(param) {
             body = {
@@ -223,11 +222,6 @@ export default function AIAgentChatSetting() {
                 <Column>
                     <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
                               titleCom={<div>
-                                  <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
-                                  <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
-                                         save_docs()
-                                    }}
-                                  />
                                   <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
                                       editor_data.set_value_temp(docs_param.current||ai_docs_setting_param_default)
                                       setEditorSetting({
@@ -241,6 +235,11 @@ export default function AIAgentChatSetting() {
                                           }
                                       })
                                   }}/>
+                                  <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
+                                  <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                         save_docs()
+                                    }}
+                                  />
                     </div>}>
                         <Table headers={headers_docs} rows={docs_list.map((item, index) => {
                             const new_list = [
