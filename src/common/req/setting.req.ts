@@ -44,6 +44,7 @@ export class ai_docs_setting_param {
     force_use_local_data = false;
     dir_recursion_depth = 10
     ignore_dir:string|string[] = "node_modules/"
+    max_file_num = 1000000
 }
 
 export const ai_docs_setting_param_default = `
@@ -55,6 +56,8 @@ force_use_local_data=false
 dir_recursion_depth=10
 # gitignore类型的忽略表达式，用于忽略某些文件不被索引，也支持数组 ["abc","node_modules"]
 ignore_dir=node_modules
+# 加载最多文件数量
+max_file_num=1000000
 `
 
 export class ai_agent_item_dotenv {

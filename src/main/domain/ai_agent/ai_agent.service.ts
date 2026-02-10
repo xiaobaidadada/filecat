@@ -108,6 +108,9 @@ export class Ai_agentService {
         let file_char_num = 0
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
+            if(files_set.size > config_search_doc.max_file_num) {
+                return;
+            }
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
             file_total += file_stats.size;
@@ -153,6 +156,9 @@ export class Ai_agentService {
             const entries = await FileUtil.readdirSync(dir);
 
             for (const entry of entries) {
+                if(files_set.size > config_search_doc.max_file_num) {
+                    return;
+                }
                 const fullPath = path.join(dir, entry);
                 let ok = false;
                 for (const ignore of ignore_list) {
