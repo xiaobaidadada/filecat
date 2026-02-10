@@ -17,6 +17,7 @@ import FlexSearch, {Charset, Index} from "flexsearch";
 import fs from "fs";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
+import {formatFileSize} from "../../../common/ValueUtil";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -62,13 +63,13 @@ export class Ai_agentService {
         for (const id of sorted) {
             const file = this.docs_data_map.get(id)
             results.push({
-                file_name: file.file_name,
+                file_name: file.path,
                 content: (await FileUtil.readFileSync(file.path)).toString(),
             })
         }
-        return JSON.stringify({
+        return `知识库搜索结果 ${JSON.stringify({
             results
-        });
+        })}`;
     }
 
     init_search_docs_param() {
@@ -103,11 +104,13 @@ export class Ai_agentService {
         }
         const files_set = new Set<string>();
         let update_file_num = 0
+        let file_total = 0
+        let file_char_num = 0
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
-
+            file_total += file_stats.size;
             if (this.docs_data_map.has(file_path)) {
                 const it = this.docs_data_map.get(file_path)!;
                 const mtime = file_stats.mtime.getTime();
@@ -118,12 +121,14 @@ export class Ai_agentService {
                     it.time_stamp = mtime;
                     this.doc_index.remove(file_path);
 
-                    const content = ` 文件 ${it.file_name} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
+                    const content = ` 文件 ${it.path} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
+                    file_char_num+=content.length;
                     this.doc_index.update(file_path, content);
                     update_file_num++
                 }
             } else {
                 const content = (await FileUtil.readFileSync(file_path)).toString();
+                file_char_num+=content.length;
                 this.doc_index.add(file_path, content);
 
                 this.docs_data_map.set(file_path, {
@@ -189,7 +194,9 @@ export class Ai_agentService {
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
-        console.log(`忽略了以下文件夹 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
+        console.log(`知识库总字符数量 ${file_char_num} `);
+        console.log(`知识库总文件大小 ${formatFileSize(file_total)} `);
+        console.log(`忽略了以下文件 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
     }
 
 
@@ -300,7 +307,8 @@ export class Ai_agentService {
    当前目录是 ${rootPath}，
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 2. 使用 markdown格式回答用户。
-${this.is_use_local_data()?`3. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料。`:''}
+3. 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
+${this.is_use_local_data()?`4. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。`:''}
 
 ${config.sys_prompt ?? ''}
 `
