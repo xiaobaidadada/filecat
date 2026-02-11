@@ -96,6 +96,8 @@ const tasksLister = new Listr(
                         }
 
                         copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
+                        copyFileSync(path.resolve("node_modules/jieba-wasm/pkg/bundler/nodejs/jieba_rs_wasm_bg.wasm"), path.join(__dirname, "..", "build", "jieba_rs_wasm_bg.wasm"))
+
                         rimraf.sync(path.join(__dirname,"..","build","server"));
 
                         res(true);

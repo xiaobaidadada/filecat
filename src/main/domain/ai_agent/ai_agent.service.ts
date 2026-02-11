@@ -25,6 +25,13 @@ import {AsyncPool} from "../../../common/ListUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
+const {
+    cut,
+    cut_all,
+    cut_for_search,
+    tokenize,
+    add_word,
+} = require("jieba-wasm");
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -48,18 +55,38 @@ export class Ai_agentService {
     docs_info = new ai_docs_load_info()
     public all_wss_set = new Set<Wss>;
 
+
     public async search_docs({keywords}: { keywords: string[] }) {
         const scoreMap = new Map<string, number>();
-        for (const k of keywords) {
+        for (let k of keywords) {
+            const list_p = cut_for_search(k,true)
+            k = list_p.join(" ")
             const ids = this.doc_index.search(k, {
-                suggest: true, // 可以不完全匹配也返回 接近匹配就行
-                resolution: 9,
-                cache: true,
+                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
+                // resolution: 9,
+                // cache: true, // 重复查询概率低 没有必要
                 limit: config_search_doc.docs_max_num
                 // offset // 分页
             }) as string[];
-            for (const id of ids) {
-                scoreMap.set(id, (scoreMap.get(id) || 0) + 1);
+            // 得分排序
+            const size_list = await Promise.all(
+                ids.map(async (id) => {
+                    const stat = await FileUtil.statSync(id);
+                    return { id, size: stat.size };
+                })
+            );
+            // 文件越大越靠前
+            size_list.sort((a, b) => b.size - a.size);
+            const p =  cut(k)
+            for (const [index, { id }] of size_list.entries()) {
+                let score = (scoreMap.get(id) || 0) + 1;
+                for (const i of p) {
+                    if (id.toLowerCase().includes(i.toLowerCase())) {
+                        score+=size_list.length;
+                    }
+                }
+                score += index;
+                scoreMap.set(id, score);
             }
         }
         const sorted = [...scoreMap.entries()]
@@ -69,7 +96,11 @@ export class Ai_agentService {
             file_name: string,
             content: string
         }[] = []
-        for (const id of sorted) {
+        let p_r_list = sorted
+        if(p_r_list.length > config_search_doc.docs_max_num) {
+            p_r_list = sorted.slice(0,config_search_doc.docs_max_num)
+        }
+        for (const id of p_r_list) {
             const file = this.docs_data_map.get(id)
             results.push({
                 file_name: file.path,
@@ -156,14 +187,16 @@ export class Ai_agentService {
                     it.time_stamp = mtime;
                     this.doc_index.remove(file_path);
 
-                    const content = ` 文件 ${it.path} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
+                    let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
                     this.docs_info.char_num +=content.length;
+                    content = cut(content,true).join(" ")
                     this.doc_index.update(file_path, content);
                     update_file_num++
                 }
             } else {
-                const content = (await FileUtil.readFileSync(file_path)).toString();
+                let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
                 this.docs_info.char_num +=content.length;
+                content = cut(content,true).join(" ")
                 this.doc_index.add(file_path, content);
 
                 this.docs_data_map.set(file_path, {

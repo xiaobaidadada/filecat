@@ -135,7 +135,7 @@ export default function AIAgentChatSetting() {
         let body:any = {
             list:docs_list
         }
-        if(param) {
+        if(param != null) {
             body = {
                 param:param
             }
