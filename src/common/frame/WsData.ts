@@ -115,6 +115,8 @@ export enum CmdType {
     workflow_realtime_one_rsq,
     workflow_search_by_run_name,
 
+    ai_load_info ,
+
 }
 
 export enum WsConnectType {

@@ -3,6 +3,9 @@ import {Response} from "express";
 import {ai_agentService} from "./ai_agent.service";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
+import {msg} from "../../../common/frame/router";
+import {CmdType, WsData} from "../../../common/frame/WsData";
+import {Wss} from "../../../common/frame/ws.server";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -39,6 +42,17 @@ export class Ai_AgentController {
             }
         }
         return stream
+    }
+
+    @msg(CmdType.ai_load_info)
+    get_info(data: WsData<any>) {
+        const wss = (data.wss as Wss)
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_setting);
+        ai_agentService.all_wss_set.add(wss)
+        wss.setClose(()=>{
+            ai_agentService.all_wss_set.delete(wss)
+        })
+        return ai_agentService.docs_info
     }
 
 }

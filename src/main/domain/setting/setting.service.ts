@@ -455,7 +455,7 @@ export class SettingService {
         }
         DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
         if(data.list != null) {
-            await ai_agentService.init_search_docs();
+             ai_agentService.init_search_docs().catch(console.error);
         }
         if(data.param != null) {
             ai_agentService.init_search_docs_param()

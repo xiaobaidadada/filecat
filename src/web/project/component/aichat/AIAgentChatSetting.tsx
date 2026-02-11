@@ -4,10 +4,10 @@ import {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {Column, FullScreenContext, FullScreenDiv} from "../../../meta/component/Dashboard";
+import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
-import {CardFull} from "../../../meta/component/Card";
+import {Card, CardFull} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -18,10 +18,16 @@ import {UserAuth} from "../../../../common/req/user.req";
 import {
     ai_agent_Item,
     ai_agent_item_dotenv_default,
-    ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
+    ai_docs_item,
+    ai_docs_load_info,
+    ai_docs_setting,
+    ai_docs_setting_param_default,
     json_params_default
 } from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
+import {ws} from "../../util/ws";
+import {CmdType, WsData} from "../../../../common/frame/WsData";
+import { formatFileSize } from "../../../../common/ValueUtil";
 
 
 const tip_text = `
@@ -50,6 +56,7 @@ export default function AIAgentChatSetting() {
 
     const [rows, setRows] = useState<ai_agent_Item>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item>([]);
+    const [load_info,set_load_info] = useState<ai_docs_load_info>(null);
     const docs_param = useRef();
 
     const tip = using_tip()
@@ -63,11 +70,20 @@ export default function AIAgentChatSetting() {
             setRows(result.data.models);
         }
 
+        await ws.addMsg(CmdType.ai_load_info, (data:WsData<ai_docs_load_info>)=>{
+            // console.log(data)
+            set_load_info(data.context)
+        })
+        const info = await ws.sendData(CmdType.ai_load_info, {})
+        // console.log(info)
+        set_load_info(info.context)
         const docs_result = await settingHttp.get("ai_docs_setting");
         if (docs_result.code === RCode.Sucess && docs_result.data.list?.length) {
             // console.log()
-            set_docs_list(docs_result.data.list);
             docs_param.current = docs_result.data.param;
+            if(docs_result.data.list?.length) {
+                set_docs_list(docs_result.data.list);
+            }
         }
     }
     useEffect(()=>{
@@ -139,130 +155,146 @@ export default function AIAgentChatSetting() {
         </Header>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
-                <Column widthPer={70}>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
-                        save()
-                    }}/></div>}>
-                        <Table headers={headers} rows={rows.map((item, index) => {
-                            const new_list = [
-                                <div>{index}</div>,
-                                <InputText value={item.url} handleInputChange={(value) => {
-                                    item.url = value;
-                                }} no_border={true}/>,
-                                <Select value={item.open} onChange={(value) => {
-                                    onChange(item,value,index);
-                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
-                                <InputText value={item.token} handleInputChange={(value) => {
-                                    item.token = value;
-                                }} no_border={true}/>,
-                                <InputText value={item.model} handleInputChange={(value) => {
-                                    item.model = value;
-                                }} no_border={true}/>,
-                                <div>
-                                    <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].sys_prompt??'')
-                                        setEditorSetting({
-                                            model: "ace/mode/text",
-                                            open: true,
-                                            fileName: "",
-                                            save:async (context)=>{
-                                                rows[index].sys_prompt = context
-                                                setRows(rows)
-                                                editor_data.set_value_temp('')
-                                                save(rows)
-                                                // console.log(context)
-                                            }
-                                        })
-                                    }}/>
-                                    <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].json_params??json_params_default)
-                                        setEditorSetting({
-                                            model: "ace/mode/json",
-                                            open: true,
-                                            fileName: "",
-                                            save:async (context)=>{
-                                                rows[index].json_params = context
-                                                setRows(rows)
-                                                editor_data.set_value_temp('')
-                                                save(rows)
-                                                // console.log(context)
-                                            },
-                                            can_format:true
-                                        })
-                                    }}/>
-                                    <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                        editor_data.set_value_temp(rows[index].dotenv||ai_agent_item_dotenv_default)
-                                        setEditorSetting({
-                                            model: "ace/mode/ini",
-                                            open: true,
-                                            fileName: "",
-                                            save:async (context)=>{
-                                                rows[index].dotenv = context
-                                                setRows(rows)
-                                                editor_data.set_value_temp('')
-                                                save(rows)
-                                                // console.log(context)
-                                            }
-                                        })
-                                    }}/>
-                                </div>
-                                ,
-                                <InputText value={item.note} handleInputChange={(value) => {
-                                    item.note = value;
-                                }} no_border={true}/>,
-                                <div>
-                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
-                                    <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
-                                </div>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"}/>
-                    </CardFull>
-                </Column>
-                <Column>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
-                              titleCom={<div>
-                                  <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                      editor_data.set_value_temp(docs_param.current||ai_docs_setting_param_default)
-                                      setEditorSetting({
-                                          model: "ace/mode/ini",
-                                          open: true,
-                                          fileName: "",
-                                          save:async (context)=>{
-                                              docs_param.current = context
-                                              editor_data.set_value_temp('')
-                                              save_docs(docs_param.current)
-                                          }
-                                      })
-                                  }}/>
-                                  <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
-                                  <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
-                                         save_docs()
-                                    }}
-                                  />
-                    </div>}>
-                        <Table headers={headers_docs} rows={docs_list.map((item, index) => {
-                            const new_list = [
-                                <div>{index}</div>,
-                                <InputText value={item.dir} handleInputChange={(value) => {
-                                    item.dir = value;
-                                }} no_border={true}/>,
-                                <Select value={item.open} onChange={(value) => {
-                                    item.open = value === 'true';
-                                    set_docs_list([...docs_list]);
-                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
-                                <InputText value={item.note} handleInputChange={(value) => {
-                                    item.note = value;
-                                }} no_border={true}/>,
-                                <div>
-                                    <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_docs(index)}/>
-                                </div>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"}/>
-                    </CardFull>
-                </Column>
-
+                <Dashboard>
+                    <Row>
+                        <Column widthPer={70}>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                save()
+                            }}/></div>}>
+                                <Table headers={headers} rows={rows.map((item, index) => {
+                                    const new_list = [
+                                        <div>{index}</div>,
+                                        <InputText value={item.url} handleInputChange={(value) => {
+                                            item.url = value;
+                                        }} no_border={true}/>,
+                                        <Select value={item.open} onChange={(value) => {
+                                            onChange(item,value,index);
+                                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                        <InputText value={item.token} handleInputChange={(value) => {
+                                            item.token = value;
+                                        }} no_border={true}/>,
+                                        <InputText value={item.model} handleInputChange={(value) => {
+                                            item.model = value;
+                                        }} no_border={true}/>,
+                                        <div>
+                                            <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
+                                                editor_data.set_value_temp(rows[index].sys_prompt??'')
+                                                setEditorSetting({
+                                                    model: "ace/mode/text",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        rows[index].sys_prompt = context
+                                                        setRows(rows)
+                                                        editor_data.set_value_temp('')
+                                                        save(rows)
+                                                        // console.log(context)
+                                                    }
+                                                })
+                                            }}/>
+                                            <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
+                                                editor_data.set_value_temp(rows[index].json_params??json_params_default)
+                                                setEditorSetting({
+                                                    model: "ace/mode/json",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        rows[index].json_params = context
+                                                        setRows(rows)
+                                                        editor_data.set_value_temp('')
+                                                        save(rows)
+                                                        // console.log(context)
+                                                    },
+                                                    can_format:true
+                                                })
+                                            }}/>
+                                            <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
+                                                editor_data.set_value_temp(rows[index].dotenv||ai_agent_item_dotenv_default)
+                                                setEditorSetting({
+                                                    model: "ace/mode/ini",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        rows[index].dotenv = context
+                                                        setRows(rows)
+                                                        editor_data.set_value_temp('')
+                                                        save(rows)
+                                                        // console.log(context)
+                                                    }
+                                                })
+                                            }}/>
+                                        </div>
+                                        ,
+                                        <InputText value={item.note} handleInputChange={(value) => {
+                                            item.note = value;
+                                        }} no_border={true}/>,
+                                        <div>
+                                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                                            <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
+                                        </div>,
+                                    ];
+                                    return new_list;
+                                })} width={"10rem"}/>
+                            </CardFull>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column widthPer={50}>
+                                <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
+                                          titleCom={<div>
+                                              <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
+                                                  editor_data.set_value_temp(docs_param.current||ai_docs_setting_param_default)
+                                                  setEditorSetting({
+                                                      model: "ace/mode/ini",
+                                                      open: true,
+                                                      fileName: "",
+                                                      save:async (context)=>{
+                                                          docs_param.current = context
+                                                          editor_data.set_value_temp('')
+                                                          save_docs(docs_param.current)
+                                                      }
+                                                  })
+                                              }}/>
+                                              <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
+                                              <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                                  save_docs()
+                                              }}
+                                              />
+                                          </div>}>
+                                    <Table headers={headers_docs} rows={docs_list.map((item, index) => {
+                                        const new_list = [
+                                            <div>{index}</div>,
+                                            <InputText value={item.dir} handleInputChange={(value) => {
+                                                item.dir = value;
+                                            }} no_border={true}/>,
+                                            <Select value={item.open} onChange={(value) => {
+                                                item.open = value === 'true';
+                                                set_docs_list([...docs_list]);
+                                            }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                            <InputText value={item.note} handleInputChange={(value) => {
+                                                item.note = value;
+                                            }} no_border={true}/>,
+                                            <div>
+                                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_docs(index)}/>
+                                            </div>,
+                                        ];
+                                        return new_list;
+                                    })} width={"10rem"}/>
+                                </CardFull>
+                        </Column>
+                        {
+                            load_info &&
+                            <Column widthPer={50}>
+                                <Card title={t("知识库加载信息")}>
+                                    <TextLine left={t("加载进度")} right={load_info?.progress}/>
+                                    <TextLine left={`${t("最近一次加载，总文件数量")}`} right={load_info?.num}/>
+                                    <TextLine left={`${t("最近一次加载，总文件字符数量")}`} right={load_info?.char_num}/>
+                                    <TextLine left={`${t("总文件大小")}`} right={formatFileSize(load_info?.size)}/>
+                                </Card>
+                            </Column>
+                        }
+                    </Row>
+                </Dashboard>
             </FullScreenContext>
         </FullScreenDiv>
     </div>;

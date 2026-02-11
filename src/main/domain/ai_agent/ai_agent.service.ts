@@ -7,17 +7,23 @@ import {Ai_agentTools, Ai_agentTools_type} from "./ai_agent.tools";
 import {settingService} from "../setting/setting.service";
 import path from "path";
 import {userService} from "../user/user.service";
-import {SystemUtil} from "../sys/sys.utl";
 import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
-import {ai_agent_Item, ai_agent_item_dotenv, ai_docs_setting_param} from "../../../common/req/setting.req";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv,
+    ai_docs_load_info,
+    ai_docs_setting_param
+} from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
 import FlexSearch, {Charset, Index} from "flexsearch";
-import fs from "fs";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
 import {formatFileSize} from "../../../common/ValueUtil";
+import {AsyncPool} from "../../../common/ListUtil";
+import {Wss} from "../../../common/frame/ws.server";
+import {CmdType} from "../../../common/frame/WsData";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -38,6 +44,8 @@ export class Ai_agentService {
         file_name: string
         time_stamp: number
     }> = new Map()
+    docs_info = new ai_docs_load_info()
+    public all_wss_set = new Set<Wss>;
 
     public async search_docs({keywords}: { keywords: string[] }) {
         const scoreMap = new Map<string, number>();
@@ -85,10 +93,12 @@ export class Ai_agentService {
                 encoder: Charset.CJK
             });
         }
+        this.docs_info.init()
+        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
         const setting = settingService.ai_docs_setting();
         const list = setting.list;
-        if(!list) {
+        if(!list?.length) {
             return;
         }
         let ignore_list :string[] = []
@@ -104,8 +114,8 @@ export class Ai_agentService {
         }
         const files_set = new Set<string>();
         let update_file_num = 0
-        let file_total = 0
-        let file_char_num = 0
+        // let file_total = 0
+        // let file_char_num = 0
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
             if(files_set.size > config_search_doc.max_file_num) {
@@ -113,7 +123,11 @@ export class Ai_agentService {
             }
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
-            file_total += file_stats.size;
+            if(file_stats.size > config_search_doc.max_file_byte_size) {
+                return;
+            }
+            this.docs_info.num ++
+            this.docs_info.size += file_stats.size;
             if (this.docs_data_map.has(file_path)) {
                 const it = this.docs_data_map.get(file_path)!;
                 const mtime = file_stats.mtime.getTime();
@@ -125,13 +139,13 @@ export class Ai_agentService {
                     this.doc_index.remove(file_path);
 
                     const content = ` 文件 ${it.path} 的内容是 ${(await FileUtil.readFileSync(file_path)).toString()}。`;
-                    file_char_num+=content.length;
+                    this.docs_info.char_num +=content.length;
                     this.doc_index.update(file_path, content);
                     update_file_num++
                 }
             } else {
                 const content = (await FileUtil.readFileSync(file_path)).toString();
-                file_char_num+=content.length;
+                this.docs_info.char_num +=content.length;
                 this.doc_index.add(file_path, content);
 
                 this.docs_data_map.set(file_path, {
@@ -144,7 +158,7 @@ export class Ai_agentService {
 
             files_set.add(file_path);
         };
-
+        const async_poll = new AsyncPool(config_search_doc.max_file_concurrency)
         // 递归遍历目录
         // 递归遍历目录（带深度控制）
         const walkDir = async (dir: string, depth: number) => {
@@ -177,14 +191,20 @@ export class Ai_agentService {
                         await walkDir(fullPath, depth + 1);
                     }
                 } else if (stat.isFile()) {
-                    await handleFile(fullPath, entry);
+                    await async_poll.run(() => handleFile(fullPath, entry));
+                    Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
                 }
             }
         };
 
 
+        const total = list.length;
         // 扫描配置中的目录
-        for (const it of list) {
+        for (let i= 0;i<list.length;i++) {
+            this.docs_info.progress =
+                (((i + 1) / total) * 100).toFixed(2);
+            Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
+            const it = list[i];
             if (!it.open) continue;
             await walkDir(it.dir,0);
         }
@@ -200,9 +220,9 @@ export class Ai_agentService {
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
-        console.log(`知识库总字符数量 ${file_char_num} `);
-        console.log(`知识库总文件大小 ${formatFileSize(file_total)} `);
-        console.log(`忽略了以下文件 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
+        console.log(`知识库总字符数量 ${this.docs_info.char_num} `);
+        console.log(`知识库总文件大小 ${formatFileSize(this.docs_info.size)} `);
+        // console.log(`忽略了以下文件 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
     }
 
 

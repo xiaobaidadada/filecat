@@ -47,11 +47,12 @@ export class Wss {
     }
 
     // 发送给所有在线的客户端
-    public static sendToAllClient(cmdType:CmdType,data:any) {
+    public static sendToAllClient(cmdType:CmdType,data:any,wss_set?:Set<Wss>) {
         const result = new WsData<any>(cmdType);
         result.context = data;
-        for (const wss of allWssSet.values()) {
-            wss.sendData(result);
+        const encode_data = result.encode()
+        for (const wss of (wss_set ?? allWssSet).values()) {
+            wss.sendData(encode_data);
         }
     }
 

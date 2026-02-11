@@ -43,14 +43,29 @@ export class ai_docs_setting_param {
     docs_max_num = 5
     force_use_local_data = false;
     dir_recursion_depth = 10
-    ignore_dir:string|string[] = "node_modules/"
+    ignore_dir:string|string[] = "node_modules"
     max_file_num = 1000000
+    max_file_byte_size = 20_000_000
+    max_file_concurrency = 2
+}
+export class ai_docs_load_info {
+    progress :any = "100"
+    num:number = 0;
+    size:number = 0;
+    char_num:number = 0;
+
+    init() {
+        this.progress = 0;
+        this.num = 0;
+        this.size = 0;
+        this.char_num = 0;
+    }
 }
 
 export const ai_docs_setting_param_default = `
 # 获取最多文章数量
 docs_max_num=5
-# 强制每次聊天前都执行本地知识库搜索
+# 强制每次聊天前都执行本地知识库搜索，建议在模型的系统提示词中设置，让AI每次都调用本地知识库搜索，会更加精准
 force_use_local_data=false
 # 读取知识库目录的时候，递归最大深度
 dir_recursion_depth=10
@@ -58,6 +73,10 @@ dir_recursion_depth=10
 ignore_dir=node_modules
 # 加载最多文件数量
 max_file_num=1000000
+# 可以加载的文件最大大小 默认是20MB 单位是字节
+max_file_byte_size=20000000
+# 文件加载最大并发数量 太大的话会影响机械硬盘的性能
+max_file_concurrency=2
 `
 
 export class ai_agent_item_dotenv {
