@@ -301,12 +301,25 @@ export function FileMenu() {
                 window.open(url);
                 break;
             case common_menu_type.ai_load_one_file: {
-                const result = await ai_agentHttp.post("ai_load_one_file", {
-                    param_path:get_ab_path()
-                });
-                if (result.code === RCode.Sucess) {
-                    NotySucess("更新到AI知识库成功")
-                }
+                set_prompt_card({
+                    open: true,
+                    title: "确认",
+                    confirm:async () => {
+                        set_prompt_card({open:false})
+                        const result = await ai_agentHttp.post("ai_load_one_file", {
+                            param_path:get_ab_path()
+                        });
+                        if (result.code === RCode.Sucess) {
+                            NotySucess("更新到AI知识库成功")
+                        }
+                    },
+                    context_div: (
+                        <p>
+                            {t("确定更新到知识库吗，更新进度请到知识库设置查询")}
+                        </p>
+                    ),
+
+                })
                 break;
             }
         }
