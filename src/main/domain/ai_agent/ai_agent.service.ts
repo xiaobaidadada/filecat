@@ -12,7 +12,7 @@ import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {
     ai_agent_Item,
-    ai_agent_item_dotenv,
+    ai_agent_item_dotenv, ai_docs_item,
     ai_docs_load_info,
     ai_docs_setting_param
 } from "../../../common/req/setting.req";
@@ -24,6 +24,7 @@ import {formatFileSize} from "../../../common/ValueUtil";
 import {AsyncPool} from "../../../common/ListUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
+import {isAbsolutePath} from "../../../common/path_util";
 
 let API_KEY = process.env.AI_API_KEY;
 let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
@@ -81,23 +82,41 @@ export class Ai_agentService {
     }
 
     init_search_docs_param() {
+        if(!this.sys_ai_is_open) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
         console.log(`ai知识库参数`,JSON.stringify(config_search_doc))
     }
 
-    async init_search_docs() {
+    async load_one_file(token:string,param_path:string) {
+        if(!this.sys_ai_is_open) return;
+        const root_path = settingService.getFileRootPath(token);
+        let sysPath = decodeURIComponent(param_path)
+        if(isAbsolutePath(sysPath)) {
+
+        } else {
+            sysPath = path.join(root_path, sysPath);
+        }
+        userService.check_user_path(token, sysPath)
+        await this.init_search_docs([{
+            open: true,
+            dir: sysPath
+        }])
+    }
+
+    async init_search_docs(target_list?:ai_docs_item[]) {
+        if(!this.sys_ai_is_open) return;
         if (!this.doc_index) {
             this.doc_index = new FlexSearch.Index({
                 tokenize: "strict",
                 encoder: Charset.CJK
             });
         }
+        const is_one_load = target_list != null;
         this.docs_info.init()
         Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
-        const setting = settingService.ai_docs_setting();
-        const list = setting.list;
+        const list = target_list || settingService.ai_docs_setting().list;
         if(!list?.length) {
             return;
         }
@@ -126,7 +145,6 @@ export class Ai_agentService {
             if(file_stats.size > config_search_doc.max_file_byte_size) {
                 return;
             }
-            this.docs_info.num ++
             this.docs_info.size += file_stats.size;
             if (this.docs_data_map.has(file_path)) {
                 const it = this.docs_data_map.get(file_path)!;
@@ -155,10 +173,12 @@ export class Ai_agentService {
                 });
                 update_file_num++
             }
-
+            this.docs_info.num ++
             files_set.add(file_path);
         };
         const async_poll = new AsyncPool(config_search_doc.max_file_concurrency)
+
+
         // 递归遍历目录
         // 递归遍历目录（带深度控制）
         const walkDir = async (dir: string, depth: number) => {
@@ -167,6 +187,11 @@ export class Ai_agentService {
                 return;
             }
 
+            const stat = await FileUtil.statSync(dir);
+            if(stat.isFile()) {
+                await async_poll.run(() => handleFile(dir, path.basename(dir)));
+                return;
+            }
             const entries = await FileUtil.readdirSync(dir);
 
             for (const entry of entries) {
@@ -201,22 +226,27 @@ export class Ai_agentService {
         const total = list.length;
         // 扫描配置中的目录
         for (let i= 0;i<list.length;i++) {
+            const it = list[i];
+            if (it.open) {
+                await walkDir(it.dir,0);
+            }
             this.docs_info.progress =
                 (((i + 1) / total) * 100).toFixed(2);
             Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
-            const it = list[i];
-            if (!it.open) continue;
-            await walkDir(it.dir,0);
         }
 
         // 删除已经不存在的文件
-        for (const key of this.docs_data_map.keys()) {
-            if (!files_set.has(key)) {
-                this.doc_index.remove(key);
-                this.docs_data_map.delete(key);
-                update_file_num++
+        if(!is_one_load) {
+            for (const key of this.docs_data_map.keys()) {
+                if (!files_set.has(key)) {
+                    this.doc_index.remove(key);
+                    this.docs_data_map.delete(key);
+                    update_file_num++
+                }
             }
         }
+        this.docs_info.total_num = this.docs_data_map.size
+        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
@@ -230,8 +260,11 @@ export class Ai_agentService {
         return config_env;
     }
 
+    public sys_ai_is_open = false
+
     public load_key() {
         config_env = new ai_agent_item_dotenv()
+        this.sys_ai_is_open = false
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
@@ -242,6 +275,7 @@ export class Ai_agentService {
                 if (it.dotenv) {
                     Env.load(it.dotenv, config_env);
                 }
+                this.sys_ai_is_open = true
                 return
             }
         }

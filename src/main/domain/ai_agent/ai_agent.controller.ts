@@ -6,6 +6,7 @@ import {UserAuth} from "../../../common/req/user.req";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
+import {Sucess} from "../../other/Result";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -54,5 +55,13 @@ export class Ai_AgentController {
         })
         return ai_agentService.docs_info
     }
+
+    @Post("/ai_load_one_file")
+    async ai_load_one_file(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        await ai_agentService.load_one_file(ctx.headers.authorization, data.param_path)
+        return  Sucess("")
+    }
+
 
 }

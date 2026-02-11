@@ -49,4 +49,5 @@ export enum common_menu_type {
     un_compress = "un_compress",
     share_file = "share_file",
     share_file_download = "share_file_download",
+    ai_load_one_file = "ai_load_one_file",
 }

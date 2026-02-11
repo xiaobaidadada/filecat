@@ -13,6 +13,7 @@ import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {Env} from "../../../common/Env";
 import {HttpRequest} from "../../../common/http";
+import {ai_agentService} from "../ai_agent/ai_agent.service";
 
 interface UserLoginData {
     username: string;
@@ -138,6 +139,7 @@ export class UserController {
         pojo.user_data = userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username);
         pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
         pojo.watch = Env.watch
+        pojo.sys_ai_is_open = ai_agentService.sys_ai_is_open
         pojo.latest_version = process.env.version !== this.latest_version?this.latest_version: process.env.version;
         if(Date.now() - this.latest_count_time > 3000) {
             HttpRequest.get(`https://registry.npmjs.org/filecat`,{},5000).then((res) => {

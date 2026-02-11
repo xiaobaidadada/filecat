@@ -32,7 +32,7 @@ export class ai_agent_Item {
 export class ai_docs_item {
     dir:string;
     open: boolean = false;
-    note: string;
+    note?: string;
 }
 
 export class ai_docs_setting {
@@ -53,12 +53,14 @@ export class ai_docs_load_info {
     num:number = 0;
     size:number = 0;
     char_num:number = 0;
+    total_num:number = 0;
 
     init() {
         this.progress = 0;
         this.num = 0;
         this.size = 0;
         this.char_num = 0;
+        this.total_num = 0
     }
 }
 

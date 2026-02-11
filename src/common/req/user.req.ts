@@ -26,6 +26,7 @@ export class UserBaseInfo {
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
     watch:boolean
     latest_version?:string;
+    sys_ai_is_open:boolean;
 
     public static get_now_dir(user_base_info:UserBaseInfo) {
         let path = user_base_info.user_data.cwd

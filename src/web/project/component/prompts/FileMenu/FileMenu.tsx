@@ -11,7 +11,7 @@ import {FileCompressType, FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_auth_check, use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {common_menu_type, run_workflow} from "./handle.service";
-import {fileHttp, settingHttp, userHttp} from "../../../util/config";
+import {ai_agentHttp, fileHttp, settingHttp, userHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {file_share_item, workflow_pre_input} from "../../../../../common/req/file.req";
@@ -48,6 +48,8 @@ export function FileMenu() {
 
         }
     ]
+
+    //权限判断
     if(check_user_auth(UserAuth.share_file)) {
         // @ts-ignore
         must_needs.push({
@@ -55,6 +57,13 @@ export function FileMenu() {
             r: t("分享"), v: common_menu_type.share_file
         })
     }
+    if(user_base_info.sys_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
+        // @ts-ignore
+        must_needs.push({
+            r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file
+        })
+    }
+
     const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
@@ -291,6 +300,15 @@ export function FileMenu() {
                 });
                 window.open(url);
                 break;
+            case common_menu_type.ai_load_one_file: {
+                const result = await ai_agentHttp.post("ai_load_one_file", {
+                    param_path:get_ab_path()
+                });
+                if (result.code === RCode.Sucess) {
+                    NotySucess("更新到AI知识库成功")
+                }
+                break;
+            }
         }
     }
 

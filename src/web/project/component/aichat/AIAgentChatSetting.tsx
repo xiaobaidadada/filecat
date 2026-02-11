@@ -43,9 +43,9 @@ const tip_text = `
 6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
 `
 const docs_tip = `
-1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据
+1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据（需要有模型开启才能使用)
 2. 该功能只能用于小型知识库，作为本地小型或者公司内部资料使用还是没有问题的
-3. 每次保存都会重新加载知识库中的文件，不会全部重新加载，而是检测哪些文件有变更，所有每次修改其中某个文件的后，需要来这里点一下保存触发全量更新
+3. 每次保存都会重新加载知识库中的文件，不会全部重新加载，而是检测哪些文件有变更
 `
 export default function AIAgentChatSetting() {
 
@@ -286,10 +286,11 @@ export default function AIAgentChatSetting() {
                             load_info &&
                             <Column widthPer={50}>
                                 <Card title={t("知识库加载信息")}>
-                                    <TextLine left={t("加载进度")} right={load_info?.progress}/>
+                                    <TextLine left={t("最近一次加载，加载进度")} right={load_info?.progress}/>
                                     <TextLine left={`${t("最近一次加载，总文件数量")}`} right={load_info?.num}/>
                                     <TextLine left={`${t("最近一次加载，总文件字符数量")}`} right={load_info?.char_num}/>
-                                    <TextLine left={`${t("总文件大小")}`} right={formatFileSize(load_info?.size)}/>
+                                    <TextLine left={`${t("最近一次加载，总文件大小")}`} right={formatFileSize(load_info?.size)}/>
+                                    <TextLine left={`${t("总文件数量")}`} right={load_info?.total_num}/>
                                 </Card>
                             </Column>
                         }
