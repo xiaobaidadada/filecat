@@ -59,7 +59,7 @@ export class ai_docs_setting_param {
     docs_max_num = 5
     force_use_local_data = false;
     dir_recursion_depth = 10
-    ignore_dir:string|string[] = "node_modules"
+    ignore_dir:string|string[] = ["node_modules",".git","*.pdf","*.dll","build",".ieda","package-lock.json","*.zip","*.exe","*.rar","*.gz","*.lock","*.png","images","*.woff2","*.svg","*.webp","*.jpg"]
     max_file_num = 5000
     max_file_byte_size = 20_000_000
     max_file_concurrency = 2
@@ -72,7 +72,7 @@ force_use_local_data=false
 # 读取知识库目录的时候，递归最大深度
 dir_recursion_depth=10
 # gitignore类型的忽略表达式，用于忽略某些文件不被索引，也支持数组 ["abc","node_modules"]
-ignore_dir=node_modules
+ignore_dir=["node_modules",".git","*.pdf","*.dll","build",".ieda","package-lock.json","*.zip","*.exe","*.rar","*.gz","*.lock","*.png","images","*.woff2","*.svg","*.webp","*.jpg"]
 # 加载最多文件数量
 max_file_num=5000
 # 可以加载的文件最大大小 默认是20MB 单位是字节
