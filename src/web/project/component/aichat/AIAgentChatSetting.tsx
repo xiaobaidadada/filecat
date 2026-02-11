@@ -78,7 +78,7 @@ export default function AIAgentChatSetting() {
         // console.log(info)
         set_load_info(info.context)
         const docs_result = await settingHttp.get("ai_docs_setting");
-        if (docs_result.code === RCode.Sucess && docs_result.data.list?.length) {
+        if (docs_result.code === RCode.Sucess) {
             // console.log()
             docs_param.current = docs_result.data.param;
             if(docs_result.data.list?.length) {
