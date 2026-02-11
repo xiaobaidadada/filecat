@@ -27,7 +27,7 @@ import {
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
-import { formatFileSize } from "../../../../common/ValueUtil";
+import {formatDuration, formatFileSize } from "../../../../common/ValueUtil";
 import {using_confirm} from "../prompts/prompt.util";
 
 
@@ -303,6 +303,7 @@ export default function AIAgentChatSetting() {
                                     <TextLine left={`${t("最近一次加载，总文件数量")}`} right={load_info?.num}/>
                                     <TextLine left={`${t("最近一次加载，总文件字符数量")}`} right={load_info?.char_num}/>
                                     <TextLine left={`${t("最近一次加载，总文件大小")}`} right={formatFileSize(load_info?.size)}/>
+                                    <TextLine left={`${t("最近一次加载，总耗时")}`} right={formatDuration(load_info?.consume_time_ms_len)}/>
                                     <TextLine left={`${t("总文件数量")}`} right={load_info?.total_num}/>
                                 </Card>
                             </Column>

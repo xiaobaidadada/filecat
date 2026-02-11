@@ -46,6 +46,7 @@ export class ai_docs_load_info {
     size:number = 0;
     char_num:number = 0;
     total_num:number = 0;
+    consume_time_ms_len:number = 0;
 
     init() {
         this.progress = 0;
@@ -53,6 +54,7 @@ export class ai_docs_load_info {
         this.size = 0;
         this.char_num = 0;
         this.total_num = 0
+        this.consume_time_ms_len = 0;
     }
 }
 export class ai_docs_setting_param {

@@ -20,7 +20,7 @@ import {Env} from "../../../common/Env";
 import FlexSearch, {Charset, Index} from "flexsearch";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
-import {formatFileSize} from "../../../common/ValueUtil";
+import {formatDuration, formatFileSize} from "../../../common/ValueUtil";
 import {AsyncPool} from "../../../common/ListUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
@@ -159,7 +159,7 @@ export class Ai_agentService {
     }
 
     public close_index() {
-        this.running = false;
+        this.running_num++;
         this.doc_index.clear()
         this.doc_index = null;
         this.doc_names_index.clear()
@@ -167,7 +167,7 @@ export class Ai_agentService {
         ai_agentService.docs_data_map.clear()
     }
 
-    running = false
+    running_num = 1
 
     async init_search_docs(target_list?: ai_docs_item[]) {
         if (!this.sys_ai_is_open) return;
@@ -189,8 +189,10 @@ export class Ai_agentService {
         if (!list?.length) {
             return;
         }
-        this.running = true;
 
+        // 可以正式开始了
+        let running_num = this.running_num
+        const now = Date.now();
 
         // 特殊路径判断
         let ignore_list: string[] = []
@@ -225,7 +227,7 @@ export class Ai_agentService {
             if (files_set.size >= config_search_doc.max_file_num) {
                 return;
             }
-            if(!this.running) return;
+            if(running_num != this.running_num) return;
             if(config_search_doc.allow_file_path) {
                 let ok = false
                 for (const allow of allow_list) {
@@ -289,7 +291,7 @@ export class Ai_agentService {
             if (depth > dir_recursion_depth) {
                 return;
             }
-            if(!this.running) return;
+            if(running_num != this.running_num) return;
             const stat = await FileUtil.statSync(dir);
             if (stat.isFile()) {
                 await async_poll.run(() => handleFile(dir, path.basename(dir)));
@@ -348,12 +350,15 @@ export class Ai_agentService {
             }
         }
         this.docs_info.total_num = this.docs_data_map.size
+        this.docs_info.consume_time_ms_len = Date.now() - now
         Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
         console.log(`知识库总字符数量 ${this.docs_info.char_num} `);
         console.log(`知识库总文件大小 ${formatFileSize(this.docs_info.size)} `);
+        console.log(`加载总耗时 ${formatDuration(this.docs_info.consume_time_ms_len)}`)
+
         // console.log(`忽略了以下文件 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
     }
 

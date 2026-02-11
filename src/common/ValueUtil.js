@@ -41,3 +41,24 @@ export function  max_pages(total, pageSize) {
     return Math.ceil(total / pageSize);
 }
 
+export function formatDuration(ms) {
+    if(!ms) return ""
+    const units = [
+        { label: "y", value: 1000 * 60 * 60 * 24 * 365 },
+        { label: "mo", value: 1000 * 60 * 60 * 24 * 30 },
+        { label: "d", value: 1000 * 60 * 60 * 24 },
+        { label: "h", value: 1000 * 60 * 60 },
+        { label: "min", value: 1000 * 60 },
+        { label: "s", value: 1000 },
+        { label: "ms", value: 1 },
+    ];
+
+    for (const unit of units) {
+        if (ms >= unit.value) {
+            const value = ms / unit.value;
+            return `${parseFloat(value.toFixed(2))} ${unit.label}`;
+        }
+    }
+
+    return "0 ms";
+}
