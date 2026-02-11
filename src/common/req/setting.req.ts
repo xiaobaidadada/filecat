@@ -56,7 +56,7 @@ export class ai_docs_load_info {
     }
 }
 export class ai_docs_setting_param {
-    docs_max_num = 5
+    docs_max_char_num = 10000
     force_use_local_data = false;
     dir_recursion_depth = 10
     ignore_dir:string|string[] = ["node_modules",".git","*.pdf","*.dll","build",".ieda","package-lock.json","*.zip","*.exe","*.rar","*.gz","*.lock","*.png","images","*.woff2","*.svg","*.webp","*.jpg"]
@@ -66,16 +66,19 @@ export class ai_docs_setting_param {
     await_time_ms_len=500
     await_file_num=100
     use_zh_segmentation = true
+    allow_file_path = ["*.txt","*.md","*.html","*.js","*.ts","*.tsx","*.json","*.csv","*.xml","*.css","*.java","*.go","*.php","*.c","*.cc","*.cpp","*.h","*.py"]
 }
 export const ai_docs_setting_param_default = `
-# 获取最多文章数量
-docs_max_num=5
+# 获取的最多字符数量 优先级大于docs_max_char_num
+docs_max_char_num=10000
 # 强制每次聊天前都执行本地知识库搜索，建议在模型的系统提示词中设置，让AI每次都调用本地知识库搜索，会更加精准
 force_use_local_data=false
 # 读取知识库目录的时候，递归最大深度
 dir_recursion_depth=10
 # gitignore类型的忽略表达式，用于忽略某些文件不被索引，也支持数组 ["abc","node_modules"]
-ignore_dir=["node_modules",".git","*.pdf","*.dll","build",".ieda","package-lock.json","*.zip","*.exe","*.rar","*.gz","*.lock","*.png","images","*.woff2","*.svg","*.webp","*.jpg"]
+ignore_dir=["node_modules",".git","*.pdf","*.dll","build",".ieda","package-lock.json","*.zip","*.exe","*.rar","*.gz","*.lock","*.png","images","*.woff2","*.svg","*.webp","*.jpg","*.jpeg"]
+# 只允许符合条件的目录，非文本内容加载在中文分词情况下特别消耗cpu
+allow_file_path=["*.txt","*.md","*.html","*.js","*.ts","*.tsx","*.json","*.csv","*.xml","*.css","*.java","*.go","*.php","*.c","*.cc","*.cpp","*.h","*.py"]
 # 加载最多文件数量
 max_file_num=5000
 # 可以加载的文件最大大小 默认是20MB 单位是字节

@@ -26,6 +26,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
 import {CommonUtil} from "../../../common/common.util";
+
 const {
     cut,
     cut_all,
@@ -47,6 +48,7 @@ let config_search_doc = new ai_docs_setting_param()
 export class Ai_agentService {
 
     doc_index: Index
+    doc_names_index: Index
     docs_data_map: Map<string, {
         path: string,
         // content:string,
@@ -60,33 +62,34 @@ export class Ai_agentService {
     public async search_docs({keywords}: { keywords: string[] }) {
         const scoreMap = new Map<string, number>();
         for (let k of keywords) {
-            const list_p = cut_for_search(k,true)
-            k = list_p.join(" ")
+            // 相当于or了
+            k = k.toLowerCase()
+            // const list_p = cut_for_search(k, true) // or 逻辑
+            // .map(v => v.replace(/\s+/g, "")) // 删除所有空白字符
+            // .filter(Boolean);                // 去掉空字符串
+            // k = list_p.join(" ")
             const ids = this.doc_index.search(k, {
                 suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
                 // resolution: 9,
                 // cache: true, // 重复查询概率低 没有必要
-                limit: config_search_doc.docs_max_num
+                // limit: config_search_doc.docs_max_num
+                // offset // 分页
+            }) as string[];
+            const names_ids = this.doc_names_index.search(k, {
+                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
+                // resolution: 9,
+                // cache: true, // 重复查询概率低 没有必要
+                // limit: config_search_doc.docs_max_num
                 // offset // 分页
             }) as string[];
             // 得分排序
-            const size_list = await Promise.all(
-                ids.map(async (id) => {
-                    const stat = await FileUtil.statSync(id);
-                    return { id, size: stat.size };
-                })
-            );
-            // 文件越大越靠前
-            size_list.sort((a, b) => b.size - a.size);
-            const p =  cut(k)
-            for (const [index, { id }] of size_list.entries()) {
+            for (const id of names_ids) {
                 let score = (scoreMap.get(id) || 0) + 1;
-                for (const i of p) {
-                    if (id.toLowerCase().includes(i.toLowerCase())) {
-                        score+=2;
-                    }
-                }
-                score += index;
+                score += 2;
+                scoreMap.set(id, score);
+            }
+            for (const id of ids) {
+                let score = (scoreMap.get(id) || 0) + 1;
                 scoreMap.set(id, score);
             }
         }
@@ -97,16 +100,18 @@ export class Ai_agentService {
             file_name: string,
             content: string
         }[] = []
-        let p_r_list = sorted
-        if(p_r_list.length > config_search_doc.docs_max_num) {
-            p_r_list = sorted.slice(0,config_search_doc.docs_max_num)
-        }
-        for (const id of p_r_list) {
+        let total_char_num = 0
+        for (const id of sorted) {
+            if (total_char_num >= config_search_doc.docs_max_char_num) {
+                break;
+            }
             const file = this.docs_data_map.get(id)
+            const content = (await FileUtil.readFileSync(file.path)).toString()
             results.push({
                 file_name: file.path,
-                content: (await FileUtil.readFileSync(file.path)).toString(),
+                content
             })
+            total_char_num += content.length
         }
         return `知识库搜索结果 ${JSON.stringify({
             results
@@ -114,17 +119,17 @@ export class Ai_agentService {
     }
 
     init_search_docs_param() {
-        if(!this.sys_ai_is_open) return;
+        if (!this.sys_ai_is_open) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
-        console.log(`ai知识库参数`,JSON.stringify(config_search_doc))
+        console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
-    async load_one_file(token:string,param_path:string) {
-        if(!this.sys_ai_is_open) return;
+    async load_one_file(token: string, param_path: string) {
+        if (!this.sys_ai_is_open) return;
         const root_path = settingService.getFileRootPath(token);
         let sysPath = decodeURIComponent(param_path)
-        if(isAbsolutePath(sysPath)) {
+        if (isAbsolutePath(sysPath)) {
 
         } else {
             sysPath = path.join(root_path, sysPath);
@@ -136,45 +141,104 @@ export class Ai_agentService {
         }])
     }
 
-    async init_search_docs(target_list?:ai_docs_item[]) {
-        if(!this.sys_ai_is_open) return;
+    private add_content(file_path: string, content: string) {
+        if (config_search_doc.use_zh_segmentation) {
+            content = cut(content, true).join(" ").toLowerCase()
+            const p = cut(file_path, true).join(" ").toLowerCase()
+            this.doc_names_index.add(file_path, p)
+        } else {
+            this.doc_names_index.add(file_path, file_path.toLowerCase())
+        }
+        this.doc_index.add(file_path, content);
+    }
+
+    private remove_content(file_path: string) {
+        this.doc_index.remove(file_path)
+        this.doc_names_index.remove(file_path)
+        this.docs_data_map.delete(file_path);
+    }
+
+    public close_index() {
+        this.running = false;
+        this.doc_index.clear()
+        this.doc_index = null;
+        this.doc_names_index.clear()
+        this.doc_names_index = null
+        ai_agentService.docs_data_map.clear()
+    }
+
+    running = false
+
+    async init_search_docs(target_list?: ai_docs_item[]) {
+        if (!this.sys_ai_is_open) return;
         if (!this.doc_index) {
             this.doc_index = new FlexSearch.Index({
                 tokenize: "strict",
-                encoder: Charset.CJK
+                // encoder: Charset.CJK
+            });
+            this.doc_names_index = new FlexSearch.Index({
+                tokenize: "strict",
+                // encoder: Charset.CJK
             });
         }
         const is_one_load = target_list != null;
         this.docs_info.init()
-        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
+        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
         const list = target_list || settingService.ai_docs_setting().list;
-        if(!list?.length) {
+        if (!list?.length) {
             return;
         }
-        let ignore_list :string[] = []
+        this.running = true;
+
+
+        // 特殊路径判断
+        let ignore_list: string[] = []
+        let allow_list :string[] = []
         // let ignore_list_str = []
-        if(config_search_doc.ignore_dir) {
-            if(typeof config_search_doc.ignore_dir === 'string') {
+        if (config_search_doc.ignore_dir) {
+            if (typeof config_search_doc.ignore_dir === 'string') {
                 ignore_list.push(config_search_doc.ignore_dir);
             } else {
-                if(Array.isArray(config_search_doc.ignore_dir)) {
+                if (Array.isArray(config_search_doc.ignore_dir)) {
                     ignore_list = config_search_doc.ignore_dir
                 }
             }
         }
+        if (config_search_doc.allow_file_path) {
+            if (typeof config_search_doc.allow_file_path === 'string') {
+                allow_list.push(config_search_doc.allow_file_path);
+            } else {
+                if (Array.isArray(config_search_doc.allow_file_path)) {
+                    allow_list = config_search_doc.allow_file_path
+                }
+            }
+        }
+
+
         const files_set = new Set<string>();
         let update_file_num = 0
-        let await_file_total = config_search_doc.await_file_num??0;
+        let await_file_total = config_search_doc.await_file_num ?? 0;
         // let file_char_num = 0
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
-            if(files_set.size >= config_search_doc.max_file_num) {
+            if (files_set.size >= config_search_doc.max_file_num) {
                 return;
             }
-            if(await_file_total<=0) {
-                await_file_total = config_search_doc.await_file_num??0;
-                if(config_search_doc.await_time_ms_len) {
+            if(!this.running) return;
+            if(config_search_doc.allow_file_path) {
+                let ok = false
+                for (const allow of allow_list) {
+                    if (matchGitignore(file_path, allow)) {
+                        ok = true
+                        break
+                    }
+                }
+                if(!ok) return
+            }
+            if (await_file_total <= 0) {
+                await_file_total = config_search_doc.await_file_num ?? 0;
+                if (config_search_doc.await_time_ms_len) {
                     await CommonUtil.sleep(config_search_doc.await_time_ms_len);
                 }
             } else {
@@ -182,7 +246,7 @@ export class Ai_agentService {
             }
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
-            if(file_stats.size > config_search_doc.max_file_byte_size) {
+            if (file_stats.size > config_search_doc.max_file_byte_size) {
                 return;
             }
             this.docs_info.size += file_stats.size;
@@ -197,19 +261,14 @@ export class Ai_agentService {
                     this.doc_index.remove(file_path);
 
                     let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
-                    this.docs_info.char_num +=content.length;
-                    if(config_search_doc.use_zh_segmentation)
-                        content = cut(content,true).join(" ")
-                    this.doc_index.update(file_path, content);
+                    this.docs_info.char_num += content.length;
+                    this.add_content(file_path, content);
                     update_file_num++
                 }
             } else {
                 let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
-                this.docs_info.char_num +=content.length;
-                if(config_search_doc.use_zh_segmentation)
-                    content = cut(content,true).join(" ")
-                this.doc_index.add(file_path, content);
-
+                this.docs_info.char_num += content.length;
+                this.add_content(file_path, content);
                 this.docs_data_map.set(file_path, {
                     file_name,
                     time_stamp: file_stats.mtime.getTime(),
@@ -217,7 +276,7 @@ export class Ai_agentService {
                 });
                 update_file_num++
             }
-            this.docs_info.num ++
+            this.docs_info.num++
             files_set.add(file_path);
         };
         const async_poll = new AsyncPool(config_search_doc.max_file_concurrency)
@@ -230,28 +289,28 @@ export class Ai_agentService {
             if (depth > dir_recursion_depth) {
                 return;
             }
-
+            if(!this.running) return;
             const stat = await FileUtil.statSync(dir);
-            if(stat.isFile()) {
+            if (stat.isFile()) {
                 await async_poll.run(() => handleFile(dir, path.basename(dir)));
                 return;
             }
             const entries = await FileUtil.readdirSync(dir);
 
             for (const entry of entries) {
-                if(files_set.size >= config_search_doc.max_file_num) {
+                if (files_set.size >= config_search_doc.max_file_num) {
                     return;
                 }
                 const fullPath = path.join(dir, entry);
                 let ok = false;
                 for (const ignore of ignore_list) {
-                    if(matchGitignore(entry, ignore)) {
+                    if (matchGitignore(entry, ignore)) {
                         ok = true;
                         // ignore_list_str.push(entry);
                         break;
                     }
                 }
-                if(ok) continue;
+                if (ok) continue;
                 const stat = await FileUtil.statSync(fullPath);
 
                 if (stat.isDirectory()) {
@@ -261,7 +320,7 @@ export class Ai_agentService {
                     }
                 } else if (stat.isFile()) {
                     await async_poll.run(() => handleFile(fullPath, entry));
-                    Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
+                    Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
                 }
             }
         };
@@ -269,28 +328,27 @@ export class Ai_agentService {
 
         const total = list.length;
         // 扫描配置中的目录
-        for (let i= 0;i<list.length;i++) {
+        for (let i = 0; i < list.length; i++) {
             const it = list[i];
             if (it.open) {
-                await walkDir(it.dir,0);
+                await walkDir(it.dir, 0);
             }
             this.docs_info.progress =
                 (((i + 1) / total) * 100).toFixed(2);
-            Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
+            Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
         }
 
         // 删除已经不存在的文件
-        if(!is_one_load) {
+        if (!is_one_load) {
             for (const key of this.docs_data_map.keys()) {
                 if (!files_set.has(key)) {
-                    this.doc_index.remove(key);
-                    this.docs_data_map.delete(key);
+                    this.remove_content(key)
                     update_file_num++
                 }
             }
         }
         this.docs_info.total_num = this.docs_data_map.size
-        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info,this.all_wss_set)
+        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
@@ -381,7 +439,7 @@ export class Ai_agentService {
     }
 
     private is_use_local_data() {
-        return  this.docs_data_map.size > 0
+        return this.docs_data_map.size > 0
     }
 
     /**
@@ -412,7 +470,7 @@ export class Ai_agentService {
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 2. 使用 markdown格式回答用户。
 3. 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
-${this.is_use_local_data()?`4. 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。`:''}
+${this.is_use_local_data() ? `4. 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
 ${config.sys_prompt ?? ''}
 `
@@ -420,10 +478,10 @@ ${config.sys_prompt ?? ''}
             ...this.trimMessages(originMessages, config_env.char_max)
         ];
 
-        if(config_search_doc.force_use_local_data) {
-            const t_ = await this.search_docs({keywords:[workMessages[workMessages.length-1].content]})
-            workMessages[workMessages.length-1].content = `本地知识库搜到 ${t_} 
-            ${workMessages[workMessages.length-1].content}`
+        if (config_search_doc.force_use_local_data) {
+            const t_ = await this.search_docs({keywords: [workMessages[workMessages.length - 1].content]})
+            workMessages[workMessages.length - 1].content = `本地知识库搜到 ${t_} 
+            ${workMessages[workMessages.length - 1].content}`
         }
 
         const env = {

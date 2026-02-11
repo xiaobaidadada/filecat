@@ -12,7 +12,7 @@ export const ai_tools_search_docs = {
                     items: {
                         type: "string"
                     },
-                    description: "用于搜索知识库的关键词列表"
+                    description: "用于搜索知识库的关键词列表，keywords每个元素都是一个词而不是一句话"
                 }
             },
             required: ["keywords"]
