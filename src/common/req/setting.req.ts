@@ -63,6 +63,9 @@ export class ai_docs_setting_param {
     max_file_num = 5000
     max_file_byte_size = 20_000_000
     max_file_concurrency = 2
+    await_time_ms_len=500
+    await_file_num=100
+    use_zh_segmentation = true
 }
 export const ai_docs_setting_param_default = `
 # 获取最多文章数量
@@ -79,6 +82,12 @@ max_file_num=5000
 max_file_byte_size=20000000
 # 文件加载最大并发数量 太大的话会影响机械硬盘的性能
 max_file_concurrency=2
+# 需要等待的目录时间间隔单位是毫秒，会让系统有时间释放临时内存
+await_time_ms_len=500
+# 配合await_time_ms_len读取多少个文件后进行等待
+await_file_num=100
+# 使用中文分词
+use_zh_segmentation =true
 `
 
 export class ai_agent_item_dotenv {

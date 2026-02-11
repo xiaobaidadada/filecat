@@ -9,7 +9,7 @@ import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {Card, CardFull} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
-import {settingHttp} from "../../util/config";
+import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
@@ -28,6 +28,7 @@ import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import { formatFileSize } from "../../../../common/ValueUtil";
+import {using_confirm} from "../prompts/prompt.util";
 
 
 const tip_text = `
@@ -63,6 +64,8 @@ export default function AIAgentChatSetting() {
     const {check_user_auth} = use_auth_check();
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const navigate = useNavigate();
+    const confirm_dell_all = using_confirm()
+
     const getItems = async () => {
         // 文件夹根路径
         const result = await settingHttp.get("ai_agent_setting");
@@ -255,6 +258,16 @@ export default function AIAgentChatSetting() {
                                                       }
                                                   })
                                               }}/>
+                                              <ActionButton icon={"restore"} title={t("重新创建索引")} onClick={()=>{
+                                                  confirm_dell_all({
+                                                      sub_title:"确认重建索引吗",
+                                                      confirm_fun:()=>{
+                                                          ai_agentHttp.post("ai_load_restart", {});
+                                                          NotySucess("ok")
+                                                      }
+                                                  })
+                                              }}
+                                              />
                                               <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
                                               <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                                   save_docs()

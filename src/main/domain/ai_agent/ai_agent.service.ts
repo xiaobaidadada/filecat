@@ -25,6 +25,7 @@ import {AsyncPool} from "../../../common/ListUtil";
 import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
+import {CommonUtil} from "../../../common/common.util";
 const {
     cut,
     cut_all,
@@ -82,7 +83,7 @@ export class Ai_agentService {
                 let score = (scoreMap.get(id) || 0) + 1;
                 for (const i of p) {
                     if (id.toLowerCase().includes(i.toLowerCase())) {
-                        score+=size_list.length;
+                        score+=2;
                     }
                 }
                 score += index;
@@ -152,7 +153,7 @@ export class Ai_agentService {
             return;
         }
         let ignore_list :string[] = []
-        let ignore_list_str = []
+        // let ignore_list_str = []
         if(config_search_doc.ignore_dir) {
             if(typeof config_search_doc.ignore_dir === 'string') {
                 ignore_list.push(config_search_doc.ignore_dir);
@@ -164,12 +165,20 @@ export class Ai_agentService {
         }
         const files_set = new Set<string>();
         let update_file_num = 0
-        // let file_total = 0
+        let await_file_total = config_search_doc.await_file_num??0;
         // let file_char_num = 0
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
-            if(files_set.size > config_search_doc.max_file_num) {
+            if(files_set.size >= config_search_doc.max_file_num) {
                 return;
+            }
+            if(await_file_total<=0) {
+                await_file_total = config_search_doc.await_file_num??0;
+                if(config_search_doc.await_time_ms_len) {
+                    await CommonUtil.sleep(config_search_doc.await_time_ms_len);
+                }
+            } else {
+                await_file_total--
             }
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
@@ -189,14 +198,16 @@ export class Ai_agentService {
 
                     let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
                     this.docs_info.char_num +=content.length;
-                    content = cut(content,true).join(" ")
+                    if(config_search_doc.use_zh_segmentation)
+                        content = cut(content,true).join(" ")
                     this.doc_index.update(file_path, content);
                     update_file_num++
                 }
             } else {
                 let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
                 this.docs_info.char_num +=content.length;
-                content = cut(content,true).join(" ")
+                if(config_search_doc.use_zh_segmentation)
+                    content = cut(content,true).join(" ")
                 this.doc_index.add(file_path, content);
 
                 this.docs_data_map.set(file_path, {
@@ -228,7 +239,7 @@ export class Ai_agentService {
             const entries = await FileUtil.readdirSync(dir);
 
             for (const entry of entries) {
-                if(files_set.size > config_search_doc.max_file_num) {
+                if(files_set.size >= config_search_doc.max_file_num) {
                     return;
                 }
                 const fullPath = path.join(dir, entry);
@@ -236,7 +247,7 @@ export class Ai_agentService {
                 for (const ignore of ignore_list) {
                     if(matchGitignore(entry, ignore)) {
                         ok = true;
-                        ignore_list_str.push(entry);
+                        // ignore_list_str.push(entry);
                         break;
                     }
                 }
@@ -401,7 +412,7 @@ export class Ai_agentService {
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 2. 使用 markdown格式回答用户。
 3. 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
-${this.is_use_local_data()?`4. 当你不了解某些知识的时候，可以使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。`:''}
+${this.is_use_local_data()?`4. 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。`:''}
 
 ${config.sys_prompt ?? ''}
 `
