@@ -53,7 +53,7 @@ export class ai_docs_load_info {
         this.num = 0;
         this.size = 0;
         this.char_num = 0;
-        this.total_num = 0
+        // this.total_num = 0
         this.consume_time_ms_len = 0;
     }
 }

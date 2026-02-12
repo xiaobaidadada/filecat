@@ -43,7 +43,6 @@ export function start_ai_agent_agent() {
                 await doc_names_index.mount(name_index_db)
             }
         }
-
     })
 
     register_threads_worker_handler(threads_msg_type.docs_add, async (data) => {

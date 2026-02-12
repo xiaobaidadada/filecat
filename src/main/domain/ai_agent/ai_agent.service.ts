@@ -30,7 +30,7 @@ import {start_worker_threads, ThreadsFilecat} from "../../threads/filecat/thread
 import {threads_msg_type} from "../../threads/threads.type";
 import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name, file_key} from "../data/data_type";
-import { pinyin } from "pinyin-pro";
+import {pinyin} from "pinyin-pro";
 
 const {
     cut,
@@ -74,19 +74,19 @@ export class Ai_agentService {
             if (!k) continue;
             // 原文关键词
             new_keywords[k] = 1;
-            if(isChinese(k)) {
+            if (isChinese(k)) {
                 // 分词后的关键词
                 for (const k2 of cut_for_search(k, true)) {
                     if (k2) new_keywords[k2] = 1;
                 }
                 // 中文转拼音全拼（无声调）
-                const pyFull = pinyin(k, { toneType: "none" });
+                const pyFull = pinyin(k, {toneType: "none"});
                 if (pyFull) {
-                    new_keywords[pyFull] = 1;
+                    // new_keywords[pyFull] = 1;
                     new_keywords[pyFull.replace(/\s+/g, "")] = 1;
                 }
             } else {
-               // 拼音转汉字不行
+                // 拼音转汉字不行
             }
         }
         let keys = [...new Set(
@@ -101,11 +101,11 @@ export class Ai_agentService {
         // }
         const r_list = await Promise.all(
             keys.map(k =>
-                ThreadsFilecat.post(threads_msg_type.docs_search, { key: k }, 60000)
+                ThreadsFilecat.post(threads_msg_type.docs_search, {key: k}, 60000)
             )
         );
         for (let i = 0; i < r_list.length; i++) {
-            const { ids ,names_ids} = r_list[i];
+            const {ids, names_ids} = r_list[i];
             let extra_weight = 0
             // if (r_list.length > 1 && r_list.length -1 === i) {
             //     extra_weight += 2
@@ -117,7 +117,7 @@ export class Ai_agentService {
             }
             for (let i = 0; i < names_ids.length; i++) {
                 const id = names_ids[i];
-                const weight = 1 / (i + 1) + extra_weight +0.5  ; // 名字比内容的匹配度更重要一点
+                const weight = 1 / (i + 1) + extra_weight + 0.5; // 名字比内容的匹配度更重要一点
                 scoreMap.set(id, (scoreMap.get(id) || 0) + weight);
             }
         }
@@ -170,42 +170,51 @@ export class Ai_agentService {
     }
 
     private async add_content(file_path: string, content: string) {
-        await ThreadsFilecat.post(threads_msg_type.docs_add,{
+        await ThreadsFilecat.post(threads_msg_type.docs_add, {
             use_zh_segmentation:
             config_search_doc.use_zh_segmentation
-            ,content,file_path
-        },60 *1000)
+            , content, file_path
+        }, 60 * 1000)
     }
 
     private async remove_content(file_path: string) {
-        await ThreadsFilecat.post(threads_msg_type.docs_add,{
-           file_path
-        },60 *1000)
+        await ThreadsFilecat.post(threads_msg_type.docs_add, {
+            file_path
+        }, 60 * 1000)
         this.docs_data_map.delete(file_path);
     }
 
     public async close_index() {
         this.running_num++;
-        await ThreadsFilecat.post(threads_msg_type.docs_close,{},60 *1000)
+        await ThreadsFilecat.post(threads_msg_type.docs_close, {}, 60 * 1000)
         ai_agentService.docs_data_map.clear()
     }
 
     running_num = 1
 
+    private push_wss(now: number) {
+        this.docs_info.consume_time_ms_len = Date.now() - now
+        this.docs_info.total_num = this.docs_data_map.size
+        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
+    }
+
     async init_search_docs(target_list?: ai_docs_item[]) {
         if (!this.sys_ai_is_open) return;
         start_worker_threads()
+        const now = Date.now();
         const body = {index_storage_type: config_search_doc.index_storage_type}
-        if(config_search_doc.index_storage_type === 'sqlite') {
+        if (config_search_doc.index_storage_type === 'sqlite') {
             const a = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_index_db)
             const b = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_name_index_db)
-            body[a] = a
-            body[b] = b
+            body['a'] = a
+            body['b'] = b
         }
-        await ThreadsFilecat.post(threads_msg_type.docs_init,body,60*1000)
+        await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
         const is_one_load = target_list != null;
         this.docs_info.init()
-        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
+
+        this.push_wss(now)
+
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
         const list = target_list || settingService.ai_docs_setting().list;
         if (!list?.length) {
@@ -214,11 +223,11 @@ export class Ai_agentService {
 
         // 可以正式开始了
         let running_num = this.running_num
-        const now = Date.now();
+
 
         // 特殊路径判断
         let ignore_list: string[] = []
-        let allow_list :string[] = []
+        let allow_list: string[] = []
         // let ignore_list_str = []
         if (config_search_doc.ignore_dir) {
             if (typeof config_search_doc.ignore_dir === 'string') {
@@ -244,13 +253,16 @@ export class Ai_agentService {
         let update_file_num = 0
         let await_file_total = config_search_doc.await_file_num ?? 0;
         // let file_char_num = 0
+        const add_file_path_list: string[] = []
+        const update_file_path_list: string[] = []
+        const delete_file_path_list: string[] = []
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
             if (files_set.size >= config_search_doc.max_file_num) {
                 return;
             }
-            if(running_num != this.running_num) return;
-            if(config_search_doc.allow_file_path) {
+            if (running_num != this.running_num) return;
+            if (config_search_doc.allow_file_path) {
                 let ok = false
                 for (const allow of allow_list) {
                     if (matchGitignore(file_path, allow)) {
@@ -258,7 +270,7 @@ export class Ai_agentService {
                         break
                     }
                 }
-                if(!ok) return
+                if (!ok) return
             }
             if (await_file_total <= 0) {
                 await_file_total = config_search_doc.await_file_num ?? 0;
@@ -282,16 +294,11 @@ export class Ai_agentService {
                     // 文件没变，跳过
                 } else {
                     it.time_stamp = mtime;
-                    await this.remove_content(file_path);
-                    let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
-                    this.docs_info.char_num += content.length;
-                    await this.add_content(file_path, content);
+                    update_file_path_list.push(file_path);
                     update_file_num++
                 }
             } else {
-                let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
-                this.docs_info.char_num += content.length;
-                await this.add_content(file_path, content);
+                add_file_path_list.push(file_path);
                 this.docs_data_map.set(file_path, {
                     file_name,
                     time_stamp: file_stats.mtime.getTime(),
@@ -312,7 +319,7 @@ export class Ai_agentService {
             if (depth > dir_recursion_depth) {
                 return;
             }
-            if(running_num != this.running_num) return;
+            if (running_num != this.running_num) return;
             const stat = await FileUtil.statSync(dir);
             if (stat.isFile()) {
                 await async_poll.run(() => handleFile(dir, path.basename(dir)));
@@ -343,9 +350,9 @@ export class Ai_agentService {
                     }
                 } else if (stat.isFile()) {
                     await async_poll.run(() => handleFile(fullPath, entry));
-                    Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
                 }
             }
+            this.push_wss(now)
         };
 
 
@@ -358,21 +365,48 @@ export class Ai_agentService {
             }
             this.docs_info.progress =
                 (((i + 1) / total) * 100).toFixed(2);
-            Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
         }
 
-        // 删除已经不存在的文件
-        if (!is_one_load) {
+        if(!is_one_load) {
+            // 单独加载文件不能删除其他的文件
             for (const key of this.docs_data_map.keys()) {
                 if (!files_set.has(key)) {
-                    await this.remove_content(key)
+                    delete_file_path_list.push(key);
                     update_file_num++
                 }
             }
         }
-        this.docs_info.total_num = this.docs_data_map.size
-        this.docs_info.consume_time_ms_len = Date.now() - now
-        Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
+
+
+        const totalFiles = add_file_path_list.length + update_file_path_list.length + delete_file_path_list.length;
+        let processed = 0;
+        for (const file_path of add_file_path_list) {
+            let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
+            this.docs_info.char_num += content.length;
+            await this.add_content(file_path, content);
+            processed++;
+            this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
+            this.push_wss(now)
+        }
+        for (const file_path of update_file_path_list) {
+            await this.remove_content(file_path);
+            let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
+            this.docs_info.char_num += content.length;
+            await this.add_content(file_path, content);
+            processed++;
+            this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
+            this.push_wss(now)
+        }
+
+        for (const file_path of delete_file_path_list) {
+            await this.remove_content(file_path)
+            processed++;
+            this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
+            this.push_wss(now)
+        }
+        this.docs_info.progress = 100
+        // 删除已经不存在的文件
+        this.push_wss(now)
 
         console.log(`共扫描了 ${files_set.size} 个知识库文件`)
         console.log(`共更新了 ${update_file_num} 个知识库文件`)
