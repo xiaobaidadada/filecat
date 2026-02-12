@@ -82,16 +82,16 @@ export function Systemd(props) {
     useEffect(() => {
         setFilterKey(filter);
         init();
-        return () => {
-            (async () => {
-                if (ws.isAilive()) {
-                    ws.setPromise(async (resolve) => {
-                        await ws.unConnect();
-                        resolve();
-                    });
-                }
-            })();
-        }
+        // return () => {
+        //     (async () => {
+        //         if (ws.isAilive()) {
+        //             ws.setPromise(async (resolve) => {
+        //                 await ws.unConnect();
+        //                 resolve();
+        //             });
+        //         }
+        //     })();
+        // }
     }, []);
     useEffect(() => {
         filter = filterKey;

@@ -67,16 +67,16 @@ export function RemoteShell(props) {
                 terminalState.dispose();
                 setTerminalState(null);
             }
-            if(ws.isAilive()) {
-                ws.setPromise(async (resolve)=>{
-                    // const data = new WsData(CmdType.remote_shell_cancel);
-                    // data.context=""
-                    // ws.unSubscribeUnconnect();
-                    // await ws.send(data);
-                    await ws.unConnect();
-                    resolve();
-                })
-            }
+            // if(ws.isAilive()) {
+            //     ws.setPromise(async (resolve)=>{
+            //         // const data = new WsData(CmdType.remote_shell_cancel);
+            //         // data.context=""
+            //         // ws.unSubscribeUnconnect();
+            //         // await ws.send(data);
+            //         await ws.unConnect();
+            //         resolve();
+            //     })
+            // }
         })();
     }
     useEffect(() => {

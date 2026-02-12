@@ -3,14 +3,21 @@ import si from "systeminformation";
 import os from "os";
 import WebSocket from "ws";
 const fs = require('fs');
-import {diskCheckAttr, DiskCheckInfo, SysCmd, SysCmdExePojo, SysPojo} from "../../../common/req/sys.pojo";
+import {
+    diskCheckAttr,
+    DiskCheckInfo,
+    node_memory_usage,
+    SysCmd,
+    SysCmdExePojo,
+    SysPojo
+} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
 import {get_ntfs_3g, getSmartctl} from "../bin/bin";
 import {lv_item, pv_item, vg_item} from "../../../common/req/common.pojo";
 import {SystemUtil} from "./sys.utl";
 let sysJobInterval: any = null;
 
-const sysWssMap = new Map<string, Wss>();
+export const sysWssMap = new Map<string, Wss>();
 
 class SysSystemService {
 
@@ -47,6 +54,9 @@ class SysSystemService {
         }
     }
 
+    // 用于存储上一次CPU时间
+    private lastNodeCpuUsage: number | null = null;
+
     async pushSysInfo(wss: Wss) {
         const currentLoad = await si.currentLoad();
         // 获取总内存（单位：字节）
@@ -54,14 +64,30 @@ class SysSystemService {
         // 剩余（单位：字节）
         const freeMemory = os.freemem();
         const result = new WsData<SysPojo>(CmdType.sys_getting);
+
+        // ===== Node CPU 增长率（相对于自己上次调用） =====
+        // Node 自身 CPU 用户态时间（微秒）
+        const currentCpuUsage = process.cpuUsage();
+        const userCpu = currentCpuUsage.user+currentCpuUsage.system;
+
+        let nodeCpuGrowthRate = 0;
+
+        if (this.lastNodeCpuUsage !== null && this.lastNodeCpuUsage !== 0) {
+            nodeCpuGrowthRate = ((userCpu - this.lastNodeCpuUsage) / this.lastNodeCpuUsage) * 100;
+        }
+        // 更新上一次 CPU
+        this.lastNodeCpuUsage = userCpu;
+
         result.context = {
             memTotal: (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
             memLeft: (freeMemory / (1024 * 1024 * 1024)).toFixed(2),
             cpu_currentLoad: currentLoad.currentLoad.toFixed(2),
+            node_memory_usage: process.memoryUsage(),
+            node_cpu_usage: nodeCpuGrowthRate.toFixed(2),
         };
-        if (wss.ws.readyState ===WebSocket.CLOSED) {
-            throw  "断开连接";
-        }
+        // if (wss.ws.readyState ===WebSocket.CLOSED) {
+        //     throw  "断开连接";
+        // }
         wss.sendData(result.encode())
     }
 

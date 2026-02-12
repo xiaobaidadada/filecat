@@ -206,3 +206,8 @@ li:hover {
   display: flex;
   align-items: center;
 }
+
+.show_data_text_div {
+  padding-top: 0.2rem;
+  font-weight: 500;
+}

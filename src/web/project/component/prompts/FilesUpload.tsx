@@ -290,7 +290,7 @@ export function FilesUpload() {
                 }
             }
             for (const it of all_wss_list) {
-                it.unConnect(); // 关闭全部的ws
+                // it.unConnect(); // 关闭全部的ws
             }
         };
 

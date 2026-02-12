@@ -106,13 +106,13 @@ export function Docker(props) {
         return () => {
             (async () => {
                 setShellShow({show: false, type: "", dockerId: ''})
-                if (ws.isAilive()) {
-                    ws.setPromise(async (resolve) => {
-                        await ws.unConnect();
-                        resolve();
-                    });
-
-                }
+                // if (ws.isAilive()) {
+                //     ws.setPromise(async (resolve) => {
+                //         await ws.unConnect();
+                //         resolve();
+                //     });
+                //
+                // }
             })();
         }
     }, []);
@@ -221,7 +221,7 @@ export function Docker(props) {
         <Header left_children={<ButtonLittleStatus defaultStatus={false} text={t("docker镜像")} clickFun={(v) => {
             set_show_iamges(v);
             if (v) {
-                ws.unConnect();
+                // ws.unConnect();
                 load_images();
                 setOptRow([]);
             } else {

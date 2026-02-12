@@ -93,6 +93,7 @@ const tasksLister = new Listr(
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
+                            copyFileSync(path.resolve("node_modules/sqlite3/build/Release/node_sqlite3.node"), path.join(__dirname, "..", "build","build", "node_sqlite3.node"))
                         }
 
                         copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))

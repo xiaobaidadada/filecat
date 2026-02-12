@@ -13,7 +13,7 @@ export enum CmdType {
     // 系统信息推送一直获取
     sys_getting,
     // 取消系统信息订阅
-    // sys_cancel,
+    sys_cancel,
 
     shell_open,
     // 发送命令

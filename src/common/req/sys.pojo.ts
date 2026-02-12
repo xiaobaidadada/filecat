@@ -155,3 +155,64 @@ export enum SysCmd {
 export class  SysCmdExePojo {
     type:SysCmd;
 }
+
+/**
+ * Node.js 进程内存使用情况（单位：字节）
+ * 来源：process.memoryUsage()
+ */
+export class node_memory_usage {
+
+    /**
+     * Resident Set Size
+     * 进程实际占用的物理内存总量（最接近操作系统看到的内存）
+     *
+     * 包含：
+     * - V8 堆内存
+     * - C++ 扩展模块内存
+     * - Buffer / ArrayBuffer
+     * - 线程栈
+     * - native 库（如 sqlite、wasm、OpenSSL 等）
+     *
+     * ⭐ 通常用于判断进程真实内存占用
+     */
+    rss: number;
+
+    /**
+     * V8 已申请的堆总内存
+     *
+     * 表示 JS 引擎当前向系统申请的堆空间总量
+     * heapUsed 一定小于等于该值
+     */
+    heapTotal: number;
+
+    /**
+     * V8 当前已使用的堆内存
+     *
+     * 表示 JS 对象实际占用的内存
+     * ⭐ 判断 JS 内存泄漏时重点关注该值
+     */
+    heapUsed: number;
+
+    /**
+     * V8 堆外内存
+     *
+     * 包含：
+     * - C++ 对象
+     * - native 插件
+     * - 某些 Buffer
+     * - wasm 内存
+     *
+     * ⭐ AI / 文件处理 / 向量库场景非常重要
+     */
+    external: number;
+
+    /**
+     * ArrayBuffer / SharedArrayBuffer 占用内存
+     *
+     * 属于 external 的子集
+     * 主要来自：
+     * - Node Buffer
+     * - 二进制数据处理
+     */
+    arrayBuffers: number;
+}

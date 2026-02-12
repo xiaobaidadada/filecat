@@ -224,7 +224,10 @@ export class WsClient {
     public unSubscribeUnconnect() {
         this._subscribeUnconnect = null;
     }
+
+    // 没有必要手动关闭 刷新页面就关闭了
     public async unConnect() {
+        console.log('关闭客户端')
         if (this.isAilive()) {
             console.info('主动关闭客户端',this.name)
             this._self_close = true;

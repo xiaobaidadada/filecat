@@ -69,6 +69,7 @@ export class ai_docs_setting_param {
     await_file_num=100
     use_zh_segmentation = true
     allow_file_path = ["*.txt","*.md","*.html","*.js","*.ts","*.tsx","*.json","*.csv","*.xml","*.css","*.java","*.go","*.php","*.c","*.cc","*.cpp","*.h","*.py"]
+    index_storage_type:'sqlite'|'memory'='memory'
 }
 export const ai_docs_setting_param_default = `
 # 获取的最多字符数量 优先级大于docs_max_char_num
@@ -92,7 +93,9 @@ await_time_ms_len=500
 # 配合await_time_ms_len读取多少个文件后进行等待
 await_file_num=100
 # 使用中文分词
-use_zh_segmentation =true
+use_zh_segmentation=true
+# 索引的存储类型 memory sqlite
+index_storage_type=memory
 `
 
 export class ai_agent_item_dotenv {

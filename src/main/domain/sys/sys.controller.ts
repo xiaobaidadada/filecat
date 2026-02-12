@@ -2,7 +2,7 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {SyserviceImpl} from "./sys.service";
-import {SysSystemServiceImpl} from "./sys.sys.service";
+import {SysSystemServiceImpl, sysWssMap} from "./sys.sys.service";
 import {SysProcessServiceImpl} from "./sys.process.service";
 import {SysDockerServiceImpl} from "./sys.docker.service";
 import {systemd} from "./sys.systemd.service";
@@ -43,6 +43,12 @@ export class SysController {
         userService.check_user_auth((data.wss as Wss).token,UserAuth.all_sys);
         await SysSystemServiceImpl.sys(data);
         return ""
+    }
+
+    @msg(CmdType.sys_cancel)
+    async cancel(data: WsData<any>) {
+        const id = (data.wss as Wss).id;
+        sysWssMap.delete((data.wss as Wss).id)
     }
 
 

@@ -1,14 +1,13 @@
 import React, {useEffect, useState} from 'react'
-import {Column, Dashboard, Row, FlexContainer, TextLine, RowColumn} from "../../../meta/component/Dashboard";
+import {Column, Dashboard, Row, ShowTextDiv, TextLine} from "../../../meta/component/Dashboard";
 import {Card, CardFull, TextTip} from "../../../meta/component/Card";
 import CircleChart from "../../../meta/component/CircleChart";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
-import {DiskDevicePojo, DiskFilePojo, staticSysPojo, SysPojo} from "../../../../common/req/sys.pojo";
+import {DiskDevicePojo, DiskFilePojo, node_memory_usage, staticSysPojo, SysPojo} from "../../../../common/req/sys.pojo";
 import {sysHttp} from "../../util/config";
 import Header from "../../../meta/component/Header";
-import {ActionButton, ButtonLittle, ButtonLittleStatus, ButtonText} from "../../../meta/component/Button";
-import {InputText} from "../../../meta/component/Input";
+import {ActionButton, ButtonLittleStatus} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {RCode} from "../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
@@ -19,7 +18,7 @@ import {NotyFail} from "../../util/noty";
 import {DiskCheck} from "./info/DiskCheck";
 import {DiskMount} from "./info/DiskMount";
 import {SysEnum} from "../../../../common/req/user.req";
-
+import {formatFileSize} from '../../../../common/ValueUtil';
 
 let real_time_p = true;
 export function Sys(props) {
@@ -33,11 +32,13 @@ export function Sys(props) {
     const [memLeft, setMemLeft] = useState(0)
     const [memTotal, setMemTotal] = useState(0)
     const [currentLoad, setCurrentLoad] = useState(0)
+    const [node_cpu_usage, setNodeCpuUsage] = useState(0)
     const [sys, setSys] = useState({} as any)
     const [base, setBase] = useState(false)
     const [disk, setDisk] = useState(false)
     const [fileDisk, setFileDisk] = useState(false)
     const [real_time, set_real_time] = useState(real_time_p);
+    const [node_memory, setNodeMemory] = useState<node_memory_usage>(null)
 
     const [diskList, setDiskList] = useState([]);
     const [fileDiskList, setFileDiskList] = useState([]);
@@ -46,7 +47,8 @@ export function Sys(props) {
 
     const  get_real_time_info = async ()=>{
         if (!real_time_p) {
-            ws.unConnect();
+            // ws.unConnect();
+            // ws.sendData(CmdType.sys_cancel, {})
             return;
         }
         const data = new WsData(CmdType.sys_get);
@@ -58,6 +60,8 @@ export function Sys(props) {
             setMemLeft(memLeft);
             setMemTotal(memTotal);
             setmemPercentage(((memTotal - memLeft) / memTotal) * 100);
+            setNodeMemory(wsData.context?.node_memory_usage)
+            setNodeCpuUsage(wsData.context?.node_cpu_usage)
         })
 
         // ws.subscribeUnconnect(init);
@@ -111,15 +115,16 @@ export function Sys(props) {
     useEffect(() => {
         init();
         return () => {
-            (async () => {
-                if (ws.isAilive()) {
-                    ws.setPromise(async (resolve) => {
-                        await ws.unConnect();
-                        resolve();
-                    })
-
-                }
-            })();
+            ws.sendData(CmdType.sys_cancel, {})
+            // (async () => {
+            //     if (ws.isAilive()) {
+            //         ws.setPromise(async (resolve) => {
+            //             await ws.unConnect();
+            //             resolve();
+            //         })
+            //
+            //     }
+            // })();
         }
     }, []);
     return <div>
@@ -156,7 +161,7 @@ export function Sys(props) {
             {real_time &&
                 <Row>
                     <Column widthPer={33}>
-                        <Card title={t("内存")}>
+                        <Card title={"Sys "+t("内存")}>
                             <Row>
                                 <Column>
                                     <CircleChart percentage={memPercentage}/>
@@ -177,7 +182,7 @@ export function Sys(props) {
                         </Card>
                     </Column>
                     <Column widthPer={33}>
-                        <Card title={"cpu"}>
+                        <Card title={"Sys "+"cpu"}>
                             <Row>
                                 <Column>
                                     <CircleChart percentage={currentLoad}/>
@@ -186,6 +191,23 @@ export function Sys(props) {
                                     <Row>
                                         <TextLine left={t("使用率")} center={currentLoad}/>
                                     </Row>
+                                </Column>
+                            </Row>
+                        </Card>
+                    </Column>
+                    <Column widthPer={33}>
+                        <Card title={"FileCat"}>
+                            <Row>
+                                <Column>
+                                    <ShowTextDiv content= {t("内存")}/>
+                                    <ShowTextDiv content={ "rss "+formatFileSize(node_memory?.rss)}/>
+                                    <ShowTextDiv content= {"v8 "+formatFileSize(node_memory?.heapTotal)}/>
+                                    <ShowTextDiv content=  {"object "+formatFileSize(node_memory?.heapUsed)}/>
+                                    <ShowTextDiv content=  {"v8-external "+formatFileSize(node_memory?.external)}/>
+                                    <ShowTextDiv content=  {"buffer "+formatFileSize(node_memory?.arrayBuffers)}/>
+                                </Column>
+                                <Column>
+                                    <ShowTextDiv content= {"cpu增长率 "+node_cpu_usage}/>
                                 </Column>
                             </Row>
                         </Card>

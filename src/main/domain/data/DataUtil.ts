@@ -93,6 +93,12 @@ export class DataUtil {
         return this.data_map[file][k];
     }
 
+    public static get_file_path(dir:data_dir_tem_name,file:file_key ): string {
+        const p = path.join(Env.work_dir, dir);
+        fse.ensureDirSync( p);
+        return path.join(p,file);
+    }
+
     public static set(k, v, file:file_key = file_key.data) {
         this.init(file);
         this.data_map[file][k] = v;

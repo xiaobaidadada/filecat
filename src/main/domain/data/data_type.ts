@@ -7,6 +7,8 @@ export enum file_key {
     navindex_key = "navindex_key.json", // 专门用于 网址 导航的
     data_version = "data_version",
     statics_tag = "statics_tag_json", // 统计用的
+    flexsearch_index_db = "flexsearch_index_db.db",
+    flexsearch_name_index_db = "flexsearch_name_index_db.db",
 }
 // 数据目录
 export enum data_dir_tem_name {
@@ -15,6 +17,7 @@ export enum data_dir_tem_name {
     all_user_api_file_dir = "datafile" , // 用户的 自定义 api 临时目录 datafile 之前用过了 兼容一下
     sys_file_dir = "sys_file_dir", // 系统目录 和用户的临时分开 不让用户自定义的文件重复了
     http_proxy_server_dir = "http_proxy_server_dir",
+    sys_database_dir = "sys_database_dir", // 存放一些数据库
 }
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择
 // key

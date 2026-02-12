@@ -26,7 +26,11 @@ import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
 import {CommonUtil} from "../../../common/common.util";
-
+import {get_bin_dependency} from "../bin/bin";
+import {DataUtil} from "../data/DataUtil";
+import {data_dir_tem_name, file_key} from "../data/data_type";
+const sqlite3 = get_bin_dependency("sqlite3")
+import Database from "flexsearch/db/sqlite";
 const {
     cut,
     cut_all,
@@ -180,6 +184,17 @@ export class Ai_agentService {
                 tokenize: "strict",
                 // encoder: Charset.CJK
             });
+            if(config_search_doc.index_storage_type === 'sqlite' && sqlite3.Database) {
+                const a = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir,file_key.flexsearch_index_db)
+                const _index_db =  new Database({
+                    db: new sqlite3.Database(a)
+                });
+                const name_index_db = new Database({
+                    db: new sqlite3.Database(DataUtil.get_file_path(data_dir_tem_name.sys_database_dir,file_key.flexsearch_name_index_db))
+                });
+                await this.doc_index.mount(_index_db)
+                await this.doc_names_index.mount(name_index_db)
+            }
         }
         const is_one_load = target_list != null;
         this.docs_info.init()

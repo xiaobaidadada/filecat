@@ -62,7 +62,7 @@ export function NetServer(props) {
         }
         init();
         return () => {
-            ws.unConnect();
+            // ws.unConnect();
         }
     }, []);
     const save = async () => {

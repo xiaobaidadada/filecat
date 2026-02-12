@@ -120,6 +120,12 @@ export function TextLine(props: {
 
 }
 
+export function ShowTextDiv (props:{content:string}) {
+    return <div className={"show_data_text_div"}>
+        {props.content}
+    </div>
+}
+
 
 export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v,item) => void ,pre_value?: any}) {
     const divRef = useRef(null);

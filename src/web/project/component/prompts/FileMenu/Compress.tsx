@@ -60,7 +60,7 @@ export function Compress(props) {
             if (v === 100) {
                 NotySucess("完成");
                 navigate(getRouterPath());
-                ws.unConnect();
+                // ws.unConnect();
                 close()
             }
             setSelectList([])

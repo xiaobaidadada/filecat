@@ -208,7 +208,7 @@ export default function LogViewer(props) {
     const cancel_watch = () => {
         if (!open_watch) return;
         open_watch = false;
-        ws.unConnect();
+        // ws.unConnect();
         set_tip(false)
 
         // console.log('取消实时监听')
@@ -344,7 +344,7 @@ export default function LogViewer(props) {
             // shellRef.current.removeEventListener("scroll", handleScroll);
             shellRef.current.remove();
         }
-        await ws.unConnect();
+        // await ws.unConnect();
         dom_children_list = [];
     }
     useEffect(() => {

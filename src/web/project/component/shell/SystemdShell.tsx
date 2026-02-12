@@ -63,7 +63,7 @@ export function SystemdShell(props) {
         initTerminal();
         const handleCustomEvent = (event) => {
             // 测试一下事件功能
-            ws.unConnect();
+            // ws.unConnect();
         };
         document.addEventListener('cancel_systemd_logs', handleCustomEvent);
         return () => {
