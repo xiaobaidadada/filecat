@@ -30,6 +30,7 @@ import {get_user_now_pwd} from "../../../common/DataUtil";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
+const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
 const Mustache = require('mustache');
@@ -591,6 +592,40 @@ export class SettingService {
     }
 
     cacheSysSoftwareItem: SysSoftwareItem[];
+
+    getFfmpeg() {
+        const list = this.getSoftware();
+        for (const item of list) {
+            if (item.id === SysSoftware.ffmpeg && item.installed && !!item.path) {
+                ffmpeg.setFfmpegPath(item.path);
+            }
+        }
+        return ffmpeg;
+    }
+
+    smartctl:string
+
+    getSmartctl() {
+        const list = settingService.getSoftware();
+        for (const item of list) {
+            if (item.id === SysSoftware.smartmontools && item.installed && !!item.path) {
+                this.smartctl = item.path;
+            }
+        }
+        return this.smartctl;
+    }
+
+    ntfs_3g:string
+
+    get_ntfs_3g() {
+        const list = settingService.getSoftware();
+        for (const item of list) {
+            if (item.id === SysSoftware.ntfs_3g && item.installed && !!item.path) {
+                this.ntfs_3g = item.path;
+            }
+        }
+        return this.ntfs_3g;
+    }
 
     public getSoftware() {
         if (this.cacheSysSoftwareItem) {

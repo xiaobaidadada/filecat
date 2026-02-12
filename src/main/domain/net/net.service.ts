@@ -23,7 +23,7 @@ import {generateRandomHash} from "../../../common/StringUtil";
 import {FileUtil} from "../file/FileUtil";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
-import {get_bin_dependency} from "../bin/bin";
+import {get_bin_dependency} from "../bin/get_bin_dependency";
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {URL} from 'url';
 import https from 'https';

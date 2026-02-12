@@ -1,7 +1,6 @@
 import Stream from "node:stream";
 import WebSocket from "ws";
-import {getFfmpeg} from "../bin/bin";
-import {deleteList} from "../../../common/ListUtil";
+import {settingService} from "../setting/setting.service";
 
 
 export class VideoService {
@@ -12,7 +11,7 @@ export class VideoService {
         // let url = `rtsp://${cur.account}:${cur.password}@${cur.nvrAddress}:${cur.nvrPortNum}/Streaming/tracks/${cur.channelNum}/?starttime=${starttime}Z&endtime=${endtime}Z`
         // 配置 FFmpeg 命令
         const stream = new Stream.PassThrough();
-        const command = getFfmpeg()(url)
+        const command = settingService.getFfmpeg()(url)
             .inputOptions('-rtsp_transport', 'tcp') // 使用 TCP 传输
             .outputFormat('flv') // 输出格式为 FLV
             .videoCodec('copy') // 直接复制视频数据

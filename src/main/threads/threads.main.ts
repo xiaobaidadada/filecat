@@ -85,10 +85,13 @@ export class ThreadsMain {
     /**
      * fire-and-forget 广播
      */
-    public  emit(msg_type: threads_msg_type, data: any) {
+    public  emit(msg_type: threads_msg_type, data: any,num = 1) {
         const msg: WorkerMessage = { type: msg_type, data };
+        let count = 0;
         for (const w of this.worker_threads) {
+            if(count >= num) break
             w.postMessage(msg);
+            count++
         }
     }
 

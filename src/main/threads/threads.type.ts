@@ -14,5 +14,14 @@ export enum threads_msg_type {
     file_search_close,
     search_file_index,
     search_file_progress,
-    search_file_end
+    search_file_end,
+
+    docs_init,
+    docs_add,
+    docs_del,
+    docs_close,
+    docs_search,
+
+    sys_info,
+    sys_info_send,
 }

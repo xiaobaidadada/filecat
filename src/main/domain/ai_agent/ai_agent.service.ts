@@ -26,11 +26,10 @@ import {Wss} from "../../../common/frame/ws.server";
 import {CmdType} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
 import {CommonUtil} from "../../../common/common.util";
-import {get_bin_dependency} from "../bin/bin";
+import {start_worker_threads, ThreadsFilecat} from "../../threads/filecat/threads.filecat";
+import {threads_msg_type} from "../../threads/threads.type";
 import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name, file_key} from "../data/data_type";
-const sqlite3 = get_bin_dependency("sqlite3")
-import Database from "flexsearch/db/sqlite";
 const {
     cut,
     cut_all,
@@ -51,8 +50,6 @@ let config_search_doc = new ai_docs_setting_param()
  */
 export class Ai_agentService {
 
-    doc_index: Index
-    doc_names_index: Index
     docs_data_map: Map<string, {
         path: string,
         // content:string,
@@ -65,27 +62,27 @@ export class Ai_agentService {
 
     public async search_docs({keywords}: { keywords: string[] }) {
         const scoreMap = new Map<string, number>();
-        for (let k of keywords) {
+        const new_keywords = {}
+        for (const k of keywords) {
+            if(k.includes(" ")) {
+                for (const k2 of cut(k,true)) {
+                    new_keywords[k2] = 1
+                }
+            } else {
+                new_keywords[k] = 1
+            }
+        }
+        for (let k of Object.keys(new_keywords)) {
             // 相当于or了
             k = k.toLowerCase()
+            if(!k) continue;
             // const list_p = cut_for_search(k, true) // or 逻辑
             // .map(v => v.replace(/\s+/g, "")) // 删除所有空白字符
             // .filter(Boolean);                // 去掉空字符串
             // k = list_p.join(" ")
-            const ids = this.doc_index.search(k, {
-                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
-                // resolution: 9,
-                // cache: true, // 重复查询概率低 没有必要
-                // limit: config_search_doc.docs_max_num
-                // offset // 分页
-            }) as string[];
-            const names_ids = this.doc_names_index.search(k, {
-                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
-                // resolution: 9,
-                // cache: true, // 重复查询概率低 没有必要
-                // limit: config_search_doc.docs_max_num
-                // offset // 分页
-            }) as string[];
+            const {ids,names_ids} = await ThreadsFilecat.post(threads_msg_type.docs_search,{
+                key:k
+            },60 *1000)
             // 得分排序
             for (const id of names_ids) {
                 let score = (scoreMap.get(id) || 0) + 1;
@@ -145,29 +142,24 @@ export class Ai_agentService {
         }])
     }
 
-    private add_content(file_path: string, content: string) {
-        if (config_search_doc.use_zh_segmentation) {
-            content = cut(content, true).join(" ").toLowerCase()
-            const p = cut(file_path, true).join(" ").toLowerCase()
-            this.doc_names_index.add(file_path, p)
-        } else {
-            this.doc_names_index.add(file_path, file_path.toLowerCase())
-        }
-        this.doc_index.add(file_path, content);
+    private async add_content(file_path: string, content: string) {
+        await ThreadsFilecat.post(threads_msg_type.docs_add,{
+            use_zh_segmentation:
+            config_search_doc.use_zh_segmentation
+            ,content,file_path
+        },60 *1000)
     }
 
-    private remove_content(file_path: string) {
-        this.doc_index.remove(file_path)
-        this.doc_names_index.remove(file_path)
+    private async remove_content(file_path: string) {
+        await ThreadsFilecat.post(threads_msg_type.docs_add,{
+           file_path
+        },60 *1000)
         this.docs_data_map.delete(file_path);
     }
 
-    public close_index() {
+    public async close_index() {
         this.running_num++;
-        this.doc_index.clear()
-        this.doc_index = null;
-        this.doc_names_index.clear()
-        this.doc_names_index = null
+        await ThreadsFilecat.post(threads_msg_type.docs_close,{},60 *1000)
         ai_agentService.docs_data_map.clear()
     }
 
@@ -175,27 +167,15 @@ export class Ai_agentService {
 
     async init_search_docs(target_list?: ai_docs_item[]) {
         if (!this.sys_ai_is_open) return;
-        if (!this.doc_index) {
-            this.doc_index = new FlexSearch.Index({
-                tokenize: "strict",
-                // encoder: Charset.CJK
-            });
-            this.doc_names_index = new FlexSearch.Index({
-                tokenize: "strict",
-                // encoder: Charset.CJK
-            });
-            if(config_search_doc.index_storage_type === 'sqlite' && sqlite3.Database) {
-                const a = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir,file_key.flexsearch_index_db)
-                const _index_db =  new Database({
-                    db: new sqlite3.Database(a)
-                });
-                const name_index_db = new Database({
-                    db: new sqlite3.Database(DataUtil.get_file_path(data_dir_tem_name.sys_database_dir,file_key.flexsearch_name_index_db))
-                });
-                await this.doc_index.mount(_index_db)
-                await this.doc_names_index.mount(name_index_db)
-            }
+        start_worker_threads()
+        const body = {index_storage_type: config_search_doc.index_storage_type}
+        if(config_search_doc.index_storage_type === 'sqlite') {
+            const a = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_index_db)
+            const b = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_name_index_db)
+            body[a] = a
+            body[b] = b
         }
+        await ThreadsFilecat.post(threads_msg_type.docs_init,body,60*1000)
         const is_one_load = target_list != null;
         this.docs_info.init()
         Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
@@ -275,17 +255,16 @@ export class Ai_agentService {
                     // 文件没变，跳过
                 } else {
                     it.time_stamp = mtime;
-                    this.doc_index.remove(file_path);
-
+                    await this.remove_content(file_path);
                     let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
                     this.docs_info.char_num += content.length;
-                    this.add_content(file_path, content);
+                    await this.add_content(file_path, content);
                     update_file_num++
                 }
             } else {
                 let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
                 this.docs_info.char_num += content.length;
-                this.add_content(file_path, content);
+                await this.add_content(file_path, content);
                 this.docs_data_map.set(file_path, {
                     file_name,
                     time_stamp: file_stats.mtime.getTime(),
@@ -359,7 +338,7 @@ export class Ai_agentService {
         if (!is_one_load) {
             for (const key of this.docs_data_map.keys()) {
                 if (!files_set.has(key)) {
-                    this.remove_content(key)
+                    await this.remove_content(key)
                     update_file_num++
                 }
             }

@@ -23,7 +23,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
-import {get_bin_dependency, getFfmpeg} from "../bin/bin";
+import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
@@ -885,7 +885,7 @@ export class FileService extends FileCompress {
         const sysPathNew = path.join(root_path, decodeURIComponent(pojo.to_filename));
 
 
-        getFfmpeg()(sysPath)
+        settingService.getFfmpeg()(sysPath)
             .toFormat(pojo.to_format)
             // .videoCodec('libx264')
             // .audioCodec('aac')

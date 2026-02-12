@@ -7,7 +7,7 @@ import {getShell, getSys} from "../shell/shell.service";
 import WebSocket from "ws";
 import os from "os";
 import {SysEnum} from "../../../common/req/user.req";
-import {get_bin_dependency} from "../bin/bin";
+import {get_bin_dependency} from "../bin/get_bin_dependency";
 
 let sysJobInterval: any = null;
 let dockerJobInterval: any = null;

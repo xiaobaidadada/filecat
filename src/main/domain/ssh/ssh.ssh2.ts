@@ -1,7 +1,7 @@
 import {SshPojo} from "../../../common/req/ssh.pojo";
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {LifecycleRecordService} from "../pre/lifeRecordService";
-import {get_bin_dependency} from "../bin/bin";
+import {get_bin_dependency} from "../bin/get_bin_dependency";
 const EventEmitter = require('events');
 
 

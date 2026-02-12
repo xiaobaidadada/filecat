@@ -19,7 +19,7 @@ import fs from "fs";
 import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
-import {get_bin_dependency} from "../bin/bin";
+import {get_bin_dependency} from "../bin/get_bin_dependency";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()

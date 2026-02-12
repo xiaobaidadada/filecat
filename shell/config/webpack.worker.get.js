@@ -15,7 +15,7 @@ function get_webpack_work_config({entry_path,output_name,pkg,docker}) {
             filename: output_name, // 输出文件名
         },
         resolve: {
-            extensions: ['.ts', '.js'] // 解析文件时自动补全的文件扩展名
+            extensions: ['.ts', '.js', '.node'] // 解析文件时自动补全的文件扩展名
         },
         externalsPresets: { node: true },
         optimization: {

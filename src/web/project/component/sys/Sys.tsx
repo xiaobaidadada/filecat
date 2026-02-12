@@ -200,14 +200,14 @@ export function Sys(props) {
                             <Row>
                                 <Column>
                                     <ShowTextDiv content= {t("内存")}/>
-                                    <ShowTextDiv content={ "rss "+formatFileSize(node_memory?.rss)}/>
-                                    <ShowTextDiv content= {"v8 "+formatFileSize(node_memory?.heapTotal)}/>
-                                    <ShowTextDiv content=  {"object "+formatFileSize(node_memory?.heapUsed)}/>
-                                    <ShowTextDiv content=  {"v8-external "+formatFileSize(node_memory?.external)}/>
-                                    <ShowTextDiv content=  {"buffer "+formatFileSize(node_memory?.arrayBuffers)}/>
+                                    <ShowTextDiv content={ "total: "+formatFileSize(node_memory?.rss)}/>
+                                    <ShowTextDiv content= {"v8-object: "+formatFileSize(node_memory?.heapTotal)}/>
+                                    <ShowTextDiv content=  {"v8-obj-use: "+formatFileSize(node_memory?.heapUsed)}/>
+                                    <ShowTextDiv content=  {"v8-external: "+formatFileSize(node_memory?.external)}/>
+                                    <ShowTextDiv content=  {"buffer: "+formatFileSize(node_memory?.arrayBuffers)}/>
                                 </Column>
                                 <Column>
-                                    <ShowTextDiv content= {"cpu增长率 "+node_cpu_usage}/>
+                                    <ShowTextDiv content= {"cpu growth rate: "+node_cpu_usage}/>
                                 </Column>
                             </Row>
                         </Card>

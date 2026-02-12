@@ -12,9 +12,12 @@ import {
     SysPojo
 } from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
-import {get_ntfs_3g, getSmartctl} from "../bin/bin";
 import {lv_item, pv_item, vg_item} from "../../../common/req/common.pojo";
 import {SystemUtil} from "./sys.utl";
+import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
+import {threads_msg_type, WorkerMessage} from "../../threads/threads.type";
+import {Worker as NodeWorker} from "worker_threads";
+import {settingService} from "../setting/setting.service";
 let sysJobInterval: any = null;
 
 export const sysWssMap = new Map<string, Wss>();
@@ -56,8 +59,20 @@ class SysSystemService {
 
     // 用于存储上一次CPU时间
     private lastNodeCpuUsage: number | null = null;
+    private node_memory_usage_worker:node_memory_usage = {} as node_memory_usage
 
     async pushSysInfo(wss: Wss) {
+        if(ThreadsFilecat.is_running) {
+            ThreadsFilecat.emit(threads_msg_type.sys_info,{})
+            ThreadsFilecat.on_once_msg(threads_msg_type.sys_info_send,(msg: WorkerMessage, worker: NodeWorker)=>{
+                const {node_memory_usage} = msg.data
+                if(node_memory_usage)  {
+                    for (const key of Object.keys(node_memory_usage)) {
+                        this.node_memory_usage_worker[key] = node_memory_usage[key]
+                    }
+                }
+            })
+        }
         const currentLoad = await si.currentLoad();
         // 获取总内存（单位：字节）
         const totalMemory = os.totalmem();
@@ -77,12 +92,15 @@ class SysSystemService {
         }
         // 更新上一次 CPU
         this.lastNodeCpuUsage = userCpu;
-
+        const node_memory_usage_ = process.memoryUsage()
+        for (const key of Object.keys(node_memory_usage_)) {
+            node_memory_usage_[key] = this.node_memory_usage_worker[key]??0;
+        }
         result.context = {
             memTotal: (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
             memLeft: (freeMemory / (1024 * 1024 * 1024)).toFixed(2),
             cpu_currentLoad: currentLoad.currentLoad.toFixed(2),
-            node_memory_usage: process.memoryUsage(),
+            node_memory_usage: node_memory_usage_,
             node_cpu_usage: nodeCpuGrowthRate.toFixed(2),
         };
         // if (wss.ws.readyState ===WebSocket.CLOSED) {
@@ -110,7 +128,7 @@ class SysSystemService {
         }
 
         try {
-            const jsonstr = (await SystemUtil.execAsync(`${getSmartctl()} -a --json ${disk}`)).toString();
+            const jsonstr = (await SystemUtil.execAsync(`${settingService.getSmartctl()} -a --json ${disk}`)).toString();
             pojo = JSON.parse(jsonstr);
         } catch (e: any) {
             if (e.status === 4 && e.stdout) {

@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
+const {npm_externals} = require("./base.webpack.config");
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
     mode: 'production', // 或者 'production'
@@ -19,17 +20,7 @@ module.exports = {
         ]
     },
     externalsPresets: { node: true },
-    externals: [
-        { // 这些都不安装，需要安装dev依赖
-            '@aws-sdk/client-s3': 'S3', // 假设全局变量名为 S3 是 @aws-sdk/client-s3带 @符号的话会无法压缩
-            // 'routing-controllers':'commonjs routing-controllers', // 有一些动态引入(他需要的动态引入也需要导入)，或者含有.node(使用用户自己安装编译的版本) 无法被打包 直接忽略这个包
-            'cors':'commonjs cors', // 动态加载无法打包 如果需要可以使用 import "cors"
-            '@xiaobaidadada/node-pty-prebuilt':'commonjs @xiaobaidadada/node-pty-prebuilt',
-            '@xiaobaidadada/node-tuntap2-wintun':'commonjs @xiaobaidadada/node-tuntap2-wintun',
-            'node-process-watcher':'commonjs node-process-watcher',
-            '@xiaobaidadada/ssh2-prebuilt':'commonjs @xiaobaidadada/ssh2-prebuilt',
-        }
-    ],
+    externals: npm_externals,
     plugins: [
         new webpack.DefinePlugin({
             'process.env.NODE_ENV': JSON.stringify('production'),

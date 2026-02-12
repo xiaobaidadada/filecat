@@ -3,7 +3,7 @@ import {shellServiceImpl, sysType} from "../../shell/shell.service";
 import {SysEnum} from "../../../../common/req/user.req";
 import {settingService} from "../../setting/setting.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
-import {get_bin_dependency} from "../../bin/bin";
+import {get_bin_dependency} from "../../bin/get_bin_dependency";
 
 
 import {data_common_key, data_dir_tem_name} from "../../data/data_type";
