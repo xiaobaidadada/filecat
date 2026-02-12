@@ -21,6 +21,11 @@ const fse = require("fs-extra");
 const {get_webpack_work_config} = require('./config/webpack.worker.get.js');
 const {copy_wintun_dll} = require("./config/common-bin.config");
 
+
+function ensure_copyFileSync(sourcePath, destPath) {
+    fse.ensureDirSync(path.dirname(destPath))
+    copyFileSync(sourcePath, destPath);
+}
 // 只能复制文件
 function copyFiles(sourceDir,destDir) {
     try {
@@ -89,15 +94,15 @@ const tasksLister = new Listr(
                         // copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
 
                         // 复制 子进程监控脚本
-                        copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
+                        ensure_copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
-                            copyFileSync(path.resolve("node_modules/sqlite3/build/Release/node_sqlite3.node"), path.join(__dirname, "..", "build","build", "node_sqlite3.node"))
+                            ensure_copyFileSync(path.resolve("node_modules/sqlite3/build/Release/node_sqlite3.node"), path.join(__dirname, "..", "build","build", "node_sqlite3.node"))
                         }
 
-                        copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
-                        copyFileSync(path.resolve("node_modules/jieba-wasm/pkg/nodejs/jieba_rs_wasm_bg.wasm"), path.join(__dirname, "..", "build", "jieba_rs_wasm_bg.wasm"))
+                        ensure_copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
+                        ensure_copyFileSync(path.resolve("node_modules/jieba-wasm/pkg/nodejs/jieba_rs_wasm_bg.wasm"), path.join(__dirname, "..", "build", "jieba_rs_wasm_bg.wasm"))
 
                         rimraf.sync(path.join(__dirname,"..","build","server"));
 
