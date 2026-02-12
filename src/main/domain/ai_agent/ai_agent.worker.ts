@@ -2,7 +2,7 @@ import {register_threads_worker_handler} from "../../threads/threads.work";
 import {threads_msg_type} from "../../threads/threads.type";
 import FlexSearch, {Charset, Index} from "flexsearch";
 import {data_dir_tem_name, file_key} from "../data/data_type";
-import Database from "flexsearch/db/sqlite";
+import Database from "../bin/sqlite3/flexsearch/sqlite";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 
 const {
@@ -33,10 +33,10 @@ export function start_ai_agent_agent() {
                 // encoder: Charset.CJK
             });
             if (index_storage_type === 'sqlite' && sqlite3.Database) {
-                const _index_db = new Database({
+                const _index_db =  Database({
                     db: new sqlite3.Database(a)
                 });
-                const name_index_db = new Database({
+                const name_index_db =  Database({
                     db: new sqlite3.Database(b)
                 });
                 await doc_index.mount(_index_db)
@@ -46,6 +46,7 @@ export function start_ai_agent_agent() {
     })
 
     register_threads_worker_handler(threads_msg_type.docs_add, async (data) => {
+        if (!doc_index)return;
         let {use_zh_segmentation, content, file_path} = data.data
         if (use_zh_segmentation) {
             content = cut(content, true).join(" ").toLowerCase()
@@ -63,6 +64,7 @@ export function start_ai_agent_agent() {
 
 
     register_threads_worker_handler(threads_msg_type.docs_del, async (data) => {
+        if (!doc_index)return;
         let {file_path} = data.data
         doc_index.remove(file_path)
         doc_names_index.remove(file_path)
@@ -73,6 +75,7 @@ export function start_ai_agent_agent() {
     })
 
     register_threads_worker_handler(threads_msg_type.docs_close, async (data) => {
+        if (!doc_index)return;
         doc_index.clear()
         doc_names_index.clear()
         if (index_storage_type_ === 'sqlite' && sqlite3.Database) {

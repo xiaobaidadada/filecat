@@ -17,4 +17,5 @@ filecat-win-x64.tar.gz
 build-exe-linux-x64
 /test/
 src/main/domain/bin/wintun*
+filecat-linux-x64.tar.gz
 
