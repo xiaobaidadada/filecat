@@ -215,6 +215,9 @@ export class Ai_agentService {
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
         const list = target_list || settingService.ai_docs_setting().list;
         if (!list?.length) {
+            if(ThreadsFilecat.is_running) {
+                await ThreadsFilecat.forceTerminateAll()
+            }
             return;
         }
 

@@ -208,7 +208,7 @@ export class ThreadsMain {
         }
     }
 
-    private async forceTerminateAll() {
+    public async forceTerminateAll() {
         console.log('[main] force terminating all workers...');
 
         this.running = false; // 防止 exit 自动重启
