@@ -5,11 +5,11 @@ type files_type = 'threads.work.filecat.ts' | 'threads.work.filecat.js';
 
 export class BinFileUtil {
 
-    // 二进制文件可能存在的目录 process.cwd(), // systemd 是 /build
+    // 二进制文件可能存在的目录 范围从小到大 process.cwd(), // systemd 是 /build
     static base_dir = [
-        path.join(__dirname),
+        path.join(__dirname,'..','..','threads','filecat'), // 本地 dev 使用
         path.join(__dirname, 'build'),
-        path.resolve('src', 'main', 'threads', 'filecat'), // 本地 dev 使用
+        path.join(__dirname)
     ];
 
     /**
