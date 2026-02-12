@@ -7,6 +7,7 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {Sucess} from "../../other/Result";
+import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -67,6 +68,7 @@ export class Ai_AgentController {
     async ai_load_restart(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         await ai_agentService.close_index()
+        await ThreadsFilecat.restart()
         Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
         ai_agentService.init_search_docs().catch(console.error);
         return  Sucess("")

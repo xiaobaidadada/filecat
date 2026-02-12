@@ -13,6 +13,9 @@ export class ThreadsMain {
     private  global_once_listeners: ((msg: WorkerMessage, worker: NodeWorker) => void)[] = [];
     private  global_once_listeners_map = new Map<threads_msg_type,((msg: WorkerMessage, worker: NodeWorker) => void)>()
     private  running = false;
+    private worker_path: string = "";
+    private worker_num: number = 1;
+
 
     public   generate_random_id(): string {
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -28,6 +31,8 @@ export class ThreadsMain {
             console.log('子线程路径不存在',absPath);
             return false
         }
+        this.worker_path = worker_path;   // ⭐ 记录
+        this.worker_num = num;            // ⭐ 记录
         this.running = true;
         for (let i = 0; i < num; i++) {
             let worker ;
@@ -49,7 +54,7 @@ export class ThreadsMain {
                 const index = this.worker_threads.indexOf(worker);
                 if (index >= 0) this.worker_threads.splice(index, 1);
                 (async ()=>{
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    await new Promise(resolve => setTimeout(resolve, 20000));
                     this.start_worker_threads(worker_path, 1);
                 })();
             });
@@ -193,4 +198,38 @@ export class ThreadsMain {
             for (const fn of fns) fn(msg, worker);
         }
     }
+
+    private async forceTerminateAll() {
+        console.log('[main] force terminating all workers...');
+
+        this.running = false; // 防止 exit 自动重启
+
+        const terminatePromises = this.worker_threads.map(w => {
+            return w.terminate().catch(() => {});
+        });
+
+        await Promise.all(terminatePromises);
+
+        this.worker_threads = [];
+        this.pending_resolves.clear();
+        this.global_listeners = [];
+        this.global_once_listeners = [];
+        this.global_once_listeners_map.clear();
+
+        console.log('[main] workers force terminated');
+    }
+
+    public async restart() {
+        console.log('[main] restarting worker pool...');
+
+        await this.forceTerminateAll();
+
+        // 等待事件循环释放
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        this.start_worker_threads(this.worker_path, this.worker_num);
+
+        console.log('[main] worker pool restarted');
+    }
+
 }

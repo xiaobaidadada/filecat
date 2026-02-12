@@ -7,8 +7,9 @@ export enum file_key {
     navindex_key = "navindex_key.json", // 专门用于 网址 导航的
     data_version = "data_version",
     statics_tag = "statics_tag_json", // 统计用的
-    flexsearch_index_db = "flexsearch_index_db.db",
-    flexsearch_name_index_db = "flexsearch_name_index_db.db",
+    // flexsearch_index_db = "flexsearch_index_db.db",
+    // flexsearch_name_index_db = "flexsearch_name_index_db.db",
+    fts5_rag_db ="fts5_rag_db.db"
 }
 // 数据目录
 export enum data_dir_tem_name {

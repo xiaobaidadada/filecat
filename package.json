@@ -43,7 +43,7 @@
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "node-process-watcher": "^1.5.1",
-    "sqlite3": "^5.1.7"
+    "better-sqlite3": "^12.6.2"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",

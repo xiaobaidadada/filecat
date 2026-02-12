@@ -1,111 +1,211 @@
-import {register_threads_worker_handler} from "../../threads/threads.work";
-import {threads_msg_type} from "../../threads/threads.type";
-import FlexSearch, {Charset, Index} from "flexsearch";
-import {data_dir_tem_name, file_key} from "../data/data_type";
-import Database from "../bin/sqlite3/flexsearch/sqlite";
+import { register_threads_worker_handler } from "../../threads/threads.work";
+import { threads_msg_type } from "../../threads/threads.type";
+import FlexSearch, { Index } from "flexsearch";
+import Database from "better-sqlite3";
+import { cut } from "jieba-wasm";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
-
-const {
-    cut,
-    cut_all,
-    cut_for_search,
-    tokenize,
-    add_word,
-} = require("jieba-wasm");
 const sqlite3 = get_bin_dependency("sqlite3")
 
+let doc_index: Index | null = null;
+let doc_names_index: Index | null = null;
 
-let doc_index: Index
-let doc_names_index: Index
-let index_storage_type_: 'sqlite' | 'memory'
+let sqlite_db: Database | null = null;
+let insert_doc_stmt: any;
+let insert_name_stmt: any;
+let delete_doc_stmt: any;
+let delete_name_stmt: any;
+let search_doc_stmt: any;
+let search_name_stmt: any;
+
+let index_storage_type_: "sqlite" | "memory" = "memory";
 
 export function start_ai_agent_agent() {
+
+    /* ---------------------------- 初始化 ---------------------------- */
+
     register_threads_worker_handler(threads_msg_type.docs_init, async (data) => {
-        const {index_storage_type ,a,b} = data.data
+        const { index_storage_type, db_path } = data.data;
         index_storage_type_ = index_storage_type;
-        if (!doc_index) {
-            doc_index = new FlexSearch.Index({
-                tokenize: "strict",
-                // encoder: Charset.CJK
-            });
-            doc_names_index = new FlexSearch.Index({
-                tokenize: "strict",
-                // encoder: Charset.CJK
-            });
-            if (index_storage_type === 'sqlite' && sqlite3.Database) {
-                const _index_db =  Database({
-                    db: new sqlite3.Database(a)
-                });
-                const name_index_db =  Database({
-                    db: new sqlite3.Database(b)
-                });
-                await doc_index.mount(_index_db)
-                await doc_names_index.mount(name_index_db)
+
+        /* ------------------ Memory 模式 ------------------ */
+        if (index_storage_type === "memory") {
+            if (!doc_index) {
+                doc_index = new FlexSearch.Index({ tokenize: "strict" });
+                doc_names_index = new FlexSearch.Index({ tokenize: "strict" });
             }
         }
-    })
+
+        /* ------------------ SQLite FTS5 模式 ------------------ */
+        if (index_storage_type === "sqlite") {
+
+            sqlite_db = new Database(db_path,{
+                nativeBinding:sqlite3
+            });
+
+            sqlite_db.exec(`
+                PRAGMA journal_mode = WAL;
+                PRAGMA synchronous = NORMAL;
+                PRAGMA temp_store = MEMORY;
+                PRAGMA mmap_size = 30000000000;
+            `);
+
+            // 创建 FTS5 表，使用 unicode61 支持空格分词
+            sqlite_db.exec(`
+                CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(
+                    file_path UNINDEXED,
+                    content,
+                    tokenize = 'unicode61'
+                );
+
+                CREATE VIRTUAL TABLE IF NOT EXISTS doc_names USING fts5(
+                    file_path UNINDEXED,
+                    name,
+                    tokenize = 'unicode61'
+                );
+            `);
+
+            insert_doc_stmt = sqlite_db.prepare(
+                `INSERT INTO docs (file_path, content) VALUES (?, ?)`
+            );
+
+            insert_name_stmt = sqlite_db.prepare(
+                `INSERT INTO doc_names (file_path, name) VALUES (?, ?)`
+            );
+
+            delete_doc_stmt = sqlite_db.prepare(
+                `DELETE FROM docs WHERE file_path = ?`
+            );
+
+            delete_name_stmt = sqlite_db.prepare(
+                `DELETE FROM doc_names WHERE file_path = ?`
+            );
+
+            search_doc_stmt = sqlite_db.prepare(`
+                SELECT file_path
+                FROM docs
+                WHERE docs MATCH ?
+                ORDER BY bm25(docs)
+                    LIMIT 50
+            `);
+
+            search_name_stmt = sqlite_db.prepare(`
+                SELECT file_path
+                FROM doc_names
+                WHERE doc_names MATCH ?
+                ORDER BY bm25(doc_names)
+                    LIMIT 50
+            `);
+        }
+    });
+
+    /* ---------------------------- 添加文档 ---------------------------- */
 
     register_threads_worker_handler(threads_msg_type.docs_add, async (data) => {
-        if (!doc_index)return;
-        let {use_zh_segmentation, content, file_path} = data.data
-        if (use_zh_segmentation) {
-            content = cut(content, true).join(" ").toLowerCase()
-            const p = cut(file_path, true).join(" ").toLowerCase()
-            doc_names_index.add(file_path, p)
-        } else {
-            doc_names_index.add(file_path, file_path.toLowerCase())
-        }
-        doc_index.add(file_path, content);
-        if (index_storage_type_ === 'sqlite' && sqlite3.Database) {
-            await doc_index.commit()
-            await doc_names_index.commit()
-        }
-    })
+        const { use_zh_segmentation, content, file_path } = data.data;
 
+        if (index_storage_type_ === "memory") {
+
+            let c = content.toLowerCase();
+            let name = file_path.toLowerCase();
+
+            if (use_zh_segmentation) {
+                c = cut(content, true).join(" ").toLowerCase();
+                name = cut(file_path, true).join(" ").toLowerCase();
+            }
+
+            doc_index?.add(file_path, c);
+            doc_names_index?.add(file_path, name);
+        }
+
+        if (index_storage_type_ === "sqlite" && sqlite_db) {
+
+            let c = content;
+            let name = file_path;
+
+            if (use_zh_segmentation) {
+                c = cut(content, true).join(" ");
+                name = cut(file_path, true).join(" ");
+            }
+
+            const transaction = sqlite_db.transaction(() => {
+                insert_doc_stmt.run(file_path, c);
+                insert_name_stmt.run(file_path, name);
+            });
+
+            transaction();
+        }
+    });
+
+    /* ---------------------------- 删除文档 ---------------------------- */
 
     register_threads_worker_handler(threads_msg_type.docs_del, async (data) => {
-        if (!doc_index)return;
-        let {file_path} = data.data
-        doc_index.remove(file_path)
-        doc_names_index.remove(file_path)
-        if (index_storage_type_ === 'sqlite' && sqlite3.Database) {
-            await doc_index.commit()
-            await doc_names_index.commit()
-        }
-    })
+        const { file_path } = data.data;
 
-    register_threads_worker_handler(threads_msg_type.docs_close, async (data) => {
-        if (!doc_index)return;
-        doc_index.clear()
-        doc_names_index.clear()
-        if (index_storage_type_ === 'sqlite' && sqlite3.Database) {
-            await doc_index.commit()
-            await doc_names_index.commit()
+        if (index_storage_type_ === "memory") {
+            doc_index?.remove(file_path);
+            doc_names_index?.remove(file_path);
         }
-        doc_index = null;
-        doc_names_index = null
-    })
+
+        if (index_storage_type_ === "sqlite" && sqlite_db) {
+
+            const transaction = sqlite_db.transaction(() => {
+                delete_doc_stmt.run(file_path);
+                delete_name_stmt.run(file_path);
+            });
+
+            transaction();
+        }
+    });
+
+    /* ---------------------------- 搜索 ---------------------------- */
 
     register_threads_worker_handler(threads_msg_type.docs_search, async (data) => {
-            const {key} = data.data
-            const query_body = {
-                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
-                resolution: 9, // 7 - 9 评分
-                context: true,
-                limit: 50
-                // cache: true, // 重复查询概率低 没有必要
-                // limit: config_search_doc.docs_max_num
-                // offset // 分页
-            }
-            const ids = doc_index.search(key,query_body) as string[];
-            const names_ids = doc_names_index.search(key,query_body) as string[];
-            if (index_storage_type_ === 'sqlite' && sqlite3.Database) {
-                return {
-                    ids: await ids,
-                    names_ids: await names_ids
-                }
-            }
-            return {ids, names_ids}
-    })
+        const { key, use_zh_segmentation } = data.data;
 
+        let query = key;
+
+        if (use_zh_segmentation) {
+            const tokens = cut(key, true);
+            // 前缀匹配，每个词加 *
+            query = tokens.map(t => t + '*').join(' OR ');
+        }
+
+        if (index_storage_type_ === "memory") {
+            const query_body = { suggest: true, resolution: 9, context: true, limit: 50 };
+            return {
+                ids: doc_index?.search(query, query_body) || [],
+                names_ids: doc_names_index?.search(query, query_body) || []
+            };
+        }
+
+        if (index_storage_type_ === "sqlite" && sqlite_db) {
+            let tokens = cut(query, true).filter(t => t.trim() !== ''); // 过滤空 token
+            const queryStr = tokens.map(t => t + '*').join(' OR ');
+            const ids = search_doc_stmt.all(queryStr);
+            const names_ids = search_name_stmt.all(queryStr);
+            return {
+                ids: ids.map((r: any) => r.file_path),
+                names_ids: names_ids.map((r: any) => r.file_path)
+            };
+        }
+
+        return { ids: [], names_ids: [] };
+    });
+
+    /* ---------------------------- 关闭 ---------------------------- */
+
+    register_threads_worker_handler(threads_msg_type.docs_close, async () => {
+
+        if (index_storage_type_ === "memory") {
+            doc_index?.clear();
+            doc_names_index?.clear();
+            doc_index = null;
+            doc_names_index = null;
+        }
+
+        if (index_storage_type_ === "sqlite" && sqlite_db) {
+            sqlite_db.close();
+            sqlite_db = null;
+        }
+    });
 }

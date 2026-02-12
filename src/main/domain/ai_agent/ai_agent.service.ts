@@ -12,12 +12,12 @@ import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {
     ai_agent_Item,
-    ai_agent_item_dotenv, ai_docs_item,
+    ai_agent_item_dotenv,
+    ai_docs_item,
     ai_docs_load_info,
     ai_docs_setting_param
 } from "../../../common/req/setting.req";
 import {Env} from "../../../common/Env";
-import FlexSearch, {Charset, Index} from "flexsearch";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
 import {formatDuration, formatFileSize} from "../../../common/ValueUtil";
@@ -204,10 +204,7 @@ export class Ai_agentService {
         const now = Date.now();
         const body = {index_storage_type: config_search_doc.index_storage_type}
         if (config_search_doc.index_storage_type === 'sqlite') {
-            const a = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_index_db)
-            const b = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.flexsearch_name_index_db)
-            body['a'] = a
-            body['b'] = b
+            body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
         const is_one_load = target_list != null;

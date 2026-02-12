@@ -14,7 +14,7 @@ export function get_bin_dependency(module:
         if(module === "sqlite3") {
             // 都用这个，不用它默认的
             // require("sqlite3/build/Release/node_sqlite3.node") // 只是让他打包的时候把这个二进制包含进去 但是sqlite3用的bings加载 这样也不行
-            return require("./sqlite3/sqlite3");
+            return  require("better-sqlite3/build/Release/better_sqlite3.node")
         }
         if (process.env.run_env === 'exe') {
             //  防止 TDZ 错误 同时又可以 让 webpack打包 具体要不要忽略-在webpack中手动控制
