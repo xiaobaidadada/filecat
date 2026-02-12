@@ -15,6 +15,8 @@ export class ThreadsMain {
     private  running = false;
     private worker_path: string = "";
     private worker_num: number = 1;
+    private _exit_worker_num = 0
+
 
 
     public   generate_random_id(): string {
@@ -31,9 +33,10 @@ export class ThreadsMain {
             console.log('子线程路径不存在',absPath);
             return false
         }
-        this.worker_path = worker_path;   // ⭐ 记录
-        this.worker_num = num;            // ⭐ 记录
+        this.worker_path = worker_path;
+        this.worker_num = num;
         this.running = true;
+        this._exit_worker_num = 0;
         for (let i = 0; i < num; i++) {
             let worker ;
             if (absPath.endsWith(".ts")) {
@@ -49,14 +52,15 @@ export class ThreadsMain {
             worker.on('message', (msg: WorkerMessage) => this.handle_message(msg, worker));
             worker.on('exit', (code) => {
                 console.log(`[main] worker exited code=${code}, restarting...`);
-                if(!this.running) return; // 没有开启就不重启
-                // 自动重启
-                const index = this.worker_threads.indexOf(worker);
-                if (index >= 0) this.worker_threads.splice(index, 1);
-                (async ()=>{
-                    await new Promise(resolve => setTimeout(resolve, 20000));
-                    this.start_worker_threads(worker_path, 1);
-                })();
+                this._exit_worker_num ++;
+                // if(!this.running) return; // 没有开启就不重启
+                // // 自动重启
+                // const index = this.worker_threads.indexOf(worker);
+                // if (index >= 0) this.worker_threads.splice(index, 1);
+                // (async ()=>{
+                //     await new Promise(resolve => setTimeout(resolve, 20000));
+                //     this.start_worker_threads(worker_path, 1);
+                // })();
             });
             worker.on('error', (err) => console.error('[main] worker error:', err));
             this.worker_threads.push(worker);
@@ -65,7 +69,11 @@ export class ThreadsMain {
     }
 
     public  get is_running(): boolean {
-        return this.running;
+        return this.exit_worker_num < this.worker_num;
+    }
+
+    public get exit_worker_num(): number {
+        return this._exit_worker_num;
     }
 
     /**
@@ -83,6 +91,7 @@ export class ThreadsMain {
         );
         await Promise.all(closePromises);
         this.worker_threads.length = 0;
+        this._exit_worker_num = this.worker_num;
         this.pending_resolves.clear();
         console.log('[main] all workers closed');
     }
