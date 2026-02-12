@@ -57,6 +57,7 @@ const npm_externals = [
         'node-process-watcher': 'commonjs node-process-watcher',
         '@xiaobaidadada/ssh2-prebuilt': 'commonjs @xiaobaidadada/ssh2-prebuilt',
         'better-sqlite3/build/Release/better_sqlite3.node': 'commonjs better-sqlite3/build/Release/better_sqlite3.node',
+        'better-sqlite3': 'commonjs better-sqlite3',
     }
 ]
 const pkg_externals = [

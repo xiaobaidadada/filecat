@@ -97,13 +97,13 @@ const tasksLister = new Listr(
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
-                            // ensure_copyFileSync(path.resolve("node_modules/sqlite3/build/Release/node_sqlite3.node"), path.join(__dirname, "..", "build", "node_sqlite3.node"))
                         }
 
                         ensure_copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))
                         ensure_copyFileSync(path.resolve("node_modules/jieba-wasm/pkg/nodejs/jieba_rs_wasm_bg.wasm"), path.join(__dirname, "..", "build", "jieba_rs_wasm_bg.wasm"))
 
                         rimraf.sync(path.join(__dirname,"..","build","server"));
+                        rimraf.sync(path.join(__dirname,"..","build","build")); //better-sqlite3 莫名其妙的
 
                         res(true);
                     });

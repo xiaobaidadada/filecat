@@ -229,7 +229,8 @@ async function start() {
         } catch (error) {console.error(error?.message);}
         // 打印
         console.log(`服务器正在运行 version: ${version}`);
-        console.log(`工作目录: ${process.cwd()}`)
+        console.log(`node工作目录: ${process.cwd()}`)
+        console.log(`filecat工作目录: ${Env.work_dir}`)
         urls.forEach(url => {
             console.log(url);
         });
