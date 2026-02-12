@@ -26,7 +26,7 @@ export function get_bin_dependency(module:
                     return require("@xiaobaidadada/node-tuntap2-wintun")
                 case "sqlite3":
                     // require("sqlite3/build/Release/node_sqlite3.node") // 只是让他打包的时候把这个二进制包含进去 但是sqlite3用的bings加载 这样也不行
-                    return require("sqlite3");
+                    return require("./sqlite3/sqlite3");
                 default:
                     throw {message: "不存在的包"}
             }

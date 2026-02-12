@@ -68,3 +68,13 @@ register_threads_worker_handler(threads_msg_type.hello, async (msg) => {
     );
 });
 console.log('[worker] ready and waiting for messages...');
+
+process.on('uncaughtException', (err) => {
+    console.error('子线程全局未捕获异常:', err);
+    // 可以选择继续运行
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('子线程未处理的 Promise 拒绝:', reason);
+});
+

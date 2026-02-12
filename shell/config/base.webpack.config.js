@@ -56,7 +56,7 @@ const npm_externals = [
         '@xiaobaidadada/node-tuntap2-wintun': 'commonjs @xiaobaidadada/node-tuntap2-wintun',
         'node-process-watcher': 'commonjs node-process-watcher',
         '@xiaobaidadada/ssh2-prebuilt': 'commonjs @xiaobaidadada/ssh2-prebuilt',
-        'sqlite3': 'commonjs sqlite3',
+        'sqlite3/build/Release/node_sqlite3.node': 'commonjs sqlite3/build/Release/node_sqlite3.node',
     }
 ]
 const pkg_externals = [
