@@ -86,20 +86,17 @@ export function start_ai_agent_agent() {
 
     register_threads_worker_handler(threads_msg_type.docs_search, async (data) => {
             const {key} = data.data
-            const ids = doc_index.search(key, {
+            const query_body = {
                 suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
-                // resolution: 9,
+                resolution: 9, // 7 - 9 评分
+                context: true,
+                limit: 50
                 // cache: true, // 重复查询概率低 没有必要
                 // limit: config_search_doc.docs_max_num
                 // offset // 分页
-            }) as string[];
-            const names_ids = doc_names_index.search(key, {
-                suggest: true, // 可以不完全匹配也返回 接近匹配就行 删除搜索变的严格
-                // resolution: 9,
-                // cache: true, // 重复查询概率低 没有必要
-                // limit: config_search_doc.docs_max_num
-                // offset // 分页
-            }) as string[];
+            }
+            const ids = doc_index.search(key,query_body) as string[];
+            const names_ids = doc_names_index.search(key,query_body) as string[];
             if (index_storage_type_ === 'sqlite' && sqlite3.Database) {
                 return {
                     ids: await ids,

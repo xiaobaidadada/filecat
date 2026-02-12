@@ -96,6 +96,7 @@
     "node-unrar-js": "^2.0.2",
     "normalize.css": "^8.0.1",
     "noty": "^3.2.0-beta-deprecated",
+    "pinyin-pro": "^3.28.0",
     "pty-shell": "^1.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

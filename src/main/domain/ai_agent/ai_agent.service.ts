@@ -30,6 +30,8 @@ import {start_worker_threads, ThreadsFilecat} from "../../threads/filecat/thread
 import {threads_msg_type} from "../../threads/threads.type";
 import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name, file_key} from "../data/data_type";
+import { pinyin } from "pinyin-pro";
+
 const {
     cut,
     cut_all,
@@ -44,6 +46,11 @@ let MODEL = "doubao-seed-1-6";
 let config: ai_agent_Item
 let config_env = new ai_agent_item_dotenv()
 let config_search_doc = new ai_docs_setting_param()
+
+// 判断是否中文
+function isChinese(str: string) {
+    return /[\u4e00-\u9fa5]/.test(str);
+}
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
@@ -64,34 +71,54 @@ export class Ai_agentService {
         const scoreMap = new Map<string, number>();
         const new_keywords = {}
         for (const k of keywords) {
-            if(k.includes(" ")) {
-                for (const k2 of cut(k,true)) {
-                    new_keywords[k2] = 1
+            if (!k) continue;
+            // 原文关键词
+            new_keywords[k] = 1;
+            if(isChinese(k)) {
+                // 分词后的关键词
+                for (const k2 of cut_for_search(k, true)) {
+                    if (k2) new_keywords[k2] = 1;
+                }
+                // 中文转拼音全拼（无声调）
+                const pyFull = pinyin(k, { toneType: "none" });
+                if (pyFull) {
+                    new_keywords[pyFull] = 1;
+                    new_keywords[pyFull.replace(/\s+/g, "")] = 1;
                 }
             } else {
-                new_keywords[k] = 1
+               // 拼音转汉字不行
             }
         }
-        for (let k of Object.keys(new_keywords)) {
-            // 相当于or了
-            k = k.toLowerCase()
-            if(!k) continue;
-            // const list_p = cut_for_search(k, true) // or 逻辑
-            // .map(v => v.replace(/\s+/g, "")) // 删除所有空白字符
-            // .filter(Boolean);                // 去掉空字符串
-            // k = list_p.join(" ")
-            const {ids,names_ids} = await ThreadsFilecat.post(threads_msg_type.docs_search,{
-                key:k
-            },60 *1000)
-            // 得分排序
-            for (const id of names_ids) {
-                let score = (scoreMap.get(id) || 0) + 1;
-                score += 2;
-                scoreMap.set(id, score);
+        let keys = [...new Set(
+            Object.keys(new_keywords)
+                .map(k => k.toLowerCase().trim())
+                .filter(Boolean)
+        )];
+        // 合并成一个查询
+        keys = [keys.join(" ")]
+        // if(keys.length > 1) {
+        //     keys.push(keywords.join(" "))
+        // }
+        const r_list = await Promise.all(
+            keys.map(k =>
+                ThreadsFilecat.post(threads_msg_type.docs_search, { key: k }, 60000)
+            )
+        );
+        for (let i = 0; i < r_list.length; i++) {
+            const { ids ,names_ids} = r_list[i];
+            let extra_weight = 0
+            // if (r_list.length > 1 && r_list.length -1 === i) {
+            //     extra_weight += 2
+            // }
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                const weight = 1 / (i + 1) + extra_weight;
+                scoreMap.set(id, (scoreMap.get(id) || 0) + weight);
             }
-            for (const id of ids) {
-                let score = (scoreMap.get(id) || 0) + 1;
-                scoreMap.set(id, score);
+            for (let i = 0; i < names_ids.length; i++) {
+                const id = names_ids[i];
+                const weight = 1 / (i + 1) + extra_weight +0.5  ; // 名字比内容的匹配度更重要一点
+                scoreMap.set(id, (scoreMap.get(id) || 0) + weight);
             }
         }
         const sorted = [...scoreMap.entries()]
