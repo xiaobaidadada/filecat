@@ -58,8 +58,7 @@ const tasksLister = new Listr(
                     webpack(get_webpack_work_config({
                         entry_path:path.join(__dirname, "..", "build", "server", "main","threads","filecat","threads.work.filecat.js"),
                         output_name:'threads.work.filecat.js',
-                        pkg:args[0]==="npm",
-                        docker:args[0]==="docker",
+                        is_exe
                     }), (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());

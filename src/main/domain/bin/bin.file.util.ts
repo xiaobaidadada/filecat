@@ -1,89 +1,141 @@
 import * as path from 'path';
-import * as fs from 'fs'
+import * as fs from 'fs';
 
-type files_type = 'threads.work.filecat.ts'|'threads.work.filecat.js'
+type files_type = 'threads.work.filecat.ts' | 'threads.work.filecat.js';
 
 export class BinFileUtil {
 
-    // 二进制文件可能存在的目录
+    // 二进制文件可能存在的目录 process.cwd(), // systemd 是 /build
     static base_dir = [
         path.join(__dirname),
-        path.resolve('build'), // 相对路径基于 cwd
-        path.resolve('src','main','threads','filecat'), // 相对路径基于 cwd
-        process.cwd(),
-    ]
+        path.join(__dirname, 'build'),
+        path.resolve('src', 'main', 'threads', 'filecat'), // 本地 dev 使用
+    ];
 
-    // 获取二进制Bin 文件的具体位置
-    public static  get_bin_path (filename:files_type) {
-        return this.findFile(this.base_dir,filename)
+    /**
+     * 获取二进制文件路径
+     * @param filename 文件名
+     * @param maxDepth 最大递归深度（默认 5 层）
+     */
+    public static get_bin_path(filename: files_type, maxDepth = 20): string | null {
+        return this.findFile(this.base_dir, filename, true, maxDepth);
     }
 
     /** 目录 -> 目录项缓存 */
     private static dirCache = new Map<string, fs.Dirent[]>();
 
-    /** root::filename -> 结果缓存 */
+    /** root::filename::depth -> 结果缓存 */
     private static resultCache = new Map<string, string | null>();
 
-    // 查找文件 full_name（递归）
-    private static   findFile(
+    /** 忽略扫描的目录 */
+    private static ignore_dirs = new Set<string>(['node_modules']);
+
+    /**
+     * 查找文件
+     */
+    private static findFile(
         rootDirs: string | string[],
         fileName: string,
-        using_cache= true
+        using_cache = true,
+        maxDepth = Infinity
     ): string | null {
+
         const roots = Array.isArray(rootDirs) ? rootDirs : [rootDirs];
-        // const absRoots = roots.map(r => path.resolve(r));
-        const absRoots = roots.filter( v=> fs.existsSync(v));
-        const cacheKey = `${absRoots.join("|")}::${fileName}`;
-        // ① 命中结果缓存
+
+        // 只保留存在的目录
+        const absRoots = roots.filter(v => fs.existsSync(v));
+
+        const cacheKey = `${absRoots.join("|")}::${fileName}::${maxDepth}`;
+
+        // 命中缓存
         if (this.resultCache.has(cacheKey)) {
             return this.resultCache.get(cacheKey)!;
         }
+
         for (const root of absRoots) {
-            const found =  this.walk(root, fileName,using_cache);
+            const found = this.walk(root, fileName, using_cache, 0, maxDepth);
+
             if (found) {
                 this.resultCache.set(cacheKey, found);
                 return found;
             }
         }
-        // ② 缓存“未找到”
+
         this.resultCache.set(cacheKey, null);
         return null;
     }
 
-    private static ignore_dirs = new Set<string>(['node_modules'])
+    /**
+     * 递归遍历目录
+     */
+    private static walk(
+        dir: string,
+        fileName: string,
+        using_cache = true,
+        currentDepth = 0,
+        maxDepth = Infinity
+    ): string | null {
 
-    private static  walk(dir: string, fileName: string,using_cache = true): string | null {
-        if (this.ignore_dirs.has(path.basename(dir))) {
-            // 忽略一些较大的目录的访问
-            return null
+        // 深度限制
+        if (currentDepth > maxDepth) {
+            return null;
         }
+
+        if (this.ignore_dirs.has(path.basename(dir))) {
+            return null;
+        }
+
         let entries: fs.Dirent[];
-        // ③ 目录缓存
-        if (this.dirCache.has(dir)) {
+
+        // 目录缓存
+        if (using_cache && this.dirCache.has(dir)) {
             entries = this.dirCache.get(dir)!;
         } else {
             try {
-                entries =  fs.readdirSync(dir, { withFileTypes: true });
-                this.dirCache.set(dir, entries);
+                entries = fs.readdirSync(dir, { withFileTypes: true });
+
+                if (using_cache) {
+                    this.dirCache.set(dir, entries);
+                }
+
             } catch {
-                // 无权限 / 被删除 / 非目录
+                // 无权限 / 非目录 / 被删除
                 return null;
             }
         }
+
         for (const entry of entries) {
+
             const fullPath = path.join(dir, entry.name);
-            // ④ 命中文件
+
+            // 命中文件
             if (entry.isFile() && entry.name === fileName) {
                 return fullPath;
             }
-            // ⑤ 递归子目录
-            if (entry.isDirectory() && using_cache) {
-                const found =  this.walk(fullPath, fileName);
-                if (found) {
-                    return found;
-                }
+
+            // 递归子目录
+            if (entry.isDirectory()) {
+
+                const found = this.walk(
+                    fullPath,
+                    fileName,
+                    using_cache,
+                    currentDepth + 1,
+                    maxDepth
+                );
+
+                if (found) return found;
             }
         }
+
         return null;
+    }
+
+    /**
+     * 清理缓存（可选工具）
+     */
+    public static clearCache() {
+        this.dirCache.clear();
+        this.resultCache.clear();
     }
 }

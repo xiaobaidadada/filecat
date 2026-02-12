@@ -5,7 +5,7 @@ const TerserPlugin = require("terser-webpack-plugin");
 const {base_url} = require("./env");
 const {plugins, pkg_externals, npm_externals, _node_rules} = require("./base.webpack.config");
 
-function get_webpack_work_config({entry_path,output_name,pkg,docker}) {
+function get_webpack_work_config({entry_path,output_name,is_exe}) {
     const config = {
         target: 'node', // 指定打包结果运行在node环境下
         mode: 'production', // 或者 'production'
@@ -29,7 +29,7 @@ function get_webpack_work_config({entry_path,output_name,pkg,docker}) {
         plugins,
         externals: npm_externals
     }
-    if(pkg===true || docker===true) {
+    if(is_exe) {
         // 整体打包需要二进制也进去
         config['module'] = {
             rules: _node_rules

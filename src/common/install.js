@@ -1,5 +1,6 @@
 const readline = require('readline');
 const fs  = require('fs');
+const path = require('path');
 const { spawn ,execSync} = require('child_process');
 // 创建 readline 接口
 const rl = readline.createInterface({
@@ -104,6 +105,7 @@ Description=filecat
 After=network.target
 
 [Service]
+WorkingDirectory=${path.dirname(data.work_dir)}
 ExecStart=${data.exe_path} ${param}
 Restart=always
 User=${data.User}

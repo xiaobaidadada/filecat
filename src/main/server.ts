@@ -229,6 +229,7 @@ async function start() {
         } catch (error) {console.error(error?.message);}
         // 打印
         console.log(`\x1b[31m服务器正在运行 version: ${version}\x1b[0m`);
+        console.log(`工作目录: ${process.cwd()}`)
         urls.forEach(url => {
             console.log(`\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
         });

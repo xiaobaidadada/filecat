@@ -22,7 +22,7 @@ export class ThreadsMain {
      * 启动 worker 线程
      */
     public  start_worker_threads(worker_path: string = "threads.worker.js", num = 1) {
-        console.log('[main] 主线程启动');
+        console.log('[main] 主线程启动',worker_path);
         const absPath = worker_path;
         if(!fs.existsSync(absPath)) {
             console.log('子线程路径不存在',absPath);
