@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.22.15",
+  "version": "5.22.16",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -42,8 +42,8 @@
     "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
-    "node-process-watcher": "^1.5.1",
-    "better-sqlite3": "^12.6.2"
+    "better-sqlite3": "^12.6.2",
+    "node-process-watcher": "^1.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
@@ -54,6 +54,7 @@
     "@excalidraw/excalidraw": "^0.17.6",
     "@koa/cors": "^5.0.0",
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@xiaobaidadada/prebuild": "^13.0.1-9",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",

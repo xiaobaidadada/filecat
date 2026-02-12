@@ -9,7 +9,7 @@ const sqlite3 = get_bin_dependency("sqlite3")
 let doc_index: Index | null = null;
 let doc_names_index: Index | null = null;
 
-let sqlite_db: Database | null = null;
+let sqlite_db: Database.Database | null = null;
 let insert_doc_stmt: any;
 let insert_name_stmt: any;
 let delete_doc_stmt: any;

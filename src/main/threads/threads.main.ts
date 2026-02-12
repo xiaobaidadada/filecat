@@ -69,7 +69,7 @@ export class ThreadsMain {
     }
 
     public  get is_running(): boolean {
-        return this.exit_worker_num < this.worker_num;
+        return this.running;
     }
 
     public get exit_worker_num(): number {
