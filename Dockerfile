@@ -3,10 +3,12 @@ FROM node:18-alpine AS builder
 WORKDIR /build-stage
 RUN apk add --no-cache \
     build-base \
-    linux-headers \
-    git \
     python3 \
-    py3-setuptools
+    linux-headers \
+    make \
+    g++ \
+    git
+
 COPY package.json  ./
 RUN npm install
 COPY . .
