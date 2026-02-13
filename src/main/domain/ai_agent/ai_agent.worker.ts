@@ -17,6 +17,9 @@ let delete_doc_stmt: any;
 let delete_name_stmt: any;
 let search_doc_stmt: any;
 let search_name_stmt: any;
+let select_doc_mtime_stmt: any;
+let select_name_mtime_stmt: any;
+
 
 let index_storage_type_: "sqlite" | "memory" = "memory";
 
@@ -65,26 +68,38 @@ export function start_ai_agent_agent() {
 
             // 创建 FTS5 表，使用 unicode61 支持空格分词
             sqlite_db.exec(`
-                CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(
-                    file_path UNINDEXED,
-                    content,
-                    tokenize = 'unicode61'
-                );
-
-                CREATE VIRTUAL TABLE IF NOT EXISTS doc_names USING fts5(
-                    file_path UNINDEXED,
-                    name,
-                    tokenize = 'unicode61'
-                );
+                    CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(
+                        file_path UNINDEXED,
+                        content,
+                        mtime UNINDEXED,
+                        tokenize = 'unicode61'
+                    );
+                
+                    CREATE VIRTUAL TABLE IF NOT EXISTS doc_names USING fts5(
+                        file_path UNINDEXED,
+                        name,
+                        mtime UNINDEXED,
+                        tokenize = 'unicode61'
+                    );
             `);
 
+            select_doc_mtime_stmt = sqlite_db.prepare(`
+                SELECT mtime FROM docs WHERE file_path = ? LIMIT 1
+            `);
+
+            select_name_mtime_stmt = sqlite_db.prepare(`
+                SELECT mtime FROM doc_names WHERE file_path = ? LIMIT 1
+            `);
+
+
             insert_doc_stmt = sqlite_db.prepare(
-                `INSERT INTO docs (file_path, content) VALUES (?, ?)`
+                `INSERT INTO docs (file_path, content, mtime) VALUES (?, ?, ?)`
             );
 
             insert_name_stmt = sqlite_db.prepare(
-                `INSERT INTO doc_names (file_path, name) VALUES (?, ?)`
+                `INSERT INTO doc_names (file_path, name, mtime) VALUES (?, ?, ?)`
             );
+
 
             delete_doc_stmt = sqlite_db.prepare(
                 `DELETE FROM docs WHERE file_path = ?`
@@ -115,11 +130,43 @@ export function start_ai_agent_agent() {
     /* ---------------------------- 添加文档 ---------------------------- */
 
     register_threads_worker_handler(threads_msg_type.docs_add, async (data) => {
-        const { use_zh_segmentation, file_path } = data.data;
-        const content = `${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
-        const char_num = content.length;
-        if (index_storage_type_ === "memory") {
+        let { use_zh_segmentation, file_path ,mtime} = data.data;
 
+        // const stat = await FileUtil.statSync(file_path); // 需要你封装或用 fs.statSync
+
+        let content:string;
+        let char_num:number;
+        if (index_storage_type_ === "sqlite" && sqlite_db) {
+            mtime = mtime ?? (await FileUtil.statSync(file_path)).mtime;
+            // 1. 检查 docs 表
+            const oldDoc = select_doc_mtime_stmt.get(file_path);
+            if (oldDoc && oldDoc.mtime === mtime) {
+                return { char_num:0 }; // 未变化，直接跳过
+            }
+
+            content = `${file_path} ${(await FileUtil.readFileSync(file_path)).toString()}。`
+            char_num = content.length;
+            let c = content;
+            let name = file_path;
+
+            if (use_zh_segmentation) {
+                c = cut(content, true).join(" ");
+                name = cut(file_path, true).join(" ");
+            }
+
+            // 2. 删除旧记录（如果存在）
+            delete_doc_stmt.run(file_path);
+            delete_name_stmt.run(file_path);
+
+            // 3. 插入新记录
+            insert_doc_stmt.run(file_path, c, mtime);
+            insert_name_stmt.run(file_path, name, mtime);
+        }
+
+        /* memory 模式保持不变 */
+        if (index_storage_type_ === "memory") {
+            content = `${file_path} ${(await FileUtil.readFileSync(file_path)).toString()}。`
+            char_num = content.length;
             let c = content.toLowerCase();
             let name = file_path.toLowerCase();
 
@@ -132,25 +179,9 @@ export function start_ai_agent_agent() {
             doc_names_index?.add(file_path, name);
         }
 
-        if (index_storage_type_ === "sqlite" && sqlite_db) {
-
-            let c = content;
-            let name = file_path;
-
-            if (use_zh_segmentation) {
-                c = cut(content, true).join(" ");
-                name = cut(file_path, true).join(" ");
-            }
-
-            // const transaction = sqlite_db.transaction(() => {
-                insert_doc_stmt.run(file_path, c);
-                insert_name_stmt.run(file_path, name);
-            // });
-
-            // transaction();
-        }
-        return {char_num}
+        return { char_num };
     });
+
 
     /* ---------------------------- 删除文档 ---------------------------- */
 

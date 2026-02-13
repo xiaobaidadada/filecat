@@ -176,7 +176,8 @@ export class Ai_agentService {
         return  ThreadsFilecat.post(threads_msg_type.docs_add, {
             use_zh_segmentation:
             config_search_doc.use_zh_segmentation
-            , file_path
+            , file_path,
+            mtime: this.docs_data_map.get(hash_str_to_number(file_path))?.time_stamp
         }, 60 * 1000)
     }
 
@@ -369,8 +370,6 @@ export class Ai_agentService {
             if (it.auto_load) {
                 await walkDir(it.dir, 0);
             }
-            this.docs_info.progress =
-                (((i + 1) / total) * 100).toFixed(2);
         }
 
 
@@ -412,6 +411,7 @@ export class Ai_agentService {
 
     public async delete_index_with_progress(targetPath: string) {
         // 先收集要删除的所有文件
+        this.docs_info.init(0)
         const filesToDelete: string[] = [];
         const now = Date.now();
         const collectFiles = async (p: string) => {
@@ -420,6 +420,8 @@ export class Ai_agentService {
             if (stat.isFile()) {
                 if (this.docs_data_map.has(hash_str_to_number(p))) {
                     filesToDelete.push(p);
+                    this.docs_info.size += stat.size;
+                    this.docs_info.num++;
                 }
             } else if (stat.isDirectory()) {
                 const entries = await FileUtil.readdirSync(p);
