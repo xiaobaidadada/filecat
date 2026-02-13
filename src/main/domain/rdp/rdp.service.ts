@@ -1,14 +1,21 @@
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import rdp from "./lib";
+// import rdp from "./lib";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
 import {msg} from "../../../common/frame/router";
 
 const rdpClientKey = "rdpClient";
+let rdp_:any;
+function init() {
+    if(!rdp_) {
+        rdp_ = require("./lib/index");
+    }
+}
 export class RdpService {
 
 
     async infos(data:WsData<any>) {
+        init()
         const wss = (data.wss as Wss);
         let rdpClient : any = wss.dataMap.get(rdpClientKey);
         if (rdpClient) {
@@ -17,7 +24,7 @@ export class RdpService {
         };
         const context = data.context;
         // todo 异常处理
-        rdpClient = rdp.createClient({
+        rdpClient = rdp_.createClient({
             domain : context.domain,
             userName : context.username,
             password : context.password,

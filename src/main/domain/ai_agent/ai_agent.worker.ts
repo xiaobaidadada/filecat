@@ -4,6 +4,7 @@ import FlexSearch, { Index } from "flexsearch";
 import Database from "better-sqlite3";
 import { cut } from "jieba-wasm";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
+import {FileUtil} from "../file/FileUtil";
 const sqlite3 = get_bin_dependency("sqlite3")
 
 let doc_index: Index | null = null;
@@ -101,8 +102,9 @@ export function start_ai_agent_agent() {
     /* ---------------------------- 添加文档 ---------------------------- */
 
     register_threads_worker_handler(threads_msg_type.docs_add, async (data) => {
-        const { use_zh_segmentation, content, file_path } = data.data;
-
+        const { use_zh_segmentation, file_path } = data.data;
+        const content = `${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
+        const char_num = content.length;
         if (index_storage_type_ === "memory") {
 
             let c = content.toLowerCase();
@@ -127,13 +129,14 @@ export function start_ai_agent_agent() {
                 name = cut(file_path, true).join(" ");
             }
 
-            const transaction = sqlite_db.transaction(() => {
+            // const transaction = sqlite_db.transaction(() => {
                 insert_doc_stmt.run(file_path, c);
                 insert_name_stmt.run(file_path, name);
-            });
+            // });
 
-            transaction();
+            // transaction();
         }
+        return {char_num}
     });
 
     /* ---------------------------- 删除文档 ---------------------------- */

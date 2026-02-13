@@ -172,11 +172,11 @@ export class Ai_agentService {
         }])
     }
 
-    private async add_content(file_path: string, content: string) {
-        await ThreadsFilecat.post(threads_msg_type.docs_add, {
+    private async add_content(file_path: string) {
+        return  ThreadsFilecat.post(threads_msg_type.docs_add, {
             use_zh_segmentation:
             config_search_doc.use_zh_segmentation
-            , content, file_path
+            , file_path
         }, 60 * 1000)
     }
 
@@ -377,18 +377,14 @@ export class Ai_agentService {
         const totalFiles = add_file_path_list.length + update_file_path_list.length
         let processed = 0;
         for (const file_path of add_file_path_list) {
-            let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
-            this.docs_info.char_num += content.length;
-            await this.add_content(file_path, content);
+            this.docs_info.char_num += (await this.add_content(file_path))?.char_num??0;
             processed++;
             this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
             this.push_wss(now)
         }
         for (const file_path of update_file_path_list) {
             await this.remove_content(file_path);
-            let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`;
-            this.docs_info.char_num += content.length;
-            await this.add_content(file_path, content);
+            this.docs_info.char_num += (await this.add_content(file_path))?.char_num??0;
             processed++;
             this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
             this.push_wss(now)

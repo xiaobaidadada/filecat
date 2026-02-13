@@ -54,7 +54,7 @@ async function handleMessage(msg: WorkerMessage) {
 
 // 注册主线程消息监听
 parentPort?.on('message', (msg: WorkerMessage) => {
-    handleMessage(msg);
+    handleMessage(msg).catch(console.error);
 });
 
 // ------------------ 示例：注册处理函数 ------------------
