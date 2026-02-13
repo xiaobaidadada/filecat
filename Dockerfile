@@ -1,13 +1,14 @@
 # 构建阶段
 FROM node:18-slim AS builder
 WORKDIR /build-stage
-RUN apk add --no-cache \
-    build-base \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     python3 \
-    linux-headers \
     make \
     g++ \
-    git
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
 
 COPY package.json  ./
 RUN  npm install
