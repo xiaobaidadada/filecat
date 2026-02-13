@@ -22,6 +22,10 @@ const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
 const {copy_wintun_dll} = require("./config/common-bin.config");
 
+const test_p = path.join(process.cwd(), "node_modules","node-process-watcher");
+const test_p2 = path.join(process.cwd(), "node_modules","better-sqlite3");
+console.log(`存在node-process-watcher ${fs.existsSync(test_p)}`);
+console.log(`存在better-sqlite3 ${fs.existsSync(test_p2)}`);
 
 function ensure_copyFileSync(sourcePath, destPath) {
     fse.ensureDirSync(path.dirname(destPath))
