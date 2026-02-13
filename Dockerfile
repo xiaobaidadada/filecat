@@ -1,5 +1,5 @@
 # 构建阶段
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 WORKDIR /build-stage
 RUN apk add --no-cache \
     build-base \
@@ -10,12 +10,12 @@ RUN apk add --no-cache \
     git
 
 COPY package.json  ./
-RUN  npm install --loglevel verbose
+RUN  npm install
 COPY . .
 RUN npm run exe-build
 
 # 运行环境
-FROM node:18-alpine
+FROM node:18-slim
 WORKDIR /filecat
 COPY --from=builder /build-stage/build /filecat
 COPY env /filecat/env
