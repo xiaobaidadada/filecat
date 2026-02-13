@@ -20,7 +20,6 @@ const fs = require("fs");
 const path = require("path");
 const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
-const {get_webpack_work_config} = require('./config/webpack.worker.get.js');
 const {copy_wintun_dll} = require("./config/common-bin.config");
 
 
@@ -56,12 +55,11 @@ const tasksLister = new Listr(
             title:"子线程构建",
             task:async ()=>{
                 return  Promise.all([new Promise((res, rej) => {
-                    // 第一个
-                    webpack(get_webpack_work_config({
-                        entry_path:path.join(__dirname, "..", "build", "server", "main","threads","filecat","threads.work.filecat.js"),
-                        output_name:'threads.work.filecat.js',
-                        is_exe
-                    }), (err, stats) => {
+                    const config = {...serverConfig};
+                    config['entry'] = path.join(__dirname, "..", "build", "server", "main","threads","filecat","threads.work.filecat.js")
+                    config['output']['filename'] = 'threads.work.filecat.js'
+                        // 第一个
+                    webpack(config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());
                             rej(false);
