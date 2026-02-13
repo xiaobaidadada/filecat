@@ -31,6 +31,7 @@ import {threads_msg_type} from "../../threads/threads.type";
 import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name, file_key} from "../data/data_type";
 import {pinyin} from "pinyin-pro";
+import {hash_str_to_number} from "../../../common/node/value.util";
 
 const {
     cut,
@@ -57,10 +58,11 @@ function isChinese(str: string) {
  */
 export class Ai_agentService {
 
-    docs_data_map: Map<string, {
-        path: string,
+    docs_data_map: Map<number, {
+        // path?: string,
+        // path_hash:number;
         // content:string,
-        file_name: string
+        // file_name?: string
         time_stamp: number
     }> = new Map()
     docs_info = new ai_docs_load_info()
@@ -133,10 +135,11 @@ export class Ai_agentService {
             if (total_char_num >= config_search_doc.docs_max_char_num) {
                 break;
             }
-            const file = this.docs_data_map.get(id)
-            const content = (await FileUtil.readFileSync(file.path)).toString()
+            // const hash_id = hash_str_to_number(id)
+            // const file = this.docs_data_map.get(hash_id)
+            const content = (await FileUtil.readFileSync(id)).toString()
             results.push({
-                file_name: file.path,
+                file_name: id,
                 content
             })
             total_char_num += content.length
@@ -181,7 +184,7 @@ export class Ai_agentService {
         await ThreadsFilecat.post(threads_msg_type.docs_del, {
             file_path
         }, 60 * 1000)
-        this.docs_data_map.delete(file_path);
+        this.docs_data_map.delete(hash_str_to_number(file_path));
     }
 
     public async close_index() {
@@ -209,7 +212,7 @@ export class Ai_agentService {
             body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
-        const is_one_load = target_list != null;
+        // const is_one_load = target_list != null;
         this.docs_info.init(0)
 
         this.push_wss(now)
@@ -251,13 +254,13 @@ export class Ai_agentService {
         }
 
 
-        const files_set = new Set<string>();
+        const files_set = new Set<number>();
         let update_file_num = 0
         let await_file_total = config_search_doc.await_file_num ?? 0;
         // let file_char_num = 0
         const add_file_path_list: string[] = []
         const update_file_path_list: string[] = []
-        const delete_file_path_list: string[] = []
+        // const delete_file_path_list: string[] = []
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
             if (files_set.size >= config_search_doc.max_file_num) {
@@ -288,8 +291,9 @@ export class Ai_agentService {
                 return;
             }
             this.docs_info.size += file_stats.size;
-            if (this.docs_data_map.has(file_path)) {
-                const it = this.docs_data_map.get(file_path)!;
+            const hash_id = hash_str_to_number(file_path);
+            if (this.docs_data_map.has(hash_id)) {
+                const it = this.docs_data_map.get(hash_id)!;
                 const mtime = file_stats.mtime.getTime();
 
                 if (it.time_stamp === mtime) {
@@ -301,15 +305,15 @@ export class Ai_agentService {
                 }
             } else {
                 add_file_path_list.push(file_path);
-                this.docs_data_map.set(file_path, {
-                    file_name,
+                this.docs_data_map.set(hash_id, {
+                    // file_name,
                     time_stamp: file_stats.mtime.getTime(),
-                    path: file_path,
+                    // path: file_path,
                 });
                 update_file_num++
             }
             this.docs_info.num++
-            files_set.add(file_path);
+            files_set.add(hash_id);
         };
         const async_poll = new AsyncPool(config_search_doc.max_file_concurrency)
 
@@ -369,18 +373,8 @@ export class Ai_agentService {
                 (((i + 1) / total) * 100).toFixed(2);
         }
 
-        if(!is_one_load) {
-            // 单独加载文件不能删除其他的文件
-            for (const key of this.docs_data_map.keys()) {
-                if (!files_set.has(key)) {
-                    delete_file_path_list.push(key);
-                    update_file_num++
-                }
-            }
-        }
 
-
-        const totalFiles = add_file_path_list.length + update_file_path_list.length + delete_file_path_list.length;
+        const totalFiles = add_file_path_list.length + update_file_path_list.length
         let processed = 0;
         for (const file_path of add_file_path_list) {
             let content = ` 文件 ${file_path}  ${(await FileUtil.readFileSync(file_path)).toString()}。`
@@ -400,12 +394,12 @@ export class Ai_agentService {
             this.push_wss(now)
         }
 
-        for (const file_path of delete_file_path_list) {
-            await this.remove_content(file_path)
-            processed++;
-            this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
-            this.push_wss(now)
-        }
+        // for (const file_path of delete_file_path_list) {
+        //     await this.remove_content(file_path)
+        //     processed++;
+        //     this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
+        //     this.push_wss(now)
+        // }
         this.docs_info.progress = 100
         // 删除已经不存在的文件
         this.push_wss(now)
@@ -419,6 +413,38 @@ export class Ai_agentService {
         // console.log(`忽略了以下文件 ${ignore_list_str.length} ${JSON.stringify(ignore_list_str)}`);
     }
 
+
+    public async delete_index_with_progress(targetPath: string) {
+        // 先收集要删除的所有文件
+        const filesToDelete: string[] = [];
+        const now = Date.now();
+        const collectFiles = async (p: string) => {
+            const stat = await FileUtil.statSync(p);
+            if (!stat) return;
+            if (stat.isFile()) {
+                if (this.docs_data_map.has(hash_str_to_number(p))) {
+                    filesToDelete.push(p);
+                }
+            } else if (stat.isDirectory()) {
+                const entries = await FileUtil.readdirSync(p);
+                for (const entry of entries) {
+                    await collectFiles(path.join(p, entry));
+                }
+            }
+        };
+
+        await collectFiles(targetPath);
+        const totalFiles = filesToDelete.length;
+        let processed = 0;
+        for (const filePath of filesToDelete) {
+            await this.remove_content(filePath);
+            processed++;
+            this.docs_info.progress = ((processed / totalFiles) * 100).toFixed(2);
+            this.push_wss(now);
+        }
+        this.docs_info.progress = 100;
+        this.push_wss(now);
+    }
 
     get_env() {
         return config_env;

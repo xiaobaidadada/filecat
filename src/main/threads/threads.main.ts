@@ -87,6 +87,10 @@ export class ThreadsMain {
         worker.on('message', (msg: WorkerMessage) => this.handle_message(msg, worker));
         worker.on('exit', (code) => {
             console.log(`[main] worker exited code=${code}`);
+            this.pending_resolves.forEach((resolve, id) => {
+                resolve(null);
+                this.pending_resolves.delete(id);
+            });
             this.emit_message('threads_exit',this.worker_threads.length-1)
         });
         worker.on('error', (err) => console.error('[main] worker error:', err));

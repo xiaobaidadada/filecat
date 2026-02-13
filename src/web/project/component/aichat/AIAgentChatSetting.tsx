@@ -307,12 +307,24 @@ export default function AIAgentChatSetting() {
                                                 item.note = value;
                                             }} no_border={true}/>,
                                             <div>
-                                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_docs(index)}/>
+                                                <ActionButton icon={"delete"} title={t("删除记录")} onClick={() => del_docs(index)}/>
                                                 <ActionButton icon={"restore"} title={t("手动加载")} onClick={()=>{
                                                     confirm_dell_all({
                                                         sub_title:"手动加载",
                                                         confirm_fun:()=>{
                                                             ai_agentHttp.post("ai_load_one_file", {
+                                                                param_path:item.dir
+                                                            });
+                                                            NotySucess("ok")
+                                                        }
+                                                    })
+                                                }}
+                                                />
+                                                <ActionButton icon={"delete_forever"} title={t("从索引删除")} onClick={()=>{
+                                                    confirm_dell_all({
+                                                        sub_title:"从索引删除",
+                                                        confirm_fun:()=>{
+                                                            ai_agentHttp.post("ai_del", {
                                                                 param_path:item.dir
                                                             });
                                                             NotySucess("ok")

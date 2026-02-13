@@ -83,5 +83,12 @@ export class Ai_AgentController {
         return  Sucess("")
     }
 
+    @Post("/ai_del")
+    async ai_del(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        ai_agentService.delete_index_with_progress(data.param_path).catch(console.error);
+        return  Sucess("")
+    }
+
 
 }

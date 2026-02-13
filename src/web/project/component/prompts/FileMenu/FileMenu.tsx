@@ -42,8 +42,8 @@ export function FileMenu() {
             // 所有文件和目录都有的选项
             r: t("复制名字"), v: common_menu_type.file_copy_name, items:
                 [
-                    {r: "复制绝对路径", v: common_menu_type.file_copy_ab_path},
-                    {r: "复制当前路径", v: common_menu_type.file_copy_now_path}
+                    {r: t("复制绝对路径"), v: common_menu_type.file_copy_ab_path},
+                    {r: t("复制当前路径"), v: common_menu_type.file_copy_now_path}
                 ]
 
         }
@@ -58,9 +58,11 @@ export function FileMenu() {
         })
     }
     if(user_base_info.sys_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
-        // @ts-ignore
         must_needs.push({
-            r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file
+            r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file,
+            items:[
+                {r:t("删除"), v: common_menu_type.ai_del_one_file},
+            ]
         })
     }
 
@@ -319,6 +321,22 @@ export function FileMenu() {
                         </p>
                     ),
 
+                })
+                break;
+            }
+            case common_menu_type.ai_del_one_file: {
+                set_prompt_card({
+                    open: true,
+                    title: "确认",
+                    confirm:async () => {
+                        set_prompt_card({open:false})
+                        const result = await ai_agentHttp.post("ai_del", {
+                            param_path:get_ab_path()
+                        });
+                        if (result.code === RCode.Sucess) {
+                            NotySucess("ok")
+                        }
+                    }
                 })
                 break;
             }
