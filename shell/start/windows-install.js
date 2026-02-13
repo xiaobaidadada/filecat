@@ -3,15 +3,13 @@ const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 
-// 当前脚本所在目录
-// const currentDir = process.cwd();
+// 当前脚本目录
 const currentDir = __dirname;
 
-
 // 默认安装目录
-const defaultInstallDir = "C:\\Program Files\\Filecat";
+const defaultInstallDir = "C:\\Filecat";
 
-// 需要启动的 cmd
+// 启动脚本
 const CMD_NAME = "filecat-run.cmd";
 
 // 开始菜单目录
@@ -22,6 +20,16 @@ const startMenuDir = path.join(
     "Start Menu",
     "Programs",
     "Filecat"
+);
+
+// 当前用户开机启动目录
+const startupDir = path.join(
+    process.env.APPDATA,
+    "Microsoft",
+    "Windows",
+    "Start Menu",
+    "Programs",
+    "Startup"
 );
 
 // =====================
@@ -47,9 +55,9 @@ function copyDir(src, dest) {
 }
 
 // =====================
-// 创建快捷方式
+// 创建开始菜单快捷方式
 // =====================
-function createShortcut(installDir) {
+function createStartMenuShortcut(installDir) {
     const cmdPath = path.join(installDir, CMD_NAME);
     const shortcutPath = path.join(startMenuDir, "Filecat.lnk");
 
@@ -61,7 +69,7 @@ function createShortcut(installDir) {
         desc: "Filecat 启动程序"
     }, (err) => {
         if (err) {
-            console.error("创建快捷方式失败:", err);
+            console.error("创建开始菜单快捷方式失败:", err);
         } else {
             console.log("开始菜单快捷方式创建成功！");
         }
@@ -69,14 +77,34 @@ function createShortcut(installDir) {
 }
 
 // =====================
+// 创建开机启动快捷方式
+// =====================
+function createStartupShortcut(installDir) {
+    const cmdPath = path.join(installDir, CMD_NAME);
+    const shortcutPath = path.join(startupDir, "Filecat.lnk");
+
+    ws.create(shortcutPath, {
+        target: cmdPath,
+        workingDir: installDir,
+        desc: "Filecat 开机自启"
+    }, (err) => {
+        if (err) {
+            console.error("创建开机自启失败:", err);
+        } else {
+            console.log("已加入当前用户开机自启！");
+        }
+    });
+}
+
+// =====================
 // 安装主流程
 // =====================
-function install(installDir) {
+function install(installDir, askStartup = true) {
 
     const cmdSrc = path.join(currentDir, CMD_NAME);
 
     if (!fs.existsSync(cmdSrc)) {
-        console.error("找不到 filecat-start.cmd");
+        console.error("找不到 filecat-run.cmd");
         return;
     }
 
@@ -87,10 +115,29 @@ function install(installDir) {
 
         console.log("文件复制完成");
 
-        createShortcut(installDir);
+        createStartMenuShortcut(installDir);
 
         console.log("安装成功！");
         console.log("Win 键搜索 Filecat 即可启动");
+
+        // ===== 询问是否开机自启 =====
+        if (askStartup) {
+            const rl2 = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+
+            rl2.question("是否加入当前用户开机自启？(y/n): ", (answer) => {
+
+                if (answer.toLowerCase() === "y") {
+                    createStartupShortcut(installDir);
+                } else {
+                    console.log("未启用开机自启");
+                }
+
+                rl2.close();
+            });
+        }
 
     } catch (e) {
         console.error("安装失败:", e.message);
