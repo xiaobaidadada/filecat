@@ -57,6 +57,7 @@ const tasksLister = new Listr(
                 return  Promise.all([new Promise((res, rej) => {
                     const config = {...serverConfig};
                     config['entry'] = path.join(__dirname, "..", "build", "server", "main","threads","filecat","threads.work.filecat.js")
+                    config['output'] = {...config['output']}
                     config['output']['filename'] = 'threads.work.filecat.js'
                         // 第一个
                     webpack(config, (err, stats) => {

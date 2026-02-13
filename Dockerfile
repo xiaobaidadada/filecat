@@ -10,10 +10,6 @@ RUN apk add --no-cache \
 COPY package.json  ./
 RUN npm install
 COPY . .
-
-# 强制源码编译 better-sqlite3
-RUN npm install --build-from-source better-sqlite3
-
 RUN npm run exe-build
 
 # 运行环境
