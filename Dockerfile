@@ -1,22 +1,23 @@
 # 构建阶段
-FROM node:18-slim AS builder
+FROM node:18-alpine AS builder
 WORKDIR /build-stage
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3 \
-    make \
-    g++ \
+RUN apk add --no-cache \
+    build-base \
+    linux-headers \
     git \
-    && rm -rf /var/lib/apt/lists/*
-
-
+    python3 \
+    py3-setuptools
 COPY package.json  ./
-RUN  npm install
+RUN npm install
 COPY . .
+
+# 强制源码编译 better-sqlite3
+RUN npm install --build-from-source better-sqlite3
+
 RUN npm run exe-build
 
 # 运行环境
-FROM node:18-slim
+FROM node:18-alpine
 WORKDIR /filecat
 COPY --from=builder /build-stage/build /filecat
 COPY env /filecat/env
