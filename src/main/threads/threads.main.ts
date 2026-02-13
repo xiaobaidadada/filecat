@@ -172,8 +172,16 @@ export class ThreadsMain {
             this.pending_resolves.set(msg_id, (v) => {
                 clearTimeout(timer);
                 resolve(v);
+                this.pending_resolves.delete(msg_id);
             });
-            worker.postMessage(msg);
+            try {
+                worker.postMessage(msg);
+            } catch (err) {
+                // 防止内存泄露
+                clearTimeout(timer);
+                this.pending_resolves.delete(msg_id);
+                reject(err);
+            }
         });
     }
 

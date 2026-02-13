@@ -22,6 +22,6 @@ export enum threads_msg_type {
     docs_close,
     docs_search,
 
-    sys_info,
-    sys_info_send,
+    // sys_info,
+    // sys_info_send,
 }

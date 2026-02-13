@@ -201,9 +201,9 @@ export function Sys(props) {
                                 <Column>
                                     <ShowTextDiv content= {t("内存")}/>
                                     <ShowTextDiv content={ "total: "+formatFileSize(node_memory?.rss)}/>
-                                    <ShowTextDiv content= {"v8-object: "+formatFileSize(node_memory?.heapTotal)}/>
-                                    <ShowTextDiv content=  {"v8-obj-use: "+formatFileSize(node_memory?.heapUsed)}/>
-                                    <ShowTextDiv content=  {"v8-external: "+formatFileSize(node_memory?.external)}/>
+                                    <ShowTextDiv content= {"object: "+formatFileSize(node_memory?.heapTotal)}/>
+                                    <ShowTextDiv content=  {"obj-use: "+formatFileSize(node_memory?.heapUsed)}/>
+                                    <ShowTextDiv content=  {"external: "+formatFileSize(node_memory?.external)}/>
                                     <ShowTextDiv content=  {"buffer: "+formatFileSize(node_memory?.arrayBuffers)}/>
                                 </Column>
                                 <Column>
