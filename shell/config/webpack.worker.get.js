@@ -3,7 +3,7 @@ const package_data = require("../../package.json")
 const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const {base_url} = require("./env");
-const {plugins, pkg_externals, npm_externals, _node_rules} = require("./base.webpack.config");
+const {plugins, pkg_externals, npm_externals, _node_rules, get_exe_plugins} = require("./base.webpack.config");
 
 function get_webpack_work_config({entry_path,output_name,is_exe}) {
     const config = {
@@ -35,6 +35,7 @@ function get_webpack_work_config({entry_path,output_name,is_exe}) {
             rules: _node_rules
         }
         config['externals'] = pkg_externals;
+        config['plugins'] = get_exe_plugins()
     }
     return config;
 }

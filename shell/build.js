@@ -8,7 +8,9 @@ const is_exe = args[0]==="exe"
 const is_npm = args[0]==="npm"
 if (args.length ===0 || is_npm) {
     serverConfig = require('./config/webpack.npm.config.js');
+    console.log('npm打包')
 } else if (is_exe) {
+    console.log('二进制打包')
     serverConfig = require('./config/webpack.exe.config.js');
 } else {
     console.error('无法识别打包环境')
