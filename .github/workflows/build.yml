@@ -44,13 +44,22 @@ jobs:
   push-docker:
     if: ${{ github.event.inputs.job == 'push-docker' || github.event.inputs.job == 'all' }}
     runs-on: ${{inputs.ubuntu_version}}
-    container: node:18-alpine
+    container: node:18-slim
     env:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
       DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台环境变量 构建的时候用
     steps:
       - uses: actions/checkout@v4 
-      - run: apk add docker build-base linux-headers git python3 py3-setuptools --update-cache
+      - name: Install build dependencies
+        run: |
+            apt-get update && apt-get install -y --no-install-recommends \
+            build-essential \
+            python3 \
+            make \
+            g++ \
+            git \
+            docker.io \
+            && rm -rf /var/lib/apt/lists/*
       - name: Docker meta # 镜像仓库
         id: meta
         uses: docker/metadata-action@v5
