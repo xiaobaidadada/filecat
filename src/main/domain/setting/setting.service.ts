@@ -455,11 +455,8 @@ export class SettingService {
             source_item.param = data.param
         }
         DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
-        if(data.list != null) {
-             ai_agentService.init_search_docs().catch(console.error);
-        }
-        if(data.param != null) {
-            ai_agentService.init_search_docs_param()
+        if(data.docs_update_tag) {
+            ai_agentService.init_search_docs().catch(console.error);
         }
     }
 

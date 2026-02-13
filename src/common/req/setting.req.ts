@@ -31,13 +31,16 @@ export class ai_agent_Item {
 
 export class ai_docs_item {
     dir:string;
-    open: boolean = false;
+    auto_load: boolean = false;
     note?: string;
 }
 
 export class ai_docs_setting {
     list:ai_docs_item[];
     param:''
+
+    // 临时用
+    docs_update_tag?:boolean
 }
 
 export class ai_docs_load_info {
@@ -48,12 +51,12 @@ export class ai_docs_load_info {
     total_num:number = 0;
     consume_time_ms_len:number = 0;
 
-    init() {
+    init(total_num:number) {
         this.progress = 0;
         this.num = 0;
         this.size = 0;
         this.char_num = 0;
-        // this.total_num = 0
+        this.total_num = total_num
         this.consume_time_ms_len = 0;
     }
 }

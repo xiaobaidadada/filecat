@@ -164,7 +164,7 @@ export class Ai_agentService {
         }
         userService.check_user_path(token, sysPath)
         await this.init_search_docs([{
-            open: true,
+            auto_load: true,
             dir: sysPath
         }])
     }
@@ -178,7 +178,7 @@ export class Ai_agentService {
     }
 
     private async remove_content(file_path: string) {
-        await ThreadsFilecat.post(threads_msg_type.docs_add, {
+        await ThreadsFilecat.post(threads_msg_type.docs_del, {
             file_path
         }, 60 * 1000)
         this.docs_data_map.delete(file_path);
@@ -186,8 +186,10 @@ export class Ai_agentService {
 
     public async close_index() {
         this.running_num++;
-        await ThreadsFilecat.post(threads_msg_type.docs_close, {}, 60 * 1000)
+        if(ThreadsFilecat.is_running)
+            await ThreadsFilecat.post(threads_msg_type.docs_close, {}, 60 * 1000)
         ai_agentService.docs_data_map.clear()
+        this.docs_info.init(0)
     }
 
     running_num = 1
@@ -208,16 +210,16 @@ export class Ai_agentService {
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
         const is_one_load = target_list != null;
-        this.docs_info.init()
+        this.docs_info.init(0)
 
         this.push_wss(now)
 
         const dir_recursion_depth = config_search_doc.dir_recursion_depth
         const list = target_list || settingService.ai_docs_setting().list;
         if (!list?.length) {
-            if(ThreadsFilecat.is_running) {
-                await ThreadsFilecat.forceTerminateAll()
-            }
+            // if(ThreadsFilecat.is_running) {
+            //     await ThreadsFilecat.forceTerminateAll()
+            // }
             return;
         }
 
@@ -360,7 +362,7 @@ export class Ai_agentService {
         // 扫描配置中的目录
         for (let i = 0; i < list.length; i++) {
             const it = list[i];
-            if (it.open) {
+            if (it.auto_load) {
                 await walkDir(it.dir, 0);
             }
             this.docs_info.progress =

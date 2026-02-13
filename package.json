@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.22.17",
+  "version": "5.22.18",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -128,6 +128,9 @@
   "keywords": [
     "文件服务器",
     "linux管理",
+    "Ai Agent",
+    "知识库",
+    "智能体",
     "运维面板",
     "远程桌面",
     "浏览器代理",

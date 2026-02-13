@@ -64,7 +64,7 @@ class SysSystemService {
     async pushSysInfo(wss: Wss) {
         if(ThreadsFilecat.is_running) {
             ThreadsFilecat.emit(threads_msg_type.sys_info,{})
-            ThreadsFilecat.on_once_msg(threads_msg_type.sys_info_send,(msg: WorkerMessage, worker: NodeWorker)=>{
+            ThreadsFilecat.on_once_message(`message_${threads_msg_type.sys_info_send}`,(msg: WorkerMessage, worker: NodeWorker)=>{
                 const {node_memory_usage} = msg.data
                 if(node_memory_usage)  {
                     for (const key of Object.keys(node_memory_usage)) {

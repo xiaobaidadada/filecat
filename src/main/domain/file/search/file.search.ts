@@ -43,17 +43,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
     start_worker_threads()
     const ram_id = ThreadsFilecat.generate_random_id()
     wss.dataMap.set('worker', ram_id);
-    const close = ()=>{
-        ThreadsFilecat.emit(threads_msg_type.file_search_close,{file_path,ram_id})
-        wss.dataMap.delete('worker');
-        ThreadsFilecat.off_by_listener_id(ram_id)
-    }
-    wss.setClose(()=>{
-        close();
-    })
-    ThreadsFilecat.emit(threads_msg_type.file_search_start,{file_path,ram_id})
-    ThreadsFilecat.emit(threads_msg_type.file_search,{ram_id,start: 0, end: stats.size,file_path ,query_text_buffer})
-    ThreadsFilecat.on((msg)=>{
+    const on_message = (msg)=>{
         const { type  } = msg
         const {find_index, progress,ram_id} = msg.data
         if(msg.data.ram_id !== ram_id) return;
@@ -72,6 +62,17 @@ export function search_file(data: WsData<LogViewerPojo>) {
             wss.sendData(result.encode());
             close();
         }
-    },ram_id)
+    }
+    const close = ()=>{
+        ThreadsFilecat.emit(threads_msg_type.file_search_close,{file_path,ram_id})
+        wss.dataMap.delete('worker');
+        ThreadsFilecat.off_message('message',on_message)
+    }
+    wss.setClose(()=>{
+        close();
+    })
+    ThreadsFilecat.emit(threads_msg_type.file_search_start,{file_path,ram_id})
+    ThreadsFilecat.emit(threads_msg_type.file_search,{ram_id,start: 0, end: stats.size,file_path ,query_text_buffer})
+    ThreadsFilecat.on_message('message',on_message)
 }
 

@@ -14,7 +14,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
-import {UserAuth} from "../../../../common/req/user.req";
+import {UserAuth, UserBaseInfo} from "../../../../common/req/user.req";
 import {
     ai_agent_Item,
     ai_agent_item_dotenv_default,
@@ -52,13 +52,16 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("自动加载"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
     const headers_docs = [t("编号"),t("本地目录"), t("是否开启"),t("备注") ];
 
     const [rows, setRows] = useState<ai_agent_Item>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item>([]);
     const [load_info,set_load_info] = useState<ai_docs_load_info>(null);
     const docs_param = useRef();
+    const docs_update_tag = useRef(false);
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+
 
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
@@ -109,7 +112,8 @@ export default function AIAgentChatSetting() {
         setRows([...rows,{note:"",open:false,path:""}]);
     }
     const add_docs = ()=>{
-        set_docs_list([...docs_list,{note:"",open:false,dir:""}]);
+        set_docs_list([...docs_list,{note:"",auto_load:false,dir:""}]);
+        docs_update_tag.current = true;
     }
     const del = (index) => {
         rows.splice(index, 1);
@@ -118,6 +122,7 @@ export default function AIAgentChatSetting() {
     const del_docs = (index) => {
         docs_list.splice(index, 1);
         set_docs_list([...docs_list]);
+        docs_update_tag.current = true;
     }
     const copy = (index) => {
         setRows([...rows,{...rows[index],open: false}]);
@@ -136,13 +141,15 @@ export default function AIAgentChatSetting() {
             rows[i].index = i;
         }
         let body:any = {
-            list:docs_list
+            list:docs_list,
+            docs_update_tag:docs_update_tag.current
         }
         if(param != null) {
             body = {
                 param:param
             }
         }
+        docs_update_tag.current = false;
         const result = await settingHttp.post("ai_docs_setting_save", body);
         if (result.code === RCode.Sucess) {
             NotySucess("保存成功")
@@ -268,6 +275,16 @@ export default function AIAgentChatSetting() {
                                                   })
                                               }}
                                               />
+                                              <ActionButton icon={"close"} title={t("关闭索引")} onClick={()=>{
+                                                  confirm_dell_all({
+                                                      sub_title:"关闭索引",
+                                                      confirm_fun:()=>{
+                                                          ai_agentHttp.post("ai_load_close", {});
+                                                          NotySucess("ok")
+                                                      }
+                                                  })
+                                              }}
+                                              />
                                               <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
                                               <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                                   save_docs()
@@ -279,16 +296,30 @@ export default function AIAgentChatSetting() {
                                             <div>{index}</div>,
                                             <InputText value={item.dir} handleInputChange={(value) => {
                                                 item.dir = value;
+                                                docs_update_tag.current = true
                                             }} no_border={true}/>,
-                                            <Select value={item.open} onChange={(value) => {
-                                                item.open = value === 'true';
+                                            <Select value={item.auto_load} onChange={(value) => {
+                                                item.auto_load = value === 'true';
                                                 set_docs_list([...docs_list]);
+                                                docs_update_tag.current = true
                                             }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                                             <InputText value={item.note} handleInputChange={(value) => {
                                                 item.note = value;
                                             }} no_border={true}/>,
                                             <div>
                                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_docs(index)}/>
+                                                <ActionButton icon={"restore"} title={t("手动加载")} onClick={()=>{
+                                                    confirm_dell_all({
+                                                        sub_title:"手动加载",
+                                                        confirm_fun:()=>{
+                                                            ai_agentHttp.post("ai_load_one_file", {
+                                                                param_path:item.dir
+                                                            });
+                                                            NotySucess("ok")
+                                                        }
+                                                    })
+                                                }}
+                                                />
                                             </div>,
                                         ];
                                         return new_list;

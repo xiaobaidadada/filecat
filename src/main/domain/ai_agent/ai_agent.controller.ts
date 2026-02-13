@@ -74,5 +74,14 @@ export class Ai_AgentController {
         return  Sucess("")
     }
 
+    @Post("/ai_load_close")
+    async ai_load_close(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        await ai_agentService.close_index()
+        await ThreadsFilecat.close()
+        Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
+        return  Sucess("")
+    }
+
 
 }
