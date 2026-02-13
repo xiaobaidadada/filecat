@@ -37,7 +37,7 @@
     "url": "https://github.com/xiaobaidadada/filecat/issues"
   },
   "license": "Apache-2.0",
-  "dependencies": {
+  "optionalDependencies": {
     "@xiaobaidadada/dockerode": "^4.0.9",
     "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
