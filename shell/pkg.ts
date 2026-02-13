@@ -4,6 +4,7 @@ import {FileService} from "../src/main/domain/file/file.service";
 
 const fs = require('fs');
 const path = require('path');
+const {copy_auto} = require('./util/file');
 
 // 复制 node
 fs.copyFileSync(process.execPath, path.join(__dirname, "..", "build", path.basename(process.execPath)));
@@ -17,7 +18,7 @@ if(args[0].includes("win")) {
     fs.copyFileSync(path.join(__dirname,"start","filecat-uninstall.cmd"), path.join(__dirname, "..", "build", "filecat-uninstall.cmd"));
     fs.copyFileSync(path.join(__dirname,"start","windows-install.js"), path.join(__dirname, "..", "build", "windows-install.js"));
     fs.copyFileSync(path.join(__dirname,"start","windows-uninstall.js"), path.join(__dirname, "..", "build", "windows-uninstall.js"));
-
+    copy_auto(path.join(process.cwd(),"node_modules","windows-shortcuts"), path.join(__dirname, "..", "build", "node_modules","windows-shortcuts"))
 } else  {
     fs.copyFileSync(path.join(__dirname,"start","filecat-run.sh"), path.join(__dirname, "..", "build", "filecat-run.sh"));
 }
