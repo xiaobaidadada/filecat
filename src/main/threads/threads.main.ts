@@ -2,7 +2,7 @@ import { Worker as NodeWorker, parentPort, workerData } from 'worker_threads';
 import * as path from 'path';
 import * as fs from 'fs'
 import {threads_msg_type, WorkerMessage} from "./threads.type";
-import {EventEmitter} from "events";
+const EventEmitter = require('events');
 
 export interface on_threads_event {
     message: (msg: WorkerMessage, worker: NodeWorker) => void;

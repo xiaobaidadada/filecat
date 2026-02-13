@@ -1,6 +1,5 @@
 import {FileQuickCmdItem, FileSettingItem, QuickCmdItem, SysSoftware, SysSoftwareItem} from "./setting.req";
 import {path_join} from "pty-shell/dist/path_util";
-import {getRouterAfter, getRouterPath} from "../../web/project/util/WebPath";
 
 export class UserLogin {
     username: string;
@@ -38,16 +37,6 @@ export class UserBaseInfo {
         return path;
     }
 
-    public static get_ab_path = (user_base_info:UserBaseInfo,filename)=>{
-        const path = UserBaseInfo.get_now_dir(user_base_info)
-        let fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
-        if(user_base_info.sys === SysEnum.win) {
-            fp = fp.replaceAll("/", '\\')
-        } else if(fp.includes("\\")) {
-            fp = fp.replaceAll("\\", '/')
-        }
-        return path_join(fp,filename)
-    }
 }
 
 
