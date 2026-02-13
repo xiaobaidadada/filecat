@@ -82,7 +82,8 @@ export default function AIAgentChatSetting() {
         })
         const info = await ws.sendData(CmdType.ai_load_info, {})
         // console.log(info)
-        set_load_info(info.context)
+        if(info?.context)
+            set_load_info(info.context)
         const docs_result = await settingHttp.get("ai_docs_setting");
         if (docs_result.code === RCode.Sucess) {
             // console.log()

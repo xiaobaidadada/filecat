@@ -43,12 +43,25 @@ export function start_ai_agent_agent() {
                 nativeBinding:sqlite3
             });
 
+            // sqlite_db.exec(`
+            //     PRAGMA journal_mode = WAL;
+            //     PRAGMA synchronous = NORMAL;
+            //     PRAGMA temp_store = MEMORY;
+            //     PRAGMA mmap_size = 30000000000;
+            // `);
             sqlite_db.exec(`
                 PRAGMA journal_mode = WAL;
                 PRAGMA synchronous = NORMAL;
-                PRAGMA temp_store = MEMORY;
-                PRAGMA mmap_size = 30000000000;
+                -- 限制 SQLite 内存缓存
+                PRAGMA cache_size = -10000;   -- 约 10MB
+                -- 临时数据不要放内存
+                PRAGMA temp_store = FILE;
+                -- 太大容易吃内存
+                PRAGMA mmap_size = 67108864; --64MB
+                -- 提交页的数量
+                PRAGMA wal_autocheckpoint = 20;
             `);
+
 
             // 创建 FTS5 表，使用 unicode61 支持空格分词
             sqlite_db.exec(`
@@ -150,13 +163,12 @@ export function start_ai_agent_agent() {
         }
 
         if (index_storage_type_ === "sqlite" && sqlite_db) {
-
-            const transaction = sqlite_db.transaction(() => {
+            // const transaction = sqlite_db.transaction(() => {
                 delete_doc_stmt.run(file_path);
                 delete_name_stmt.run(file_path);
-            });
-
-            transaction();
+            // });
+            //
+            // transaction();
         }
     });
 
