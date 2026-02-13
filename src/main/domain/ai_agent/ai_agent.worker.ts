@@ -49,18 +49,18 @@ export function start_ai_agent_agent() {
             //     PRAGMA temp_store = MEMORY;
             //     PRAGMA mmap_size = 30000000000;
             // `);
-            sqlite_db.exec(`
-                PRAGMA journal_mode = WAL;
-                PRAGMA synchronous = NORMAL;
-                -- 限制 SQLite 内存缓存
-                PRAGMA cache_size = -10000;   -- 约 10MB
-                -- 临时数据不要放内存
-                PRAGMA temp_store = FILE;
-                -- 太大容易吃内存
-                PRAGMA mmap_size = 67108864; --64MB
-                -- 提交页的数量
-                PRAGMA wal_autocheckpoint = 20;
-            `);
+            // sqlite_db.exec(`
+            //     PRAGMA journal_mode = WAL;
+            //     PRAGMA synchronous = NORMAL;
+            //     -- 限制 SQLite 内存缓存
+            //     PRAGMA cache_size = -10000;   -- 约 10MB
+            //     -- 临时数据不要放内存
+            //     PRAGMA temp_store = FILE;
+            //     -- 太大容易吃内存
+            //     PRAGMA mmap_size = 67108864; --64MB
+            //     -- 提交页的数量
+            //     PRAGMA wal_autocheckpoint = 20;
+            // `);
 
 
             // 创建 FTS5 表，使用 unicode61 支持空格分词

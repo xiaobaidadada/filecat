@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.23.1",
+  "version": "5.23.2",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -123,6 +123,7 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.0",
     "webpack-node-externals": "^3.0.0",
+    "windows-shortcuts": "^0.1.6",
     "ws": "^8.16.0",
     "xxhashjs": "^0.2.2"
   },

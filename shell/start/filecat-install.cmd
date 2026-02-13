@@ -1,0 +1,1 @@
+.\node  windows-install.js %*

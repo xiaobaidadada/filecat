@@ -12,9 +12,14 @@ const FileServiceImpl = new FileService();
 const args = process.argv.slice(2);
 
 if(args[0].includes("win")) {
-    fs.copyFileSync(path.join(__dirname,"start","run.cmd"), path.join(__dirname, "..", "build", "run.cmd"));
+    fs.copyFileSync(path.join(__dirname,"start","filecat-run.cmd"), path.join(__dirname, "..", "build", "filecat-run.cmd"));
+    fs.copyFileSync(path.join(__dirname,"start","filecat-install.cmd"), path.join(__dirname, "..", "build", "filecat-install.cmd"));
+    fs.copyFileSync(path.join(__dirname,"start","filecat-uninstall.cmd"), path.join(__dirname, "..", "build", "filecat-uninstall.cmd"));
+    fs.copyFileSync(path.join(__dirname,"start","windows-install.js"), path.join(__dirname, "..", "build", "windows-install.js"));
+    fs.copyFileSync(path.join(__dirname,"start","windows-uninstall.js"), path.join(__dirname, "..", "build", "windows-uninstall.js"));
+
 } else  {
-    fs.copyFileSync(path.join(__dirname,"start","run.sh"), path.join(__dirname, "..", "build", "run.sh"));
+    fs.copyFileSync(path.join(__dirname,"start","filecat-run.sh"), path.join(__dirname, "..", "build", "filecat-run.sh"));
 }
 
 const filePaths: string[] = [], directorys: string[] = [];
