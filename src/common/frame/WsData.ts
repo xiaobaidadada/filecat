@@ -1,6 +1,7 @@
 import {Wss} from "./ws.server";
 import {RCode} from "../Result.pojo";
 import {DataEncode} from "./data.encode";
+// import WebSocket from 'ws'; // 浏览器不能用
 
 export const protocolIsProto2 = true;
 export enum CmdType {
@@ -128,7 +129,8 @@ export class WsData<T> {
     public cmdType: CmdType;
     public context: T|any;
     public bin_context: Uint8Array;
-    public wss:Wss|null|WebSocket;
+    public wss:Wss;
+    public client_wss:WebSocket;
     public code:RCode; // 只有返回的时候用
     public message:string; // 只有返回的时候用 错误时候的信息
     public random_id:string;

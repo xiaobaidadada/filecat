@@ -1,6 +1,9 @@
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
+// import WebSocket from 'ws'; // 前端不能导入，直接使用就行 这只能nodejs用
+import {EventEmitter} from "../event";
+
 function generateRandomHash(length = 16) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let hash = '';
@@ -9,249 +12,198 @@ function generateRandomHash(length = 16) {
     }
     return hash;
 }
+
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-enum connect_status {
-    not,
-    connecting,
-    connected,
+
+interface WsClientEvents {
+    // {1} 是 cmdType 类型
+    [key: `message_${number}`]: (data: WsData<any>) => void;
+
+    // 所有类型的事件
+    message: (data: WsData<any>) => void;
+    close: () => void;
 }
+
 export class WsClient {
 
     private name;
-    private  _socket;
+    private _socket: WebSocket;
     private _url;
-    // 0 是未连接
-    private  _status:connect_status = connect_status.not;
-    private _connect_await_promise = [];
-    private _self_close  = false;
-    private _authHandle;
-    private _subscribeUnconnect;
-    private _promise;
 
-    private _msgHandlerMap = new Map();
+    private _msg_event: EventEmitter = new EventEmitter();
     private _msgResolveMap = new Map();
     private _msgResolveTimeoutMap = new Map();
 
-    handMsg(cmdType: CmdType,data : WsData<any>) {
-        // console.log(data.random_id)
-        if(data.code === RCode.Fail) {
-            NotyFail(data.message);
-        }
-        // console.log(data.random_id||data.cmdType)
-        const key = data.random_id||cmdType;
-        const resolve = this._msgResolveMap.get(key)
-        if (resolve) {
-            resolve(data);
-            this._msgResolveMap.delete(key)
-        }
-        const timeout = this._msgResolveTimeoutMap.get(key);
-        if(timeout) {
-            clearTimeout(timeout);
-            this._msgResolveTimeoutMap.delete(key);
-        }
-        const fun = this._msgHandlerMap.get(data.cmdType)
-        if (fun) {
-            fun(data);
-        }
 
-    }
-
-    constructor(url:string,authHandle:(socket:WebSocket)=>void,name?:string) {
+    constructor(url: string, name?: string) {
         this._url = url;
-        this._authHandle = authHandle;
         this.name = name;
     }
 
 
+    public async connect(): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (this._socket?.readyState === WebSocket.OPEN) {
+                return resolve(true);
+            }
 
-    public async connect():Promise<boolean> {
-        const handle = (resolve)=>{
-            if (this._status === connect_status.connected) {
-                resolve(true);
-                return;
-            } else if (this._status === connect_status.connecting) {
-                this._connect_await_promise.push(resolve);
-                return;
+            if (this._socket) {
+                return reject(false);
             }
-            this._status = connect_status.connecting;
-            const unConnect =()=> {
-                this._status = connect_status.not;
-                if (this._subscribeUnconnect && !this._self_close) {
-                    this._subscribeUnconnect();
-                }
-                this._self_close = false;
-            }
-            const open = async (event) => {
-                console.info('ws连接成功',this.name);
-                this._status = connect_status.connected;
-                // 身份验证发送
-                if (this._authHandle) {
-                    this._authHandle(this._socket)
-                }
+
+            this._socket = new WebSocket(
+                `${protocol}//${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`
+            );
+
+            this._socket.addEventListener('open', () => {
+                console.log(`WebSocket 已连接: ${this._url}`);
                 resolve(true);
-                if(this._connect_await_promise.length) {
-                    while (true) {
-                        const connect_await = this._connect_await_promise.pop();
-                        if (connect_await) {
-                            connect_await(true);
-                        } else {
-                            break;
-                        }
+            });
+            const hand_data = (event_data: any) => {
+                const data = WsData.decode(event_data);
+                data.client_wss = this._socket
+                if (data.code === RCode.Fail) {
+                    NotyFail(data.message);
+                }
+                if (this._msgResolveMap.has(data.random_id)) {
+                    clearTimeout(this._msgResolveTimeoutMap.get(data.random_id));
+                    this._msgResolveTimeoutMap.delete(data.random_id);
+                    this._msgResolveMap.get(data.random_id)(data);
+                    this._msgResolveMap.delete(data.random_id);
+                }
+
+                this.emit_message('message', data);
+                this.emit_message(`message_${data.cmdType}`, data);
+            }
+            this._socket.addEventListener('message', (event) => {
+                try {
+                    const event_data = event.data;
+                    if (event_data instanceof ArrayBuffer) {
+                        // 处理 ArrayBuffer 数据
+                       hand_data(new Uint8Array(event_data))
+                    } else if (event_data instanceof Blob) {
+                        // 处理 Blob 数据
+                        // 例如，将 Blob 转换为 ArrayBuffer
+                        const reader = new FileReader();
+                        reader.onload = async function() {
+                            await hand_data(new Uint8Array(reader.result as ArrayBuffer ))
+                        };
+                        reader.readAsArrayBuffer(event_data);
+                    } else {
+                        hand_data(event_data)
                     }
+                } catch (err: any) {
+                    console.error('WS 消息错误', err?.message ?? err);
                 }
-            }
-            let dataList = [];
-            let processing = false;
-            const handleData = async (rowData)=>{
-                const data = WsData.decode(rowData);
-                data.wss = this._socket;
-                this.handMsg(data.cmdType,data);
-                handle();
-            }
-            const handle = ()=>{
-                if (dataList.length === 0) {
-                    processing = false;
-                    return;
-                }
-                processing = true;
-                const data = dataList.shift();
-                if (data instanceof ArrayBuffer) {
-                    // 处理 ArrayBuffer 数据
-                    handleData(new Uint8Array(data))
-                } else if (data instanceof Blob) {
-                    // 处理 Blob 数据
-                    // 例如，将 Blob 转换为 ArrayBuffer
-                    const reader = new FileReader();
-                    reader.onload = async function() {
-                        handleData(new Uint8Array(reader.result as ArrayBuffer ));
-                    };
-                    reader.readAsArrayBuffer(data);
-                } else {
-                    // 处理其他类型的数据，例如字符串
-                    handleData(data)
-                }
-            }
-            const message = async (event:MessageEvent)=>{
-                dataList.push(event.data);
-                if (!processing) {
-                    handle();
-                }
-            }
-            if (!this.isAilive()) {
-                const name = this.name;
-                // 创建 WebSocket 连接
-                const socket = new WebSocket(`${protocol}//${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`);
-                // 监听连接成功事件
-                socket.addEventListener('open', open);
+            });
 
-                // 监听接收消息事件
-                socket.addEventListener('message', message);
+            this._socket.addEventListener('close', (event) => {
+                console.log(`WS 已断开: ${this._url}`, event.code, event.reason);
+                this._socket = null;
+                this.emit_message('close');
+            });
 
-                // 监听连接关闭事件
-                socket.addEventListener('close', async function (event) {
-                    console.info('Disconnected from WebSocket server',name);
-                    await unConnect()
-                });
-
-                // 监听连接错误事件
-                socket.addEventListener('error', function (event) {
-                    console.error('WebSocket error:', event);
-                    unConnect();
-                });
-                this._socket = socket;
-            } else {
-                resolve(true);
-            }
-        }
-        return new Promise<boolean>(handle);
-
+            this._socket.addEventListener('error', (event) => {
+                console.error('WS 错误', event);
+            });
+        });
     }
 
-    public async sendData(cmdType: CmdType,context: any,set_random_id?:boolean) {
+
+    public async sendData(cmdType: CmdType, context: any, set_random_id?: boolean) {
         const wsData = new WsData(cmdType);
         wsData.context = context;
-        if(set_random_id) {
+        if (set_random_id) {
             wsData.random_id = generateRandomHash(9);
         }
         return this.send(wsData);
     };
 
 
-    public async send(wsData:WsData<any>):Promise<WsData<any>> {
-        if (this._promise) {
-            await this._promise;
-            this._promise = null;
+    public async send<T = any>(message: WsData<any>): Promise<WsData<T>> {
+        if (!this._socket) {
+            await this.connect();
         }
-        // console.log(wsData,this.name)
-        await this.connect();
-        const data = wsData.encode();
-        return new Promise((resolve,reject)=>{
-            const key = wsData.random_id||wsData.cmdType;
-            const timeout = setTimeout(()=>{
-                resolve(null);
-                console.info('ws超时',key)
-            },1000 * 6);
-            this._msgResolveMap.set(key,resolve);
-            this._msgResolveTimeoutMap.set(key,timeout);
-            // console.log(wsData.random_id||wsData.cmdType)
-            // console.log(data)
-            if (Array.isArray(data)) {
-                for (let i = 0; i < data.length; i++) {
-                    this._socket!.send(data[i]);
-                }
-            } else {
-                this._socket!.send(data);
+        if (this._socket.readyState !== WebSocket.OPEN) {
+            await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('WS 连接超时')), 5000);
+                const handleOpen = () => {
+                    clearTimeout(timeout);
+                    this._socket!.removeEventListener('open', handleOpen);
+                    resolve();
+                };
+                this._socket!.addEventListener('open', handleOpen);
+            });
+        }
+        return new Promise<any>((resolve, reject) => {
+            try {
+                message.random_id = generateRandomHash(9)
+                const key = message.random_id;
+                const timeout = setTimeout(() => {
+                    reject(false);
+                    console.info('ws超时', message.cmdType)
+                    this._msgResolveMap.delete(key);
+                }, 1000 * 6);
+                this._msgResolveMap.set(key, resolve);
+                this._msgResolveTimeoutMap.set(key, timeout);
+                this._socket.send(message.encode());
+            } catch (err) {
+                reject(err);
             }
         })
     }
-    // 可以作为锁，控制两个路由之前的跳转处理函数的先后顺序
-    public setPromise(fun:(resolve)=>void) {
-        this._promise = new Promise(async (resolve)=>{
-            await fun(resolve);
-        })
-    }
 
-    public isAilive() {
-        if (this._status === connect_status.connected && !!this._socket && this._socket.readyState===WebSocket.OPEN) {
-            return true;
-        }
-        return false;
-    }
 
-    public subscribeUnconnect(handle:()=>void) {
-        this._subscribeUnconnect = handle;
-    }
-    public unSubscribeUnconnect() {
-        this._subscribeUnconnect = null;
+    public subscribeUnconnect(handle: () => void) {
+        this.on_message('close', handle)
     }
 
     // 没有必要手动关闭 刷新页面就关闭了
-    public async unConnect() {
-        console.log('关闭客户端')
-        if (this.isAilive()) {
-            console.info('主动关闭客户端',this.name)
-            this._self_close = true;
-            this._socket.close();
-        }
-        this._status = connect_status.not;
-        this._msgHandlerMap.clear();
+    /** 手动关闭 WS，不触发自动重连 */
+    public async close() {
+        if (!this._socket) return;
+        this._socket.close();
+        this._socket = null;
+        // this.stop_heartbeat()
     }
 
     // 多次add相同的 key 只会add一次
-    public async  addMsg<T>(cmdType: CmdType,handler:(wsData:WsData<T>)=>void) {
-        this._msgHandlerMap.set(cmdType,handler)
+    public async addMsg<T>(cmdType: CmdType, handler: (wsData: WsData<T>) => void) {
+        // this._msgHandlerMap.set(cmdType,handler)
+        this.on_message(`message_${cmdType}`, handler)
     }
 
     public removeMsg<T>(cmdType: CmdType) {
-        this._msgHandlerMap.delete(cmdType)
+        // this._msgHandlerMap.delete(cmdType)
+        this._msg_event.off_all(`message_${cmdType}`);
     }
 
-    public static getOtherWebSocket(code:CmdType) {
-        return new WebSocket(`${protocol}//${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
+    public on_message<K extends keyof WsClientEvents>(message: K, listener: WsClientEvents[K]) {
+        this._msg_event.on(message, listener)
     }
 
-    public static getOtherWebSocketUrl(code:CmdType,query:{[key: string]: string}) {
-        let url  = `${protocol}//${window.location.host+window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
+    public on_once_message<K extends keyof WsClientEvents>(message: K, listener: WsClientEvents[K]) {
+        this._msg_event.once(message, listener)
+    }
+
+    public off_message<K extends keyof WsClientEvents>(message: K, listener: WsClientEvents[K]) {
+        this._msg_event.off(message, listener)
+    }
+
+    private emit_message<K extends keyof WsClientEvents>(
+        message: K,
+        ...args: Parameters<WsClientEvents[K]>
+    ) {
+        // 举例：调用 EventEmitter
+        this._msg_event.emit(message, ...args);
+    }
+
+    public static getOtherWebSocket(code: CmdType) {
+        return new WebSocket(`${protocol}//${window.location.host + window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`);
+    }
+
+    public static getOtherWebSocketUrl(code: CmdType, query: { [key: string]: string }) {
+        let url = `${protocol}//${window.location.host + window.location.pathname}?token=${localStorage.getItem("token")}&type=${WsConnectType.other}&code=${code}`;
         for (const key of Object.keys(query)) {
             url += `&${key}=${encodeURIComponent(query[key])}`;
         }

@@ -120,14 +120,9 @@ export function Docker(props) {
         filter = filterKey;
     }, [filterKey]);
     const closeGet = () => {
-        if (ws.isAilive()) {
-            ws.setPromise(async (resolve) => {
-                const data2 = new WsData(shellShow.type === "logs" ? CmdType.docker_shell_logs_cancel : CmdType.docker_shell_exec_cancel);
-                data2.context = ""
-                await ws.send(data2);
-                resolve();
-            })
-        }
+        const data2 = new WsData(shellShow.type === "logs" ? CmdType.docker_shell_logs_cancel : CmdType.docker_shell_exec_cancel);
+        data2.context = ""
+        ws.send(data2);
     }
     const logs = () => {
         if (shellShow.show) {
