@@ -17,7 +17,7 @@ import {
     ai_docs_load_info,
     ai_docs_setting_param
 } from "../../../common/req/setting.req";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
 import {formatDuration, formatFileSize} from "../../../common/ValueUtil";
@@ -153,7 +153,7 @@ export class Ai_agentService {
         if (!this.sys_ai_is_open) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
-        console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
+        // console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
     async load_one_file(token: string, param_path: string) {

@@ -27,7 +27,7 @@ export function CustomerApiRouter() {
     const [rows, setRows] = useState([]);
     const getItems = async () => {
         const result = await settingHttp.get("api/customer_router");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             setRows(result.data);
         }
     }
@@ -36,7 +36,7 @@ export function CustomerApiRouter() {
     }, []);
     const save = async () => {
         const result = await settingHttp.post("api/customer_router/save", rows);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             new Noty({
                 type: 'success',
                 text: '保存成功',

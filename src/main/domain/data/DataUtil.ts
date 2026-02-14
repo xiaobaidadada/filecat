@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import fse from 'fs-extra'
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import {
     data_common_key,
     data_dir_tem_name,

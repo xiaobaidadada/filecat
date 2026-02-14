@@ -80,7 +80,7 @@ export function DiskMount() {
 
     const get_blk = async () => {
         const rsq2 = await sysHttp.get("disk/blk");
-        if (rsq2.code === RCode.Sucess) {
+        if (rsq2.code === RCode.Success) {
             set_list(rsq2.data)
         }
         return rsq2.code
@@ -88,7 +88,7 @@ export function DiskMount() {
 
     const get_lvm = async () => {
         const rsq2 = await sysHttp.get("disk/lvm");
-        if (rsq2.code === RCode.Sucess) {
+        if (rsq2.code === RCode.Success) {
             set_lvm_list(rsq2.data)
         }
     }
@@ -171,7 +171,7 @@ export function DiskMount() {
         <ActionButton key={1} icon={"update"} title={t("更新挂载")}
                       onClick={async () => {
                           const rsq2 = await sysHttp.post("cmd/exe", {type: SysCmd.mount});
-                          if (rsq2.code === RCode.Sucess) {
+                          if (rsq2.code === RCode.Success) {
                               NotySucess("挂载文件已生效")
                           }
                       }}/>
@@ -208,7 +208,7 @@ export function DiskMount() {
                                     });
                                 }}/>}
                             <ActionButton icon={"update"} title={t("刷新")} onClick={async () => {
-                                if (await get_blk() === RCode.Sucess) {
+                                if (await get_blk() === RCode.Success) {
                                     NotySucess("刷新成功")
                                 }
                             }}/>

@@ -1,7 +1,7 @@
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import {have_empty_char, removeTrailingPath} from "../../../common/StringUtil";
 import {hash_string} from "./user.hash";
 import path from "path";

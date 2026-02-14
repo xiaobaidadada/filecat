@@ -29,7 +29,7 @@ export function TengXun(props: any) {
     useEffect( () => {
         (async ()=>{
             const rsp = await ddnsHttp.get("ips/tx");
-            if (rsp.code !== RCode.Sucess) {
+            if (rsp.code !== RCode.Success) {
                 return;
             }
             const data = rsp.data as DdnsConnection;

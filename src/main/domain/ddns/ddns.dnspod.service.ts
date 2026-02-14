@@ -1,4 +1,4 @@
-import {HttpRequest} from "../../../common/http";
+import {HttpRequest} from "../../../common/node/http";
 import { DataUtil} from "../data/DataUtil";
 import {DdnsConnection, DdnsIPPojo, DnsPod} from "../../../common/req/ddns.pojo";
 import {getMapByList} from "../../../common/ListUtil";

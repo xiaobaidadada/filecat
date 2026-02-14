@@ -1,7 +1,7 @@
 import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 const { exec } = require('child_process');
 const util = require('util');
 const exec_async = util.promisify(exec);

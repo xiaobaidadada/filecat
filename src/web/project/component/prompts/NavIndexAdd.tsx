@@ -32,7 +32,7 @@ export function NavIndexAdd(props) {
             }).show();
         }
         const result = await navHttp.post("add",{name,url});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             cancel();
             // 需要当前页面监听    const location = useLocation();
             navigate(getRouterPath());

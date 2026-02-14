@@ -66,7 +66,7 @@ export default function Studio(props) {
         const p = getRouterAfter('file', studio.folder_path);
         set_pre_path(p);
         const rsp = await fileHttp.post('studio/get/item', {path: p});
-        if (rsp.code === RCode.Sucess) {
+        if (rsp.code === RCode.Success) {
             const folder_list = [];
             const file_list = [];
             for (const item of rsp.data.list) {
@@ -123,7 +123,7 @@ export default function Studio(props) {
     const click = async (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => {
         if (pojo.type === "folder") {
             const rsp = await fileHttp.post('studio/get/item', {path: `${pre_path}`});
-            if (rsp.code === RCode.Sucess) {
+            if (rsp.code === RCode.Success) {
                 const folder_list = [];
                 const file_list = [];
                 for (const item of rsp.data.list) {

@@ -141,7 +141,7 @@ export class WsData<T> {
         this.cmdType = cmdType;
         this.context = context;
         this.bin_context = bin_context;
-        this.code = RCode.Sucess; // 默认成功
+        this.code = RCode.Success; // 默认成功
         this.random_id = random_id;
     }
 

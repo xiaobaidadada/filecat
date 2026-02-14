@@ -174,7 +174,7 @@ export function Docker(props) {
     // 加载镜像
     const  load_images = async ()=> {
         const rsq = await sysHttp.get("docker/images");
-        if (rsq.code === RCode.Sucess) {
+        if (rsq.code === RCode.Success) {
             const data :any[] = rsq.data ??[];
             const list:any[][] = [];
             for (let i=0; i<data.length; i++) {
@@ -195,10 +195,10 @@ export function Docker(props) {
             handle: async () => {
                 const keys = Object.keys(images_selected);
                 const checkRsq = await sysHttp.post("docker/check/delete",{ids:keys});
-                if (checkRsq.code === RCode.Sucess ) {
+                if (checkRsq.code === RCode.Success ) {
                     if (checkRsq.data.length === 0) {
                         const rsq = await sysHttp.post("docker/delete",{ids:keys});
-                        if (rsq.code === RCode.Sucess) {
+                        if (rsq.code === RCode.Success) {
                             NotySucess("删除完成");
                             load_images();
                             set_show_confirm({open:false,handle:null});

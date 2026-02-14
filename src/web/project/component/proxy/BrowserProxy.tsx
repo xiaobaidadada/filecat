@@ -30,7 +30,7 @@ export function BrowserProxy(props) {
         const req = new NetPojo();
         req.targetProxyUrl = typeof showUrl === "string" ?showUrl: gourl;
         const result = await netHttp.post("close",req)
-        if (result.code !== RCode.Sucess) {
+        if (result.code !== RCode.Success) {
             return;
         }
         setGourl("")
@@ -50,7 +50,7 @@ export function BrowserProxy(props) {
         }
         req.sysProxyPort = sysPort;
         const rsp = await netHttp.post("start", req);
-        if (rsp.code !== RCode.Sucess) {
+        if (rsp.code !== RCode.Success) {
             return;
         }
         const host = `${window.location.protocol}//${window.location.hostname}:${rsp.data}`;
@@ -64,14 +64,14 @@ export function BrowserProxy(props) {
     }, [])
     const getItems = async ()=>{
         const result = await netHttp.get("tag");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const saveItems = async (items)=>{
         const rsq = await netHttp.post("tag/save",items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             new Noty({
                 type: 'error',
                 text: '网络错误',

@@ -29,7 +29,7 @@ export function DiskCheck(props: DiskDevicePojo) {
 
     const init = async () => {
         const rsq2 = await sysHttp.post("sys/disk/info",{name:props.name});
-        if (rsq2.code === RCode.Sucess) {
+        if (rsq2.code === RCode.Success) {
             const list:any[][] = [];
 
             for (const v of rsq2.data.ata_smart_attributes ??[]) {

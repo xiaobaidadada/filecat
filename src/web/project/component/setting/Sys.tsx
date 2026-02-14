@@ -52,7 +52,7 @@ export function  Sys() {
         user.password = password;
         user.user_id = userInfo.user_data.id;
         const result = await userHttp.post("updatePassword",user);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("修改成功")
         }
     }
@@ -64,14 +64,14 @@ export function  Sys() {
             }
         }
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.cyc,value:recycle_dir,open:recycle_open});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("修改成功")
         }
     }
     useEffect(() => {
         const getOpen = async ()=>{
             const all_open_result = await settingHttp.get("sys_option/status");
-            if(all_open_result.code === RCode.Sucess) {
+            if(all_open_result.code === RCode.Success) {
                 setAuthopen(all_open_result.data.self_auth_open);
                 set_shell_cmd_open(all_open_result.data.shell_cmd_check_open);
                 set_recycle_open(all_open_result.data.recycle_open);
@@ -86,7 +86,7 @@ export function  Sys() {
             // set_shell_cmd_open(result2.data);
 
             const result1 = await settingHttp.get("token");
-            if (result1.code === RCode.Sucess) {
+            if (result1.code === RCode.Success) {
                 const data = result1.data as TokenSettingReq;
                 if (!data) {
                     return;
@@ -144,14 +144,14 @@ export function  Sys() {
     }
     const authOpenSave = async () =>{
         const result = await settingHttp.post("self_auth_open/save", {open:authopen});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("修改成功")
         }
     }
 
     const auth_shell_open_Save = async () =>{
         const result = await settingHttp.post("shell_cmd_check_open/save", {open:shell_cmd_open});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("修改成功")
         }
     }
@@ -165,7 +165,7 @@ export function  Sys() {
         }
         data.length = parseInt(tokenSeconds);
         const result1 = await settingHttp.post("token/save",data);
-        if (result1.code === RCode.Sucess) {
+        if (result1.code === RCode.Success) {
             NotySucess("保存成功")
         }
     }
@@ -177,7 +177,7 @@ export function  Sys() {
 
     const tokenClearAll = async () => {
         const result1 = await settingHttp.get("token/clear");
-        if (result1.code === RCode.Sucess) {
+        if (result1.code === RCode.Success) {
             NotySucess("清理完成，重新登录")
         }
     }
@@ -188,7 +188,7 @@ export function  Sys() {
                 language,
                 theme
             }});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("修改成功")
         } else {
             return;

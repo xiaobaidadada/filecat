@@ -59,7 +59,7 @@ export function RemoteLinux(props) {
         req.username = item?item.username:username;
         req.private_path = item?item.private_path:private_path;
         const res = await sshHttp.post("start", req);
-        if (res && res.code === RCode.Sucess) {
+        if (res && res.code === RCode.Success) {
             req.dir = item?item.dir:dir;
             navigate(path_join('/proxy/remoteShell', req.dir))
             setShellNowDir([req.dir]);
@@ -69,14 +69,14 @@ export function RemoteLinux(props) {
     }
     const getItems = async ()=>{
         const result = await sshHttp.get("tag");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const saveItems = async (items)=>{
         const rsq = await sshHttp.post("tag/save",items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             new Noty({
                 type: 'error',
                 text: '网络错误',

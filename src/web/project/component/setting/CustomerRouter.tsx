@@ -28,7 +28,7 @@ export function CustomerRouter() {
 
     const save = async (req: [[]]) => {
         const result = await settingHttp.post(Http_controller_router.setting_customer_router_save, req);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             new Noty({
                 type: 'success',
                 text: '保存成功',
@@ -39,7 +39,7 @@ export function CustomerRouter() {
     }
     const getItems = async () => {
         const result = await settingHttp.get(Http_controller_router.setting_customer_router);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             if(router_jump?.page_self_router_api_data) {
                 for (const it of result.data) {
                     if(it[1] === router_jump?.page_self_router_api_data[1]) {
@@ -112,13 +112,13 @@ export function CustomerRouter() {
                 <TableListRender title={t("页面资源路由")} headers={headers} getItems={getItems} save={save} info_click={soft_ware_info_click}/>
                 <TableListRender title={t("workflow触发路由")} headers={headers_workflow} getItems={async ()=>{
                     const result = await settingHttp.get(Http_controller_router.setting_customer_workflow_router);
-                    if (result.code === RCode.Sucess) {
+                    if (result.code === RCode.Success) {
                         return result.data;
                     }
                     return [];
                 }} save={async (req: [[]]) => {
                     const result = await settingHttp.post(Http_controller_router.setting_customer_workflow_router_save, req);
-                    if (result.code === RCode.Sucess) {
+                    if (result.code === RCode.Success) {
                         new Noty({
                             type: 'success',
                             text: '保存成功',

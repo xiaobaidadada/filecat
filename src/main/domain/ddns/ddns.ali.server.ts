@@ -1,7 +1,7 @@
 import {Ali, DdnsConnection, DnsPod, Tengxun} from "../../../common/req/ddns.pojo";
 import {DdnsPre} from "./ddns.pre";
 import {IResult} from "tldts-core";
-import {HttpRequest} from "../../../common/http";
+import {HttpRequest} from "../../../common/node/http";
 import {data_common_key} from "../data/data_type";
 const crypto = require('crypto');
 

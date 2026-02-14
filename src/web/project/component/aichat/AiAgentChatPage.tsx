@@ -142,7 +142,7 @@ export default function AiAgentChatPage() {
     const init = async ()=>{
         setMessages(getMessagesFromLocal())
         const result = await settingHttp.get("ai_agent_setting/env");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             env_config.current = result.data
         }
     }

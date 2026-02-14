@@ -28,7 +28,7 @@ export function Crypto() {
 
     const generate = async () => {
         const result = await cryptoHttp.post("generate", {type: method, form});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             set_publicKey(result.data.public_key);
             set_privateKey(result.data.private_key);
             home_path = result.data.home_path;
@@ -53,7 +53,7 @@ export function Crypto() {
                     name,
                     context: type === "pub" ? publicKey : privateKey,
                 });
-                if (result.code === RCode.Sucess) {
+                if (result.code === RCode.Success) {
                     NotySucess("完成");
                     setShowPrompt({open:false,handle:null});
                 }

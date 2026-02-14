@@ -45,7 +45,7 @@ export function Role() {
     const getItems = async () => {
         // 文件夹根路径
         const result = await userHttp.get("all_roles");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             setRows(result.data);
         }
 
@@ -118,7 +118,7 @@ export function Role() {
         if(!user_data) return ;
         const r =await userHttp.post("create_role", user_data);
         getItems();
-        if(r.code === RCode.Sucess) {
+        if(r.code === RCode.Success) {
             NotySucess("创建完成");
             getItems();
             set_is_create(false);
@@ -132,7 +132,7 @@ export function Role() {
         if(!user_data) return ;
         user_data.role_id = role_id;
         const r = await userHttp.post("save_role", user_data);
-        if(r.code === RCode.Sucess) {
+        if(r.code === RCode.Success) {
             NotySucess("保存完成");
             getItems();
         }
@@ -146,7 +146,7 @@ export function Role() {
                 const user_data = new UserData();
                 user_data.role_id = role_id;
                 const result = await userHttp.post("delete_role", user_data);
-                if(result.code === RCode.Sucess) {
+                if(result.code === RCode.Success) {
                     NotySucess("删除完成");
                     getItems();
                     setShowPrompt({open:false,handle:null});

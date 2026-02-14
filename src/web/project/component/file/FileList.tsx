@@ -125,7 +125,7 @@ export default function FileList() {
         } else {
             rsp = await fileHttp.get(path);
         }
-        if(rsp.code !== RCode.Sucess)return
+        if(rsp.code !== RCode.Success)return
         // 排序一下
         const data: GetFilePojo = rsp.data;
         file_sort(data, user_base_info.user_data.dir_show_type)

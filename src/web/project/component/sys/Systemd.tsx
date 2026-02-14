@@ -118,7 +118,7 @@ export function Systemd(props) {
     const delete_systemd_sys = async (name)=> {
             setShowPrompt({open:true,handle:async ()=>{
                     const rsq = await sysHttp.post("systemd/sys/delete",{unit_name:name});
-                    if (rsq.code === RCode.Sucess) {
+                    if (rsq.code === RCode.Success) {
                         NotySucess("删除成功");
                         setShowPrompt({open:false,handle:null});
                     }
@@ -129,7 +129,7 @@ export function Systemd(props) {
     const  del = async (name) =>{
         setShowPrompt({open:true,handle:async ()=>{
                 const rsq = await sysHttp.post("systemd/delete",{unit_name:name});
-                if (rsq.code === RCode.Sucess) {
+                if (rsq.code === RCode.Success) {
                     NotySucess("删除成功");
                     setShowPrompt({open:false,handle:null});
                 }
@@ -139,12 +139,12 @@ export function Systemd(props) {
     // 加载系统systemd单元
     const load_systemd = async ()=>{
         const data = await sysHttp.get("systemd/inside/all");
-        if (data.code !== RCode.Sucess) {
+        if (data.code !== RCode.Success) {
             return;
         }
         set_inside_systemd(new Set(data.data));
         const rsq = await sysHttp.get("systemd/allget");
-        if (rsq.code === RCode.Sucess) {
+        if (rsq.code === RCode.Success) {
             const data :any[] = rsq.data;
             const list:any[][] = [];
             for (const value of data??[]) {
@@ -175,7 +175,7 @@ export function Systemd(props) {
     // 添加到管理
     const add_systemd = async (name)=>{
         const rsq = await sysHttp.post("systemd/add",{unit_name:name});
-        if (rsq.code === RCode.Sucess) {
+        if (rsq.code === RCode.Success) {
             set_inside_systemd(new Set(rsq.data));
             NotySucess("添加成功");
         }
@@ -183,7 +183,7 @@ export function Systemd(props) {
     // 获取sytemd文件内容
     const get_sytemd_context = async (name)=>{
         const rsq = await sysHttp.post("systemd/get/context",{unit_name:name});
-        if (rsq.code === RCode.Sucess) {
+        if (rsq.code === RCode.Success) {
             setEditorSetting({
                 model:"text",
                 open: true,
@@ -202,7 +202,7 @@ export function Systemd(props) {
                     // 取决于是否有修改这个文件的权限了
                     const rsq1 = await fileHttp.post(`save/${rsq.data.path}`, data)
                     // const rsq1 = await fileHttp.post("common/save", data)
-                    if (rsq1.code === RCode.Sucess) {
+                    if (rsq1.code === RCode.Success) {
                         editor_data.set_value_temp('')
                         setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }

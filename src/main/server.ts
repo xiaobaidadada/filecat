@@ -16,7 +16,7 @@ import {DdnsController} from "./domain/ddns/ddns.controller";
 import {NetController} from "./domain/net/net.controller";
 // import proxy from 'koa-proxies';
 import {NavindexController} from "./domain/navindex/navindex.controller";
-import {Env} from "../common/Env";
+import {Env} from "../common/node/Env";
 import {SettingController} from "./domain/setting/setting.controller";
 import {SSHController} from "./domain/ssh/ssh.controller";
 import {RdpController} from "./domain/rdp/rdp.controller";
@@ -228,9 +228,8 @@ async function start() {
             }
         } catch (error) {console.error(error?.message);}
         // 打印
-        console.log(`服务器正在运行 version: ${version}`);
-        console.log(`node工作目录: ${process.cwd()}`)
-        console.log(`filecat工作目录: ${Env.work_dir}`)
+        console.log(`服务器正在运行 version: ${version},node version:${process.version}`);
+        console.log(`node工作目录: ${process.cwd()}, filecat工作目录: ${Env.work_dir}`)
         urls.forEach(url => {
             console.log(url);
         });

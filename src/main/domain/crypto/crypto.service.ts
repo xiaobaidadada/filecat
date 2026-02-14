@@ -1,7 +1,7 @@
 import path from "path";
 import fs, {Stats} from "fs";
 import fse from 'fs-extra'
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import {execSync} from "child_process";
 import {getSys} from "../shell/shell.service";
 import {SysEnum} from "../../../common/req/user.req";

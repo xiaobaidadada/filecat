@@ -11,8 +11,8 @@ import {settingService} from "../setting/setting.service";
 import {Request} from "express";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Http_controller_router} from "../../../common/req/http_controller_router";
-import {Env} from "../../../common/Env";
-import {HttpRequest} from "../../../common/http";
+import {Env} from "../../../common/node/Env";
+import {HttpRequest} from "../../../common/node/http";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 
 interface UserLoginData {

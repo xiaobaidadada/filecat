@@ -49,7 +49,7 @@ export default function Share() {
         const r = await fileHttp.post(`share`, {
             id: share_id.current, token: share_token.current,
         })
-        if (r.code === RCode.Sucess) {
+        if (r.code === RCode.Success) {
             const p: ShareData = {
                 is_dir: r.data.is_dir
             }

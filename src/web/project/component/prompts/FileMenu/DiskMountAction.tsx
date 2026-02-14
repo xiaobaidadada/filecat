@@ -53,7 +53,7 @@ export function DiskMountAction(props) {
         const rsq2 = await sysHttp.post("disk/mount",{
             fsType:showPrompt.data.extra_data.fstype , dir_path: tarDir, dev_path: showPrompt.data.extra_data.path
         });
-        if (rsq2.code === RCode.Sucess) {
+        if (rsq2.code === RCode.Success) {
             if(showPrompt.data.call) {
                 showPrompt.data.call();
             }

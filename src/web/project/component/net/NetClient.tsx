@@ -31,7 +31,7 @@ export function NetClient(props) {
     useEffect(() => {
         const init = async ()=>{
             const result = await netHttp.get("vir/client/get");
-            if (result.code !== RCode.Sucess) {
+            if (result.code !== RCode.Success) {
                 return;
             }
             const data = result.data as VirClientPojo;
@@ -78,7 +78,7 @@ export function NetClient(props) {
         pojo.client_name = client_name;
         // pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         const result = await netHttp.post("vir/client/save", pojo);
-        if (result.code !== RCode.Sucess) {
+        if (result.code !== RCode.Success) {
             NotyFail("网络错误")
             return;
         }

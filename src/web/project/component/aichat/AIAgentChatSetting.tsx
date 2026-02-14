@@ -72,7 +72,7 @@ export default function AIAgentChatSetting() {
     const getItems = async () => {
         // 文件夹根路径
         const result = await settingHttp.get("ai_agent_setting");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             setRows(result.data.models);
         }
 
@@ -85,7 +85,7 @@ export default function AIAgentChatSetting() {
         if(info?.context)
             set_load_info(info.context)
         const docs_result = await settingHttp.get("ai_docs_setting");
-        if (docs_result.code === RCode.Sucess) {
+        if (docs_result.code === RCode.Success) {
             // console.log()
             docs_param.current = docs_result.data.param;
             if(docs_result.data.list?.length) {
@@ -133,7 +133,7 @@ export default function AIAgentChatSetting() {
             rows[i].index = i;
         }
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
         }
     }
@@ -152,7 +152,7 @@ export default function AIAgentChatSetting() {
         }
         docs_update_tag.current = false;
         const result = await settingHttp.post("ai_docs_setting_save", body);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
         }
     }

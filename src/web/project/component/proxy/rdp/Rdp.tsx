@@ -105,14 +105,14 @@ export function Rdp() {
     }
     const getItems = async () => {
         const result = await rdpHttp.get("tag");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const saveItems = async (items) => {
         const rsq = await rdpHttp.post("tag/save", items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             NotyFail("网络错误")
         }
     }

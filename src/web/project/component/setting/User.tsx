@@ -57,12 +57,12 @@ export function User() {
     const getItems = async () => {
         // 文件夹根路径
         const result = await userHttp.get("all_users");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             setRows(result.data);
         }
 
         const result2 = await userHttp.get("all_roles");
-        if (result2.code === RCode.Sucess) {
+        if (result2.code === RCode.Success) {
             set_roles(result2.data);
             role_map.clear();
             for (const role of result2.data) {
@@ -225,7 +225,7 @@ export function User() {
         const user_data = get_user_value();
         const r =await userHttp.post("create_user", user_data);
         getItems();
-        if(r.code === RCode.Sucess) {
+        if(r.code === RCode.Success) {
             NotySucess("创建完成");
             getItems();
             set_is_create(false);
@@ -241,7 +241,7 @@ export function User() {
         }
         user_data.id = user_id;
         const r = await userHttp.post("save_user", user_data);
-        if(r.code === RCode.Sucess) {
+        if(r.code === RCode.Success) {
             NotySucess("保存完成");
             getItems();
         }
@@ -255,7 +255,7 @@ export function User() {
                 const user_data = new UserData();
                 user_data.username = username;
                 const result = await userHttp.post("delete_user", user_data);
-                if(result.code === RCode.Sucess) {
+                if(result.code === RCode.Success) {
                     NotySucess("删除完成");
                     getItems();
                     setShowPrompt({open:false,handle:null});

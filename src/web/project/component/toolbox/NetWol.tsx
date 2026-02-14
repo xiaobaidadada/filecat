@@ -28,7 +28,7 @@ export function NetWol(props) {
             return;
         }
         const rsp = await netHttp.post("wol/exec", {mac:mac_v});
-        if (rsp.code !== RCode.Sucess) {
+        if (rsp.code !== RCode.Success) {
             return;
         }
         new Noty({
@@ -41,14 +41,14 @@ export function NetWol(props) {
 
     const getItems = async () => {
         const result = await netHttp.get("wol/tag");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const saveItems = async (items) => {
         const rsq = await netHttp.post("wol/tag/save", items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             new Noty({
                 type: 'error',
                 text: '网络错误',

@@ -1,5 +1,5 @@
 export enum RCode {
-    Sucess = 0,
+    Success = 0,
     Fail = 1,
     AuthFail = 2,
     DdnsAuthFail,
@@ -8,3 +8,4 @@ export enum RCode {
     PROTECT_FILE,
     need_token_share
 }
+

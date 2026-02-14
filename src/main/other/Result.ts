@@ -8,7 +8,7 @@ export type Result<T> = {
     data?:T
 }
 
-export function Sucess<T>(data:T,code:RCode = RCode.Sucess):Result<T> {
+export function Sucess<T>(data:T,code:RCode = RCode.Success):Result<T> {
     return {
         code:code,
         data:data

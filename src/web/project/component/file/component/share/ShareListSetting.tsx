@@ -31,7 +31,7 @@ export default function ShareListSetting() {
     }
     const get_items = async () => {
         const result = await settingHttp.get("get_share_file_list");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             const  p:file_share_item[] = result.data ?? []
             const now = Date.now();
             for (const i of p) {
@@ -54,7 +54,7 @@ export default function ShareListSetting() {
     },[])
     const save = async ()=>{
         const result = await settingHttp.post("set_share_file_list", rows);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             get_items()
         }

@@ -3,7 +3,7 @@ import {TcpProxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../.
 import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
 import {UdpUtil} from "../util/udp.util";
-import {findAvailablePort} from "../../../../common/findPort";
+import {findAvailablePort} from "../../../../common/node/findPort";
 import {TcpUtil} from "../util/tcp.util";
 import {Wss} from "../../../../common/frame/ws.server";
 import {get_tun_require, get_wintun_dll_path} from "../../bin/bin";

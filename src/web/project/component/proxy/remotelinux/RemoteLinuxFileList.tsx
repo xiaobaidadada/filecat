@@ -63,7 +63,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         // req.domain = props.data.domain;
         // req.port = props.data.port;
         const rsp = await sshHttp.post("get/dir", req);
-        if (rsp.code !== RCode.Sucess) {
+        if (rsp.code !== RCode.Success) {
             NotyFail("连接失败")
             return;
         }

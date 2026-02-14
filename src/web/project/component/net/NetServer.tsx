@@ -49,7 +49,7 @@ export function NetServer(props) {
         getItems();
         const init = async () => {
             const result = await netHttp.get("vir/server/get");
-            if (result.code !== RCode.Sucess) {
+            if (result.code !== RCode.Success) {
                 return;
             }
             const data = result.data as VirServerPojo;
@@ -77,7 +77,7 @@ export function NetServer(props) {
         // if(udp_port)
         // pojo.udp_port = parseInt(udp_port)
         const result = await netHttp.post("vir/server/save", pojo);
-        if (result.code !== RCode.Sucess) {
+        if (result.code !== RCode.Success) {
             NotyFail("网络错误")
             return;
         }

@@ -72,14 +72,14 @@ export function Sys(props) {
     const getBase = async () => {
         const rsq1 = await sysHttp.get("base");
 
-        if (rsq1.code === RCode.Sucess) {
+        if (rsq1.code === RCode.Success) {
             const data: staticSysPojo = rsq1.data;
             setSys(data)
         }
     }
     const getDisk = async () => {
         const rsq2 = await sysHttp.get("disk");
-        if (rsq2.code === RCode.Sucess) {
+        if (rsq2.code === RCode.Success) {
             const data: DiskDevicePojo[] = rsq2.data;
             const list: any[][] = [];
             let have_smartmontools = true;
@@ -102,7 +102,7 @@ export function Sys(props) {
     }
     const getFileDisk = async () => {
         const rsq3 = await sysHttp.get("filedisk");
-        if (rsq3.code === RCode.Sucess) {
+        if (rsq3.code === RCode.Success) {
             const data: DiskFilePojo[] = rsq3.data;
             const list: any[][] = [];
             for (const disk of data ?? []) {

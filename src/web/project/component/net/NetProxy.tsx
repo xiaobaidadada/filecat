@@ -42,7 +42,7 @@ export function NetProxy(props) {
 
     const win_proxy_init = async () => {
         const proxy = await netHttp.post("http/proxy/get/win");
-        if (proxy.code === RCode.Sucess) {
+        if (proxy.code === RCode.Success) {
             const pojo = proxy.data as HttpProxy
             setIp(pojo.ip)
             setPort(pojo.port)
@@ -90,10 +90,10 @@ export function NetProxy(props) {
         }
         // 获取tcp代理
         const [rtcp, httpProxy] = await Promise.all(list);
-        if (rtcp.code === RCode.Sucess) {
+        if (rtcp.code === RCode.Success) {
             set_tcp_proxy_list(rtcp.data)
         }
-        if (httpProxy.code === RCode.Sucess) {
+        if (httpProxy.code === RCode.Success) {
             // console.log(httpProxy.data)
             setHttpServer(httpProxy.data)
         }
@@ -111,7 +111,7 @@ export function NetProxy(props) {
         pojo.ip = ip
         pojo.bypass = ignore_ips
         const result = await netHttp.post("http/proxy/set/win", pojo);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             init();
             NotySucess("保存成功")
         }
@@ -120,7 +120,7 @@ export function NetProxy(props) {
     const save_proxy_mac = async (index1) => {
         const pojo = mac_proxies[index1]
         const result = await netHttp.post("http/proxy/set/mac", [pojo]);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             init();
             NotySucess("保存成功")
         }
@@ -132,7 +132,7 @@ export function NetProxy(props) {
             list.push(tcp_proxy_list[i]);
         }
         const result = await netHttp.post("vir/client/tcp_proxy/save", list);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             init()
         }
@@ -140,7 +140,7 @@ export function NetProxy(props) {
 
     const http_proxy_save = async () => {
         const result = await netHttp.post("http/proxy/server/save", httpServer);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             init();
             NotySucess("保存成功")
         }

@@ -22,12 +22,12 @@ export const GlobalProvider = ({ children }) => {
 
     const getItems = async () => {
         const switch_result = await fileHttp.post("base_switch/get");
-        if (switch_result.code === RCode.Sucess) {
+        if (switch_result.code === RCode.Success) {
             setFile_root_path(switch_result.data);
         }
         const result = await settingHttp.get("filesSetting");
         const list = [];
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             for (let i=0; i<result.data.dirs.length; i++) {
                 list.push({
                     r:(<div>{result.data.dirs[i].note}</div>),
@@ -45,7 +45,7 @@ export const GlobalProvider = ({ children }) => {
         if(is_share()) return
         await reloadFileRoot();
         const result = await userHttp.get("userInfo/get");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             const p :UserBaseInfo = result.data;
             if(user_base_info?.user_data?.theme  !== p.user_data.theme)
                 setTheme(p.user_data.theme);

@@ -9,7 +9,7 @@ const EventEmitter = require('events');
 type Client = any
 import {sftp_client, SshSsh2} from "./ssh.ssh2";
 import path from "path";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import fs from "fs";
 import archiver from "archiver";
 import Stream from "node:stream";

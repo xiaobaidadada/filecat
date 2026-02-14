@@ -97,14 +97,14 @@ export default function Rtsp() {
     }
     const getItems = async () => {
         const result = await videoHttp.get("tag");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const saveItems = async (items) => {
         const rsq = await videoHttp.post("tag/save", items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             NotyFail("网络错误")
         }
     }

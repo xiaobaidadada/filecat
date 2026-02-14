@@ -9,7 +9,7 @@ import {
     MacProxy,
     NetPojo
 } from "../../../common/req/net.pojo";
-import {findAvailablePort} from "../../../common/findPort";
+import {findAvailablePort} from "../../../common/node/findPort";
 import {Fail, Sucess} from "../../other/Result";
 import proxy from 'koa-proxies';
 import {Request, Response} from "express";

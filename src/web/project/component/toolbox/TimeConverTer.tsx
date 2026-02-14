@@ -71,7 +71,7 @@ export function TimeConverTer(props) {
     // 服务器时间
     const fetchServerTime = async () => {
         const response = await sysHttp.get("sys_time/get");
-        if(response.code === RCode.Sucess) {
+        if(response.code === RCode.Success) {
             const data = await response.data;
             setServerTime(data.timestamp);
             setTimezone(data.timezone);

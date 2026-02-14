@@ -6,7 +6,7 @@ import path from "path";
 // import {config} from "../../other/config";
 // import * as inspector from "node:inspector";
 import {SystemUtil} from "../sys/sys.utl";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
 import {SysEnum, UserAuth} from "../../../common/req/user.req";

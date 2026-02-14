@@ -1,5 +1,5 @@
 import {DdnsConnection, DdnsIPPojo, ip_source_type} from "../../../common/req/ddns.pojo";
-import {HttpRequest} from "../../../common/http";
+import {HttpRequest} from "../../../common/node/http";
 import {IResult} from "tldts-core";
 import { DataUtil} from "../data/DataUtil";
 import {getMapByList} from "../../../common/ListUtil";

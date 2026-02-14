@@ -1,7 +1,7 @@
 import {getSys} from "../shell/shell.service";
 import path from "path";
 import os from "os";
-import {Env} from "../../../common/Env";
+import {Env} from "../../../common/node/Env";
 
 const fs = require('fs');
 import fse from 'fs-extra'

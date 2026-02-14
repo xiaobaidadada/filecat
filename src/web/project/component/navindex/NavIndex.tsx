@@ -29,14 +29,14 @@ export default function NavIndex() {
     }
     const getItems = async ()=>{
         const result = await navHttp.get();
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             return result.data;
         }
         return [];
     }
     const save = async (items)=>{
         const rsq = await navHttp.post("save",items);
-        if (rsq.code !== RCode.Sucess) {
+        if (rsq.code !== RCode.Success) {
             new Noty({
                 type: 'error',
                 text: '网络错误',

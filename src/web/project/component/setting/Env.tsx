@@ -48,40 +48,40 @@ export function Env() {
     const getItems = async () => {
         // 文件夹根路径
         const result = await settingHttp.get("filesSetting");
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             setRows(result.data.dirs);
             set_quick_cmd_rows(result.data.quick_cmd);
             set_file_quick_cmd_rows(result.data.file_quick_cmd);
         }
         const result1 = await settingHttp.get("outside/software/get");
-        if (result1.code === RCode.Sucess) {
+        if (result1.code === RCode.Success) {
             setRows_outside_software(result1.data);
         }
         // env path
         const result2 = await settingHttp.get("env/path/get");
-        if (result2.code === RCode.Sucess) {
+        if (result2.code === RCode.Success) {
             set_env_path_dir_rows(result2.data);
         }
         // 个人保护目录
         const result3 = await settingHttp.get("protection_dir");
-        if (result3.code === RCode.Sucess) {
+        if (result3.code === RCode.Success) {
             set_protection_dir_rows(result3.data ?? []);
         }
 
         const result4 = await settingHttp.get("pty_cmd");
-        if (result4.code === RCode.Sucess) {
+        if (result4.code === RCode.Success) {
             set_pty_cmd(result4.data);
         }
 
         // 系统保护目录
         const result5 = await settingHttp.get("protection_dir/sys");
-        if (result5.code === RCode.Sucess) {
+        if (result5.code === RCode.Success) {
             set_protection_sys_dir_rows(result5.data ?? []);
         }
 
         // 并发数量限制系统保护目录
         const result6 = await settingHttp.get("dir_upload_max_num");
-        if (result6.code === RCode.Sucess) {
+        if (result6.code === RCode.Success) {
             set_dir_upload_rows(result6.data ?? []);
         }
     }
@@ -91,7 +91,7 @@ export function Env() {
 
     const save_pty_cmd = async ()=>{
         const result = await settingHttp.post("pty_cmd/save", {str:pty_cmd});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             reloadUserInfo();
         }
@@ -103,7 +103,7 @@ export function Env() {
             rows[i].index = i;
         }
         const result = await settingHttp.post("filesSetting/save", {dirs:rows});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             reloadUserInfo();
         }
@@ -118,7 +118,7 @@ export function Env() {
         //     }
         // }
         const result = await settingHttp.post("filesSetting/save", {quick_cmd:quick_cmd_rows});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             // reloadUserInfo();
             initUserInfo();
@@ -126,7 +126,7 @@ export function Env() {
     }
     const file_quick_cmd_save = async () => {
         const result = await settingHttp.post("filesSetting/save", {file_quick_cmd:file_quick_cmd_rows});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             initUserInfo();
         }
@@ -134,14 +134,14 @@ export function Env() {
     // 保护目录保存
     const protection_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/save", protection_dir_rows);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             reloadUserInfo();
         }
     }
     const protection_sys_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/sys/save", protection_sys_dir_rows);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             reloadUserInfo();
         }
@@ -167,7 +167,7 @@ export function Env() {
         }
         sort(dir_upload_rows,v=>v.index);
         const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             reloadUserInfo();
         }
@@ -238,7 +238,7 @@ export function Env() {
     // 外部软件
     const save_outside_software = async () => {
         const result = await settingHttp.post("outside/software/save", rows_outside_software);
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             initUserInfo();
         }
@@ -306,7 +306,7 @@ export function Env() {
 
     const update_env_path = async ()=>{
         const result = await settingHttp.post("env/path/save", {paths:env_path_dir_rows});
-        if (result.code === RCode.Sucess) {
+        if (result.code === RCode.Success) {
             NotySucess("保存成功")
             initUserInfo();
         }

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import {UserLanguage} from "./req/user.req";
+import {UserLanguage} from "../req/user.req";
 
 const {execSync} = require('child_process');
 const help = `
@@ -155,35 +155,58 @@ export class Env {
         return /^-?\d+(\.\d+)?$/.test(value);
     }
 
-    public static parseValue(value) {
-        if (this.isNumeric(value)) {
-            return parseFloat(value);
+    public static parseValue(value: string): any {
+        const trimmed = value.trim();
+
+        // 去掉包裹引号
+        if (
+            (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+            (trimmed.startsWith("'") && trimmed.endsWith("'"))
+        ) {
+            const unquoted = trimmed.slice(1, -1);
+
+            // 处理常见转义
+            return unquoted
+                .replace(/\\n/g, '\n')
+                .replace(/\\r/g, '\r')
+                .replace(/\\t/g, '\t');
         }
 
-        if (value.toLowerCase() === 'true') {
+        // 数字
+        if (!isNaN(Number(trimmed))) {
+            return Number(trimmed);
+        }
+
+        // 布尔
+        if (trimmed.toLowerCase() === 'true') {
             return true;
         }
 
-        if (value.toLowerCase() === 'false') {
+        if (trimmed.toLowerCase() === 'false') {
             return false;
         }
 
-        return value;
+        return trimmed;
     }
 
-    public static load(envData: string,target:any): void {
-        if(!envData) return
+    public static load(envData: string, target: any): void {
+        if (!envData) return;
+
         const envVariables = envData.split(/\r?\n/);
-        for (const line of envVariables) {
-            if (line.trim() === '' || line.trim().startsWith('#')) {
-                continue;
-            }
-            const [key, value] = line.split('=');
-            try {
-                target[key.trim()] = JSON.parse(value.trim());
-            } catch (e) {
-                target[key.trim()] = this.parseValue(value.trim());
-            }
+
+        for (const rawLine of envVariables) {
+            const line = rawLine.trim();
+
+            if (!line || line.startsWith('#')) continue;
+
+            const equalIndex = line.indexOf('=');
+            if (equalIndex === -1) continue;
+
+            const key = line.slice(0, equalIndex).trim();
+            const value = line.slice(equalIndex + 1);
+
+            target[key] = this.parseValue(value);
         }
     }
+
 }

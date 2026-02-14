@@ -269,7 +269,7 @@ export function FileMenu() {
                 const save_item = async () => {
                     // 确定保存
                     const result = await settingHttp.post("add_share_file_list", item);
-                    if (result.code === RCode.Sucess) {
+                    if (result.code === RCode.Success) {
                         NotySucess("添加成功")
                         set_prompt_card({open:false})
                         navigate(`/${routerConfig.share_list_setting_page}`);
@@ -311,7 +311,7 @@ export function FileMenu() {
                         const result = await ai_agentHttp.post("ai_load_one_file", {
                             param_path:get_ab_path()
                         });
-                        if (result.code === RCode.Sucess) {
+                        if (result.code === RCode.Success) {
                             NotySucess("更新到AI知识库成功")
                         }
                     },
@@ -333,7 +333,7 @@ export function FileMenu() {
                         const result = await ai_agentHttp.post("ai_del", {
                             param_path:get_ab_path()
                         });
-                        if (result.code === RCode.Sucess) {
+                        if (result.code === RCode.Success) {
                             NotySucess("ok")
                         }
                     }
