@@ -203,9 +203,16 @@ export class Env {
             if (equalIndex === -1) continue;
 
             const key = line.slice(0, equalIndex).trim();
-            const value = line.slice(equalIndex + 1);
-
-            target[key] = this.parseValue(value);
+            const value = line.slice(equalIndex + 1).trim();
+            if(!value) {
+                target[key] = undefined;
+            } else {
+                try {
+                    target[key] = JSON.parse(value);
+                } catch (e) {
+                    target[key] = this.parseValue(value);
+                }
+            }
         }
     }
 
