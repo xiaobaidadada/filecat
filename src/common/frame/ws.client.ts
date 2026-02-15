@@ -54,6 +54,7 @@ export class WsClient {
             this._socket = new WebSocket(
                 `${protocol}//${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`
             );
+            this._socket.binaryType = "arraybuffer";
 
             this._socket.addEventListener('open', () => {
                 console.log(`WebSocket 已连接: ${this._url}`);
@@ -75,23 +76,19 @@ export class WsClient {
                 this.emit_message('message', data);
                 this.emit_message(`message_${data.cmdType}`, data);
             }
-            this._socket.addEventListener('message', (event) => {
+            this._socket.addEventListener('message', async (event) => {
                 try {
-                    const event_data = event.data;
-                    if (event_data instanceof ArrayBuffer) {
-                        // 处理 ArrayBuffer 数据
-                       hand_data(new Uint8Array(event_data))
-                    } else if (event_data instanceof Blob) {
+                    let event_data = event.data;
+                     if (event_data instanceof Blob) {
                         // 处理 Blob 数据
                         // 例如，将 Blob 转换为 ArrayBuffer
-                        const reader = new FileReader();
-                        reader.onload = async function() {
-                            await hand_data(new Uint8Array(reader.result as ArrayBuffer ))
-                        };
-                        reader.readAsArrayBuffer(event_data);
-                    } else {
-                        hand_data(event_data)
-                    }
+                        event_data = await event_data.arrayBuffer()
+                        event_data = new Uint8Array(event_data)
+                    } else if (event_data instanceof ArrayBuffer) {
+                         // 处理 ArrayBuffer 数据
+                         event_data = new Uint8Array(event_data)
+                     }
+                    hand_data(event_data)
                 } catch (err: any) {
                     console.error('WS 消息错误', err?.message ?? err);
                 }
