@@ -209,9 +209,18 @@
 .file-icons [aria-label$=".draw"] i
 { color: var(--icon-violet) }
 
-.file-icons [aria-label$=".md"] i::before
-{
-    content: url('../img/MdiLanguageMarkdownOutline.svg');
+.file-icons [aria-label$=".md"] i::before {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+
+    mask: url('../img/MdiLanguageMarkdownOutline.svg') no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url('../img/MdiLanguageMarkdownOutline.svg') no-repeat center;
+    -webkit-mask-size: contain;
+
+    background-color: currentColor;
 }
 
 /* Overrides */

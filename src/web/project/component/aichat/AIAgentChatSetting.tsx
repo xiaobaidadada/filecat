@@ -169,7 +169,7 @@ export default function AIAgentChatSetting() {
                 <Dashboard>
                     <Row>
                         <Column widthPer={70}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save()
                             }}/></div>}>
                                 <Table headers={headers} rows={rows.map((item, index) => {
@@ -343,11 +343,11 @@ export default function AIAgentChatSetting() {
                             load_info &&
                             <Column widthPer={50}>
                                 <Card title={t("知识库加载信息")}>
-                                    <TextLine left={t("最近一次加载，加载进度")} right={load_info?.progress}/>
-                                    <TextLine left={`${t("最近一次加载，总文件数量")}`} right={load_info?.num}/>
-                                    <TextLine left={`${t("最近一次加载，总文件字符数量")}`} right={load_info?.char_num}/>
-                                    <TextLine left={`${t("最近一次加载，总文件大小")}`} right={formatFileSize(load_info?.size)}/>
-                                    <TextLine left={`${t("最近一次加载，总耗时")}`} right={formatDuration(load_info?.consume_time_ms_len)}/>
+                                    <TextLine left={t("最近一次加载")+"，"+t("加载进度")} right={load_info?.progress}/>
+                                    <TextLine left={`${t(`最近一次加载`)}，${t(`总文件数量`)}`} right={load_info?.num}/>
+                                    <TextLine left={`${t("最近一次加载")}，${t("总文件字符数量")}`} right={load_info?.char_num}/>
+                                    <TextLine left={`${t("最近一次加载")}，${t("总文件大小")}`} right={formatFileSize(load_info?.size)}/>
+                                    <TextLine left={`${t("最近一次加载")}，${t("总耗时")}`} right={formatDuration(load_info?.consume_time_ms_len)}/>
                                     <TextLine left={`${t("总文件数量")}`} right={load_info?.total_num}/>
                                 </Card>
                             </Column>

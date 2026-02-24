@@ -1,110 +1,81 @@
-Here’s the English translation of your document:
+# ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
----
 
-# ![](./src/web/meta/resources/img/logo-70.png) filecat
+FileCat is a server management tool centered around file management. After configuring the server file path, users can manage server files through a clean and intuitive web interface. It integrates various server management features such as command terminal, Docker management, network proxy, and more, providing a unified server management experience.
 
-- [中文](./doc/README.md) | English
-- FileCat helps developers set up a file server with numerous essential features tailored for programmers. It includes remote terminals with permissions (supports RDP desktop, terminal command interception), SSH proxy, online file browsing/editing/extraction, whiteboard drawing, automated builds, system monitoring, Docker management, real-time viewing of large logs, and more. Currently, it supports Linux and Windows but does not support macOS.
-- It is a service program accessed via a web interface. Install it globally using `npm install filecat -g`, then run it with the `filecat` command. Use `filecat --help` for more options. It also supports **binary execution**. See the details below for more usage instructions.
+## Demo
 
-## 1. Screenshots
-![Demo](https://github.com/user-attachments/assets/c763018e-c420-491f-92b4-e8b12149b7cd)
+[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)
 
-## 2. Usage
+username/password: demo/demo
+Chinese account: demo-zh/demo
 
-### 1. Demo
-URL: http://demo.filecat.xiaobaidadada.fun:5569/
+The demo server is sponsored by [Yecaoyun](https://my.yecaoyun.com/aff.php?aff=7185).
 
-- **account:** `en_admin` / `en_admin`
+## Installation
 
-### 2. Running with npm
-- If Node.js and npm are already installed, install FileCat globally using `npm install filecat -g`, then run `filecat`. Alternatively, install it locally with `npm install filecat` and run it with `npx filecat`.
-- If your network is slow, use the Taobao mirror:
-  - Set it permanently: `npm config set registry https://registry.npmmirror.com`
-  - Use it temporarily during installation: `npm install -g filecat --registry https://registry.npmmirror.com`
-- Many dependencies are prebuilt and hosted on GitHub (supports Node.js 16, 18, 20, 22). If GitHub access is slow, installation may fail and require local compilation. If this happens, check the error logs and install dependencies such as `npm -g install node-addon-api`. If GitHub access is blocked, consider using the binary or Docker versions.
-- On Windows, local compilation may require additional setup. See [this link](https://blog.csdn.net/jjocwc/article/details/134152602).
+Minor bug fixes and feature updates are released and synchronized in real time on npm.
 
-### 3. Running with binary files
-Download the [latest release](https://github.com/xiaobaidadada/filecat/releases) and extract the package for your platform. The package includes all necessary resources and a `node.exe` file. Use the provided `run` script to start the program. Currently, only x64 architecture is supported; ARM users must compile it themselves.
+### 1. Npm
 
-1. Run the following command:
-  - Windows: `run.cmd --port 5567 --base_folder /home`
-  - Linux: `run.sh --port 5567 --base_folder /home` (you may need to run `chmod +x ./run.sh` to grant execute permission)
-2. Use a configuration file:
-  - Run: `run.sh --env ./env`
+`npm install -g filecat --registry`
 
-If no username is specified, the default account credentials are `admin` / `admin`.
+Node.js 20 is recommended. Some features rely on certain npm submodules. If access to GitHub is slow, the installation process may fall back to local C++ compilation. In this case, you need Python 3.8 (not too high version) and a C++ compiler to complete the installation successfully; otherwise, some features may not function properly.
 
-### 4. Running as a systemd service on Linux
-To install FileCat as a systemd service (requires root permissions):
-1. Download the latest `filecat-linux` executable.
-2. Grant execute permissions: `chmod +x filecat-linux`.
-3. Install it as a systemd service: `./filecat-linux --install linux`.
-4. If installed via npm, run `filecat --install linux`.
+On Windows, if installation fails, it is usually because some C++ dependencies need to be compiled locally. You need to install Python 3 and [vs_BuildTools](https://aka.ms/vs/17/release/vs_BuildTools.exe) (select C++ Desktop Development and the Spectre components) before running the installation again.
 
-### 5. Running with Docker
-Run the following command:
-```sh
-docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home
-```  
-- All executable parameters can be used as Docker arguments. If omitted, default values from the `env` file will be used.
-- Use `-v` to mount a configuration file and directories (e.g., `-v /home:/home` is necessary for file management).
-- `--net=host` enables full network features such as virtual networking and DDNS. However, some system info may be inaccessible in Docker.
-- If you only need file management, Docker is sufficient. For full functionality, install FileCat on a physical machine.
+### 2. Docker
 
-## 3. Key Features
+`docker run -d \   --name filecat \   --restart=always \   --net=host \
+  -v /home:/home \
+  ghcr.io/xiaobaidadada/filecat:latest \   --port 5567 --base_folder /home`
 
-### File Management
-1. Online previews for images, videos, Markdown, and more.
-2. Code editor with customizable file-opening options.
-3. Image editor with [Filerobot Image Editor](https://github.com/scaleflex/filerobot-image-editor).
-4. Studio editor: Right-click a folder to open a VS Code-like editor, useful for temporary Linux development.
-5. [Excalidraw](https://github.com/excalidraw/excalidraw) whiteboard drawing tool.
-6. Root directory switching: Set multiple root folders in settings and switch sessions dynamically.
-7. Custom terminal with command filtering to prevent malicious execution (e.g., blocking `rm -rf /`).
-8. Large log file viewer with real-time updates and fast scrolling.
-9. Workflow automation: A local automation tool similar to GitHub Actions or Jenkins. Create `.workflow.yml` files to automate tasks.
-10. Resumable and parallel file uploads.
+### 3. Binary
 
-### Additional Features
-- **SSH & FTP Proxy**: Manage multiple Linux servers, similar to WinSCP.
-- **HTTP Proxy**: A built-in HTTP client similar to Postman; can also be used for server-side file downloads.
-- **Website Manager**: A bookmark manager for accessing server-based websites.
-- **DDNS**: Dynamic DNS updates.
-- **Web-based HTTP Proxy, RDP Proxy, and RTSP Player**: Watch live streams (e.g., security cameras) in a browser.
-- **Docker Management**: Manage containers, images, and logs.
-- **System Monitoring**: View memory, CPU usage, and process statistics with minimal resource consumption.
-- **WOL (Wake-on-LAN)**: Remotely power on machines.
-- **Virtual Networking**: Create peer-to-peer VPNs with `tun` interfaces.
-- **User Permissions**: Granular control over file operations, commands, and system features.
+Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases)
 
-## 4. Additional Notes
-1. **macOS is not supported** due to missing dependencies like virtual networking. Administrator privileges are required on Windows and root access on Linux for full functionality.
-2. Some features are still in the demo stage and will be improved over time.
-3. Developers interested in contributing should be familiar with TypeScript, React, Webpack, and Node.js APIs.
-  - All non-dev dependencies are custom-built or forked, primarily implemented in C++.
-  - During installation, binaries are downloaded from GitHub. If access is slow, it falls back to local compilation, which may require additional setup.
-  - Ubuntu systems generally only need Python for compilation, while Windows requires Visual Studio and Python.
+### 4. Git Clone
 
-## 5. Roadmap
-1. Improve UI/UX and add more refined operations.
-2. Support additional file formats for previewing.
-3. Enhance streaming capabilities.
-4. Expand DDNS support.
-5. Implement web scraping automation.
-6. Improve virtual networking and distributed file synchronization.
+`git clone https://github.com/xiaobaidadada/filecat.git`
 
-## 6. Community
-Join our QQ group: **824838674**
+`npm install`
 
-## 7. Acknowledgments
-This project is inspired by or incorporates features from:
-- [filebrowser](https://github.com/filebrowser/filebrowser)
-- [MeshCentral](https://github.com/Ylianst/MeshCentral)
-- [mstsc](https://github.com/citronneur/mstsc.js)
+`npm run dev` or `npm run build && node dist/main.js`
 
----
+## Running
 
-Let me know if you need any refinements! 🚀
+Run `filecat --port 5567`
+
+account/password: admin/admin
+
+For more parameters, use `filecat --help`
+
+## Features Overview
+
+|                                    File Management                                   |                                     Code Editing                                     |                                 Multi-user Management                                |
+| :----------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: |
+| ![](https://github.com/user-attachments/assets/46b67603-db28-4751-b0c1-4e1ae9cef0d2) | ![](https://github.com/user-attachments/assets/aa6cf4d9-1a0f-4d47-b48d-21c509ec1554) | ![](https://github.com/user-attachments/assets/09d968e5-cd72-4aa3-8351-12ea3c0d7031) |
+
+|                                    10G Log Viewing                                   |                                  System Information                                  |                                   TUN Client/Server                                  |
+| :----------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: |
+| ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
+|                                        AI Q&A                                        |                                                                                      |                                                                                      |
+| ![](https://github.com/user-attachments/assets/14c7636e-ed6a-4f4e-ac3b-64b40f66b31f) |                                                                                      |                                                                                      |
+
+* **File Management**: Supports resumable chunked uploads, multiple root directories, code/image editing, editor mode, whiteboard drawing, file sharing...
+* **Terminal**: Compared to filebrowser, it uses xterm.js and implements command permission filtering through a virtual shell to prevent users from executing dangerous commands such as `rm -r /` (therefore, command permissions must be configured in user settings before using the terminal).
+* **CI/CD Automation**: Built-in automation feature that mimics GitHub workflow syntax, applied to files ending with `.act`.
+* **SSH Proxy**: Can manage multiple Linux servers, similar to WinSCP, making terminal and file management more convenient. Also supports HTTP proxy, RDP remote desktop (Windows), and other proxy features.
+* **Website Navigation**: Record and manage your own frequently used links.
+* **System, Docker, and Process Monitoring**: For system process queries, an efficient implementation is used, requiring very low CPU usage to monitor the status of all processes.
+* **AI Q&A**: Interact with AI to execute commands and obtain server resources. It also supports permission filtering to prevent AI from executing dangerous commands (therefore, before using the AI feature, you need to configure command permissions in user settings. It is recommended to set `*` to allow all commands and then explicitly forbid dangerous ones). You need to register and configure any model API compatible with the OpenAI style. It also supports local knowledge base full-text search with RAG enhancement.
+* **Large Log Viewing**: Uses file chunked reading, allowing extremely large text files to open instantly.
+
+
+## Thanks
+
+The following projects provided inspiration or foundation for FileCat:
+
+* [filebrowser](https://github.com/filebrowser/filebrowser)
+* [MeshCentral](https://github.com/Ylianst/MeshCentral)
+* [mstsc](https://github.com/citronneur/mstsc.js)

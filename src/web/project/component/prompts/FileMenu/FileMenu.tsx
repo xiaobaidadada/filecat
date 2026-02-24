@@ -283,7 +283,7 @@ export function FileMenu() {
                         <div className="card-content">
                             <InputText placeholderOut={t("路径")} value={item.path}
                                        handleInputChange={(value) => item.path = value}/>
-                            <InputText placeholderOut={t("剩余过期时间（小时)")} value={item.left_hour}
+                            <InputText placeholderOut={t("剩余过期时间(小时)")} value={item.left_hour}
                                        handleInputChange={(value) => item.left_hour = parseInt(value)}/>
                             <InputText placeholderOut={t("token(可以为空)")}
                                        handleInputChange={(value) => item.token = value}/>

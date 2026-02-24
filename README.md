@@ -1,12 +1,9 @@
 
 # ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
-FileCat 是一个基于 Web 的文件服务器、服务器管理工具。集成了文件管理、超大日志查看、远程终端访问、系统进程监控，以及包括 TUN、SSH、RDP、HTTP、TCP 等多种网络代理功能。支持windows、linux、mac。
+[English](./doc/EN_README.md) 
 
-**支持AI Agent用问答的方式来查询服务器资源，不再需要记住复杂的运维命令，并且支持一定程度的本地RAG文件索引功能**。
-
-
-FileCat is a web-based server management platform that provides file management, large-scale log viewing, remote terminal access, process monitoring, and various network proxies including TUN, SSH, RDP, HTTP, and TCP.
+FileCat 是一个以文件管理为核心的服务器管理工具。通过配置服务器文件路径，用户可以在简洁直观的 Web 界面中管理服务器文件，同时集成命令终端、Docker 管理、网络代理等多种运维功能，实现统一的服务器管理体验。
 
 ## Demo
 http://demo.filecat.xiaobaidadada.fun/
@@ -15,10 +12,9 @@ username/password: demo/demo
 中文账号 demo-zh/demo
 
 demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提供
-## 安装方式 / Installation
+## 安装方式 
 小的bug修复与功能更新，只会在npm上实时发布同步
 
-Minor bug fixes and feature updates will only be released and synchronized in real time on npm.
 ### 1. Npm
 
 
@@ -35,24 +31,24 @@ Minor bug fixes and feature updates will only be released and synchronized in re
   -v /home:/home \
   ghcr.io/xiaobaidadada/filecat:latest \
   --port 5567 --base_folder /home`
-### 3. Binary 二进制
-Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases)
+### 3.  二进制
+下载最新 [Releases](https://github.com/xiaobaidadada/filecat/releases)
 
-### 4. git clone
+### 4. Git Clone
 `git clone https://github.com/xiaobaidadada/filecat.git`
 
 `npm install`
 
 `npm run dev` or `npm run build && node dist/main.js`
 
-## 运行/Running
+## 运行
 运行 `filecat --port 5567`
 
 account/password: admin/admin
 
 更多参数可以使用 `filecat --help` 查看
 
-## 功能概览 / Features
+## 功能概览 
 |           文件管理           |                                         代码编辑                                         |          多用户管理           |
 |:------------------------:|:------------------------------------------------------------------------------------:|:------------------------:|
 | ![](https://github.com/user-attachments/assets/46b67603-db28-4751-b0c1-4e1ae9cef0d2) | ![](https://github.com/user-attachments/assets/aa6cf4d9-1a0f-4d47-b48d-21c509ec1554) | ![](https://github.com/user-attachments/assets/09d968e5-cd72-4aa3-8351-12ea3c0d7031) |
@@ -74,7 +70,6 @@ account/password: admin/admin
 - **AI 问答**: 通过与ai进行交互来执行命令获取服务器资源，同时支持权限过滤，避免AI执行危险命令行为（因此使用AI功能，需要先在用户设置中，给用户设置命令权限，建议设置 `*` 允许全部命令，在设置禁止不能执行的危险命令），需要自己注册配置任何符合openai风格的模型api。另外还支持本地知识库全文检索的rag方式增强ai能力。
 - **超大日志查看**: 采用文件分片读取的方式，不管多大的文本文件都可以做到秒开
 
-More: https://filecat.xiaobaidadada.fun
 ##  qq群
 824838674
 
