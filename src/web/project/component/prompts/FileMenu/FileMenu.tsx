@@ -7,7 +7,7 @@ import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
-import {FileCompressType, FileTypeEnum} from "../../../../../common/file.pojo";
+import {FileCompressType, FileInfo, FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_auth_check, use_file_to_running, user_click_file} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
 import {common_menu_type, run_workflow} from "./handle.service";
@@ -27,6 +27,8 @@ import {SysEnum, UserAuth, UserBaseInfo} from "../../../../../common/req/user.re
 import {CardPrompt} from "../../../../meta/component/Card";
 import {RCode} from "../../../../../common/Result.pojo";
 import {routerConfig} from "../../../../../common/RouterConfig";
+import {formatFileSize} from "../../../../../common/ValueUtil";
+import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 
 
 export function FileMenu() {
@@ -62,6 +64,11 @@ export function FileMenu() {
             r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file,
             items:[
                 {r:t("删除"), v: common_menu_type.ai_del_one_file},
+            ]
+        })
+        must_needs.push({
+            r: t("详细信息"), v: common_menu_type.file_base_info,
+            items:[
             ]
         })
     }
@@ -337,6 +344,30 @@ export function FileMenu() {
                             NotySucess("ok")
                         }
                     }
+                })
+                break;
+            }
+            case common_menu_type.file_base_info: {
+                const result = await fileHttp.post("file_base_info", {
+                    param_path:get_ab_path()
+                });
+                if(result.code !== RCode.Success) {
+                    return
+                }
+                const data:FileInfo = result.data
+                set_prompt_card({
+                    open: true,
+                    title: "确认",
+                    context_div:<>
+                        <TextLine left={`${t("名称")}`} right={data.name}/>
+                        {/*<TextLine left={`${t("路径")}`} right={data.path}/>*/}
+                        <TextLine left={`${t("大小")}`} right={formatFileSize(data.size)}/>
+                        <TextLine left={`${t("字节")}`} right={data.size}/>
+                        <TextLine left={`${t("创建时间")}`} right={formatDate(data.createdAt)}/>
+                        <TextLine left={`${t("修改时间")}`} right={formatDate(data.modifiedAt)}/>
+                        <TextLine left={`${t("访问时间")}`} right={formatDate(data.accessedAt)}/>
+                        <TextLine left={`${t("权限")}`} right={formatPermissions(data.mode)}/>
+                    </>
                 })
                 break;
             }

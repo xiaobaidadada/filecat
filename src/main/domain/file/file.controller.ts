@@ -66,9 +66,15 @@ export class FileController {
         return await FileServiceImpl.getFileInfo(pojo.type, pojo.path, (data.wss as Wss).token, (data.wss as Wss));
     }
 
+    // 获取目录的含有磁盘信息的
     @Post('/file/info')
     async getFileInfo(@Req() ctx, @Body() data: { type: FileTypeEnum, path: string }) {
         return Sucess(await FileServiceImpl.getFileInfo(data.type, data.path, ctx.headers.authorization));
+    }
+
+    @Post('/file_base_info')
+    async get_file_info(@Req() ctx, @Body() data: any) {
+        return Sucess(await FileServiceImpl.get_file_base_info( ctx.headers.authorization,data.param_path));
     }
 
     // @Put('/:path([^"]{0,})')

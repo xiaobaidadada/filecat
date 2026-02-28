@@ -112,3 +112,39 @@ export class LogViewerPojo {
     max_size: number; // 当前文件的最大字节数
     query_text: string;
 }
+
+export interface FileInfo {
+    /** 文件名称 */
+    name: string;
+
+    /** 文件完整路径 */
+    path: string;
+
+
+    /** 可读文件大小（如 1.23 MB） */
+    size: number;
+
+    /** 原始文件大小（字节） */
+    // sizeBytes: number;
+
+    /** 是否是普通文件 */
+    isFile: boolean;
+
+    /** 是否是软链接 */
+    isSymbolicLink: boolean;
+
+    /** 创建时间（格式化后的字符串） */
+    createdAt: number;
+
+    /** 最后修改时间 */
+    modifiedAt: number;
+
+    /** 最后访问时间 */
+    accessedAt: number;
+
+    /** 文件 mode 原始值 */
+    mode: number;
+
+    /** 可读权限字符串 (rwxr-xr-x) */
+    // permissions: string;
+}

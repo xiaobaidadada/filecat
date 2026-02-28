@@ -1,7 +1,7 @@
 import {
     base64UploadType,
     FileCompressPojo,
-    FileCompressType,
+    FileCompressType, FileInfo,
     FileInfoItemData,
     FileTreeList,
     FileTypeEnum,
@@ -25,7 +25,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {FileCompress} from "./file.compress";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {removeTrailingPath} from "../../../common/StringUtil";
+import {formatDate, formatPermissions, removeTrailingPath} from "../../../common/StringUtil";
 import si from "systeminformation";
 import multer from 'multer';
 import {Request, Response} from "express";
@@ -81,6 +81,29 @@ export class FileService extends FileCompress {
             default:
                 throw new Error(`不支持的 outputFormat: ${outputFormat}，可选 'buffer' | 'hex' | 'base64' | 'string'`);
         }
+    }
+
+    public async get_file_base_info(token:string,param_path:string):Promise<FileInfo> {
+        let sysPath = decodeURIComponent(param_path)
+        const root_path = settingService.getFileRootPath(token);
+        if(isAbsolutePath(sysPath)) {
+
+        } else {
+            sysPath = path.join(root_path, sysPath);
+        }
+        userService.check_user_path(token, sysPath)
+        const stat = await FileUtil.statSync(sysPath);
+        return {
+            name:  path.basename(sysPath),
+            path: sysPath,
+            size: stat.size,
+            isFile: stat.isFile(),
+            isSymbolicLink: stat.isSymbolicLink(),
+            createdAt: stat.birthtime?.getTime(),
+            modifiedAt: stat.mtime?.getTime(),
+            accessedAt: stat.atime?.getTime(),
+            mode: stat.mode
+        };
     }
 
     public async getFile(param_path, token): Promise<Result<GetFilePojo | string>> {

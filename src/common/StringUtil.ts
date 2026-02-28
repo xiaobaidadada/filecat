@@ -202,3 +202,34 @@ function ignoreToRegex(rule: string, isDir: boolean, isRoot: boolean): RegExp {
 
     return new RegExp(r);
 }
+
+
+/**
+ * 格式化时间
+ */
+export function formatDate(date?: Date | number): string | undefined {
+    if (!date) return undefined;
+
+    const d = typeof date === "number" ? new Date(date) : date;
+
+    return d.toLocaleString();
+}
+
+/**
+ * 把 mode 转成 rwxrwxrwx 这种可读权限
+ */
+export function formatPermissions(mode: number): string {
+    if(mode == null) return undefined;
+    const perms = ["r", "w", "x"];
+    let result = "";
+
+    // 3 组：user / group / other
+    for (let i = 2; i >= 0; i--) {
+        for (let j = 0; j < 3; j++) {
+            result =
+                (mode & (1 << (i * 3 + j))) ? perms[j] : "-";
+        }
+    }
+
+    return result;
+}
