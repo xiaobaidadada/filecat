@@ -48,6 +48,11 @@ export function FileMenu() {
                     {r: t("复制当前路径"), v: common_menu_type.file_copy_now_path}
                 ]
 
+        },
+        {
+            r: t("详细信息"), v: common_menu_type.file_base_info,
+            items:[
+            ]
         }
     ]
 
@@ -64,11 +69,6 @@ export function FileMenu() {
             r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file,
             items:[
                 {r:t("删除"), v: common_menu_type.ai_del_one_file},
-            ]
-        })
-        must_needs.push({
-            r: t("详细信息"), v: common_menu_type.file_base_info,
-            items:[
             ]
         })
     }
