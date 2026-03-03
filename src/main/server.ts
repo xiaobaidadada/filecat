@@ -47,10 +47,10 @@ const compression = require('compression'); // webpack-dev-server 包含的有
 
 async function start() {
 
-    await Env.parseArgs();
+    Env.parseArgs();
     DataUtil.handle_history_data();
     await userService.root_init();
-    shellServiceImpl.path_init();
+    await shellServiceImpl.path_init();
 
     // 创建 Koa 应用并注册控制器
     const app = createExpressServer({
@@ -137,7 +137,7 @@ async function start() {
 
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start(settingService.check.bind(settingService));
-
+    const sys_pre = get_sys_base_url_pre();
     if (process.env.NODE_ENV === "production") {
         const router = new Set();
         for (const item of Object.values(routerConfig)) {
@@ -151,7 +151,7 @@ async function start() {
             index_text = await settingService.get_index_html();
         })
 
-        const sys_pre = get_sys_base_url_pre();
+
         app.use(async (req: Request, res: Response, next) => {
             if (req.originalUrl && (req.originalUrl.startsWith(sys_pre))) {
                 next();
@@ -189,7 +189,6 @@ async function start() {
         const {createProxyMiddleware} = require('http-proxy-middleware');
         // 使用正则表达式匹配路径并代理
         // const self_pre = settingService.get_customer_api_pre_key();
-        const sys_pre = get_sys_base_url_pre();
         // const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
         const regex = new RegExp(`^(?!(\/${sys_pre}))`);
         app.use(regex, createProxyMiddleware({
@@ -210,11 +209,12 @@ async function start() {
         }));
     }
 
+    const base_url = get_base()
     // 启动服务器
     const server = app.listen(Env.port, () => {
         const version = get_package_json().version;
 
-        const urls = [`http://localhost:${Env.port}`];
+        const urls = [`http://localhost:${Env.port}${base_url}`];
         try {
             const interfaces = os.networkInterfaces();
             for (const name of Object.keys(interfaces)) {
@@ -222,7 +222,7 @@ async function start() {
                     // 只关心 IPv4 且非内部地址
                     if (iface.family === "IPv4") {
                         const ip = iface.address;
-                        urls.push(`http://${ip}:${Env.port}/`);
+                        urls.push(`http://${ip}:${Env.port}${base_url}`);
                     }
                 }
             }

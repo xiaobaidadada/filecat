@@ -29,6 +29,8 @@ const help = `
 对于shell支持filecat-restart 重启命令
 `;
 
+export let parsed = false
+
 export class Env {
 
     public static port: number = 5567;
@@ -43,8 +45,7 @@ export class Env {
     public static lan: UserLanguage = "en";
     public static watch: boolean = false;
 
-    public static async parseArgs() {
-        return new Promise((resolve, reject) => {
+    public static  parseArgs() {
             const args = process.argv.slice(2);
             const result = {};
 
@@ -130,9 +131,8 @@ export class Env {
                 const envData = fs.readFileSync(this.env, 'utf8');
                 this.load(envData,this);
             }
-            resolve(1);
+        parsed = true
             // return result;
-        })
     }
 
     public static updateEnv(list: { key: string, value?: string }[]) {

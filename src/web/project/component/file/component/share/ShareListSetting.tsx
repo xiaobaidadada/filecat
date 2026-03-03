@@ -15,6 +15,8 @@ import Header from "../../../../../meta/component/Header";
 import {useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../../util/store";
+import {Global} from "../../../../util/global";
+import {join_url} from "../../../../../../common/StringUtil";
 
 
 // 分享列表设置
@@ -113,7 +115,7 @@ export default function ShareListSetting() {
                             {
                                 item.id &&
                                 <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
-                                    const url = `${window.location.origin}/${routerConfig.share}/${item.id}`
+                                    const url = join_url(`${window.location.origin}${Global.base_url}`,`${routerConfig.share}/${item.id}`)
                                     copyToClipboard(url)
                                     NotySucess(url)
                                 }}/>

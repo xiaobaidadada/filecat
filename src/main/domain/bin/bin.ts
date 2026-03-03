@@ -1,7 +1,7 @@
 import {getSys} from "../shell/shell.service";
 import path from "path";
 import os from "os";
-import {Env} from "../../../common/node/Env";
+import {Env, parsed} from "../../../common/node/Env";
 
 const fs = require('fs');
 import fse from 'fs-extra'
@@ -107,17 +107,21 @@ export function loadWasm() {
     return wasmBinary;
 }
 
-let sys_pre;
-let base_url;
+let sys_pre:string; // 后端
+let base_url:string; // 前后端
 
 function init_pre_path() {
+    if(!parsed) {
+        Env.parseArgs()
+    }
     if (process.env.NODE_ENV === "production") {
-        sys_pre = `${Env.base_url || process.env.base_url || ""}/api`;
         base_url = Env.base_url || process.env.base_url || "";
+        sys_pre = `${base_url}/api`;
+
     } else {
         try {
-            sys_pre = `${Env.base_url || require("../../../../shell/config/env").base_url || ""}/api`;
             base_url = Env.base_url || require("../../../../shell/config/env").base_url || "";
+            sys_pre = `${base_url}/api`;
         } catch (e) {
             sys_pre = "/api"
             base_url = "";

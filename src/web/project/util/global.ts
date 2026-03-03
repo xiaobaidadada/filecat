@@ -23,9 +23,11 @@ export class Global {
         this._init = true;
     }
     public static get base_url() {
+        this.init()
         return this._base_url;
     }
     public static get web_site_title() {
+        this.init()
         return this._web_site_title;
     }
 
