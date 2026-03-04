@@ -6,7 +6,8 @@ import {DataEncode} from "./data.encode";
 export const protocolIsProto2 = true;
 export enum CmdType {
     // 连接
-    connection= 0,
+    // connection= 0,
+    heart,
     // 验证
     // auth = 1,
     // 系统信息

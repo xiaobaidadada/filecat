@@ -33,6 +33,7 @@ export class WsClient {
     private _msg_event: EventEmitter = new EventEmitter();
     private _msgResolveMap = new Map();
     private _msgResolveTimeoutMap = new Map();
+    private _heart_interval: any;
 
 
     constructor(url: string, name?: string) {
@@ -59,6 +60,7 @@ export class WsClient {
             this._socket.addEventListener('open', () => {
                 console.log(`WebSocket 已连接: ${this._url}`);
                 resolve(true);
+                this.start_heart_interval()
             });
             const hand_data = (event_data: any) => {
                 const data = WsData.decode(event_data);
@@ -98,12 +100,22 @@ export class WsClient {
                 console.log(`WS 已断开: ${this._url}`, event.code, event.reason);
                 this._socket = null;
                 this.emit_message('close');
+                this.stop_heart_interval()
             });
 
             this._socket.addEventListener('error', (event) => {
                 console.error('WS 错误', event);
             });
         });
+    }
+
+    private start_heart_interval() {
+        this._heart_interval = setInterval(() => {
+            this.sendData(CmdType.heart,{})
+        },10*1000)
+    }
+    private stop_heart_interval() {
+        clearInterval(this._heart_interval)
     }
 
 
@@ -161,6 +173,7 @@ export class WsClient {
         if (!this._socket) return;
         this._socket.close();
         this._socket = null;
+        this.stop_heart_interval()
         // this.stop_heartbeat()
     }
 

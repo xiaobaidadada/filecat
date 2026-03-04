@@ -19,7 +19,9 @@ export class Wss {
     public dataMap = new Map();
     public id: string;
     public _close: Function[] = [];
-    public token;
+    public token:string;
+    public heart_time_stamp:number = Date.now();
+    public heart_interval:NodeJS.Timeout;
 
     constructor(ws: WebSocket) {
         this._ws = ws;
@@ -66,73 +68,6 @@ export class Wss {
 }
 
 
-class WsPreHandler {
-
-    @msg(CmdType.connection)
-    async connection(ws: WebSocket,token) {
-        // console.log('ws客户端连接');
-        // 该ws只创建一次
-        const wss = new Wss(ws);
-        allWssSet.add(wss);
-        wss.token = token;
-
-        // 监听客户端发送的消息
-        wss.ws.on('message', async function incoming(message: WebSocket.Data) {
-
-                const data = WsData.decode(message);
-                // if(data.cmdType === CmdType.connection) {
-                //     return;
-                // }
-                data.wss = wss;
-                const handle = routerHandlerMap.get(data.cmdType);
-                if (handle) {
-                    try {
-                        const rsq: string = await handle(data);
-                        // 发送消息给客户端
-                        wss.sendData(new WsData(data.cmdType, rsq,undefined,data.random_id).encode());
-                    } catch (e) {
-                        console.log(e)
-                        const p = new WsData(data.cmdType);
-                        p.code = RCode.Fail;
-                        p.message = JSON.stringify(e)
-                        p.random_id = data.random_id;
-                        wss.sendData(p.encode());
-                    }
-                } else {
-                    console.log("没有匹配到路由")
-                }
-
-        });
-        // 监听客户端断开连接事件
-        wss.ws.on('close', function close() {
-            // console.log('ws客户端断开');
-            allWssSet.delete(wss);
-            if (wss._close.length > 0) {
-                while (true) {
-                    const close = wss._close.pop();
-                    if (close) {
-                        try {
-                            close();
-                        } catch (e) {
-                            console.error('关闭函数', e)
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-        });
-        //  身份验证
-        // setTimeout(() => {
-        //     if (wss.status === 0) {
-        //         wss.ws.close();
-        //     }
-        // }, 1000 * 10)
-    }
-
-}
-
 export class WsServer {
     private _wss;
 
@@ -147,13 +82,71 @@ export class WsServer {
                 // 解析查询参数
                 const parsedUrl = url.parse(request.url, true); // 使用 'true' 参数解析查询字符串
                 const { query } = parsedUrl; // 解析后的查询参数对象
-                if (!await check(query['token'])) {
+                const token = query['token']
+                if (!await check(token)) {
                     ws.close();
                     console.log('未验证的ws请求')
                     return;
                 }
                 if (query['type'] === `${WsConnectType.data}`) {
-                    routerHandlerMap.get(CmdType.connection)!(ws,query['token']);
+                    // routerHandlerMap.get(CmdType.connection)!(ws,token);
+                    const wss = new Wss(ws);
+                    allWssSet.add(wss);
+                    wss.token = token;
+                    let closed = false;
+                    const close = ()=>{
+                        if(closed) return
+                        closed = true;
+                        allWssSet.delete(wss);
+                        ws.close()
+                        for (const fn  of wss._close??[]) {
+                            try {
+                                fn ();
+                            } catch (e) {
+                                console.error('关闭函数', e)
+                            }
+                        }
+                        clearInterval(wss.heart_interval)
+                    }
+                    wss.heart_interval = setInterval(() => {
+                        if(Date.now() -wss.heart_time_stamp > 30 *1000) {
+                            close()
+                        }
+                    },10*1000)
+                    // 监听客户端发送的消息
+                    ws.on('message', async function incoming(message: WebSocket.Data) {
+                        const data = WsData.decode(message);
+                        data.wss = wss;
+                        if(data.cmdType === CmdType.heart) {
+                            wss.sendData(new WsData(data.cmdType, {},undefined,data.random_id).encode());
+                            wss.heart_time_stamp = Date.now();
+                            return;
+                        }
+                        const handle = routerHandlerMap.get(data.cmdType);
+                        if (handle) {
+                            try {
+                                const rsq: string = await handle(data);
+                                // 发送消息给客户端
+                                wss.sendData(new WsData(data.cmdType, rsq,undefined,data.random_id).encode());
+                            } catch (e) {
+                                console.log(e)
+                                const p = new WsData(data.cmdType);
+                                p.code = RCode.Fail;
+                                p.message = JSON.stringify(e)
+                                p.random_id = data.random_id;
+                                wss.sendData(p.encode());
+                            }
+                        } else {
+                            console.log("没有匹配到路由")
+                        }
+
+                    });
+                    // 监听客户端断开连接事件
+                    wss.ws.on('close',()=> {
+                        // console.log('ws客户端断开');
+                        close()
+                    });
+
                 } else if (query['type'] === `${WsConnectType.other}`) {
                     const handler = otherRouterHandlerMap.get(parseInt(query['code']));
                     if (handler) {
