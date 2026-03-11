@@ -13,46 +13,6 @@ import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {deleteList} from "../../../../../common/ListUtil";
 import {LongText} from "../../../../meta/component/Card";
-// const insert_data = (data:string)=> {
-//     if(!data)return;
-//     insert_done = false;
-//     const list = data.split("\n");
-//     if (context_list.length >= history_max_line) {
-//         // dom 数量早就超过了 100
-//         context_list.push(...list);
-//         context_list.splice(0, context_list.length - history_max_line); // 删除多余的元素
-//         // 全部重新渲染
-//         for (let i=0; i < context_list.length; i++) {
-//             shellRef.current.children[i].textContent = context_list[i];
-//         }
-//     } else {
-//         // dom 元素不足 100个
-//         const totalLength = list.length + context_list.length;
-//         if (totalLength  > history_max_line) {
-//             // dom 数量不够100 但是加上就超过 100了
-//             context_list.push(...list);
-//             context_list.splice(0, totalLength - history_max_line); // 删除前面多余的元素
-//             // 前面的先重新渲染
-//             for (let i=0; i < shellRef.current.children.length; i++) {
-//                 if (shellRef.current.children[i].textContent)
-//                     shellRef.current.children[i].textContent = context_list[i];
-//             }
-//             if (shellRef.current.children.length < history_max_line) {
-//                 // 后面的还没够100个dom补足一下
-//                 for (let i = shellRef.current.children.length; i< context_list.length; i++) {
-//                     insert(context_list[i])
-//                 }
-//             }
-//         }  else {
-//             // 元素数量加上也不够 100 直接新建 前面的不用渲染
-//             for (const item of list) {
-//                 insert(item)
-//                 context_list.push(item);
-//             }
-//         }
-//     }
-//
-// }
 
 const history_max_line = 300; // 最多创建多少个dom对象
 
@@ -178,9 +138,10 @@ export default function LogViewer(props) {
                 }
 
             }
-            if (shellRef.current.clientHeight === shellRef.current.scrollHeight) {
-                watch(req.max_size);
-            }
+            // if (shellRef.current.clientHeight === shellRef.current.scrollHeight) {
+            //     // 页面如果滑动到底部了
+            //     watch(req.max_size);
+            // }
 
         }
     }
@@ -210,7 +171,7 @@ export default function LogViewer(props) {
         open_watch = false;
         // ws.unConnect();
         set_tip(false)
-
+        ws.sendData(CmdType.log_viewer_watch_cancel, req);
         // console.log('取消实时监听')
     }
     const initTerminal = async () => {
@@ -228,6 +189,7 @@ export default function LogViewer(props) {
                     last_position = element.scrollTop;
                     return;
                 }
+
                 if (last_position < element.scrollTop && dom_children_list.length > 0 && element.scrollTop + element.clientHeight + 500 >= element.scrollHeight) {
                     // console.log("滚动到达底部");
                     const position = parseInt(dom_children_list[dom_children_list.length - 1].getAttribute('position'))

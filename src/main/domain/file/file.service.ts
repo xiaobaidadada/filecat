@@ -1382,11 +1382,17 @@ export class FileService extends FileCompress {
         return this.go_forward_log(pojo, file_path);
     }
 
-    file_change_watcher_map = new Map();
+    file_change_watcher_map = new Map<string,string>();
 
+
+    log_viewer_watch_cancel(data: WsData<LogViewerPojo>) {
+        this.file_change_watcher_map.delete(data.wss.token)
+    }
+
+    // todo 多个文件复用同一个文件监听 做一个通用的函数 事件推送的形式
     log_viewer_watch(data: WsData<LogViewerPojo>) {
         const pojo = data.context as LogViewerPojo;
-        if (this.file_change_watcher_map.has(pojo.token)) {
+        if (this.file_change_watcher_map.has(data.wss.token)) {
             return;
         }
 
@@ -1395,7 +1401,7 @@ export class FileService extends FileCompress {
         pojo.context_list = [];
         pojo.context_position_list = [];
         pojo.context_start_position_list = [];
-        const root_path = settingService.getFileRootPath(pojo.token);
+        const root_path = settingService.getFileRootPath(data.wss.token);
         const file_path = path.join(root_path, decodeURIComponent(pojo.path));
         userService.check_user_path(wss.token, file_path)
         // 使用 chokidar 监控文件变化
@@ -1404,22 +1410,26 @@ export class FileService extends FileCompress {
             usePolling: true, // 使用事件驱动模式（默认是）
             // interval: 100,     // 轮询间隔（如果启用了轮询模式）
         });
-        this.file_change_watcher_map.set(pojo.token, watcher);
+        this.file_change_watcher_map.set(data.wss.token, watcher);
         wss.setClose(() => {
             watcher.close();
-            this.file_change_watcher_map.delete(pojo.token);
+            this.file_change_watcher_map.delete(data.wss.token);
         })
         // 已读取的字节数
         let bytesRead = pojo.max_size;
         // 监听文件变化事件
         watcher.on('change', (changedFilePath) => {
             if (changedFilePath === file_path) {
+                if(!this.file_change_watcher_map.has(data.wss.token)) {
+                    watcher.close();
+                    return;
+                }
                 // 获取当前文件的状态
                 fs.stat(file_path, (err, stats) => {
                     if (err) {
                         console.error('Failed to get file stats:', err);
                         watcher.close();
-                        this.file_change_watcher_map.delete(pojo.token);
+                        this.file_change_watcher_map.delete(data.wss.token);
                         return;
                     }
                     if (stats.size > bytesRead) {  // 文件变大
@@ -1463,7 +1473,7 @@ export class FileService extends FileCompress {
         // 监听错误
         watcher.on('error', (error) => {
             watcher.close();
-            this.file_change_watcher_map.delete(pojo.token);
+            this.file_change_watcher_map.delete(data.wss.token);
         });
     }
 

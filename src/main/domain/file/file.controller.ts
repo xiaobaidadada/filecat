@@ -239,6 +239,12 @@ export class FileController {
         return FileServiceImpl.log_viewer_watch(data);
     }
 
+    @msg(CmdType.log_viewer_watch_cancel)
+    async log_viewer_watch_cancel(data: WsData<LogViewerPojo>) {
+        // 如果一行太长 现在会进行截断成多个分裂的行
+        return FileServiceImpl.log_viewer_watch_cancel(data);
+    }
+
     @msg(CmdType.search_file)
     async search_file(data: WsData<LogViewerPojo>) {
         search_file(data);

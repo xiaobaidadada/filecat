@@ -96,6 +96,7 @@ export enum CmdType {
     file_upload,
     log_viewer,
     log_viewer_watch,
+    log_viewer_watch_cancel,
     search_file,
     search_file_progress,
     search_file_index, // 结果输出
