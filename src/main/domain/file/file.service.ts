@@ -105,7 +105,7 @@ export class FileService extends FileCompress {
             accessedAt: stat.atime?.getTime(),
             mode: stat.mode,
             uid: stat.uid,
-            uname: getSys() === SysEnum.win ?node_process_watcher.get_file_owner(sysPath)?.username:node_process_watcher.get_username_by_uid(stat.uid)
+            uname: getSys() === SysEnum.win ?node_process_watcher?.get_file_owner(sysPath)?.username:node_process_watcher?.get_username_by_uid(stat.uid)
         };
     }
 
@@ -237,18 +237,18 @@ export class FileService extends FileCompress {
     public async get_folder_info(fpath: string, token, wss: Wss) {
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
         userService.check_user_path(token, sysPath);
-        node_process_watcher.on_folder_size(sysPath, (file_num: number, total_size: number) => {
+        node_process_watcher?.on_folder_size(sysPath, (file_num: number, total_size: number) => {
             wss.send(CmdType.folder_size_info, [file_num, total_size]);
         });
         wss.setClose(() => {
-            node_process_watcher.stop_folder_size(sysPath);
+            node_process_watcher?.stop_folder_size(sysPath);
         })
     }
 
     public async stop_folder_info(fpath: string, token) {
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
         userService.check_user_path(token, sysPath);
-        node_process_watcher.stop_folder_size(sysPath);
+        node_process_watcher?.stop_folder_size(sysPath);
     }
 
     public async getFileInfo(type: FileTypeEnum, fpath: string, token, wss?: Wss) {
