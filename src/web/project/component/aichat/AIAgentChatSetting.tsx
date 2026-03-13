@@ -52,8 +52,8 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("自动加载"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
-    const headers_docs = [t("编号"),t("本地目录"), t("是否开启"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
 
     const [rows, setRows] = useState<ai_agent_Item>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item>([]);

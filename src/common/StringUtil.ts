@@ -219,17 +219,19 @@ export function formatDate(date?: Date | number): string | undefined {
  * 把 mode 转成 rwxrwxrwx 这种可读权限
  */
 export function formatPermissions(mode: number): string {
-    if(mode == null) return undefined;
-    const perms = ["r", "w", "x"];
-    let result = "";
+    if (mode == null) return undefined;
 
-    // 3 组：user / group / other
-    for (let i = 2; i >= 0; i--) {
-        for (let j = 0; j < 3; j++) {
-            result =
-                (mode & (1 << (i * 3 + j))) ? perms[j] : "-";
-        }
+    const perms = ["r", "w", "x"];
+    const masks = [
+        0o400, 0o200, 0o100, // owner
+        0o040, 0o020, 0o010, // group
+        0o004, 0o002, 0o001  // others
+    ];
+
+    let result = "";
+    for (let i = 0; i < masks.length; i++) {
+        result += (mode & masks[i]) ? perms[i % 3] : "-";
     }
 
-    return result;
+    return result; // 例如 "-rwxr-xr--"
 }

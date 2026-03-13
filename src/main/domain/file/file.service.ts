@@ -30,13 +30,14 @@ import si from "systeminformation";
 import multer from 'multer';
 import {Request, Response} from "express";
 import {userService} from "../user/user.service";
-import {UserAuth} from "../../../common/req/user.req";
+import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {FileUtil} from "./FileUtil";
 const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 import {list_paginate} from "../../../common/ListUtil";
 import {isAbsolutePath} from "../../../common/path_util";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
+import {getSys} from "../shell/shell.service";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -102,7 +103,9 @@ export class FileService extends FileCompress {
             createdAt: stat.birthtime?.getTime(),
             modifiedAt: stat.mtime?.getTime(),
             accessedAt: stat.atime?.getTime(),
-            mode: stat.mode
+            mode: stat.mode,
+            uid: stat.uid,
+            uname: getSys() === SysEnum.win ?node_process_watcher.get_file_owner(sysPath)?.username:node_process_watcher.get_username_by_uid(stat.uid)
         };
     }
 

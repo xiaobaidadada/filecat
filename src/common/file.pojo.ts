@@ -147,4 +147,8 @@ export interface FileInfo {
 
     /** 可读权限字符串 (rwxr-xr-x) */
     // permissions: string;
+
+    uid:number
+
+    uname:string
 }

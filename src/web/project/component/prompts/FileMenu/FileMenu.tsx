@@ -367,6 +367,7 @@ export function FileMenu() {
                         <TextLine left={`${t("修改时间")}`} right={formatDate(data.modifiedAt)}/>
                         <TextLine left={`${t("访问时间")}`} right={formatDate(data.accessedAt)}/>
                         <TextLine left={`${t("权限")}`} right={formatPermissions(data.mode)}/>
+                        <TextLine left={`${t("用户")}`} right={`${data.uname}(${data.uid})`}/>
                     </>
                 })
                 break;
