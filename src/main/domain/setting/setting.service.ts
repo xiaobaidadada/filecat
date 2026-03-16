@@ -590,8 +590,8 @@ export class SettingService {
 
     cacheSysSoftwareItem: SysSoftwareItem[];
 
-    getFfmpeg() {
-        const list = this.getSoftware();
+    async getFfmpeg() {
+        const list = await this.getSoftware();
         for (const item of list) {
             if (item.id === SysSoftware.ffmpeg && item.installed && !!item.path) {
                 ffmpeg.setFfmpegPath(item.path);
@@ -602,8 +602,8 @@ export class SettingService {
 
     smartctl:string
 
-    getSmartctl() {
-        const list = settingService.getSoftware();
+    async getSmartctl() {
+        const list = await settingService.getSoftware();
         for (const item of list) {
             if (item.id === SysSoftware.smartmontools && item.installed && !!item.path) {
                 this.smartctl = item.path;
@@ -614,8 +614,8 @@ export class SettingService {
 
     ntfs_3g:string
 
-    get_ntfs_3g() {
-        const list = settingService.getSoftware();
+    async get_ntfs_3g() {
+        const list = await settingService.getSoftware();
         for (const item of list) {
             if (item.id === SysSoftware.ntfs_3g && item.installed && !!item.path) {
                 this.ntfs_3g = item.path;
@@ -624,7 +624,7 @@ export class SettingService {
         return this.ntfs_3g;
     }
 
-    public getSoftware() {
+    public async getSoftware() {
         if (this.cacheSysSoftwareItem) {
             return this.cacheSysSoftwareItem;
         }
@@ -634,17 +634,22 @@ export class SettingService {
             map.set(item.id, item);
         }
         const list: SysSoftwareItem[] = [];
+        const env_list = settingService.get_env_list()
         for (const key of Object.keys(SysSoftware)) {
             const pojo = new SysSoftwareItem();
             pojo.id = SysSoftware[key];
             const item = map.get(key);
-            pojo.path = item ? item.path : "";
-            if (key === SysSoftware.ffmpeg) {
-                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ffmpeg"}  -version`);
-            } else if (key === SysSoftware.smartmontools) {
-                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "smartctl"} --version`);
-            } else if (key === SysSoftware.ntfs_3g) {
-                pojo.installed = SystemUtil.commandIsExist(`${!!item && item.path ? item.path : "ntfs-3g"} --version`);
+            pojo.path = item?.path
+            if(pojo.path) {
+                pojo.installed = SystemUtil.commandIsExist(`${pojo.path}  -version`);
+            } else {
+                for (const p of env_list) {
+                    const v = await FileUtil.get_exe_path_by_env_dir(p,key)
+                    if(v) {
+                        pojo.path = p;
+                        pojo.installed = true;
+                    }
+                }
             }
             list.push(pojo);
         }
@@ -667,7 +672,8 @@ export class SettingService {
     public get_env_list() {
         const list: any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
         const s = sysType === SysEnum.win ? ";" : ":";
-        return list.map(v => v.path).join(s);
+        const r_list = list.map(v => v.path).join(s);
+        return process.env.PATH + s+ r_list;
     }
 
     setEnvPath(paths: any[]) {

@@ -113,7 +113,7 @@ class SysSystemService {
         }
 
         try {
-            const jsonstr = (await SystemUtil.execAsync(`${settingService.getSmartctl()} -a --json ${disk}`)).toString();
+            const jsonstr = (await SystemUtil.execAsync(`${await settingService.getSmartctl()} -a --json ${disk}`)).toString();
             pojo = JSON.parse(jsonstr);
         } catch (e: any) {
             if (e.status === 4 && e.stdout) {

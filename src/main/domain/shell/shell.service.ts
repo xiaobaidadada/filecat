@@ -99,7 +99,7 @@ export class ShellService {
             word_detection.clear();
             word_detection = new word_detection_js();
             PATH_file_total = 0;
-            const SYS_PATH = process.env.PATH + s_f + settingService.get_env_list();
+            const SYS_PATH = settingService.get_env_list();
             for (const item of SYS_PATH.split(s_f)) {
                 try {
                     if (await FileUtil.access(item)) {
@@ -207,7 +207,7 @@ export class ShellService {
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        const PATH = process.env.PATH + (sysType === SysEnum.win ? ";" : ":") + settingService.get_env_list();
+        const PATH = settingService.get_env_list();
         const pojo = data.context as ShellInitPojo;
         if (pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");

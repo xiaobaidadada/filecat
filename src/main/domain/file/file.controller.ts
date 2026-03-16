@@ -211,7 +211,7 @@ export class FileController {
 
     @msg(CmdType.file_video_trans)
     async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
-        FileServiceImpl.file_video_trans(data);
+        await FileServiceImpl.file_video_trans(data);
         return ""
     }
 

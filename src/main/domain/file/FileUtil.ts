@@ -70,4 +70,14 @@ export class FileUtil {
 
         return newFilePath;
     }
+
+    static async get_exe_path_by_env_dir(dir:string,exe_name:string) {
+        const list = await this.readdirSync(dir)
+        for (const item of list) {
+            if(item.startsWith(exe_name)) {
+                return  path.join(dir, `${item}`);
+            }
+        }
+        return null
+    }
 }

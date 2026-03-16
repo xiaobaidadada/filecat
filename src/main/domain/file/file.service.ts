@@ -902,7 +902,7 @@ export class FileService extends FileCompress {
     }
 
 
-    file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
+    async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
         const pojo = data.context as FileVideoFormatTransPojo;
         userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         const wss = data.wss as Wss;
@@ -911,7 +911,7 @@ export class FileService extends FileCompress {
         const sysPathNew = path.join(root_path, decodeURIComponent(pojo.to_filename));
 
 
-        settingService.getFfmpeg()(sysPath)
+        (await settingService.getFfmpeg())(sysPath)
             .toFormat(pojo.to_format)
             // .videoCodec('libx264')
             // .audioCodec('aac')

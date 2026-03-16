@@ -125,11 +125,11 @@ export class UserController {
     latest_count_time = Date.now();
 
     @Get("/userInfo/get")
-    getUserInfo(@Req() req: Request) {
+    async getUserInfo(@Req() req: Request) {
         const pojo = new UserBaseInfo();
         // pojo.language = DataUtil.get(this.language)??"zh";
         pojo.sys = getSys();
-        const list = settingService.getSoftware();
+        const list = await settingService.getSoftware();
         const map = {};
         for (const item of list) {
             map[item.id] = item;

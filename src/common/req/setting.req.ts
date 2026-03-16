@@ -140,8 +140,8 @@ export class FileQuickCmdItem {
 
 export enum SysSoftware {
     ffmpeg = "ffmpeg",
-    smartmontools = "smartmontools",
-    ntfs_3g = "ntfs_3g"
+    smartmontools = "smartctl",
+    ntfs_3g = "ntfs-3g"
 }
 
 export class SysSoftwareItem {

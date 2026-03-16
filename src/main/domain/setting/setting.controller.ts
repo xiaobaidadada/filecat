@@ -252,8 +252,8 @@ export class SettingController {
 
     // 系统软件设置
     @Get("/outside/software/get")
-    getSoftware() {
-        return Sucess(settingService.getSoftware());
+    async getSoftware() {
+        return Sucess(await settingService.getSoftware());
     }
 
     @Post('/outside/software/save')
