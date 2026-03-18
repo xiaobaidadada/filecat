@@ -32,6 +32,7 @@ import {DataUtil} from "../data/DataUtil";
 import {data_dir_tem_name, file_key} from "../data/data_type";
 import {pinyin} from "pinyin-pro";
 import {hash_str_to_number} from "../../../common/node/value.util";
+import {ServerEvent} from "../../other/config";
 
 const {
     cut,
@@ -202,6 +203,12 @@ export class Ai_agentService {
         this.docs_info.consume_time_ms_len = Date.now() - now
         this.docs_info.total_num = this.docs_data_map.size
         Wss.sendToAllClient(CmdType.ai_load_info, this.docs_info, this.all_wss_set)
+    }
+
+    async init() {
+        this.load_key()
+        if (!this.sys_ai_is_open) return;
+        start_worker_threads()
     }
 
     async init_search_docs(target_list?: ai_docs_item[]) {
@@ -883,3 +890,6 @@ ${config.sys_prompt ?? ''}
 }
 
 export const ai_agentService = new Ai_agentService();
+ServerEvent.on("start", (data) => {
+    ai_agentService.init().catch(console.error);
+})

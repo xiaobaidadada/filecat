@@ -7,7 +7,8 @@ export function get_bin_dependency(module:
                                        | "@xiaobaidadada/node-tuntap2-wintun"
                                        | "@xiaobaidadada/ssh2-prebuilt"
                                        | "node-process-watcher"
-                                       | "sqlite3",
+                                       | "sqlite3"
+                                       | "better-sqlite3",
                                    auto_throw = false
 ) {
     try {
@@ -29,6 +30,8 @@ export function get_bin_dependency(module:
                     return require("node-process-watcher");
                 case "@xiaobaidadada/node-tuntap2-wintun":
                     return require("@xiaobaidadada/node-tuntap2-wintun")
+                case "better-sqlite3":
+                    return require("better-sqlite3")
                 default:
                     throw {message: "不存在的包"}
             }

@@ -1,16 +1,16 @@
 import { register_threads_worker_handler } from "../../threads/threads.work";
 import { threads_msg_type } from "../../threads/threads.type";
 import FlexSearch, { Index } from "flexsearch";
-import Database from "better-sqlite3";
 import { cut } from "jieba-wasm";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {FileUtil} from "../file/FileUtil";
 const sqlite3 = get_bin_dependency("sqlite3")
+const Database  = get_bin_dependency("better-sqlite3")
 
 let doc_index: Index | null = null;
 let doc_names_index: Index | null = null;
 
-let sqlite_db: Database.Database | null = null;
+let sqlite_db: any = null;
 let insert_doc_stmt: any;
 let insert_name_stmt: any;
 let delete_doc_stmt: any;
@@ -195,8 +195,8 @@ export function start_ai_agent_agent() {
 
         if (index_storage_type_ === "sqlite" && sqlite_db) {
             // const transaction = sqlite_db.transaction(() => {
-                delete_doc_stmt.run(file_path);
-                delete_name_stmt.run(file_path);
+            delete_doc_stmt.run(file_path);
+            delete_name_stmt.run(file_path);
             // });
             //
             // transaction();

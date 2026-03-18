@@ -72,6 +72,9 @@ export class FileUtil {
     }
 
     static async get_exe_path_by_env_dir(dir:string,exe_name:string) {
+        if(!await this.access(dir)) {
+            return  null
+        }
         const list = await this.readdirSync(dir)
         for (const item of list) {
             if(item.startsWith(exe_name)) {
