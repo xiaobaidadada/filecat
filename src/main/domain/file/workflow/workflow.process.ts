@@ -30,7 +30,7 @@ export class WorkflowProcess {
 
     constructor(instance: work_children, job: job_item) {
         this.instance = instance;
-        const PATH = settingService.get_env_list();
+        const PATH = settingService.get_env_path();
         const env = job['exclude-env'] ? {} : instance.env;
         if (job.env) {
             for (const key of Object.keys(job.env)) {

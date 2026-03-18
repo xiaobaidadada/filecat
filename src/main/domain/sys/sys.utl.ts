@@ -37,7 +37,7 @@ export class SystemUtil {
             { encoding: "utf8" ,
                 env:{
                     ...process.env,
-                    PATH: settingService.get_env_list()
+                    PATH: settingService.get_env_path()
                 }
             }
         );

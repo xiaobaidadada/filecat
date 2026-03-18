@@ -634,19 +634,20 @@ export class SettingService {
             map.set(item.id, item);
         }
         const list: SysSoftwareItem[] = [];
-        const env_list = settingService.get_env_list()
+        const s = sysType === SysEnum.win ? ";" : ":";
+        const env_list = settingService.get_env_path().split(s)
         for (const key of Object.keys(SysSoftware)) {
             const pojo = new SysSoftwareItem();
             pojo.id = SysSoftware[key];
-            const item = map.get(key);
+            const item = map.get(pojo.id);
             pojo.path = item?.path
             if(pojo.path) {
-                pojo.installed = SystemUtil.commandIsExist(`${pojo.path}  -version`);
+                pojo.installed = SystemUtil.commandIsExist(`${pojo.path}`);
             } else {
                 for (const p of env_list) {
-                    const v = await FileUtil.get_exe_path_by_env_dir(p,key)
+                    const v = await FileUtil.get_exe_path_by_env_dir(p,pojo.id)
                     if(v) {
-                        pojo.path = p;
+                        pojo.path = v;
                         pojo.installed = true;
                     }
                 }
@@ -669,7 +670,7 @@ export class SettingService {
         return DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
     }
 
-    public get_env_list() {
+    public get_env_path() {
         const list: any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
         const s = sysType === SysEnum.win ? ";" : ":";
         const r_list = list.map(v => v.path).join(s);

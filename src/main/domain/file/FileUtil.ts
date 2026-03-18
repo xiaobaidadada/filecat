@@ -75,6 +75,10 @@ export class FileUtil {
         if(!await this.access(dir)) {
             return  null
         }
+        const stats = await this.statSync(dir)
+        if(!stats.isDirectory()){
+            return null
+        }
         const list = await this.readdirSync(dir)
         for (const item of list) {
             if(item.startsWith(exe_name)) {
