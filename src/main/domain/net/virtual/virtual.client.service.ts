@@ -2,9 +2,8 @@ import {DataUtil} from "../../data/DataUtil";
 import {TcpProxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
-import {UdpUtil} from "../util/udp.util";
 import {findAvailablePort} from "../../../../common/node/findPort";
-import {TcpUtil} from "../util/tcp.util";
+import {tcp_stream_util} from "../util/tcp_stream_util";
 import {Wss} from "../../../../common/frame/ws.server";
 import {get_tun_require, get_wintun_dll_path} from "../../bin/bin";
 import {data_common_key} from "../../data/data_type";
@@ -16,6 +15,7 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {TcpProxy} from "./tcp_proxy";
 import {SysEnum} from "../../../../common/req/user.req";
 import * as fs from "fs"
+import {tcp_raw_socket} from "../util/tcp.client";
 
 const crypto = require('crypto');
 
@@ -30,12 +30,11 @@ export const vir_data_client_hash_key = data_common_key.vir_data_client_hash_key
 export const vir_data_server_hash_key = data_common_key.vir_data_server_hash_key;
 
 
-const checkClientHeartTimes = 1000 * 15;
-export const haertTime = 2000;
 
-export class CLientInfo extends UdpUtil {
+
+export class tcp_client_item {
     // 基本tcp工具变量
-    tcpUtil: TcpUtil;
+    tcpUtil: tcp_raw_socket;
     client_name: string;
 
     guid: string;
@@ -43,10 +42,11 @@ export class CLientInfo extends UdpUtil {
     tcp_real_address: string; // 物理ip
     tcp_real_port: number;
 
-    udp_real_port: number; // udp 真实端口
-    udp_real_address: string;
+    // udp_real_port: number; // udp 真实端口
+    // udp_real_address: string;
 
     close: Function;
+
 
 }
 
@@ -59,9 +59,9 @@ interface TunInfo {
 const mac_prefix = Buffer.alloc(4);
 mac_prefix.writeUInt32BE(2, 0); // AF_INET = 2
 
-export class VirtualClientService extends UdpUtil {
+export class VirtualClientService  {
 
-    clientIPAndUdpMap = new Map<string, CLientInfo>(); // 对方虚拟 ip和地址
+    clientIPAndUdpMap = new Map<string, tcp_client_item>(); // 对方虚拟 ip和地址
     udp_addr_allow_set: Set<string> = new Set(); // 合法的udp 地址
 
 
@@ -101,41 +101,7 @@ export class VirtualClientService extends UdpUtil {
         await findAvailablePort(49152, 65535)
     }
 
-    async client_register_udp() {
-        // 被动注册
-        const udp_buffer = await NetClientUtil.send_for_udp_async(NetMsgType.register_udp_info, Buffer.from(JSON.stringify({vir_ip: this.server_info.self_vir_ip})), this.server_info.server_tcp_ip, this.server_info.server_tcp_port);
-        const udp_data: { udp_real_address: string, udp_real_port: number } = JSON.parse(udp_buffer.toString());
-        this.server_info.self_udp_ip = udp_data.udp_real_address;
-        this.server_info.self_udp_port = udp_data.udp_real_port;
-        console.log('被动注册');
-        return udp_data;
-    }
 
-    // 获取对象的udp信息
-    // private async udpClientCreateAndGet(destIP: string): Promise<CLientInfo> {
-    //     return new Promise(async (resolve) => {
-    //         let info = this.clientIPAndUdpMap.get(destIP);
-    //         if (info) {
-    //             resolve(info as CLientInfo);
-    //             return;
-    //         }
-    //         // 注册自己的 udp 信息
-    //         const udp_buffer = await NetClientUtil.send_for_udp_async(NetMsgType.register_udp_info, Buffer.from(JSON.stringify({vir_ip: this.server_info.self_vir_ip})), this.server_info.server_tcp_ip, this.server_info.server_udp_port);
-    //         const udp_data:{udp_real_address:string,udp_real_port:number} = JSON.parse(udp_buffer.toString());
-    //         this.server_info.self_udp_ip = udp_data.udp_real_address;
-    //         this.server_info.self_udp_port = udp_data.udp_real_port;
-    //         // 获取对方的信息
-    //         const t_buffer = await NetClientUtil.send_for_tcp_async(NetMsgType.get_udp_info, Buffer.from(JSON.stringify({dest_vir_ip:destIP})));
-    //         const t_data:{udp_real_address:string,udp_real_port:number} = JSON.parse(t_buffer.toString());
-    //         const t = new CLientInfo();
-    //         t.udp_real_port = t_data.udp_real_port;
-    //         t.udp_real_address = t_data.udp_real_address;
-    //         this.clientIPAndUdpMap.set(destIP, t);
-    //         this.udp_addr_allow_set.add(`${t_data.udp_real_address}${t_data.udp_real_port}`)
-    //         console.log('获取到对方数据',t)
-    //         return t;
-    //     })
-    // }
 
     public async init() {
         // 服务器
@@ -262,7 +228,7 @@ export class VirtualClientService extends UdpUtil {
             }
             // if (is_tcp) {
             // console.log(buffer.subarray(4) )
-            await NetClientUtil.send_for_tcp(NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, sysType === SysEnum.mac ? buffer.subarray(4) : buffer));
+             NetClientUtil.send_for_tcp(this.server_info.server_tcp_ip,this.server_info.server_tcp_port,NetMsgType.trans_data, NetUtil.getTransBuffer(destIP, sysType === SysEnum.mac ? buffer.subarray(4) : buffer));
         } catch (e) {
             console.log(e);
         }
@@ -384,25 +350,26 @@ export class VirtualClientService extends UdpUtil {
         this.server_info.server_tcp_ip = serverIp;
         this.server_info.server_tcp_port = serverPort;
         this.server_info.self_vir_ip = ip;
+        // 发送自己的虚拟注册信息
+        const register = ()=>{
+            NetClientUtil.send_for_tcp(serverIp,serverPort,NetMsgType.register, Buffer.from(JSON.stringify({
+                ip,
+                hashKey: this.getClientHashKey(),
+                client_name,
+                guid
+            })));
+        }
         await NetClientUtil.start_tcp(serverPort, serverIp, () => {
-                NetClientUtil.tcp_client.sendData(NetUtil.getTcpBuffer(NetMsgType.register, Buffer.from(JSON.stringify({
-                    ip,
-                    hashKey: this.getClientHashKey(),
-                    client_name,
-                    guid
-                }))));
+
             },
             (state) => {
                 this.client_status = state;
                 this.push_clinet_info();
+                if(state) {
+                    register()
+                }
             });
-        // 发送自己的虚拟注册信息
-        NetClientUtil.send_for_tcp(NetMsgType.register, Buffer.from(JSON.stringify({
-            ip,
-            hashKey: this.getClientHashKey(),
-            client_name,
-            guid
-        })));
+        register()
         // 定时发送心跳
         // this.heartInterval = setInterval(() => {
         //     NetClientUtil.tcp_client.sendToSocket(Buffer.alloc(0), this.getTcpBuffer(NetMsgType.heart, Buffer.alloc(0)));
@@ -485,11 +452,11 @@ export class VirtualClientService extends UdpUtil {
         DataUtil.set(vir_data_client_hash_key, hashKey);
         if (data.open) {
             // 重新启动
-            NetClientUtil.close_tcp();
+            NetClientUtil.close_tcp(this.server_info.server_tcp_ip,this.server_info.server_tcp_port);
             await this.tunStart(data);
         } else {
             try {
-                NetClientUtil.close_tcp();
+                NetClientUtil.close_tcp(this.server_info.server_tcp_ip,this.server_info.server_tcp_port);
                 this.closeTun();
             } catch (e) {
                 console.log('客户端关闭失败')

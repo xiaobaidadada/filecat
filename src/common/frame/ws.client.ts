@@ -3,6 +3,7 @@ import {RCode} from "../Result.pojo";
 import {NotyFail} from "../../web/project/util/noty";
 // import WebSocket from 'ws'; // 前端不能导入，直接使用就行 这只能nodejs用
 import {EventEmitter} from "../event";
+import {heart_interval} from "./constant";
 
 function generateRandomHash(length = 16) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -112,7 +113,7 @@ export class WsClient {
     private start_heart_interval() {
         this._heart_interval = setInterval(() => {
             this.sendData(CmdType.heart,{})
-        },10*1000)
+        },heart_interval)
     }
     private stop_heart_interval() {
         clearInterval(this._heart_interval)

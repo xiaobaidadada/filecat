@@ -3,6 +3,7 @@ import {msg, otherRouterHandlerMap, routerHandlerMap} from "./router";
 import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import {RCode} from "../Result.pojo";
 import {generateRandomHash} from "../StringUtil";
+import {heart_interval, max_heart_interval} from "./constant";
 
 const url = require('url');
 
@@ -109,17 +110,18 @@ export class WsServer {
                         clearInterval(wss.heart_interval)
                     }
                     wss.heart_interval = setInterval(() => {
-                        if(Date.now() -wss.heart_time_stamp > 30 *1000) {
+                        if(Date.now() -wss.heart_time_stamp > max_heart_interval) {
+                            console.log('ws心跳断开')
                             close()
                         }
-                    },10*1000)
+                    },heart_interval)
                     // 监听客户端发送的消息
                     ws.on('message', async function incoming(message: WebSocket.Data) {
                         const data = WsData.decode(message);
                         data.wss = wss;
+                        wss.heart_time_stamp = Date.now();
                         if(data.cmdType === CmdType.heart) {
                             wss.sendData(new WsData(data.cmdType, {},undefined,data.random_id).encode());
-                            wss.heart_time_stamp = Date.now();
                             return;
                         }
                         const handle = routerHandlerMap.get(data.cmdType);

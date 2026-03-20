@@ -2,8 +2,11 @@
 // 一个函数防止重复执行，执行期间拒绝第二次执行
 export function withLock<T extends (...args: any[]) => Promise<any>>(
     fn: T,
-    timeoutMs = 60_000
+    timeoutMs :number
 ) {
+    if(timeoutMs == null) {
+        timeoutMs = 60_000;
+    }
     // 这个函数返回一次，由于闭包，这里的变量会永久存在，除非返回的函数引用消失
     let locked = false
     let timer: NodeJS.Timeout | null = null
@@ -23,13 +26,17 @@ export function withLock<T extends (...args: any[]) => Promise<any>>(
         if (locked) return
         locked = true
         const myToken = token
-        timer = setTimeout(() => {
-            // console.warn('[withLock] auto unlock by timeout')
-            unlock(myToken)
-        }, timeoutMs)
+        if(timeoutMs >= 0) {
+            timer = setTimeout(() => {
+                // console.warn('[withLock] auto unlock by timeout')
+                unlock(myToken)
+            }, timeoutMs)
+        }
         try {
             return await fn(...args)
-        } finally {
+        } catch (e) {
+            console.error(e)
+        }finally {
             unlock(myToken)
         }
     }

@@ -1,20 +1,20 @@
 import {VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {DataUtil} from "../../data/DataUtil";
 import {
-    CLientInfo,
+    tcp_client_item,
     vir_data_server_hash_key,
     vir_server_data_key,
     virtualClientService
 } from "./virtual.client.service";
 import dgram from "dgram";
 import net from "net";
-import {TcpUtil} from "../util/tcp.util";
+import {tcp_stream_util} from "../util/tcp_stream_util";
 import {Wss} from "../../../../common/frame/ws.server";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {NetServerUtil} from "../util/NetServerUtil";
 import {clientMap} from "./virtual.controller";
 import {NetClientUtil} from "../util/NetClientUtil";
-import {NetUtil} from "../util/NetUtil";
+import {NetMsgType, NetUtil, tcp_server_type} from "../util/NetUtil";
 
 class VirtualServerService {
 
@@ -25,7 +25,7 @@ class VirtualServerService {
     get_all_client_info() {
         const list:any[] = [];
         clientMap.forEach(v=>{
-            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.is_alive])
+            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.get_client().get_socket().connecting]) // todo 连接状态
         })
         return list;
     }
@@ -60,7 +60,7 @@ class VirtualServerService {
             this.serverStatus = true;
         } else {
             try {
-                NetServerUtil.close_server();
+                NetServerUtil.close_server(tcp_server_type.sys_tun);
             } catch (e) {
                 console.log('虚拟网络关闭')
             }
@@ -79,13 +79,10 @@ class VirtualServerService {
         return pojo;
     }
 
-    public async udpServerStart(port?: number) {
-        await NetClientUtil.start_dup_client(port);
-    }
 
 
     public async tcpServerStart(port: number) {
-        return NetServerUtil.start_tcp_server(port);
+        return NetServerUtil.start_tcp_server(port,tcp_server_type.sys_tun,NetMsgType.register);
     }
 }
 

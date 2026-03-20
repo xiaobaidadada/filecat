@@ -1,13 +1,41 @@
 import dgram from "dgram";
-import {TcpUtil} from "./tcp.util";
+import {tcp_stream_util} from "./tcp_stream_util";
 import crypto from "crypto";
+import {tcp_raw_socket} from "./tcp.client";
 
-export const msgServerMap = new Map<NetMsgType,(data:Buffer, util:TcpUtil,head?:Buffer)=>any>();
+export const msgServerMap: Partial<{
+    [K in tcp_server_type]: Partial<{
+        [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+    }>
+}> = {};
 
-export const msgClientMap = new Map<NetMsgType,(data:Buffer, util:TcpUtil)=>any>();
+export const msgClientMap = new Map<NetMsgType,(data:Buffer, util:tcp_raw_socket, tag_id?: number)=>any>();
 
-export const msgUdpMap = new Map<NetMsgType,(data:Buffer,rinfo:dgram.RemoteInfo, head?:Buffer)=>any>();
 
+
+export function tcp_server_msg(msg:NetMsgType,type:tcp_server_type) {
+    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
+        if(!msgServerMap[type]) {
+            msgServerMap[type] = {}
+        }
+        const p = msgServerMap[type][msg];
+        const obj = p??new target.constructor();
+        msgServerMap[type][msg] = obj[key].bind(obj)
+    }
+}
+
+export function tcp_client_msg(msg:NetMsgType) {
+    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
+        const p = msgClientMap.get(msg);
+        const obj = p??new target.constructor();
+        msgClientMap.set(msg,obj[key].bind(obj))
+    }
+}
+
+export enum tcp_server_type {
+    sys_tun,
+    tcp_for_http
+}
 
 export enum NetMsgType {
     default, // 没有意义的 用于 head 返回的情况 但是需要设置个值
@@ -18,65 +46,29 @@ export enum NetMsgType {
     trans_data, // 转发通信数据
     async_server_info_to_client, // 服务器信息同步给客户端 密钥 端口
 
-    // udp 协议
-    get_server_info , // 获取服务器信息
-    client_register_udp, // 客户端注册 udp
-    register_udp_info , // 注册udp 信息
-    get_udp_info , // 获取对方的udp信息
-    udp_data, // udp 写入数据
 
 }
 
 
-export function tcpServerMsg(msg:NetMsgType) {
-    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
-        const p = msgServerMap.get(target.name);
-        const obj = p??new target.constructor();
-        descriptor.value
-        msgServerMap.set(msg,obj[key].bind(obj))
-    }
-}
 
-export function tcpClientMsg(msg:NetMsgType) {
-    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
-        const p = msgClientMap.get(target.name);
-        const obj = p??new target.constructor();
-        descriptor.value
-        msgClientMap.set(msg,obj[key].bind(obj))
-    }
-}
-
-export function udpMsg(msg:NetMsgType) {
-    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
-        const p = msgUdpMap.get(target.name);
-        const obj = p??new target.constructor();
-        descriptor.value
-        msgUdpMap.set(msg,obj[key].bind(obj))
-    }
-}
 
 export  class NetUtil {
-    static head_len = 2;
-    static head_0 = Buffer.alloc(2);
-    static head: Buffer = Buffer.alloc(2); // 固定 2 字节 Buffer
-    private static value: number = 0;
-    private static readonly MAX = 0xFFFF; // 最大值 65535
 
-    static nextHead() {
-        this.value = (this.value + 1) & this.MAX; // 👈 提前加
-        this.head[0] = (this.value >> 8) & 0xFF;
-        this.head[1] = this.value & 0xFF;
-        return this.head;
+
+
+    private static tag_value: number = 0;
+    private static readonly tag_MAX = 6553511; // 最大值 65535
+
+    static next_tag_id() {
+        this.tag_value = this.tag_value + 1
+        if(this.tag_MAX < this.tag_value) {
+            this.tag_value = 1;
+        }
+        return this.tag_value;
     }
 
 
-    static getHeadValue(): number {
-        return (this.head[0] << 8) | this.head[1];
-    }
 
-    static getHeadCurrentValue(): number {
-        return this.value; // 或者你想的是 value - 1 也可以，取决于使用方式
-    }
 
     static getHedValueByBuffer(buffer:Buffer){
         if(buffer.length !== 2) throw "len error";
@@ -124,13 +116,13 @@ export  class NetUtil {
     }
 
 
-    public static getTcpBuffer(code_type: number, buffer: Buffer) {
+    public static getTcpBuffer(code_type: NetMsgType, buffer: Buffer) {
         const buffer1 = Buffer.allocUnsafe(1);
         buffer1[0] = code_type;
         return Buffer.concat([buffer1, buffer]);
     }
 
-    public static geRawTcpBufferList(code_type: number, buffer: Buffer) {
+    public static geRawTcpBufferList(code_type: NetMsgType, buffer: Buffer) {
         const buffer1 = Buffer.allocUnsafe(1);
         buffer1[0] = code_type;
         return [buffer1, buffer];
@@ -160,4 +152,44 @@ export  class NetUtil {
         return {data: dataBuffer, vir_ip: ipBuffer.toString()};
 
     }
+
+    static intToBuffer(value) {
+        const buffer = Buffer.alloc(4); // 创建一个长度为4的新 Buffer
+        // 写入整数到 Buffer，使用大端序（Most Significant Byte first）
+        buffer.writeUInt32BE(value, 0);
+        return buffer;
+    }
+
+    static bufferToInt(buffer) {
+        // 从 Buffer 中读取四字节的整数，使用大端序
+        return buffer.readUInt32BE(0);
+    }
+
+    // 比 concat更快
+    static  fastBufferConcat(buffers:Buffer[], totalLength?:number) {
+        // 自动计算总长度（如果你不传）
+        if (typeof totalLength !== 'number') {
+            totalLength = 0;
+            for (let buf of buffers) {
+                totalLength += buf.length;
+            }
+        }
+        const result = Buffer.allocUnsafe(totalLength);
+        let offset = 0;
+        for (let buf of buffers) {
+            buf.copy(result, offset);
+            offset += buf.length;
+        }
+        return result;
+    }
+
+    static int16_to_buffer(num:number) {
+        const buf = Buffer.alloc(2);
+        buf.writeUInt16BE(num); // 大端（常用于网络协议）
+        return buf;
+    }
+    static buffer_to_int16(buf:Buffer) {
+        return buf.readUInt16BE(0);
+    }
+
 }
