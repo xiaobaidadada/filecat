@@ -209,17 +209,17 @@ export class Ai_agentService {
         this.load_key()
         if (!this.sys_ai_is_open) return;
         start_worker_threads()
-    }
-
-    async init_search_docs(target_list?: ai_docs_item[]) {
-        if (!this.sys_ai_is_open) return;
-        start_worker_threads()
-        const now = Date.now();
         const body = {index_storage_type: config_search_doc.index_storage_type}
         if (config_search_doc.index_storage_type === 'sqlite') {
             body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
+    }
+
+    async init_search_docs(target_list?: ai_docs_item[]) {
+        if (!this.sys_ai_is_open) return;
+        const now = Date.now();
+        await this.init()
         // const is_one_load = target_list != null;
         this.docs_info.init(0)
 
