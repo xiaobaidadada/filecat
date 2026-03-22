@@ -39,6 +39,17 @@ export class FileUtil {
         return fs.promises.writeFile(path,data)
     }
 
+
+    static async writeFileSyncWithUtf8bom(path: string, data: string) {
+        const BOM = '\uFEFF';
+        if (!data.startsWith(BOM)) {
+            data = BOM + data;
+        }
+        return fs.promises.writeFile(path, data, {
+            encoding: 'utf8'
+        });
+    }
+
     static async truncateSync(path: string) {
         return fs.promises.truncate(path);
     }
