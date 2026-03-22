@@ -22,10 +22,14 @@ export class NetServerUtil {
 
     // 授权成功
     public static connect_success(socket: net.Socket) {
-        clearTimeout(this.socket_timeout_map.get(socket));
-        this.socket_timeout_resolve_map.get(socket)(1);
-        this.socket_timeout_resolve_map.delete(socket);
-        this.socket_timeout_map.delete(socket);
+        if(this.socket_timeout_map) {
+            clearTimeout(this.socket_timeout_map.get(socket));
+            this.socket_timeout_map.delete(socket);
+        }
+        if(this.socket_timeout_resolve_map.has(socket)) {
+            this.socket_timeout_resolve_map.get(socket)(1);
+            this.socket_timeout_resolve_map.delete(socket);
+        }
     }
 
     public static close_server(server_type: tcp_server_type): void {
@@ -74,7 +78,7 @@ export class NetServerUtil {
         }
         _map.server = net.createServer(async (socket) => {
 
-                console.log('客户端连接');
+                console.log(`tcp 客户端连接 ${socket.remoteAddress}`);
                 const raw_socket = new tcp_raw_socket(socket);
                 _map.socket_set.add(raw_socket)
                 socket.on("close", () => {
@@ -90,6 +94,21 @@ export class NetServerUtil {
                     console.log('Socket 错误:', socket.remoteAddress);
                 });
                 start_heart(raw_socket)
+                // 等待授权
+                new Promise((resolve,reject) => {
+                    const  timeout = setTimeout(() => {
+                        // 超时未验证
+                        raw_socket.get_client().close();
+                        console.log(`超时未验证 ${socket.remoteAddress}:${socket.remotePort}`);
+                        this.socket_timeout_map.delete(socket)
+                        this.socket_timeout_resolve_map.delete(socket)
+                    }, 3000)
+                    this.socket_timeout_map.set(socket, timeout)
+                    this.socket_timeout_resolve_map.set(socket,resolve );
+                }).then(()=>{
+                    console.log(`tpc 授权成功 ${socket.remoteAddress}`);
+                    auth = true
+                })
                 raw_socket.get_client().set_on_data(async (data, tag_id) => {
                     try {
                         const {code, tcpBuffer} = NetUtil.getTcpData(data);
@@ -98,7 +117,7 @@ export class NetServerUtil {
                         }
                         if(NetMsgType.heart === code) {
                             this.tcp_server_map[server_type].last_connect_time = Date.now()
-                            raw_socket.send_data(NetMsgType.heart, Buffer.alloc(0))
+                            raw_socket.send_data(NetMsgType.heart, Buffer.alloc(0),tag_id)
                             return;
                         }
                         if(_map.call_resolve_map[tag_id]) {
@@ -119,27 +138,9 @@ export class NetServerUtil {
                         console.log(e);
                     }
                 })
-            try {
-                // 等待授权
-                await new Promise((resolve,reject) => {
-                    const  timeout = setTimeout(() => {
-                        // 超时未验证
-                        raw_socket.get_client().close();
-                        reject({message:"超时未验证"})
-                        this.socket_timeout_map.delete(socket)
-                        this.socket_timeout_resolve_map.delete(socket)
-                    }, 3000)
-                    this.socket_timeout_map.set(socket, timeout)
-                    this.socket_timeout_resolve_map.set(socket,resolve );
-                })
-                auth = true
-            } catch (e) {
-                raw_socket.get_client().close();
-                console.error(e)
-            }
         });
         _map.server.listen(port, () => {
-            console.log(`tcp服务器运行开始`);
+            console.log(`tcp服务器运行开始 ${port}`);
         });
     }
 

@@ -49,24 +49,31 @@ export class tcp_stream_util {
         }
     }
 
-    private handle_buffer () {
-        while (true) {
-            if (this.buffer.length < this.total_head_length) {
+    private handle_buffer() {
+        while (this.buffer.length >= this.total_head_length) {
+            // 如果缓冲区长度小于协议头长度，则返回
+            if (!(this.buffer[0] === this.protocol[0] && this.buffer[1] === this.protocol[1])) {
+                this.buffer = Buffer.alloc(0); // 丢弃所有包
                 return;
             }
-            if (!(this.buffer[0]=== this.protocol[0] && this.buffer[1]=== this.protocol[1])) {
-                this.buffer = Buffer.alloc(0);// 丢弃所有包
-                return;
-            }
-            const data_len = NetUtil.bufferToInt(this.buffer.subarray(this.protocol.length,this.now_all_head_length));
+
+            // 计算 data_len 和 total_len
+            const data_len = NetUtil.bufferToInt(this.buffer.subarray(this.protocol.length, this.now_all_head_length));  // 假设数据长度紧跟在协议后面
             const total_len = this.total_head_length + data_len;
-            if ((this.buffer.length - this.total_head_length) < total_len) {
-                // 如果 buffer 不足以读取完整数据包，暂不处理，等待更多数据
+
+            // 如果缓冲区不足以读取完整数据包，等待更多数据
+            if (this.buffer.length < total_len) {
                 return;
             }
+
+            // 提取数据包
             const data = this.buffer.subarray(this.total_head_length, total_len);
             const tag_id = this.buffer.subarray(this.now_all_head_length, this.total_head_length);
-            this.on_data(data,NetUtil.buffer_to_int16(tag_id));
+
+            // 处理数据
+            this.on_data(data, NetUtil.buffer_to_int16(tag_id));
+
+            // 更新缓冲区，移除已经处理过的数据
             this.buffer = this.buffer.subarray(total_len);
         }
     }

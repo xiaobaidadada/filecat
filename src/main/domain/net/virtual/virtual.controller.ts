@@ -14,6 +14,7 @@ import {Sucess} from "../../../other/Result";
 import {msg} from "../../../../common/frame/router";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {tcp_raw_socket} from "../util/tcp.client";
+import {tag} from "jieba-wasm";
 
 // tcp 连接信息
 export const clientMap = new Map<string, tcp_client_item>(); // 虚拟ip与对方信息
@@ -96,7 +97,7 @@ export class VirtualController {
 
     // 注册ip信息 与鉴权
     @tcp_server_msg(NetMsgType.register,tcp_server_type.sys_tun)
-    register(data: Buffer, util: tcp_raw_socket) {
+    register(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const tcpData: { client_name: string, ip: string, hashKey: string, guid: string } = JSON.parse(data.toString());
         const hashKey = tcpData.hashKey;
         const serverHashKey = virtualClientService.getServerHashKey();
@@ -134,6 +135,7 @@ export class VirtualController {
             virtualServerService.pushConnectInfo();
         })
         virtualServerService.pushConnectInfo();
+        info.tcpUtil.send_data(NetMsgType.register, Buffer.alloc(0),tag_id);
     }
 
 

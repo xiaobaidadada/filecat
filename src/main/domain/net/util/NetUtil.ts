@@ -56,7 +56,7 @@ export  class NetUtil {
 
 
 
-    private static tag_value: number = 0;
+    private static tag_value: number = 1;
     private static readonly tag_MAX = 6553511; // 最大值 65535
 
     static next_tag_id() {

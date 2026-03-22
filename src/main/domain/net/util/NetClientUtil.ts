@@ -65,13 +65,13 @@ export class NetClientUtil {
         return `${options.server_host}:${options.server_port}`;
     }
 
-    public static async start_tcp(serverPort: number, serverIp: string, close_call: () => void, state_call: (state: boolean) => void) {
+    public static async start_tcp(serverPort: number, serverIp: string, register:  () => Promise<Buffer>, state_call: (state: boolean) => void) {
         const opt = {
             server_host: serverIp,
             server_port: serverPort,
         }
         const key = this.get_key(opt)
-        const client = new tcp_client(opt)
+        const client = new tcp_client(opt,register)
         if (this.tcp_client_map[key]) {
             this.tcp_client_map[key].close()
         }
@@ -83,7 +83,6 @@ export class NetClientUtil {
         })
         client.get_raw_client().on_close(() => {
             state_call(false)
-            close_call();
         })
     }
 

@@ -353,24 +353,18 @@ export class VirtualClientService  {
         this.server_info.self_vir_ip = ip;
         // 发送自己的虚拟注册信息
         const register = ()=>{
-            NetClientUtil.send_for_tcp(serverIp,serverPort,NetMsgType.register, Buffer.from(JSON.stringify({
+            return NetClientUtil.send_for_tcp_async(serverIp,serverPort,NetMsgType.register, Buffer.from(JSON.stringify({
                 ip,
                 hashKey: this.getClientHashKey(),
                 client_name,
                 guid
             })));
         }
-        await NetClientUtil.start_tcp(serverPort, serverIp, () => {
-
-            },
+        await NetClientUtil.start_tcp(serverPort, serverIp,register,
             (state) => {
                 this.client_status = state;
                 this.push_clinet_info();
-                if(state) {
-                    register()
-                }
             });
-        register()
         // 定时发送心跳
         // this.heartInterval = setInterval(() => {
         //     NetClientUtil.tcp_client.sendToSocket(Buffer.alloc(0), this.getTcpBuffer(NetMsgType.heart, Buffer.alloc(0)));

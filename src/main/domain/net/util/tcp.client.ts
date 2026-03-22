@@ -12,6 +12,15 @@ export class tcp_raw_socket {
 
     constructor(socket?:net.Socket) {
         this.client = new tcp_stream_util(socket??new net.Socket());
+        if(socket) {
+            this.is_connected = true;
+        }
+        this.client.get_socket().on("close", ()=>{
+            this.is_connected = false;
+        });
+        this.client.get_socket().on("connect", ()=>{
+            this.is_connected = true;
+        });
         this.send_data = this.client.send_data.bind(this.client);
     }
 
@@ -25,11 +34,10 @@ export class tcp_raw_socket {
 
     on_close(fun:()=>void) {
         this.client.get_socket().on("close", ()=>{
-            this.is_connected = false;
             try {
                 fun()
             } catch (e) {
-                console.error(e);
+                console.error(`函数错误 ${e?.message??e}`);
             }
         });
     }
@@ -37,11 +45,10 @@ export class tcp_raw_socket {
 
     on_connect(fun:()=>void) {
         this.client.get_socket().on("connect", ()=>{
-            this.is_connected = true;
             try {
                 fun()
             } catch (e) {
-                console.error(e);
+                console.error(`函数错误 ${e?.message??e}`);
             }
         });
     }
@@ -68,20 +75,23 @@ export class tcp_raw_client extends tcp_raw_socket{
     }
 
     private reconnect() {
-        if(this.closed) {
+        if(this.closed || this.connected) {
             return ;
         }
         if(this.reconnect_timeout) {
             return;
         }
-        console.log('10秒后重连tcp服务器');
+        console.log('服务器主动断开 10秒后重连tcp服务器');
         this.reconnect_timeout = setTimeout(()=>{
             this.reconnect_timeout = undefined;
             if(this.closed) {
-                console.log('服务器关闭再尝试')
+                console.log('客户端主动关闭 定时函数结束 不再连接')
                 return ;
             }
-            this.connect().catch(console.error);
+            this.connect().catch((e)=>{
+                console.log(`-- ${e}`)
+                this.reconnect()
+            });
         },10*1000)
     }
 
@@ -119,9 +129,11 @@ export class tcp_client {
     private call_resolve_map: { [key: number]: any } = {}
     private call_resolve_timeout_map: { [key: number]: any } = {}
     private options: tcp_client_options
+    private register:()=>Promise<Buffer>
 
-    constructor(
-        options: tcp_client_options) {
+        constructor(
+        options: tcp_client_options,register:()=>Promise<Buffer> ) {
+        this.register = register;
         this.options = options;
     }
 
@@ -136,24 +148,15 @@ export class tcp_client {
 
     async connect(){
         if(this.client) {
-            this.client.close();
+            this.close();
         }
         this.client = new tcp_raw_client(this.options);
         this.send_data = this.client.send_data.bind(this.client);
         await this.client.connect();
         const client = this.client;
-        console.log('tcp 服务器连接成功')
-        this.heart_fun = setInterval(withLock(async ()=>{
-            try {
-                await this.send_data_async(NetMsgType.heart, Buffer.alloc(0))
-            } catch (e) {
-                console.log(`心跳超时 tcp 断开 10秒后重连`)
-                await CommonUtil.sleep(10*1000)
-                this.connect().then(console.error);
-            }
-        },-1), 10_000)
         client.get_client().set_on_data(async (data, tag_id) => {
             const {code, tcpBuffer} = NetUtil.getTcpData(data);
+            // console.log(code,tag_id);
             if (this.call_resolve_map[tag_id]) {
                 this.call_resolve_map[tag_id](tcpBuffer)
                 clearTimeout(this.call_resolve_timeout_map[tag_id])
@@ -166,9 +169,23 @@ export class tcp_client {
             try {
                 await fun(tcpBuffer, client,tag_id);
             } catch (e) {
-                console.error(e)
+                console.error(`tcp客户端接受函数报错 ${e?.message??e}` )
             }
         })
+        console.log('tcp 服务器 连接 成功')
+        await this.register()
+        console.log('tcp 服务器 注册 成功')
+        const heart_fun = withLock(async ()=>{
+            try {
+                // console.log(`发送心跳`)
+                await this.send_data_async(NetMsgType.heart, Buffer.alloc(0))
+            } catch (e) {
+                console.log(`心跳超时 tcp 断开 10秒后重连`)
+                await CommonUtil.sleep(10*1000)
+                this.connect().catch(console.error);
+            }
+        },-1)
+        this.heart_fun =  setInterval(heart_fun, 10_000)
     }
 
     send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void;
