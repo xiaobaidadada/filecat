@@ -1,6 +1,6 @@
 
 const crypto = require('crypto');
 
-export function hash_string(input, algorithm = 'sha256', encoding = 'hex') {
-    return crypto.createHash(algorithm).update(`${input}`, 'utf8').digest(encoding);
+export function hash_string(input,  salt = '') {
+    return crypto.createHash("sha256").update(`${input}${salt??''}`, 'utf8').digest('hex');
 }

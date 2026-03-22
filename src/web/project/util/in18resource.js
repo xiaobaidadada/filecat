@@ -1,5 +1,5 @@
 import en from "./i18/en.json";
-import zh from "./i18/zh.json";
+import zh from "./i18/zh-CH.json";
 import de from "./i18/de.json";
 import ja from "./i18/ja.json";
 import ko from "./i18/ko.json";
@@ -15,6 +15,9 @@ export const resources = {
         translation: en // 英语
     },
     "zh": {
+        translation: zh // 中文
+    },
+    "zh-CH": {
         translation: zh // 中文
     },
     "de": {

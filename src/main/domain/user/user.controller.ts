@@ -58,58 +58,10 @@ export class UserController {
             Cache.setValue(`${uuid}`, cache);
             return Sucess(uuid)
         }
-        // if (Env.username && !password_hash) {
-        //     // 环境变量只要不为空 就用环境变量文件的判断
-        //     if (user.username === `${Env.username}` && user.password === `${Env.password}`) {
-        //         const uuid = generateSaltyUUID(username);
-        //         // Cache.setToken(`${uuid}`)
-        //         Cache.setValue(`${uuid}`,cache);
-        //         return Sucess(uuid)
-        //     }
-        // } else if (username) {
-        //     // 有密码的
-        //     const password = DataUtil.get(data_common_key.password);
-        //     if(password_hash) {
-        //         if(user.username === `${username}` && hash_string(user.password) === password_hash) {
-        //             const uuid = generateSaltyUUID(username);
-        //             // Cache.setToken(`${uuid}`)
-        //             Cache.setValue(`${uuid}`,cache);
-        //             return Sucess(uuid)
-        //         }
-        //     } else if(user.username === `${username}` && user.password === `${password}`) {
-        //         const uuid = generateSaltyUUID(username);
-        //         // Cache.setToken(`${uuid}`)
-        //         Cache.setValue(`${uuid}`,cache);
-        //         return Sucess(uuid)
-        //     }
-        // } else {
-        //     if (user.username === "admin" && user.password === "admin") {
-        //         const uuid = generateSaltyUUID(username);
-        //         // Cache.setToken(`${uuid}`)
-        //         Cache.setValue(`${uuid}`,cache);
-        //         return Sucess(uuid)
-        //     }
-        // }
         return AuthFail('password error');
     }
 
 
-    @Post('/updatePassword')
-    async updatePassword(@Body() user: UserLogin, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.update_password);
-        const user_data = userService.get_user_info_by_user_id(user.user_id);
-        if (!user_data) {
-            throw "user data not found";
-        }
-        // if(user.username)
-        // user_data.username = user.username;
-        // user_data.hash_password = hash_string(user.password);
-        await userService.save_user_info(user.user_id, {
-            username: user.username,
-            hash_password: hash_string(user.password)
-        } as UserData);
-        return Sucess('ok');
-    }
 
 
     // @Post('/language/save')
@@ -177,8 +129,28 @@ export class UserController {
             delete user.password;
         }
         if (!user.cwd) throw "cwd not found";
+        userService.check_same_user(user.username,user.id)
         await userService.save_user_info(user.id, user)
         return Sucess("");
+    }
+
+
+    @Post('/updatePassword')
+    async updatePassword(@Body() user: UserLogin, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.update_password);
+        const user_data = userService.get_user_info_by_user_id(user.user_id);
+        if (!user_data) {
+            throw "user data not found";
+        }
+        // if(user.username)
+        // user_data.username = user.username;
+        // user_data.hash_password = hash_string(user.password);
+        userService.check_same_user(user.username,user.user_id)
+        await userService.save_user_info(user.user_id, {
+            username: user.username,
+            hash_password: hash_string(user.password)
+        } as UserData);
+        return Sucess('ok');
     }
 
     // 用户样式类型
@@ -244,4 +216,3 @@ export class UserController {
 
 }
 
-export const userController = new UserController();

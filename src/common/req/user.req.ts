@@ -4,7 +4,8 @@ import {path_join} from "pty-shell/dist/path_util";
 export class UserLogin {
     username: string;
     password: string;
-    hash_password?: string;
+    confirm_password?: string; // 只用于修改密码的时候 二次确认
+    hash_password?: string; // hash 过后的
     user_id?: string;
 }
 
@@ -16,7 +17,7 @@ export enum SysEnum {
     unknown = 3
 }
 
-export type UserLanguage = "zh"|"en";
+export type UserLanguage = "zh-CH"|"en";
 
 export class UserBaseInfo {
     language: string; // 废弃字段
