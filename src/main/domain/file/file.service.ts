@@ -616,7 +616,7 @@ export class FileService extends FileCompress {
         userService.check_user_only_path(token, sysPath);
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
-        await FileUtil.writeFileSync(sysPath, context);
+        await FileUtil.writeFileSyncWithUtf8bom(sysPath, context);
     }
 
     // public common_save(path:string,context:string) {

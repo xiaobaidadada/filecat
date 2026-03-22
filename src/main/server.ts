@@ -247,6 +247,9 @@ async function start() {
     process.on('uncaughtException', (err) => {
         console.error('未捕获的异常:', err);
     });
+    process.on('unhandledRejection', (reason, promise) => {
+        console.error('未处理的 Promise 拒绝:', reason);
+    });
 }
 
 start();

@@ -114,6 +114,24 @@ export class UserService {
         return mapping[id] as UserData;
     }
 
+    // 检查是否有同名用户
+    public check_same_user(username: string, user_id:string,auto_throw = true): boolean {
+        if(user_id == null) {
+            throw "验证id 不能是空的";
+        }
+        const id = this.get_user_id(username);
+        let r :boolean
+        if(id == null) {
+            r = false;
+        } else {
+            r = id === user_id;
+        }
+        if(auto_throw === true && r === true) {
+            throw "已经有同名的用户"
+        }
+        return r
+    }
+
     /**
      * 更新用户信息( 不存在就报错)
      * @param id
@@ -193,6 +211,7 @@ export class UserService {
         }
         id = this.create_unique_user_id();
         data.id = id;
+        this.check_same_user(data.username,data.id)
         this.bind_user_id(data.username, id);
         // 创建
         let mapping = DataUtil.get(data_common_key.user_id_info_data_mapping);
@@ -261,6 +280,7 @@ export class UserService {
         return list;
     }
 
+    // root 用户初始化
     public async root_init() {
         try {
             // 以前的账号密码
