@@ -16,11 +16,13 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {TcpProxy} from "./tcp_proxy";
 import {SysEnum} from "../../../../common/req/user.req";
 import * as fs from "fs"
+import {get_bin_dependency} from "../../bin/get_bin_dependency";
 
 const crypto = require('crypto');
 
 
 const path = require("path");
+const  {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 
 export const vir_server_data_key = data_common_key.vir_server_data_key;
 export const vir_client_data_key = data_common_key.vir_client_data_key;
@@ -291,6 +293,9 @@ export class VirtualClientService extends UdpUtil {
         const guid = this.get_guid();
         if (this.tun_status) {
             return;
+        }
+        if(!node_process_watcher.is_admin()) {
+            throw " not admin "
         }
         // ip是否激活
         if (await SysProcessServiceImpl.isIpAssigned(ip)) {
