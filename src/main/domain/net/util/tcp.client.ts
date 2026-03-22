@@ -8,6 +8,7 @@ import {CommonUtil} from "../../../../common/common.util";
 
 export class tcp_raw_socket {
     protected client:tcp_stream_util
+    protected is_connected = false;
 
     constructor(socket?:net.Socket) {
         this.client = new tcp_stream_util(socket??new net.Socket());
@@ -18,8 +19,13 @@ export class tcp_raw_socket {
         return this.client;
     }
 
+    get connected() {
+        return this.is_connected;
+    }
+
     on_close(fun:()=>void) {
         this.client.get_socket().on("close", ()=>{
+            this.is_connected = false;
             try {
                 fun()
             } catch (e) {
@@ -31,6 +37,7 @@ export class tcp_raw_socket {
 
     on_connect(fun:()=>void) {
         this.client.get_socket().on("connect", ()=>{
+            this.is_connected = true;
             try {
                 fun()
             } catch (e) {
@@ -47,7 +54,6 @@ export class tcp_raw_client extends tcp_raw_socket{
     private options: tcp_client_options
     private reconnect_timeout:NodeJS.Timeout; // 客户端重试连接
     private closed = false;
-    private is_connected = false;
 
     constructor(
         options: tcp_client_options) {
@@ -85,9 +91,7 @@ export class tcp_raw_client extends tcp_raw_socket{
         this.client?.close();
     }
 
-    get connected() {
-        return this.is_connected;
-    }
+
 
     async connect() {
         return new Promise((resolve, reject) => {

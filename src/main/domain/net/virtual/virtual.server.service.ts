@@ -25,7 +25,7 @@ class VirtualServerService {
     get_all_client_info() {
         const list:any[] = [];
         clientMap.forEach(v=>{
-            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.get_client().get_socket().connecting]) // todo 连接状态
+            list.push([v.client_name,v.vir_ip,v.tcp_real_address,v?.tcpUtil.connected])
         })
         return list;
     }

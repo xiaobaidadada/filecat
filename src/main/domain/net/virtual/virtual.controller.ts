@@ -52,13 +52,13 @@ export class VirtualController {
             for (const ip of data.async_ips) {
                 try {
                     const client = clientMap.get(ip);
-                    // if (client?.connected()) {
+                    if (client?.tcpUtil.connected) {
                     // todo 检测是否在线
                         client.tcpUtil.send_data(NetMsgType.async_server_info_to_client, Buffer.from(JSON.stringify({
                             port: data.port,
                             key: data.key,
                         })));
-                    // }
+                    }
                 } catch (err) {
                     console.log(err);
                 }
