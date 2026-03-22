@@ -29,7 +29,7 @@ export class VirtualController {
         for (const ip of data.ips ?? []) {
             const client = clientMap.get(ip);
             if (client) {
-                client.tcpUtil.close();
+                client.close();
                 clientMap.delete(ip);
                 virtualServerService.pushConnectInfo();
             }
@@ -52,12 +52,13 @@ export class VirtualController {
             for (const ip of data.async_ips) {
                 try {
                     const client = clientMap.get(ip);
-                    if (client?.tcpUtil?.is_alive) {
-                        client.tcpUtil.send_data(NetUtil.getTcpBuffer(NetMsgType.async_server_info_to_client, Buffer.from(JSON.stringify({
+                    // if (client?.connected()) {
+                    // todo 检测是否在线
+                        client.tcpUtil.send_data(NetMsgType.async_server_info_to_client, Buffer.from(JSON.stringify({
                             port: data.port,
                             key: data.key,
-                        }))));
-                    }
+                        })));
+                    // }
                 } catch (err) {
                     console.log(err);
                 }
@@ -146,7 +147,8 @@ export class VirtualController {
             return;
         }
         // info.tcpUtil.sendData(NetUtil.getTcpBuffer(NetMsgType.data, data));
-        info.tcpUtil.fastSendData(NetUtil.geRawTcpBufferList(NetMsgType.data, data));
+        // info.tcpUtil.fastSendData(NetUtil.geRawTcpBufferList(NetMsgType.data, data));
+        info.tcpUtil.send_data(NetMsgType.data, data);
     }
 
     // 写入数据

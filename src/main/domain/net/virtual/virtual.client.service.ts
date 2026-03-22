@@ -3,7 +3,6 @@ import {TcpProxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../.
 import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
 import {findAvailablePort} from "../../../../common/node/findPort";
-import {tcp_stream_util} from "../util/tcp_stream_util";
 import {Wss} from "../../../../common/frame/ws.server";
 import {get_tun_require, get_wintun_dll_path} from "../../bin/bin";
 import {data_common_key} from "../../data/data_type";
@@ -15,12 +14,14 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {TcpProxy} from "./tcp_proxy";
 import {SysEnum} from "../../../../common/req/user.req";
 import * as fs from "fs"
+import {get_bin_dependency} from "../../bin/get_bin_dependency";
 import {tcp_raw_socket} from "../util/tcp.client";
 
 const crypto = require('crypto');
 
 
 const path = require("path");
+const  {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 
 export const vir_server_data_key = data_common_key.vir_server_data_key;
 export const vir_client_data_key = data_common_key.vir_client_data_key;

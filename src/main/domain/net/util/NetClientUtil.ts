@@ -9,7 +9,7 @@ export class NetClientUtil {
 
     static tcp_client_map: {
         [key: string]: tcp_client;
-    }
+    } = {}
 
 
     public static send_for_tcp(server_host: string, server_port: number,type: NetMsgType, data: Buffer,tag_id?:number) {

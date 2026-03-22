@@ -79,9 +79,10 @@ export class tcp_stream_util {
      * @param tag_id
      * @private
      */
-    private get_package(data:Buffer,tag_id?:number) {
-        return Buffer.concat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]);
-    }
+    // private get_package(data:Buffer,tag_id?:number) {
+    //     const buf =  NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data])
+    //     return Buffer.concat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]);
+    // }
 
     public get_socket(){
         return this.socket;
@@ -89,12 +90,13 @@ export class tcp_stream_util {
 
 
     public send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number) {
-        this.send_raw_data(NetUtil.getTcpBuffer(code_type, buffer),tag_id)
+        const data = NetUtil.getTcpBuffer(code_type, buffer)
+        this.socket.write( NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]));
     }
 
-    private send_raw_data(data:Buffer,tag_id?:number) {
-        this.socket.write(this.get_package(data,tag_id));
-    }
+    // private send_raw_data(data:Buffer,tag_id?:number) {
+    //     this.socket.write( NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]));
+    // }
 
 
 

@@ -11,6 +11,7 @@ export class tcp_raw_socket {
 
     constructor(socket?:net.Socket) {
         this.client = new tcp_stream_util(socket??new net.Socket());
+        this.send_data = this.client.send_data.bind(this.client);
     }
 
     get_client(){
@@ -38,9 +39,7 @@ export class tcp_raw_socket {
         });
     }
 
-    send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number) {
-        this.client.send_data(code_type,buffer,tag_id)
-    }
+    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void
 }
 
 export class tcp_raw_client extends tcp_raw_socket{
@@ -114,12 +113,13 @@ export class tcp_client {
 
     private client:tcp_raw_client
     private heart_fun:NodeJS.Timeout;
-    private call_resolve_map: { [key: number]: any }
-    private call_resolve_timeout_map: { [key: number]: any }
+    private call_resolve_map: { [key: number]: any } = {}
+    private call_resolve_timeout_map: { [key: number]: any } = {}
 
     constructor(
         options: tcp_client_options) {
         this.client = new tcp_raw_client(options);
+        this.send_data = this.client.send_data.bind(this.client);
     }
 
     public get_raw_client(){
@@ -162,9 +162,7 @@ export class tcp_client {
         })
     }
 
-    send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number) {
-        return this.client.send_data(code_type,buffer,tag_id)
-    }
+    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void;
 
     async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<any> {
         return new Promise((resolve, reject) => {

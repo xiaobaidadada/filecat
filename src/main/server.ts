@@ -259,3 +259,9 @@ const log = console.log.bind(console);
 console.log = (...args) => {
     log((new Date()).toLocaleString(),...args);
 }
+console.info = (...args) => {
+    log((new Date()).toLocaleString(),...args);
+}
+console.error = (...args) => {
+    log((new Date()).toLocaleString(),'error',...args);
+}
