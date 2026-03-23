@@ -469,7 +469,7 @@ export class VirtualClientService  {
 
     private restart_tcp_proxy(req: TcpProxyITem[]) {
         if (this.tcp_proxy) {
-            this.tcp_proxy.close();
+            this.tcp_proxy.close(true);
         }
         const list = req.filter(v => v.open && v.port > 0 && !!v.target_ip && v.target_port > 0).map(v => {
             return {
@@ -483,8 +483,9 @@ export class VirtualClientService  {
             return;
         }
         this.tcp_proxy = new TcpProxy(list);
-        this.tcp_proxy.start();
-        this.push_clinet_info();
+        this.tcp_proxy.start(() => {
+            this.push_clinet_info();
+        });
     }
 
     public get_tcp_proxy(): TcpProxyITem[] {
