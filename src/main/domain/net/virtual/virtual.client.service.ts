@@ -2,7 +2,7 @@ import {DataUtil} from "../../data/DataUtil";
 import {TcpProxyITem, VirClientPojo, VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {getSys, sysType} from "../../shell/shell.service";
 import {ServerEvent} from "../../../other/config";
-import {findAvailablePort} from "../../../../common/node/findPort";
+import {find_available_port} from "../../../../common/node/findPort";
 import {Wss} from "../../../../common/frame/ws.server";
 import {get_tun_require, get_wintun_dll_path} from "../../bin/bin";
 import {data_common_key} from "../../data/data_type";
@@ -99,7 +99,7 @@ export class VirtualClientService  {
     }
 
     async getRandomAblePort() {
-        await findAvailablePort(49152, 65535)
+        await find_available_port(49152, 65535)
     }
 
 

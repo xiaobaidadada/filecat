@@ -13,7 +13,7 @@ interface port_server_type {
     activeSockets:Set<net.Socket>;
 }
 export class TcpProxy {
-    private proxies: ProxyConfig[];
+    private proxies: ProxyConfig[] = [];
     // private serverList: net.Server[];
     // private activeSockets: Set<net.Socket>; // 用来强制关闭所有连接
     private port_server_list:port_server_type[] = []
@@ -40,31 +40,41 @@ export class TcpProxy {
                 }
                 const server = net.createServer((clientSocket) => {
                     port_server.activeSockets.add(clientSocket);
-                    clientSocket.on('close', () => port_server.activeSockets.delete(clientSocket));
-
                     const targetSocket = net.createConnection(config.targetPort, config.targetHost, () => {
                         config.status = true;
                         done_call();
                     });
-
                     port_server.activeSockets.add(targetSocket);
-                    targetSocket.on('close', () => port_server.activeSockets.delete(targetSocket));
 
+                    // 双向转发
                     clientSocket.pipe(targetSocket);
                     targetSocket.pipe(clientSocket);
 
-                    clientSocket.on('error', () => targetSocket.end());
-                    targetSocket.on('error', () => clientSocket.end());
-
-                    clientSocket.on('end', () => {
-                        targetSocket.end();
+                    const destroyBoth = () => {
+                        if (!clientSocket.destroyed) clientSocket.destroy();
+                        if (!targetSocket.destroyed) targetSocket.destroy();
                         config.status = false;
-                    });
+                    };
 
-                    targetSocket.on('end', () => {
-                        clientSocket.end();
-                        config.status = false;
-                    });
+                    // 任意一方结束 → 优雅关闭
+                    clientSocket.on('end', () => targetSocket.end());
+                    targetSocket.on('end', () => clientSocket.end());
+
+                    // 任意一方出错 → 强制关闭
+                    clientSocket.on('error', destroyBoth);
+                    targetSocket.on('error', destroyBoth);
+
+                    // 任意一方关闭 → 强制兜底
+                    clientSocket.on('close', destroyBoth);
+                    targetSocket.on('close', destroyBoth);
+
+                    // 清理
+                    const cleanup = (socket: net.Socket) => {
+                        port_server.activeSockets.delete(socket);
+                    };
+
+                    clientSocket.on('close', () => cleanup(clientSocket));
+                    targetSocket.on('close', () => cleanup(targetSocket));
                 });
 
                 server.listen(config.proxyPort, () => {

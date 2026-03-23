@@ -3,12 +3,14 @@ import {tcp_stream_util} from "./tcp_stream_util";
 import crypto from "crypto";
 import {tcp_raw_socket} from "./tcp.client";
 
+// 完全限制了一种类型的服务器中的消息可以访问另一种类型的服务的函数的可能性
 export const msgServerMap: Partial<{
     [K in tcp_server_type]: Partial<{
         [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
     }>
 }> = {};
 
+// 客户端既然想要连接服务器了 就是信任服务器的 这里校验小一点 代码也少一点好写一点
 export const msgClientMap = new Map<NetMsgType,(data:Buffer, util:tcp_raw_socket, tag_id?: number)=>any>();
 
 
@@ -34,18 +36,25 @@ export function tcp_client_msg(msg:NetMsgType) {
 
 export enum tcp_server_type {
     sys_tun,
-    tcp_for_http
+    tcp_forward
 }
 
 export enum NetMsgType {
     default, // 没有意义的 用于 head 返回的情况 但是需要设置个值
 
+    // 用于tun 代理的 ip对ip层
     heart  , // 心跳
     register, // 注册
     data, // tcp 传输数据
     trans_data, // 转发通信数据
     async_server_info_to_client, // 服务器信息同步给客户端 密钥 端口
 
+    // 用于转发tcp的 端口对端口层
+    tcp_connect,
+    tcp_socket_data,
+    tcp_socket_close,//  服务器和客户端都可以用
+
+    tcp_client_create_socket_for_server,
 
 }
 

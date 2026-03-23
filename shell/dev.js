@@ -4,7 +4,7 @@ const path = require("path");
 const Webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
 const webpackConfig = require('./config/webpack.web.config.js');
-const {findAvailablePort} = require("../src/common/node/findPort");
+const {find_available_port} = require("../src/common/node/findPort");
 
 // const temLog = console.log;
 
@@ -24,7 +24,7 @@ const {findAvailablePort} = require("../src/common/node/findPort");
 
 
 const runServer = async () => {
-    const port = await findAvailablePort(49152, 65535);
+    const port = await find_available_port(49152, 65535);
     process.env.webpack_port = port;
     webpackConfig['mode'] = 'development';
     webpackConfig['devServer']['port'] = port;

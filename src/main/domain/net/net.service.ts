@@ -9,7 +9,7 @@ import {
     MacProxy,
     NetPojo
 } from "../../../common/req/net.pojo";
-import {findAvailablePort} from "../../../common/node/findPort";
+import {find_available_port} from "../../../common/node/findPort";
 import {Fail, Sucess} from "../../other/Result";
 import proxy from 'koa-proxies';
 import {Request, Response} from "express";
@@ -71,7 +71,7 @@ export class NetService {
         }
         const pojo: proxyInterface | any = {};
         proxyTargetUrlMap.set(data.targetProxyUrl, pojo);
-        const port = await findAvailablePort(49152, 65535);
+        const port = await find_available_port(49152, 65535);
         pojo.beforPort = port;
         const app = new Koa();
         // 自定义 CORS 规则
