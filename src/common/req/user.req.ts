@@ -95,6 +95,9 @@ export enum UserAuth {
     ai_agent_setting, // ai 模型设置
     ai_agent_page= 50, // ai 聊天页面
     share_file , // 文件分享功能
+    tcp_proxy_server,
+    tcp_proxy_client,
+
 }
 
 

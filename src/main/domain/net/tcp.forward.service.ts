@@ -5,30 +5,77 @@ import {is_port_available} from "../../../common/node/findPort";
 import net from "net";
 import {ServerEvent} from "../../other/config";
 import {NetClientUtil} from "./util/NetClientUtil";
-import {tcp_raw_socket} from "./util/tcp.client";
+import {DataUtil} from "../data/DataUtil";
+import {data_common_key, file_key} from "../data/data_type";
+import {tcp_proxy_server_config} from "../../../common/req/common.pojo";
 
 
 export class TcpForwardService {
 
-    private server_set_token:string = "123";
-    public client_map:{
+    private client_map:{
         [key:string]:tcp_forward_client_type // key 是客户端 id
     } = {}
-
-    private server_service_port:number; // 服务器的服务端口给tcp的
 
     public server_socket_map:{
         [key:number]:net.Socket
     } = {}
+    private server_list:net.Server[] = []
+
     public client_socket_map:{
         [key:number]:net.Socket
     } = {}
 
     private global_socket_id = 1;
 
+    public load_client() {
+        const list = this.client_get()
+        const new_map:{[key:string]:tcp_forward_client_type} = {}
+        for (const it of list) {
+            new_map[it.client_id] = it
+            if(this.client_map[it.client_id]) {
+                new_map[it.client_id].status = this.client_map[it.client_id].status
+                new_map[it.client_id].client_util = this.client_map[it.client_id].client_util
+            }
+        }
+    }
+
+    delete_client(client_id:string):void {
+        const it = this.client_map[client_id];
+        if(it) {
+            const aa = it.client_util.data_map[`sockets`]??{}
+            for (const k  of Object.keys(aa)) {
+                if(this.server_socket_map[k]) {
+                    this.server_socket_map[k]?.destroy()
+                    delete this.server_socket_map[k];
+                }
+
+            }
+        }
+        delete this.client_map[client_id];
+    }
+
+    add_client(fig:tcp_forward_client_type) {
+        fig.client_util.data_map[`sockets`] = {}
+        const list = this.client_get()
+        const it = list.find(v=>v.client_id == fig.client_id)
+        if(it) {
+            Object.assign(it,fig)
+            delete it.client_util
+        } else {
+            const n = {
+                ...fig
+            }
+            delete n.client_util
+            list.push(n)
+            DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server)
+            this.client_map[it.client_id] = fig
+        }
+    }
+
     public is_ok_token(hash_token:string){
-        if(this.server_set_token == null) return false;
-        return hash_token === NetUtil.get64Key(this.server_set_token);
+        const k = this.server_get().key
+        if(k == null) return false;
+        return hash_token === NetUtil.get64Key(k);
     }
 
     // 开启一个 tcp 转发服务器 服务器
@@ -71,9 +118,11 @@ export class TcpForwardService {
                 // 用户访问服务器建立的客户端
                 client.client_util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
             })
+            client.client_util.data_map[`sockets`][socket_id]= clientSocket;
             clientSocket.on("close",()=>{
                 client.client_util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
                 delete this.server_socket_map[socket_id]
+                delete client.client_util.data_map[`sockets`][socket_id];
             })
         });
         server.listen(server_same_port, () => {
@@ -84,7 +133,8 @@ export class TcpForwardService {
         });
         server.on('listening', () => {
             console.log(`TCP 转发服务器 代理正在监听${server_same_port}...`);
-
+            this.server_list.push(server)
+            client.client_util.data_map['server'] = server;
         });
     }
 
@@ -127,11 +177,52 @@ export class TcpForwardService {
             delete this.client_socket_map[socket_id]
         }
     }
+
+    server_get() {
+        let v:tcp_proxy_server_config = DataUtil.get(data_common_key.tcp_proxy_server_base,file_key.tcp_proxy_server)
+        if(!v){
+            v = new tcp_proxy_server_config()
+            DataUtil.set(data_common_key.tcp_proxy_server_base,v,file_key.tcp_proxy_server)
+        }
+        return v;
+    }
+
+    client_get() {
+        let list :tcp_forward_client_type[]=  DataUtil.get(data_common_key.tcp_proxy_server_client_list,file_key.tcp_proxy_server)
+        if(!list){
+            list = [];
+            DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server)
+        }
+        return list;
+    }
+
+    server_save(fig:tcp_proxy_server_config) {
+        DataUtil.set(data_common_key.tcp_proxy_server_base,fig,file_key.tcp_proxy_server)
+        this.init()
+    }
+
+    init() {
+        const fig = this.server_get()
+        // 先关闭
+        NetServerUtil.close_server(tcp_server_type.tcp_forward)
+        for (const key of Object.keys(this.server_socket_map)) {
+            this.server_socket_map[key].destroy();
+        }
+        this.server_socket_map = {}
+        for (const server of this.server_list) {
+            server.close()
+        }
+        this.server_list = []
+        if(fig.open) {
+            this.server_start(fig.port);
+        }
+    }
 }
 
 export const tcpForwardService = new TcpForwardService();
 ServerEvent.on("start", async (data) => {
-    tcpForwardService.server_start(5678)
-    await tcpForwardService.client_connect_server(5678,"127.0.0.1")
-    tcpForwardService.server_open_port_for_client(5570,"123",5567,"192.168.5.7")
+    tcpForwardService.init()
+    // tcpForwardService.server_start(5678)
+    // await tcpForwardService.client_connect_server(5678,"127.0.0.1")
+    // tcpForwardService.server_open_port_for_client(5570,"123",5567,"192.168.5.7")
 })

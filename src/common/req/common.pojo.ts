@@ -69,3 +69,9 @@ export interface env_item {
     note:string;
     open:boolean;
 }
+
+export class tcp_proxy_server_config {
+    open:boolean;
+    key:string;
+    port?:number;
+}

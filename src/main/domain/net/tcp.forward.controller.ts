@@ -1,15 +1,35 @@
-import {JsonController} from "routing-controllers";
+import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {NetMsgType, NetUtil, tcp_client_msg, tcp_server_msg, tcp_server_type} from "./util/NetUtil";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {tcp_forward_client_type} from "./type";
 import {tcpForwardService} from "./tcp.forward.service";
 import {NetServerUtil} from "./util/NetServerUtil";
-import {generateSaltyUUID} from "../../../common/StringUtil";
 import net from "net";
+import {NetPojo} from "../../../common/req/net.pojo";
+import {DataUtil} from "../data/DataUtil";
+import {tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
+import {Sucess} from "../../other/Result";
+import {generateSaltyUUID} from "../../../common/StringUtil";
+
 
 
 @JsonController("/tcp_forward")
 export class TcpForwardController {
+
+    @Post('/server_save')
+    async server_save(@Body() data: tcp_proxy_server_config, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy_server);
+        tcpForwardService.server_save(data)
+        return Sucess({})
+    }
+
+    @Get('/server_get')
+    async server_get(@Body() data: NetPojo, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy_server);
+        return Sucess(tcpForwardService.server_get())
+    }
 
     // 服务器接收注册
     @tcp_server_msg(NetMsgType.tcp_connect,tcp_server_type.tcp_forward)
@@ -21,18 +41,12 @@ export class TcpForwardController {
         // token校验成功 连接成功
         NetServerUtil.connect_success(util.get_client().get_socket());
         if(!info.client_id) {
-            // info.client_id = generateSaltyUUID(info.client_name)
-            // todo 临时测试
-            info.client_id = "123"
-        }
-        if(!tcpForwardService.client_map[info.client_id]) {
-            tcpForwardService.client_map[info.client_id] = info;
-            // todo 对于一些端口的修改 这里要重新加载服务器上的配置
+            info.client_id = generateSaltyUUID(info.client_name)
         }
         info.client_util = util
+        tcpForwardService.add_client(info)
         util.on_close(() => {
-            // todo 关闭客户端的一切资源
-            delete tcpForwardService.client_map[info.client_id]
+            tcpForwardService.delete_client(info.client_id)
         })
         util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
             client_id:info.client_id,
