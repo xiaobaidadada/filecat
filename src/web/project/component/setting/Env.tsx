@@ -20,6 +20,7 @@ import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {sort} from "../../../../common/ListUtil";
+import {env_item} from "../../../../common/req/common.pojo";
 
 export function Env() {
     const { t, i18n } = useTranslation();
@@ -33,7 +34,7 @@ export function Env() {
     const [quick_cmd_rows,set_quick_cmd_rows] = useState([] as QuickCmdItem[]);
     const [file_quick_cmd_rows,set_file_quick_cmd_rows] = useState([] as FileQuickCmdItem[]);
     const [dir_upload_rows,set_dir_upload_rows] = useState<dir_upload_max_num_item[]>([]);
-    const [env_path_dir_rows,set_env_path_dir_rows] = useState([]);
+    const [env_path_dir_rows,set_env_path_dir_rows] = useState([] as env_item[]);
     const [pty_cmd,set_pty_cmd] = useState("");
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
@@ -41,9 +42,17 @@ export function Env() {
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
     const quick_cmd_headers = [t("编号"),t("命令"),t("父编号"),t("备注")];
     const file_quick_cmd_headers = [t("文件后缀"),t("命令"),t("其他参数"),t("备注")];
-    const env_path_dir_headers = [t("编号"),t("路径"),t("备注")];
+    const env_path_dir_headers = [t("编号"),t("路径"),t("是否开启"),t("备注")];
     const dir_upload_headers = [t("编号"),t("路径"),t("单用户并发数量"),t("系统并发数量"),t("是否开启大文件断点"),t("大文件判断大小MB"),t("大文件并发数量"),t("大文件分块大小MB"),t("备注")];
     const {check_user_auth} = use_auth_check();
+
+    const get_env = async () => {
+        // env path
+        const result2 = await settingHttp.get("env/path/get");
+        if (result2.code === RCode.Success) {
+            set_env_path_dir_rows(result2.data);
+        }
+    }
 
     const getItems = async () => {
         // 文件夹根路径
@@ -57,11 +66,7 @@ export function Env() {
         if (result1.code === RCode.Success) {
             setRows_outside_software(result1.data);
         }
-        // env path
-        const result2 = await settingHttp.get("env/path/get");
-        if (result2.code === RCode.Success) {
-            set_env_path_dir_rows(result2.data);
-        }
+
         // 个人保护目录
         const result3 = await settingHttp.get("protection_dir");
         if (result3.code === RCode.Success) {
@@ -72,6 +77,8 @@ export function Env() {
         if (result4.code === RCode.Success) {
             set_pty_cmd(result4.data);
         }
+
+        get_env()
 
         // 系统保护目录
         const result5 = await settingHttp.get("protection_dir/sys");
@@ -308,6 +315,7 @@ export function Env() {
         const result = await settingHttp.post("env/path/save", {paths:env_path_dir_rows});
         if (result.code === RCode.Success) {
             NotySucess("保存成功")
+            get_env()
             initUserInfo();
         }
     }
@@ -380,6 +388,10 @@ export function Env() {
                             <InputText value={item.path} handleInputChange={(value) => {
                                 item.path = value;
                             }} no_border={true}/>,
+                            <Select value={!!item.open} onChange={(value:any) => {
+                                item.open = (value === true || value ==="true")
+                                set_env_path_dir_rows([...env_path_dir_rows])
+                            }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;
                             }} no_border={true}/>,

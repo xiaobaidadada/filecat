@@ -279,7 +279,7 @@ export class SettingController {
     // path路径
     @Get("/env/path/get")
     getEnvPath() {
-        return Sucess(settingService.getEnvPath());
+        return Sucess(settingService.get_en_path_list());
     }
 
     @Post('/env/path/save')

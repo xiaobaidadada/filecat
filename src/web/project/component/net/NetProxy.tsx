@@ -54,6 +54,9 @@ export function NetProxy(props) {
 
     const mac_proxy_init = async () => {
         const proxy = await netHttp.post("http/proxy/get/mac");
+        if(proxy.code !== RCode.Success) {
+            return;
+        }
         const list = []
         const others = []
         for (const p of proxy.data as MacProxy[]) {
