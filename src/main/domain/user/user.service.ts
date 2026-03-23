@@ -124,7 +124,7 @@ export class UserService {
         if(id == null) {
             r = false;
         } else {
-            r = id === user_id;
+            r = id !== user_id;
         }
         if(auto_throw === true && r === true) {
             throw "已经有同名的用户"

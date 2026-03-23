@@ -30,6 +30,7 @@ import {get_user_now_pwd} from "../../../common/DataUtil";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
+import {env_item} from "../../../common/req/common.pojo";
 const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
@@ -666,18 +667,18 @@ export class SettingService {
 
     // extra_env_path = data_common_key.extra_env_path
 
-    public getEnvPath() {
+    public get_en_path_list():env_item[] {
         return DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
     }
 
     public get_env_path() {
-        const list: any[] = DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
+        const list= this.get_en_path_list()
         const s = sysType === SysEnum.win ? ";" : ":";
-        const r_list = list.map(v => v.path).join(s);
+        const r_list = list.filter(v=>v.open).map(v => v.path).join(s);
         return process.env.PATH + s+ r_list;
     }
 
-    setEnvPath(paths: any[]) {
+    setEnvPath(paths: env_item[]) {
         DataUtil.set(data_common_key.extra_env_path_list_key, paths);
         shellServiceImpl.path_init();
         return Sucess("1");

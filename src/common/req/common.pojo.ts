@@ -63,3 +63,9 @@ export class ai_agent_message_item {
     tool_call_id?: string;
 }
 export type ai_agent_messages = ai_agent_message_item[];
+
+export interface env_item {
+    path:string;
+    note:string;
+    open:boolean;
+}
