@@ -106,3 +106,10 @@ export class tcp_proxy_client_fig{
     serverPort: number;
     key: string = "";
 }
+
+export interface server_client_proxy {
+    server_port:number;
+    client_name:string;
+    proxy_host:string;
+    proxy_port:number;
+}

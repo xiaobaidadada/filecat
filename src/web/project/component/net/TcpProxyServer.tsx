@@ -16,6 +16,7 @@ import {UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {
+    server_client_proxy,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
     tcp_proxy_server_config
@@ -35,10 +36,12 @@ export function TcpProxyServer() {
     const [isOpen, setIsOpen] = useState(false);
     const [key, setKey] = useState("");
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
+    const [online_server,set_online_server] = useState<server_client_proxy[]>([])
 
     const headers = [t("序号"),t("名称"),t("在线状态"), t("备注") ];
     const client_headers = [t("序号"),t("服务器端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
+    const online_server_headers = [t("序号"),t("名称"),t("服务端口"), t("转发ip"),t("转发端口") ];
 
     const getItems = async () => {
         const r1 = await tcpProxy.get("server_get")
@@ -51,6 +54,11 @@ export function TcpProxyServer() {
         const r2 = await tcpProxy.get("server_client_get")
         if(r2.code === RCode.Success) {
             set_client_list(r2.data);
+        }
+
+        const r3 = await tcpProxy.get("get_all_open_server_client_proxy_fig")
+        if(r3.code === RCode.Success) {
+            set_online_server(r3.data);
         }
 
     }
@@ -146,7 +154,7 @@ export function TcpProxyServer() {
         </Column>
         <Column widthPer={50}>
             {
-                (edit_client) &&
+                (edit_client) ?
                 <Dashboard>
                     <Card self_title={<span
                         className={" div-row "}><h2>{t(`客户端代理配置`)}</h2> </span>}
@@ -205,7 +213,22 @@ export function TcpProxyServer() {
                             return new_list;
                         })} width={"10rem"}/>
                     </Card>
-                </Dashboard>
+                </Dashboard> :
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Online Server")}</h2>
+                        {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
+                </span>}
+                    >
+                        <Table headers={online_server_headers} rows={online_server.map((item:server_client_proxy, index) => {
+                            const new_list = [
+                                <p>{index}</p>,
+                                <TextTip>{item.client_name}</TextTip>,
+                                <TextTip>{item.server_port}</TextTip>,
+                                <TextTip>{item.proxy_host}</TextTip>,
+                                <TextTip>{item.proxy_port}</TextTip>
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </CardFull>
             }
         </Column>
     </Row>)

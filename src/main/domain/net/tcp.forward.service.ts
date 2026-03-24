@@ -8,6 +8,7 @@ import {NetClientUtil} from "./util/NetClientUtil";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {
+    server_client_proxy,
     tcp_proxy_client_fig,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
@@ -39,6 +40,19 @@ export class TcpForwardService {
 
     private global_socket_id = 1;
 
+    // 获取所有开启的 正在运行的 服务器端口占用
+    get_all_open_server_client_proxy_fig() {
+        const list:server_client_proxy[] = []
+        for (const server of this.server_list) {
+            list.push({
+                server_port:server.proxy_fig.server_port,
+                proxy_host: server.proxy_fig.proxy_host,
+                proxy_port: server.proxy_fig.proxy_port,
+                client_name: server.fig.client_name
+            })
+        }
+        return list
+    }
 
     // 内存删除配置 持久化不删除
     delete_client(client_id:string):void {
@@ -94,7 +108,6 @@ export class TcpForwardService {
         if(!client) {
             throw ` client not found`;
         }
-        this.server_close_client_proxy(fig)
         const data_map:server_type = client.client_util.data_map[server_key]
         if(data_map.server_map[proxy_fig.server_port]) {
             // 创建过了

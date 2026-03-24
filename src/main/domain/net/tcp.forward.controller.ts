@@ -33,6 +33,12 @@ export class TcpForwardController {
         return Sucess(tcpForwardService.server_fig_get())
     }
 
+    @Get('/get_all_open_server_client_proxy_fig')
+    async get_all_open_server_client_proxy_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        return Sucess(tcpForwardService.get_all_open_server_client_proxy_fig())
+    }
+
     @Get('/server_client_get')
     async server_client_get(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
