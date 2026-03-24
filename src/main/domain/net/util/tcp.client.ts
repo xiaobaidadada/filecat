@@ -131,10 +131,10 @@ export class tcp_client {
     private call_resolve_map: { [key: number]: any } = {}
     private call_resolve_timeout_map: { [key: number]: any } = {}
     private options: tcp_client_options
-    private register:()=>Promise<Buffer>
+    private register:()=>any
 
         constructor(
-        options: tcp_client_options,register:()=>Promise<Buffer> ) {
+        options: tcp_client_options,register:()=>any) {
         this.register = register;
         this.options = options;
     }

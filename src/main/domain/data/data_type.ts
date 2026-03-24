@@ -10,7 +10,7 @@ export enum file_key {
     // flexsearch_index_db = "flexsearch_index_db.db",
     // flexsearch_name_index_db = "flexsearch_name_index_db.db",
     fts5_rag_db ="fts5_rag_db.db",
-    tcp_proxy_server = "tcp_proxy_server"
+    tcp_proxy_server_client = "tcp_proxy_server_client"
 }
 // 数据目录
 export enum data_dir_tem_name {
@@ -83,7 +83,9 @@ export enum data_common_key {
     share_file_list_key = "share_file_list_key",
     share_file_list_key_download_statics = "share_file_list_key_download_statics",
     tcp_proxy_server_base = "tcp_proxy_server_base",
+    // 服务器的客户端配置
     tcp_proxy_server_client_list = "tcp_proxy_server_client_list",
+    tcp_proxy_client_fig = "tcp_proxy_client_fig",
 }
 
 

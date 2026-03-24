@@ -84,6 +84,7 @@ export enum CmdType {
     // net
     vir_net_serverIno_get,
     vir_net_client_get,
+    tcp_proxy_client_status,
     //文件功能
     file_info,
     file_video_trans,

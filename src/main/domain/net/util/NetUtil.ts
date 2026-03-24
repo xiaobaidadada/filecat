@@ -41,9 +41,9 @@ export enum tcp_server_type {
 
 export enum NetMsgType {
     default, // 没有意义的 用于 head 返回的情况 但是需要设置个值
+    heart  , // 心跳
 
     // 用于tun 代理的 ip对ip层
-    heart  , // 心跳
     register, // 注册
     data, // tcp 传输数据
     trans_data, // 转发通信数据

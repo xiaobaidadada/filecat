@@ -65,7 +65,7 @@ export class NetClientUtil {
         return `${options.server_host}:${options.server_port}`;
     }
 
-    public static async start_tcp(serverPort: number, serverIp: string, register:  () => Promise<Buffer>, state_call: (state: boolean) => void) {
+    public static async start_tcp(serverPort: number, serverIp: string, register:  () => any, state_call: (state: boolean) => void) {
         const opt = {
             server_host: serverIp,
             server_port: serverPort,

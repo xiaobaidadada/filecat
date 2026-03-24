@@ -1,4 +1,5 @@
 import {running_type} from "./file.req";
+import {VirServerEnum} from "./net.pojo";
 
 export interface NavIndexItem {
     name:string;
@@ -74,4 +75,34 @@ export class tcp_proxy_server_config {
     open:boolean;
     key:string;
     port?:number;
+}
+
+export class tcp_proxy_client_item {
+    proxy_host:string;
+    proxy_port:number;
+    note?:string;
+    server_port:number;
+    open:boolean;
+}
+
+export class tcp_proxy_server_client {
+    // 服务器状态与配置
+    index?:number;
+    note?:string;
+    status:boolean;
+    // 客户端需要的配置
+    proxy_fig_list:tcp_proxy_client_item[]= []
+    // 客户端原本信息
+    client_id:string;
+    client_name:string;
+}
+
+export class tcp_proxy_client_fig{
+    client_name: string;
+    client_id?:string;
+    open: boolean = false;
+
+    serverIp: string;
+    serverPort: number;
+    key: string = "";
 }

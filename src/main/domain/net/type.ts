@@ -1,7 +1,8 @@
 import {tcp_raw_socket} from "./util/tcp.client";
 import net from "net";
+import {tcp_proxy_client_item, tcp_proxy_server_client} from "../../../common/req/common.pojo";
 
-
+// 传输的时候需要
 export interface tcp_forward_client_type {
     note?:string // 备注
     // token?:string
@@ -11,9 +12,19 @@ export interface tcp_forward_client_type {
     client_name?:string
     client_id?:string // 服务器生成
 
-
     // 内存临时变量
-    status?:boolean;
     client_util?: tcp_raw_socket // 服务器上的socket客户端
 }
 
+export interface sockets_type  {
+    [key: number]: net.Socket;
+}
+
+export interface server_type {
+    fig:tcp_proxy_server_client,
+    proxy_fig:tcp_proxy_client_item,
+    server?:net.Server,
+    server_socket_map:{
+        [key:number]:net.Socket
+    }
+}
