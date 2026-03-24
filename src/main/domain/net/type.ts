@@ -20,11 +20,20 @@ export interface sockets_type  {
     [key: number]: net.Socket;
 }
 
-export interface server_type {
+export interface server_item_type {
     fig:tcp_proxy_server_client,
     proxy_fig:tcp_proxy_client_item,
     server?:net.Server,
     server_socket_map:{
         [key:number]:net.Socket
+    }
+}
+
+export interface server_type {
+    all_server_socket_map:{
+        [key:number]:net.Socket
+    }
+    server_map:{
+        [key:number]:server_item_type
     }
 }

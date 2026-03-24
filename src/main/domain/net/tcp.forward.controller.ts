@@ -86,6 +86,11 @@ export class TcpForwardController {
         if(!info.client_id) {
             info.client_id = generateSaltyUUID(info.client_name)
         }
+        const data_map:server_type = {
+            all_server_socket_map: {},
+            server_map: {}
+        }
+        util.data_map[server_key] =  data_map
         util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
             client_id:info.client_id,
         })),tag_id);
@@ -152,18 +157,18 @@ export class TcpForwardController {
     }
     @tcp_server_msg(NetMsgType.tcp_socket_data,tcp_server_type.tcp_forward)
     client_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        const server:server_type  =  util.data_map[server_key]
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-        tcpForwardService.write_socket(server.server_socket_map[socket_id],data)
+        const data_map:server_type = util.data_map[server_key]
+        tcpForwardService.write_socket(data_map.all_server_socket_map[socket_id],data)
     }
 
     // 服务器和客户端接收到客户端的关闭
     @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)
     server_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        const server:server_type  =  util.data_map[server_key]
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-        server.server_socket_map[socket_id]?.destroy()
-        delete server.server_socket_map[socket_id]
+        const data_map:server_type = util.data_map[server_key]
+        data_map.all_server_socket_map[socket_id]?.destroy()
+        delete data_map.all_server_socket_map[socket_id]
     }
     @tcp_client_msg(NetMsgType.tcp_socket_close)
     client_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
