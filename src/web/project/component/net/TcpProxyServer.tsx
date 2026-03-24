@@ -67,12 +67,15 @@ export function TcpProxyServer() {
     useEffect(() => {
         getItems();
     }, []);
-    const save_server_info = async () => {
+    const save_server_info = async (notice_client:boolean) => {
         const req:tcp_proxy_server_config = new tcp_proxy_server_config()
         req.port = serverPort
         req.key = key
         req.open = isOpen
-        const r = await tcpProxy.post("server_save",req)
+        const r = await tcpProxy.post("server_save",{
+            fig:req,
+            notice_client:notice_client
+        })
         if(r.code === RCode.Success) {
             NotySucess("成功")
         }
@@ -93,7 +96,14 @@ export function TcpProxyServer() {
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
-                <Card title={"Server"} rightBottomCom={<ButtonText text={t('保存')} clickFun={save_server_info}/>}>
+                <Card title={"Server"} rightBottomCom={<div>
+                    <ButtonText text={t('保存并通知修改key和port')} clickFun={()=>{
+                        save_server_info(true)
+                    }}/>
+                    <ButtonText text={t('保存')} clickFun={()=>{
+                        save_server_info(false)
+                    }}/>
+                </div>}>
 
                     <InputText placeholder={"port"} value={serverPort} handleInputChange={(d) => {
                         setServerPort(d)

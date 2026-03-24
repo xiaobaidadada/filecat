@@ -21,7 +21,7 @@ const  tcp_client_target_map = {}
 export class TcpForwardController {
 
     @Post('/server_save')
-    async server_save(@Body() data: tcp_proxy_server_config, @Req() req) {
+    async server_save(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
         tcpForwardService.server_fig_save(data)
         return Sucess({})
@@ -151,8 +151,10 @@ export class TcpForwardController {
     @tcp_client_msg(NetMsgType.tcp_server_update_client_info)
     tcp_server_update_client_info(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const info = JSON.parse(data.toString()) as any
-        const it = tcpForwardService.client_fig_get()
+        const it = {} as tcp_proxy_client_fig
         it.client_name = info.client_name
+        it.key = info.token
+        it.serverPort = info.server_port
         tcpForwardService.client_fig_save(it)
     }
 

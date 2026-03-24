@@ -40,6 +40,17 @@ export class TcpForwardService {
 
     private global_socket_id = 1;
 
+    push_all_client_update_server_info() {
+        const info = this.server_fig_get()
+        for (const key of Object.keys(this.client_map)) {
+            const client = this.client_map[key];
+            client.client_util.send_data(NetMsgType.tcp_server_update_client_info, Buffer.from(JSON.stringify({
+                token:info.key,
+                server_port:info.port
+            })));
+        }
+    }
+
     // 获取所有开启的 正在运行的 服务器端口占用
     get_all_open_server_client_proxy_fig() {
         const list:server_client_proxy[] = []
@@ -290,8 +301,14 @@ export class TcpForwardService {
     }
 
     // 服务器开启配置保存
-    server_fig_save(fig:tcp_proxy_server_config) {
-        DataUtil.set(data_common_key.tcp_proxy_server_base,fig,file_key.tcp_proxy_server_client)
+    server_fig_save(param:{
+        fig:tcp_proxy_server_config,
+        notice_client:boolean
+    }) {
+        DataUtil.set(data_common_key.tcp_proxy_server_base,param.fig,file_key.tcp_proxy_server_client)
+        if(param.notice_client){
+            this.push_all_client_update_server_info()
+        }
         this.server_init()
     }
 
@@ -328,6 +345,7 @@ export class TcpForwardService {
     client_fig_save(fig:tcp_proxy_client_fig|any) {
         const old_fig = this.client_fig_get()
         for (const key of Object.keys(fig)) {
+            if(fig[key] == null) continue;
             old_fig[key] = fig[key];
         }
         DataUtil.set(data_common_key.tcp_proxy_client_fig,old_fig,file_key.tcp_proxy_server_client)
