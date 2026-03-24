@@ -112,4 +112,6 @@ export interface server_client_proxy {
     client_name:string;
     proxy_host:string;
     proxy_port:number;
+
+    server_port_note?:string;
 }

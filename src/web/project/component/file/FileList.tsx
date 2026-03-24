@@ -233,12 +233,12 @@ export default function FileList() {
         const size_sort = [
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>{t("大小逆序")}</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>{t("大小顺序")}</span>),
                 v: DirListShowTypeEmum.size_min_max
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>{t("大小顺序")}</span>),
+                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>{t("大小逆序")}</span>),
                 v: DirListShowTypeEmum.size_max_min
             }
         ]

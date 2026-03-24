@@ -59,7 +59,8 @@ export class TcpForwardService {
                 server_port:server.proxy_fig.server_port,
                 proxy_host: server.proxy_fig.proxy_host,
                 proxy_port: server.proxy_fig.proxy_port,
-                client_name: server.fig.client_name
+                client_name: server.fig.client_name,
+                server_port_note: server.proxy_fig.note,
             })
         }
         return list

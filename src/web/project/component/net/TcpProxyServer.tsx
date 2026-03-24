@@ -41,7 +41,7 @@ export function TcpProxyServer() {
     const headers = [t("序号"),t("名称"),t("在线状态"), t("备注") ];
     const client_headers = [t("序号"),t("服务器端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
-    const online_server_headers = [t("序号"),t("名称"),t("服务端口"), t("转发ip"),t("转发端口") ];
+    const online_server_headers = [t("序号"),t("名称"),t("服务端口"), t("转发ip"),t("转发端口"),t("端口备注") ];
 
     const getItems = async () => {
         const r1 = await tcpProxy.get("server_get")
@@ -234,7 +234,8 @@ export function TcpProxyServer() {
                                 <TextTip>{item.client_name}</TextTip>,
                                 <TextTip>{item.server_port}</TextTip>,
                                 <TextTip>{item.proxy_host}</TextTip>,
-                                <TextTip>{item.proxy_port}</TextTip>
+                                <TextTip>{item.proxy_port}</TextTip>,
+                                <TextTip>{item.server_port_note}</TextTip>
                             ];
                             return new_list;
                         })} width={"10rem"}/>
