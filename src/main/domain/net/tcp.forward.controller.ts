@@ -46,6 +46,13 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    @Post('/server_client_del')
+    async server_client_del(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        tcpForwardService.server_client_del(data)
+        return Sucess({})
+    }
+
     @Post('/client_save')
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
@@ -76,12 +83,12 @@ export class TcpForwardController {
         }
         // token校验成功 连接成功
         NetServerUtil.connect_success(util.get_client().get_socket());
-        util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
-            client_id:info.client_id,
-        })),tag_id);
         if(!info.client_id) {
             info.client_id = generateSaltyUUID(info.client_name)
         }
+        util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
+            client_id:info.client_id,
+        })),tag_id);
         info.client_util = util
         tcpForwardService.add_client(info)
         tcpForwardService.server_client_socket_map[info.client_id] = util;

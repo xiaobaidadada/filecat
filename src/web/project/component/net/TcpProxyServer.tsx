@@ -75,6 +75,13 @@ export function TcpProxyServer() {
             NotySucess("成功")
         }
     }
+    const server_client_del = async (client_id:string) => {
+        const r = await tcpProxy.post("server_client_del",{client_id})
+        if(r.code === RCode.Success) {
+            NotySucess("成功")
+            getItems()
+        }
+    }
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
@@ -113,7 +120,22 @@ export function TcpProxyServer() {
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
                                     set_edit_client(item)
                                 }}/>
-                                {/*<ActionButton icon={"delete"} title={t("删除")} onClick={() => {}}/>*/}
+                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
+                                    set_prompt_card({
+                                        open: true,
+                                        title: "share file",
+                                        confirm: async () => {
+                                            set_prompt_card({open: false})
+                                            await server_client_del(item.client_id)
+                                        },
+                                        context_div: (
+                                            <div className="card-content">
+                                                {t("确定删除这个吗客户端吗？")}
+                                            </div>
+                                        ),
+
+                                    })
+                                }}/>
                             </div>,
                         ];
                         return new_list;

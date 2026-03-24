@@ -47,7 +47,7 @@ export class NetServerUtil {
     }
 
     public static close_client(server_type: tcp_server_type,util:tcp_raw_socket) {
-        this.tcp_server_map[server_type].socket_set.delete(util)
+        this.tcp_server_map[server_type]?.socket_set?.delete(util)
         util.get_client().close()
     }
 

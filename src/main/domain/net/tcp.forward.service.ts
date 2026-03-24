@@ -235,6 +235,19 @@ export class TcpForwardService {
         }
     }
 
+    server_client_del({client_id}:{client_id:string}) {
+        const list = this.server_client_get()
+        const one = list.find(v=>v.client_id===client_id)
+        if(one){
+            this.server_close_client_proxy(one);
+            const new_list = list.filter(v=>v.client_id!==client_id);
+            DataUtil.set(data_common_key.tcp_proxy_server_client_list,new_list,file_key.tcp_proxy_server_client)
+            this.client_map[client_id]?.client_util.get_client().close()
+            delete this.client_map[client_id]
+            return
+        }
+    }
+
     server_client_save(item:tcp_proxy_server_client) {
         const list = this.server_client_get()
         const one = list.find(v=>v.client_id===item.client_id)
