@@ -91,7 +91,7 @@ export function TcpProxyClient(props) {
                 <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>} titleCom={<div>{t("连接状态")}<StatusCircle ok={connet_state} /></div>}>
 
                     <InputText placeholder={`${t("服务器")}ip`} value={serverIp} handleInputChange={(d)=>{setServerIp(d)}}/>
-                    <InputText placeholder={`${t("服务器")}part`} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
+                    <InputText placeholder={`${t("服务器")}port`} value={serverPort} handleInputChange={(d)=>{setServerPort(d)}}/>
                     <InputText placeholder={"名称 "} value={client_name} handleInputChange={(d)=>{set_client_name(d)}}/>
                     <InputText placeholder={"key "} value={key} handleInputChange={(d)=>{setKey(d)}}/>
                     <form>

@@ -210,7 +210,7 @@ export function TcpProxyServer() {
                                 <div>
                                     <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                                         const new_list = []
-                                        for (let i=0;i<edit_client.proxy_fig_list;i++) {
+                                        for (let i=0;i<(edit_client.proxy_fig_list.length??0);i++) {
                                             if(i!== index) {
                                                 new_list.push(edit_client.proxy_fig_list[i])
                                             }
