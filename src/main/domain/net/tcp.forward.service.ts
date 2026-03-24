@@ -61,6 +61,7 @@ export class TcpForwardService {
         this.client_map[fig.client_id] = fig
         if(it) {
             it.client_name  = fig.client_name
+            this.server_let_client_to_proxy(it)
         } else {
             list.push({
                 client_id: fig.client_id,
@@ -93,6 +94,7 @@ export class TcpForwardService {
         if(!client) {
             throw ` client not found`;
         }
+        this.server_close_client_proxy(fig)
         const server_item:server_type = {
             proxy_fig:proxy_fig,
             fig,
@@ -148,7 +150,7 @@ export class TcpForwardService {
                 }
                 const data = await NetClientUtil.send_for_tcp_async(fig.serverIp,fig.serverPort,NetMsgType.tcp_connect, Buffer.from(JSON.stringify(info)));
                 const r_info = JSON.parse(data.toString());
-                await this.client_fig_save({client_id:r_info.client_id})
+                this.client_fig_save({client_id:r_info.client_id})
             }
             await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
                 (state) => {
@@ -226,6 +228,13 @@ export class TcpForwardService {
         this.server_list = new_server_list
     }
 
+    server_let_client_to_proxy(item:tcp_proxy_server_client) {
+        for (const open_fig of item.proxy_fig_list) {
+            if(open_fig.open)
+                this.server_open_port_for_client(item,open_fig)
+        }
+    }
+
     server_client_save(item:tcp_proxy_server_client) {
         const list = this.server_client_get()
         const one = list.find(v=>v.client_id===item.client_id)
@@ -234,10 +243,12 @@ export class TcpForwardService {
             for (const key of Object.keys(item)) {
                 one[key] = item[key];
             }
-            for (const open_fig of item.proxy_fig_list) {
-                if(open_fig.open)
-                    this.server_open_port_for_client(item,open_fig)
-            }
+            DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
+            this.server_let_client_to_proxy(item)
+            const client = this.client_map[one.client_id];
+            client?.client_util.send_data(NetMsgType.tcp_server_update_client_info,Buffer.from(JSON.stringify({
+                client_name:item.client_name
+            })))
             return
         }
         throw "不存在的客户端"
@@ -246,7 +257,7 @@ export class TcpForwardService {
     // 服务器开启配置保存
     server_fig_save(fig:tcp_proxy_server_config) {
         DataUtil.set(data_common_key.tcp_proxy_server_base,fig,file_key.tcp_proxy_server_client)
-        this.init()
+        this.server_init()
     }
 
     client_fig_get() {
@@ -279,7 +290,7 @@ export class TcpForwardService {
         return info;
     }
 
-    async client_fig_save(fig:tcp_proxy_client_fig|any) {
+    client_fig_save(fig:tcp_proxy_client_fig|any) {
         const old_fig = this.client_fig_get()
         for (const key of Object.keys(fig)) {
             old_fig[key] = fig[key];
@@ -287,7 +298,7 @@ export class TcpForwardService {
         DataUtil.set(data_common_key.tcp_proxy_client_fig,old_fig,file_key.tcp_proxy_server_client)
     }
 
-    init() {
+    server_init() {
         const fig = this.server_fig_get()
         // 全部服务端口先关闭
         NetServerUtil.close_server(tcp_server_type.tcp_forward)
@@ -302,12 +313,18 @@ export class TcpForwardService {
         if(fig.open) {
             this.server_start(fig.port);
         }
+        setTimeout(()=>{
+            const list = this.server_client_get()
+            for (const item of list) {
+                this.server_let_client_to_proxy(item)
+            }
+        },3000)
     }
 }
 
 export const tcpForwardService = new TcpForwardService();
 ServerEvent.on("start", async (data) => {
-    tcpForwardService.init()
+    tcpForwardService.server_init()
     setTimeout(()=>{
          tcpForwardService.client_init_to_server()
     },500)

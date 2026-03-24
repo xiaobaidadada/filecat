@@ -113,7 +113,7 @@ export function TcpProxyServer() {
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
                                     set_edit_client(item)
                                 }}/>
-                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => {}}/>
+                                {/*<ActionButton icon={"delete"} title={t("删除")} onClick={() => {}}/>*/}
                             </div>,
                         ];
                         return new_list;

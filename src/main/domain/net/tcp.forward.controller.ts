@@ -15,7 +15,7 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {virtualClientService} from "./virtual/virtual.client.service";
 
-
+const  tcp_client_target_map = {}
 
 @JsonController("/tcp_forward")
 export class TcpForwardController {
@@ -50,7 +50,7 @@ export class TcpForwardController {
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
         tcpForwardService.close_client()
-        await tcpForwardService.client_fig_save(data)
+        tcpForwardService.client_fig_save(data)
         await tcpForwardService.client_init_to_server()
         return Sucess({})
     }
@@ -76,6 +76,9 @@ export class TcpForwardController {
         }
         // token校验成功 连接成功
         NetServerUtil.connect_success(util.get_client().get_socket());
+        util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
+            client_id:info.client_id,
+        })),tag_id);
         if(!info.client_id) {
             info.client_id = generateSaltyUUID(info.client_name)
         }
@@ -86,9 +89,21 @@ export class TcpForwardController {
             tcpForwardService.delete_client(info.client_id)
             delete tcpForwardService.server_client_socket_map[info.client_id]
         })
-        util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
-            client_id:info.client_id,
-        })),tag_id);
+    }
+
+
+
+    @Get('/client_tcp_proxy_get')
+    async client_tcp_proxy_get(@Body() data: NetPojo, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        const list:{
+            client_proxy_port:number,
+            client_proxy_host:string
+        }[] = []
+        for (const key of Object.keys(tcp_client_target_map)) {
+            list.push(tcp_client_target_map[key]);
+        }
+        return Sucess(list)
     }
 
     // 客户端接收到服务器的创建请求
@@ -98,14 +113,29 @@ export class TcpForwardController {
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
 
         });
+        const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
+        tcp_client_target_map[key] = {
+            client_proxy_port: info.client_proxy_port,
+            client_proxy_host: info.client_proxy_host,
+        }
         targetSocket.on("data", (data) => {
             util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
         })
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
             delete tcpForwardService.client_socket_map[info.socket_id]
+            delete tcp_client_target_map[key]
         })
         tcpForwardService.client_socket_map[info.socket_id] = targetSocket;
+    }
+
+    // 修改信息
+    @tcp_client_msg(NetMsgType.tcp_server_update_client_info)
+    tcp_server_update_client_info(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const info = JSON.parse(data.toString()) as any
+        const it = tcpForwardService.client_fig_get()
+        it.client_name = info.client_name
+        tcpForwardService.client_fig_save(it)
     }
 
     // socket的数据

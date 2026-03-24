@@ -3,15 +3,15 @@ import {tcpProxy} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {Column, Row} from "../../../meta/component/Dashboard";
-import {Card, StatusCircle} from "../../../meta/component/Card";
+import {Card, StatusCircle, TextTip} from "../../../meta/component/Card";
 import {InputRadio, InputText} from "../../../meta/component/Input";
-import {ButtonText} from "../../../meta/component/Button";
-import {Rows} from "../../../meta/component/Table";
+import {ActionButton, ButtonText} from "../../../meta/component/Button";
+import {Rows, Table} from "../../../meta/component/Table";
 import {VirClientPojo} from "../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
-import {tcp_proxy_client_fig} from "../../../../common/req/common.pojo";
+import {tcp_proxy_client_fig, tcp_proxy_server_client} from "../../../../common/req/common.pojo";
 
 export function TcpProxyClient(props) {
     const { t } = useTranslation();
@@ -25,31 +25,45 @@ export function TcpProxyClient(props) {
     const [key,setKey] = useState("");
     const [connet_state,set_connet_state] = useState<boolean>(false);
 
+    const [client_proxy_list,set_client_proxy_list] = useState<{
+        client_proxy_port:number,
+        client_proxy_host:string
+    }[]>([]);
+
+    const client_headers = ["index","host","port"]
+
+    const init = async ()=>{
+        const result = await tcpProxy.get("client_get");
+        if (result.code !== RCode.Success) {
+            return;
+        }
+        const data = result.data as tcp_proxy_client_fig;
+        setServerPort(data.serverPort);
+        setServerIp(data.serverIp);
+        setKey(data.key);
+        setIsOpen(data.open);
+        set_client_name(data.client_name);
+        if(data.open) {
+            const data = new WsData(CmdType.tcp_proxy_client_status);
+            const r = await ws.send(data);
+            if(r.code !== RCode.Success)  return
+            const state = r.context.status;
+            console.log(r)
+            set_connet_state(state);
+            ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
+                set_connet_state(data.context.status);
+            })
+        }
+
+        const result1 = await tcpProxy.get("client_tcp_proxy_get");
+        if (result1.code !== RCode.Success) {
+            return;
+        }
+        set_client_proxy_list(result1.data)
+    }
 
     useEffect(() => {
-        const init = async ()=>{
-            const result = await tcpProxy.get("client_get");
-            if (result.code !== RCode.Success) {
-                return;
-            }
-            const data = result.data as tcp_proxy_client_fig;
-            setServerPort(data.serverPort);
-            setServerIp(data.serverIp);
-            setKey(data.key);
-            setIsOpen(data.open);
-            set_client_name(data.client_name);
-            if(data.open) {
-                const data = new WsData(CmdType.tcp_proxy_client_status);
-                const r = await ws.send(data);
-                if(r.code !== RCode.Success)  return
-                const state = r.context.status;
-                console.log(r)
-                set_connet_state(state);
-                ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
-                    set_connet_state(data.context.status);
-                })
-            }
-        }
+
         init();
     }, []);
     const save =async ()=>{
@@ -88,8 +102,15 @@ export function TcpProxyClient(props) {
                         ]}/>
                     </form>
                 </Card>
-                <Card title={"转发列表"} >
-
+                <Card title={"正在转发列表"} >
+                    <Table headers={client_headers} rows={client_proxy_list.map((item, index) => {
+                        const new_list = [
+                            <p>{index}</p>,
+                            <TextTip>{item.client_proxy_host}</TextTip>,
+                            <TextTip>{item.client_proxy_port}</TextTip>,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
                 </Card>
             </Column>
 

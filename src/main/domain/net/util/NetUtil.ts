@@ -55,6 +55,7 @@ export enum NetMsgType {
     tcp_socket_close,//  服务器和客户端都可以用
 
     tcp_client_create_socket_for_server,
+    tcp_server_update_client_info,
 
 }
 
