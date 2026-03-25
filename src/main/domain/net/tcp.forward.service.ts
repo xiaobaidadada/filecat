@@ -139,7 +139,7 @@ export class TcpForwardService {
         const data_map:server_type = client.client_util.data_map[server_key]
         if(data_map.server_map[proxy_fig.server_port]) {
             // 创建过了
-            console.log(`服务器有了 ${proxy_fig.server_port}`)
+            data_map.server_map[proxy_fig.server_port]?.server?.close()
             return;
         }
         const server_item:server_item_type = {
