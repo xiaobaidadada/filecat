@@ -123,6 +123,16 @@ export class TcpForwardService {
     }
 
 
+    server_close_client_proxy(old_item:tcp_proxy_server_client) {
+        // 先关服务器
+        const data_map:server_type = this.client_map[old_item.client_id].client_util.data_map[server_key]
+        if(!data_map)return;
+        for (const server_port of Object.keys(data_map.server_map)) {
+            const server:server_item_type = data_map.server_map[server_port]
+            server.server?.close()
+        }
+    }
+
     // 服务器向客户端发起一个请求 想要获取 一个socket的建立
     server_open_port_for_client( fig:tcp_proxy_server_client,proxy_fig:tcp_proxy_client_item) {
         const client = this.client_map[fig.client_id];
@@ -160,6 +170,11 @@ export class TcpForwardService {
                 delete data_map?.all_server_socket_map[socket_id]
             })
         });
+        server.on("close",()=>{
+            for (const key of Object.keys(server_item.server_socket_map)) {
+                server_item.server_socket_map[key]?.destroy()
+            }
+        })
         server.listen(proxy_fig.server_port, () => {
             console.log(`TCP 转发服务器 代理: ${proxy_fig.server_port}`);
         });
@@ -252,18 +267,6 @@ export class TcpForwardService {
         return list;
     }
 
-    server_close_client_proxy(old_item:tcp_proxy_server_client) {
-        // 先关服务器
-        const data_map:server_type = this.client_map[old_item.client_id].client_util.data_map[server_key]
-        for (const server_port of Object.keys(data_map.server_map)) {
-            const server:server_item_type = data_map.server_map[server_port]
-            server.server.close()
-            for (const key of Object.keys(server.server_socket_map)) {
-                server.server_socket_map[key].destroy()
-            }
-            delete data_map.server_map[server_port]
-        }
-    }
 
     server_let_client_to_proxy(item:tcp_proxy_server_client) {
         for (const open_fig of item.proxy_fig_list) {
