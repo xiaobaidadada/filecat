@@ -34,9 +34,10 @@ export function TcpProxyServer() {
     const [serverPort, setServerPort] = useState(undefined);
     // const [udp_port, set_udp_port] = useState(undefined);
     const [isOpen, setIsOpen] = useState(false);
-    const [key, setKey] = useState("");
+    // const [key, setKey] = useState("");
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
     const [online_server,set_online_server] = useState<server_client_proxy[]>([])
+    const [option_keys,set_option_keys] = useState<string[]>([])
 
     const headers = [t("序号"),t("名称"),t("在线状态"), t("备注") ];
     const client_headers = [t("序号"),t("服务器端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
@@ -46,9 +47,10 @@ export function TcpProxyServer() {
     const getItems = async () => {
         const r1 = await tcpProxy.get("server_get")
         if(r1.code === RCode.Success) {
-            setKey(r1.data.key);
+            // setKey(r1.data.key);
             setServerPort(r1.data.port);
             setIsOpen(r1.data.open);
+            set_option_keys(r1.data.option_keys??[]);
         }
 
         const r2 = await tcpProxy.get("server_client_get")
@@ -70,8 +72,9 @@ export function TcpProxyServer() {
     const save_server_info = async (notice_client:boolean) => {
         const req:tcp_proxy_server_config = new tcp_proxy_server_config()
         req.port = serverPort
-        req.key = key
+        // req.key = key
         req.open = isOpen
+        req.option_keys = option_keys;
         const r = await tcpProxy.post("server_save",{
             fig:req,
             notice_client:notice_client
@@ -97,7 +100,7 @@ export function TcpProxyServer() {
         <Column widthPer={50}>
             <Dashboard>
                 <Card title={"Server"} rightBottomCom={<div>
-                    <ButtonText text={t('保存并通知修改key和port')} clickFun={()=>{
+                    <ButtonText text={t('保存并通知客户端第一个key和port')} clickFun={()=>{
                         save_server_info(true)
                     }}/>
                     <ButtonText text={t('保存')} clickFun={()=>{
@@ -109,9 +112,24 @@ export function TcpProxyServer() {
                         setServerPort(d)
                     }}/>
                     {/*<InputText placeholder={"udp port 不设置p2p服务将无法使用 "} value={udp_port} handleInputChange={(d)=>{set_udp_port(d)}}/>*/}
-                    <InputText placeholder={"key "} value={key} handleInputChange={(d) => {
-                        setKey(d)
-                    }}/>
+                    {/*<InputText placeholder={"key "} value={key} handleInputChange={(d) => {*/}
+                    {/*    setKey(d)*/}
+                    {/*}}/>*/}
+                    <label><ActionButton icon={"add"} onClick={() => {
+                        set_option_keys([...option_keys, ""])
+                    }} title={"添加"}/>{t("key")}</label>
+                    {(option_keys ?? []).map((item, index) => {
+                        return <div key={index} style={{display: "flex",}}>
+                            <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
+                                option_keys[index] = value;
+                                set_option_keys([...option_keys]);
+                            }}/></div>
+                            <ActionButton icon={"delete"} onClick={() => {
+                                option_keys.splice(index, 1);
+                                set_option_keys([...option_keys]);
+                            }} title={"删除"}/>
+                        </div>
+                    })}
                     <form>
                         {t("状态")}:<Rows isFlex={true} columns={[
                         <InputRadio value={1} context={t("开启")} selected={isOpen} onchange={() => {

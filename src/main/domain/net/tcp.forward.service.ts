@@ -29,10 +29,6 @@ export class TcpForwardService {
         [key:string]:tcp_forward_client_type // key 是客户端 id
     } = {}
 
-    public server_client_socket_map:{
-        [key:number]:tcp_raw_socket
-    } = {}
-
 
     public client_socket_map:{
         [key:number]:net.Socket
@@ -52,7 +48,7 @@ export class TcpForwardService {
         for (const key of Object.keys(this.client_map)) {
             const client = this.client_map[key];
             client.client_util.send_data(NetMsgType.tcp_server_update_client_info, Buffer.from(JSON.stringify({
-                token:info.key,
+                token:info.option_keys?.[0],
                 server_port:info.port
             })));
         }
@@ -84,8 +80,8 @@ export class TcpForwardService {
         if(it) {
             const aa:server_type = it.client_util.data_map[server_key]
             if(!aa)return;
-            for (const k  of Object.keys(aa.all_server_socket_map)) {
-                aa.all_server_socket_map[k].destroy()
+            for (const server  of Object.values(aa.server_map)) {
+                server.server?.close()
             }
         }
         delete this.client_map[client_id];
@@ -112,9 +108,14 @@ export class TcpForwardService {
     }
 
     public is_ok_token(hash_token:string){
-        const k = this.server_fig_get().key
-        if(k == null) return false;
-        return hash_token === NetUtil.get64Key(k);
+        const server_info = this.server_fig_get()
+        for (const key of server_info.option_keys??[]) {
+            let r =  hash_token === NetUtil.get64Key(key);
+            if(r ) {
+                return  true;
+            }
+        }
+        return false;
     }
 
     // 开启一个 tcp 转发服务器 服务器
@@ -136,11 +137,14 @@ export class TcpForwardService {
     // 服务器向客户端发起一个请求 想要获取 一个socket的建立
     server_open_port_for_client( fig:tcp_proxy_server_client,proxy_fig:tcp_proxy_client_item) {
         const client = this.client_map[fig.client_id];
+        if(!client) {
+            // 客户端还没有连接
+            return;
+        }
         const data_map:server_type = client.client_util.data_map[server_key]
         if(data_map.server_map[proxy_fig.server_port]) {
             // 创建过了
             data_map.server_map[proxy_fig.server_port]?.server?.close()
-            return;
         }
         const server_item:server_item_type = {
             proxy_fig:proxy_fig,
@@ -209,8 +213,9 @@ export class TcpForwardService {
             }
             await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
                 (state) => {
-                    this.client_staus = state
+                    // this.client_staus = state
                     this.push_client_status()
+
                 });
         }
     }
@@ -262,7 +267,7 @@ export class TcpForwardService {
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
         }
         for (const it of list) {
-            it.status = !!this.server_client_socket_map[it.client_id]
+            it.status = !!this.client_map[it.client_id]?.client_util?.connected
         }
         return list;
     }
@@ -329,7 +334,7 @@ export class TcpForwardService {
     }
 
     wssSet: Set<Wss> = new Set();
-    client_staus:boolean = false;
+    // client_staus:boolean = false;
 
     tcp_proxy_client_status(data: WsData<any>) {
         this.wssSet.add(data.wss)
@@ -340,8 +345,9 @@ export class TcpForwardService {
     }
 
     push_client_status( ){
+        const fig = this.client_fig_get()
         const info = {
-            status:this.client_staus
+            status: NetClientUtil.is_alive(fig.serverIp,fig.serverPort),
         }
         for (const wss of this.wssSet.values()) {
             wss.send(CmdType.tcp_proxy_client_status, info);
@@ -376,12 +382,6 @@ export class TcpForwardService {
         if(fig.open) {
             this.server_start(fig.port);
         }
-        setTimeout(()=>{
-            const list = this.server_client_get()
-            for (const item of list) {
-                this.server_let_client_to_proxy(item)
-            }
-        },3000)
     }
 }
 

@@ -102,10 +102,8 @@ export class TcpForwardController {
         })),tag_id);
         info.client_util = util
         tcpForwardService.add_client(info)
-        tcpForwardService.server_client_socket_map[info.client_id] = util;
         util.on_close(() => {
             tcpForwardService.delete_client(info.client_id)
-            delete tcpForwardService.server_client_socket_map[info.client_id]
         })
     }
 

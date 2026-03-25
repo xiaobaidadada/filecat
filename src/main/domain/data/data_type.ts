@@ -94,6 +94,8 @@ export enum data_version_type{
     undefine = 0,
     filecat_not = 1, // 没有使用版本的阶段
     filecat_1 = 2 , // 这个版本会 将navindex_key http_tag_key 独立文件检测独立拷贝出来
+    handle_tcp_proxy_server_key = 3,
+
 }
 
 export function is_data_version_type(value) {

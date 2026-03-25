@@ -73,7 +73,8 @@ export interface env_item {
 
 export class tcp_proxy_server_config {
     open:boolean;
-    key:string;
+    key?:string; // 废弃
+    option_keys?:string[]
     port?:number;
 }
 

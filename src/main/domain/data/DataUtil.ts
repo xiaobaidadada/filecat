@@ -10,6 +10,7 @@ import {
     is_data_version_type
 } from "./data_type";
 import {FileUtil} from "../file/FileUtil";
+import {tcp_proxy_server_config} from "../../../common/req/common.pojo";
 
 
 export class DataUtil {
@@ -41,6 +42,7 @@ export class DataUtil {
     // 处理历史数据版本
     public static handle_history_data() {
         try {
+            const  p_v = path.join(Env.work_dir, file_key.data_version)
             const version = this.get_data_version();
             if(version === data_version_type.filecat_not) {
                 // 升级到 data_version_type.filecat_1
@@ -56,8 +58,18 @@ export class DataUtil {
                     this.set(data_common_key.http_tag_key, http_tag_key,file_key.http_tag);
                     this.set(data_common_key.http_tag_key,null );
                 }
-                const  p_v = path.join(Env.work_dir, file_key.data_version)
+
                 fs.writeFileSync(p_v, `${data_version_type.filecat_1}`);
+            }
+
+            if(version < data_version_type.handle_tcp_proxy_server_key) {
+                const v :tcp_proxy_server_config = DataUtil.get(data_common_key.tcp_proxy_server_base,file_key.tcp_proxy_server_client)
+                if(v.key && !v.option_keys?.length) {
+                    v.option_keys = [v.key]
+                    delete v.key
+                }
+                DataUtil.set(data_common_key.tcp_proxy_server_base,v,file_key.tcp_proxy_server_client)
+                fs.writeFileSync(p_v, `${data_version_type.handle_tcp_proxy_server_key}`);
             }
         } catch (e) {
             console.log('历史数据处理失败',e);
