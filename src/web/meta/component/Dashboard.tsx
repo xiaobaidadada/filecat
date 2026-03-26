@@ -78,7 +78,8 @@ export function Row(props) {
     return <div className={"row"}>{props.children}</div>
 }
 
-export function RowColumn(props) {
+export function RowColumn(props?:{ widthPer?: number,
+    children?: React.ReactNode}) {
     return (<div className={"row"}>
         <Column {...props}>
             {(props.children)}

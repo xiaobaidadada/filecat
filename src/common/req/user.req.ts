@@ -122,6 +122,11 @@ export enum FileListPaginationModeEmum {
 
 export type themes = "light" | "dark" | "" | undefined;
 
+export enum user_file_time_show_type {
+    current = "current",
+    time="time",
+}
+
 export class UserData extends UserLogin {
     cwd: string; // 目录顶级范围 (role 作用)
     access_dirs: string[] = []; // cwd 是第一个 这里是其它的可访问的 (role 作用)
@@ -154,4 +159,5 @@ export class UserData extends UserLogin {
     dir_show_type: DirListShowTypeEmum; // 目录列表样式
     not_pre_show_image:boolean; // 是否预览图片
     file_list_pagination_mode?: FileListPaginationModeEmum; // 文件列表加载模式：全部加载或分页加载
+    file_time_show_type?:user_file_time_show_type
 }

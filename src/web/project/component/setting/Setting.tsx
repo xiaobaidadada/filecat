@@ -8,6 +8,7 @@ import {Env} from "./Env";
 import {User} from "./User";
 import {use_auth_check} from "../../util/store.util";
 import {Role} from "./Role";
+import {PrivateEnv} from "./PrivateEnv";
 
 
 export default function  Settings() {
@@ -16,7 +17,8 @@ export default function  Settings() {
 
     const menuRots = [
         {index: 1, name: t("系统"), rto: "password/"},
-        {index: 1, name: t("环境"), rto: "env_setting/"},
+        {index: 1, name: `${t("系统")} ${t("环境")}`, rto: "env_setting/"},
+        {index: 1, name: `${t('个人')} ${t("环境")}`, rto: "env_private_setting/"},
         {index: 1, name: t("自定义路由"), rto: "customer_router/"},
     ];
     if(check_user_auth(UserAuth.user_manage)) {
@@ -29,6 +31,7 @@ export default function  Settings() {
     return  <Menu optionList={menuRots}>
         <Sys />
         <Env />
+        <PrivateEnv />
         <CustomerRouter />
         {check_user_auth(UserAuth.user_manage) && <User />}
         {check_user_auth(UserAuth.role_manage) &&     <Role />}

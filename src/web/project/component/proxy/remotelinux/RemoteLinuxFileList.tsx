@@ -20,6 +20,8 @@ import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {isAbsolutePath, path_join} from "pty-shell/dist/path_util";
 import {RemoteMenu} from "./RemoteMenu";
 import {FileListLoad_file_folder_for_linux} from "../../file/FileListLoad";
+import {user_file_time_show_type} from "../../../../../common/req/user.req";
+import {formatDate} from "../../../../../common/StringUtil";
 
 export class RemoteLinuxFileListProps {
     close: () => void;
@@ -71,10 +73,18 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         for (const item of files ?? []) {
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            if(user_base_info.user_data.file_time_show_type === user_file_time_show_type.time) {
+                item.show_mtime = item.mtime ? formatDate(item.mtime) : "";
+            } else {
+                item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            }
         }
         for (const item of folders ?? []) {
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            if(user_base_info.user_data.file_time_show_type === user_file_time_show_type.time) {
+                item.show_mtime = item.mtime ? formatDate(item.mtime) : "";
+            } else {
+                item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            }
         }
         const data = {folders: folders || [], files: files || []};
         // 排序一下

@@ -242,6 +242,7 @@ export function TcpProxyServer() {
                         })} width={"10rem"}/>
                     </Card>
                 </Dashboard> :
+                    <Dashboard>
                     <CardFull self_title={<span className={" div-row "}><h2>{t("Online Server")}</h2>
                         {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
@@ -258,6 +259,7 @@ export function TcpProxyServer() {
                             return new_list;
                         })} width={"10rem"}/>
                     </CardFull>
+                    </Dashboard>
             }
         </Column>
     </Row>)

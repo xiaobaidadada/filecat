@@ -20,7 +20,12 @@ import {getShortTime} from "../../../project/util/common_util";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
-import {DirListShowTypeEmum, FileListPaginationModeEmum, UserAuth} from "../../../../common/req/user.req";
+import {
+    DirListShowTypeEmum,
+    FileListPaginationModeEmum,
+    user_file_time_show_type,
+    UserAuth
+} from "../../../../common/req/user.req";
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
@@ -28,6 +33,7 @@ import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_b
 import {FileMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
 import {cloneDeep} from "lodash";
+import {formatDate} from "../../../../common/StringUtil";
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
@@ -84,9 +90,14 @@ export default function FileList() {
     const file_after  = async (data)=>{
         let have_workflow_water = false;
         for (const item of data.files ?? []) {
-            item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+
             item.origin_size = item.size;
             item.size = formatFileSize(item.size);
+            if(user_base_info.user_data.file_time_show_type === user_file_time_show_type.time) {
+                item.show_mtime = item.mtime ? formatDate(item.mtime) : "";
+            } else {
+                item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
+            }
             if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
                 have_workflow_water = true;
                 Promise.resolve().then(() => {
@@ -98,7 +109,11 @@ export default function FileList() {
             }
         }
         for (const folder of data.folders ?? []) {
-            folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
+            if(user_base_info.user_data.file_time_show_type === user_file_time_show_type.time) {
+                folder.show_mtime = folder.mtime ? formatDate(folder.mtime) : "";
+            } else {
+                folder.show_mtime = folder.mtime ? getShortTime(folder.mtime) : "";
+            }
             if (folder.name === workflow_dir_name) {
                 have_workflow_water = true;
             }
@@ -254,40 +269,61 @@ export default function FileList() {
                 v: FileListPaginationModeEmum.pagination
             }
         ];
-        
+        const time_show_mode = [
+            {
+                r: (<span
+                    style={{color: (!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current) ? "green" : undefined}}>{t("最近时长")}</span>),
+                v: user_file_time_show_type.current
+            },
+            {
+                r: (<span
+                    style={{color: user_base_info.user_data.file_time_show_type === user_file_time_show_type.time ? "green" : undefined}}>{t("准确时间")}</span>),
+                v: user_file_time_show_type.time
+            }
+        ];
+        const common_handle_item = {
+            r: t("文件列表展示"),
+            items:[
+                {
+                    r: t("文件排序"),
+                    v: "",
+                    items: [
+                        {
+                            r: (<span
+                                style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>{t("系统默认")}</span>),
+                            v: DirListShowTypeEmum.defualt
+                        },
+                        {
+                            r: (<span
+                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>{t("名字")}</span>),
+                            v: DirListShowTypeEmum.name
+                        },
+                        {
+                            r: (<span
+                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}
+                            >{t("修改时间")}</span>), v: false, items: time_sort
+                        },
+                        {
+                            r: (<span
+                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}
+                            >{t("文件大小")}</span>), v: false, items: size_sort
+                        },
+                    ]
+                },
+                {
+                    r: t("文件加载方式"),
+                    v: "",
+                    items: pagination_mode
+                },
+                {
+                    r: t("时间展示"),
+                    v: "",
+                    items: time_show_mode
+                },
+            ]
+        }
         const list: any[] = [
-            {
-                r: t("文件排序"),
-                v: "",
-                items: [
-                    {
-                        r: (<span
-                            style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>{t("系统默认")}</span>),
-                        v: DirListShowTypeEmum.defualt
-                    },
-                    {
-                        r: (<span
-                            style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>{t("名字")}</span>),
-                        v: DirListShowTypeEmum.name
-                    },
-                    {
-                        r: (<span
-                            style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}
-                        >{t("修改时间")}</span>), v: false, items: time_sort
-                    },
-                    {
-                        r: (<span
-                            style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}
-                        >{t("文件大小")}</span>), v: false, items: size_sort
-                    },
-                ]
-            },
-            {
-                r: t("文件加载方式"),
-                v: "",
-                items: pagination_mode
-            },
-
+            common_handle_item
         ];
         if (check_user_auth(UserAuth.code_resource)) {
             list.push({r: t("添加http资源根目录"), v: "code_resource"})
@@ -341,9 +377,10 @@ export default function FileList() {
 
             } else if(v=== FileListPaginationModeEmum.all || v===FileListPaginationModeEmum.pagination) {
                 user_save_user_file_list_show_type_pojo['is_pagination_mode'] = true
+            } else if(v === user_file_time_show_type.current || v === user_file_time_show_type.time) {
+                user_save_user_file_list_show_type_pojo['is_file_show_type'] = true
             } else {
-                // 默认是设置时间的
-                user_save_user_file_list_show_type_pojo['is_dir_list_type'] = true
+                return
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
                 type: v,
