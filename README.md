@@ -22,19 +22,13 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 ### 1. Npm
 
 
-`npm install -g filecat --registry`
+`npm install -g filecat `
 
 
 建议使用node20，部分功能作为一些npm子模块依赖，如果电脑访问github过慢，安装的时候会退化为本地c++编译，需要安装python3.8(不能太高)和c++编译器才能安装成功，否则会影响部功能的运行，windows下如果安装报错，是需要本地编译一些c++依赖，需要先安装python3和[vs_BuildTools](https://aka.ms/vs/17/release/vs_BuildTools.exe)(选择c++桌面，和Spectre 单独的包，安装这两个库)再执行安装.
 
 ### 2. Docker
-`docker run -d \
-  --name filecat \
-  --restart=always \
-  --net=host \
-  -v /home:/home \
-  ghcr.io/xiaobaidadada/filecat:latest \
-  --port 5567 --base_folder /home`
+`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`
 ### 3.  二进制
 下载最新 [Releases](https://github.com/xiaobaidadada/filecat/releases)
 

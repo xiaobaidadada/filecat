@@ -18,7 +18,7 @@ Minor bug fixes and feature updates are released and synchronized in real time o
 
 ### 1. Npm
 
-`npm install -g filecat --registry`
+`npm install -g filecat `
 
 Node.js 20 is recommended. Some features rely on certain npm submodules. If access to GitHub is slow, the installation process may fall back to local C++ compilation. In this case, you need Python 3.8 (not too high version) and a C++ compiler to complete the installation successfully; otherwise, some features may not function properly.
 
