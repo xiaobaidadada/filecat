@@ -12,14 +12,24 @@ import {public_list} from "./decorator";
 
 // const base_pre = get_sys_base_url_pre();
 
+let download_start_pre:string
+let share_download_start_pre:string
+let ssh_download_start_pre:string
+let login_start_pre:string
+
+export async function  init_pre() {
+    if(!download_start_pre) {
+        download_start_pre = await get_sys_base_url_pre()+"/download";
+        share_download_start_pre = await get_sys_base_url_pre()+"/share_download";
+        ssh_download_start_pre = await get_sys_base_url_pre()+"/ssh/download";
+        login_start_pre = await get_sys_base_url_pre()+"/user/login";
+    }
+}
 
 @Middleware({type: 'before'})
 export class AuthMiddleware implements ExpressMiddlewareInterface {
 
-     download_start_pre = get_sys_base_url_pre()+"/download";
-    share_download_start_pre = get_sys_base_url_pre()+"/share_download";
-     ssh_download_start_pre = get_sys_base_url_pre()+"/ssh/download";
-     login_start_pre = get_sys_base_url_pre()+"/user/login";
+
 
     async use(req: Request, res: Response, next: (err?: any) => Promise<any>): Promise<any> {
         // 先对public方法路由判断
@@ -32,11 +42,11 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
             }
         }
         // 下载拦截
-        if(req.originalUrl.startsWith(this.share_download_start_pre)) {
+        if(req.originalUrl.startsWith(share_download_start_pre)) {
             FileServiceImpl.download_for_public(req);
             return ;
         }
-        if (req.originalUrl.startsWith(this.download_start_pre)) {
+        if (req.originalUrl.startsWith(download_start_pre)) {
             const token:string = req.query['token'] as string;
             if (!await settingService.check(token)) {
                 res.send(JSON.stringify(AuthFail('失败')));
@@ -46,7 +56,7 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
             return ;
         }
         // 校验可以用params
-        if (req.originalUrl.startsWith(this.ssh_download_start_pre)) {
+        if (req.originalUrl.startsWith(ssh_download_start_pre)) {
             const token:string = req.query['token'] as string;
             if (!await settingService.check(token)) {
                 res.send(JSON.stringify(AuthFail('失败')));
@@ -59,7 +69,7 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
         if (await settingService.intercept(req)) {
             return ;
         }
-        if (req.originalUrl.indexOf(this.login_start_pre) !==-1
+        if (req.originalUrl.indexOf(login_start_pre) !==-1
             // || !req.originalUrl.startsWith(base_pre) // 根本不会匹配除了 /api其它的 框架设置了前缀
             // pathRegex.test(req.originalUrl)
         ) {

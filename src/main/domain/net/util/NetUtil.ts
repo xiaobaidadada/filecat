@@ -41,13 +41,13 @@ export enum tcp_server_type {
 
 export enum NetMsgType {
     default, // 没有意义的 用于 head 返回的情况 但是需要设置个值
-    heart  , // 心跳
+    heart  = 1 , // 心跳
 
     // 用于tun 代理的 ip对ip层
     register, // 注册
     data, // tcp 传输数据
     trans_data, // 转发通信数据
-    async_server_info_to_client, // 服务器信息同步给客户端 密钥 端口
+    async_server_info_to_client = 5, // 服务器信息同步给客户端 密钥 端口
 
     // 用于转发tcp的 端口对端口层
     tcp_connect,
@@ -57,8 +57,7 @@ export enum NetMsgType {
     tcp_client_create_socket_for_server,
 
     // 给用户更新信息
-    tcp_server_update_client_info,
-
+    tcp_server_update_client_info =10
 }
 
 

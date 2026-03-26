@@ -1,7 +1,7 @@
 import {getSys} from "../shell/shell.service";
 import path from "path";
 import os from "os";
-import {Env, parsed} from "../../../common/node/Env";
+import {Env} from "../../../common/node/Env";
 
 const fs = require('fs');
 import fse from 'fs-extra'
@@ -110,9 +110,11 @@ export function loadWasm() {
 let sys_pre:string; // 后端
 let base_url:string; // 前后端
 
-function init_pre_path() {
+let parsed = false
+async function  init_pre_path() {
     if(!parsed) {
-        Env.parseArgs()
+        await Env.parseArgs()
+        parsed = true
     }
     if (process.env.NODE_ENV === "production") {
         base_url = Env.base_url || process.env.base_url || "";
@@ -130,16 +132,16 @@ function init_pre_path() {
 }
 
 
-export function get_sys_base_url_pre() {
+export async function get_sys_base_url_pre() {
     if (sys_pre === undefined) {
-        init_pre_path();
+        await init_pre_path();
     }
     return sys_pre;
 }
 
-export function get_base() {
+export async function get_base() {
     if (base_url === undefined) {
-        init_pre_path();
+        await init_pre_path();
     }
     return base_url;
 }

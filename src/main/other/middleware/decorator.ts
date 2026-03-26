@@ -4,7 +4,7 @@ import {get_sys_base_url_pre} from "../../domain/bin/bin";
 
 
 export const public_list = []
-const pre = get_sys_base_url_pre()
+
 
 export function Public(router:string): MethodDecorator & ClassDecorator {
     return (target: any, propertyKey?: string | symbol) => {
@@ -13,7 +13,9 @@ export function Public(router:string): MethodDecorator & ClassDecorator {
         // } else {
         //     Authorized('public')(target); // 类级别
         // }
-        public_list.push(pre+router);
+        get_sys_base_url_pre().then(pre=>{
+            public_list.push(pre+router);
+        })
     };
 }
 

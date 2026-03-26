@@ -17,6 +17,9 @@ export class tcp_raw_socket {
         if(socket) {
             this.is_connected = true;
         }
+        this.client.set_on_close(()=>{
+            this.is_connected = false;
+        })
         this.client.get_socket().on("close", ()=>{
             this.is_connected = false;
         });
@@ -31,11 +34,14 @@ export class tcp_raw_socket {
     }
 
     get connected() {
+        if(!this.client?.get_socket())  {
+            return  false;
+        }
         return this.is_connected;
     }
 
     on_close(fun:()=>void) {
-        this.client.get_socket().on("close", ()=>{
+        this.client.set_on_close(()=>{
             try {
                 fun()
             } catch (e) {
@@ -68,7 +74,7 @@ export class tcp_raw_client extends tcp_raw_socket{
         options: tcp_client_options) {
         super();
         this.options = options;
-        this.client.get_socket().on("close", () => {
+        this.client.set_on_close(() => {
             this.reconnect();
         })
         this.client.get_socket().on('end', () => {

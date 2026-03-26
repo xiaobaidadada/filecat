@@ -7,7 +7,7 @@ import {UserController} from "./domain/user/user.controller";
 import {SysController} from "./domain/sys/sys.controller";
 import {ShellController} from "./domain/shell/shell.controller";
 import {FileController} from "./domain/file/file.controller";
-import {AuthMiddleware} from "./other/middleware/AuthMiddleware";
+import {AuthMiddleware, init_pre} from "./other/middleware/AuthMiddleware";
 import {GlobalErrorHandler} from "./other/middleware/GlobalErrorHandler";
 // import {CheckTokenMiddleware} from "./other/middleware/redirect";
 import path from "path";
@@ -48,7 +48,8 @@ const compression = require('compression'); // webpack-dev-server 包含的有
 
 async function start() {
 
-    Env.parseArgs();
+    await Env.parseArgs();
+    await init_pre()
     DataUtil.handle_history_data();
     await userService.root_init();
     await shellServiceImpl.path_init();
@@ -56,7 +57,7 @@ async function start() {
     // 创建 Koa 应用并注册控制器
     const app = createExpressServer({
         cors: false,
-        routePrefix: get_sys_base_url_pre(),
+        routePrefix: await get_sys_base_url_pre(),
         classTransformer: true,
         controllers: [
             UserController, SysController, ShellController,
@@ -138,14 +139,14 @@ async function start() {
 
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start(settingService.check.bind(settingService));
-    const sys_pre = get_sys_base_url_pre();
+    const sys_pre = await get_sys_base_url_pre();
     if (process.env.NODE_ENV === "production") {
         const router = new Set();
         for (const item of Object.values(routerConfig)) {
             router.add(`/${item}`)
             router.add(`${item}`)
         }
-        router.add(get_base()); // base_url
+        router.add(await get_base()); // base_url
 
         let index_text = await settingService.get_index_html();
         ServerEvent.on("sys_env_update", async (data) => {
@@ -210,7 +211,7 @@ async function start() {
         }));
     }
 
-    const base_url = get_base()
+    const base_url = await get_base()
     // 启动服务器
     const server = app.listen(Env.port, () => {
         const version = get_package_json().version;

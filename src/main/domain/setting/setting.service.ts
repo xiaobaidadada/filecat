@@ -83,7 +83,7 @@ export class SettingService {
             if (ctx.originalUrl.includes("?")) {
                 c_url = ctx.originalUrl.split("?")[0];
             }
-            if (!c_url || !c_url.startsWith(get_sys_base_url_pre())) return;
+            if (!c_url || !c_url.startsWith(await get_sys_base_url_pre())) return;
             const workflow_list_router = this.get_workflow_router() as [][];
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
@@ -316,7 +316,7 @@ export class SettingService {
         const web_site_title = this.get_sys_env().web_site_title;
         index_text = Mustache.render(index_text.toString(),{
             Windows_FileCat: JSON.stringify({
-                base_url:get_base(),
+                base_url:await get_base(),
                 web_site_title
             }), // 给前端
             web_site_title

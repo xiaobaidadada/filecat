@@ -11,6 +11,7 @@ export class tcp_stream_util {
     private buffer:Buffer = Buffer.alloc(0); // 数据包
 
     private on_data:(data:Buffer,tag_id?:number)=>any;
+    private on_close_list:(()=>any)[] = [];
 
     private socket:net.Socket;
 
@@ -33,8 +34,18 @@ export class tcp_stream_util {
     public close() {
         this.socket?.end();
         this.socket?.destroy();
+        for (const close of this.on_close_list) {
+            close();
+        }
     }
 
+
+    public set_on_close(close:()=>void) {
+        this.on_close_list.push(close);
+        this.socket.on("close", () => {
+            close()
+        })
+    }
 
     // 设置包处理函数
     public set_on_data(handle:( data:Buffer,tag_id?:number)=>void) {
