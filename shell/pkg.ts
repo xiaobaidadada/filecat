@@ -38,6 +38,6 @@ for (const file of fs.readdirSync(root_path)) {
     }
 }
 // args[0] 会在 package.json 所在目录下
-FileServiceImpl.compress(FileCompressType.tar,9,args[0], filePaths, directorys,(v)=>{
+FileServiceImpl.compress("tar",9,args[0], filePaths, directorys,(v)=>{
     console.log(`压缩进度:${v.toFixed(2)}`)
 },true)
