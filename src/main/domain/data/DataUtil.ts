@@ -44,7 +44,7 @@ export class DataUtil {
         try {
             const  p_v = path.join(Env.work_dir, file_key.data_version)
             const version = this.get_data_version();
-            if(version === data_version_type.filecat_not) {
+            if(version < data_version_type.filecat_1) {
                 // 升级到 data_version_type.filecat_1
                 const navindex_key = this.get(data_common_key.navindex_key);
                 const http_tag_key = this.get(data_common_key.http_tag_key);
