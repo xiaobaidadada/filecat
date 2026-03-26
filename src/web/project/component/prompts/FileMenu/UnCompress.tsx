@@ -8,7 +8,12 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
+import {
+    file_select_list,
+    FileCompressPojo,
+    FileCompressType,
+    FileVideoFormatTransPojo
+} from "../../../../../common/file.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
@@ -47,19 +52,19 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
         const sourceFileName = `${getRouterAfter('file',getRouterPath())}${showPrompt.data.filename}`;
 
         const req = new FileCompressPojo();
+
         let format;
-        if (extension === FileCompressType.tar) {
-            format = FileCompressType.tar;
-        } else if (extension === FileCompressType.zip) {
-            format = FileCompressType.zip;
-        } else if (extension === FileCompressType.gzip || extension === "tgz") {
-            format = FileCompressType.gzip;
-        } else if (extension === FileCompressType.rar) {
-            format = FileCompressType.rar;
-        } else {
+        for (const ff of file_select_list) {
+            if(showPrompt.data.filename.endsWith(ff)) {
+                format = ff;
+                break;
+            }
+        }
+        if(!format) {
             NotyFail("不支持的文件后缀");
             return;
         }
+
         req.format = format;
         req.source_file = sourceFileName;
         req.tar_dir = tarDir;

@@ -60,11 +60,21 @@ export class FileVideoFormatTransPojo {
 }
 
 export enum FileCompressType {
-    zip = "zip",
-    tar = "tar",
-    gzip = "gz", // 不使用 实际使用 tar + zip 开启
-    rar = "rar"// 只解压
+    zip = ".zip", // zip 支持多文件
+    tar = ".tar",
+    gz = ".gz", // gz 不支持多文件 只支持单文件
+    rar = ".rar", // 只解压
+    tar_gz = ".tar.gz",
 }
+
+// 有优先级的 后缀的 选择
+export const file_select_list = [
+    FileCompressType.zip,
+    FileCompressType.tar_gz,
+    FileCompressType.gz,
+    FileCompressType.rar,
+    FileCompressType.tar,
+]
 
 export class FileCompressPojo {
     format: FileCompressType;

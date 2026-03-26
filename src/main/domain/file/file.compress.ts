@@ -2,6 +2,7 @@ import path from "path";
 import {FileCompressType} from "../../../common/file.pojo";
 import {loadWasm} from "../bin/bin";
 import {LifecycleRecordService} from "../pre/lifeRecordService";
+import {Gunzip, Gzip} from "minizlib";
 
 const fs = require('fs');
 // const unzipper = require('unzipper'); // 对于流会有损坏的问题
@@ -102,8 +103,48 @@ export class FileCompress extends LifecycleRecordService{
         progress(100);
     }
 
+    unGz(
+        filePath: string,
+        targetFolder: string,
+        progress: (value: number) => void
+    ) {
+        const stat = fs.statSync(filePath);
+        const totalSize = stat.size;
+        let processedSize = 0;
+
+        const fileName = path.basename(filePath).replace(/\.gz$/, '');
+        const outputPath = path.join(targetFolder, fileName);
+
+        const readStream = fs.createReadStream(filePath);
+        const gunzip = new Gunzip({});
+        const writeStream = fs.createWriteStream(outputPath);
+
+        // 进度统计
+        readStream.on('data', (chunk) => {
+            processedSize += chunk.length;
+            progress((processedSize / totalSize) * 100);
+        });
+
+        readStream.on('error', (e) => {
+            progress(-1)
+        });
+        gunzip.on('error', (e) => {
+            progress(-1)
+        });
+        writeStream.on('error', (e) => {
+            progress(-1)
+        });
+
+        writeStream.on('finish', () => {
+            progress(100);
+        });
+
+        // pipe
+        readStream.pipe(gunzip).pipe(writeStream);
+    }
+
     // 压缩进度获取
-    compress(format: FileCompressType, level: number, targerFilePath: string, filePaths: string[], directorys: string[], progress: (value: number) => void, gzip: boolean = false) {
+    compress(format: "tar"|"zip", level: number, targerFilePath: string, filePaths: string[], directorys: string[], progress: (value: number) => void, gzip: boolean = false) {
         // 创建一个输出流以写入压缩文件
         const output = fs.createWriteStream(targerFilePath);
         const archive = archiver(format, {
@@ -135,6 +176,55 @@ export class FileCompress extends LifecycleRecordService{
             archive.directory(dir, path.basename(dir));
         })
         archive.finalize();
+    }
+
+    compressGz(
+        level: number,
+        targetFilePath: string,
+        filePaths: string[],
+        directorys: string[],
+        progress: (value: number) => void
+    ) {
+        progress(0);
+
+        const inputPath = filePaths?.[0];
+
+        if (!inputPath) {
+            progress(-1);
+            throw new Error('gzip 压缩必须提供至少一个文件');
+        }
+
+        const stat = fs.statSync(inputPath);
+        const totalSize = stat.size;
+        let processedSize = 0;
+
+        if (!fs.existsSync(path.dirname(targetFilePath))) {
+            fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
+        }
+
+        const outputPath = targetFilePath.endsWith('.gz')
+            ? targetFilePath
+            : targetFilePath + '.gz';
+
+        const readStream = fs.createReadStream(inputPath);
+        const gzip = new Gzip({ level });
+        const writeStream = fs.createWriteStream(outputPath);
+
+        // 进度（基于输入文件读取）
+        readStream.on('data', (chunk) => {
+            processedSize += chunk.length;
+            progress((processedSize / totalSize) * 100);
+        });
+
+        readStream.on('error', () => progress(-1));
+        gzip.on('error', () => progress(-1));
+        writeStream.on('error', () => progress(-1));
+
+        writeStream.on('close', () => {
+            progress(100);
+        });
+
+        readStream.pipe(gzip).pipe(writeStream);
     }
 
 

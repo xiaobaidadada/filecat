@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {$stroe} from "../../../util/store";
 import {useRecoilState} from "recoil";
-import { Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
@@ -48,7 +48,7 @@ export function Compress(props) {
         req.format = format;
         let r_name = tar_filename;
         if (!r_name.endsWith(format)) {
-            r_name = r_name + "." + format;
+            r_name = r_name + format;
         }
         req.tar_filename = `${getRouterAfter('file', getRouterPath())}${r_name}`;
         req.token = localStorage.getItem("token");
@@ -77,23 +77,20 @@ export function Compress(props) {
                         confirm_t={t("确定")}
                         context={!progress ? [
                                 <Select value={format} onChange={(value: FileCompressType) => {
-                                    let v;
-                                    if (value === FileCompressType.tar) {
-                                        v = FileCompressType.tar;
-                                    } else if (value === FileCompressType.zip) {
-                                        v = FileCompressType.zip;
-                                    } else if (value === FileCompressType.gzip) {
-                                        v = "tar.gz";
-                                    }
                                     setFormat(value);
-                                    setPlaceholder(`.${v}`)
-                                }} options={[{
-                                    title: `tar ${t("格式")}`,
-                                    value: FileCompressType.tar
-                                }, {title: `zip ${t("格式")}`, value: FileCompressType.zip}, {
-                                    title: `gz ${t("格式")}`,
-                                    value: FileCompressType.gzip
-                                }]}/>,
+                                    setPlaceholder(value)
+                                }} options={[
+                                    {
+                                        title: `tar ${t("格式")}`,
+                                        value: FileCompressType.tar
+                                    },
+                                    {title: `zip ${t("格式")}`, value: FileCompressType.zip},
+                                    {
+                                        title: `tar.gz ${t("格式")}`,
+                                        value: FileCompressType.tar_gz
+                                    },
+                                    {title: `gz ${t("格式")}`, value: FileCompressType.gz},
+                                    ]}/>,
                                 <Select value={compress_level} onChange={(value) => {
                                     const v = parseInt(value);
                                     setCompress_level(v);

@@ -968,7 +968,7 @@ export class FileService extends FileCompress {
             this.unTar(sysSourcePath, targetFolder, outHanle)
         } else if (pojo.format === FileCompressType.zip) {
             this.unZip(sysSourcePath, targetFolder, outHanle)
-        } else if (pojo.format === FileCompressType.gzip) {
+        } else if (pojo.format === FileCompressType.tar_gz) {
             this.unTar(sysSourcePath, targetFolder, outHanle, true)
         } else if (pojo.format === FileCompressType.rar) {
             try {
@@ -976,6 +976,8 @@ export class FileService extends FileCompress {
             } catch (e) {
                 wss.ws.close();
             }
+        } else if(pojo.format === FileCompressType.gz) {
+            this.unGz(sysSourcePath, targetFolder, outHanle)
         } else {
             wss.ws.close();
         }
@@ -1003,24 +1005,37 @@ export class FileService extends FileCompress {
             } catch (e) {
             }
         }
-        let format;
-        switch (pojo.format) {
-            case FileCompressType.gzip:
-                format = FileCompressType.tar;
-                break;
-            default:
-                format = pojo.format;
-        }
         const targerFilePath = path.join(root_path, decodeURIComponent(pojo.tar_filename));
-        this.compress(format, pojo.compress_level, targerFilePath, filePaths, directorys, (value) => {
-            if (value === -1) {
-                wss.ws.close();
-                return;
+        const handle_progress = (value)=>{
+            {
+                if (value === -1) {
+                    wss.ws.close();
+                    return;
+                }
+                const result = new WsData<SysPojo>(CmdType.file_compress_progress);
+                result.context = value;
+                wss.sendData(result.encode());
             }
-            const result = new WsData<SysPojo>(CmdType.file_compress_progress);
-            result.context = value;
-            wss.sendData(result.encode());
-        }, pojo.format === FileCompressType.gzip);
+        }
+        let format:"tar"|"zip";
+        switch (pojo.format) {
+            case FileCompressType.tar:
+                format = "tar";
+                break;
+            case FileCompressType.gz:
+                this.compressGz(pojo.compress_level,targerFilePath,filePaths,directorys,handle_progress)
+                return
+            case FileCompressType.rar:
+                // 不支持
+                return
+            case FileCompressType.zip:
+                format = "zip";
+                break
+            case FileCompressType.tar_gz:
+                format = "tar";
+                break
+        }
+        this.compress(format, pojo.compress_level, targerFilePath, filePaths, directorys, handle_progress, pojo.format === FileCompressType.tar_gz);
     }
 
     // getTotalFile(data: { files: string[], total: number }, filepath: string) {
