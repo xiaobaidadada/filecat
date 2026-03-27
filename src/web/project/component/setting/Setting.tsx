@@ -17,8 +17,8 @@ export default function  Settings() {
 
     const menuRots = [
         {index: 1, name: t("系统"), rto: "password/"},
-        {index: 1, name: `${t("系统")} ${t("环境")}`, rto: "env_setting/"},
-        {index: 1, name: `${t('个人')} ${t("环境")}`, rto: "env_private_setting/"},
+        {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/"},
+        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting/"},
         {index: 1, name: t("自定义路由"), rto: "customer_router/"},
     ];
     if(check_user_auth(UserAuth.user_manage)) {

@@ -1,60 +1,65 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Link, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
-import Login from "../../project/component/Login";
-import Layout from "../../project/component/Layout";
+import {Link, NavLink, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
 import SimpleRoutes from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
-import {getRouterPath} from "../../project/util/WebPath";
+import { have_key_by_router_key_list} from "../../project/util/WebPath";
 
 // 菜单容器
-export function Menu(props) {
-    const location = useLocation();
+export function Menu(props: {
+    optionList: { rto: string; name: string; index?: number }[];
+    children?: any;
+}) {
+    const optionList = [...props.optionList].sort(
+        (a, b) => (a.index ?? 0) - (b.index ?? 0)
+    );
+    const have_key = have_key_by_router_key_list(props.optionList.map(v=>v.rto))
+    return (
+        <div className={"dashboard"}>
+            {/* 菜单 */}
+            <div className={"menu not-select-div"}>
+                <div className={"wrapper"}>
+                    <ul>
+                        {optionList.map((v, index) => (
+                            <NavLink
+                                key={index}
+                                to={v.rto}
+                                end={v.rto === "/"} // 根路径精确匹配
+                                className={({ isActive }) =>
+                                    {
+                                        if(have_key === false && index === 0) {
+                                            isActive = true
+                                            }
+                                        return isActive ? "active-link" : ""
+                                    }
+                                }
+                            >
+                                {({ isActive }) => {
+                                    if(have_key === false && index === 0) {
+                                        isActive = true
+                                    }
+                                    return (
+                                        <li className={isActive ? "active" : ""}>
+                                            {v.name}
+                                        </li>
+                                    )
+                                }}
+                            </NavLink>
+                        ))}
+                    </ul>
+                </div>
+            </div>
 
-    if (props.optionList) {
-        props.optionList.sort((a, b) => a.index - b.index);
-    }
-    const [selectedIndex, setSelectedIndex] = React.useState(0);
-    useEffect(() => {
-        let have = true;
-        const all_router = getRouterPath();
-        for (let index = 0; index < props.optionList.length; index++) {
-            let rto = props.optionList[index].rto.replace("*","");
-            if (all_router.includes(rto)) {
-                setSelectedIndex(index);
-                have = false;
-                break;
-            }
-        }
-        if(have) {
-            setSelectedIndex(0);
-        }
-    }, [props.optionList]);
-    return <div className={"dashboard"}>
-        {/*标签头*/}
-        <div className={"menu not-select-div"}>
-            <div className={"wrapper"}>
-                <ul>
-
-                    {props.optionList.map((v, index) =>
-                        (<Link to={v.rto} onClick={() => {
-                            setSelectedIndex(index)
-                        }} key={index}>
-                            <li className={selectedIndex === index ? "active" : ""}>{v.name}</li>
-                        </Link>)
-                    )}
-                </ul>
+            {/*标签内容路由*/}
+            <div className={" scroll-div-y "}>
+                <div style={{
+                    padding:".5rem"
+                }}>
+                    <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
+                                  children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
+                </div>
             </div>
         </div>
-        {/*标签内容路由*/}
-        <div className={" scroll-div-y "}>
-            <div style={{
-                padding:".5rem"
-            }}>
-                <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
-                              children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
-            </div>
-        </div>
-    </div>
+    );
 }
 
 // 普通容器 行列必须要在这个里面

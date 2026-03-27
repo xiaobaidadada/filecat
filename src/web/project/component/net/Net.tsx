@@ -14,7 +14,7 @@ import {TcpProxyClient} from "./TcpProxyClient";
 export default function  Net() {
     const { t } = useTranslation();
     const menuRots = [
-        {index: 1, name:t("系统")+" "+ t("代理"), rto: "proxy_sys/"},
+        {index: 1, name:t("系统")+ t("代理"), rto: "proxy_sys/"},
         {index: 2, name:"Tcp proxy "+ t("客户端"), rto: "tcp_proxy_server/"},
         {index: 3, name:"Tcp proxy "+t("服务端"), rto: "tcp_proxy_client/"},
         {index: 4, name:"Tun proxy "+ t("客户端"), rto: "client/"},

@@ -1,6 +1,6 @@
 import {Global} from "./global";
 import {routerConfig} from "../../../common/RouterConfig";
-import { path_join } from "../../../common/path_util";
+import {path_join} from "../../../common/path_util";
 
 Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
@@ -78,6 +78,27 @@ export function getRouterPath() {
         path = path.slice(sys_pre.length) || "/";
     }
     return path;
+}
+
+export function get_router_key_set() {
+   return new Set(getRouterPath().split("/"));
+}
+
+export function get_filter_key(key:string) {
+    return  key.replaceAll("/", "").replaceAll("*", "")
+}
+
+export function have_key_by_router_key_list(router_key_list:string[]) {
+    const set = get_router_key_set()
+    let have = false
+    for (const key of router_key_list) {
+        const filter_key = get_filter_key(key)
+        if(set.has(filter_key)) {
+            have = true;
+            break;
+        }
+    }
+    return have;
 }
 
 export function is_share (){

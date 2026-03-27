@@ -6,10 +6,11 @@ port=5567
 # The starting folder address, the default address for file management. If not specified, it will be the directory of the executing program.
 #base_folder=D:\ 或者 /home/user
 
-# 本地账号密码
+# 初始化时候的本地账号密码
 username=admin
 password=admin
 
+# 初始化的时候语言
 lan=zh-CH
 
 watch=true

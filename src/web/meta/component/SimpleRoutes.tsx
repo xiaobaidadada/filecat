@@ -9,12 +9,13 @@ export interface RouteContainerProps {
     rtos: string[];
     children: ReactNode[];
 }
-const SimpleRoutes: React.FC<RouteContainerProps> = (props) => {
+const SimpleRoutes: React.FC<RouteContainerProps> = (props:RouteContainerProps) => {
     return ( <Routes>
         {props.children.map((value, index) => {
             return (
-
-                <React.Fragment key={index}><Route  path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>}/></React.Fragment>
+                <React.Fragment key={index}>
+                    <Route  path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>} />
+                </React.Fragment>
             )
         })}
         ( <Route  path={"/"} element={(props.children[0])}/>)

@@ -2,7 +2,7 @@ import React, {ReactNode, useEffect} from 'react';
 // import '../resources/css/all.css'
 import {MaterialIcon} from "material-icons";
 import {To} from "./To";
-import {getRouterPath} from "../../project/util/WebPath";
+import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/util/WebPath";
 
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
@@ -22,15 +22,15 @@ export function Nav(props: NavProps) {
     const [selectedIndex, setSelectedIndex] = React.useState("");
     useEffect(() => {
         let have = true;
-        const all_router = getRouterPath();
+        const set = get_router_key_set()
         for (let index = 0; index < props.navList.length; index++) {
             let ok = false;
             for (let i=0;i<props.navList[index].length;i++) {
                 if (!props.navList[index][i]?.rto) {
                     continue;
                 }
-                let rto = props.navList[index][i].rto.replace("*","");
-                if (all_router.includes(rto)  && rto!=="/") {
+                const filter_key = get_filter_key(props.navList[index][i].rto)
+                if (set.has(filter_key)) {
                     setSelectedIndex(`${index}_${i}`);
                     have = false;
                     ok = true;
