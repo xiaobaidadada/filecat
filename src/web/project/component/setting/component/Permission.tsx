@@ -14,417 +14,158 @@ export function Permission(props:{
     const {t, i18n} = useTranslation();
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
 
+    const list:{
+        title: string,
+        list:{
+            title: string,
+            permission:UserAuth,
+            noDisable?:boolean // 强制 选择不隐藏 就算超级管理员也需要显示
+        }[]
+    } []= [
+        {
+            title: t("用户权限"),
+            list: [
+                { title: t("用户管理"), permission: UserAuth.user_manage },
+                { title: t("角色管理"), permission: UserAuth.role_manage }
+            ]
+        },
+        {
+            title: t("系统管理权限"),
+            list: [
+                { title: t("系统信息"), permission: UserAuth.all_sys },
+                { title: t("系统进程关闭"), permission: UserAuth.sys_process_close },
+                { title: t("docker容器停止、删除"), permission: UserAuth.docker_container_update },
+                { title: t("docker镜像删除"), permission: UserAuth.docker_images_delete },
+                { title: t("systemd删除、添加管理"), permission: UserAuth.systemd_update }
+            ]
+        },
+        {
+            title: t("网络功能权限"),
+            list: [
+                { title: t("系统网络"), permission: UserAuth.vir_net },
+                { title: "ddns", permission: UserAuth.ddns }
+            ]
+        },
+        {
+            title: t("Ai 设置权限"),
+            list: [
+                { title: t("Ai 配置"), permission: UserAuth.ai_agent_setting },
+                { title: t("Ai Chat Page"), permission: UserAuth.ai_agent_page }
+            ]
+        },
+        {
+            title: t("文件权限"),
+            list: [
+                { title: t("文件删除、剪切、重命名"), permission: UserAuth.filecat_file_delete_cut_rename },
+                { title: t("文件创建、上传、内容更新、解压缩"), permission: UserAuth.filecat_file_context_update_upload_created_copy_decompression },
+                { title: t("内容更新"), permission: UserAuth.filecat_file_context_update },
+                { title: t("文件回收站修改"), permission: UserAuth.recycle_file_save },
+                { title: t("文件分享"), permission: UserAuth.share_file }
+            ]
+        },
+        {
+            title: t("系统设置权限"),
+            list: [
+                { title: t("token时间修改"), permission: UserAuth.token_update },
+                { title: t("自定义auth"), permission: UserAuth.code_auth },
+                { title: t("修改密码"), permission: UserAuth.update_password },
+                { title: t("磁盘挂载"), permission: UserAuth.sys_disk_mount },
+                { title: t("通用设置"), permission: UserAuth.sys_env_setting_key },
+                { title: t("shell命令检测"), permission: UserAuth.shell_cmd_check },
+            ]
+        },
+        {
+            title: t("系统环境设置"),
+            list: [
+                { title: t("系统环境设置页面"), permission: UserAuth.sys_page },
+                { title: t("目录文件上传数量限制修改"), permission: UserAuth.dir_upload_max_num },
+                { title: t("PATH路径修改"), permission: UserAuth.env_path_update },
+                { title: "pty cmd " + t("更新"), permission: UserAuth.pty_cmd_update },
+                { title: "workflow job", permission: UserAuth.workflow_job },
+                { title: t("系统保护路径更新"), permission: UserAuth.sys_protection_dir },
+                { title: t("外部软件路径"), permission: UserAuth.outside_software_path }
+            ]
+        },
+        {
+            title: t("自定义路由"),
+            list: [
+                { title: t("自定义路由页面"), permission: UserAuth.auth_router_page },
+                { title: t("workflow触发api 修改"), permission: UserAuth.workflow_api },
+                { title: t("自定义资源路由"), permission: UserAuth.code_resource },
+                { title: t("自定义api路由"), permission: UserAuth.code_api }
+            ]
+        },
+        {
+            title: t("标签编辑权限"),
+            list: [
+                { title: t("网址导航"), permission: UserAuth.net_site_tag_update },
+                { title: t("ssh代理"), permission: UserAuth.ssh_proxy_tag_update },
+                { title: t("http代理"), permission: UserAuth.http_proxy_tag_update },
+                { title: t("浏览器代理"), permission: UserAuth.browser_proxy_tag_update },
+                { title: t("rdp代理"), permission: UserAuth.rdp_proxy_tag_update },
+                { title: t("网络唤醒"), permission: UserAuth.wol_proxy_tag_update },
+                { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy_tag_update }
+            ]
+        },
+        {
+            title: t("代理功能"),
+            list: [
+                { title: t("ssh代理"), permission: UserAuth.ssh_proxy },
+                { title: t("http代理"), permission: UserAuth.http_proxy },
+                { title: t("http代理下载关闭"), permission: UserAuth.http_proxy_download_cancel },
+                { title: t("浏览器代理"), permission: UserAuth.browser_proxy },
+                { title: t("rdp代理"), permission: UserAuth.rdp_proxy }
+            ]
+        },
+        {
+            title: t("其他功能"),
+            list: [
+                { title: t("workflow 执行"), permission: UserAuth.workflow_exe },
+                { title: t("workflow 执行用户"), permission: UserAuth.workflow_exe_user, noDisable: true },
+                { title: t("网络唤醒"), permission: UserAuth.wol_proxy },
+                { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy },
+                { title: t("ssh密钥保存到磁盘"), permission: UserAuth.crypto_ssh_file },
+                { title: t("网址导航"), permission: UserAuth.nav_net_tag }
+            ]
+        }
+    ];
 
     return (<React.Fragment>
-        <h3>{t("用户权限")}</h3>
-        <div className={"checkbox_container"}>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.user_manage)}
-                       checked={props.is_selected(UserAuth.user_manage)} onChange={() => {
-                    props.select_auth(UserAuth.user_manage)
-                }}/>
-                {t("用户管理")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.role_manage)}
-                       checked={props.is_selected(UserAuth.role_manage)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.role_manage)
-                       }}/>
-                {t("角色管理")}
-            </div>
-            <h3>{t("系统管理权限")}</h3>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.all_sys)}
-                       checked={props.is_selected(UserAuth.all_sys)} onChange={() => {
-                    props.select_auth(UserAuth.all_sys)
-                }}/>
-                {t("系统信息")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.sys_process_close)}
-                       checked={props.is_selected(UserAuth.sys_process_close)} onChange={() => {
-                    props.select_auth(UserAuth.sys_process_close)
-                }}/>
-                {t("系统进程关闭")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.docker_container_update)}
-                       checked={props.is_selected(UserAuth.docker_container_update)} onChange={() => {
-                    props.select_auth(UserAuth.docker_container_update)
-                }}/>
-                {t("docker容器停止、删除")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.docker_images_delete)}
-                       checked={props.is_selected(UserAuth.docker_images_delete)} onChange={() => {
-                    props.select_auth(UserAuth.docker_images_delete)
-                }}/>
-                {t("docker镜像删除")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.systemd_update)}
-                       checked={props.is_selected(UserAuth.systemd_update)} onChange={() => {
-                    props.select_auth(UserAuth.systemd_update)
-                }}/>
-                {t("systemd删除、添加管理")}
-            </div>
+        {list.map((group, i) => (
+            <div key={i}>
+                <h3>{group.title}</h3>
 
-            <h3>{t("网络功能权限")}</h3>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.vir_net)}
-                       checked={props.is_selected(UserAuth.vir_net)} onChange={() => {
-                    props.select_auth(UserAuth.vir_net)
-                }}/>
-                {t("系统网络")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.ddns)}
-                       checked={props.is_selected(UserAuth.ddns)} onChange={() => {
-                    props.select_auth(UserAuth.ddns)
-                }}/>
-                ddns
-            </div>
+                {group.list.map((item, j) => {
+                    // 特殊逻辑：pty shell
+                    if (
+                        item.permission === UserAuth.shell_cmd_filecat_restart &&
+                        !user_base_info.watch
+                    ) {
+                        return null;
+                    }
 
-
-            <h3>{t("系统设置权限")}</h3>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.token_update)}
-                       checked={props.is_selected(UserAuth.token_update)} onChange={() => {
-                    props.select_auth(UserAuth.token_update)
-                }}/>
-                {t("token时间修改")}
+                    return (
+                        <div key={j}>
+                            <input
+                                type="checkbox"
+                                disabled={
+                                    item.noDisable
+                                        ? false
+                                        : props.is_disable(item.permission)
+                                }
+                                checked={props.is_selected(
+                                    item.permission,
+                                    item.noDisable
+                                )}
+                                onChange={() => {
+                                    props.select_auth(item.permission);
+                                }}
+                            />
+                            {item.title}
+                        </div>
+                    );
+                })}
             </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.code_auth)}
-                       checked={props.is_selected(UserAuth.code_auth)} onChange={() => {
-                    props.select_auth(UserAuth.code_auth)
-                }}/>
-                {t("自定义auth")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.code_resource)}
-                       checked={props.is_selected(UserAuth.code_resource)} onChange={() => {
-                    props.select_auth(UserAuth.code_resource)
-                }}/>
-                {t("自定义资源路由")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.code_api)}
-                       checked={props.is_selected(UserAuth.code_api)} onChange={() => {
-                    props.select_auth(UserAuth.code_api)
-                }}/>
-                {t("自定义api路由")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.update_password)}
-                       checked={props.is_selected(UserAuth.update_password)} onChange={() => {
-                    props.select_auth(UserAuth.update_password)
-                }}/>
-                {t("修改密码")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.sys_disk_mount)}
-                       checked={props.is_selected(UserAuth.sys_disk_mount)} onChange={() => {
-                    props.select_auth(UserAuth.sys_disk_mount)
-                }}/>
-                {t("磁盘挂载")}
-            </div>
-
-            <h3>{t("系统环境设置权限")}</h3>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.outside_software_path)}
-                       checked={props.is_selected(UserAuth.outside_software_path)} onChange={() => {
-                    props.select_auth(UserAuth.outside_software_path)
-                }}/>
-                {t("外部软件路径")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.filecat_file_context_update)}
-                       checked={props.is_selected(UserAuth.filecat_file_context_update)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.filecat_file_context_update)
-                       }}/>
-                {t("内容更新")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.shell_cmd_check)}
-                       checked={props.is_selected(UserAuth.shell_cmd_check)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.shell_cmd_check)
-                       }}/>
-                {t("shell命令检测")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.env_path_update)}
-                       checked={props.is_selected(UserAuth.env_path_update)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.env_path_update)
-                       }}/>
-                {t("PATH路径修改")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.pty_cmd_update)}
-                       checked={props.is_selected(UserAuth.pty_cmd_update)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.pty_cmd_update)
-                       }}/>
-                {"pty cmd " +t("更新")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.sys_protection_dir)}
-                       checked={props.is_selected(UserAuth.sys_protection_dir)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.sys_protection_dir)
-                       }}/>
-                {t("系统保护路径更新")}
-            </div>
-
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.workflow_exe)}
-                       checked={props.is_selected(UserAuth.workflow_exe)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.workflow_exe)
-                       }}/>
-                {t("workflow ")+t("执行")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       checked={props.is_selected(UserAuth.workflow_exe_user, true)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.workflow_exe_user)
-                       }}/>
-                {t("workflow ")+t("执行用户")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.workflow_api)}
-                       checked={props.is_selected(UserAuth.workflow_api)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.workflow_api)
-                       }}/>
-                {t("workflow触发api 修改")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.workflow_job)}
-                       checked={props.is_selected(UserAuth.workflow_job)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.workflow_job)
-                       }}/>
-                workflow job
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.dir_upload_max_num)}
-                       checked={props.is_selected(UserAuth.dir_upload_max_num)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.dir_upload_max_num)
-                       }}/>
-                {t("目录文件上传数量限制修改")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.sys_env_setting_key)}
-                       checked={props.is_selected(UserAuth.sys_env_setting_key)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.sys_env_setting_key)
-                       }}/>
-                {t("全局变量通用设置")}
-            </div>
-            <h3>{t("Ai 设置权限")}</h3>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.ai_agent_setting)}
-                       checked={props.is_selected(UserAuth.ai_agent_setting)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.ai_agent_setting)
-                       }}/>
-                {t("Ai 配置")}
-            </div>
-            <div>
-                <input type="checkbox"
-                       disabled={props.is_disable(UserAuth.ai_agent_page)}
-                       checked={props.is_selected(UserAuth.ai_agent_page)}
-                       onChange={() => {
-                           props.select_auth(UserAuth.ai_agent_page)
-                       }}/>
-                {t("Ai Chat Page")}
-            </div>
-        </div>
-
-        <h3>{t("文件权限")}</h3>
-        <div>
-            <input type="checkbox" disabled={props.is_disable(UserAuth.filecat_file_delete_cut_rename)}
-                   checked={props.is_selected(UserAuth.filecat_file_delete_cut_rename)} onChange={() => {
-                props.select_auth(UserAuth.filecat_file_delete_cut_rename)
-            }}/>
-            {t("文件删除、剪切、重命名")}
-        </div>
-        <div>
-            <input type="checkbox"
-                   disabled={props.is_disable(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
-                   checked={props.is_selected(UserAuth.filecat_file_context_update_upload_created_copy_decompression)}
-                   onChange={() => {
-                       props.select_auth(UserAuth.filecat_file_context_update_upload_created_copy_decompression)
-                   }}/>
-            {t("文件创建、上传、内容更新、解压缩")}
-        </div>
-        <div>
-            <input type="checkbox"
-                   disabled={props.is_disable(UserAuth.recycle_file_save)}
-                   checked={props.is_selected(UserAuth.recycle_file_save)}
-                   onChange={() => {
-                       props.select_auth(UserAuth.recycle_file_save)
-                   }}/>
-            {t("文件回收站修改")}
-        </div>
-        <div>
-            <input type="checkbox"
-                   disabled={props.is_disable(UserAuth.share_file)}
-                   checked={props.is_selected(UserAuth.share_file)}
-                   onChange={() => {
-                       props.select_auth(UserAuth.share_file)
-                   }}/>
-            {t("文件分享")}
-        </div>
-
-
-        <h3>{t("标签编辑权限")}</h3>
-        <div className={"checkbox_container"}>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.net_site_tag_update)}
-                       checked={props.is_selected(UserAuth.net_site_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.net_site_tag_update)
-                }}/>
-                {t("网址")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.ssh_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.ssh_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.ssh_proxy_tag_update)
-                }}/>
-                {t("ssh代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.http_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.http_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.http_proxy_tag_update)
-                }}/>
-                {t("http代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.browser_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.browser_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.browser_proxy_tag_update)
-                }}/>
-                {t("浏览器代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.rdp_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.rdp_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.rdp_proxy_tag_update)
-                }}/>
-                {t("rdp代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.wol_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.wol_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.wol_proxy_tag_update)
-                }}/>
-                {t("网络唤醒")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.rtsp_proxy_tag_update)}
-                       checked={props.is_selected(UserAuth.rtsp_proxy_tag_update)} onChange={() => {
-                    props.select_auth(UserAuth.rtsp_proxy_tag_update)
-                }}/>
-                {t("rtsp播放器")}
-            </div>
-
-            <h3>{t("工具功能")}</h3>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.ssh_proxy)}
-                       checked={props.is_selected(UserAuth.ssh_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.ssh_proxy)
-                }}/>
-                {t("ssh代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.http_proxy)}
-                       checked={props.is_selected(UserAuth.http_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.http_proxy)
-                }}/>
-                {t("http代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.http_proxy_download_cancel)}
-                       checked={props.is_selected(UserAuth.http_proxy_download_cancel)} onChange={() => {
-                    props.select_auth(UserAuth.http_proxy_download_cancel)
-                }}/>
-                {t("http代理下载关闭")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.browser_proxy)}
-                       checked={props.is_selected(UserAuth.browser_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.browser_proxy)
-                }}/>
-                {t("浏览器代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.rdp_proxy)}
-                       checked={props.is_selected(UserAuth.rdp_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.rdp_proxy)
-                }}/>
-                {t("rdp代理")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.wol_proxy)}
-                       checked={props.is_selected(UserAuth.wol_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.wol_proxy)
-                }}/>
-                {t("网络唤醒")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.rtsp_proxy)}
-                       checked={props.is_selected(UserAuth.rtsp_proxy)} onChange={() => {
-                    props.select_auth(UserAuth.rtsp_proxy)
-                }}/>
-                {t("rtsp播放器")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.crypto_ssh_file)}
-                       checked={props.is_selected(UserAuth.crypto_ssh_file)} onChange={() => {
-                    props.select_auth(UserAuth.crypto_ssh_file)
-                }}/>
-                {t("ssh密钥保存到磁盘")}
-            </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.nav_net_tag)}
-                       checked={props.is_selected(UserAuth.nav_net_tag)} onChange={() => {
-                    props.select_auth(UserAuth.nav_net_tag)
-                }}/>
-                {t("网址导航")}
-            </div>
-
-
-
-            <h3>{t("pty shell")}</h3>
-            {user_base_info.watch && <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.shell_cmd_filecat_restart)}
-                       checked={props.is_selected(UserAuth.shell_cmd_filecat_restart)} onChange={() => {
-                    props.select_auth(UserAuth.shell_cmd_filecat_restart)
-                }}/>
-                {t("filecat-restart cmd open")}
-            </div>
-            }
-        </div>
+        ))}
     </React.Fragment>)
 }

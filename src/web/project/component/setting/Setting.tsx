@@ -17,10 +17,15 @@ export default function  Settings() {
 
     const menuRots = [
         {index: 1, name: t("系统"), rto: "password/"},
-        {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/"},
-        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting/"},
-        {index: 1, name: t("自定义路由"), rto: "customer_router/"},
+        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting/"}
+
     ];
+    if(check_user_auth(UserAuth.sys_page)) {
+        menuRots.push(     {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/"},)
+    }
+    if(check_user_auth(UserAuth.auth_router_page)) {
+        menuRots.push( {index: 1, name: t("自定义路由"), rto: "customer_router/"})
+    }
     if(check_user_auth(UserAuth.user_manage)) {
         menuRots.push({index:1, name:t("用户管理"), rto:"user_manager/"})
     }
@@ -28,11 +33,12 @@ export default function  Settings() {
         menuRots.push({index: 1, name:t("角色管理"),rto: "role_manager/"})
     }
 
+
     return  <Menu optionList={menuRots}>
         <Sys />
-        <Env />
+        {check_user_auth(UserAuth.sys_page) && <Env />}
         <PrivateEnv />
-        <CustomerRouter />
+        {check_user_auth(UserAuth.auth_router_page) && <CustomerRouter />}
         {check_user_auth(UserAuth.user_manage) && <User />}
         {check_user_auth(UserAuth.role_manage) &&     <Role />}
     </Menu>

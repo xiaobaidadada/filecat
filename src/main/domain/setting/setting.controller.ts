@@ -181,7 +181,7 @@ export class SettingController {
     // 设置文件路由设置
     @Post('/filesSetting/save')
     async saveFilesSetting(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
         await settingService.saveFilesSetting(req, ctx.headers.authorization);
         return Sucess("1");
     }
