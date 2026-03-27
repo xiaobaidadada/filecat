@@ -1,5 +1,7 @@
 
 // 数据库 json 文件
+import {workflow_setting_item} from "../../../common/req/common.pojo";
+
 export enum file_key {
     data = "data.json",
     systemd = "systemd.json",
@@ -86,6 +88,7 @@ export enum data_common_key {
     // 服务器的客户端配置
     tcp_proxy_server_client_list = "tcp_proxy_server_client_list",
     tcp_proxy_client_fig = "tcp_proxy_client_fig",
+    workflow_setting_item_list = "workflow_setting_item_list"
 }
 
 

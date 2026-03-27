@@ -398,4 +398,16 @@ export class SettingController {
         }
         return Sucess("1");
     }
+
+    @Get("/workflow_setting_get")
+    workflow_setting_get(@Req() ctx) {
+        return Sucess(settingService.get_workflow_setting());
+    }
+
+    @Post("/workflow_setting_save")
+    workflow_setting_save(@Body() req: any, @Req() ctx) {
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.dir_upload_max_num);
+        settingService.save_workflow_setting(req);
+        return Sucess("1");
+    }
 }

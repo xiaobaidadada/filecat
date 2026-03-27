@@ -16,7 +16,7 @@ export function Permission(props:{
 
 
     return (<React.Fragment>
-        <h3>{t("功能权限")}</h3>
+        <h3>{t("用户权限")}</h3>
         <div className={"checkbox_container"}>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.user_manage)}
@@ -33,6 +33,14 @@ export function Permission(props:{
                            props.select_auth(UserAuth.role_manage)
                        }}/>
                 {t("角色管理")}
+            </div>
+            <h3>{t("系统管理权限")}</h3>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.all_sys)}
+                       checked={props.is_selected(UserAuth.all_sys)} onChange={() => {
+                    props.select_auth(UserAuth.all_sys)
+                }}/>
+                {t("系统信息")}
             </div>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.sys_process_close)}
@@ -62,13 +70,25 @@ export function Permission(props:{
                 }}/>
                 {t("systemd删除、添加管理")}
             </div>
+
+            <h3>{t("网络功能权限")}</h3>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.vir_net)}
                        checked={props.is_selected(UserAuth.vir_net)} onChange={() => {
                     props.select_auth(UserAuth.vir_net)
                 }}/>
-                {t("虚拟网络")}
+                {t("系统网络")}
             </div>
+            <div>
+                <input type="checkbox" disabled={props.is_disable(UserAuth.ddns)}
+                       checked={props.is_selected(UserAuth.ddns)} onChange={() => {
+                    props.select_auth(UserAuth.ddns)
+                }}/>
+                ddns
+            </div>
+
+
+            <h3>{t("系统设置权限")}</h3>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.token_update)}
                        checked={props.is_selected(UserAuth.token_update)} onChange={() => {
@@ -111,13 +131,8 @@ export function Permission(props:{
                 }}/>
                 {t("磁盘挂载")}
             </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.ddns)}
-                       checked={props.is_selected(UserAuth.ddns)} onChange={() => {
-                    props.select_auth(UserAuth.ddns)
-                }}/>
-                ddns
-            </div>
+
+            <h3>{t("系统环境设置权限")}</h3>
             <div>
                 <input type="checkbox" disabled={props.is_disable(UserAuth.outside_software_path)}
                        checked={props.is_selected(UserAuth.outside_software_path)} onChange={() => {
@@ -199,6 +214,15 @@ export function Permission(props:{
             </div>
             <div>
                 <input type="checkbox"
+                       disabled={props.is_disable(UserAuth.workflow_job)}
+                       checked={props.is_selected(UserAuth.workflow_job)}
+                       onChange={() => {
+                           props.select_auth(UserAuth.workflow_job)
+                       }}/>
+                workflow job
+            </div>
+            <div>
+                <input type="checkbox"
                        disabled={props.is_disable(UserAuth.dir_upload_max_num)}
                        checked={props.is_selected(UserAuth.dir_upload_max_num)}
                        onChange={() => {
@@ -215,6 +239,7 @@ export function Permission(props:{
                        }}/>
                 {t("全局变量通用设置")}
             </div>
+            <h3>{t("Ai 设置权限")}</h3>
             <div>
                 <input type="checkbox"
                        disabled={props.is_disable(UserAuth.ai_agent_setting)}
@@ -388,13 +413,7 @@ export function Permission(props:{
                 }}/>
                 {t("网址导航")}
             </div>
-            <div>
-                <input type="checkbox" disabled={props.is_disable(UserAuth.all_sys)}
-                       checked={props.is_selected(UserAuth.all_sys)} onChange={() => {
-                    props.select_auth(UserAuth.all_sys)
-                }}/>
-                {t("系统")}
-            </div>
+
 
 
             <h3>{t("pty shell")}</h3>

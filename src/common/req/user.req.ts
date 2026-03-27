@@ -83,7 +83,8 @@ export enum UserAuth {
     wol_proxy, // 网络唤醒功能
     rtsp_proxy, // rtsp 功能
     workflow_exe, // workflow 执行 功能
-    workflow_exe_user, // 能被设置执行的 workflow 用户
+    workflow_exe_user, // 能被设置执行的 workf
+    workflow_job,// low 用户
     workflow_api, // workflow 自定义触发api
     dir_upload_max_num = 43, // 目录上传数量限制
     http_proxy_download_cancel, // 关闭下载

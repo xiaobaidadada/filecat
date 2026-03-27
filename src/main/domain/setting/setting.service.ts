@@ -30,11 +30,12 @@ import {get_user_now_pwd} from "../../../common/DataUtil";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
-import {env_item} from "../../../common/req/common.pojo";
+import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
 const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
 const Mustache = require('mustache');
+const cron = require("node-cron");
 
 const customer_router_key = data_common_key.customer_router_key;
 
@@ -765,11 +766,118 @@ export class SettingService {
         return false;
     }
 
+    isValidCron(expr) {
+        if (typeof expr !== "string") return false;
+
+        const parts = expr.trim().split(/\s+/);
+
+        // node-cron: 秒 分 时 日 月 星期 => 6段
+        if (parts.length !== 6) return false;
+
+        const ranges = [
+            [0, 59], // 秒
+            [0, 59], // 分
+            [0, 23], // 时
+            [1, 31], // 日
+            [1, 12], // 月
+            [0, 7],  // 星期 (0/7 = Sunday)
+        ];
+
+        const isFieldValid = (field, min, max) => {
+            // 支持 *, */n, n-m, n,m
+            const regex = /^(\*|(\d+(-\d+)?)(,\d+(-\d+)?)*)$|^\*\/\d+$/;
+            if (!regex.test(field)) return false;
+
+            // *
+            if (field === "*") return true;
+
+            // */n
+            if (field.startsWith("*/")) {
+                const step = Number(field.slice(2));
+                return step > 0;
+            }
+
+            // n,m or n-m
+            const items = field.split(",");
+            for (const item of items) {
+                if (item.includes("-")) {
+                    const [a, b] = item.split("-").map(Number);
+                    if (a < min || b > max || a > b) return false;
+                } else {
+                    const num = Number(item);
+                    if (num < min || num > max) return false;
+                }
+            }
+
+            return true;
+        };
+
+        for (let i = 0; i < 6; i++) {
+            const [min, max] = ranges[i];
+            if (!isFieldValid(parts[i], min, max)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    get_workflow_setting():workflow_setting_item[] {
+        let list:workflow_setting_item[] = DataUtil.get(data_common_key.workflow_setting_item_list)
+        if(!list) {
+            list = []
+            DataUtil.set(data_common_key.workflow_setting_item_list, list);
+        }
+        return list;
+    }
+
+    save_workflow_setting(list:workflow_setting_item[]) {
+        for (let item of list) {
+            if(item.cron_str != null && !this.isValidCron(item.cron_str)) {
+                throw ` ${item.cron_str} is wrong `;
+            }
+        }
+        DataUtil.set(data_common_key.workflow_setting_item_list, list);
+        this.init_corn()
+    }
+
+    corn_job_running_list:any[] =[]
+
+    init_corn() {
+        for (const job of this.corn_job_running_list) {
+            job.stop()
+        }
+        this.corn_job_running_list = []
+        for (const item of this.get_workflow_setting()) {
+            if(!item.open)continue;
+            if(item.cron_str && this.isValidCron(item.cron_str)) {
+                const job = cron.schedule(item.cron_str,()=>{
+                    const user_info = userService.get_user_info_by_user_id(item.user_id);
+                    workflowService.exec_file(item.file_path,user_info).catch(console.error);
+                });
+                this.corn_job_running_list.push(job);
+            }
+        }
+
+    }
+
+    power_on_corn() {
+        const list = this.get_workflow_setting()
+        for (const item of list) {
+            if(!item.open)continue;
+            if(!item.sys_power_on)continue;
+            const user_info = userService.get_user_info_by_user_id(item.user_id);
+            workflowService.exec_file(item.file_path,user_info).catch(console.error);
+        }
+    }
+
 }
 
 export const settingService: SettingService = new SettingService();
 ServerEvent.on("start", (data) => {
     settingService.init();
+    settingService.power_on_corn();
+    settingService.init_corn();
     ai_agentService.init_search_docs_param()
     ai_agentService.init_search_docs().catch(console.error);
 })

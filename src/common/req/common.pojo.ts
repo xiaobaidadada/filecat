@@ -116,3 +116,12 @@ export interface server_client_proxy {
 
     server_port_note?:string;
 }
+
+export interface workflow_setting_item {
+    file_path:string;
+    cron_str?:string; // cron定时器表达式 秒 分 时 日 月 星期
+    sys_power_on?:boolean; // 开机就启动
+    note?:string;
+    user_id:string
+    open:boolean
+}

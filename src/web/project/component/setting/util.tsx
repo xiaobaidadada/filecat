@@ -58,6 +58,29 @@ export function using_env_prompt() {
             context = <div>
                 用于右键特定后缀的文件，执行一些快捷命令，文件后缀可以是多个，用空格分割
             </div>
+        } else if(id === "Workflow") {
+            context = <div>
+                <li>
+                    在特定的时间启动系统中的workflow任务
+                </li>
+                <li>
+                    cron表达式是定时器 格式为： 秒 分 时 日 月 星期
+                </li>
+                <li>
+                    <li>
+                        1. "*"（通配符,所有值）
+                    </li>
+                    <li>
+                        2. "," 是枚举: 0 0 1,15 * * *
+                    </li>
+                    <li>
+                        3. "-" 是范围: 0 0 1-5 * * *
+                    </li>
+                    <li>
+                        4. "/" 是步长，标识每隔n执行 */3 * * * * * 每隔三秒，必须配合 * 使用 ,/ 只能写一次 ，有了/就成了定时器，而不是指定时间执行
+                    </li>
+                </li>
+            </div>
         }
         set_prompt_card({open:true,title:"信息",context_div : (
                 <div >

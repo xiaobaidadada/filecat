@@ -20,7 +20,7 @@ import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {sort} from "../../../../common/ListUtil";
-import {env_item} from "../../../../common/req/common.pojo";
+import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
 import {using_env_prompt} from "./util";
 
 export function Env() {
@@ -32,11 +32,13 @@ export function Env() {
     const [protection_sys_dir_rows, set_protection_sys_dir_rows] = useState([]);
     const [dir_upload_rows, set_dir_upload_rows] = useState<dir_upload_max_num_item[]>([]);
     const [env_path_dir_rows, set_env_path_dir_rows] = useState([] as env_item[]);
+    const [workflow_setting_rows, set_workflow_setting_rows] = useState([] as workflow_setting_item[]);
     const [pty_cmd, set_pty_cmd] = useState("");
 
     const headers_outside_software = [t("软件"), t("是否安装"), t("路径")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
+    const workflow_setting_headers = [t("编号"), t("文件路径"),t("是否开启"), t("系统启动执行"), t("corn表达式"),t("用户id"),t("备注")];
     const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("是否开启大文件断点"), t("大文件判断大小MB"), t("大文件并发数量"), t("大文件分块大小MB"), t("备注")];
     const {check_user_auth} = use_auth_check();
 
@@ -45,6 +47,13 @@ export function Env() {
         const result2 = await settingHttp.get("env/path/get");
         if (result2.code === RCode.Success) {
             set_env_path_dir_rows(result2.data);
+        }
+    }
+
+    const get_workflow_setting_rows = async () => {
+        const result2 = await settingHttp.get("workflow_setting_get");
+        if (result2.code === RCode.Success) {
+            set_workflow_setting_rows(result2.data);
         }
     }
 
@@ -62,6 +71,8 @@ export function Env() {
         }
 
         get_env()
+
+        get_workflow_setting_rows()
 
         // 系统保护目录
         const result5 = await settingHttp.get("protection_dir/sys");
@@ -168,6 +179,15 @@ export function Env() {
             initUserInfo();
         }
     }
+
+    const workflow_setting_rows_save = async ()=>{
+        const result2 = await settingHttp.post("workflow_setting_save",workflow_setting_rows);
+        if (result2.code === RCode.Success) {
+            NotySucess("ok")
+            get_workflow_setting_rows()
+        }
+    }
+
     return (<React.Fragment>
         <RowColumn widthPer={100}>
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton
@@ -252,6 +272,7 @@ export function Env() {
                             return new_list;
                         })} width={"10rem"}/>
                     </CardFull>
+
                     <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("pty")
@@ -261,6 +282,54 @@ export function Env() {
                             set_pty_cmd(value)
                         }}/>
                     </Card>
+
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Workflow Job")}</h2>
+                    <ActionButton icon={"info"} onClick={() => {
+                        soft_ware_info_click("Workflow")
+                    }} title={"信息"}/></span>}
+                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>{
+                                  set_workflow_setting_rows([...workflow_setting_rows,{open:false}])
+                              }}/>
+                                  <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/></div>}>
+                        <Table headers={workflow_setting_headers} rows={workflow_setting_rows.map((item, index) => {
+                            const new_list = [
+                                <div>{index}</div>,
+                                <InputText value={item.file_path} handleInputChange={(value) => {
+                                    item.file_path = value;
+                                }} no_border={true}/>,
+
+                                <Select value={!!item.open} onChange={(value: any) => {
+                                    item.open = (value === true || value === "true")
+                                    set_workflow_setting_rows([...workflow_setting_rows])
+                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        no_border={true}/>,
+
+                                <Select value={!!item.sys_power_on} onChange={(value: any) => {
+                                    item.sys_power_on = (value === true || value === "true")
+                                    set_workflow_setting_rows([...workflow_setting_rows])
+                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        no_border={true}/>,
+
+                                <InputText value={item.cron_str} handleInputChange={(value) => {
+                                    item.cron_str = value;
+                                }} no_border={true}/>,
+
+                                <InputText value={item.user_id} handleInputChange={(value) => {
+                                    item.user_id = value;
+                                }} no_border={true}/>,
+
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+
+                                <ActionButton icon={"delete"} title={t("删除")}
+                                              onClick={() => ()=>{
+                                                  set_workflow_setting_rows([...workflow_setting_rows.splice(index,1)])
+                                              }}/>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </CardFull>
 
 
                 </Dashboard>
