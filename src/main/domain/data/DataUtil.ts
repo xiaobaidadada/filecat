@@ -2,14 +2,7 @@ import path from "path";
 import fs from "fs";
 import fse from 'fs-extra'
 import {Env} from "../../../common/node/Env";
-import {
-    data_common_key,
-    data_dir_tem_name,
-    data_version_type,
-    file_key,
-    is_data_version_type
-} from "./data_type";
-import {FileUtil} from "../file/FileUtil";
+import {data_common_key, data_dir_tem_name, data_version_type, file_key, is_data_version_type} from "./data_type";
 import {tcp_proxy_server_config} from "../../../common/req/common.pojo";
 
 
@@ -44,7 +37,7 @@ export class DataUtil {
         try {
             const  p_v = path.join(Env.work_dir, file_key.data_version)
             const version = this.get_data_version();
-            if(version < data_version_type.filecat_1) {
+            if(version < data_version_type.filecat_1 && version === data_version_type.filecat_not) {
                 // 升级到 data_version_type.filecat_1
                 const navindex_key = this.get(data_common_key.navindex_key);
                 const http_tag_key = this.get(data_common_key.http_tag_key);
