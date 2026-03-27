@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
-const {npm_externals} = require("./base.webpack.config");
+const {npm_externals, common_plugins} = require("./base.webpack.config");
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
     mode: 'production', // 或者 'production'
@@ -22,12 +22,7 @@ module.exports = {
     externalsPresets: { node: true },
     externals: npm_externals,
     plugins: [
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify('production'),
-            'process.env.version': JSON.stringify(package_data.version),
-            'process.env.base_url': JSON.stringify(base_url),
-            // 'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify
-        }),
+        new webpack.DefinePlugin(common_plugins),
         // new webpack.IgnorePlugin({ // 前面已经排除了可能含义.node的项目 这里就不需要了
         //     resourceRegExp: /\.node$/
         //     // contextRegExp: /moment$/,

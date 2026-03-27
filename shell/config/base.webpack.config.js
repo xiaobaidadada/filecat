@@ -9,7 +9,7 @@ const common_plugins = {
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env.version': JSON.stringify(package_data.version),
     'process.env.base_url': JSON.stringify(base_url),
-    // 'process.env.run_env': JSON.stringify("exe") // 必须用 JSON.stringify
+    'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify
 }
 // 给js代码注入一些环境变量
 const plugins = [
@@ -69,6 +69,7 @@ const pkg_externals = [
 ]
 
 module.exports.plugins = plugins;
+module.exports.common_plugins = common_plugins
 module.exports.get_exe_plugins = get_exe_plugins;
 module.exports._node_rules = _node_rules;
 module.exports.npm_externals = npm_externals;

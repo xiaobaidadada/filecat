@@ -93,6 +93,7 @@ export class UserController {
         pojo.watch = Env.watch
         pojo.sys_ai_is_open = ai_agentService.sys_ai_is_open
         pojo.latest_version = process.env.version !== this.latest_version?this.latest_version: process.env.version;
+        pojo.process_env_run_env = process.env.run_env as string
         if(Date.now() - this.latest_count_time > 3000) {
             HttpRequest.get(`https://registry.npmjs.org/filecat`,{},5000).then((res) => {
                 if(res && typeof res === "object") {

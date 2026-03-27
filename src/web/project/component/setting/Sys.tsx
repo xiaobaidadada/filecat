@@ -275,6 +275,7 @@ export function  Sys() {
             <span className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span>
             <span className={"credits"}><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{`version:${process.env.version}`}{userInfo.latest_version != null  && userInfo.latest_version !== process.env.version ? ` -> ${userInfo.latest_version}`:''}</a></span>
             <span className={"credits"}><a href={t("官网地址")} target="_blank">{`filecat ${t("功能文档")}`}</a></span>
+            <span className={"credits"}>{t("安装方式")} :{userInfo.process_env_run_env}</span>
         </>}/>
     </Row>
 }

@@ -30,6 +30,8 @@ export class UserBaseInfo {
     latest_version?:string;
     sys_ai_is_open:boolean;
 
+    process_env_run_env:string | "exe"|"npm"
+
     public static get_now_dir(user_base_info:UserBaseInfo) {
         let path = user_base_info.user_data.cwd
         if(user_base_info.user_data.folder_item_now && user_base_info.user_data.folder_items?.length) {
