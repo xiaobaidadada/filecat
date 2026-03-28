@@ -3,6 +3,7 @@ import path from "path";
 import http from "http";
 import https from "https";
 import {spawn} from "child_process";
+import {settingService} from "../../main/domain/setting/setting.service";
 
 export enum filecat_cmd  {
     filecat_restart = "filecat-restart",
@@ -149,7 +150,11 @@ export class ProcessUtil {
             const npm = isWin ? "npm.cmd" : "npm";
             const child = spawn(npm, args, {
                 stdio: ["ignore", "pipe", "pipe"],
-                shell: process.platform === "win32"
+                shell: process.platform === "win32",
+                env:{
+                    ...process.env,
+                    PATH: settingService.get_env_path()
+                }
             });
 
             // =========================

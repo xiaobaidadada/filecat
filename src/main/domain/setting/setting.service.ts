@@ -676,7 +676,7 @@ export class SettingService {
         const list= this.get_en_path_list()
         const s = sysType === SysEnum.win ? ";" : ":";
         const filter_path_list = list.filter(v=>v.open).map(v => v.path)
-        // 添加当前的node环境
+        // 添加当前的node环境 添加到后面 前面有的话会覆盖
         filter_path_list.push(path.dirname(process.execPath))
         const r_list = filter_path_list.join(s);
         return process.env.PATH + s+ r_list;
