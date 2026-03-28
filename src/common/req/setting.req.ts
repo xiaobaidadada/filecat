@@ -121,7 +121,8 @@ messages_show_max=100
 messages_current_max=100
 `
 export const json_params_default = JSON.stringify({
-    stream: false
+    "stream":true,
+    "thinking" : { "type":"disabled" }
 })
 
 export class QuickCmdItem {

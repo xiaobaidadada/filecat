@@ -57,11 +57,13 @@ export class DataUtil {
 
             if(version < data_version_type.handle_tcp_proxy_server_key) {
                 const v :tcp_proxy_server_config = DataUtil.get(data_common_key.tcp_proxy_server_base,file_key.tcp_proxy_server_client)
-                if(v.key && !v.option_keys?.length) {
-                    v.option_keys = [v.key]
-                    delete v.key
+                if(v) {
+                    if(v.key && !v.option_keys?.length) {
+                        v.option_keys = [v.key]
+                        delete v.key
+                    }
+                    DataUtil.set(data_common_key.tcp_proxy_server_base,v,file_key.tcp_proxy_server_client)
                 }
-                DataUtil.set(data_common_key.tcp_proxy_server_base,v,file_key.tcp_proxy_server_client)
                 fs.writeFileSync(p_v, `${data_version_type.handle_tcp_proxy_server_key}`);
             }
         } catch (e) {

@@ -2,7 +2,7 @@ import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {NetMsgType, NetUtil, tcp_client_msg, tcp_server_msg, tcp_server_type} from "./util/NetUtil";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {server_type, tcp_forward_client_type} from "./type";
-import {server_key, tcpForwardService} from "./tcp.forward.service";
+import {server_key, tcpForwardService} from "./tcp.forward.server.service";
 import {NetServerUtil} from "./util/NetServerUtil";
 import net from "net";
 import {NetPojo} from "../../../common/req/net.pojo";
@@ -14,6 +14,9 @@ import {generateSaltyUUID} from "../../../common/StringUtil";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {virtualClientService} from "./virtual/virtual.client.service";
+import {DataUtil} from "../data/DataUtil";
+import {data_common_key, file_key} from "../data/data_type";
+import {tcp_forward_client_service} from "./tcp.forward.client.service";
 
 const  tcp_client_target_map = {}
 
@@ -62,22 +65,22 @@ export class TcpForwardController {
     @Post('/client_save')
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        tcpForwardService.close_client()
-        tcpForwardService.client_fig_save(data)
-        await tcpForwardService.client_init_to_server()
+        tcp_forward_client_service.close_client()
+        tcp_forward_client_service.client_fig_save(data)
+        await tcp_forward_client_service.client_init_to_server()
         return Sucess({})
     }
 
     @Get('/client_get')
     async client_get(@Body() data: NetPojo, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        return Sucess(tcpForwardService.client_fig_get())
+        return Sucess(tcp_forward_client_service.client_fig_get())
     }
 
     @msg(CmdType.tcp_proxy_client_status)
     vir_net_client_get(data: WsData<any>) {
         userService.check_user_auth(data.wss.token, UserAuth.vir_net);
-        return tcpForwardService.tcp_proxy_client_status(data);
+        return tcp_forward_client_service.tcp_proxy_client_status(data);
     }
 
     // 服务器接收注册
@@ -139,10 +142,10 @@ export class TcpForwardController {
         })
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
-            delete tcpForwardService.client_socket_map[info.socket_id]
+            delete tcp_forward_client_service.client_socket_map[info.socket_id]
             delete tcp_client_target_map[key]
         })
-        tcpForwardService.client_socket_map[info.socket_id] = targetSocket;
+        tcp_forward_client_service.client_socket_map[info.socket_id] = targetSocket;
     }
 
     // 修改信息
@@ -153,19 +156,19 @@ export class TcpForwardController {
         it.client_name = info.client_name
         it.key = info.token
         it.serverPort = info.server_port
-        tcpForwardService.client_fig_save(it)
+        tcp_forward_client_service.client_fig_save(it)
     }
 
     // socket的数据
     @tcp_client_msg(NetMsgType.tcp_socket_data)
     server_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        tcpForwardService.client_on_data(data)
+        tcp_forward_client_service.client_on_data(data)
     }
     @tcp_server_msg(NetMsgType.tcp_socket_data,tcp_server_type.tcp_forward)
     client_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         const data_map:server_type = util.data_map[server_key]
-        tcpForwardService.write_socket(data_map.all_server_socket_map[socket_id],data)
+        tcp_forward_client_service.write_socket(data_map.all_server_socket_map[socket_id],data)
     }
 
     // 服务器和客户端接收到客户端的关闭
@@ -178,7 +181,14 @@ export class TcpForwardController {
     }
     @tcp_client_msg(NetMsgType.tcp_socket_close)
     client_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        tcpForwardService.client_tcp_socket_close(data)
+        tcp_forward_client_service.client_tcp_socket_close(data)
+    }
+
+    @tcp_client_msg(NetMsgType.tcp_server_del_client)
+    server_del_cleint(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const fig = tcp_forward_client_service.client_fig_get()
+        delete fig.client_id
+        DataUtil.set(data_common_key.tcp_proxy_client_fig,fig,file_key.tcp_proxy_server_client)
     }
 
 

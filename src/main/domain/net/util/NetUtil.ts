@@ -57,7 +57,9 @@ export enum NetMsgType {
     tcp_client_create_socket_for_server,
 
     // 给用户更新信息
-    tcp_server_update_client_info =10
+    tcp_server_update_client_info =10,
+
+    tcp_server_del_client = 11, // 服务器删除客户端
 }
 
 

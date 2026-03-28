@@ -1,7 +1,6 @@
 import {NetServerUtil} from "./util/NetServerUtil";
 import {NetMsgType, NetUtil, tcp_server_type} from "./util/NetUtil";
 import {server_item_type, server_type, tcp_forward_client_type} from "./type";
-import {is_port_available} from "../../../common/node/findPort";
 import net from "net";
 import {ServerEvent} from "../../other/config";
 import {NetClientUtil} from "./util/NetClientUtil";
@@ -16,23 +15,19 @@ import {
 } from "../../../common/req/common.pojo";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
-import {tcp_raw_socket} from "./util/tcp.client";
+import {tcp_forward_client_service} from "./tcp.forward.client.service";
 
 
 export const server_key = "sockets";
 
 
 
-export class TcpForwardService {
+export class TcpForwardServerService {
 
     private client_map:{
         [key:string]:tcp_forward_client_type // key 是客户端 id
     } = {}
 
-
-    public client_socket_map:{
-        [key:number]:net.Socket
-    } = {}
 
     private global_socket_id = 1;
 
@@ -191,65 +186,8 @@ export class TcpForwardService {
         });
     }
 
-    close_client() {
-        const fig = this.client_fig_get()
-        if(fig.serverIp && fig.open && fig.serverPort) {
-            NetClientUtil.close_tcp(fig.serverIp,fig.serverPort)
-        }
-    }
 
-    async client_init_to_server() {
-        const fig = this.client_fig_get()
-        if(fig.open) {
-            const register = async ()=>{
-                const info :tcp_forward_client_type = {
-                    hash_token: NetUtil.get64Key(fig.key),
-                    client_id: fig.client_id,
-                    client_name: fig.client_name
-                }
-                const data = await NetClientUtil.send_for_tcp_async(fig.serverIp,fig.serverPort,NetMsgType.tcp_connect, Buffer.from(JSON.stringify(info)));
-                const r_info = JSON.parse(data.toString());
-                this.client_fig_save({client_id:r_info.client_id})
-            }
-            await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
-                (state) => {
-                    // this.client_staus = state
-                    this.push_client_status()
 
-                });
-        }
-    }
-
-    client_on_data(data: Buffer) {
-        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-        try {
-            this.write_socket( this.client_socket_map[socket_id],data)
-        } catch(err) {
-            console.error(` tcp 转发服务器 写失败 ${err?.message}`);
-        }
-    }
-
-    write_socket( socket:net.Socket,data:Buffer) {
-        if (!socket || socket.destroyed) {
-            // console.warn(`socket  已关闭，丢弃数据`);
-            return;
-        }
-        try {
-            socket.write(data.subarray(2),(err)=>{
-                if(err) {
-                    console.error(` tcp 转发服务器 写失败 ${err?.message}`);
-                }
-            });
-        } catch(err) {
-            console.log(` tcp err: ${err?.message}`);
-        }
-    }
-
-    client_tcp_socket_close(data: Buffer) {
-        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-        this.client_socket_map[socket_id]?.destroy()
-        delete this.client_socket_map[socket_id]
-    }
 
     server_fig_get() {
         let v:tcp_proxy_server_config = DataUtil.get(data_common_key.tcp_proxy_server_base,file_key.tcp_proxy_server_client)
@@ -284,6 +222,7 @@ export class TcpForwardService {
         const list = this.server_client_get()
         const one = list.find(v=>v.client_id===client_id)
         if(one){
+            this.client_map[one.client_id]?.client_util.send_data(NetMsgType.tcp_server_del_client,Buffer.alloc(0))
             this.server_close_client_proxy(one);
             const new_list = list.filter(v=>v.client_id!==client_id);
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,new_list,file_key.tcp_proxy_server_client)
@@ -324,45 +263,11 @@ export class TcpForwardService {
         this.server_init()
     }
 
-    client_fig_get() {
-        let v:tcp_proxy_client_fig = DataUtil.get(data_common_key.tcp_proxy_client_fig,file_key.tcp_proxy_server_client)
-        if(!v) {
-            v = {client_name: "", key: "", open: false, serverIp: "", serverPort: 0}
-            DataUtil.set(data_common_key.tcp_proxy_client_fig,v,file_key.tcp_proxy_server_client)
-        }
-        return v;
-    }
 
-    wssSet: Set<Wss> = new Set();
-    // client_staus:boolean = false;
 
-    tcp_proxy_client_status(data: WsData<any>) {
-        this.wssSet.add(data.wss)
-        data.wss.setClose(()=>{
-            this.wssSet.delete(data.wss)
-        })
-        return this.push_client_status()
-    }
 
-    push_client_status( ){
-        const fig = this.client_fig_get()
-        const info = {
-            status: NetClientUtil.is_alive(fig.serverIp,fig.serverPort),
-        }
-        for (const wss of this.wssSet.values()) {
-            wss.send(CmdType.tcp_proxy_client_status, info);
-        }
-        return info;
-    }
 
-    client_fig_save(fig:tcp_proxy_client_fig|any) {
-        const old_fig = this.client_fig_get()
-        for (const key of Object.keys(fig)) {
-            if(fig[key] == null) continue;
-            old_fig[key] = fig[key];
-        }
-        DataUtil.set(data_common_key.tcp_proxy_client_fig,old_fig,file_key.tcp_proxy_server_client)
-    }
+
 
     server_init() {
         const fig = this.server_fig_get()
@@ -385,11 +290,11 @@ export class TcpForwardService {
     }
 }
 
-export const tcpForwardService = new TcpForwardService();
+export const tcpForwardService = new TcpForwardServerService();
 ServerEvent.on("start", async (data) => {
     tcpForwardService.server_init()
     setTimeout(()=>{
-         tcpForwardService.client_init_to_server()
+        tcp_forward_client_service.client_init_to_server()
     },500)
     // tcpForwardService.server_start(5678)
     // await tcpForwardService.client_connect_server(5678,"127.0.0.1")
