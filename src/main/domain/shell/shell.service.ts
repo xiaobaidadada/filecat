@@ -20,7 +20,7 @@ import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
-import {filecat_cmd, ProcessUtil} from "../../../common/node/process.util";
+import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUtil";
 import {DataUtil} from "../data/DataUtil";
 
 const {spawn, exec} = require('child_process');
@@ -165,10 +165,10 @@ export class ShellService {
 
     add_handle_for_type_shell(pty_shell:PtyShell,ws_send?:(data)=>void) {
         pty_shell.add_cmd_handle(filecat_cmd.filecat_restart,async (params,send) => {
-            ProcessUtil.requestRestart()
+            ChildProcessUtil.send_father(filecat_cmd.filecat_restart)
         })
         pty_shell.add_cmd_handle(filecat_cmd.filecat_down,async (params, send) => {
-            ProcessUtil.kill_self()
+            ChildProcessUtil.send_father(filecat_cmd.filecat_down)
         })
         pty_shell.add_cmd_handle(filecat_cmd.filecat_upgrade,async (params,send) => {
             if(process.env.run_env === "exe") {
@@ -177,18 +177,21 @@ export class ShellService {
                     return;
                 }
                 send(`start download file ...`);
-                const file_path = await ProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
+                const file_path = await ChildProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
                     send(`${num} %`);
                 })
                 send(`\r\ndone! ${file_path}`)
-                ProcessUtil.requestUpgrade(process.env.run_env,file_path)
+                ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade,{
+                    file_path,
+                    run_env:process.env.run_env
+                })
             } else if (process.env.run_env === "npm") {
-                send("start run npm install -g filecat ... ")
-                await ProcessUtil.npmGlobalInstall("filecat",params?.[0],(data)=>{
-                    send(data);
-                });
-                send(`npm update done!`)
-                ProcessUtil.requestUpgrade(process.env.run_env)
+                send("start run npm install -g filecat ... , now kill self")
+                await ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade,{
+                    run_env:process.env.run_env,
+                    paths:settingService.get_env_path(),
+                    registry:params?.[0]
+                })
             }
 
         })

@@ -1,7 +1,7 @@
 import {fork} from 'child_process';
 import readline from 'readline';
 import * as path from "path"
-import {filecat_cmd} from "../common/node/process.util";
+import {FatherProcessUtil, filecat_cmd, node_process_cmd} from "../common/node/childProcessUtil";
 import {fileCompress} from "./domain/file/file.compress";
 import {file_select_list} from "../common/file.pojo";
 import {get_zip_file_format_util} from "../common/StringUtil";
@@ -50,39 +50,58 @@ export function startLauncher() {
                 env: {...process.env}
             }
         );
-
-        child.on('message', async (msg: any) => {
-            switch (msg.msg) {
-                case filecat_cmd.filecat_restart:
-                    console.log('♻️ 子进程请求重启...');
-                    restartServer();
-                    break;
-                case filecat_cmd.filecat_down:
-                    console.log('♻️ 关闭自己...');
-                    if(child) {
-                        child.kill('SIGTERM');
-                    }
-                    process.exit(1);
-                    break;
-                case filecat_cmd.filecat_upgrade:
-                    if(msg.run_env === "exe") {
-                        const format = get_zip_file_format_util(msg.file_path)
-                        if (!format) {
-                            console.log(`不能识别的文件压缩格式  ${msg.file_path}`)
-                            return
-                        }
-                        console.log(`开始解压 ${msg.file_path}`)
-                        await fileCompress.handle_un(format,msg.file_path,__dirname,()=>{} )
-                        console.log(  `解压完成 `)
-                    }
-                    if(child) {
-                        child.kill('SIGTERM');
-                    }
-                    console.log(  `升级完成 开始重启`)
-                    restartServer();
-                    break;
-
+        const close_child = ()=>{
+            if(child) {
+                child.kill('SIGTERM');
+                console.log('关闭子进程')
             }
+        }
+        child.on('message', async (params: {
+            msg:any,
+            msg_id: number,
+            on_data_msg_id: number,
+            data?: any,
+        }) => {
+            const {data,msg,msg_id,on_data_msg_id} = params;
+            try {
+                switch (msg) {
+                    case filecat_cmd.filecat_restart:
+                        console.log('♻️ 子进程请求重启...');
+                        restartServer();
+                        break;
+                    case filecat_cmd.filecat_down:
+                        console.log('♻️ 关闭自己...');
+                        close_child()
+                        process.exit(1);
+                        break;
+                    case filecat_cmd.filecat_upgrade:
+                        if(data.run_env === "exe") {
+                            const format = get_zip_file_format_util(data.file_path)
+                            if (!format) {
+                                console.log(`不能识别的文件压缩格式  ${data.file_path}`)
+                                return
+                            }
+                            console.log(`开始解压 ${data.file_path}`)
+                            close_child()
+                            await fileCompress.handle_un(format,data.file_path,__dirname,()=>{} )
+                            console.log(  `解压完成 `)
+                        } else if(data.run_env === "npm") {
+                            close_child()
+                            await FatherProcessUtil.npmGlobalInstall("filecat",data.paths,data.registry)
+                            console.log('npm 更新完成')
+                        }
+                        if(child) {
+                            child.kill('SIGTERM');
+                        }
+                        console.log(  `升级完成 开始重启`)
+                        restartServer();
+                        break;
+
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            FatherProcessUtil.send(child,{msg_id});
         });
 
         child.on('exit', (code: number, signal: string) => {
@@ -106,21 +125,21 @@ export function startLauncher() {
     // 启动
     startServer();
 
-    // 键盘监听
-    readline.emitKeypressEvents(process.stdin);
-    if (process.stdin.isTTY) process.stdin.setRawMode(true);
-
-    process.stdin.on('keypress', (str, key) => {
-        if (key.ctrl && key.name === 'r') {
-            restartServer();
-        }
-
-        if (key.ctrl && key.name === 'c') {
-            console.log('\n🛑 主进程退出');
-            if (child) child.kill('SIGTERM');
-            process.exit(0);
-        }
-    });
+    // // 键盘监听
+    // readline.emitKeypressEvents(process.stdin);
+    // if (process.stdin.isTTY) process.stdin.setRawMode(true);
+    //
+    // process.stdin.on('keypress', (str, key) => {
+    //     if (key.ctrl && key.name === 'r') {
+    //         restartServer();
+    //     }
+    //
+    //     if (key.ctrl && key.name === 'c') {
+    //         console.log('\n🛑 主进程退出');
+    //         if (child) child.kill('SIGTERM');
+    //         process.exit(0);
+    //     }
+    // });
 }
 
 process.on('exit', () => {
@@ -138,10 +157,10 @@ process.on('SIGTERM', () => {
 
 process.on('uncaughtException', (err) => {
     console.error('❌ 未捕获异常:', err);
-    process.exit(1);
+    // process.exit(1);
 });
 
 process.on('unhandledRejection', (err) => {
     console.error('❌ Promise异常:', err);
-    process.exit(1);
+    // process.exit(1);
 });
