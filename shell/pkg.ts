@@ -22,6 +22,7 @@ if(args[0].includes("win")) {
     copy_auto(path.join(process.cwd(),"node_modules","windows-shortcuts"), path.join(__dirname, "..", "build", "node_modules","windows-shortcuts"))
 } else  {
     fs.copyFileSync(path.join(__dirname,"start","filecat-run.sh"), path.join(__dirname, "..", "build", "filecat-run.sh"));
+    fs.copyFileSync(path.join(__dirname,"start","filecat-install.sh"), path.join(__dirname, "..", "build", "filecat-install.sh"));
 }
 
 const filePaths: string[] = [], directorys: string[] = [];
