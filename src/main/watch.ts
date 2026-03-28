@@ -10,6 +10,13 @@ let child: any = null;
 let last = 0;
 let running = false;
 
+function killChild() {
+    if (child && !child.killed) {
+        console.log('🛑 正在关闭子进程...');
+        child.kill('SIGTERM');
+    }
+}
+
 export function startLauncher() {
     const argv = process.argv;
     const isDev = __filename.endsWith('.ts');
@@ -115,3 +122,26 @@ export function startLauncher() {
         }
     });
 }
+
+process.on('exit', () => {
+    killChild();
+});
+
+process.on('SIGINT', () => {
+    // Ctrl + C
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    process.exit(0);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('❌ 未捕获异常:', err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('❌ Promise异常:', err);
+    process.exit(1);
+});
