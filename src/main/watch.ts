@@ -7,8 +7,8 @@ import {file_select_list} from "../common/file.pojo";
 import {get_zip_file_format_util} from "../common/StringUtil";
 
 let child: any = null;
-let last = 0;
-let running = false;
+let restarting = false;
+let closed = false;
 
 function killChild() {
     if (child && !child.killed) {
@@ -31,13 +31,9 @@ export function startLauncher() {
     const childArgs = argv.slice(2);
 
     function startServer() {
-        if (running === true && Date.now() - last <= 3000) {
-            console.log(`${last} server started`);
-            return;
-        }
+        if(closed) return;
 
-        last = Date.now();
-        running = true;
+        killChild();
 
         console.log('🚀 启动子进程...', new Date().toLocaleString());
 
@@ -55,6 +51,11 @@ export function startLauncher() {
                 child.kill('SIGTERM');
                 console.log('关闭子进程')
             }
+            closed = true;
+        }
+        const start_child = ()=>{
+            closed = false
+            restartServer();
         }
         child.on('message', async (params: {
             msg:any,
@@ -75,31 +76,25 @@ export function startLauncher() {
                         process.exit(1);
                         break;
                     case filecat_cmd.filecat_upgrade:
-                        if(data.run_env === "exe") {
-                            const format = get_zip_file_format_util(data.file_path)
-                            if (!format) {
-                                console.log(`不能识别的文件压缩格式  ${data.file_path}`)
-                                return
-                            }
-                            console.log(`开始解压 ${data.file_path}`)
-                            close_child()
-                            try {
+                        try {
+                            if(data.run_env === "exe") {
+                                const format = get_zip_file_format_util(data.file_path)
+                                if (!format) {
+                                    console.log(`不能识别的文件压缩格式  ${data.file_path}`)
+                                    return
+                                }
+                                console.log(`开始解压 ${data.file_path}`)
                                 await fileCompress.handle_un(format,data.file_path,__dirname,()=>{} )
-                            } catch (e) {
-                                console.log(e)
-                            }
-                            console.log(  `解压完成 `)
-                        } else if(data.run_env === "npm") {
-                            close_child()
-                            try {
+                                console.log(  `解压完成 `)
+                            } else if(data.run_env === "npm") {
                                 await FatherProcessUtil.npmGlobalInstall("filecat",data.paths,data.registry)
-                            }catch(e){
-                                console.log(e)
+                                console.log('npm 更新完成')
                             }
-                            console.log('npm 更新完成')
+                            console.log(  `升级完成 开始重启`)
+                        }  catch(e){
+                            console.error(e)
                         }
-                        console.log(  `升级完成 开始重启`)
-                        restartServer();
+                        start_child()
                         break;
 
                 }
@@ -116,35 +111,20 @@ export function startLauncher() {
     }
 
     function restartServer() {
-        running = false;
-        if (child) {
-            console.log('♻️ 正在重启子进程...');
-            child.kill('SIGTERM');
-            setTimeout(() => startServer(), 1000 * 5);
-        } else {
+        if (restarting) return;
+        restarting = true;
+
+        setTimeout(() => {
+            restarting = false;
             startServer();
-        }
+        }, 5000);
     }
 
 
     // 启动
     startServer();
 
-    // // 键盘监听
-    // readline.emitKeypressEvents(process.stdin);
-    // if (process.stdin.isTTY) process.stdin.setRawMode(true);
-    //
-    // process.stdin.on('keypress', (str, key) => {
-    //     if (key.ctrl && key.name === 'r') {
-    //         restartServer();
-    //     }
-    //
-    //     if (key.ctrl && key.name === 'c') {
-    //         console.log('\n🛑 主进程退出');
-    //         if (child) child.kill('SIGTERM');
-    //         process.exit(0);
-    //     }
-    // });
+
 }
 
 process.on('exit', () => {
