@@ -29,12 +29,19 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 
 对于Linux系统，安装完以后，你可选择使用pm2来保活，或者使用 `filecat --install`来注册到systemd
 
-### 2. Docker
-`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`
+2. Linux curl 
+
+`curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh`
+
+在linux系统下可以执行该命令，将自动下载二进制包并执行安装程序，按照提示输入参数即可。 
+
 ### 3.  二进制
 下载最新 [Releases](https://github.com/xiaobaidadada/filecat/releases)
 
-### 4. Git Clone
+### 4. Docker
+`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`
+
+### 5. Git Clone
 `git clone https://github.com/xiaobaidadada/filecat.git`
 
 `npm install`
