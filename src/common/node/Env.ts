@@ -41,7 +41,7 @@ export class Env {
     public static reset_root_password: string;
     public static base_url: string; // 本地 dev的时候这个参数没有用  env.j会生效
     public static lan: UserLanguage = "en";
-    public static watch: boolean = false;
+    // public static watch: boolean = false;
 
     public static async parseArgs() {
         return new Promise((resolve, reject) => {
@@ -118,8 +118,6 @@ export class Env {
                         execSync(`sudo systemctl daemon-reload`);
                         console.log("卸载完成")
                         process.exit();
-                    } else if (key === "watch") {
-                        this.watch = true;
                     }
                 }
             }

@@ -675,7 +675,10 @@ export class SettingService {
     public get_env_path() {
         const list= this.get_en_path_list()
         const s = sysType === SysEnum.win ? ";" : ":";
-        const r_list = list.filter(v=>v.open).map(v => v.path).join(s);
+        const filter_path_list = list.filter(v=>v.open).map(v => v.path)
+        // 添加当前的node环境
+        filter_path_list.push(path.dirname(process.execPath))
+        const r_list = filter_path_list.join(s);
         return process.env.PATH + s+ r_list;
     }
 

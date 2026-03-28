@@ -125,7 +125,10 @@ export function Permission(props:{
                 { title: t("网络唤醒"), permission: UserAuth.wol_proxy },
                 { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy },
                 { title: t("ssh密钥保存到磁盘"), permission: UserAuth.crypto_ssh_file },
-                { title: t("网址导航"), permission: UserAuth.nav_net_tag }
+                { title: t("网址导航"), permission: UserAuth.nav_net_tag },
+                { title: t("filecat-restart重启命令"), permission: UserAuth.shell_cmd_filecat_restart },
+                { title: t("filecat-upgrade升级命令"), permission: UserAuth.shell_cmd_filecat_upgrade },
+                { title: t("filecat-down关闭主进程命令"), permission: UserAuth.shell_cmd_filecat_kill_self },
             ]
         }
     ];
@@ -136,13 +139,6 @@ export function Permission(props:{
                 <h3>{group.title}</h3>
 
                 {group.list.map((item, j) => {
-                    // 特殊逻辑：pty shell
-                    if (
-                        item.permission === UserAuth.shell_cmd_filecat_restart &&
-                        !user_base_info.watch
-                    ) {
-                        return null;
-                    }
 
                     return (
                         <div key={j}>

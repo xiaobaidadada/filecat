@@ -1,4 +1,5 @@
 import {find_sep} from "./path_util";
+import {file_select_list} from "./file.pojo";
 
 export class Param {
     key: string;
@@ -234,4 +235,13 @@ export function formatPermissions(mode: number): string {
     }
 
     return result; // 例如 "-rwxr-xr--"
+}
+
+
+export function get_zip_file_format_util(name) {
+    for (const ff of file_select_list) {
+        if(name.endsWith(ff)) {
+            return ff;
+        }
+    }
 }

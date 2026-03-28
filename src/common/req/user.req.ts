@@ -26,7 +26,7 @@ export class UserBaseInfo {
     runing_time_length: any; // 系统运行的时间
     user_data: UserData; // 用户数据
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
-    watch:boolean
+    // watch:boolean
     latest_version?:string;
     sys_ai_is_open:boolean;
 
@@ -100,6 +100,8 @@ export enum UserAuth {
     share_file , // 文件分享功能
     sys_page, //  系统页面
     auth_router_page= 53, // 自定义路由页面
+    shell_cmd_filecat_upgrade , // 升级命令
+    shell_cmd_filecat_kill_self= 55, //
 
 }
 

@@ -22,7 +22,7 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {RCode} from "../../../common/Result.pojo";
-import {FileCompress} from "./file.compress";
+import {fileCompress, FileCompress} from "./file.compress";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {formatDate, formatPermissions, removeTrailingPath} from "../../../common/StringUtil";
@@ -58,7 +58,7 @@ const iconv = require('iconv-lite');
 //     'gbk', 'gb2312', 'gb18030', 'big5',
 // ];
 
-export class FileService extends FileCompress {
+export class FileService  {
 
     utf8ToEncoding(utf8Str, targetEncoding, outputFormat = 'buffer') {
         // 1. 将 UTF-8 字符串编码为目标编码的 Buffer
@@ -449,7 +449,7 @@ export class FileService extends FileCompress {
         // if (fs.existsSync(sysPath)) {
         //     fs.unlinkSync(sysPath);  // 删除文件
         // }
-        this.lifeStart(sysPath, upload_max_key, async (key) => {
+        fileCompress.lifeStart(sysPath, upload_max_key, async (key) => {
             this.file_upload_count_map.delete(upload_max_key);
             value.writeStream.end();
             value.buffer_list = null;
@@ -484,7 +484,7 @@ export class FileService extends FileCompress {
         const sysPath = path.join(settingService.getFileRootPath(token), param.file_path ? decodeURIComponent(param.file_path) : "");
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
-        this.lifeHeart(sysPath);
+        fileCompress.lifeHeart(sysPath);
 
         const num_value = this.file_upload_count_map.get(sysPath);
         try {
@@ -964,23 +964,7 @@ export class FileService extends FileCompress {
             result.context = value;
             wss.sendData(result.encode());
         };
-        if (pojo.format === FileCompressType.tar) {
-            this.unTar(sysSourcePath, targetFolder, outHanle)
-        } else if (pojo.format === FileCompressType.zip) {
-            this.unZip(sysSourcePath, targetFolder, outHanle)
-        } else if (pojo.format === FileCompressType.tar_gz) {
-            this.unTar(sysSourcePath, targetFolder, outHanle, true)
-        } else if (pojo.format === FileCompressType.rar) {
-            try {
-                await this.unRar(sysSourcePath, targetFolder, outHanle)
-            } catch (e) {
-                wss.ws.close();
-            }
-        } else if(pojo.format === FileCompressType.gz) {
-            this.unGz(sysSourcePath, targetFolder, outHanle)
-        } else {
-            wss.ws.close();
-        }
+        await fileCompress.handle_un(pojo.format,sysSourcePath,targetFolder,outHanle)
     }
 
     async FileCompress(data: WsData<FileCompressPojo>) {
@@ -1023,7 +1007,7 @@ export class FileService extends FileCompress {
                 format = "tar";
                 break;
             case FileCompressType.gz:
-                this.compressGz(pojo.compress_level,targerFilePath,filePaths,directorys,handle_progress)
+                await fileCompress.compressGz(pojo.compress_level,targerFilePath,filePaths,directorys,handle_progress)
                 return
             case FileCompressType.rar:
                 // 不支持
@@ -1035,7 +1019,7 @@ export class FileService extends FileCompress {
                 format = "tar";
                 break
         }
-        this.compress(format, pojo.compress_level, targerFilePath, filePaths, directorys, handle_progress, pojo.format === FileCompressType.tar_gz);
+        await fileCompress.compress(format, pojo.compress_level, targerFilePath, filePaths, directorys, handle_progress, pojo.format === FileCompressType.tar_gz);
     }
 
     // getTotalFile(data: { files: string[], total: number }, filepath: string) {

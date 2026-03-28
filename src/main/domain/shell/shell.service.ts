@@ -20,6 +20,8 @@ import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
+import {filecat_cmd, ProcessUtil} from "../../../common/node/process.util";
+import {DataUtil} from "../data/DataUtil";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -126,6 +128,11 @@ export class ShellService {
                     console.error('path加载 检查目录时发生错误:', err);
                 }
             }
+            Object.values(filecat_cmd).forEach((cmd) => {
+                word_detection.add(cmd)
+            })
+            // word_detection.add(filecat_cmd.filecat_restart)
+            // word_detection.add(filecat_cmd.filecat_upgrade)
             // console.log(PATH_file_total)
         } catch (ex) {
             console.log(ex)
@@ -144,28 +151,74 @@ export class ShellService {
         return line;
     }
 
+    check_permission(params:{token?:string,user_id?:string,permission:UserAuth},auto_throw = false) {
+        if (params.token != null ) {
+            return userService.check_user_auth(params.token, params.permission, auto_throw)
+        }
+        if (params.user_id != null ) {
+            return  userService.check_user_auth_by_user_id(params.user_id, params.permission, {
+                auto_throw: auto_throw,
+                root_check: true,
+            })
+        }
+    }
+
+    add_handle_for_type_shell(pty_shell:PtyShell,ws_send?:(data)=>void) {
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_restart,async (params,send) => {
+            ProcessUtil.requestRestart()
+        })
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_down,async (params, send) => {
+            ProcessUtil.kill_self()
+        })
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_upgrade,async (params,send) => {
+            if(process.env.run_env === "exe") {
+                if(!params[0]) {
+                    send("please input file http url ")
+                    return;
+                }
+                send(`start download file ...`);
+                const file_path = await ProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
+                    send(`${num} %`);
+                })
+                send(`\r\ndone! ${file_path}`)
+                ProcessUtil.requestUpgrade(process.env.run_env,file_path)
+            } else if (process.env.run_env === "npm") {
+                send("start run npm install -g filecat ... ")
+                await ProcessUtil.npmGlobalInstall("filecat",params?.[0],(data)=>{
+                    send(data);
+                });
+                send(`npm update done!`)
+                ProcessUtil.requestUpgrade(process.env.run_env)
+            }
+
+        })
+    }
+
     check_exe_cmd({
                       token, cwd, user_id
                   }: {
         token?: string, cwd: string, user_id?: string
     }) {
         return async (exe_cmd, params) => {
-            // 自定义命令
+            // 特殊自定义命令
             switch (exe_cmd) {
-                case "filecat-restart":
+                case filecat_cmd.filecat_restart:
                     // 重启filecat
-                    if (!!Env.watch  && process.send != null) {
-                        if (token != null && userService.check_user_auth(token, UserAuth.shell_cmd_filecat_restart, false)) {
-                            process.send('restart'); // 告诉主进程重启我
-                        } else if (user_id != null && userService.check_user_auth_by_user_id(user_id, UserAuth.shell_cmd_filecat_restart, {
-                            auto_throw: false,
-                            root_check: true,
-                        })) {
-                            process.send('restart'); // 告诉主进程重启我
-                        } else {
-                            return exec_type.not // 如果不是watch模式下，不允许执行
-                        }
+                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_restart})) {
+                        return exec_type.not // 如果不是watch模式下，不允许执行
                     }
+                    break
+                case    filecat_cmd.filecat_upgrade:
+                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
+                        return exec_type.not // 如果不是watch模式下，不允许执行
+                    }
+                    break
+                case    filecat_cmd.filecat_down:
+                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
+                        return exec_type.not // 如果不是watch模式下，不允许执行
+                    }
+                    break
+
             }
             if (settingService.get_shell_cmd_check()) {
                 const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
@@ -244,6 +297,7 @@ export class ShellService {
         ptyShell.check_exe_cmd = this.check_exe_cmd({
             token: (data.wss as Wss).token, cwd:sysPath
         })
+        this.add_handle_for_type_shell(ptyShell,(data.wss as Wss).sendData.bind(data.wss))
         ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测
             let v = word_detection.detection_next_one_word(exe, ".");

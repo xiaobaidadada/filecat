@@ -6,7 +6,7 @@ import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
-import {StringUtil} from "../../../../../common/StringUtil";
+import {get_zip_file_format_util, StringUtil} from "../../../../../common/StringUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {
     file_select_list,
@@ -53,13 +53,7 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
 
         const req = new FileCompressPojo();
 
-        let format;
-        for (const ff of file_select_list) {
-            if(showPrompt.data.filename.endsWith(ff)) {
-                format = ff;
-                break;
-            }
-        }
+        const format = get_zip_file_format_util(showPrompt.data.filename)
         if(!format) {
             NotyFail("不支持的文件后缀");
             return;

@@ -22,6 +22,7 @@ export enum data_dir_tem_name {
     sys_file_dir = "sys_file_dir", // 系统目录 和用户的临时分开 不让用户自定义的文件重复了
     http_proxy_server_dir = "http_proxy_server_dir",
     sys_database_dir = "sys_database_dir", // 存放一些数据库
+    filecat_upgrade_dir = "filecat_upgrade_dir",
 }
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择
 // key

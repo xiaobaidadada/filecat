@@ -46,6 +46,7 @@ export class WorkflowProcess {
         ptyshell.check_exe_cmd = shellServiceImpl.check_exe_cmd({
             user_id: instance.user_id, cwd:ptyshell.cwd
         })
+        shellServiceImpl.add_handle_for_type_shell(ptyshell)
         instance.pty_shell_set.add(ptyshell);
         ptyshell.on_call = (cmdData) => {
             instance.logger.running_log = cmdData;

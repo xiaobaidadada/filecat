@@ -90,7 +90,7 @@ export class UserController {
         pojo.runing_time_length = this.start_server_time;
         pojo.user_data = userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username);
         pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
-        pojo.watch = Env.watch
+        // pojo.watch = Env.watch
         pojo.sys_ai_is_open = ai_agentService.sys_ai_is_open
         pojo.latest_version = process.env.version !== this.latest_version?this.latest_version: process.env.version;
         pojo.process_env_run_env = process.env.run_env as string
