@@ -96,27 +96,28 @@ export class tcp_raw_client extends tcp_raw_socket{
                 console.log('客户端主动关闭 定时函数结束 不再连接')
                 return ;
             }
-            this.connect().catch((e)=>{
+            this.client?.close();
+            this.raw_connect().catch((e)=>{
                 console.log(`-- ${e}`)
                 this.reconnect()
             });
-        },10*1000)
+        },3*1000)
     }
 
     close () {
         console.log(`客户端关闭`)
+        clearTimeout( this.reconnect_timeout)
+        this.reconnect_timeout = null;
         this.closed = true;
         this.client?.close();
     }
 
-
-
-    async connect() {
+    private async raw_connect() {
+        if(this.is_connected) return;
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(()=>{
                 reject(new Error(`tcp 客户端 连接超时 ${this.options.server_host}  ${this.options.server_port}`));
-                this.close()
-            }, 10_000)
+            }, 5_000)
             this.client.get_socket().connect(this.options.server_port, this.options.server_host, () => {
                 clearTimeout(timeout);
                 console.log('tcp服务器握手完成');
@@ -124,6 +125,15 @@ export class tcp_raw_client extends tcp_raw_socket{
                 resolve (true);
             });
         })
+    }
+
+    async connect() {
+        try {
+            await this.raw_connect();
+        }catch(e){
+            this.close()
+            throw e;
+        }
     }
 
 
@@ -154,10 +164,9 @@ export class tcp_client {
         this.client?.close();
     }
 
-    async connect(){
-        if(this.client) {
-            this.close();
-        }
+    private async raw_connect(){
+        if(this.client?.connected) return;
+        this.client?.close();
         this.client = new tcp_raw_client(this.options);
         this.send_data = this.client.send_data.bind(this.client);
         await this.client.connect();
@@ -183,6 +192,13 @@ export class tcp_client {
         console.log('tcp 服务器 连接 成功')
         await this.register()
         console.log('tcp 服务器 注册 成功')
+    }
+
+    async connect(){
+        if(this.client) {
+            this.close();
+        }
+        await this.raw_connect()
         const heart_fun = withLock(async ()=>{
             try {
                 // console.log(`发送心跳`)
@@ -190,7 +206,8 @@ export class tcp_client {
             } catch (e) {
                 console.log(`心跳超时 tcp 断开 10秒后重连`)
                 await CommonUtil.sleep(10*1000)
-                this.connect().catch(console.error);
+                this.client?.close();
+                this.raw_connect().catch(console.error);
             }
         },-1)
         this.heart_fun =  setInterval(heart_fun, 10_000)
