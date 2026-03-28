@@ -29,7 +29,7 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 
 对于Linux系统，安装完以后，你可选择使用pm2来保活，或者使用 `filecat --install`来注册到systemd
 
-2. Linux curl 
+### 2. Linux curl 
 
 `curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh`
 
