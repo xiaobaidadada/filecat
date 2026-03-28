@@ -83,15 +83,20 @@ export function startLauncher() {
                             }
                             console.log(`开始解压 ${data.file_path}`)
                             close_child()
-                            await fileCompress.handle_un(format,data.file_path,__dirname,()=>{} )
+                            try {
+                                await fileCompress.handle_un(format,data.file_path,__dirname,()=>{} )
+                            } catch (e) {
+                                console.log(e)
+                            }
                             console.log(  `解压完成 `)
                         } else if(data.run_env === "npm") {
                             close_child()
-                            await FatherProcessUtil.npmGlobalInstall("filecat",data.paths,data.registry)
+                            try {
+                                await FatherProcessUtil.npmGlobalInstall("filecat",data.paths,data.registry)
+                            }catch(e){
+                                console.log(e)
+                            }
                             console.log('npm 更新完成')
-                        }
-                        if(child) {
-                            child.kill('SIGTERM');
                         }
                         console.log(  `升级完成 开始重启`)
                         restartServer();
