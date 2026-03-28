@@ -15,7 +15,7 @@ import {fileHttp} from "../../../../util/config";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail} from "../../../../util/noty";
+import {NotyFail, NotySucess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
 import Header from "../../../../../meta/component/Header";
 import {getFileNameByLocation, getFilesByIndexs} from "../../FileUtil";
@@ -23,6 +23,7 @@ import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
 import {user_click_file} from "../../../../util/store.util";
+import {copyToClipboard} from "../../../../util/FunUtil";
 
 type FileItem = FileItemData
 
@@ -184,6 +185,16 @@ export default function Share() {
                                                 share_token: share_token.current
                                             });
                                             window.open(url);
+                                        }}/>
+
+                                        <ButtonText text={"copy url"} clickFun={() => {
+                                            const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                                share_id: share_id.current,
+                                                share_token: share_token.current
+                                            });
+                                            const f = fileHttp.get_full_url(url)
+                                            copyToClipboard(f)
+                                            NotySucess(f)
                                         }}/>
 
                                         <ButtonText text={"preview"} clickFun={() => {

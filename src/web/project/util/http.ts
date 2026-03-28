@@ -80,6 +80,10 @@ export class Http {
         return url;
     }
 
+    get_full_url(url:string) {
+        return window.location.origin + url
+    }
+
     getDownloadUrlV2(files,pre_url,params?:any) {
         let url = config.baseUrl+`${pre_url}?`;
         if (files ) {

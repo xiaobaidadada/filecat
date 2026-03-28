@@ -303,11 +303,20 @@ export function FileMenu() {
             }
             break;
             case common_menu_type.share_file_download:
-                const url = fileHttp.getDownloadUrlV2(showPrompt.data.path, "share_download", {
+                const u = fileHttp.getDownloadUrlV2(showPrompt.data.path, "share_download", {
                     share_id: showPrompt.data.share_id,
                     share_token: showPrompt.data.share_token
                 });
-                window.open(url);
+                window.open(u);
+                break;
+            case common_menu_type.share_file_copy_url:
+                const uu = fileHttp.getDownloadUrlV2(showPrompt.data.path, "share_download", {
+                    share_id: showPrompt.data.share_id,
+                    share_token: showPrompt.data.share_token
+                });
+                const p = fileHttp.get_full_url(uu)
+                copyToClipboard(p);
+                NotySucess(p)
                 break;
             case common_menu_type.ai_load_one_file: {
                 set_prompt_card({
