@@ -17,7 +17,7 @@ on:
       ubuntu_version:
         description: 'ubuntu版本'
         required: false
-        default: 'ubuntu-20.04' #  ${{ inputs.ubuntu_version || 'ubuntu-20.04' }} 也可以
+        default: 'ubuntu-22.04' #  ${{ inputs.ubuntu_version || 'ubuntu-20.04' }} 也可以
       win_version:
         description: 'windows版本'
         required: false
