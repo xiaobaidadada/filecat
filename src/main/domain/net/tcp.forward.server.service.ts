@@ -38,7 +38,8 @@ export class TcpForwardServerService {
     private global_socket_id = 1;
 
     get_socket_id() {
-        if(this.global_socket_id > 32767) {
+        // 两字节暂时这么多
+        if(this.global_socket_id > 65535) {
             this.global_socket_id = 1
         }
         return this.global_socket_id++
@@ -93,22 +94,22 @@ export class TcpForwardServerService {
     add_client(fig:tcp_forward_client_type) {
         fig.client_util.data_map[server_key] = fig.client_util.data_map[server_key]??{}
         const list = this.server_client_get()
-        const it = list.find(v=>v.client_id == fig.client_id)
+        let it = list.find(v=>v.client_id == fig.client_id)
         if(it) {
             if(it.client_num_id == null) {
-                it.client_num_id = tcpForwardService.get_new_client_num_id()
+                it.client_num_id = this.get_new_client_num_id()
                 fig.client_num_id = it.client_num_id
             }
             it.client_name  = fig.client_name
         } else {
-            it.client_num_id = tcpForwardService.get_new_client_num_id()
-            list.push({
+            it = {
                 client_id: fig.client_id,
                 client_name: fig.client_name,
                 status:fig.client_util.connected,
                 proxy_fig_list: [],
-                client_num_id: fig.client_num_id
-            })
+                client_num_id: this.get_new_client_num_id()
+            }
+            list.push(it)
         }
         fig.client_num_id = it.client_num_id
         this.client_map[fig.client_id] = fig
