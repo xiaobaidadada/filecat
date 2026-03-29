@@ -71,7 +71,7 @@ function Input(props: {
     const [value, setValue] = React.useState("");
     const [css, setCss] = React.useState("input input--block awesomplete");
     useEffect(() => {
-        setValue(props.value === undefined || props.value === null ? "" : props.value);
+        setValue(props.value == null ? "" : props.value);
         if (props.focus) {
             inputRef.current.focus(); //获得焦点
         }
@@ -94,12 +94,16 @@ function Input(props: {
                 inputRef.current.dispatchEvent(new Event("input"));
             });
             const handleSelect = (event: any) => {
-                const val = event.text.label??event.text.value; // 选中的值
-                setValue(val);                // 更新 显示的值
-                if (props.handleInputChange) {
-                    // 实际是值
-                    props.handleInputChange(event.text.value, inputRef.current);
-                }
+                const label = event.text.label ?? event.text.value;
+                const value = event.text.value;
+
+                setValue(label);
+                // ❌ 不让 Awesomplete 写 input.value
+                requestAnimationFrame(() => {
+                    inputRef.current.value = label;
+                });
+
+                props.handleInputChange?.(value, inputRef.current);
             };
 
             inputRef.current.addEventListener("awesomplete-selectcomplete", handleSelect);
@@ -176,7 +180,7 @@ export function InputText(props: {
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
-    options?: (string|{ label: string, value: string })[]
+    options?: (string|{ label: string, value: string })[] // 使用了 必须每次更新state才算修改，这是为啥 ?
     type?: string
 }) {
     return Input({

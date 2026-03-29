@@ -191,9 +191,6 @@ export class tcp_forward_server_service {
                 server_socket_map: {},
             }
             this.bridge_server_client_map[fig.server_port] = server_item;
-        } else {
-            // 已经创建过了 先关闭
-            server_item.server?.close()
         }
         const client_fig = this.client_fig_get()
 
@@ -211,7 +208,7 @@ export class tcp_forward_server_service {
                 client_proxy_port:fig.client_proxy_port,
                 client_proxy_host:fig.client_proxy_host,
                 client_num_id:fig.client_num_id,
-                // server_client_num_id:fig.server_client_num_id
+                server_client_num_id:fig.server_client_num_id
             }
             await NetClientUtil.send_for_tcp_async(client_fig.serverIp,client_fig.serverPort,
                 NetMsgType.bridge_client_create_socket_for_server, Buffer.from(JSON.stringify(info)));
@@ -231,6 +228,8 @@ export class tcp_forward_server_service {
                 delete this.server_socket_map[socket_id]
             })
         });
+        // 先关闭如果有的话
+        server_item.server?.close()
         server.on("close",()=>{
             for (const key of Object.keys(server_item.server_socket_map)) {
                 server_item.server_socket_map[key]?.destroy()

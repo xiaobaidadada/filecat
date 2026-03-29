@@ -120,24 +120,38 @@ export function TcpProxyServer() {
         }
     }
 
-    const bridge_add = async (item) => {
+    const bridge_add = async (item:tcp_proxy_bridge_fig_item) => {
+        if(item.client_num_id == null) {
+            NotyFail("未选择转发送 client")
+            return
+        }
         const r = await tcpProxy.post("server_bridge_add_fig",item)
         if(r.code === RCode.Success) {
             NotySucess("成功")
+            get_server_bridge_get_one_fig(item.server_client_num_id)
+
         }
     }
 
-    const bridge_edit = async (item) => {
+    const bridge_edit = async (item:tcp_proxy_bridge_fig_item) => {
+        if(item.client_num_id == null) {
+            NotyFail("未选择转发送 client")
+            return
+        }
         const r = await tcpProxy.post("server_bridge_edit_fig",item)
         if(r.code === RCode.Success) {
             NotySucess("成功")
+            get_server_bridge_get_one_fig(item.server_client_num_id)
+
         }
     }
 
-    const bridge_del = async (id:string) => {
+    const bridge_del = async (id:string,server_client_num_id) => {
         const r = await tcpProxy.post("server_bridge_del_fig",{id})
         if(r.code === RCode.Success) {
             NotySucess("成功")
+            get_server_bridge_get_one_fig(server_client_num_id)
+
         }
     }
 
@@ -308,7 +322,9 @@ export function TcpProxyServer() {
                                 }} no_border={true}/>,
                                 <InputText value={item.client_name} options={all_client_options} handleInputChange={(value) => {
                                     // item.server_client_name = value;
+                                    // console.log(value)
                                     item.client_num_id = parseInt(value);
+                                    set_edit_client_bridge_fig([...edit_client_bridge_fig])
                                 }} no_border={true}/>,
 
                                 <InputText value={item.client_proxy_host} handleInputChange={(value) => {
@@ -319,7 +335,7 @@ export function TcpProxyServer() {
                                 }} no_border={true}/>,
                                 <Select value={!!item.open} onChange={(value) => {
                                     item.open = value === "true"
-                                    set_edit_client({...edit_client})
+                                    set_edit_client_bridge_fig([...edit_client_bridge_fig])
                                 }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
@@ -335,19 +351,16 @@ export function TcpProxyServer() {
                                             }
                                             set_edit_client_bridge_fig([...new_list])
                                         } else {
-                                            await bridge_del(item.id)
-                                            get_server_bridge_get_one_fig(item.server_client_num_id)
+                                            await bridge_del(item.id,item.server_client_num_id)
                                         }
                                     }}/>
                                     {
                                         item.id == null ?
                                             <ActionButton icon={"add"} title={t("添加")} onClick={async () => {
                                                 await bridge_add(item)
-                                                get_server_bridge_get_one_fig(item.server_client_num_id)
                                             }}/> :
                                             <ActionButton icon={"save"} title={t("保存")} onClick={async () => {
                                                 await bridge_edit(item)
-                                                get_server_bridge_get_one_fig(item.server_client_num_id)
                                             }}/>
                                     }
                                 </div>,

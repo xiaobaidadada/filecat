@@ -8,6 +8,7 @@
 /dist/
 package-lock.json
 /data/
+/data2/
 /.vs/
 filecat-linux-amd64
 filecat-win-amd64.exe
@@ -18,4 +19,5 @@ build-exe-linux-x64
 /test/
 src/main/domain/bin/wintun*
 filecat-linux-x64.tar.gz
+env.local
 
