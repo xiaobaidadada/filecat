@@ -11,7 +11,11 @@ import {VirClientPojo} from "../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
-import {tcp_proxy_client_fig, tcp_proxy_server_client} from "../../../../common/req/common.pojo";
+import {
+    tcp_proxy_bridge_fig_item,
+    tcp_proxy_client_fig,
+    tcp_proxy_server_client
+} from "../../../../common/req/common.pojo";
 
 export function TcpProxyClient(props) {
     const { t } = useTranslation();
@@ -29,8 +33,11 @@ export function TcpProxyClient(props) {
         client_proxy_port:number,
         client_proxy_host:string
     }[]>([]);
+    const [bridge_list,set_bridge_list] = useState<tcp_proxy_bridge_fig_item[]>([]);
 
     const client_headers = ["index","host","port"]
+    const client_bridge_headers = [t("序号"),t("服务端口"), t("转发客户端名称") ];
+
 
     const init = async ()=>{
         const result = await tcpProxy.get("client_get");
@@ -56,10 +63,15 @@ export function TcpProxyClient(props) {
         }
 
         const result1 = await tcpProxy.get("client_tcp_proxy_get");
-        if (result1.code !== RCode.Success) {
-            return;
+        if (result1.code === RCode.Success) {
+            set_client_proxy_list(result1.data)
         }
-        set_client_proxy_list(result1.data)
+
+        const result2 = await tcpProxy.get("client_bridge_get_all_fig");
+        if (result2.code === RCode.Success) {
+            set_bridge_list(result2.data)
+        }
+
     }
 
     useEffect(() => {
@@ -102,12 +114,26 @@ export function TcpProxyClient(props) {
                         ]}/>
                     </form>
                 </Card>
-                <Card title={"正在转发列表"} >
+
+                <Card title={"转发列表"} >
                     <Table headers={client_headers} rows={client_proxy_list.map((item, index) => {
                         const new_list = [
                             <p>{index}</p>,
                             <TextTip>{item.client_proxy_host}</TextTip>,
                             <TextTip>{item.client_proxy_port}</TextTip>,
+                        ];
+                        return new_list;
+                    })} width={"10rem"}/>
+                </Card>
+            </Column>
+            <Column>
+
+                <Card title={"桥接服务端口列表"} >
+                    <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
+                        const new_list = [
+                            <p>{index}</p>,
+                            <TextTip>{item.server_port}</TextTip>,
+                            <TextTip>{item.client_name}</TextTip>,
                         ];
                         return new_list;
                     })} width={"10rem"}/>

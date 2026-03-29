@@ -60,6 +60,22 @@ export enum NetMsgType {
     tcp_server_update_client_info =10,
 
     tcp_server_del_client = 11, // 服务器删除客户端
+
+    // 桥接功能
+    bridge_client_create_socket_for_server = 12,
+    bridge_tcp_socket_data,
+    bridge_client_tcp_socket_data,
+
+    bridge_close_port_for_client, // 服务器被关 先
+    bridge_tcp_socket_close, // 服务器关客户端 后
+
+    bridge_open_port_for_client, // 打开一个客户端
+    bridge_tcp_client_create_socket_for_server,
+
+
+    get_global_socket_id, // 获取全局socket id
+
+
 }
 
 

@@ -89,7 +89,8 @@ export enum data_common_key {
     // 服务器的客户端配置
     tcp_proxy_server_client_list = "tcp_proxy_server_client_list",
     tcp_proxy_client_fig = "tcp_proxy_client_fig",
-    workflow_setting_item_list = "workflow_setting_item_list"
+    workflow_setting_item_list = "workflow_setting_item_list",
+    server_bridge_config_list = "server_bridge_config_list",
 }
 
 

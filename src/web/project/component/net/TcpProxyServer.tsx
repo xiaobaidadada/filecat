@@ -16,7 +16,7 @@ import {UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {
-    server_client_proxy,
+    server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
     tcp_proxy_server_config
@@ -39,10 +39,24 @@ export function TcpProxyServer() {
     const [online_server,set_online_server] = useState<server_client_proxy[]>([])
     const [option_keys,set_option_keys] = useState<string[]>([])
 
+    const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
+
+    const [edit_client_bridge_fig,set_edit_client_bridge_fig] = useState<tcp_proxy_bridge_fig_item[]>([])
+
     const headers = [t("序号"),t("名称"),t("在线状态"), t("备注") ];
-    const client_headers = [t("序号"),t("服务器端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
+    const client_headers = [t("序号"),t("服务端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
+    const client_bridge_headers = [t("序号"),t("服务端口"),t("转发Client名称"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
     const online_server_headers = [t("序号"),t("服务端口"), t("转发ip"),t("转发端口"),"client "+t("名称"),t("端口备注") ];
+
+    const get_server_bridge_get_one_fig = async (server_client_num_id:number) => {
+        const r1 = await tcpProxy.post("server_bridge_get_one_fig",{
+            server_client_num_id:server_client_num_id,
+        })
+        if(r1.code === RCode.Success) {
+            set_edit_client_bridge_fig(r1.data);
+        }
+    }
 
     const getItems = async () => {
         const r1 = await tcpProxy.get("server_get")
@@ -55,7 +69,16 @@ export function TcpProxyServer() {
 
         const r2 = await tcpProxy.get("server_client_get")
         if(r2.code === RCode.Success) {
-            set_client_list(r2.data);
+            const list:tcp_proxy_server_client[] = r2.data
+            set_client_list(list);
+            const options = []
+            for (const item of list) {
+                options.push({
+                    label: item.client_name,
+                    value: item.client_num_id,
+                })
+            }
+            set_all_client_options(options)
         }
 
         const r3 = await tcpProxy.get("get_all_open_server_client_proxy_fig")
@@ -96,6 +119,28 @@ export function TcpProxyServer() {
             getItems()
         }
     }
+
+    const bridge_add = async (item) => {
+        const r = await tcpProxy.post("server_bridge_add_fig",item)
+        if(r.code === RCode.Success) {
+            NotySucess("成功")
+        }
+    }
+
+    const bridge_edit = async (item) => {
+        const r = await tcpProxy.post("server_bridge_edit_fig",item)
+        if(r.code === RCode.Success) {
+            NotySucess("成功")
+        }
+    }
+
+    const bridge_del = async (id:string) => {
+        const r = await tcpProxy.post("server_bridge_edit_fig",{id})
+        if(r.code === RCode.Success) {
+            NotySucess("成功")
+        }
+    }
+
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
@@ -155,6 +200,7 @@ export function TcpProxyServer() {
                             <div>
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
                                     set_edit_client(item)
+                                    get_server_bridge_get_one_fig(item.client_num_id)
                                 }}/>
                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                                     set_prompt_card({
@@ -241,12 +287,83 @@ export function TcpProxyServer() {
                             return new_list;
                         })} width={"10rem"}/>
                     </Card>
+
+                    <Card self_title={<span
+                        className={" div-row "}><h2>{t(`客户端桥接配置`)}</h2> </span>}>
+
+                        <ActionButton icon={"add"} onClick={() => {
+                            edit_client_bridge_fig.push({
+                                open:false,server_client_num_id:edit_client.client_num_id
+                            })
+                            set_edit_client_bridge_fig([...edit_client_bridge_fig])
+                        }} title={t("添加")}/>
+                        {t("代理")}
+
+                        <Table headers={client_bridge_headers} rows={edit_client_bridge_fig.map((item:tcp_proxy_bridge_fig_item, index) => {
+                            const new_list = [
+                                <p>{index}</p>,
+
+                                <InputText value={item.server_port} handleInputChange={(value) => {
+                                    item.server_port = parseInt(value);
+                                }} no_border={true}/>,
+                                <InputText value={item.server_client_name} options={all_client_options} handleInputChange={(value) => {
+                                    // item.server_client_name = value;
+                                    // console.log(value)
+                                    item.client_num_id = parseInt(value);
+                                }} no_border={true}/>,
+
+                                <InputText value={item.client_proxy_host} handleInputChange={(value) => {
+                                    item.client_proxy_host = value;
+                                }} no_border={true}/>,
+                                <InputText value={item.client_proxy_port} handleInputChange={(value) => {
+                                    item.client_proxy_port = parseInt(value);
+                                }} no_border={true}/>,
+                                <Select value={!!item.open} onChange={(value) => {
+                                    item.open = value === "true"
+                                    set_edit_client({...edit_client})
+                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+                                <div>
+                                    <ActionButton icon={"delete"} title={t("删除")} onClick={async () => {
+                                        if(item.id == null) {
+                                            const new_list = []
+                                            for (let i=0;i<(edit_client_bridge_fig.length??0);i++) {
+                                                if(i!== index) {
+                                                    new_list.push(edit_client_bridge_fig[i])
+                                                }
+                                            }
+                                            set_edit_client_bridge_fig([...new_list])
+                                        } else {
+                                            await bridge_del(item.id)
+                                            get_server_bridge_get_one_fig(item.client_num_id)
+                                        }
+                                    }}/>
+                                    {
+                                        item.id == null ?
+                                            <ActionButton icon={"add"} title={t("添加")} onClick={async () => {
+                                                await bridge_add(item)
+                                                get_server_bridge_get_one_fig(item.client_num_id)
+                                            }}/> :
+                                            <ActionButton icon={"save"} title={t("保存")} onClick={async () => {
+                                                await bridge_edit(item)
+                                                get_server_bridge_get_one_fig(item.client_num_id)
+                                            }}/>
+                                    }
+                                </div>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </Card>
+
                 </Dashboard> :
-                    <Dashboard>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Online Server")}</h2>
+
+                <Dashboard>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Online Server Port")}</h2>
                         {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
-                </span>}
-                    >
+                        </span>}
+                            >
                         <Table headers={online_server_headers} rows={online_server.map((item:server_client_proxy, index) => {
                             const new_list = [
                                 <p>{index}</p>,

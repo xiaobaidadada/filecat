@@ -65,7 +65,7 @@ function Input(props: {
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
-    options?: string[]
+    options?: (string|{ label: string, value: string })[]
 }) {
     const inputRef = useRef(null);
     const [value, setValue] = React.useState("");
@@ -94,10 +94,11 @@ function Input(props: {
                 inputRef.current.dispatchEvent(new Event("input"));
             });
             const handleSelect = (event: any) => {
-                const val = event.text.value; // 选中的值
+                const val = event.text.label??event.text.value; // 选中的值
                 setValue(val);                // 更新 React 状态
                 if (props.handleInputChange) {
-                    props.handleInputChange(val, inputRef.current);
+                    // 实际是值
+                    props.handleInputChange(event.text.value??event.text.label, inputRef.current);
                 }
             };
 
@@ -175,7 +176,7 @@ export function InputText(props: {
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
-    options?: string[]
+    options?: (string|{ label: string, value: string })[]
     type?: string
 }) {
     return Input({

@@ -7,7 +7,7 @@ import {NetClientUtil} from "./util/NetClientUtil";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {
-    server_client_proxy,
+    server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_fig,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
@@ -16,9 +16,12 @@ import {
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
+import {tcp_raw_socket} from "./util/tcp.client";
+import {generateSaltyUUID} from "../../../common/StringUtil";
 
 
 export const server_key = "sockets";
+export const client_num_id_key = "client_num_id_key";
 
 
 
@@ -26,6 +29,9 @@ export class TcpForwardServerService {
 
     private client_map:{
         [key:string]:tcp_forward_client_type // key 是客户端 id
+    } = {}
+    public client_num_map:{
+        [key:number]:tcp_forward_client_type // key 是客户端 id
     } = {}
 
 
@@ -70,7 +76,7 @@ export class TcpForwardServerService {
     }
 
     // 内存删除配置 持久化不删除
-    delete_client(client_id:string):void {
+    delete_client(client_id:string,client_num_id:number):void {
         const it = this.client_map[client_id];
         if(it) {
             const aa:server_type = it.client_util.data_map[server_key]
@@ -80,6 +86,7 @@ export class TcpForwardServerService {
             }
         }
         delete this.client_map[client_id];
+        delete  this.client_num_map[client_num_id]
     }
 
     // 内存添加配置 也做持久化
@@ -87,19 +94,27 @@ export class TcpForwardServerService {
         fig.client_util.data_map[server_key] = fig.client_util.data_map[server_key]??{}
         const list = this.server_client_get()
         const it = list.find(v=>v.client_id == fig.client_id)
-        this.client_map[fig.client_id] = fig
         if(it) {
+            if(it.client_num_id == null) {
+                it.client_num_id = tcpForwardService.get_new_client_num_id()
+                fig.client_num_id = it.client_num_id
+            }
             it.client_name  = fig.client_name
-            this.server_let_client_to_proxy(it)
         } else {
+            it.client_num_id = tcpForwardService.get_new_client_num_id()
             list.push({
                 client_id: fig.client_id,
                 client_name: fig.client_name,
                 status:fig.client_util.connected,
-                proxy_fig_list: []
+                proxy_fig_list: [],
+                client_num_id: fig.client_num_id
             })
-            DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
         }
+        fig.client_num_id = it.client_num_id
+        this.client_map[fig.client_id] = fig
+        this.client_num_map[fig.client_num_id] = fig
+        this.server_let_client_to_proxy(it)
+        DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
     }
 
     public is_ok_token(hash_token:string){
@@ -210,11 +225,30 @@ export class TcpForwardServerService {
         return list;
     }
 
+    get_new_client_num_id() {
+       let max = 0;
+       const list = this.server_client_get()
+        for (const item of list) {
+            if(item.client_num_id != null && item.client_num_id > max) {
+                max = item.client_num_id
+            }
+        }
+        max++;
+        return max;
+    }
+
 
     server_let_client_to_proxy(item:tcp_proxy_server_client) {
         for (const open_fig of item.proxy_fig_list) {
-            if(open_fig.open)
-                this.server_open_port_for_client(item,open_fig)
+            if(open_fig.open) {
+                this.server_open_port_for_client(item, open_fig)
+                const list = this.get_all_bridge_config()
+                for (const bridge of list) {
+                    if(bridge.open && bridge.server_client_num_id === item.client_num_id) {
+                        this.start_bridge_config(bridge)
+                    }
+                }
+            }
         }
     }
 
@@ -263,10 +297,171 @@ export class TcpForwardServerService {
         this.server_init()
     }
 
+    bridge_client_create_socket_for_server(data:Buffer, util: tcp_raw_socket,tag_id:number) {
+        const info : {
+            socket_id:number,
+            client_proxy_port:number,
+            client_proxy_host:string,
+            client_num_id:number
+        } = JSON.parse(data.toString())
+        const client_num_id = util.data_map[client_num_id_key] as number
+        const item = tcpForwardService.get_bridge_fig_by_id(client_num_id,info.client_num_id)
+        if(!item) {
+            // 服务器没有这个配置 就不继续了
+            console.log(`不存在的配置 ${JSON.stringify(info)}`)
+            return;
+        }
+        const client = this.client_num_map[info.client_num_id]
+        client.client_util.send_data(NetMsgType.bridge_tcp_client_create_socket_for_server,Buffer.from(JSON.stringify({
+            socket_id:info.socket_id,
+            client_proxy_port:info.client_proxy_port,
+            client_proxy_host:info.client_proxy_host,
+            server_client_num_id:client_num_id
+        })))
+        util.send_data_call(tag_id,Buffer.alloc(0))
+    }
+
+    bridge_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const client_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        const client = this.client_num_map[client_id]
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
+        client.client_util?.send_data(NetMsgType.bridge_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
+    }
+
+    bridge_client_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const client_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        const client = this.client_num_map[client_id]
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
+        client?.client_util?.send_data(NetMsgType.bridge_client_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
+    }
+
+    bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const fig = JSON.parse(data.toString()) as tcp_proxy_bridge_fig_item
+        const server_client = this.client_num_map[fig.server_client_num_id]
+        server_client.client_util?.send_data(NetMsgType.bridge_close_port_for_client,data)
+    }
 
 
 
+    bridge_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const client_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        const client = this.client_num_map[client_id]
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
+        client.client_util?.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
 
+    }
+
+    get_all_bridge_config(){
+        let fig:tcp_proxy_bridge_fig_item[] = DataUtil.get(data_common_key.server_bridge_config_list,file_key.tcp_proxy_server_client);
+        if(!fig){
+            fig = []
+            DataUtil.set(data_common_key.server_bridge_config_list,fig,file_key.tcp_proxy_server_client)
+        }
+        return fig;
+    }
+
+    get_bridge_fig_by_server_id(server_client_num_id:number) {
+        const list = this.get_all_bridge_config()
+        const r_list:tcp_proxy_bridge_fig_item[] = []
+        for (const item of list) {
+            if(item.server_client_num_id === server_client_num_id ){
+                r_list.push(item)
+            }
+        }
+        return r_list
+    }
+
+    get_bridge_fig_by_id(server_client_num_id:number,client_num_id:number) {
+        const list = this.get_all_bridge_config()
+        for (const item of list) {
+            if(item.open) {
+                if(item.server_client_num_id === server_client_num_id && item.client_num_id === client_num_id){
+                    return item
+                }
+            }
+        }
+    }
+
+    // init_bridge_config(){
+    //     const list = this.get_all_bridge_config()
+    //     for (const item of list) {
+    //         this.start_bridge_config(item)
+    //     }
+    // }
+
+    check_bridge_config(item:tcp_proxy_bridge_fig_item){
+        if(!item.server_port || !item.client_proxy_port || !item.client_proxy_host) {
+            throw `配置不全`
+        }
+        // 添加的时候端口不能冲突
+        const list = this.get_all_bridge_config()
+        for (const it of list) {
+            if(it.server_port === item.server_port && item.id !== it.id){
+                throw ` ${item.server_port} is already in use`
+            }
+        }
+    }
+
+    edit_bridge_config(item:tcp_proxy_bridge_fig_item){
+        const list = this.get_all_bridge_config()
+        const fig  = list.find(v=>v.id === item.id)
+        this.close_bridge_config(item) // 先关闭老的
+        this.check_bridge_config(item)
+        Object.assign(fig,item)
+        DataUtil.set(data_common_key.server_bridge_config_list,list,file_key.tcp_proxy_server_client)
+        if(item.open) {
+            setTimeout(()=>{
+                this.start_bridge_config(item)
+            },1000)
+        }
+    }
+
+    add_bridge_config(item:tcp_proxy_bridge_fig_item){
+        this.check_bridge_config(item)
+        const server = this.client_num_map[item.server_client_num_id]
+        const client = this.client_num_map[item.client_num_id]
+        if(!server){
+            throw `服务客户端不在线`
+        }
+        if(!client) {
+            throw `代理客户端不在线`
+        }
+        const list = this.get_all_bridge_config()
+        item.client_name = client.client_name
+        item.server_client_name = server.client_name
+        item.id = generateSaltyUUID()
+        list.push(item)
+        this.start_bridge_config(item)
+        // 真实保存
+        DataUtil.set(data_common_key.server_bridge_config_list,list,file_key.tcp_proxy_server_client)
+    }
+
+    del_bridge_config(id:string){
+        const list = this.get_all_bridge_config()
+        const new_list = []
+        for (const item of list) {
+            if(item.id === id){
+                this.close_bridge_config(item)
+            } else {
+                new_list.push(item)
+            }
+        }
+        DataUtil.set(data_common_key.server_bridge_config_list,new_list,file_key.tcp_proxy_server_client)
+    }
+
+    close_bridge_config(item:tcp_proxy_bridge_fig_item){
+        const client = this.client_num_map[item.client_num_id]
+        client.client_util?.send_data(NetMsgType.bridge_close_port_for_client,Buffer.from(JSON.stringify(item)));
+    }
+
+    start_bridge_config(item:tcp_proxy_bridge_fig_item){
+        if(item.open) {
+            const client = this.client_num_map[item.client_num_id]
+            client.client_util?.send_data(NetMsgType.bridge_open_port_for_client,Buffer.from(JSON.stringify(item)));
+        } else {
+            this.close_bridge_config(item)
+        }
+    }
 
 
     server_init() {
@@ -296,6 +491,17 @@ ServerEvent.on("start", async (data) => {
     setTimeout(()=>{
         tcp_forward_client_service.client_init_to_server()
     },500)
+    // setTimeout(()=>{
+    //     // tcpForwardService.init_bridge_config()
+    //     tcpForwardService.add_bridge_config({
+    //         server_port: 888,
+    //         client_proxy_host: "127.0.0.1",
+    //         client_proxy_port: 5567,
+    //         client_num_id: 0,
+    //         server_client_num_id: 0,
+    //         open: true,
+    //     })
+    // },1000)
     // tcpForwardService.server_start(5678)
     // await tcpForwardService.client_connect_server(5678,"127.0.0.1")
     // tcpForwardService.server_open_port_for_client(5570,"123",5567,"192.168.5.7")

@@ -117,7 +117,7 @@ export class NetServerUtil {
                         }
                         if(NetMsgType.heart === code) {
                             this.tcp_server_map[server_type].last_connect_time = Date.now()
-                            raw_socket.send_data(NetMsgType.heart, Buffer.alloc(0),tag_id)
+                            raw_socket.send_data_call(tag_id, Buffer.alloc(0))
                             return;
                         }
                         if(_map.call_resolve_map[tag_id]) {

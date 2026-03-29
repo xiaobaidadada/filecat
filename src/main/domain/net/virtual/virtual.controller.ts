@@ -135,7 +135,7 @@ export class VirtualController {
             virtualServerService.pushConnectInfo();
         })
         virtualServerService.pushConnectInfo();
-        info.tcpUtil.send_data(NetMsgType.register, Buffer.alloc(0),tag_id);
+        info.tcpUtil.send_data_call(tag_id, Buffer.alloc(0));
     }
 
 

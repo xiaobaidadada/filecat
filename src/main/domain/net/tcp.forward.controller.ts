@@ -2,7 +2,7 @@ import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {NetMsgType, NetUtil, tcp_client_msg, tcp_server_msg, tcp_server_type} from "./util/NetUtil";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {server_type, tcp_forward_client_type} from "./type";
-import {server_key, tcpForwardService} from "./tcp.forward.server.service";
+import {client_num_id_key, server_key, tcpForwardService} from "./tcp.forward.server.service";
 import {NetServerUtil} from "./util/NetServerUtil";
 import net from "net";
 import {NetPojo} from "../../../common/req/net.pojo";
@@ -72,9 +72,49 @@ export class TcpForwardController {
     }
 
     @Get('/client_get')
-    async client_get(@Body() data: NetPojo, @Req() req) {
+    async client_get(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
         return Sucess(tcp_forward_client_service.client_fig_get())
+    }
+
+    // 桥接控制 接口 todo 暂时不用
+    @Get('/server_bridge_get_all_fig')
+    async server_bridge_get_all_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        return Sucess(tcpForwardService.get_all_bridge_config())
+    }
+
+    @Get('/client_bridge_get_all_fig')
+    async client_bridge_get_all_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        return Sucess(tcp_forward_client_service.client_bridge_get_all_fig())
+    }
+
+    @Post('/server_bridge_get_one_fig')
+    async server_bridge_get_one_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        return Sucess(tcpForwardService.get_bridge_fig_by_server_id(data.server_client_num_id))
+    }
+
+    @Post('/server_bridge_add_fig')
+    async server_bridge_add_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        tcpForwardService.add_bridge_config(data)
+        return Sucess({})
+    }
+
+    @Post('/server_bridge_edit_fig')
+    async server_bridge_edit_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        tcpForwardService.edit_bridge_config(data)
+        return Sucess({})
+    }
+
+    @Post('/server_bridge_del_fig')
+    async server_bridge_del_fig(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        tcpForwardService.del_bridge_config(data.id)
+        return Sucess({})
     }
 
     @msg(CmdType.tcp_proxy_client_status)
@@ -105,8 +145,11 @@ export class TcpForwardController {
         })),tag_id);
         info.client_util = util
         tcpForwardService.add_client(info)
+        util.data_map[client_num_id_key] = info.client_num_id
         util.on_close(() => {
-            tcpForwardService.delete_client(info.client_id)
+            tcpForwardService.delete_client(info.client_id,info.client_num_id)
+            // delete util.data_map[client_num_id_key]
+            // delete util.data_map[server_key]
         })
     }
 
@@ -128,7 +171,11 @@ export class TcpForwardController {
     // 客户端接收到服务器的创建请求
     @tcp_client_msg(NetMsgType.tcp_client_create_socket_for_server)
     tcp_client_create_socket_for_server(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        const info = JSON.parse(data.toString()) as any
+        const info = JSON.parse(data.toString()) as {
+            socket_id:number,
+            client_proxy_port:number,
+            client_proxy_host:string
+        }
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
 
         });
@@ -171,14 +218,14 @@ export class TcpForwardController {
         tcp_forward_client_service.write_socket(data_map.all_server_socket_map[socket_id],data)
     }
 
-    // 服务器和客户端接收到客户端的关闭
-    @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)
-    server_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-        const data_map:server_type = util.data_map[server_key]
-        data_map.all_server_socket_map[socket_id]?.destroy()
-        delete data_map.all_server_socket_map[socket_id]
-    }
+    // 服务器和客户端接收到客户端的关闭 服务器不会主动接受到关闭
+    // @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)
+    // server_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    //     const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+    //     const data_map:server_type = util.data_map[server_key]
+    //     data_map.all_server_socket_map[socket_id]?.destroy()
+    //     delete data_map.all_server_socket_map[socket_id]
+    // }
     @tcp_client_msg(NetMsgType.tcp_socket_close)
     client_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         tcp_forward_client_service.client_tcp_socket_close(data)
@@ -191,5 +238,90 @@ export class TcpForwardController {
         DataUtil.set(data_common_key.tcp_proxy_client_fig,fig,file_key.tcp_proxy_server_client)
     }
 
+    @tcp_server_msg(NetMsgType.get_global_socket_id,tcp_server_type.tcp_forward)
+    get_global_socket_id(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const socket_id = tcpForwardService.get_socket_id()
+        util.send_data_call(tag_id,NetUtil.int16_to_buffer(socket_id))
+    }
+
+    // 桥接相关
+
+
+    @tcp_server_msg(NetMsgType.bridge_tcp_socket_close,tcp_server_type.tcp_forward)
+    bridge_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcpForwardService.bridge_tcp_socket_close(data,util,tag_id)
+    }
+
+
+    // 建立一个tcp服务器
+    @tcp_client_msg(NetMsgType.bridge_open_port_for_client)
+    bridge_open_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcp_forward_client_service.open_port_for_client(JSON.parse(data.toString()))
+    }
+
+    // tcp服务器 socket 对象，让对方建立
+    @tcp_server_msg(NetMsgType.bridge_client_create_socket_for_server,tcp_server_type.tcp_forward)
+    bridge_client_create_socket_for_server(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcpForwardService.bridge_client_create_socket_for_server(data,util,tag_id)
+    }
+
+    // 对方建立一个 socket
+    @tcp_client_msg(NetMsgType.bridge_tcp_client_create_socket_for_server)
+    bridge_tcp_client_create_socket_for_server(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const info = JSON.parse(data.toString()) as {
+            socket_id:number,
+            client_proxy_port:number,
+            client_proxy_host:string,
+            server_client_num_id:number
+        }
+        const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
+
+        });
+        const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
+        tcp_client_target_map[key] = {
+            client_proxy_port: info.client_proxy_port,
+            client_proxy_host: info.client_proxy_host,
+        }
+        targetSocket.on("data", (data) => {
+            util.send_data(NetMsgType.bridge_tcp_socket_data,
+                Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
+        })
+        targetSocket.on("close", () => {
+            util.send_data(NetMsgType.bridge_tcp_socket_close,
+                Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id)]))
+            delete tcp_forward_client_service.client_socket_map[info.socket_id]
+            delete tcp_client_target_map[key]
+        })
+        tcp_forward_client_service.client_socket_map[info.socket_id] = targetSocket;
+    }
+
+    // tcp服务器 socket 需要转发给。对方数据
+    @tcp_server_msg(NetMsgType.bridge_tcp_socket_data,tcp_server_type.tcp_forward)
+    bridge_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcpForwardService.bridge_tcp_socket_data(data,util,tag_id)
+    }
+    @tcp_server_msg(NetMsgType.bridge_client_tcp_socket_data,tcp_server_type.tcp_forward)
+    bridge_client_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcpForwardService.bridge_client_tcp_socket_data(data,util,tag_id)
+    }
+
+    @tcp_server_msg(NetMsgType.bridge_close_port_for_client,tcp_server_type.tcp_forward)
+    bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcpForwardService.bridge_close_port_for_client(data,util,tag_id)
+    }
+
+    @tcp_client_msg(NetMsgType.bridge_close_port_for_client)
+    client_bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcp_forward_client_service.client_bridge_close_port_for_client(data,util,tag_id)
+    }
+
+    @tcp_client_msg(NetMsgType.bridge_tcp_socket_data)
+    client_bridge_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcp_forward_client_service.server_client_on_data(data)
+    }
+    @tcp_client_msg(NetMsgType.bridge_client_tcp_socket_data)
+    client_bridge_client_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcp_forward_client_service.client_on_data(data)
+    }
 
 }

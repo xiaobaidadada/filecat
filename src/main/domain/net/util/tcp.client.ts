@@ -27,6 +27,9 @@ export class tcp_raw_socket {
             this.is_connected = true;
         });
         this.send_data = this.client.send_data.bind(this.client);
+        this.send_data_call = (tag_id:number, buffer: Buffer)=>{
+            this.client.send_data(NetMsgType.default,buffer,tag_id);
+        }
     }
 
     get_client(){
@@ -62,6 +65,8 @@ export class tcp_raw_socket {
     }
 
     send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void
+
+    send_data_call:(tag_id:number, buffer: Buffer,)=>void
 }
 
 export class tcp_raw_client extends tcp_raw_socket{
@@ -75,7 +80,9 @@ export class tcp_raw_client extends tcp_raw_socket{
         super();
         this.options = options;
         this.client.set_on_close(() => {
-            this.reconnect();
+            if(!this.options.not_reconnect_attempt) {
+                this.reconnect();
+            }
         })
         this.client.get_socket().on('end', () => {
             console.log('服务器断开连接');
@@ -175,6 +182,7 @@ export class tcp_client {
             const {code, tcpBuffer} = NetUtil.getTcpData(data);
             // console.log(code,tag_id);
             if (this.call_resolve_map[tag_id]) {
+                // 只要有tag_id 就行，不需要 code
                 this.call_resolve_map[tag_id](tcpBuffer)
                 clearTimeout(this.call_resolve_timeout_map[tag_id])
                 delete this.call_resolve_timeout_map[tag_id]

@@ -1,25 +1,41 @@
-import {tcp_proxy_client_fig, tcp_proxy_server_client, tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {tcp_proxy_bridge_fig_item, tcp_proxy_client_fig, tcp_proxy_client_item} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {NetClientUtil} from "./util/NetClientUtil";
-import {NetServerUtil} from "./util/NetServerUtil";
-import {NetMsgType, NetUtil, tcp_server_type} from "./util/NetUtil";
-import {server_type, tcp_forward_client_type} from "./type";
+import {NetMsgType, NetUtil} from "./util/NetUtil";
+import {bridge_server_item_type, server_item_type, server_type, tcp_forward_client_type} from "./type";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import net from "net";
+import {server_key} from "./tcp.forward.server.service";
+import {tcp_raw_socket} from "./util/tcp.client";
 
 
 export class tcp_forward_server_service {
 
 
 
+    // 用于对方需要自己创建的
     public client_socket_map:{
         [key:number]:net.Socket
     } = {}
+    // 用作服务器内自己创建的
+    public server_socket_map:{
+        [key:number]:net.Socket
+    } = {}
+
+    public bridge_server_client_map:{
+        [key:number]:bridge_server_item_type // key 服务器端口
+    } = {}
 
 
-
+    client_bridge_get_all_fig() {
+        const list:tcp_proxy_bridge_fig_item[] = []
+        for (const value of Object.values(this.bridge_server_client_map)) {
+            list.push(value.fig)
+        }
+        return list
+    }
 
     write_socket( socket:net.Socket,data:Buffer) {
         if (!socket || socket.destroyed) {
@@ -43,12 +59,39 @@ export class tcp_forward_server_service {
         delete this.client_socket_map[socket_id]
     }
 
+    client_bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const fig = JSON.parse(data.toString()) as tcp_proxy_bridge_fig_item
+        for (const port of Object.keys(this.bridge_server_client_map)) {
+            const server:bridge_server_item_type = this.bridge_server_client_map[port]
+            if(fig.server_port !== server.fig.server_port) {
+                continue;
+            }
+            console.log(`关闭服务器 ${fig.server_port}` )
+            for (const socket of Object.values(server.server_socket_map)) {
+                socket?.destroy()
+            }
+            server.server?.close()
+            delete this.bridge_server_client_map[port];
+            break
+        }
+
+    }
+
     client_on_data(data: Buffer) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         try {
             this.write_socket( this.client_socket_map[socket_id],data)
         } catch(err) {
-            console.error(` tcp 转发服务器 写失败 ${err?.message}`);
+            console.error(` tcp client 转发服务器 写失败 ${err?.message}`);
+        }
+    }
+
+    server_client_on_data(data: Buffer) {
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        try {
+            this.write_socket( this.server_socket_map[socket_id],data)
+        } catch(err) {
+            console.error(` tcp server 转发服务器 写失败 ${err?.message}`);
         }
     }
 
@@ -66,6 +109,15 @@ export class tcp_forward_server_service {
         if(fig.serverIp && fig.open && fig.serverPort) {
             NetClientUtil.close_tcp(fig.serverIp,fig.serverPort)
         }
+        for (const port of Object.keys(this.bridge_server_client_map)) {
+            const server:bridge_server_item_type =  this.bridge_server_client_map[port];
+            for (const socket of Object.values(server.server_socket_map)) {
+                socket?.destroy()
+            }
+            server.server?.close()
+            delete this.bridge_server_client_map[port];
+        }
+
     }
 
     client_fig_save(fig:tcp_proxy_client_fig|any) {
@@ -122,6 +174,73 @@ export class tcp_forward_server_service {
 
                 });
         }
+    }
+
+
+
+    async open_port_for_client( fig:tcp_proxy_bridge_fig_item) {
+        let server_item = this.bridge_server_client_map[fig.server_port];
+        if(!server_item) {
+            server_item = {
+                fig,
+                server_socket_map: {},
+            }
+            this.bridge_server_client_map[fig.server_port] = server_item;
+        } else {
+            // 已经创建过了 先关闭
+            server_item.server?.close()
+        }
+        const client_fig = this.client_fig_get()
+
+        const server = net.createServer(async (clientSocket) => {
+
+            const socket_id = NetUtil.buffer_to_int16((await NetClientUtil.send_for_tcp_async(client_fig.serverIp,client_fig.serverPort,
+                NetMsgType.get_global_socket_id, Buffer.alloc(0))))
+
+            // socket 添加
+            server_item.server_socket_map[socket_id] = clientSocket;
+            this.server_socket_map[socket_id] = clientSocket;
+
+            const info = {
+                socket_id,
+                client_proxy_port:fig.client_proxy_port,
+                client_proxy_host:fig.client_proxy_host,
+                client_num_id:fig.client_num_id,
+                // server_client_num_id:fig.server_client_num_id
+            }
+            await NetClientUtil.send_for_tcp_async(client_fig.serverIp,client_fig.serverPort,
+                NetMsgType.bridge_client_create_socket_for_server, Buffer.from(JSON.stringify(info)));
+
+
+            clientSocket.on("data", (chunk) => {
+                // 用户访问服务器建立的客户端
+                NetClientUtil.send_for_tcp(client_fig.serverIp,client_fig.serverPort,
+                    NetMsgType.bridge_client_tcp_socket_data,
+                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
+            })
+            clientSocket.on("close",()=>{
+                NetClientUtil.send_for_tcp(client_fig.serverIp,client_fig.serverPort,
+                    NetMsgType.bridge_tcp_socket_close,
+                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id)]));
+                delete server_item.server_socket_map[socket_id]
+                delete this.server_socket_map[socket_id]
+            })
+        });
+        server.on("close",()=>{
+            for (const key of Object.keys(server_item.server_socket_map)) {
+                server_item.server_socket_map[key]?.destroy()
+            }
+        })
+        server.listen(fig.server_port, () => {
+            console.log(`TCP 转发服务器 代理: ${fig.server_port}`);
+        });
+        server.on('error', (err) => {
+            console.log(err);
+        });
+        server.on('listening', () => {
+            console.log(`TCP 转发服务器 代理正在监听${fig.server_port}...`);
+            server_item.server = server
+        });
     }
 }
 

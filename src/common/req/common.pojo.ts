@@ -86,6 +86,24 @@ export class tcp_proxy_client_item {
     open:boolean;
 }
 
+export class tcp_proxy_bridge_fig_item {
+    id?:string;
+
+    server_port:number;
+    server_client_num_id:number;
+    server_client_name?:string;
+
+    note?:string;
+    open:boolean;
+
+    client_num_id:number;
+    client_proxy_port:number; // 作为客户端 请求的端口
+    client_proxy_host:string; // 作为客户端要建立连接的ip
+    client_name?:string;
+
+}
+
+
 export class tcp_proxy_server_client {
     // 服务器状态与配置
     index?:number;
@@ -95,6 +113,7 @@ export class tcp_proxy_server_client {
     proxy_fig_list:tcp_proxy_client_item[]= []
     // 客户端原本信息
     client_id:string;
+    client_num_id:number;
     client_name:string;
 }
 
