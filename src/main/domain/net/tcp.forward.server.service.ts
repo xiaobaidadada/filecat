@@ -243,12 +243,12 @@ export class TcpForwardServerService {
         for (const open_fig of item.proxy_fig_list) {
             if(open_fig.open) {
                 this.server_open_port_for_client(item, open_fig)
-                const list = this.get_all_bridge_config()
-                for (const bridge of list) {
-                    if(bridge.open && bridge.server_client_num_id === item.client_num_id) {
-                        this.start_bridge_config(bridge)
-                    }
-                }
+            }
+        }
+        const list = this.get_all_bridge_config()
+        for (const bridge of list) {
+            if(bridge.open && bridge.server_client_num_id === item.client_num_id) {
+                this.start_bridge_config(bridge)
             }
         }
     }
@@ -263,8 +263,10 @@ export class TcpForwardServerService {
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,new_list,file_key.tcp_proxy_server_client)
             this.client_map[client_id]?.client_util.get_client().close()
             delete this.client_map[client_id]
+            this.del_bridge_config_by_server_client_id(one.client_num_id)
             return
         }
+
     }
 
     server_client_save(item:tcp_proxy_server_client) {
@@ -397,7 +399,7 @@ export class TcpForwardServerService {
         // 添加的时候端口不能冲突
         const list = this.get_all_bridge_config()
         for (const it of list) {
-            if(it.server_port === item.server_port && item.id !== it.id){
+            if(it.server_port === item.server_port && item.id !== it.id && it.open){
                 throw ` ${item.server_port} is already in use`
             }
         }
@@ -435,6 +437,17 @@ export class TcpForwardServerService {
         this.start_bridge_config(item)
         // 真实保存
         DataUtil.set(data_common_key.server_bridge_config_list,list,file_key.tcp_proxy_server_client)
+    }
+
+    del_bridge_config_by_server_client_id(server_client_num_id:number){
+        const list = this.get_all_bridge_config()
+        const new_list = []
+        for (const item of list) {
+            if(item.server_client_num_id !== server_client_num_id){
+                new_list.push(item)
+            }
+        }
+        DataUtil.set(data_common_key.server_bridge_config_list,new_list,file_key.tcp_proxy_server_client)
     }
 
     del_bridge_config(id:string){

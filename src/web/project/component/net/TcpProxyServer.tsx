@@ -231,7 +231,7 @@ export function TcpProxyServer() {
                 (edit_client) ?
                 <Dashboard>
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端代理配置`)}</h2> </span>}
+                        className={" div-row "}><h2>{t(`客户端代理配置-${edit_client?.client_name}`)}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
@@ -289,7 +289,7 @@ export function TcpProxyServer() {
                     </Card>
 
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端桥接配置`)}</h2> </span>}>
+                        className={" div-row "}><h2>{t(`客户端桥接配置-${edit_client?.client_name}`)}</h2> </span>}>
 
                         <ActionButton icon={"add"} onClick={() => {
                             edit_client_bridge_fig.push({

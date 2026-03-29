@@ -71,6 +71,7 @@ export class tcp_forward_server_service {
                 socket?.destroy()
             }
             server.server?.close()
+            console.log( `关闭 tcp server ${port}` )
             delete this.bridge_server_client_map[port];
             break
         }
@@ -115,6 +116,7 @@ export class tcp_forward_server_service {
                 socket?.destroy()
             }
             server.server?.close()
+            console.log( `关闭 tcp server ${port}` )
             delete this.bridge_server_client_map[port];
         }
 
