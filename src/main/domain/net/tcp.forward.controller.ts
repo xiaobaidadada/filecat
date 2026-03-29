@@ -132,8 +132,8 @@ export class TcpForwardController {
         }
         // token校验成功 连接成功
         NetServerUtil.connect_success(util.get_client().get_socket());
-        if(!info.client_id) {
-            info.client_id = generateSaltyUUID(info.client_name)
+        if(info.client_num_id == null) {
+            info.client_num_id = tcpForwardService.get_new_client_num_id()
         }
         const data_map:server_type = {
             all_server_socket_map: {},
@@ -141,13 +141,14 @@ export class TcpForwardController {
         }
         util.data_map[server_key] =  data_map
         util.send_data(NetMsgType.tcp_connect, Buffer.from(JSON.stringify({
-            client_id:info.client_id,
+            client_num_id: info.client_num_id,
         })),tag_id);
         info.client_util = util
         tcpForwardService.add_client(info)
         util.data_map[client_num_id_key] = info.client_num_id
         util.on_close(() => {
-            tcpForwardService.delete_client(info.client_id,info.client_num_id)
+            console.log(`客户端离线 ${info.client_name}`)
+            tcpForwardService.delete_client(info.client_num_id)
             // delete util.data_map[client_num_id_key]
             // delete util.data_map[server_key]
         })
@@ -234,7 +235,8 @@ export class TcpForwardController {
     @tcp_client_msg(NetMsgType.tcp_server_del_client)
     server_del_cleint(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const fig = tcp_forward_client_service.client_fig_get()
-        delete fig.client_id
+        // delete fig.client_id
+        delete fig.client_num_id
         DataUtil.set(data_common_key.tcp_proxy_client_fig,fig,file_key.tcp_proxy_server_client)
     }
 

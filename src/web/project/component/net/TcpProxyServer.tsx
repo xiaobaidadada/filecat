@@ -112,8 +112,8 @@ export function TcpProxyServer() {
             NotySucess("成功")
         }
     }
-    const server_client_del = async (client_id:string) => {
-        const r = await tcpProxy.post("server_client_del",{client_id})
+    const server_client_del = async (client_num_id:number) => {
+        const r = await tcpProxy.post("server_client_del",{client_num_id})
         if(r.code === RCode.Success) {
             NotySucess("成功")
             getItems()
@@ -135,7 +135,7 @@ export function TcpProxyServer() {
     }
 
     const bridge_del = async (id:string) => {
-        const r = await tcpProxy.post("server_bridge_edit_fig",{id})
+        const r = await tcpProxy.post("server_bridge_del_fig",{id})
         if(r.code === RCode.Success) {
             NotySucess("成功")
         }
@@ -208,7 +208,7 @@ export function TcpProxyServer() {
                                         title: "share file",
                                         confirm: async () => {
                                             set_prompt_card({open: false})
-                                            await server_client_del(item.client_id)
+                                            await server_client_del(item.client_num_id)
                                         },
                                         context_div: (
                                             <div className="card-content">
@@ -306,9 +306,8 @@ export function TcpProxyServer() {
                                 <InputText value={item.server_port} handleInputChange={(value) => {
                                     item.server_port = parseInt(value);
                                 }} no_border={true}/>,
-                                <InputText value={item.server_client_name} options={all_client_options} handleInputChange={(value) => {
+                                <InputText value={item.client_name} options={all_client_options} handleInputChange={(value) => {
                                     // item.server_client_name = value;
-                                    // console.log(value)
                                     item.client_num_id = parseInt(value);
                                 }} no_border={true}/>,
 
@@ -337,18 +336,18 @@ export function TcpProxyServer() {
                                             set_edit_client_bridge_fig([...new_list])
                                         } else {
                                             await bridge_del(item.id)
-                                            get_server_bridge_get_one_fig(item.client_num_id)
+                                            get_server_bridge_get_one_fig(item.server_client_num_id)
                                         }
                                     }}/>
                                     {
                                         item.id == null ?
                                             <ActionButton icon={"add"} title={t("添加")} onClick={async () => {
                                                 await bridge_add(item)
-                                                get_server_bridge_get_one_fig(item.client_num_id)
+                                                get_server_bridge_get_one_fig(item.server_client_num_id)
                                             }}/> :
                                             <ActionButton icon={"save"} title={t("保存")} onClick={async () => {
                                                 await bridge_edit(item)
-                                                get_server_bridge_get_one_fig(item.client_num_id)
+                                                get_server_bridge_get_one_fig(item.server_client_num_id)
                                             }}/>
                                     }
                                 </div>,

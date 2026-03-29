@@ -162,12 +162,15 @@ export class tcp_forward_server_service {
             const register = async ()=>{
                 const info :tcp_forward_client_type = {
                     hash_token: NetUtil.get64Key(fig.key),
-                    client_id: fig.client_id,
+                    // client_id: fig.client_id,
+                    client_num_id: fig.client_num_id,
                     client_name: fig.client_name
                 }
                 const data = await NetClientUtil.send_for_tcp_async(fig.serverIp,fig.serverPort,NetMsgType.tcp_connect, Buffer.from(JSON.stringify(info)));
                 const r_info = JSON.parse(data.toString());
-                this.client_fig_save({client_id:r_info.client_id})
+                this.client_fig_save({
+                    client_id:r_info.client_id,
+                    client_num_id:r_info.client_num_id});
             }
             await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
                 (state) => {

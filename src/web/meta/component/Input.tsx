@@ -95,10 +95,10 @@ function Input(props: {
             });
             const handleSelect = (event: any) => {
                 const val = event.text.label??event.text.value; // 选中的值
-                setValue(val);                // 更新 React 状态
+                setValue(val);                // 更新 显示的值
                 if (props.handleInputChange) {
                     // 实际是值
-                    props.handleInputChange(event.text.value??event.text.label, inputRef.current);
+                    props.handleInputChange(event.text.value, inputRef.current);
                 }
             };
 

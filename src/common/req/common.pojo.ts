@@ -112,14 +112,15 @@ export class tcp_proxy_server_client {
     // 客户端需要的配置
     proxy_fig_list:tcp_proxy_client_item[]= []
     // 客户端原本信息
-    client_id:string;
+    // client_id:string;
     client_num_id:number;
     client_name:string;
 }
 
 export class tcp_proxy_client_fig{
     client_name: string;
-    client_id?:string;
+    // client_id?:string;
+    client_num_id?:number;
     open: boolean = false;
 
     serverIp: string;

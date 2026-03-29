@@ -27,9 +27,9 @@ export const client_num_id_key = "client_num_id_key";
 
 export class TcpForwardServerService {
 
-    private client_map:{
-        [key:string]:tcp_forward_client_type // key 是客户端 id
-    } = {}
+    // private client_map:{
+    //     [key:string]:tcp_forward_client_type // key 是客户端 id
+    // } = {}
     public client_num_map:{
         [key:number]:tcp_forward_client_type // key 是客户端 id
     } = {}
@@ -47,8 +47,8 @@ export class TcpForwardServerService {
 
     push_all_client_update_server_info() {
         const info = this.server_fig_get()
-        for (const key of Object.keys(this.client_map)) {
-            const client = this.client_map[key];
+        for (const key of Object.keys(this.client_num_map)) {
+            const client = this.client_num_map[key];
             client.client_util.send_data(NetMsgType.tcp_server_update_client_info, Buffer.from(JSON.stringify({
                 token:info.option_keys?.[0],
                 server_port:info.port
@@ -59,8 +59,8 @@ export class TcpForwardServerService {
     // 获取所有开启的 正在运行的 服务器端口占用
     get_all_open_server_client_proxy_fig() {
         const list:server_client_proxy[] = []
-        for (const client_id of Object.keys(this.client_map)) {
-            const client = this.client_map[client_id];
+        for (const client_id of Object.keys(this.client_num_map)) {
+            const client = this.client_num_map[client_id];
             const data_map:server_type = client.client_util.data_map[server_key];
             for (const server_port of Object.keys(data_map.server_map)) {
                const server:server_item_type = data_map.server_map[server_port];
@@ -77,8 +77,8 @@ export class TcpForwardServerService {
     }
 
     // 内存删除配置 持久化不删除
-    delete_client(client_id:string,client_num_id:number):void {
-        const it = this.client_map[client_id];
+    delete_client(client_num_id:number):void {
+        const it = this.client_num_map[client_num_id];
         if(it) {
             const aa:server_type = it.client_util.data_map[server_key]
             if(!aa)return;
@@ -86,7 +86,7 @@ export class TcpForwardServerService {
                 server.server?.close()
             }
         }
-        delete this.client_map[client_id];
+        // delete this.client_map[client_id];
         delete  this.client_num_map[client_num_id]
     }
 
@@ -94,27 +94,23 @@ export class TcpForwardServerService {
     add_client(fig:tcp_forward_client_type) {
         fig.client_util.data_map[server_key] = fig.client_util.data_map[server_key]??{}
         const list = this.server_client_get()
-        let it = list.find(v=>v.client_id == fig.client_id)
+        let it = list.find(v=>v.client_num_id == fig.client_num_id)
         if(it) {
-            if(it.client_num_id == null) {
-                it.client_num_id = this.get_new_client_num_id()
-                fig.client_num_id = it.client_num_id
-            }
             it.client_name  = fig.client_name
         } else {
             it = {
-                client_id: fig.client_id,
+                // client_id: fig.client_id,
+                client_num_id: fig.client_num_id,
                 client_name: fig.client_name,
                 status:fig.client_util.connected,
                 proxy_fig_list: [],
-                client_num_id: this.get_new_client_num_id()
             }
             list.push(it)
         }
-        fig.client_num_id = it.client_num_id
-        this.client_map[fig.client_id] = fig
+        // this.client_map[fig.client_id] = fig
         this.client_num_map[fig.client_num_id] = fig
         this.server_let_client_to_proxy(it)
+        console.log(`客户端上线 ${fig.client_name}`)
         DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
     }
 
@@ -137,7 +133,7 @@ export class TcpForwardServerService {
 
     server_close_client_proxy(old_item:tcp_proxy_server_client) {
         // 先关服务器
-        const data_map:server_type = this.client_map[old_item.client_id].client_util.data_map[server_key]
+        const data_map:server_type = this.client_num_map[old_item.client_num_id]?.client_util.data_map[server_key]
         if(!data_map)return;
         for (const server_port of Object.keys(data_map.server_map)) {
             const server:server_item_type = data_map.server_map[server_port]
@@ -147,7 +143,7 @@ export class TcpForwardServerService {
 
     // 服务器向客户端发起一个请求 想要获取 一个socket的建立
     server_open_port_for_client( fig:tcp_proxy_server_client,proxy_fig:tcp_proxy_client_item) {
-        const client = this.client_map[fig.client_id];
+        const client = this.client_num_map[fig.client_num_id];
         if(!client) {
             // 客户端还没有连接
             return;
@@ -221,7 +217,7 @@ export class TcpForwardServerService {
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
         }
         for (const it of list) {
-            it.status = !!this.client_map[it.client_id]?.client_util?.connected
+            it.status = !!this.client_num_map[it.client_num_id]?.client_util?.connected
         }
         return list;
     }
@@ -253,16 +249,16 @@ export class TcpForwardServerService {
         }
     }
 
-    server_client_del({client_id}:{client_id:string}) {
+    server_client_del({client_num_id}:{client_num_id:number}) {
         const list = this.server_client_get()
-        const one = list.find(v=>v.client_id===client_id)
+        const one = list.find(v=>v.client_num_id===client_num_id)
         if(one){
-            this.client_map[one.client_id]?.client_util.send_data(NetMsgType.tcp_server_del_client,Buffer.alloc(0))
+            this.client_num_map[one.client_num_id]?.client_util.send_data(NetMsgType.tcp_server_del_client,Buffer.alloc(0))
             this.server_close_client_proxy(one);
-            const new_list = list.filter(v=>v.client_id!==client_id);
+            const new_list = list.filter(v=>v.client_num_id!==client_num_id);
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,new_list,file_key.tcp_proxy_server_client)
-            this.client_map[client_id]?.client_util.get_client().close()
-            delete this.client_map[client_id]
+            this.client_num_map[client_num_id]?.client_util.get_client().close()
+            delete this.client_num_map[client_num_id]
             this.del_bridge_config_by_server_client_id(one.client_num_id)
             return
         }
@@ -271,7 +267,7 @@ export class TcpForwardServerService {
 
     server_client_save(item:tcp_proxy_server_client) {
         const list = this.server_client_get()
-        const one = list.find(v=>v.client_id===item.client_id)
+        const one = list.find(v=>v.client_num_id===item.client_num_id)
         if(one){
             this.server_close_client_proxy(one);
             for (const key of Object.keys(item)) {
@@ -279,7 +275,7 @@ export class TcpForwardServerService {
             }
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
             this.server_let_client_to_proxy(item)
-            const client = this.client_map[one.client_id];
+            const client = this.client_num_map[one.client_num_id];
             client?.client_util.send_data(NetMsgType.tcp_server_update_client_info,Buffer.from(JSON.stringify({
                 client_name:item.client_name
             })))
@@ -350,8 +346,7 @@ export class TcpForwardServerService {
         const client_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         const client = this.client_num_map[client_id]
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
-        client.client_util?.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
-
+        client?.client_util?.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
     }
 
     get_all_bridge_config(){
@@ -411,27 +406,28 @@ export class TcpForwardServerService {
         this.close_bridge_config(item) // 先关闭老的
         this.check_bridge_config(item)
         Object.assign(fig,item)
+        this.save_update_info(item)
         DataUtil.set(data_common_key.server_bridge_config_list,list,file_key.tcp_proxy_server_client)
-        if(item.open) {
-            setTimeout(()=>{
-                this.start_bridge_config(item)
-            },1000)
+        this.start_bridge_config(item)
+    }
+
+    save_update_info(item:tcp_proxy_bridge_fig_item){
+        const server = this.client_num_map[item.server_client_num_id]
+        const client = this.client_num_map[item.client_num_id]
+        if(!server){
+            throw `服务客户端不在线 ${item.server_client_name} `
         }
+        if(!client) {
+            throw `代理客户端不在线 ${item.client_name} `
+        }
+        item.client_name = client.client_name
+        item.server_client_name = server.client_name
     }
 
     add_bridge_config(item:tcp_proxy_bridge_fig_item){
         this.check_bridge_config(item)
-        const server = this.client_num_map[item.server_client_num_id]
-        const client = this.client_num_map[item.client_num_id]
-        if(!server){
-            throw `服务客户端不在线`
-        }
-        if(!client) {
-            throw `代理客户端不在线`
-        }
+        this.save_update_info(item)
         const list = this.get_all_bridge_config()
-        item.client_name = client.client_name
-        item.server_client_name = server.client_name
         item.id = generateSaltyUUID()
         list.push(item)
         this.start_bridge_config(item)
@@ -465,13 +461,13 @@ export class TcpForwardServerService {
 
     close_bridge_config(item:tcp_proxy_bridge_fig_item){
         const client = this.client_num_map[item.client_num_id]
-        client.client_util?.send_data(NetMsgType.bridge_close_port_for_client,Buffer.from(JSON.stringify(item)));
+        client?.client_util?.send_data(NetMsgType.bridge_close_port_for_client,Buffer.from(JSON.stringify(item)));
     }
 
     start_bridge_config(item:tcp_proxy_bridge_fig_item){
         if(item.open) {
             const client = this.client_num_map[item.client_num_id]
-            client.client_util?.send_data(NetMsgType.bridge_open_port_for_client,Buffer.from(JSON.stringify(item)));
+            client?.client_util?.send_data(NetMsgType.bridge_open_port_for_client,Buffer.from(JSON.stringify(item)));
         } else {
             this.close_bridge_config(item)
         }
@@ -482,8 +478,8 @@ export class TcpForwardServerService {
         const fig = this.server_fig_get()
         // 全部服务端口先关闭
         NetServerUtil.close_server(tcp_server_type.tcp_forward)
-        for (const client_id of Object.keys(this.client_map)) {
-            const client = this.client_map[client_id];
+        for (const client_id of Object.keys(this.client_num_map)) {
+            const client = this.client_num_map[client_id];
             const data_map:server_type = client.client_util.data_map[server_key];
             for (const server_port of Object.keys(data_map.server_map)) {
                 const server:server_item_type = data_map.server_map[server_port];

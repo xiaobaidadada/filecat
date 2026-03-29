@@ -14,7 +14,7 @@ export interface tcp_forward_client_type {
     client_ip?:string
     client_port?:number
     client_name?:string
-    client_id?:string // 服务器生成
+    // client_id?:string // 服务器生成
     client_num_id?:number
 
     // 内存临时变量
