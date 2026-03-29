@@ -192,6 +192,8 @@ export class ShellService {
                     paths:settingService.get_env_path(),
                     registry:params?.[0]
                 })
+            } else {
+                throw '未知的安装方式 或者本地dev启动 找不到升级方式'
             }
 
         })
