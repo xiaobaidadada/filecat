@@ -187,6 +187,7 @@ export class TcpForwardServerService {
             for (const key of Object.keys(server_item.server_socket_map)) {
                 server_item.server_socket_map[key]?.destroy()
             }
+            delete data_map.server_map[proxy_fig.server_port]
         })
         server.listen(proxy_fig.server_port, () => {
             console.log(`TCP 转发服务器 代理: ${proxy_fig.server_port}`);
