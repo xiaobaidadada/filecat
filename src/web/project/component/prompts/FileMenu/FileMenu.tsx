@@ -395,7 +395,13 @@ export function FileMenu() {
                                                                           {r: <div className={"common-tag-center"}>
                                                                                   <i className="material-icons icon">{"download"}</i>
                                                                                   <span>{"download"}</span>
-                                                                          </div>, v: common_menu_type.share_file_download}
+                                                                          </div>, v: common_menu_type.share_file_download
+                                                                          },
+                                                                          {r: <div className={"common-tag-center"}>
+                                                                                  <i className="material-icons icon">{"link"}</i>
+                                                                                  <span>{"copy curl"}</span>
+                                                                              </div>, v: common_menu_type.share_file_copy_url
+                                                                          }
                                                                       ]} click={right_click}/>}/>
         </div>
         return (div);
