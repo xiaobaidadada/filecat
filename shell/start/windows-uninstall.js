@@ -37,6 +37,22 @@ function removeDirSafe(dir) {
         console.log("已删除目录:", dir);
     }
 }
+function clearDirSafe(dir) {
+    if (!fs.existsSync(dir)) return;
+
+    const files = fs.readdirSync(dir);
+
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+
+        try {
+            fs.rmSync(fullPath, { recursive: true, force: true });
+            console.log("已删除:", fullPath);
+        } catch (e) {
+            console.error("删除失败:", fullPath, e.message);
+        }
+    }
+}
 
 // =====================
 // 安全删除文件
@@ -94,7 +110,7 @@ ws.query(shortcutPath, (err, options) => {
     try {
 
         // 删除安装目录
-        removeDirSafe(installDir);
+        clearDirSafe(installDir);
 
         // 删除开始菜单快捷方式
         removeFileSafe(shortcutPath);
