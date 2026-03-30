@@ -211,20 +211,23 @@ export class ShellService {
                     // 重启filecat
                     if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_restart})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
+                    } else {
+                        return exec_type.auto_child_process
                     }
-                    break
                 case    filecat_cmd.filecat_upgrade:
                     if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
+                    } else {
+                        return exec_type.auto_child_process
                     }
-                    break
                 case    filecat_cmd.filecat_down:
                     if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
+                    } else {
+                        return exec_type.auto_child_process
                     }
-                    break
-
             }
+            // 自定义命令检测
             if (settingService.get_shell_cmd_check()) {
                 const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
                 // 开启了自定义的处理
@@ -236,6 +239,8 @@ export class ShellService {
                     // 继续接下来的判断
                 }
             }
+
+            // 命令通用权限检测
             if (token != null && !userService.check_user_cmd(token, exe_cmd, false)) {
                 // 检测命令能不能执行
                 return exec_type.not;
@@ -243,6 +248,7 @@ export class ShellService {
                 // 检测命令能不能执行
                 return exec_type.not;
             }
+
             // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
             if (exe_cmd === 'cd') {
                 // cd 需要检测一下目录
@@ -257,7 +263,10 @@ export class ShellService {
                 } else {
                     return exec_type.not;
                 }
+
             }
+
+            // 其实就是通过了 可以继续了  continue 是不通过 也不继续
             return exec_type.auto_child_process;
         }
     }

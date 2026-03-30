@@ -28,21 +28,25 @@ export async function startLauncher() {
     const argv = process.argv;
     const isDev = __filename.endsWith('.ts');
 
-    let p: string;
+    let entry: string;
     let nodePath = process.execPath;
     if (__filename.endsWith("watch.ts")) {
-        p = path.join(__dirname, "server.ts")
+        entry = path.join(__dirname, "server.ts")
     } else if (__filename.endsWith("watch.js")) {
-        p = path.join(__dirname, "server.js")
+        entry = path.join(__dirname, "server.js")
     } else {
-        p = __filename;
+        entry = __filename;
     }
 
     const upgrade_dir_ok = await FileUtil.find_max_numbered_version_file(upgrade_dir)
     if (upgrade_dir_ok) {
         // 如果升级目录存在的话以后都用这个目录 不用当前目录了 升级并不一定需要替换 第一次安装的永远不替换，这个升级机制不能改
-        p = path.join(upgrade_dir_ok, "main.js");
-        nodePath = path.join(upgrade_dir_ok, path.basename(nodePath));
+        const entry_p = path.join(upgrade_dir_ok, "main.js");
+        const node_path_p  = path.join(upgrade_dir_ok, path.basename(nodePath));
+        if(await FileUtil.access_all([entry_p,node_path_p])) {
+           entry = entry_p
+           nodePath = node_path_p
+        }
     }
 
     const childArgs = argv.slice(2);
@@ -58,7 +62,7 @@ export async function startLauncher() {
         console.log('🚀 启动子进程...', new Date().toLocaleString());
 
         const args = [
-            p,
+            entry,
             ...childArgs,
             "--child",
         ];

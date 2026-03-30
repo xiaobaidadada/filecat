@@ -30,6 +30,20 @@ export class FileUtil {
         }
     }
 
+    // 文件是否都存在
+    static async access_all(paths: string[]) {
+        let num = 0
+        for (const path of paths) {
+            try {
+                await fs.promises.access(path,fs.constants.F_OK);
+                num++
+            } catch {
+
+            }
+        }
+        return num === paths.length;
+    }
+
     static async appendFileSync(path: string,data: string | Uint8Array,
                                 options?:any) {
         return fs.promises.appendFile(path,data,options)

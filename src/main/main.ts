@@ -231,7 +231,8 @@ export async function start_main() {
         } catch (error) {console.error(error?.message);}
         // 打印
         console.log(`服务器正在运行 version: ${version},node version:${process.version}`);
-        console.log(`node工作目录: ${process.cwd()}, filecat工作目录: ${Env.work_dir}`)
+        console.log(`node工作目录: ${process.cwd()}, filecat数据目录: ${Env.work_dir}`)
+        console.log(`node位置: ${process.execPath}, entry位置: ${__filename}`);
         urls.forEach(url => {
             console.log(url);
         });
