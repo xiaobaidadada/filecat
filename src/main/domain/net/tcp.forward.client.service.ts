@@ -106,6 +106,7 @@ export class tcp_forward_server_service {
     }
 
     close_client() {
+        clearTimeout(this.open_try_timer)
         const fig = this.client_fig_get()
         if(fig.serverIp && fig.open && fig.serverPort) {
             NetClientUtil.close_tcp(fig.serverIp,fig.serverPort)
@@ -156,6 +157,8 @@ export class tcp_forward_server_service {
         return this.push_client_status()
     }
 
+    open_try_timer:NodeJS.Timeout;
+
     async client_init_to_server() {
         const fig = this.client_fig_get()
         if(fig.open) {
@@ -172,12 +175,24 @@ export class tcp_forward_server_service {
                     client_id:r_info.client_id,
                     client_num_id:r_info.client_num_id});
             }
-            await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
-                (state) => {
-                    // this.client_staus = state
-                    this.push_client_status()
+            clearTimeout(this.open_try_timer)
+            try {
+                await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
+                    (state) => {
+                        // this.client_staus = state
+                        this.push_client_status()
 
-                });
+                    });
+            }catch(err) {
+                console.log(`第一次尝试连接失败 5秒后重试 ${err?.message}`);
+                this.open_try_timer = setTimeout(()=>{
+                    this.client_init_to_server().catch(err => console.log(err));
+                },5000)
+                throw `第一次尝试连接失败 5秒后重试 ${err?.message}`;
+            }
+        } else {
+            clearTimeout(this.open_try_timer)
+            this.open_try_timer = null
         }
     }
 
