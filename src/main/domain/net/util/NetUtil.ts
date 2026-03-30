@@ -2,6 +2,7 @@ import dgram from "dgram";
 import {tcp_stream_util} from "./tcp_stream_util";
 import crypto from "crypto";
 import {tcp_raw_socket} from "./tcp.client";
+import net from "net";
 
 // 完全限制了一种类型的服务器中的消息可以访问另一种类型的服务的函数的可能性
 export const msgServerMap: Partial<{
@@ -66,10 +67,10 @@ export enum NetMsgType {
     bridge_tcp_socket_data,
     bridge_client_tcp_socket_data,
 
-    bridge_close_port_for_client, // 服务器被关 先
-    bridge_tcp_socket_close, // 服务器关客户端 后
+    bridge_close_port_for_client = 15, // 服务器被关 先
+    bridge_tcp_socket_close= 16 , // 服务器关客户端 后
 
-    bridge_open_port_for_client, // 打开一个客户端
+    bridge_open_port_for_client= 17, // 打开一个客户端
     bridge_tcp_client_create_socket_for_server,
 
 
@@ -221,4 +222,41 @@ export  class NetUtil {
         return buf.readUInt16BE(0);
     }
 
+
+    public static async close_server(
+        server?: net.Server,
+        server_socket_map?: { [key: number]: net.Socket }
+    ) {
+        if (!server) return;
+
+        try {
+            // 1️⃣ 先关闭所有 socket（关键）
+            if (server_socket_map) {
+                for (const key of Object.keys(server_socket_map)) {
+                    try {
+                        server_socket_map[key]?.destroy();
+                    } catch (e) {
+                        console.log(`socket destroy error: ${e?.message}`);
+                    }
+                    delete server_socket_map[key];
+                }
+            }
+
+            // 2️⃣ 再关闭 server（不会卡）
+            await new Promise<void>((resolve) => {
+                try {
+                    server.close(() => resolve());
+                } catch (e) {
+                    console.log(`server close error: ${e?.message}`);
+                    resolve();
+                }
+
+                // 3️⃣ 兜底（防止极端情况卡死）
+                setTimeout(() => resolve(), 3000);
+            });
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
 }

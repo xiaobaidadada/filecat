@@ -59,6 +59,13 @@ export class tcp_forward_server_service {
         delete this.client_socket_map[socket_id]
     }
 
+    client_bridge_tcp_socket_close(data: Buffer) {
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        this.server_socket_map[socket_id]?.destroy()
+        delete this.server_socket_map[socket_id]
+    }
+
+
     client_bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const fig = JSON.parse(data.toString()) as tcp_proxy_bridge_fig_item
         for (const port of Object.keys(this.bridge_server_client_map)) {
@@ -244,7 +251,7 @@ export class tcp_forward_server_service {
             })
         });
         // 先关闭如果有的话
-        server_item.server?.close()
+        await NetUtil.close_server(server_item.server,server_item.server_socket_map)
         server.on("close",()=>{
             for (const key of Object.keys(server_item.server_socket_map)) {
                 server_item.server_socket_map[key]?.destroy()
@@ -253,12 +260,12 @@ export class tcp_forward_server_service {
         server.listen(fig.server_port, () => {
             console.log(`TCP 转发服务器 代理: ${fig.server_port}`);
         });
+        server_item.server = server
         server.on('error', (err) => {
             console.log(err);
         });
         server.on('listening', () => {
             console.log(`TCP 转发服务器 代理正在监听${fig.server_port}...`);
-            server_item.server = server
         });
     }
 }

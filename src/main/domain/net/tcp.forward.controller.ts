@@ -51,14 +51,14 @@ export class TcpForwardController {
     @Post('/server_client_save')
     async server_client_save(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        tcpForwardService.server_client_save(data)
+        await tcpForwardService.server_client_save(data)
         return Sucess({})
     }
 
     @Post('/server_client_del')
     async server_client_del(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        tcpForwardService.server_client_del(data)
+        await tcpForwardService.server_client_del(data)
         return Sucess({})
     }
 
@@ -125,7 +125,7 @@ export class TcpForwardController {
 
     // 服务器接收注册
     @tcp_server_msg(NetMsgType.tcp_connect,tcp_server_type.tcp_forward)
-    connect(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    async connect(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const info = JSON.parse(data.toString()) as tcp_forward_client_type
         if(!tcpForwardService.is_ok_token(info.hash_token)) {
             return;
@@ -144,7 +144,7 @@ export class TcpForwardController {
             client_num_id: info.client_num_id,
         })),tag_id);
         info.client_util = util
-        tcpForwardService.add_client(info)
+        await tcpForwardService.add_client(info)
         util.data_map[client_num_id_key] = info.client_num_id
         util.on_close(() => {
             console.log(`客户端离线 ${info.client_name}`)
@@ -219,21 +219,19 @@ export class TcpForwardController {
         tcp_forward_client_service.write_socket(data_map.all_server_socket_map[socket_id],data)
     }
 
-    // 服务器和客户端接收到客户端的关闭 服务器不会主动接受到关闭
-    // @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)
-    // server_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-    //     const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
-    //     const data_map:server_type = util.data_map[server_key]
-    //     data_map.all_server_socket_map[socket_id]?.destroy()
-    //     delete data_map.all_server_socket_map[socket_id]
-    // }
+    @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)
+    server_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
+        const data_map:server_type = util.data_map[server_key]
+        data_map.all_server_socket_map[socket_id]?.destroy()
+    }
     @tcp_client_msg(NetMsgType.tcp_socket_close)
     client_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         tcp_forward_client_service.client_tcp_socket_close(data)
     }
 
     @tcp_client_msg(NetMsgType.tcp_server_del_client)
-    server_del_cleint(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    server_del_client(data: Buffer, util: tcp_raw_socket, tag_id:number) {
         const fig = tcp_forward_client_service.client_fig_get()
         // delete fig.client_id
         delete fig.client_num_id
@@ -252,6 +250,10 @@ export class TcpForwardController {
     @tcp_server_msg(NetMsgType.bridge_tcp_socket_close,tcp_server_type.tcp_forward)
     bridge_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         tcpForwardService.bridge_tcp_socket_close(data,util,tag_id)
+    }
+    @tcp_client_msg(NetMsgType.bridge_tcp_socket_close)
+    client_bridge_tcp_socket_close(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        tcp_forward_client_service.client_bridge_tcp_socket_close(data)
     }
 
 
@@ -307,10 +309,10 @@ export class TcpForwardController {
         tcpForwardService.bridge_client_tcp_socket_data(data,util,tag_id)
     }
 
-    @tcp_server_msg(NetMsgType.bridge_close_port_for_client,tcp_server_type.tcp_forward)
-    bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        tcpForwardService.bridge_close_port_for_client(data,util,tag_id)
-    }
+    // @tcp_server_msg(NetMsgType.bridge_close_port_for_client,tcp_server_type.tcp_forward)
+    // bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    //     tcpForwardService.bridge_close_port_for_client(data,util,tag_id)
+    // }
 
     @tcp_client_msg(NetMsgType.bridge_close_port_for_client)
     client_bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
