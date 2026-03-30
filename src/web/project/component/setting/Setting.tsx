@@ -18,7 +18,6 @@ export default function  Settings() {
     const menuRots = [
         {index: 1, name: t("系统"), rto: "password/"},
         {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting/"}
-
     ];
     if(check_user_auth(UserAuth.sys_page)) {
         menuRots.push(     {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/"},)
@@ -36,8 +35,8 @@ export default function  Settings() {
 
     return  <Menu optionList={menuRots}>
         <Sys />
-        {check_user_auth(UserAuth.sys_page) && <Env />}
         <PrivateEnv />
+        {check_user_auth(UserAuth.sys_page) && <Env />}
         {check_user_auth(UserAuth.auth_router_page) && <CustomerRouter />}
         {check_user_auth(UserAuth.user_manage) && <User />}
         {check_user_auth(UserAuth.role_manage) &&     <Role />}
