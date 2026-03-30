@@ -9,6 +9,8 @@ let child: any = null;
 let restart_timer: any;
 let kill_child_ing = false
 
+let lastRestart = 0;
+
 function killChild() {
     if (child && !child.killed) {
         console.log('🛑 正在关闭子进程...');
@@ -33,7 +35,11 @@ export function startLauncher() {
 
     function startServer() {
 
-        killChild();
+        const now = Date.now();
+        if (now - lastRestart < 1000) return;
+
+        lastRestart = now;
+
 
         console.log('🚀 启动子进程...', new Date().toLocaleString());
 
@@ -60,14 +66,14 @@ export function startLauncher() {
                 switch (msg) {
                     case filecat_cmd.filecat_restart:
                         console.log('♻️ 子进程请求重启...');
-                        restartServer();
-                        break;
+                        killChild(); // 只负责触发 exit
+                        return
 
                     case filecat_cmd.filecat_down:
                         console.log('♻️ 关闭自己...');
                         killChild()
                         process.exit(1);
-                        break;
+                        return
 
                     case filecat_cmd.filecat_upgrade:
                         console.log('⬆️ 开始升级...');

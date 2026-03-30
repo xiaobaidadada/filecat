@@ -34,6 +34,10 @@ export class TcpForwardServerService {
         [key:number]:tcp_forward_client_type // key 是客户端 id
     } = {}
 
+    private all_server_port_map:{
+        [key:number]:server_item_type
+    } = {}
+
 
     private global_socket_id = 1;
 
@@ -77,17 +81,15 @@ export class TcpForwardServerService {
     }
 
     // 内存删除配置 持久化不删除
-    delete_client(client_num_id:number):void {
-        const it = this.client_num_map[client_num_id];
-        if(it) {
-            const aa:server_type = it.client_util.data_map[server_key]
-            if(!aa)return;
-            for (const server  of Object.values(aa.server_map)) {
-                server.server?.close()
-            }
-        }
-        // delete this.client_map[client_id];
+    delete_client(util: tcp_raw_socket,client_num_id:number):void {
         delete  this.client_num_map[client_num_id]
+        const aa:server_type = util.data_map[server_key]
+        if(!aa)return;
+        for (const port of Object.keys(aa.server_map)) {
+            const server = aa.server_map[port]
+            console.log(`关闭tcp服务器 ${port}`)
+            server.server?.close()
+        }
     }
 
     // 内存添加配置 也做持久化
@@ -159,6 +161,10 @@ export class TcpForwardServerService {
             server_socket_map:{}
         }
         data_map.server_map[proxy_fig.server_port] = server_item
+        if(this.all_server_port_map[proxy_fig.server_port]) {
+            this.all_server_port_map[proxy_fig.server_port].server?.close()
+        }
+        this.all_server_port_map[proxy_fig.server_port] = server_item
         const server = net.createServer((clientSocket) => {
             const socket_id = this.get_socket_id();
             // socket 添加
@@ -179,6 +185,7 @@ export class TcpForwardServerService {
                 // socket 删除
                 delete server_item.server_socket_map[socket_id]
                 delete data_map?.all_server_socket_map[socket_id]
+                delete this.all_server_port_map[proxy_fig.server_port]
             })
         });
         // 先关闭如果有的话

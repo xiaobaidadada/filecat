@@ -148,7 +148,7 @@ export class TcpForwardController {
         util.data_map[client_num_id_key] = info.client_num_id
         util.on_close(() => {
             console.log(`客户端离线 ${info.client_name}`)
-            tcpForwardService.delete_client(info.client_num_id)
+            tcpForwardService.delete_client(util,info.client_num_id)
             // delete util.data_map[client_num_id_key]
             // delete util.data_map[server_key]
         })

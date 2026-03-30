@@ -68,6 +68,7 @@ export class NetServerUtil {
         }
         const _map = this.tcp_server_map[server_type];
         const start_heart = (util:tcp_raw_socket)=>{
+            clearInterval(this.tcp_server_map[server_type].heart_interval)
             this.tcp_server_map[server_type].last_connect_time = Date.now()
             this.tcp_server_map[server_type].heart_interval = setInterval(() => {
                 if(Date.now() - this.tcp_server_map[server_type].last_connect_time > 30 * 1000) {
@@ -106,7 +107,7 @@ export class NetServerUtil {
                     this.socket_timeout_map.set(socket, timeout)
                     this.socket_timeout_resolve_map.set(socket,resolve );
                 }).then(()=>{
-                    console.log(`tpc 授权成功 ${socket.remoteAddress}`);
+                    console.log(`tcp 授权成功 ${socket.remoteAddress}`);
                     auth = true
                 })
                 raw_socket.get_client().set_on_data(async (data, tag_id) => {
