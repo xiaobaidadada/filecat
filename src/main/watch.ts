@@ -1,9 +1,10 @@
-import { fork } from 'child_process';
+import {fork, spawn} from 'child_process';
 import readline from 'readline';
 import * as path from "path"
-import { FatherProcessUtil, filecat_cmd } from "../common/node/childProcessUtil";
-import { fileCompress } from "./domain/file/file.compress";
-import { get_zip_file_format_util } from "../common/StringUtil";
+import {FatherProcessUtil, filecat_cmd} from "../common/node/childProcessUtil";
+import {fileCompress} from "./domain/file/file.compress";
+import {get_zip_file_format_util} from "../common/StringUtil";
+import {FileUtil} from "./domain/file/FileUtil";
 
 let child: any = null;
 let restart_timer: any;
@@ -18,17 +19,30 @@ function killChild() {
     }
 }
 
-export function startLauncher() {
+let update_ing = false; // 更新中
+
+const upgrade_dir = path.join(__dirname, "upgrade")
+
+export async function startLauncher() {
+
     const argv = process.argv;
     const isDev = __filename.endsWith('.ts');
 
     let p: string;
+    let nodePath = process.execPath;
     if (__filename.endsWith("watch.ts")) {
         p = path.join(__dirname, "server.ts")
     } else if (__filename.endsWith("watch.js")) {
         p = path.join(__dirname, "server.js")
     } else {
         p = __filename;
+    }
+
+    const upgrade_dir_ok = await FileUtil.find_max_numbered_version_file(upgrade_dir)
+    if (upgrade_dir_ok) {
+        // 如果升级目录存在的话以后都用这个目录 不用当前目录了 升级并不一定需要替换 第一次安装的永远不替换，这个升级机制不能改
+        p = path.join(upgrade_dir_ok, "main.js");
+        nodePath = path.join(upgrade_dir_ok, path.basename(nodePath));
     }
 
     const childArgs = argv.slice(2);
@@ -43,15 +57,25 @@ export function startLauncher() {
 
         console.log('🚀 启动子进程...', new Date().toLocaleString());
 
-        child = fork(
+        const args = [
             p,
-            [...childArgs, '--child'],
-            {
-                stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-                execArgv: isDev ? ['-r', 'ts-node/register'] : [],
-                env: { ...process.env }
+            ...childArgs,
+            "--child",
+        ];
+
+        // 👉 dev 模式支持 ts-node
+        if (isDev) {
+            args.unshift("-r", "ts-node/register");
+        }
+
+        child = spawn(nodePath, args, {
+            stdio: ["inherit", "inherit", "inherit", "ipc"],
+            cwd: process.cwd(),
+            env: {
+                ...process.env,
+                NODE_ENV: process.env.NODE_ENV
             }
-        );
+        });
 
 
         child.on('message', async (params: {
@@ -60,7 +84,7 @@ export function startLauncher() {
             on_data_msg_id: number,
             data?: any,
         }) => {
-            const { data, msg, msg_id } = params;
+            const {data, msg, msg_id} = params;
 
             try {
                 switch (msg) {
@@ -76,6 +100,7 @@ export function startLauncher() {
                         return
 
                     case filecat_cmd.filecat_upgrade:
+                        if (update_ing) break;
                         console.log('⬆️ 开始升级...');
                         kill_child_ing = true;
                         killChild()
@@ -87,7 +112,8 @@ export function startLauncher() {
                                     break;
                                 }
                                 console.log(`开始解压 ${data.file_path}`)
-                                await fileCompress.handle_un(format, data.file_path, __dirname, () => { })
+                                await fileCompress.handle_un(format, data.file_path,await FileUtil.get_next_numbered_name(upgrade_dir), () => {
+                                })
                                 console.log(`解压完成`)
                             } else if (data.run_env === "npm") {
                                 await FatherProcessUtil.npmGlobalInstall("filecat", data.paths, data.registry)
@@ -99,8 +125,9 @@ export function startLauncher() {
                             console.error('升级失败:', e);
                         } finally {
                             kill_child_ing = false;
+                            update_ing = false;
+                            restartServer();
                         }
-                        restartServer();
                         break;
                 }
             } catch (e) {
@@ -116,12 +143,12 @@ export function startLauncher() {
         });
     }
 
-    function restartServer() {
-        if(kill_child_ing) return;
+    function restartServer(timeout = 2000) {
+        if (kill_child_ing) return;
         clearTimeout(restart_timer)
         restart_timer = setTimeout(() => {
             startServer();
-        }, 2000); // 👈 可适当缩短
+        }, timeout);
     }
 
     // 启动

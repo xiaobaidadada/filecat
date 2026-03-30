@@ -11,50 +11,45 @@ const tar = require('tar');
 // const zlib = require('zlib');
 const archiver = require('archiver');
 const unrar = require("node-unrar-js");
+import {pipeline} from "stream/promises";
+import {FileUtil} from "./FileUtil";
 
-export class FileCompress extends LifecycleRecordService{
+export class FileCompress extends LifecycleRecordService {
 
     async unZip(
         filePath: string,
         targetFolder: string,
         progress: (value: number) => void
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                fs.mkdirSync(targetFolder, { recursive: true });
+        try {
+            fs.mkdirSync(targetFolder, {recursive: true});
 
-                const readStream = fs.createReadStream(filePath);
-                const extractStream = unzip_stream.Extract({ path: targetFolder });
+            const readStream = fs.createReadStream(filePath);
 
-                let finished = false;
+            let totalSize = fs.statSync(filePath).size;
+            let processed = 0;
+            let last = 0;
 
-                const done = () => {
-                    if (!finished) {
-                        finished = true;
-                        progress(100);
-                        resolve();
-                    }
-                };
+            readStream.on("data", (chunk) => {
+                processed += chunk.length;
+                const percent = Math.min(99, Math.floor((processed / totalSize) * 100));
 
-                readStream.on("error", (err) => {
-                    progress(-1);
-                    reject(err);
-                });
+                if (percent !== last) {
+                    last = percent;
+                    progress(percent);
+                }
+            });
 
-                extractStream.on("error", (err) => {
-                    progress(-1);
-                    reject(err);
-                });
+            await pipeline(
+                readStream,
+                unzip_stream.Extract({path: targetFolder})
+            );
 
-                extractStream.on("close", done);
-                extractStream.on("end", done);
-
-                readStream.pipe(extractStream);
-            } catch (e) {
-                progress(-1);
-                reject(e);
-            }
-        });
+            progress(100);
+        } catch (e) {
+            progress(-1);
+            throw e;
+        }
     }
 
     async unTar(
@@ -63,46 +58,33 @@ export class FileCompress extends LifecycleRecordService{
         progress: (value: number) => void,
         gzip: boolean = false
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                fs.mkdirSync(targetFolder, { recursive: true });
+        const totalSize = fs.statSync(filePath).size;
+        let processed = 0;
+        let lastPercent = 0;
 
-                const readStream = fs.createReadStream(filePath);
+        const readStream = fs.createReadStream(filePath);
 
-                const extractStream = tar.x({
-                    cwd: targetFolder,
-                    gzip
-                });
+        readStream.on("data", (chunk) => {
+            processed += chunk.length;
 
-                let finished = false;
+            const percent = Math.floor((processed / totalSize) * 100);
 
-                const done = () => {
-                    if (!finished) {
-                        finished = true;
-                        progress(100);
-                        resolve();
-                    }
-                };
-
-                readStream.on("error", (err) => {
-                    progress(-1);
-                    reject(err);
-                });
-
-                extractStream.on("error", (err) => {
-                    progress(-1);
-                    reject(err);
-                });
-
-                extractStream.on("close", done);
-                extractStream.on("end", done);
-
-                readStream.pipe(extractStream);
-            } catch (e) {
-                progress(-1);
-                reject(e);
+            // 避免频繁回调
+            if (percent !== lastPercent) {
+                lastPercent = percent;
+                progress(percent);
             }
         });
+
+        await pipeline(
+            readStream,
+            tar.x({
+                cwd: targetFolder,
+                gzip
+            })
+        );
+
+        progress(100);
     }
 
     async unRar(
@@ -111,9 +93,9 @@ export class FileCompress extends LifecycleRecordService{
         progress: (value: number) => void
     ): Promise<void> {
         try {
-            fs.mkdirSync(targetFolder, { recursive: true });
+            fs.mkdirSync(targetFolder, {recursive: true});
 
-            const buf = fs.readFileSync(filePath);
+            const buf = await fs.promises.readFile(filePath);
 
             const opt: any = {
                 data: buf
@@ -124,13 +106,12 @@ export class FileCompress extends LifecycleRecordService{
             }
 
             const extractor = await unrar.createExtractorFromData(opt);
-
             const extracted = extractor.extract({});
 
             const files = [...extracted.files];
 
-            const dirs: any[] = [];
-            const fileList: any[] = [];
+            const dirs: typeof files = [];
+            const fileList: typeof files = [];
 
             for (const file of files) {
                 if (file.fileHeader.flags.directory) {
@@ -140,32 +121,32 @@ export class FileCompress extends LifecycleRecordService{
                 }
             }
 
-            let count = 0;
-            const total = files.length;
+            const total = files.length || 1;
+            let doneCount = 0;
 
             const update = () => {
-                progress(Math.round((count / total) * 100));
+                const percent = Math.floor((doneCount / total) * 100);
+                progress(percent);
             };
 
-            // 创建目录
+            // 1️⃣ 创建目录（同步OK，成本低）
             for (const dir of dirs) {
-                fs.mkdirSync(
-                    path.join(targetFolder, dir.fileHeader.name),
-                    { recursive: true }
-                );
-                count++;
+                const dirPath = path.join(targetFolder, dir.fileHeader.name);
+                fs.mkdirSync(dirPath, {recursive: true});
+
+                doneCount++;
                 update();
             }
 
-            // 写文件
+            // 2️⃣ 写文件（改成 async，避免阻塞）
             for (const file of fileList) {
                 const outPath = path.join(targetFolder, file.fileHeader.name);
 
-                fs.mkdirSync(path.dirname(outPath), { recursive: true });
+                fs.mkdirSync(path.dirname(outPath), {recursive: true});
 
-                fs.writeFileSync(outPath, file.extraction);
+                await fs.promises.writeFile(outPath, file.extraction);
 
-                count++;
+                doneCount++;
                 update();
             }
 
@@ -176,51 +157,46 @@ export class FileCompress extends LifecycleRecordService{
         }
     }
 
+
     async unGz(
         filePath: string,
         targetFolder: string,
         progress: (value: number) => void
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                fs.mkdirSync(targetFolder, { recursive: true });
+        fs.mkdirSync(targetFolder, {recursive: true});
 
-                const stat = fs.statSync(filePath);
-                const totalSize = stat.size;
-                let processedSize = 0;
+        const stat = fs.statSync(filePath);
+        const total = stat.size;
 
-                const fileName = path.basename(filePath).replace(/\.gz$/, "");
-                const outputPath = path.join(targetFolder, fileName);
+        let processed = 0;
+        let last = 0;
 
-                const readStream = fs.createReadStream(filePath);
-                const gunzip = new Gunzip({});
-                const writeStream = fs.createWriteStream(outputPath);
+        const fileName = path.basename(filePath).replace(/\.gz$/, "");
+        const outputPath = path.join(targetFolder, fileName);
 
-                readStream.on("data", (chunk) => {
-                    processedSize += chunk.length;
-                    progress(Math.round((processedSize / totalSize) * 100));
-                });
+        const readStream = fs.createReadStream(filePath);
 
-                const fail = (err: any) => {
-                    progress(-1);
-                    reject(err);
-                };
+        readStream.on("data", (chunk) => {
+            processed += chunk.length;
 
-                readStream.on("error", fail);
-                gunzip.on("error", fail);
-                writeStream.on("error", fail);
+            const percent = Math.min(
+                99,
+                Math.floor((processed / total) * 100)
+            );
 
-                writeStream.on("finish", () => {
-                    progress(100);
-                    resolve();
-                });
-
-                readStream.pipe(gunzip).pipe(writeStream);
-            } catch (e) {
-                progress(-1);
-                reject(e);
+            if (percent !== last) {
+                last = percent;
+                progress(percent);
             }
         });
+
+        await pipeline(
+            readStream,
+            new Gunzip({}),
+            fs.createWriteStream(outputPath)
+        );
+
+        progress(100);
     }
 
     // 压缩进度获取
@@ -233,74 +209,66 @@ export class FileCompress extends LifecycleRecordService{
         progress: (value: number) => void,
         gzip: boolean = false
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
+        fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
 
-                const output = fs.createWriteStream(targetFilePath);
+        const output = fs.createWriteStream(targetFilePath);
 
-                const archive = archiver(format, {
-                    zlib: { level },
-                    gzip
-                });
+        const archive = archiver(format, {
+            zlib: { level },
+            gzip
+        });
 
-                progress(0);
+        progress(0);
 
-                let finished = false;
+        let last = 0;
 
-                const done = () => {
-                    if (!finished) {
-                        finished = true;
-                        progress(100);
-                        resolve();
-                    }
-                };
+        archive.on("progress", (data: any) => {
+            const p = data?.fs;
 
-                const fail = (err: any) => {
-                    if (!finished) {
-                        finished = true;
-                        progress(-1);
-                        reject(err);
-                    }
-                };
+            if (p?.processedBytes && p?.totalBytes) {
+                const percent = Math.min(
+                    99,
+                    Math.floor((p.processedBytes / p.totalBytes) * 100)
+                );
 
-                output.on("close", done);
-                output.on("error", fail);
-
-                archive.on("error", fail);
-
-                // ⚠️ progress 事件不可靠，但保留
-                archive.on("progress", (data) => {
-                    const { processedBytes, totalBytes } = data.fs || {};
-                    if (totalBytes > 0) {
-                        const percent = Math.min(
-                            99,
-                            Math.round((processedBytes / totalBytes) * 100)
-                        );
-                        progress(percent);
-                    }
-                });
-
-                archive.pipe(output);
-
-                // files
-                for (const filePath of filePaths || []) {
-                    archive.file(filePath, {
-                        name: path.basename(filePath)
-                    });
+                if (percent !== last) {
+                    last = percent;
+                    progress(percent);
                 }
-
-                // directories
-                for (const dir of directories || []) {
-                    archive.directory(dir, path.basename(dir));
-                }
-
-                archive.finalize();
-            } catch (e) {
-                progress(-1);
-                reject(e);
             }
         });
+
+        archive.on("warning", (err: any) => {
+            // 非致命错误不终止
+            console.warn(err);
+        });
+
+        archive.on("error", (err: any) => {
+            progress(-1);
+            throw err;
+        });
+
+        const done = new Promise<void>((resolve, reject) => {
+            output.on("close", resolve);
+            output.on("error", reject);
+        });
+
+        archive.pipe(output);
+
+        for (const filePath of filePaths || []) {
+            archive.file(filePath, {
+                name: path.basename(filePath)
+            });
+        }
+
+        for (const dir of directories || []) {
+            archive.directory(dir, path.basename(dir));
+        }
+
+        await archive.finalize();
+        await done;
+
+        progress(100);
     }
 
     async compressGz(
@@ -318,7 +286,7 @@ export class FileCompress extends LifecycleRecordService{
                     throw new Error("gzip 压缩必须提供至少一个文件");
                 }
 
-                fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
+                fs.mkdirSync(path.dirname(targetFilePath), {recursive: true});
 
                 const outputPath = targetFilePath.endsWith(".gz")
                     ? targetFilePath
@@ -330,7 +298,7 @@ export class FileCompress extends LifecycleRecordService{
                 let processed = 0;
 
                 const readStream = fs.createReadStream(inputPath);
-                const gzip = new Gzip({ level });
+                const gzip = new Gzip({level});
                 const writeStream = fs.createWriteStream(outputPath);
 
                 progress(0);
@@ -378,7 +346,8 @@ export class FileCompress extends LifecycleRecordService{
     }
 
 
-    async handle_un(format:FileCompressType,sysSourcePath,targetFolder,outHanle) {
+    async handle_un(format: FileCompressType, sysSourcePath, targetFolder, outHanle) {
+        await FileUtil.ensure_dir(targetFolder)
         if (format === FileCompressType.tar) {
             await fileCompress.unTar(sysSourcePath, targetFolder, outHanle)
         } else if (format === FileCompressType.zip) {
@@ -387,7 +356,7 @@ export class FileCompress extends LifecycleRecordService{
             await fileCompress.unTar(sysSourcePath, targetFolder, outHanle, true)
         } else if (format === FileCompressType.rar) {
             await fileCompress.unRar(sysSourcePath, targetFolder, outHanle)
-        } else if(format === FileCompressType.gz) {
+        } else if (format === FileCompressType.gz) {
             await fileCompress.unGz(sysSourcePath, targetFolder, outHanle)
         }
     }
