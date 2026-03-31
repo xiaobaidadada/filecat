@@ -21,26 +21,30 @@ export class SettingController {
 
     // 获取页面路由
     @Get(`/${Http_controller_router.setting_customer_router}`)
-    getRouter() {
+    getRouter(@Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.getCustomerRouter());
     }
 
     // 设置页面路由
     @Post(`/${Http_controller_router.setting_customer_router_save}`)
     saveRouter(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         userService.check_user_auth(r.headers.authorization, UserAuth.code_resource);
         settingService.setCustomerRouter(req);
         return Sucess("1");
     }
 
     @Get(`/${Http_controller_router.setting_customer_workflow_router}`)
-    get_workflow_router() {
+    get_workflow_router(@Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.get_workflow_router());
     }
 
     // 设置workflow路由
     @Post(`/${Http_controller_router.setting_customer_workflow_router_save}`)
     save_workflow_router(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         userService.check_user_auth(r.headers.authorization, UserAuth.workflow_api);
         settingService.save_workflow_router(req);
         return Sucess("1");
@@ -48,13 +52,15 @@ export class SettingController {
 
     // 获取api路由
     @Get("/api/customer_router")
-    getApiRouter() {
+    getApiRouter( @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.getCustomerApiRouter());
     }
 
     // 设置api路由
     @Post('/api/customer_router/save')
     saveApiRouter(@Body() req: any, @Req() r) {
+        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
         // todo 之前设置的js代码文件是否一直保留
         settingService.setCustomerApiRouter(req);

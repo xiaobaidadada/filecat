@@ -2,7 +2,8 @@
 // 一个函数防止重复执行，执行期间拒绝第二次执行
 export function withLock<T extends (...args: any[]) => Promise<any>>(
     fn: T,
-    timeoutMs?:number // 小于0的话 没有过期时间
+    timeoutMs?:number, // 小于0的话 没有过期时间
+    throw_err?:boolean
 ) {
     if(timeoutMs == null) {
         timeoutMs = 60_000;
@@ -37,6 +38,8 @@ export function withLock<T extends (...args: any[]) => Promise<any>>(
             return await fn(...args)
         } catch (e) {
             console.log(e?.message || e)
+            if(throw_err)
+                throw e;
         } finally {
             unlock(myToken)
         }

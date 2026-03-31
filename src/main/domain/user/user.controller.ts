@@ -14,6 +14,8 @@ import {Http_controller_router} from "../../../common/req/http_controller_router
 import {Env} from "../../../common/node/Env";
 import {HttpRequest} from "../../../common/node/http";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
+import {withLock} from "../../../common/fun.util";
+import {CommonUtil} from "../../../common/common.util";
 
 interface UserLoginData {
     username: string;
@@ -23,41 +25,54 @@ interface UserLoginData {
 @JsonController("/user")
 export class UserController {
 
+
+
     @Post('/login')
     async login(@Body() user: UserLogin, @Req() req: Request) {
-        // 超级用户账号 会自动生成 不再读取环境变量内的 如果用户忘记密码 可以修改环境变量文件 reset_root_password 然后重启服务器 （安全需要用户保证环境变量文件不会被修改)
-        // const username = DataUtil.get(data_common_key.username) as string;
-        // 只用于第一次登录 或者token 过期了
-        const user_data = userService.get_user_info_by_username(user.username);
-        if (settingService.getSelfAuthOpen()) {
-            // 开启了自定义处理鉴权功能
-            const selfHandler = settingService.getHandlerClass(self_auth_jscode, data_dir_tem_name.sys_file_dir);
-            if (!selfHandler) {
-                return false;
-            }
-            // 开启了自定义处理
-            try {
-                const result = await selfHandler.handler(req.headers, req);
-                if (result) {
-                    const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
-                    const cache: UserLoginData = {username: user.username, id: user_data.id};
-                    Cache.setValue(`${uuid}`, cache);
-                    return Sucess(uuid)
+        try {
+            // 超级用户账号 会自动生成 不再读取环境变量内的 如果用户忘记密码 可以修改环境变量文件 reset_root_password 然后重启服务器 （安全需要用户保证环境变量文件不会被修改)
+            // const username = DataUtil.get(data_common_key.username) as string;
+            // 只用于第一次登录 或者token 过期了
+            const user_data = userService.get_user_info_by_username(user.username);
+            if (settingService.getSelfAuthOpen()) {
+                // 开启了自定义处理鉴权功能
+                const selfHandler = settingService.getHandlerClass(self_auth_jscode, data_dir_tem_name.sys_file_dir);
+                if (!selfHandler) {
+                    await CommonUtil.sleep_lock_key(user.username,1000)
+                    return false;
                 }
-            } catch (e) {
-                console.log(e)
+                // 开启了自定义处理
+                try {
+                    const result = await selfHandler.handler(req.headers, req);
+                    if (result) {
+                        const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
+                        const cache: UserLoginData = {username: user.username, id: user_data.id};
+                        Cache.setValue(`${uuid}`, cache);
+                        await CommonUtil.sleep_lock_key(user.username,1000*CommonUtil.random01())
+                        return Sucess(uuid)
+                    }
+                } catch (e) {
+                    console.log(e)
+                }
+                // 失败了继续尝试正常的密码登录
             }
-            // 失败了继续正常的登录
+
+            // const password_hash = DataUtil.get(data_common_key.password_hash) as string;
+
+            if (!!user_data && hash_string(user.password) === user_data.hash_password) {
+                const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
+                const cache: UserLoginData = {username: user.username, id: user_data.id};
+                Cache.setValue(`${uuid}`, cache);
+                await CommonUtil.sleep_lock_key(user.username,1000*CommonUtil.random01())
+                return Sucess(uuid)
+            }
+
+        } catch(err){
+            await CommonUtil.sleep_lock_key(user.username,1000)
+            throw err;
         }
 
-        // const password_hash = DataUtil.get(data_common_key.password_hash) as string;
-
-        if (!!user_data && hash_string(user.password) === user_data.hash_password) {
-            const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
-            const cache: UserLoginData = {username: user.username, id: user_data.id};
-            Cache.setValue(`${uuid}`, cache);
-            return Sucess(uuid)
-        }
+        await CommonUtil.sleep_lock_key(user.username,1000)
         return AuthFail('password error');
     }
 

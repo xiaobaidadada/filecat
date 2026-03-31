@@ -58,8 +58,9 @@ const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
 export class SettingService {
 
-    getCustomerRouter() {
-        const list = DataUtil.get(customer_router_key);
+
+    getCustomerRouter():[string,string,number,string][] {
+        const list:any[] = DataUtil.get(customer_router_key);
         return list ?? [];
     }
 
@@ -67,8 +68,9 @@ export class SettingService {
         DataUtil.set(customer_router_key, req);
     }
 
-    get_workflow_router() {
-        const list = DataUtil.get(data_common_key.customer_workflow_router_key);
+    // 1. 路由 2. 文件路径 3 token 4 用户Id 5 备注
+    get_workflow_router():[string,string,string,string,string][] {
+        const list:any[] = DataUtil.get(data_common_key.customer_workflow_router_key);
         return list ?? [];
     }
 
@@ -85,21 +87,18 @@ export class SettingService {
                 c_url = ctx.originalUrl.split("?")[0];
             }
             if (!c_url || !c_url.startsWith(await get_sys_base_url_pre())) return;
-            const workflow_list_router = this.get_workflow_router() as [][];
+            const workflow_list_router = this.get_workflow_router();
             if (!!workflow_list_router && workflow_list_router.length > 0) {
                 for (let item of workflow_list_router) {
-                    // @ts-ignore
                     const router = item[0];
                     if (router === c_url) {
-                        // @ts-ignore
                         const location = item[1];
                         if (location && await FileUtil.access(location)) {
-                            // @ts-ignore
                             const token = item[2];
                             if (token) {
                                 // token验证
                                 if (path.isAbsolute(token)) {
-                                    const context = (await FileUtil.readFileSync(token)).toString();
+                                    const context = (await FileUtil.readFileSync(token)).toString().trim();
                                     if (context !== ctx.headers.authorization) {
                                         ctx.res.status(500).send("token is invalid");
                                         return true;
@@ -111,9 +110,7 @@ export class SettingService {
                             }
                             // workflow文件存在
                             try {
-                                // @ts-ignore
                                 const user_info = userService.get_user_info_by_user_id(item[3]);
-                                // @ts-ignore
                                 userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
                                 workflowService.exec_file(location, user_info).catch((e) => {
                                     console.log("workflow触发失败", e)
@@ -129,10 +126,10 @@ export class SettingService {
                     }
                 }
             }
-            const list_router: any[] = DataUtil.get<[][]>(customer_router_key);
+            const list_router= this.getCustomerRouter()
             if (!!list_router && list_router.length > 0) {
                 for (let item of list_router) {
-                    const router = item[0] as string;
+                    const router = item[0]
                     if (c_url.startsWith(router)) { // 使用包含 可以用于目录的情况
                         const location = item[1];
                         if (location) {

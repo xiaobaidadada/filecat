@@ -26,12 +26,54 @@ export async function  init_pre() {
     }
 }
 
+const ipMap = new Map<string, {  // 一个 ip 生成了就不会删除了 hash 字符串足够快
+    count: number; time: number  // 窗口期是固定间隔时间
+}>();
+
+function checkRateLimit(ip: string, limit = 500, windowMs = 1000) {
+    const now = Date.now();
+
+    if (!ipMap.has(ip)) {
+        ipMap.set(ip, { count: 1, time: now });
+        return true;
+    }
+
+    const data = ipMap.get(ip)!;
+
+    // 超过时间窗口，重置
+    if (now - data.time > windowMs) {
+        data.count = 1;
+        data.time = now;
+        return true;
+    }
+
+    // 还在窗口内
+    data.count++;
+
+    if (data.count > limit) {
+        return false;
+    }
+
+    return true;
+}
+
 @Middleware({type: 'before'})
 export class AuthMiddleware implements ExpressMiddlewareInterface {
 
 
 
     async use(req: Request, res: Response, next: (err?: any) => Promise<any>): Promise<any> {
+        // const ip =
+        //     req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+        //     req.socket.remoteAddress ||
+        //     '';
+
+        // ip 限流
+        // if (!checkRateLimit(ip)) {
+        //     res.status(429).send('Too Many Requests');
+        //     return;
+        // }
+
         // 先对public方法路由判断
         if(public_list.length) {
             for (let i = 0; i < public_list.length; i++) {
