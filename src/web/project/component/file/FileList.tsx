@@ -342,6 +342,7 @@ export default function FileList() {
         }
         pojo.items = list;
         pojo.textClick = async (v) => {
+            console.log(v)
             if (v === false) return;
             const user_save_user_file_list_show_type_pojo:any = {}
             if (v === "code_resource") {
@@ -379,7 +380,15 @@ export default function FileList() {
                 user_save_user_file_list_show_type_pojo['is_pagination_mode'] = true
             } else if(v === user_file_time_show_type.current || v === user_file_time_show_type.time) {
                 user_save_user_file_list_show_type_pojo['is_file_show_type'] = true
-            } else {
+            } else if(v === DirListShowTypeEmum.defualt ||
+            v === DirListShowTypeEmum.name ||
+            v === DirListShowTypeEmum.size_max_min ||
+            v === DirListShowTypeEmum.size_min_max ||
+            v === DirListShowTypeEmum.time_max_min ||
+            v === DirListShowTypeEmum.time_minx_max) {
+                user_save_user_file_list_show_type_pojo['is_dir_list_type'] = true
+            } else
+            {
                 return
             }
             await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {

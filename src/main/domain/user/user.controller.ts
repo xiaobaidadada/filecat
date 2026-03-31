@@ -68,7 +68,7 @@ export class UserController {
             }
 
         } catch(err){
-            await CommonUtil.sleep_lock_key(user.username,1000)
+            await CommonUtil.sleep_lock_key("",1000)
             throw err;
         }
 
