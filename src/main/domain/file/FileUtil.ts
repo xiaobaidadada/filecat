@@ -119,11 +119,27 @@ export class FileUtil {
         await fs.promises.mkdir(dir, { recursive: true });
     }
 
-    static async copy_dir(
+    static async copy(
         src: string,
         dest: string,
         ignore: string[] = []
     ) {
+
+        const stat = await fs.promises.stat(src);
+
+        // ✅ 如果是文件
+        if (stat.isFile()) {
+            // 确保目标目录存在
+            await this.ensure_dir(path.dirname(dest));
+
+            // 忽略规则（文件名）
+            if (ignore.includes(path.basename(src))) {
+                return;
+            }
+
+            await fs.promises.copyFile(src, dest);
+            return;
+        }
 
         await this.ensure_dir(dest)
 
@@ -139,7 +155,7 @@ export class FileUtil {
             }
 
             if (entry.isDirectory()) {
-                await this.copy_dir(srcPath, destPath, ignore);
+                await this.copy(srcPath, destPath, ignore);
             } else if (entry.isFile()) {
                 await fs.promises.copyFile(srcPath, destPath);
             }
