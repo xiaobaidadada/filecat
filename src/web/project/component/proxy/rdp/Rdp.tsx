@@ -28,6 +28,7 @@ export function Rdp() {
     const {check_user_auth} = use_auth_check();
 
     const [address, setAddress] = useState(undefined);
+    const [port, set_port] = useState(3389);
     const [username, setUsername] = useState(undefined);
     const [password, setPassword] = useState(undefined);
     const [fullScreen, setFullScreen] = useState(false);
@@ -63,10 +64,10 @@ export function Rdp() {
         }
 
 
-        function connect(ip, username, password) {
+        function connect(ip,port, username, password) {
             ip = ip?ip :item.address,username=username?username : item.username,password =password ? password : item.password;
-            if (!ip || !username || !password) {
-                NotyFail(t("不允许为空"));
+            if (!ip || !username ) {
+                NotyFail(t("ip或者账号不允许为空"));
                 setStatus(false)
                 return;
             }
@@ -81,7 +82,7 @@ export function Rdp() {
 
             setFullScreen(true);
             setHeaderMin(true);
-            client.connect(ip, "", username, password, function (err) {
+            client.connect(ip, "",port, username, password, function (err) {
                 Mstsc.$("rdpwebview").style.display = 'none';
                 setHeaderMin(false);
                 setStatus(false);
@@ -90,7 +91,7 @@ export function Rdp() {
             });
         }
 
-        connect(address, username, password);
+        connect(address,port, username, password);
     }
     const close = async () => {
         setFullScreen(false);
@@ -120,12 +121,19 @@ export function Rdp() {
         setPassword(item.password);
         setUsername(item.username);
         setAddress(item.address);
+        set_port(item.port)
         go(item);
     }
     return <div>
         <Header>
             <InputTextIcon placeholder={t("地址")} icon={"outlet"} value={address}
                            handleInputChange={(v) => setAddress(v)}/>
+            <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} max_width={"10rem"}
+                           handleInputChange={(v) => {
+                               if(v) {
+                                   set_port(parseInt(v));
+                               }
+                           }}/>
             <InputTextIcon placeholder={t("账号")} icon={"http"} value={username}
                            handleInputChange={(v) => setUsername(v)}/>
             <InputTextIcon placeholder={t("密码")} icon={"http"} value={password}
@@ -135,7 +143,13 @@ export function Rdp() {
             {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
         </Header>
         <FullScreenDiv isFull={fullScreen}>
-            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")}, {key: "username", preName: t("账号")}, {key: "password", preName: t("密码")},{key:"color",preName:"color"}]}/>}
+            {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[
+                {key: "name", preName: t("名字")},
+                {key: "address", preName: t("地址")},
+                {key: "port", preName: t("端口")},
+                {key: "username", preName: t("账号")},
+                {key: "password", preName: t("密码")},
+                {key:"color",preName:"color"}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         </FullScreenDiv>
 

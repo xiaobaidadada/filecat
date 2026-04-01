@@ -169,7 +169,7 @@ export class Client {
 	 * @param password {string} session password
 	 * @param next {function} asynchrone end callback
 	 */
-	connect  (ip, domain, username, password, next) {
+	connect  (ip, domain,port, username, password, next) {
 
 		// start connection
 		var self = this;
@@ -196,7 +196,7 @@ export class Client {
 		wsData.cmdType = CmdType.infos;
 		wsData.context = {
 			ip : ip.indexOf(":")>-1 ? ip.split(":")[0] : ip,
-			port : ip.indexOf(":")>-1 ? parseInt(ip.split(":")[1]) : 3389,
+			port : port,
 			screen : {
 				width : this.canvas.width,
 				height : this.canvas.height

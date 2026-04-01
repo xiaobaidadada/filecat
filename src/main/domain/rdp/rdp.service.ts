@@ -25,7 +25,7 @@ export class RdpService {
         const context = data.context;
         // todo 异常处理
         rdpClient = rdp_.createClient({
-            domain : context.domain,
+            domain : context.domain, // widnwos 账号属于这个电脑的一个域 不是域名
             userName : context.username,
             password : context.password,
             enablePerf : true,
@@ -53,7 +53,7 @@ export class RdpService {
             const result = new WsData<SysPojo>(CmdType.rdp_error);
             result.context = err;
             (data.wss as Wss).sendData(result.encode())
-        }).connect(context.ip, 3389);
+        }).connect(context.ip, context.port??3389);
         (data.wss as Wss).setClose(()=>{
             if(!rdpClient) return;
             console.log('由于ws断开，rpd关闭');
