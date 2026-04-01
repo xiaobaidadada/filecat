@@ -232,7 +232,7 @@ export async function start_main() {
         // 打印
         console.log(`服务器正在运行 version: ${version},node version:${process.version}`);
         console.log(`node工作目录: ${process.cwd()}, filecat数据目录: ${Env.work_dir}`)
-        console.log(`node位置: ${process.execPath}, entry位置: ${__filename}`);
+        console.log(`node位置: ${process.execPath}, entry位置: ${__filename} __dirname:${__dirname}`);
         urls.forEach(url => {
             console.log(url);
         });

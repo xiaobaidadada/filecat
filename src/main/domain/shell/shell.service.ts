@@ -176,11 +176,15 @@ export class ShellService {
                     send("please input file http url ")
                     return;
                 }
-                send(`start download file ...`);
-                const file_path = await ChildProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
-                    send(`${num} %`);
-                })
+                let file_path:string = params[0];
+                if(!path.isAbsolute(params[0])) {
+                    send(`start download file ...`);
+                    file_path = await ChildProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
+                        send(`${num} %`);
+                    })
+                }
                 send(`\r\ndone! ${file_path}`)
+                send(`\r\n now restart ... ! ${file_path}`)
                 ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade,{
                     file_path,
                     run_env:process.env.run_env

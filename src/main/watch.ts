@@ -38,26 +38,27 @@ export async function startLauncher() {
         entry = __filename;
     }
 
-    const upgrade_dir_ok = await FileUtil.find_max_numbered_version_file(upgrade_dir)
-    if (upgrade_dir_ok) {
-        // 如果升级目录存在的话以后都用这个目录 不用当前目录了 升级并不一定需要替换 第一次安装的永远不替换，这个升级机制不能改
-        const entry_p = path.join(upgrade_dir_ok, "main.js");
-        const node_path_p  = path.join(upgrade_dir_ok, path.basename(nodePath));
-        if(await FileUtil.access_all([entry_p,node_path_p])) {
-           entry = entry_p
-           nodePath = node_path_p
-        }
-    }
 
     const childArgs = argv.slice(2);
 
-    function startServer() {
+    async function startServer() {
 
         const now = Date.now();
         if (now - lastRestart < 1000) return;
 
         lastRestart = now;
 
+
+        const upgrade_dir_ok = await FileUtil.find_max_numbered_version_file(upgrade_dir)
+        if (upgrade_dir_ok) {
+            // 如果升级目录存在的话以后都用这个目录 不用当前目录了 升级并不一定需要替换 第一次安装的永远不替换，这个升级机制不能改
+            const entry_p = path.join(upgrade_dir_ok, "main.js");
+            const node_path_p  = path.join(upgrade_dir_ok, path.basename(nodePath));
+            if(await FileUtil.access_all([entry_p,node_path_p])) {
+                entry = entry_p
+                nodePath = node_path_p
+            }
+        }
 
         console.log('🚀 启动子进程...', new Date().toLocaleString());
 

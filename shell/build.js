@@ -21,6 +21,7 @@ const path = require("path");
 const {rimraf} = require("rimraf");
 const fse = require("fs-extra");
 const {copy_wintun_dll} = require("./config/common-bin.config");
+const {execSync} = require("child_process");
 
 // const test_p = path.join(process.cwd(), "node_modules","node-process-watcher");
 // const test_p2 = path.join(process.cwd(), "node_modules","better-sqlite3");
@@ -55,6 +56,13 @@ function copyFiles(sourceDir,destDir) {
 
 const tasksLister = new Listr(
     [
+        {
+            title:"清理build目录执行tsc",
+            task:async ()=>{
+                fse.removeSync(path.join(__dirname, "..", "build"));
+                execSync("npx tsc")
+            }
+        },
         {
             title:"子线程构建",
             task:async ()=>{
