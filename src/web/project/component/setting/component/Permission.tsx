@@ -129,6 +129,7 @@ export function Permission(props:{
                 { title: t("filecat-restart重启命令"), permission: UserAuth.shell_cmd_filecat_restart },
                 { title: t("filecat-upgrade升级命令"), permission: UserAuth.shell_cmd_filecat_upgrade },
                 { title: t("filecat-down关闭主进程命令"), permission: UserAuth.shell_cmd_filecat_kill_self },
+                { title: t("ai 命令(Ai 聊天)"), permission: UserAuth.ai_chat_cmd },
             ]
         }
     ];

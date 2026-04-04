@@ -39,6 +39,7 @@ export default function Shell(props:ShellProps) {
     }, 32),[])
     useEffect(() => {
         if (props.terminal) {
+            props.terminal.options.convertEol = true; // 把 \n 自动作为 \n\r 换行
             props.terminal.open(terminalRef.current);
             // terminal 的尺寸与父元素匹配
             // @ts-ignore

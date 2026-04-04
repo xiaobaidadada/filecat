@@ -102,6 +102,7 @@ export enum UserAuth {
     auth_router_page= 53, // 自定义路由页面
     shell_cmd_filecat_upgrade , // 升级命令
     shell_cmd_filecat_kill_self= 55, //
+    ai_chat_cmd,
 
 }
 

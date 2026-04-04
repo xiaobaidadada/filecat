@@ -6,10 +6,10 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
-    ai_agent_Item, ai_docs_item, ai_docs_setting,
+    ai_agent_Item, ai_agent_item_dotenv_default, ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
     dir_upload_max_num_item,
     FileQuickCmdItem,
-    FileSettingItem,
+    FileSettingItem, json_params_default,
     QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
@@ -425,6 +425,8 @@ export class SettingService {
             pojo.model = "doubao-seed-1-6"
             pojo.note = "豆包模型"
             pojo.open = false
+            pojo.dotenv = ai_agent_item_dotenv_default
+            pojo.json_params = json_params_default
             return {
                 models:[
                     pojo
@@ -438,7 +440,7 @@ export class SettingService {
     ai_docs_setting():ai_docs_setting{
         return DataUtil.get(data_common_key.ai_agent_docs_setting) ??{
             list:[],
-            param:''
+            param:ai_docs_setting_param_default
         }
     }
 

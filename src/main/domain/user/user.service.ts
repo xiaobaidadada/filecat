@@ -153,7 +153,12 @@ export class UserService {
             this.bind_user_id(data.username, id)
         }
         const is_root = mapping[id].is_root;
-        mapping[id] = {...mapping[id], ...data};
+        // mapping[id] = {...mapping[id], ...data};
+        for (const key of Object.keys(data)) {
+            if(data[key] != null) {
+                mapping[id][key] = data[key];
+            }
+        }
         // 角色作用
         if(!is_root)
             this.update_user_role_data(mapping[id]);

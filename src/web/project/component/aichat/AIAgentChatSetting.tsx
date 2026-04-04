@@ -17,12 +17,8 @@ import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth, UserBaseInfo} from "../../../../common/req/user.req";
 import {
     ai_agent_Item,
-    ai_agent_item_dotenv_default,
     ai_docs_item,
     ai_docs_load_info,
-    ai_docs_setting,
-    ai_docs_setting_param_default,
-    json_params_default
 } from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
@@ -204,7 +200,7 @@ export default function AIAgentChatSetting() {
                                                 })
                                             }}/>
                                             <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
-                                                editor_data.set_value_temp(rows[index].json_params??json_params_default)
+                                                editor_data.set_value_temp(rows[index].json_params)
                                                 setEditorSetting({
                                                     model: "ace/mode/json",
                                                     open: true,
@@ -220,7 +216,7 @@ export default function AIAgentChatSetting() {
                                                 })
                                             }}/>
                                             <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                                editor_data.set_value_temp(rows[index].dotenv||ai_agent_item_dotenv_default)
+                                                editor_data.set_value_temp(rows[index].dotenv)
                                                 setEditorSetting({
                                                     model: "ace/mode/ini",
                                                     open: true,
@@ -254,7 +250,7 @@ export default function AIAgentChatSetting() {
                                 <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
                                           titleCom={<div>
                                               <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                                  editor_data.set_value_temp(docs_param.current||ai_docs_setting_param_default)
+                                                  editor_data.set_value_temp(docs_param.current)
                                                   setEditorSetting({
                                                       model: "ace/mode/ini",
                                                       open: true,

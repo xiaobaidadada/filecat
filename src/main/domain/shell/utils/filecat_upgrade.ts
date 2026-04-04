@@ -1,11 +1,13 @@
 import path from "path";
-import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
-import {DataUtil} from "../data/DataUtil";
-import {data_dir_tem_name} from "../data/data_type";
-import {settingService} from "../setting/setting.service";
-import {getSys} from "./shell.service";
-import {SysEnum} from "../../../common/req/user.req";
-import {SystemUtil} from "../sys/sys.utl";
+import {ChildProcessUtil, filecat_cmd} from "../../../../common/node/childProcessUtil";
+import {DataUtil} from "../../data/DataUtil";
+import {data_dir_tem_name} from "../../data/data_type";
+import {settingService} from "../../setting/setting.service";
+import {getSys} from "../shell.service";
+import {SysEnum} from "../../../../common/req/user.req";
+import {SystemUtil} from "../../sys/sys.utl";
+import {ShellUtil} from "./shell.util";
+import {PtyShell} from "pty-shell";
 
 export class filecat_upgrade_class {
 
@@ -16,28 +18,25 @@ export class filecat_upgrade_class {
 
     }
 
-    constructor(exit:()=>void,print:(str: string) => void,params:string[]) {
+    init():void {
+        this.print("\r\n")
+        this.handle(this.params).catch((e)=>{
+            this.print(e?.message??e);
+            this.exit()
+        })
+    }
+
+    params
+    constructor(pty:PtyShell,exit:()=>void,print:(str: string) => void,params:string[]) {
         this.exit = ()=>{
             print("\r\n");
             exit()
         };
         this.print = print;
-        print("\r\n")
-        this.handle(params).catch((e)=>{
-            print(e?.message??e);
-            this.exit()
-        })
+        this.params = params
     }
 
-    renderProgress(percent) {
-        const width = 30; // 进度条宽度
-        const filled = Math.round((percent / 100) * width);
-        const empty = width - filled;
 
-        const bar = "█".repeat(filled) + "░".repeat(empty);
-
-        return `\r\x1b[K[${bar}] ${percent}%`;
-    }
 
     async handle(params:string[]) {
         // process.env.run_env = "exe"
@@ -76,7 +75,7 @@ export class filecat_upgrade_class {
                 this.print("开始下载文件\r\n")
                 download_url = await ChildProcessUtil.down_load_file(download_url,DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
                     // this.print(`\r\x1b[K下载进度: ${num}%`);
-                    this.print(this.renderProgress(num))
+                    this.print(ShellUtil.render_progress(num))
                 })
             }
             this.print("\n\r下载完成，开始解压...")

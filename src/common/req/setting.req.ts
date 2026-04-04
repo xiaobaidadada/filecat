@@ -26,7 +26,7 @@ export class ai_agent_Item {
     json_params?: string;
     sys_prompt?: string;
 
-    dotenv?: string;
+    dotenv?: string = '';
 }
 
 export class ai_docs_item {
@@ -37,7 +37,7 @@ export class ai_docs_item {
 
 export class ai_docs_setting {
     list:ai_docs_item[];
-    param:''
+    param:string
 
     // 临时用
     docs_update_tag?:boolean

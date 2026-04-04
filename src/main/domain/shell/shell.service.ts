@@ -22,7 +22,8 @@ import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUtil";
 import {DataUtil} from "../data/DataUtil";
-import {filecat_upgrade_class} from "./util";
+import {filecat_upgrade_class} from "./utils/filecat_upgrade";
+import {ai_agent_class} from "./utils/ai_agent";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -69,7 +70,7 @@ export function getShell() {
 }
 
 // const pty:any = shell === 'powershell.exe'?require('../../../../local_node_modules/windows/node-pty'):require('../../../../local_node_modules/linux/node-pty');
-const pty: any = get_bin_dependency("@xiaobaidadada/node-pty-prebuilt",false)
+const pty: any = get_bin_dependency("@xiaobaidadada/node-pty-prebuilt", false)
 
 
 // const socketMap: Map<string, any> = new Map();
@@ -152,57 +153,67 @@ export class ShellService {
         return line;
     }
 
-    check_permission(params:{token?:string,user_id?:string,permission:UserAuth},auto_throw = false) {
-        if (params.token != null ) {
+    check_permission(params: { token?: string, user_id?: string, permission: UserAuth }, auto_throw = false) {
+        if (params.token != null) {
             return userService.check_user_auth(params.token, params.permission, auto_throw)
         }
-        if (params.user_id != null ) {
-            return  userService.check_user_auth_by_user_id(params.user_id, params.permission, {
+        if (params.user_id != null) {
+            return userService.check_user_auth_by_user_id(params.user_id, params.permission, {
                 auto_throw: auto_throw,
                 root_check: true,
             })
         }
     }
 
-    add_handle_for_type_shell(pty_shell:PtyShell,ws_send?:(data)=>void) {
-        pty_shell.add_cmd_handle(filecat_cmd.filecat_restart,async (params,send) => {
+    add_handle_for_type_shell(pty_shell: PtyShell, ws_send?: (data) => void) {
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_restart, async (params, send) => {
             ChildProcessUtil.send_father(filecat_cmd.filecat_restart)
         })
-        pty_shell.add_cmd_handle(filecat_cmd.filecat_down,async (params, send) => {
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_down, async (params, send) => {
             ChildProcessUtil.send_father(filecat_cmd.filecat_down)
         })
 
-        pty_shell.add_js_child(filecat_cmd.filecat_upgrade,filecat_upgrade_class)
-
+        pty_shell.add_js_child(filecat_cmd.filecat_upgrade, filecat_upgrade_class)
+        pty_shell.add_js_child(filecat_cmd.ai, ai_agent_class)
     }
 
     check_exe_cmd({
-                      token, cwd, user_id
+                      token, user_id,cwd,pty_shell
                   }: {
-        token?: string, cwd: string, user_id?: string
+        token?: string,  user_id?: string,
+        pty_shell?: PtyShell,cwd?: string // 二选一
     }) {
-        return async (exe_cmd, params) => {
+        return async (exe_cmd:string, params:string[]) => {
+            cwd = pty_shell?.cwd ?? cwd
             // 特殊自定义命令
             switch (exe_cmd) {
                 case filecat_cmd.filecat_restart:
                     // 重启filecat
-                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_restart})) {
+                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_restart})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
                 case    filecat_cmd.filecat_upgrade:
-                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
+                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
                 case    filecat_cmd.filecat_down:
-                    if(!this.check_permission({token, user_id,permission:UserAuth.shell_cmd_filecat_upgrade})) {
+                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
+                case filecat_cmd.ai:
+                    params.push(token)
+                    if (!this.check_permission({token, user_id, permission: UserAuth.ai_chat_cmd})) {
+                        return exec_type.not // 如果不是watch模式下，不允许执行
+                    } else {
+                        return exec_type.auto_child_process
+                    }
+
             }
             // 自定义命令检测
             if (settingService.get_shell_cmd_check()) {
@@ -228,18 +239,19 @@ export class ShellService {
 
             // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
             if (exe_cmd === 'cd' || exe_cmd === 'ls') {
-                if(exe_cmd === 'ls' ) {
-                    if(!params?.length) {
+                if (exe_cmd === 'ls') {
+                    if (!params?.length) {
                         params = ['.']
                     }
                 }
-                // cd 需要检测一下目录
+                const p = path.isAbsolute(params[0])?params[0]: path.join(cwd, params[0])
+                // 需要检测一下目录
                 if (token) {
-                    if (userService.check_user_path(token, path.isAbsolute(params[0]) ? params[0] : path.join(cwd, params[0]))) {
+                    if (userService.check_user_path(token, p)) {
                         return exec_type.auto_child_process;
                     }
                 } else if (user_id) {
-                    if (userService.check_user_path_by_user_id(user_id, path.isAbsolute(params[0]) ? params[0] : path.join(cwd, params[0]))) {
+                    if (userService.check_user_path_by_user_id(user_id, p)) {
                         return exec_type.auto_child_process;
                     }
                 } else {
@@ -291,9 +303,9 @@ export class ShellService {
             }
         });
         ptyShell.check_exe_cmd = this.check_exe_cmd({
-            token: (data.wss as Wss).token, cwd:sysPath
+            token: (data.wss as Wss).token, pty_shell:ptyShell,
         })
-        this.add_handle_for_type_shell(ptyShell,(data.wss as Wss).sendData.bind(data.wss))
+        this.add_handle_for_type_shell(ptyShell, (data.wss as Wss).sendData.bind(data.wss))
         ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测
             let v = word_detection.detection_next_one_word(exe, ".");
@@ -448,9 +460,11 @@ export class ShellService {
                         AttachStdout: true,
                         AttachStderr: true,
                     });
-                    const stream = await execInstance.start({ hijack: true, stdin: true });
+                    const stream = await execInstance.start({hijack: true, stdin: true});
                     let output = "";
-                    stream.on("data", (chunk: Buffer) => { output += chunk.toString(); });
+                    stream.on("data", (chunk: Buffer) => {
+                        output += chunk.toString();
+                    });
                     await new Promise(res => stream.on("end", res));
                     if (output.includes("ok")) {
                         dshell = sh;
@@ -492,7 +506,7 @@ export class ShellService {
             (data.wss as Wss).sendData(result.encode());
         });
 
-        ptyProcess.onExit(({ exitCode, signal }) => {
+        ptyProcess.onExit(({exitCode, signal}) => {
             (data.wss as Wss).ws.close();
             // socketMap.delete(socketId);
         });
