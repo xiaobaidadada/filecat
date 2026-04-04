@@ -40,7 +40,7 @@ export class filecat_upgrade_class {
     }
 
     async handle(params:string[]) {
-        process.env.run_env = "exe"
+        // process.env.run_env = "exe"
         if(process.env.run_env === "exe") {
             let download_url = params[0]
             if(!download_url) {
