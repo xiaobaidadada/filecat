@@ -57,7 +57,7 @@ account/password: admin/admin
 
 ## 升级
 1. 使用自定义的安装方式进行升级，比如npm 安装的就使用 npm -g i filecat，docker 可以重新pull镜像，二进制安装的可以重新下载替换。
-2. 使用 从5.33.0 版本以后，可以使用 `filecat-upgrade` 命令来进行升级，会自动根据安装环境进行升级。特别的对于docker和二进制安装的方式，filecat-upgrade 命令还支持一个自定义下载url路径（默认是从github下载最新包）。
+2. 从5.33.0 版本以后，可以使用 `filecat-upgrade` 命令来进行升级，会自动根据安装环境进行升级。对于docker和二进制安装的方式，filecat-upgrade 命令还支持一个自定义下载url路径参数（默认是从github下载最新包）。
 
 ## 功能概览 
 |           文件管理           |                                         代码编辑                                         |          多用户管理           |
