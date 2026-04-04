@@ -138,20 +138,31 @@ export class ChildProcessUtil {
     }
 
 
-    public static down_load_file(
+    public static async down_load_file(
         url: string,
         dirPath: string,
         on_progress: (value: number) => void
     ): Promise<string> {
 
         return new Promise(async (resolve, reject) => {
+
             try {
 
-                await FileUtil.mkdirSync(dirPath, { recursive: true })
+                await FileUtil.mkdirSync(dirPath, { recursive: true });
 
-                const urlObj = new URL(url);
+                // ==============================
+                // 🔧 URL 修复（核心升级）
+                // ==============================
+                const safeUrl = encodeURI(url);
 
-                const stream = needle.get(url, {
+                let urlObj: URL;
+                try {
+                    urlObj = new URL(safeUrl);
+                } catch (e) {
+                    return reject(new Error("非法 URL: " + url));
+                }
+
+                const stream = needle.get(safeUrl, {
                     follow_max: 5,
                     headers: {
                         "User-Agent": "node",
@@ -168,38 +179,43 @@ export class ChildProcessUtil {
                 let fileStream: fs.WriteStream | null = null;
 
                 // ==============================
-                // ❌ 统一清理函数
+                // ❌ 清理函数
                 // ==============================
                 const cleanup = (err: any) => {
-                    if (fileStream) fileStream.destroy();
+                    try {
+                        if (fileStream) fileStream.destroy();
 
-                    if (filePath && fs.existsSync(filePath)) {
-                        try {
+                        if (filePath && fs.existsSync(filePath)) {
                             fs.unlinkSync(filePath);
-                        } catch {}
-                    }
+                        }
+                    } catch {}
 
                     reject(err);
                 };
 
                 // ==============================
-                // 📦 响应开始
+                // 📦 response
                 // ==============================
                 stream.on("response", (res) => {
 
-                    // ❌ HTTP 错误
                     if (res.statusCode && res.statusCode >= 400) {
                         cleanup(new Error(`下载失败: ${res.statusCode}`));
                         stream.destroy();
                         return;
                     }
 
-                    // 👉 文件名解析
+                    // ==========================
+                    // 📄 文件名解析（增强版）
+                    // ==========================
                     const disposition = res.headers["content-disposition"];
                     if (disposition) {
                         const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
                         if (match?.[1]) {
-                            fileName = decodeURIComponent(match[1]);
+                            try {
+                                fileName = decodeURIComponent(match[1]);
+                            } catch {
+                                fileName = match[1];
+                            }
                         }
                     }
 
@@ -207,18 +223,19 @@ export class ChildProcessUtil {
                         fileName = path.basename(urlObj.pathname);
                     }
 
-                    if (!fileName || fileName === "/") {
+                    if (!fileName || fileName === "/" || fileName === ".") {
                         fileName = `download_${Date.now()}`;
                     }
 
                     filePath = path.resolve(dirPath, fileName);
 
-                    // ✅ 在 response 后创建（关键）
+                    // ==========================
+                    // 📁 创建文件流（关键修复点）
+                    // ==========================
                     fileStream = fs.createWriteStream(filePath);
 
                     fileStream.on("error", cleanup);
 
-                    // ✅ 在这里 pipe（关键）
                     stream.pipe(fileStream);
 
                     total = Number(res.headers["content-length"] || 0);
@@ -255,7 +272,6 @@ export class ChildProcessUtil {
                         resolve(filePath);
                     });
                 } else {
-                    // ⚠️ 防止极端情况
                     stream.on("close", () => {
                         if (filePath) {
                             on_progress(100);
@@ -265,9 +281,10 @@ export class ChildProcessUtil {
                 }
 
                 // ==============================
-                // ❌ 错误处理
+                // ❌ error
                 // ==============================
                 stream.on("error", cleanup);
+
             } catch (e) {
                 reject(e);
             }
