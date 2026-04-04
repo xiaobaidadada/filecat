@@ -44,4 +44,11 @@ export class SystemUtil {
         return stdout;
     }
 
+    public static is_arm() {
+        return process.arch === "arm64"
+    }
+
+    public static is_x86() {
+        return process.arch === "x64"
+    }
 }

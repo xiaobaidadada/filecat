@@ -57,9 +57,11 @@ export async function startLauncher() {
             if(await FileUtil.access_all([entry_p,node_path_p])) {
                 entry = entry_p
                 nodePath = node_path_p
+                if(!isDev) {
+                    // 复制main.js到当前 下次重启主进程的时候 父进程也可以用了
+                    await FileUtil.copy(entry_p,__filename);
+                }
             }
-            // 复制main.js到当前 下次重启主进程的时候 父进程也可以用了
-            await FileUtil.copy(entry_p,__filename);
         }
 
         console.log('🚀 启动子进程...', new Date().toLocaleString());

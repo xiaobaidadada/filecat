@@ -3,6 +3,8 @@ import path from "path";
 import http from "http";
 import https from "https";
 import {spawn} from "child_process";
+import needle from "needle";
+import {FileUtil} from "../../main/domain/file/FileUtil";
 
 export enum filecat_cmd  {
     filecat_restart = "filecat-restart",
@@ -136,106 +138,139 @@ export class ChildProcessUtil {
     }
 
 
-
     public static down_load_file(
         url: string,
         dirPath: string,
         on_progress: (value: number) => void
     ): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const client = url.startsWith("https") ? https : http;
 
-            fs.mkdirSync(dirPath, { recursive: true });
+        return new Promise(async (resolve, reject) => {
+            try {
 
-            const urlObj = new URL(url);
+                await FileUtil.mkdirSync(dirPath, { recursive: true })
 
-            client.get(url, (res) => {
-                if (res.statusCode && res.statusCode >= 400) {
-                    reject(new Error(`下载失败: ${res.statusCode}`));
-                    return;
-                }
+                const urlObj = new URL(url);
+
+                const stream = needle.get(url, {
+                    follow_max: 5,
+                    headers: {
+                        "User-Agent": "node",
+                        "Accept": "*/*"
+                    }
+                });
 
                 let fileName = "";
-
-                // ==============================
-                // 1️⃣ Content-Disposition 优先
-                // ==============================
-                const disposition = res.headers["content-disposition"];
-                if (disposition) {
-                    const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
-                    if (match?.[1]) {
-                        fileName = decodeURIComponent(match[1]);
-                    }
-                }
-
-                // ==============================
-                // 2️⃣ URL ?file=xxx（你这个场景关键）
-                // ==============================
-                if (!fileName) {
-                    const fileParam = urlObj.searchParams.get("file");
-                    if (fileParam) {
-                        fileName = path.basename(fileParam);
-                    }
-                }
-
-                // ==============================
-                // 3️⃣ pathname 兜底
-                // ==============================
-                if (!fileName) {
-                    fileName = path.basename(urlObj.pathname);
-                }
-
-                // ==============================
-                // 4️⃣ fallback
-                // ==============================
-                if (!fileName || fileName === "/") {
-                    fileName = `download_${Date.now()}`;
-                }
-
-                const filePath = path.resolve(dirPath, fileName);
-                const fileStream = fs.createWriteStream(filePath);
-
-                const total = Number(res.headers["content-length"] || 0);
+                let total = 0;
                 let downloaded = 0;
+                let lastPercent = -1;
 
-                res.on("data", (chunk) => {
+                let filePath = "";
+                let fileStream: fs.WriteStream | null = null;
+
+                // ==============================
+                // ❌ 统一清理函数
+                // ==============================
+                const cleanup = (err: any) => {
+                    if (fileStream) fileStream.destroy();
+
+                    if (filePath && fs.existsSync(filePath)) {
+                        try {
+                            fs.unlinkSync(filePath);
+                        } catch {}
+                    }
+
+                    reject(err);
+                };
+
+                // ==============================
+                // 📦 响应开始
+                // ==============================
+                stream.on("response", (res) => {
+
+                    // ❌ HTTP 错误
+                    if (res.statusCode && res.statusCode >= 400) {
+                        cleanup(new Error(`下载失败: ${res.statusCode}`));
+                        stream.destroy();
+                        return;
+                    }
+
+                    // 👉 文件名解析
+                    const disposition = res.headers["content-disposition"];
+                    if (disposition) {
+                        const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+                        if (match?.[1]) {
+                            fileName = decodeURIComponent(match[1]);
+                        }
+                    }
+
+                    if (!fileName) {
+                        fileName = path.basename(urlObj.pathname);
+                    }
+
+                    if (!fileName || fileName === "/") {
+                        fileName = `download_${Date.now()}`;
+                    }
+
+                    filePath = path.resolve(dirPath, fileName);
+
+                    // ✅ 在 response 后创建（关键）
+                    fileStream = fs.createWriteStream(filePath);
+
+                    fileStream.on("error", cleanup);
+
+                    // ✅ 在这里 pipe（关键）
+                    stream.pipe(fileStream);
+
+                    total = Number(res.headers["content-length"] || 0);
+                });
+
+                // ==============================
+                // 📊 进度
+                // ==============================
+                stream.on("data", (chunk) => {
                     downloaded += chunk.length;
 
-                    const ok = fileStream.write(chunk);
-                    if (!ok) {
-                        res.pause();
-                        fileStream.once("drain", () => res.resume());
-                    }
+                    if (total > 0) {
+                        const percent = Math.floor((downloaded / total) * 100);
 
-                    if (total) {
-                        const percent = Math.round((downloaded / total) * 100);
-                        on_progress(percent);
-                    } else {
-                        on_progress(0);
+                        if (percent !== lastPercent) {
+                            lastPercent = percent;
+                            on_progress(percent);
+                        }
                     }
                 });
 
-                res.on("end", () => {
-                    fileStream.end();
+                // ==============================
+                // ✅ 完成
+                // ==============================
+                stream.on("end", () => {
+                    if (fileStream) {
+                        fileStream.end();
+                    }
                 });
 
-                fileStream.on("finish", () => {
-                    on_progress(100);
-                    resolve(filePath); // ⭐ 返回绝对路径
-                });
+                if (fileStream) {
+                    fileStream.on("finish", () => {
+                        on_progress(100);
+                        resolve(filePath);
+                    });
+                } else {
+                    // ⚠️ 防止极端情况
+                    stream.on("close", () => {
+                        if (filePath) {
+                            on_progress(100);
+                            resolve(filePath);
+                        }
+                    });
+                }
 
-                res.on("error", (err) => {
-                    fileStream.destroy();
-                    reject(err);
-                });
-
-                fileStream.on("error", (err) => {
-                    res.destroy();
-                    reject(err);
-                });
-            }).on("error", (err) => {
-                reject(err);
-            });
+                // ==============================
+                // ❌ 错误处理
+                // ==============================
+                stream.on("error", cleanup);
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 

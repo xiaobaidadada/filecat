@@ -10,7 +10,7 @@ import {Env} from "../../../common/node/Env";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {settingService} from "../setting/setting.service";
 import {SysEnum, UserAuth} from "../../../common/req/user.req";
-import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
+import {CharUtil, exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {userService} from "../user/user.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
@@ -22,6 +22,7 @@ import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUtil";
 import {DataUtil} from "../data/DataUtil";
+import {filecat_upgrade_class} from "./util";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -170,37 +171,9 @@ export class ShellService {
         pty_shell.add_cmd_handle(filecat_cmd.filecat_down,async (params, send) => {
             ChildProcessUtil.send_father(filecat_cmd.filecat_down)
         })
-        pty_shell.add_cmd_handle(filecat_cmd.filecat_upgrade,async (params,send) => {
-            if(process.env.run_env === "exe") {
-                if(!params[0]) {
-                    send("please input file http url ")
-                    return;
-                }
-                let file_path:string = params[0];
-                if(!path.isAbsolute(params[0])) {
-                    send(`start download file ...`);
-                    file_path = await ChildProcessUtil.down_load_file(params[0],DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
-                        send(`${num} %`);
-                    })
-                }
-                send(`\r\ndone! ${file_path}`)
-                send(`\r\n now restart ... ! ${file_path}`)
-                ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade,{
-                    file_path,
-                    run_env:process.env.run_env
-                })
-            } else if (process.env.run_env === "npm") {
-                send("start run npm install -g filecat ... , now kill self")
-                await ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade,{
-                    run_env:process.env.run_env,
-                    paths:settingService.get_env_path(),
-                    registry:params?.[0]
-                })
-            } else {
-                throw '未知的安装方式 或者本地dev启动 找不到升级方式'
-            }
 
-        })
+        pty_shell.add_js_child(filecat_cmd.filecat_upgrade,filecat_upgrade_class)
+
     }
 
     check_exe_cmd({
@@ -254,7 +227,12 @@ export class ShellService {
             }
 
             // 系统 支持的默认的 cd ,对于 ls pwd 权限临时改变了就改变吧 不做权限控制了 如果需要用户可以自己设置自定义脚本
-            if (exe_cmd === 'cd') {
+            if (exe_cmd === 'cd' || exe_cmd === 'ls') {
+                if(exe_cmd === 'ls' ) {
+                    if(!params?.length) {
+                        params = ['.']
+                    }
+                }
                 // cd 需要检测一下目录
                 if (token) {
                     if (userService.check_user_path(token, path.isAbsolute(params[0]) ? params[0] : path.join(cwd, params[0]))) {
@@ -296,7 +274,7 @@ export class ShellService {
                 // 输出格式化的命令提示符
                 const p = path.basename(cwd);
                 const c = `${green}${user_data.username}${reset}:${blue}${p}${reset}:# `;
-                const len = PtyShell.get_full_char_num(`${user_data.username}:${p}:# `); // 计算纯字符
+                const len = CharUtil.get_full_char_num(`${user_data.username}:${p}:# `); // 计算纯字符
                 return {str: c, char_num: len};
             },
             on_call: (cmdData) => {
