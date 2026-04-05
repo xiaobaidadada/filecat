@@ -137,6 +137,39 @@ export const ai_tools = [
                 required: ["url"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "search_in_files",
+            description: "在本地项目中跨文件搜索文本内容（类似 grep），返回匹配的文件、行号和内容",
+            parameters: {
+                type: "object",
+                properties: {
+                    pattern: {
+                        type: "string",
+                        description: "要搜索的正则或关键词"
+                    },
+                    path: {
+                        type: "string",
+                        description: "搜索路径"
+                    },
+                    max_files: {
+                        type: "number",
+                        description: "最多扫描多少个文件，默认50"
+                    },
+                    max_matches_per_file: {
+                        type: "number",
+                        description: "每个文件最多匹配多少条结果，默认20"
+                    },
+                    ignore_case: {
+                        type: "boolean",
+                        description: "是否忽略大小写，默认true"
+                    }
+                },
+                required: ["pattern"]
+            }
+        }
     }
 
 ];

@@ -3,6 +3,7 @@ import {shellServiceImpl} from "../shell/shell.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SystemUtil} from "../sys/sys.utl";
 import {ai_agentService} from "./ai_agent.service";
+import fg from "fast-glob";
 
 export const Ai_agentTools = {
     // 读取文件
@@ -21,8 +22,8 @@ export const Ai_agentTools = {
         return 'OK';
     },
     // 执行命令
-    exec_cmd: async ({cmd}: { cmd: string }) => {
-        return SystemUtil.execAsync(cmd)
+    exec_cmd: async ({cmd,cwd}: { cmd: string,cwd:string }) => {
+        return SystemUtil.execAsync(cmd,cwd)
     },
     // 搜索本地知识库
     search_docs: async ({keywords}: { keywords: string[] }) => {
@@ -126,7 +127,76 @@ export const Ai_agentTools = {
         } finally {
             clearTimeout(timer);
         }
-    }
+    },
+    search_in_files: async ({
+                                pattern,
+                                path ,
+                                max_files = 50,
+                                max_matches_per_file = 20,
+                                ignore_case = true
+                            }: {
+        pattern: string;
+        path: string;
+        max_files?: number;
+        max_matches_per_file?: number;
+        ignore_case?: boolean;
+    }) => {
+
+        const files = await fg([`${path}/**/*.*`], {
+            onlyFiles: true,
+            ignore: [
+                "**/node_modules/**",
+                "**/.git/**",
+                "**/dist/**",
+                "**/build/**"
+            ]
+        });
+
+        const regex = new RegExp(pattern, ignore_case ? "i" : "");
+        const results: any[] = [];
+
+        let fileCount = 0;
+
+        for (const file of files) {
+            if (fileCount >= max_files) break;
+
+            try {
+                const content = await readFile(file, "utf-8");
+                const lines = content.split("\n");
+
+                const matches: any[] = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    if (matches.length >= max_matches_per_file) break;
+
+                    if (regex.test(lines[i])) {
+                        matches.push({
+                            line: i + 1,
+                            text: lines[i].slice(0, 300)
+                        });
+                    }
+                }
+
+                if (matches.length > 0) {
+                    results.push({
+                        file,
+                        matches
+                    });
+                    fileCount++;
+                }
+
+            } catch (e) {
+                // skip binary / permission error
+            }
+        }
+
+        return JSON.stringify({
+            pattern,
+            scanned_files: files.length,
+            matched_files: results.length,
+            results
+        }, null, 2);
+    },
 }
 
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;

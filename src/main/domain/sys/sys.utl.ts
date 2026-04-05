@@ -3,7 +3,8 @@ import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
 import {Env} from "../../../common/node/Env";
 import {settingService} from "../setting/setting.service";
-const { exec } = require('child_process');
+
+const {exec} = require('child_process');
 const util = require('util');
 const exec_async = util.promisify(exec);
 
@@ -31,14 +32,16 @@ export class SystemUtil {
         // }
     }
 
-    public static async  execAsync (cmd: string): Promise<any> {
-        const { stdout } = await exec_async(
+    public static async execAsync(cmd: string,cwd?:string): Promise<any> {
+        const {stdout} = await exec_async(
             cmd,
-            { encoding: "utf8" ,
-                env:{
+            {
+                encoding: "utf8",
+                env: {
                     ...process.env,
                     PATH: settingService.get_env_path()
-                }
+                },
+                cwd
             }
         );
         return stdout;
