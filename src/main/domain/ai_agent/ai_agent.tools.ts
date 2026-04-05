@@ -255,3 +255,51 @@ export const Ai_agentTools = {
 }
 
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;
+
+export const tools_des_map: Record<Ai_agentTools_type, {
+    get_name:()=>string,
+    get_params:(args:any)=>string,
+}> = {
+    edit_file: {
+        get_name:()=> "编辑文件",
+        get_params:(args)=>{
+            return ` ${args.path}`
+        }
+    },
+    exec_cmd: {
+        get_name:()=>"执行命令",
+        get_params:(args)=>{
+            return ` ${args.cmd}`
+        }
+    },
+    http_request: {
+        get_name:()=>"请求http",
+        get_params:(args)=>{
+            return `url为 ${args.url}`
+        }
+    },
+    list_files: {
+        get_name:()=>"查询目录",
+        get_params:(args)=>{
+            return ` ${args.path}`
+        }
+    },
+    read_file: {
+        get_name:()=>"读取文件",
+        get_params:(args)=>{
+            return ` ${args.path}`
+        }
+    },
+    search_docs: {
+        get_name:()=>"搜索本地知识库",
+        get_params:(args)=>{
+            return `关键词： ${args.keywords?.join(" ")}`
+        }
+    },
+    search_in_files: {
+        get_name:()=>"搜索文件内容",
+        get_params:(args)=>{
+            return `路径： ${args.path}`
+        }
+    }
+};

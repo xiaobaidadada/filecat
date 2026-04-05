@@ -3,7 +3,7 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {Ai_agentTools, Ai_agentTools_type} from "./ai_agent.tools";
+import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./ai_agent.tools";
 import {Readable} from "stream";
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
 import {ai_agentService, API_KEY, BASE_URL, config, config_env, config_search_doc, MODEL} from "./ai_agent.service";
@@ -238,13 +238,17 @@ ${sys_prompt ?? ''}
             // 有 tool_calls，开始执行工具 这些工具必须是可以并发执行的，如果工具之前自己本身有前后顺序（工具函数内部自己处理），ai提供的列表是可以并发的
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
+                    if(!call.function?.name)return; // 有问题
+                    const toolName = call.function.name as Ai_agentTools_type;
+                    const tool_info_value = tools_des_map[toolName];
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
-                        const toolName = call.function.name as Ai_agentTools_type;
-
                         await this.permission_test(token, user, toolName, args, cwd);
+
+                        on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params(args)}\n\r`)
                         let result = await Ai_agentTools[toolName](args);
                         let resultStr = String(result);
+                        // on_msg(`\n\r${tool_des_name} 执行完成`)
                         // if (resultStr.length > 5000) {
                         //     resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
                         // }
@@ -255,8 +259,7 @@ ${sys_prompt ?? ''}
                         });
                     } catch (e) {
                         const msg = String(e)
-                        console.log(`工具执行失败 ${ call.function.name} ${msg}`)
-
+                        on_msg(`\n\r工具执行失败 ${ tool_info_value.get_name()} ${msg}`)
                         if (env.tool_error_max-- <= 0) throw e;
 
                         workMessages.push({
