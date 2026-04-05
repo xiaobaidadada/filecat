@@ -11,12 +11,12 @@ export const Ai_agentTools = {
     // 读取文件
     read_file: async ({path}) => {
         const content = await readFile(path, 'utf-8');
-        return content;
+        return `文件内容是: ${content}`;
     },
     // 读取目录
     list_files: async ({path = '.'}) => {
         const files = await readdir(path, {withFileTypes: true});
-        return files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n');
+        return  `${path}下的文件列表为: ${files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n')}`;
     },
     // 修改文件
     edit_file: async ({
