@@ -59,20 +59,27 @@ export const ai_tools = [
         type: "function",
         function: {
             name: "edit_file",
-            description: "编辑文件内容，用 new_content 替换文件中的内容",
+            description: `
+编辑文件工具，支持多种模式：
+
+- overwrite: 全量覆盖
+- append: 追加内容
+- diff: 使用 unified diff（git patch格式）修改文件
+        `,
             parameters: {
                 type: "object",
                 properties: {
-                    path: {
+                    path: { type: "string" },
+                    action: {
                         type: "string",
-                        description: "文件路径"
+                        enum: ["overwrite", "append", "diff"]
                     },
-                    new_content: {
+                    content: {
                         type: "string",
-                        description: "新的文件内容"
+                        description: "diff 模式时为 unified diff"
                     }
                 },
-                required: ["path", "new_content"]
+                required: ["path", "action"]
             }
         }
     },
@@ -131,7 +138,7 @@ export const ai_tools = [
                     },
                     max_length: {
                         type: "number",
-                        description: "最大返回字符数，超出将被截断，默认 8000"
+                        description: "最大返回字符数，超出将被截断，默认 8000,-1s是不截断"
                     }
                 },
                 required: ["url"]

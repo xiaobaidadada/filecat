@@ -107,7 +107,6 @@ export class ai_agent_item_dotenv {
     char_max = 12000; // 单轮请求字符最大数量，多了会截断
     messages_show_max = 100; // 聊天消息最多展示多少条
     messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
-    show_planner = true; // 展示任务规划过程（避免直接循环执行，在ai没有那么强大之前这样是最好的)
 }
 export const ai_agent_item_dotenv_default = `
 # 工具报错最大尝试次数
@@ -120,8 +119,6 @@ char_max=12000
 messages_show_max=100
 # 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
 messages_current_max=100
-# 展示任务规划过程（避免直接循环执行，在ai没有那么强大之前这样是最好的)
-show_planner=true
 `
 export const json_params_default = JSON.stringify({
     "stream":true,

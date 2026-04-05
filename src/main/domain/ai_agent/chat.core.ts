@@ -19,6 +19,7 @@ export class ChatCore {
     private async permission_test(token, user: UserData, toolName, args: any, cwd) {
         switch (toolName) {
             case "exec_cmd": {
+                // todo shell-quote shell 中 || 语法的命令会有潜在问题
                 const cmd = args.cmd?.trim();
                 if (!cmd) throw new Error("cmd 不能为空");
 
@@ -157,12 +158,8 @@ ${sys_prompt ?? ''}
             tool_error_max: config_env.tool_error_max
         };
 
-        const planner_message = await this.planner(workMessages, on_msg, controller, config_env.show_planner)
-        workMessages.push(planner_message);
-        if(config_env.show_planner) {
-            on_msg("\n\r");
-        }
-
+        // 隐式 planner
+        // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
         while (env.toolLoop-- > 0) {
 
             //  用来拼完整 assistant message
@@ -229,9 +226,7 @@ ${sys_prompt ?? ''}
                 controller
             );
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
-            if (assistantMessage.tool_calls.length > 0) {
-                assistantMessage.content = null;
-            }
+
 
             //  一次 LLM 完整结束，补 push assistant
             workMessages.push(assistantMessage);
@@ -242,82 +237,42 @@ ${sys_prompt ?? ''}
                 return;
             }
 
-            // 有 tool_calls，开始执行工具
-            for (const call of assistantMessage.tool_calls) {
-                let args: any = {};
-                try {
-                    args = JSON.parse(call.function.arguments || "{}");
-                } catch (e) {
-                    throw new Error(`工具参数 JSON 解析失败: ${call.function.arguments}`);
-                }
-                const toolName = call.function.name as Ai_agentTools_type;
+            // 有 tool_calls，开始执行工具 这些工具必须是可以并发执行的，如果工具之前自己本身有前后顺序（工具函数内部自己处理），ai提供的列表是可以并发的
+            await Promise.all(assistantMessage.tool_calls.map(call=>{
+                return (async ()=>{
+                    try {
+                        const args = JSON.parse(call.function.arguments || "{}");
+                        const toolName = call.function.name as Ai_agentTools_type;
 
-                await this.permission_test(token, user, toolName, args, cwd);
+                        await this.permission_test(token, user, toolName, args, cwd);
+                        let result = await Ai_agentTools[toolName](args);
+                        let resultStr = String(result);
+                        // if (resultStr.length > 5000) {
+                        //     resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
+                        // }
+                        workMessages.push({
+                            role: "tool",
+                            tool_call_id: call.id,
+                            content: resultStr
+                        });
+                    } catch (e) {
+                        if (env.tool_error_max-- <= 0) throw e;
 
-                try {
-                    let result = await Ai_agentTools[toolName](args);
-                    let resultStr = String(result);
-                    // if (resultStr.length > 5000) {
-                    //     resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
-                    // }
-                    workMessages.push({
-                        role: "tool",
-                        tool_call_id: call.id,
-                        content: resultStr
-                    });
-                } catch (e) {
-                    if (env.tool_error_max-- <= 0) throw e;
+                        workMessages.push({
+                            role: "tool",
+                            tool_call_id: call.id,
+                            content: String(e)
+                        });
+                    }
+                })()
+            }))
 
-                    workMessages.push({
-                        role: "tool",
-                        tool_call_id: call.id,
-                        content: String(e)
-                    });
-                }
-            }
         }
 
         on_msg("超出最大理解语义次数");
         on_end();
     }
 
-
-    // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
-    async planner(workMessages: ai_agent_messages, on_msg: (msg: string) => void, controller: AbortController, show_planner: boolean) {
-        let assistantMessage: any = {
-            role: "system",
-            content: `执行计划步骤： `,
-            // tool_calls: []
-        };
-        await this.callLLSync(
-            [
-                ...workMessages,
-                {
-                    role: "system",
-                    content: "请把用户目标拆成清晰的步骤，不要调用工具"
-                },
-            ],
-            // ===== call_data =====
-            (chunk) => {
-                if (!chunk) return;
-                // ===== 1. 普通内容流 =====
-                if (chunk.content) {
-                    assistantMessage.content += chunk.content;
-                    if (show_planner) {
-                        on_msg(chunk.content);
-                    }
-                }
-
-            }
-            ,
-            // ===== error_call =====
-            (e) => {
-                throw e
-            },
-            controller
-        );
-        return assistantMessage
-    }
 
     private async callLLSync(messages: ai_agent_messages,
                              call_data: (message: any) => void,

@@ -1,9 +1,11 @@
-import {readFile, writeFile, readdir} from 'fs/promises';
+import {readFile, writeFile, readdir, appendFile} from 'fs/promises';
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SystemUtil} from "../sys/sys.utl";
 import {ai_agentService} from "./ai_agent.service";
 import fg from "fast-glob";
+import needle from "needle";
+import { applyPatch } from "diff";
 
 export const Ai_agentTools = {
     // 读取文件
@@ -17,9 +19,72 @@ export const Ai_agentTools = {
         return files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n');
     },
     // 修改文件
-    edit_file: async ({path, new_content}) => {
-        await writeFile(path, new_content, 'utf-8');
-        return 'OK';
+    edit_file: async ({
+                          path,
+                          action,
+                          content,
+                      }: any) => {
+
+        let newContent: string | null = null;
+
+        switch (action) {
+
+            // =========================
+            // 1️⃣ diff 模式（需要读文件）
+            // =========================
+            case "diff": {
+                if (!content) throw new Error("diff content required");
+
+                const fileContent = await readFile(path, "utf-8");
+
+                const result = applyPatch(fileContent, content);
+
+                if (result === false) {
+                    throw new Error("Failed to apply diff (patch rejected)");
+                }
+
+                newContent = result;
+                await writeFile(path, newContent, "utf-8");
+                break;
+            }
+
+            // =========================
+            // 2️⃣ overwrite（需要读文件逻辑可选，这里直接写）
+            // =========================
+            case "overwrite": {
+                if (typeof content !== "string") {
+                    throw new Error("content required");
+                }
+
+                await writeFile(path, content, "utf-8");
+                break;
+            }
+
+            // =========================
+            // 3️⃣ append（🔥不读文件）
+            // =========================
+            case "append": {
+                if (typeof content !== "string") {
+                    throw new Error("content required");
+                }
+
+                await appendFile(path, "\n" + content, "utf-8");
+                break;
+            }
+
+            default:
+                throw new Error(`Unknown action: ${action}`);
+        }
+
+        // =========================
+        // 🚀 统一返回（不返回文件内容）
+        // =========================
+        return JSON.stringify({
+            ok: true,
+            action,
+            path,
+            updated: true
+        });
     },
     // 执行命令
     exec_cmd: async ({cmd,cwd}: { cmd: string,cwd:string }) => {
@@ -47,76 +112,62 @@ export const Ai_agentTools = {
         timeout?: number;
         max_length?: number;
     }) => {
-        // ---------- 安全校验 ----------
-        const u = new URL(url);
-        // if (!["http:", "https:"].includes(u.protocol)) {
-        //     throw new Error("仅允许 http/https 协议");
-        // }
-        // if (
-        //     u.hostname === "localhost" ||
-        //     u.hostname.startsWith("127.") ||
-        //     u.hostname.startsWith("192.168.") ||
-        //     u.hostname.startsWith("10.") ||
-        //     u.hostname.endsWith(".local")
-        // ) {
-        //     throw new Error("禁止访问本地或内网地址");
-        // }
 
-        // ---------- query ----------
+        // ---------- URL ----------
+        const u = new URL(url);
+
         if (query) {
             for (const [k, v] of Object.entries(query)) {
                 u.searchParams.set(k, String(v));
             }
         }
 
-        // ---------- timeout ----------
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeout);
+        const finalUrl = u.toString();
+
+        // ---------- request options ----------
+        const options: any = {
+            headers: {
+                "User-Agent": "ai-agent/1.0",
+                ...headers
+            },
+            timeout: timeout,
+            follow_max: 5,
+            parse: false // 我们自己处理 body
+        };
 
         try {
-            const fetchOptions: any = {
-                method: method.toUpperCase(),
-                headers: {
-                    "User-Agent": "ai-agent/1.0",
-                    ...headers
-                },
-                signal: controller.signal
-            };
+            const res = await needle(
+                method.toUpperCase() as any,
+                finalUrl,
+                body ?? undefined,
+                options
+            );
 
-            // ---------- body ----------
-            if (body !== undefined && fetchOptions.method !== "GET") {
-                if (
-                    typeof body === "object" &&
-                    !Buffer.isBuffer(body)
-                ) {
-                    fetchOptions.body = JSON.stringify(body);
-                    fetchOptions.headers["Content-Type"] =
-                        fetchOptions.headers["Content-Type"] ||
-                        "application/json";
-                } else {
-                    fetchOptions.body = String(body);
-                }
+            let text = "";
+
+            if (Buffer.isBuffer(res.body)) {
+                text = res.body.toString("utf8");
+            } else if (typeof res.body === "string") {
+                text = res.body;
+            } else {
+                text = JSON.stringify(res.body);
             }
 
-            const res = await fetch(u.toString(), fetchOptions);
-
-            let text = await res.text();
-
-            if (text.length > max_length) {
+            if (max_length >=0 && text.length > max_length) {
                 text =
                     text.slice(0, max_length) +
                     "\n\n...（响应内容过长，已截断）";
             }
 
             const headersObj: Record<string, string> = {};
-            res.headers.forEach((value, key) => {
-                headersObj[key] = value;
-            });
+            for (const [k, v] of Object.entries(res.headers || {})) {
+                headersObj[k] = String(v);
+            }
 
             return JSON.stringify(
                 {
-                    status: res.status,
-                    statusText: res.statusText,
+                    status: res.statusCode,
+                    statusText: res.statusMessage,
                     headers: headersObj,
                     body: text
                 },
@@ -124,8 +175,12 @@ export const Ai_agentTools = {
                 2
             );
 
-        } finally {
-            clearTimeout(timer);
+        } catch (e: any) {
+            // needle 错误统一处理
+            return JSON.stringify({
+                error: e?.message ?? String(e),
+                code: e?.code
+            });
         }
     },
     search_in_files: async ({
