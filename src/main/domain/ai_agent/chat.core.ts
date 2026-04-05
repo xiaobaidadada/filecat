@@ -11,6 +11,7 @@ import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
 import * as path from "path";
+import {StringUtil} from "../../../common/StringUtil";
 
 
 export class ChatCore {
@@ -19,20 +20,19 @@ export class ChatCore {
     private async permission_test(token, user: UserData, toolName, args: any, cwd) {
         switch (toolName) {
             case "exec_cmd": {
-                // todo shell-quote shell 中 || 语法的命令会有潜在问题
-                const cmd = args.cmd?.trim();
-                if (!cmd) throw new Error("cmd 不能为空");
+                args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
+                const cmds = StringUtil.splitBashCommands(args.cmd)
+                for (const cmd of cmds) {
+                    const argv = cmd.split(" ");
+                    const code = await shellServiceImpl.check_exe_cmd({
+                        user_id: user.id,
+                        cwd: args.cwd
+                    })(argv[0], argv.slice(1));
 
-                const argv = cmd.split(" ");
-                const code = await shellServiceImpl.check_exe_cmd({
-                    user_id: user.id,
-                    cwd: cwd ?? process.cwd() // 默认这个就是允许的 工作目录 一次性的不会变得
-                })(argv[0], argv.slice(1));
-
-                if (code === exec_type.not) {
-                    throw new Error(`没有权限执行命令：${cmd}`);
+                    if (code === exec_type.not) {
+                        throw new Error(`没有权限执行命令：${cmd}`);
+                    }
                 }
-                args.cwd = cwd
                 break;
             }
 

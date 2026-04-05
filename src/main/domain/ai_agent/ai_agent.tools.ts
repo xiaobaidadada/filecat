@@ -269,7 +269,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     exec_cmd: {
         get_name:()=>"执行命令",
         get_params:(args)=>{
-            return ` ${args.cmd}`
+            return ` ${args.cmd} 在 ${args.cwd}`
         }
     },
     http_request: {

@@ -39,6 +39,89 @@ export class StringUtil {
         if(!fileName) return "";
         return fileName.split('.').pop();
     }
+
+    public static splitBashCommands(input) {
+        const result = [];
+
+        let buf = "";
+        let inSingle = false;
+        let inDouble = false;
+        let escape = false;
+
+        const flush = () => {
+            const trimmed = buf.trim();
+            if (trimmed) result.push(trimmed);
+            buf = "";
+        };
+
+        for (let i = 0; i < input.length; i++) {
+            const c = input[i];
+
+            // 处理转义
+            if (escape) {
+                buf += c;
+                escape = false;
+                continue;
+            }
+
+            if (c === "\\") {
+                buf += c;
+                escape = true;
+                continue;
+            }
+
+            // 单引号
+            if (c === "'" && !inDouble) {
+                inSingle = !inSingle;
+                buf += c;
+                continue;
+            }
+
+            // 双引号
+            if (c === '"' && !inSingle) {
+                inDouble = !inDouble;
+                buf += c;
+                continue;
+            }
+
+            // 如果在引号内，所有符号都当普通字符
+            if (inSingle || inDouble) {
+                buf += c;
+                continue;
+            }
+
+            // === 分隔符检测 ===
+            if (c === ";") {
+                flush();
+                continue;
+            }
+
+            if (c === "&") {
+                // 处理 && 和单 &
+                if (input[i + 1] === "&") {
+                    i++;
+                }
+                flush();
+                continue;
+            }
+
+            if (c === "|") {
+                // 处理 || 和 |
+                if (input[i + 1] === "|") {
+                    i++;
+                }
+                flush();
+                continue;
+            }
+
+            // 普通字符
+            buf += c;
+        }
+
+        flush();
+
+        return result;
+    }
 }
 
 // 获取编辑器模式
