@@ -136,6 +136,7 @@ export class ChatCore {
    当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
    
 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
+如果用户没有问题，不要做任何工具调用。
 
 ${ai_agentService.is_use_local_data() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
