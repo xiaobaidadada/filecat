@@ -1,4 +1,4 @@
-import {ai_agent_messages} from "../../../common/req/common.pojo";
+import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
@@ -71,7 +71,7 @@ export class ChatCore {
             return workMessages;
         }
         on_msg(`历史消息过长，正在裁剪消息`);
-        let assistantMessage: any = {
+        let assistantMessage: ai_agent_message_item = {
             role: "user",
             content: ``,
             // tool_calls: []
@@ -107,7 +107,7 @@ export class ChatCore {
             },
             controller
         );
-        return assistantMessage
+        return [assistantMessage] as ai_agent_messages
     }
 
     // todo 长期记忆方式
