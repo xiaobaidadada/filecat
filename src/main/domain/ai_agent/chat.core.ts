@@ -195,22 +195,18 @@ ${sys_prompt ?? ''}
                                     type: "function",
                                     function: {
                                         name: tc.function?.name ?? "",
-                                        arguments: ""
+                                        arguments: tc.function?.arguments??""
                                     }
                                 });
+                                continue;
                             }
 
-                            const call = toolCallMap.get(idx);
-                            if (tc.id) {
-                                call.id = tc.id;
-                            }
-
+                            const call = toolCallMap.get(idx)!;
 
                             // name 只会来一次
                             if (tc.function?.name) {
-                                call.function.name = tc.function.name;
+                                call.function.name += tc.function.name;
                             }
-
                             // arguments 是流式拼接的
                             if (tc.function?.arguments) {
                                 call.function.arguments += tc.function.arguments;
@@ -236,7 +232,8 @@ ${sys_prompt ?? ''}
                 on_end();
                 return;
             }
-
+            // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
+            // console.log(`工具执行开始 ${log_text} `)
             // 有 tool_calls，开始执行工具 这些工具必须是可以并发执行的，如果工具之前自己本身有前后顺序（工具函数内部自己处理），ai提供的列表是可以并发的
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
@@ -256,16 +253,20 @@ ${sys_prompt ?? ''}
                             content: resultStr
                         });
                     } catch (e) {
+                        const msg = String(e)
+                        console.log(`工具执行失败 ${ call.function.name} ${msg}`)
+
                         if (env.tool_error_max-- <= 0) throw e;
 
                         workMessages.push({
                             role: "tool",
                             tool_call_id: call.id,
-                            content: String(e)
+                            content: msg
                         });
                     }
                 })()
             }))
+            // console.log(`工具执行结束 ${log_text} `)
 
         }
 
