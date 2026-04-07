@@ -131,7 +131,7 @@ export async function download_ripgrep() {
   // --------------------
   // find binary (IMPORTANT FIX)
   // --------------------
-  const src = findBinary(tmpDir)
+  const src = findBinary(outDir)
 
   if (!src) {
     throw new Error("rg binary not found after extract")
