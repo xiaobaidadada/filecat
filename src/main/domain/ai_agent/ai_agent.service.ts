@@ -153,14 +153,14 @@ export class Ai_agentService {
     }
 
     private init_search_docs_param() {
-        if (!this.docs_switch_get()) return;
+        if (!this.have_ai_open()) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
         // console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
     async load_one_file(token: string, param_path: string) {
-        if (!this.docs_switch_get()) return;
+        if (!this.have_ai_open()) return;
         const root_path = settingService.getFileRootPath(token);
         let sysPath = decodeURIComponent(param_path)
         if (isAbsolutePath(sysPath)) {
@@ -212,7 +212,7 @@ export class Ai_agentService {
         await ThreadsFilecat.close()
         this.load_key()
         this.init_search_docs_param()
-        if (!this.docs_switch_get()) return;
+        if (!this.have_ai_open()) return;
         if(process.env.run_env !== "exe") {
             if(ai_agentService.docs_switch_get()) {
                 download_ripgrep().then(r => {
@@ -231,7 +231,7 @@ export class Ai_agentService {
 
     // 加载文件 进入索引
     private async load_search_docs(target_list?: ai_docs_item[]) {
-        if (!this.docs_switch_get()) return;
+        if (!this.have_ai_open()) return;
         const now = Date.now();
 
         // const is_one_load = target_list != null;
@@ -469,7 +469,8 @@ export class Ai_agentService {
         return config_env;
     }
 
-    // public sys_ai_is_open = false
+    // 只要开启了任意一个ai
+    // public have_ai_is_open = false
 
     docs_switch_get( ) {
         let status:boolean =  DataUtil.get(data_common_key.ai_agent_status)
@@ -479,9 +480,19 @@ export class Ai_agentService {
         return status;
     }
 
+    public have_ai_open() {
+        const r = settingService.ai_agent_setting()
+        for (const it of r.models) {
+            if (it.open) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public load_key() {
         config_env = new ai_agent_item_dotenv()
-        // this.sys_ai_is_open = false
+        // this.have_ai_is_open = false
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
@@ -492,7 +503,7 @@ export class Ai_agentService {
                 if (it.dotenv) {
                     Env.load(it.dotenv, config_env);
                 }
-                // this.sys_ai_is_open = true
+                // this.have_ai_is_open = true
                 return
             }
         }
