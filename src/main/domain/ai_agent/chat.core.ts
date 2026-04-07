@@ -191,6 +191,9 @@ ${sys_prompt ?? ''}
                             const idx = tc.index;
 
                             if (!toolCallMap.has(idx)) {
+                                if(tc.function.name) {
+                                    on_msg(`\n${`等待 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
+                                }
                                 toolCallMap.set(idx, {
                                     id: tc.id,
                                     type: "function",
@@ -207,6 +210,7 @@ ${sys_prompt ?? ''}
                             // name 只会来一次
                             if (tc.function?.name) {
                                 call.function.name += tc.function.name;
+                                on_msg(`\n${`等待 ${tools_des_map[call.function.name]?.get_name()} ...`}`)
                             }
                             // arguments 是流式拼接的
                             if (tc.function?.arguments) {
@@ -222,6 +226,7 @@ ${sys_prompt ?? ''}
                 },
                 controller
             );
+            on_msg("\n")
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
 

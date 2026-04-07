@@ -25,4 +25,8 @@ export class ShellUtil {
         return `${color}${text}${ANSI.reset}`;
     }
 
+    public static write_line(text: string) {
+        // 清空当前行 + 回到行首 + 输出
+        return `\r\x1b[2K${text}`
+    }
 }

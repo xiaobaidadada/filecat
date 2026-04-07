@@ -550,7 +550,7 @@ ServerEvent.on("start", (data) => {
 })
 
 ServerEvent.on("start",async =>{
-    if(process.env.run_env === "npm") {
+    if(process.env.run_env !== "exe") {
         download_ripgrep().then(r => {
 
         }).catch(console.error);

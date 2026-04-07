@@ -5,8 +5,7 @@ import {SystemUtil} from "../sys/sys.utl";
 import {ai_agentService} from "./ai_agent.service";
 import fg from "fast-glob";
 import needle from "needle";
-import { applyPatch } from "diff";
-import {BinFileUtil} from "../bin/bin.file.util";
+import { parsePatch, applyPatch } from "diff";import {BinFileUtil} from "../bin/bin.file.util";
 import {RG_PATH} from "../bin/download-ripgrep";
 
 export const Ai_agentTools = {
@@ -39,7 +38,11 @@ export const Ai_agentTools = {
 
                 const fileContent = await readFile(path, "utf-8");
 
-                const result = applyPatch(fileContent, content);
+                // const result = applyPatch(fileContent, content);
+                //
+                const patches = parsePatch(content);
+
+                const result = applyPatch(fileContent, patches[0]);
 
                 if (result === false) {
                     throw new Error("Failed to apply diff (patch rejected)");
@@ -326,7 +329,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     edit_file: {
         get_name:()=> "编辑文件",
         get_params:(args)=>{
-            return ` ${args.path}`
+            return ` ${args.path} ${args.action} 内容：${args.content}`
         }
     },
     exec_cmd: {
