@@ -54,6 +54,7 @@ export default function Switch({
                                    defaultChecked = false,
                                    onChange,
                                    disabled = false,
+                                   title = ""
                                }) {
     const [internal, setInternal] = useState(defaultChecked);
 
@@ -73,7 +74,7 @@ export default function Switch({
     };
 
     return (
-        <div className={"action"}>
+        <div className={"action"} title={title}>
             <button
                 onClick={toggle}
                 disabled={disabled}

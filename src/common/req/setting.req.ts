@@ -51,7 +51,7 @@ export class ai_docs_load_info {
     total_num:number = 0;
     consume_time_ms_len:number = 0;
 
-    init(total_num:number) {
+    init_statics(total_num:number) {
         this.progress = 0;
         this.num = 0;
         this.size = 0;

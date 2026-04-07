@@ -33,15 +33,14 @@ export function start_ai_agent_agent() {
 
         /* ------------------ Memory 模式 ------------------ */
         if (index_storage_type === "memory") {
-            if (!doc_index) {
-                doc_index = new FlexSearch.Index({ tokenize: "strict" });
-                doc_names_index = new FlexSearch.Index({ tokenize: "strict" });
-            }
+            if (doc_index) return;
+            doc_index = new FlexSearch.Index({ tokenize: "strict" });
+            doc_names_index = new FlexSearch.Index({ tokenize: "strict" });
         }
 
         /* ------------------ SQLite FTS5 模式 ------------------ */
         if (index_storage_type === "sqlite") {
-
+            if(sqlite_db) return;
             sqlite_db = new Database(db_path,{
                 nativeBinding:sqlite3
             });

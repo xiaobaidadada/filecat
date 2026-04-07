@@ -29,7 +29,7 @@ import {CommonUtil} from "../../../common/common.util";
 import {start_worker_threads, ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {threads_msg_type} from "../../threads/threads.type";
 import {DataUtil} from "../data/DataUtil";
-import {data_dir_tem_name, file_key} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {pinyin} from "pinyin-pro";
 import {hash_str_to_number} from "../../../common/node/value.util";
 import {ServerEvent} from "../../other/config";
@@ -151,15 +151,15 @@ export class Ai_agentService {
         })}`;
     }
 
-    init_search_docs_param() {
-        if (!this.sys_ai_is_open) return;
+    private init_search_docs_param() {
+        if (!this.docs_switch_get()) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
         // console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
     async load_one_file(token: string, param_path: string) {
-        if (!this.sys_ai_is_open) return;
+        if (!this.docs_switch_get()) return;
         const root_path = settingService.getFileRootPath(token);
         let sysPath = decodeURIComponent(param_path)
         if (isAbsolutePath(sysPath)) {
@@ -168,7 +168,7 @@ export class Ai_agentService {
             sysPath = path.join(root_path, sysPath);
         }
         userService.check_user_path(token, sysPath)
-        await this.init_search_docs([{
+        await this.load_search_docs([{
             auto_load: true,
             dir: sysPath
         }])
@@ -195,10 +195,11 @@ export class Ai_agentService {
         if(ThreadsFilecat.is_running)
             await ThreadsFilecat.post(threads_msg_type.docs_close, {}, 60 * 1000)
         ai_agentService.docs_data_map.clear()
-        this.docs_info.init(0)
+        await ThreadsFilecat.close()
+        this.docs_info.init_statics(0)
     }
 
-    running_num = 1
+    running_num = 1 // 用于终止 正在 加载文件的函数
 
     private push_wss(now: number) {
         this.docs_info.consume_time_ms_len = Date.now() - now
@@ -207,22 +208,26 @@ export class Ai_agentService {
     }
 
     async init() {
+        await ThreadsFilecat.close()
         this.load_key()
-        if (!this.sys_ai_is_open) return;
+        this.init_search_docs_param()
+        if (!this.docs_switch_get()) return;
         start_worker_threads()
         const body = {index_storage_type: config_search_doc.index_storage_type}
         if (config_search_doc.index_storage_type === 'sqlite') {
             body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
+        this.load_search_docs().catch(console.error);
     }
 
-    async init_search_docs(target_list?: ai_docs_item[]) {
-        if (!this.sys_ai_is_open) return;
+    // 加载文件 进入索引
+    private async load_search_docs(target_list?: ai_docs_item[]) {
+        if (!this.docs_switch_get()) return;
         const now = Date.now();
-        await this.init()
+
         // const is_one_load = target_list != null;
-        this.docs_info.init(0)
+        this.docs_info.init_statics(0)
 
         this.push_wss(now)
 
@@ -419,7 +424,7 @@ export class Ai_agentService {
 
     public async delete_index_with_progress(targetPath: string) {
         // 先收集要删除的所有文件
-        this.docs_info.init(0)
+        this.docs_info.init_statics(0)
         const filesToDelete: string[] = [];
         const now = Date.now();
         const collectFiles = async (p: string) => {
@@ -456,11 +461,19 @@ export class Ai_agentService {
         return config_env;
     }
 
-    public sys_ai_is_open = false
+    // public sys_ai_is_open = false
+
+    docs_switch_get( ) {
+        let status:boolean =  DataUtil.get(data_common_key.ai_agent_status)
+        if(status == null) {
+            status = false
+        }
+        return status;
+    }
 
     public load_key() {
         config_env = new ai_agent_item_dotenv()
-        this.sys_ai_is_open = false
+        // this.sys_ai_is_open = false
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
@@ -471,7 +484,7 @@ export class Ai_agentService {
                 if (it.dotenv) {
                     Env.load(it.dotenv, config_env);
                 }
-                this.sys_ai_is_open = true
+                // this.sys_ai_is_open = true
                 return
             }
         }

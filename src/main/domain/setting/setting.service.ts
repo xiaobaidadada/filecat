@@ -409,7 +409,7 @@ export class SettingService {
         if (!DataUtil.get(data_common_key.cmd_use_pty_key)) {
             DataUtil.set(data_common_key.cmd_use_pty_key, shell_list);
         }
-        ai_agentService.load_key()
+
 
         // 处理分享
         this.init_share()
@@ -419,17 +419,45 @@ export class SettingService {
     ai_agent_setting():{models:ai_agent_Item[]} {
         const r = DataUtil.get(data_common_key.ai_agent_model_setting)as  any;
         if(!r) {
-            const pojo = new ai_agent_Item()
+            const doubao_pojo = new ai_agent_Item()
             // 默认添加豆包的 api
-            pojo.url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-            pojo.model = "doubao-seed-1-6"
-            pojo.note = "豆包模型"
-            pojo.open = false
-            pojo.dotenv = ai_agent_item_dotenv_default
-            pojo.json_params = json_params_default
+            doubao_pojo.url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+            doubao_pojo.model = "doubao-seed-1-6"
+            doubao_pojo.note = "豆包模型"
+            doubao_pojo.open = false
+            doubao_pojo.dotenv = ai_agent_item_dotenv_default
+            doubao_pojo.json_params = json_params_default
+            const longcat_pojo = new ai_agent_Item()
+            longcat_pojo.url = 'https://api.longcat.chat/openai/v1/chat/completions'
+            longcat_pojo.model = "LongCat-Flash-Chat"
+            longcat_pojo.note = "美团龙猫"
+            longcat_pojo.open = false
+            longcat_pojo.dotenv = ai_agent_item_dotenv_default
+            longcat_pojo.json_params = json_params_default
+            const zhipu_pojo = new ai_agent_Item()
+            zhipu_pojo.url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+            zhipu_pojo.model = "glm-5"
+            zhipu_pojo.note = "智谱"
+            zhipu_pojo.open = false
+            zhipu_pojo.dotenv = ai_agent_item_dotenv_default
+            zhipu_pojo.json_params = json_params_default
+            const openai_pojo = new ai_agent_Item()
+            openai_pojo.url = 'https://api.openai.com/v1/chat/completions'
+            openai_pojo.model = "gpt-4o-mini" // 或 gpt-4.1 / gpt-5.3
+            openai_pojo.note = "OpenAI"
+            openai_pojo.open = false
+            openai_pojo.dotenv = ai_agent_item_dotenv_default
+            openai_pojo.json_params = json_params_default
+            const xiaomi_pojo = new ai_agent_Item()
+            xiaomi_pojo.url = 'https://api.xiaomimimo.com/v1/chat/completions'
+            xiaomi_pojo.model = "mimo-v2-pro"
+            xiaomi_pojo.note = "小米AI"
+            xiaomi_pojo.open = false
+            xiaomi_pojo.dotenv = ai_agent_item_dotenv_default
+            xiaomi_pojo.json_params = json_params_default
             return {
                 models:[
-                    pojo
+                    doubao_pojo,longcat_pojo,zhipu_pojo,openai_pojo,xiaomi_pojo
                 ]
             }
         } else {
@@ -457,7 +485,7 @@ export class SettingService {
         }
         DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
         if(data.docs_update_tag) {
-            ai_agentService.init_search_docs().catch(console.error);
+            ai_agentService.init().catch(console.error);
         }
     }
 
@@ -880,6 +908,4 @@ ServerEvent.on("start", (data) => {
     settingService.init();
     settingService.power_on_corn();
     settingService.init_corn();
-    ai_agentService.init_search_docs_param()
-    ai_agentService.init_search_docs().catch(console.error);
 })

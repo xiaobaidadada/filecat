@@ -1,4 +1,4 @@
-import {Body, JsonController, Post, Req, Res} from "routing-controllers";
+import {Body, Get, JsonController, Post, Req, Res} from "routing-controllers";
 import {Response} from "express";
 import {ai_agentService} from "./ai_agent.service";
 import {userService} from "../user/user.service";
@@ -8,6 +8,8 @@ import {CmdType, WsData} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {Sucess} from "../../other/Result";
 import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
+import {DataUtil} from "../data/DataUtil";
+import {data_common_key} from "../data/data_type";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -64,23 +66,41 @@ export class Ai_AgentController {
         return  Sucess("")
     }
 
-    @Post("/ai_load_restart")
-    async ai_load_restart(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
-        await ai_agentService.close_index()
-        await ThreadsFilecat.restart()
-        Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
-        ai_agentService.init_search_docs().catch(console.error);
-        return  Sucess("")
-    }
+    // @Post("/ai_load_restart")
+    // async ai_load_restart(@Req() ctx, @Body() data: any) {
+    //     userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+    //     await ai_agentService.close_index()
+    //     await ThreadsFilecat.restart()
+    //     Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
+    //     ai_agentService.init_search_docs().catch(console.error);
+    //     return  Sucess("")
+    // }
 
-    @Post("/ai_load_close")
-    async ai_load_close(@Req() ctx, @Body() data: any) {
+    // @Post("/ai_load_close")
+    // async ai_load_close(@Req() ctx, @Body() data: any) {
+    //     userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+    //     await ai_agentService.close_index()
+    //     Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
+    //     return  Sucess("")
+    // }
+
+    // 知识库是否开启
+    @Get("/docs_on_get")
+    async docs_on_get(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
-        await ai_agentService.close_index()
-        await ThreadsFilecat.close()
-        Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
-        return  Sucess("")
+        return Sucess(ai_agentService.docs_switch_get())
+    }
+    @Post("/docs_on_set")
+    async docs_on_set(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        DataUtil.set(data_common_key.ai_agent_status,data.status)
+        if(ai_agentService.docs_switch_get()) {
+            await ai_agentService.init()
+            Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
+        } else {
+            await ai_agentService.close_index()
+        }
+        return Sucess("")
     }
 
     @Post("/ai_del")

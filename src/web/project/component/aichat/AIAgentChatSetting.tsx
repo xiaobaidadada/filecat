@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import React, {useContext, useEffect, useRef, useState} from "react";
-import {ActionButton} from "../../../meta/component/Button";
+import Switch, {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
@@ -14,16 +14,12 @@ import {RCode} from "../../../../common/Result.pojo";
 import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
-import {UserAuth, UserBaseInfo} from "../../../../common/req/user.req";
-import {
-    ai_agent_Item,
-    ai_docs_item,
-    ai_docs_load_info,
-} from "../../../../common/req/setting.req";
+import {UserAuth} from "../../../../common/req/user.req";
+import {ai_agent_Item, ai_docs_item, ai_docs_load_info,} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
-import {formatDuration, formatFileSize } from "../../../../common/ValueUtil";
+import {formatDuration, formatFileSize} from "../../../../common/ValueUtil";
 import {using_confirm} from "../prompts/prompt.util";
 
 
@@ -57,13 +53,20 @@ export default function AIAgentChatSetting() {
     const docs_param = useRef();
     const docs_update_tag = useRef(false);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
-
+    const [index_switch,set_index_switch] = useState(false);
 
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const navigate = useNavigate();
     const confirm_dell_all = using_confirm()
+
+    const load_index_switch = async () => {
+        const r = await ai_agentHttp.get("docs_on_get")
+        if (r.code === RCode.Success) {
+            set_index_switch(r.data)
+        }
+    }
 
     const getItems = async () => {
         // 文件夹根路径
@@ -88,6 +91,8 @@ export default function AIAgentChatSetting() {
                 set_docs_list(docs_result.data.list);
             }
         }
+
+        load_index_switch()
     }
     useEffect(()=>{
         getItems()
@@ -249,6 +254,14 @@ export default function AIAgentChatSetting() {
                         <Column widthPer={50}>
                                 <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
                                           titleCom={<div>
+
+                                              <Switch checked={index_switch} onChange={async (v)=>{
+                                                  ai_agentHttp.post("docs_on_set", {
+                                                      status: v
+                                                  });
+                                                  load_index_switch()
+                                              }} title={t("知识库开关")}/>
+
                                               <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
                                                   editor_data.set_value_temp(docs_param.current)
                                                   setEditorSetting({
@@ -262,26 +275,28 @@ export default function AIAgentChatSetting() {
                                                       }
                                                   })
                                               }}/>
-                                              <ActionButton icon={"restore"} title={t("重新创建索引")} onClick={()=>{
-                                                  confirm_dell_all({
-                                                      sub_title:"确认重建索引吗",
-                                                      confirm_fun:()=>{
-                                                          ai_agentHttp.post("ai_load_restart", {});
-                                                          NotySucess("ok")
-                                                      }
-                                                  })
-                                              }}
-                                              />
-                                              <ActionButton icon={"close"} title={t("关闭索引")} onClick={()=>{
-                                                  confirm_dell_all({
-                                                      sub_title:"关闭索引",
-                                                      confirm_fun:()=>{
-                                                          ai_agentHttp.post("ai_load_close", {});
-                                                          NotySucess("ok")
-                                                      }
-                                                  })
-                                              }}
-                                              />
+
+                                              {/*<ActionButton icon={"restore"} title={t("重新创建索引")} onClick={()=>{*/}
+                                              {/*    confirm_dell_all({*/}
+                                              {/*        sub_title:"确认重建索引吗",*/}
+                                              {/*        confirm_fun:()=>{*/}
+                                              {/*            ai_agentHttp.post("ai_load_restart", {});*/}
+                                              {/*            NotySucess("ok")*/}
+                                              {/*        }*/}
+                                              {/*    })*/}
+                                              {/*}}*/}
+                                              {/*/>*/}
+                                              {/*<ActionButton icon={"close"} title={t("关闭索引")} onClick={()=>{*/}
+                                              {/*    confirm_dell_all({*/}
+                                              {/*        sub_title:"关闭索引",*/}
+                                              {/*        confirm_fun:()=>{*/}
+                                              {/*            ai_agentHttp.post("ai_load_close", {});*/}
+                                              {/*            NotySucess("ok")*/}
+                                              {/*        }*/}
+                                              {/*    })*/}
+                                              {/*}}*/}
+
+                                              {/*/>*/}
                                               <ActionButton icon={"add"} title={t("添加")} onClick={add_docs}/>
                                               <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                                   save_docs()
