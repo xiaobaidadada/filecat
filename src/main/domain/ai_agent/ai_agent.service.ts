@@ -214,7 +214,7 @@ export class Ai_agentService {
         this.init_search_docs_param()
         if (!this.have_ai_open()) return;
         if(process.env.run_env !== "exe") {
-            if(ai_agentService.docs_switch_get()) {
+            if(ai_agentService.have_ai_open()) {
                 download_ripgrep().then(r => {
 
                 }).catch(console.error);
