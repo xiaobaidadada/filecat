@@ -213,6 +213,13 @@ export class Ai_agentService {
         this.load_key()
         this.init_search_docs_param()
         if (!this.docs_switch_get()) return;
+        if(process.env.run_env !== "exe") {
+            if(ai_agentService.docs_switch_get()) {
+                download_ripgrep().then(r => {
+
+                }).catch(console.error);
+            }
+        }
         start_worker_threads()
         const body = {index_storage_type: config_search_doc.index_storage_type}
         if (config_search_doc.index_storage_type === 'sqlite') {
@@ -547,12 +554,4 @@ export class Ai_agentService {
 export const ai_agentService = new Ai_agentService();
 ServerEvent.on("start", (data) => {
     ai_agentService.init().catch(console.error);
-})
-
-ServerEvent.on("start",async =>{
-    if(process.env.run_env !== "exe") {
-        download_ripgrep().then(r => {
-
-        }).catch(console.error);
-    }
 })
