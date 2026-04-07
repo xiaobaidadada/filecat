@@ -1,6 +1,7 @@
 import {FileCompressType} from "../src/common/file.pojo";
 import {FileService} from "../src/main/domain/file/file.service";
 import {fileCompress} from "../src/main/domain/file/file.compress";
+import {download_ripgrep} from "../src/main/domain/bin/download-ripgrep";
 
 
 const fs = require('fs');
@@ -39,7 +40,12 @@ for (const file of fs.readdirSync(root_path)) {
     } catch (e) {
     }
 }
-// args[0] 会在 package.json 所在目录下
-fileCompress.compress("tar",9,args[0], filePaths, directorys,(v)=>{
-    console.log(`压缩进度:${v.toFixed(2)}`)
-},true)
+
+async function run() {
+    await download_ripgrep()
+    // args[0] 会在 package.json 所在目录下
+    await fileCompress.compress("tar",9,args[0], filePaths, directorys,(v)=>{
+        console.log(`压缩进度:${v.toFixed(2)}`)
+    },true)
+}
+run()

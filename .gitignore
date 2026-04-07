@@ -21,3 +21,4 @@ src/main/domain/bin/wintun*
 filecat-linux-x64.tar.gz
 env.local
 filecat-mac-arm.tar.gz
+/ripgrep/

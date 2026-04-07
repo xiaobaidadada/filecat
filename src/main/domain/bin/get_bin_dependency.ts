@@ -1,6 +1,4 @@
 
-
-
 export function get_bin_dependency(module:
                                        "@xiaobaidadada/dockerode"
                                        | "@xiaobaidadada/node-pty-prebuilt"

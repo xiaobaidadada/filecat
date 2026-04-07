@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-type files_type = 'threads.work.filecat.ts' | 'threads.work.filecat.js';
+type files_type = 'threads.work.filecat.ts' | 'threads.work.filecat.js'|"rg.exe"|"rg";
 
 export class BinFileUtil {
 

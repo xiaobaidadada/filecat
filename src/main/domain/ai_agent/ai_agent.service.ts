@@ -34,6 +34,7 @@ import {pinyin} from "pinyin-pro";
 import {hash_str_to_number} from "../../../common/node/value.util";
 import {ServerEvent} from "../../other/config";
 import {chat_core} from "./chat.core";
+import {download_ripgrep} from "../bin/download-ripgrep";
 
 const {
     cut,
@@ -546,4 +547,12 @@ export class Ai_agentService {
 export const ai_agentService = new Ai_agentService();
 ServerEvent.on("start", (data) => {
     ai_agentService.init().catch(console.error);
+})
+
+ServerEvent.on("start",async =>{
+    if(process.env.run_env === "npm") {
+        download_ripgrep().then(r => {
+
+        }).catch(console.error);
+    }
 })
