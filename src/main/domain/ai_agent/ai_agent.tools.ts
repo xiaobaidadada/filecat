@@ -86,7 +86,7 @@ export const Ai_agentTools = {
             updated: true
         });
     },
-    // 执行命令
+    // 执行命令 todo 更多执行参数
     exec_cmd: async ({cmd,cwd}: { cmd: string,cwd:string }) => {
         return SystemUtil.execAsync(cmd,cwd)
     },

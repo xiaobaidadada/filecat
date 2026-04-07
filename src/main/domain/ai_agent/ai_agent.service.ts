@@ -488,6 +488,7 @@ export class Ai_agentService {
     }
 
     /**
+     * todo 把记忆当作知识库 每次会话都会保存一个 记忆列表并给出概要 让ai自己根据需求 去搜索多个概要 并可以创建子目录 子归类
      * 对话每一次都需要把之前全部的message填充过去，所以对话越长，每一次对话的时候消耗的token越多
      * todo 添加记忆能力，每一次对话都不断的让ai总结之前的聊天内容，节省token，现在可以通过让AI返回的时候内容尽量简洁一点，从而节省一点token
      * @param originMessages
