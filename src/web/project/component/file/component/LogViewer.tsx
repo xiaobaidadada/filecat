@@ -181,9 +181,9 @@ export default function LogViewer(props) {
             const element = shellRef.current;
             if (element) {
 
-                if (last_position > element.scrollTop) {
-                    cancel_watch(); // 往上滑就取消实时监听
-                }
+                // if (last_position > element.scrollTop) {
+                //     cancel_watch(); // 往上滑就取消实时监听
+                // }
                 // 检测是否滚动到底部
                 if (open_watch) {
                     last_position = element.scrollTop;
@@ -448,7 +448,10 @@ export default function LogViewer(props) {
                     }}/>
                 ]}>
             <span style={{paddingRight:".5rem"}}>{shellShow.encoding}</span>
-            {tip && <span style={{color: 'var(--icon-green)', whiteSpace: 'pre'}}>正在实时监听   </span>}
+            {tip && <>
+                <span style={{color: 'var(--icon-green)', whiteSpace: 'pre'}}>正在实时监听   </span>
+                <ActionButton icon={"close"} title={t("关闭实时")} onClick={cancel_watch}/>
+            </>}
             <span>当前加载进度{progress}</span>
             <InputTextIcon max_width={"10rem"} placeholder={t('跳转进度')} icon={"percent"} value={go_progress}
                            handleInputChange={(v) => {
