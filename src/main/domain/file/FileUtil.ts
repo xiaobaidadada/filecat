@@ -49,8 +49,8 @@ export class FileUtil {
         return fs.promises.appendFile(path,data,options)
     }
 
-    static async writeFileSync(path: string,data: string | Uint8Array) {
-        return fs.promises.writeFile(path,data)
+    static async writeFileSync(path: string,data: string | Uint8Array,options?:any) {
+        return fs.promises.writeFile(path,data,options)
     }
 
 
