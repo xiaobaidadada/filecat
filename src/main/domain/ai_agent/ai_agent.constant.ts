@@ -60,23 +60,76 @@ export const ai_tools = [
         function: {
             name: "edit_file",
             description: `
-编辑文件工具，支持多种模式：
+编辑文件工具，支持五种模式：
 
-- overwrite: 全量覆盖
-- append: 追加内容
-- diff: 使用 unified diff（git patch格式）修改文件
+- overwrite: 全量覆盖文件
+- replace: 局部字符串替换
+- append: 文件末尾追加
+- insert: 在指定行后插入内容
+- delete: 删除指定行范围（推荐用于清理代码）
         `,
             parameters: {
                 type: "object",
                 properties: {
                     path: { type: "string" },
+
                     action: {
                         type: "string",
-                        enum: ["overwrite", "append", "diff"]
+                        enum: ["overwrite", "replace", "append", "insert", "delete"]
                     },
+
                     content: {
-                        type: "string",
-                        description: "diff 模式时为 unified diff"
+                        description: `
+replace:
+  { find, replace } | array
+
+insert:
+  { line: number, content: string | string[] }
+
+delete:
+  { start: number, end: number }
+                    `,
+                        oneOf: [
+                            { type: "string" },
+
+                            {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        find: { type: "string" },
+                                        replace: { type: "string" }
+                                    },
+                                    required: ["find", "replace"]
+                                }
+                            },
+
+                            {
+                                type: "object",
+                                properties: {
+                                    line: { type: "number" },
+                                    content: {
+                                        oneOf: [
+                                            { type: "string" },
+                                            {
+                                                type: "array",
+                                                items: { type: "string" }
+                                            }
+                                        ]
+                                    }
+                                },
+                                required: ["line", "content"]
+                            },
+
+                            {
+                                type: "object",
+                                properties: {
+                                    start: { type: "number" },
+                                    end: { type: "number" }
+                                },
+                                required: ["start", "end"]
+                            }
+                        ]
                     }
                 },
                 required: ["path", "action"]

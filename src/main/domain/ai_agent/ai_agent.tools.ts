@@ -5,7 +5,7 @@ import {SystemUtil} from "../sys/sys.utl";
 import {ai_agentService} from "./ai_agent.service";
 import fg from "fast-glob";
 import needle from "needle";
-import { parsePatch, applyPatch } from "diff";import {BinFileUtil} from "../bin/bin.file.util";
+import {BinFileUtil} from "../bin/bin.file.util";
 import {RG_PATH} from "../bin/download-ripgrep";
 
 export const Ai_agentTools = {
@@ -26,35 +26,10 @@ export const Ai_agentTools = {
                           content,
                       }: any) => {
 
-        let newContent: string | null = null;
-
         switch (action) {
 
             // =========================
-            // 1️⃣ diff 模式（需要读文件）
-            // =========================
-            case "diff": {
-                if (!content) throw new Error("diff content required");
-
-                const fileContent = await readFile(path, "utf-8");
-
-                // const result = applyPatch(fileContent, content);
-                //
-                const patches = parsePatch(content);
-
-                const result = applyPatch(fileContent, patches[0]);
-
-                if (result === false) {
-                    throw new Error("Failed to apply diff (patch rejected)");
-                }
-
-                newContent = result;
-                await writeFile(path, newContent, "utf-8");
-                break;
-            }
-
-            // =========================
-            // 2️⃣ overwrite（需要读文件逻辑可选，这里直接写）
+            // 1️⃣ overwrite（全量写入）
             // =========================
             case "overwrite": {
                 if (typeof content !== "string") {
@@ -62,11 +37,50 @@ export const Ai_agentTools = {
                 }
 
                 await writeFile(path, content, "utf-8");
-                break;
+
+                return JSON.stringify({
+                    ok: true,
+                    action,
+                    path,
+                    updated: true
+                });
             }
 
             // =========================
-            // 3️⃣ append（🔥不读文件）
+            // 2️⃣ replace（🔥核心新增）
+            // =========================
+            case "replace": {
+                let fileContent = await readFile(path, "utf-8");
+
+                const ops = Array.isArray(content)
+                    ? content
+                    : [content];
+
+                for (const op of ops) {
+                    if (!op?.find) {
+                        throw new Error("replace missing 'find'");
+                    }
+
+                    if (typeof op.find !== "string") {
+                        throw new Error("find must be string");
+                    }
+
+                    fileContent = fileContent.replace(op.find, op.replace ?? "");
+                }
+
+                await writeFile(path, fileContent, "utf-8");
+
+                return JSON.stringify({
+                    ok: true,
+                    action,
+                    path,
+                    updated: true,
+                    ops: ops.length
+                });
+            }
+
+            // =========================
+            // 3️⃣ append（追加）
             // =========================
             case "append": {
                 if (typeof content !== "string") {
@@ -74,22 +88,84 @@ export const Ai_agentTools = {
                 }
 
                 await appendFile(path, "\n" + content, "utf-8");
-                break;
+
+                return JSON.stringify({
+                    ok: true,
+                    action,
+                    path,
+                    updated: true
+                });
+            }
+
+            case "insert": {
+                let fileContent = await readFile(path, "utf-8");
+
+                const lines = fileContent.split("\n");
+
+                const { line, content: insertContent } = content;
+
+                if (typeof line !== "number") {
+                    throw new Error("insert requires line number");
+                }
+
+                const insertLines = Array.isArray(insertContent)
+                    ? insertContent
+                    : [insertContent];
+
+                lines.splice(line + 1, 0, ...insertLines);
+
+                const newContent = lines.join("\n");
+
+                await writeFile(path, newContent, "utf-8");
+
+                return JSON.stringify({
+                    ok: true,
+                    action,
+                    path,
+                    updated: true,
+                    insertedAt: line,
+                    lines: insertLines.length
+                });
+            }
+
+            case "delete": {
+                let fileContent = await readFile(path, "utf-8");
+
+                const lines = fileContent.split("\n");
+
+                const { start, end } = content;
+
+                if (typeof start !== "number" || typeof end !== "number") {
+                    throw new Error("delete requires start & end line numbers");
+                }
+
+                if (start < 0 || end >= lines.length || start > end) {
+                    throw new Error("invalid line range");
+                }
+
+                // 删除区间（包含 start 和 end）
+                lines.splice(start, end - start + 1);
+
+                const newContent = lines.join("\n");
+
+                await writeFile(path, newContent, "utf-8");
+
+                return JSON.stringify({
+                    ok: true,
+                    action,
+                    path,
+                    updated: true,
+                    deleted: {
+                        start,
+                        end,
+                        count: end - start + 1
+                    }
+                });
             }
 
             default:
                 throw new Error(`Unknown action: ${action}`);
         }
-
-        // =========================
-        // 🚀 统一返回（不返回文件内容）
-        // =========================
-        return JSON.stringify({
-            ok: true,
-            action,
-            path,
-            updated: true
-        });
     },
     // 执行命令 todo 更多执行参数
     exec_cmd: async ({cmd,cwd}: { cmd: string,cwd:string }) => {
@@ -329,7 +405,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     edit_file: {
         get_name:()=> "编辑文件",
         get_params:(args)=>{
-            return ` ${args.path} ${args.action} 内容：${args.content}`
+            return ` ${args.path} ${args.action} 内容：${typeof args.content === "string"?args.content:JSON.stringify(args.content)}`
         }
     },
     exec_cmd: {

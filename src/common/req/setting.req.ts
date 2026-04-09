@@ -102,17 +102,17 @@ index_storage_type=memory
 `
 
 export class ai_agent_item_dotenv {
-    tool_error_max = 1 ; // 工具报错最大尝试次数
-    tool_call_max = 5; // 聊天循环最大次数
+    tool_error_max = 50 ; // 工具报错最大尝试次数
+    tool_call_max = 300; // 聊天循环最大次数
     char_max = 12000; // 单轮请求字符最大数量，多了会截断
     messages_show_max = 100; // 聊天消息最多展示多少条
     messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
 }
 export const ai_agent_item_dotenv_default = `
 # 工具报错最大尝试次数
-tool_error_max=1
+tool_error_max=50
 # 聊天循环最大次数
-tool_call_max=5
+tool_call_max=300
 # 单轮请求字符最大数量，多了会截断前面的
 char_max=12000
 # 聊天消息最多展示多少条
