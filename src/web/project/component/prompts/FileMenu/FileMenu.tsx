@@ -64,7 +64,7 @@ export function FileMenu() {
             r: t("分享"), v: common_menu_type.share_file
         })
     }
-    if(user_base_info.sys_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
+    if(user_base_info.docs_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
         must_needs.push({
             r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file,
             items:[

@@ -43,7 +43,7 @@ const docs_tip = `
 export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
-    const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
+    const {initUserInfo,} = useContext(GlobalContext);
     const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
 
@@ -256,10 +256,11 @@ export default function AIAgentChatSetting() {
                                           titleCom={<div>
 
                                               <Switch checked={index_switch} onChange={async (v)=>{
-                                                  ai_agentHttp.post("docs_on_set", {
+                                                  await ai_agentHttp.post("docs_on_set", {
                                                       status: v
                                                   });
                                                   load_index_switch()
+                                                  initUserInfo()
                                               }} title={t("知识库开关")}/>
 
                                               <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {

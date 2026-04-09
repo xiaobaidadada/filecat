@@ -153,14 +153,14 @@ export class Ai_agentService {
     }
 
     private init_search_docs_param() {
-        if (!this.have_ai_open()) return;
+        // if (!this.docs_switch_get()) return;
         const setting = settingService.ai_docs_setting()
         Env.load(setting.param, config_search_doc);
         // console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
     async load_one_file(token: string, param_path: string) {
-        if (!this.have_ai_open()) return;
+        if (!this.docs_switch_get()) return;
         const root_path = settingService.getFileRootPath(token);
         let sysPath = decodeURIComponent(param_path)
         if (isAbsolutePath(sysPath)) {
@@ -209,10 +209,7 @@ export class Ai_agentService {
     }
 
     async init() {
-        await ThreadsFilecat.close()
         this.load_key()
-        this.init_search_docs_param()
-        if (!this.have_ai_open()) return;
         if(process.env.run_env !== "exe") {
             if(ai_agentService.have_ai_open()) {
                 download_ripgrep().then(r => {
@@ -220,6 +217,9 @@ export class Ai_agentService {
                 }).catch(console.error);
             }
         }
+        await ThreadsFilecat.close()
+        this.init_search_docs_param()
+        if (!this.docs_switch_get()) return;
         start_worker_threads()
         const body = {index_storage_type: config_search_doc.index_storage_type}
         if (config_search_doc.index_storage_type === 'sqlite') {
@@ -231,7 +231,7 @@ export class Ai_agentService {
 
     // 加载文件 进入索引
     private async load_search_docs(target_list?: ai_docs_item[]) {
-        if (!this.have_ai_open()) return;
+        if (!this.docs_switch_get()) return;
         const now = Date.now();
 
         // const is_one_load = target_list != null;

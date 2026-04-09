@@ -107,6 +107,7 @@ export class UserController {
         pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
         // pojo.watch = Env.watch
         pojo.sys_ai_is_open = ai_agentService.have_ai_open()
+        pojo.docs_ai_is_open = ai_agentService.docs_switch_get()
         pojo.latest_version = process.env.version !== this.latest_version?this.latest_version: process.env.version;
         pojo.process_env_run_env = process.env.run_env as string
         if(Date.now() - this.latest_count_time > 3000) {

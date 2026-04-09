@@ -1,5 +1,5 @@
 import {fork, spawn} from 'child_process';
-import readline from 'readline';
+// import readline from 'readline';
 import * as path from "path"
 import {FatherProcessUtil, filecat_cmd} from "../common/node/childProcessUtil";
 import {fileCompress} from "./domain/file/file.compress";

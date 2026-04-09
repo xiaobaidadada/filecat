@@ -29,6 +29,7 @@ export class UserBaseInfo {
     // watch:boolean
     latest_version?:string;
     sys_ai_is_open:boolean;
+    docs_ai_is_open:boolean;
 
     process_env_run_env:string | "exe"|"npm"
 
