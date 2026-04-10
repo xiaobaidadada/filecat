@@ -13,6 +13,7 @@ export class filecat_upgrade_class {
 
     exit:() => void;
     print:(str:string)=>void;
+    pty:PtyShell
 
     kill() {
 
@@ -34,6 +35,7 @@ export class filecat_upgrade_class {
         };
         this.print = print;
         this.params = params
+        this.pty = pty;
     }
 
 
@@ -75,7 +77,8 @@ export class filecat_upgrade_class {
                 this.print("开始下载文件\r\n")
                 download_url = await ChildProcessUtil.down_load_file(download_url,DataUtil.get_tem_path(data_dir_tem_name.filecat_upgrade_dir),(num)=>{
                     // this.print(`\r\x1b[K下载进度: ${num}%`);
-                    this.print(ShellUtil.render_progress(num))
+                    this.pty.on_call(ShellUtil.render_progress(num))
+                    // this.print(ShellUtil.render_progress(num))
                 })
             }
             this.print("\n\r下载完成，开始解压...")
