@@ -222,14 +222,21 @@ export class FileCompress extends LifecycleRecordService {
 
         let last = 0;
 
-        archive.on("progress", (data: any) => {
-            const p = data?.fs;
+        archive.on("progress", (data) => {
+            const p = data.fs;
 
             if (p?.processedBytes && p?.totalBytes) {
-                const percent = Math.min(
-                    99,
-                    Math.floor((p.processedBytes / p.totalBytes) * 100)
-                );
+                let percent = Math.floor((p.processedBytes / p.totalBytes) * 80); // 只占80%
+
+                // 再加上输出进度
+                const written = archive.pointer();
+                const total = p.totalBytes;
+
+                if (written && total) {
+                    percent += Math.floor((written / total) * 20);
+                }
+
+                percent = Math.min(99, percent);
 
                 if (percent !== last) {
                     last = percent;
