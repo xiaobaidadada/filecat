@@ -462,7 +462,6 @@ export class VirtualClientService  {
     private tcp_proxy: TcpProxy;
 
     public save_tcp_proxy(req: TcpProxyITem[]) {
-        DataUtil.set(data_common_key.tcp_proxy_key, req);
         this.restart_tcp_proxy(req);
     }
 

@@ -190,6 +190,7 @@ export function InputPassword(props: {
     handleEnterPress?: () => void,
     maxWidth?: string,
     width?: string,
+    value?: any,
 }) {
     return Input({
         placeholder: props.placeholder,
@@ -198,6 +199,7 @@ export function InputPassword(props: {
         handlerEnter: props.handleEnterPress,
         maxWidth: props.maxWidth,
         width: props.width,
+        value: props.value,
     });
 }
 

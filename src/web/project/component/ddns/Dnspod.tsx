@@ -3,7 +3,7 @@ import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/D
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";
-import {InputRadio, InputText} from "../../../meta/component/Input";
+import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
 import {ddnsHttp,} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type} from "../../../../common/req/ddns.pojo";
@@ -149,7 +149,7 @@ export function Dnspod(props: any) {
                     <InputText placeholder={"ID"} value={id} handleInputChange={(d) => {
                         setId(d)
                     }}/>
-                    <InputText placeholder={"TOKEN"} value={token} handleInputChange={(d) => {
+                    <InputPassword placeholder={"TOKEN"} value={token} handleInputChange={(d) => {
                         setToken(d)
                     }}/>
                     <Rows isFlex={true} columns={[

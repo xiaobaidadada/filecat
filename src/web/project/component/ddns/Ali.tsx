@@ -3,7 +3,7 @@ import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/D
 import {Card} from "../../../meta/component/Card";
 import {ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";
-import {InputRadio, InputText} from "../../../meta/component/Input";
+import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
 import {ddnsHttp,} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../common/req/ddns.pojo";
@@ -103,7 +103,7 @@ export function Ali(props: any) {
             <Column>
                 <Card title={"账号设置"} rightBottomCom={<ButtonText text={'保存'} clickFun={save}/>}>
                     <InputText placeholder={"accesskey_id"} value={accesskey_id} handleInputChange={(d)=>{setAccesskey_id(d)}}/>
-                    <InputText placeholder={"accesskey_secret"} value={accesskey_secret} handleInputChange={(d)=>{setAccesskey_secret(d)}}/>
+                    <InputPassword placeholder={"accesskey_secret"} value={accesskey_secret} handleInputChange={(d)=>{setAccesskey_secret(d)}}/>
                     <Rows isFlex={true} columns={[
                         <InputRadio value={1} context={"开启"} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
                         <InputRadio value={1} context={"关闭"} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>

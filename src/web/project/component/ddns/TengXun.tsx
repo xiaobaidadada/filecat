@@ -3,7 +3,7 @@ import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/D
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";
-import {InputRadio, InputText} from "../../../meta/component/Input";
+import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
 import {ddnsHttp,} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type, Tengxun} from "../../../../common/req/ddns.pojo";
@@ -137,7 +137,7 @@ export function TengXun(props: any) {
             <Column>
                 <Card title={t("账号设置")} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>
                     <InputText placeholder={"SecretId"} value={secretid} handleInputChange={(d)=>{setSecretid(d)}}/>
-                    <InputText placeholder={"SecretKey"} value={secretkey} handleInputChange={(d)=>{setSecretkey(d)}}/>
+                    <InputPassword placeholder={"SecretKey"} value={secretkey} handleInputChange={(d)=>{setSecretkey(d)}}/>
                     <Rows isFlex={true} columns={[
                         <InputRadio value={1} context={t("开启")} selected={isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>,
                         <InputRadio value={1} context={t("关闭")} selected={!isOpen}  onchange={()=>{setIsOpen(!isOpen)}}/>

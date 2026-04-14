@@ -112,6 +112,7 @@ export class NetController {
     @Post('/vir/client/tcp_proxy/save')
     tcp_proxy_save(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        DataUtil.set(data_common_key.tcp_proxy_key, req);
         setTimeout(()=>{
             // 避免当前使用的端口被占用，先回复函数成功
             virtualClientService.save_tcp_proxy(req)
