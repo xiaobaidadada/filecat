@@ -46,6 +46,7 @@ export class ChatCore {
                 break;
 
             case "edit_file":
+            case "create_fs_entry":
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }
@@ -192,7 +193,7 @@ ${sys_prompt ?? ''}
 
                             if (!toolCallMap.has(idx)) {
                                 if(tc.function.name) {
-                                    on_msg(`\n${`等待 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
+                                    on_msg(`\n${`ai正在补充 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
                                 }
                                 toolCallMap.set(idx, {
                                     id: tc.id,

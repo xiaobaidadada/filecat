@@ -122,15 +122,15 @@ function Input(props: {
                 width: props.width,
                 maxWidth: props.maxWidth
             }}>
-                {props.left_placeholder && <div style={{
-                    "paddingRight": ".3rem",
-                    width: "auto",
-                    whiteSpace: "nowrap",
-                }}>
+                {props.left_placeholder &&<div style={{ flex: "0 0 auto" }}>
                     {props.left_placeholder}
                 </div>}
 
                 <input
+                    style={{
+                        flex: 1,
+                        minWidth: 0   // ⭐防止溢出（很重要）
+                    }}
                     onClick={(event) => {
                         event.stopPropagation();
                     }}
@@ -154,11 +154,7 @@ function Input(props: {
                     value={value}
                     ref={inputRef}
                 />
-                {props.right_placeholder && <div style={{
-                    "paddingLeft": ".3rem",
-                    width: "auto",
-                    whiteSpace: "nowrap",
-                }}>
+                {props.right_placeholder &&  <div style={{ flex: "0 0 auto" }}>
                     {props.right_placeholder}
                 </div>}
 

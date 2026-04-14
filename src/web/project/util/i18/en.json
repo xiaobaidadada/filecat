@@ -376,5 +376,7 @@
   "剩余时间": "Remaining Time",
   "文件加载方式": "File Loading Mode",
   "全部加载文件": "Load All Files",
-  "分页滚动加载文件": "Load Files with Infinite Scroll"
+  "分页滚动加载文件": "Load Files with Infinite Scroll",
+  "网络代理": "Network Proxy"
 }
+

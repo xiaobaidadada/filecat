@@ -1,4 +1,4 @@
-import {readFile, writeFile, readdir, appendFile} from 'fs/promises';
+import {readFile, writeFile, readdir, appendFile,mkdir} from 'fs/promises';
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SystemUtil} from "../sys/sys.utl";
@@ -7,6 +7,7 @@ import fg from "fast-glob";
 import needle from "needle";
 import {BinFileUtil} from "../bin/bin.file.util";
 import {RG_PATH} from "../bin/download-ripgrep";
+import {FileUtil} from "../file/FileUtil";
 
 export const Ai_agentTools = {
     // 读取文件
@@ -20,92 +21,93 @@ export const Ai_agentTools = {
         return  `${path}下的文件列表为: ${files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n')}`;
     },
     // 修改文件
-    edit_file: async ({
-                          path,
-                          action,
-                          content,
-                      }: any) => {
+    edit_file: async ({ path, action, content }: any) => {
+        // =========================
+        // 0️⃣ ensure file exists
+        // =========================
+        const exists = await FileUtil.access(path);
+        if (!exists) {
+            await writeFile(path, "", "utf-8");
+        }
 
         switch (action) {
 
             // =========================
-            // 1️⃣ overwrite（全量写入）
+            // 1️⃣ overwrite
             // =========================
             case "overwrite": {
                 if (typeof content !== "string") {
-                    throw new Error("content required");
+                    throw new Error("overwrite requires string content");
                 }
 
                 await writeFile(path, content, "utf-8");
 
-                return JSON.stringify({
+                return {
                     ok: true,
                     action,
                     path,
                     updated: true
-                });
+                };
             }
 
             // =========================
-            // 2️⃣ replace（🔥核心新增）
+            // 2️⃣ replace
             // =========================
             case "replace": {
                 let fileContent = await readFile(path, "utf-8");
 
-                const ops = Array.isArray(content)
-                    ? content
-                    : [content];
+                const ops = Array.isArray(content) ? content : [content];
 
                 for (const op of ops) {
-                    if (!op?.find) {
-                        throw new Error("replace missing 'find'");
+                    if (!op || typeof op.find !== "string") {
+                        throw new Error("replace requires {find: string}");
                     }
 
-                    if (typeof op.find !== "string") {
-                        throw new Error("find must be string");
-                    }
+                    const replaceValue = typeof op.replace === "string" ? op.replace : "";
 
-                    fileContent = fileContent.replace(op.find, op.replace ?? "");
+                    fileContent = fileContent.replaceAll(op.find, replaceValue);
                 }
 
                 await writeFile(path, fileContent, "utf-8");
 
-                return JSON.stringify({
+                return {
                     ok: true,
                     action,
                     path,
                     updated: true,
                     ops: ops.length
-                });
+                };
             }
 
             // =========================
-            // 3️⃣ append（追加）
+            // 3️⃣ append
             // =========================
             case "append": {
                 if (typeof content !== "string") {
-                    throw new Error("content required");
+                    throw new Error("append requires string content");
                 }
 
-                await appendFile(path, "\n" + content, "utf-8");
+                await appendFile(path, `\n${content}`, "utf-8");
 
-                return JSON.stringify({
+                return {
                     ok: true,
                     action,
                     path,
                     updated: true
-                });
+                };
             }
 
+            // =========================
+            // 4️⃣ insert
+            // =========================
             case "insert": {
-                let fileContent = await readFile(path, "utf-8");
-
-                const lines = fileContent.split("\n");
+                const fileContent = await readFile(path, "utf-8");
+                const lines = fileContent ? fileContent.split("\n") : [];
 
                 const { line, content: insertContent } = content;
 
-                if (typeof line !== "number") {
-                    throw new Error("insert requires line number");
+                if (typeof line !== "number" || Number.isNaN(line)) {
+                    throw new Error("insert requires valid line number");
                 }
 
                 const insertLines = Array.isArray(insertContent)
@@ -114,53 +116,52 @@ export const Ai_agentTools = {
 
                 lines.splice(line + 1, 0, ...insertLines);
 
-                const newContent = lines.join("\n");
+                await writeFile(path, lines.join("\n"), "utf-8");
 
-                await writeFile(path, newContent, "utf-8");
-
-                return JSON.stringify({
+                return {
                     ok: true,
                     action,
                     path,
                     updated: true,
                     insertedAt: line,
                     lines: insertLines.length
-                });
+                };
             }
 
+            // =========================
+            // 5️⃣ delete
+            // =========================
             case "delete": {
-                let fileContent = await readFile(path, "utf-8");
-
-                const lines = fileContent.split("\n");
+                const fileContent = await readFile(path, "utf-8");
+                const lines = fileContent ? fileContent.split("\n") : [];
 
                 const { start, end } = content;
 
-                if (typeof start !== "number" || typeof end !== "number") {
-                    throw new Error("delete requires start & end line numbers");
+                if (
+                    typeof start !== "number" ||
+                    typeof end !== "number" ||
+                    Number.isNaN(start) ||
+                    Number.isNaN(end)
+                ) {
+                    throw new Error("delete requires valid start/end");
                 }
 
-                if (start < 0 || end >= lines.length || start > end) {
+                if (start < 0 || end > lines.length - 1 || start > end) {
                     throw new Error("invalid line range");
                 }
 
-                // 删除区间（包含 start 和 end）
-                lines.splice(start, end - start + 1);
+                const deletedCount = end - start + 1;
+                lines.splice(start, deletedCount);
 
-                const newContent = lines.join("\n");
+                await writeFile(path, lines.join("\n"), "utf-8");
 
-                await writeFile(path, newContent, "utf-8");
-
-                return JSON.stringify({
+                return {
                     ok: true,
                     action,
                     path,
                     updated: true,
-                    deleted: {
-                        start,
-                        end,
-                        count: end - start + 1
-                    }
-                });
+                    deleted: { start, end, count: deletedCount }
+                };
             }
 
             default:
@@ -394,6 +395,55 @@ export const Ai_agentTools = {
             results
         }, null, 2)
     },
+    create_fs_entry: async ({
+                                path,
+                                type = "file",
+                                content = "",
+                                recursive = true
+                            }: {
+        path: string;
+        type?: "file" | "dir";
+        content?: string;
+        recursive?: boolean;
+    }) => {
+
+        // =========================
+        // 📁 创建目录
+        // =========================
+        if (type === "dir") {
+            await mkdir(path, { recursive });
+            return {
+                ok: true,
+                type,
+                path,
+                created: true
+            };
+        }
+
+        // =========================
+        // 📄 创建文件
+        // =========================
+        if (type === "file") {
+
+            // 自动创建父目录（避免 writeFile 报错）
+            const dir = path.substring(0, path.lastIndexOf("/"));
+            if (dir) {
+                await mkdir(dir, { recursive: true });
+            }
+
+            await writeFile(path, content ?? "", "utf-8");
+
+            return {
+                ok: true,
+                type,
+                path,
+                created: true,
+                hasContent: !!content
+            };
+        }
+
+        throw new Error("invalid type: must be file or dir");
+    },
 }
 
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;
@@ -440,6 +490,12 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     },
     search_in_files: {
         get_name:()=>"搜索文件内容",
+        get_params:(args)=>{
+            return `路径： ${args.path}`
+        }
+    },
+    create_fs_entry:{
+        get_name:()=>"创建文件/目录",
         get_params:(args)=>{
             return `路径： ${args.path}`
         }

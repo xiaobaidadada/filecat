@@ -378,5 +378,7 @@
   "剩余时间": "Verbleibende Zeit",
   "文件加载方式": "Dateilademodus",
   "全部加载文件": "Alle Dateien laden",
-  "分页滚动加载文件": "Dateien seitenweise beim Scrollen laden"
+  "分页滚动加载文件": "Dateien seitenweise beim Scrollen laden",
+  "网络代理":"Netzwerkproxy"
 }
+

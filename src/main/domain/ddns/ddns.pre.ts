@@ -7,8 +7,8 @@ import {parse} from "tldts";
 import {data_common_key} from "../data/data_type";
 const os = require('os');
 
-const wwwIpv4 = "https://4.ipw.cn";
-const wwwIpv6 = "https://6.ipw.cn";
+// const wwwIpv4 = "https://4.ipw.cn";
+// const wwwIpv6 = "https://6.ipw.cn";
 
 let getIpsCurrentStamp = null; // 上次查询Ip时间
 let cacheIps:DdnsIPPojo[] = []; // 缓存ip

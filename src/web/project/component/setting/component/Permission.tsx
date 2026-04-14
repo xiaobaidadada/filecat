@@ -42,7 +42,7 @@ export function Permission(props:{
         {
             title: t("网络功能权限"),
             list: [
-                { title: t("系统网络"), permission: UserAuth.vir_net },
+                { title: t("网络代理"), permission: UserAuth.vir_net },
                 { title: "ddns", permission: UserAuth.ddns }
             ]
         },

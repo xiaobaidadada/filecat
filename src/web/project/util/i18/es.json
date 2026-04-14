@@ -378,5 +378,7 @@
   "剩余时间": "Tiempo restante",
   "文件加载方式": "Modo de carga de archivos",
   "全部加载文件": "Cargar todos los archivos",
-  "分页滚动加载文件": "Cargar archivos con desplazamiento paginado"
+  "分页滚动加载文件": "Cargar archivos con desplazamiento paginado",
+  "网络代理": "Proxy de red"
 }
+

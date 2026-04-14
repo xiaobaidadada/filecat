@@ -61,17 +61,14 @@ export const ai_tools = [
             name: "edit_file",
             description: `
 编辑文件工具，支持五种模式：
-
-- overwrite: 全量覆盖文件
-- replace: 局部字符串替换
-- append: 文件末尾追加
-- insert: 在指定行后插入内容
-- delete: 删除指定行范围（推荐用于清理代码）
-        `,
+overwrite / replace / append / insert / delete
+    `,
             parameters: {
                 type: "object",
                 properties: {
-                    path: { type: "string" },
+                    path: {
+                        type: "string"
+                    },
 
                     action: {
                         type: "string",
@@ -79,20 +76,14 @@ export const ai_tools = [
                     },
 
                     content: {
-                        description: `
-replace:
-  { find, replace } | array
-
-insert:
-  { line: number, content: string | string[] }
-
-delete:
-  { start: number, end: number }
-                    `,
                         oneOf: [
-                            { type: "string" },
+                            {
+                                description: "overwrite / append",
+                                type: "string"
+                            },
 
                             {
+                                description: "replace operations",
                                 type: "array",
                                 items: {
                                     type: "object",
@@ -100,11 +91,12 @@ delete:
                                         find: { type: "string" },
                                         replace: { type: "string" }
                                     },
-                                    required: ["find", "replace"]
+                                    required: ["find"]
                                 }
                             },
 
                             {
+                                description: "insert",
                                 type: "object",
                                 properties: {
                                     line: { type: "number" },
@@ -122,6 +114,7 @@ delete:
                             },
 
                             {
+                                description: "delete",
                                 type: "object",
                                 properties: {
                                     start: { type: "number" },
@@ -234,6 +227,35 @@ delete:
                 required: ["pattern"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "create_fs_entry",
+            description: "创建文件或目录，支持初始化文件内容和递归创建目录",
+            parameters: {
+                type: "object",
+                properties: {
+                    path: {
+                        type: "string",
+                        description: "文件或目录路径"
+                    },
+                    type: {
+                        type: "string",
+                        enum: ["file", "dir"],
+                        description: "创建类型：file=文件，dir=目录"
+                    },
+                    content: {
+                        type: "string",
+                        description: "文件初始内容，仅在 type=file 时生效"
+                    },
+                    recursive: {
+                        type: "boolean",
+                        description: "是否递归创建目录，仅在 type=dir 时生效，默认 true"
+                    }
+                },
+                required: ["path", "type"]
+            }
+        }
     }
-
 ];

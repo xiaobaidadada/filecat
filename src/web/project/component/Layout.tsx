@@ -68,7 +68,7 @@ function Layout() {
         // {component:(<div>测试</div>)}
     ]
     if (check_user_auth(UserAuth.vir_net)) {
-        three = [{icon: "vpn_lock", name: t("系统网络"), rto: `${routerConfig.net}/`}, ...three];
+        three = [{icon: "vpn_lock", name: t("网络代理"), rto: `${routerConfig.net}/`}, ...three];
     }
     const main_list:NavItem[] = [
             {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
