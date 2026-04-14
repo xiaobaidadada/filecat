@@ -173,7 +173,7 @@ export class NetController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         const key = req.key;
         const context = DataUtil.getFile(`data_common_key.proxy_server_code_prefix_${key}`, data_dir_tem_name.http_proxy_server_dir);
-        const pre = JSON.stringify([http_proxy_item_sample])
+        const pre = `(() => { return ${JSON.stringify([http_proxy_item_sample])} })()`
         if (!context) {
             DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${req.name}`, pre, data_dir_tem_name.http_proxy_server_dir);
         }
