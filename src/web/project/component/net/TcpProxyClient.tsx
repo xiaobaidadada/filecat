@@ -55,7 +55,7 @@ export function TcpProxyClient(props) {
             const r = await ws.send(data);
             if(r.code !== RCode.Success)  return
             const state = r.context.status;
-            console.log(r)
+            // console.log(r)
             set_connet_state(state);
             ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
                 set_connet_state(data.context.status);

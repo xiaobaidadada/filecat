@@ -18,6 +18,7 @@ import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {TcpForwardUtil} from "./tcp.forward.util";
+import {Wss} from "../../../common/frame/ws.server";
 
 const  tcp_client_target_map = {}
 
@@ -69,6 +70,7 @@ export class TcpForwardController {
         tcp_forward_client_service.close_client()
         tcp_forward_client_service.client_fig_save(data)
         await tcp_forward_client_service.client_init_to_server()
+        tcp_forward_client_service.push_client_status()
         return Sucess({})
     }
 
@@ -147,9 +149,11 @@ export class TcpForwardController {
         info.client_util = util
         await tcpForwardService.add_client(info)
         util.data_map[client_num_id_key] = info.client_num_id
+        Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
         util.on_close(() => {
             console.log(`客户端离线 ${info.client_name}`)
             tcpForwardService.delete_client(util,info.client_num_id)
+            Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
             // delete util.data_map[client_num_id_key]
             // delete util.data_map[server_key]
         })

@@ -3,17 +3,16 @@ import {NetMsgType, NetUtil, tcp_server_type} from "./util/NetUtil";
 import {server_item_type, server_type, tcp_forward_client_type} from "./type";
 import net from "net";
 import {ServerEvent} from "../../other/config";
-import {NetClientUtil} from "./util/NetClientUtil";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {
-    server_client_proxy, tcp_proxy_bridge_fig_item,
-    tcp_proxy_client_fig,
+    server_client_proxy,
+    tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
     tcp_proxy_server_config
 } from "../../../common/req/common.pojo";
-import {CmdType, WsData} from "../../../common/frame/WsData";
+import {CmdType} from "../../../common/frame/WsData";
 import {Wss} from "../../../common/frame/ws.server";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {tcp_raw_socket} from "./util/tcp.client";
@@ -71,6 +70,7 @@ export class TcpForwardServerService {
                 proxy_port: server.proxy_fig.proxy_port,
                 client_name: server.fig.client_name,
                 server_port_note: server.proxy_fig.note,
+                open_success: !!server.server
             })
         }
         return list
@@ -189,6 +189,7 @@ export class TcpForwardServerService {
             console.log(`关闭tcp服务器 ${proxy_fig.server_port}`)
         })
         this.all_server_port_map[proxy_fig.server_port] = server_item
+        Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
         server.listen(proxy_fig.server_port, () => {
             console.log(`TCP 转发服务器 代理: ${proxy_fig.server_port}`);
         });
