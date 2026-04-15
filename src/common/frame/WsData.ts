@@ -121,6 +121,8 @@ export enum CmdType {
 
     ai_load_info ,
 
+    tcp_forward_server_load,
+
 }
 
 export enum WsConnectType {

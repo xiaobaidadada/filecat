@@ -21,6 +21,8 @@ import {
     tcp_proxy_server_client,
     tcp_proxy_server_config
 } from "../../../../common/req/common.pojo";
+import {ws} from "../../util/ws";
+import {CmdType} from "../../../../common/frame/WsData";
 
 
 export function TcpProxyServer() {
@@ -47,7 +49,7 @@ export function TcpProxyServer() {
     const client_headers = [t("序号"),t("服务端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
     const client_bridge_headers = [t("序号"),t("服务端口"),t("转发Client名称"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
-    const online_server_headers = [t("序号"),t("服务端口"), t("转发ip"),t("转发端口"),"client "+t("名称"),t("端口备注") ];
+    const online_server_headers = [t("序号"),t("服务端口"), t("转发ip"),t("转发端口"),"client "+t("名称"),t("开启"),t("端口备注") ];
 
     const get_server_bridge_get_one_fig = async (server_client_num_id:number) => {
         const r1 = await tcpProxy.post("server_bridge_get_one_fig",{
@@ -90,6 +92,9 @@ export function TcpProxyServer() {
 
 
     useEffect(() => {
+        ws.addMsg(CmdType.tcp_forward_server_load,(d)=>{
+            getItems();
+        })
         getItems();
     }, []);
     const save_server_info = async (notice_client:boolean) => {
@@ -372,7 +377,7 @@ export function TcpProxyServer() {
                 </Dashboard> :
 
                 <Dashboard>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Online Server Port")}</h2>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("Server Port")}</h2>
                         {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                         </span>}
                             >
@@ -383,7 +388,8 @@ export function TcpProxyServer() {
                                 <TextTip>{item.proxy_host}</TextTip>,
                                 <TextTip>{item.proxy_port}</TextTip>,
                                 <TextTip>{item.client_name}</TextTip>,
-                                <TextTip>{item.server_port_note}</TextTip>
+                                <StatusCircle ok={item.open_success} />,
+                                <TextTip>{item.server_port_note}</TextTip>,
                             ];
                             return new_list;
                         })} width={"10rem"}/>

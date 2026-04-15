@@ -135,6 +135,7 @@ export interface server_client_proxy {
     proxy_port:number;
 
     server_port_note?:string;
+    open_success:boolean // 服务器是否开启成功
 }
 
 export interface workflow_setting_item {

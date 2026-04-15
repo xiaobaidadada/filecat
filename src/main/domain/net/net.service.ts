@@ -37,7 +37,7 @@ const  {node_process_watcher} = get_bin_dependency("node-process-watcher",false)
 const needle = require('needle');
 
 let proxyServer: http.Server | null = null;
-let proxy_server_data: HttpServerProxy;
+// let proxy_server_data: HttpServerProxy;
 let proxy_server_list_data: HttpProxyITem[] = []
 
 const Koa = require('koa');
@@ -511,7 +511,7 @@ export class NetService {
 
     load_server_proxy() {
         const data = this.getHttpServerProxy()
-        proxy_server_data = data
+        // proxy_server_data = data
         const list = []
         for (const it of data.list ?? []) {
             if (it.open) {
@@ -614,7 +614,7 @@ export class NetService {
 
         // https 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
-            const [targetHost, targetPortStr] = (req.url || '').split(':');
+            const [targetHost, targetPortStr] = (req.headers?.['host'] || '').split(':');
             const targetPort = Number(targetPortStr || 443);
             const fullUrl = `https://${targetHost}:${targetPort}/`;
 

@@ -180,6 +180,7 @@ export class WsClient {
 
     // 多次add相同的 key 只会add一次
     public async addMsg<T>(cmdType: CmdType, handler: (wsData: WsData<T>) => void) {
+        await this.connect();
         // this._msgHandlerMap.set(cmdType,handler)
         this.on_message(`message_${cmdType}`, handler)
     }

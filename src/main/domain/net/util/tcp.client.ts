@@ -30,6 +30,7 @@ export class tcp_raw_socket {
         this.send_data_call = (tag_id:number, buffer: Buffer)=>{
             this.client.send_data(NetMsgType.default,buffer,tag_id);
         }
+        this.send_data_async = this.client.send_data_async.bind(this.client);
     }
 
     get_client(){
@@ -67,6 +68,8 @@ export class tcp_raw_socket {
     send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void
 
     send_data_call:(tag_id:number, buffer: Buffer,)=>void
+
+    send_data_async:(code_type: NetMsgType, buffer: Buffer)=>Promise<Buffer>
 }
 
 export class tcp_raw_client extends tcp_raw_socket{
