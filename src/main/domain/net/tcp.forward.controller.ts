@@ -17,6 +17,7 @@ import {virtualClientService} from "./virtual/virtual.client.service";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
+import {TcpForwardUtil} from "./tcp.forward.util";
 
 const  tcp_client_target_map = {}
 
@@ -216,7 +217,8 @@ export class TcpForwardController {
     client_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         const data_map:server_type = util.data_map[server_key]
-        tcp_forward_client_service.write_socket(data_map.all_server_socket_map[socket_id],data)
+        TcpForwardUtil.write_socket(data_map.all_server_socket_map[socket_id],data)
+        // tcp_forward_client_service.write_socket(data_map.all_server_socket_map[socket_id],data)
     }
 
     @tcp_server_msg(NetMsgType.tcp_socket_close,tcp_server_type.tcp_forward)

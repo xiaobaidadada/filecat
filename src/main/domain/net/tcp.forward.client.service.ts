@@ -9,6 +9,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import net from "net";
 import {server_key} from "./tcp.forward.server.service";
 import {tcp_raw_socket} from "./util/tcp.client";
+import {TcpForwardUtil} from "./tcp.forward.util";
 
 
 export class tcp_forward_server_service {
@@ -37,21 +38,6 @@ export class tcp_forward_server_service {
         return list
     }
 
-    write_socket( socket:net.Socket,data:Buffer) {
-        if (!socket || socket.destroyed) {
-            // console.warn(`socket  已关闭，丢弃数据`);
-            return;
-        }
-        try {
-            socket.write(data.subarray(2),(err)=>{
-                if(err) {
-                    console.error(` tcp 转发服务器 写失败 ${err?.message}`);
-                }
-            });
-        } catch(err) {
-            console.log(` tcp err: ${err?.message}`);
-        }
-    }
 
     client_tcp_socket_close(data: Buffer) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
@@ -88,7 +74,8 @@ export class tcp_forward_server_service {
     client_on_data(data: Buffer) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         try {
-            this.write_socket( this.client_socket_map[socket_id],data)
+            TcpForwardUtil.write_socket(this.client_socket_map[socket_id],data)
+            // this.write_socket( this.client_socket_map[socket_id],data)
         } catch(err) {
             console.error(` tcp client 转发服务器 写失败 ${err?.message}`);
         }
@@ -97,7 +84,8 @@ export class tcp_forward_server_service {
     server_client_on_data(data: Buffer) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         try {
-            this.write_socket( this.server_socket_map[socket_id],data)
+            TcpForwardUtil.write_socket(this.server_socket_map[socket_id],data)
+            // this.write_socket( this.server_socket_map[socket_id],data)
         } catch(err) {
             console.error(` tcp server 转发服务器 写失败 ${err?.message}`);
         }

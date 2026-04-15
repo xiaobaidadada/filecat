@@ -418,13 +418,15 @@ export class TcpForwardServerService {
     save_update_info(item:tcp_proxy_bridge_fig_item){
         const server = this.client_num_map[item.server_client_num_id]
         const client = this.client_num_map[item.client_num_id]
-        if(!server){
-            throw `服务客户端不在线 ${item.server_client_name} `
-        }
-        if(!client) {
-            throw `代理客户端不在线 ${item.client_name} `
-        }
+        // if(!server){
+        //     throw `服务客户端不在线 ${item.server_client_name} `
+        // }
+        // if(!client) {
+        //     throw `代理客户端不在线 ${item.client_name} `
+        // }
+        if(client)
         item.client_name = client.client_name
+        if(server)
         item.server_client_name = server.client_name
     }
 
