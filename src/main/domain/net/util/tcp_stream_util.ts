@@ -10,7 +10,10 @@ export class tcp_stream_util {
 
     private buffer:Buffer = Buffer.alloc(0); // 数据包
 
-    private on_data:(data:Buffer,tag_id?:number)=>any;
+    // private on_data:(data:Buffer,tag_id?:number)=>any;
+    private on_data_list:((data:Buffer,tag_id?:number)=>any)[] = []
+    private one_data_resolve_map:{[key:number]:(data:Buffer)=>void} = {}
+
     private on_close_list:(()=>any)[] = [];
 
     private socket:net.Socket;
@@ -47,9 +50,10 @@ export class tcp_stream_util {
         })
     }
 
-    // 设置包处理函数
+    // 设置包处理函数 可以添加多个
     public set_on_data(handle:( data:Buffer,tag_id?:number)=>void) {
-        this.on_data= handle;
+        // this.on_data= handle;
+        this.on_data_list.push(handle);
     }
 
     // 处理buffer
@@ -81,8 +85,16 @@ export class tcp_stream_util {
             const data = this.buffer.subarray(this.total_head_length, total_len);
             const tag_id = this.buffer.subarray(this.now_all_head_length, this.total_head_length);
 
-            // 处理数据
-            this.on_data(data, NetUtil.buffer_to_int16(tag_id));
+            const tag_id_number =  NetUtil.buffer_to_int16(tag_id)
+            if(this.one_data_resolve_map[tag_id_number]){
+                this.one_data_resolve_map[tag_id_number](data)
+            } else {
+                // 没有回调的msgid 处理数据
+                for(const on_data of this.on_data_list) {
+                    on_data(data, tag_id_number);
+                }
+            }
+
 
             // 更新缓冲区，移除已经处理过的数据
             this.buffer = this.buffer.subarray(total_len);
@@ -110,6 +122,21 @@ export class tcp_stream_util {
     public send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number) {
         const data = NetUtil.getTcpBuffer(code_type, buffer)
         this.socket.write( NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]));
+    }
+
+
+    public async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<Buffer> {
+        const tag_id = NetUtil.next_tag_id();
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(()=>{
+                reject("超时请求tcp")
+            },10*1000)
+            this.one_data_resolve_map[tag_id] = (data:Buffer)=>{
+                clearTimeout(timer);
+                resolve(data)
+            }
+            this.send_data(code_type, buffer,tag_id)
+        })
     }
 
     // private send_raw_data(data:Buffer,tag_id?:number) {

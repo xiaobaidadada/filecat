@@ -9,6 +9,7 @@ export class TcpForwardUtil {
             return;
         }
         try {
+            if(on_drain)
             socket.once('drain', on_drain)
             // const ok  =
             socket.write(data.subarray(2), (err) => {
