@@ -556,15 +556,8 @@ export class NetService {
 
 
         const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
-            // if (!req.url) return res.end();
-
-            // const protocol = 'http:';
-            // const host = req.headers.host;
-            // const fullUrl = `${protocol}//${host}${req.url}`;
             const fullUrl = req.url;
-
             const item = this.findProxyRule(fullUrl);
-
             let targetUrl: URL;
             let headers = {}
             if (item) {
@@ -614,100 +607,80 @@ export class NetService {
 
         // https 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
-            const [targetHost, targetPortStr] = (req.headers?.['host'] || '').split(':');
-            const targetPort = Number(targetPortStr || 443);
+            const [host, portStr] = (req.url || '').split(':'); // CONNECT 标准用 req.url
+            const targetHost = host;
+            const targetPort = Number(portStr || 443);
             const fullUrl = `https://${targetHost}:${targetPort}/`;
 
-            const item = this.findProxyRule(fullUrl);
+            const rule = this.findProxyRule(fullUrl);
 
-            if (item) {
-                //
-                // ✅ 命中规则：走上游代理（例如 127.0.0.1:3067）
-                //
+            const safeDestroy = (a, b, msg) => {
+                if (a && !a.destroyed) a.destroy();
+                if (b && !b.destroyed) b.destroy();
+                if (msg && clientSocket.writable) clientSocket.end(msg);
+            };
+
+            // -----------------------------
+            // 命中规则：走上游代理
+            // -----------------------------
+            if (rule) {
                 const rewritten = fullUrl.replace(
-                    new RegExp(item.rewrite_regexp_source),
-                    item.rewrite_target
+                    new RegExp(rule.rewrite_regexp_source),
+                    rule.rewrite_target
                 );
+
                 const rewrittenUrl = new URL(rewritten);
                 const upstreamHost = rewrittenUrl.hostname;
                 const upstreamPort = Number(rewrittenUrl.port) || 443;
 
-                const upstreamSocket = net.connect(upstreamPort, upstreamHost, () => {
-                    const connectReq =
-                        `CONNECT ${targetHost}:${targetPort} HTTP/1.1\r\n` +
-                        `Host: ${targetHost}:${targetPort}\r\n` +
-                        `Connection: keep-alive\r\n\r\n`;
-                    upstreamSocket.write(connectReq);
+                const upstreamSocket = net.connect(upstreamPort, upstreamHost);
 
-                    if (head && head.length) upstreamSocket.write(head);
+                upstreamSocket.on('connect', () => {
+                    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+
+                    if (head?.length) upstreamSocket.write(head);
+
+                    clientSocket.pipe(upstreamSocket);
+                    upstreamSocket.pipe(clientSocket);
                 });
 
-                let buffered = Buffer.alloc(0);
-                const onUpstreamData = (chunk: Buffer) => {
-                    buffered = Buffer.concat([buffered, chunk]);
-                    const str = buffered.toString('utf8', 0, Math.min(buffered.length, 4096));
-                    const headerEndIdx = str.indexOf('\r\n\r\n');
-                    if (headerEndIdx === -1) return;
-
-                    const headerText = str.slice(0, headerEndIdx);
-                    const statusLine = headerText.split('\r\n')[0];
-                    const m = statusLine.match(/^HTTP\/\d\.\d\s+(\d+)/);
-                    upstreamSocket.removeListener('data', onUpstreamData);
-
-                    if (!m) {
-                        clientSocket.end('HTTP/1.1 502 Bad Gateway\r\n\r\nInvalid upstream proxy response\r\n');
-                        upstreamSocket.destroy();
-                        return;
-                    }
-
-                    const statusCode = Number(m[1]);
-                    const rest = buffered.slice(headerEndIdx + 4);
-
-                    if (statusCode === 200) {
-                        clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-                        if (rest.length) clientSocket.write(rest);
-                        upstreamSocket.pipe(clientSocket);
-                        clientSocket.pipe(upstreamSocket);
-                    } else {
-                        clientSocket.end(`HTTP/1.1 ${statusCode} Upstream Proxy Error\r\n\r\n${headerText}\r\n`);
-                        upstreamSocket.end();
-                    }
+                const cleanup = (err) => {
+                    safeDestroy(clientSocket, upstreamSocket, err?.message);
                 };
 
-                upstreamSocket.on('data', onUpstreamData);
-                upstreamSocket.setTimeout(10000, () => {
-                    clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nUpstream proxy timeout\r\n');
-                    upstreamSocket.destroy();
-                });
-                upstreamSocket.on('error', (err) => {
-                    clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nUpstream socket error: ${err.message}\r\n`);
-                });
-
-                clientSocket.on('error', () => upstreamSocket.destroy());
-                clientSocket.on('close', () => upstreamSocket.end());
-            } else {
-                //
-                // ✅ 未命中规则：直连目标网站（标准 HTTPS 隧道）
-                //
-                const directSocket = net.connect(targetPort, targetHost, () => {
-                    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-                    if (head && head.length) directSocket.write(head);
-                    directSocket.pipe(clientSocket);
-                    clientSocket.pipe(directSocket);
-                });
-
-                directSocket.setTimeout(10000, () => {
-                    clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nDirect connection timeout\r\n');
-                    directSocket.destroy();
-                });
-
-                directSocket.on('error', (err) => {
-                    clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nDirect socket error: ${err.message}\r\n`);
-                });
-
-                clientSocket.on('error', () => directSocket.destroy());
-                clientSocket.on('close', () => directSocket.end());
+                clientSocket.on('error', cleanup);
+                clientSocket.on('close', cleanup);
+                upstreamSocket.on('error', cleanup);
+                upstreamSocket.on('close', cleanup);
+                return;
             }
+
+            // -----------------------------
+            // 未命中规则：直连
+            // -----------------------------
+            const directSocket = net.connect(targetPort, targetHost);
+
+            directSocket.on('connect', () => {
+                clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+
+                if (head?.length) directSocket.write(head);
+
+                clientSocket.pipe(directSocket);
+                directSocket.pipe(clientSocket);
+            });
+
+            directSocket.setTimeout(10000, () => {
+                safeDestroy(clientSocket, directSocket, 'HTTP/1.1 504 Gateway Timeout\r\n\r\n');
+            });
+
+            const cleanup = (err) => {
+                safeDestroy(clientSocket, directSocket, err?.message && 'HTTP/1.1 502 Bad Gateway\r\n\r\n');
+            };
+
+            clientSocket.on('error', cleanup);
+            clientSocket.on('close', cleanup);
+            directSocket.on('error', cleanup);
+            directSocket.on('close', cleanup);
         });
 
 
