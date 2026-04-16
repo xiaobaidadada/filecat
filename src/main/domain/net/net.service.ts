@@ -30,13 +30,14 @@ import https from 'https';
 import {ServerEvent} from "../../other/config";
 import net from "net";
 import vm from "node:vm";
-
+import ProxyChain from 'proxy-chain';
+const proxy_chain = require('proxy-chain');
 
 const  {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 
 const needle = require('needle');
 
-let proxyServer: http.Server | null = null;
+let proxyServer: ProxyChain.Server | null = null;
 // let proxy_server_data: HttpServerProxy;
 let proxy_server_list_data: HttpProxyITem[] = []
 
@@ -549,143 +550,64 @@ export class NetService {
     };
 
 
-    httpServerStart(
-        data: HttpServerProxy
-    ) {
+    async httpServerStart(data) {
         if (proxyServer) return;
 
+        proxyServer = new proxy_chain.Server({
+            port: data.port,
 
-        const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
-            const fullUrl = req.url;
-            const item = this.findProxyRule(fullUrl);
-            let targetUrl: URL;
-            let headers = {}
-            if (item) {
-                // 命中规则 → 改写 URL
-                const rewrittenUrl = fullUrl.replace(
-                    new RegExp(item.rewrite_regexp_source),
-                    item.rewrite_target
-                );
-                targetUrl = new URL(rewrittenUrl);
-                headers = {...item.headers};
-                if (item.changeOrigin) {
-                    headers!['host'] = targetUrl.host;
+            verbose: false,
+
+            prepareRequestFunction: ({ request }) => {
+                try {
+                    const fullUrl = request.url;
+
+                    const rule = this.findProxyRule(fullUrl);
+
+                    // =============================
+                    // ❌ 没命中规则：直连
+                    // =============================
+                    if (!rule) {
+                        return {
+                            upstreamProxyUrl: null, // 直连
+                        };
+                    }
+
+                    // =============================
+                    // ✅ 命中规则：rewrite
+                    // =============================
+                    const rewritten = fullUrl.replace(
+                        new RegExp(rule.rewrite_regexp_source),
+                        rule.rewrite_target
+                    );
+
+                    const rewrittenUrl = new URL(rewritten);
+
+                    // 👉 上游代理（关键）
+                    const upstreamProxyUrl =
+                        `${rewrittenUrl.protocol}//${rewrittenUrl.host}`;
+
+                    // 👉 headers 处理
+                    const headers = { ...rule.headers };
+
+                    if (rule.changeOrigin) {
+                        headers['host'] = rewrittenUrl.host;
+                    }
+
+                    return {
+                        upstreamProxyUrl,     // 🔥 交给 proxy-chain 自动 CONNECT
+                        customHeaders: headers,
+                    };
+
+                } catch (err) {
+                    console.error('prepareRequest error:', err);
+                    return {};
                 }
-            } else {
-                // 没匹配规则 → 直连
-                targetUrl = new URL(fullUrl);
-            }
-
-
-            const options: http.RequestOptions = {
-                hostname: targetUrl.hostname,
-                port: targetUrl.port,
-                path: targetUrl.pathname + (targetUrl.search ? '?' + targetUrl.search : ''),
-                method: req.method,
-                headers: {...req.headers, ...headers},
-            };
-
-
-            const proxyReq = http.request(
-                options,
-                proxyRes => {
-                    res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
-                    proxyRes.pipe(res, {end: true});
-                }
-            );
-
-            proxyReq.on('error', err => {
-                res.writeHead(500);
-                res.end('Proxy error: ' + err.message);
-            });
-
-            req.pipe(proxyReq, {end: true});
-        };
-
-        // http 走requestHandler
-        proxyServer = http.createServer(requestHandler);
-
-        // https 走connect  处理 HTTPS CONNECT 隧道
-        proxyServer.on('connect', (req, clientSocket, head) => {
-            const [host, portStr] = (req.url || '').split(':'); // CONNECT 标准用 req.url
-            const targetHost = host;
-            const targetPort = Number(portStr || 443);
-            const fullUrl = `https://${targetHost}:${targetPort}/`;
-
-            const rule = this.findProxyRule(fullUrl);
-
-            const safeDestroy = (a, b, msg) => {
-                if (a && !a.destroyed) a.destroy();
-                if (b && !b.destroyed) b.destroy();
-                if (msg && clientSocket.writable) clientSocket.end(msg);
-            };
-
-            // -----------------------------
-            // 命中规则：走上游代理
-            // -----------------------------
-            if (rule) {
-                const rewritten = fullUrl.replace(
-                    new RegExp(rule.rewrite_regexp_source),
-                    rule.rewrite_target
-                );
-
-                const rewrittenUrl = new URL(rewritten);
-                const upstreamHost = rewrittenUrl.hostname;
-                const upstreamPort = Number(rewrittenUrl.port) || 443;
-
-                const upstreamSocket = net.connect(upstreamPort, upstreamHost);
-
-                upstreamSocket.on('connect', () => {
-                    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-
-                    if (head?.length) upstreamSocket.write(head);
-
-                    clientSocket.pipe(upstreamSocket);
-                    upstreamSocket.pipe(clientSocket);
-                });
-
-                const cleanup = (err) => {
-                    safeDestroy(clientSocket, upstreamSocket, err?.message);
-                };
-
-                clientSocket.on('error', cleanup);
-                clientSocket.on('close', cleanup);
-                upstreamSocket.on('error', cleanup);
-                upstreamSocket.on('close', cleanup);
-                return;
-            }
-
-            // -----------------------------
-            // 未命中规则：直连
-            // -----------------------------
-            const directSocket = net.connect(targetPort, targetHost);
-
-            directSocket.on('connect', () => {
-                clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-
-                if (head?.length) directSocket.write(head);
-
-                clientSocket.pipe(directSocket);
-                directSocket.pipe(clientSocket);
-            });
-
-            directSocket.setTimeout(10000, () => {
-                safeDestroy(clientSocket, directSocket, 'HTTP/1.1 504 Gateway Timeout\r\n\r\n');
-            });
-
-            const cleanup = (err) => {
-                safeDestroy(clientSocket, directSocket, err?.message && 'HTTP/1.1 502 Bad Gateway\r\n\r\n');
-            };
-
-            clientSocket.on('error', cleanup);
-            clientSocket.on('close', cleanup);
-            directSocket.on('error', cleanup);
-            directSocket.on('close', cleanup);
+            },
         });
 
-
-        proxyServer.listen(data.port, () => {
-            console.log(`HTTP Proxy server running on port ${data.port}`);
+        await proxyServer.listen(() => {
+            console.log(`Proxy running on port ${data.port}`);
         });
     }
 
@@ -693,18 +615,19 @@ export class NetService {
     /**
      * 关闭 HTTP 代理服务
      */
-    public httpServerProxyClose() {
+    public async httpServerProxyClose() {
         if (proxyServer) {
-            proxyServer.close(() => console.log('Proxy server closed.'));
+            await proxyServer.close(true)
+            console.log(`关闭http代理穿透服务器`)
             proxyServer = null;
         }
     }
 
-    public saveHttpServer(req: HttpServerProxy) {
+    public async saveHttpServer(req: HttpServerProxy) {
         DataUtil.set(data_common_key.http_server_key, req);
-        this.httpServerProxyClose()
+        await this.httpServerProxyClose()
         if (req.open) {
-            this.httpServerStart(req)
+            await this.httpServerStart(req)
         }
         this.load_server_proxy()
     }
@@ -722,7 +645,7 @@ ServerEvent.on("start", async (data) => {
         const req = netService.getHttpServerProxy()
         if (req.open) {
             netService.load_server_proxy()
-            netService.httpServerStart(req)
+            await netService.httpServerStart(req)
         }
     } catch (e) {
         console.error('启动虚拟网网络vpn失败', e);

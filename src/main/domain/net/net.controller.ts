@@ -163,9 +163,9 @@ export class NetController {
     }
 
     @Post('/http/proxy/server/save')
-    httpProxySave(@Body() req: any, @Req() ctx) {
+    async httpProxySave(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
-        netService.saveHttpServer(req)
+        await netService.saveHttpServer(req)
         return Sucess("");
     }
 
