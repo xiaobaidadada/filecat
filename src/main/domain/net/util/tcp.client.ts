@@ -65,7 +65,7 @@ export class tcp_raw_socket {
         });
     }
 
-    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void
+    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>boolean
 
     send_data_call:(tag_id:number, buffer: Buffer,)=>void
 
@@ -224,9 +224,9 @@ export class tcp_client {
         this.heart_fun =  setInterval(heart_fun, 10_000)
     }
 
-    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>void;
+    send_data:(code_type: NetMsgType, buffer: Buffer,tag_id?:number)=>boolean;
 
-    async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<any> {
+    async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<Buffer> {
         return new Promise((resolve, reject) => {
             const tag_id = NetUtil.next_tag_id();
             this.call_resolve_map[tag_id] = resolve;

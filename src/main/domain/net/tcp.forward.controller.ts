@@ -191,7 +191,13 @@ export class TcpForwardController {
             client_proxy_host: info.client_proxy_host,
         }
         targetSocket.on("data", (data) => {
-            util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
+            const ok = util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
+            if(!ok) {
+                targetSocket.pause()
+                util.get_client().get_socket().once('drain',()=>{
+                    targetSocket.resume()
+                })
+            }
         })
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
@@ -214,11 +220,11 @@ export class TcpForwardController {
 
     // socket的数据
     @tcp_client_msg(NetMsgType.tcp_socket_data)
-    server_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    client_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         tcp_forward_client_service.client_on_data(data)
     }
     @tcp_server_msg(NetMsgType.tcp_socket_data,tcp_server_type.tcp_forward)
-    client_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+    server_on_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         const data_map:server_type = util.data_map[server_key]
         TcpForwardUtil.write_socket(data_map.all_server_socket_map[socket_id],data)
@@ -293,8 +299,14 @@ export class TcpForwardController {
             client_proxy_host: info.client_proxy_host,
         }
         targetSocket.on("data", (data) => {
-            util.send_data(NetMsgType.bridge_tcp_socket_data,
+            const ok = util.send_data(NetMsgType.bridge_tcp_socket_data,
                 Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
+            if(!ok) {
+                targetSocket.pause()
+                util.get_client().get_socket().once('drain',()=>{
+                    targetSocket.resume()
+                })
+            }
         })
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.bridge_tcp_socket_close,

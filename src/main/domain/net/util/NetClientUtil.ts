@@ -13,17 +13,18 @@ export class NetClientUtil {
 
 
     public static send_for_tcp(server_host: string, server_port: number,type: NetMsgType, data: Buffer,tag_id?:number) {
-        try {
             // this.tcp_client.sendToSocket(NetUtil.head_0,buffer);
             // this.tcp_client.fastSendData(NetUtil.geRawTcpBufferList(type, data));
             const v = this.tcp_client_map[this.get_key({
                 server_host, server_port
             })];
-            if (!v) return
-            v.send_data(type,data,tag_id)
-        } catch (e) {
-            console.log(e)
-        }
+            return v?.send_data(type,data,tag_id)
+    }
+
+    public static get_server_socket(server_host: string, server_port: number) {
+        return this.tcp_client_map[this.get_key({
+            server_host, server_port
+        })];
     }
 
     // 发送到服务器 并 await 服务器返回的数据 服务器需要 根据 head 返回数据
@@ -37,7 +38,7 @@ export class NetClientUtil {
                 reject({message:"未连接"})
                 return
             }
-            v.send_data_async(type,data).catch(reject).then(resolve)
+            v.send_data_async(type,data).catch(reject).then((data:Buffer)=>{resolve(data)})
         })
     }
 

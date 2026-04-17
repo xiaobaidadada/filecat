@@ -203,11 +203,10 @@ export class tcp_forward_server_service {
             this.bridge_server_client_map[fig.server_port] = server_item;
         }
         const client_fig = this.client_fig_get()
+        const server_socket = NetClientUtil.get_server_socket(client_fig.serverIp,client_fig.serverPort);
 
         const server = net.createServer(async (clientSocket) => {
-
-            const socket_id = NetUtil.buffer_to_int16((await NetClientUtil.send_for_tcp_async(client_fig.serverIp,client_fig.serverPort,
-                NetMsgType.get_global_socket_id, Buffer.alloc(0))))
+            const socket_id = NetUtil.buffer_to_int16(( await server_socket.send_data_async(NetMsgType.get_global_socket_id, Buffer.alloc(0))))
 
             // socket 添加
             server_item.server_socket_map[socket_id] = clientSocket;
@@ -220,20 +219,22 @@ export class tcp_forward_server_service {
                 client_num_id:fig.client_num_id,
                 server_client_num_id:fig.server_client_num_id
             }
-            await NetClientUtil.send_for_tcp_async(client_fig.serverIp,client_fig.serverPort,
-                NetMsgType.bridge_client_create_socket_for_server, Buffer.from(JSON.stringify(info)));
-
+            await server_socket.send_data_async(NetMsgType.bridge_client_create_socket_for_server, Buffer.from(JSON.stringify(info)))
 
             clientSocket.on("data", (chunk) => {
                 // 用户访问服务器建立的客户端
-                NetClientUtil.send_for_tcp(client_fig.serverIp,client_fig.serverPort,
-                    NetMsgType.bridge_client_tcp_socket_data,
-                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
+                const ok = server_socket.send_data(NetMsgType.bridge_client_tcp_socket_data,
+                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]))
+                if(!ok) {
+                    clientSocket.pause()
+                    server_socket.get_raw_client().get_client().get_socket().once('drain',()=>{
+                        clientSocket.resume()
+                    })
+                }
             })
             clientSocket.on("close",()=>{
-                NetClientUtil.send_for_tcp(client_fig.serverIp,client_fig.serverPort,
-                    NetMsgType.bridge_tcp_socket_close,
-                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id)]));
+                server_socket.send_data(NetMsgType.bridge_tcp_socket_close,
+                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id)]))
                 delete server_item.server_socket_map[socket_id]
                 delete this.server_socket_map[socket_id]
             })

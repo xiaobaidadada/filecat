@@ -169,7 +169,13 @@ export class TcpForwardServerService {
             // todo  on("drain", 内存优化
             clientSocket.on("data", (chunk) => {
                 // 用户访问服务器建立的客户端
-                client.client_util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
+                const ok = client.client_util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
+                if(!ok) {
+                    clientSocket.pause()
+                    client.client_util.get_client().get_socket().once('drain',()=>{
+                        clientSocket.resume()
+                    })
+                }
             })
             clientSocket.on("close",()=>{
                 client.client_util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
