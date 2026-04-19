@@ -76,6 +76,8 @@ export enum NetMsgType {
 
     get_global_socket_id, // 获取全局socket id
 
+    bridge_socket_pause,
+    bridge_socket_resume
 
 }
 

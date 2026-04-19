@@ -50,17 +50,18 @@ export function TcpProxyClient(props) {
         setKey(data.key);
         setIsOpen(data.open);
         set_client_name(data.client_name);
-        if(data.open) {
-            const data = new WsData(CmdType.tcp_proxy_client_status);
-            const r = await ws.send(data);
-            if(r.code !== RCode.Success)  return
-            const state = r.context.status;
-            // console.log(r)
-            set_connet_state(state);
-            ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
-                set_connet_state(data.context.status);
-            })
-        }
+        // if(data.open) {
+            const data1 = new WsData(CmdType.tcp_proxy_client_status);
+            const r1 = await ws.send(data1);
+            if(r1.code === RCode.Success)  {
+                const state = r1.context.status;
+                // console.log(r)
+                set_connet_state(state);
+                ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
+                    set_connet_state(data.context.status);
+                })
+            }
+        // }
 
         const result1 = await tcpProxy.get("client_tcp_proxy_get");
         if (result1.code === RCode.Success) {

@@ -71,10 +71,10 @@ export class tcp_forward_server_service {
 
     }
 
-    client_on_data(data: Buffer, on_drain?: () => void) {
+    client_on_data(data: Buffer) {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         try {
-            TcpForwardUtil.write_socket(this.client_socket_map[socket_id],data,on_drain)
+            TcpForwardUtil.write_socket(this.client_socket_map[socket_id],data)
             // this.write_socket( this.client_socket_map[socket_id],data)
         } catch(err) {
             console.error(` tcp client 转发服务器 写失败 ${err?.message}`);

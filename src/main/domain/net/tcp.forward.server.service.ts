@@ -166,7 +166,6 @@ export class TcpForwardServerService {
                 client_proxy_port:proxy_fig.proxy_port,
                 client_proxy_host:proxy_fig.proxy_host,
             })))
-            // todo  on("drain", 内存优化
             clientSocket.on("data", (chunk) => {
                 // 用户访问服务器建立的客户端
                 const ok = client.client_util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
@@ -342,7 +341,14 @@ export class TcpForwardServerService {
         const client_id =  NetUtil.buffer_to_int16(data.subarray(0,2))
         const client = this.client_num_map[client_id]
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
-        client?.client_util?.send_data(NetMsgType.bridge_client_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
+        const ok = client.client_util.send_data(NetMsgType.bridge_client_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
+        if(!ok) {
+            client.client_util.send_data(NetMsgType.bridge_socket_pause,NetUtil.int16_to_buffer(socket_id))
+            client.client_util.get_client().get_socket().on("drain",()=>{
+                client.client_util.send_data(NetMsgType.bridge_socket_resume,NetUtil.int16_to_buffer(socket_id))
+            })
+        }
+
     }
 
     // bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {

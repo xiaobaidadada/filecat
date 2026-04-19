@@ -3,14 +3,12 @@ import net from "net";
 
 export class TcpForwardUtil {
 
-    public static write_socket(socket: net.Socket, data: Buffer, on_drain?: () => void) {
+    public static write_socket(socket: net.Socket, data: Buffer) {
         if (!socket || socket.destroyed) {
             // console.warn(`socket  已关闭，丢弃数据`);
             return;
         }
         try {
-            if(on_drain)
-            socket.once('drain', on_drain)
             // const ok  =
             socket.write(data.subarray(2), (err) => {
                 if (err) {

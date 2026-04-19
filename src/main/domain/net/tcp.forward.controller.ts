@@ -326,7 +326,16 @@ export class TcpForwardController {
     bridge_client_tcp_socket_data(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         tcpForwardService.bridge_client_tcp_socket_data(data,util,tag_id)
     }
-
+    @tcp_client_msg(NetMsgType.bridge_socket_pause)
+    client_bridge_socket_pause(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const socket_id = NetUtil.buffer_to_int16(data)
+        tcp_forward_client_service.server_socket_map[socket_id].pause()
+    }
+    @tcp_client_msg(NetMsgType.bridge_socket_resume)
+    client_bridge_socket_resume(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        const socket_id = NetUtil.buffer_to_int16(data)
+        tcp_forward_client_service.server_socket_map[socket_id].resume()
+    }
     // @tcp_server_msg(NetMsgType.bridge_close_port_for_client,tcp_server_type.tcp_forward)
     // bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
     //     tcpForwardService.bridge_close_port_for_client(data,util,tag_id)
