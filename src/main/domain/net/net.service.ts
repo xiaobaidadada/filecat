@@ -5,6 +5,7 @@ import {
     HttpFormPojo,
     HttpProxy,
     HttpProxyITem,
+    https_tunnel_server_fig,
     HttpServerProxy,
     MacProxy,
     NetPojo
@@ -26,10 +27,16 @@ import {Wss} from "../../../common/frame/ws.server";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {URL} from 'url';
-import https from 'https';
 import {ServerEvent} from "../../other/config";
 import net from "net";
 import vm from "node:vm";
+import {NetServerUtil} from "./util/NetServerUtil";
+import {NetMsgType, NetUtil, tcp_server_type} from "./util/NetUtil";
+import {NetClientUtil} from "./util/NetClientUtil";
+import {tcp_client, tcp_raw_socket} from "./util/tcp.client";
+import {Env} from "../../../common/node/Env";
+import {https_tunnel} from "./https.tunnel";
+import * as util from "node:util";
 
 
 const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);
@@ -608,6 +615,58 @@ export class NetService {
             const fullUrl = `https://${targetHost}:${targetPort}/`;
             const item = this.findProxyRule(fullUrl);
             if (item) {
+                if(item.use_https_tunnel && item.https_tunnel_key && item.https_tunnel_port && item.https_tunnel_host) {
+                    // 使用了https隧道
+                    const opt = {
+                        server_host: item.https_tunnel_host,
+                        server_port: item.https_tunnel_port,
+                        not_reconnect_attempt: true,
+                        msg_map: {
+                        }
+                    }
+                    opt.msg_map[NetMsgType.https_tunnel_tcp_data] = (data:Buffer, util:tcp_raw_socket, tag_id?: number)=>{
+                        const ok = clientSocket.write(data)
+                        if(!ok) {
+                            util.get_client().get_socket().pause()
+                            clientSocket.on('drain',()=>{
+                                util.get_client().get_socket().resume()
+                            })
+                        }
+                    }
+                    const client = new tcp_client(opt,async ()=>{
+                        try {
+                            const socket_id_data = await client.send_data_async(NetMsgType.https_tunnel_tcp_connect,Buffer.from(JSON.stringify(
+                                {
+                                    key:item.https_tunnel_key,
+                                    target_proxy_port:targetPort,
+                                    target_proxy_host:targetHost
+                                }
+                            )))
+                            clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                            clientSocket.on("data", data => {
+                                const ok = client.send_data(NetMsgType.https_tunnel_tcp_data,Buffer.concat([socket_id_data,data]) )
+                                if(!ok) {
+                                    clientSocket.pause()
+                                    client.get_raw_client().get_client().get_socket().on('drain',()=>{
+                                        clientSocket.resume()
+                                    })
+                                }
+                            })
+                            const cleanup = () => {
+                                clientSocket.destroy();
+                                client.close();
+                            };
+                            clientSocket.on('error', cleanup);
+                            client.get_raw_client().on_close(cleanup);
+                            clientSocket.on('close', cleanup);
+                        } catch (err) {
+                            // 连接失败 什么都不做处理
+                            clientSocket.destroy();
+                        }
+                    })
+                    client.connect().catch(console.error);
+                    return;
+                }
                 //
                 // ✅ 命中规则：走上游代理（例如 127.0.0.1:3067）
                 //
@@ -711,9 +770,34 @@ export class NetService {
     }
 
     public getHttpServerProxy(): HttpServerProxy {
-        return DataUtil.get(data_common_key.http_server_key) ?? {open: false, port: "0", list: []};
+        return DataUtil.get(data_common_key.http_server_key) ?? {open: false, port: 0, list: []};
     }
 
+    public get_https_tunnel_fig():https_tunnel_server_fig {
+        let fig:https_tunnel_server_fig = DataUtil.get(data_common_key.https_tunnel_server_fig)
+        if(Env.https_tunnel_server_open && fig == null) {
+            fig =   {
+                open:true,
+                port: Env.https_tunnel_server_port,
+                keys:[Env.https_tunnel_key]
+            }
+        } else {
+            fig = {open: false, port: 0, keys: []}
+        }
+        return fig;
+    }
+
+    https_tunnel_server() {
+        const fig = this.get_https_tunnel_fig();
+        if(fig.open) {
+            console.log(`开启 https tunnel服务器 ${fig.port}`)
+            NetServerUtil.start_tcp_server(fig.port,tcp_server_type.https_tunnel, NetMsgType.https_tunnel_tcp_connect)
+        } else {
+            console.log(`关闭 https tunnel服务器 ${fig.port}`)
+            NetServerUtil.close_server(tcp_server_type.https_tunnel)
+        }
+
+    }
 }
 
 export const netService: NetService = new NetService();
@@ -725,6 +809,9 @@ ServerEvent.on("start", async (data) => {
             netService.load_server_proxy()
             netService.httpServerStart(req)
         }
+
+        https_tunnel.get_socket_id(); // 加载模块
+        netService.https_tunnel_server()
     } catch (e) {
         console.error('启动虚拟网网络vpn失败', e);
     }

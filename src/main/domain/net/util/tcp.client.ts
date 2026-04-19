@@ -158,9 +158,16 @@ export class tcp_client {
     private call_resolve_timeout_map: { [key: number]: any } = {}
     private options: tcp_client_options
     private register:()=>any
+    private msg_map:Partial<{
+        [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+    }>
 
         constructor(
         options: tcp_client_options,register:()=>any) {
+        this.msg_map = {
+            ...msgClientMap,
+            ...options.msg_map
+        }
         this.register = register;
         this.options = options;
     }
@@ -192,7 +199,7 @@ export class tcp_client {
                 delete this.call_resolve_map[tag_id];
                 return;
             }
-            const fun = msgClientMap.get(code);
+            const fun = this.msg_map[code]
             if (!fun) return; // 没有处理函数
             try {
                 await fun(tcpBuffer, client,tag_id);

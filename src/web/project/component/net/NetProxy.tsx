@@ -372,7 +372,7 @@ export function NetProxy(props) {
 
                     port
                     <InputText value={httpServer.port} handleInputChange={(value) => {
-                        httpServer.port = value;
+                        httpServer.port = parseInt(value);
                         setHttpServer({...httpServer})
                     }} no_border={true}/>
 

@@ -41,6 +41,11 @@ export class Env {
     public static reset_root_password: string;
     public static base_url: string; // 本地 dev的时候这个参数没有用  env.j会生效
     public static lan: UserLanguage = "en";
+
+    public static https_tunnel_server_port: number;
+    public static https_tunnel_key: string;
+    public static https_tunnel_server_open:boolean
+
     // public static watch: boolean = false;
 
     public static async parseArgs() {

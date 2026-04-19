@@ -12,7 +12,11 @@ export const msgServerMap: Partial<{
 }> = {};
 
 // 客户端既然想要连接服务器了 就是信任服务器的 这里校验小一点 代码也少一点好写一点
-export const msgClientMap = new Map<NetMsgType,(data:Buffer, util:tcp_raw_socket, tag_id?: number)=>any>();
+export const msgClientMap:Partial<{
+    [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+}> = {};
+
+
 
 
 
@@ -29,15 +33,17 @@ export function tcp_server_msg(msg:NetMsgType,type:tcp_server_type) {
 
 export function tcp_client_msg(msg:NetMsgType) {
     return (target: any, key: string, descriptor: PropertyDescriptor)=>{
-        const p = msgClientMap.get(msg);
+        const p = msgClientMap[msg];
         const obj = p??new target.constructor();
-        msgClientMap.set(msg,obj[key].bind(obj))
+        msgClientMap[msg] = obj[key].bind(obj)
+        // msgClientMap.set(msg,obj[key].bind(obj))
     }
 }
 
 export enum tcp_server_type {
     sys_tun,
-    tcp_forward
+    tcp_forward,
+    https_tunnel,
 }
 
 export enum NetMsgType {
@@ -77,7 +83,10 @@ export enum NetMsgType {
     get_global_socket_id, // 获取全局socket id
 
     bridge_socket_pause,
-    bridge_socket_resume
+    bridge_socket_resume,
+
+    https_tunnel_tcp_connect,
+    https_tunnel_tcp_data,
 
 }
 

@@ -1,6 +1,7 @@
 
 // 数据库 json 文件
 import {workflow_setting_item} from "../../../common/req/common.pojo";
+import {https_tunnel_server_fig} from "../../../common/req/net.pojo";
 
 export enum file_key {
     data = "data.json",
@@ -91,7 +92,8 @@ export enum data_common_key {
     tcp_proxy_client_fig = "tcp_proxy_client_fig",
     workflow_setting_item_list = "workflow_setting_item_list",
     server_bridge_config_list = "server_bridge_config_list",
-    ai_agent_status  = "ai_agent_status"
+    ai_agent_status  = "ai_agent_status",
+    https_tunnel_server_fig = "https_tunnel_server_fig",
 }
 
 

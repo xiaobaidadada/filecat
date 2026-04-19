@@ -102,6 +102,11 @@ export class HttpProxyITem {
     rewrite_regexp_source: string;
     rewrite_target: string;
     headers: { [key: string]: string };
+
+    use_https_tunnel?: boolean;
+    https_tunnel_host?: string;
+    https_tunnel_port?: number;
+    https_tunnel_key?: string;
 }
 
 export const http_proxy_item_sample = {
@@ -119,7 +124,7 @@ export class HttpServerProxyItem {
 }
 
 export class HttpServerProxy {
-    port: string;
+    port: number;
     list: HttpServerProxyItem[]
     open: boolean
 }
@@ -139,4 +144,10 @@ export class MacProxy {
     name: string
     proxies: HttpProxy[]
     bypass?: string
+}
+
+export class https_tunnel_server_fig {
+    port: number;
+    keys?: string[];
+    open: boolean;
 }
