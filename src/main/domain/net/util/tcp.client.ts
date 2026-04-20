@@ -130,7 +130,7 @@ export class tcp_raw_client extends tcp_raw_socket{
             }, 5_000)
             this.client.get_socket().connect(this.options.server_port, this.options.server_host, () => {
                 clearTimeout(timeout);
-                console.log('tcp服务器握手完成');
+                // console.log('tcp服务器握手完成');
                 this.is_connected = true;
                 resolve (true);
             });
@@ -207,9 +207,9 @@ export class tcp_client {
                 console.error(`tcp客户端接受函数报错 ${e?.message??e}` )
             }
         })
-        console.log('tcp 服务器 连接 成功')
+        // console.log('tcp 服务器 连接 成功')
         await this.register()
-        console.log('tcp 服务器 注册 成功')
+        // console.log('tcp 服务器 注册 成功')
     }
 
     async connect(){
