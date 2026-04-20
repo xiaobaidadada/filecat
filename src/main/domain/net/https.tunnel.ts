@@ -32,8 +32,8 @@ export class HttpsTunnel {
             target_proxy_host:string
         }
         let ok = false;
-        for (const key of fig.keys??[]) {
-            if(info.key == key) {
+        for (const key of fig.keys??[]) { // 流量计算
+            if(info.key == key.key) {
                 ok = true;
                 break;
             }

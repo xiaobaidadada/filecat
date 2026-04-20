@@ -43,8 +43,9 @@ export class Env {
     public static lan: UserLanguage = "en";
 
     public static https_tunnel_server_port: number;
-    public static https_tunnel_key: string;
     public static https_tunnel_server_open:boolean
+    public static https_tunnel_key: string;
+    public static https_tunnel_key_kb_size:number;
 
     // public static watch: boolean = false;
 

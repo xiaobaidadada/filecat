@@ -87,9 +87,10 @@ export class tcp_raw_client extends tcp_raw_socket{
         super();
         this.options = options;
         this.client.set_on_close(() => {
-            if(!this.options.not_reconnect_attempt) {
-                this.reconnect();
+            if(this.options.not_reconnect_attempt) {
+               return
             }
+            this.reconnect();
         })
         this.client.get_socket().on('end', () => {
             console.log('服务器断开连接');
@@ -226,6 +227,9 @@ export class tcp_client {
                 // console.log(`发送心跳`)
                 await this.send_data_async(NetMsgType.heart, Buffer.alloc(0))
             } catch (e) {
+                if(this.options.not_reconnect_attempt) {
+                    return
+                }
                 console.log(`心跳超时 tcp 断开 10秒后重连`)
                 await CommonUtil.sleep(10*1000)
                 this.client?.close();

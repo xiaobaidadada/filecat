@@ -777,14 +777,30 @@ export class NetService {
 
     public get_https_tunnel_fig():https_tunnel_server_fig {
         let fig:https_tunnel_server_fig = DataUtil.get(data_common_key.https_tunnel_server_fig)
-        if(Env.https_tunnel_server_open && fig == null) {
-            fig =   {
-                open:true,
-                port: Env.https_tunnel_server_port,
-                keys:[Env.https_tunnel_key]
-            }
-        } else {
+        if (fig == null) {
             fig = {open: false, port: 0, keys: []}
+            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
+        }
+        if(Env.https_tunnel_server_open) {
+            fig.open = true;
+            fig.port = Env.https_tunnel_server_port;
+            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
+        }
+        if(Env.https_tunnel_key) {
+            let have = false
+            for (const key of fig.keys) {
+                if(key.key === Env.https_tunnel_key) {
+                    have = true
+                    break;
+                }
+            }
+            if( have === false) {
+                fig.keys.push({
+                    key: Env.https_tunnel_key,
+                    size: Env.https_tunnel_key_kb_size
+                })
+            }
+            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
         }
         return fig;
     }

@@ -146,8 +146,14 @@ export class MacProxy {
     bypass?: string
 }
 
+export class https_tunnel_server_key {
+    key: string;
+    size?: number;
+    note?: string;
+}
+
 export class https_tunnel_server_fig {
     port: number;
-    keys?: string[];
+    keys?: https_tunnel_server_key[];
     open: boolean;
 }

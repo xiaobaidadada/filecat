@@ -70,7 +70,7 @@ export class NetClientUtil {
         const opt = {
             server_host: serverIp,
             server_port: serverPort,
-            not_reconnect_attempt: true
+            // not_reconnect_attempt: true
         }
         const key = this.get_key(opt)
         const client = new tcp_client(opt,register)

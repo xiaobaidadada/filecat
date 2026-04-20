@@ -79,7 +79,7 @@ export class NetServerUtil {
         }
         _map.server = net.createServer(async (socket) => {
 
-                console.log(`tcp 客户端连接 ${socket.remoteAddress}`);
+                // console.log(`tcp 客户端连接 ${socket.remoteAddress}`);
                 const raw_socket = new tcp_raw_socket(socket);
                 _map.socket_set.add(raw_socket)
                 socket.on("close", () => {
@@ -88,7 +88,7 @@ export class NetServerUtil {
                 let auth = false
                 socket.on('end', () => {
                     raw_socket.get_client().close();
-                    console.log('客户端断开连接', socket.remoteAddress);
+                    // console.log('客户端断开连接', socket.remoteAddress);
                 });
                 // 处理错误事件
                 socket.on('error', (err) => {
@@ -100,14 +100,14 @@ export class NetServerUtil {
                     const  timeout = setTimeout(() => {
                         // 超时未验证
                         raw_socket.get_client().close();
-                        console.log(`超时未验证 ${socket.remoteAddress}:${socket.remotePort}`);
+                        // console.log(`超时未验证 ${socket.remoteAddress}:${socket.remotePort}`);
                         this.socket_timeout_map.delete(socket)
                         this.socket_timeout_resolve_map.delete(socket)
                     }, 3000)
                     this.socket_timeout_map.set(socket, timeout)
                     this.socket_timeout_resolve_map.set(socket,resolve );
                 }).then(()=>{
-                    console.log(`tcp 授权成功 ${socket.remoteAddress}`);
+                    // console.log(`tcp 授权成功 ${socket.remoteAddress}`);
                     auth = true
                 })
                 raw_socket.get_client().set_on_data(async (data, tag_id) => {
