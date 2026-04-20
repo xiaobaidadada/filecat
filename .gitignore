@@ -22,3 +22,6 @@ filecat-linux-x64.tar.gz
 env.local
 filecat-mac-arm.tar.gz
 /ripgrep/
+
+filecat-win-x64
+filecat-win-x64.zip
