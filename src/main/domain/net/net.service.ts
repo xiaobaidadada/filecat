@@ -662,6 +662,7 @@ export class NetService {
                         } catch (err) {
                             // 连接失败 什么都不做处理
                             clientSocket.destroy();
+                            client.close()
                         }
                     })
                     client.connect().catch(console.error);

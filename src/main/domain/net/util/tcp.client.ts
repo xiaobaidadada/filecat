@@ -115,7 +115,7 @@ export class tcp_raw_client extends tcp_raw_socket{
     }
 
     close () {
-        console.log(`客户端关闭`)
+        // console.log(`客户端关闭`)
         clearTimeout( this.reconnect_timeout)
         this.reconnect_timeout = null;
         this.closed = true;
