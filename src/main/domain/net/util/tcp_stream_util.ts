@@ -14,7 +14,7 @@ export class tcp_stream_util {
     private on_data_list:((data:Buffer,tag_id?:number)=>any)[] = []
     private one_data_resolve_map:{[key:number]:(data:Buffer)=>void} = {}
 
-    private on_close_list:(()=>any)[] = [];
+    // private on_close_list:(()=>any)[] = [];
 
     private socket:net.Socket;
 
@@ -37,21 +37,22 @@ export class tcp_stream_util {
     public close() {
         this.socket?.end();
         this.socket?.destroy();
-        for (const close of this.on_close_list) {
-            close();
-        }
+        // for (const close of this.on_close_list) {
+        //     close();
+        // }
     }
 
 
     public set_on_close(close:()=>void) {
-        this.on_close_list.push(close);
+        // this.on_close_list.push(close);
         this.socket.on("close", () => {
             close()
         })
     }
 
     public remove_on_close(close:()=>void) {
-        this.on_close_list = this.on_close_list.filter(v => v !== close);
+        this.socket.removeListener('close',close)
+        // this.on_close_list = this.on_close_list.filter(v => v !== close);
     }
 
     // 设置包处理函数 可以添加多个
