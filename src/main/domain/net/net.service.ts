@@ -802,6 +802,11 @@ export class NetService {
         if (fig == null) {
             fig = {open: false, port: 0, keys: []}
             DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
+            if(Env.https_tunnel_server_open) {
+                fig.open = true;
+                fig.port = Env.https_tunnel_server_port;
+                DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
+            }
         }
         fig.keys = fig.keys ?? [];
         for (const key of fig.keys) {
@@ -809,11 +814,6 @@ export class NetService {
                 key.used_size = 0;
             }
             key.forbid_regexp_list = key.forbid_regexp_list ?? [];
-        }
-        if(Env.https_tunnel_server_open) {
-            fig.open = true;
-            fig.port = Env.https_tunnel_server_port;
-            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
         }
         if(Env.https_tunnel_key) {
             let have = false

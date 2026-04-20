@@ -6,9 +6,11 @@ import {tcp_raw_socket} from "./util/tcp.client";
 import {https_tunnel_server_key} from "../../../common/req/net.pojo";
 
 
+let key_used_size_map: {[key:string]:number} = {}
+let socket_key_map: {[key:number]:string} = {}
+
 export class HttpsTunnel {
-    private key_used_size_map: {[key:string]:number} = {}
-    private socket_key_map: {[key:number]:string} = {}
+
 
 
     // public client_socket_map:{
@@ -40,10 +42,10 @@ export class HttpsTunnel {
             return 0;
         }
         const key_value = key_info.key;
-        if (this.key_used_size_map[key_value] == null) {
-            this.key_used_size_map[key_value] = key_info.used_size ?? 0;
+        if (key_used_size_map[key_value] == null) {
+            key_used_size_map[key_value] = key_info.used_size ?? 0;
         }
-        return this.key_used_size_map[key_value];
+        return key_used_size_map[key_value];
     }
 
     private can_use_traffic(key_info:https_tunnel_server_key, data_size:number) {
@@ -58,7 +60,7 @@ export class HttpsTunnel {
             return;
         }
         const key_value = key_info.key;
-        this.key_used_size_map[key_value] = this.get_key_used_size(key_info) + data_size;
+        key_used_size_map[key_value] = this.get_key_used_size(key_info) + data_size;
     }
 
     private is_forbid_target(key_info:https_tunnel_server_key, host:string, port:number) {
@@ -84,7 +86,7 @@ export class HttpsTunnel {
     }
 
     private cleanup_socket(socket_id:number, clientSocket:net.Socket, remoteSocket?:net.Socket) {
-        delete this.socket_key_map[socket_id];
+        delete socket_key_map[socket_id];
         clientSocket.destroy();
         if (remoteSocket) {
             remoteSocket.destroy();
@@ -98,7 +100,7 @@ export class HttpsTunnel {
             if (key.size == null) {
                 continue;
             }
-            const used_size = this.key_used_size_map[key.key];
+            const used_size = key_used_size_map[key.key];
             if (used_size != null && key.used_size !== used_size) {
                 key.used_size = used_size;
                 need_save = true;
@@ -110,8 +112,8 @@ export class HttpsTunnel {
     }
 
     public clear_runtime_traffic_stats() {
-        this.key_used_size_map = {}
-        this.socket_key_map = {}
+        key_used_size_map = {}
+        socket_key_map = {}
     }
 
 
@@ -139,7 +141,7 @@ export class HttpsTunnel {
         try {
             const remoteSocket = net.connect(info.target_proxy_port, info.target_proxy_host);
             remoteSocket.on('connect', () => {
-                this.socket_key_map[socket_id] = key_info.key;
+                socket_key_map[socket_id] = key_info.key;
                 util.send_data_call( tag_id,NetUtil.int16_to_buffer(socket_id))
                 //  双向稳定转发
                 // remoteSocket.pipe(clientSocket);
@@ -169,7 +171,7 @@ export class HttpsTunnel {
             remoteSocket.on('close', cleanup);
         } catch (err) {
             delete util.data_map[socket_id];
-            delete this.socket_key_map[socket_id];
+            delete socket_key_map[socket_id];
             clientSocket.destroy();
         }
     }
@@ -181,7 +183,7 @@ export class HttpsTunnel {
         if(!socket) {
             return
         }
-        const key_value = this.socket_key_map[socket_id];
+        const key_value = socket_key_map[socket_id];
         const key_info = key_value ? this.find_key_info(key_value) : undefined;
         const real_data = data.subarray(2);
         if (key_info) {
