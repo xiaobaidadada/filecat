@@ -9,6 +9,137 @@ import {BinFileUtil} from "../bin/bin.file.util";
 import {RG_PATH} from "../bin/download-ripgrep";
 import {FileUtil} from "../file/FileUtil";
 
+type PatchLineType = "context" | "add" | "delete";
+
+interface UnifiedPatchHunkLine {
+    type: PatchLineType;
+    text: string;
+}
+
+interface UnifiedPatchHunk {
+    oldStart: number;
+    oldCount: number;
+    newStart: number;
+    newCount: number;
+    lines: UnifiedPatchHunkLine[];
+}
+
+function normalizeText(text: string) {
+    return text.replace(/\r\n/g, "\n");
+}
+
+function parseUnifiedPatch(patchText: string): UnifiedPatchHunk[] {
+    const lines = normalizeText(patchText).split("\n");
+    const hunks: UnifiedPatchHunk[] = [];
+    let currentHunk: UnifiedPatchHunk | null = null;
+
+    for (const line of lines) {
+        if (
+            line.startsWith("diff --git ") ||
+            line.startsWith("index ") ||
+            line.startsWith("--- ") ||
+            line.startsWith("+++ ")
+        ) {
+            continue;
+        }
+
+        const hunkMatch = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?:\s.*)?$/);
+        if (hunkMatch) {
+            currentHunk = {
+                oldStart: Number(hunkMatch[1]),
+                oldCount: hunkMatch[2] ? Number(hunkMatch[2]) : 1,
+                newStart: Number(hunkMatch[3]),
+                newCount: hunkMatch[4] ? Number(hunkMatch[4]) : 1,
+                lines: []
+            };
+            hunks.push(currentHunk);
+            continue;
+        }
+
+        if (!currentHunk) {
+            if (!line.trim()) {
+                continue;
+            }
+            throw new Error(`patch 缺少 hunk 头: ${line}`);
+        }
+
+        if (line === "\\ No newline at end of file") {
+            continue;
+        }
+
+        const prefix = line[0];
+        const text = line.slice(1);
+        if (prefix === " ") {
+            currentHunk.lines.push({type: "context", text});
+            continue;
+        }
+        if (prefix === "+") {
+            currentHunk.lines.push({type: "add", text});
+            continue;
+        }
+        if (prefix === "-") {
+            currentHunk.lines.push({type: "delete", text});
+            continue;
+        }
+
+        throw new Error(`patch 行必须以空格/+/- 开头: ${line}`);
+    }
+
+    if (hunks.length === 0) {
+        throw new Error("未检测到有效的 unified diff hunk");
+    }
+
+    return hunks;
+}
+
+function applyUnifiedPatch(originalContent: string, patchText: string) {
+    const normalized = normalizeText(originalContent);
+    const originalLines = normalized === "" ? [] : normalized.split("\n");
+    const hunks = parseUnifiedPatch(patchText);
+    const result: string[] = [];
+    let sourceIndex = 0;
+
+    for (const hunk of hunks) {
+        const targetIndex = Math.max(hunk.oldStart - 1, 0);
+        if (targetIndex < sourceIndex) {
+            throw new Error("patch hunk 顺序非法或发生重叠");
+        }
+
+        while (sourceIndex < targetIndex) {
+            result.push(originalLines[sourceIndex]);
+            sourceIndex++;
+        }
+
+        for (const line of hunk.lines) {
+            if (line.type === "context") {
+                if (originalLines[sourceIndex] !== line.text) {
+                    throw new Error(`patch context 不匹配，期望第 ${sourceIndex + 1} 行是: ${line.text}`);
+                }
+                result.push(originalLines[sourceIndex]);
+                sourceIndex++;
+                continue;
+            }
+
+            if (line.type === "delete") {
+                if (originalLines[sourceIndex] !== line.text) {
+                    throw new Error(`patch delete 不匹配，期望第 ${sourceIndex + 1} 行是: ${line.text}`);
+                }
+                sourceIndex++;
+                continue;
+            }
+
+            result.push(line.text);
+        }
+    }
+
+    while (sourceIndex < originalLines.length) {
+        result.push(originalLines[sourceIndex]);
+        sourceIndex++;
+    }
+
+    return result.join("\n");
+}
+
 export const Ai_agentTools = {
     // 读取文件
     read_file: async ({path}) => {
@@ -88,6 +219,27 @@ export const Ai_agentTools = {
                 }
 
                 await appendFile(path, `\n${content}`, "utf-8");
+
+                return {
+                    ok: true,
+                    action,
+                    path,
+                    updated: true
+                };
+            }
+
+            // =========================
+            // 3.5️⃣ patch
+            // =========================
+            case "patch": {
+                if (typeof content !== "string") {
+                    throw new Error("patch requires unified diff string content");
+                }
+
+                const fileContent = await readFile(path, "utf-8");
+                const nextContent = applyUnifiedPatch(fileContent, content);
+
+                await writeFile(path, nextContent, "utf-8");
 
                 return {
                     ok: true,

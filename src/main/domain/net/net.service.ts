@@ -44,6 +44,7 @@ const {node_process_watcher} = get_bin_dependency("node-process-watcher", false)
 const needle = require('needle');
 
 let proxyServer: http.Server | null = null;
+const proxyServerSocketSet: Set<net.Socket> = new Set();
 // let proxy_server_data: HttpServerProxy;
 let proxy_server_list_data: HttpProxyITem[] = []
 
@@ -609,6 +610,12 @@ export class NetService {
         };
         // http 走requestHandler
         proxyServer = http.createServer(requestHandler);
+        proxyServer.on('connection', (socket: net.Socket) => {
+            proxyServerSocketSet.add(socket);
+            socket.on('close', () => {
+                proxyServerSocketSet.delete(socket);
+            });
+        });
         // https 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
@@ -756,16 +763,30 @@ export class NetService {
     /**
      * 关闭 HTTP 代理服务
      */
-    public httpServerProxyClose() {
-        if (proxyServer) {
-            proxyServer.close(() => console.log('Proxy server closed.'));
+    public httpServerProxyClose(): Promise<void> {
+        return new Promise((resolve) => {
+            if (!proxyServer) {
+                resolve();
+                return;
+            }
+            const server = proxyServer;
             proxyServer = null;
-        }
+            server.close(() => {
+                console.log('Proxy server closed.');
+                resolve();
+            });
+            server.closeAllConnections?.();
+            server.closeIdleConnections?.();
+            for (const socket of proxyServerSocketSet) {
+                socket.destroy();
+            }
+            proxyServerSocketSet.clear();
+        });
     }
 
-    public saveHttpServer(req: HttpServerProxy) {
+    public async saveHttpServer(req: HttpServerProxy) {
         DataUtil.set(data_common_key.http_server_key, req);
-        this.httpServerProxyClose()
+        await this.httpServerProxyClose()
         if (req.open) {
             this.httpServerStart(req)
         }

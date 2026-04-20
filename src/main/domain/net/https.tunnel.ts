@@ -63,7 +63,7 @@ export class HttpsTunnel {
 
     private is_forbid_target(key_info:https_tunnel_server_key, host:string, port:number) {
         const list = key_info.forbid_regexp_list;
-        if (list?.length) {
+        if (!list?.length) {
             return false;
         }
         const full_url = `https://${host}:${port}/`;

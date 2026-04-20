@@ -60,8 +60,8 @@ export const ai_tools = [
         function: {
             name: "edit_file",
             description: `
-编辑文件工具，支持五种模式：
-overwrite / replace / append / insert / delete
+编辑文件工具，支持六种模式：
+overwrite / replace / append / patch / insert / delete
     `,
             parameters: {
                 type: "object",
@@ -72,13 +72,13 @@ overwrite / replace / append / insert / delete
 
                     action: {
                         type: "string",
-                        enum: ["overwrite", "replace", "append", "insert", "delete"]
+                        enum: ["overwrite", "replace", "append", "patch", "insert", "delete"]
                     },
 
                     content: {
                         oneOf: [
                             {
-                                description: "overwrite / append",
+                                description: "overwrite / append / patch，patch 使用 unified diff 文本，支持 @@、空格上下文、+新增、-删除、patch 行必须以空格/+/- 开头",
                                 type: "string"
                             },
 
