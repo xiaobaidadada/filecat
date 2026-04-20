@@ -46,6 +46,7 @@ export class Env {
     public static https_tunnel_server_open:boolean
     public static https_tunnel_key: string;
     public static https_tunnel_key_kb_size:number;
+    public static https_tunnel_forbid_regexp:string;
 
     // public static watch: boolean = false;
 

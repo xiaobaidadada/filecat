@@ -71,6 +71,7 @@ const sandbox = {
 const proxyTargetUrlMap: Map<string, proxyInterface> = new Map();
 const checkTimeLength = 1000 * 60 * 10;// 十分钟没有触发，就关闭
 export class NetService {
+    private https_tunnel_traffic_save_timer?: NodeJS.Timeout;
     public async start(data: NetPojo) {
         const map = proxyTargetUrlMap.get(data.targetProxyUrl);
         if (map) {
@@ -781,6 +782,13 @@ export class NetService {
             fig = {open: false, port: 0, keys: []}
             DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
         }
+        fig.keys = fig.keys ?? [];
+        for (const key of fig.keys) {
+            if (key.used_size == null) {
+                key.used_size = 0;
+            }
+            key.forbid_regexp_list = key.forbid_regexp_list ?? [];
+        }
         if(Env.https_tunnel_server_open) {
             fig.open = true;
             fig.port = Env.https_tunnel_server_port;
@@ -795,23 +803,54 @@ export class NetService {
                 }
             }
             if( have === false) {
-                fig.keys.push({
+                const p = {
                     key: Env.https_tunnel_key,
-                    size: Env.https_tunnel_key_kb_size
-                })
+                    size: Env.https_tunnel_key_kb_size,
+                    used_size: 0,
+                    forbid_regexp_list: []
+                }
+                if(Env.https_tunnel_forbid_regexp) {
+                    p.forbid_regexp_list.push(Env.https_tunnel_forbid_regexp);
+                }
+                fig.keys.push(p)
             }
             DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
         }
         return fig;
     }
 
+    public save_https_tunnel_fig(fig:https_tunnel_server_fig) {
+        DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
+    }
+
+    private start_https_tunnel_traffic_save_timer() {
+        if (this.https_tunnel_traffic_save_timer) {
+            return;
+        }
+        this.https_tunnel_traffic_save_timer = setInterval(() => {
+            https_tunnel.persist_traffic_stats();
+        }, 60 * 1000);
+    }
+
+    private stop_https_tunnel_traffic_save_timer() {
+        if (!this.https_tunnel_traffic_save_timer) {
+            return;
+        }
+        clearInterval(this.https_tunnel_traffic_save_timer);
+        this.https_tunnel_traffic_save_timer = undefined;
+    }
+
     https_tunnel_server() {
         const fig = this.get_https_tunnel_fig();
         if(fig.open) {
             console.log(`开启 https tunnel服务器 ${fig.port}`)
+            this.start_https_tunnel_traffic_save_timer()
             NetServerUtil.start_tcp_server(fig.port,tcp_server_type.https_tunnel, NetMsgType.https_tunnel_tcp_connect)
         } else {
             console.log(`关闭 https tunnel服务器 ${fig.port}`)
+            https_tunnel.persist_traffic_stats();
+            https_tunnel.clear_runtime_traffic_stats();
+            this.stop_https_tunnel_traffic_save_timer()
             NetServerUtil.close_server(tcp_server_type.https_tunnel)
         }
 
