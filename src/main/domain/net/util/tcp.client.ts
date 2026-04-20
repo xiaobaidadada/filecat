@@ -54,6 +54,10 @@ export class tcp_raw_socket {
         });
     }
 
+    remove_on_close(fun:()=>void) {
+        this.client.remove_on_close(fun)
+    }
+
 
     on_connect(fun:()=>void) {
         this.client.get_socket().on("connect", ()=>{

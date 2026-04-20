@@ -653,6 +653,7 @@ export class NetService {
                                 }
                             })
                             const cleanup = () => {
+                                client.get_raw_client().remove_on_close(cleanup)
                                 clientSocket.destroy();
                                 client.close();
                             };
