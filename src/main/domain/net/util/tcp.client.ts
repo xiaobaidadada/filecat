@@ -92,9 +92,9 @@ export class tcp_raw_client extends tcp_raw_socket{
             }
             this.reconnect();
         })
-        this.client.get_socket().on('end', () => {
-            console.log('服务器断开连接');
-        });
+        // this.client.get_socket().on('end', () => {
+        //     console.log('服务器断开连接');
+        // });
     }
 
     private reconnect() {
