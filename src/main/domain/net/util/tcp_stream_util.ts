@@ -51,7 +51,7 @@ export class tcp_stream_util {
     }
 
     public remove_on_close(close:()=>void) {
-        this.on_close_list = this.on_close_list.filter(close => close !== close);
+        this.on_close_list = this.on_close_list.filter(v => v !== close);
     }
 
     // 设置包处理函数 可以添加多个
