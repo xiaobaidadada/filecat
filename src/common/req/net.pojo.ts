@@ -148,7 +148,7 @@ export class MacProxy {
 
 export class https_tunnel_server_key {
     key: string;
-    size?: number; // 单位都是 字节
+    size?: number; // 单位都是 字节（1kb 1024字节)
     used_size?: number;
     forbid_regexp_list?: string[];
     note?: string;
