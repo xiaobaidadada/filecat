@@ -1,8 +1,6 @@
 // 自定义全局异常处理中间件
 import {
     ExpressErrorMiddlewareInterface,
-    ExpressMiddlewareInterface,
-    KoaMiddlewareInterface,
     Middleware
 } from "routing-controllers";
 import {Fail} from "../Result";

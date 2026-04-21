@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.37.2",
+  "version": "5.37.3",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -54,7 +54,6 @@
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",
     "@excalidraw/excalidraw": "^0.17.6",
-    "@koa/cors": "^5.0.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@xiaobaidadada/prebuild": "^13.0.1-9",
@@ -78,11 +77,9 @@
     "github-markdown-css": "^5.6.1",
     "html-webpack-plugin": "^5.6.6",
     "http-proxy-middleware": "3.0.5",
-    "https-proxy-agent": "^7.0.6",
     "i18next": "^25.5.2",
     "iconv-lite": "^0.6.3",
     "jieba-wasm": "^2.4.0",
-    "koa-proxies": "^0.12.4",
     "listr2": "^8.2.1",
     "lodash": "4.17.23",
     "markdown-it": "14.1.1",

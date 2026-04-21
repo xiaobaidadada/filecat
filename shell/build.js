@@ -32,27 +32,7 @@ function ensure_copyFileSync(sourcePath, destPath) {
     fse.ensureDirSync(path.dirname(destPath))
     copyFileSync(sourcePath, destPath);
 }
-// 只能复制文件
-function copyFiles(sourceDir,destDir) {
-    try {
-        const files =  fs.readdirSync(sourceDir); // 获取源目录下的所有文件/文件夹
 
-        for (const file of files) {
-            const sourcePath = path.join(sourceDir, file);
-            const destPath = path.join(destDir, file);
-            const stat =  fs.statSync(sourcePath); // 获取文件信息，判断是文件还是目录
-            if (stat.isDirectory()) {
-                // 如果是目录 暂时不做处理
-            } else {
-                // 如果是文件，则直接复制
-                fs.copyFileSync(sourcePath, destPath);
-            }
-        }
-        console.log(`${sourceDir}:下所有文件复制完成!\n`);
-    } catch (err) {
-        console.error('复制文件时出错:', err);
-    }
-}
 
 const tasksLister = new Listr(
     [
@@ -150,7 +130,7 @@ const tasksLister = new Listr(
         },
     ],
     {
-        exitOnError: false,
+        exitOnError: true,
     }
 );
 tasksLister.run();

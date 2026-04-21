@@ -63,7 +63,8 @@ const npm_externals = [
 const pkg_externals = [
     {
         '@aws-sdk/client-s3': 'S3', // 假设全局变量名为 S3 是 @aws-sdk/client-s3带 @符号的话会无法压缩
-        'cors': 'commonjs cors' // 动态加载无法打包 如果需要可以使用 import "cors"
+        'cors': 'commonjs cors',
+        '@koa/cors': 'commonjs @koa/cors' // 动态加载无法打包 如果需要可以使用 import "cors"
         // 'routing-controllers':'commonjs routing-controllers', // 有一些动态引入(他需要的动态引入也需要导入)，或者含有.node(使用用户自己安装编译的版本) 无法被打包 直接忽略这个包
     }
 ]

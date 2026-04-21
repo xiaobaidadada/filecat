@@ -12,7 +12,8 @@ import {
 } from "../../../common/req/net.pojo";
 import {find_available_port} from "../../../common/node/findPort";
 import {Fail, Sucess} from "../../other/Result";
-import proxy from 'koa-proxies';
+import express from "express";
+
 import {Request, Response} from "express";
 import path from "path";
 import fs from "fs";
@@ -37,6 +38,7 @@ import {tcp_client, tcp_raw_socket} from "./util/tcp.client";
 import {Env} from "../../../common/node/Env";
 import {https_tunnel} from "./https.tunnel";
 import * as util from "node:util";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 
 const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);
@@ -48,9 +50,7 @@ const proxyServerSocketSet: Set<net.Socket> = new Set();
 // let proxy_server_data: HttpServerProxy;
 let proxy_server_list_data: HttpProxyITem[] = []
 
-const Koa = require('koa');
-const cors = require('@koa/cors');
-const httpsProxyAgent = require('https-proxy-agent')
+
 const dgram = require('dgram');
 
 let interval = null;
@@ -82,33 +82,32 @@ export class NetService {
         proxyTargetUrlMap.set(data.targetProxyUrl, pojo);
         const port = await find_available_port(49152, 65535);
         pojo.beforPort = port;
-        const app = new Koa();
-        // 自定义 CORS 规则
-        app.use(cors());
-        pojo.server = app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
+
+        const app = express();
+        app.use((req, res, next) => {
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.setHeader("Access-Control-Allow-Methods", "*");
+            res.setHeader("Access-Control-Allow-Headers", "*");
+            next();
         });
-        const options = {
+        const proxy = createProxyMiddleware({
             target: data.targetProxyUrl,
             changeOrigin: true,
-            events: {
-                proxyRes(proxyRes, req, res) {
-                    // 修改响应头
-                    // proxyRes.headers['X-Frame-Options'] = `ALLOW-FROM ${req.headers.referer}`;
-                    // proxyRes.headers['Content-Security-Policy'] = "frame-ancestors *";
-                    proxyRes.headers['X-Frame-Options'] = ``;
-                    proxyRes.headers['Content-Security-Policy'] = "";
-                }
-            },
-            rewrite: function (path) {
+            ws: true, // 支持 websocket
+            pathRewrite: function (path) {
                 pojo.heartbeat = true;
                 return path;
             },
-        }
-        if (data.sysProxyPort) {
-            options['agent'] = new httpsProxyAgent(`http://127.0.0.1:${data.sysProxyPort}`);
-        }
-        app.use(proxy(/^.*$/, options));
+        });
+        app.use("/", proxy);
+
+        pojo.server = app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+        // if (data.sysProxyPort) {
+        //     options['agent'] = new httpsProxyAgent(`http://127.0.0.1:${data.sysProxyPort}`);
+        // }
+        // app.use(proxy(/^.*$/, options));
         const result = new NetPojo();
         result.proxyPort = port;
         if (!interval) {

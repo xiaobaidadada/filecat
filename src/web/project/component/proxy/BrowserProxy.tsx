@@ -48,7 +48,7 @@ export function BrowserProxy(props) {
             NotyFail("must start with http[s]://");
             return;
         }
-        req.sysProxyPort = sysPort;
+        // req.sysProxyPort = sysPort;
         const rsp = await netHttp.post("start", req);
         if (rsp.code !== RCode.Success) {
             return;
@@ -105,7 +105,7 @@ export function BrowserProxy(props) {
     }
     return <div>
         <Header>
-            <InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>
+            {/*<InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>*/}
             <InputTextIcon placeholder={t("要代理的url")} icon={"link"} value={showUrl} handleInputChange={(v) => {
                 setshowUrl(v);
             }}/>
