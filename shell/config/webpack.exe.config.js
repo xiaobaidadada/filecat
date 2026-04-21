@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
-const { _node_rules, get_exe_plugins} = require("./base.webpack.config");
+const { _node_rules, get_exe_plugins, pkg_externals} = require("./base.webpack.config");
 
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
@@ -22,12 +22,7 @@ module.exports = {
     },
     externalsPresets: { node: true },
     externals: [
-        {
-            '@aws-sdk/client-s3': 'S3', // 假设全局变量名为 S3 是 @aws-sdk/client-s3带 @符号的话会无法压缩
-            'cors': 'commonjs cors',
-            '@koa/cors':'commonjs @koa/cors' // 动态加载无法打包 如果需要可以使用 import "cors"
-            // 'routing-controllers':'commonjs routing-controllers', // 有一些动态引入(他需要的动态引入也需要导入)，或者含有.node(使用用户自己安装编译的版本) 无法被打包 直接忽略这个包
-        }
+        pkg_externals
     ],
     // externals: [nodeExternals()], // 将所有的外部模块排除打包
     plugins:get_exe_plugins(),
