@@ -2,8 +2,6 @@ import {fork, spawn} from 'child_process';
 // import readline from 'readline';
 import * as path from "path"
 import {FatherProcessUtil, filecat_cmd} from "../common/node/childProcessUtil";
-import {fileCompress} from "./domain/file/file.compress";
-import {get_zip_file_format_util} from "../common/StringUtil";
 import {FileUtil} from "./domain/file/FileUtil";
 
 let child: any = null;
@@ -115,6 +113,8 @@ export async function startLauncher() {
                         killChild()
                         try {
                             if (data.run_env === "exe") {
+                                let {fileCompress} = require("./domain/file/file.compress")
+                                let {get_zip_file_format_util} = require('"../common/StringUtil"')
                                 const format = get_zip_file_format_util(data.file_path)
                                 if (!format) {
                                     console.log(`不能识别的文件压缩格式 ${data.file_path}`)
