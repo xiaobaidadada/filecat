@@ -666,7 +666,7 @@ export class NetService {
                             };
                             clientSocket.on('error', cleanup);
                             client.get_raw_client().on_close(cleanup);
-                            client.get_raw_client().get_client().get_socket().once('error', cleanup);
+                            client.get_raw_client().get_client().get_socket().on('error', cleanup);
                             clientSocket.on('close', cleanup);
                         } catch (err) {
                             // 连接失败 什么都不做处理
