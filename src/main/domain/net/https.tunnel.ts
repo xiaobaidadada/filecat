@@ -154,7 +154,7 @@ export class HttpsTunnel {
                     const ok = util.send_data(NetMsgType.https_tunnel_tcp_data,data as Buffer)
                     if(!ok) {
                         remoteSocket.pause()
-                        util.get_client().get_socket().on('drain',()=>{
+                        util.get_client().get_socket().once('drain',()=>{
                             remoteSocket.resume()
                         })
                     }
@@ -169,6 +169,8 @@ export class HttpsTunnel {
             remoteSocket.on('error', cleanup);
             clientSocket.on('close', cleanup);
             remoteSocket.on('close', cleanup);
+            clientSocket.on('end', cleanup);
+            remoteSocket.on('end', cleanup);
         } catch (err) {
             delete util.data_map[socket_id];
             delete socket_key_map[socket_id];
@@ -197,7 +199,7 @@ export class HttpsTunnel {
         const ok = socket.write(real_data)
         if(!ok) {
             util.get_client().get_socket().pause()
-            socket.on('drain',()=>{
+            socket.once('drain',()=>{
                 util.get_client().get_socket().resume()
             })
         }

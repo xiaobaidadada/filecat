@@ -147,6 +147,8 @@ export class TcpForwardController {
             client_num_id: info.client_num_id,
         })),tag_id);
         info.client_util = util
+        info.client_remote_address = util.get_client().get_socket().remoteAddress
+        info.online_start_time = Date.now()
         await tcpForwardService.add_client(info)
         util.data_map[client_num_id_key] = info.client_num_id
         Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )

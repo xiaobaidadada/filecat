@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
+import {Column, Dashboard, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
@@ -23,6 +23,7 @@ import {
 } from "../../../../common/req/common.pojo";
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
+import { getShortTime } from "../../util/common_util";
 
 
 export function TcpProxyServer() {
@@ -254,6 +255,8 @@ export function TcpProxyServer() {
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
+                        <TextLine left={"远程地址"} center={edit_client?.client_remote_address??""}/>
+                        <TextLine left={"在线时长"} center={getShortTime(edit_client?.online_start_time)}/>
                         <InputText placeholder={"名称"} value={edit_client.client_name} handleInputChange={(d) => {
                             edit_client.client_name = d
                             set_edit_client({...edit_client})

@@ -226,7 +226,10 @@ export class TcpForwardServerService {
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
         }
         for (const it of list) {
-            it.status = !!this.client_num_map[it.client_num_id]?.client_util?.connected
+            const client = this.client_num_map[it.client_num_id]
+            it.status = !!client?.client_util?.connected
+            it.client_remote_address = client?.client_remote_address
+            it.online_start_time = client?.online_start_time
         }
         return list;
     }

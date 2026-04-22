@@ -635,7 +635,7 @@ export class NetService {
                         const ok = clientSocket.write(data)
                         if(!ok) {
                             util.get_client().get_socket().pause()
-                            clientSocket.on('drain',()=>{
+                            clientSocket.once('drain',()=>{
                                 util.get_client().get_socket().resume()
                             })
                         }
@@ -654,7 +654,7 @@ export class NetService {
                                 const ok = client.send_data(NetMsgType.https_tunnel_tcp_data,Buffer.concat([socket_id_data,data]) )
                                 if(!ok) {
                                     clientSocket.pause()
-                                    client.get_raw_client().get_client().get_socket().on('drain',()=>{
+                                    client.get_raw_client().get_client().get_socket().once('drain',()=>{
                                         clientSocket.resume()
                                     })
                                 }

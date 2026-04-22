@@ -19,6 +19,9 @@ export interface tcp_forward_client_type {
 
     // 内存临时变量
     client_util?: tcp_raw_socket // 服务器上的socket客户端
+
+    client_remote_address?:string // 客户端远程地址
+    online_start_time?:number
 }
 
 export interface sockets_type  {

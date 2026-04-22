@@ -115,6 +115,9 @@ export class tcp_proxy_server_client {
     // client_id:string;
     client_num_id:number;
     client_name:string;
+
+    client_remote_address?:string;
+    online_start_time?:number;
 }
 
 export class tcp_proxy_client_fig{
