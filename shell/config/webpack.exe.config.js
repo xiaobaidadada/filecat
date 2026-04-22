@@ -21,9 +21,7 @@ module.exports = {
         rules: _node_rules
     },
     externalsPresets: { node: true },
-    externals: [
-        pkg_externals
-    ],
+    externals: pkg_externals,
     // externals: [nodeExternals()], // 将所有的外部模块排除打包
     plugins:get_exe_plugins(),
     optimization: {
