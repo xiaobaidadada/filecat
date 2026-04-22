@@ -126,12 +126,15 @@ export class HttpsTunnel {
         }
         const key_info = this.find_key_info(info.key);
         if(!key_info) {
+            console.log(`未验证请求`)
             return;
         }
         if (this.is_forbid_target(key_info, info.target_proxy_host, info.target_proxy_port)) {
+            console.log(`禁止访问网站 ${info.target_proxy_host}`)
             return;
         }
         if (!this.can_use_traffic(key_info, 0)) {
+            console.log(`流流量用完 ${key_info.key}`)
             return;
         }
         // token校验成功 连接成功
@@ -147,6 +150,7 @@ export class HttpsTunnel {
                 // remoteSocket.pipe(clientSocket);
                 remoteSocket.on('data', data => {
                     if (!this.can_use_traffic(key_info, data.length)) {
+                        console.log(`流流量用完 ${key_info.key}`)
                         this.cleanup_socket(socket_id, clientSocket, remoteSocket);
                         return;
                     }
@@ -190,6 +194,7 @@ export class HttpsTunnel {
         const real_data = data.subarray(2);
         if (key_info) {
             if (!this.can_use_traffic(key_info, real_data.length)) {
+                console.log(`流流量用完 ${key_info.key}`)
                 delete util.data_map[socket_id];
                 this.cleanup_socket(socket_id, util.get_client().get_socket(), socket);
                 return;
