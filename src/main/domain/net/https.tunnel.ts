@@ -137,12 +137,33 @@ export class HttpsTunnel {
             console.log(`流流量用完 ${key_info.key}`)
             return;
         }
-        // token校验成功 连接成功
-        NetServerUtil.connect_success(util.get_client().get_socket());
         const clientSocket = util.get_client().get_socket();
         const socket_id = this.get_socket_id()
+        NetServerUtil.connect_success(util.get_client().get_socket());
+        let cleaned = false;
+
+        const cleanup = (reason?: string) => {
+            if (cleaned) return;
+            cleaned = true;
+            try {
+                delete util.data_map[socket_id];
+                delete socket_key_map[socket_id];
+                clientSocket.destroy();
+            } catch {}
+            try {
+                remoteSocket.destroy();
+            } catch {}
+            // 可选 debug
+            // console.log(`cleanup socket ${socket_id}`, reason);
+        };
+        let remoteSocket: any;
         try {
-            const remoteSocket = net.connect(info.target_proxy_port, info.target_proxy_host);
+            remoteSocket = net.connect(info.target_proxy_port, info.target_proxy_host);
+            util.data_map[socket_id] = remoteSocket;
+
+            remoteSocket.setTimeout(15000);
+            remoteSocket.on('timeout', () => cleanup('timeout'));
+
             remoteSocket.on('connect', () => {
                 socket_key_map[socket_id] = key_info.key;
                 util.send_data_call( tag_id,NetUtil.int16_to_buffer(socket_id))
@@ -151,34 +172,35 @@ export class HttpsTunnel {
                 remoteSocket.on('data', data => {
                     if (!this.can_use_traffic(key_info, data.length)) {
                         console.log(`流流量用完 ${key_info.key}`)
-                        this.cleanup_socket(socket_id, clientSocket, remoteSocket);
+                        cleanup('traffic limit');
+                        // this.cleanup_socket(socket_id, clientSocket, remoteSocket);
                         return;
                     }
                     this.add_key_traffic(key_info, data.length);
                     const ok = util.send_data(NetMsgType.https_tunnel_tcp_data,data as Buffer)
-                    if(!ok) {
-                        remoteSocket.pause()
-                        util.get_client().get_socket().once('drain',()=>{
-                            remoteSocket.resume()
-                        })
+                    if (!ok) {
+                        remoteSocket.pause();
+                        clientSocket.once('drain', () => {
+                            if (!cleaned) remoteSocket.resume();
+                        });
                     }
                 })
             });
-            util.data_map[socket_id] = remoteSocket;
-            const cleanup = () => {
-                delete util.data_map[socket_id];
-                this.cleanup_socket(socket_id, clientSocket, remoteSocket);
-            };
-            clientSocket.on('error', cleanup);
-            remoteSocket.on('error', cleanup);
-            clientSocket.on('close', cleanup);
-            remoteSocket.on('close', cleanup);
-            clientSocket.on('end', cleanup);
-            remoteSocket.on('end', cleanup);
+
+            // ===== error 兜底（关键）=====
+            remoteSocket.on('error', (err: any) => {
+                cleanup('remote error');
+            });
+
+            clientSocket.on('error', () => cleanup('client error'));
+
+            remoteSocket.on('close', () => cleanup('remote close'));
+            clientSocket.on('close', () => cleanup('client close'));
+
+            remoteSocket.on('end', () => cleanup('remote end'));
+            clientSocket.on('end', () => cleanup('client end'));
         } catch (err) {
-            delete util.data_map[socket_id];
-            delete socket_key_map[socket_id];
-            clientSocket.destroy();
+            cleanup('exception');
         }
     }
 
