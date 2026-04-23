@@ -39,6 +39,7 @@ import {Env} from "../../../common/node/Env";
 import {https_tunnel} from "./https.tunnel";
 import * as util from "node:util";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { Duplex } from "node:stream";
 
 
 const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);
@@ -592,8 +593,14 @@ export class NetService {
                 port: targetUrl.port || 80,
                 path: targetUrl.pathname + targetUrl.search,
                 method: req.method,
-                headers: {...req.headers, ...headers},
+                headers: {
+                    ...req.headers,
+                    ...headers,
+                    connection: 'close'   // ✅ 强制关闭连接
+                },
             };
+            delete options.headers['proxy-connection'];
+            res.setHeader('Connection', 'close');
             const proxyReq = http.request(
                 options,
                 proxyRes => {
@@ -617,21 +624,27 @@ export class NetService {
         });
         // ws 走升级
         proxyServer.on('upgrade', (req, socket, head) => {
-            const targetUrl = new URL(req.url!);
+            const host = req.headers.host!;
+            const targetUrl = new URL(`http://${host}${req.url}`);
+
             const port = targetUrl.port ? Number(targetUrl.port) : 80;
-            const proxySocket = net.connect(
-                port,
-                targetUrl.hostname,
-                () => {
-                    socket.write(
-                        'HTTP/1.1 101 Switching Protocols\r\n\r\n'
-                    );
-                    proxySocket.write(head);
-                    proxySocket.pipe(socket);
-                    socket.pipe(proxySocket);
-                }
-            );
-            proxySocket.on('error', () => socket.end());
+
+            const proxySocket = net.connect(port, targetUrl.hostname);
+
+            proxySocket.on('connect', () => {
+                proxySocket.write(head);
+                proxySocket.pipe(socket);
+                socket.pipe(proxySocket);
+            });
+
+            const cleanup = () => {
+                socket.destroy();
+                proxySocket.destroy();
+            };
+
+            socket.on('error', cleanup);
+            socket.on('close', cleanup);
+            proxySocket.on('error', cleanup);
         });
         // https wss 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
@@ -748,8 +761,11 @@ export class NetService {
                 upstreamSocket.on('error', (err) => {
                     clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nUpstream socket error: ${err.message}\r\n`);
                 });
-                clientSocket.on('error', () => upstreamSocket.destroy());
-                clientSocket.on('close', () => upstreamSocket.end());
+                const cleanup = () => this.safeDestroy(clientSocket, upstreamSocket);
+                clientSocket.on('error', cleanup);
+                clientSocket.on('close', cleanup);
+                upstreamSocket.on('error', cleanup);
+                upstreamSocket.on('close', cleanup);
                 return
             }
             //
@@ -768,8 +784,12 @@ export class NetService {
             directSocket.on('error', (err) => {
                 clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nDirect socket error: ${err.message}\r\n`);
             });
-            clientSocket.on('error', () => directSocket.destroy());
-            clientSocket.on('close', () => directSocket.end());
+            const cleanup = () => this.safeDestroy(clientSocket, directSocket);
+            directSocket.on('error', cleanup);
+            directSocket.on('timeout', cleanup);
+            directSocket.on('close', cleanup);
+            clientSocket.on('error', cleanup);
+            clientSocket.on('close', cleanup);
         });
 
         proxyServer.listen(data.port, () => {
@@ -777,11 +797,36 @@ export class NetService {
         });
     }
 
+    stop_socket() {
+        if (!proxyServer) return;
+
+        proxyServer.close();
+
+        for (const socket of proxyServerSocketSet) {
+            if (!socket.destroyed) {
+                socket.destroy();   // ✅ 强制断所有连接
+            }
+        }
+
+        proxyServerSocketSet.clear();
+        proxyServer = null;
+    }
+
+
+    safeDestroy  (...sockets: (net.Socket |Duplex| undefined)[]) {
+        sockets.forEach(s => {
+            if (s && !s.destroyed) {
+                s.destroy();
+            }
+        });
+    };
+
 
     /**
      * 关闭 HTTP 代理服务
      */
     public httpServerProxyClose(): Promise<void> {
+        this.stop_socket()
         return new Promise((resolve) => {
             if (!proxyServer) {
                 resolve();
