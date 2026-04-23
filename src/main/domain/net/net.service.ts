@@ -615,7 +615,25 @@ export class NetService {
                 proxyServerSocketSet.delete(socket);
             });
         });
-        // https 走connect  处理 HTTPS CONNECT 隧道
+        // ws 走升级
+        proxyServer.on('upgrade', (req, socket, head) => {
+            const targetUrl = new URL(req.url!);
+            const port = targetUrl.port ? Number(targetUrl.port) : 80;
+            const proxySocket = net.connect(
+                port,
+                targetUrl.hostname,
+                () => {
+                    socket.write(
+                        'HTTP/1.1 101 Switching Protocols\r\n\r\n'
+                    );
+                    proxySocket.write(head);
+                    proxySocket.pipe(socket);
+                    socket.pipe(proxySocket);
+                }
+            );
+            proxySocket.on('error', () => socket.end());
+        });
+        // https wss 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
             const targetPort = Number(targetPortStr || 443);
