@@ -1,22 +1,24 @@
 // 用于保存对象实例，避免重复创建，因为typedi必须要提前创建，但是这里是最提前的所以需要自己创建
-import {CmdType} from "./WsData";
+import {CmdType, ws_cmd_type_map, WsData} from "./WsData";
 import WebSocket from "ws";
 
 const objMap = new Map<string,Object>();
 export const routerHandlerMap = new Map<CmdType,Function>();
 export const otherRouterHandlerMap = new Map<CmdType,(ws: WebSocket,query:{[key: string]: string})=>any>();
 
-export function msg(msg:CmdType) {
+export function msg<K extends  CmdType>(msg:K) {
     /**
      *
      * @param target 目标对象，也是构造器 可以构造器创建
      * @param key 属性名
      * @param descriptor 描述符
      */
-    return (target: any, key: string, descriptor: PropertyDescriptor)=>{
+    return (target: any, key: string, descriptor: TypedPropertyDescriptor<
+        (data: WsData<ws_cmd_type_map[K][0]>) => Promise<ws_cmd_type_map[K][1]>
+    >)=>{
         const p = objMap.get(target.name);
         const obj = p??new target.constructor();
-        descriptor.value
+        // descriptor.value
         routerHandlerMap.set(msg,obj[key].bind(obj))
         // const originalMethod = descriptor.value;
         // descriptor.value = function (...args: any[]) {
@@ -31,7 +33,7 @@ export function otherMsg(msg:CmdType) {
     return (target: any, key: string, descriptor: PropertyDescriptor)=>{
         const p = objMap.get(target.name);
         const obj = p??new target.constructor();
-        descriptor.value
+        // descriptor.value
         otherRouterHandlerMap.set(msg,obj[key].bind(obj))
     }
 }

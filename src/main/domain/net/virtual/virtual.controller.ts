@@ -71,12 +71,12 @@ export class VirtualController {
 
 
     @msg(CmdType.vir_net_serverIno_get)
-    getServerInfos(data: WsData<any>) {
+    async getServerInfos(data: WsData<any>) {
         return virtualServerService.getServerInfos(data);
     }
 
     @msg(CmdType.vir_net_client_get)
-    vir_net_client_get(data: WsData<any>) {
+    async vir_net_client_get(data: WsData<any>) {
         return virtualClientService.vir_net_client_get(data);
     }
 

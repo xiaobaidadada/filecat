@@ -1,6 +1,9 @@
 import {Wss} from "./ws.server";
 import {RCode} from "../Result.pojo";
 import {DataEncode} from "./data.encode";
+import {FileCompressPojo, LogViewerPojo} from "../file.pojo";
+import {WorkFlowRealTimeOneReq} from "../req/file.req";
+import {ShellInitPojo} from "../req/ssh.pojo";
 // import WebSocket from 'ws'; // 浏览器不能用
 
 export const protocolIsProto2 = true;
@@ -123,6 +126,105 @@ export enum CmdType {
 
     tcp_forward_server_load,
 
+}
+
+
+
+export type ws_cmd_type_map = {
+    [CmdType.heart]: [any, any]
+
+    [CmdType.sys_get]: [any, any]
+    [CmdType.sys_getting]: [any, any]
+    [CmdType.sys_cancel]: [any, any]
+
+    [CmdType.shell_open]: [ShellInitPojo, any]
+    [CmdType.shell_send]: [any, any]
+    [CmdType.shell_getting]: [any, any]
+    [CmdType.shell_copy]: [any, any]
+
+    [CmdType.docker_get]: [any, any]
+    [CmdType.docker_getting]: [any, any]
+    [CmdType.docker_shell_logs]: [any, any]
+    [CmdType.docker_shell_logs_getting]: [any, any]
+    [CmdType.docker_shell_logs_cancel]: [any, any]
+    [CmdType.docker_shell_exec_open]: [any, any]
+    [CmdType.docker_shell_exec]: [any, any]
+    [CmdType.docker_shell_exec_getting]: [any, any]
+    [CmdType.docker_shell_exec_cancel]: [any, any]
+    [CmdType.docker_switch]: [any, any]
+    [CmdType.docker_del_container]: [{dockerId:string}, any]
+
+    [CmdType.process_get]: [any, any]
+    [CmdType.process_getting]: [any, any]
+    [CmdType.process_close]: [any, any]
+
+    [CmdType.systemd_inside_get]: [any, any]
+    [CmdType.systemd_inside_getting]: [any, any]
+    [CmdType.systemd_logs_get]: [any, any]
+    [CmdType.systemd_logs_getting]: [any, any]
+
+    [CmdType.remote_shell_open]: [any, any]
+    [CmdType.remote_shell_send]: [any, any]
+    [CmdType.remote_shell_getting]: [any, any]
+    [CmdType.remote_shell_cancel]: [any, any]
+    [CmdType.remote_shell_cd]: [any, any]
+
+    [CmdType.infos]: [any, any]
+    [CmdType.connect]: [any, any]
+
+    [CmdType.rdp_connect]: [any, any]
+    [CmdType.rdp_bitmap]: [any, any]
+    [CmdType.rdp_close]: [any, any]
+    [CmdType.rdp_error]: [any, any]
+    [CmdType.mouse]: [any, any]
+    [CmdType.wheel]: [any, any]
+    [CmdType.scancode]: [any, any]
+    [CmdType.unicode]: [any, any]
+    [CmdType.rdp_disconnect]: [any, any]
+
+    [CmdType.vir_net_serverIno_get]: [any, any]
+    [CmdType.vir_net_client_get]: [any, any]
+
+    [CmdType.tcp_proxy_client_status]: [any, any]
+
+    [CmdType.file_info]: [any, any]
+    [CmdType.file_video_trans]: [any, any]
+    [CmdType.file_video_trans_progress]: [any, any]
+    [CmdType.file_uncompress]: [FileCompressPojo, any]
+    [CmdType.file_uncompress_progress]: [any, any]
+    [CmdType.file_compress]: [any, any]
+    [CmdType.file_compress_progress]: [any, any]
+    [CmdType.file_upload_pre]: [any, any]
+    [CmdType.file_upload]: [any, any]
+
+    [CmdType.log_viewer]: [any, any]
+    [CmdType.log_viewer_watch]: [LogViewerPojo, any]
+    [CmdType.log_viewer_watch_cancel]: [any, any]
+
+    [CmdType.search_file]: [any, any]
+    [CmdType.search_file_progress]: [any, any]
+    [CmdType.search_file_index]: [any, any]
+    [CmdType.search_file_cancel]: [any, any]
+
+    [CmdType.http_download_water]: [any, any]
+    [CmdType.http_download_cancel]: [any, any]
+
+    [CmdType.folder_size_info]: [any, any]
+    [CmdType.folder_size_info_close]: [any, any]
+
+    [CmdType.rtsp_get]: [any, any]
+    [CmdType.rtsp_cancel]: [any, any]
+
+    [CmdType.workflow_exec]: [any, any]
+    [CmdType.workflow_get]: [any, any]
+    [CmdType.workflow_realtime]: [any, any]
+    [CmdType.workflow_realtime_one_req]: [WorkFlowRealTimeOneReq, any]
+    [CmdType.workflow_realtime_one_rsq]: [any, any]
+    [CmdType.workflow_search_by_run_name]: [WorkFlowRealTimeOneReq, any]
+
+    [CmdType.ai_load_info]: [any, any]
+
+    [CmdType.tcp_forward_server_load]: [any, any]
 }
 
 export enum WsConnectType {

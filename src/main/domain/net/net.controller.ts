@@ -98,13 +98,13 @@ export class NetController {
     }
 
     @msg(CmdType.http_download_water)
-    http_download_water(data: WsData<any>) {
+    async http_download_water(data: WsData<any>) {
         userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy);
         return netService.http_download_water(data);
     }
 
     @msg(CmdType.http_download_cancel)
-    http_download_cancel(data: WsData<any>) {
+    async http_download_cancel(data: WsData<any>) {
         userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy_download_cancel);
         return netService.http_download_cancel(data);
     }

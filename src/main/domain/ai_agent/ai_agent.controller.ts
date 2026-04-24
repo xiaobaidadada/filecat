@@ -49,7 +49,7 @@ export class Ai_AgentController {
     }
 
     @msg(CmdType.ai_load_info)
-    get_info(data: WsData<any>) {
+    async get_info(data: WsData<any>) {
         const wss = (data.wss as Wss)
         userService.check_user_auth(wss.token, UserAuth.ai_agent_setting);
         ai_agentService.all_wss_set.add(wss)

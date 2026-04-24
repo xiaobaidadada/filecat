@@ -121,7 +121,7 @@ export class TcpForwardController {
     }
 
     @msg(CmdType.tcp_proxy_client_status)
-    vir_net_client_get(data: WsData<any>) {
+    async vir_net_client_get(data: WsData<any>) {
         userService.check_user_auth(data.wss.token, UserAuth.vir_net);
         return tcp_forward_client_service.tcp_proxy_client_status(data);
     }
