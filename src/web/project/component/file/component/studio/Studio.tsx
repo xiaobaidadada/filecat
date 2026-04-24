@@ -17,6 +17,7 @@ import {ableExtBeautify, FileMenuData, getFileFormat} from "../../../../../../co
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
+import {useLocation, useNavigate} from "react-router-dom";
 // import Ace from "../Ace";
 
 
@@ -24,7 +25,7 @@ const Ace = React.lazy(() => import("../Ace"));
 
 
 export default function Studio(props) {
-    const [studio, set_studio] = useRecoilState($stroe.studio);
+    // const [studio, set_studio] = useRecoilState($stroe.studio);
     const [list, set_list] = useState([]);
     const [pre_path, set_pre_path] = useState("")
     const [editorValue, setEditorValue] = useState("");
@@ -42,6 +43,12 @@ export default function Studio(props) {
     const [nav_width, set_nav_width] = useState(16);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const {t} = useTranslation();
+    const navigate = useNavigate();
+
+
+    const location = useLocation();
+    let folder_path = location.pathname.split("/").filter(Boolean).pop();
+    folder_path = decodeURIComponent(folder_path);
 
     function shellClick() {
         if (file_shell_hidden !== undefined) {
@@ -51,7 +58,7 @@ export default function Studio(props) {
         if (!shellShow.show) {
             setShellShow({
                 show: true,
-                path: getRouterAfter('file', studio.folder_path)
+                path: getRouterAfter('file', folder_path)
             })
             set_file_shell_hidden(false);
         } else {
@@ -63,7 +70,7 @@ export default function Studio(props) {
     }
 
     const get_item = async () => {
-        const p = getRouterAfter('file', studio.folder_path);
+        const p = getRouterAfter('file', folder_path);
         set_pre_path(p);
         const rsp = await fileHttp.post('studio/get/item', {path: p});
         if (rsp.code === RCode.Success) {
@@ -84,19 +91,20 @@ export default function Studio(props) {
         // @ts-ignore
         set_edit_filename({});
         set_have_update(false);
-        if (!studio.folder_path) {
-            return;
-        }
+        // if (!studio.folder_path) {
+        //     return;
+        // }
         get_item();
-    }, [studio]);
+    }, []);
 
     const cancel = () => {
-        set_studio({});
+        // set_studio({});
         setShellShow({
             show: false,
             path: ''
         })
         set_file_shell_hidden(undefined);
+        navigate(-1);
     }
     const load_file = async (name, pre_path) => {
         // const model = getEditModelType(name) ?? "text";
@@ -278,7 +286,7 @@ export default function Studio(props) {
                 width: `${nav_width - 1}em`,
             }}
                  onContextMenu={(event) => {
-                         handleContextMenu(event, edit_filename.name, getRouterAfter('file', studio.folder_path), true, get_item)
+                         handleContextMenu(event, edit_filename.name, getRouterAfter('file', folder_path), true, get_item)
                  }}
             >
                 <FolderTree pre_path={pre_path} list={list} click={click} handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>

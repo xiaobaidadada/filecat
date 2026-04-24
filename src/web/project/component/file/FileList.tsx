@@ -37,7 +37,6 @@ import {formatDate} from "../../../../common/StringUtil";
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
-const FileShell = React.lazy(() => import("../shell/FileShell"));
 
 
 let pre_search: GetFilePojo;
@@ -419,7 +418,6 @@ export default function FileList() {
                     <FileListLoad_file_folder_for_local handleContextMenu={handleContextMenu} file_list={nowFileList.files}
                                                         folder_list={nowFileList.folders} clickBlank={clickBlank}/>
             }
-            <FileShell/>
             {workflow_show && <WorkFlow/>}
             {workflow_realtime_show.open && <WorkFlowRealTime/>}
         </React.Fragment>

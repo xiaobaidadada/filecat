@@ -108,7 +108,7 @@ export function FileMenu() {
     }
     const [items, setItems,] = useState(show_items);
     // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [studio, set_studio] = useRecoilState($stroe.studio);
+    // const [studio, set_studio] = useRecoilState($stroe.studio);
     const {click_file} = user_click_file();
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [shell_file_log, set_file_log] = useRecoilState($stroe.log_viewer);
@@ -256,8 +256,9 @@ export function FileMenu() {
                 copyToClipboard(get_ab_path())
                 break;
             case    common_menu_type.sutdio : {
-                set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
+                // set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
                 close();
+                navigate(`/${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
             }
             break;
             case common_menu_type.folder_size_info: {

@@ -30,6 +30,7 @@ const ChatPage =   React.lazy(()=> import('./aichat/./AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/share/Share'))
 const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
 const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting'))
+const FileShell = React.lazy(() => import("./shell/FileShell"));
 
 function Layout() {
     const {t} = useTranslation();
@@ -85,7 +86,8 @@ function Layout() {
         [
             { rto: `${routerConfig.share}/`, component: <Share />},
             { rto: `${routerConfig.share_list_setting_page}/`, component: <ShareListSetting />},
-            { rto: `${routerConfig.ai_agent_setting_page}/`, component: <AIAgentChatSetting />}
+            { rto: `${routerConfig.ai_agent_setting_page}/`, component: <AIAgentChatSetting />},
+            { rto: `${routerConfig.studio_page}/`, component: <StudioLazy />}
         ]
     ]
     if (custom_fun_opt) {
@@ -114,7 +116,7 @@ function Layout() {
                 <MarkDown/>
             </Suspense>
             <Suspense fallback={<div></div>}>
-                <StudioLazy/>
+                <FileShell/>
             </Suspense>
             {image_editor.path !== undefined && <Suspense fallback={<div></div>}><ImageEditor/></Suspense>}
             {excalidraw_editor.path !== undefined && <Suspense fallback={<div></div>}>
