@@ -155,8 +155,8 @@ export class tcp_forward_server_service {
                 }
             }
         } else if(fig.index != null) {
-            this.check_ip_port(old_fig.list,fig)
             if(fig.index === old_fig.list.length) {
+                this.check_ip_port(old_fig.list,fig)
                 old_fig.list.push(fig)
             } else {
                 const f = old_fig.list[fig.index];
@@ -228,7 +228,7 @@ export class tcp_forward_server_service {
     async client_init_to_server() {
         const fig_all = this.client_fig_get()
         for (const fig of fig_all.list??[]) {
-            await this.open_client(fig)
+            await this.open_client(fig).catch(console.error)
         }
     }
 
