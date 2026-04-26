@@ -12,7 +12,7 @@ export class tcp_stream_util {
 
     // private on_data:(data:Buffer,tag_id?:number)=>any;
     private on_data_list:((data:Buffer,tag_id?:number)=>any)[] = []
-    private one_data_resolve_map:{[key:number]:(data:Buffer)=>void} = {}
+    private one_data_resolve_map:{[key:number]:(code:NetMsgType,tcpBuffer:Buffer)=>void} = {}
 
     // private on_close_list:(()=>any)[] = [];
 
@@ -92,7 +92,8 @@ export class tcp_stream_util {
 
             const tag_id_number =  NetUtil.buffer_to_int16(tag_id)
             if(this.one_data_resolve_map[tag_id_number]){
-                this.one_data_resolve_map[tag_id_number](data)
+                const {code, tcpBuffer} = NetUtil.getTcpData(data);
+                this.one_data_resolve_map[tag_id_number](code, tcpBuffer)
             } else {
                 // 没有回调的msgid 处理数据
                 for(const on_data of this.on_data_list) {
@@ -130,15 +131,16 @@ export class tcp_stream_util {
     }
 
 
-    public async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<Buffer> {
+    public async send_data_async(code_type: NetMsgType, buffer: Buffer):Promise<{code:NetMsgType,tcpBuffer:Buffer}> {
         const tag_id = NetUtil.next_tag_id();
         return new Promise((resolve, reject) => {
             const timer = setTimeout(()=>{
                 reject("超时请求tcp")
             },10*1000)
-            this.one_data_resolve_map[tag_id] = (data:Buffer)=>{
+            this.one_data_resolve_map[tag_id] = (code:NetMsgType,tcpBuffer:Buffer)=>{
                 clearTimeout(timer);
-                resolve(data)
+                resolve({code,tcpBuffer})
+                delete this.one_data_resolve_map[tag_id]
             }
             this.send_data(code_type, buffer,tag_id)
         })

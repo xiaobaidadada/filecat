@@ -213,7 +213,7 @@ export class tcp_forward_server_service {
 
 
 
-    async open_port_for_client( fig:tcp_proxy_bridge_fig_item, util: tcp_raw_socket) {
+    async open_port_for_client( fig:tcp_proxy_bridge_fig_item,util: tcp_raw_socket) {
         let server_item = this.bridge_server_client_map[fig.server_port];
         if(!server_item) {
             server_item = {
@@ -226,7 +226,7 @@ export class tcp_forward_server_service {
         const server_socket = util.get_client();
 
         const server = net.createServer(async (clientSocket) => {
-            const socket_id = NetUtil.buffer_to_int16(( await server_socket.send_data_async(NetMsgType.get_global_socket_id, Buffer.alloc(0))))
+            const socket_id = NetUtil.buffer_to_int16(( await server_socket.send_data_async(NetMsgType.get_global_socket_id, Buffer.alloc(0))).tcpBuffer)
 
             // socket 添加
             server_item.server_socket_map[socket_id] = clientSocket;

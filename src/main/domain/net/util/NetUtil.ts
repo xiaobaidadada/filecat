@@ -169,7 +169,7 @@ export  class NetUtil {
         return [buffer1, buffer];
     }
 
-    public static getTcpData(buffer: Buffer) {
+    public static getTcpData(buffer: Buffer):{code:NetMsgType,tcpBuffer:Buffer} {
         if (buffer.length < 1) {
             return;
         }

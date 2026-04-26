@@ -76,7 +76,7 @@ export class tcp_raw_socket {
 
     send_data_call:(tag_id:number, buffer: Buffer,)=>void
 
-    send_data_async:(code_type: NetMsgType, buffer: Buffer)=>Promise<Buffer>
+    send_data_async:(code_type: NetMsgType, buffer: Buffer)=>Promise<{code:NetMsgType,tcpBuffer:Buffer}>
 }
 
 export class tcp_raw_client extends tcp_raw_socket{
