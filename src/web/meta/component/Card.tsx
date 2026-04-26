@@ -128,11 +128,11 @@ export function ProgressCard(props: { progress: number }) {
 export const StatusCircle = (props: { ok?: boolean,success?:boolean,running?:boolean }) => {
     const [color,set_color] = useState("var(--iconTertiary)");
     useEffect(() => {
-        if(props.ok!==undefined) {
+        if(props.ok!=null) {
             set_color(props.ok ? 'var(--icon-green)' : 'var(--iconTertiary)')
             return;
         }
-        if(props.success !== undefined) {
+        if(props.success != null) {
             if(props.success === true) {
                 set_color('var(--icon-green)')
             } else if(props.success === false) {
@@ -140,7 +140,7 @@ export const StatusCircle = (props: { ok?: boolean,success?:boolean,running?:boo
             }
             return;
         }
-        if(props.running !== undefined) {
+        if(props.running != null) {
             set_color('var(--icon-yellow)')
         }
     }, [props]);

@@ -75,16 +75,17 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    @msg(CmdType.tcp_proxy_client_status)
+    async vir_net_client_get(data: WsData<any>) {
+        userService.check_user_auth(data.wss.token, UserAuth.vir_net);
+        return tcp_forward_client_service.tcp_proxy_client_status(data);
+    }
+
     @Post('/client_save')
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
         tcp_forward_client_service.close_client()
-        if(data.is_new) {
-            delete data.is_new;
-            tcp_forward_client_service.client_fig_save(data,true)
-        } else {
-            tcp_forward_client_service.client_fig_save(data)
-        }
+        tcp_forward_client_service.client_fig_save(data)
         tcp_forward_client_service.client_init_to_server().catch(console.error)
         return Sucess({})
     }
@@ -135,11 +136,6 @@ export class TcpForwardController {
         return Sucess({})
     }
 
-    @msg(CmdType.tcp_proxy_client_status)
-    async vir_net_client_get(data: WsData<any>) {
-        userService.check_user_auth(data.wss.token, UserAuth.vir_net);
-        return tcp_forward_client_service.tcp_proxy_client_status(data);
-    }
 
     // 服务器接收注册
     @tcp_server_msg(NetMsgType.tcp_connect,tcp_server_type.tcp_forward)

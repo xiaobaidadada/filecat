@@ -137,6 +137,7 @@ export class tcp_proxy_client_fig{
 
     is_new?:boolean;
     index?:number;
+
 }
 
 export class tcp_proxy_client_all_fig{

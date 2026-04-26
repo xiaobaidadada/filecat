@@ -98,7 +98,7 @@ export function TcpProxyClient(props) {
     }
     const save =async (item:tcp_proxy_client_fig)=>{
         const pojo = new tcp_proxy_client_fig();
-        pojo.is_new = item.is_new
+        // pojo.is_new = item.is_new
         pojo.index = item.index
 
         pojo.key = item.key;
@@ -149,7 +149,7 @@ export function TcpProxyClient(props) {
                             <InputText value={item.key} handleInputChange={(value) => {
                                 item.key = value;
                             }} no_border={true}/>,
-                            <StatusCircle success={item.status}/>,
+                            <StatusCircle ok={!!item.status}/>,
                             <Select value={!!item.open} onChange={(value) => {
                                 item.open = value === "true"
                                 set_clients([...clients])
@@ -176,6 +176,7 @@ export function TcpProxyClient(props) {
                                     item.is_new  ?
                                         <ActionButton icon={"add"} title={t("添加")} onClick={async () => {
                                             // await bridge_add(item)
+                                            item.index = index;
                                             await save(item)
                                         }}/> :
                                         <ActionButton icon={"save"} title={t("保存")} onClick={async () => {

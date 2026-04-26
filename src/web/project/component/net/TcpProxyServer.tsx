@@ -391,7 +391,7 @@ export function TcpProxyServer() {
                                 <TextTip>{item.proxy_host}</TextTip>,
                                 <TextTip>{item.proxy_port}</TextTip>,
                                 <TextTip>{item.client_name}</TextTip>,
-                                <StatusCircle ok={item.open_success} />,
+                                <StatusCircle ok={!!item.open_success} />,
                                 <TextTip>{item.server_port_note}</TextTip>,
                             ];
                             return new_list;

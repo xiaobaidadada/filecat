@@ -425,7 +425,7 @@ export class TcpForwardServerService {
     edit_bridge_config(item:tcp_proxy_bridge_fig_item){
         const list = this.get_all_bridge_config()
         const fig  = list.find(v=>v.id === item.id)
-        this.close_bridge_config(item) // 先关闭老的
+        this.close_bridge_config(fig) // 先关闭老的
         this.check_bridge_config(item)
         Object.assign(fig,item)
         this.save_update_info(fig)
