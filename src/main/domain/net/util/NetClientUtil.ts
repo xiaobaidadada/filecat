@@ -79,6 +79,8 @@ export class NetClientUtil {
         }
         this.tcp_client_map[key] = client
         await client.connect();
+        client.get_raw_client().data_map.server_port = serverPort;
+        client.get_raw_client().data_map.server_ip = serverIp
         state_call(true)
         client.get_raw_client().on_connect(() => {
             state_call(true)

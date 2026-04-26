@@ -22,6 +22,8 @@ export class VirServerPojo {
 }
 
 export class VirClientPojo {
+    client_num_id?:number;
+
     client_name: string;
     open: boolean = false;
     ip: string;

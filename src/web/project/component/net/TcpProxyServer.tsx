@@ -66,7 +66,7 @@ export function TcpProxyServer() {
         if(r1.code === RCode.Success) {
             // setKey(r1.data.key);
             setServerPort(r1.data.port);
-            setIsOpen(r1.data.open);
+            setIsOpen(!!r1.data.open);
             set_option_keys(r1.data.option_keys??[]);
         }
 

@@ -54,7 +54,8 @@ export class TcpForwardServerService {
             const client = this.client_num_map[key];
             client.client_util.send_data(NetMsgType.tcp_server_update_client_info, Buffer.from(JSON.stringify({
                 token:info.option_keys?.[0],
-                server_port:info.port
+                server_port:info.port,
+                client_num_id:client.client_num_id,
             })));
         }
     }
@@ -289,7 +290,8 @@ export class TcpForwardServerService {
             await this.server_let_client_to_proxy(item)
             const client = this.client_num_map[one.client_num_id];
             client?.client_util.send_data(NetMsgType.tcp_server_update_client_info,Buffer.from(JSON.stringify({
-                client_name:item.client_name
+                client_name:item.client_name,
+                client_num_id:item.client_num_id,
             })))
             return
         }

@@ -1,6 +1,6 @@
 
 // 数据库 json 文件
-import {workflow_setting_item} from "../../../common/req/common.pojo";
+import {tcp_proxy_client_all_fig, workflow_setting_item} from "../../../common/req/common.pojo";
 import {https_tunnel_server_fig} from "../../../common/req/net.pojo";
 
 export enum file_key {
@@ -90,6 +90,7 @@ export enum data_common_key {
     // 服务器的客户端配置
     tcp_proxy_server_client_list = "tcp_proxy_server_client_list",
     tcp_proxy_client_fig = "tcp_proxy_client_fig",
+    tcp_proxy_client_all_fig = "tcp_proxy_client_all_fig",
     workflow_setting_item_list = "workflow_setting_item_list",
     server_bridge_config_list = "server_bridge_config_list",
     ai_agent_status  = "ai_agent_status",
@@ -103,6 +104,7 @@ export enum data_version_type{
     filecat_not = 1, // 没有使用版本的阶段
     filecat_1 = 2 , // 这个版本会 将navindex_key http_tag_key 独立文件检测独立拷贝出来
     handle_tcp_proxy_server_key = 3,
+    tcp_proxy_client_all_fig = 4,
 
 }
 

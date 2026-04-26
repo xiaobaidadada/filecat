@@ -64,13 +64,28 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    @Post('/client_del')
+    async client_del(@Body() data: {index:number}, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        tcp_forward_client_service.close_client()
+        const fig = tcp_forward_client_service.client_fig_get()
+        fig.list = fig.list.filter((_, i) => i !== data.index);
+        DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
+        tcp_forward_client_service.client_init_to_server().catch(console.error)
+        return Sucess({})
+    }
+
     @Post('/client_save')
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
         tcp_forward_client_service.close_client()
-        tcp_forward_client_service.client_fig_save(data)
-        await tcp_forward_client_service.client_init_to_server()
-        tcp_forward_client_service.push_client_status()
+        if(data.is_new) {
+            delete data.is_new;
+            tcp_forward_client_service.client_fig_save(data,true)
+        } else {
+            tcp_forward_client_service.client_fig_save(data)
+        }
+        tcp_forward_client_service.client_init_to_server().catch(console.error)
         return Sucess({})
     }
 
@@ -217,6 +232,7 @@ export class TcpForwardController {
         it.client_name = info.client_name
         it.key = info.token
         it.serverPort = info.server_port
+        it.client_num_id = info.client_num_id
         tcp_forward_client_service.client_fig_save(it)
     }
 
@@ -247,9 +263,17 @@ export class TcpForwardController {
     @tcp_client_msg(NetMsgType.tcp_server_del_client)
     server_del_client(data: Buffer, util: tcp_raw_socket, tag_id:number) {
         const fig = tcp_forward_client_service.client_fig_get()
+        const ip = util.data_map.server_ip
+        const port = util.data_map.server_port
+        for (const f of fig.list) {
+            if(f.serverPort === port && f.serverIp === ip) {
+                delete f.client_num_id
+                break
+            }
+        }
         // delete fig.client_id
-        delete fig.client_num_id
-        DataUtil.set(data_common_key.tcp_proxy_client_fig,fig,file_key.tcp_proxy_server_client)
+        // delete fig.client_num_id
+        DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
     }
 
     @tcp_server_msg(NetMsgType.get_global_socket_id,tcp_server_type.tcp_forward)
@@ -274,7 +298,7 @@ export class TcpForwardController {
     // 建立一个tcp服务器
     @tcp_client_msg(NetMsgType.bridge_open_port_for_client)
     bridge_open_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        tcp_forward_client_service.open_port_for_client(JSON.parse(data.toString()))
+        tcp_forward_client_service.open_port_for_client(JSON.parse(data.toString()),util)
     }
 
     // tcp服务器 socket 对象，让对方建立

@@ -3,7 +3,7 @@ import fs from "fs";
 import fse from 'fs-extra'
 import {Env} from "../../../common/node/Env";
 import {data_common_key, data_dir_tem_name, data_version_type, file_key, is_data_version_type} from "./data_type";
-import {tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
 
 
 export class DataUtil {
@@ -66,6 +66,16 @@ export class DataUtil {
                 }
                 fs.writeFileSync(p_v, `${data_version_type.handle_tcp_proxy_server_key}`);
             }
+
+            if(version < data_version_type.tcp_proxy_client_all_fig) {
+                const v :tcp_proxy_client_fig = DataUtil.get(data_common_key.tcp_proxy_client_fig,file_key.tcp_proxy_server_client)
+                if(v) {
+                    const fig:tcp_proxy_client_all_fig = DataUtil.get(data_common_key.tcp_proxy_client_all_fig,file_key.tcp_proxy_server_client)??{list:[]}
+                    fig.list.push(v)
+                    DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
+                }
+                fs.writeFileSync(p_v, `${data_version_type.tcp_proxy_client_all_fig}`);
+            }
         } catch (e) {
             console.log('历史数据处理失败',e);
         }
@@ -106,12 +116,18 @@ export class DataUtil {
         return path.join(p,file);
     }
 
-    public static set(k, v, file:file_key = file_key.data) {
+    public static set(k:data_common_key, v, file:file_key = file_key.data) {
         this.init(file);
         this.data_map[file][k] = v;
         // FileUtil.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file])).catch(err=>{
         //     console.log(`数据持久化错误`,err)
         // });
+        fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
+    }
+
+    public static del(k:data_common_key,file:file_key = file_key.data) {
+        this.init(file);
+        delete this.data_map[file][k]
         fs.writeFileSync(this.data_path_map[file], JSON.stringify(this.data_map[file]));
     }
 

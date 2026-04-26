@@ -1,4 +1,9 @@
-import {tcp_proxy_bridge_fig_item, tcp_proxy_client_fig, tcp_proxy_client_item} from "../../../common/req/common.pojo";
+import {
+    tcp_proxy_bridge_fig_item,
+    tcp_proxy_client_all_fig,
+    tcp_proxy_client_fig,
+    tcp_proxy_client_item
+} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {NetClientUtil} from "./util/NetClientUtil";
@@ -92,19 +97,25 @@ export class tcp_forward_server_service {
     }
 
     client_fig_get() {
-        let v:tcp_proxy_client_fig = DataUtil.get(data_common_key.tcp_proxy_client_fig,file_key.tcp_proxy_server_client)
-        if(!v) {
-            v = {client_name: "", key: "", open: false, serverIp: "", serverPort: 0}
-            DataUtil.set(data_common_key.tcp_proxy_client_fig,v,file_key.tcp_proxy_server_client)
+        const fig:tcp_proxy_client_all_fig = DataUtil.get(data_common_key.tcp_proxy_client_all_fig,file_key.tcp_proxy_server_client)??{list:[]}
+        // let v:tcp_proxy_client_fig = DataUtil.get(data_common_key.tcp_proxy_client_fig,file_key.tcp_proxy_server_client)
+        // if(!v) {
+        //     v = {client_name: "", key: "", open: false, serverIp: "", serverPort: 0}
+        //     DataUtil.set(data_common_key.tcp_proxy_client_fig,v,file_key.tcp_proxy_server_client)
+        // }
+        for (const f of fig.list) {
+            f.status = !!NetClientUtil.is_alive(f.serverIp,f.serverPort)
         }
-        return v;
+        return fig;
     }
 
     close_client() {
         clearTimeout(this.open_try_timer)
-        const fig = this.client_fig_get()
-        if(fig.serverIp && fig.open && fig.serverPort) {
-            NetClientUtil.close_tcp(fig.serverIp,fig.serverPort)
+        const all = this.client_fig_get()
+        for (const fig of all.list) {
+            if(fig.serverIp && fig.open && fig.serverPort) {
+                NetClientUtil.close_tcp(fig.serverIp,fig.serverPort)
+            }
         }
         for (const port of Object.keys(this.bridge_server_client_map)) {
             const server:bridge_server_item_type =  this.bridge_server_client_map[port];
@@ -118,11 +129,25 @@ export class tcp_forward_server_service {
 
     }
 
-    client_fig_save(fig:tcp_proxy_client_fig|any) {
+    client_fig_save(fig:tcp_proxy_client_fig,add?:boolean) {
         const old_fig = this.client_fig_get()
-        for (const key of Object.keys(fig)) {
-            if(fig[key] == null) continue;
-            old_fig[key] = fig[key];
+        if(add) {
+            old_fig.list.push(fig)
+        } else if(fig.client_num_id != null) {
+            for (const f of old_fig.list) {
+                if(f.client_num_id === fig.client_num_id) {
+                    for (const key of Object.keys(fig)) {
+                        if(fig[key] == null) continue;
+                        f[key] = fig[key];
+                    }
+                }
+            }
+        } else if(fig.index != null) {
+            const f = old_fig.list[fig.index];
+            for (const key of Object.keys(fig)) {
+                if(fig[key] == null) continue;
+                f[key] = fig[key];
+            }
         }
         DataUtil.set(data_common_key.tcp_proxy_client_fig,old_fig,file_key.tcp_proxy_server_client)
     }
@@ -133,14 +158,9 @@ export class tcp_forward_server_service {
     // client_staus:boolean = false;
 
     push_client_status( ){
-        const fig = this.client_fig_get()
-        const info = {
-            status: NetClientUtil.is_alive(fig.serverIp,fig.serverPort),
-        }
         for (const wss of this.wssSet.values()) {
-            wss.send(CmdType.tcp_proxy_client_status, info);
+            wss.send(CmdType.tcp_proxy_client_status, {});
         }
-        return info;
     }
 
 
@@ -155,45 +175,45 @@ export class tcp_forward_server_service {
     open_try_timer:NodeJS.Timeout;
 
     async client_init_to_server() {
-        const fig = this.client_fig_get()
-        if(fig.open) {
-            const register = async ()=>{
-                const info :tcp_forward_client_type = {
-                    hash_token: NetUtil.get64Key(fig.key),
-                    // client_id: fig.client_id,
-                    client_num_id: fig.client_num_id,
-                    client_name: fig.client_name
+        const fig_all = this.client_fig_get()
+        for (const fig of fig_all.list??[]) {
+            if (fig.open) {
+                const register = async () => {
+                    const info: tcp_forward_client_type = {
+                        hash_token: NetUtil.get64Key(fig.key),
+                        // client_id: fig.client_id,
+                        client_num_id: fig.client_num_id,
+                        client_name: fig.client_name
+                    }
+                    const data = await NetClientUtil.send_for_tcp_async(fig.serverIp, fig.serverPort, NetMsgType.tcp_connect, Buffer.from(JSON.stringify(info)));
+                    const r_info = JSON.parse(data.toString());
+                    fig.client_num_id = r_info.client_num_id
+                    this.client_fig_save(fig);
                 }
-                const data = await NetClientUtil.send_for_tcp_async(fig.serverIp,fig.serverPort,NetMsgType.tcp_connect, Buffer.from(JSON.stringify(info)));
-                const r_info = JSON.parse(data.toString());
-                this.client_fig_save({
-                    client_id:r_info.client_id,
-                    client_num_id:r_info.client_num_id});
+                clearTimeout(this.open_try_timer)
+                try {
+                    await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
+                        (state) => {
+                            // this.client_staus = state
+                            this.push_client_status()
+                        });
+                } catch (err) {
+                    console.log(`第一次尝试连接失败 5秒后重试 ${err?.message}`);
+                    this.open_try_timer = setTimeout(() => {
+                        this.client_init_to_server().catch(err => console.log(err));
+                    }, 5000)
+                    throw `第一次尝试连接失败 5秒后重试 ${err?.message}`;
+                }
+            } else {
+                clearTimeout(this.open_try_timer)
+                this.open_try_timer = null
             }
-            clearTimeout(this.open_try_timer)
-            try {
-                await NetClientUtil.start_tcp(fig.serverPort, fig.serverIp, register,
-                    (state) => {
-                        // this.client_staus = state
-                        this.push_client_status()
-
-                    });
-            }catch(err) {
-                console.log(`第一次尝试连接失败 5秒后重试 ${err?.message}`);
-                this.open_try_timer = setTimeout(()=>{
-                    this.client_init_to_server().catch(err => console.log(err));
-                },5000)
-                throw `第一次尝试连接失败 5秒后重试 ${err?.message}`;
-            }
-        } else {
-            clearTimeout(this.open_try_timer)
-            this.open_try_timer = null
         }
     }
 
 
 
-    async open_port_for_client( fig:tcp_proxy_bridge_fig_item) {
+    async open_port_for_client( fig:tcp_proxy_bridge_fig_item, util: tcp_raw_socket) {
         let server_item = this.bridge_server_client_map[fig.server_port];
         if(!server_item) {
             server_item = {
@@ -202,8 +222,8 @@ export class tcp_forward_server_service {
             }
             this.bridge_server_client_map[fig.server_port] = server_item;
         }
-        const client_fig = this.client_fig_get()
-        const server_socket = NetClientUtil.get_server_socket(client_fig.serverIp,client_fig.serverPort);
+        // const client_fig = this.client_fig_get()
+        const server_socket = util.get_client();
 
         const server = net.createServer(async (clientSocket) => {
             const socket_id = NetUtil.buffer_to_int16(( await server_socket.send_data_async(NetMsgType.get_global_socket_id, Buffer.alloc(0))))
@@ -227,7 +247,7 @@ export class tcp_forward_server_service {
                     Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]))
                 if(!ok) {
                     clientSocket.pause()
-                    server_socket.get_raw_client().get_client().get_socket().once('drain',()=>{
+                    server_socket.get_socket().once('drain',()=>{
                         clientSocket.resume()
                     })
                 }

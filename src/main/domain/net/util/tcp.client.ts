@@ -10,7 +10,10 @@ export class tcp_raw_socket {
     protected client:tcp_stream_util
     protected is_connected = false;
 
-    public data_map :{[key:string]:any}= {}
+    public data_map :{[key:string]:any,
+        server_port?: number;
+        server_ip?: string;
+    }= {}
 
     constructor(socket?:net.Socket) {
         this.client = new tcp_stream_util(socket??new net.Socket());

@@ -129,6 +129,18 @@ export class tcp_proxy_client_fig{
     serverIp: string;
     serverPort: number;
     key: string = "";
+
+    note?: string ;
+
+    //  展示用的
+    status?:boolean;
+
+    is_new?:boolean;
+    index?:number;
+}
+
+export class tcp_proxy_client_all_fig{
+    list:tcp_proxy_client_fig[];
 }
 
 export interface server_client_proxy {

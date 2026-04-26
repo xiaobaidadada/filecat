@@ -84,7 +84,7 @@ export class DdnsService extends DdnsPre {
     }
 
     async save(data: DdnsConnection) {
-        let key = "";
+        let key:data_common_key;
         switch (data.ddnsType) {
             case DdnsType.dnspod:
                 key = data_common_key.ddns_dnspod_key;
