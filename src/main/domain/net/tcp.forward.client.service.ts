@@ -73,7 +73,7 @@ export class tcp_forward_server_service {
             delete this.bridge_server_client_map[port];
             break
         }
-
+        this.push_client_status()
     }
 
     client_on_data(data: Buffer) {
@@ -296,6 +296,7 @@ export class tcp_forward_server_service {
         });
         server.on('listening', () => {
             console.log(`TCP 转发服务器 代理正在监听${fig.server_port}...`);
+            this.push_client_status()
         });
     }
 }

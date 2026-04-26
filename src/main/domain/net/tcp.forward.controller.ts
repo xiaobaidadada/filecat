@@ -20,7 +20,7 @@ import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {TcpForwardUtil} from "./tcp.forward.util";
 import {Wss} from "../../../common/frame/ws.server";
 
-const  tcp_client_target_map = {}
+// const  tcp_client_target_map = {}
 
 @JsonController("/tcp_forward")
 export class TcpForwardController {
@@ -174,18 +174,18 @@ export class TcpForwardController {
 
 
 
-    @Get('/client_tcp_proxy_get')
-    async client_tcp_proxy_get(@Body() data: NetPojo, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        const list:{
-            client_proxy_port:number,
-            client_proxy_host:string
-        }[] = []
-        for (const key of Object.keys(tcp_client_target_map)) {
-            list.push(tcp_client_target_map[key]);
-        }
-        return Sucess(list)
-    }
+    // @Get('/client_tcp_proxy_get')
+    // async client_tcp_proxy_get(@Body() data: NetPojo, @Req() req) {
+    //     userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+    //     const list:{
+    //         client_proxy_port:number,
+    //         client_proxy_host:string
+    //     }[] = []
+    //     for (const key of Object.keys(tcp_client_target_map)) {
+    //         list.push(tcp_client_target_map[key]);
+    //     }
+    //     return Sucess(list)
+    // }
 
     // 客户端接收到服务器的创建请求
     @tcp_client_msg(NetMsgType.tcp_client_create_socket_for_server)
@@ -198,11 +198,11 @@ export class TcpForwardController {
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
 
         });
-        const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
-        tcp_client_target_map[key] = {
-            client_proxy_port: info.client_proxy_port,
-            client_proxy_host: info.client_proxy_host,
-        }
+        // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
+        // tcp_client_target_map[key] = {
+        //     client_proxy_port: info.client_proxy_port,
+        //     client_proxy_host: info.client_proxy_host,
+        // }
         targetSocket.on("data", (data) => {
             const ok = util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
             if(!ok) {
@@ -215,7 +215,7 @@ export class TcpForwardController {
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
             delete tcp_forward_client_service.client_socket_map[info.socket_id]
-            delete tcp_client_target_map[key]
+            // delete tcp_client_target_map[key]
         })
         tcp_forward_client_service.client_socket_map[info.socket_id] = targetSocket;
     }
@@ -315,11 +315,11 @@ export class TcpForwardController {
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
 
         });
-        const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
-        tcp_client_target_map[key] = {
-            client_proxy_port: info.client_proxy_port,
-            client_proxy_host: info.client_proxy_host,
-        }
+        // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
+        // tcp_client_target_map[key] = {
+        //     client_proxy_port: info.client_proxy_port,
+        //     client_proxy_host: info.client_proxy_host,
+        // }
         targetSocket.on("data", (data) => {
             const ok = util.send_data(NetMsgType.bridge_tcp_socket_data,
                 Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
@@ -334,7 +334,7 @@ export class TcpForwardController {
             util.send_data(NetMsgType.bridge_tcp_socket_close,
                 Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id)]))
             delete tcp_forward_client_service.client_socket_map[info.socket_id]
-            delete tcp_client_target_map[key]
+            // delete tcp_client_target_map[key]
         })
         tcp_forward_client_service.client_socket_map[info.socket_id] = targetSocket;
     }

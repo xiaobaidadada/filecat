@@ -37,7 +37,7 @@ export function TcpProxyClient(props) {
     }[]>([]);
     const [bridge_list,set_bridge_list] = useState<tcp_proxy_bridge_fig_item[]>([]);
 
-    const client_headers = ["index","host","port"]
+    // const client_headers = ["index","host","port"]
     const client_bridge_headers = [t("序号"),t("服务端口"), t("转发客户端名称") ];
 
     const all_client_headers = [t("序号"),t("port"), t("host"),t("名称"),t("key"),t("在线"),t("开启"),t("备注") ];
@@ -65,10 +65,10 @@ export function TcpProxyClient(props) {
         //     }
         // }
 
-        const result1 = await tcpProxy.get("client_tcp_proxy_get");
-        if (result1.code === RCode.Success) {
-            set_client_proxy_list(result1.data)
-        }
+        // const result1 = await tcpProxy.get("client_tcp_proxy_get");
+        // if (result1.code === RCode.Success) {
+        //     set_client_proxy_list(result1.data)
+        // }
 
         const result2 = await tcpProxy.get("client_bridge_get_all_fig");
         if (result2.code === RCode.Success) {
@@ -120,10 +120,10 @@ export function TcpProxyClient(props) {
     return <div>
         <Row>
 
-            <Column>
+            <Column widthPer={60}>
 
                 <Card self_title={<span
-                    className={" div-row "}><h2>{t(`服务器`)}</h2> </span>}>
+                    className={" div-row "}><h2>{t(`服务器配置`)}</h2> </span>}>
 
                     <ActionButton icon={"add"} onClick={() => {
                         clients.push({
@@ -191,19 +191,9 @@ export function TcpProxyClient(props) {
                     })} width={"10rem"}/>
                 </Card>
 
-                <Card title={"转发列表"} >
-                    <Table headers={client_headers} rows={client_proxy_list.map((item, index) => {
-                        const new_list = [
-                            <p>{index}</p>,
-                            <TextTip>{item.client_proxy_host}</TextTip>,
-                            <TextTip>{item.client_proxy_port}</TextTip>,
-                        ];
-                        return new_list;
-                    })} width={"10rem"}/>
-                </Card>
-            </Column>
-            <Column>
 
+            </Column>
+            <Column widthPer={40}>
                 <Card title={"桥接服务端口列表"} >
                     <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
                         const new_list = [
