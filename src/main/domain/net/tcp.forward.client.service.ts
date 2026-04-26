@@ -97,7 +97,9 @@ export class tcp_forward_server_service {
     }
 
     client_fig_get() {
-        const fig:tcp_proxy_client_all_fig = DataUtil.get(data_common_key.tcp_proxy_client_all_fig,file_key.tcp_proxy_server_client)??{list:[]}
+        const fig:tcp_proxy_client_all_fig = DataUtil.get(data_common_key.tcp_proxy_client_all_fig,file_key.tcp_proxy_server_client)??{
+            list:[new tcp_proxy_client_fig()]
+        }
         // let v:tcp_proxy_client_fig = DataUtil.get(data_common_key.tcp_proxy_client_fig,file_key.tcp_proxy_server_client)
         // if(!v) {
         //     v = {client_name: "", key: "", open: false, serverIp: "", serverPort: 0}
@@ -105,6 +107,9 @@ export class tcp_forward_server_service {
         // }
         for (const f of fig.list) {
             f.status = NetClientUtil.is_alive(f.serverIp,f.serverPort)
+        }
+        if(!fig.list?.length) {
+            fig.list = [new tcp_proxy_client_fig()]
         }
         return fig;
     }

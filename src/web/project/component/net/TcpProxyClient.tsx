@@ -122,6 +122,38 @@ export function TcpProxyClient(props) {
 
             <Column widthPer={60}>
 
+                <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={()=>{
+                    clients[0].index = 0
+                    save(clients[0])
+                }}/>} titleCom={<div>{t("连接状态")}<StatusCircle ok={!!clients[0]?.status} /></div>}>
+
+                    <InputText placeholder={`${t("服务器")}ip`} value={clients[0]?.serverIp} handleInputChange={(d)=>{
+                        clients[0].serverIp = d
+                    }}/>
+                    <InputText placeholder={`${t("服务器")}port`} value={clients[0]?.serverPort} handleInputChange={(d)=>{
+                        clients[0].serverPort = parseInt(d)
+                    }}/>
+                    <InputText placeholder={t("名称")} value={clients[0]?.client_name} handleInputChange={(d)=>{
+                        clients[0].client_name = d
+                    }}/>
+                    <InputText placeholder={"key "} value={clients[0]?.key} handleInputChange={(d)=>{
+                        clients[0].key = d
+                    }}/>
+                    <form>
+                        {t("状态")}
+                        <Rows isFlex={true} columns={[
+                            <InputRadio value={1} context={t("开启")} selected={clients[0]?.open}  onchange={()=>{
+                                clients[0].open = !clients[0].open
+                                set_clients([...clients])
+                            }}/>,
+                            <InputRadio value={1} context={t("关闭")} selected={!clients[0]?.open}  onchange={()=>{
+                                clients[0].open = !clients[0].open
+                                set_clients([...clients])
+                            }}/>
+                        ]}/>
+                    </form>
+                </Card>
+
                 <Card self_title={<span
                     className={" div-row "}><h2>{t(`服务器配置`)}</h2> </span>}>
 
@@ -134,7 +166,7 @@ export function TcpProxyClient(props) {
                     }} title={t("添加")}/>
                     {t("代理")}
 
-                    <Table headers={all_client_headers} rows={clients.map((item:tcp_proxy_client_fig, index) => {
+                    <Table headers={all_client_headers} rows={clients.slice(1).map((item:tcp_proxy_client_fig, index) => {
                         const new_list = [
                             <p>{index}</p>,
                             <InputText value={item.serverPort} handleInputChange={(value) => {
@@ -194,7 +226,7 @@ export function TcpProxyClient(props) {
 
             </Column>
             <Column widthPer={40}>
-                <Card title={"桥接服务端口列表"} >
+                <Card title={t("桥接服务端口列表")} >
                     <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
                         const new_list = [
                             <p>{index}</p>,

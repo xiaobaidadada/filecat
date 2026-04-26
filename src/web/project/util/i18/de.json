@@ -402,6 +402,7 @@
   "在线时长": "Online-Dauer",
   "转发Client名称": "Weiterleitungs-Clientname",
   "保存并通知客户端第一个key和port": "Speichern und den ersten Schlüssel und Port an den Client benachrichtigen",
+  "桥接服务端口列表": "Bridge-Server-Portliste",
   "响应体 是否开启": "Antwortkörper aktiviert",
   "发送": "Senden",
   "输入消息": "Nachricht eingeben",

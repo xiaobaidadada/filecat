@@ -400,6 +400,7 @@
   "在线时长": "Online Duration",
   "转发Client名称": "Forwarding Client Name",
   "保存并通知客户端第一个key和port": "Save and Notify the Client of the First Key and Port",
+  "桥接服务端口列表": "Bridge Server Port List",
   "响应体 是否开启": "Response Body Enabled",
   "发送": "Send",
   "输入消息": "Enter Message",

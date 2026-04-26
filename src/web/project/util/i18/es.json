@@ -402,6 +402,7 @@
   "在线时长": "Duración en línea",
   "转发Client名称": "Nombre del cliente de reenvío",
   "保存并通知客户端第一个key和port": "Guardar y notificar al cliente la primera clave y el puerto",
+  "桥接服务端口列表": "Lista de puertos del servidor puente",
   "响应体 是否开启": "Cuerpo de respuesta activado",
   "发送": "Enviar",
   "输入消息": "Introducir mensaje",
