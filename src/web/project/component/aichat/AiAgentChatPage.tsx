@@ -94,6 +94,9 @@ export default function AiAgentChatPage() {
         //     text:"hello filecat"
         // }
     ]);
+    const { t, i18n } = useTranslation();
+
+
     const set_messages = useRef(
         debounce((mes) => {
             let next = mes;
@@ -329,11 +332,11 @@ export default function AiAgentChatPage() {
                     value={inputValue}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="输入消息，Shift+Enter换行"
+                    placeholder={t("输入消息")}
                     className="chat-input"
                 />
                    {sending === false &&
-                       <button  onClick={handleSend}>发送</button>
+                       <button  onClick={handleSend}>{t("发送")}</button>
                    }
                </div>
 

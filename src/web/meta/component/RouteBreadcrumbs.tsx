@@ -4,6 +4,7 @@ import {webPathJoin} from "../../../common/ListUtil";
 import {getRouterPath} from "../../project/util/WebPath";
 import {InputText} from "./Input";
 import {DivOverlayTransparent, FileMenuItem, OverlayTransparent} from "./Dashboard";
+import {useTranslation} from "react-i18next";
 // import '../resources/css/all.css'
 // 依靠路由的面包屑
 
@@ -16,6 +17,7 @@ export function RouteBreadcrumbs(props: {
     const [totalRoutePaths, setTotalRoutePaths] = useState([]);
     const [prePath, setPrePath] = useState('/');
     const [input_path, set_input_path] = useState(undefined);
+    const { t, i18n } = useTranslation();
 
     React.useEffect(() => {
         let prePathP = '';
@@ -78,7 +80,7 @@ export function RouteBreadcrumbs(props: {
                 <DivOverlayTransparent click={()=>{set_input_path(undefined)}}
                                     children={
                                         <InputText width={"100%"}
-                                                   placeholder={"输入跳转的目录"}
+                                                   placeholder={t("输入跳转的目录")}
                                                    handlerEnter={(v) => {
                                                        if(props.input_path_enter) {
                                                            props.input_path_enter(v);

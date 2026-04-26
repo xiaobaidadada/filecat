@@ -278,7 +278,7 @@ export function FileMenu() {
             set_workflow_show(!workflow_show)
         }}/>}
         <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
-        {check_user_auth(UserAuth.share_file) && <ActionButton icon={"share"} title={"文件分享"} onClick={file_share}/>}
+        {check_user_auth(UserAuth.share_file) && <ActionButton icon={"share"} title={t("文件分享")} onClick={file_share}/>}
         <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
         <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>
         <ActionButton icon={"note_add"} title={t("创建文本文件")} onClick={filenew}/>
