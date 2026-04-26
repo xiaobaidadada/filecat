@@ -11,13 +11,13 @@ export class NetServerUtil {
             socket_set:Set<tcp_raw_socket>,
             call_timeout_map: { [key: number]: any },
             call_resolve_map: { [key: number]: any }
-            heart_interval?:NodeJS.Timeout;
-            last_connect_time?:number
         }
     }> = {};
 
     static socket_timeout_map: Map<net.Socket, any> = new Map<net.Socket, any>();
     static socket_timeout_resolve_map: Map<net.Socket, any> = new Map<net.Socket, any>();
+    static socket_heart_timeout_map: Map<tcp_raw_socket, NodeJS.Timeout> = new Map();
+    static socket_heart_last_time_map: Map<tcp_raw_socket, number> = new Map();
 
 
     // 授权成功
@@ -37,6 +37,12 @@ export class NetServerUtil {
         this.tcp_server_map[server_type]?.server.close()
         console.log('服务器已停止接受新的连接');
         for (const v of this.tcp_server_map[server_type].socket_set) {
+            const heart_timeout = this.socket_heart_timeout_map.get(v);
+            if (heart_timeout) {
+                clearInterval(heart_timeout);
+                this.socket_heart_timeout_map.delete(v);
+            }
+            this.socket_heart_last_time_map.delete(v);
             v.get_client().close()
         }
         console.log('服务器已停止关闭所有连接');
@@ -48,6 +54,12 @@ export class NetServerUtil {
 
     public static close_client(server_type: tcp_server_type,util:tcp_raw_socket) {
         this.tcp_server_map[server_type]?.socket_set?.delete(util)
+        const heart_timeout = this.socket_heart_timeout_map.get(util);
+        if (heart_timeout) {
+            clearInterval(heart_timeout);
+            this.socket_heart_timeout_map.delete(util);
+        }
+        this.socket_heart_last_time_map.delete(util);
         util.get_client().close()
     }
 
@@ -68,23 +80,41 @@ export class NetServerUtil {
         }
         const _map = this.tcp_server_map[server_type];
         const start_heart = (util:tcp_raw_socket)=>{
-            clearInterval(this.tcp_server_map[server_type].heart_interval)
-            this.tcp_server_map[server_type].last_connect_time = Date.now()
-            this.tcp_server_map[server_type].heart_interval = setInterval(() => {
-                if(Date.now() - this.tcp_server_map[server_type].last_connect_time > 30 * 1000) {
-                    clearInterval(this.tcp_server_map[server_type].heart_interval)
-                    NetServerUtil.close_client(tcp_server_type.sys_tun,util)
+            const old_timeout = this.socket_heart_timeout_map.get(util);
+            if (old_timeout) {
+                clearInterval(old_timeout);
+            }
+            this.socket_heart_last_time_map.set(util, Date.now())
+            const heart_timeout = setInterval(() => {
+                const last_connect_time = this.socket_heart_last_time_map.get(util);
+                if (typeof last_connect_time !== "number") {
+                    clearInterval(heart_timeout);
+                    this.socket_heart_timeout_map.delete(util);
+                    return;
+                }
+                if(Date.now() - last_connect_time > 30 * 1000) {
+                    clearInterval(heart_timeout)
+                    this.socket_heart_timeout_map.delete(util);
+                    this.socket_heart_last_time_map.delete(util);
+                    NetServerUtil.close_client(server_type,util)
                 }
             },10 * 1000)
+            this.socket_heart_timeout_map.set(util, heart_timeout)
         }
         _map.server = net.createServer(async (socket) => {
 
                 // console.log(`tcp 客户端连接 ${socket.remoteAddress}`);
                 const raw_socket = new tcp_raw_socket(socket);
                 _map.socket_set.add(raw_socket)
-                socket.on("close", () => {
-                    _map.socket_set.delete(raw_socket)
-                })
+                    socket.on("close", () => {
+                        _map.socket_set.delete(raw_socket)
+                        const heart_timeout = this.socket_heart_timeout_map.get(raw_socket);
+                        if (heart_timeout) {
+                            clearInterval(heart_timeout);
+                            this.socket_heart_timeout_map.delete(raw_socket);
+                        }
+                        this.socket_heart_last_time_map.delete(raw_socket)
+                    })
                 let auth = false
                 socket.on('end', () => {
                     raw_socket.get_client().close();
@@ -117,7 +147,7 @@ export class NetServerUtil {
                             return;
                         }
                         if(NetMsgType.heart === code) {
-                            this.tcp_server_map[server_type].last_connect_time = Date.now()
+                            this.socket_heart_last_time_map.set(raw_socket, Date.now())
                             raw_socket.send_data_call(tag_id, Buffer.alloc(0))
                             return;
                         }
@@ -125,7 +155,7 @@ export class NetServerUtil {
                             _map.call_resolve_map[tag_id](tcpBuffer)
                             clearTimeout(_map.call_timeout_map[tag_id])
                             delete _map.call_resolve_map[tag_id]
-                            delete _map.call_resolve_map[tag_id];
+                            delete _map.call_timeout_map[tag_id];
                             return;
                         }
                         const fun = msgServerMap[server_type][code]
