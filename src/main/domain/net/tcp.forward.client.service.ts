@@ -149,7 +149,7 @@ export class tcp_forward_server_service {
                 f[key] = fig[key];
             }
         }
-        DataUtil.set(data_common_key.tcp_proxy_client_fig,old_fig,file_key.tcp_proxy_server_client)
+        DataUtil.set(data_common_key.tcp_proxy_client_all_fig,old_fig,file_key.tcp_proxy_server_client)
     }
 
 
