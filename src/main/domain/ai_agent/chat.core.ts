@@ -4,7 +4,6 @@ import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
 import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./ai_agent.tools";
-import {Readable} from "stream";
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
 import {ai_agentService, API_KEY, BASE_URL, config, config_env, config_search_doc, MODEL} from "./ai_agent.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
@@ -192,9 +191,9 @@ ${sys_prompt ?? ''}
                             const idx = tc.index;
 
                             if (!toolCallMap.has(idx)) {
-                                if(tc.function.name) {
-                                    on_msg(`\n${`ai正在补充 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
-                                }
+                                // if(tc.function.name) {
+                                //     on_msg(`\n${`ai正在补充 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
+                                // }
                                 toolCallMap.set(idx, {
                                     id: tc.id,
                                     type: "function",

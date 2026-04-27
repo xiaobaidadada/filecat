@@ -16,7 +16,6 @@ export default function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
     const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
-    const [shellShowInit,setShellShowInit] = useState(false);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const color =  userInfo.user_data.theme === "dark"?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
@@ -46,10 +45,10 @@ export default function FileShell(props) {
             terminal.write(context);
             handle = handle_msg2;
         };
-        ws.addMsg(CmdType.shell_getting,(wsData:WsData<SysPojo>)=>{
+        await ws.addMsg(CmdType.shell_getting,(wsData:WsData<SysPojo>)=>{
             handle(wsData.context);
         })
-        ws.addMsg(CmdType.shell_copy,(wsData:WsData<SysPojo>)=>{
+        await ws.addMsg(CmdType.shell_copy,(wsData:WsData<SysPojo>)=>{
             if(wsData.context)
             copyToClipboard(wsData.context);
             terminal.focus()
@@ -64,22 +63,8 @@ export default function FileShell(props) {
         // ws.subscribeUnconnect(initTerminal)
     }
     const close = ()=>{
-        (async () => {
-            if (terminalState) {
-                terminalState.dispose();
-                setTerminalState(null);
-            }
-            // if(ws.isAilive()) {
-            //     ws.setPromise(async (resolve)=>{
-            //         // const data = new WsData(CmdType.shell_cancel);
-            //         // data.context=""
-            //         // ws.unSubscribeUnconnect();
-            //         // await ws.send(data);
-            //         // await ws.unConnect();
-            //         resolve();
-            //     })
-            // }
-        })();
+        terminalState?.dispose();
+        setTerminalState(null);
     }
     useEffect(() => {
         return ()=> {
@@ -99,7 +84,6 @@ export default function FileShell(props) {
         } else {
             initTerminal();
         }
-        setShellShowInit(true);
     }, [shellShow])
     const init = (rows:number,cols:number)=>{
         terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')

@@ -47,7 +47,9 @@ export class WsClient {
     public async connect(): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
             if (this._socket) {
-                await CommonUtil.sleep(1000)
+                // await CommonUtil.sleep(1000)
+                resolve(true);
+                return;
             }
             if (this._socket?.readyState === WebSocket.OPEN) {
                 return resolve(true);
