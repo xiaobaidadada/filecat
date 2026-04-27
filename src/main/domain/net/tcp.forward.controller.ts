@@ -165,7 +165,7 @@ export class TcpForwardController {
         Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
         util.get_client().get_socket().on('connect',()=>{
             // 重连会重新加入
-            tcpForwardService.client_num_map[info.client_num_id] = info
+            tcpForwardService.add_client(info).catch(console.error)
             Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
         })
         util.on_close(() => {
