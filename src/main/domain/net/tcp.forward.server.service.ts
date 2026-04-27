@@ -416,7 +416,7 @@ export class TcpForwardServerService {
         // 添加的时候端口不能冲突
         const list = this.get_all_bridge_config()
         for (const it of list) {
-            if(it.server_port === item.server_port && it.client_proxy_host == item.client_proxy_host && item.id !== it.id && it.open === true){
+            if(it.server_port === item.server_port && it.server_client_num_id == item.server_client_num_id && item.id !== it.id && it.open === true){
                 throw ` ${item.server_port} is already in use`
             }
         }
