@@ -163,6 +163,10 @@ export class TcpForwardController {
         await tcpForwardService.add_client(info)
         util.data_map[client_num_id_key] = info.client_num_id
         Wss.sendToAllClient(CmdType.tcp_forward_server_load,{} )
+        util.get_client().get_socket().on('connect',()=>{
+            // 重连会重新加入
+            tcpForwardService.client_num_map[info.client_num_id] = info
+        })
         util.on_close(() => {
             console.log(`客户端离线 ${info.client_name}`)
             tcpForwardService.delete_client(util,info.client_num_id)
