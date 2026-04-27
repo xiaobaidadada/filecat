@@ -145,7 +145,8 @@ ${config.sys_prompt ?? ''}
 ${sys_prompt ?? ''}
 `
             },
-            ...await this.trimMessages(originMessages, config_env.char_max, on_msg, controller),
+            ...originMessages
+            // ...await this.trimMessages(originMessages, config_env.char_max, on_msg, controller),
         ];
 
         if (config_search_doc.force_use_local_data) {
