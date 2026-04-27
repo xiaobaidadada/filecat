@@ -4,6 +4,7 @@ import {NotyFail} from "../../web/project/util/noty";
 // import WebSocket from 'ws'; // 前端不能导入，直接使用就行 这只能nodejs用
 import {EventEmitter} from "../event";
 import {heart_interval} from "./constant";
+import {CommonUtil} from "../common.util";
 
 function generateRandomHash(length = 16) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -44,13 +45,12 @@ export class WsClient {
 
 
     public async connect(): Promise<boolean> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
+            if (this._socket) {
+                await CommonUtil.sleep(1000)
+            }
             if (this._socket?.readyState === WebSocket.OPEN) {
                 return resolve(true);
-            }
-
-            if (this._socket) {
-                return reject(false);
             }
 
             this._socket = new WebSocket(

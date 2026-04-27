@@ -72,6 +72,12 @@ export function FileMenu() {
 
     useEffect(()=>{
         dir_info = {}
+        return ()=>{
+            setShellShow({
+                show: false,
+                path: ''
+            })
+        }
     },[location]);
 
     function shellClick() {

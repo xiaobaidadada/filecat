@@ -62,6 +62,7 @@ export const ai_tools = [
             description: `
 编辑文件工具，支持六种模式：
 overwrite / replace / append / patch / insert / delete
+内容修改操作使用顺序  append overwrite patch insert replace
     `,
             parameters: {
                 type: "object",
