@@ -200,7 +200,7 @@ export function TcpProxyClient(props) {
                                         }
                                         set_clients([...new_list])
                                     } else {
-                                        await del_client(index)
+                                        await del_client(index+1)
                                         // await bridge_del(item.id,item.server_client_num_id)
                                     }
                                 }}/>
@@ -208,12 +208,12 @@ export function TcpProxyClient(props) {
                                     item.is_new  ?
                                         <ActionButton icon={"add"} title={t("添加")} onClick={async () => {
                                             // await bridge_add(item)
-                                            item.index = index;
+                                            item.index = index+1;
                                             await save(item)
                                         }}/> :
                                         <ActionButton icon={"save"} title={t("保存")} onClick={async () => {
                                             // await bridge_edit(item)
-                                            item.index = index;
+                                            item.index = index+1;
                                             await save(item)
                                         }}/>
                                 }
