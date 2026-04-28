@@ -18,7 +18,7 @@ import {useTranslation} from "react-i18next";
 import {NotyFail, NotySucess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
 import Header from "../../../../../meta/component/Header";
-import {getFileNameByLocation, getFilesByIndexs} from "../../FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "../../FileUtil";
 import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
@@ -44,6 +44,8 @@ export default function Share() {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const {click_file} = user_click_file();
+
+    const  switchGridView = unsing_switch_grid_view(true)
 
 
     const get_file = async () => {
@@ -134,6 +136,7 @@ export default function Share() {
         window.open(url);
     }
 
+
     return (
         <React.Fragment>
             <Header left_children={<>
@@ -142,6 +145,7 @@ export default function Share() {
                 </h2>
             </>}>
                 {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
+                {data.is_dir &&         <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>}
             </Header>
             <Dashboard>
                 <FullScreenDiv isFull>

@@ -349,7 +349,7 @@ export class TcpForwardServerService {
         const ok = client.client_util.send_data(NetMsgType.bridge_client_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
         if(!ok) {
             util.send_data(NetMsgType.bridge_socket_pause,NetUtil.int16_to_buffer(socket_id))
-            client.client_util.get_client().get_socket().on("drain",()=>{
+            client.client_util.get_client().get_socket().once("drain",()=>{
                 util.send_data(NetMsgType.bridge_socket_resume,NetUtil.int16_to_buffer(socket_id))
             })
         }

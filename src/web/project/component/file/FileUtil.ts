@@ -323,12 +323,22 @@ export function using_add_md__copy_button(){
     }, []);
 }
 
-export function unsing_switch_grid_view () {
+export function unsing_switch_grid_view (is_local = false) {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
 
     return async () => {
         const type = getNextByLoop(fileTypes, user_base_info?.user_data?.file_list_show_type ?? '');
+        if (is_local) {
+            setUser_base_info(prev => ({
+                ...prev,
+                user_data: {
+                    ...prev?.user_data,
+                    file_list_show_type: type,
+                }
+            }));
+            return;
+        }
         await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {type});
         initUserInfo();
     }
