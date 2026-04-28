@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Dashboard, FullScreenDiv} from "../../../../../meta/component/Dashboard";
 import {CardFull} from "../../../../../meta/component/Card";
 import {useRecoilState} from "recoil";
@@ -24,6 +24,8 @@ import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
 import {user_click_file} from "../../../../util/store.util";
 import {copyToClipboard} from "../../../../util/FunUtil";
+import {DirListShowTypeEmum} from "../../../../../../common/req/user.req";
+import {getNextByLoop} from "../../../../../../common/ListUtil";
 
 type FileItem = FileItemData
 
@@ -37,15 +39,27 @@ type ShareData = {
 
 export default function Share() {
     const [data, setData] = useState<ShareData | null>(null);
-    const share_id = useRef();
-    const share_token = useRef();
+    const share_id = useRef<string>("");
+    const share_token = useRef<string>("");
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [share_sort_type, setShareSortType] = useRecoilState($stroe.share_sort_type);
     const {t} = useTranslation();
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const {click_file} = user_click_file();
 
     const  switchGridView = unsing_switch_grid_view(true)
+
+    const display_items = useMemo(() => {
+        const items = [...(data?.items ?? [])];
+        const get_time = (item: FileItem) => Number(item.mtime ?? 0);
+        if (share_sort_type === DirListShowTypeEmum.time_minx_max) {
+            items.sort((a, b) => get_time(a) - get_time(b));
+        } else if (share_sort_type === DirListShowTypeEmum.time_max_min) {
+            items.sort((a, b) => get_time(b) - get_time(a));
+        }
+        return items;
+    }, [data?.items, share_sort_type]);
 
 
     const get_file = async () => {
@@ -58,6 +72,7 @@ export default function Share() {
             }
             p.items = r.data.files ?? []
             for (const f of p.items) {
+                f.origin_size = f.size;
                 f.show_mtime = f.mtime ? getShortTime(f.mtime) : "";
                 f.size = formatFileSize(f.size);
             }
@@ -121,12 +136,23 @@ export default function Share() {
         }
     }
 
+    const switchTimeSort = () => {
+        const next = getNextByLoop([
+            DirListShowTypeEmum.time_max_min,
+            DirListShowTypeEmum.time_minx_max,
+            DirListShowTypeEmum.defualt,
+        ], share_sort_type) as DirListShowTypeEmum;
+        setShareSortType(next);
+        setSelectList([])
+        setClickList([])
+    }
+
     function downloadFile() {
         const file_paths:string[] = []
         // console.log(data)
         // return
         for (let i = 0; i < selectList.length; i++) {
-            const file = data.items[selectList[i]];
+            const file = display_items[selectList[i]];
             file_paths.push(encodeURIComponent(file.path))
         }
         const url = fileHttp.getDownloadUrlV2(file_paths, "share_download", {
@@ -145,7 +171,8 @@ export default function Share() {
                 </h2>
             </>}>
                 {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
-                {data.is_dir &&         <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>}
+                {data.is_dir && <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>}
+                {data.is_dir && <ActionButton icon={"schedule"} title={share_sort_type === DirListShowTypeEmum.time_minx_max ? t("时间逆序") : t("时间顺序")} onClick={switchTimeSort}/>}
             </Header>
             <Dashboard>
                 <FullScreenDiv isFull>
@@ -184,7 +211,8 @@ export default function Share() {
                                         </div>
 
                                         <ButtonText text={"download"} clickFun={() => {
-                                            const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                            const item = display_items[0];
+                                            const url = fileHttp.getDownloadUrlV2(item.path, "share_download", {
                                                 share_id: share_id.current,
                                                 share_token: share_token.current
                                             });
@@ -192,7 +220,8 @@ export default function Share() {
                                         }}/>
 
                                         <ButtonText text={"copy url"} clickFun={() => {
-                                            const url = fileHttp.getDownloadUrlV2(data.items[0].path, "share_download", {
+                                            const item = display_items[0];
+                                            const url = fileHttp.getDownloadUrlV2(item.path, "share_download", {
                                                 share_id: share_id.current,
                                                 share_token: share_token.current
                                             });
@@ -202,7 +231,7 @@ export default function Share() {
                                         }}/>
 
                                         <ButtonText text={"preview"} clickFun={() => {
-                                            const item = data.items[0]
+                                            const item = display_items[0]
                                             click_file({
                                                 file_path: item.path,
                                                 file_url: fileHttp.getDownloadUrlV2(item.path,"share_download", {
@@ -225,7 +254,7 @@ export default function Share() {
                                             share_token: share_token.current,
                                         }
                                     } handleContextMenu={() => {
-                                    }} file_list={data.items} clickBlank={clickBlank}/>
+                                    }} file_list={display_items} clickBlank={clickBlank}/>
                                 )
                         }
                     </div>

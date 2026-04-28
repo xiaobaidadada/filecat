@@ -1,6 +1,6 @@
 import {atom, RecoilState, useRecoilState} from 'recoil';
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
-import {UserBaseInfo, UserData} from "../../../common/req/user.req";
+import {DirListShowTypeEmum, UserBaseInfo, UserData} from "../../../common/req/user.req";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 import {http_download_map} from "../../../common/req/net.pojo";
@@ -249,6 +249,11 @@ export const $stroe = {
         key: 'file_preview',
         default: {open: false} as { open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string },
     }),
+    // 分享页文件时间排序方式
+    share_sort_type: atom({
+        key: 'share_sort_type',
+        default: DirListShowTypeEmum.time_max_min
+    }),
     // md预览
     markdown: atom({
         key: 'markdown',
@@ -331,7 +336,6 @@ export const $stroe = {
         default: 0
     })
 }
-
 
 
 
