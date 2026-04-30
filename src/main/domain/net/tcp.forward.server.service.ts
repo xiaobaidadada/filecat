@@ -62,19 +62,21 @@ export class TcpForwardServerService {
 
     // 获取所有开启的 正在运行的 服务器端口占用
     get_all_open_server_client_proxy_fig() {
-        const list:server_client_proxy[] = []
-        for (const server_port of Object.keys(this.all_server_port_map)) {
-            const server:server_item_type = this.all_server_port_map[server_port];
-            list.push({
-                server_port:server.proxy_fig.server_port,
-                proxy_host: server.proxy_fig.proxy_host,
-                proxy_port: server.proxy_fig.proxy_port,
-                client_name: server.fig.client_name,
-                server_port_note: server.proxy_fig.note,
-                open_success: !!server.server
-            })
+        const list = this.server_client_get()
+        const show_list:server_client_proxy[] = []
+        for (const item of list) {
+            for (const p of item.proxy_fig_list??[]) {
+                show_list.push({
+                    server_port:p.server_port,
+                    proxy_host: p.proxy_host,
+                    proxy_port: p.proxy_port,
+                    client_name: item.client_name,
+                    server_port_note: item.note,
+                    open_success: !!this.all_server_port_map[p.server_port]
+                })
+            }
         }
-        return list
+        return show_list
     }
 
     // 内存删除配置 持久化不删除
