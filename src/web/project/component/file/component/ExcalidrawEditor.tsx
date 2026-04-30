@@ -8,6 +8,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {editor_data} from "../../../util/store.util";
 import {useLocation, useNavigate} from "react-router-dom";
+import {Http} from "../../../util/http";
 
 
 const loadStyles = async () => {
@@ -28,8 +29,8 @@ export default function ExcalidrawEditor() {
     //     load_style = true;
     // }
     const getContext = async () => {
-        const rsq = await fileHttp.get(`${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${excalidraw_editor.name}`)
-        return JSON.parse(rsq.data);
+        const rsq =  await Http.get(excalidraw_editor.url)
+        return JSON.parse(rsq);
     }
     useEffect(() => {
         getContext()

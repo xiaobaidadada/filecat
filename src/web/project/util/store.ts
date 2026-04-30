@@ -272,7 +272,7 @@ export const $stroe = {
     // excalidraw编辑器
     excalidraw_editor: atom({
         key: 'excalidraw_editor',
-        default: {} as { path?: string, name?: string }
+        default: {} as { url?: string, name?: string }
     }),
     // 磁盘
     disk: atom({

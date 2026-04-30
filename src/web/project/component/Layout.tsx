@@ -119,7 +119,7 @@ function Layout() {
                 <FileShell/>
             </Suspense>
             {image_editor.path !== undefined && <Suspense fallback={<div></div>}><ImageEditor/></Suspense>}
-            {excalidraw_editor.path !== undefined && <Suspense fallback={<div></div>}>
+            {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <ExcalidrawEditor/>
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}

@@ -127,7 +127,7 @@ export const user_click_file = () => {
             switch (type) {
                 case FileTypeEnum.draw:
                 case FileTypeEnum.excalidraw:
-                    set_excalidraw_editor({path: "", name});
+                    set_excalidraw_editor({url, name});
                     break;
                 case FileTypeEnum.md:
                     set_markdown({
