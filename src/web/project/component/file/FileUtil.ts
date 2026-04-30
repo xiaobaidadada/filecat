@@ -14,6 +14,7 @@ import {copyToClipboard} from "../../util/FunUtil";
 import {userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
+import {useSearchParams} from "react-router-dom";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -342,4 +343,21 @@ export function unsing_switch_grid_view (is_local = false) {
         await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {type});
         initUserInfo();
     }
+}
+
+
+export function useUpdateUrlParams() {
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    return (key: string, value: string|undefined|null) => {
+        const newParams = new URLSearchParams(searchParams);
+
+        if (value === undefined || value === null) {
+            newParams.delete(key);
+        } else {
+            newParams.set(key, value);
+        }
+
+        setSearchParams(newParams);
+    };
 }

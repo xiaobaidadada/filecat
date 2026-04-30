@@ -29,10 +29,12 @@ import {Http} from "./http";
 // }
 
 export const user_click_file = () => {
+    // 四个预览
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
+
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {t} = useTranslation();
@@ -52,6 +54,7 @@ export const user_click_file = () => {
         context?: string,
         get_file_fun?: () => Promise<string>,
         save_file_fun?: (text: string) => Promise<void>,
+        close?:()=>any
     }) => {
         const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
 
@@ -118,7 +121,8 @@ export const user_click_file = () => {
                         // setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
                 },
-                opt_shell: param.opt_shell
+                opt_shell: param.opt_shell,
+                close:param.close
             })
             editor_data.set_value_temp(value)
             return;
@@ -127,12 +131,13 @@ export const user_click_file = () => {
             switch (type) {
                 case FileTypeEnum.draw:
                 case FileTypeEnum.excalidraw:
-                    set_excalidraw_editor({url, name});
+                    set_excalidraw_editor({url, name,close:param.close});
                     break;
                 case FileTypeEnum.md:
                     set_markdown({
                         context: await Http.get(url),
-                        filename: name
+                        filename: name,
+                        close:param.close
                     })
                     break;
                 case FileTypeEnum.video:

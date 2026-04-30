@@ -11,6 +11,7 @@ import {useTranslation} from "react-i18next";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {getRouterPath} from "../../../../util/WebPath";
 import {PromptEnum} from "../../../prompts/Prompt";
+import {useUpdateUrlParams} from "../../FileUtil";
 
 
 
@@ -23,6 +24,7 @@ export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], i
     const {t} = useTranslation();
     // 右键功能
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const updateParams = useUpdateUrlParams();
 
     const clickHandler = async (index, name) => {
         const select = getByList(selectList, index);
@@ -60,6 +62,18 @@ export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], i
             // 文件
             const item = clickList.find(v => v === index)
             if (item !== undefined) {
+                const type = getFileFormat(name);
+                if(["text",
+                    FileTypeEnum.md,
+                    FileTypeEnum.excalidraw,
+                    FileTypeEnum.draw,
+                    FileTypeEnum.pdf,
+                    FileTypeEnum.image,
+                    FileTypeEnum.video
+                ].includes(type)) {
+                    updateParams('share_preview_file_name',props.item_list[item].name)
+                    return;
+                }
                 // console.log(props.item_list[item])
                 // return
                 click_file({file_path: props.item_list[item].path, file_url: fileHttp.getDownloadUrlV2(props.item_list[item].path,"share_download", {

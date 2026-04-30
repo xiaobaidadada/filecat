@@ -38,7 +38,7 @@ export default function ExcalidrawEditor() {
     const close = () => {
         set_excalidraw_editor({});
         navigate(getRouterPath());
-
+        excalidraw_editor?.close?.()
     }
     const save = async () => {
         const elements = excalidrawAPI.getSceneElements();

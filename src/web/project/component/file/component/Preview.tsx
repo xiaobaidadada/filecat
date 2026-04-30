@@ -18,6 +18,7 @@ export default function Preview(props: any) {
     }
     function cancel () {
         setFilePreview({open:false})
+        file_preview?.close?.()
     }
     let opt_div ;
     switch (file_preview.type) {

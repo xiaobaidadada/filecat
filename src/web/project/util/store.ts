@@ -135,6 +135,7 @@ export const $stroe = {
             save?: any,
             opt_shell?: boolean,
             can_format?: boolean,
+            close?:()=>any
         }
     }),
     windows_width:atom({
@@ -247,7 +248,7 @@ export const $stroe = {
     // 文件预览
     file_preview: atom({
         key: 'file_preview',
-        default: {open: false} as { open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string },
+        default: {open: false} as { open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string,close?:()=>any },
     }),
     // 分享页文件时间排序方式
     share_sort_type: atom({
@@ -257,7 +258,7 @@ export const $stroe = {
     // md预览
     markdown: atom({
         key: 'markdown',
-        default: {} as { filename?: string, context?: string },
+        default: {} as { filename?: string, context?: string,close?:()=>any },
     }),
     // 编辑器
     studio: atom({
@@ -272,7 +273,7 @@ export const $stroe = {
     // excalidraw编辑器
     excalidraw_editor: atom({
         key: 'excalidraw_editor',
-        default: {} as { url?: string, name?: string }
+        default: {} as { url?: string, name?: string ,close?:()=>any}
     }),
     // 磁盘
     disk: atom({

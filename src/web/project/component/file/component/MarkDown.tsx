@@ -20,6 +20,7 @@ export default function MarkDown(props) {
 
     function cancel() {
         set_markdown({context: "", filename: ""})
+        markdown?.close?.()
     }
 
 

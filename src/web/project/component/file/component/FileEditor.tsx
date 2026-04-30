@@ -38,6 +38,7 @@ export default function FileEditor() {
     function cancel () {
         editor_data.set_value_temp('')
         setEditorSetting({open: false,model:'',fileName:'',save:null})
+        editorSetting?.close?.()
     }
     async function save() {
         if (editorSetting.save && have_update) {

@@ -197,6 +197,7 @@ export async function start_main() {
             target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
             // changeOrigin: true,
             pathRewrite: (path, req) => {
+                path = path.split("?")[0]
                 if (path.endsWith(".md")) {
                     return "/"; // md 特殊文件
                 }

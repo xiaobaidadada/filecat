@@ -18,7 +18,7 @@ import {useTranslation} from "react-i18next";
 import {NotyFail, NotySucess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
 import Header from "../../../../../meta/component/Header";
-import {getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "../../FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view, useUpdateUrlParams} from "../../FileUtil";
 import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
@@ -26,6 +26,7 @@ import {user_click_file} from "../../../../util/store.util";
 import {copyToClipboard} from "../../../../util/FunUtil";
 import {DirListShowTypeEmum} from "../../../../../../common/req/user.req";
 import {getNextByLoop} from "../../../../../../common/ListUtil";
+import {useSearchParams} from "react-router-dom";
 
 type FileItem = FileItemData
 
@@ -47,6 +48,8 @@ export default function Share() {
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
     const {click_file} = user_click_file();
+    const [searchParams] = useSearchParams()
+    const updateParams = useUpdateUrlParams();
 
     const  switchGridView = unsing_switch_grid_view(true)
 
@@ -82,8 +85,28 @@ export default function Share() {
                 p.size = f.size;
                 p.show_mtime = f.show_mtime
             }
-            setData(p)
             localStorage.setItem(`file_share_token_${share_id.current}`, share_token.current)
+            const share_preview_file_name = searchParams.get("share_preview_file_name");
+            if(share_preview_file_name) {
+                try {
+                    const one = r.data.files.find(v=>v.name === share_preview_file_name);
+                    click_file({
+                        file_path: one.path, file_url: fileHttp.getDownloadUrlV2(one.path,"share_download", {
+                            share_id: share_id.current,
+                            share_token: share_token.current
+                        }),
+                        name:one.name, size: one.origin_size, opt_shell: true, mtime: one.mtime,
+                        not_type_tip:t("未知类型，请下载查看"),
+                        close:()=>{
+                            updateParams('share_preview_file_name',null)
+                        }
+                    });
+                } catch (e) {
+                    NotyFail(e?.message || e);
+                }
+            } else {
+                setData(p)
+            }
         } else if (r.code === RCode.need_token_share) {
             localStorage.removeItem(`file_share_token_${share_id.current}`);
             NotyFail(`需要正确的访问token`)
@@ -108,6 +131,7 @@ export default function Share() {
     }
     /** mock：替换为真实接口 */
     useEffect(() => {
+
         const id = remove_router_tail(`${getRouterAfter(routerConfig.share, getRouterPath())}`)
         share_id.current = id;
         share_token.current = localStorage.getItem(`file_share_token_${id}`)
@@ -119,7 +143,7 @@ export default function Share() {
         //         size:"12mb"
         //     });
         // }, 300);
-    }, []);
+    }, [searchParams]);
 
     if (!data) {
         return (
