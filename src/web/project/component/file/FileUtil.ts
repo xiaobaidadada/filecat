@@ -15,6 +15,7 @@ import {userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
 import {useSearchParams} from "react-router-dom";
+import {getFileFormat} from "../../../../common/FileMenuType";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -360,4 +361,24 @@ export function useUpdateUrlParams() {
 
         setSearchParams(newParams);
     };
+}
+
+export function use_share_preview() {
+    const updateParams = useUpdateUrlParams();
+    const list = ["text",
+        FileTypeEnum.md,
+        FileTypeEnum.excalidraw,
+        FileTypeEnum.draw,
+        FileTypeEnum.pdf,
+        FileTypeEnum.image,
+        FileTypeEnum.video
+    ]
+    return (name:string)=>{
+        const type = getFileFormat(name);
+        if(list.includes(type)) {
+            updateParams('share_preview_file_name',name)
+            return true;
+        }
+        return false;
+    }
 }

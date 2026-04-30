@@ -18,7 +18,13 @@ import {useTranslation} from "react-i18next";
 import {NotyFail, NotySucess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
 import Header from "../../../../../meta/component/Header";
-import {getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view, useUpdateUrlParams} from "../../FileUtil";
+import {
+    getFileNameByLocation,
+    getFilesByIndexs,
+    unsing_switch_grid_view,
+    use_share_preview,
+    useUpdateUrlParams
+} from "../../FileUtil";
 import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
@@ -50,6 +56,7 @@ export default function Share() {
     const {click_file} = user_click_file();
     const [searchParams] = useSearchParams()
     const updateParams = useUpdateUrlParams();
+    const share_review = use_share_preview()
 
     const  switchGridView = unsing_switch_grid_view(true)
 
@@ -256,17 +263,18 @@ export default function Share() {
 
                                         <ButtonText text={"preview"} clickFun={() => {
                                             const item = display_items[0]
-                                            click_file({
-                                                file_path: item.path,
-                                                file_url: fileHttp.getDownloadUrlV2(item.path,"share_download", {
-                                                    share_id: share_id.current,
-                                                    share_token: share_token.current
-                                                }),
-                                                name:item.name, size: item.origin_size,
-                                                opt_shell: true,
-                                                mtime: item.mtime,
-                                                not_type_tip:t("未知类型，请下载查看")
-                                            });
+                                            share_review(item.name)
+                                            // click_file({
+                                            //     file_path: item.path,
+                                            //     file_url: fileHttp.getDownloadUrlV2(item.path,"share_download", {
+                                            //         share_id: share_id.current,
+                                            //         share_token: share_token.current
+                                            //     }),
+                                            //     name:item.name, size: item.origin_size,
+                                            //     opt_shell: true,
+                                            //     mtime: item.mtime,
+                                            //     not_type_tip:t("未知类型，请下载查看")
+                                            // });
                                         }}/>
                                     </div>
                                 </CardFull>
