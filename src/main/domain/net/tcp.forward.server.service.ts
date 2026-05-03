@@ -95,6 +95,10 @@ export class TcpForwardServerService {
     // 内存删除配置 持久化不删除
     async delete_client(util: tcp_raw_socket,client_num_id:number) {
         const current_client = this.client_num_map[client_num_id];
+        if (!current_client || current_client.client_util !== util) {
+            // 旧连接/重复连接的 close 回调，不能把当前在线连接误删掉
+            return;
+        }
         if (current_client) {
             const list = this.server_client_get();
             const item = list.find(v => v.client_num_id === client_num_id);
@@ -109,7 +113,7 @@ export class TcpForwardServerService {
                 DataUtil.set(data_common_key.tcp_proxy_server_client_list, list, file_key.tcp_proxy_server_client);
             }
         }
-        delete  this.client_num_map[client_num_id]
+        delete this.client_num_map[client_num_id]
         const aa:server_type = util.data_map[server_key]
         if(!aa)return;
         for (const port of Object.keys(aa.server_map)) {
