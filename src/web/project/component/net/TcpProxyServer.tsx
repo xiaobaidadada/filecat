@@ -46,11 +46,18 @@ export function TcpProxyServer() {
 
     const [edit_client_bridge_fig,set_edit_client_bridge_fig] = useState<tcp_proxy_bridge_fig_item[]>([])
 
-    const headers = [t("序号"),t("名称"),t("在线状态"), t("备注") ];
+    const headers = [t("序号"),t("名称"),t("在线状态"),t("时间"), t("备注") ];
     const client_headers = [t("序号"),t("服务端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
     const client_bridge_headers = [t("序号"),t("服务端口"),t("转发Client名称"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
     const online_server_headers = [t("序号"),t("服务端口"), t("转发ip"),t("转发端口"),"client "+t("名称"),t("开启"),t("备注") ];
+
+    const getRelativeTimeText = (stamp?: number) => {
+        if (stamp == null) {
+            return "";
+        }
+        return getShortTime(stamp);
+    }
 
     const get_server_bridge_get_one_fig = async (server_client_num_id:number) => {
         const r1 = await tcpProxy.post("server_bridge_get_one_fig",{
@@ -216,6 +223,7 @@ export function TcpProxyServer() {
                             <p>{index}</p>,
                             <TextTip>{item.client_name}</TextTip>,
                             <StatusCircle ok={item.status} />,
+                            <TextTip>{getRelativeTimeText(item.status ? item.online_start_time : item.offline_time)}</TextTip>,
                             <TextTip>{item.note}</TextTip>,
                             <div>
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
@@ -250,13 +258,16 @@ export function TcpProxyServer() {
             {
                 (edit_client) ?
                 <Dashboard>
-                    <Card self_title={<span
+                <Card self_title={<span
                         className={" div-row "}><h2>{t(`客户端代理配置-${edit_client?.client_name}`)}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
                         <TextLine left={"远程地址"} center={edit_client?.client_remote_address??""}/>
-                        <TextLine left={"在线时长"} center={getShortTime(edit_client?.online_start_time)}/>
+                        <TextLine
+                            left={edit_client?.status ? t("在线时间") : t("离线时间")}
+                            center={getRelativeTimeText(edit_client?.status ? edit_client?.online_start_time : edit_client?.offline_time)}
+                        />
                         <InputText placeholder={"名称"} value={edit_client.client_name} handleInputChange={(d) => {
                             edit_client.client_name = d
                             set_edit_client({...edit_client})

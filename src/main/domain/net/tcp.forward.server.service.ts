@@ -40,6 +40,19 @@ export class TcpForwardServerService {
 
     private global_socket_id = 1;
 
+    private sync_client_runtime_fields(target: tcp_proxy_server_client, source: tcp_forward_client_type) {
+        target.client_name = source.client_name ?? target.client_name;
+        if (source.client_remote_address != null) {
+            target.client_remote_address = source.client_remote_address;
+        }
+        if (source.online_start_time != null) {
+            target.online_start_time = source.online_start_time;
+        }
+        if (source.offline_time != null) {
+            target.offline_time = source.offline_time;
+        }
+    }
+
     get_socket_id() {
         // 两字节暂时这么多
         if(this.global_socket_id > 65535) {
@@ -81,6 +94,21 @@ export class TcpForwardServerService {
 
     // 内存删除配置 持久化不删除
     async delete_client(util: tcp_raw_socket,client_num_id:number) {
+        const current_client = this.client_num_map[client_num_id];
+        if (current_client) {
+            const list = this.server_client_get();
+            const item = list.find(v => v.client_num_id === client_num_id);
+            if (item) {
+                item.offline_time = Date.now();
+                if (current_client.client_remote_address != null) {
+                    item.client_remote_address = current_client.client_remote_address;
+                }
+                if (current_client.online_start_time != null) {
+                    item.online_start_time = current_client.online_start_time;
+                }
+                DataUtil.set(data_common_key.tcp_proxy_server_client_list, list, file_key.tcp_proxy_server_client);
+            }
+        }
         delete  this.client_num_map[client_num_id]
         const aa:server_type = util.data_map[server_key]
         if(!aa)return;
@@ -96,7 +124,7 @@ export class TcpForwardServerService {
         const list = this.server_client_get()
         let it = list.find(v=>v.client_num_id == fig.client_num_id)
         if(it) {
-            it.client_name  = fig.client_name
+            this.sync_client_runtime_fields(it, fig)
         } else {
             it = {
                 // client_id: fig.client_id,
@@ -104,6 +132,9 @@ export class TcpForwardServerService {
                 client_name: fig.client_name,
                 status:fig.client_util.connected,
                 proxy_fig_list: [],
+                client_remote_address: fig.client_remote_address,
+                online_start_time: fig.online_start_time,
+                offline_time: fig.offline_time,
             }
             list.push(it)
         }
@@ -230,9 +261,20 @@ export class TcpForwardServerService {
         }
         for (const it of list) {
             const client = this.client_num_map[it.client_num_id]
-            it.status = !!client?.client_util?.connected
-            it.client_remote_address = client?.client_remote_address
-            it.online_start_time = client?.online_start_time
+            if (client) {
+                it.status = !!client?.client_util?.connected
+                if (client.client_remote_address != null) {
+                    it.client_remote_address = client.client_remote_address
+                }
+                if (client.online_start_time != null) {
+                    it.online_start_time = client.online_start_time
+                }
+                if (client.offline_time != null) {
+                    it.offline_time = client.offline_time
+                }
+            } else {
+                it.status = false
+            }
         }
         return list;
     }

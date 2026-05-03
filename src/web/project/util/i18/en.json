@@ -330,6 +330,8 @@
   "时区": "time zone",
   "时间": "time",
   "服务器时间": "server time",
+  "在线时间": "online time",
+  "离线时间": "offline time",
   "在线": "online",
   "离线": "offline",
   "功能文档": "Function Specification",

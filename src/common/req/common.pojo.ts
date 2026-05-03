@@ -108,7 +108,7 @@ export class tcp_proxy_server_client {
     // 服务器状态与配置
     index?:number;
     note?:string;
-    status:boolean;
+
     // 客户端需要的配置
     proxy_fig_list:tcp_proxy_client_item[]= []
     // 客户端原本信息
@@ -116,8 +116,10 @@ export class tcp_proxy_server_client {
     client_num_id:number;
     client_name:string;
 
+    status:boolean;
     client_remote_address?:string;
     online_start_time?:number;
+    offline_time?:number;
 }
 
 export class tcp_proxy_client_fig{

@@ -22,6 +22,7 @@ export interface tcp_forward_client_type {
 
     client_remote_address?:string // 客户端远程地址
     online_start_time?:number
+    offline_time?:number
 }
 
 export interface sockets_type  {
