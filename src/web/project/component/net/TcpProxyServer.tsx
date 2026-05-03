@@ -171,7 +171,7 @@ export function TcpProxyServer() {
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
-                <Card title={"Server"} rightBottomCom={<div>
+                <Card title={t("服务器配置")} rightBottomCom={<div>
                     <ButtonText text={t('保存并通知客户端第一个key和port')} clickFun={()=>{
                         save_server_info(true)
                     }}/>
@@ -189,7 +189,7 @@ export function TcpProxyServer() {
                     {/*}}/>*/}
                     <label><ActionButton icon={"add"} onClick={() => {
                         set_option_keys([...option_keys, ""])
-                    }} title={"添加"}/>{t("key")}</label>
+                    }} title={t("添加")}/>{t("key")}</label>
                     {(option_keys ?? []).map((item, index) => {
                         return <div key={index} style={{display: "flex",}}>
                             <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
@@ -199,7 +199,7 @@ export function TcpProxyServer() {
                             <ActionButton icon={"delete"} onClick={() => {
                                 option_keys.splice(index, 1);
                                 set_option_keys([...option_keys]);
-                            }} title={"删除"}/>
+                            }} title={t("删除")}/>
                         </div>
                     })}
                     <form>
@@ -214,7 +214,7 @@ export function TcpProxyServer() {
                     </form>
 
                 </Card>
-                <CardFull self_title={<span className={" div-row "}><h2>{t("Client")}</h2>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("客户端列表")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
                           >
@@ -259,11 +259,11 @@ export function TcpProxyServer() {
                 (edit_client) ?
                 <Dashboard>
                 <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端代理配置-${edit_client?.client_name}`)}</h2> </span>}
+                        className={" div-row "}><h2>{t(`客户端代理配置`)+`-${edit_client?.client_name}`}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
-                        <TextLine left={"远程地址"} center={edit_client?.client_remote_address??""}/>
+                        <TextLine left={t('远程地址')} center={edit_client?.client_remote_address??""}/>
                         <TextLine
                             left={edit_client?.status ? t("在线时间") : t("离线时间")}
                             center={getRelativeTimeText(edit_client?.status ? edit_client?.online_start_time : edit_client?.offline_time)}
@@ -322,7 +322,7 @@ export function TcpProxyServer() {
                     </Card>
 
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端桥接配置-${edit_client?.client_name}`)}</h2> </span>}>
+                        className={" div-row "}><h2>{t(`客户端桥接配置`)+`-${edit_client?.client_name}`}</h2> </span>}>
 
                         <ActionButton icon={"add"} onClick={() => {
                             edit_client_bridge_fig.push({
@@ -391,7 +391,7 @@ export function TcpProxyServer() {
                 </Dashboard> :
 
                 <Dashboard>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Server Port")}</h2>
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("服务器")+t("端口映射")}</h2>
                         {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                         </span>}
                             >

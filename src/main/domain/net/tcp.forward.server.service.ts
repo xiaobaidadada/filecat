@@ -84,7 +84,7 @@ export class TcpForwardServerService {
                     proxy_host: p.proxy_host,
                     proxy_port: p.proxy_port,
                     client_name: item.client_name,
-                    server_port_note: item.note,
+                    server_port_note: p.note,
                     open_success: !!this.all_server_port_map[p.server_port]
                 })
             }

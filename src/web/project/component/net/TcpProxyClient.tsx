@@ -155,7 +155,7 @@ export function TcpProxyClient(props) {
                 </Card>
 
                 <Card self_title={<span
-                    className={" div-row "}><h2>{t(`服务器配置`)}</h2> </span>}>
+                    className={" div-row "}><h2>{t(`更多服务器`)}</h2> </span>}>
 
                     <ActionButton icon={"add"} onClick={() => {
                         clients.push({
