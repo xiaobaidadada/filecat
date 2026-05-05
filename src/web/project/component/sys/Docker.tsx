@@ -72,6 +72,8 @@ export function Docker(props) {
         }}/></span>];
 
     const init = async () => {
+        setRows([]);
+        setOptRow([]);
         const data = new WsData(CmdType.docker_get);
         await ws.send(data)
         ws.addMsg(CmdType.docker_getting, (wsData: WsData<SysPojo>) => {
@@ -88,16 +90,13 @@ export function Docker(props) {
             } else {
                 renders.push(...wsData.context);
             }
-            for (let index = 0; index < renders.length; index++) {
-                const row = renders[index];
-                for (let index2 = 0; index2 < row.length; index2++) {
-                    row[index2] = (<TextTip context={row[index2]}/>)
-                }
-                row.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
-                    setOptRow(row);
-                }}/>))
-            }
-            setRows(renders)
+            setRows(renders.map((row) => {
+                const nextRow = row.map((cell) => (<TextTip context={cell}/>));
+                nextRow.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
+                    setOptRow(nextRow);
+                }}/>));
+                return nextRow;
+            }))
         })
     }
     useEffect(() => {

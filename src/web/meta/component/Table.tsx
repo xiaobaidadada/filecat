@@ -31,10 +31,10 @@ export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: R
                         props.handleContextMenu(row);
                     }
                 }}>
-                    {row.map((row, index) =>
+                    {row.map((cell, index) =>
                         (<td style={{
                             width: props.width ?? "auto",
-                        }} key={index} className={index === rows.length - 1 ? "small" : ""}>{row}</td>)
+                        }} key={index} className={index === row.length - 1 ? "small" : ""}>{cell}</td>)
                     )}
                 </tr>)
             }

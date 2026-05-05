@@ -49,6 +49,8 @@ export function Systemd(props) {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
 
     const init = async () => {
+        setRows([]);
+        setOptRow([]);
         const data = new WsData(CmdType.systemd_inside_get);
         await ws.send(data)
         ws.addMsg(CmdType.systemd_inside_getting, (wsData: WsData<any>) => {
@@ -66,17 +68,15 @@ export function Systemd(props) {
             } else {
                 renders.push(...wsData.context);
             }
-            for (let index = 0; index < renders.length; index++) {
-                const row = renders[index];
-                for (let index2 = 0; index2 < row.length; index2++) {
-                    row[index2] = (<TextTip context={index2===4?formatFileSize(row[index2]):row[index2]}/>); // 内存计算
-                }
-                row.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
-                    setOptRow(row);
+            setRows(renders.map((row) => {
+                const nextRow = row.map((cell, index2) => (
+                    <TextTip context={index2 === 4 ? formatFileSize(cell) : cell}/>
+                )); // 内存计算
+                nextRow.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
+                    setOptRow(nextRow);
                 }}/>))
-
-            }
-            setRows(renders)
+                return nextRow;
+            }))
         })
     }
     useEffect(() => {
@@ -138,24 +138,30 @@ export function Systemd(props) {
     }
     // 加载系统systemd单元
     const load_systemd = async ()=>{
-        const data = await sysHttp.get("systemd/inside/all");
-        if (data.code !== RCode.Success) {
-            return;
+            set_systemd_rows([]);
+            set_systemd_opt_row([]);
+            const data = await sysHttp.get("systemd/inside/all");
+            if (data.code !== RCode.Success) {
+                return;
         }
         set_inside_systemd(new Set(data.data));
         const rsq = await sysHttp.get("systemd/allget");
-        if (rsq.code === RCode.Success) {
-            const data :any[] = rsq.data;
-            const list:any[][] = [];
-            for (const value of data??[]) {
-                const row = [<TextTip context={value.unit}/>,value.load,`${value.active}(${value.sub})`,<TextTip context={value.description}/>];
-                row.push((<ActionButton icon={"place"} title={"添加"} onClick={() => {
-                    set_systemd_opt_row(row);
-                }}/>))
-                list.push(row);
-            }
-            systemd_rows_p = list;
-            set_systemd_rows(list);
+            if (rsq.code === RCode.Success) {
+                const data :any[] = rsq.data;
+                const list:any[][] = [];
+                for (const value of data??[]) {
+                    const row = [<TextTip context={value.unit}/>,value.load,`${value.active}(${value.sub})`,<TextTip context={value.description}/>];
+                    list.push([
+                        ...row,
+                        (<ActionButton icon={"place"} title={"添加"} onClick={() => {
+                            set_systemd_opt_row([
+                                ...row
+                            ]);
+                        }}/>)
+                    ]);
+                }
+                systemd_rows_p = list;
+                set_systemd_rows(list);
         }
     }
     // 搜索系统单元

@@ -35,6 +35,9 @@ export function Process(props) {
     const {check_user_auth} = use_auth_check();
 
     const init = async () => {
+        setRows([]);
+        setCount(0);
+        setOptRow([]);
         const data = new WsData(CmdType.process_get);
         await ws.send(data)
         ws.addMsg(CmdType.process_getting, (wsData: WsData<any>) => {
@@ -58,17 +61,17 @@ export function Process(props) {
             if (sortCpu) {
                 sort(renders,(v)=>v[4],false)
             }
-            for (let index = 0; index < renders.length; index++) {
-                const row = renders[index];
-                for (let index2 = 0; index2 < row.length; index2++) {
-                    row[index2] = (<TextTip context={index2===3?formatFileSize(row[index2]):row[index2]}/>);
-                }
-                row.push((<ActionButton icon={"place"} title={t("选中")} onClick={() => {
-                    setOptRow(row);
-                }}/>))
-            }
+            const displayRows = renders.map((row) => {
+                const nextRow = row.map((cell, index2) => (
+                    <TextTip context={index2 === 3 ? formatFileSize(cell) : cell}/>
+                ));
+                nextRow.push(<ActionButton icon={"place"} title={t("选中")} onClick={() => {
+                    setOptRow(nextRow);
+                }}/>);
+                return nextRow;
+            });
             setCount(renders.length)
-            setRows(renders)
+            setRows(displayRows)
         })
     }
     useEffect(() => {
