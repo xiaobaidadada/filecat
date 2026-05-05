@@ -37,12 +37,16 @@ export function ButtonText(props:{text:string,clickFun?:()=>void}) {
     />)
 }
 
-export function ActionButton(props:{icon:MaterialIcon,title:string,onClick?:(event?:any)=>void,tip?:any,selected?:boolean,key?:any}) {
+export function ActionButton(props:{icon?:MaterialIcon,title:string,onClick?:(event?:any)=>void,tip?:any,selected?:boolean,key?:any}) {
     return (
         <div className="action" title={props.title} onClick={props.onClick}>
-            <i className="material-icons icon" style={{
-                color:props.selected===true?"#2196f3":""
-            }}>{props.icon}</i>
+            {
+                props.icon ?
+                <i className="material-icons icon" style={{
+                    color:props.selected===true?"#2196f3":""
+                }}>{props.icon}</i> :
+                    props.title
+            }
             {props.tip!==undefined && <div className={"actio_tip"}>{props.tip}</div>}
         </div>
     );

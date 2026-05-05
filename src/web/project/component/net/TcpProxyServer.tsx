@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react'
 import {Column, Dashboard, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
@@ -41,6 +41,7 @@ export function TcpProxyServer() {
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
     const [online_server,set_online_server] = useState<server_client_proxy[]>([])
     const [option_keys,set_option_keys] = useState<string[]>([])
+    const [sortServerPortAsc, setSortServerPortAsc] = useState(null)
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -50,14 +51,27 @@ export function TcpProxyServer() {
     const client_headers = [t("序号"),t("服务端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
     const client_bridge_headers = [t("序号"),t("服务端口"),t("转发Client名称"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
-    const online_server_headers = [t("序号"),t("服务端口"), t("转发ip"),t("转发端口"),"client "+t("名称"),t("开启"),t("备注") ];
-
     const getRelativeTimeText = (stamp?: number) => {
         if (stamp == null) {
             return "";
         }
         return getShortTime(stamp);
     }
+
+    const sortedOnlineServer = useMemo(() => {
+        const list = [...online_server];
+        if(sortServerPortAsc != null) {
+            list.sort((a, b) => {
+                if (sortServerPortAsc) {
+                    return a.server_port - b.server_port;
+                }
+                return b.server_port - a.server_port;
+            });
+            return list;
+        } else {
+            return list;
+        }
+    }, [online_server, sortServerPortAsc]);
 
     const get_server_bridge_get_one_fig = async (server_client_num_id:number) => {
         const r1 = await tcpProxy.post("server_bridge_get_one_fig",{
@@ -395,7 +409,17 @@ export function TcpProxyServer() {
                         {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                         </span>}
                             >
-                        <Table headers={online_server_headers} rows={online_server.map((item:server_client_proxy, index) => {
+                        <Table headers={[
+                            t("序号"),
+                            <ActionButton  title={t("服务端口")} onClick={() => {
+                                setSortServerPortAsc(v => !v);
+                            }}/>,
+                            t("转发ip"),
+                            t("转发端口"),
+                            "client "+t("名称"),
+                            t("开启"),
+                            t("备注")
+                        ]} rows={sortedOnlineServer.map((item:server_client_proxy, index) => {
                             const new_list = [
                                 <p>{index}</p>,
                                 <TextTip>{item.server_port}</TextTip>,
