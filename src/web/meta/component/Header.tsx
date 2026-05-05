@@ -23,17 +23,19 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
         <header className={`header not-select-div ${headerMin?"header-min":""}`}>
             {
                 !is_share() &&
-                <div className={"header-menu"}>
-                    <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
-                </div>
+                <React.Fragment>
+                    <div className={"header-menu"}>
+                        <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
+                    </div>
+                    <div className={"header-nav-toggle"}>
+                        <ActionButton
+                            icon={"menu"}
+                            title={(nav_style.open_menu ?? true) ? "收起" : "展开"}
+                            onClick={toggleNavCollapsed}
+                        />
+                    </div>
+                </React.Fragment>
             }
-            <div className={"header-nav-toggle"}>
-                <ActionButton
-                    icon={"menu"}
-                    title={(nav_style.open_menu ?? true) ? "收起" : "展开"}
-                    onClick={toggleNavCollapsed}
-                />
-            </div>
             {props.ignore_tags !== true &&
                 <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank"><img src={logo } alt="FileCat"/></a></h3>
                 // <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{t("title")}</a></h3>

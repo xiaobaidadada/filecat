@@ -1,6 +1,5 @@
 import {Global} from "./global";
 import {routerConfig} from "../../../common/RouterConfig";
-import {path_join} from "../../../common/path_util";
 
 Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
@@ -101,7 +100,10 @@ export function have_key_by_router_key_list(router_key_list:string[]) {
     return have;
 }
 
+// todo 所有计算可以缓存的都缓存一下
 export function is_share (){
-   const abc = getRouterPath()
-    return path_join("/",abc).startsWith(`/${routerConfig.share}`)
+   const path = getRouterPath()
+   const cleanPath = path.split("?")[0].split("#")[0].replace(/^\/+/, "");
+   const firstPath = cleanPath.split("/")[0];
+    return firstPath === routerConfig.share
 }

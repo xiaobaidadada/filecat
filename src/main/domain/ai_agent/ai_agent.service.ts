@@ -515,9 +515,9 @@ export class Ai_agentService {
 
 
 
-    is_use_local_data() {
-        return this.docs_data_map.size > 0
-    }
+    // is_use_local_data() {
+    //     return this.docs_data_map.size > 0
+    // }
 
     /**
      * todo 把记忆当作知识库 每次会话都会保存一个 记忆列表并给出概要 让ai自己根据需求 去搜索多个概要 并可以创建子目录 子归类
