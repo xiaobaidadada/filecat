@@ -3,11 +3,11 @@
 
 [English Doc](./doc/EN_README.md) 
 
-FileCat is a server management tool centered on file management. By configuring server file paths, users can manage server files through a clean and intuitive web interface. It also integrates a command terminal, Docker management, network proxying, and other operations features to provide a unified server management experience.
+FileCat is a self-hosted web file manager and server administration platform.
+It combines file browser, terminal, SSH proxy, Docker management, systemd control, AI assistant, DDNS, and tunneling features in one web UI.
 
-**AI chat is now supported for querying server resources and managing servers. You no longer need to remember complex Linux commands. Just type the `ai` command in the terminal.**
-
-FileCat 是一个以文件管理为核心的服务器管理工具。通过配置服务器文件路径，用户可以在简洁直观的 Web 界面中管理服务器文件，同时集成命令终端、Docker 管理、网络代理等多种运维功能，实现统一的服务器管理体验。
+FileCat 是一个自己部署使用的 Web 文件管理和服务器管理平台。
+它把文件浏览器、终端、SSH 代理、Docker 管理、systemd 控制、AI 助手、DDNS 和网络隧道功能整合在一个 Web 界面里。
 
 **现在支持AI 聊天的方式询问服务器资源，管理服务器，不再需要记住复杂的Linux命令，只需要在终端输入 `ai` 命令即可**;
 
