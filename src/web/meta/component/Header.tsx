@@ -22,7 +22,7 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
     return (
         <header className={`header not-select-div ${headerMin?"header-min":""}`}>
             {
-                !is_share() &&
+                (!is_share() && props.ignore_tags !== true) &&
                 <React.Fragment>
                     <div className={"header-menu"}>
                         <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
