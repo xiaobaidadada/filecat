@@ -1,5 +1,4 @@
 import React from 'react';
-import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../project/util/store";
 // @ts-ignore
@@ -8,13 +7,16 @@ import {ActionButton} from "./Button";
 import {is_share} from "../../project/util/WebPath";
 
 function Header(props: { ignore_tags?: boolean, children?: any, left_children?: any }) {
-    const { t } = useTranslation();
     const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
     const [windows_width, set_windows_width] = useRecoilState($stroe.windows_width);
     const [nav_style,set_nav_style] = useRecoilState($stroe.nav_style);
 
     const mobile = () => {
-        set_nav_style({is_mobile:true})
+        set_nav_style((prev) => ({...prev, open_menu: true}))
+    }
+
+    const toggleNavCollapsed = () => {
+        set_nav_style((prev) => ({...prev, open_menu: !(prev.open_menu ?? true)}))
     }
 
     return (
@@ -25,6 +27,13 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
                     <ActionButton icon={"menu"} title={"菜单"} onClick={mobile}/>
                 </div>
             }
+            <div className={"header-nav-toggle"}>
+                <ActionButton
+                    icon={"menu"}
+                    title={(nav_style.open_menu ?? true) ? "收起" : "展开"}
+                    onClick={toggleNavCollapsed}
+                />
+            </div>
             {props.ignore_tags !== true &&
                 <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank"><img src={logo } alt="FileCat"/></a></h3>
                 // <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{t("title")}</a></h3>

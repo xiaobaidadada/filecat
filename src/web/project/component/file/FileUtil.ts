@@ -254,6 +254,7 @@ const columnWidth = 280;
 // 让文件页面的文件可以子适应 （控制 width参数)
 export function using_file_page_handle_width_auto() {
     const [itemWidth, setItemWidth] = useState($stroe.file_item_width_atom);
+    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
 
     const handleResize = () => {
         let columns = Math.floor(
@@ -270,7 +271,7 @@ export function using_file_page_handle_width_auto() {
         return () => {
             window.removeEventListener('resize', handleResize);
         }
-    }, []);
+    }, [nav_style]);
     return itemWidth
 }
 

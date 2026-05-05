@@ -95,8 +95,9 @@ function Layout() {
         MainNavList[MainNavList.length - 1].push(custom_fun_opt);
     }
     const nav_close = () => {
-        set_nav_style({is_mobile: false})
+        set_nav_style((prev) => ({...prev, open_menu: false}))
     }
+    const openMenu = nav_style?.open_menu ?? true;
     return (
         <React.Fragment>
             {/*全局显示*/}
@@ -127,9 +128,10 @@ function Layout() {
             <CommonBody
                 navList={MainNavList}
                 hidden_navList={hidden_navList}
-                nav_is_mobile={nav_style.is_mobile}
+                nav_is_mobile={openMenu}
+                nav_is_collapsed={!openMenu}
             />
-            {nav_style.is_mobile && <Overlay click={nav_close}/>}
+            {openMenu && <Overlay className={"layout-nav-overlay"} click={nav_close}/>}
         </React.Fragment>
     )
         ;

@@ -316,8 +316,8 @@ export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v,item) =>
     </div>
 }
 
-export function Overlay(props: { click: () => void }) {
-    return <div className="overlay" onClick={props.click}></div>
+export function Overlay(props: { click: () => void, className?: string }) {
+    return <div className={`overlay ${props.className ?? ""}`.trim()} onClick={props.click}></div>
 }
 
 export function OverlayTransparent(props: { click: () => void, children?: React.ReactNode }) {

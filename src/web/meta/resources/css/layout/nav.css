@@ -29,6 +29,22 @@ nav  {
     height: 100%;
 }
 
+nav.collapsed {
+    width: 4.5em;
+    overflow-x: hidden;
+}
+
+nav.collapsed .nav_2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1em 0;
+}
+
+nav.collapsed .nav_3 {
+    display: none;
+}
+
 nav  .nav_2 {
     width: 100%;
     display: block;

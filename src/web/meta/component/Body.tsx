@@ -11,11 +11,12 @@ export const CommonBody: React.FC<NavProps> = (props) => {
         {/*网页功能选择 | 不管什么位置都是位于左边*/}
         <Nav
             nav_is_mobile={props.nav_is_mobile}
+            nav_is_collapsed={props.nav_is_collapsed}
             navList={props.navList}
         />
         {/*网页主要内容 | 不管什么位置都是位于右边*/}
         {/*{JSON.stringify(flatten(props.list).map(v=>v.rto+"*"))}*/}
-        <Main >
+        <Main nav_is_collapsed={props.nav_is_collapsed}>
             <SimpleRoutes rtos={navRouteList.map(v=>v.rto+"*")}>
                 {navRouteList.map(v => <React.Fragment key={v.rto}>{v.component}</React.Fragment>)}
             </SimpleRoutes>

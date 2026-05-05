@@ -16,6 +16,7 @@ export interface NavProps {
     navList: NavItem[][],
     hidden_navList?: NavItem[],
     nav_is_mobile: boolean,
+    nav_is_collapsed?: boolean,
 }
 
 export function Nav(props: NavProps) {
@@ -45,7 +46,7 @@ export function Nav(props: NavProps) {
 
     }, [props.navList]);
     return (
-        <nav className={`${props.nav_is_mobile? "active" :""}  not-select-div`}>
+        <nav className={`${props.nav_is_mobile? "active" :""} ${props.nav_is_collapsed ? "collapsed" : ""}  not-select-div`}>
             {props.navList.map((item, index) => {
                 return (<div key={index} className=" nav_1" >
                     {item.map((item2, index2) => {

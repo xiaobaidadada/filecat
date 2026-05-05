@@ -9,3 +9,7 @@ main {
     height: 100%;
     padding-top: var( --top-length);
 }
+
+main.nav-collapsed {
+    width: calc(100% - 6em);
+}

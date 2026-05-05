@@ -300,10 +300,15 @@ export const $stroe = {
     nav_style:atom({
         key: 'nav_style',
         default: {
+            open_menu: true,
 
         } as {
-            is_mobile ? :boolean,
+            open_menu?: boolean,
         }
+        ,
+        effects: [
+            localStorageEffect("nav_style")
+        ]
     }),
     // router jump 跳转资源
     router_jump : atom({
@@ -337,6 +342,5 @@ export const $stroe = {
         default: 0
     })
 }
-
 
 

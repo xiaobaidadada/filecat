@@ -329,6 +329,10 @@ body.rtl .card .card-action {
     animation: .1s show forwards;
 }
 
+.layout-nav-overlay {
+    display: none;
+}
+
 .overlay_trans {
     /*background-color: rgba(0, 0, 0, 0.5);*/
     position: fixed;

@@ -55,6 +55,11 @@
   display: none;
 }
 
+.header .header-nav-toggle {
+
+  margin-right: 0.5em;
+}
+
 .header .overlay {
   width: 0;
   height: 0;
