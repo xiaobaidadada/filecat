@@ -49,11 +49,6 @@ export function Nav(props: NavProps) {
             {props.navList.map((item, index) => {
                 return (<div key={index} className=" nav_1" >
                     {item.map((item2, index2) => {
-                        if (item2.component) return (
-                            <div  key={index2}>
-                                {item2.component}
-                            </div>
-                        );
                         return (
                             <To rto={item2.rto} key={index2} clickFun={item2.clickFun} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
                                 <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>

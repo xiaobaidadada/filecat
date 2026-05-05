@@ -1,4 +1,4 @@
-import React, {Suspense} from 'react'
+import React, {Suspense, useEffect, useState} from 'react'
 import Header from "../../meta/component/Header";
 import {CommonBody} from "../../meta/component/Body";
 import {NavItem} from "../../meta/component/NavProps";
@@ -48,34 +48,34 @@ function Layout() {
 
     const seconds: NavItem[] = []
     if (check_user_auth(UserAuth.nav_net_tag)) {
-        seconds.push({icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`})
+        seconds.push({icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}/`, component: <NavIndex/>})
     }
     if (check_user_auth(UserAuth.all_sys)) {
-        seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`})
+        seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`, component: <SysInfo/>})
     }
     if (menuRots?.length > 0) {
-        seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`})
+        seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`, component: <Proxy menuRots={menuRots}/>})
     }
     // @ts-ignore
     seconds.push(...[
-        {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`}
+        {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`, component: <ToolBox/>}
     ])
     if (check_user_auth(UserAuth.ddns)) {
-        seconds.push({icon: "dns", name: "ddns", rto: `${routerConfig.ddns}/`})
+        seconds.push({icon: "dns", name: "ddns", rto: `${routerConfig.ddns}/`, component: <Ddns/>})
     }
     let three: NavItem[] = [
-        {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`},
+        {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`, component: <Settings/>},
         {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
         // {component:(<div>测试</div>)}
     ]
     if (check_user_auth(UserAuth.vir_net)) {
-        three = [{icon: "vpn_lock", name: t("网络代理"), rto: `${routerConfig.net}/`}, ...three];
+        three = [{icon: "vpn_lock", name: t("网络代理"), rto: `${routerConfig.net}/`, component: <Net/>}, ...three];
     }
     const main_list:NavItem[] = [
-            {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`,},
+            {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`, component: <FileList/>},
         ]
     if (check_user_auth(UserAuth.ai_agent_page)) {
-        main_list.push({icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`,})
+        main_list.push({icon: "question_answer", name: t("AI"), rto: `${routerConfig.aichat}/`, component: <ChatPage />})
     }
     const MainNavList: NavItem[][] = [
         main_list,
@@ -124,55 +124,11 @@ function Layout() {
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
-            <CommonBody navList={MainNavList} hidden_navList={hidden_navList} nav_is_mobile={nav_style.is_mobile}>
-                {/*文件*/}
-                <FileList/>
-                {/*ai聊天*/}
-                {check_user_auth(UserAuth.ai_agent_page) &&
-                    <Suspense fallback={<div></div>}>
-                        <ChatPage />
-                    </Suspense>
-                }
-                {/*网站 索引*/}
-                {check_user_auth(UserAuth.nav_net_tag) &&
-                    <Suspense fallback={<div></div>}>
-                        <NavIndex/>
-                    </Suspense>
-                }
-                {/*系统信息*/}
-                {check_user_auth(UserAuth.all_sys) &&
-                    <Suspense fallback={<div></div>}>
-                        <SysInfo/>
-                    </Suspense>
-                }
-                {/*代理*/}
-                {
-                    menuRots?.length > 0 &&
-                    <Suspense fallback={<div></div>}>
-                        <Proxy menuRots={menuRots}/>
-                    </Suspense>
-                }
-                {/*工具箱*/}
-                <Suspense fallback={<div></div>}>
-                    <ToolBox/>
-                </Suspense>
-                {/*ddns*/}
-                {check_user_auth(UserAuth.ddns) &&
-                    <Suspense fallback={<div></div>}>
-                        <Ddns/>
-                    </Suspense>
-                }
-                {/*网络*/}
-                {check_user_auth(UserAuth.vir_net) &&
-                    <Suspense fallback={<div></div>}>
-                        <Net/>
-                    </Suspense>
-                }
-                {/*设置*/}
-                <Suspense fallback={<div></div>}>
-                    <Settings/>
-                </Suspense>
-            </CommonBody>
+            <CommonBody
+                navList={MainNavList}
+                hidden_navList={hidden_navList}
+                nav_is_mobile={nav_style.is_mobile}
+            />
             {nav_style.is_mobile && <Overlay click={nav_close}/>}
         </React.Fragment>
     )
