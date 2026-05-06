@@ -30,16 +30,16 @@ On top of file management, FileCat integrates various server operation and manag
 ## Screenshots
 
 ### File List
-![](./doc/文件列表.png)
+![](./文件列表.png)
 
 ### Intranet Penetration
-![](./doc/内网穿透.png)
+![](./内网穿透.png)
 
 ### System Dashboard
-![](./doc/系统信息看板.png)
+![](./系统信息看板.png)
 
 ### AI Features
-![](./doc/AI能力.png)
+![](./AI能力.png)
 
 In addition to the above, FileCat also supports features such as instant opening of large text log files, Windows remote desktop, simple image editing, CI/CD workflows, Excalidraw drawing, etc.
 
