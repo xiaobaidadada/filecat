@@ -1,17 +1,56 @@
 
 # ![](./src/web/meta/resources/img/logo-70.png) FileCat
 
+<p align="left">
+  <!-- npm 下载量 -->
+  <a href="https://www.npmjs.com/package/filecat">
+    <img src="https://img.shields.io/npm/dm/filecat.svg" alt="npm downloads">
+  </a>
+
+  <!-- npm 版本 -->
+  <a href="https://www.npmjs.com/package/filecat">
+    <img src="https://img.shields.io/npm/v/filecat.svg" alt="npm version">
+  </a>
+
+  <!-- GitHub stars -->
+  <a href="https://github.com/xiaobaidadada/filecat">
+    <img src="https://img.shields.io/github/stars/xiaobaidadada/filecat.svg" alt="stars">
+  </a>
+
+  <!-- GitHub 下载量 -->
+  <a href="https://github.com/xiaobaidadada/filecat/releases">
+    <img src="https://img.shields.io/github/downloads/xiaobaidadada/filecat/total.svg" alt="downloads">
+  </a>
+
+  <!-- Docker pulls -->
+  <a href="https://ghcr.io/xiaobaidadada/filecat">
+    <img src="https://img.shields.io/badge/docker-ghcr.io-blue.svg" alt="docker">
+  </a>
+
+  <!-- license -->
+  <a href="https://github.com/xiaobaidadada/filecat/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/xiaobaidadada/filecat.svg" alt="license">
+  </a>
+</p>
+
 [English Doc](./doc/EN_README.md) 
 
-FileCat is a self-hosted web file manager and server administration platform.
-It combines file browser, terminal, SSH proxy, Docker management, systemd control, AI assistant, DDNS, and tunneling features in one web UI.
+FileCat 是一个web文件服务器、也是一个轻量级的服务器管理工具。部署在服务器上后，即可浏览服务器上的文件，支持多种文件格式在线浏览(图片、视频、绘图、Markdown等)
 
-FileCat 是一个自己部署使用的 Web 文件管理和服务器管理平台。
-它把文件浏览器、终端、SSH 代理、Docker 管理、systemd 控制、AI 助手、DDNS 和网络隧道功能整合在一个 Web 界面里。
+在文件管理的基础上，filecat集成了很多服务器运维与管理的功能，让你同时拥有一个轻量级的服务器管理工具，这些功能能够帮助用户更方便的访问和操作服务器上的文件
 
-**现在支持AI 聊天的方式询问服务器资源，管理服务器，不再需要记住复杂的Linux命令，只需要在终端输入 `ai` 命令即可**;
 
-定制化开发联系qq: 1643220580
+## 部分功能截图
+### 文件列表
+![](./doc/文件列表.png)
+### 内网穿透
+![](./doc/内网穿透.png)
+### 系统信息看板
+![](./doc/系统信息看板.png)
+### AI能力
+![](./doc/AI能力.png)
+
+除了以上功能之外，还支持一些可能会对你有帮助的功能，任意大小的文本日志文件秒开，windows远程桌面，图片简单编辑，CI/CD工作流，excalidraw绘图 ...
 
 ## Demo
 http://demo.filecat.xiaobaidadada.fun/
@@ -27,9 +66,6 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 
 
 `npm install -g filecat `
-
-
-建议使用node20，部分功能作为一些npm子模块依赖，如果电脑访问github过慢，安装的时候会退化为本地c++编译，需要安装python3.8(不能太高)和c++编译器才能安装成功，否则会影响部功能的运行，windows下如果安装报错，是需要本地编译一些c++依赖，需要先安装python3和[vs_BuildTools](https://aka.ms/vs/17/release/vs_BuildTools.exe)(选择c++桌面，和Spectre 单独的包，安装这两个库)再执行安装.
 
 对于Linux系统，安装完以后，你可选择使用pm2来保活，或者使用 `filecat --install`来注册到systemd
 
@@ -53,40 +89,17 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 `npm run dev` or `npm run build && node dist/main.js`
 
 ## 运行
-运行 `filecat --port 5567`
+安装完以后运行命令 `filecat --port 5567`
 
-account/password: admin/admin
+默认账号/密码: admin/admin
 
 更多参数可以使用 `filecat --help` 查看
+
+使用提示：权限功能是必须要注意的，安装以后，默认能够访问的服务器文件目录就是安装目录，你需要在设置中设置每个用户能够访问的目录，以及能够执行的权限。
 
 ## 升级
 1. 使用自定义的安装方式进行升级，比如npm 安装的就使用 npm -g i filecat，docker 可以重新pull镜像，二进制安装的可以重新下载替换。
 2. 从5.33.0 版本以后，可以使用 `filecat-upgrade` 命令来进行升级，会自动根据安装环境进行升级。对于docker和二进制安装的方式，filecat-upgrade 命令还支持一个自定义下载url路径参数（默认是从github下载最新包）。
-
-## 功能概览 
-|           文件管理           |                                         代码编辑                                         |          多用户管理           |
-|:------------------------:|:------------------------------------------------------------------------------------:|:------------------------:|
-| ![](https://github.com/user-attachments/assets/46b67603-db28-4751-b0c1-4e1ae9cef0d2) | ![](https://github.com/user-attachments/assets/aa6cf4d9-1a0f-4d47-b48d-21c509ec1554) | ![](https://github.com/user-attachments/assets/09d968e5-cd72-4aa3-8351-12ea3c0d7031) |
-
-
-|         10G 日志查看         |           系统信息           |                                      TUN客户端/服务器                                      |
-|:------------------------:|:------------------------:|:------------------------------------------------------------------------------------:|
-| ![](https://github.com/user-attachments/assets/20702c83-4f68-47cf-ae12-7694f19dea2a) | ![image](https://github.com/user-attachments/assets/9845638c-8298-4957-86cb-201b3ca2a7d9) | ![](https://github.com/user-attachments/assets/f7a746af-5645-4241-9e2e-69eace3b4ba1) |
-|                                                                                                                                                                                                                                                                                                                                                                                                      AI问答                                                                                                                                                                                                                                                                                                                                                                                                       |                      |                                                                                      |
-| ![](https://github.com/user-attachments/assets/14c7636e-ed6a-4f4e-ac3b-64b40f66b31f) |  |  |
-
-
-- **文件管理**: 支持断点分块上传、多个根目录、代码\图片编辑、编辑器模式、白板绘图，文件分享...
-- **终端**：相比filebrowser使用了xterm.js，并且采用了虚拟shell完美实现命令的权限过滤，避免用户执行类似 rm -r / 的危险命令（所以使用终端命令行，就需要先在用户设置中设置命令权限）
-- **CI/CD自动化构建**：内置了一个模仿github workflow 语法实现的自动化构建功能，作用于以.act结尾的文件
-- **ssh代理**: 可以管理多个linux服务器，作用和winscp类似，让终端和文件管理更方便。除此之外还支持http代理，rdp远程桌面(windows)等代理
-- **网站导航**: 记录管理自己的多个链接地址
-- **系统、docker、进程 等信息的监控**: 对于系统进程查询，采用了高效的实现方式，监控全部进程的状态只需要非常小的cpu占用率
-- **AI 问答**: 通过与ai进行交互来执行命令获取服务器资源，同时支持权限过滤，避免AI执行危险命令行为（因此使用AI功能，需要先在用户设置中，给用户设置命令权限，建议设置 `*` 允许全部命令，在设置禁止不能执行的危险命令），需要自己注册配置任何符合openai风格的模型api。另外还支持本地知识库全文检索的rag方式增强ai能力。
-- **超大日志查看**: 采用文件分片读取的方式，不管多大的文本文件都可以做到秒开
-- **虚拟Tun网络**: 可以进行客户端和服务器模式的tun网络建立，让多个具有公网或者内容的电脑拥有虚拟ip，进行局域网形式的通信
-- **虚拟Tcp网络**: 采用客户端和服务器模式，服务器可以控制客户端，让客户端在当前网络环境中进行tcp通信代理
-
 
 
 ##  qq群
