@@ -126,7 +126,7 @@ export function Rdp() {
     }
     return <div>
         <Header>
-            <InputTextIcon placeholder={t("地址")} icon={"outlet"} value={address}
+            <InputTextIcon placeholder={t("地址")} icon={"network_ping"} value={address} max_width={"15rem"}
                            handleInputChange={(v) => setAddress(v)}/>
             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} max_width={"10rem"}
                            handleInputChange={(v) => {
@@ -134,9 +134,9 @@ export function Rdp() {
                                    set_port(parseInt(v));
                                }
                            }}/>
-            <InputTextIcon placeholder={t("账号")} icon={"http"} value={username}
+            <InputTextIcon placeholder={t("账号")} icon={"manage_accounts"} value={username} max_width={"15rem"}
                            handleInputChange={(v) => setUsername(v)}/>
-            <InputTextIcon placeholder={t("密码")} icon={"http"} value={password}
+            <InputTextIcon placeholder={t("密码")} icon={"password"} value={password} max_width={"15rem"}
                            handleInputChange={(v) => setPassword(v)}/>
             {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
             {/*<ActionButton icon={"fullscreen"} title={t("全屏")} onClick={() => setFullScreen(!fullScreen)}/>*/}
