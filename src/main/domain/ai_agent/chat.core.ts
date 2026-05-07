@@ -3,7 +3,6 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./ai_agent.tools";
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
 import {ai_agentService, API_KEY, BASE_URL, config, config_env, config_search_doc, MODEL} from "./ai_agent.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
@@ -213,7 +212,7 @@ ${sys_prompt ?? ''}
                             // name 只会来一次
                             if (tc.function?.name) {
                                 call.function.name += tc.function.name;
-                                on_msg(`\n${`等待 ${tools_des_map[call.function.name]?.get_name()} ...`}`)
+                                on_msg(`\n${`等待 ${ai_agentService.getToolInfo(call.function.name, {})?.get_name?.() ?? call.function.name} ...`}`)
                             }
                             // arguments 是流式拼接的
                             if (tc.function?.arguments) {
@@ -247,15 +246,19 @@ ${sys_prompt ?? ''}
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
                     if(!call.function?.name)return; // 有问题
-                    const toolName = call.function.name as Ai_agentTools_type;
-                    const tool_info_value = tools_des_map[toolName];
+                    const toolName = call.function.name as string;
+                    let tool_info_value = ai_agentService.getToolInfo(toolName, {}) ?? {
+                        get_name: () => toolName,
+                        get_params: () => ""
+                    };
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
+                        tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
                         await this.permission_test(token, user, toolName, args, cwd);
 
-                        on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params(args)}\n\r`)
-                        let result = await Ai_agentTools[toolName](args);
-                        let resultStr = String(result);
+                        on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params()}\n\r`)
+                        let result = await ai_agentService.callTool(toolName, args);
+                        let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         // on_msg(`\n\r${tool_des_name} 执行完成`)
                         // if (resultStr.length > 5000) {
                         //     resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
@@ -297,6 +300,8 @@ ${sys_prompt ?? ''}
         if (ai_agentService.docs_switch_get()) {
             tools.push(ai_tools_search_docs)
         }
+        // mcp 的工具 也加入
+        tools.push(...ai_agentService.getMcpTools())
         const json_body: any = {
             messages,
             tools: tools,

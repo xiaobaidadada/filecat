@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {ai_agent_Item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {ai_agent_Item, ai_mcp_server_item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -212,6 +212,20 @@ export class SettingController {
         // 全部数据配置，需要编辑权限才能看到
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_agent_setting());
+    }
+
+    // mcp 相关
+    @Get("/ai_mcp_setting")
+    ai_mcp_setting_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(settingService.ai_mcp_setting());
+    }
+
+    @Post('/ai_mcp_setting/save')
+    async ai_mcp_settingsave(@Body() req: {list: ai_mcp_server_item[]}, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        await settingService.ai_mcp_setting_save(ctx.headers.authorization, req);
+        return Sucess("1");
     }
 
     @Get("/ai_docs_setting")

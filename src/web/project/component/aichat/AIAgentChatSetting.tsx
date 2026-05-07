@@ -15,7 +15,7 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_docs_item, ai_docs_load_info,} from "../../../../common/req/setting.req";
+import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item,} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
@@ -40,17 +40,26 @@ const docs_tip = `
 2. 该功能只能用于小型知识库，作为本地小型或者公司内部资料使用还是没有问题的
 3. 每次保存都会重新加载知识库中的文件，不会全部重新加载，而是检测哪些文件有变更
 `
+const mcp_tip = `
+1. 这里配置的是 MCP Client 启动参数，当前实现的是 stdio 模式，也就是通过 command + args 启动本地 MCP Server
+2. 例如可以填 npx / uvx / python 等命令，再配合对应的 MCP server 包参数
+3. 保存后会自动重新加载 MCP 工具，agent 聊天时会把这些工具一起带给模型
+4. 建议把 cwd 配到具体项目目录，避免 server 在错误目录里运行
+`
 export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
     const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
+    const headers_mcp = [t("编号"),t("名称"), t("是否开启"), t("command"), "args", "cwd", "env", t("备注") ];
 
-    const [rows, setRows] = useState<ai_agent_Item>([]);
-    const [docs_list,set_docs_list] = useState<ai_docs_item>([]);
+    const [rows, setRows] = useState<ai_agent_Item[]>([]);
+    const [docs_list,set_docs_list] = useState<ai_docs_item[]>([]);
+    const [mcp_list,set_mcp_list] = useState<ai_mcp_server_item[]>([]);
     const [load_info,set_load_info] = useState<ai_docs_load_info>(null);
     const docs_param = useRef();
+    const mcp_update_tag = useRef(false);
     const docs_update_tag = useRef(false);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const [index_switch,set_index_switch] = useState(false);
@@ -92,6 +101,11 @@ export default function AIAgentChatSetting() {
             }
         }
 
+        const mcp_result = await settingHttp.get("ai_mcp_setting");
+        if (mcp_result.code === RCode.Success) {
+            set_mcp_list(mcp_result.data.list ?? []);
+        }
+
         load_index_switch()
     }
     useEffect(()=>{
@@ -117,6 +131,10 @@ export default function AIAgentChatSetting() {
         set_docs_list([...docs_list,{note:"",auto_load:false,dir:""}]);
         docs_update_tag.current = true;
     }
+    const add_mcp = ()=>{
+        set_mcp_list([...mcp_list,{name:"",open:false,command:"",args:"",cwd:"",env:"",note:"",transport:"stdio"}]);
+        mcp_update_tag.current = true;
+    }
     const del = (index) => {
         rows.splice(index, 1);
         setRows([...rows]);
@@ -126,8 +144,17 @@ export default function AIAgentChatSetting() {
         set_docs_list([...docs_list]);
         docs_update_tag.current = true;
     }
+    const del_mcp = (index) => {
+        mcp_list.splice(index, 1);
+        set_mcp_list([...mcp_list]);
+        mcp_update_tag.current = true;
+    }
     const copy = (index) => {
         setRows([...rows,{...rows[index],open: false}]);
+    }
+    const copy_mcp = (index) => {
+        set_mcp_list([...mcp_list,{...mcp_list[index],open:false}]);
+        mcp_update_tag.current = true;
     }
     const save = async (data_rows?:any) => {
         for (let i =0; i<rows.length;i++) {
@@ -136,6 +163,16 @@ export default function AIAgentChatSetting() {
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
         if (result.code === RCode.Success) {
             NotySucess("保存成功")
+        }
+    }
+    const save_mcp = async (data_rows?:any) => {
+        for (let i =0; i<mcp_list.length;i++) {
+            mcp_list[i].index = i;
+        }
+        const result = await settingHttp.post("ai_mcp_setting/save", {list:data_rows??mcp_list});
+        if (result.code === RCode.Success) {
+            NotySucess("保存成功")
+            mcp_update_tag.current = false;
         }
     }
     const save_docs = async (param?:any) => {
@@ -243,6 +280,66 @@ export default function AIAgentChatSetting() {
                                         <div>
                                             <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
                                             <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy(index)}/>
+                                        </div>,
+                                    ];
+                                    return new_list;
+                                })} width={"10rem"}/>
+                            </CardFull>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column widthPer={70}>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add_mcp}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                save_mcp()
+                            }}/></div>}>
+                                <Table headers={headers_mcp} rows={mcp_list.map((item, index) => {
+                                    const new_list = [
+                                        <div>{index}</div>,
+                                        <InputText value={item.name} handleInputChange={(value) => {
+                                            item.name = value;
+                                            mcp_update_tag.current = true
+                                        }} no_border={true}/>,
+                                        <Select value={item.open} onChange={(value) => {
+                                            item.open = value === 'true';
+                                            set_mcp_list([...mcp_list]);
+                                            mcp_update_tag.current = true
+                                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                        <InputText value={item.command} handleInputChange={(value) => {
+                                            item.command = value;
+                                            mcp_update_tag.current = true
+                                        }} no_border={true}/>,
+                                        <InputText value={item.args} handleInputChange={(value) => {
+                                            item.args = value;
+                                            mcp_update_tag.current = true
+                                        }} no_border={true}/>,
+                                        <InputText value={item.cwd} handleInputChange={(value) => {
+                                            item.cwd = value;
+                                            mcp_update_tag.current = true
+                                        }} no_border={true}/>,
+                                        <div>
+                                            <ActionButton icon={"settings"} title={"env"} onClick={() => {
+                                                editor_data.set_value_temp(item.env ?? '')
+                                                setEditorSetting({
+                                                    model: "ace/mode/ini",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        item.env = context
+                                                        set_mcp_list([...mcp_list])
+                                                        editor_data.set_value_temp('')
+                                                        mcp_update_tag.current = true
+                                                        save_mcp(mcp_list)
+                                                    }
+                                                })
+                                            }}/>
+                                        </div>,
+                                        <InputText value={item.note} handleInputChange={(value) => {
+                                            item.note = value;
+                                            mcp_update_tag.current = true
+                                        }} no_border={true}/>,
+                                        <div>
+                                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_mcp(index)}/>
+                                            <ActionButton icon={"copy_all"} title={t("复制")} onClick={() => copy_mcp(index)}/>
                                         </div>,
                                     ];
                                     return new_list;

@@ -3,8 +3,9 @@ import {ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
-import {Ai_agentTools, Ai_agentTools_type} from "./ai_agent.tools";
+import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./ai_agent.tools";
 import {settingService} from "../setting/setting.service";
+import {ai_agentMcpService} from "./ai_agent.mcp";
 import path from "path";
 import {userService} from "../user/user.service";
 import {exec_type} from "pty-shell";
@@ -219,6 +220,7 @@ export class Ai_agentService {
         }
         await ThreadsFilecat.close()
         this.init_search_docs_param()
+        await ai_agentMcpService.reload().catch(console.error);
         if (!this.docs_switch_get()) return;
         start_worker_threads()
         const body = {index_storage_type: config_search_doc.index_storage_type}
@@ -545,6 +547,31 @@ export class Ai_agentService {
             this.end_to_res(res);
         },"使用 markdown格式回答用户")
         return res;
+    }
+
+    public async reloadMcp() {
+        await ai_agentMcpService.reload();
+    }
+
+    public getMcpTools() {
+        return ai_agentMcpService.getTools();
+    }
+
+    public getToolInfo(toolName: string, args: any) {
+        if (Ai_agentTools[toolName as Ai_agentTools_type]) {
+            return {
+                get_name: () => tools_des_map[toolName as Ai_agentTools_type]?.get_name?.() ?? toolName,
+                get_params: () => tools_des_map[toolName as Ai_agentTools_type]?.get_params?.(args) ?? ""
+            };
+        }
+        return ai_agentMcpService.getToolInfo(toolName, args);
+    }
+
+    public async callTool(toolName: string, args: any) {
+        if (Ai_agentTools[toolName as Ai_agentTools_type]) {
+            return Ai_agentTools[toolName as Ai_agentTools_type](args);
+        }
+        return ai_agentMcpService.callTool(toolName, args);
     }
 
 

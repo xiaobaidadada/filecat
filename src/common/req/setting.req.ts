@@ -121,6 +121,24 @@ messages_show_max=100
 # 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
 messages_current_max=100
 `
+
+export class ai_mcp_server_item {
+    name: string;
+    open: boolean = false;
+    note: string;
+    index: number;
+    transport: "stdio" | "http" = "stdio";
+    command: string;
+    args: string;
+    cwd?: string;
+    env?: string = "";
+    timeout_ms?: number = 10000;
+}
+
+export class ai_mcp_setting {
+    list: ai_mcp_server_item[];
+}
+
 export const json_params_default = JSON.stringify({
     "stream":true,
     "thinking" : { "type":"disabled" }

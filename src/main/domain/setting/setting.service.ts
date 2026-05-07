@@ -10,6 +10,7 @@ import {
     dir_upload_max_num_item,
     FileQuickCmdItem,
     FileSettingItem, json_params_default,
+    ai_mcp_server_item,
     QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
@@ -463,6 +464,26 @@ export class SettingService {
         } else {
             return r
         }
+    }
+
+    ai_mcp_setting(): { list: ai_mcp_server_item[] } {
+        return DataUtil.get(data_common_key.ai_agent_mcp_setting) ?? {
+            list: []
+        };
+    }
+
+    async ai_mcp_setting_save(token: string, data: { list: ai_mcp_server_item[] }) {
+        const source_item = this.ai_mcp_setting();
+        if (data?.list != null) {
+            for (const it of data.list) {
+                if (it.cwd) {
+                    userService.check_user_path(token, it.cwd);
+                }
+            }
+            source_item.list = data.list;
+        }
+        DataUtil.set(data_common_key.ai_agent_mcp_setting, source_item);
+        await ai_agentService.reloadMcp().catch(console.error);
     }
 
     ai_docs_setting():ai_docs_setting{
