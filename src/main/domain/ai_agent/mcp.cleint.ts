@@ -111,6 +111,17 @@ export function parseEnvText(envText?: string) {
     return env;
 }
 
+export function parseHeaderText(headerText?: string) {
+    const headers = parseEnvText(headerText);
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(headers)) {
+        if (key) {
+            result[key] = value == null ? "" : String(value);
+        }
+    }
+    return result;
+}
+
 export function getToolTextContent(result: any) {
     if (result == null) return "";
     if (typeof result === "string") return result;
@@ -143,6 +154,8 @@ export interface McpStreamChunk {
 }
 
 export interface IMcpTransport {
+    runtime_tools: McpRuntimeToolInfo[];
+
     start(): Promise<void>;
 
     close(): Promise<void>;
@@ -367,27 +380,140 @@ export class HttpMcpTransport implements IMcpTransport {
 
     private nextId = 1;
 
+    private started = false;
+
+    // MCP Session ID
+    private sessionId?: string;
+
+    public readonly runtime_tools: McpRuntimeToolInfo[] = [];
+
     constructor(
         private readonly options: HttpMcpTransportOptions
     ) {}
 
-    async start() {}
+    async start() {
+
+        if (this.started) {
+            return;
+        }
+
+        // initialize 会创建 session
+        await this.request("initialize", {
+            protocolVersion: "2024-11-05",
+            capabilities: {},
+            clientInfo: {
+                name: "filecat",
+                version: process.env.version || "dev"
+            }
+        });
+
+        await this.notify("initialized", {});
+
+        await this.reloadTools();
+
+        this.started = true;
+    }
 
     async close() {}
 
-    async notify(method: string, params?: any): Promise<void> {
-        await fetch(this.options.endpoint, {
+    async reloadTools() {
+
+        this.runtime_tools.length = 0;
+
+        let cursor: string | undefined;
+
+        do {
+
+            const res: any = await this.request(
+                "tools/list",
+                cursor ? { cursor } : {}
+            );
+
+            const tools = res?.tools ?? [];
+
+            for (const tool of tools) {
+
+                const toolName = String(tool?.name ?? "");
+
+                if (!toolName) {
+                    continue;
+                }
+
+                this.runtime_tools.push({
+                    server_name: "http",
+                    server_label: this.options.endpoint,
+                    tool_name: toolName,
+                    display_name: `${this.options.endpoint}/${toolName}`,
+                    description: tool?.description,
+                    input_schema: tool?.inputSchema ?? {
+                        type: "object",
+                        properties: {}
+                    }
+                });
+            }
+
+            cursor = res?.nextCursor;
+
+        } while (cursor);
+    }
+
+    private buildHeaders() {
+
+        return {
+            "content-type": "application/json",
+            accept: "application/json, text/event-stream",
+
+            // MCP Session
+            ...(this.sessionId
+                ? {
+                    "mcp-session-id": this.sessionId
+                }
+                : {}),
+
+            ...this.options.headers
+        };
+    }
+
+    private saveSessionId(res: Response) {
+
+        const sessionId =
+            res.headers.get("mcp-session-id") ||
+            res.headers.get("x-session-id");
+
+        if (sessionId) {
+            this.sessionId = sessionId;
+        }
+    }
+
+    async notify(
+        method: string,
+        params?: any
+    ): Promise<void> {
+
+        const res = await fetch(this.options.endpoint, {
             method: "POST",
-            headers: {
-                "content-type": "application/json",
-                ...this.options.headers
-            },
+            headers: this.buildHeaders(),
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method,
                 params
             })
         });
+
+        this.saveSessionId(res);
+
+        if (!res.ok) {
+
+            let text = "";
+
+            try {
+                text = await res.text();
+            } catch {}
+
+            throw new Error(
+                `HTTP ${res.status} ${text}`
+            );
+        }
     }
 
     async request(
@@ -397,41 +523,60 @@ export class HttpMcpTransport implements IMcpTransport {
 
         const id = this.nextId++;
 
+        const wantStream = this.options.stream ?? false;
+
         const res = await fetch(this.options.endpoint, {
             method: "POST",
-            headers: {
-                "content-type": "application/json",
-                accept: this.options.stream
-                    ? "text/event-stream"
-                    : "application/json",
-                ...this.options.headers
-            },
+            headers: this.buildHeaders(),
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 id,
                 method,
                 params,
-                stream: this.options.stream ?? false
+                stream: wantStream
             })
         });
 
+        // 保存 session id
+        this.saveSessionId(res);
+
         if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+
+            let text = "";
+
+            try {
+                text = await res.text();
+            } catch {}
+
+            throw new Error(
+                `HTTP ${res.status} ${text}`
+            );
         }
 
-        const contentType = res.headers.get("content-type") || "";
+        const contentType =
+            (res.headers.get("content-type") || "")
+                .toLowerCase();
 
-        if (!this.options.stream || contentType.includes("application/json")) {
+        // JSON 返回
+        if (contentType.includes("application/json")) {
+
             const json = await res.json();
 
-            if (json.error) {
+            if (json?.error) {
                 throw new Error(json.error.message);
             }
 
-            return json.result;
+            return json?.result;
         }
 
-        return this.readStream(res);
+        // SSE 返回
+        if (contentType.includes("text/event-stream")) {
+            return this.readStream(res);
+        }
+
+        throw new Error(
+            `Unsupported content-type: ${contentType}`
+        );
     }
 
     private async *readStream(
@@ -443,6 +588,7 @@ export class HttpMcpTransport implements IMcpTransport {
         }
 
         const reader = res.body.getReader();
+
         const decoder = new TextDecoder();
 
         let buffer = "";
@@ -451,39 +597,68 @@ export class HttpMcpTransport implements IMcpTransport {
 
             const { done, value } = await reader.read();
 
-            if (done) break;
+            if (done) {
 
-            buffer += decoder.decode(value, { stream: true });
+                yield {
+                    type: "done"
+                };
 
-            const parts = buffer.split("\n\n");
+                break;
+            }
 
-            buffer = parts.pop() || "";
+            buffer += decoder.decode(value, {
+                stream: true
+            });
 
-            for (const part of parts) {
+            const chunks = buffer.split("\n\n");
 
-                const line = part
+            buffer = chunks.pop() || "";
+
+            for (const chunk of chunks) {
+
+                const lines = chunk
                     .split("\n")
-                    .find(v => v.startsWith("data:"));
+                    .map(v => v.trim());
 
-                if (!line) continue;
+                for (const line of lines) {
 
-                const text = line.slice(5).trim();
+                    if (!line.startsWith("data:")) {
+                        continue;
+                    }
 
-                if (text === "[DONE]") {
-                    yield { type: "done" };
-                    return;
-                }
+                    const text = line
+                        .slice(5)
+                        .trim();
 
-                try {
-                    yield {
-                        type: "chunk",
-                        data: JSON.parse(text)
-                    };
-                } catch (err) {
-                    yield {
-                        type: "error",
-                        data: err
-                    };
+                    if (!text) {
+                        continue;
+                    }
+
+                    if (text === "[DONE]") {
+
+                        yield {
+                            type: "done"
+                        };
+
+                        return;
+                    }
+
+                    try {
+
+                        const data = JSON.parse(text);
+
+                        yield {
+                            type: "chunk",
+                            data
+                        };
+
+                    } catch (err) {
+
+                        yield {
+                            type: "error",
+                            data: err
+                        };
+                    }
                 }
             }
         }

@@ -125,13 +125,16 @@ messages_current_max=100
 export class ai_mcp_server_item {
     name: string;
     open: boolean = false;
-    note: string;
-    index: number;
+    note?: string;
+    index?: number;
     transport: "stdio" | "http" = "stdio";
     command: string;
-    args: string;
+    args?: string;
     cwd?: string;
     env?: string = "";
+    endpoint?: string = "";
+    headers?: string = "";
+    stream?: boolean = false;
     timeout_ms?: number = 10000;
 }
 

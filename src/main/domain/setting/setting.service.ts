@@ -476,7 +476,15 @@ export class SettingService {
         const source_item = this.ai_mcp_setting();
         if (data?.list != null) {
             for (const it of data.list) {
-                if (it.cwd) {
+                if (it.transport === "http") {
+                    if (it.endpoint) {
+                        try {
+                            new URL(it.endpoint);
+                        } catch {
+                            throw new Error(`MCP HTTP endpoint 无效: ${it.endpoint}`);
+                        }
+                    }
+                } else if (it.cwd) {
                     userService.check_user_path(token, it.cwd);
                 }
             }

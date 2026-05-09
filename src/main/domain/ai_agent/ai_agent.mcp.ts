@@ -1,12 +1,11 @@
-import {spawn, ChildProcessWithoutNullStreams} from "child_process";
-import readline from "readline";
-import {Env} from "../../../common/node/Env";
 import {ai_mcp_server_item} from "../../../common/req/setting.req";
 import {
     getToolTextContent,
+    HttpMcpTransport,
     IMcpTransport,
     McpRuntimeToolInfo,
     McpToolDefinition,
+    parseHeaderText,
     sanitizeName,
     StdioMcpServerClient
 } from "./mcp.cleint";
@@ -21,6 +20,23 @@ export class AiMcpRuntimeService {
     private buildClientKey(item: ai_mcp_server_item, index: number) {
 
         return `${index}__${sanitizeName(item.name || item.note || `mcp_${index}`)}`;
+    }
+
+    private createClient(item: ai_mcp_server_item, key: string): IMcpTransport | null {
+        if (item.transport === "http") {
+            if (!item.endpoint) {
+                return null;
+            }
+            return new HttpMcpTransport({
+                endpoint: item.endpoint,
+                headers: parseHeaderText(item.headers),
+                stream: item.stream ?? false
+            });
+        }
+        if (!item.command) {
+            return null;
+        }
+        return new StdioMcpServerClient(item, key);
     }
 
     public async reload() {
@@ -42,9 +58,9 @@ export class AiMcpRuntimeService {
         for (let i = 0; i < list.length; i++) {
             const item = list[i];
             if (!item?.open) continue;
-            if (!item.command) continue;
             const key = this.buildClientKey(item, i);
-            const client = new StdioMcpServerClient(item, key);
+            const client = this.createClient(item, key);
+            if (!client) continue;
             try {
                 await client.start();
                 this.clients.set(key, client);
@@ -104,9 +120,11 @@ export class AiMcpRuntimeService {
         if (!client) {
             throw new Error(`MCP 客户端未启动: ${meta.clientKey}`);
         }
-        client?.ensureStarted();
+        if(client.ensureStarted) {
+            await client.ensureStarted();
+        }
         const res = await client.request("tools/call", {
-            name: toolName,
+            name: meta.originalToolName,
             arguments: args
         });
         return getToolTextContent(res);
