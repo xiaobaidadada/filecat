@@ -17,10 +17,6 @@
     <img src="https://img.shields.io/github/stars/xiaobaidadada/filecat.svg" alt="stars">
   </a>
 
-  <!-- GitHub 下载量 -->
-  <a href="https://github.com/xiaobaidadada/filecat/releases">
-    <img src="https://img.shields.io/github/downloads/xiaobaidadada/filecat/total.svg" alt="downloads">
-  </a>
 
   <!-- Docker pulls -->
   <a href="https://ghcr.io/xiaobaidadada/filecat">
@@ -111,3 +107,33 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [MeshCentral](https://github.com/Ylianst/MeshCentral)
 - [mstsc](https://github.com/citronneur/mstsc.js)
+
+
+## 软件对比
+
+ | 软件名称         | ![](./src/web/meta/resources/img/logo-70.png) FileCat | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > Quantum | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > Filebrowser |
+|--------------|---------|--|-------------------------------------------------------------------------------------------------------------------------|
+| 文件系统支持       |   ✅      |  ✅ | ✅                                                                                                                       |
+| Linux        |     ✅    | ✅ | ✅                                                                                                                       |
+| Windows      |     ✅    | ✅ | ✅                                                                                                                        |
+| Mac          |      ✅   |   ✅|          ✅                                                                                                               |
+| 自己部署         | ✅|✅|✅|
+| webdav 支持    | ❌|✅|❌|
+| 用户登陆支持       | ✅|✅|✅|
+| 终端shell      |✅|❌|❌|
+| 开源           |✅|✅|✅|
+| 单点登录支持       |✅|✅|❌|
+| 可分享的网页链接     |✅|✅|✅|
+| 基于文本的文件编辑器   |✅|✅|✅|
+ | 详细使用手册       | ❌|✅|✅|
+| Office 文件预览  |❌|✅|❌|
+| 索引搜索         |❌|✅|❌|
+| 多文件系统路径挂载    |✅|✅|❌|
+ | 内网穿透         |✅|❌|❌|
+ | ssh终端        |✅|❌|❌|
+ | 实时系统信息       |✅|❌|❌|
+ | windows 远程桌面 |✅|❌|❌|
+ | 命令CI/CD工作流支持 |✅|❌|❌|
+ | 超大日志文件查看     |✅|❌|❌|
+ | ai agent     |✅|❌|❌|
+ 
