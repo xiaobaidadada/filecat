@@ -692,7 +692,7 @@ export class NetService {
                             })
                             const cleanup = () => {
                                 client.get_raw_client().remove_on_close(cleanup)
-                                clientSocket.destroy();
+                                clientSocket.end();
                                 client.close();
                             };
                             clientSocket.on('error', cleanup);
@@ -701,7 +701,7 @@ export class NetService {
                             clientSocket.on('close', cleanup);
                         } catch (err) {
                             // 连接失败 什么都不做处理
-                            clientSocket.destroy();
+                            clientSocket.end();
                             client.close()
                         }
                     })
