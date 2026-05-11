@@ -515,7 +515,7 @@ export default function AIAgentChatSetting() {
                     </Row>
                     <Row>
                         <Column widthPer={70}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> </span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
