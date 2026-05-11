@@ -435,5 +435,10 @@
   "filecat-restart重启命令": "filecat-restart 재시작 명령",
   "filecat-upgrade升级命令": "filecat-upgrade 업그레이드 명령",
   "filecat-down关闭主进程命令": "filecat-down 메인 프로세스 종료 명령",
-  "ai 命令(Ai 聊天)": "AI 명령(AI 채팅)"
+  "ai 命令(Ai 聊天)": "AI 명령(AI 채팅)",
+  "个性化设置": "개인화 설정",
+  "登陆展示用户信息": "로그인 시 사용자 정보 표시",
+  "个人环境设置": "개인 환경 설정",
+  "其他参数": "기타 매개변수",
+  "父编号": "부모 ID"
 }

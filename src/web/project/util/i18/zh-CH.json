@@ -435,5 +435,10 @@
   "filecat-restart重启命令": "filecat-restart重启命令",
   "filecat-upgrade升级命令": "filecat-upgrade升级命令",
   "filecat-down关闭主进程命令": "filecat-down关闭主进程命令",
-  "ai 命令(Ai 聊天)": "ai 命令(Ai 聊天)"
+  "ai 命令(Ai 聊天)": "ai 命令(Ai 聊天)",
+  "个性化设置": "个性化设置",
+  "登陆展示用户信息": "登陆展示用户信息",
+  "个人环境设置": "个人环境设置",
+  "其他参数": "其他参数",
+  "父编号": "父编号"
 }

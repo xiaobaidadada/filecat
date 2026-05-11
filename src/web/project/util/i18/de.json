@@ -435,5 +435,10 @@
   "filecat-restart重启命令": "filecat-restart-Neustartbefehl",
   "filecat-upgrade升级命令": "filecat-upgrade-Aktualisierungsbefehl",
   "filecat-down关闭主进程命令": "filecat-down-Befehl zum Schließen des Hauptprozesses",
-  "ai 命令(Ai 聊天)": "KI-Befehl (KI-Chat)"
+  "ai 命令(Ai 聊天)": "KI-Befehl (KI-Chat)",
+  "个性化设置": "Personalisierte Einstellungen",
+  "登陆展示用户信息": "Benutzerinformationen bei Anmeldung anzeigen",
+  "个人环境设置": "Persönliche Umgebungs Einstellungen",
+  "其他参数": "Andere Parameter",
+  "父编号": "Eltern-ID"
 }

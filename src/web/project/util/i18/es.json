@@ -435,5 +435,10 @@
   "filecat-restart重启命令": "Comando de reinicio filecat-restart",
   "filecat-upgrade升级命令": "Comando de actualización filecat-upgrade",
   "filecat-down关闭主进程命令": "Comando para cerrar el proceso principal filecat-down",
-  "ai 命令(Ai 聊天)": "Comando de IA (chat de IA)"
+  "ai 命令(Ai 聊天)": "Comando de IA (chat de IA)",
+  "个性化设置": "Configuración personalizada",
+  "登陆展示用户信息": "Mostrar información del usuario al iniciar sesión",
+  "个人环境设置": "Configuración del entorno personal",
+  "其他参数": "Otros parámetros",
+  "父编号": "ID padre"
 }
