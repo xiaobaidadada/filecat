@@ -45,12 +45,12 @@ const {
     add_word,
 } = require("jieba-wasm");
 
-export let API_KEY = process.env.AI_API_KEY;
-export let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-export let MODEL = "doubao-seed-1-6";
-export let config: ai_agent_Item
-export let config_env = new ai_agent_item_dotenv()
-export let config_search_doc = new ai_docs_setting_param()
+// export let API_KEY = process.env.AI_API_KEY;
+// export let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+// export let MODEL = "doubao-seed-1-6";
+export let ai_config: ai_agent_Item
+export let ai_config_env = new ai_agent_item_dotenv()
+export let ai_config_search_doc = new ai_docs_setting_param()
 
 // 判断是否中文
 function isChinese(str: string) {
@@ -136,7 +136,7 @@ export class Ai_agentService {
         }[] = []
         let total_char_num = 0
         for (const id of sorted) {
-            if (total_char_num >= config_search_doc.docs_max_char_num) {
+            if (total_char_num >= ai_config_search_doc.docs_max_char_num) {
                 break;
             }
             // const hash_id = hash_str_to_number(id)
@@ -156,7 +156,7 @@ export class Ai_agentService {
     private init_search_docs_param() {
         // if (!this.docs_switch_get()) return;
         const setting = settingService.ai_docs_setting()
-        Env.load(setting.param, config_search_doc);
+        Env.load(setting.param, ai_config_search_doc);
         // console.log(`ai知识库参数`, JSON.stringify(config_search_doc))
     }
 
@@ -179,7 +179,7 @@ export class Ai_agentService {
     private async add_content(file_path: string) {
         return  ThreadsFilecat.post(threads_msg_type.docs_add, {
             use_zh_segmentation:
-            config_search_doc.use_zh_segmentation
+            ai_config_search_doc.use_zh_segmentation
             , file_path,
             mtime: this.docs_data_map.get(hash_str_to_number(file_path))?.time_stamp
         }, 60 * 1000)
@@ -223,8 +223,8 @@ export class Ai_agentService {
         await ai_agentMcpService.reload().catch(console.error);
         if (!this.docs_switch_get()) return;
         start_worker_threads()
-        const body = {index_storage_type: config_search_doc.index_storage_type}
-        if (config_search_doc.index_storage_type === 'sqlite') {
+        const body = {index_storage_type: ai_config_search_doc.index_storage_type}
+        if (ai_config_search_doc.index_storage_type === 'sqlite') {
             body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
         await ThreadsFilecat.post(threads_msg_type.docs_init, body, 60 * 1000)
@@ -241,7 +241,7 @@ export class Ai_agentService {
 
         this.push_wss(now)
 
-        const dir_recursion_depth = config_search_doc.dir_recursion_depth
+        const dir_recursion_depth = ai_config_search_doc.dir_recursion_depth
         const list = target_list || settingService.ai_docs_setting().list;
         if (!list?.length) {
             // if(ThreadsFilecat.is_running) {
@@ -258,21 +258,21 @@ export class Ai_agentService {
         let ignore_list: string[] = []
         let allow_list: string[] = []
         // let ignore_list_str = []
-        if (config_search_doc.ignore_dir) {
-            if (typeof config_search_doc.ignore_dir === 'string') {
-                ignore_list.push(config_search_doc.ignore_dir);
+        if (ai_config_search_doc.ignore_dir) {
+            if (typeof ai_config_search_doc.ignore_dir === 'string') {
+                ignore_list.push(ai_config_search_doc.ignore_dir);
             } else {
-                if (Array.isArray(config_search_doc.ignore_dir)) {
-                    ignore_list = config_search_doc.ignore_dir
+                if (Array.isArray(ai_config_search_doc.ignore_dir)) {
+                    ignore_list = ai_config_search_doc.ignore_dir
                 }
             }
         }
-        if (config_search_doc.allow_file_path) {
-            if (typeof config_search_doc.allow_file_path === 'string') {
-                allow_list.push(config_search_doc.allow_file_path);
+        if (ai_config_search_doc.allow_file_path) {
+            if (typeof ai_config_search_doc.allow_file_path === 'string') {
+                allow_list.push(ai_config_search_doc.allow_file_path);
             } else {
-                if (Array.isArray(config_search_doc.allow_file_path)) {
-                    allow_list = config_search_doc.allow_file_path
+                if (Array.isArray(ai_config_search_doc.allow_file_path)) {
+                    allow_list = ai_config_search_doc.allow_file_path
                 }
             }
         }
@@ -280,18 +280,18 @@ export class Ai_agentService {
 
         const files_set = new Set<number>();
         let update_file_num = 0
-        let await_file_total = config_search_doc.await_file_num ?? 0;
+        let await_file_total = ai_config_search_doc.await_file_num ?? 0;
         // let file_char_num = 0
         const add_file_path_list: string[] = []
         const update_file_path_list: string[] = []
         // const delete_file_path_list: string[] = []
         // 处理单个文件
         const handleFile = async (file_path: string, file_name: string) => {
-            if (files_set.size >= config_search_doc.max_file_num) {
+            if (files_set.size >= ai_config_search_doc.max_file_num) {
                 return;
             }
             if (running_num != this.running_num) return;
-            if (config_search_doc.allow_file_path) {
+            if (ai_config_search_doc.allow_file_path) {
                 let ok = false
                 for (const allow of allow_list) {
                     if (matchGitignore(file_path, allow)) {
@@ -302,16 +302,16 @@ export class Ai_agentService {
                 if (!ok) return
             }
             if (await_file_total <= 0) {
-                await_file_total = config_search_doc.await_file_num ?? 0;
-                if (config_search_doc.await_time_ms_len) {
-                    await CommonUtil.sleep(config_search_doc.await_time_ms_len);
+                await_file_total = ai_config_search_doc.await_file_num ?? 0;
+                if (ai_config_search_doc.await_time_ms_len) {
+                    await CommonUtil.sleep(ai_config_search_doc.await_time_ms_len);
                 }
             } else {
                 await_file_total--
             }
             const file_stats = await FileUtil.statSync(file_path);
             if (!file_stats.isFile()) return;
-            if (file_stats.size > config_search_doc.max_file_byte_size) {
+            if (file_stats.size > ai_config_search_doc.max_file_byte_size) {
                 return;
             }
             this.docs_info.size += file_stats.size;
@@ -339,7 +339,7 @@ export class Ai_agentService {
             this.docs_info.num++
             files_set.add(hash_id);
         };
-        const async_poll = new AsyncPool(config_search_doc.max_file_concurrency)
+        const async_poll = new AsyncPool(ai_config_search_doc.max_file_concurrency)
 
 
         // 递归遍历目录
@@ -358,7 +358,7 @@ export class Ai_agentService {
             const entries = await FileUtil.readdirSync(dir);
 
             for (const entry of entries) {
-                if (files_set.size >= config_search_doc.max_file_num) {
+                if (files_set.size >= ai_config_search_doc.max_file_num) {
                     return;
                 }
                 const fullPath = path.join(dir, entry);
@@ -468,7 +468,7 @@ export class Ai_agentService {
     }
 
     get_env() {
-        return config_env;
+        return ai_config_env;
     }
 
     // 只要开启了任意一个ai
@@ -493,26 +493,26 @@ export class Ai_agentService {
     }
 
     public load_key() {
-        config_env = new ai_agent_item_dotenv()
+        ai_config_env = new ai_agent_item_dotenv()
         // this.have_ai_is_open = false
         const r = settingService.ai_agent_setting()
         for (const it of r.models) {
             if (it.open) {
-                MODEL = it.model
-                BASE_URL = it.url
-                API_KEY = it.token
-                config = it
+                // MODEL = it.model
+                // BASE_URL = it.url
+                // API_KEY = it.token
+                ai_config = it
                 if (it.dotenv) {
-                    Env.load(it.dotenv, config_env);
+                    Env.load(it.dotenv, ai_config_env);
                 }
                 // this.have_ai_is_open = true
                 return
             }
         }
-        config = undefined
-        API_KEY = undefined
-        BASE_URL = undefined
-        MODEL = undefined
+        ai_config = undefined
+        // API_KEY = undefined
+        // BASE_URL = undefined
+        // MODEL = undefined
     }
 
 

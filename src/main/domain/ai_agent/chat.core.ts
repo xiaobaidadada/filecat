@@ -4,7 +4,7 @@ import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
-import {ai_agentService, API_KEY, BASE_URL, config, config_env, config_search_doc, MODEL} from "./ai_agent.service";
+import {ai_agentService,  ai_config, ai_config_env, ai_config_search_doc} from "./ai_agent.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
@@ -119,7 +119,7 @@ export class ChatCore {
         sys_prompt?: string,
         cwd?: string,
     ) {
-        if (!API_KEY) {
+        if (!ai_config) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
 
@@ -137,11 +137,11 @@ export class ChatCore {
 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
 如果用户没有问题，不要做任何tools工具调用，直接回答用户。
 
-如果你调用调用tools，在tools的时候向用户说明你当前的意图。
+如果你需要调用tools，在调用tools的时候向用户简要的说明你的意图是什么。
 
 ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
-${config.sys_prompt ?? ''}
+${ai_config.sys_prompt ?? ''}
 
 ${sys_prompt ?? ''}
 `
@@ -150,15 +150,15 @@ ${sys_prompt ?? ''}
             // ...await this.trimMessages(originMessages, config_env.char_max, on_msg, controller),
         ];
 
-        if (config_search_doc.force_use_local_data) {
+        if (ai_config_search_doc.force_use_local_data) {
             const t_ = await ai_agentService.search_docs({keywords: [workMessages[workMessages.length - 1].content]})
             workMessages[workMessages.length - 1].content = `本地知识库搜到 ${t_} 
             ${workMessages[workMessages.length - 1].content}`
         }
 
         const env = {
-            toolLoop: config_env.tool_call_max,
-            tool_error_max: config_env.tool_error_max
+            toolLoop: ai_config_env.tool_call_max,
+            tool_error_max: ai_config_env.tool_error_max
         };
 
         // 隐式 planner
@@ -305,15 +305,15 @@ ${sys_prompt ?? ''}
         const json_body: any = {
             messages,
             tools: tools,
-            temperature: 0.2,
-            model: MODEL,
+            // temperature: 0.2,
+            model: ai_config.model,
             // thinking : { // 豆包深度思考
             //     "type":"disabled"
             // }
         }
         try {
-            if (config.json_params) {
-                const obj = JSON.parse(config.json_params);
+            if (ai_config.json_params) {
+                const obj = JSON.parse(ai_config.json_params);
                 for (const key of Object.keys(obj)) {
                     json_body[key] = obj[key];
                 }
@@ -324,11 +324,11 @@ ${sys_prompt ?? ''}
         // 最后重新赋值确保不会被修改
         json_body.tools = tools
         json_body.messages = messages
-        const res = await fetch(BASE_URL, {
+        const res = await fetch(ai_config.url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${API_KEY}`
+                "Authorization": `Bearer ${ai_config.token}`
             },
             body: JSON.stringify(json_body),
             signal: controller.signal

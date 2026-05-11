@@ -523,7 +523,7 @@ export class HttpMcpTransport implements IMcpTransport {
 
         const id = this.nextId++;
 
-        const wantStream = this.options.stream ?? false;
+        // const wantStream = this.options.stream ?? false;
 
         const res = await fetch(this.options.endpoint, {
             method: "POST",
@@ -533,7 +533,7 @@ export class HttpMcpTransport implements IMcpTransport {
                 id,
                 method,
                 params,
-                stream: wantStream
+                // stream: wantStream
             })
         });
 
@@ -549,7 +549,7 @@ export class HttpMcpTransport implements IMcpTransport {
             } catch {}
 
             throw new Error(
-                `HTTP ${res.status} ${text}`
+                `HTTP ${this.options.endpoint} ${res.status} ${text}`
             );
         }
 

@@ -19,7 +19,7 @@ export class AiMcpRuntimeService {
 
     private buildClientKey(item: ai_mcp_server_item, index: number) {
 
-        return `${index}__${sanitizeName(item.name || item.note || `mcp_${index}`)}`;
+        return `mcp_${index}_${sanitizeName(item.name || item.note)}`;
     }
 
     private createClient(item: ai_mcp_server_item, key: string): IMcpTransport | null {
@@ -30,7 +30,7 @@ export class AiMcpRuntimeService {
             return new HttpMcpTransport({
                 endpoint: item.endpoint,
                 headers: parseHeaderText(item.headers),
-                stream: item.stream ?? false
+                // stream: item.stream ?? false
             });
         }
         if (!item.command) {
@@ -73,6 +73,7 @@ export class AiMcpRuntimeService {
                         originalToolName: tool.tool_name
                     });
                 }
+                console.log(`MCP 服务 ${key} 共加载 ${client.runtime_tools?.length} 个工具`)
             } catch (err) {
                 console.error(`[MCP ${key}] start failed`, err);
             }

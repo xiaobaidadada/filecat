@@ -134,7 +134,7 @@ export class ai_mcp_server_item {
     env?: string = "";
     endpoint?: string = "";
     headers?: string = "";
-    stream?: boolean = false;
+    // stream?: boolean = false;
     timeout_ms?: number = 10000;
 }
 
