@@ -42,19 +42,19 @@ Based on file management, FileCat integrates many server operation and managemen
 
 ### File List
 
-![](./doc/文件列表.png)
+![](./文件列表.png)
 
 ### Intranet Penetration
 
-![](./doc/内网穿透.png)
+![](./内网穿透.png)
 
 ### System Information Dashboard
 
-![](./doc/系统信息看板.png)
+![](./系统信息看板.png)
 
 ### AI Features
 
-![](./doc/AI能力.png)
+![](./AI能力.png)
 
 In addition to the features above, it also supports some functions that may be helpful to you, such as instantly opening text log files of any size, Windows remote desktop, simple image editing, CI/CD workflows, Excalidraw drawing, and more.
 
@@ -130,7 +130,7 @@ The following projects provided inspiration or foundations for FileCat:
 
 ## Software Comparison
 
-| Software                         | ![](./src/web/meta/resources/img/logo-70.png) FileCat | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > Quantum | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > Filebrowser |
+| Software                         | ![](./src/web/meta/resources/img/logo-70.png) [FileCat](https://github.com/xiaobaidadada/filecat) | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > [Quantum](https://github.com/gtsteffaniak/filebrowser) | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > [Filebrowser](https://github.com/filebrowser/filebrowser) |
 | -------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | File System Support              | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
 | Linux                            | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |

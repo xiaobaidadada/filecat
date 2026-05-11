@@ -111,7 +111,7 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 
 ## 软件对比
 
- | 软件名称         | ![](./src/web/meta/resources/img/logo-70.png) FileCat | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > Quantum | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > Filebrowser |
+| 软件名称         | ![](./src/web/meta/resources/img/logo-70.png) [FileCat](https://github.com/xiaobaidadada/filecat) | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > [Quantum](https://github.com/gtsteffaniak/filebrowser) | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > [Filebrowser](https://github.com/filebrowser/filebrowser) |
 |--------------|---------|--|-------------------------------------------------------------------------------------------------------------------------|
 | 文件系统支持       |   ✅      |  ✅ | ✅                                                                                                                       |
 | Linux        |     ✅    | ✅ | ✅                                                                                                                       |
