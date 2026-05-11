@@ -15,13 +15,14 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group, ai_mcp_server_tool_item,} from "../../../../common/req/setting.req";
+import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {formatDuration, formatFileSize} from "../../../../common/ValueUtil";
 import {using_confirm} from "../prompts/prompt.util";
 
+import {PromptPageItem, SwitchPagePrompt} from "../prompts/PromptCard";
 
 const tip_text = `
 1. 只能使用符合openai风格的ai接口，接口不能只填域名，而是类似 https://ark.cn-beijing.volces.com/api/v3/chat/completions 这样的全路径链接聊天url
@@ -46,107 +47,6 @@ const mcp_tip = `
 3. 保存后会自动重新加载 MCP 工具，agent 聊天时会把这些工具一起带给模型
 4. 建议把 cwd 配到具体项目目录，避免 server 在错误目录里运行
 `
-
-function McpToolsPrompt(props: {
-    group: ai_mcp_server_tool_group,
-    onReload: () => Promise<void>,
-    onClose: () => void,
-    initialSelectedToolName?: string,
-}) {
-    const {t} = useTranslation();
-    const [selectedToolName, setSelectedToolName] = useState<string>(props.initialSelectedToolName ?? props.group.tools?.[0]?.runtime_name ?? "");
-
-    useEffect(() => {
-        setSelectedToolName(props.initialSelectedToolName ?? props.group.tools?.[0]?.runtime_name ?? "");
-    }, [props.group.key, props.group.tools?.length, props.initialSelectedToolName]);
-
-    const selectedTool = props.group.tools?.find((tool) => tool.runtime_name === selectedToolName) ?? props.group.tools?.[0];
-
-    return (
-        <div style={{
-            minWidth: "min(80vw, 1100px)",
-            maxWidth: "min(80vw, 1100px)",
-            maxHeight: "70vh",
-            overflow: "auto",
-        }}>
-            <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: ".75rem",
-                flexWrap: "wrap"
-            }}>
-                <div>
-                    <div style={{fontSize: "1.1rem", fontWeight: 600}}>{props.group.name || props.group.note || props.group.key}</div>
-                    <div style={{opacity: .8, fontSize: ".9rem"}}>
-                        {props.group.transport} | {props.group.open ? t("是") : t("否")} | {props.group.loaded ? "loaded" : "idle"} | {props.group.tool_count} tools
-                    </div>
-                </div>
-                <div style={{display: "flex", gap: ".5rem", flexWrap: "wrap"}}>
-                    <ActionButton icon={"refresh"} title={"重新加载工具"} onClick={async () => {
-                        await props.onReload();
-                    }}/>
-                    <ActionButton icon={"close"} title={t("关闭")} onClick={props.onClose}/>
-                </div>
-            </div>
-
-            <div style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: ".4rem",
-                marginTop: "1rem"
-            }}>
-                {props.group.tools?.length ? props.group.tools.map((tool) => (
-                    <button
-                        key={tool.runtime_name}
-                        className="button button--flat button--grey"
-                        style={{
-                            padding: ".35rem .7rem",
-                            borderRadius: ".5rem",
-                            border: selectedTool?.runtime_name === tool.runtime_name ? "1px solid var(--blue)" : undefined,
-                            color: selectedTool?.runtime_name === tool.runtime_name ? "var(--blue)" : undefined
-                        }}
-                        onClick={() => setSelectedToolName(tool.runtime_name)}
-                    >
-                        {tool.tool_name}
-                    </button>
-                )) : <div style={{opacity: .7}}>{t("暂无工具")}</div>}
-            </div>
-
-            <div style={{
-                marginTop: "1rem",
-                padding: "1rem",
-                border: "1px solid rgba(128,128,128,.25)",
-                borderRadius: ".75rem",
-                background: "var(--surfaceSecondary)",
-            }}>
-                {selectedTool ? (
-                    <div>
-                        <div style={{fontWeight: 600, marginBottom: ".5rem"}}>{selectedTool.display_name}</div>
-                        <div style={{marginBottom: ".5rem", opacity: .85}}>{selectedTool.description || t("无描述")}</div>
-                        <div style={{marginBottom: ".5rem"}}>
-                            <strong>runtime:</strong> {selectedTool.runtime_name}
-                        </div>
-                        <div>
-                            <strong>schema:</strong>
-                            <pre style={{
-                                marginTop: ".5rem",
-                                padding: ".75rem",
-                                overflow: "auto",
-                                whiteSpace: "pre-wrap",
-                                wordBreak: "break-word",
-                                background: "rgba(0,0,0,.06)",
-                                borderRadius: ".5rem"
-                            }}>{JSON.stringify(selectedTool.input_schema ?? {}, null, 2)}</pre>
-                        </div>
-                    </div>
-                ) : (
-                    <div style={{opacity: .7}}>{t("暂无工具")}</div>
-                )}
-            </div>
-        </div>
-    );
-}
 export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
@@ -337,20 +237,51 @@ export default function AIAgentChatSetting() {
             tool_count: 0,
             tools: [],
         };
+        const pages: PromptPageItem[] = (group.tools ?? []).map((tool) => ({
+            id: tool.runtime_name,
+            title: tool.tool_name,
+            subtitle: tool.description || t("无描述"),
+            detail: tool.display_name,
+            meta: tool.runtime_name
+        }));
         set_prompt_card({
             open: true,
             title: `${item.name || item.note || index} MCP工具`,
             context_div: (
-                <McpToolsPrompt
-                    group={group}
-                    initialSelectedToolName={initialSelectedToolName}
-                    onReload={async () => {
+                <SwitchPagePrompt
+                    title={`${item.name || item.note || index} MCP工具`}
+                    subtitle={`${group.transport ?? "stdio"} | ${group.open ? t("是") : t("否")} | ${group.loaded ? "loaded" : "idle"} | ${group.tool_count} tools`}
+                    pages={pages}
+                    initialPageId={initialSelectedToolName}
+                    onRefresh={async () => {
                         const fresh = await reloadOneMcpTools(index);
                         if (fresh) {
                             await showMcpTools(item, index, initialSelectedToolName, fresh);
                         }
                     }}
-                    onClose={() => set_prompt_card({open: false})}
+                    // onClose={() => set_prompt_card({open: false})}
+                    renderPage={(page) => {
+                        if (!page) {
+                            return <div className="prompt-switch-page__empty">{t("暂无工具")}</div>;
+                        }
+                        const tool = group.tools?.find((it) => it.runtime_name === page.id);
+                        if (!tool) {
+                            return <div className="prompt-switch-page__empty">{t("暂无工具")}</div>;
+                        }
+                        return (
+                            <div className="prompt-switch-page__detail">
+                                <div className="prompt-switch-page__detail-title">{tool.display_name}</div>
+                                <div className="prompt-switch-page__detail-desc">{tool.description || t("无描述")}</div>
+                                <div className="prompt-switch-page__detail-row">
+                                    <strong>runtime:</strong> {tool.runtime_name}
+                                </div>
+                                <div>
+                                    <strong>schema:</strong>
+                                    <pre className="prompt-switch-page__schema">{JSON.stringify(tool.input_schema ?? {}, null, 2)}</pre>
+                                </div>
+                            </div>
+                        );
+                    }}
                 />
             ),
             cancel: () => set_prompt_card({open: false})
