@@ -1,4 +1,4 @@
-import {ai_mcp_server_item} from "../../../common/req/setting.req";
+import {ai_mcp_server_item, ai_mcp_server_tool_group, ai_mcp_server_tool_item} from "../../../common/req/setting.req";
 import {
     getToolTextContent,
     HttpMcpTransport,
@@ -15,10 +15,10 @@ export class AiMcpRuntimeService {
     private clients = new Map<string, IMcpTransport>();
     private toolMap = new Map<string, McpRuntimeToolInfo & { runtime_name: string }>();
     private toolToClient = new Map<string, { clientKey: string; originalToolName: string }>();
+    private clientTools = new Map<string, string[]>();
     private loadingPromise: Promise<void> | null = null;
 
     private buildClientKey(item: ai_mcp_server_item, index: number) {
-
         return `mcp_${index}_${sanitizeName(item.name || item.note)}`;
     }
 
@@ -29,14 +29,63 @@ export class AiMcpRuntimeService {
             }
             return new HttpMcpTransport({
                 endpoint: item.endpoint,
-                headers: parseHeaderText(item.headers),
-                // stream: item.stream ?? false
+                headers: parseHeaderText(item.headers)
             });
         }
         if (!item.command) {
             return null;
         }
         return new StdioMcpServerClient(item, key);
+    }
+
+    private async startClient(item: ai_mcp_server_item, index: number) {
+        if (!item?.open) {
+            return;
+        }
+        const key = this.buildClientKey(item, index);
+        await this.closeClient(key);
+
+        const client = this.createClient(item, key);
+        if (!client) {
+            return;
+        }
+
+        try {
+            await client.start();
+            this.clients.set(key, client);
+
+            const runtimeNames: string[] = [];
+            for (const tool of client.runtime_tools) {
+                const runtimeName = `mcp__${sanitizeName(key)}__${sanitizeName(tool.tool_name)}`;
+                const info = {...tool, runtime_name: runtimeName};
+                this.toolMap.set(runtimeName, info);
+                this.toolToClient.set(runtimeName, {
+                    clientKey: key,
+                    originalToolName: tool.tool_name
+                });
+                runtimeNames.push(runtimeName);
+            }
+            this.clientTools.set(key, runtimeNames);
+            console.log(`MCP service ${key} loaded ${client.runtime_tools?.length ?? 0} tools`);
+        } catch (err) {
+            console.error(`[MCP ${key}] start failed`, err);
+            await client.close().catch(() => {});
+        }
+    }
+
+    private async closeClient(key: string) {
+        const client = this.clients.get(key);
+        this.clients.delete(key);
+        this.clientTools.delete(key);
+        for (const [runtimeName, meta] of [...this.toolToClient.entries()]) {
+            if (meta.clientKey === key) {
+                this.toolToClient.delete(runtimeName);
+                this.toolMap.delete(runtimeName);
+            }
+        }
+        if (client) {
+            await client.close().catch(() => {});
+        }
     }
 
     public async reload() {
@@ -56,36 +105,64 @@ export class AiMcpRuntimeService {
         const {settingService} = await import("../setting/setting.service");
         const list = settingService.ai_mcp_setting().list ?? [];
         for (let i = 0; i < list.length; i++) {
-            const item = list[i];
-            if (!item?.open) continue;
-            const key = this.buildClientKey(item, i);
-            const client = this.createClient(item, key);
-            if (!client) continue;
-            try {
-                await client.start();
-                this.clients.set(key, client);
-                for (const tool of client.runtime_tools) {
-                    const runtimeName = `mcp__${sanitizeName(key)}__${sanitizeName(tool.tool_name)}`;
-                    const info = {...tool, runtime_name: runtimeName};
-                    this.toolMap.set(runtimeName, info);
-                    this.toolToClient.set(runtimeName, {
-                        clientKey: key,
-                        originalToolName: tool.tool_name
-                    });
-                }
-                console.log(`MCP 服务 ${key} 共加载 ${client.runtime_tools?.length} 个工具`)
-            } catch (err) {
-                console.error(`[MCP ${key}] start failed`, err);
-            }
+            await this.startClient(list[i], i);
         }
     }
 
+    public async reloadServer(index: number) {
+        const {settingService} = await import("../setting/setting.service");
+        const list = settingService.ai_mcp_setting().list ?? [];
+        const item = list[index];
+        if (!item) {
+            throw new Error(`未找到 MCP 服务: ${index}`);
+        }
+        await this.startClient(item, index);
+        const groups = await this.getServerToolGroups();
+        return groups.find((group) => group.index === index) ?? null;
+    }
+
     public async close() {
-        const clients = [...this.clients.values()];
+        const keys = [...this.clients.keys()];
+        await Promise.all(keys.map((key) => this.closeClient(key)));
         this.clients.clear();
         this.toolMap.clear();
         this.toolToClient.clear();
-        await Promise.all(clients.map(client => client.close().catch(() => {})));
+        this.clientTools.clear();
+    }
+
+    public async getServerToolGroups(): Promise<ai_mcp_server_tool_group[]> {
+        const {settingService} = await import("../setting/setting.service");
+        const list = settingService.ai_mcp_setting().list ?? [];
+        return list.map((item: ai_mcp_server_item, index: number) => {
+            const key = this.buildClientKey(item, index);
+            const runtimeNames = this.clientTools.get(key) ?? [];
+            const tools = runtimeNames
+                .map((runtimeName): ai_mcp_server_tool_item | null => {
+                    const tool = this.toolMap.get(runtimeName);
+                    if (!tool) return null;
+                    return {
+                        runtime_name: tool.runtime_name,
+                        tool_name: tool.tool_name,
+                        display_name: tool.display_name,
+                        description: tool.description,
+                        input_schema: tool.input_schema
+                    };
+                })
+                .filter(Boolean) as ai_mcp_server_tool_item[];
+
+            return {
+                index,
+                key,
+                name: item.name || "",
+                note: item.note,
+                transport: item.transport ?? "stdio",
+                open: !!item.open,
+                loaded: this.clients.has(key),
+                tool_count: tools.length,
+                tools,
+                error: undefined
+            };
+        });
     }
 
     public getTools(): McpToolDefinition[] {
@@ -121,7 +198,7 @@ export class AiMcpRuntimeService {
         if (!client) {
             throw new Error(`MCP 客户端未启动: ${meta.clientKey}`);
         }
-        if(client.ensureStarted) {
+        if (client.ensureStarted) {
             await client.ensureStarted();
         }
         const res = await client.request("tools/call", {
@@ -129,10 +206,7 @@ export class AiMcpRuntimeService {
             arguments: args
         });
         return getToolTextContent(res);
-        // return client.callTool(meta.originalToolName, args);
     }
-
-
 }
 
 export const ai_agentMcpService = new AiMcpRuntimeService();

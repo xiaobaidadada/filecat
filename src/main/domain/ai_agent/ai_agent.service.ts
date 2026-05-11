@@ -557,6 +557,14 @@ export class Ai_agentService {
         return ai_agentMcpService.getTools();
     }
 
+    public async getMcpServerTools() {
+        return ai_agentMcpService.getServerToolGroups();
+    }
+
+    public async reloadMcpServer(index: number) {
+        return ai_agentMcpService.reloadServer(index);
+    }
+
     public getToolInfo(toolName: string, args: any) {
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return {

@@ -173,9 +173,9 @@ table tr>*:last-child {
     z-index: 1002;
     /*max-width: 25em;*/
     /*width: 90%;*/
-    max-width: 50%;
+    /*max-width: 50%;*/
     min-width: 25em;
-    max-height: 95%;
+    /*max-height: 95%;*/
     animation: .1s show forwards;
 }
 

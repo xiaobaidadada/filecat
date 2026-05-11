@@ -138,6 +138,27 @@ export class ai_mcp_server_item {
     timeout_ms?: number = 10000;
 }
 
+export class ai_mcp_server_tool_item {
+    runtime_name: string;
+    tool_name: string;
+    display_name: string;
+    description?: string;
+    input_schema?: any;
+}
+
+export class ai_mcp_server_tool_group {
+    index: number;
+    key: string;
+    name: string;
+    note?: string;
+    transport: "stdio" | "http" = "stdio";
+    open: boolean = false;
+    loaded: boolean = false;
+    tool_count: number = 0;
+    tools: ai_mcp_server_tool_item[] = [];
+    error?: string;
+}
+
 export class ai_mcp_setting {
     list: ai_mcp_server_item[];
 }

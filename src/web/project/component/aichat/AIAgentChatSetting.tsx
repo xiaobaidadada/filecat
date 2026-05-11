@@ -15,7 +15,7 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item,} from "../../../../common/req/setting.req";
+import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group, ai_mcp_server_tool_item,} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
@@ -46,6 +46,107 @@ const mcp_tip = `
 3. 保存后会自动重新加载 MCP 工具，agent 聊天时会把这些工具一起带给模型
 4. 建议把 cwd 配到具体项目目录，避免 server 在错误目录里运行
 `
+
+function McpToolsPrompt(props: {
+    group: ai_mcp_server_tool_group,
+    onReload: () => Promise<void>,
+    onClose: () => void,
+    initialSelectedToolName?: string,
+}) {
+    const {t} = useTranslation();
+    const [selectedToolName, setSelectedToolName] = useState<string>(props.initialSelectedToolName ?? props.group.tools?.[0]?.runtime_name ?? "");
+
+    useEffect(() => {
+        setSelectedToolName(props.initialSelectedToolName ?? props.group.tools?.[0]?.runtime_name ?? "");
+    }, [props.group.key, props.group.tools?.length, props.initialSelectedToolName]);
+
+    const selectedTool = props.group.tools?.find((tool) => tool.runtime_name === selectedToolName) ?? props.group.tools?.[0];
+
+    return (
+        <div style={{
+            minWidth: "min(80vw, 1100px)",
+            maxWidth: "min(80vw, 1100px)",
+            maxHeight: "70vh",
+            overflow: "auto",
+        }}>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: ".75rem",
+                flexWrap: "wrap"
+            }}>
+                <div>
+                    <div style={{fontSize: "1.1rem", fontWeight: 600}}>{props.group.name || props.group.note || props.group.key}</div>
+                    <div style={{opacity: .8, fontSize: ".9rem"}}>
+                        {props.group.transport} | {props.group.open ? t("是") : t("否")} | {props.group.loaded ? "loaded" : "idle"} | {props.group.tool_count} tools
+                    </div>
+                </div>
+                <div style={{display: "flex", gap: ".5rem", flexWrap: "wrap"}}>
+                    <ActionButton icon={"refresh"} title={"重新加载工具"} onClick={async () => {
+                        await props.onReload();
+                    }}/>
+                    <ActionButton icon={"close"} title={t("关闭")} onClick={props.onClose}/>
+                </div>
+            </div>
+
+            <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: ".4rem",
+                marginTop: "1rem"
+            }}>
+                {props.group.tools?.length ? props.group.tools.map((tool) => (
+                    <button
+                        key={tool.runtime_name}
+                        className="button button--flat button--grey"
+                        style={{
+                            padding: ".35rem .7rem",
+                            borderRadius: ".5rem",
+                            border: selectedTool?.runtime_name === tool.runtime_name ? "1px solid var(--blue)" : undefined,
+                            color: selectedTool?.runtime_name === tool.runtime_name ? "var(--blue)" : undefined
+                        }}
+                        onClick={() => setSelectedToolName(tool.runtime_name)}
+                    >
+                        {tool.tool_name}
+                    </button>
+                )) : <div style={{opacity: .7}}>{t("暂无工具")}</div>}
+            </div>
+
+            <div style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                border: "1px solid rgba(128,128,128,.25)",
+                borderRadius: ".75rem",
+                background: "var(--surfaceSecondary)",
+            }}>
+                {selectedTool ? (
+                    <div>
+                        <div style={{fontWeight: 600, marginBottom: ".5rem"}}>{selectedTool.display_name}</div>
+                        <div style={{marginBottom: ".5rem", opacity: .85}}>{selectedTool.description || t("无描述")}</div>
+                        <div style={{marginBottom: ".5rem"}}>
+                            <strong>runtime:</strong> {selectedTool.runtime_name}
+                        </div>
+                        <div>
+                            <strong>schema:</strong>
+                            <pre style={{
+                                marginTop: ".5rem",
+                                padding: ".75rem",
+                                overflow: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                background: "rgba(0,0,0,.06)",
+                                borderRadius: ".5rem"
+                            }}>{JSON.stringify(selectedTool.input_schema ?? {}, null, 2)}</pre>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{opacity: .7}}>{t("暂无工具")}</div>
+                )}
+            </div>
+        </div>
+    );
+}
 export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
@@ -59,12 +160,15 @@ export default function AIAgentChatSetting() {
     const docs_param = useRef();
     const mcp_update_tag = useRef(false);
     const docs_update_tag = useRef(false);
+    const [mcp_tool_groups, set_mcp_tool_groups] = useState<ai_mcp_server_tool_group[]>([]);
+    const [mcp_tool_loading, set_mcp_tool_loading] = useState(false);
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const [index_switch,set_index_switch] = useState(false);
     const mcp_stdio_list = mcp_list.filter((item) => (item.transport ?? "stdio") !== "http");
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
-    const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", "env", t("备注") ];
-    const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("headers"), t("备注") ];
+    const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
+    const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
 
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
@@ -107,6 +211,8 @@ export default function AIAgentChatSetting() {
         if (mcp_result.code === RCode.Success) {
             set_mcp_list(mcp_result.data.list ?? []);
         }
+
+        await loadMcpTools();
 
         load_index_switch()
     }
@@ -180,7 +286,119 @@ export default function AIAgentChatSetting() {
         if (result.code === RCode.Success) {
             NotySucess("保存成功")
             mcp_update_tag.current = false;
+            await loadMcpTools();
         }
+    }
+    const loadMcpTools = async () => {
+        const result = await settingHttp.get("ai_mcp_tools");
+        if (result.code === RCode.Success) {
+            set_mcp_tool_groups(result.data ?? []);
+            return result.data ?? [];
+        }
+        return [];
+    }
+    // const reloadAllMcpTools = async () => {
+    //     set_mcp_tool_loading(true);
+    //     try {
+    //         const result = await settingHttp.post("ai_mcp_tools/reload_all", {});
+    //         if (result.code === RCode.Success) {
+    //             set_mcp_tool_groups(result.data ?? []);
+    //             NotySucess("MCP工具加载成功")
+    //             return result.data ?? [];
+    //         }
+    //     } finally {
+    //         set_mcp_tool_loading(false);
+    //     }
+    //     return [];
+    // }
+    const reloadOneMcpTools = async (index: number) => {
+        set_mcp_tool_loading(true);
+        try {
+            const result = await settingHttp.post("ai_mcp_tools/reload", {index});
+            if (result.code === RCode.Success) {
+                await loadMcpTools();
+                NotySucess("MCP工具加载成功")
+                return result.data ?? null;
+            }
+        } finally {
+            set_mcp_tool_loading(false);
+        }
+        return null;
+    }
+    const showMcpTools = async (item: ai_mcp_server_item, index: number, initialSelectedToolName?: string, groupOverride?: ai_mcp_server_tool_group | null) => {
+        const group = groupOverride ?? mcp_tool_groups.find((it) => it.index === index) ?? {
+            index,
+            key: `${index}`,
+            name: item.name ?? "",
+            note: item.note,
+            transport: item.transport ?? "stdio",
+            open: !!item.open,
+            loaded: false,
+            tool_count: 0,
+            tools: [],
+        };
+        set_prompt_card({
+            open: true,
+            title: `${item.name || item.note || index} MCP工具`,
+            context_div: (
+                <McpToolsPrompt
+                    group={group}
+                    initialSelectedToolName={initialSelectedToolName}
+                    onReload={async () => {
+                        const fresh = await reloadOneMcpTools(index);
+                        if (fresh) {
+                            await showMcpTools(item, index, initialSelectedToolName, fresh);
+                        }
+                    }}
+                    onClose={() => set_prompt_card({open: false})}
+                />
+            ),
+            cancel: () => set_prompt_card({open: false})
+        });
+    }
+    const renderMcpToolsCell = (item: ai_mcp_server_item) => {
+        const index = mcp_list.indexOf(item);
+        const group = mcp_tool_groups.find((it) => it.index === index);
+        const tools = group?.tools ?? [];
+        return (
+            <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: ".25rem"
+            }}>
+                {tools.length ? tools.map((tool) => (
+                    <button
+                        key={tool.runtime_name}
+                        className="button button--flat button--grey"
+                        style={{
+                            padding: ".25rem .55rem",
+                            minHeight: "auto",
+                            lineHeight: 1.4
+                        }}
+                        onClick={() => showMcpTools(item, index, tool.runtime_name)}
+                    >
+                        {tool.tool_name}
+                    </button>
+                )) : (
+                    <button
+                        className="button button--flat button--grey"
+                        style={{
+                            padding: ".25rem .55rem",
+                            minHeight: "auto",
+                            lineHeight: 1.4
+                        }}
+                        onClick={async () => {
+                            const fresh = await reloadOneMcpTools(index);
+                            if (fresh) {
+                                await showMcpTools(item, index, fresh.tools?.[0]?.runtime_name, fresh);
+                            }
+                        }}
+                    >
+                        {group ? t("查看工具") : t("加载工具")}
+                    </button>
+                )}
+            </div>
+        );
     }
     const save_docs = async (param?:any) => {
         for (let i =0; i<rows.length;i++) {
@@ -281,10 +499,6 @@ export default function AIAgentChatSetting() {
                                             }}/>
                                         </div>
                                         ,
-                                        <InputText value={String(item.timeout_ms ?? 10000)} handleInputChange={(value) => {
-                                            item.timeout_ms = Number(value) || 10000;
-                                            mcp_update_tag.current = true
-                                        }} no_border={true}/>,
                                         <InputText value={item.note} handleInputChange={(value) => {
                                             item.note = value;
                                         }} no_border={true}/>,
@@ -298,12 +512,15 @@ export default function AIAgentChatSetting() {
                             </CardFull>
                         </Column>
                     </Row>
+
                     <Row>
                         <Column widthPer={70}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/>
+                                <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
                                 <Table headers={headers_mcp_stdio} rows={mcp_stdio_list.map((item, index) => {
+                                    const sourceIndex = mcp_list.indexOf(item);
                                     const new_list = [
                                         <div>{index}</div>,
                                         <InputText value={item.name} handleInputChange={(value) => {
@@ -327,7 +544,14 @@ export default function AIAgentChatSetting() {
                                             item.cwd = value;
                                             mcp_update_tag.current = true
                                         }} no_border={true}/>,
+                                        // renderMcpToolsCell(item),
                                         <div>
+                                            {/*<ActionButton icon={"play_arrow"} title={"加载此服务工具"} onClick={async () => {*/}
+                                            {/*    await reloadOneMcpTools(sourceIndex);*/}
+                                            {/*}}/>*/}
+                                            <ActionButton icon={"visibility"} title={"查看工具"} onClick={() => {
+                                                showMcpTools(item, sourceIndex);
+                                            }}/>
                                             <ActionButton icon={"settings"} title={"env"} onClick={() => {
                                                 editor_data.set_value_temp(item.env ?? '')
                                                 setEditorSetting({
@@ -360,10 +584,12 @@ export default function AIAgentChatSetting() {
                     </Row>
                     <Row>
                         <Column widthPer={70}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
+                                <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
                                 <Table headers={headers_mcp_http} rows={mcp_http_list.map((item, index) => {
+                                    const sourceIndex = mcp_list.indexOf(item);
                                     const new_list = [
                                         <div>{index}</div>,
                                         <InputText value={item.name} handleInputChange={(value) => {
@@ -379,7 +605,14 @@ export default function AIAgentChatSetting() {
                                             item.endpoint = value;
                                             mcp_update_tag.current = true
                                         }} no_border={true}/>,
+                                        // renderMcpToolsCell(item),
                                         <div>
+                                            {/*<ActionButton icon={"play_arrow"} title={"加载此服务工具"} onClick={async () => {*/}
+                                            {/*    await reloadOneMcpTools(sourceIndex);*/}
+                                            {/*}}/>*/}
+                                            <ActionButton icon={"visibility"} title={"查看工具"} onClick={() => {
+                                                showMcpTools(item, sourceIndex);
+                                            }}/>
                                             <ActionButton icon={"settings"} title={"headers"} onClick={() => {
                                                 editor_data.set_value_temp(item.headers ?? '')
                                                 setEditorSetting({

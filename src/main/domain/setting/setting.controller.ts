@@ -228,6 +228,25 @@ export class SettingController {
         return Sucess("1");
     }
 
+    @Get("/ai_mcp_tools")
+    async ai_mcp_tools_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(await ai_agentService.getMcpServerTools());
+    }
+
+    @Post("/ai_mcp_tools/reload")
+    async ai_mcp_tools_reload(@Req() ctx, @Body() req: { index: number }) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(await ai_agentService.reloadMcpServer(Number(req?.index)));
+    }
+
+    // @Post("/ai_mcp_tools/reload_all")
+    // async ai_mcp_tools_reload_all(@Req() ctx) {
+    //     userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+    //     await ai_agentService.reloadMcp();
+    //     return Sucess(await ai_agentService.getMcpServerTools());
+    // }
+
     @Get("/ai_docs_setting")
     ai_docs_setting(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
