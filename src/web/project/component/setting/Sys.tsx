@@ -22,9 +22,7 @@ import {GlobalContext} from "../../GlobalProvider";
 
 export function  Sys() {
     const [web_site_title, set_web_site_title] = useState("");
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirm_password, set_confirm_password] = useState("");
+
     const [authopen, setAuthopen] = useState(false);
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
     const [recycle_open, set_recycle_open] = useState(false);
@@ -43,25 +41,7 @@ export function  Sys() {
     const [theme,set_theme] =  useState<themes>("");
     const {initUserInfo} = useContext(GlobalContext);
 
-    const update = async () =>{
-        if (!username || !password) {
-            NotyFail("账号密码不能为空")
-            return;
-        }
-        if(password !== confirm_password) {
-            NotyFail("两次密码不一样")
-            return;
-        }
-        const user = new UserLogin();
-        user.username = username;
-        user.password = password;
-        user.confirm_password = confirm_password;
-        user.user_id = userInfo.user_data.id;
-        const result = await userHttp.post("updatePassword",user);
-        if (result.code === RCode.Success) {
-            NotySucess("修改成功")
-        }
-    }
+
     const set_recycle_save = async () =>{
         if (recycle_open) {
             if(!recycle_dir) {
@@ -209,11 +189,6 @@ export function  Sys() {
     return <Row>
         <Column widthPer={30}>
             <Dashboard>
-                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update}/>}>
-                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
-                    <InputPassword placeholder={t('新密码')}  handleInputChange={(value)=>{setPassword(value)}} />
-                    <InputPassword placeholder={t('确认密码')}  handleInputChange={(value)=>{set_confirm_password(value)}} />
-                </Card>
                 <Card title={t("自定义登录auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
                     <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>

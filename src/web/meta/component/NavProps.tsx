@@ -7,7 +7,7 @@ import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/u
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
     name?: string, // 隐藏的也不需要
-    rto: string,
+    rto?: string,
     clickFun?: Function, // 隐藏的也不需要
     component?:ReactNode
 }

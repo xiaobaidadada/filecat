@@ -3,9 +3,9 @@ import {Column, Dashboard, Row, RowColumn} from "../../../meta/component/Dashboa
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
-import {InputText, Select} from "../../../meta/component/Input";
+import {InputPassword, InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {settingHttp} from "../../util/config";
+import {settingHttp, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {
     dir_upload_max_num_item,
@@ -19,6 +19,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {using_env_prompt} from "./util";
+import {UserLogin} from "../../../../common/req/user.req";
 export function PrivateEnv() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
@@ -27,13 +28,18 @@ export function PrivateEnv() {
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
     const [quick_cmd_rows,set_quick_cmd_rows] = useState([] as QuickCmdItem[]);
     const [file_quick_cmd_rows,set_file_quick_cmd_rows] = useState([] as FileQuickCmdItem[]);
+    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
     const protection_dir_headers = [t("编号"),t("路径"),t("备注")];
     const quick_cmd_headers = [t("编号"),t("命令"),t("父编号"),t("备注")];
     const file_quick_cmd_headers = [t("文件后缀"),t("命令"),t("其他参数"),t("备注")];
 
-
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirm_password, set_confirm_password] = useState("");
+    const [authopen, setAuthopen] = useState(false);
 
     const getItems = async () => {
         // 文件夹根路径
@@ -152,8 +158,29 @@ export function PrivateEnv() {
     // 外部软件信息解释
     const soft_ware_info_click =  using_env_prompt();
 
+    const update_password = async () =>{
+        if (!username || !password) {
+            NotyFail("账号密码不能为空")
+            return;
+        }
+        if(password !== confirm_password) {
+            NotyFail("两次密码不一样")
+            return;
+        }
+        const user = new UserLogin();
+        user.username = username;
+        user.password = password;
+        user.confirm_password = confirm_password;
+        user.user_id = userInfo.user_data.id;
+        const result = await userHttp.post("updatePassword",user);
+        if (result.code === RCode.Success) {
+            NotySucess("修改成功")
+        }
+    }
+
     return (<React.Fragment>
         <Row>
+
             <Column>
                 <Dashboard>
                     <CardFull self_title={<span className={" div-row "}><h2>{t("文件夹路径")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("文件夹路径")}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
@@ -244,6 +271,14 @@ export function PrivateEnv() {
                         return new_list;
                     })} width={"10rem"}/>
                 </CardFull>
+            </Dashboard>
+
+            <Dashboard>
+                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>
+                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
+                    <InputPassword placeholder={t('新密码')}  handleInputChange={(value)=>{setPassword(value)}} />
+                    <InputPassword placeholder={t('确认密码')}  handleInputChange={(value)=>{set_confirm_password(value)}} />
+                </Card>
             </Dashboard>
         </Column>
     </Row></React.Fragment>)
