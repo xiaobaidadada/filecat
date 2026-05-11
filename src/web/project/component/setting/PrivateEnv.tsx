@@ -10,7 +10,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {
     dir_upload_max_num_item,
     FileQuickCmdItem,
-    QuickCmdItem,
+    QuickCmdItem, sys_setting_type,
     SysSoftware,
     TokenSettingReq
 } from "../../../../common/req/setting.req";
@@ -19,7 +19,8 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {using_env_prompt} from "./util";
-import {UserLogin} from "../../../../common/req/user.req";
+import {themes, UserLogin} from "../../../../common/req/user.req";
+import {Http_controller_router} from "../../../../common/req/http_controller_router";
 export function PrivateEnv() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
@@ -40,6 +41,9 @@ export function PrivateEnv() {
     const [password, setPassword] = useState("");
     const [confirm_password, set_confirm_password] = useState("");
     const [authopen, setAuthopen] = useState(false);
+
+    const [language,set_language] =  useState("");
+    const [theme,set_theme] =  useState<themes>("");
 
     const getItems = async () => {
         // 文件夹根路径
@@ -62,6 +66,8 @@ export function PrivateEnv() {
     }
     useEffect(() => {
         getItems();
+        set_language(userInfo?.user_data?.language);
+        set_theme(userInfo?.user_data?.theme);
     }, []);
 
 
@@ -178,6 +184,20 @@ export function PrivateEnv() {
         }
     }
 
+    const save_sys_env = async () =>{
+
+        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.private_sys_env,value:{
+                language,
+                theme
+            }});
+        if (result.code === RCode.Success) {
+            NotySucess("修改成功")
+        } else {
+            return;
+        }
+        initUserInfo();
+    }
+
     return (<React.Fragment>
         <Row>
 
@@ -221,6 +241,27 @@ export function PrivateEnv() {
                 </Dashboard>
             </Column>
         <Column>
+            <Dashboard>
+                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>
+                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
+                    <InputPassword placeholder={t('新密码')}  handleInputChange={(value)=>{setPassword(value)}} />
+                    <InputPassword placeholder={t('确认密码')}  handleInputChange={(value)=>{set_confirm_password(value)}} />
+                </Card>
+            </Dashboard>
+
+            <Dashboard>
+                <Card title={t("个性化设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                    {t("语言")}
+                    <Select  value={language} onChange={(value)=>{
+                        set_language(value);
+                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"},{title:"Deutsch",value:"de"},{title:"ドイツ語",value:"ja"},{title:"독일어",value:"ko"},{title:"Немецкий язык",value:"ru"},{title:"Allemand",value:"fr"},{title:"Alemán",value:"es"}]}/>
+                    {t("主题")}
+                    <Select  value={theme} onChange={(value)=>{
+                        set_theme(value);
+                    }} options={[{title:"light",value:"light"},{title:"dark",value:"dark"}]}/>
+                </Card>
+            </Dashboard>
+
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("目录快捷命令")}</h2>
                     <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("目录快捷命令")}}
@@ -273,13 +314,7 @@ export function PrivateEnv() {
                 </CardFull>
             </Dashboard>
 
-            <Dashboard>
-                <Card title={t("修改密码")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>
-                    <InputText placeholder={t('新账号')}  value={username} handleInputChange={(value)=>{setUsername(value)}} />
-                    <InputPassword placeholder={t('新密码')}  handleInputChange={(value)=>{setPassword(value)}} />
-                    <InputPassword placeholder={t('确认密码')}  handleInputChange={(value)=>{set_confirm_password(value)}} />
-                </Card>
-            </Dashboard>
+
         </Column>
     </Row></React.Fragment>)
 }

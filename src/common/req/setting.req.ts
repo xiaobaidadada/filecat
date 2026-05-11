@@ -209,7 +209,8 @@ export const enum sys_setting_type {
     auth,
     cmd,
     cyc, // 垃圾站
-    sys_env
+    sys_env= 3,
+    private_sys_env,
 }
 
 export interface dir_upload_max_num_item {

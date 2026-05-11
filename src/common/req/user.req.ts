@@ -33,6 +33,8 @@ export class UserBaseInfo {
 
     process_env_run_env:string | "exe"|"npm"
 
+    sys_env:{ web_site_title: string, show_login_user_info:boolean}
+
     public static get_now_dir(user_base_info:UserBaseInfo) {
         let path = user_base_info.user_data.cwd
         if(user_base_info.user_data.folder_item_now && user_base_info.user_data.folder_items?.length) {
@@ -104,6 +106,7 @@ export enum UserAuth {
     shell_cmd_filecat_upgrade , // 升级命令
     shell_cmd_filecat_kill_self= 55, //
     ai_chat_cmd,
+    private_sys_env, //个性化设置 语言 属性
 
 }
 

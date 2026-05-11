@@ -1,10 +1,8 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React from 'react'
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
-import {GlobalContext} from "../../../GlobalProvider";
 import {useTranslation} from "react-i18next";
 import {UserAuth} from "../../../../../common/req/user.req";
-import {deleteList} from "../../../../../common/ListUtil";
 
 export function Permission(props:{
     is_disable:(auth: UserAuth) => boolean;
@@ -84,6 +82,12 @@ export function Permission(props:{
                 { title: "workflow job", permission: UserAuth.workflow_job },
                 { title: t("系统保护路径更新"), permission: UserAuth.sys_protection_dir },
                 { title: t("外部软件路径"), permission: UserAuth.outside_software_path }
+            ]
+        },
+        {
+            title:t("个人环境设置"),
+            list:[
+                {title:t("个性化设置"),permission:UserAuth.private_sys_env}
             ]
         },
         {

@@ -22,6 +22,7 @@ import {GlobalContext} from "../../GlobalProvider";
 
 export function  Sys() {
     const [web_site_title, set_web_site_title] = useState("");
+    const [show_login_user_info,set_show_login_user_info]=useState(false);
 
     const [authopen, setAuthopen] = useState(false);
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
@@ -37,8 +38,7 @@ export function  Sys() {
     const { t, i18n } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
-    const [language,set_language] =  useState("");
-    const [theme,set_theme] =  useState<themes>("");
+
     const {initUserInfo} = useContext(GlobalContext);
 
 
@@ -64,6 +64,7 @@ export function  Sys() {
                 set_recycle_dir(all_open_result.data.recycle_dir);
                 const sys_env = all_open_result.data.sys_env;
                 set_web_site_title(sys_env?.web_site_title);
+                set_show_login_user_info(sys_env?.show_login_user_info);
             }
             // const result = await settingHttp.get("self_auth_open");
             // setAuthopen(result.data);
@@ -86,8 +87,6 @@ export function  Sys() {
             }
         }
         getOpen();
-        set_language(userInfo?.user_data?.language);
-        set_theme(userInfo?.user_data?.theme);
     }, []);
     const jscode = async () =>{
         const res = await settingHttp.get(`self_auth_open/jscode`);
@@ -171,8 +170,7 @@ export function  Sys() {
 
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.sys_env,value:{
                 web_site_title,
-                language,
-                theme
+                show_login_user_info
             }});
         if (result.code === RCode.Success) {
             NotySucess("修改成功")
@@ -233,16 +231,16 @@ export function  Sys() {
         <Column widthPer={40}>
             <Dashboard>
                 <Card title={t("通用设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
-                    {t("语言")}
-                    <Select  value={language} onChange={(value)=>{
-                        set_language(value);
-                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"},{title:"Deutsch",value:"de"},{title:"ドイツ語",value:"ja"},{title:"독일어",value:"ko"},{title:"Немецкий язык",value:"ru"},{title:"Allemand",value:"fr"},{title:"Alemán",value:"es"}]}/>
-                    {t("主题")}
-                    <Select  value={theme} onChange={(value)=>{
-                        set_theme(value);
-                    }} options={[{title:"light",value:"light"},{title:"dark",value:"dark"}]}/>
                     {t("网站标题")}
                     <InputText   value={web_site_title} handleInputChange={(value)=>{set_web_site_title(value)}} />
+                    {t("登陆展示用户信息")}
+                    <input
+                        type="checkbox"
+                        checked={show_login_user_info}
+                        onChange={() => {
+                            set_show_login_user_info(!show_login_user_info)
+                        }}
+                    />
                 </Card>
             </Dashboard>
         </Column>

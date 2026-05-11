@@ -91,7 +91,9 @@ function Layout() {
             { rto: `${routerConfig.studio_page}/`, component: <StudioLazy />}
         ]
     ]
-    MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note,icon:"person",rto:'/setting/private_env_setting'})
+    if(user_base_info.sys_env?.show_login_user_info) {
+        MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note,icon:"person",rto:'/setting/private_env_setting'})
+    }
     if (custom_fun_opt) {
         // @ts-ignore
         MainNavList[MainNavList.length - 1].push(custom_fun_opt);

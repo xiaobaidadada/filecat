@@ -323,11 +323,11 @@ export class SettingService {
         return index_text;
     }
 
-    public get_sys_env(): { web_site_title: string } {
-        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat'};
+    public get_sys_env(): { web_site_title: string, show_login_user_info:boolean} {
+        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true};
     }
 
-    public set_sys_env(req:{web_site_title: string }) {
+    public set_sys_env(req:{web_site_title: string ,show_login_user_info:boolean}) {
         return DataUtil.set(data_common_key.sys_env_key, req);
     }
 

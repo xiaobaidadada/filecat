@@ -427,8 +427,11 @@ export class SettingController {
             DataUtil.set(data_common_key.recycle_bin_key, key_map_list);
         } else if (body.type === sys_setting_type.sys_env) {
             userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
-            settingService.set_sys_env({web_site_title: body.value.web_site_title});
+            settingService.set_sys_env({web_site_title: body.value.web_site_title,show_login_user_info:body.value.show_login_user_info});
             ServerEvent.emit("sys_env_update");
+        } else if (body.type === sys_setting_type.private_sys_env) {
+            // 个性化
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.private_sys_env);
             // 语言
             const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
             user_data.language = body.value.language;
