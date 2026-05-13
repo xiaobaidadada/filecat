@@ -146,7 +146,9 @@ export class TcpForwardController {
         }
         // token校验成功 连接成功
         NetServerUtil.connect_success(util.get_client().get_socket());
-        if(info.client_num_id == null) {
+        const list = tcpForwardService.server_client_get()
+        let client_it = list.find(v=>v.client_num_id == info.client_num_id)
+        if(!client_it) {
             info.client_num_id = tcpForwardService.get_new_client_num_id()
         }
         const data_map:server_type = {

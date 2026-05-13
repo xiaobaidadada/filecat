@@ -82,6 +82,10 @@ export function TcpProxyServer() {
         }
     }
 
+    const resolveClientOption = (value: string | number) => {
+        return all_client_options.find((item) => String(item.value) === String(value));
+    }
+
     const getItems = async () => {
         const r1 = await tcpProxy.get("server_get")
         if(r1.code === RCode.Success) {
@@ -356,7 +360,9 @@ export function TcpProxyServer() {
                                 <InputText value={item.client_name} options={all_client_options} handleInputChange={(value) => {
                                     // item.server_client_name = value;
                                     // console.log(value)
-                                    item.client_num_id = parseInt(value);
+                                    const selected = resolveClientOption(value);
+                                    item.client_num_id = parseInt(String(selected.value));
+                                    item.client_name = selected.label;
                                     set_edit_client_bridge_fig([...edit_client_bridge_fig])
                                 }} no_border={true}/>,
 

@@ -816,7 +816,7 @@ export class NetService {
     safeDestroy  (...sockets: (net.Socket |Duplex| undefined)[]) {
         sockets.forEach(s => {
             if (s && !s.destroyed) {
-                s.destroy();
+                s.end();
             }
         });
     };

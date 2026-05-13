@@ -482,8 +482,9 @@ export class TcpForwardServerService {
     }
 
     save_update_info(item:tcp_proxy_bridge_fig_item){
-        const server = this.client_num_map[item.server_client_num_id]
-        const client = this.client_num_map[item.client_num_id]
+        const list = this.server_client_get()
+        const server = this.client_num_map[item.server_client_num_id] ?? list.find(v => v.client_num_id === item.server_client_num_id)
+        const client = this.client_num_map[item.client_num_id] ?? list.find(v => v.client_num_id === item.client_num_id)
         // if(!server){
         //     throw `服务客户端不在线 ${item.server_client_name} `
         // }
