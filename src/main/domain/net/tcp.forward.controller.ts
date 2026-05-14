@@ -219,11 +219,19 @@ export class TcpForwardController {
                 })
             }
         })
-        targetSocket.on("close", () => {
+        const close = ()=>{
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
             delete tcp_forward_client_service.client_socket_map[info.socket_id]
+        }
+        targetSocket.on("close", () => {
+            close()
             // delete tcp_client_target_map[key]
         })
+        targetSocket.on('error', (err) => {
+            close()
+            targetSocket.end()
+            console.error('Socket error:', err.message);
+        });
         tcp_forward_client_service.client_socket_map[info.socket_id] = targetSocket;
     }
 
