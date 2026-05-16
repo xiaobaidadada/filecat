@@ -13,8 +13,40 @@ const archiver = require('archiver');
 const unrar = require("node-unrar-js");
 import {pipeline} from "stream/promises";
 import {FileUtil} from "./FileUtil";
+const p7zip = require('7zip-min');
 
 export class FileCompress extends LifecycleRecordService {
+
+    async un7z(
+        filePath: string,
+        targetFolder: string,
+        progress: (value: number) => void
+    ): Promise<void> {
+        try {
+            // 1. 确保目标目录存在
+            fs.mkdirSync(targetFolder, { recursive: true });
+
+            // 2. 开始解压，进度设为 0
+            progress(10);
+
+            // 3. 封装为 Promise 执行解压
+            await new Promise<void>((resolve, reject) => {
+                p7zip.unpack(filePath, targetFolder, (err: any) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve();
+                });
+            });
+
+            // 4. 成功完成，进度设为 100
+            progress(100);
+        } catch (e) {
+            // 5. 发生异常，进度设为 -1
+            progress(-1);
+            throw e;
+        }
+    }
 
     async unZip(
         filePath: string,
@@ -352,6 +384,75 @@ export class FileCompress extends LifecycleRecordService {
         });
     }
 
+    async compress7z(
+        targetFilePath: string,
+        filePaths: string[],
+        directories: string[],
+        progress: (value: number) => void
+    ): Promise<void> {
+        let tempDir: string | null = null;
+        try {
+            fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
+
+            progress(10); // 开始压缩，进度 10
+
+            let sourcePath = "";
+
+            const totalFiles = filePaths?.length || 0;
+            const totalDirs = directories?.length || 0;
+
+            // 场景 A：单个文件
+            if (totalFiles === 1 && totalDirs === 0) {
+                sourcePath = filePaths[0];
+            }
+            // 场景 B：单个目录
+            else if (totalFiles === 0 && totalDirs === 1) {
+                sourcePath = directories[0];
+            }
+            // 场景 C：多个文件/目录或混合
+            else if ((totalFiles + totalDirs) > 1) {
+                tempDir = path.join(path.dirname(targetFilePath), `_7z_tmpl_${Date.now()}`);
+                fs.mkdirSync(tempDir, { recursive: true });
+
+                // 拷贝文件
+                for (const file of filePaths || []) {
+                    if (fs.existsSync(file)) {
+                        fs.copyFileSync(file, path.join(tempDir, path.basename(file)));
+                    }
+                }
+                // 拷贝目录
+                for (const dir of directories || []) {
+                    if (fs.existsSync(dir)) {
+                        const destDir = path.join(tempDir, path.basename(dir));
+                        fs.cpSync ? fs.cpSync(dir, destDir, { recursive: true }) : fs.mkdirSync(destDir, { recursive: true });
+                    }
+                }
+
+                sourcePath = tempDir;
+            } else {
+                throw new Error("7z 压缩必须提供有效的文件或目录");
+            }
+
+            // 调用 7zip-min 压缩
+            await new Promise<void>((resolve, reject) => {
+                p7zip.pack(sourcePath, targetFilePath, (err: any) => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+
+            progress(100); // 压缩完成
+        } catch (e) {
+            progress(-1); // 异常
+            throw e;
+        } finally {
+            // 清理临时目录
+            if (tempDir && fs.existsSync(tempDir)) {
+                fs.rmSync ? fs.rmSync(tempDir, { recursive: true, force: true }) : fs.rmdirSync(tempDir, { recursive: true });
+            }
+        }
+    }
+
 
     async handle_un(format: FileCompressType, sysSourcePath, targetFolder, outHanle) {
         await FileUtil.ensure_dir(targetFolder)
@@ -365,6 +466,8 @@ export class FileCompress extends LifecycleRecordService {
             await fileCompress.unRar(sysSourcePath, targetFolder, outHanle)
         } else if (format === FileCompressType.gz) {
             await fileCompress.unGz(sysSourcePath, targetFolder, outHanle)
+        } else if (format === FileCompressType.sevenZip) {
+            await fileCompress.un7z(sysSourcePath, targetFolder, outHanle)
         }
     }
 

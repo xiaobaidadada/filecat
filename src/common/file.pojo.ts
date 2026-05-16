@@ -64,11 +64,13 @@ export enum FileCompressType {
     tar = ".tar",
     gz = ".gz", // gz 不支持多文件 只支持单文件
     rar = ".rar", // 只解压
+    sevenZip = ".7z", // 只支持 单个的解压缩
     tar_gz = ".tar.gz",
 }
 
 // 有优先级的 后缀的 选择
 export const file_select_list = [
+    FileCompressType.sevenZip,
     FileCompressType.zip,
     FileCompressType.tar_gz,
     FileCompressType.gz,

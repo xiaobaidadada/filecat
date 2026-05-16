@@ -26,7 +26,7 @@ export class FileMenuData {
 
 
 const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","wmv","swf","mod","mpv","mpeg","asf"]);
-const compressing_list = new Set(["tar","zip","gz","tgz","rar"]);// compressing
+const compressing_list = new Set(["tar","zip","gz","tgz","rar","7z"]);// compressing
 const image_list = new Set(["jpg","jpeg","png","gif"]);
 const txt = new Set(["txt","ts","js"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);

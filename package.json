@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "5.57.0",
+  "version": "5.58.0",
   "description": "FileCat Server Manager",
   "author": "xiaobaidadada",
   "scripts": {
@@ -45,7 +45,8 @@
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "better-sqlite3": "^12.6.2",
-    "node-process-watcher": "^1.6.6"
+    "node-process-watcher": "^1.6.6",
+    "7zip-min": "^3.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
