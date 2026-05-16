@@ -12,7 +12,7 @@ import {use_auth_check, use_file_to_running, user_click_file} from "../../../uti
 import {DiskMountAction} from "./DiskMountAction";
 import {common_menu_type, run_workflow} from "./handle.service";
 import {ai_agentHttp, fileHttp, settingHttp, userHttp} from "../../../util/config";
-import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
+import {getRouterAfter, getRouterPath, getRouterPrePath} from "../../../util/WebPath";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {file_share_item, workflow_pre_input} from "../../../../../common/req/file.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
@@ -53,7 +53,9 @@ export function FileMenu() {
             r: t("详细信息"), v: common_menu_type.file_base_info,
             items:[
             ]
-        }
+        },
+        {r: t("重命名"), v: common_menu_type.file_rename},
+        {r: t("删除"), v: common_menu_type.file_delete}
     ]
 
     //权限判断
@@ -382,6 +384,16 @@ export function FileMenu() {
                 })
                 break;
             }
+            case    common_menu_type.file_delete:
+            {
+
+            }
+            break
+            case    common_menu_type.file_rename:
+            {
+
+            }
+
         }
     }
 

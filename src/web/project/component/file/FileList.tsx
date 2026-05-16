@@ -30,7 +30,7 @@ import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "./FileListLoad";
-import {FileMenu} from "./FileMenu";
+import {FileMenu, use_handleContextMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
 import {cloneDeep} from "lodash";
 import {formatDate} from "../../../../common/StringUtil";
@@ -49,7 +49,6 @@ export default function FileList() {
 
     let location = useLocation();
     const navigate = useNavigate();
-    const {check_user_auth} = use_auth_check();
 
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
@@ -65,9 +64,10 @@ export default function FileList() {
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {click_file} = user_click_file();
     const [to_running_files_set, set_to_running_files_set] = useRecoilState($stroe.to_running_files);
-    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
 
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
+
+    const handleContextMenu = use_handleContextMenu()
 
     const workflow_watcher = async () => {
         const p = new WorkFlowRealTimeReq();
@@ -225,181 +225,7 @@ export default function FileList() {
         setClickList([])
         setNowFileList({files: [], folders: []});
     }
-    const handleContextMenu = (event) => {
-        event.preventDefault();
-        event.stopPropagation(); // 阻止事件冒泡 阻止向父标签传递事件
-        const pojo = new FileMenuData();
-        pojo.x = event.clientX;
-        pojo.y = event.clientY;
-        pojo.type = FileTypeEnum.directory;
-        const time_sort = [
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max ? "green" : undefined}}>{t("时间逆序")}</span>),
-                v: DirListShowTypeEmum.time_minx_max
-            },
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}>{t("时间顺序")}</span>),
-                v: DirListShowTypeEmum.time_max_min
-            }
-        ]
-        const size_sort = [
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>{t("大小顺序")}</span>),
-                v: DirListShowTypeEmum.size_min_max
-            },
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>{t("大小逆序")}</span>),
-                v: DirListShowTypeEmum.size_max_min
-            }
-        ]
-        const pagination_mode = [
-            {
-                r: (<span
-                    style={{color: (!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all) ? "green" : undefined}}>{t("全部加载文件")}</span>),
-                v: FileListPaginationModeEmum.all
-            },
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ? "green" : undefined}}>{t("分页滚动加载文件")}</span>),
-                v: FileListPaginationModeEmum.pagination
-            }
-        ];
-        const time_show_mode = [
-            {
-                r: (<span
-                    style={{color: (!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current) ? "green" : undefined}}>{t("最近时长")}</span>),
-                v: user_file_time_show_type.current
-            },
-            {
-                r: (<span
-                    style={{color: user_base_info.user_data.file_time_show_type === user_file_time_show_type.time ? "green" : undefined}}>{t("准确时间")}</span>),
-                v: user_file_time_show_type.time
-            }
-        ];
-        const common_handle_item = {
-            r: t("文件列表展示"),
-            items:[
-                {
-                    r: t("文件排序"),
-                    v: "",
-                    items: [
-                        {
-                            r: (<span
-                                style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>{t("系统默认")}</span>),
-                            v: DirListShowTypeEmum.defualt
-                        },
-                        {
-                            r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>{t("名字")}</span>),
-                            v: DirListShowTypeEmum.name
-                        },
-                        {
-                            r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}
-                            >{t("修改时间")}</span>), v: false, items: time_sort
-                        },
-                        {
-                            r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}
-                            >{t("文件大小")}</span>), v: false, items: size_sort
-                        },
-                    ]
-                },
-                {
-                    r: t("文件加载方式"),
-                    v: "",
-                    items: pagination_mode
-                },
-                {
-                    r: t("时间展示"),
-                    v: "",
-                    items: time_show_mode
-                },
-            ]
-        }
-        const list: any[] = [
-            common_handle_item
-        ];
-        if (check_user_auth(UserAuth.code_resource)) {
-            list.push({r: t("添加http资源根目录"), v: "code_resource"})
-        }
-        if (check_user_auth(UserAuth.http_proxy)) {
-            list.push({r: t("在此目录下载http资源"), v: "http_resource"})
-        }
-        if (user_base_info?.user_data?.quick_cmd) {
-            // const cmd = {
-            //     r: t("快捷命令"),
-            //     v: "",
-            //     items:[]
-            // }
-            create_quick_cmd_items([...user_base_info.user_data.quick_cmd], list);
-            // list.push(cmd);
-        }
-        pojo.items = list;
-        pojo.textClick = async (v) => {
-            console.log(v)
-            if (v === false) return;
-            const user_save_user_file_list_show_type_pojo:any = {}
-            if (v === "code_resource") {
-                const result = await ws.sendData(CmdType.file_info, {
-                    // type: "",
-                    path: getRouterAfter('file', getRouterPath())
-                });
-                set_router_jump({page_self_router_api_data: ["", result.context.now_absolute_path]});
-                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate("/setting/customer_router/");
-                return;
-            } else if (v === "http_resource") {
-                const result = await ws.sendData(CmdType.file_info, {
-                    // type: "",
-                    path: getRouterAfter('file', getRouterPath())
-                });
-                set_router_jump({http_download_map_path: result.context.now_absolute_path});
-                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate("/proxy/http/");
-                return;
-            } else if (typeof v === "object" && v.tag === "quick_cmd") {
-                let cmd = v.cmd;
-                if (cmd) {
-                    if (!cmd.endsWith("\r")) {
-                        cmd += "\r";
-                        setShellShow({
-                            show: true,
-                            path: getRouterAfter('file', getRouterPath()),
-                            cmd: cmd
-                        })
-                    }
-                }
 
-            } else if(v=== FileListPaginationModeEmum.all || v===FileListPaginationModeEmum.pagination) {
-                user_save_user_file_list_show_type_pojo['is_pagination_mode'] = true
-            } else if(v === user_file_time_show_type.current || v === user_file_time_show_type.time) {
-                user_save_user_file_list_show_type_pojo['is_file_show_type'] = true
-            } else if(v === DirListShowTypeEmum.defualt ||
-            v === DirListShowTypeEmum.name ||
-            v === DirListShowTypeEmum.size_max_min ||
-            v === DirListShowTypeEmum.size_min_max ||
-            v === DirListShowTypeEmum.time_max_min ||
-            v === DirListShowTypeEmum.time_minx_max) {
-                user_save_user_file_list_show_type_pojo['is_dir_list_type'] = true
-            } else
-            {
-                return
-            }
-            await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
-                type: v,
-                ...user_save_user_file_list_show_type_pojo
-            });
-            await initUserInfo();
-            setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-            navigate(getRouterPath());
-        }
-        setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
-    };
     return (
         <React.Fragment>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}

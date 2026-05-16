@@ -146,6 +146,7 @@ export class HttpsTunnel {
             if (cleaned) return;
             cleaned = true;
             try {
+                util.get_client()?.close()
                 delete util.data_map[socket_id];
                 delete socket_key_map[socket_id];
                 clientSocket.destroy();

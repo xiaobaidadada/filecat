@@ -254,10 +254,10 @@ export default function Studio(props) {
                             setEditorValue("");
                             editor_data.set_value_temp("");
                         }
-                        setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path, call:extra_call}});
+                        setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path, call:extra_call,filename:name}});
                         break;
                     }
-                    setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path, call:isDir?()=>{call(true)}:call}});
+                    setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path,filename:name, call:isDir?()=>{call(true)}:call}});
                     break;
                 case "重命名":
                     setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{path:path,dir:getRouterPrePath(path),call:()=>{call(true)},filename:name}});

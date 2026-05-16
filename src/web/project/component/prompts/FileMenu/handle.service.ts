@@ -53,4 +53,6 @@ export enum common_menu_type {
     ai_load_one_file = "ai_load_one_file",
     ai_del_one_file = "ai_del_one_file",
     file_base_info = "file_base_info",
+    file_delete = "file_delete",
+    file_rename = "file_rename",
 }

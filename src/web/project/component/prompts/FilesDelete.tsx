@@ -58,7 +58,7 @@ export function FilesDelete(props) {
         <div className="card floating">
             <div className="card-content">
                 <p>
-                    {t("是否删除选中的文件")}
+                    {!showPrompt.data?.filename? t("是否删除选中的文件"):t(`删除`)+` ${showPrompt.data.filename} ?`}
                 </p>
 
             </div>
