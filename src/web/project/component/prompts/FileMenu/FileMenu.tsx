@@ -148,6 +148,10 @@ export function FileMenu() {
         return path_join(fp,showPrompt.data.filename)
     }
 
+    const get_menu_file_path = () => {
+        return `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`;
+    }
+
     let div; // useEffect 是已经渲染过了再执行
     const pojo = showPrompt.data;
     const right_click = async (v, item) => {
@@ -386,13 +390,31 @@ export function FileMenu() {
             }
             case    common_menu_type.file_delete:
             {
-
+                setShowPrompt({
+                    show: true,
+                    type: PromptEnum.FilesDelete,
+                    overlay: true,
+                    data: {
+                        path: get_menu_file_path(),
+                        filename: showPrompt.data.filename
+                    }
+                });
             }
             break
             case    common_menu_type.file_rename:
             {
-
+                setShowPrompt({
+                    show: true,
+                    type: PromptEnum.FileRename,
+                    overlay: true,
+                    data: {
+                        path: get_menu_file_path(),
+                        dir: getRouterAfter('file', getRouterPath()),
+                        filename: showPrompt.data.filename
+                    }
+                });
             }
+            break;
 
         }
     }
@@ -521,5 +543,4 @@ export function FileMenu() {
     }
     return (div);
 }
-
 
