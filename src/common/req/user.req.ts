@@ -174,4 +174,6 @@ export class UserData extends UserLogin {
     not_pre_show_image:boolean; // 是否预览图片
     file_list_pagination_mode?: FileListPaginationModeEmum; // 文件列表加载模式：全部加载或分页加载
     file_time_show_type?:user_file_time_show_type
+
+    file_list_zoom?:number;
 }

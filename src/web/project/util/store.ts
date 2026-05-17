@@ -340,7 +340,14 @@ export const $stroe = {
     file_item_width_atom:atom({
         key: 'file_item_width_atom',
         default: 0
-    })
+    }),
+    // 文件列表缩放
+    zoom_style_by_percent:atom(
+        {
+            key: 'zoom_style_by_percent',
+            default: 100 // 0 - 100
+        }
+    )
 }
 
 

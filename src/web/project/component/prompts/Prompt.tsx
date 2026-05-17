@@ -23,6 +23,7 @@ import {PromptCard} from "./PromptCard";
 import {DdnsAddHttp} from "./DdnsAddHttp";
 import {UploadFile} from "./UploadFile";
 import {FolderInfo} from "./FolderInfo";
+import {ZoomAdjust} from "./ZoomAdjust";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -43,7 +44,8 @@ export enum PromptEnum {
     Compress = "Compress",
     DdnsAddHttp = "DdnsAddHttp",
     UploadFile = "UploadFile",
-    FolderInfo = "FolderInfo"
+    FolderInfo = "FolderInfo",
+    ZoomAdjust = "ZoomAdjust"
 }
 
 export default function Prompt() {
@@ -120,6 +122,9 @@ export default function Prompt() {
             break;
         case PromptEnum.FolderInfo:
             div = <FolderInfo/>
+            break;
+        case PromptEnum.ZoomAdjust:
+            div = <ZoomAdjust/>
     }
 
     return (<div>

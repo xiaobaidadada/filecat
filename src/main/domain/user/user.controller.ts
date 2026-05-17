@@ -171,8 +171,8 @@ export class UserController {
         return Sucess('ok');
     }
 
-    // 用户样式类型
-    @Post(`/${Http_controller_router.user_save_user_file_list_show_type}`)
+    // 用户隐私保存接口
+    @Post(`/${Http_controller_router.user_save_private_attr}`)
     save_user_file_list_show_type(@Body() body: {
         type: string,
         is_file_list_type?: boolean,
@@ -180,6 +180,8 @@ export class UserController {
         not_pre_show_image?: boolean,
         is_pagination_mode?: boolean,
         is_file_show_type?: boolean,
+        is_file_list_zoom?: boolean,
+        value?:any,
     }, @Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
         const user_id = userService.get_user_id(user_data.username);
@@ -191,6 +193,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {file_list_pagination_mode: body.type} as UserData);
         } else if(body.is_file_show_type) {
             userService.only_update_user_data(user_id, {file_time_show_type: body.type} as UserData);
+        } else if(body.is_file_list_zoom) {
+            userService.only_update_user_data(user_id, {file_list_zoom: body.value} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

@@ -422,6 +422,10 @@ export function use_handleContextMenu() {
                     v: "",
                     items: time_show_mode
                 },
+                {
+                    r: t("缩放调整"),
+                    v: "zoom_adjust"
+                },
             ]
         }
         const list: any[] = [
@@ -465,6 +469,12 @@ export function use_handleContextMenu() {
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate("/proxy/http/");
                 return;
+            } else if (v === "zoom_adjust") {
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                setTimeout(() => {
+                    setShowPrompt({show: true, type: PromptEnum.ZoomAdjust, overlay: false, data: {}});
+                }, 0);
+                return;
             } else if (typeof v === "object" && v.tag === "quick_cmd") {
                 let cmd = v.cmd;
                 if (cmd) {
@@ -493,7 +503,7 @@ export function use_handleContextMenu() {
             {
                 return
             }
-            await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
+            await userHttp.post(Http_controller_router.user_save_private_attr, {
                 type: v,
                 ...user_save_user_file_list_show_type_pojo
             });

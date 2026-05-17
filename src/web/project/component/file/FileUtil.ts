@@ -249,20 +249,49 @@ export function using_add_div_wheel_event(ref, bottom: () => void,up: () => void
     },[]) // 只执行一次 组件周期内
 }
 
+/**
+ * 根据缩放百分比计算列宽和字号
+ * @param percent 缩放百分比 (默认传 100，缩小传 60，放大传 130)
+ */
+export function getZoomStyleByPercent(percent: number) {
+    if(percent == null) [
+        percent = 100
+    ]
+    // 1. 安全边界控制，防止比例过小或过大
+    // 转化后的 scale 在 100% 时刚好等于 1
+    const scale = Math.max(30, Math.min(200, percent)) / 100;
+
+    // 2. 计算列宽：全新基准 280px * 比例系数
+    // 当 percent = 100 时，scale = 1，columnWidth = 280
+    const columnWidth = 280 * scale;
+
+    // 3. 计算字号：基准 1 * 比例系数
+    // 当 percent = 100 时，scale = 1，fontSize = 1
+    const fontSize = 1 * scale;
+
+    return {
+        columnWidth,
+        fontSize: `${fontSize}em` // 或者是 `${fontSize}rem`
+    };
+}
+
+
 const columnWidth = 280;
 
 // 让文件页面的文件可以子适应 （控制 width参数)
 export function using_file_page_handle_width_auto() {
     const [itemWidth, setItemWidth] = useState($stroe.file_item_width_atom);
     const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
+    const [zoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
 
     const handleResize = () => {
+        const scale = Math.max(30, Math.min(200, zoomPercent??100)) / 100;// 最大缩放 200 最小缩放30
+        const scaledColumnWidth = columnWidth * scale;
         let columns = Math.floor(
-            document.querySelector("main").offsetWidth / columnWidth
+            document.querySelector("main").offsetWidth / scaledColumnWidth
         );
         if (columns === 0) columns = 1;
         setItemWidth(`calc(${100 / columns}% - 1em)`)
-        // set_windows_width({width: window.innerWidth,is_mobile: window.innerWidth <= 736})
     };
 
     useEffect(() => {
@@ -271,7 +300,7 @@ export function using_file_page_handle_width_auto() {
         return () => {
             window.removeEventListener('resize', handleResize);
         }
-    }, [nav_style]);
+    }, [nav_style, zoomPercent]);
     return itemWidth
 }
 
@@ -342,7 +371,7 @@ export function unsing_switch_grid_view (is_local = false) {
             }));
             return;
         }
-        await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {type});
+        await userHttp.post(Http_controller_router.user_save_private_attr, {type});
         initUserInfo();
     }
 }

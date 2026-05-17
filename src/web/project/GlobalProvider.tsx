@@ -18,6 +18,7 @@ export const GlobalProvider = ({ children }) => {
     const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
     const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [zoomPercent, setZoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
     const { t, i18n } = useTranslation();
 
     const getItems = async () => {
@@ -52,6 +53,11 @@ export const GlobalProvider = ({ children }) => {
             setUser_base_info(p)
             i18n.changeLanguage(p?.user_data?.language);
             auth_key_map.clear();
+            if(p.user_data?.file_list_zoom != null) {
+                setZoomPercent(p.user_data?.file_list_zoom);
+            } else {
+                setZoomPercent(100)
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {
     file_show_item,
+    getZoomStyleByPercent,
     using_add_div_wheel_event, using_drop_file_upload, using_file_page_handle_width_auto, using_file_quick_keyboard
 } from "./FileUtil";
 import {useTranslation} from "react-i18next";
@@ -153,6 +154,7 @@ export function FileListLoad_file_folder_for_local(
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const inputRef = useRef(null); // 用于保证 大小伸缩变化
     const {t} = useTranslation();
+    const [zoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
 
     // 页面自适应 通用
     const itemWidth = using_file_page_handle_width_auto()
@@ -160,6 +162,7 @@ export function FileListLoad_file_folder_for_local(
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
 
     const folders_len = useMemo(() => folder_list?.length ?? 0, [folder_list])
+    const zoomStyle = getZoomStyleByPercent(zoomPercent);
 
     using_drop_file_upload(inputRef, PromptEnum.FilesUpload)
     // 快捷键
@@ -175,7 +178,7 @@ export function FileListLoad_file_folder_for_local(
     }, []);
 
 
-    return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
+    return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem', fontSize: zoomStyle.fontSize}}
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
         // onScroll={()=>{
         //     console.log(111)
@@ -217,12 +220,14 @@ export function FileListLoad_file_folder_for_local_by_page(
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const inputRef = useRef(null); // 用于保证 大小伸缩变化
     const {t} = useTranslation();
+    const [zoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
     const itemWidth = using_file_page_handle_width_auto()
     const {file_is_running} = use_file_to_running();
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
     const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
+    const zoomStyle = getZoomStyleByPercent(zoomPercent);
 
     // 快捷键
     using_file_quick_keyboard(list, [], inputRef)
@@ -249,7 +254,7 @@ export function FileListLoad_file_folder_for_local_by_page(
     }, []);
 
 
-    return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem'}}
+    return <div onContextMenu={handleContextMenu} id={"listing"} style={{paddingBottom: '10rem', fontSize: zoomStyle.fontSize}}
                 className={`mosaic file-icons ${user_base_info?.user_data?.file_list_show_type ?? ''}`} ref={inputRef}
         // onScroll={()=>{
         //     console.log(111)

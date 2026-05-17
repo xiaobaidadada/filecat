@@ -482,7 +482,7 @@ export function FileMenu() {
                     if (v == "open") {
                         set_image_editor({path: showPrompt.data.path, name: showPrompt.data.filename});
                     } else if (v == "pre") {
-                        await userHttp.post(Http_controller_router.user_save_user_file_list_show_type, {
+                        await userHttp.post(Http_controller_router.user_save_private_attr, {
                             not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
                         });
                         await initUserInfo();
