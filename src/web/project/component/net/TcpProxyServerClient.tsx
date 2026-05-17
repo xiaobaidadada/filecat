@@ -213,7 +213,7 @@ export function TcpProxyServerClient() {
                         }}/>
 
                         <form>
-                            {t("filecat访问")}:<Rows isFlex={true} columns={[
+                            {t("filecat代理访问")}:<Rows isFlex={true} columns={[
                             <InputRadio value={1} context={t("开启")} selected={edit_client.open_filecat} onchange={() => {
                                 edit_client.open_filecat = !edit_client.open_filecat;
                                 set_edit_client({...edit_client})
@@ -228,7 +228,7 @@ export function TcpProxyServerClient() {
                             edit_client.open_filecat &&
                             (<React.Fragment>
                                     <form>
-                                        {t("filecat访问使用服务器前端")}:<Rows isFlex={true} columns={[
+                                        {t("filecat代理访问使用服务器前端")}:<Rows isFlex={true} columns={[
                                         <InputRadio value={1} context={t("开启")} selected={edit_client.filecat_use_local_page} onchange={() => {
                                             edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
                                             set_edit_client({...edit_client})

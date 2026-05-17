@@ -440,5 +440,11 @@
   "登陆展示用户信息": "Afficher les informations utilisateur à la connexion",
   "个人环境设置": "Paramètres d'environnement personnel",
   "其他参数": "Autres paramètres",
-  "父编号": "ID parent"
+  "父编号": "ID parent",
+  "代理配置": "Configuration du proxy",
+  "桥接配置": "Configuration du pont",
+  "内网穿透": "Pénétration intranet",
+  "filecat代理访问": "Accès proxy Filecat",
+  "filecat代理访问使用服务器前端": "Accès proxy Filecat via frontend serveur",
+  "自定义filecat代理地址": "Adresse proxy Filecat personnalisée"
 }

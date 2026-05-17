@@ -266,7 +266,7 @@ export const use_ws_filecat_middleware = (sys_pre) =>{
                 }
             }
 
-            console.log(`[穿透通道 - 强流直连] -> 正在通过底层双向管道直接穿透 WS 连接`);
+            // console.log(`[穿透通道 - 强流直连] -> 正在通过底层双向管道直接穿透 WS 连接`);
 
             // 1. 申请穿透链路唯一的 socket_id
             const socket_id = tcpForwardService.get_socket_id();
