@@ -374,7 +374,7 @@ export function use_handleContextMenu() {
         const time_show_mode = [
             {
                 r: (<span
-                    style={{color: (!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current) ? "green" : undefined}}>{t("最近时长")}</span>),
+                    style={{color: (!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current) ? "green" : undefined}}>{t("最近时间")}</span>),
                 v: user_file_time_show_type.current
             },
             {

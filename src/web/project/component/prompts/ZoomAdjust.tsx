@@ -53,7 +53,7 @@ export function ZoomAdjust() {
             setZoomPercent(num);
         }
         await userHttp.post(Http_controller_router.user_save_private_attr, {is_file_list_zoom:true,value:num});
-        NotySucess(`zoom adjusted successfully. ${num}`);
+        NotySucess(t("缩放调整成功"));
         initUserInfo();
         close();
     };
