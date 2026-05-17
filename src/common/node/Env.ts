@@ -125,15 +125,16 @@ export class Env {
                         execSync(`sudo systemctl daemon-reload`);
                         console.log("卸载完成")
                         process.exit();
+                    } else if (key === "env") {
+                        if (this.env) {
+                            const envData = fs.readFileSync(this.env, 'utf8');
+                            this.load(envData,result);
+                        }
                     }
                 }
             }
             for (const key of Object.keys(result)) {
                 this[key] = result[key];
-            }
-            if (this.env) {
-                const envData = fs.readFileSync(this.env, 'utf8');
-                this.load(envData,this);
             }
             resolve(1);
             // return result;
