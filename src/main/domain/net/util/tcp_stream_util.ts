@@ -12,6 +12,7 @@ export class tcp_stream_util {
 
     // private on_data:(data:Buffer,tag_id?:number)=>any;
     private on_data_list:((data:Buffer,tag_id?:number)=>any)[] = []
+
     private one_data_resolve_map:{[key:number]:(code:NetMsgType,tcpBuffer:Buffer)=>void} = {}
 
     // private on_close_list:(()=>any)[] = [];
@@ -56,9 +57,13 @@ export class tcp_stream_util {
     }
 
     // 设置包处理函数 可以添加多个
-    public set_on_data(handle:( data:Buffer,tag_id?:number)=>void) {
+    public add_on_data(handle:(data:Buffer, tag_id?:number)=>void):void {
         // this.on_data= handle;
         this.on_data_list.push(handle);
+    }
+
+    public delete_on_data(handle:(data:Buffer, tag_id?:number)=>void) {
+        this.on_data_list = this.on_data_list.filter((v:any) => v !== handle);
     }
 
     // 处理buffer

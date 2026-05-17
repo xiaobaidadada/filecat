@@ -194,12 +194,12 @@ export class TcpForwardServerService {
             server_socket_map:{}
         }
         data_map.server_map[proxy_fig.server_port] = server_item
-        const server = net.createServer((clientSocket) => {
+        const server = net.createServer(async (clientSocket) => {
             const socket_id = this.get_socket_id();
             // socket 添加
             server_item.server_socket_map[socket_id] = clientSocket;
             data_map.all_server_socket_map[socket_id] = clientSocket;
-            client.client_util.send_data(NetMsgType.tcp_client_create_socket_for_server,Buffer.from(JSON.stringify({
+            await client.client_util.send_data_async(NetMsgType.tcp_client_create_socket_for_server,Buffer.from(JSON.stringify({
                 socket_id,
                 client_proxy_port:proxy_fig.proxy_port,
                 client_proxy_host:proxy_fig.proxy_host,
@@ -330,7 +330,7 @@ export class TcpForwardServerService {
     get_tcp_filecat(client_num_id:number) {
         const list = this.server_client_get()
         for (const item of list) {
-            if(item.open_filecat) {
+            if(item.open_filecat && client_num_id === item.client_num_id) {
                 return item
             }
         }
@@ -369,7 +369,7 @@ export class TcpForwardServerService {
         this.server_init()
     }
 
-    bridge_client_create_socket_for_server(data:Buffer, util: tcp_raw_socket,tag_id:number) {
+    async bridge_client_create_socket_for_server(data:Buffer, util: tcp_raw_socket,tag_id:number) {
         const info : {
             socket_id:number,
             client_proxy_port:number,
@@ -385,7 +385,7 @@ export class TcpForwardServerService {
             return;
         }
         const client = this.client_num_map[info.client_num_id]
-        client.client_util.send_data(NetMsgType.bridge_tcp_client_create_socket_for_server,Buffer.from(JSON.stringify({
+        await client.client_util.send_data_async(NetMsgType.bridge_tcp_client_create_socket_for_server,Buffer.from(JSON.stringify({
             socket_id:info.socket_id,
             client_proxy_port:info.client_proxy_port,
             client_proxy_host:info.client_proxy_host,

@@ -37,6 +37,10 @@ import {VirtualController} from "./domain/net/virtual/virtual.controller";
 import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
 import os from "os";
 import {TcpForwardController} from "./domain/net/tcp.forward.controller";
+import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
+import { tcpForwardService } from "./domain/net/tcp.forward.server.service";
+import { NetMsgType, NetUtil } from "./domain/net/util/NetUtil";
+
 // import {authorizationChecker} from "./other/middleware/decorator";
 const http = require('http');
 const https = require('https');
@@ -45,7 +49,6 @@ const {createProxyMiddleware} = require('http-proxy-middleware');
 
 const WebSocket = require('ws');
 const compression = require('compression'); // webpack-dev-server 包含的有
-
 
 export async function start_main() {
 
@@ -58,7 +61,7 @@ export async function start_main() {
     const sys_pre = await get_sys_base_url_pre(); // 如果请求的是后端的 api
 
     // ==========================================
-    // 1. 【核心修改】先创建一个干净的原生 Express 实例
+    // 1. 先创建一个干净的原生 Express 实例
     // ==========================================
     const express = require('express');
     const expressApp = express();
@@ -69,53 +72,12 @@ export async function start_main() {
     expressApp.use(compression());
 
     // =======================================================
-    // 3. 【核心修改】全系统最高优先级代理拦截（凌驾于一切中间件之上）
+    // 3. 全系统最高优先级代理拦截（凌驾于一切中间件之上）
     // =======================================================
-    expressApp.use((req: Request, res: Response, next: any) => {
+    const filecat_middleware = use_filecat_middleware(sys_pre);
+    expressApp.use(filecat_middleware);
 
-        const hasAbcQuery = req.query && String(req.query.abc) === '1';
-        const hasAbcCookie = req.cookies && String(req.cookies.abc) === '1';
-
-        if (hasAbcQuery || hasAbcCookie) {
-
-
-            // 【洗白机制】解决浏览器并发加载静态资源时，Cookie 还没写完的时间差 Bug
-            if (hasAbcQuery && !hasAbcCookie) {
-                // 强制写入全局根路径 Cookie
-                res.cookie('abc', '1', { path: '/', maxAge: 86400000, httpOnly: false });
-
-                // 强行让浏览器刷新重定向，去掉 URL 后面的尾巴，确保下一次并发请求百分百自带 Cookie
-                const cleanUrl = req.originalUrl.split('?')[0];
-                return res.redirect(cleanUrl);
-            }
-
-            if (!(req.originalUrl && (req.originalUrl.startsWith(sys_pre)))) {
-                next();
-                return;
-            }
-
-            const targetServer = 'http://192.168.5.7:5567';
-            console.log(`[全流量御前拦截] 命中代理 -> [${req.method}] ${req.originalUrl}`);
-
-            const dynamicProxy = createProxyMiddleware({
-                target: targetServer,
-                changeOrigin: true,
-                logLevel: 'error',
-                onError: (err: any, pReq: any, pRes: any) => {
-                    console.error('[流量转发失败]:', err.message);
-                    if (!pRes.headersSent) pRes.status(502).send('Bad Gateway');
-                }
-            });
-
-            // 拦截成功，直接交由代理处理，绝不向下传递给 AuthMiddleware
-            return dynamicProxy(req, res, next);
-        }
-
-        // 跟 abc=1 无关的正常流量，放行
-        next();
-    });
-
-    // 创建 Koa 应用并注册控制器
+    // 创建 应用并注册控制器
     const app = useExpressServer(expressApp,{
         cors: false,
         routePrefix: await get_sys_base_url_pre(),
@@ -132,71 +94,6 @@ export async function start_main() {
         // authorizationChecker
     });
     app.use(compression());
-
-
-    //  todo 目前  还不能用，ws也需要代理
-    // const proxyConfigList  = [
-    //     {
-    //         url_regexp: 'abc\\.qq\\.fun', // 正则转义：. 需要写成 \\.
-    //         rewrite_regexp_source: '', // 不配置路径重写
-    //         rewrite_target: '',
-    //         headers: {
-    //             'X-Proxy-Source': 'Express-Server', // 自定义转发标识头
-    //             'Connection': 'keep-alive'
-    //         },
-    //         target_hostname:"179.116.1.1",
-    //         target_port:80
-    //     }
-    // ];
-
-    // app.use((req, res, next) => {
-    //     const matchedConfig = proxyConfigList.find((config) => {
-    //         if (!config.url_regexp) return false;
-    //
-    //         const urlRegex = new RegExp(config.url_regexp);
-    //         const requestFullAddress = `${req.headers.host}${req.originalUrl}`;
-    //
-    //         return urlRegex.test(requestFullAddress);
-    //     });
-    //
-    //     if (!matchedConfig) {
-    //         return next();
-    //     }
-    //
-    //     let targetPath = req.originalUrl;
-    //     const { rewrite_regexp_source, rewrite_target,target_hostname,target_port } = matchedConfig;
-    //     if(!target_hostname || !target_port) return next();
-    //     if (rewrite_regexp_source && rewrite_target !== undefined) {
-    //         const rewriteRegex = new RegExp(rewrite_regexp_source);
-    //         targetPath = targetPath.replace(rewriteRegex, rewrite_target);
-    //     }
-    //
-    //     const targetConfig = {
-    //         hostname: target_hostname,
-    //         port: target_port,
-    //         path: targetPath,
-    //         method: req.method,
-    //         headers: { ...req.headers, ...matchedConfig.headers },
-    //     };
-    //
-    //     const client = targetConfig.port === 443 ? https : http;
-    //
-    //     const proxyReq = client.request(targetConfig, (proxyRes) => {
-    //         res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    //         proxyRes.pipe(res, { end: true });
-    //     });
-    //
-    //     proxyReq.on('error', (err) => {
-    //         console.error(`转发请求失败（匹配配置：${JSON.stringify(matchedConfig)}）：`, err);
-    //         if (!res.headersSent) {
-    //             res.status(500).send('faile');
-    //         } else {
-    //             res.end();
-    //         }
-    //     });
-    //
-    //     req.pipe(proxyReq, { end: true });
-    // });
 
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start(settingService.check.bind(settingService));
@@ -235,7 +132,6 @@ export async function start_main() {
                     throw "";
                 }
 
-                // fs.accessSync(url, fs.constants.F_OK);
                 const readStream = fs.createReadStream(url);
                 res.type(mime.lookup(url));
                 if (url.endsWith('.js') || url.endsWith(".woff2")) {
@@ -254,8 +150,7 @@ export async function start_main() {
         // const regex = new RegExp(`^(?!(\/${sys_pre}|${self_pre}))`);
         const regex = new RegExp(`^(?!(\/${sys_pre}))`);
         app.use(regex, createProxyMiddleware({
-            target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`, // 代理目标
-            // changeOrigin: true,
+            target: `http://127.0.0.1:${process.env.webpack_port ?? "3301"}`,
             pathRewrite: (path, req) => {
                 path = path.split("?")[0]
                 if (path.endsWith(".md")) {
@@ -299,42 +194,17 @@ export async function start_main() {
         });
     });
 
-    // 将WebSocket服务器与Koa服务器绑定到同一个端口
-    // ==========================================
-    // 🚀 WebSocket 升级事件拦截分流
-    // ==========================================
-    server.on('upgrade', (request, socket, head) => {
-        // 1. 解析 WebSocket 请求的路径与 Query 参数
-        // 这里的 request.url 可能是 '/socket-path?abc=1'，需要解析出 searchParams
-        const urlObj = new URL(request.url || '', `http://${request.headers.host || '127.0.0.1'}`);
-        const hasAbcQuery = urlObj.searchParams.get('abc') === '1';
-
-        // 从请求的 Headers 中提取可能已经存在的 Cookie (注意名值对的空格)
-        const cookieHeader = request.headers.cookie || '';
-        const hasAbcCookie = cookieHeader.split(';').some(item => item.trim() === 'abc=1');
-
-        // 2. 命中代理分流策略
-        if (hasAbcQuery || hasAbcCookie) {
-            const targetServer = 'http://192.168.5.7:5567';
-            console.log(`[WS 流量拦截转发] 命中 abc 规则，正升级并转发至 -> ${targetServer}`);
-
-            // 创建一个临时的、专用于 WS 协议升级的代理服务
-            const wsProxy = createProxyMiddleware({
-                target: targetServer,
-                changeOrigin: true,
-                ws: true,        // 👈 必须开启此项，激活 WebSocket 支持
-                logLevel: 'error'
+    // ====================================================================
+    // 基于 Socket 管道直连的高性能 WebSocket 穿透机制
+    // ====================================================================
+    const ws_filecat_middleware = use_ws_filecat_middleware(sys_pre)
+    server.on('upgrade', async (request, socket, head) => {
+        if(await ws_filecat_middleware(request, socket, head) === 'contiue') {
+            // 【回源】若非穿透连接，继续流转原系统的 WebSocket（保持你原有的逻辑不变）
+            wss.handleUpgrade(request, socket, head, (ws) => {
+                wss.emit('connection', ws, request);
             });
-
-            // 强行让 http-proxy-middleware 接管本次底层的底层 TCP 握手流
-            return wsProxy.upgrade(request, socket, head);
         }
-
-        // 3. 正常流量：走你原本系统内的 WsServer 逻辑
-        console.log(`[WS 本地放行] 走原生 wss 逻辑: ${request.url}`);
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws, request);
-        });
     });
 
     ServerEvent.emit("start");

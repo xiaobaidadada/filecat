@@ -10,6 +10,7 @@ export class TcpForwardUtil {
         }
         try {
             // const ok  =
+            // console.log(`写入客户端数据 ${data.subarray(2).toString()}`)
             socket.write(data.subarray(2), (err) => {
                 if (err) {
                     console.error(` tcp 转发服务器 写失败 ${err?.message}`);

@@ -19,6 +19,7 @@ import {data_common_key, file_key} from "../data/data_type";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {TcpForwardUtil} from "./tcp.forward.util";
 import {Wss} from "../../../common/frame/ws.server";
+import {Env} from "../../../common/node/Env";
 
 // const  tcp_client_target_map = {}
 
@@ -200,10 +201,18 @@ export class TcpForwardController {
         const info = JSON.parse(data.toString()) as {
             socket_id:number,
             client_proxy_port:number,
-            client_proxy_host:string
+            client_proxy_host:string,
+            is_filecat?:boolean,
         }
+        if(info.is_filecat) {
+            info.client_proxy_host = '127.0.0.1'
+            info.client_proxy_port = Env.port
+        }
+        // console.log(`请求 ${tag_id}`)
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
-
+            // console.log(`连接成功 ${info.client_proxy_host}:${info.client_proxy_port}`)
+            util.send_data_call(tag_id,Buffer.alloc(0))
+            // console.log(`结束 ${tag_id}`)
         });
         // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
         // tcp_client_target_map[key] = {
@@ -314,8 +323,8 @@ export class TcpForwardController {
 
     // tcp服务器 socket 对象，让对方建立
     @tcp_server_msg(NetMsgType.bridge_client_create_socket_for_server,tcp_server_type.tcp_forward)
-    bridge_client_create_socket_for_server(data: Buffer, util: tcp_raw_socket,tag_id:number) {
-        tcpForwardService.bridge_client_create_socket_for_server(data,util,tag_id)
+    async bridge_client_create_socket_for_server(data: Buffer, util: tcp_raw_socket,tag_id:number) {
+        await tcpForwardService.bridge_client_create_socket_for_server(data,util,tag_id)
     }
 
     // 对方建立一个 socket
@@ -328,7 +337,7 @@ export class TcpForwardController {
             server_client_num_id:number
         }
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
-
+            util.send_data_call(tag_id,Buffer.alloc(0))
         });
         // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
         // tcp_client_target_map[key] = {

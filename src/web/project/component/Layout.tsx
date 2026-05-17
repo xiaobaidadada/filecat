@@ -98,9 +98,9 @@ function Layout() {
     if(user_base_info.sys_env?.show_login_user_info) {
         MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note,icon:"person",rto:'/setting/private_env_setting'})
     }
-    if(CookieUtils.has('tcp_filecat')) {
+    if(CookieUtils.has('tcp_client_num_id')) {
         MainNavList[MainNavList.length-1].push({name:t('代理退出'),icon:"cookie",clickFun:()=>{
-                CookieUtils.delete('tcp_filecat')
+                CookieUtils.delete('tcp_client_num_id')
                 window.location.reload();
             }})
     }

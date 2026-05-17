@@ -140,7 +140,7 @@ export class NetServerUtil {
                     // console.log(`tcp 授权成功 ${socket.remoteAddress}`);
                     auth = true
                 })
-                raw_socket.get_client().set_on_data(async (data, tag_id) => {
+                raw_socket.get_client().add_on_data(async (data, tag_id) => {
                     try {
                         const {code, tcpBuffer} = NetUtil.getTcpData(data);
                         if(auth === false && code !== auth_code) {

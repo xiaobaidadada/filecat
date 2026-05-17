@@ -196,7 +196,7 @@ export class tcp_client {
         this.send_data = this.client.send_data.bind(this.client);
         await this.client.connect();
         const client = this.client;
-        client.get_client().set_on_data(async (data, tag_id) => {
+        client.get_client().add_on_data(async (data, tag_id) => {
             const {code, tcpBuffer} = NetUtil.getTcpData(data);
             // console.log(code,tag_id);
             if (this.call_resolve_map[tag_id]) {
