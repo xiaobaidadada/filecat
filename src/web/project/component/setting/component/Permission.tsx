@@ -40,7 +40,8 @@ export function Permission(props:{
         {
             title: t("网络功能权限"),
             list: [
-                { title: t("网络代理"), permission: UserAuth.vir_net },
+                { title: t("系统网络"), permission: UserAuth.vir_net },
+                { title: t("内网穿透"), permission: UserAuth.tcp_proxy },
                 { title: "ddns", permission: UserAuth.ddns }
             ]
         },

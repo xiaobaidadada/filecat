@@ -286,9 +286,7 @@ export function createChunks(base64Str, size) {
 
 export function get_proxy_menuRots() {
     const {check_user_auth} = use_auth_check();
-    const {t} = useTranslation();
 
-    const menuRots = [];
     if (check_user_auth(UserAuth.http_proxy)) {
         return true
     }

@@ -125,7 +125,10 @@ export class tcp_proxy_server_client {
     open_filecat?:boolean;
     // 访问filecat的时候使用本地前端
     filecat_use_local_page?:boolean;
+    // 可以用 127.0.0.1:5567 的格式形式指定需要代理的地址
+    filecat_proxy_host_port?:string;
 }
+
 
 export class tcp_proxy_client_fig{
     client_name: string;

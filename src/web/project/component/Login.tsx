@@ -1,3 +1,5 @@
+import CookieUtils from "../util/cookie";
+
 Global.init();
 import React, {useContext, useEffect, useState} from 'react'
 import {useRecoilState} from "recoil";
@@ -56,6 +58,13 @@ function Login() {
                     setPassword(value)
                 }} handleEnterPress={login}/>
                 <Button text={t("登录")} clickFun={login}/>
+                {
+                    CookieUtils.has('tcp_client_num_id') &&
+                    <Button text={t("代理退出")} clickFun={()=>{
+                        CookieUtils.delete('tcp_client_num_id')
+                        window.location.reload();
+                    }}/>
+                }
             </div>
         </WinCenter>
     );

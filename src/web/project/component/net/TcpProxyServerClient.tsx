@@ -14,7 +14,7 @@ import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
-import {have_empty_char} from "../../../../common/StringUtil";
+import {have_empty_char, join_url} from "../../../../common/StringUtil";
 import {
     server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
@@ -24,6 +24,9 @@ import {
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
 import { getShortTime } from "../../util/common_util";
+import {Global} from "../../util/global";
+import {routerConfig} from "../../../../common/RouterConfig";
+import {copyToClipboard} from "../../util/FunUtil";
 
 
 export function TcpProxyServerClient() {
@@ -223,18 +226,30 @@ export function TcpProxyServerClient() {
                         </form>
                         {
                             edit_client.open_filecat &&
-                            <form>
-                                {t("filecat访问使用服务器前端")}:<Rows isFlex={true} columns={[
-                                <InputRadio value={1} context={t("开启")} selected={edit_client.filecat_use_local_page} onchange={() => {
-                                    edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
-                                    set_edit_client({...edit_client})
-                                }}/>,
-                                <InputRadio value={1} context={t("关闭")} selected={!edit_client.filecat_use_local_page} onchange={() => {
-                                    edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
-                                    set_edit_client({...edit_client})
-                                }}/>
-                            ]}/>
-                            </form>
+                            (<React.Fragment>
+                                    <form>
+                                        {t("filecat访问使用服务器前端")}:<Rows isFlex={true} columns={[
+                                        <InputRadio value={1} context={t("开启")} selected={edit_client.filecat_use_local_page} onchange={() => {
+                                            edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
+                                            set_edit_client({...edit_client})
+                                        }}/>,
+                                        <InputRadio value={1} context={t("关闭")} selected={!edit_client.filecat_use_local_page} onchange={() => {
+                                            edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
+                                            set_edit_client({...edit_client})
+                                        }}/>
+                                    ]}/>
+                                    </form>
+                                    <InputText placeholderOut={t("自定义filecat代理地址")} placeholder={"127.0.0.1:5567"} value={edit_client.filecat_proxy_host_port} handleInputChange={(d) => {
+                                        edit_client.filecat_proxy_host_port = d
+                                        set_edit_client({...edit_client})
+                                    }}/>
+                                    <ActionButton icon={'content_copy'} title={t('复制filecat代理url')}  onClick={() => {
+                                        const url = `${window.location.origin}?tcp_client_num_id=${edit_client.client_num_id}`
+                                        copyToClipboard(url)
+                                        NotySucess(url)
+                                    }}  />
+                                </React.Fragment>
+                            )
                         }
 
                         <InputText placeholder={"备注"} value={edit_client.note} handleInputChange={(d) => {

@@ -56,7 +56,7 @@ function Layout() {
     if (check_user_auth(UserAuth.all_sys)) {
         seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`, component: <SysInfo/>})
     }
-    if (check_user_auth) {
+    if (have_proxy_menuRots) {
         seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`, component: <Proxy />})
     }
     // @ts-ignore
@@ -69,9 +69,14 @@ function Layout() {
         {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
         // {component:(<div>测试</div>)}
     ]
-    if (check_user_auth(UserAuth.vir_net)) {
+    if (check_user_auth(UserAuth.vir_net) || check_user_auth(UserAuth.ddns) ) {
         three = [
             {icon: "dns", name: t("系统网络"), rto: `${routerConfig.net}/`, component: <Net/>},
+            ...three
+        ];
+    }
+    if (check_user_auth(UserAuth.tcp_proxy)) {
+        three = [
             {icon: "vpn_lock", name: t("内网穿透"), rto: `${routerConfig.net_proxy}/`, component: <TcpProxy/>},
             ...three
         ];
@@ -96,7 +101,7 @@ function Layout() {
         ]
     ]
     if(user_base_info.sys_env?.show_login_user_info) {
-        MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note,icon:"person",rto:'/setting/private_env_setting'})
+        MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note??user_base_info.user_data.username,icon:"person",rto:'/setting/private_env_setting'})
     }
     if(CookieUtils.has('tcp_client_num_id')) {
         MainNavList[MainNavList.length-1].push({name:t('代理退出'),icon:"cookie",clickFun:()=>{

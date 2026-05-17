@@ -19,11 +19,14 @@ export default function  Net() {
     const { t } = useTranslation();
     const {check_user_auth} = use_auth_check();
 
-    const menuRots = [
-        {index: 1, name:t("系统")+ t("代理"), rto: "proxy_sys/",component: <NetProxy />},
-        {index: 2, name:"Tun proxy "+ t("客户端"), rto: "client/",component: <NetClient/>},
-        {index: 3, name: "Tun proxy "+t("服务端"), rto: "server/",component: <NetServer/>},
-    ];
+    const menuRots = [];
+    if(check_user_auth(UserAuth.vir_net)) {
+        menuRots.push(...[
+            {index: 1, name:t("系统")+ t("代理"), rto: "proxy_sys/",component: <NetProxy />},
+            {index: 2, name:"Tun proxy "+ t("客户端"), rto: "client/",component: <NetClient/>},
+            {index: 3, name: "Tun proxy "+t("服务端"), rto: "server/",component: <NetServer/>},
+        ])
+    }
     if (check_user_auth(UserAuth.ddns)) {
         menuRots.push(...[
             {index: 4, name:`ddns-dnspod(${t("腾讯")})`, rto: "dnspod/",component:<Dnspod/>},

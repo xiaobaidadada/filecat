@@ -164,10 +164,17 @@ export const use_filecat_middleware = (sys_pre: string) => {
 
             try {
                 // 5. 通知内网建连
-                await client.client_util.send_data_async(NetMsgType.tcp_client_create_socket_for_server, Buffer.from(JSON.stringify({
-                    socket_id,
-                    is_filecat: true
-                })));
+                const option = {
+                    socket_id
+                }
+                if(client_config.filecat_proxy_host_port) {
+                    const host_port_list = client_config.filecat_proxy_host_port.split(':');
+                    option['client_proxy_host'] = host_port_list[0];
+                    option['client_proxy_port'] = parseInt(host_port_list[1]);
+                } else {
+                    option['is_filecat'] = true;
+                }
+                await client.client_util.send_data_async(NetMsgType.tcp_client_create_socket_for_server, Buffer.from(JSON.stringify(option)));
 
                 // 公共代理配置项
                 const proxyOptions = {
@@ -312,10 +319,17 @@ export const use_ws_filecat_middleware = (sys_pre) =>{
 
             try {
                 // 4. 异步通知客户端建立对远端目标的物理连接
-                await client.client_util.send_data_async(NetMsgType.tcp_client_create_socket_for_server, Buffer.from(JSON.stringify({
-                    socket_id,
-                    is_filecat: true
-                })));
+                const option = {
+                    socket_id
+                }
+                if(client_config.filecat_proxy_host_port) {
+                    const host_port_list = client_config.filecat_proxy_host_port.split(':');
+                    option['client_proxy_host'] = host_port_list[0];
+                    option['client_proxy_port'] = parseInt(host_port_list[1]);
+                } else {
+                    option['is_filecat'] = true;
+                }
+                await client.client_util.send_data_async(NetMsgType.tcp_client_create_socket_for_server, Buffer.from(JSON.stringify(option)));
 
                 // 5. 🔥【神来之笔】：绕过 http-proxy，将前端握手头还原回二进制流发往穿透通道
                 // 构造原始的、最纯粹的 HTTP Upgrade 握手报文头
