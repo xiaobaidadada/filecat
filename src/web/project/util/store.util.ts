@@ -290,19 +290,19 @@ export function get_proxy_menuRots() {
 
     const menuRots = [];
     if (check_user_auth(UserAuth.http_proxy)) {
-        menuRots.push({index: 1, name: t("http代理"), rto: 'http/'})
+        return true
     }
     if (check_user_auth(UserAuth.ssh_proxy)) {
-        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/*"})
+        return true
     }
     if (check_user_auth(UserAuth.browser_proxy)) {
-        menuRots.push({index: 1, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/"})
+       return true
     }
     if (check_user_auth(UserAuth.rdp_proxy)) {
-        menuRots.push({index: 1, name: `rdp${t("代理")}`, rto: "rdp/"})
+        return true
     }
     if (check_user_auth(UserAuth.rtsp_proxy)) {
-        menuRots.push({index: 1, name: t("rtsp播放器"), rto: "rtsp/"})
+       return true
     }
-    return {menuRots};
+    return false
 }

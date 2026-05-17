@@ -3,15 +3,21 @@ import {Link, NavLink, Route, Routes, useLocation, useMatch, useNavigate} from "
 import SimpleRoutes from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
 import { have_key_by_router_key_list} from "../../project/util/WebPath";
+// 1. 定义每个配置项的类型，支持传入 React 组件
+export interface MenuOption {
+    rto: string;
+    name: string;
+    component: React.ComponentType<any> | React.ReactNode; // 支持直接传组件类或渲染好的 React 节点
+    index?: number;
+}
 
-// 菜单容器
 export function Menu(props: {
-    optionList: { rto: string; name: string; index?: number }[];
-    children?: any;
+    optionList: MenuOption[];
 }) {
     const optionList = [...props.optionList].sort(
         (a, b) => (a.index ?? 0) - (b.index ?? 0)
     );
+    const components = optionList.map(v=>v.component);
     const have_key = have_key_by_router_key_list(props.optionList.map(v=>v.rto))
     return (
         <div className={"dashboard"}>
@@ -25,12 +31,12 @@ export function Menu(props: {
                                 to={v.rto}
                                 end={v.rto === "/"} // 根路径精确匹配
                                 className={({ isActive }) =>
-                                    {
-                                        if(have_key === false && index === 0) {
-                                            isActive = true
-                                            }
-                                        return isActive ? "active-link" : ""
+                                {
+                                    if(have_key === false && index === 0) {
+                                        isActive = true
                                     }
+                                    return isActive ? "active-link" : ""
+                                }
                                 }
                             >
                                 {({ isActive }) => {
@@ -55,7 +61,7 @@ export function Menu(props: {
                     padding:".5rem"
                 }}>
                     <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
-                                  children={!Array.isArray(props.children) ? [props.children.filter(v=>!!v)] : props.children.filter(v=>!!v)}/>
+                                  children={components}/>
                 </div>
             </div>
         </div>

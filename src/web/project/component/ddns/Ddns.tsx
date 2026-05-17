@@ -11,14 +11,16 @@ import {useTranslation} from "react-i18next";
 export default function Ddns() {
     const { t } = useTranslation();
 
-    const menuRots = [{index: 1, name:`dnspod(${t("腾讯")})`, rto: "dnspod/"}, {index: 2, name: `${t("腾讯")}${t("云")}`, rto: "tengxun/"},
+    const menuRots = [
+        {index: 1, name:`dnspod(${t("腾讯")})`, rto: "dnspod/"},
+        {index: 2, name: `${t("腾讯")}${t("云")}`, rto: "tengxun/"},
 //     {
 //     index: 3,
 //     name: "阿里云",
 //     rto: "ali/"
 // }
     ];
-    return <Menu optionList={menuRots}>
+    return <Menu optionList={[]}>
         <Dnspod/>
         <TengXun/>
         {/*<Ali/>*/}

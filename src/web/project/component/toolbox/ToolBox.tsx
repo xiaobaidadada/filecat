@@ -15,18 +15,15 @@ export default function ToolBox(props) {
     const menuRots = [];
 
     menuRots.push(...[
-        {index: 1, name: t("时间工具"), rto: "timeutil/"},
-        {index: 1, name: t("非对称密钥"), rto: "crypto/"},
+        {index: 1, name: t("时间工具"), rto: "timeutil/",component: <TimeConverTer/>},
+        {index: 1, name: t("非对称密钥"), rto: "crypto/",component:    <Crypto/>},
     ])
     if (check_user_auth(UserAuth.wol_proxy)) {
-        menuRots.push({index: 1, name: t("网络唤醒"), rto: "netwol/"})
+        menuRots.push({index: 1, name: t("网络唤醒"), rto: "netwol/",component: <NetWol/>});
     }
 
     return (
         <Menu optionList={menuRots}>
-            <TimeConverTer/>
-            <Crypto/>
-            {check_user_auth(UserAuth.wol_proxy) && <NetWol/>}
         </Menu>
 
     )

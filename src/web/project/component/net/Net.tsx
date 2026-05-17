@@ -4,8 +4,12 @@ import {NetServer} from "./NetServer";
 import {NetClient} from "./NetClient";
 import {useTranslation} from "react-i18next";
 import {NetProxy} from "./NetProxy";
-import {TcpProxyServer} from "./TcpProxyServer";
-import {TcpProxyClient} from "./TcpProxyClient";
+import {UserAuth} from "../../../../common/req/user.req";
+import {routerConfig} from "../../../../common/RouterConfig";
+import {use_auth_check} from "../../util/store.util";
+import {Dnspod} from "../ddns/Dnspod";
+import {TengXun} from "../ddns/TengXun";
+
 
 
 
@@ -13,19 +17,19 @@ import {TcpProxyClient} from "./TcpProxyClient";
 
 export default function  Net() {
     const { t } = useTranslation();
-    const menuRots = [
-        {index: 1, name:t("系统")+ t("代理"), rto: "proxy_sys/"},
-        {index: 2, name:"Tcp proxy "+ t("客户端"), rto: "tcp_proxy_server/"},
-        {index: 3, name:"Tcp proxy "+t("服务端"), rto: "tcp_proxy_client/"},
-        {index: 4, name:"Tun proxy "+ t("客户端"), rto: "client/"},
-        {index: 5, name: "Tun proxy "+t("服务端"), rto: "server/"}
-    ];
+    const {check_user_auth} = use_auth_check();
 
+    const menuRots = [
+        {index: 1, name:t("系统")+ t("代理"), rto: "proxy_sys/",component: <NetProxy />},
+        {index: 2, name:"Tun proxy "+ t("客户端"), rto: "client/",component: <NetClient/>},
+        {index: 3, name: "Tun proxy "+t("服务端"), rto: "server/",component: <NetServer/>},
+    ];
+    if (check_user_auth(UserAuth.ddns)) {
+        menuRots.push(...[
+            {index: 4, name:`ddns-dnspod(${t("腾讯")})`, rto: "dnspod/",component:<Dnspod/>},
+            {index: 5, name: `ddns-${t("腾讯")}${t("云")}`, rto: "tengxun/",component: <TengXun/>},
+        ])
+    }
     return  <Menu optionList={menuRots}>
-        <NetProxy />
-        <TcpProxyClient />
-        <TcpProxyServer />
-        <NetClient />
-        <NetServer />
     </Menu>
 }

@@ -9,8 +9,9 @@ import {useTranslation} from "react-i18next";
 import {get_proxy_menuRots, use_auth_check} from "../util/store.util";
 import {UserAuth} from "../../../common/req/user.req";
 import {Overlay} from "../../meta/component/Dashboard";
+import CookieUtils from "../util/cookie";
 
-const Ddns = React.lazy(() => import("./ddns/Ddns"))
+
 const FileList = React.lazy(() => import("./file/FileList"))
 const Prompt = React.lazy(() => import("./prompts/Prompt"))
 const ImageEditor = React.lazy(() => import("./file/component/image/ImageEditor"))
@@ -23,6 +24,7 @@ const MarkDown = React.lazy(() => import("./file/component/MarkDown"))
 const ExcalidrawEditor = React.lazy(() => import("./file/component/ExcalidrawEditor"))
 const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
+const TcpProxy = React.lazy(() => import("./net/TcpProxy"))
 const Settings = React.lazy(() => import("./setting/Setting"))
 const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
@@ -41,7 +43,7 @@ function Layout() {
     const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
-    const {menuRots} = get_proxy_menuRots()
+    const have_proxy_menuRots= get_proxy_menuRots()
 
     function logout() {
         localStorage.setItem('token', '')
@@ -54,23 +56,25 @@ function Layout() {
     if (check_user_auth(UserAuth.all_sys)) {
         seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}/`, component: <SysInfo/>})
     }
-    if (menuRots?.length > 0) {
-        seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`, component: <Proxy menuRots={menuRots}/>})
+    if (check_user_auth) {
+        seconds.push({icon: "cell_tower", name: t("远程代理"), rto: `${routerConfig.proxy}/`, component: <Proxy />})
     }
     // @ts-ignore
     seconds.push(...[
         {icon: "home_repair_service", name: t("工具箱"), rto: `${routerConfig.toolbox}/`, component: <ToolBox/>}
     ])
-    if (check_user_auth(UserAuth.ddns)) {
-        seconds.push({icon: "dns", name: "ddns", rto: `${routerConfig.ddns}/`, component: <Ddns/>})
-    }
+
     let three: NavItem[] = [
         {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`, component: <Settings/>},
         {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
         // {component:(<div>测试</div>)}
     ]
     if (check_user_auth(UserAuth.vir_net)) {
-        three = [{icon: "vpn_lock", name: t("网络代理"), rto: `${routerConfig.net}/`, component: <Net/>}, ...three];
+        three = [
+            {icon: "dns", name: t("系统网络"), rto: `${routerConfig.net}/`, component: <Net/>},
+            {icon: "vpn_lock", name: t("内网穿透"), rto: `${routerConfig.net_proxy}/`, component: <TcpProxy/>},
+            ...three
+        ];
     }
     const main_list:NavItem[] = [
             {icon: "folder", name: t("文件"), rto: `${routerConfig.file}/`, component: <FileList/>},
@@ -93,6 +97,12 @@ function Layout() {
     ]
     if(user_base_info.sys_env?.show_login_user_info) {
         MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note,icon:"person",rto:'/setting/private_env_setting'})
+    }
+    if(CookieUtils.has('tcp_filecat')) {
+        MainNavList[MainNavList.length-1].push({name:t('代理退出'),icon:"cookie",clickFun:()=>{
+                CookieUtils.delete('tcp_filecat')
+                window.location.reload();
+            }})
     }
     if (custom_fun_opt) {
         // @ts-ignore

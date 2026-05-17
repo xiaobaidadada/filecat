@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/Dashboard';
+import {Column,  Row, RowColumn} from '../../../meta/component/Dashboard';
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows} from "../../../meta/component/Table";

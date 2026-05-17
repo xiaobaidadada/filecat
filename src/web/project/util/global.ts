@@ -5,6 +5,11 @@ export class Global {
     private static _web_site_title ;
 
     public static init() {
+        // const log = console.log.bind(console);
+        // console.log = (...args)=>{
+        //     debugger;
+        //     log(...args);
+        // };
         if(this._init)return;
         if(process.env.NODE_ENV === "production") {
             console.log = ()=>{};

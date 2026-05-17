@@ -26,7 +26,7 @@ import {CmdType} from "../../../../common/frame/WsData";
 import { getShortTime } from "../../util/common_util";
 
 
-export function TcpProxyServer() {
+export function TcpProxyServerClient() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
@@ -34,14 +34,9 @@ export function TcpProxyServer() {
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     // const [is_save,set_is_is_save] = useState(false);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
-    const [serverPort, setServerPort] = useState(undefined);
-    // const [udp_port, set_udp_port] = useState(undefined);
-    const [isOpen, setIsOpen] = useState(false);
-    // const [key, setKey] = useState("");
+
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
-    const [online_server,set_online_server] = useState<server_client_proxy[]>([])
     const [option_keys,set_option_keys] = useState<string[]>([])
-    const [sortServerPortAsc, setSortServerPortAsc] = useState(null)
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -58,20 +53,7 @@ export function TcpProxyServer() {
         return getShortTime(stamp);
     }
 
-    const sortedOnlineServer = useMemo(() => {
-        const list = [...online_server];
-        if(sortServerPortAsc != null) {
-            list.sort((a, b) => {
-                if (sortServerPortAsc) {
-                    return a.server_port - b.server_port;
-                }
-                return b.server_port - a.server_port;
-            });
-            return list;
-        } else {
-            return list;
-        }
-    }, [online_server, sortServerPortAsc]);
+
 
     const get_server_bridge_get_one_fig = async (server_client_num_id:number) => {
         const r1 = await tcpProxy.post("server_bridge_get_one_fig",{
@@ -87,13 +69,7 @@ export function TcpProxyServer() {
     }
 
     const getItems = async () => {
-        const r1 = await tcpProxy.get("server_get")
-        if(r1.code === RCode.Success) {
-            // setKey(r1.data.key);
-            setServerPort(r1.data.port);
-            setIsOpen(!!r1.data.open);
-            set_option_keys(r1.data.option_keys??[]);
-        }
+
 
         const r2 = await tcpProxy.get("server_client_get")
         if(r2.code === RCode.Success) {
@@ -109,10 +85,7 @@ export function TcpProxyServer() {
             set_all_client_options(options)
         }
 
-        const r3 = await tcpProxy.get("get_all_open_server_client_proxy_fig")
-        if(r3.code === RCode.Success) {
-            set_online_server(r3.data);
-        }
+
 
     }
 
@@ -123,20 +96,7 @@ export function TcpProxyServer() {
         })
         getItems();
     }, []);
-    const save_server_info = async (notice_client:boolean) => {
-        const req:tcp_proxy_server_config = new tcp_proxy_server_config()
-        req.port = serverPort
-        // req.key = key
-        req.open = isOpen
-        req.option_keys = option_keys;
-        const r = await tcpProxy.post("server_save",{
-            fig:req,
-            notice_client:notice_client
-        })
-        if(r.code === RCode.Success) {
-            NotySucess("成功")
-        }
-    }
+
     const save_client_fig = async ()=>{
         const r = await tcpProxy.post("server_client_save",edit_client)
         if(r.code === RCode.Success) {
@@ -189,49 +149,7 @@ export function TcpProxyServer() {
     return (<Row>
         <Column widthPer={50}>
             <Dashboard>
-                <Card title={t("服务器配置")} rightBottomCom={<div>
-                    <ButtonText text={t('保存并通知客户端第一个key和port')} clickFun={()=>{
-                        save_server_info(true)
-                    }}/>
-                    <ButtonText text={t('保存')} clickFun={()=>{
-                        save_server_info(false)
-                    }}/>
-                </div>}>
 
-                    <InputText placeholder={"port"} value={serverPort} handleInputChange={(d) => {
-                        setServerPort(d)
-                    }}/>
-                    {/*<InputText placeholder={"udp port 不设置p2p服务将无法使用 "} value={udp_port} handleInputChange={(d)=>{set_udp_port(d)}}/>*/}
-                    {/*<InputText placeholder={"key "} value={key} handleInputChange={(d) => {*/}
-                    {/*    setKey(d)*/}
-                    {/*}}/>*/}
-                    <label><ActionButton icon={"add"} onClick={() => {
-                        set_option_keys([...option_keys, ""])
-                    }} title={t("添加")}/>{t("key")}</label>
-                    {(option_keys ?? []).map((item, index) => {
-                        return <div key={index} style={{display: "flex",}}>
-                            <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
-                                option_keys[index] = value;
-                                set_option_keys([...option_keys]);
-                            }}/></div>
-                            <ActionButton icon={"delete"} onClick={() => {
-                                option_keys.splice(index, 1);
-                                set_option_keys([...option_keys]);
-                            }} title={t("删除")}/>
-                        </div>
-                    })}
-                    <form>
-                        {t("状态")}:<Rows isFlex={true} columns={[
-                        <InputRadio value={1} context={t("开启")} selected={isOpen} onchange={() => {
-                            setIsOpen(!isOpen)
-                        }}/>,
-                        <InputRadio value={1} context={t("关闭")} selected={!isOpen} onchange={() => {
-                            setIsOpen(!isOpen)
-                        }}/>
-                    ]}/>
-                    </form>
-
-                </Card>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("客户端列表")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
@@ -245,7 +163,7 @@ export function TcpProxyServer() {
                             <TextTip>{item.note}</TextTip>,
                             <div>
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
-                                    set_edit_client(item)
+                                    set_edit_client({...item})
                                     get_server_bridge_get_one_fig(item.client_num_id)
                                 }}/>
                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
@@ -277,7 +195,7 @@ export function TcpProxyServer() {
                 (edit_client) ?
                 <Dashboard>
                 <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端代理配置`)+`-${edit_client?.client_name}`}</h2> </span>}
+                        className={" div-row "}><h2>{t(`代理配置`)+`-${edit_client?.client_name}`}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
@@ -290,6 +208,35 @@ export function TcpProxyServer() {
                             edit_client.client_name = d
                             set_edit_client({...edit_client})
                         }}/>
+
+                        <form>
+                            {t("filecat访问")}:<Rows isFlex={true} columns={[
+                            <InputRadio value={1} context={t("开启")} selected={edit_client.open_filecat} onchange={() => {
+                                edit_client.open_filecat = !edit_client.open_filecat;
+                                set_edit_client({...edit_client})
+                            }}/>,
+                            <InputRadio value={1} context={t("关闭")} selected={!edit_client.open_filecat} onchange={() => {
+                                edit_client.open_filecat = !edit_client.open_filecat;
+                                set_edit_client({...edit_client})
+                            }}/>
+                        ]}/>
+                        </form>
+                        {
+                            edit_client.open_filecat &&
+                            <form>
+                                {t("filecat访问使用服务器前端")}:<Rows isFlex={true} columns={[
+                                <InputRadio value={1} context={t("开启")} selected={edit_client.filecat_use_local_page} onchange={() => {
+                                    edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
+                                    set_edit_client({...edit_client})
+                                }}/>,
+                                <InputRadio value={1} context={t("关闭")} selected={!edit_client.filecat_use_local_page} onchange={() => {
+                                    edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
+                                    set_edit_client({...edit_client})
+                                }}/>
+                            ]}/>
+                            </form>
+                        }
+
                         <InputText placeholder={"备注"} value={edit_client.note} handleInputChange={(d) => {
                             edit_client.note = d
                             set_edit_client({...edit_client})
@@ -340,7 +287,7 @@ export function TcpProxyServer() {
                     </Card>
 
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`客户端桥接配置`)+`-${edit_client?.client_name}`}</h2> </span>}>
+                        className={" div-row "}><h2>{t(`桥接配置`)+`-${edit_client?.client_name}`}</h2> </span>}>
 
                         <ActionButton icon={"add"} onClick={() => {
                             edit_client_bridge_fig.push({
@@ -411,33 +358,7 @@ export function TcpProxyServer() {
                 </Dashboard> :
 
                 <Dashboard>
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("服务器")+t("端口映射")}</h2>
-                        {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
-                        </span>}
-                            >
-                        <Table headers={[
-                            t("序号"),
-                            <ActionButton  title={t("服务端口")} onClick={() => {
-                                setSortServerPortAsc(v => !v);
-                            }}/>,
-                            t("转发ip"),
-                            t("转发端口"),
-                            "client "+t("名称"),
-                            t("开启"),
-                            t("备注")
-                        ]} rows={sortedOnlineServer.map((item:server_client_proxy, index) => {
-                            const new_list = [
-                                <p>{index}</p>,
-                                <TextTip>{item.server_port}</TextTip>,
-                                <TextTip>{item.proxy_host}</TextTip>,
-                                <TextTip>{item.proxy_port}</TextTip>,
-                                <TextTip>{item.client_name}</TextTip>,
-                                <StatusCircle ok={!!item.open_success} />,
-                                <TextTip>{item.server_port_note}</TextTip>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"}/>
-                    </CardFull>
+                    {/*暂时空白显示*/}
                     </Dashboard>
             }
         </Column>

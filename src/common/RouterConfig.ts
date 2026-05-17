@@ -8,6 +8,7 @@ export const routerConfig = {
     info:"info",
     ddns:"ddns",
     net:"net",
+    net_proxy:"net_proxy", // 内网穿透
     setting:"setting",
     share:"share",
     share_list_setting_page:"share_list_setting_page",

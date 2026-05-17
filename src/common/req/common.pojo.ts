@@ -120,6 +120,11 @@ export class tcp_proxy_server_client {
     client_remote_address?:string;
     online_start_time?:number;
     offline_time?:number;
+
+    // 开启目标filecat的访问
+    open_filecat?:boolean;
+    // 访问filecat的时候使用本地前端
+    filecat_use_local_page?:boolean;
 }
 
 export class tcp_proxy_client_fig{

@@ -13,16 +13,14 @@ import {SysEnum} from "../../../../common/req/user.req";
 export default function SysInfo(props) {
     const { t } = useTranslation();
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const menuRots = [{index: 1, name: t("系统性能"), rto: "sys/"},{index: 2, name: t("系统进程"), rto: "process/"}, {index: 3, name: t("docker容器"), rto: "docker/"}];
+    const menuRots = [{
+        index: 1, name: t("系统性能"), rto: "sys/",component:<Sys/>},
+
+        {index: 2, name: t("系统进程"), rto: "process/",component:<Process/>},
+        {index: 3, name: t("docker容器"), rto: "docker/",component:<Docker/>},];
     if (userInfo.sys === SysEnum.linux) {
-        menuRots.push({index:4,name: t("systemd"),rto:"systemd/"})
+        menuRots.push({index:4,name: t("systemd"),rto:"systemd/",component: <Systemd/>})
     }
     return <Menu optionList={menuRots}>
-        <Sys></Sys>
-        <Process></Process>
-        <Docker></Docker>
-        <Systemd/>
-        {/*<div></div>*/}
-        {/*<div></div>*/}
     </Menu>
 }

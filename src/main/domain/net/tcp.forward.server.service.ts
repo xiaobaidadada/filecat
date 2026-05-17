@@ -326,6 +326,17 @@ export class TcpForwardServerService {
 
     }
 
+
+    get_tcp_filecat(client_num_id:number) {
+        const list = this.server_client_get()
+        for (const item of list) {
+            if(item.open_filecat) {
+                return item
+            }
+        }
+        return null
+    }
+
     async server_client_save(item:tcp_proxy_server_client) {
         const list = this.server_client_get()
         const one = list.find(v=>v.client_num_id===item.client_num_id)
