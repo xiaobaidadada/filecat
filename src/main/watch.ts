@@ -114,7 +114,7 @@ export async function startLauncher() {
                         try {
                             if (data.run_env === "exe") {
                                 let {fileCompress} = require("./domain/file/file.compress")
-                                let {get_zip_file_format_util} = require('"../common/StringUtil"')
+                                let {get_zip_file_format_util} = require("../common/StringUtil")
                                 const format = get_zip_file_format_util(data.file_path)
                                 if (!format) {
                                     console.log(`不能识别的文件压缩格式 ${data.file_path}`)
