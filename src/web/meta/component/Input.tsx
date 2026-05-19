@@ -67,54 +67,86 @@ function Input(props: {
     width?: string,
     options?: (string|{ label: string, value: string })[]
 }) {
-    const inputRef = useRef(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = React.useState("");
     const [css, setCss] = React.useState("input input--block awesomplete");
+
+    // 同步外部传入的 value
     useEffect(() => {
         setValue(props.value == null ? "" : props.value);
-        if (props.focus) {
-            inputRef.current.focus(); //获得焦点
+        if (props.focus && inputRef.current) {
+            inputRef.current.focus();
         }
         if (props.no_border) {
-            setCss(`${css} input--no_border awesomplete`);
+            setCss("input input--block awesomplete input--no_border");
         }
-    }, [props.value]);
+    }, [props.value, props.focus, props.no_border]);
+
+    // 使用 Ref 绕过 useEffect 的闭包陷阱，确保永远能调用到最新的回调函数
+    const handlerRef = useRef(props.handleInputChange);
+    useEffect(() => {
+        handlerRef.current = props.handleInputChange;
+    }, [props.handleInputChange]);
+
+    // 监听 options 变化，动态初始化或销毁 Awesomplete
     useEffect(() => {
         if (props.options != null && inputRef.current) {
-            // 把 list 数据直接传给 Awesomplete
+            // 格式化数据：Awesomplete 接受标准 [{label: 'xx', value: 'yy'}] 或 ['字符串']
+            const listData = props.options.map(item => {
+                if (typeof item === 'object' && item !== null) {
+                    return { label: item.label, value: item.value };
+                }
+                return String(item);
+            });
+
             const awesomplete = new Awesomplete(inputRef.current, {
-                list: props.options ?? [],
-                minChars: 0,   // 输入 0 个字符也能弹出
+                list: listData,
+                minChars: 0,
                 autoFirst: true
             });
 
-            // 让它一点击就能展开
-            inputRef.current.addEventListener("focus", () => {
-                inputRef.current.value = ""; // 可选：清空输入，保证弹出完整列表
-                inputRef.current.dispatchEvent(new Event("input"));
-            });
-            const handleSelect = (event: any) => {
-                const label = event.text.label ?? event.text.value;
-                const value = event.text.value;
-
-                setValue(label);
-                // ❌ 不让 Awesomplete 写 input.value
-                requestAnimationFrame(() => {
-                    inputRef.current.value = label;
-                });
-
-                props.handleInputChange?.(value, inputRef.current);
+            // 点击时自动展开下拉菜单，不再粗暴清空输入框
+            const handleFocus = () => {
+                // 触发原生 input 事件，让 Awesomplete 弹出菜单
+                inputRef.current?.dispatchEvent(new Event("input"));
             };
 
+            // 选中下拉项时的逻辑
+            const handleSelect = (event: any) => {
+                // event.text 对象包含了选中的项
+                const selectedText = event.text.label ?? event.text.value ?? event.text;
+                const selectedValue = event.text.value ?? event.text;
+
+                // 1. 先更新 React 内部的状态
+                setValue(selectedText);
+
+                // 2. 强行在下一帧更正 DOM 的 value，防止 Awesomplete 乱填
+                requestAnimationFrame(() => {
+                    if (inputRef.current) inputRef.current.value = selectedText;
+                });
+
+                // 3. 触发父组件的 onChange 回调，传入真实 Value
+                if (handlerRef.current) {
+                    handlerRef.current(selectedValue, inputRef.current);
+                }
+            };
+
+            inputRef.current.addEventListener("focus", handleFocus);
             inputRef.current.addEventListener("awesomplete-selectcomplete", handleSelect);
 
+            // 清理函数：当 options 改变或组件销毁时，彻底移除残留的 DOM 监听和 wrapper
             return () => {
-                inputRef.current?.removeEventListener("awesomplete-selectcomplete", handleSelect);
+                if (inputRef.current) {
+                    inputRef.current.removeEventListener("focus", handleFocus);
+                    inputRef.current.removeEventListener("awesomplete-selectcomplete", handleSelect);
+                }
                 awesomplete.destroy();
             };
         }
-    }, []);
-    return (<React.Fragment>
+    }, [props.options]); // ⭐ 关键：把 props.options 作为依赖项！
+
+    return (
+        <React.Fragment>
             {props.placeholderOut && <p>{props.placeholderOut}</p>}
             <div style={{
                 display: "flex",
@@ -122,46 +154,43 @@ function Input(props: {
                 width: props.width,
                 maxWidth: props.maxWidth
             }}>
-                {props.left_placeholder &&<div style={{ flex: "0 0 auto" }}>
-                    {props.left_placeholder}
-                </div>}
+                {props.left_placeholder && (
+                    <div style={{ flex: "0 0 auto", marginRight: "4px" }}>
+                        {props.left_placeholder}
+                    </div>
+                )}
 
                 <input
-                    style={{
-                        flex: 1,
-                        minWidth: 0   // ⭐防止溢出（很重要）
-                    }}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                    }}
+                    style={{ flex: 1, minWidth: 0 }}
+                    onClick={(event) => event.stopPropagation()}
                     disabled={!!props.disabled}
                     className={css}
                     type={props.type}
-                    placeholder={value || props.placeholder}
+                    placeholder={props.placeholder}
                     onChange={(event) => {
+                        const val = event.target.value;
+                        setValue(val);
                         if (props.handleInputChange) {
-                            props.handleInputChange(event.target.value, event.target);
+                            props.handleInputChange(val, event.target);
                         }
-                        setValue(event.target.value);
                     }}
                     onKeyPress={(event) => {
-                        if (event.key === 'Enter') {
-                            if (props.handlerEnter) {
-                                props.handlerEnter(event.target.value);
-                            }
+                        if (event.key === 'Enter' && props.handlerEnter) {
+                            props.handlerEnter(event.currentTarget.value);
                         }
                     }}
                     value={value}
                     ref={inputRef}
                 />
-                {props.right_placeholder &&  <div style={{ flex: "0 0 auto" }}>
-                    {props.right_placeholder}
-                </div>}
 
+                {props.right_placeholder && (
+                    <div style={{ flex: "0 0 auto", marginLeft: "4px" }}>
+                        {props.right_placeholder}
+                    </div>
+                )}
             </div>
         </React.Fragment>
-
-    )
+    );
 }
 
 export function InputText(props: {
