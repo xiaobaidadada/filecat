@@ -15,6 +15,8 @@ import {Ace as AceItem} from "ace-builds";
 import {UserAuth, UserBaseInfo} from "../../../common/req/user.req";
 import {path_join} from "pty-shell/dist/path_util";
 import {Http} from "./http";
+import {useNavigate} from "react-router-dom";
+import {routerConfig} from "../../../common/RouterConfig";
 
 // async function get_file_context(path, is_sys_path) {
 //     if (is_sys_path) {
@@ -34,9 +36,11 @@ export const user_click_file = () => {
     const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
     const [markdown, set_markdown] = useRecoilState($stroe.markdown)
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
+    const [sqlite_query_context, set_sqlite_query_context] = useRecoilState($stroe.sqlite_query_context);
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const navigate = useNavigate();
     const {t} = useTranslation();
 
     const click_file = async (param: {
@@ -74,8 +78,18 @@ export const user_click_file = () => {
         const {name, context} = param;
         let model = getEditModelType(name);
         const type = getFileFormat(name);
+        const absolute_file_path = param.file_path ?? path_join(ab_dir_path, `${getRouterAfter('file', getRouterPath())}${name}`)
         const file_path_ = param.file_path ?? path_join(ab_dir_path, `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`)
         const url = param.file_url ?? fileHttp.getDownloadUrl(file_path_);
+        if (type === FileTypeEnum.database) {
+            set_sqlite_query_context({
+                open: true,
+                path: absolute_file_path,
+                name
+            });
+            navigate(`/${routerConfig.sqlite_query_page}/`);
+            return;
+        }
         if (param.model === "text") {
             // 双击文件
             let value;

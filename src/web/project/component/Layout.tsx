@@ -33,6 +33,7 @@ const Share = React.lazy(()=> import('./file/component/share/Share'))
 const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
 const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
+const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
 
 function Layout() {
     const {t} = useTranslation();
@@ -66,7 +67,7 @@ function Layout() {
 
     let three: NavItem[] = [
         {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`, component: <Settings/>},
-        {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
+        {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/logout"},
         // {component:(<div>测试</div>)}
     ]
     if (check_user_auth(UserAuth.vir_net) || check_user_auth(UserAuth.ddns) ) {
@@ -97,6 +98,7 @@ function Layout() {
             { rto: `${routerConfig.share}/`, component: <Share />},
             { rto: `${routerConfig.share_list_setting_page}/`, component: <ShareListSetting />},
             { rto: `${routerConfig.ai_agent_setting_page}/`, component: <AIAgentChatSetting />},
+            { rto: `${routerConfig.sqlite_query_page}/`, component: <SqliteQuery />},
             { rto: `${routerConfig.studio_page}/`, component: <StudioLazy />}
         ]
     ]

@@ -27,6 +27,7 @@
 @import "./image_editor.css";
 @import "./excalidraw.css";
 @import "./common.css";
+@import "./db.css";
 
 @import "mobile.css";
 @import "chat.css";

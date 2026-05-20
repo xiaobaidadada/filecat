@@ -55,4 +55,5 @@ export enum common_menu_type {
     file_base_info = "file_base_info",
     file_delete = "file_delete",
     file_rename = "file_rename",
+    sqlite_query = "sqlite_query",
 }

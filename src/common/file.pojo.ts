@@ -4,6 +4,7 @@ import {dir_upload_max_num_item} from "./req/setting.req";
 export enum FileTypeEnum {
     audio = "audio",
     blob = 'blob',
+    database = "database",
     image = "image",
     pdf = 'pdf',
     text = 'text',

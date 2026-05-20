@@ -1,0 +1,40 @@
+.db-query-page {
+    overflow-y: auto;
+    height: 100%;
+}
+
+.db-query-page__content {
+    padding: 16px;
+    display: grid;
+    gap: 16px;
+    align-items: start;
+}
+
+.db-query-page__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.db-query-page__editor {
+    height: 240px;
+    min-height: 240px;
+}
+
+.db-query-page__error {
+    margin-top: 12px;
+    color: #c0392b;
+}
+
+.db-query-page__result-json {
+    margin: 0;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.db-query-page__hint {
+    opacity: 0.7;
+}

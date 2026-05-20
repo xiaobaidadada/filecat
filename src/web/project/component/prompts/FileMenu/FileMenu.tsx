@@ -94,6 +94,12 @@ export function FileMenu() {
         },
         ...must_needs
     ]
+    if (showPrompt.data?.type === FileTypeEnum.database || /\.(db|sqlite|sqlite3)$/i.test(showPrompt.data?.filename ?? "")) {
+        show_items.unshift({
+            r: t("数据库查询"),
+            v: common_menu_type.sqlite_query
+        });
+    }
     if (user_base_info.user_data?.file_quick_cmd) {
         for (const it of user_base_info.user_data.file_quick_cmd) {
             for (const key of (it.file_suffix ?? "").split(" ")) {
@@ -260,6 +266,13 @@ export function FileMenu() {
                 break;
             case common_menu_type.file_copy_ab_path:
                 copyToClipboard(get_ab_path())
+                break;
+            case common_menu_type.sqlite_query: {
+                click_file({
+                    name: showPrompt.data.filename,
+                    file_path: get_ab_path(),
+                });
+            }
                 break;
             case    common_menu_type.sutdio : {
                 // set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
@@ -543,4 +556,3 @@ export function FileMenu() {
     }
     return (div);
 }
-

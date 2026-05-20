@@ -38,9 +38,11 @@ import {isAbsolutePath} from "../../../common/path_util";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {getSys} from "../shell/shell.service";
+import {sqliteQueryReq, sqliteQueryResult} from "../../../common/req/file.req";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
+const Database = get_bin_dependency("better-sqlite3", false) as any;
 
 const chokidar = require('chokidar');
 const iconv = require('iconv-lite');
@@ -107,6 +109,86 @@ export class FileService  {
             uid: stat.uid,
             uname: getSys() === SysEnum.win ?node_process_watcher?.get_file_owner(sysPath)?.username:node_process_watcher?.get_username_by_uid(stat.uid)
         };
+    }
+
+    private resolveFilePath(token: string, param_path: string) {
+        let sysPath = decodeURIComponent(param_path);
+        const root_path = settingService.getFileRootPath(token);
+        if (!isAbsolutePath(sysPath)) {
+            sysPath = path.join(root_path, sysPath);
+        }
+        userService.check_user_path(token, sysPath);
+        return sysPath;
+    }
+
+    private normalizeSqliteValue(value: any): any {
+        if (typeof value === "bigint") {
+            return value.toString();
+        }
+        if (Array.isArray(value)) {
+            return value.map(v => this.normalizeSqliteValue(v));
+        }
+        if (value && typeof value === "object") {
+            if (Buffer.isBuffer(value)) {
+                return value;
+            }
+            const result: any = {};
+            for (const [key, item] of Object.entries(value)) {
+                result[key] = this.normalizeSqliteValue(item);
+            }
+            return result;
+        }
+        return value;
+    }
+
+    public async sqlite_query(token: string, data: sqliteQueryReq): Promise<Result<sqliteQueryResult | string>> {
+        if (typeof Database !== "function") {
+            return Fail("sqlite3 依赖未加载", RCode.Fail);
+        }
+        if (!data?.path || !data?.sql) {
+            return Fail("path 或 sql 不能为空", RCode.Fail);
+        }
+        const sysPath = this.resolveFilePath(token, data.path);
+        if (!await FileUtil.access(sysPath)) {
+            return Fail("数据库文件不存在", RCode.Fail);
+        }
+        const stats = await FileUtil.statSync(sysPath);
+        if (!stats.isFile()) {
+            return Fail("请选择一个数据库文件", RCode.Fail);
+        }
+        const sql = data.sql.trim().replace(/;+\s*$/, "");
+        if (!/^(select|with|pragma|explain)\b/i.test(sql)) {
+            return Fail("只允许查询语句", RCode.Fail);
+        }
+        let db;
+        try {
+            db = new Database(sysPath, {readonly: true, fileMustExist: true});
+            const stmt = db.prepare(sql);
+            const rows = stmt.all().map(v => this.normalizeSqliteValue(v));
+            let columns: string[] = [];
+            try {
+                columns = stmt.columns().map(v => v.name);
+            } catch (e) {
+                columns = [];
+            }
+            if (!columns.length && rows.length) {
+                columns = Object.keys(rows[0]);
+            }
+            const result: sqliteQueryResult = {
+                columns,
+                rows,
+                row_count: rows.length,
+            };
+            return Sucess(result);
+        } catch (e) {
+            return Fail(e?.message ?? `${e}`, RCode.Fail);
+        } finally {
+            try {
+                db?.close?.();
+            } catch (e) {
+                // ignore close errors
+            }
+        }
     }
 
     public async getFile(param_path, token): Promise<Result<GetFilePojo | string>> {

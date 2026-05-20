@@ -37,6 +37,7 @@ import {list_paginate} from "../../../common/ListUtil";
 import {Stats} from "fs";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {Public} from "../../other/middleware/decorator";
+import {sqliteQueryReq} from "../../../common/req/file.req";
 
 
 @JsonController("/file")
@@ -116,6 +117,11 @@ export class FileController {
             return Sucess("1");
         }
         return Fail("no permission")
+    }
+
+    @Post('/sqlite/query')
+    async sqlite_query(@Req() ctx, @Body() data?: sqliteQueryReq) {
+        return await FileServiceImpl.sqlite_query(ctx.headers.authorization, data);
     }
 
     // base保存支持分片

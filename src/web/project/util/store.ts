@@ -24,6 +24,12 @@ export class ShowPromptData {
     data: FileMenuData;
 }
 
+export class SqliteQueryContext {
+    open: boolean = false;
+    path: string = "";
+    name: string = "";
+}
+
 export const $stroe = {
     // 当前的所有文件
     nowFileList: atom({
@@ -260,6 +266,14 @@ export const $stroe = {
         key: 'markdown',
         default: {} as { filename?: string, context?: string,close?:()=>any },
     }),
+    // sqlite 查询页上下文
+    sqlite_query_context: atom({
+        key: 'sqlite_query_context',
+        default: new SqliteQueryContext(),
+        effects: [
+            localStorageEffect("sqlite_query_context")
+        ]
+    }),
     // 编辑器
     studio: atom({
         key: 'studio',
@@ -349,5 +363,4 @@ export const $stroe = {
         }
     )
 }
-
 

@@ -9,6 +9,17 @@ export interface saveTxtReq {
     context: string
 }
 
+export interface sqliteQueryReq {
+    path: string;
+    sql: string;
+}
+
+export interface sqliteQueryResult {
+    columns: string[];
+    rows: Record<string, any>[];
+    row_count: number;
+}
+
 export interface cutCopyReq {
     files: string[],
     to: string

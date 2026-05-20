@@ -28,6 +28,7 @@ export class FileMenuData {
 const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","wmv","swf","mod","mpv","mpeg","asf"]);
 const compressing_list = new Set(["tar","zip","gz","tgz","rar","7z"]);// compressing
 const image_list = new Set(["jpg","jpeg","png","gif"]);
+const sqlite_list = new Set(["db", "sqlite", "sqlite3"]);
 const txt = new Set(["txt","ts","js"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);
 
@@ -35,6 +36,8 @@ export function getFileFormat(filename:string): FileTypeEnum {
     const extension = StringUtil.getFileExtension(filename);
     if (extension ==="pdf") {
         return FileTypeEnum.pdf;
+    } else if (sqlite_list.has(extension)) {
+        return FileTypeEnum.database;
     } else if (extension == "md") {
         return FileTypeEnum.md;
     } else if (video_format_set.has(extension)) {
