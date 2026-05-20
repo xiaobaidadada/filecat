@@ -157,9 +157,9 @@ export class FileService  {
             return Fail("请选择一个数据库文件", RCode.Fail);
         }
         const sql = data.sql.trim().replace(/;+\s*$/, "");
-        if (!/^(select|with|pragma|explain)\b/i.test(sql)) {
-            return Fail("只允许查询语句", RCode.Fail);
-        }
+        // if (!/^(select|with|pragma|explain)\b/i.test(sql)) {
+        //     return Fail("只允许查询语句", RCode.Fail);
+        // }
         let db;
         try {
             db = new Database(sysPath, {readonly: true, fileMustExist: true});
