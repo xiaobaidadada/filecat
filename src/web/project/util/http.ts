@@ -3,7 +3,7 @@ import {fetchEventSource} from '@microsoft/fetch-event-source';
 import {RCode} from "../../../common/Result.pojo";
 import {Result} from "../../../main/other/Result";
 import {NotyFail} from "./noty";
-import {config} from "./config";
+import {front_config} from "./config";
 
 let now = Date.now();
 export class Http {
@@ -85,7 +85,7 @@ export class Http {
     }
 
     getDownloadUrlV2(files,pre_url,params?:any) {
-        let url = config.baseUrl+`${pre_url}?`;
+        let url = front_config.baseUrl+`${pre_url}?`;
         if (files ) {
             for (let file of Array.isArray(files)?files:[files]) {
                 if (file.endsWith("/")  || file.endsWith("\\")) {
