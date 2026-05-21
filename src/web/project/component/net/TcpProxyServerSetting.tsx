@@ -38,7 +38,7 @@ export function TcpProxyServerSetting() {
 
     const [option_keys,set_option_keys] = useState<string[]>([])
     const [serverPort, setServerPort] = useState(undefined);
-
+    const [client_filter_Key,set_client_filter_Key] = useState<string>(undefined)
 
     const sortedOnlineServer = useMemo(() => {
         const list = [...online_server];
@@ -55,6 +55,22 @@ export function TcpProxyServerSetting() {
         }
     }, [online_server, sortServerPortAsc]);
 
+    const get_all_open_server_client_proxy_fig = async ()=>{
+        const r3 = await tcpProxy.get("get_all_open_server_client_proxy_fig")
+        if(r3.code === RCode.Success) {
+            const new_list = []
+            for (const item of r3.data as server_client_proxy[]) {
+                if(client_filter_Key) {
+                    if(`${item.server_port}${item.client_name}${item.proxy_host}${item.server_port}${item.server_port_note}`.includes(client_filter_Key)) {
+                        new_list.push(item)
+                    }
+                } else {
+                    new_list.push(item)
+                }
+            }
+            set_online_server(new_list);
+        }
+    }
 
     const getItems = async () => {
 
@@ -65,12 +81,7 @@ export function TcpProxyServerSetting() {
             setIsOpen(!!r1.data.open);
             set_option_keys(r1.data.option_keys??[]);
         }
-
-        const r3 = await tcpProxy.get("get_all_open_server_client_proxy_fig")
-        if(r3.code === RCode.Success) {
-            set_online_server(r3.data);
-        }
-
+        get_all_open_server_client_proxy_fig()
     }
 
 
@@ -150,6 +161,11 @@ export function TcpProxyServerSetting() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("服务器")+t("端口映射")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                         </span>}
+              titleCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
+                  set_client_filter_Key(value);
+              }} handlerEnter={()=>{
+                  get_all_open_server_client_proxy_fig()
+              }}/>}
                 >
                     <Table headers={[
                         t("序号"),

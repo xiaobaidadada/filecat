@@ -7,8 +7,8 @@ import {NetProxy} from "./NetProxy";
 import {UserAuth} from "../../../../common/req/user.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {use_auth_check} from "../../util/store.util";
-import {Dnspod} from "../ddns/Dnspod";
-import {TengXun} from "../ddns/TengXun";
+import {Dnspod} from "./ddns/Dnspod";
+import {TengXun} from "./ddns/TengXun";
 
 
 

@@ -28,6 +28,7 @@ import {Global} from "../../util/global";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {copyToClipboard} from "../../util/FunUtil";
 
+let client_num_id_map:{[key:number]:tcp_proxy_server_client} = {}
 
 export function TcpProxyServerClient() {
     const { t, i18n } = useTranslation();
@@ -39,7 +40,7 @@ export function TcpProxyServerClient() {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
 
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
-    const [option_keys,set_option_keys] = useState<string[]>([])
+    const [client_filter_Key,set_client_filter_Key] = useState<string>(undefined)
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -63,7 +64,11 @@ export function TcpProxyServerClient() {
             server_client_num_id:server_client_num_id,
         })
         if(r1.code === RCode.Success) {
-            set_edit_client_bridge_fig(r1.data);
+            const data_list : tcp_proxy_bridge_fig_item[]= r1.data
+            for (const data of data_list) {
+                data.client_name = client_num_id_map?.[data.client_num_id]?.client_name??''
+            }
+            set_edit_client_bridge_fig(data_list);
         }
     }
 
@@ -77,14 +82,24 @@ export function TcpProxyServerClient() {
         const r2 = await tcpProxy.get("server_client_get")
         if(r2.code === RCode.Success) {
             const list:tcp_proxy_server_client[] = r2.data
-            set_client_list(list);
+            const new_list = []
             const options = []
+            client_num_id_map = {}
             for (const item of list) {
+                if(client_filter_Key) {
+                    if(`${item.index}${item.client_name}${item.note}`.includes(client_filter_Key)) {
+                        new_list.push(item)
+                    }
+                } else {
+                    new_list.push(item)
+                }
                 options.push({
                     label: item.client_name,
                     value: item.client_num_id,
                 })
+                client_num_id_map[item.client_num_id] = item;
             }
+            set_client_list(new_list);
             set_all_client_options(options)
         }
 
@@ -153,9 +168,16 @@ export function TcpProxyServerClient() {
         <Column widthPer={50}>
             <Dashboard>
 
-                <CardFull self_title={<span className={" div-row "}><h2>{t("客户端列表")}</h2>
+                <CardFull self_title={<span className={" div-row "} >
+                    <h2>{t("客户端列表")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
+
+              titleCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
+                  set_client_filter_Key(value);
+              }} handlerEnter={()=>{
+                  getItems()
+              }}/>}
                           >
                     <Table headers={headers} rows={client_list.map((item:tcp_proxy_server_client, index) => {
                         const new_list = [

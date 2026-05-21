@@ -1,19 +1,19 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Column,  Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {Rows} from "../../../meta/component/Table";
-import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
-import {ddnsHttp,} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type} from "../../../../common/req/ddns.pojo";
+import {Column,  Row, RowColumn} from '../../../../meta/component/Dashboard';
+import {Card} from "../../../../meta/component/Card";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {Rows} from "../../../../meta/component/Table";
+import {InputPassword, InputRadio, InputText} from "../../../../meta/component/Input";
+import {ddnsHttp,} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type} from "../../../../../common/req/ddns.pojo";
 import Noty from "noty";
 import {useTranslation} from "react-i18next";
-import Header from "../../../meta/component/Header";
-import {PromptEnum} from "../prompts/Prompt";
+import Header from "../../../../meta/component/Header";
+import {PromptEnum} from "../../prompts/Prompt";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
-import {NotySucess} from "../../util/noty";
+import {$stroe} from "../../../util/store";
+import {NotySucess} from "../../../util/noty";
 
 export function Dnspod(props: any) {
     const {t} = useTranslation();

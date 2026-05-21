@@ -1,19 +1,19 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {Rows} from "../../../meta/component/Table";
-import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
-import {ddnsHttp,} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type, Tengxun} from "../../../../common/req/ddns.pojo";
+import {Column, Dashboard, Menu, Row, RowColumn} from '../../../../meta/component/Dashboard';
+import {Card} from "../../../../meta/component/Card";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {Rows} from "../../../../meta/component/Table";
+import {InputPassword, InputRadio, InputText} from "../../../../meta/component/Input";
+import {ddnsHttp,} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type, Tengxun} from "../../../../../common/req/ddns.pojo";
 import Noty from "noty";
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
-import {PromptEnum} from "../prompts/Prompt";
-import {NotySucess} from "../../util/noty";
-import Header from "../../../meta/component/Header";
+import {$stroe} from "../../../util/store";
+import {PromptEnum} from "../../prompts/Prompt";
+import {NotySucess} from "../../../util/noty";
+import Header from "../../../../meta/component/Header";
 
 export function TengXun(props: any) {
     const { t } = useTranslation();

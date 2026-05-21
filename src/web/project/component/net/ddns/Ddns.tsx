@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Column, Dashboard, Menu, Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card} from "../../../meta/component/Card";
+import {Column, Dashboard, Menu, Row, RowColumn} from '../../../../meta/component/Dashboard';
+import {Card} from "../../../../meta/component/Card";
 import {Dnspod} from "./Dnspod";
 import {TengXun} from "./TengXun";
 import {Ali} from "./Ali";

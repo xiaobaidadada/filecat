@@ -1,12 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Column, Row, RowColumn} from '../../../meta/component/Dashboard';
-import {Card} from "../../../meta/component/Card";
-import {ButtonText} from "../../../meta/component/Button";
-import {Rows} from "../../../meta/component/Table";
-import {InputPassword, InputRadio, InputText} from "../../../meta/component/Input";
-import {ddnsHttp,} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../common/req/ddns.pojo";
+import {Column, Row, RowColumn} from '../../../../meta/component/Dashboard';
+import {Card} from "../../../../meta/component/Card";
+import {ButtonText} from "../../../../meta/component/Button";
+import {Rows} from "../../../../meta/component/Table";
+import {InputPassword, InputRadio, InputText} from "../../../../meta/component/Input";
+import {ddnsHttp,} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../../common/req/ddns.pojo";
 import Noty from "noty";
 
 export function Ali(props: any) {
