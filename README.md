@@ -101,12 +101,6 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 ##  qq群
 824838674
 
-##  Thanks
-以下项目为 FileCat 提供了灵感或基础
-
-- [filebrowser](https://github.com/filebrowser/filebrowser)
-- [MeshCentral](https://github.com/Ylianst/MeshCentral)
-- [mstsc](https://github.com/citronneur/mstsc.js)
 
 
 ## 软件对比
@@ -119,7 +113,7 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 | Mac          |      ✅   |   ✅|          ✅                                                                                                               |
 | 自己部署         | ✅|✅|✅|
 | webdav 支持    | ❌|✅|❌|
-| 用户登陆支持       | ✅|✅|✅|
+| 多用户登陆管理支持    | ✅|✅|✅|
 | 终端shell      |✅|❌|❌|
 | 开源           |✅|✅|✅|
 | 单点登录支持       |✅|✅|❌|
@@ -136,4 +130,10 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
  | 命令CI/CD工作流支持 |✅|❌|❌|
  | 超大日志文件查看     |✅|❌|❌|
  | ai agent     |✅|❌|❌|
- 
+
+##  Thanks
+以下项目为 FileCat 提供了灵感或基础
+
+- [filebrowser](https://github.com/filebrowser/filebrowser)
+- [MeshCentral](https://github.com/Ylianst/MeshCentral)
+- [mstsc](https://github.com/citronneur/mstsc.js)

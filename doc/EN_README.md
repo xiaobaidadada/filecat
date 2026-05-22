@@ -120,13 +120,6 @@ Usage tip: Permission management is something that must be taken seriously. Afte
 
 824838674
 
-## Thanks
-
-The following projects provided inspiration or foundations for FileCat:
-
-* [filebrowser](https://github.com/filebrowser/filebrowser)
-* [MeshCentral](https://github.com/Ylianst/MeshCentral)
-* [mstsc](https://github.com/citronneur/mstsc.js)
 
 ## Software Comparison
 
@@ -138,7 +131,7 @@ The following projects provided inspiration or foundations for FileCat:
 | Mac                              | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
 | Self-hosted                      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
 | WebDAV Support                   | ❌                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| User Login Support               | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
+| Multi-user Login Management      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
 | Terminal Shell                   | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
 | Open Source                      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
 | Single Sign-On Support           | ✅                                                     | ✅                                                                                                               | ❌                                                                                                                        |
@@ -155,3 +148,12 @@ The following projects provided inspiration or foundations for FileCat:
 | Command CI/CD Workflow Support   | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
 | Large Log File Viewer            | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
 | AI Agent                         | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
+
+
+## Thanks
+
+The following projects provided inspiration or foundations for FileCat:
+
+* [filebrowser](https://github.com/filebrowser/filebrowser)
+* [MeshCentral](https://github.com/Ylianst/MeshCentral)
+* [mstsc](https://github.com/citronneur/mstsc.js)
