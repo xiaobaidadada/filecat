@@ -34,7 +34,7 @@ export function TcpProxyServerClientSetting() {
 
     const [sync_task_list,set_sync_task_list] = useState<(tcp_proxy_sync_task_item & {ignore_text?: string})[]>([])
 
-    const sync_task_headers = [t("编号"), t("原客户端"), t("原目录"), t("目标客户端"), t("目标目录"), "Ignore", t("开启"), t("备注")];
+    const sync_task_headers = [t("编号"), t("原客户端"), t("原目录"), t("目标客户端"), t("目标目录"), t("忽略目录"), t("开启"), t("备注")];
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -104,7 +104,7 @@ export function TcpProxyServerClientSetting() {
     }
 
     return (<Row>
-        <Column widthPer={50}>
+        <Column widthPer={100}>
             <Dashboard>
                 <Card self_title={<span className={" div-row "}><h2>{t(`客户端文件同步`)}</h2> </span>}>
                     <ActionButton icon={"add"} onClick={() => {
@@ -129,7 +129,7 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={sourceOpt?.label ?? item.source_client_name} options={all_client_options} handleInputChange={(value) => {
                                 const selected = resolveClientOption(value);
                                 item.source_client_num_id = parseInt(String(selected?.value));
-                                item.source_client_name = selected?.label;
+                                // item.source_client_name = selected?.label;
                                 set_sync_task_list([...sync_task_list])
                             }} no_border={true}/>,
                             <InputText value={item.source_dir} handleInputChange={(value) => {
@@ -138,7 +138,7 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={targetOpt?.label ?? item.target_client_name} options={all_client_options} handleInputChange={(value) => {
                                 const selected = resolveClientOption(value);
                                 item.target_client_num_id = parseInt(String(selected?.value));
-                                item.target_client_name = selected?.label;
+                                // item.target_client_name = selected?.label;
                                 set_sync_task_list([...sync_task_list])
                             }} no_border={true}/>,
                             <InputText value={item.target_dir} handleInputChange={(value) => {

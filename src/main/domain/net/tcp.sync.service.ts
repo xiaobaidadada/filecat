@@ -5,14 +5,9 @@ import {generateSaltyUUID} from "../../../common/StringUtil";
 import {NetMsgType, NetUtil} from "./util/NetUtil";
 import {buildSyncEnvelope, parseSyncEnvelope} from "./tcp.sync.util";
 import path from "path";
+import {tcpForwardService} from "./tcp.forward.server.service";
 
-function getTcpForwardService() {
-    // Lazy require avoids a hard circular dependency during module initialization.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require("./tcp.forward.server.service").tcpForwardService as {
-        client_num_map: { [key: number]: { client_util?: any } };
-    };
-}
+
 
 function getClientList(): tcp_proxy_server_client[] {
     return DataUtil.get(data_common_key.tcp_proxy_server_client_list, file_key.tcp_proxy_server_client) ?? [];
@@ -40,8 +35,8 @@ export class TcpSyncService {
         const clients = getClientList();
         const source = clients.find((item) => item.client_num_id === task.source_client_num_id);
         const target = clients.find((item) => item.client_num_id === task.target_client_num_id);
-        task.source_client_name = source?.client_name ?? task.source_client_name;
-        task.target_client_name = target?.client_name ?? task.target_client_name;
+        task.source_client_name = source?.client_name ?? '';
+        task.target_client_name = target?.client_name ?? '';
         return task;
     }
 
@@ -50,13 +45,15 @@ export class TcpSyncService {
     }
 
     private sendTaskToClient(task: tcp_proxy_sync_task_item, client_num_id: number) {
-        const tcpForwardService = getTcpForwardService();
+        // if(!tcpForwardService.client_num_map[task.source_client_num_id] || !tcpForwardService.client_num_map[task.target_client_num_id]) {
+        //     // 两个客户端有一个不在线就不开始了
+        //     return
+        // }
         const client = tcpForwardService.client_num_map[client_num_id];
         client?.client_util?.send_data(NetMsgType.tcp_sync_task_config, Buffer.from(JSON.stringify(task)));
     }
 
     private clearTaskOnClient(task: tcp_proxy_sync_task_item, client_num_id: number) {
-        const tcpForwardService = getTcpForwardService();
         const client = tcpForwardService.client_num_map[client_num_id];
         client?.client_util?.send_data(NetMsgType.tcp_sync_task_clear, Buffer.from(JSON.stringify({
             task_id: task.id,
@@ -78,7 +75,6 @@ export class TcpSyncService {
     }
 
     public push_sync_task_to_all() {
-        const tcpForwardService = getTcpForwardService();
         for (const key of Object.keys(tcpForwardService.client_num_map)) {
             this.push_sync_task_to_client(Number(key));
         }
@@ -158,7 +154,6 @@ export class TcpSyncService {
     }
 
     public route_sync_event(buffer: Buffer) {
-        const tcpForwardService = getTcpForwardService();
         const envelope = parseSyncEnvelope(buffer);
         const task = this.get_sync_task_by_id(envelope.header.task_id);
         if (!task || !task.open) {
@@ -172,7 +167,6 @@ export class TcpSyncService {
     }
 
     public send_sync_event_to_server(task_id: string, source_client_num_id: number, target_client_num_id: number, payload: Buffer) {
-        const tcpForwardService = getTcpForwardService();
         const source = tcpForwardService.client_num_map[source_client_num_id];
         if (!source) {
             return false;

@@ -452,5 +452,13 @@
   "时间展示": "Time Display",
   "最近时间": "Recent Time",
   "准确时间": "Exact Time",
-  "缩放调整成功": "Zoom adjusted successfully"
+  "缩放调整成功": "Zoom adjusted successfully",
+  "原客户端": "Source Client",
+  "原目录": "Source Directory",
+  "目标客户端": "Target Client",
+  "目标目录": "Target Directory",
+  "忽略目录": "Ignore Directory",
+  "双向同步": "Bidirectional Sync",
+  "客户端文件同步": "Client File Sync",
+  "客户端设置": "Client Settings"
 }

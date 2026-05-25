@@ -89,6 +89,8 @@ export class tcp_raw_client extends tcp_raw_socket{
         options: tcp_client_options) {
         super();
         this.options = options;
+        this.data_map.server_port = options.server_port
+        this.data_map.server_ip = options.server_host
         this.client.set_on_close(() => {
             if(this.options.not_reconnect_attempt) {
                return

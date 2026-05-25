@@ -169,7 +169,7 @@ export function TcpProxyServerClient() {
 
     return (<React.Fragment>
         <Header>
-            { edit_client && <span>{edit_client.client_name}</span>}
+            { edit_client && <span>{`${edit_client.client_name}${edit_client.note?`(${edit_client.note})`:''}`}</span>}
         </Header>
         <Row>
         <Column widthPer={50}>

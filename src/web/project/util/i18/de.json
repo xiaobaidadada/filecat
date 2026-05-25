@@ -446,5 +446,13 @@
   "内网穿透": "Intranet-Penetration",
   "filecat代理访问": "Filecat-Proxy-Zugriff",
   "filecat代理访问使用服务器前端": "Filecat-Proxy-Zugriff über Server-Frontend",
-  "自定义filecat代理地址": "Benutzerdefinierte Filecat-Proxy-Adresse"
+  "自定义filecat代理地址": "Benutzerdefinierte Filecat-Proxy-Adresse",
+  "原客户端": "Quell-Client",
+  "原目录": "Quell-Verzeichnis",
+  "目标客户端": "Ziel-Client",
+  "目标目录": "Ziel-Verzeichnis",
+  "忽略目录": "Ignoriertes Verzeichnis",
+  "双向同步": "Bidirektionale Synchronisation",
+  "客户端文件同步": "Client-Dateisynchronisation",
+  "客户端设置": "Client-Einstellungen"
 }
