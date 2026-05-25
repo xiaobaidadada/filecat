@@ -343,6 +343,12 @@ export class TcpSyncClientService {
         };
         this.runtime_map.set(task.id, runtime);
 
+        if(task.target_client_num_id === client_num_id && !task.two_way_sync) {
+            // 如果自己是目标  必须开启了 双向同步才能继续
+            await fse.ensureDir(task.target_dir);
+            return
+        }
+
         // 4. 双向同步：无论当前节点是 source 还是 target，所有人一律启动对本地目录的实时监控
         await this.watchLocalDir(task, client_num_id);
     }

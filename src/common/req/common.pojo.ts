@@ -120,7 +120,7 @@ export class tcp_proxy_sync_task_item {
     ignore_list?: string[] = [];
     delete_missing?: boolean = true;
 
-    // two_way_sync?: boolean; // 双向同步
+    two_way_sync?: boolean; // 双向同步
 }
 
 

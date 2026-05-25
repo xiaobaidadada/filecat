@@ -34,7 +34,7 @@ export function TcpProxyServerClientSetting() {
 
     const [sync_task_list,set_sync_task_list] = useState<(tcp_proxy_sync_task_item & {ignore_text?: string})[]>([])
 
-    const sync_task_headers = [t("编号"), t("原客户端"), t("原目录"), t("目标客户端"), t("目标目录"), t("忽略目录"), t("开启"), t("备注")];
+    const sync_task_headers = [t("编号"), t("原客户端"), t("原目录"), t("目标客户端"), t("目标目录"), t("忽略目录"), t("开启"),t("双向同步"), t("备注")];
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -149,6 +149,10 @@ export function TcpProxyServerClientSetting() {
                             }} no_border={true}/>,
                             <Select value={!!item.open} onChange={(value) => {
                                 item.open = value === "true"
+                                set_sync_task_list([...sync_task_list])
+                            }}  options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]} no_border={true}/>,
+                            <Select value={!!item.two_way_sync} onChange={(value) => {
+                                item.two_way_sync = value === "true"
                                 set_sync_task_list([...sync_task_list])
                             }}  options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]} no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
