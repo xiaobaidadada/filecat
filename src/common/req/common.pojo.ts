@@ -103,6 +103,24 @@ export class tcp_proxy_bridge_fig_item {
 
 }
 
+export class tcp_proxy_sync_task_item {
+    id?: string;
+
+    source_client_num_id: number;
+    source_client_name?: string;
+    source_dir: string;
+
+    target_client_num_id: number;
+    target_client_name?: string;
+    target_dir: string;
+
+    open: boolean;
+    note?: string;
+
+    ignore_list?: string[] = [];
+    delete_missing?: boolean = true;
+}
+
 
 export class tcp_proxy_server_client {
     // 服务器状态与配置

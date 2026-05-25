@@ -1,29 +1,25 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from 'react'
-import {Column, Dashboard, Row, TextLine} from "../../../meta/component/Dashboard";
-import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {Rows, Table} from "../../../meta/component/Table";
-import {InputCheckbox, InputRadio, InputText, Select} from "../../../meta/component/Input";
+import {Column, Dashboard, Row, TextLine} from "../../../../meta/component/Dashboard";
+import {Card, CardFull, StatusCircle, TextTip} from "../../../../meta/component/Card";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {Rows, Table} from "../../../../meta/component/Table";
+import {InputCheckbox, InputRadio, InputText, Select} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
-import {GlobalContext} from "../../GlobalProvider";
+import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.req";
+import {GlobalContext} from "../../../GlobalProvider";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
-import {UserAuth, UserData} from "../../../../common/req/user.req";
-import {deleteList} from "../../../../common/ListUtil";
-import {have_empty_char} from "../../../../common/StringUtil";
+import {$stroe} from "../../../util/store";
+import {NotyFail, NotySucess} from "../../../util/noty";
 import {
     server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
-    tcp_proxy_server_config
-} from "../../../../common/req/common.pojo";
-import {ws} from "../../util/ws";
-import {CmdType} from "../../../../common/frame/WsData";
-import { getShortTime } from "../../util/common_util";
+    tcp_proxy_server_config, tcp_proxy_sync_task_item
+} from "../../../../../common/req/common.pojo";
+import {ws} from "../../../util/ws";
+import {CmdType} from "../../../../../common/frame/WsData";
 
 
 export function TcpProxyServerSetting() {
@@ -90,6 +86,7 @@ export function TcpProxyServerSetting() {
             getItems();
         })
         getItems();
+
     }, []);
 
     const save_server_info = async (notice_client:boolean) => {
@@ -153,6 +150,7 @@ export function TcpProxyServerSetting() {
                     </form>
 
                 </Card>
+
             </Dashboard>
 
         </Column>

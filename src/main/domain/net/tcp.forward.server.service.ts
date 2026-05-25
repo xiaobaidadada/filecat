@@ -17,6 +17,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {generateSaltyUUID} from "../../../common/StringUtil";
+import {tcpSyncService} from "./tcp.sync.service";
 
 
 export const server_key = "sockets";
@@ -145,6 +146,7 @@ export class TcpForwardServerService {
         // this.client_map[fig.client_id] = fig
         this.client_num_map[fig.client_num_id] = fig
         await this.server_let_client_to_proxy(it)
+        tcpSyncService.push_sync_task_to_client(fig.client_num_id)
         console.log(`客户端上线 ${fig.client_name}`)
         DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
     }
@@ -332,6 +334,9 @@ export class TcpForwardServerService {
             this.client_num_map[client_num_id]?.client_util.get_client().close()
             delete this.client_num_map[client_num_id]
             this.del_bridge_config_by_server_client_id(one.client_num_id)
+            for (const task of tcpSyncService.get_sync_task_list_by_client(one.client_num_id)) {
+                tcpSyncService.delete_sync_task(task.id);
+            }
             return
         }
 
@@ -358,6 +363,7 @@ export class TcpForwardServerService {
             }
             DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
             await this.server_let_client_to_proxy(item)
+            tcpSyncService.push_sync_task_to_client(one.client_num_id)
             const client = this.client_num_map[one.client_num_id];
             client?.client_util.send_data(NetMsgType.tcp_server_update_client_info,Buffer.from(JSON.stringify({
                 client_name:item.client_name,

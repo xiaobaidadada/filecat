@@ -88,6 +88,10 @@ export enum NetMsgType {
     https_tunnel_tcp_connect,
     https_tunnel_tcp_data,
 
+    tcp_sync_task_config,
+    tcp_sync_task_event,
+    tcp_sync_task_clear,
+
 }
 
 

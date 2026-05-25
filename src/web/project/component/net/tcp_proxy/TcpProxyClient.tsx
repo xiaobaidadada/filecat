@@ -1,22 +1,22 @@
 import React, {useEffect, useState} from 'react'
-import {tcpProxy} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {NotyFail, NotySucess} from "../../util/noty";
-import {Column, Row} from "../../../meta/component/Dashboard";
-import {Card, StatusCircle, TextTip} from "../../../meta/component/Card";
-import {InputRadio, InputText, Select} from "../../../meta/component/Input";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {Rows, Table} from "../../../meta/component/Table";
-import {VirClientPojo} from "../../../../common/req/net.pojo";
+import {tcpProxy} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {NotyFail, NotySucess} from "../../../util/noty";
+import {Column, Row} from "../../../../meta/component/Dashboard";
+import {Card, StatusCircle, TextTip} from "../../../../meta/component/Card";
+import {InputRadio, InputText, Select} from "../../../../meta/component/Input";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {Rows, Table} from "../../../../meta/component/Table";
+import {VirClientPojo} from "../../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
-import {CmdType, WsData} from "../../../../common/frame/WsData";
-import {ws} from "../../util/ws";
+import {CmdType, WsData} from "../../../../../common/frame/WsData";
+import {ws} from "../../../util/ws";
 import {
     tcp_proxy_bridge_fig_item, tcp_proxy_client_all_fig,
     tcp_proxy_client_fig,
     tcp_proxy_server_client
-} from "../../../../common/req/common.pojo";
-import {generateRandomHash} from "../../../../common/StringUtil";
+} from "../../../../../common/req/common.pojo";
+import {generateRandomHash} from "../../../../../common/StringUtil";
 
 export function TcpProxyClient(props) {
     const { t } = useTranslation();

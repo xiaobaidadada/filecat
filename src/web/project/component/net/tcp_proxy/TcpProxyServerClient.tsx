@@ -1,32 +1,34 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from 'react'
-import {Column, Dashboard, Row, TextLine} from "../../../meta/component/Dashboard";
-import {Card, CardFull, StatusCircle, TextTip} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {Rows, Table} from "../../../meta/component/Table";
-import {InputCheckbox, InputRadio, InputText, Select} from "../../../meta/component/Input";
+import {Column, Dashboard, Row, TextLine} from "../../../../meta/component/Dashboard";
+import {Card, CardFull, StatusCircle, TextTip} from "../../../../meta/component/Card";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {Rows, Table} from "../../../../meta/component/Table";
+import {InputCheckbox, InputRadio, InputText, Select} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../util/config";
-import {RCode} from "../../../../common/Result.pojo";
-import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
-import {GlobalContext} from "../../GlobalProvider";
+import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../../util/config";
+import {RCode} from "../../../../../common/Result.pojo";
+import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.req";
+import {GlobalContext} from "../../../GlobalProvider";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
-import {UserAuth, UserData} from "../../../../common/req/user.req";
-import {deleteList} from "../../../../common/ListUtil";
-import {have_empty_char, join_url} from "../../../../common/StringUtil";
+import {$stroe} from "../../../util/store";
+import {NotyFail, NotySucess} from "../../../util/noty";
+import {UserAuth, UserData} from "../../../../../common/req/user.req";
+import {deleteList} from "../../../../../common/ListUtil";
+import {have_empty_char, join_url} from "../../../../../common/StringUtil";
 import {
     server_client_proxy, tcp_proxy_bridge_fig_item,
+    tcp_proxy_sync_task_item,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
     tcp_proxy_server_config
-} from "../../../../common/req/common.pojo";
-import {ws} from "../../util/ws";
-import {CmdType} from "../../../../common/frame/WsData";
-import { getShortTime } from "../../util/common_util";
-import {Global} from "../../util/global";
-import {routerConfig} from "../../../../common/RouterConfig";
-import {copyToClipboard} from "../../util/FunUtil";
+} from "../../../../../common/req/common.pojo";
+import {ws} from "../../../util/ws";
+import {CmdType} from "../../../../../common/frame/WsData";
+import { getShortTime } from "../../../util/common_util";
+import {Global} from "../../../util/global";
+import {routerConfig} from "../../../../../common/RouterConfig";
+import {copyToClipboard} from "../../../util/FunUtil";
+import Header from "../../../../meta/component/Header";
 
 let client_num_id_map:{[key:number]:tcp_proxy_server_client} = {}
 
@@ -164,7 +166,12 @@ export function TcpProxyServerClient() {
         }
     }
 
-    return (<Row>
+
+    return (<React.Fragment>
+        <Header>
+            { edit_client && <span>{edit_client.client_name}</span>}
+        </Header>
+        <Row>
         <Column widthPer={50}>
             <Dashboard>
 
@@ -220,7 +227,7 @@ export function TcpProxyServerClient() {
                 (edit_client) ?
                 <Dashboard>
                 <Card self_title={<span
-                        className={" div-row "}><h2>{t(`代理配置`)+`-${edit_client?.client_name}`}</h2> </span>}
+                        className={" div-row "}><h2>{t(`代理配置`)}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
@@ -324,7 +331,7 @@ export function TcpProxyServerClient() {
                     </Card>
 
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`桥接配置`)+`-${edit_client?.client_name}`}</h2> </span>}>
+                        className={" div-row "}><h2>{t(`桥接配置`)}</h2> </span>}>
 
                         <ActionButton icon={"add"} onClick={() => {
                             edit_client_bridge_fig.push({
@@ -399,5 +406,6 @@ export function TcpProxyServerClient() {
                     </Dashboard>
             }
         </Column>
-    </Row>)
+    </Row>
+    </React.Fragment>)
 }

@@ -6,7 +6,7 @@ import {client_num_id_key, server_key, tcpForwardService} from "./tcp.forward.se
 import {NetServerUtil} from "./util/NetServerUtil";
 import net from "net";
 import {NetPojo} from "../../../common/req/net.pojo";
-import {tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {tcp_proxy_client_fig, tcp_proxy_server_config, tcp_proxy_sync_task_item} from "../../../common/req/common.pojo";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {Sucess} from "../../other/Result";
@@ -20,6 +20,8 @@ import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {TcpForwardUtil} from "./tcp.forward.util";
 import {Wss} from "../../../common/frame/ws.server";
 import {Env} from "../../../common/node/Env";
+import {tcpSyncService} from "./tcp.sync.service";
+import {tcpSyncClientService} from "./tcp.sync.client.service";
 
 // const  tcp_client_target_map = {}
 
@@ -62,6 +64,27 @@ export class TcpForwardController {
     async server_client_del(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         await tcpForwardService.server_client_del(data)
+        return Sucess({})
+    }
+
+    // 文件同步相关
+    @Get('/sync_task_get')
+    async sync_task_get(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        return Sucess(tcpSyncService.get_all_sync_task_list())
+    }
+
+    @Post('/sync_task_save')
+    async sync_task_save(@Body() data: tcp_proxy_sync_task_item, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        const saved = tcpSyncService.save_sync_task(data)
+        return Sucess(saved)
+    }
+
+    @Post('/sync_task_del')
+    async sync_task_del(@Body() data: {id:string}, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        tcpSyncService.delete_sync_task(data.id)
         return Sucess({})
     }
 
@@ -300,6 +323,36 @@ export class TcpForwardController {
         // delete fig.client_id
         // delete fig.client_num_id
         DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
+    }
+
+    // 文件同步相关
+    @tcp_server_msg(NetMsgType.tcp_sync_task_event, tcp_server_type.tcp_forward)
+    sync_task_event_to_server(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        tcpSyncService.route_sync_event(data)
+    }
+
+    @tcp_client_msg(NetMsgType.tcp_sync_task_event)
+    sync_task_event_to_client(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        tcpSyncClientService.apply_remote_event(data).catch(console.error)
+    }
+
+    @tcp_client_msg(NetMsgType.tcp_sync_task_config)
+    sync_task_config(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        const fig = tcp_forward_client_service.client_fig_get()
+        const serverIp = util.data_map.server_ip
+        const serverPort = util.data_map.server_port
+        const client = fig.list.find((item) => item.serverIp === serverIp && item.serverPort === serverPort)
+        if (!client?.client_num_id) {
+            return;
+        }
+        const task = JSON.parse(data.toString()) as tcp_proxy_sync_task_item;
+        tcpSyncClientService.sync_task_config(task, client.client_num_id).catch(console.error)
+    }
+
+    @tcp_client_msg(NetMsgType.tcp_sync_task_clear)
+    sync_task_clear(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        const info = JSON.parse(data.toString()) as { task_id: string };
+        tcpSyncClientService.sync_task_clear(info.task_id)
     }
 
     @tcp_server_msg(NetMsgType.get_global_socket_id,tcp_server_type.tcp_forward)
