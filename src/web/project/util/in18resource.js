@@ -40,10 +40,12 @@ export const resources = {
     }
 }
 let lan;
-const data = localStorage.getItem("user_base_info");
-if (data) {
-    lan = JSON.parse(data)['language'];
-}
+try {
+    const data = localStorage.getItem("user_base_info");
+    if (data) {
+        lan = JSON.parse(data)['user_data']['language'];
+    }
+} catch (e) {}
 i18n
     // 将 i18n 实例传递给 react-i18next
     .use(initReactI18next)
