@@ -347,6 +347,9 @@ export class TcpForwardController {
         }
         const task = JSON.parse(data.toString()) as tcp_proxy_sync_task_item;
         tcpSyncClientService.sync_task_config(task, client.client_num_id).catch(console.error)
+        util.get_client().set_on_close(()=>{
+            tcpSyncClientService.stopRuntime(task.id)
+        })
     }
 
     @tcp_client_msg(NetMsgType.tcp_sync_task_clear)

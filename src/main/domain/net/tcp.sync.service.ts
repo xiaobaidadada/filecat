@@ -49,6 +49,9 @@ export class TcpSyncService {
         //     // 两个客户端有一个不在线就不开始了
         //     return
         // }
+        if(task.source_client_num_id === task.target_client_num_id) {
+            return ;
+        }
         const client = tcpForwardService.client_num_map[client_num_id];
         client?.client_util?.send_data(NetMsgType.tcp_sync_task_config, Buffer.from(JSON.stringify(task)));
     }
@@ -102,9 +105,10 @@ export class TcpSyncService {
         }
 
         if (current.source_client_num_id === current.target_client_num_id) {
-            if(this.isAbsoluteRelated(current.source_dir,current.target_dir)) {
-                throw new Error("Source and target dir must be different when same client");
-            }
+            // if(this.isAbsoluteRelated(current.source_dir,current.target_dir)) {
+            //     throw new Error("Source and target dir must be different when same client");
+            // }
+            throw new Error("Source and target id must be different ");
         }
 
         const existingIndex = current.id ? list.findIndex((item) => item.id === current.id) : -1;
@@ -159,10 +163,10 @@ export class TcpSyncService {
         if (!task || !task.open) {
             return;
         }
-        if (task.source_client_num_id !== envelope.header.source_client_num_id || task.target_client_num_id !== envelope.header.target_client_num_id) {
-            return;
-        }
-        const target = tcpForwardService.client_num_map[task.target_client_num_id];
+        // if (task.source_client_num_id !== envelope.header.source_client_num_id || task.target_client_num_id !== envelope.header.target_client_num_id) {
+        //     return;
+        // }
+        const target = tcpForwardService.client_num_map[envelope.header.target_client_num_id];
         target?.client_util?.send_data(NetMsgType.tcp_sync_task_event, buffer);
     }
 

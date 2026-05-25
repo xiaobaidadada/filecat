@@ -70,7 +70,7 @@ export function TcpProxyServerClientSetting() {
         if (r.code === RCode.Success) {
             const list = (r.data as tcp_proxy_sync_task_item[]).map((item) => ({
                 ...item,
-                ignore_text: (item.ignore_list ?? []).join(", "),
+                ignore_text: (item.ignore_list ?? []).join(";"),
             }));
             set_sync_task_list(list as any);
         }
@@ -144,7 +144,7 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={item.target_dir} handleInputChange={(value) => {
                                 item.target_dir = value;
                             }} no_border={true}/>,
-                            <InputText value={item.ignore_text} handleInputChange={(value) => {
+                            <InputText value={item.ignore_text} placeholder={'dir1;file2'} handleInputChange={(value) => {
                                 item.ignore_text = value;
                             }} no_border={true}/>,
                             <Select value={!!item.open} onChange={(value) => {
