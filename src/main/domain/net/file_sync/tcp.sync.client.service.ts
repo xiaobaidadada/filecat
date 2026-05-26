@@ -35,6 +35,9 @@ function getServerConnectionForClient(client_num_id: number) {
 export class TcpSyncClientService {
 
     async client_sync_task_get() {
+        if(!ThreadsFilecat.is_running) {
+            return  []
+        }
         const list = await ThreadsFilecat.post(threads_msg_type.file_watch_sync_task_get,{})
         return list
     }
