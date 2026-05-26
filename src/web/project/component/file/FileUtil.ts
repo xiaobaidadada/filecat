@@ -16,6 +16,7 @@ import {Http_controller_router} from "../../../../common/req/http_controller_rou
 import {GlobalContext} from "../../GlobalProvider";
 import {useSearchParams} from "react-router-dom";
 import {getFileFormat} from "../../../../common/FileMenuType";
+import {browser_file_pojo} from "../../../../common/req/common.pojo";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -101,6 +102,7 @@ export type file_show_item = {
 export function using_drop_file_upload(inputRef:any,call_fun_type:PromptEnum) {
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
+    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
 
     const drop = async (event) => {
         event.preventDefault();
@@ -116,7 +118,7 @@ export function using_drop_file_upload(inputRef:any,call_fun_type:PromptEnum) {
             }
         }
         // 文件名不会包含绝对路径
-        let files = await scanFiles(dt);
+        let files:browser_file_pojo[] = await scanFiles(dt,user_base_info?.user_data?.upload_file_ignore_list);
         setUploadFiles(files);
         setShowPrompt({show: true, type: call_fun_type, overlay: false, data: {}});
     }

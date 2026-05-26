@@ -14,7 +14,8 @@ import {ws_file_upload_req} from "../../../../common/req/file.req";
 import {fileHttp} from "../../util/config";
 import {WsClient} from "../../../../common/frame/ws.client";
 import {dir_upload_max_num_item} from "../../../../common/req/setting.req";
-import {generateRandomHash} from "../../../../common/StringUtil";
+import {generateRandomHash, matchGitignore} from "../../../../common/StringUtil";
+import {browser_file_pojo} from "../../../../common/req/common.pojo";
 
 // const all_wss_list: WsClient[] = [];
 const readAsArrayBufferAsync = (chunk, reader) => {
@@ -37,7 +38,7 @@ export function FilesUpload() {
 
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [open, setOpen] = React.useState(false);
-    const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
+    const [uploadFiles, setUploadFiles] = useRecoilState<browser_file_pojo[]>($stroe.uploadFiles);
     const [progresses, setProgresses] = useState<number[]>([]);
     const [progresses_speed, set_progresses_speed] = useState<number[]>([]);
     const [progresses_tip, set_progresses_tip] = useState<string[]>([]);
@@ -270,11 +271,22 @@ export function FilesUpload() {
                 activeWorkers++;
                 // console.log(ok_index,index)
                 try {
-                    if (v?.dir_upload_max_num_value?.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
-                        // 开启了 并超过了最大值
-                        await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value,all_wss_list);
-                    } else {
-                        await uploadFile(uploadFiles[index], index, initialPath);
+                    let ok = true
+                    if(user_base_info?.user_data?.upload_file_ignore_list?.length) {
+                        for (const it of user_base_info.user_data.upload_file_ignore_list) {
+                            if(matchGitignore(uploadFiles[index].fullPath,it)) {
+                                ok = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(ok) {
+                        if (v?.dir_upload_max_num_value?.open_ws_file === true && uploadFiles[index].size >= v.dir_upload_max_num_value.ws_file_standard_size) {
+                            // 开启了 并超过了最大值
+                            await ws_upload_file(uploadFiles[index], index, initialPath, v.dir_upload_max_num_value,all_wss_list);
+                        } else {
+                            await uploadFile(uploadFiles[index], index, initialPath);
+                        }
                     }
                 } catch (e) {
                     hasError = true;

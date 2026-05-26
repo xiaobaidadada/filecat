@@ -206,3 +206,11 @@ export interface workflow_setting_item {
     user_id:string
     open:boolean
 }
+
+export interface browser_file_pojo {
+
+    fullPath:string;
+    isDir:boolean;
+    name:string;
+    size:number
+}

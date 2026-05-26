@@ -51,7 +51,7 @@ export function UploadFile(props) {
                     <div className="action" onClick={() => {
                         // @ts-ignore
                         // document.getElementById("upload-input-directory").value = "";
-                        // @ts-ignore
+                        // @ts-ignore 一次性扁平 系统自己递归遍历
                         document.getElementById("upload-input").click();
                     }}>
                         <i className="material-icons">insert_drive_file</i>

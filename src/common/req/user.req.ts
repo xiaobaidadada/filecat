@@ -176,4 +176,7 @@ export class UserData extends UserLogin {
     file_time_show_type?:user_file_time_show_type
 
     file_list_zoom?:number;
+
+    upload_file_ignore?:string
+    upload_file_ignore_list?:string[]
 }

@@ -44,6 +44,7 @@ export function PrivateEnv() {
 
     const [language,set_language] =  useState("");
     const [theme,set_theme] =  useState<themes>("");
+    const [upload_file_ignore,set_upload_file_ignore] =  useState<themes>("");
 
     const getItems = async () => {
         // 文件夹根路径
@@ -68,6 +69,7 @@ export function PrivateEnv() {
         getItems();
         set_language(userInfo?.user_data?.language);
         set_theme(userInfo?.user_data?.theme);
+        set_upload_file_ignore(userInfo?.user_data?.upload_file_ignore)
     }, []);
 
 
@@ -188,7 +190,8 @@ export function PrivateEnv() {
 
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.private_sys_env,value:{
                 language,
-                theme
+                theme,
+                upload_file_ignore
             }});
         if (result.code === RCode.Success) {
             NotySucess("修改成功")
@@ -259,6 +262,9 @@ export function PrivateEnv() {
                     <Select  value={theme} onChange={(value)=>{
                         set_theme(value);
                     }} options={[{title:"light",value:"light"},{title:"dark",value:"dark"}]}/>
+                    <InputText value={upload_file_ignore} handleInputChange={(value) => {
+                        set_upload_file_ignore(value)
+                    }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"} no_border={true}/>
                 </Card>
             </Dashboard>
 

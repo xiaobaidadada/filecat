@@ -1,4 +1,7 @@
-export function scanFiles(dt) {
+import {browser_file_pojo} from "../../../common/req/common.pojo";
+import {matchGitignore} from "../../../common/StringUtil";
+
+export function scanFiles(dt,upload_file_ignore_list?:string[]):Promise<browser_file_pojo[]> {
     return new Promise((resolve) => {
         let reading = 0;
         const contents = [];
@@ -18,6 +21,13 @@ export function scanFiles(dt) {
         }
 
         function readEntry(entry, directory = "") {
+            if(upload_file_ignore_list?.length) {
+                for (let it of upload_file_ignore_list) {
+                    if(matchGitignore(entry.name,it)) {
+                        return;
+                    }
+                }
+            }
             if (entry.isFile) {
                 reading++;
                 entry.file((file) => {

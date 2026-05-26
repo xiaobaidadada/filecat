@@ -436,6 +436,7 @@ export class SettingController {
             const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
             user_data.language = body.value.language;
             user_data.theme = body.value.theme;
+            user_data.upload_file_ignore = body.value.upload_file_ignore
             await userService.save_user_info(user_data.id, user_data);
         }
         return Sucess("1");
