@@ -265,7 +265,7 @@ export class tcp_client {
             const tag_id = NetUtil.next_tag_id();
             this.call_resolve_map[tag_id] = resolve;
             this.call_resolve_timeout_map[tag_id] = setTimeout(() => {
-                reject(new Error("超时"));
+                reject(new Error(`超时:${code_type}`));
                 delete this.call_resolve_map[tag_id];
                 delete this.call_resolve_timeout_map[tag_id];
             }, net_timeout);

@@ -20,8 +20,8 @@ import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {TcpForwardUtil} from "./tcp.forward.util";
 import {Wss} from "../../../common/frame/ws.server";
 import {Env} from "../../../common/node/Env";
-import {tcpSyncService} from "./tcp.sync.service";
-import {tcpSyncClientService} from "./tcp.sync.client.service";
+import {tcpSyncService} from "./file_sync/tcp.sync.service";
+import {tcpSyncClientService} from "./file_sync/tcp.sync.client.service";
 
 // const  tcp_client_target_map = {}
 
@@ -91,7 +91,7 @@ export class TcpForwardController {
     @Get('/client_sync_task_get')
     async client_sync_task_get(@Body() data: any, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
-        return Sucess(tcpSyncClientService.client_sync_task_get())
+        return Sucess(await tcpSyncClientService.client_sync_task_get())
     }
 
     @Post('/client_del')
@@ -335,7 +335,7 @@ export class TcpForwardController {
     @tcp_server_msg(NetMsgType.tcp_sync_task_event, tcp_server_type.tcp_forward)
     async sync_task_event_to_server(data: Buffer, util: tcp_raw_socket, tag_id:number) {
         try {
-            tcpSyncService.route_sync_event(data)
+            await tcpSyncService.route_sync_event(data)
         } catch (e) {
             console.log(e)
         } finally {

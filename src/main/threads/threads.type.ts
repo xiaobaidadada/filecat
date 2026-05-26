@@ -20,8 +20,15 @@ export enum threads_msg_type {
     docs_add,
     docs_del,
     docs_close,
-    docs_search,
+    docs_search= 12,
 
     // sys_info,
     // sys_info_send,
+
+    file_watch_init,
+    file_watch_send,
+    file_watch_close,
+    file_watch_apply,
+    file_watch_sync_task_get
+
 }

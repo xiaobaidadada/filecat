@@ -17,7 +17,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {generateSaltyUUID} from "../../../common/StringUtil";
-import {tcpSyncService} from "./tcp.sync.service";
+import {tcpSyncService} from "./file_sync/tcp.sync.service";
 
 
 export const server_key = "sockets";

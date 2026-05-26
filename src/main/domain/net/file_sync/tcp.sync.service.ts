@@ -1,11 +1,11 @@
-import {DataUtil} from "../data/DataUtil";
-import {data_common_key, file_key} from "../data/data_type";
-import {tcp_proxy_sync_task_item, tcp_proxy_server_client} from "../../../common/req/common.pojo";
-import {generateSaltyUUID} from "../../../common/StringUtil";
-import {NetMsgType, NetUtil} from "./util/NetUtil";
+import {DataUtil} from "../../data/DataUtil";
+import {data_common_key, file_key} from "../../data/data_type";
+import {tcp_proxy_sync_task_item, tcp_proxy_server_client} from "../../../../common/req/common.pojo";
+import {generateSaltyUUID} from "../../../../common/StringUtil";
+import {NetMsgType, NetUtil} from "../util/NetUtil";
 import {buildSyncEnvelope, parseSyncEnvelope} from "./tcp.sync.util";
 import path from "path";
-import {tcpForwardService} from "./tcp.forward.server.service";
+import {tcpForwardService} from "../tcp.forward.server.service";
 
 
 
