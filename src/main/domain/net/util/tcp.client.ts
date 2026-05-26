@@ -177,7 +177,7 @@ export class tcp_client {
             return; // 已经在等待重连中，不再挂载重复定时器
         }
 
-        console.log("TCP 链路已断开，3秒后尝试建立新连接并重新注册...");
+        // console.log("TCP 链路已断开，3秒后尝试建立新连接并重新注册...");
         this.reconnect_timeout = setTimeout(async () => {
             this.reconnect_timeout = undefined;
             if (this.is_manually_closed) return;
@@ -203,6 +203,7 @@ export class tcp_client {
 
         // ⭐ 监听连接被服务器主动踢掉、或者网络突发故障断开的情况
         this.client.on_close(() => {
+            console.log(`tcp 被服务器踢掉 ${this.options.server_host}  ${this.options.server_port}`);
             this.scheduleReconnect();
         });
 
