@@ -203,7 +203,7 @@ export class tcp_client {
 
         // ⭐ 监听连接被服务器主动踢掉、或者网络突发故障断开的情况
         this.client.on_close(() => {
-            console.log(`tcp 被服务器踢掉 ${this.options.server_host}  ${this.options.server_port}`);
+            // console.log(`tcp 被服务器踢掉 ${this.options.server_host}  ${this.options.server_port}`);
             this.scheduleReconnect();
         });
 

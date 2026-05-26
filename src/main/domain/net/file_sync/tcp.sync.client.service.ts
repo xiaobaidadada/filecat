@@ -64,7 +64,7 @@ export class TcpSyncClientService {
         const cache_path = DataUtil.get_file_path(data_dir_tem_name.tempfile, `tcp_proxy_file_sync_${task.id}.json`);
         ThreadsFilecat.post(threads_msg_type.file_watch_init,{
             task,client_num_id,cache_path
-        }).catch(console.error)
+        },10_000).catch(console.error)
 
     }
 

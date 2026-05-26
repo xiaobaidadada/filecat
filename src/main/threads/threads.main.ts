@@ -170,7 +170,7 @@ export class ThreadsMain {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.pending_resolves.delete(msg_id);
-                reject(new Error('Worker response timeout'));
+                reject(new Error(`Worker response timeout ${msg_type}`));
             }, timeout_ms);
             this.pending_resolves.set(msg_id, (v) => {
                 clearTimeout(timer);
