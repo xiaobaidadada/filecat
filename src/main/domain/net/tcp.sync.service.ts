@@ -25,9 +25,15 @@ export class TcpSyncService {
     private normalizeTask(task: tcp_proxy_sync_task_item) {
         task.source_dir = (task.source_dir ?? "").trim();
         task.target_dir = (task.target_dir ?? "").trim();
-        task.ignore_list = (task.ignore_list ?? []).map((item) => String(item ?? "").trim()).filter(Boolean);
         task.delete_missing = task.delete_missing !== false;
         task.open = !!task.open;
+        task.ignore_list = (task.ignore_text ?? "")
+            .split('\n')
+            .map(line => line.trim())          // 去除首尾空白
+            .filter(line =>
+                line &&                          // 过滤空行
+                !line.startsWith('#')            // 过滤 # 开头
+            );
         return task;
     }
 
@@ -92,10 +98,7 @@ export class TcpSyncService {
 
     public save_sync_task(task: tcp_proxy_sync_task_item) {
         const list = getSyncTaskList();
-        const current = this.normalizeTask({
-            ...task,
-            ignore_list: task.ignore_list ?? [],
-        });
+        const current = this.normalizeTask(task);
 
         if (!current.source_client_num_id || !current.target_client_num_id) {
             throw new Error("Sync task needs two client ids");

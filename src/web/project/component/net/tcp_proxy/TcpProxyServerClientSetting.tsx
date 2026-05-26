@@ -23,6 +23,7 @@ import {
 } from "../../../../../common/req/common.pojo";
 import {ws} from "../../../util/ws";
 import {CmdType} from "../../../../../common/frame/WsData";
+import {editor_data} from "../../../util/store.util";
 
 
 export function TcpProxyServerClientSetting() {
@@ -30,7 +31,7 @@ export function TcpProxyServerClientSetting() {
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-
+    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
 
     const [sync_task_list,set_sync_task_list] = useState<(tcp_proxy_sync_task_item & {ignore_text?: string})[]>([])
 
@@ -68,11 +69,7 @@ export function TcpProxyServerClientSetting() {
     const load_sync_tasks = async () => {
         const r = await tcpProxy.get("sync_task_get")
         if (r.code === RCode.Success) {
-            const list = (r.data as tcp_proxy_sync_task_item[]).map((item) => ({
-                ...item,
-                ignore_text: (item.ignore_list ?? []).join(";"),
-            }));
-            set_sync_task_list(list as any);
+            set_sync_task_list(r.data as any);
         }
     }
 
@@ -80,14 +77,8 @@ export function TcpProxyServerClientSetting() {
         return all_client_options.find((item) => String(item.value) === String(value));
     }
 
-    const save_sync_task = async (item: tcp_proxy_sync_task_item & {ignore_text?: string}) => {
-        const payload: tcp_proxy_sync_task_item = {
-            ...item,
-            ignore_list: (item.ignore_text ?? "")
-                .split(/[\n,]/)
-                .map((v) => v.trim())
-                .filter(Boolean),
-        };
+    const save_sync_task = async (item: tcp_proxy_sync_task_item ) => {
+        const payload: tcp_proxy_sync_task_item = item;
         const r = await tcpProxy.post("sync_task_save", payload)
         if (r.code === RCode.Success) {
             NotySucess("成功")
@@ -144,17 +135,28 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={item.target_dir} handleInputChange={(value) => {
                                 item.target_dir = value;
                             }} no_border={true}/>,
-                            <InputText value={item.ignore_text} placeholder={'dir1;file2'} handleInputChange={(value) => {
-                                item.ignore_text = value;
-                            }} no_border={true}/>,
-                            <Select value={!!item.open} onChange={(value) => {
-                                item.open = value === "true"
+                            <ActionButton icon={"edit"} title={"额外参数设置"} onClick={() => {
+                                editor_data.set_value_temp(item.ignore_text)
+                                setEditorSetting({
+                                    model: "ace/mode/gitignore",
+                                    open: true,
+                                    fileName: "",
+                                    save:async (context)=>{
+                                        item.ignore_text = context
+                                        set_sync_task_list([...sync_task_list])
+                                        editor_data.set_value_temp('')
+                                        save_sync_task(item)
+                                    }
+                                })
+                            }}/>,
+                            <InputCheckbox selected={!!item.open} onchange={()=>{
+                                item.open = !item.open
                                 set_sync_task_list([...sync_task_list])
-                            }}  options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]} no_border={true}/>,
-                            <Select value={!!item.two_way_sync} onChange={(value) => {
-                                item.two_way_sync = value === "true"
+                            }} />,
+                           <InputCheckbox selected={!!item.two_way_sync} onchange={()=>{
+                                item.two_way_sync = !item.two_way_sync
                                 set_sync_task_list([...sync_task_list])
-                            }}  options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]} no_border={true}/>,
+                            }} />,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;
                             }} no_border={true}/>,

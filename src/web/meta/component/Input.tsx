@@ -285,7 +285,7 @@ export function InputRadio(props: {
 }
 
 export function InputCheckbox(props: {
-    context: any,
+    context?: any,
     onchange?: () => void,
     selected?: boolean,
     is_disable?: boolean,
@@ -311,7 +311,7 @@ export function InputCheckbox(props: {
         {/*       onChange={() => {*/}
         {/*           if (props.onchange) props.onchange(props.value)*/}
         {/*       }}/>*/}
-        {props.context}
+        {props.context&&props.context}
     </div>
 }
 
