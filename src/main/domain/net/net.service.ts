@@ -930,13 +930,14 @@ export class NetService {
             console.log(`开启 https tunnel服务器 ${fig.port}`)
             this.start_https_tunnel_traffic_save_timer()
             NetServerUtil.start_tcp_server(fig.port,tcp_server_type.https_tunnel, NetMsgType.https_tunnel_tcp_connect)
-        } else {
-            console.log(`关闭 https tunnel服务器 ${fig.port}`)
-            https_tunnel.persist_traffic_stats();
-            https_tunnel.clear_runtime_traffic_stats();
-            this.stop_https_tunnel_traffic_save_timer()
-            NetServerUtil.close_server(tcp_server_type.https_tunnel)
         }
+        // else {
+        //     // console.log(`关闭 https tunnel服务器 ${fig.port}`)
+        //     https_tunnel.persist_traffic_stats();
+        //     https_tunnel.clear_runtime_traffic_stats();
+        //     this.stop_https_tunnel_traffic_save_timer()
+        //     NetServerUtil.close_server(tcp_server_type.https_tunnel)
+        // }
 
     }
 }

@@ -91,6 +91,13 @@ export class TcpSyncClientService {
         this.stopRuntime(task_id);
     }
 
+    public tcp_sync_task_config_delete(task_id: string) {
+        // 删除缓存文件
+        this.sync_task_clear(task_id);
+        const cache_path = DataUtil.get_file_path(data_dir_tem_name.tempfile, `tcp_proxy_file_sync_${task_id}.json`);
+        FileUtil.unlinkSync(cache_path).catch(console.error);
+    }
+
     async send_data(current_client_id:number,buffer:any) {
         const serverSocket = getServerConnectionForClient(current_client_id);
         const rawClient = serverSocket?.get_raw_client?.();

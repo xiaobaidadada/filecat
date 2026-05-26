@@ -376,6 +376,12 @@ export class TcpForwardController {
         tcpSyncClientService.sync_task_clear(info.task_id)
     }
 
+    @tcp_client_msg(NetMsgType.tcp_sync_task_config_delete)
+    tcp_sync_task_config_delete(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        const info = JSON.parse(data.toString()) as { task_id: string };
+        tcpSyncClientService.tcp_sync_task_config_delete(info.task_id)
+    }
+
     @tcp_server_msg(NetMsgType.get_global_socket_id,tcp_server_type.tcp_forward)
     get_global_socket_id(data: Buffer, util: tcp_raw_socket,tag_id:number) {
         const socket_id = tcpForwardService.get_socket_id()

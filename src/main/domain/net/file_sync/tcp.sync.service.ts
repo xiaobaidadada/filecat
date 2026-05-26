@@ -62,6 +62,22 @@ export class TcpSyncService {
         client?.client_util?.send_data(NetMsgType.tcp_sync_task_config, Buffer.from(JSON.stringify(task)));
     }
 
+    private sendDelTaskToClient(task: tcp_proxy_sync_task_item) {
+        // if(!tcpForwardService.client_num_map[task.source_client_num_id] || !tcpForwardService.client_num_map[task.target_client_num_id]) {
+        //     // 两个客户端有一个不在线就不开始了
+        //     return
+        // }
+        const source_client = tcpForwardService.client_num_map[task.source_client_num_id];
+        source_client?.client_util?.send_data(NetMsgType.tcp_sync_task_config_delete, Buffer.from(JSON.stringify({
+            task_id:task.id
+        })));
+
+        const target_client = tcpForwardService.client_num_map[task.target_client_num_id];
+        target_client?.client_util?.send_data(NetMsgType.tcp_sync_task_config_delete, Buffer.from(JSON.stringify({
+            task_id:task.id
+        })));
+    }
+
     private clearTaskOnClient(task: tcp_proxy_sync_task_item, client_num_id: number) {
         const client = tcpForwardService.client_num_map[client_num_id];
         client?.client_util?.send_data(NetMsgType.tcp_sync_task_clear, Buffer.from(JSON.stringify({
@@ -154,8 +170,9 @@ export class TcpSyncService {
         }
         if (removed) {
             saveSyncTaskList(next_list);
-            this.clearTaskOnClient(removed, removed.source_client_num_id);
-            this.clearTaskOnClient(removed, removed.target_client_num_id);
+            // this.clearTaskOnClient(removed, removed.source_client_num_id);
+            // this.clearTaskOnClient(removed, removed.target_client_num_id);
+            this.sendDelTaskToClient(removed)
         }
         return removed;
     }
