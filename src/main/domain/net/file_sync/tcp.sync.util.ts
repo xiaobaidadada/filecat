@@ -118,7 +118,7 @@ export class AsyncQueue {
     constructor(
         private concurrency: number = 1,
         private processor: (task: QueueTaskItem) => Promise<void>, // 传入外部处理器
-        private next_interval = 500
+        private next_interval = 100
     ) {}
 
     public push(task: QueueTaskItem) {

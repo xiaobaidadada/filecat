@@ -49,6 +49,7 @@ export class TcpSyncClientService {
 
 
     public stopRuntime(task_id: string) {
+        if(!ThreadsFilecat.is_running) return
        // 没有必要吧
         ThreadsFilecat.post(threads_msg_type.file_watch_close,{task_id}).catch(console.error);
     }
@@ -70,6 +71,7 @@ export class TcpSyncClientService {
 
     // 响应和接收远端网络包的回调钩子
     public async apply_remote_event(buffer: Buffer) {
+        if(!ThreadsFilecat.is_running) return
         await ThreadsFilecat.post(threads_msg_type.file_watch_apply,{buffer})
     }
 

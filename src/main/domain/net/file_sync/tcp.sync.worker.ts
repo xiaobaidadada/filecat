@@ -191,7 +191,10 @@ export class TcpSyncWorkerService {
         }
     }
 
-    public async apply_remote_event(buffer: Buffer) {
+    public async apply_remote_event(rawBuffer: Buffer) {
+        // ⭐ 核心修复：将跨线程传输后丢失原型的普通对象/Uint8Array 重新转换为标准的 Buffer
+        const buffer = Buffer.from(rawBuffer);
+
         const envelope = parseSyncEnvelope(buffer);
         const runtime = this.runtime_map.get(envelope.header.task_id);
         if (!runtime || !runtime.task.open) {

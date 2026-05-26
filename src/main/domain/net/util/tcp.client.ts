@@ -185,7 +185,7 @@ export class tcp_client {
             try {
                 await this.raw_connect();
             } catch (e) {
-                console.error(`重连或注册失败，继续等待下次重试: ${e?.message ?? e}`);
+                // console.error(`重连或注册失败，继续等待下次重试: ${e?.message ?? e}`);
                 this.scheduleReconnect(); // 失败进入下一次循环
             }
         }, 3 * 1000);

@@ -102,7 +102,7 @@ export function TengXun(props: any) {
                     NotySucess("删除成功，稍后请刷新");
                 }
                 set_confirm({open: false, handle: null});
-            }, title: "确定删除吗？"
+            }, title: t("确定删除吗")
         });
 
     }

@@ -249,7 +249,7 @@ export function User() {
     const delete_user_api = async (username)=> {
         setShowPrompt({
             open: true,
-            title: "确定删除吗",
+            title: t("确定删除吗"),
             // sub_title: ``,
             handle: async () => {
                 const user_data = new UserData();

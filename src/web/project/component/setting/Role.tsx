@@ -140,7 +140,7 @@ export function Role() {
     const delete_user_api = async (role_id)=> {
         setShowPrompt({
             open: true,
-            title: "确定删除吗",
+            title: t("确定删除吗"),
             // sub_title: ``,
             handle: async () => {
                 const user_data = new UserData();

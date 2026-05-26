@@ -31,6 +31,7 @@ export function TcpProxyServerClientSetting() {
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [, set_confirm] = useRecoilState($stroe.confirm);
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
 
     const [sync_task_list,set_sync_task_list] = useState<(tcp_proxy_sync_task_item & {ignore_text?: string})[]>([])
@@ -170,7 +171,16 @@ export function TcpProxyServerClientSetting() {
                                 }}/>
                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                                     if (item.id) {
-                                        del_sync_task(item.id)
+                                        set_confirm({
+                                            open: true,
+                                            title: t('确定删除吗'),
+                                            // sub_title: ``,
+                                            handle: async () => {
+                                                await del_sync_task(item.id)
+                                                NotySucess("删除完成");
+                                                set_confirm({open:false,handle:null});
+                                            }
+                                        })
                                     } else {
                                         sync_task_list.splice(index, 1);
                                         set_sync_task_list([...sync_task_list])
