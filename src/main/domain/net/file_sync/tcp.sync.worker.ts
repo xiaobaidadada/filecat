@@ -35,9 +35,6 @@ export class TcpSyncWorkerService {
         return list;
     }
 
-    private shouldManageTask(task: tcp_proxy_sync_task_item, client_num_id: number) {
-        return task.source_client_num_id === client_num_id || task.target_client_num_id === client_num_id;
-    }
 
     public stopRuntime(task_id: string) {
         const runtime = this.runtime_map.get(task_id);
@@ -221,7 +218,7 @@ export class TcpSyncWorkerService {
 
         const watcher = chokidar.watch(runtime.local_dir, {
             persistent: true,
-            ignoreInitial: false,
+            ignoreInitial: !task.full_sync,
             alwaysStat: false,
             ignored: (filePath: string) => {
                 const relative = normalizeSyncRelativePath(path.relative(runtime.local_dir, filePath));
@@ -263,9 +260,6 @@ export class TcpSyncWorkerService {
     }
 
     public async open_task(task: tcp_proxy_sync_task_item, client_num_id: number, cache_path: string) {
-        if (!this.shouldManageTask(task, client_num_id) || !task.open) {
-            return;
-        }
 
         this.stopRuntime(task.id);
 
