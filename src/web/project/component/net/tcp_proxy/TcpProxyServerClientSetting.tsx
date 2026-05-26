@@ -129,7 +129,7 @@ export function TcpProxyServerClientSetting() {
                             target_client_num_id: defaultTarget ? parseInt(String(defaultTarget)) : undefined,
                             source_dir: "",
                             target_dir: "",
-                            ignore_text: "",
+                            // ignore_text: "",
                             delete_missing: true,
                         } as any)
                         set_sync_task_list([...sync_task_list])
