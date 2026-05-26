@@ -229,7 +229,7 @@ export class tcp_client {
 
         // ⭐ 核心重点：每次物理重连成功后，都必须要执行注册业务，恢复远端路由信息
         await this.register();
-        console.log("TCP 物理连接完成，业务注册成功！");
+        // console.log("TCP 物理连接完成，业务注册成功！");
     }
 
     async connect() {
