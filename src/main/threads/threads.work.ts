@@ -10,6 +10,14 @@ console.log('[worker] 子线程启动, workerData=', workerData);
  */
 const handlers = new Map<threads_msg_type, (msg: WorkerMessage) => Promise<any>>();
 
+// 👇 新增：用于子线程主动发起请求时的 ID 生成与 Promise 映射
+let next_msg_id = 1;
+const pending_resolves = new Map<number, (v: any) => void>();
+
+function get_next_msg_id(): number {
+    return next_msg_id++;
+}
+
 /**
  * 注册消息处理函数
  * @param type 消息类型
@@ -35,22 +43,76 @@ export function threads_send(msg: WorkerMessage, transferList?: ArrayBuffer[]) {
 }
 
 /**
+ * ⭐ 新增：向主线程异步发送消息并等待返回结果 (支持零拷贝)
+ * @param msg_type 消息类型
+ * @param data 消息数据
+ * @param timeout_ms 超时时间，默认 5000 毫秒
+ * @param transferList 可转移对象
+ */
+export async function threads_send_async(
+    msg_type: threads_msg_type,
+    data: any,
+    timeout_ms = 5000,
+    transferList?: ArrayBuffer[]
+): Promise<any> {
+    const msg_id = get_next_msg_id();
+    const msg: WorkerMessage = { id: msg_id, type: msg_type, data };
+
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            pending_resolves.delete(msg_id);
+            reject(new Error(`[worker] Request to main thread timeout (type: ${msg_type}, id: ${msg_id})`));
+        }, timeout_ms);
+
+        pending_resolves.set(msg_id, (v) => {
+            clearTimeout(timer);
+            resolve(v);
+            pending_resolves.delete(msg_id);
+        });
+
+        try {
+            threads_send(msg, transferList);
+        } catch (err) {
+            clearTimeout(timer);
+            pending_resolves.delete(msg_id);
+            reject(err);
+        }
+    });
+}
+
+/**
  * 处理消息
  */
 async function handleMessage(msg: WorkerMessage) {
     try {
+        // 👇 核心拦截：如果主线程发来的消息带有 id，且属于子线程之前挂起的异步请求的响应
+        if (msg.id && pending_resolves.has(msg.id)) {
+            const resolveFn = pending_resolves.get(msg.id)!;
+            // 如果主线程传回了异常错误，这里抛出
+            if (msg.error) {
+                console.error(`[worker] received error from main: ${msg.error}`);
+            }
+            resolveFn(msg.data);
+            return; // 响应处理完毕，直接截断不再去找对应的 handler
+        }
+
+        // 否则，说明是主线程主动派发过来的任务，走原有逻辑
         const fn = handlers.get(msg.type);
         if (!fn) {
-            // 未注册处理函数
             threads_send({ id: msg.id, type: msg.type, data: `unknown type ${msg.type}` });
             return;
         }
 
         const result = await fn(msg);
-        threads_send({ id: msg.id, type: msg.type, data: result });
+
+        // 只有当主线程传了 id 过来（代表主线程在 await 结果），才需要给主线程回传带 id 的消息
+        if (msg.id) {
+            threads_send({ id: msg.id, type: msg.type, data: result });
+        }
     } catch (err: any) {
-        // 捕获异常并回传
-        threads_send({ id: msg.id, type: msg.type, data: null, error: err?.message || String(err) });
+        if (msg.id) {
+            threads_send({ id: msg.id, type: msg.type, data: null, error: err?.message || String(err) });
+        }
         console.error('[worker] task error:', err);
     }
 }

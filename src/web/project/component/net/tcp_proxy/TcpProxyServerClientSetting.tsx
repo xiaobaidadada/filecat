@@ -16,6 +16,7 @@ import {UserAuth, UserData} from "../../../../../common/req/user.req";
 import {deleteList} from "../../../../../common/ListUtil";
 import {have_empty_char} from "../../../../../common/StringUtil";
 import {
+    fault_ignore_text,
     server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
     tcp_proxy_server_client,
@@ -98,7 +99,21 @@ export function TcpProxyServerClientSetting() {
     return (<Row>
         <Column widthPer={100}>
             <Dashboard>
-                <Card self_title={<span className={" div-row "}><h2>{t(`客户端文件同步`)}</h2> </span>}>
+                <Card self_title={<span className={" div-row "}>
+                    <h2>{t(`客户端文件同步`)}</h2>
+                    <ActionButton icon={"info"} onClick={()=>{
+                        set_prompt_card({open:true,title:"信息",context_div : (
+                                <div>
+                                    <li>
+                                        {t(`默认（没有选中全量同步）不会立即同步两个目录中的文件，而是有文件被修改或者改动后才会同步，如果开启全量同步，每次客户端一上线就会递归的同步全部的文件，如果文件非常多，这会造成很大的执行压力。`)}
+                                    </li>
+                                    <li>
+                                        {t(`如果开启了双向同步，如果两边初始化的时候各自又有很多文件，这是不太稳定的,暂时不建议这样做。`)}
+                                    </li>
+                                </div>
+                            )})
+                    }} title={"信息"}/>
+                </span>}>
                     <ActionButton icon={"add"} onClick={() => {
                         const defaultSource = all_client_options?.[0]?.value;
                         const defaultTarget = all_client_options?.[1]?.value ?? all_client_options?.[0]?.value;
@@ -137,7 +152,7 @@ export function TcpProxyServerClientSetting() {
                                 item.target_dir = value;
                             }} no_border={true}/>,
                             <ActionButton icon={"edit"} title={"额外参数设置"} onClick={() => {
-                                editor_data.set_value_temp(item.ignore_text)
+                                editor_data.set_value_temp(item.ignore_text??fault_ignore_text)
                                 setEditorSetting({
                                     model: "ace/mode/gitignore",
                                     open: true,

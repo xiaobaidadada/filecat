@@ -73,18 +73,11 @@ export class TcpSyncClientService {
     public async apply_remote_event(buffer: Buffer) {
         if(!ThreadsFilecat.is_running) return
 
-        // 👈 提取底层 ArrayBuffer，实现主线程到子线程的零拷贝
-        const transferList: ArrayBuffer[] = [];
-        if (buffer.buffer instanceof ArrayBuffer) {
-            transferList.push(buffer.buffer);
-        }
-
         // 向子线程 post 消息时传入转移列表
         await ThreadsFilecat.post(
             threads_msg_type.file_watch_apply,
             { buffer },
-            2000,
-            transferList
+            2000
         );
     }
 

@@ -129,6 +129,14 @@ export class tcp_proxy_sync_task_item {
     full_sync?:boolean; // 初始化的时候就全量同步
 }
 
+export const fault_ignore_text =  `
+node_modules
+.venv
+.gradle
+.cache
+vendor
+`
+
 
 export class tcp_proxy_server_client {
     // 服务器状态与配置

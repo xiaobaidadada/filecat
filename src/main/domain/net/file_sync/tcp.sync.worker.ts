@@ -12,7 +12,7 @@ import {
     getFilePathHash // 👈 引入刚刚定义的哈希工具函数
 } from "./tcp.sync.util";
 import { FileUtil } from "../../file/FileUtil";
-import {register_threads_worker_handler, threads_send} from "../../../threads/threads.work";
+import {register_threads_worker_handler, threads_send, threads_send_async} from "../../../threads/threads.work";
 import {threads_msg_type} from "../../../threads/threads.type";
 
 const chokidar = require("chokidar");
@@ -184,13 +184,13 @@ export class TcpSyncWorkerService {
 
             // ⭐ 如果包装后的信封 buffer 也是独立的 ArrayBuffer，也可以选择转移它
             // 这里我们直接将大 buffer 传入发送，并携带底层的 ArrayBuffer 转移权
-            threads_send({
-                type: threads_msg_type.file_watch_send,
-                data: {
+            await threads_send_async(
+               threads_msg_type.file_watch_send,
+                 {
                     current_client_id,
                     buffer // 此时发送到主线程的 buffer 已经是零拷贝了
                 }
-            }, transferList); // 👈 传入转移列表
+            , 5000,transferList); // 👈 传入转移列表
 
             if (event === "add" || event === "change") {
                 const pathHash = getFilePathHash(runtime.local_dir, fullPath);
