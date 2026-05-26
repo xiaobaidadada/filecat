@@ -91,6 +91,7 @@ export enum NetMsgType {
     tcp_sync_task_config,
     tcp_sync_task_event,
     tcp_sync_task_clear,
+    tcp_sync_task_config_delete, // todo 待实现 删除缓存文件
 
 }
 
