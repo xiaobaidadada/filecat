@@ -19,13 +19,16 @@ export function register_threads_worker_handler(type: threads_msg_type, fn: (msg
     handlers.set(type, fn);
 }
 
+// threads.work.ts
+
 /**
- * 向主线程发送消息
- * @param msg
+ * 向主线程发送消息（支持零拷贝转移）
+ * @param msg 消息体
+ * @param transferList 可转移的 ArrayBuffer 数组
  */
-export function threads_send(msg: WorkerMessage) {
+export function threads_send(msg: WorkerMessage, transferList?: ArrayBuffer[]) {
     try {
-        parentPort?.postMessage(msg);
+        parentPort?.postMessage(msg, transferList);
     } catch (err) {
         console.error('[worker] send failed:', err);
     }

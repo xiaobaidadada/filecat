@@ -125,18 +125,7 @@ export class ThreadsMain {
         console.log('[main] all workers closed');
     }
 
-    /**
-     * fire-and-forget 广播
-     */
-    public  emit(msg_type: threads_msg_type, data: any,num = 1) {
-        const msg: WorkerMessage = { type: msg_type, data };
-        let count = 0;
-        for (const w of this.worker_threads) {
-            if(count >= num) break
-            w.postMessage(msg);
-            count++
-        }
-    }
+
 
     private  get_next_msg_id(): number {
         if(this.next_msg_id > 1000000000000) {
@@ -156,9 +145,23 @@ export class ThreadsMain {
     }
 
     /**
-     * 发送消息并 await 子线程返回结果
+     * fire-and-forget 广播（支持转移对象）
      */
-    public  async post(msg_type: threads_msg_type, data: any, timeout_ms = 2000): Promise<any> {
+    public emit(msg_type: threads_msg_type, data: any, num = 1, transferList?: ArrayBuffer[]) {
+        const msg: WorkerMessage = { type: msg_type, data };
+        let count = 0;
+        for (const w of this.worker_threads) {
+            if(count >= num) break
+            // 传入 transferList 确保零拷贝
+            w.postMessage(msg, transferList);
+            count++
+        }
+    }
+
+    /**
+     * 发送消息并 await 子线程返回结果（支持转移对象）
+     */
+    public async post(msg_type: threads_msg_type, data: any, timeout_ms = 2000, transferList?: ArrayBuffer[]): Promise<any> {
         if (this.worker_threads.length === 0) throw new Error('No worker threads started');
         const msg_id = this.get_next_msg_id()
         const msg: WorkerMessage = { id: msg_id, type: msg_type, data };
@@ -175,9 +178,9 @@ export class ThreadsMain {
                 this.pending_resolves.delete(msg_id);
             });
             try {
-                worker.postMessage(msg);
+                // 传入 transferList
+                worker.postMessage(msg, transferList);
             } catch (err) {
-                // 防止内存泄露
                 clearTimeout(timer);
                 this.pending_resolves.delete(msg_id);
                 reject(err);

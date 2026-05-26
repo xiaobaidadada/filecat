@@ -140,6 +140,7 @@ export class TcpSyncWorkerService {
             let mtime = Date.now();
             let size: number | undefined = undefined;
             let payload = Buffer.alloc(0);
+            let transferList: ArrayBuffer[] = []; // 👈 新增：转移列表
 
             if (event === "add" || event === "change") {
                 try {
@@ -147,15 +148,24 @@ export class TcpSyncWorkerService {
                     mtime = stats.mtimeMs;
                     size = stats.size;
 
-                    // ⭐ 重构：计算路径的 Hash 值作为缓存的 key
                     const pathHash = getFilePathHash(runtime.local_dir, fullPath);
-
                     if (runtime.cache_file_map[pathHash]) {
                         if (runtime.cache_file_map[pathHash].mtime === mtime) {
-                            return; // 缓存吻合，丢弃任务
+                            return;
                         }
                     }
-                    payload = await readFileBuffer(fullPath);
+
+                    // 读取文件为 Node Buffer
+                    const fileBuffer = await readFileBuffer(fullPath);
+
+                    // 核心：提取底层的 ArrayBuffer 用于零拷贝转移
+                    // 注意：如果是从小文件或 Buffer 池分配的，byteLength 可能不等于 buffer.byteLength，
+                    // 但对于大文件，fs.readFile 返回的是独立、干净的 ArrayBuffer
+                    payload = fileBuffer;
+                    if (fileBuffer.buffer instanceof ArrayBuffer) {
+                        transferList.push(fileBuffer.buffer);
+                    }
+
                 } catch (statErr) {
                     return;
                 }
@@ -172,15 +182,16 @@ export class TcpSyncWorkerService {
                 target_client_num_id: runtime.remote_client_id,
             }, payload);
 
+            // ⭐ 如果包装后的信封 buffer 也是独立的 ArrayBuffer，也可以选择转移它
+            // 这里我们直接将大 buffer 传入发送，并携带底层的 ArrayBuffer 转移权
             threads_send({
                 type: threads_msg_type.file_watch_send,
                 data: {
                     current_client_id,
-                    buffer
+                    buffer // 此时发送到主线程的 buffer 已经是零拷贝了
                 }
-            });
+            }, transferList); // 👈 传入转移列表
 
-            // ⭐ 重构：成功发送后使用 Hash 刷新本地缓存
             if (event === "add" || event === "change") {
                 const pathHash = getFilePathHash(runtime.local_dir, fullPath);
                 runtime.cache_file_map[pathHash] = { mtime };
