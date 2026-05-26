@@ -14,7 +14,7 @@ import {ws} from "../../../util/ws";
 import {
     tcp_proxy_bridge_fig_item, tcp_proxy_client_all_fig,
     tcp_proxy_client_fig,
-    tcp_proxy_server_client
+    tcp_proxy_server_client, tcp_proxy_sync_task_item
 } from "../../../../../common/req/common.pojo";
 import {generateRandomHash} from "../../../../../common/StringUtil";
 
@@ -36,9 +36,11 @@ export function TcpProxyClient(props) {
         client_proxy_host:string
     }[]>([]);
     const [bridge_list,set_bridge_list] = useState<tcp_proxy_bridge_fig_item[]>([]);
+    const [client_sync_task_list,set_client_sync_task_list] = useState<tcp_proxy_sync_task_item[]>([]);
 
     // const client_headers = ["index","host","port"]
     const client_bridge_headers = [t("序号"),t("服务端口"), t("转发客户端名称") ];
+    const client_sync_task_headers = [t("序号"),t("原客户端"), t("目标客户端") , t("待同步文件数量") ];
 
     const all_client_headers = [t("序号"),t("port"), t("host"),t("名称"),t("key"),t("在线"),t("开启"),t("备注") ];
 
@@ -73,6 +75,11 @@ export function TcpProxyClient(props) {
         const result2 = await tcpProxy.get("client_bridge_get_all_fig");
         if (result2.code === RCode.Success) {
             set_bridge_list(result2.data)
+        }
+
+        const result3 = await tcpProxy.get("client_sync_task_get");
+        if (result3.code === RCode.Success) {
+            set_client_sync_task_list(result3.data)
         }
 
     }
@@ -226,16 +233,35 @@ export function TcpProxyClient(props) {
 
             </Column>
             <Column widthPer={40}>
-                <Card title={t("桥接服务端口列表")} >
-                    <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
-                        const new_list = [
-                            <p>{index}</p>,
-                            <TextTip>{item.server_port}</TextTip>,
-                            <TextTip>{item.client_name}</TextTip>,
-                        ];
-                        return new_list;
-                    })} width={"10rem"}/>
-                </Card>
+                {
+                    bridge_list?.length ?
+                    <Card title={t("桥接服务端口列表")} >
+                        <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
+                            const new_list = [
+                                <p>{index}</p>,
+                                <TextTip>{item.server_port}</TextTip>,
+                                <TextTip>{item.client_name}</TextTip>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </Card>:
+                        <></>
+                }
+                {
+                    client_sync_task_list?.length ?
+                    <Card title={t("文件同步列表")} >
+                        <Table headers={client_sync_task_headers} rows={client_sync_task_list.map((item, index) => {
+                            const new_list = [
+                                <p>{index}</p>,
+                                <TextTip>{item.source_client_name}</TextTip>,
+                                <TextTip>{item.target_client_name}</TextTip>,
+                                <TextTip>{item.running_num}</TextTip>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </Card>:
+                        <></>
+                }
             </Column>
 
         </Row>

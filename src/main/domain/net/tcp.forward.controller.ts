@@ -88,6 +88,12 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    @Get('/client_sync_task_get')
+    async client_sync_task_get(@Body() data: any, @Req() req) {
+        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        return Sucess(tcpSyncClientService.client_sync_task_get())
+    }
+
     @Post('/client_del')
     async client_del(@Body() data: {index:number}, @Req() req) {
         userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
@@ -327,13 +333,25 @@ export class TcpForwardController {
 
     // 文件同步相关
     @tcp_server_msg(NetMsgType.tcp_sync_task_event, tcp_server_type.tcp_forward)
-    sync_task_event_to_server(data: Buffer, util: tcp_raw_socket, tag_id:number) {
-        tcpSyncService.route_sync_event(data)
+    async sync_task_event_to_server(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        try {
+            tcpSyncService.route_sync_event(data)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            util.send_data_call(tag_id,Buffer.alloc(0))
+        }
     }
 
     @tcp_client_msg(NetMsgType.tcp_sync_task_event)
-    sync_task_event_to_client(data: Buffer, util: tcp_raw_socket, tag_id:number) {
-        tcpSyncClientService.apply_remote_event(data).catch(console.error)
+    async sync_task_event_to_client(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        try {
+          await  tcpSyncClientService.apply_remote_event(data)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            util.send_data_call(tag_id,Buffer.alloc(0))
+        }
     }
 
     @tcp_client_msg(NetMsgType.tcp_sync_task_config)

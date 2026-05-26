@@ -275,7 +275,8 @@ export function InputRadio(props: {
     name?: string
 }) {
     return <div className="input_radio_row">
-        <input type="radio" checked={props.selected} name={props.name ?? "common_name"} value={props.value}
+        {/* ⭐ 使用 props.selected ?? false 确保绝对不为 undefined */}
+        <input type="radio" checked={props.selected ?? false} name={props.name ?? "common_name"} value={props.value}
                className={"input_radio"}
                onChange={() => {
                    if (props.onchange) props.onchange(props.value)
@@ -290,28 +291,16 @@ export function InputCheckbox(props: {
     selected?: boolean,
     is_disable?: boolean,
 }) {
-    const [selected, set_selected] = useState<boolean>(false);
-    useEffect(() => {
-        set_selected(!!props.selected)
-    }, [props.selected]);
+    // 💡 优化掉不必要的内部 useState 与 useEffect，直接成为标准受控组件，避免不必要的渲染和警告
     return <div className="input_radio_row">
-        <input type="checkbox" disabled={props.is_disable ?? false} checked={selected}
+        {/* ⭐ 使用 !!props.selected 强转为布尔值，防止 undefined 潜入 */}
+        <input type="checkbox" disabled={!!props.is_disable} checked={!!props.selected}
                onChange={() => {
                    if (props.onchange) {
                        props.onchange();
                    }
                }}/>
-        {/*<i className="material-icons icon" onClick={() => {*/}
-        {/*    if (props.onchange) {*/}
-        {/*        props.onchange();*/}
-        {/*    }*/}
-        {/*}}>{selected ? "check_box" : "check_box_outline_blank"}</i>*/}
-        {/* 通过state更改input是会报错的。所以改成自定义的。*/}
-        {/*<input type="checkbox" checked={props.selected} name="common_name" value={props.value} className={"input_radio"}*/}
-        {/*       onChange={() => {*/}
-        {/*           if (props.onchange) props.onchange(props.value)*/}
-        {/*       }}/>*/}
-        {props.context&&props.context}
+        {props.context && props.context}
     </div>
 }
 

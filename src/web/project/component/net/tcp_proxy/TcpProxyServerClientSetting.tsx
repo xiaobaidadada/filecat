@@ -120,7 +120,7 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={sourceOpt?.label ?? item.source_client_name} options={all_client_options} handleInputChange={(value) => {
                                 const selected = resolveClientOption(value);
                                 item.source_client_num_id = parseInt(String(selected?.value));
-                                // item.source_client_name = selected?.label;
+                                item.source_client_name = selected?.label;
                                 set_sync_task_list([...sync_task_list])
                             }} no_border={true}/>,
                             <InputText value={item.source_dir} handleInputChange={(value) => {
@@ -129,7 +129,7 @@ export function TcpProxyServerClientSetting() {
                             <InputText value={targetOpt?.label ?? item.target_client_name} options={all_client_options} handleInputChange={(value) => {
                                 const selected = resolveClientOption(value);
                                 item.target_client_num_id = parseInt(String(selected?.value));
-                                // item.target_client_name = selected?.label;
+                                item.target_client_name = selected?.label;
                                 set_sync_task_list([...sync_task_list])
                             }} no_border={true}/>,
                             <InputText value={item.target_dir} handleInputChange={(value) => {

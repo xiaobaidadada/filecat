@@ -70,7 +70,11 @@ export class TcpSyncService {
     }
 
     public get_all_sync_task_list() {
-        return getSyncTaskList().map((task) => this.syncNames(task));
+        const list = getSyncTaskList()
+        for (const task of list) {
+            this.syncNames(task)
+        }
+        return list;
     }
 
     public get_sync_task_list_by_client(client_num_id: number) {
@@ -160,7 +164,7 @@ export class TcpSyncService {
         return this.get_all_sync_task_list().find((item) => item.id === id);
     }
 
-    public route_sync_event(buffer: Buffer) {
+    public async route_sync_event(buffer: Buffer) {
         const envelope = parseSyncEnvelope(buffer);
         const task = this.get_sync_task_by_id(envelope.header.task_id);
         if (!task || !task.open) {
@@ -170,7 +174,7 @@ export class TcpSyncService {
         //     return;
         // }
         const target = tcpForwardService.client_num_map[envelope.header.target_client_num_id];
-        target?.client_util?.send_data(NetMsgType.tcp_sync_task_event, buffer);
+        await target?.client_util?.send_data_async(NetMsgType.tcp_sync_task_event, buffer);
     }
 
     public send_sync_event_to_server(task_id: string, source_client_num_id: number, target_client_num_id: number, payload: Buffer) {

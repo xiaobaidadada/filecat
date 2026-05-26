@@ -21,16 +21,64 @@ const chokidar = require("chokidar");
 type ChokidarWatcher = ReturnType<typeof chokidar.watch>;
 type cache_file_type = { [key: string]: { mtime: number } }
 
+// 简单的异步排队执行器
+class AsyncQueue {
+    private queue: (() => Promise<void>)[] = [];
+    private activeCount = 0; // 记录当前正在执行的任务数
+
+    // concurrency = 1 代表严格串行（等前一个 await 完再执行下一个）
+    constructor(private concurrency: number = 1) {}
+
+    public push(task: () => Promise<void>) {
+        this.queue.push(task);
+        this.next();
+    }
+
+    public get size(): number {
+        return this.queue.length;
+    }
+
+    private next() {
+        // 如果当前执行中的任务数达到了最大并发限制，或者队列空了，就直接返回
+        if (this.activeCount >= this.concurrency || this.queue.length === 0) {
+            return;
+        }
+
+        const task = this.queue.shift();
+        if (task) {
+            this.activeCount++; // 占用一个并发名额
+
+            // 核心：不需要用 running 锁，直接同步调用异步函数
+            task().finally(() => {
+                this.activeCount--; // 任务彻底完成后（await 结束），释放名额
+                this.next();        // 递归调用，继续消耗队列
+            }).catch(e=>{
+                console.log(e)
+            });
+
+            // ⭐ 关键点：如果是多并发(concurrency > 1)，
+            // 允许在当前任务挂起(await)时，继续贪婪地拉取下一个任务
+            this.next();
+        }
+    }
+
+    public clear() {
+        this.queue = [];
+        this.activeCount = 0;
+    }
+}
+
 interface SyncRuntimeState {
     task: tcp_proxy_sync_task_item;
     watcher?: ChokidarWatcher;
     ignore: (relative_path: string, is_directory?: boolean) => boolean;
     suppress_set: Set<string>;
-    local_dir: string;         // 当前节点要监听和写入的本地目录
-    remote_client_id: number;  // 对方的客户端 ID
-    cache_file_map: cache_file_type; // 核心：内存中缓存的实体映射，双向共享
-    cache_path: string;        // 缓存文件的绝对路径
-    client_num_id:number
+    local_dir: string;
+    remote_client_id: number;
+    cache_file_map: cache_file_type;
+    cache_path: string;
+    client_num_id: number;
+    queue: AsyncQueue; // ⭐ 为每个任务运行时新增一个独立的队列
 }
 
 function readFileBuffer(file_path: string) {
@@ -53,7 +101,15 @@ export class TcpSyncClientService {
     private runtime_map = new Map<string, SyncRuntimeState>();
     private cache_timers = new Map<string, NodeJS.Timeout>();
 
-
+    client_sync_task_get() {
+        const list:tcp_proxy_sync_task_item[] = []
+        for (const key of this.runtime_map.keys()) {
+            const v = this.runtime_map.get(key);
+            v.task.running_num = v.queue.size;
+            list.push(v.task);
+        }
+        return list;
+    }
 
     // 检查当前客户端是否属于该任务的一员（无论作为 Source 还是 Target）
     private shouldManageTask(task: tcp_proxy_sync_task_item, client_num_id: number) {
@@ -75,6 +131,9 @@ export class TcpSyncClientService {
         const runtime = this.runtime_map.get(task_id);
         if (runtime?.watcher) {
             runtime.watcher.close();
+        }
+        if (runtime?.queue) {
+            runtime.queue.clear(); // ⭐ 清理未完成的队列
         }
         this.runtime_map.delete(task_id);
 
@@ -218,43 +277,49 @@ export class TcpSyncClientService {
 
         const sendEvent = async (event: "add" | "change" | "unlink" | "addDir" | "unlinkDir", fullPath: string, stats?: any) => {
             const relative = normalizeSyncRelativePath(path.relative(runtime.local_dir, fullPath));
-            if (!relative) {
-                return;
-            }
+            if (!relative) return;
+
             const isDir = event === "addDir" || event === "unlinkDir";
-            if (runtime.ignore(relative, isDir)) {
-                return;
-            }
+            if (runtime.ignore(relative, isDir)) return;
+            if (this.isSuppressed(runtime, relative)) return;
 
-            // ⭐ 双向屏障：拦截由于远端同步写入引起的本地二次事件变动
-            if (this.isSuppressed(runtime, relative)) {
-                return;
-            }
+            // ⭐ 将高 I/O 和网络发送操作推入队列中排队
+            runtime.queue.push(async () => {
+                try {
+                    // 再次检查防止排队期间被锁定了
+                    if (this.isSuppressed(runtime, relative)) return;
 
-            const payload = (event === "add" || event === "change") ? await readFileBuffer(fullPath) : Buffer.alloc(0);
-            const buffer = buildSyncEnvelope({
-                task_id: task.id,
-                event,
-                relative_path: relative,
-                is_directory: isDir,
-                mtime: stats?.mtimeMs ?? Date.now(),
-                size: stats?.size,
-                source_client_num_id: current_client_id,        // 自己作为当前信封的源
-                target_client_num_id: runtime.remote_client_id,  // 对方作为目标
-            }, payload);
+                    let payload = Buffer.alloc(0);
+                    if (event === "add" || event === "change") {
+                        // 队列执行时才真正读取磁盘，避免海量文件瞬间把内存撑爆
+                        payload = await readFileBuffer(fullPath);
+                    }
 
-            const serverSocket = getServerConnectionForClient(current_client_id);
-            const rawClient = serverSocket?.get_raw_client?.();
-            if (!rawClient?.connected) {
-                return;
-            }
-            serverSocket.send_data(NetMsgType.tcp_sync_task_event, buffer);
+                    const buffer = buildSyncEnvelope({
+                        task_id: task.id,
+                        event,
+                        relative_path: relative,
+                        is_directory: isDir,
+                        mtime: stats?.mtimeMs ?? Date.now(),
+                        size: stats?.size,
+                        source_client_num_id: current_client_id,
+                        target_client_num_id: runtime.remote_client_id,
+                    }, payload);
 
-            // 如果是本端产生的文件实体写入，更新缓存并保存
-            if ((event === "add" || event === "change") && stats?.mtimeMs) {
-                runtime.cache_file_map[fullPath] = { mtime: stats.mtimeMs };
-                this.saveCache(task.id, runtime.cache_path, runtime.cache_file_map);
-            }
+                    const serverSocket = getServerConnectionForClient(current_client_id);
+                    const rawClient = serverSocket?.get_raw_client?.();
+                    if (!rawClient?.connected) return;
+
+                    await serverSocket.send_data_async(NetMsgType.tcp_sync_task_event, buffer);
+
+                    if ((event === "add" || event === "change") && stats?.mtimeMs) {
+                        runtime.cache_file_map[fullPath] = { mtime: stats.mtimeMs };
+                        this.saveCache(task.id, runtime.cache_path, runtime.cache_file_map);
+                    }
+                } catch (err) {
+                    console.error(`[Sync Queue] 处理文件事件失败: ${fullPath} 继续下一个`, err);
+                }
+            });
         };
 
         watcher.on("add", (fullPath, stats) => {
@@ -339,7 +404,8 @@ export class TcpSyncClientService {
             remote_client_id,
             cache_file_map,
             cache_path,
-            client_num_id
+            client_num_id,
+            queue: new AsyncQueue(1) // ⭐ 初始化队列：1 表示严格先进先出排队同步
         };
         this.runtime_map.set(task.id, runtime);
 
@@ -354,6 +420,10 @@ export class TcpSyncClientService {
     }
 
     public close_task(task_id: string) {
+        const runtime = this.runtime_map.get(task_id);
+        if(runtime) {
+            this.saveCache(task_id, runtime.cache_path, {});
+        }
         this.stopRuntime(task_id);
     }
 

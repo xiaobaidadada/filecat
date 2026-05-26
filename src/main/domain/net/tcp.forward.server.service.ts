@@ -288,23 +288,37 @@ export class TcpForwardServerService {
     get_new_client_num_id() {
         const list = this.server_client_get();
 
-        // 1. 收集当前所有已使用的 ID，并转换为 Set 提高查找效率
+        // 1. 收集当前所有已使用的 ID，并找出当前最大的 ID
         const usedIds = new Set();
+        let maxId = 0; // 假设有效 ID 从 1 开始，如果没有元素则最大为 0
+
         for (const item of list) {
             if (item.client_num_id != null) {
-                usedIds.add(item.client_num_id);
+                const id = item.client_num_id;
+                usedIds.add(id);
+                if (id > maxId) {
+                    maxId = id;
+                }
             }
         }
 
-        // 2. 从 1 开始查找第一个没被占用的 ID (UInt16 最大值为 65535)
-        // 如果你的协议允许 ID 为 0，可以将 i 的初始值改为 0
-        for (let i = 1; i <= 65535; i++) {
+        // 2. 核心逻辑：先从最大 ID 的后面（maxId + 1）开始往后查找
+        // 最大边界为 UInt16 的 65535
+        for (let i = maxId + 1; i <= 65535; i++) {
             if (!usedIds.has(i)) {
                 return i;
             }
         }
 
-        // 3. 如果从 1 到 65535 全都被占满了
+        // 3. 如果后面全被占满了，再回头去查看前面是否有空余的 id 空位
+        // 从 1 一直查到刚才的 maxId
+        for (let i = 1; i <= maxId; i++) {
+            if (!usedIds.has(i)) {
+                return i;
+            }
+        }
+
+        // 4. 如果 1 到 65535 的所有位置全都被彻底占满了
         throw new Error("No available client ID (max 65535 clients reached)");
     }
 

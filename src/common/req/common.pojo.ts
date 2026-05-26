@@ -123,6 +123,8 @@ export class tcp_proxy_sync_task_item {
     delete_missing?: boolean = true;
 
     two_way_sync?: boolean; // 双向同步
+
+    running_num?: number; // 正在进行同步的文件数量
 }
 
 
