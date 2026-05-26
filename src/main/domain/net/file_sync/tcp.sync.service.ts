@@ -87,11 +87,11 @@ export class TcpSyncService {
         }
     }
 
-    public push_sync_task_to_all() {
-        for (const key of Object.keys(tcpForwardService.client_num_map)) {
-            this.push_sync_task_to_client(Number(key));
-        }
-    }
+    // public push_sync_task_to_all() {
+    //     for (const key of Object.keys(tcpForwardService.client_num_map)) {
+    //         this.push_sync_task_to_client(Number(key));
+    //     }
+    // }
 
     // 两个目录有没有包含关系
     isAbsoluteRelated(absA, absB) {

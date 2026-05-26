@@ -72,28 +72,21 @@ export function createSyncIgnoreMatcher(ignore_list: string[] = []) {
         const rel = normalizeSyncRelativePath(relative_path);
         if (!rel) return false;
 
-        for (const pattern of patterns) {
-            if (!pattern) continue;
-            if (pattern.includes("*") || pattern.includes("?")) {
-                if (regexList.some((reg) => reg.test(rel))) {
-                    return true;
-                }
-                continue;
-            }
+        // 1. 优先执行预编译好的通配符正则匹配（只需这一句，就测完了所有通配符规则，不用进循环）
+        if (regexList.some((reg) => reg.test(rel))) {
+            return true;
+        }
 
-            if (rel === pattern) {
-                return true;
-            }
-            if (rel.startsWith(`${pattern}/`)) {
-                return true;
-            }
+        // 2. 剩下的只进行普通字符串的高速精准判定
+        for (const pattern of patterns) {
+            if (!pattern || pattern.includes("*") || pattern.includes("?")) continue;
+
+            if (rel === pattern) return true;
+            if (rel.startsWith(`${pattern}/`)) return true;
+
             const segments = rel.split("/");
-            if (segments.includes(pattern)) {
-                return true;
-            }
-            if (is_directory && rel === `${pattern}/`) {
-                return true;
-            }
+            if (segments.includes(pattern)) return true;
+            if (is_directory && rel === `${pattern}/`) return true;
         }
 
         return false;
