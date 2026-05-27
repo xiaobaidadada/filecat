@@ -50,11 +50,13 @@ export const GlobalProvider = ({ children }) => {
             const p :UserBaseInfo = result.data;
             if(user_base_info?.user_data?.theme  !== p.user_data.theme)
                 setTheme(p.user_data.theme);
-            if(p?.user_data?.upload_file_ignore) {
+            if(p.user_data.upload_file_ignore) {
                 try {
                     p.user_data.upload_file_ignore_list =  p.user_data.upload_file_ignore.split(/[; ]/);
                 } catch (e) {
                 }
+            } else {
+                p.user_data.upload_file_ignore_list = []
             }
             setUser_base_info(p)
             i18n.changeLanguage(p?.user_data?.language);
