@@ -7,26 +7,47 @@
 }
 
 .input {
-    border-radius: .1em;
-    padding: .5em 1em;
+    /* border-radius: .1em;  <- 旧的，太硬了 */
+    border-radius: 6px;      /* 现代 UI 标配：更圆润的倒角 */
+
+    padding: .6em 1.2em;     /* 稍微加大一点内边距，让呼吸感更强 */
     background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+
+    /* border: 1px solid rgba(0, 0, 0, 0.1); <- 旧的 */
+    border: 1px solid #e2e8f0; /* 使用现代的浅灰色边框，或者rgba(0,0,0,0.08) */
+
+    /* 加入微弱的现代环境阴影（非常重要！） */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
     transition: .2s ease all;
     color: #333;
     margin: 0;
+
+    /* 🌟 核心：针对 select 标签清除掉浏览器自带的丑陋外观 */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
 }
+
 .input[type="checkbox"] {
     height: 1.5rem;
     cursor: pointer;
 }
 
-.input:hover,
-.input:focus {
+.input:hover {
     border-color: rgba(0, 0, 0, 0.2);
+    /*cursor: pointer; !* 🌟 加上这一行，鼠标放上去就变成小手了 *!*/
+}
+
+.input:focus {
+    /*border-color: #3b82f6; !* 现代偏科技感的蓝色（或者你项目的主题色） *!*/
+    outline: none;
+    /* 配合一个半透明的外发光高光（Focus Ring） */
+    /*box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.05);*/
 }
 
 .input--block {
-    margin-bottom: .5em;
+    /*margin-bottom: .5em;*/
     display: block;
     width: 100%;
 }
@@ -46,10 +67,14 @@
 }
 
 .input_left {
-    margin-bottom: .5em;
-    display: block;
-    background-color: #f5f5f5;
+    /*margin-bottom: .5em;*/
+    display: inline-flex;     /* 改为 inline-flex 方便对齐 */
+    align-items: center;       /* 垂直居中 */
+    background-color: #f1f5f9; /* 更清爽的现代灰（Slate） */
     margin-left: .5rem;
+    border-radius: 6px;        /* 与 input 保持一致的圆角 */
+    color: #475569;            /* 字色变柔和 */
+    font-size: 0.9em;
 }
 
 .input--red {

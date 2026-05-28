@@ -200,7 +200,7 @@ body.rtl #search #result ul>* {
 }
 
 #search li {
-  margin-bottom: .5em;
+  /*margin-bottom: .5em;*/
 }
 
 #search #result>div {

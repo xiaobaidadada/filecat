@@ -91,7 +91,7 @@ function Input(props: {
     // 监听 options 变化，动态初始化或销毁 Awesomplete
     useEffect(() => {
         if (props.options != null && inputRef.current) {
-            // 格式化数据：Awesomplete 接受标准 [{label: 'xx', value: 'yy'}] 或 ['字符串']
+            // 格式化数据
             const listData = props.options.map(item => {
                 if (typeof item === 'object' && item !== null) {
                     return { label: item.label, value: item.value };
@@ -102,30 +102,40 @@ function Input(props: {
             const awesomplete = new Awesomplete(inputRef.current, {
                 list: listData,
                 minChars: 0,
-                autoFirst: true
+                autoFirst: true,
+                // 🌟 核心修改 1：重写过滤器。当输入框为空时，强制显示所有选项
+                filter: (text, input) => {
+                    if (input.trim() === "") {
+                        return true; // 空输入时，所有条目都算匹配成功
+                    }
+                    // 如果不为空，则走默认的“包含”匹配逻辑（不区分大小写）
+                    return Awesomplete.FILTER_CONTAINS(text, input);
+                },
+                // 🌟 核心修改 2：防止空状态下排序被打乱
+                sort: (a, b) => {
+                    if (inputRef.current?.value.trim() === "") {
+                        return 0; // 保持原样输出
+                    }
+                    return a.label < b.label ? -1 : 1;
+                }
             });
 
-            // 点击时自动展开下拉菜单，不再粗暴清空输入框
+            // 点击或聚焦时自动展开下拉菜单
             const handleFocus = () => {
-                // 触发原生 input 事件，让 Awesomplete 弹出菜单
-                inputRef.current?.dispatchEvent(new Event("input"));
+                awesomplete.evaluate(); // 🌟 显式调用 evaluate() 比单纯派发事件更稳定
             };
 
             // 选中下拉项时的逻辑
             const handleSelect = (event: any) => {
-                // event.text 对象包含了选中的项
                 const selectedText = event.text.label ?? event.text.value ?? event.text;
                 const selectedValue = event.text.value ?? event.text;
 
-                // 1. 先更新 React 内部的状态
                 setValue(selectedText);
 
-                // 2. 强行在下一帧更正 DOM 的 value，防止 Awesomplete 乱填
                 requestAnimationFrame(() => {
                     if (inputRef.current) inputRef.current.value = selectedText;
                 });
 
-                // 3. 触发父组件的 onChange 回调，传入真实 Value
                 if (handlerRef.current) {
                     handlerRef.current(selectedValue, inputRef.current);
                 }
@@ -134,7 +144,6 @@ function Input(props: {
             inputRef.current.addEventListener("focus", handleFocus);
             inputRef.current.addEventListener("awesomplete-selectcomplete", handleSelect);
 
-            // 清理函数：当 options 改变或组件销毁时，彻底移除残留的 DOM 监听和 wrapper
             return () => {
                 if (inputRef.current) {
                     inputRef.current.removeEventListener("focus", handleFocus);
@@ -143,7 +152,7 @@ function Input(props: {
                 awesomplete.destroy();
             };
         }
-    }, [props.options]); // ⭐ 关键：把 props.options 作为依赖项！
+    }, [props.options]);
 
     return (
         <React.Fragment>
@@ -233,7 +242,7 @@ export function InputPassword(props: {
 }
 
 export interface SelectProps {
-    options: { title: string, value: any }[];
+    options: { title?: string, value: any }[];
     onChange: (value: string) => void;
     defaultValue?: any,
     no_border?: boolean,
@@ -244,27 +253,57 @@ export interface SelectProps {
 }
 
 export function Select(props: SelectProps) {
+    return (
+        <div style={{
+            display: "flex",
+            alignItems: "center", // 让前置 tip 和下拉框在水平方向完美居中对齐
+            width: props.width || "100%",
+        }}>
+            {props.tip && (
+                <p className={`input input_left`}>
+                    {props.tip}
+                </p>
+            )}
 
-    return <div style={{
-        display: "flex",
-    }}>
-        {props.tip &&
-            <p className={`input input_left `}>
-                {props.tip}
-            </p>
-        }
-        <select defaultValue={props.defaultValue} value={props.value}
-                style={{
-                    width: props.width,
+            {/* 🌟 核心：外层增加一个相对定位的容器 */}
+            <div style={{
+                position: "relative",
+                flex: 1,
+                display: "flex",
+                alignItems: "center"
+            }}>
+                <select
+                    defaultValue={props.defaultValue}
+                    value={props.value}
+                    disabled={!!props.disabled}
+                    className={`input input--block ${props.no_border ? "input--no_border" : ""}`}
+                    onChange={(event) => props.onChange(event.target.value)}
+                    style={{
+                        margin: 0, // 消除 input--block 默认的下边距干扰
+                        cursor: props.disabled ? "not-allowed" : "pointer"
                 }}
-                disabled={!!props.disabled}
-                className={`input input--block  ${props.no_border ? "input--no_border" : ""}`}
-                onChange={(event) => props.onChange(event.target.value)}>
-            {props.options.map((item, index) => {
-                return <option key={index} value={item.value}>{item.title}</option>;
-            })}
-        </select>
-    </div>
+                >
+                    {props.options.map((item, index) => {
+                        return <option key={index} value={item.value}>{item.title ?? item.value}</option>;
+                    })}
+                </select>
+
+                {/* 🌟 核心：在此处放置你的 MaterialIcon，并通过内联样式将其固定在右侧 */}
+                <i
+                    className="material-icons"
+                    style={{
+                        position: "absolute",
+                        right: "12px",
+                        pointerEvents: "none", // 💡 穿透点击：点击图标依然能打开下拉菜单
+                        color: props.disabled ? "#9ca3af" : "#666", // 随禁用状态变灰
+                        fontSize: "18px" // 根据 UI 调整现代化的图标大小
+                    }}
+                >
+                    expand_more {/* 或者使用 arrow_drop_down */}
+                </i>
+            </div>
+        </div>
+    );
 }
 
 export function InputRadio(props: {

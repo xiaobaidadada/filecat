@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react'
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {ActionButton} from "../../../meta/component/Button";
-import {InputRadio, InputText, InputTextIcon} from "../../../meta/component/Input";
+import {InputRadio, InputText, InputTextIcon, Select} from "../../../meta/component/Input";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
 import {Rows, Table} from "../../../meta/component/Table";
@@ -363,12 +363,10 @@ export function Http() {
                               <ActionButton icon={"add"} title={t("添加")} onClick={add}/>}
                     >
                         <div className={'http_url'}>
-                            <InputTextIcon not_mobile={true} max_width={'15%'} placeholder={t("协议")} icon={"http"}
-                                           value={url_type}
-                                           handleInputChange={(v) => {
-                                               set_url_type(v);
-                                           }}/>
-                            <InputTextIcon not_mobile={true} max_width={'80%'} placeholder={t("http url")} icon={"link"}
+
+                            <Select width={'10rem'} value={url_type} onChange={(value)=>{set_url_type(value)}} options={[{value:'get'},{value:'post'},{value:'put'},{value:'delete'},{value:'head'},{value:'options'},{value:'connect'},{value:'trace'},{value:'custom'}]}/>
+
+                            <InputText width={'50rem'} placeholder={t("http url")}
                                            value={url}
                                            handleInputChange={(v) => {
                                                set_url(v);
