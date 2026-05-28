@@ -28,7 +28,7 @@
 @import "./excalidraw.css";
 @import "./common.css";
 @import "./db.css";
-
+@import "tabs.css";
 @import "mobile.css";
 @import "chat.css";
 /*@import "./themes/dark.css";*/

@@ -331,6 +331,18 @@ export class NetService {
                             return;
                         }
                         const pojo = JSON.parse(req.body.data) as HttpFormPojo;
+
+                        // 🌟 【修复核心】防止 URL 中包含中文或未编码字符导致 ClientRequest 崩溃
+                        if (pojo.url) {
+                            try {
+                                // 使用内置的 URL 对象，它会自动对 path 和 query 中的中文及特殊字符进行标准转义
+                                const parsedUrl = new URL(pojo.url);
+                                pojo.url = parsedUrl.toString();
+                            } catch (e) {
+                                // 如果输入的不是标准规范的 URL 格式，退一步使用传统的 encodeURI 补救
+                                pojo.url = encodeURI(pojo.url);
+                            }
+                        }
                         let call = async (err, needle_res) => {
                             if (err) {
                                 console.error('Error:', err);

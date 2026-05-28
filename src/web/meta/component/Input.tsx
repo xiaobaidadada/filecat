@@ -279,7 +279,7 @@ export function Select(props: SelectProps) {
                     className={`input input--block ${props.no_border ? "input--no_border" : ""}`}
                     onChange={(event) => props.onChange(event.target.value)}
                     style={{
-                        margin: 0, // 消除 input--block 默认的下边距干扰
+                        // margin: 0, // 消除 input--block 默认的下边距干扰
                         cursor: props.disabled ? "not-allowed" : "pointer"
                 }}
                 >
