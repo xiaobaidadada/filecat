@@ -71,14 +71,35 @@ export function NavIndexContainer(props: {
             rootList = list;
         }
     }
-    const handleronDrop = (event, index) => {
+
+    const handleronDrop = (event: React.DragEvent, targetIndex: number) => {
+        event.preventDefault();
+        const draggedItem = items[indexp]; // 被拖拽的项目
+        const targetItem = items[targetIndex]; // 放置目标
+
+        // 如果目标是目录，则执行“移动到目录内”逻辑
+        if (targetItem && targetItem._type === 'dir') {
+            const newItems = [...items];
+            newItems.splice(indexp, 1); // 从原列表中移除
+
+            // 初始化目标文件夹的 children
+            if (!targetItem._children) targetItem._children = [];
+            targetItem._children.push(draggedItem);
+
+            update_list(newItems);
+            setItems(newItems);
+            return;
+        }
+
+        // 原有的排序逻辑：如果不是目录，则交换位置
         const list = [...items];
         const itemp = list[indexp];
-        list.splice(indexp, 1);//删掉原来位置
-        list.splice(index, 0, itemp); //插入
+        list.splice(indexp, 1);
+        list.splice(targetIndex, 0, itemp);
         update_list(list);
-        setItems(list)
-    }
+        setItems(list);
+    };
+
     const del = (idnex) => {
         const list = [...items];
         list.splice(idnex, 1);//删掉

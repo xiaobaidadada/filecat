@@ -273,3 +273,7 @@ table th {
 .dashboard,.full_screen_context {
   background: var(--background);
 }
+
+.site_edit {
+  background: var(--background);
+}

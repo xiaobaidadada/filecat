@@ -1,8 +1,18 @@
 
 
+/* common.css */
 .site_edit {
-    position: absolute;
-    z-index: 1000;
+     /*position: absolute;  */
+     /*z-index: 1000;*/
+
+    /* 改为以下设置 */
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    padding: 10px;
+    background: #f9f9f9; /* 加个浅色背景让编辑区更醒目 */
+    /*border: 1px solid #c1c9cc;*/
+    border-radius: 4px;
 }
 
 /* http 请求*/
