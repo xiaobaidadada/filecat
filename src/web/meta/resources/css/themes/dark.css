@@ -258,10 +258,18 @@ table th {
   background: var(--textPrimary);
 }
 
-.chat-input-area ,.chat-input-area textarea {
+.chat-input-area textarea {
   background: var(--textPrimary);
 }
 
 .common-box  {
+  background: var(--background);
+}
+
+.chat-header ,.chat-input-area {
+  background: var(--background);
+}
+
+.dashboard,.full_screen_context {
   background: var(--background);
 }

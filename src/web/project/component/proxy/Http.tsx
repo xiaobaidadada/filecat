@@ -146,7 +146,19 @@ export function Http() {
     // 🌟 关键修改：响应结果 Tab 切换回调函数
     const handleResponseTabChange = (key: string) => {
         setResponseTabKey(key);
-        set_status_body(key === "body" ? respone_body : respone_headers);
+        const content = key === "body" ? respone_body : respone_headers;
+        set_status_body(content);
+
+        const editor = editor_data.get_editor(2);
+        if (editor) {
+            try {
+                JSON.parse(content);
+                editor.session.setMode('ace/mode/json');
+            } catch {
+                editor.session.setMode('ace/mode/text');
+            }
+            editor.setValue(content, -1);
+        }
     };
 
     const add = () => { set_form_data_list([{}, ...form_data_list]); }
@@ -202,20 +214,54 @@ export function Http() {
             headers: { 'Content-Type': 'multipart/form-data', 'Authorization': localStorage.getItem('token') }
         }).catch(e => { NotyFail(e.message); }).then((r: AxiosResponse) => {
             if (!r) return;
-            if (r.headers.filecat_remote_code) {
-                try {
-                    const status = JSON.parse(r.headers.filecat_remote_code);
-                    set_status_code(status === 200 ? (<span style={{ color: 'green' }}>200</span>) : status);
-                } catch (e) { console.log(e) }
-            }
-            respone_body = typeof r.data === 'object' ? JSON.stringify(r.data) : r.data;
-            try {
-                if (r.headers.filecat_remote_raw_headers)
-                    respone_headers = JSON.stringify(JSON.parse(r.headers.filecat_remote_raw_headers), null, 2);
-            } catch (e) { respone_headers = JSON.stringify(r.headers.filecat_remote_raw_headers); }
 
-            // 🌟 发送完成后，根据当前用户所处的 Tab 状态回填对应的数据
-            set_status_body(responseTabKey === "body" ? respone_body : respone_headers);
+            // 1. 处理响应头对象 (确保 respone_headers 变成 JSON 对象用于判断)
+            let headersObj: any = {};
+            try {
+                if (r.headers.filecat_remote_raw_headers) {
+                    headersObj = JSON.parse(r.headers.filecat_remote_raw_headers);
+                    respone_headers = JSON.stringify(headersObj, null, 2);
+                }
+            } catch (e) {
+                respone_headers = String(r.headers.filecat_remote_raw_headers);
+            }
+
+            // 2. 从 headersObj 中获取 Content-Type
+            // 注意：HTTP 头是大小写不敏感的，但解析后的 JSON 键通常是小写或原始形式
+            const contentType = (headersObj['content-type'] || headersObj['Content-Type'] || '').toLowerCase();
+
+            // 3. 处理响应体
+            respone_body = typeof r.data === 'object' ? JSON.stringify(r.data, null, 2) : r.data;
+
+            // 4. Ace 编辑器智能切换
+            const editor = editor_data.get_editor(2);
+            const content = responseTabKey === "body" ? respone_body : respone_headers;
+
+            if (editor) {
+                // 匹配逻辑
+                if (contentType.includes('application/json') || contentType.includes('+json')) {
+                    editor.session.setMode('ace/mode/json');
+                    // 自动格式化响应体
+                    try {
+                        const parsed = JSON.parse(respone_body);
+                        respone_body = JSON.stringify(parsed, null, 2);
+                    } catch(e) {}
+                } else if (contentType.includes('html')) {
+                    editor.session.setMode('ace/mode/html');
+                } else if (contentType.includes('xml')) {
+                    editor.session.setMode('ace/mode/xml');
+                } else if (contentType.includes('javascript')) {
+                    editor.session.setMode('ace/mode/javascript');
+                } else {
+                    editor.session.setMode('ace/mode/text');
+                }
+
+                // 同步内容
+                editor.setValue(responseTabKey === "body" ? respone_body : respone_headers, -1);
+            }
+
+            set_status_body(content);
+            // ... (状态码处理保持不变)
         });
     }
 
@@ -314,7 +360,7 @@ export function Http() {
                         <Tabs activeKey={mainTabKey} onChange={(key) => setMainTabKey(key)}>
 
                             {/* Panel 1: 请求头 */}
-                            <TabPanel itemKey="headers" tab={t("请求头")}>
+                            <TabPanel itemKey="headers" tab={t("请求头")+"(json)"}>
                                 <div style={{ marginTop: '10px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
                                         <ActionButton title={t("格式化")} icon={"data_object"} onClick={formatHeaders} />
@@ -378,10 +424,20 @@ export function Http() {
                         </div>
                     </Card>
 
-                    {/* 🌟 核心修改：返回结果区域改用新 Tabs 组件，同时在头部右侧提供复制功能 */}
+
+                </Column>
+                <Column>
+
                     <Card title={status_code} titleCom={
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <ActionButton title={t("复制")} icon={"copy_all"} onClick={() => { if (status_body) { copyToClipboard(status_body); NotySucess("完成"); } }} />
+                            {/* 响应体专用格式化按钮 */}
+                            <ActionButton title={t("格式化")} icon={"data_object"} onClick={() => {
+                                editor_data.get_editor(2)?.['formatCode']?.();
+                            }} />
+                            <ActionButton title={t("复制")} icon={"copy_all"} onClick={() => {
+                                const val = editor_data.get_editor_value(2);
+                                if (val) { copyToClipboard(val); NotySucess("完成"); }
+                            }} />
                         </div>
                     }>
                         <Tabs activeKey={responseTabKey} onChange={handleResponseTabChange}>
@@ -389,16 +445,15 @@ export function Http() {
                             <TabPanel itemKey="headers" tab={t("响应头")} />
                         </Tabs>
 
-                        <div style={{ marginTop: '10px' }}>
-                            <textarea
-                                className={"input--textarea input--no_border"}
-                                style={{ width: "100%", height: "270px" }}
-                                onChange={(event) => set_status_body(event.target.value)}
-                                value={status_body}
-                            />
+                        <div className={'http_ace'} style={{ marginTop: '10px', height: '21rem' }}>
+                            {/* 使用 editor_id={2} */}
+                            <Ace name={''} editor_id={2} />
                         </div>
                     </Card>
+
                 </Column>
+            </Row>
+            <Row>
                 <Column>
                     <NavIndexContainer getItems={getItems} save={saveItems} have_auth_edit={check_user_auth(UserAuth.http_proxy_tag_update)} clickItem={clickItem} items={[{ key: "name", preName: t("名字") }, { key: "url", preName: "url" }, { key: "method", preName: "method" }, { key: "headers", preName: "headers" }, { key: "data", preName: "data" }, { key: "form_data_list", preName: "form_data_list" }, { key: "local_download_path", preName: "local_download_path" }, { key: "color", preName: "color" }]} />
                 </Column>
