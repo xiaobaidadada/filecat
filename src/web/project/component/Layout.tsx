@@ -67,7 +67,7 @@ function Layout() {
 
     let three: NavItem[] = [
         {icon: "settings", name: t("设置"), rto: `${routerConfig.setting}/`, component: <Settings/>},
-        {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/logout"},
+        {icon: "logout", name: t("退出登录"), clickFun: logout, rto: "/"},
         // {component:(<div>测试</div>)}
     ]
     if (check_user_auth(UserAuth.vir_net) || check_user_auth(UserAuth.ddns) ) {
