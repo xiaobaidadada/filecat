@@ -1,3 +1,5 @@
+import {fastHash} from "../StringUtil";
+
 export class ShellInitPojo {
     rows:number;
     cols:number;
@@ -20,8 +22,9 @@ export class SshPojo extends ShellInitPojo{
     files:string[]; // 多个文件暂时不用
     source:string;
     target:string; // 目标目录，用于文件移动操作
+    authorization?:string;
     public static getKey(obj:SshPojo) : string{
-        return obj.domain+obj.port+obj.username;
+        return fastHash(`${obj.domain}${obj.port}${obj.username}${obj.authorization}`);
     }
 }
 

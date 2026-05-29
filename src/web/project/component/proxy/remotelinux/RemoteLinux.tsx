@@ -21,6 +21,7 @@ import {use_auth_check} from "../../../util/store.util";
 import {UserAuth} from "../../../../../common/req/user.req";
 import {useNavigate} from "react-router-dom";
 import {path_join} from "pty-shell/dist/path_util";
+import {NotyFail} from "../../../util/noty";
 
 
 
@@ -58,9 +59,29 @@ export function RemoteLinux(props) {
         req.port = item?item.port:port;
         req.username = item?item.username:username;
         req.private_path = item?item.private_path:private_path;
+        req.dir = item?item.dir:dir;
+        if(!req.dir) {
+            NotyFail('dir not found');
+            return
+        }
+        if(!req.username) {
+            NotyFail('username not found');
+            return
+        }
+        if(!req.domain) {
+            NotyFail('domain not found');
+            return
+        }
+        if(!req.port) {
+            NotyFail('port not found');
+            return
+        }
+        if(!req.private_path && !req.password) {
+            NotyFail('private_path password not found');
+            return
+        }
         const res = await sshHttp.post("start", req);
         if (res && res.code === RCode.Success) {
-            req.dir = item?item.dir:dir;
             navigate(path_join('/proxy/remoteShell', req.dir))
             setShellNowDir([req.dir]);
             setSSHInfo(res.data);

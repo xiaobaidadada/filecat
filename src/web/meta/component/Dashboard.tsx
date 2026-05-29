@@ -28,7 +28,7 @@ export function Menu(props: {
                         {optionList.map((v, index) => (
                             <NavLink
                                 key={index}
-                                to={v.rto}
+                                to={`${v.rto}`.replace(/\*$/, "")}
                                 end={v.rto === "/"} // 根路径精确匹配
                                 className={({ isActive }) =>
                                 {

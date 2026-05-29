@@ -45,6 +45,7 @@ export class SshService extends SshSsh2 {
                 console.log('触发', e)
             }
         })
+        this.forEveryLifeHeart(key);
         // this.map.set(key, req);
         return {key};
     }
@@ -64,17 +65,17 @@ export class SshService extends SshSsh2 {
         if (!client) {
             return [];
         }
-        this.lifeHeart(req.key);
+        // this.lifeHeart(req.key);
         return this.sftGetDir(decodeURIComponent(req.dir), client);
     }
 
     async getFileText(req: SshPojo) {
         const client = this.lifeGetData(req.key) as Client;
-        if (!client) {
-            return "";
-        }
-        this.lifeHeart(req.key);
-        const stats = await this.sftGetFileStats(req.file,client);
+        // if (!client) {
+        //     return "";
+        // }
+        // this.lifeHeart(req.key);
+        // const stats = await this.sftGetFileStats(req.file,client);
         // if (stats.size > MAX_SIZE_TXT) {
         //     return Fail("超过20MB",RCode.File_Max);
         // }
@@ -86,7 +87,7 @@ export class SshService extends SshSsh2 {
         if (!client) {
             return "";
         }
-        this.lifeHeart(req.key);
+        // this.lifeHeart(req.key);
         return this.sftUpdateFileText(req, client);
     }
 
@@ -101,7 +102,7 @@ export class SshService extends SshSsh2 {
             req.context = "";
             await this.sftUpdateFileText(req, client);
         }
-        this.lifeHeart(req.key);
+        // this.lifeHeart(req.key);
         return;
     }
 
@@ -111,11 +112,11 @@ export class SshService extends SshSsh2 {
             return "";
         }
         if (req.dir) {
-            await this.sftDelteFolder(decodeURIComponent(req.dir), client);
+            await this.sftDeleteFolder(decodeURIComponent(req.dir), client);
         } else if (req.file) {
-            await this.sftDelteFile(decodeURIComponent(req.file), client);
+            await this.sftDeleteFile(decodeURIComponent(req.file), client);
         }
-        this.lifeHeart(req.key);
+        // this.lifeHeart(req.key);
         return;
     }
 
@@ -125,7 +126,7 @@ export class SshService extends SshSsh2 {
             return "";
         }
         await this.sftMoveFile(decodeURIComponent(req.source), decodeURIComponent(req.target), client);
-        this.lifeHeart(req.key);
+        // this.lifeHeart(req.key);
         return;
     }
 
@@ -134,8 +135,13 @@ export class SshService extends SshSsh2 {
         if (!client) {
             return "";
         }
-        await this.sftCopyFile(decodeURIComponent(req.source), decodeURIComponent(req.target), client);
-        this.lifeHeart(req.key);
+        let target = decodeURIComponent(req.target)
+        const source = decodeURIComponent(req.source)
+        // 因为只支持单文件的复制 这里特殊处理了
+        // target = path.join(target, path.basename(source));
+
+        await this.sftCopyFile(source,target , client);
+        // this.lifeHeart(req.key);
         return;
     }
 
@@ -146,7 +152,7 @@ export class SshService extends SshSsh2 {
             if (!client) {
                 return "";
             }
-            this.forEveryLifeHeart(pojo.key);
+            // this.forEveryLifeHeart(pojo.key);
             const wss = (data.wss as Wss);
             let emitter = new EventEmitter();
             wss.dataMap.set(`emitter_${pojo.key}`, emitter);
@@ -194,7 +200,6 @@ export class SshService extends SshSsh2 {
         } catch (e) {
             console.log(e)
         }
-
     }
 
     // cancel(data: WsData<SshPojo>) {
@@ -280,7 +285,7 @@ export class SshService extends SshSsh2 {
         req['fileName'] = path.basename(localFilePath);
         await this.uploadFileAsync(req, res);
         return new Promise((resolve, reject) => {
-            this.lifeHeart(req.query.key);
+            // this.lifeHeart(req.query.key);
             // 上传文件
             sftp.fastPut(localFilePath, remoteFilePath, async (err) => { // 比下面的更快
                 if (err) {

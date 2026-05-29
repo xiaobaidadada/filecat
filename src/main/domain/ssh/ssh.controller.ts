@@ -28,10 +28,10 @@ import {Wss} from "../../../common/frame/ws.server";
 @JsonController("/ssh")
 export class SSHController {
 
-    // todo 有一个连接，其他用户不需要密码也能连接，以后有权限了可以改一下
     @Post("/start")
     async start(@Body() body: SshPojo,@Req()r) {
         userService.check_user_auth(r.headers.authorization, UserAuth.ssh_proxy);
+        body.authorization = r.headers.authorization;
         return Sucess(await sshService.start(body));
     }
 

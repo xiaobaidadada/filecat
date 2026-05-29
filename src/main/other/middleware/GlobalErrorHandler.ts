@@ -21,7 +21,22 @@ export class GlobalErrorHandler implements ExpressErrorMiddlewareInterface  {
     error(error: any, request: any, response: Response, next: (err: any) => any) {
         console.error("全局异常拦截", error);
         // next不再执行
-        response.status(200).send(Fail(JSON.stringify(error?.message ?? typeof error === "string"?error:JSON.stringify(error))));
+        let message:string;
+        if(typeof error === "string"){
+            message = error;
+        } else {
+           try {
+               if(error?.message){
+                   message = error.message;
+               } else {
+                   message = JSON.stringify(error);
+               }
+           } catch(err) {
+               console.log(error)
+               message = 'server error'
+           }
+        }
+        response.status(200).send(Fail(message));
         return;
     }
 }

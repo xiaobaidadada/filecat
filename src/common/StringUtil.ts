@@ -328,3 +328,18 @@ export function get_zip_file_format_util(name) {
         }
     }
 }
+
+export function fastHash(str: string): string {
+    // FNV-1a 64位偏移基数
+    let hash = 0xcbf29ce484222325n;
+    // FNV-1a 64位素数
+    const prime = 0x100000001b3n;
+
+    for (let i = 0; i < str.length; i++) {
+        hash ^= BigInt(str.charCodeAt(i));
+        hash *= prime;
+    }
+
+    // 转为 16 位 16 进制字符串 (64 位)
+    return hash.toString(16).padStart(16, '0');
+}

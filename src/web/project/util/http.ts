@@ -41,7 +41,7 @@ export class Http {
             this.check(rsq.data);
             return rsq.data
         }catch(err) {
-            NotyFail(JSON.stringify(err));
+            // NotyFail(JSON.stringify(err));
             throw err;
         }
     }
@@ -62,7 +62,7 @@ export class Http {
             // return rsq.data
             return await res.text();
         }catch(err) {
-            NotyFail(JSON.stringify(err));
+            // NotyFail(JSON.stringify(err));
             throw err;
         }
     }
@@ -115,7 +115,7 @@ export class Http {
             }
             return rsq.data;
         } catch (e) {
-            NotyFail(JSON.stringify(e));
+            // NotyFail(e?.message??JSON.stringify(e));
             throw e
         }
     }
@@ -137,7 +137,7 @@ export class Http {
             this.check(rsq.data);
             return rsq.data
         } catch (e) {
-            NotyFail(JSON.stringify(e));
+            // NotyFail(JSON.stringify(e));
             return null;
         }
     }
@@ -165,7 +165,7 @@ export class Http {
             this.check(rsq.data);
             return rsq.data
         } catch (e) {
-            NotyFail(JSON.stringify(e));
+            // NotyFail(JSON.stringify(e));
             throw e;
         }
     }
@@ -181,7 +181,7 @@ export class Http {
            this.check(rsq.data);
            return rsq.data
        }catch (e) {
-           NotyFail(JSON.stringify(e));
+           // NotyFail(JSON.stringify(e));
            throw e
        }
     }
