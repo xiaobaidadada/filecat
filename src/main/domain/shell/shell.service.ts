@@ -337,7 +337,7 @@ export class ShellService {
         (data.wss as Wss).ws.on('close', function close() {
             const pty = (data.wss as Wss).dataMap.get(socketId);
             if (pty) {
-                console.log('意外断开pty');
+                // console.log('意外断开pty');
                 pty.kill();
                 // socketMap.delete(socketId);
             }
@@ -516,7 +516,7 @@ export class ShellService {
         (data.wss as Wss).ws.on('close', function close() {
             const pty = (data.wss as Wss).dataMap.get(socketId);
             if (pty) {
-                console.log('ws客户端 意外断开pty');
+                // console.log('ws客户端 意外断开pty');
                 pty.kill();
                 // socketMap.delete(socketId);
             }

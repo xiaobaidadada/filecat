@@ -72,6 +72,7 @@ export class ai_agent_chat_session_item {
     summary:string = "";
     // 长期记忆
     long_term_memory:string = "";
+    source?: "web" | "cli";
     created_at:number;
     updated_at:number;
 }
@@ -82,6 +83,7 @@ export class ai_agent_chat_session_meta {
     message_count:number;
     summary?:string;
     long_term_memory?:string;
+    source?: "web" | "cli";
     created_at:number;
     updated_at:number;
 }

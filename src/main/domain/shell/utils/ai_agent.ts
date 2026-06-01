@@ -1,5 +1,7 @@
-import { ai_agent_messages } from "../../../../common/req/common.pojo";
+import { ai_agent_message_item, ai_agent_messages } from "../../../../common/req/common.pojo";
 import { chat_core } from "../../ai_agent/chat.core";
+import { aiAgentMemoryService } from "../../ai_agent/ai_agent.memory";
+import { userService } from "../../user/user.service";
 import {CharUtil, PtyShell} from "pty-shell";
 import {ShellUtil} from "./shell.util";
 
@@ -11,6 +13,8 @@ export class ai_agent_class {
 
     messages: ai_agent_messages;
     token: string;
+    userId: string;
+    sessionId: string;
 
     controller = new AbortController();
 
@@ -47,12 +51,17 @@ export class ai_agent_class {
         this.pty = pty;
         this.exit = exit
         this.print = print;
-        this.messages = params.slice(0, params.length - 1).map(v => ({
-            content: v,
-            role: "user"
-        }));
-
         this.token = params[params.length - 1];
+        this.userId = userService.get_user_info_by_token(this.token).id;
+        const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
+        this.sessionId = session.id;
+        this.messages = [
+            ...(session.messages ?? []),
+            ...params.slice(0, params.length - 1).map(v => ({
+                content: v,
+                role: "user" as const
+            })) as ai_agent_message_item[]
+        ];
     }
 
     chat_done() {
@@ -99,11 +108,16 @@ export class ai_agent_class {
 
                 // end callback
                 () => {
-                    if (this.system_line.trim()) {
-                        this.messages.push({
-                            content: this.system_line,
-                            role: "system"
-                        });
+                    if (this.system_line.trim() && this.messages.length > 0) {
+                        const latestUserMessage = [...this.messages].reverse().find(it => it.role === "user");
+                        if (latestUserMessage) {
+                            const assistantMessage = {
+                                content: this.system_line,
+                                role: "assistant" as const
+                            };
+                            aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage).catch(console.error);
+                            this.messages.push(assistantMessage);
+                        }
                     }
                     this.system_line = "";
                 },

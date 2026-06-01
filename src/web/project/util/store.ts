@@ -361,6 +361,14 @@ export const $stroe = {
             key: 'zoom_style_by_percent',
             default: 100 // 0 - 100
         }
-    )
+    ),
+    // ai 会话列表
+    ai_session_collapsed:atom({
+        key: 'ai_session_collapsed',
+        default: false as boolean,
+        effects: [
+            localStorageEffect("ai_session_collapsed")
+        ]
+    }),
 }
 

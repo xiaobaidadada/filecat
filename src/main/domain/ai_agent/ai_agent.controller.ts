@@ -27,7 +27,7 @@ export class Ai_AgentController {
         const token = ctx.headers.authorization
         let stream ;
         try {
-            stream =  await ai_agentService.chat(data.messages, res, token, data.session_id)
+        stream =  await ai_agentService.chat(data.messages, res, token, data.session_id)
         } catch (err) {
             console.log(err);
             if (!res.writableEnded && !res.destroyed) {

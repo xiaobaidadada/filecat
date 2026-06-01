@@ -67,7 +67,8 @@
 }
 
 .chat-session-list.collapsed .chat-session-item small,
-.chat-session-list.collapsed .chat-session-item i {
+.chat-session-list.collapsed .chat-session-item i,
+.chat-session-list.collapsed .chat-session-item .chat-session-source {
     display: none;
 }
 
@@ -88,6 +89,14 @@
 .chat-session-item small {
     color: #667085;
     font-size: 12px;
+}
+
+.chat-session-source {
+    display: inline-block;
+    margin-top: 2px;
+    font-style: normal;
+    font-size: 11px;
+    color: #7c3aed;
 }
 
 .chat-session-item i {
@@ -143,7 +152,8 @@
     }
 
     .chat-session-list.collapsed .chat-session-item small,
-    .chat-session-list.collapsed .chat-session-item i {
+    .chat-session-list.collapsed .chat-session-item i,
+    .chat-session-list.collapsed .chat-session-item .chat-session-source {
         display: initial;
     }
 

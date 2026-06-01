@@ -15,6 +15,8 @@ import {RCode} from "../../../../common/Result.pojo";
 import {ai_agent_item_dotenv} from "../../../../common/req/setting.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../util/store";
 
 interface Message {
     id: number;
@@ -63,16 +65,16 @@ export default function AiAgentChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
-    const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
-    const [sessionCollapsed, setSessionCollapsed] = useState(false);
+    const [ai_session_collapsed,set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
+
     const { t } = useTranslation();
 
     const toggleSessionPanel = () => {
         if (window.innerWidth <= 736) {
-            setSessionMenuOpen(true);
+            set_ai_session_collapsed(true);
             return;
         }
-        setSessionCollapsed(prev => !prev);
+        set_ai_session_collapsed(prev => !prev);
     }
 
     const set_messages = useRef(
@@ -140,7 +142,7 @@ export default function AiAgentChatPage() {
         setActiveSessionId(session.id);
         setMessages(toUiMessages(session.messages));
         if (closeMenu) {
-            setSessionMenuOpen(false);
+            set_ai_session_collapsed(false);
         }
         requestAnimationFrame(() => scrollToBottom(false));
     }
@@ -151,7 +153,7 @@ export default function AiAgentChatPage() {
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         setMessages([]);
-        setSessionMenuOpen(false);
+        set_ai_session_collapsed(false);
         await loadSessions(session.id);
     }
 
@@ -303,14 +305,14 @@ export default function AiAgentChatPage() {
        <React.Fragment>
            <Header>
                <ActionButton
-                   icon={sessionCollapsed ? "chevron_right" : "menu"}
-                   title={sessionCollapsed ? "展开会话" : "会话"}
+                   icon={ "menu"}
+                   title={t( "会话")}
                    onClick={toggleSessionPanel}
                />
-               <ActionButton icon={"add"} title={"新会话"} onClick={createSession}/>
-               <ActionButton icon={"delete_sweep"} title={"清空全部会话"} onClick={()=>{
+               <ActionButton icon={"add"} title={t("新会话")} onClick={createSession}/>
+               <ActionButton icon={"delete_sweep"} title={t("清空全部会话")} onClick={()=>{
                    confirm_dell_all({
-                       sub_title:"确认删除全部聊天会话吗?",
+                       sub_title:t("确认删除全部聊天会话吗?"),
                        confirm_fun:async ()=>{
                            await ai_agentHttp.post("sessions/clear", {})
                            await init()
@@ -324,8 +326,8 @@ export default function AiAgentChatPage() {
                }
            </Header>
            <div className="chat-page chat-page-with-sessions">
-               {sessionMenuOpen && <div className="chat-session-overlay" onClick={() => setSessionMenuOpen(false)}></div>}
-               <aside className={`chat-session-list ${sessionMenuOpen ? "active" : ""} ${sessionCollapsed ? "collapsed" : ""}`}>
+               {ai_session_collapsed && <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(false)}></div>}
+               <aside className={`chat-session-list ${ai_session_collapsed ? "active" : ""} ${ai_session_collapsed ? "collapsed" : ""}`}>
                    {sessions.map(session => (
                        <button
                            key={session.id}
@@ -334,7 +336,10 @@ export default function AiAgentChatPage() {
                            title={session.summary || session.long_term_memory || session.title}
                        >
                            <span>{toSessionTitle(session.title)}</span>
-                           <small>{session.message_count} 条</small>
+                           <small>{session.message_count}
+                               {/*{t("条")}*/}
+                           </small>
+                           {session.source === "cli" && <em className="chat-session-source">CLI</em>}
                            <i onClick={(e)=>{
                                e.stopPropagation();
                                deleteSession(session.id);

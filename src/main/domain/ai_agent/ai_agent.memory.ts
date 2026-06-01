@@ -7,17 +7,17 @@ import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_config} from "./ai_agent.service";
 
 type SessionMeta = ai_agent_chat_session_meta & {
-    file_name:string;
-}
+    file_name: string;
+};
 
 type SessionIndexStore = {
-    version:number;
-    users:{
-        [userId:string]:{
-            sessions:SessionMeta[];
-        }
-    }
-}
+    version: number;
+    users: {
+        [userId: string]: {
+            sessions: SessionMeta[];
+        };
+    };
+};
 
 // 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
 const MAX_RECENT_MESSAGES = 24;
@@ -39,10 +39,6 @@ function safeName(text:string) {
     return (text || "default").replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
-function messageChars(messages: ai_agent_messages) {
-    return messages.reduce((sum, it) => sum + (it.content?.length ?? 0), 0);
-}
-
 function cloneSession(session: ai_agent_chat_session_item): ai_agent_chat_session_item {
     return {
         ...session,
@@ -60,22 +56,26 @@ function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item
     };
 }
 
+function messageChars(messages: ai_agent_messages) {
+    return messages.reduce((sum, it) => sum + (it.content?.length ?? 0), 0);
+}
+
 export class AiAgentMemoryService {
     private sessionRoot() {
         return DataUtil.get_tem_path(data_dir_tem_name.ai_agent_chat_session_dir);
     }
 
-    private userDir(userId:string) {
+    private userDir(userId: string) {
         const dir = path.join(this.sessionRoot(), safeName(userId));
         fse.ensureDirSync(dir);
         return dir;
     }
 
-    private sessionPath(userId:string, fileName:string) {
+    private sessionPath(userId: string, fileName: string) {
         return path.join(this.userDir(userId), safeName(fileName));
     }
 
-    private sessionFileName(sessionId:string) {
+    private sessionFileName(sessionId: string) {
         return `${safeName(sessionId)}.json`;
     }
 
@@ -90,11 +90,11 @@ export class AiAgentMemoryService {
         return store;
     }
 
-    private saveIndex(store:SessionIndexStore) {
+    private saveIndex(store: SessionIndexStore) {
         DataUtil.set(data_common_key.ai_agent_chat_session_store, store);
     }
 
-    private userIndex(store:SessionIndexStore, userId:string) {
+    private userIndex(store: SessionIndexStore, userId: string) {
         if (!store.users[userId]) {
             store.users[userId] = {sessions: []};
         }
@@ -102,26 +102,27 @@ export class AiAgentMemoryService {
         return store.users[userId];
     }
 
-    private toMeta(session:ai_agent_chat_session_item, fileName:string):SessionMeta {
+    private toMeta(session: ai_agent_chat_session_item, fileName: string): SessionMeta {
         return {
             id: session.id,
             title: session.title,
             message_count: session.messages?.length ?? 0,
             summary: session.summary,
             long_term_memory: session.long_term_memory,
+            source: session.source,
             created_at: session.created_at,
             updated_at: session.updated_at,
             file_name: fileName
         };
     }
 
-    private writeSession(userId:string, session:ai_agent_chat_session_item, fileName?:string) {
+    private writeSession(userId: string, session: ai_agent_chat_session_item, fileName?: string) {
         const nextFileName = fileName || this.sessionFileName(session.id);
         fs.writeFileSync(this.sessionPath(userId, nextFileName), JSON.stringify(session));
         return nextFileName;
     }
 
-    private readSession(userId:string, meta:SessionMeta):ai_agent_chat_session_item {
+    private readSession(userId: string, meta: SessionMeta) {
         try {
             const fileName = meta.file_name || this.sessionFileName(meta.id);
             const filePath = this.sessionPath(userId, fileName);
@@ -130,6 +131,7 @@ export class AiAgentMemoryService {
             session.messages = session.messages ?? [];
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
+            session.source = session.source ?? meta.source;
             return session;
         } catch (e) {
             console.log("read ai chat session failed", e);
@@ -137,7 +139,7 @@ export class AiAgentMemoryService {
         }
     }
 
-    private upsertMeta(store:SessionIndexStore, userId:string, session:ai_agent_chat_session_item, fileName?:string) {
+    private upsertMeta(store: SessionIndexStore, userId: string, session: ai_agent_chat_session_item, fileName?: string) {
         const user = this.userIndex(store, userId);
         const nextFileName = fileName || this.sessionFileName(session.id);
         const meta = this.toMeta(session, nextFileName);
@@ -148,11 +150,15 @@ export class AiAgentMemoryService {
             user.sessions.unshift(meta);
         }
         user.sessions = user.sessions.sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0));
-
         this.saveIndex(store);
     }
 
-    public list(userId:string):ai_agent_chat_session_meta[] {
+    private findMetaBySource(userId: string, source: "web" | "cli") {
+        const store = this.read_index_of_session();
+        return this.userIndex(store, userId).sessions.find(it => it.source === source) ?? null;
+    }
+
+    public list(userId: string): ai_agent_chat_session_meta[] {
         const store = this.read_index_of_session();
         return this.userIndex(store, userId).sessions
             .slice()
@@ -163,12 +169,13 @@ export class AiAgentMemoryService {
                 message_count: it.message_count ?? 0,
                 summary: it.summary,
                 long_term_memory: it.long_term_memory,
+                source: it.source,
                 created_at: it.created_at,
                 updated_at: it.updated_at
             }));
     }
 
-    public get_session(userId:string, sessionId:string):ai_agent_chat_session_item {
+    public get_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
@@ -176,14 +183,15 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId:string, title = "新会话"):ai_agent_chat_session_item {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" = "web") {
         const store = this.read_index_of_session();
-        const session:ai_agent_chat_session_item = {
+        const session: ai_agent_chat_session_item = {
             id: nowId(),
             title,
             messages: [],
             summary: "",
             long_term_memory: "",
+            source,
             created_at: Date.now(),
             updated_at: Date.now()
         };
@@ -192,15 +200,23 @@ export class AiAgentMemoryService {
         return cloneSession(session);
     }
 
-    public ensure_session(userId:string, sessionId?:string, title?:string):ai_agent_chat_session_item {
+    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" = "web") {
         if (sessionId) {
             const session = this.get_session(userId, sessionId);
             if (session) return session;
         }
-        return this.create_session(userId, title);
+        return this.create_session(userId, title, source);
     }
 
-    public delete(userId:string, sessionId:string) {
+    public ensure_single_session(userId: string, source: "web" | "cli", title: string) {
+        const meta = this.findMetaBySource(userId, source);
+        if (meta) {
+            return this.get_session(userId, meta.id);
+        }
+        return this.create_session(userId, title, source);
+    }
+
+    public delete(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const user = this.userIndex(store, userId);
         const meta = user.sessions.find(it => it.id === sessionId);
@@ -214,7 +230,7 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    public clear(userId:string) {
+    public clear(userId: string) {
         const store = this.read_index_of_session();
         const user = this.userIndex(store, userId);
         for (const meta of user.sessions) {
@@ -227,7 +243,7 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    public updateMessages(userId:string, sessionId:string, messages:ai_agent_messages) {
+    public updateMessages(userId: string, sessionId: string, messages: ai_agent_messages) {
         const store = this.read_index_of_session();
         const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
@@ -281,12 +297,12 @@ export class AiAgentMemoryService {
         return context;
     }
 
-    private createTitle(text:string) {
+    private createTitle(text: string) {
         const title = (text ?? "").replace(/\s+/g, " ").trim().slice(0, 28);
         return title || "新会话";
     }
 
-    private async compressIfNeeded(session:ai_agent_chat_session_item) {
+    private async compressIfNeeded(session: ai_agent_chat_session_item) {
         const messages = session.messages ?? [];
         if (messages.length <= COMPRESS_MESSAGE_COUNT && messageChars(messages) <= COMPRESS_CHAR_COUNT) {
             return;
@@ -306,7 +322,7 @@ export class AiAgentMemoryService {
         session.messages = recentMessages;
     }
 
-    private mergeMemory(oldMemory:string, nextMemory:string) {
+    private mergeMemory(oldMemory: string, nextMemory: string) {
         const lines = `${oldMemory ?? ""}\n${nextMemory ?? ""}`
             .split("\n")
             .map(it => it.trim())
@@ -314,9 +330,9 @@ export class AiAgentMemoryService {
         return Array.from(new Set(lines)).join("\n").slice(-MAX_LONG_MEMORY_CHARS);
     }
 
-    private async compressWithAI(summary:string, longMemory:string, messages:ai_agent_messages):Promise<{summary:string,long_term_memory:string}> {
+    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_messages): Promise<{ summary: string, long_term_memory: string }> {
         if (!ai_config) throw new Error("ai config not found");
-        const body:any = {
+        const body: any = {
             model: ai_config.model,
             messages: [
                 {
@@ -351,7 +367,7 @@ export class AiAgentMemoryService {
         };
     }
 
-    private async readAiText(res:Response) {
+    private async readAiText(res: any) {
         const contentType = res.headers.get("content-type") || "";
         if (!res.ok) {
             throw new Error(await res.text());
