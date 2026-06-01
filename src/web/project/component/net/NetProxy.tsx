@@ -220,7 +220,7 @@ export function NetProxy(props) {
                         <InputText placeholder={"port "} value={port} handleInputChange={(d) => {
                             setPort(d)
                         }}/>
-                        <InputText placeholder={"忽略ip "} value={ignore_ips} handleInputChange={(d) => {
+                        <InputText placeholder={t('忽略ip')} value={ignore_ips} handleInputChange={(d) => {
                             setIgnoredIps(d)
                         }}/>
 

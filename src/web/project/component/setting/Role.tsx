@@ -259,7 +259,7 @@ export function Role() {
                         <label>{t("语言")}</label>
                         <Select value={language} onChange={(value) => {
                             setLanguage(value);
-                        }} options={[{title: "NOT", value: ""},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
+                        }} options={[{title:t('跟随系统'),value:'sys'},{title: "NOT", value: ""},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
                         {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 
                         <Permission is_disable={() => {

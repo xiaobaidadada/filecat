@@ -309,7 +309,7 @@ export default function AiAgentChatPage() {
            </Header>
            <div className="chat-page">
                {
-                   messages?.length === 0 && <div className="chat-header">询问服务器的一切</div>
+                   messages?.length === 0 && <div className="chat-header">{t('询问服务器的一切')}</div>
                }
                <div className="chat-messages" ref={chatContainerRef}>
                    {messages.map(msg => (

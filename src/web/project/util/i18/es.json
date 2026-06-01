@@ -454,5 +454,15 @@
   "忽略目录": "Directorio ignorado",
   "双向同步": "Sincronización bidireccional",
   "客户端文件同步": "Sincronización de archivos del cliente",
-  "客户端设置": "Configuración del cliente"
+  "客户端设置": "Configuración del cliente",
+  "拖拽上传忽略列表": "Lista de ignorados para arrastrar y soltar",
+  "请勿将代理服务器用于本地(Intranet)地址": "No usar servidor proxy para direcciones locales (Intranet)",
+  "忽略ip": "Ignorar IP",
+  "询问服务器的一切": "Preguntar todo al servidor",
+  "本地目录": "Directorio local",
+  "响应体": "Cuerpo de la respuesta",
+  "客户端功能": "Funciones del cliente",
+  "全量同步": "Sincronización completa",
+  "公钥": "Clave pública",
+  "跟随系统": "Seguir el sistema"
 }

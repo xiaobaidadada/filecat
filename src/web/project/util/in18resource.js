@@ -44,6 +44,8 @@ try {
     const data = localStorage.getItem("user_base_info");
     if (data) {
         lan = JSON.parse(data)['user_data']['language'];
+    } else if(resources[navigator.language]) {
+        lan = navigator.language;
     }
 } catch (e) {}
 i18n

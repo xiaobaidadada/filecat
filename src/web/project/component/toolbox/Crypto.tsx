@@ -64,10 +64,10 @@ export function Crypto() {
         <Dashboard>
             <Header>
                 <Rows isFlex={true} columns={[
-                    <Select tip={"加密算法"} value={method} width={"auto"} onChange={(value) => {
+                    <Select tip={t('加密算法')} value={method} width={"auto"} onChange={(value) => {
                         set_method(value)
                     }} options={[{title: t("RSA"), value: 'rsa'}, {title: t("DSA"), value: 'dsa'},{title: t("ECDSA"), value: 'ecdsa'}]}/>
-                    , <Select tip={"输出格式"} value={form} width={"auto"} onChange={(value) => {
+                    , <Select tip={t('输出格式')} value={form} width={"auto"} onChange={(value) => {
                         set_form(value)
                     }} options={[{title: t("普通PEM"), value: 'pem'}, {title: t("opensshPEM"), value: 'openssh_pem'}]}/>
                     , <ActionButton icon={"play_arrow"} title={t("生成")} onClick={() => {
@@ -77,7 +77,7 @@ export function Crypto() {
             </Header>
             <Row>
                 <Column>
-                    <Card title={"公钥"} titleCom={<ActionButton title={"复制"} icon={"copy_all"} onClick={()=>{
+                    <Card title={t('公钥')} titleCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (publicKey) {
                             copyToClipboard(publicKey);
                             NotySucess("完成")
@@ -101,7 +101,7 @@ export function Crypto() {
                     </Card>
                 </Column>
                 <Column>
-                    <Card title={"私钥"} titleCom={<ActionButton title={"复制"} icon={"copy_all"} onClick={()=>{
+                    <Card title={t('私钥')} titleCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (privateKey) {
                             copyToClipboard(privateKey);
                             NotySucess("成功")

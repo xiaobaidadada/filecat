@@ -460,5 +460,15 @@
   "忽略目录": "Ignore Directory",
   "双向同步": "Bidirectional Sync",
   "客户端文件同步": "Client File Sync",
-  "客户端设置": "Client Settings"
+  "客户端设置": "Client Settings",
+  "拖拽上传忽略列表": "Drag and Drop Upload Ignore List",
+  "请勿将代理服务器用于本地(Intranet)地址": "Do not use proxy server for local (Intranet) addresses",
+  "忽略ip": "Ignore IP",
+  "询问服务器的一切": "Ask server about everything",
+  "本地目录": "Local directory",
+  "响应体": "Response body",
+  "客户端功能": "Client features",
+  "全量同步": "Full synchronization",
+  "公钥": "Public Key",
+  "跟随系统": "Follow system"
 }

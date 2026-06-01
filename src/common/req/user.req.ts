@@ -17,7 +17,7 @@ export enum SysEnum {
     unknown = 3
 }
 
-export type UserLanguage = "zh-CH"|"en";
+export type UserLanguage = "zh-CH"|"en"|"sys";
 
 export class UserBaseInfo {
     language: string; // 废弃字段

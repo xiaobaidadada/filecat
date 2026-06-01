@@ -222,6 +222,18 @@ export function Http() {
                     headersObj = JSON.parse(r.headers.filecat_remote_raw_headers);
                     respone_headers = JSON.stringify(headersObj, null, 2);
                 }
+                if (r.headers.filecat_remote_code) {
+                    try {
+                        const status = JSON.parse(r.headers.filecat_remote_code);
+                        if (status === 200 || status === 201) {
+                            set_status_code((<span style={{color: 'green'}}>200</span>));
+                        } else {
+                            set_status_code(status);
+                        }
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
             } catch (e) {
                 respone_headers = String(r.headers.filecat_remote_raw_headers);
             }
@@ -351,7 +363,17 @@ export function Http() {
                     {/* 核心请求包裹器 */}
                     <Card title={""} rightBottomCom={Number(bodyTabKey) === http_body_type.form && mainTabKey === 'body' && <ActionButton icon={"add"} title={t("添加")} onClick={add} />}>
                         <div className={'http_url'}>
-                            <Select width={'10rem'} value={url_type} onChange={(value) => { set_url_type(value) }} options={[{ value: 'get' }, { value: 'post' }, { value: 'put' }, { value: 'delete' }, { value: 'head' }, { value: 'options' }, { value: 'connect' }, { value: 'trace' }, { value: 'custom' }]} />
+                            <Select width={'10rem'} value={url_type} onChange={(value) => { set_url_type(value) }} options={[
+                                { value: 'get', color: '#28a745' },
+                                { value: 'post', color: '#007bff' },
+                                { value: 'put', color: '#fd7e14' },
+                                { value: 'delete', color: '#dc3545' },
+                                { value: 'head', color: '#6f42c1' },
+                                { value: 'options', color: '#17a2b8' },
+                                { value: 'connect', color: '#666666' },
+                                { value: 'trace', color: '#666666' },
+                                { value: 'custom', color: '#e83e8c' }
+                            ]} />
                             <InputText width={'50rem'} placeholder={t("http url")} value={url} handleInputChange={(v) => { set_url(v); }} />
                             <ActionButton icon={"send"} title={t("发送")} onClick={send} />
                             {check_user_auth(UserAuth.http_proxy_tag_update) && <ActionButton title={t("添加")} icon={"save_as"} onClick={save_as} />}

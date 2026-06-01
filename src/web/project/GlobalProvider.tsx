@@ -59,7 +59,11 @@ export const GlobalProvider = ({ children }) => {
                 p.user_data.upload_file_ignore_list = []
             }
             setUser_base_info(p)
-            i18n.changeLanguage(p?.user_data?.language);
+            let language = p?.user_data?.language
+            if(language === 'sys' || !language) {
+                language = navigator.language
+            }
+            i18n.changeLanguage(language);
             auth_key_map.clear();
             if(p.user_data?.file_list_zoom != null) {
                 setZoomPercent(p.user_data?.file_list_zoom);

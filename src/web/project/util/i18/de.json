@@ -454,5 +454,15 @@
   "忽略目录": "Ignoriertes Verzeichnis",
   "双向同步": "Bidirektionale Synchronisation",
   "客户端文件同步": "Client-Dateisynchronisation",
-  "客户端设置": "Client-Einstellungen"
+  "客户端设置": "Client-Einstellungen",
+  "拖拽上传忽略列表": "Ignorierliste für Drag-and-Drop-Uploads",
+  "请勿将代理服务器用于本地(Intranet)地址": "Proxyserver für lokale (Intranet-) Adressen umgehen",
+  "忽略ip": "IP ignorieren",
+  "询问服务器的一切": "Alles den Server abfragen",
+  "本地目录": "Lokales Verzeichnis",
+  "响应体": "Antworttext",
+  "客户端功能": "Client-Funktionen",
+  "全量同步": "Vollständige Synchronisierung",
+  "公钥": "Öffentlicher Schlüssel",
+  "跟随系统": "Systemeinstellung folgen"
 }

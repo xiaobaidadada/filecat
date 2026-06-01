@@ -40,7 +40,7 @@ export class Env {
     public static reset_root_username: string;
     public static reset_root_password: string;
     public static base_url: string; // 本地 dev的时候这个参数没有用  env.j会生效
-    public static lan: UserLanguage = "en";
+    public static lan: UserLanguage = "sys";
 
     public static https_tunnel_server_port: number;
     public static https_tunnel_server_open:boolean

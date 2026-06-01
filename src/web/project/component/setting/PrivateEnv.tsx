@@ -257,7 +257,7 @@ export function PrivateEnv() {
                     {t("语言")}
                     <Select  value={language} onChange={(value)=>{
                         set_language(value);
-                    }} options={[{title:"English",value:"en"},{title:"中文",value:"zh"},{title:"Deutsch",value:"de"},{title:"ドイツ語",value:"ja"},{title:"독일어",value:"ko"},{title:"Немецкий язык",value:"ru"},{title:"Allemand",value:"fr"},{title:"Alemán",value:"es"}]}/>
+                    }} options={[{title:t('跟随系统'),value:'sys'},{title:"English",value:"en"},{title:"中文",value:"zh"},{title:"Deutsch",value:"de"},{title:"ドイツ語",value:"ja"},{title:"독일어",value:"ko"},{title:"Немецкий язык",value:"ru"},{title:"Allemand",value:"fr"},{title:"Alemán",value:"es"}]}/>
                     {t("主题")}
                     <Select  value={theme} onChange={(value)=>{
                         set_theme(value);
