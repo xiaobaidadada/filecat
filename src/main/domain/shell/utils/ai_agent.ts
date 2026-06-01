@@ -116,6 +116,8 @@ export class ai_agent_class {
                 this.pty.cwd
             );
 
+        } catch (e) {
+            this.pty.on_call(e?.message ?? JSON.stringify(e));
         } finally {
             this.chat_done();
         }

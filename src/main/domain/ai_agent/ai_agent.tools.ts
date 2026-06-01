@@ -605,51 +605,51 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     get_params:(args:any)=>string,
 }> = {
     edit_file: {
-        get_name:()=> "编辑文件",
+        get_name:()=> "edit file",
         get_params:(args)=>{
-            return ` ${args.path} ${args.action} 内容：${typeof args.content === "string"?args.content:JSON.stringify(args.content)}`
+            return ` ${args.path} ${args.action} content：${typeof args.content === "string"?args.content:JSON.stringify(args.content)}`
         }
     },
     exec_cmd: {
-        get_name:()=>"执行命令",
+        get_name:()=>"exe cmd",
         get_params:(args)=>{
-            return ` ${args.cmd} 在 ${args.cwd}`
+            return ` ${args.cmd} at ${args.cwd}`
         }
     },
     http_request: {
-        get_name:()=>"请求http",
+        get_name:()=>"request http",
         get_params:(args)=>{
-            return `url为 ${args.url}`
+            return `url is ${args.url}`
         }
     },
     list_files: {
-        get_name:()=>"查询目录",
+        get_name:()=>"query file dir",
         get_params:(args)=>{
             return ` ${args.path}`
         }
     },
     read_file: {
-        get_name:()=>"读取文件",
+        get_name:()=>"read file",
         get_params:(args)=>{
             return ` ${args.path}`
         }
     },
     search_docs: {
-        get_name:()=>"搜索本地知识库",
+        get_name:()=>"search docs",
         get_params:(args)=>{
-            return `关键词： ${args.keywords?.join(" ")}`
+            return `keys： ${args.keywords?.join(" ")}`
         }
     },
     search_in_files: {
-        get_name:()=>"搜索文件内容",
+        get_name:()=>"search in file",
         get_params:(args)=>{
-            return `路径： ${args.path}`
+            return `path： ${args.path}`
         }
     },
     create_fs_entry:{
-        get_name:()=>"创建文件/目录",
+        get_name:()=>"create file",
         get_params:(args)=>{
-            return `路径： ${args.path}`
+            return `path： ${args.path}`
         }
     }
 };

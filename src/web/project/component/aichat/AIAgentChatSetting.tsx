@@ -15,7 +15,11 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {ai_agent_Item, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group} from "../../../../common/req/setting.req";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv_default, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group,
+    json_params_default
+} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
@@ -133,7 +137,7 @@ export default function AIAgentChatSetting() {
         setRows(list);
     }
     const add = ()=>{
-        setRows([...rows,{note:"",open:false,path:""}]);
+        setRows([...rows,{note:"",open:false,path:"",dotenv:ai_agent_item_dotenv_default,json_params : json_params_default}]);
     }
     const add_docs = ()=>{
         set_docs_list([...docs_list,{note:"",auto_load:false,dir:""}]);

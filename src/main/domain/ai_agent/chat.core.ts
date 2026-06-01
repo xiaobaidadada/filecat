@@ -10,7 +10,7 @@ import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
 import * as path from "path";
 import {StringUtil} from "../../../common/StringUtil";
-
+import { createParser } from 'eventsource-parser'; // 引入库
 
 export class ChatCore {
 
@@ -58,58 +58,8 @@ export class ChatCore {
 
     }
 
-    private async trimMessages(workMessages: ai_agent_messages, char_max: number, on_msg: (msg: string) => void, controller: AbortController) {
-        if (char_max < 12000) {
-            char_max = 12000; // 也不能太小
-        }
-        let count = 0;
-        for (const workMessage of workMessages) {
-            count += workMessage.content?.length ?? 0;
-        }
-        if (count <= char_max) {
-            return workMessages;
-        }
-        on_msg(`历史消息过长，正在裁剪消息`);
-        let assistantMessage: ai_agent_message_item = {
-            role: "user",
-            content: ``,
-            // tool_calls: []
-        };
-        await this.callLLSync(
-            [
-                ...workMessages,
-                {
-                    role: "system",
-                    content: `
-                    请总结以上对话，保留：
-1. 用户目标
-2. 已完成的步骤
-3. 关键结论
-4. 当前状态
-字符在${char_max} 以内
-                    `
-                },
-            ],
-            // ===== call_data =====
-            (chunk) => {
-                if (!chunk) return;
-                // ===== 1. 普通内容流 =====
-                if (chunk.content) {
-                    assistantMessage.content += chunk.content;
-                }
 
-            }
-            ,
-            // ===== error_call =====
-            (e) => {
-                throw e
-            },
-            controller
-        );
-        return [assistantMessage] as ai_agent_messages
-    }
-
-    // todo 长期记忆方式
+    // todo 长期记忆 短期记忆 等记忆处理
     public async chat(
         originMessages: ai_agent_messages,
         token: string,
@@ -290,172 +240,109 @@ ${sys_prompt ?? ''}
     }
 
 
-    private async callLLSync(messages: ai_agent_messages,
-                             call_data: (message: any) => void,
-                             error_call: (e) => void,
-                             controller: AbortController
+    private async callLLSync(
+        messages: ai_agent_messages,
+        call_data: (message: any) => void,
+        error_call: (e: any) => void,
+        controller: AbortController
     ) {
-        // const l_time = Date.now();
-        const tools: any[] = [...ai_tools]
+        const tools: any[] = [...ai_tools];
         if (ai_agentService.docs_switch_get()) {
-            tools.push(ai_tools_search_docs)
+            tools.push(ai_tools_search_docs);
         }
-        // mcp 的工具 也加入
-        tools.push(...ai_agentService.getMcpTools())
+        tools.push(...ai_agentService.getMcpTools());
+
         const json_body: any = {
             messages,
             tools: tools,
-            // temperature: 0.2,
             model: ai_config.model,
-            // thinking : { // 豆包深度思考
-            //     "type":"disabled"
-            // }
-        }
+        };
+
+        // 合并自定义配置参数
         try {
             if (ai_config.json_params) {
                 const obj = JSON.parse(ai_config.json_params);
-                for (const key of Object.keys(obj)) {
-                    json_body[key] = obj[key];
-                }
+                Object.assign(json_body, obj);
             }
         } catch (err) {
-            console.log(err)
+            console.error("解析 ai_config.json_params 失败", err);
         }
-        // 最后重新赋值确保不会被修改
-        json_body.tools = tools
-        json_body.messages = messages
-        const res = await fetch(ai_config.url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${ai_config.token}`
-            },
-            body: JSON.stringify(json_body),
-            signal: controller.signal
-        });
-        // console.log(`一次请求耗时 ${(Date.now() - l_time)/1000} s`)
-        const contentType = res.headers.get("content-type") || "";
-        const isSSE = contentType.includes("text/event-stream");
-        if (isSSE) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buf = '';
-            while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                buf += decoder.decode(value, {stream: true});
-                // SSE 按 \n\n 分段
-                let parts = buf.split(/\r?\n\r?\n/);
-                buf = parts.pop()!; // 留下未完整的一段
 
-                for (const part of parts) {
-                    // 过滤空段
-                    if (!part.trim()) continue;
-                    // SSE 可能包含多行 data:
-                    const lines = part.split('\n');
-                    let dataLines: string[] = [];
-                    for (const line of lines) {
-                        if (line.startsWith('data:')) {
-                            dataLines.push(line.replace(/^data:\s*/, ''));
-                        }
-                    }
-                    const dataStr = dataLines.join('\n');
-                    // [DONE] 表示结束
-                    if (dataStr.trim() === '[DONE]') {
-                        return;
-                    }
-                    // 解析 JSON 并回调
-                    try {
-                        const json = JSON.parse(dataStr);
-                        // 你可以根据接口结构取你想要的字段
-                        const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
-                        if (message)
-                            call_data(message);
-                    } catch (e) {
-                        if (e.name === "AbortError") {
-                            // 客户端断开，正常终止
-                            return;
-                        }
-                        error_call(e)
-                        return
-                    }
+        try {
+            const res = await fetch(ai_config.url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${ai_config.token}`
+                },
+                body: JSON.stringify(json_body),
+                signal: controller.signal
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                try {
+                    const json = JSON.parse(text);
+                    error_call(json.message || json.error?.message || text);
+                } catch {
+                    error_call(text);
                 }
+                return;
             }
-            // 如果读完了也结束
-            return
-        }
 
-        if (!res.ok) {
-            const text = await res.text();
-            try {
-                const json = JSON.parse(text);
-                error_call((json.message || json.error?.message || text))
-            } catch {
-                error_call(text)
+            const contentType = res.headers.get("content-type") || "";
+            const isSSE = contentType.includes("text/event-stream");
+
+            // --- SSE 处理逻辑 ---
+            if (isSSE && res.body) {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+
+                const parser = createParser({
+                    onEvent: (event) => {
+                        // 直接判断 data 即可
+                        if (event.data === '[DONE]') return;
+                        try {
+                            const json = JSON.parse(event.data);
+                            // 兼容 OpenAI 格式
+                            const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
+                            if (message) {
+                                call_data(message);
+                            }
+                        } catch (e) {
+                            // 解析失败可能是因为收到了非 JSON 的数据行，可以忽略或记录
+                            console.warn("SSE 解析 JSON 失败，数据内容:", event.data);
+                        }
+                    }
+                });
+
+                try {
+                    while (true) {
+                        const {done, value} = await reader.read();
+                        if (done) break;
+                        parser.feed(decoder.decode(value, {stream: true}));
+                    }
+                } catch (e: any) {
+                    if (e.name !== "AbortError") {
+                        error_call(e);
+                    }
+                } finally {
+                    parser.reset();
+                }
+                return;
             }
-            return
+
+            // --- 非 SSE 处理逻辑 ---
+            const result = await res.json();
+            call_data(result.choices[0].message);
+
+        } catch (e: any) {
+            if (e.name !== "AbortError") {
+                error_call(e);
+            }
         }
-        call_data((await res.json() as any).choices[0].message)
     }
 
-
-    // // 暂时不用
-    // private async flow_call(res: Response, work_messages: ai_agent_messages) {
-    //     const finalMessages: ai_agent_messages = this.trimMessages(work_messages);
-    //     finalMessages.push({
-    //         role: 'system',
-    //         content: '现在基于以上结果对用户进行简洁的回答，并使用markdown的格式。'
-    //     })
-    //     let json_body: any = {
-    //         model: MODEL,
-    //         messages: finalMessages,
-    //         stream: true,
-    //         temperature: 0.7
-    //     }
-    //     try {
-    //         if (config.json_params) {
-    //             const obj = JSON.parse(config.json_params);
-    //             for (const key of Object.keys(obj)) {
-    //                 json_body[key] = obj[key];
-    //             }
-    //         }
-    //     } catch (err) {
-    //         console.log(err)
-    //     }
-    //     // const l_time = Date.now();
-    //     const aiResponse = await fetch(BASE_URL, {
-    //         method: "POST",
-    //         headers: {
-    //             "Content-Type": "application/json",
-    //             "Authorization": `Bearer ${API_KEY}`
-    //         },
-    //         body: JSON.stringify(json_body)
-    //     });
-    //     // console.log(`最终回答耗时: ${((Date.now() - l_time)/1000)} s`)
-    //     if (!aiResponse.ok || !aiResponse.body) {
-    //         res.write(
-    //             `event: error\ndata: ${aiResponse.status === 413
-    //                 ? "请求内容过大（413）"
-    //                 : "AI 请求失败"
-    //             }\n\n`
-    //         );
-    //         res.end();
-    //         return res;
-    //     }
-    //     if (!json_body.stream) {
-    //         const r: any = await aiResponse.json()
-    //         const msg = r.choices[0].message;
-    //         this.write_to_res(res, msg.content);
-    //         res.end();
-    //         return res;
-    //     }
-    //     const nodeStream = Readable.fromWeb(aiResponse.body as any);
-    //     res.on("close", () => {
-    //         nodeStream.destroy();
-    //     });
-    //     nodeStream.pipe(res);
-    //     return nodeStream;
-    // }
 }
 
 export const chat_core = new ChatCore();

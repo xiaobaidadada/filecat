@@ -541,11 +541,16 @@ export class Ai_agentService {
                 controller.abort();   // 👈 核心
             });
         }
-        await chat_core.chat(originMessages,token,controller,(msg)=>{
-            this.write_to_res(res, msg);
-        },()=>{
-            this.end_to_res(res);
-        },"使用 markdown格式回答用户")
+       try {
+           await chat_core.chat(originMessages,token,controller,(msg)=>{
+               this.write_to_res(res, msg);
+           },()=>{
+               this.end_to_res(res);
+           },"使用 markdown格式回答用户")
+       } catch (error) {
+           this.write_to_res(res,error.message??JSON.stringify(error) );
+           this.end_to_res(res);
+       }
         return res;
     }
 
