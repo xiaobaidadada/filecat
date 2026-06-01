@@ -3,6 +3,8 @@ import React, {ReactNode, useEffect} from 'react';
 import {MaterialIcon} from "material-icons";
 import {To} from "./To";
 import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/util/WebPath";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../project/util/store";
 
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
@@ -21,6 +23,12 @@ export interface NavProps {
 
 export function Nav(props: NavProps) {
     const [selectedIndex, setSelectedIndex] = React.useState("");
+    const [, set_nav_style] = useRecoilState($stroe.nav_style);
+    const closeMobileNav = () => {
+        if (window.innerWidth <= 736) {
+            set_nav_style((prev) => ({...prev, open_menu: false}));
+        }
+    }
     useEffect(() => {
         let have = true;
         const set = get_router_key_set()
@@ -51,7 +59,10 @@ export function Nav(props: NavProps) {
                 return (<div key={index} className=" nav_1" >
                     {item.map((item2, index2) => {
                         return (
-                            <To rto={item2.rto} key={index2} clickFun={item2.clickFun} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
+                            <To rto={item2.rto} key={index2} clickFun={() => {
+                                if(item2.clickFun) item2.clickFun();
+                                closeMobileNav();
+                            }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
                                 <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>
                                 <span className=" nav_3">{item2.name}</span>
                             </To>)

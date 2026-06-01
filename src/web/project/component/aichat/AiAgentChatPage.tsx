@@ -1,10 +1,8 @@
 import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
-import {throttle,debounce} from "../../../../common/fun.util";
-import {ai_agent_message_item} from "../../../../common/req/common.pojo";
-import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
+import {throttle, debounce} from "../../../../common/fun.util";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_item} from "../../../../common/req/common.pojo";
 import Header from "../../../meta/component/Header";
 import {ActionButton} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
@@ -17,16 +15,12 @@ import {RCode} from "../../../../common/Result.pojo";
 import {ai_agent_item_dotenv} from "../../../../common/req/setting.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
-// import './ChatPage.css';
 
 interface Message {
     id: number;
     sender: 'user' | 'bot';
     text: string;
 }
-
-const MESSAGE_KEY = "chat_messages";
-const MAX_MESSAGES = 200;
 
 function MessageActions({
                             onDelete,
@@ -36,8 +30,6 @@ function MessageActions({
     onCopy: () => void;
 }) {
     const {t} = useTranslation();
-
-
     return (
         <div className="message-actions">
             <button onClick={onDelete}>{t("删除")}</button>
@@ -46,56 +38,42 @@ function MessageActions({
     );
 }
 
-
-export function getMessagesFromLocal(): any[] {
-    try {
-        const data = localStorage.getItem(MESSAGE_KEY);
-        if (!data) return [];
-        const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-        console.error("读取 messages 失败", e);
-        return [];
-    }
+function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
+    return messages
+        .filter(it => it.role === "user" || it.role === "assistant")
+        .map((it, index) => ({
+            id: Date.now() + index,
+            sender: it.role === "assistant" ? "bot" : "user",
+            text: it.content
+        }));
 }
 
-export function setMessagesToLocal(messages: any[]) {
-    try {
-        const truncated = messages.slice(-MAX_MESSAGES);
-        localStorage.setItem(MESSAGE_KEY, JSON.stringify(truncated));
-    } catch (e) {
-        console.error("保存 messages 到 localStorage 失败", e);
-    }
+function toSessionTitle(title:string) {
+    return title || "新会话";
 }
 
-export function pushMessageToLocal(message: any,messages_show_max) {
-    const messages = getMessagesFromLocal();
-    if(messages?.length > 0 && messages[messages.length - 1].id === message.id) {
-        return;
-    }
-    messages.push(message);
-    let next = messages;
-    if (messages.length > messages_show_max) {
-        next = messages.slice(-messages_show_max);
-    }
-    setMessagesToLocal(next);
+function toAiMessages(messages: Message[]): ai_agent_message_item[] {
+    return messages.map(it => ({
+        role: it.sender === "bot" ? "assistant" : "user",
+        content: it.text
+    }));
 }
-
-export function learAllMessages(): void {
-    setMessagesToLocal([]);
-}
-
 
 export default function AiAgentChatPage() {
-    const [messages, setMessages] = useState<Message[]>([
-        // {
-        //     id:1,
-        //     sender:'bot',
-        //     text:"hello filecat"
-        // }
-    ]);
-    const { t, i18n } = useTranslation();
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
+    const [activeSessionId, setActiveSessionId] = useState<string>("");
+    const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
+    const [sessionCollapsed, setSessionCollapsed] = useState(false);
+    const { t } = useTranslation();
 
+    const toggleSessionPanel = () => {
+        if (window.innerWidth <= 736) {
+            setSessionMenuOpen(true);
+            return;
+        }
+        setSessionCollapsed(prev => !prev);
+    }
 
     const set_messages = useRef(
         debounce((mes) => {
@@ -112,13 +90,12 @@ export default function AiAgentChatPage() {
 
     const [sending, set_sending] = useState(false);
     const {check_user_auth} = use_auth_check();
-
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const confirm_dell_all = using_confirm()
     const navigate = useNavigate();
-    const autoScrollRef = useRef(true); // 是否允许自动滚动
+    const autoScrollRef = useRef(true);
     const env_config = useRef(new ai_agent_item_dotenv())
 
     const isNearBottom = (el: HTMLElement, threshold = 120) => {
@@ -126,33 +103,68 @@ export default function AiAgentChatPage() {
         return scrollHeight - (scrollTop + clientHeight) < threshold;
     };
 
-
-    // 自动滚动到底部
     const scrollToBottom = (smooth = false) => {
         const el = chatContainerRef.current;
         if (!el) return;
-
         el.scrollTo({
             top: el.scrollHeight,
             behavior: smooth ? "smooth" : "auto"
-            /**
-             * behavior: "auto"   // 立刻跳到目标位置（无动画）
-             * behavior: "smooth" // 带动画地滚过去
-             */
         });
     };
 
+    const loadSessions = async (selectId?: string | null) => {
+        const result = await ai_agentHttp.get("sessions");
+        if (result.code !== RCode.Success) return;
+        const list = result.data ?? [];
+        setSessions(list);
+        const nextId = selectId === null ? (list[0]?.id ?? "") : (selectId || activeSessionId || list[0]?.id || "");
+        if (nextId) {
+            await loadSession(nextId);
+        } else {
+            setMessages([]);
+            setActiveSessionId("");
+        }
+    }
+
+    const refreshSessions = async () => {
+        const result = await ai_agentHttp.get("sessions");
+        if (result.code === RCode.Success) {
+            setSessions(result.data ?? []);
+        }
+    }
+
+    const loadSession = async (sessionId: string, closeMenu = false) => {
+        const result = await ai_agentHttp.post("session/get", {session_id: sessionId});
+        if (result.code !== RCode.Success || !result.data) return;
+        const session = result.data as ai_agent_chat_session_item;
+        setActiveSessionId(session.id);
+        setMessages(toUiMessages(session.messages));
+        if (closeMenu) {
+            setSessionMenuOpen(false);
+        }
+        requestAnimationFrame(() => scrollToBottom(false));
+    }
+
+    const createSession = async () => {
+        const result = await ai_agentHttp.post("session", {title: "新会话"});
+        if (result.code !== RCode.Success) return;
+        const session = result.data as ai_agent_chat_session_item;
+        setActiveSessionId(session.id);
+        setMessages([]);
+        setSessionMenuOpen(false);
+        await loadSessions(session.id);
+    }
+
     const init = async ()=>{
-        setMessages(getMessagesFromLocal())
         const result = await settingHttp.get("ai_agent_setting/env");
         if (result.code === RCode.Success) {
             env_config.current = result.data
         }
+        await loadSessions();
     }
+
     useEffect(() => {
         init();
-
-        // 历史加载完成后直接定位到底
         requestAnimationFrame(() => {
             scrollToBottom(false);
         });
@@ -169,60 +181,49 @@ export default function AiAgentChatPage() {
         el.addEventListener("scroll", onScroll);
         return () => el.removeEventListener("scroll", onScroll);
     }, []);
+
     useLayoutEffect(() => {
-        // 每次添加完消息后滚动
         if (autoScrollRef.current) {
             scrollToBottom(false);
         }
     }, [messages]);
 
-    const get_message = (allMessages: Message[]): ai_agent_message_item[] => {
-        const {
-            messages_current_max
-        } = env_config.current;
-
-        // 1️⃣ 先截取“最近的 N 条”（保持顺序）
-        // console.log(allMessages.length , messages_current_max)
-        const sliced =
-            allMessages.length < messages_current_max
-                ? allMessages
-                : allMessages.slice(-messages_current_max);
-        // debugger
-        // 2️⃣ 映射为 LLM message
-        return sliced.map((m) => ({
-            content: m.text,
-            role: m.sender === 'bot' ? 'system' : 'user'
-        }));
+    const get_message = (message: Message): ai_agent_message_item[] => {
+        return [{
+            content: message.text,
+            role: message.sender === 'bot' ? 'assistant' : 'user'
+        }];
     };
 
-
-    const handleSend = () => {
+    const handleSend = async () => {
         const text = inputValue.trim();
-        if (!text) return;
-        // 打印用户的
-        const user_message = { id: Date.now(), sender: 'user', text }
-        let new_messages = [
-                ...messages,
-            user_message
-        ]
-        pushMessageToLocal(user_message,env_config.current.messages_show_max)
+        if (!text || sending) return;
+        let sessionId = activeSessionId;
+        if (!sessionId) {
+            const result = await ai_agentHttp.post("session", {title: text.slice(0, 28)});
+            if (result.code !== RCode.Success) return;
+
+            const session = result.data as ai_agent_chat_session_item;
+            sessionId = session.id;
+            setActiveSessionId(sessionId);
+            await loadSessions(sessionId);
+        }
+
+        const user_message: Message = { id: Date.now(), sender: 'user', text }
+        const new_messages = [...messages, user_message]
         setMessages(new_messages);
         setInputValue('');
 
         set_sending(true)
-        const messages_p = get_message(new_messages)
-        // messages_p.push({ role: "user", content: text });
-        // 打印系统的
-        const call_pojo =  {
+        const call_pojo: Message =  {
             id:user_message.id +1,
             sender:'bot',
             text:"AI思考中..."
         }
         new_messages.push(call_pojo);
-        setMessages(new_messages);
+        setMessages([...new_messages]);
         let thinking_start = true
-        // scrollToBottom(false);
-        ai_agentHttp.sse_post("chat", {messages:messages_p},{
+        ai_agentHttp.sse_post("chat", {messages:get_message(user_message), session_id: sessionId},{
             onMessage: (res) => {
                 if(thinking_start) {
                     call_pojo.text = ""
@@ -230,7 +231,9 @@ export default function AiAgentChatPage() {
                 }
                 try {
                     const json = JSON.parse(res);
-                    const call_text_r = json?.choices[0]?.delta.content
+                    const call_text_r = typeof json === "string"
+                        ? json
+                        : json?.choices?.[0]?.delta?.content ?? json?.choices?.[0]?.message?.content;
                     if(call_text_r) {
                         call_pojo.text+=call_text_r;
                     }
@@ -243,29 +246,17 @@ export default function AiAgentChatPage() {
                 }
                 set_messages([...new_messages]);
             },
-            onDone:throttle(()=>{
+            onDone:throttle(async ()=>{
                 set_sending(false)
-                pushMessageToLocal(call_pojo,env_config.current.messages_show_max)
-
-                // ⭐ 流结束再 smooth 一次
+                await refreshSessions();
                 scrollToBottom(true);
             },100)
         });
-
-        // 模拟 bot 回复
-        // setTimeout(() => {
-        //     const botMessage: Message = {
-        //         id: Date.now() + 1,
-        //         sender: 'bot',
-        //         text: `你说的是: "${text}"`,
-        //     };
-        //     setMessages(prev => [...prev, botMessage]);
-        // }, 600);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // 防止换行
+            e.preventDefault();
             handleSend();
         }
     };
@@ -273,14 +264,19 @@ export default function AiAgentChatPage() {
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const el = e.target;
         el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 200) + 'px'; // 最大高度 200px
+        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
         setInputValue(el.value);
     };
 
     const handleDelete = (id: number) => {
         const newMessages = messages.filter(m => m.id !== id);
         setMessages(newMessages);
-        setMessagesToLocal(newMessages);
+        if (activeSessionId) {
+            ai_agentHttp.post("session/messages", {
+                session_id: activeSessionId,
+                messages: toAiMessages(newMessages)
+            }).catch(console.error);
+        }
     };
 
     const handleCopy = async (text: string) => {
@@ -288,58 +284,97 @@ export default function AiAgentChatPage() {
         NotySucess('复制成功')
     };
 
+    const deleteSession = (sessionId: string) => {
+        confirm_dell_all({
+            sub_title:"确认删除这个会话吗?",
+            confirm_fun:async ()=>{
+                await ai_agentHttp.post("session/delete", {session_id: sessionId})
+                if (activeSessionId === sessionId) {
+                    setActiveSessionId("");
+                    await loadSessions(null);
+                } else {
+                    await loadSessions(activeSessionId);
+                }
+            }
+        })
+    }
+
     return (
        <React.Fragment>
            <Header>
-               <ActionButton icon={"delete_sweep"} title={"清空聊天历史"} onClick={()=>{
+               <ActionButton
+                   icon={sessionCollapsed ? "chevron_right" : "menu"}
+                   title={sessionCollapsed ? "展开会话" : "会话"}
+                   onClick={toggleSessionPanel}
+               />
+               <ActionButton icon={"add"} title={"新会话"} onClick={createSession}/>
+               <ActionButton icon={"delete_sweep"} title={"清空全部会话"} onClick={()=>{
                    confirm_dell_all({
-                       sub_title:"确认删除全部聊天内容吗",
-                       confirm_fun:()=>{
-                           learAllMessages()
-                           init()
+                       sub_title:"确认删除全部聊天会话吗?",
+                       confirm_fun:async ()=>{
+                           await ai_agentHttp.post("sessions/clear", {})
+                           await init()
                        }
                    })
                }}/>
                {check_user_auth(UserAuth.ai_agent_setting) &&
                    <ActionButton icon={"settings"} title={"ai setting"} onClick={()=>{
                        navigate(`/${routerConfig.ai_agent_setting_page}`);
-                       // set_ai_agent_chat_setting(true);
                    }}/>
                }
            </Header>
-           <div className="chat-page">
-               {
-                   messages?.length === 0 && <div className="chat-header">{t('询问服务器的一切')}</div>
-               }
-               <div className="chat-messages" ref={chatContainerRef}>
-                   {messages.map(msg => (
-                       <div
-                           key={msg.id}
-                           className={`chat-message ${msg.sender}`}
+           <div className="chat-page chat-page-with-sessions">
+               {sessionMenuOpen && <div className="chat-session-overlay" onClick={() => setSessionMenuOpen(false)}></div>}
+               <aside className={`chat-session-list ${sessionMenuOpen ? "active" : ""} ${sessionCollapsed ? "collapsed" : ""}`}>
+                   {sessions.map(session => (
+                       <button
+                           key={session.id}
+                           className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
+                           onClick={() => loadSession(session.id, true)}
+                           title={session.summary || session.long_term_memory || session.title}
                        >
-                           <Md context={msg.text}/>
-                           <MessageActions
-                               onDelete={() => handleDelete(msg.id)}
-                               onCopy={() => handleCopy(msg.text)}
-                           />
-                       </div>
+                           <span>{toSessionTitle(session.title)}</span>
+                           <small>{session.message_count} 条</small>
+                           <i onClick={(e)=>{
+                               e.stopPropagation();
+                               deleteSession(session.id);
+                           }}>×</i>
+                       </button>
                    ))}
-                   <div ref={messagesEndRef} />
-               </div>
-
-               <div className="chat-input-area">
-                <textarea
-                    value={inputValue}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t("输入消息")}
-                    className="chat-input"
-                />
-                   {sending === false &&
-                       <button  onClick={handleSend}>{t("发送")}</button>
+               </aside>
+               <section className="chat-main">
+                   {
+                       messages?.length === 0 && <div className="chat-header">{t('询问服务器的一切')}</div>
                    }
-               </div>
+                   <div className="chat-messages" ref={chatContainerRef}>
+                       {messages.map(msg => (
+                           <div
+                               key={msg.id}
+                               className={`chat-message ${msg.sender}`}
+                           >
+                               <Md context={msg.text}/>
+                               <MessageActions
+                                   onDelete={() => handleDelete(msg.id)}
+                                   onCopy={() => handleCopy(msg.text)}
+                               />
+                           </div>
+                       ))}
+                       <div ref={messagesEndRef} />
+                   </div>
 
+                   <div className="chat-input-area">
+                    <textarea
+                        value={inputValue}
+                        onChange={handleChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t("输入消息")}
+                        className="chat-input"
+                    />
+                       {sending === false &&
+                           <button  onClick={handleSend}>{t("发送")}</button>
+                       }
+                   </div>
+               </section>
            </div>
        </React.Fragment>
     );

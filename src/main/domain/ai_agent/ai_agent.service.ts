@@ -1,5 +1,5 @@
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
-import {ai_agent_messages} from "../../../common/req/common.pojo";
+import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
@@ -36,6 +36,7 @@ import {hash_str_to_number} from "../../../common/node/value.util";
 import {ServerEvent} from "../../other/config";
 import {chat_core} from "./chat.core";
 import {download_ripgrep} from "../bin/download-ripgrep";
+import {aiAgentMemoryService} from "./ai_agent.memory";
 
 const {
     cut,
@@ -528,25 +529,45 @@ export class Ai_agentService {
      * @param originMessages
      * @param res
      * @param token
+     * @param session_id
      */
     public async chat(
-        originMessages: ai_agent_messages,
+        originMessages: ai_agent_messages, // 只有一条用户的了
         res: Response,
-        token: string
+        token: string,
+        session_id?: string
     ) {
         const controller = new AbortController();
+        let responseFinished = false;
 
         if (res) {
             res.on("close", () => {
-                controller.abort();   // 👈 核心
+                if (!responseFinished) {
+                    controller.abort();
+                }
             });
         }
+       const userId = userService.get_user_info_by_token(token).id;
+       const incomingMessages = (originMessages ?? []).filter(it => it?.content);
+       const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
+       const session = aiAgentMemoryService.ensure_session(userId, session_id, latestUserMessage?.content);
+       const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
+       let assistantText = "";
        try {
-           await chat_core.chat(originMessages,token,controller,(msg)=>{
+           await chat_core.chat(workMessages,token,controller,(msg)=>{
+               assistantText += msg;
                this.write_to_res(res, msg);
            },()=>{
+               responseFinished = true;
                this.end_to_res(res);
            },"使用 markdown格式回答用户")
+           if (latestUserMessage && assistantText) {
+               const assistantMessage:ai_agent_message_item = {
+                   role: "assistant",
+                   content: assistantText
+               };
+               await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage);
+           }
        } catch (error) {
            this.write_to_res(res,error.message??JSON.stringify(error) );
            this.end_to_res(res);
@@ -589,9 +610,23 @@ export class Ai_agentService {
 
 
     public write_to_res(res: Response, text: string) {
-        res.write(
-            `event: message\ndata: ${JSON.stringify(text)}\n\n`
-        );
+        const data = `event: message\ndata: ${JSON.stringify(text)}\n\n`;
+
+        // 1. 写入 Response 缓冲区
+        const flushed = res.write(data);
+
+        // 2. 强制 Socket 刷新
+        const socket = (res as any).socket;
+        if (socket) {
+            // 禁用 Nagle 算法，禁止数据包堆积
+            socket.setNoDelay(true);
+
+            // 如果底层支持 flush（某些 Node 版本或代理库），则调用
+            if (typeof (res as any).flush === 'function') {
+                (res as any).flush();
+            }
+        }
+        // console.log("已尝试发送数据，res.write 返回:", flushed);
     }
 
     public end_to_res(res: Response) {

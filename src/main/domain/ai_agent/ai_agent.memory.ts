@@ -1,0 +1,386 @@
+import fs from "fs";
+import path from "path";
+import fse from "fs-extra";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
+import {DataUtil} from "../data/DataUtil";
+import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {ai_config} from "./ai_agent.service";
+
+type SessionMeta = ai_agent_chat_session_meta & {
+    file_name:string;
+}
+
+type SessionIndexStore = {
+    version:number;
+    users:{
+        [userId:string]:{
+            sessions:SessionMeta[];
+        }
+    }
+}
+
+// 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
+const MAX_RECENT_MESSAGES = 24;
+// 当单个会话累计消息条数超过该值时，触发历史内容压缩。
+const COMPRESS_MESSAGE_COUNT = 36;
+// 当单个会话累计消息字符数超过该值时，触发历史内容压缩。
+const COMPRESS_CHAR_COUNT = 18000;
+// 会话摘要的最大字符数，超过后截断，避免摘要本身无限增长。
+const MAX_SUMMARY_CHARS = 6000;
+// 长期记忆的最大字符数，超过后保留最新内容，避免长期记忆无限增长。
+const MAX_LONG_MEMORY_CHARS = 6000;
+
+//  id of session
+function nowId() {
+    return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function safeName(text:string) {
+    return (text || "default").replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+function messageChars(messages: ai_agent_messages) {
+    return messages.reduce((sum, it) => sum + (it.content?.length ?? 0), 0);
+}
+
+function cloneSession(session: ai_agent_chat_session_item): ai_agent_chat_session_item {
+    return {
+        ...session,
+        messages: [...(session.messages ?? [])],
+        summary: session.summary ?? "",
+        long_term_memory: session.long_term_memory ?? "",
+    };
+}
+
+function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
+    return {
+        role: message.role,
+        content: message.content ?? "",
+        tool_call_id: message.tool_call_id
+    };
+}
+
+export class AiAgentMemoryService {
+    private sessionRoot() {
+        return DataUtil.get_tem_path(data_dir_tem_name.ai_agent_chat_session_dir);
+    }
+
+    private userDir(userId:string) {
+        const dir = path.join(this.sessionRoot(), safeName(userId));
+        fse.ensureDirSync(dir);
+        return dir;
+    }
+
+    private sessionPath(userId:string, fileName:string) {
+        return path.join(this.userDir(userId), safeName(fileName));
+    }
+
+    private sessionFileName(sessionId:string) {
+        return `${safeName(sessionId)}.json`;
+    }
+
+    // index of session
+    private read_index_of_session():SessionIndexStore {
+        const store = DataUtil.get<SessionIndexStore>(data_common_key.ai_agent_chat_session_store) ?? {
+            version: 2,
+            users: {}
+        };
+        store.version = 2;
+        store.users = store.users ?? {};
+        return store;
+    }
+
+    private saveIndex(store:SessionIndexStore) {
+        DataUtil.set(data_common_key.ai_agent_chat_session_store, store);
+    }
+
+    private userIndex(store:SessionIndexStore, userId:string) {
+        if (!store.users[userId]) {
+            store.users[userId] = {sessions: []};
+        }
+        store.users[userId].sessions = store.users[userId].sessions ?? [];
+        return store.users[userId];
+    }
+
+    private toMeta(session:ai_agent_chat_session_item, fileName:string):SessionMeta {
+        return {
+            id: session.id,
+            title: session.title,
+            message_count: session.messages?.length ?? 0,
+            summary: session.summary,
+            long_term_memory: session.long_term_memory,
+            created_at: session.created_at,
+            updated_at: session.updated_at,
+            file_name: fileName
+        };
+    }
+
+    private writeSession(userId:string, session:ai_agent_chat_session_item, fileName?:string) {
+        const nextFileName = fileName || this.sessionFileName(session.id);
+        fs.writeFileSync(this.sessionPath(userId, nextFileName), JSON.stringify(session));
+        return nextFileName;
+    }
+
+    private readSession(userId:string, meta:SessionMeta):ai_agent_chat_session_item {
+        try {
+            const fileName = meta.file_name || this.sessionFileName(meta.id);
+            const filePath = this.sessionPath(userId, fileName);
+            if (!fs.existsSync(filePath)) return null;
+            const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
+            session.messages = session.messages ?? [];
+            session.summary = session.summary ?? "";
+            session.long_term_memory = session.long_term_memory ?? "";
+            return session;
+        } catch (e) {
+            console.log("read ai chat session failed", e);
+            return null;
+        }
+    }
+
+    private upsertMeta(store:SessionIndexStore, userId:string, session:ai_agent_chat_session_item, fileName?:string) {
+        const user = this.userIndex(store, userId);
+        const nextFileName = fileName || this.sessionFileName(session.id);
+        const meta = this.toMeta(session, nextFileName);
+        const index = user.sessions.findIndex(it => it.id === session.id);
+        if (index >= 0) {
+            user.sessions[index] = meta;
+        } else {
+            user.sessions.unshift(meta);
+        }
+        user.sessions = user.sessions.sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0));
+
+        this.saveIndex(store);
+    }
+
+    public list(userId:string):ai_agent_chat_session_meta[] {
+        const store = this.read_index_of_session();
+        return this.userIndex(store, userId).sessions
+            .slice()
+            .sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0))
+            .map(it => ({
+                id: it.id,
+                title: it.title,
+                message_count: it.message_count ?? 0,
+                summary: it.summary,
+                long_term_memory: it.long_term_memory,
+                created_at: it.created_at,
+                updated_at: it.updated_at
+            }));
+    }
+
+    public get_session(userId:string, sessionId:string):ai_agent_chat_session_item {
+        const store = this.read_index_of_session();
+        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return null;
+        const session = this.readSession(userId, meta);
+        return session ? cloneSession(session) : null;
+    }
+
+    public create_session(userId:string, title = "新会话"):ai_agent_chat_session_item {
+        const store = this.read_index_of_session();
+        const session:ai_agent_chat_session_item = {
+            id: nowId(),
+            title,
+            messages: [],
+            summary: "",
+            long_term_memory: "",
+            created_at: Date.now(),
+            updated_at: Date.now()
+        };
+        const fileName = this.writeSession(userId, session);
+        this.upsertMeta(store, userId, session, fileName);
+        return cloneSession(session);
+    }
+
+    public ensure_session(userId:string, sessionId?:string, title?:string):ai_agent_chat_session_item {
+        if (sessionId) {
+            const session = this.get_session(userId, sessionId);
+            if (session) return session;
+        }
+        return this.create_session(userId, title);
+    }
+
+    public delete(userId:string, sessionId:string) {
+        const store = this.read_index_of_session();
+        const user = this.userIndex(store, userId);
+        const meta = user.sessions.find(it => it.id === sessionId);
+        if (meta) {
+            const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(sessionId));
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        user.sessions = user.sessions.filter(it => it.id !== sessionId);
+        this.saveIndex(store);
+    }
+
+    public clear(userId:string) {
+        const store = this.read_index_of_session();
+        const user = this.userIndex(store, userId);
+        for (const meta of user.sessions) {
+            const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(meta.id));
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        user.sessions = [];
+        this.saveIndex(store);
+    }
+
+    public updateMessages(userId:string, sessionId:string, messages:ai_agent_messages) {
+        const store = this.read_index_of_session();
+        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.readSession(userId, meta);
+        if (!session) return;
+        session.messages = (messages ?? [])
+            .filter(it => it?.content && (it.role === "user" || it.role === "assistant"))
+            .map(normalizeMessage);
+        session.updated_at = Date.now();
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
+    }
+
+    // 将本次机器人的聊天结果加入到历史会话中
+    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item) {
+        const store = this.read_index_of_session();
+        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.readSession(userId, meta);
+        if (!session) return;
+        session.messages = session.messages ?? [];
+        session.messages.push(normalizeMessage(userMessage));
+        session.messages.push(normalizeMessage(assistantMessage));
+        session.updated_at = Date.now();
+        if (!session.title || session.title === "新会话") {
+            session.title = this.createTitle(userMessage.content);
+        }
+        await this.compressIfNeeded(session);
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
+    }
+
+    // 为聊天构建新的上下文
+    public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_messages):ai_agent_messages {
+        const context:ai_agent_messages = [];
+        if (session?.summary || session?.long_term_memory) {
+            // 记忆加入
+            context.push({
+                role: "system",
+                content: [
+                    session.summary ? `会话压缩摘要：\n${session.summary}` : "",
+                    session.long_term_memory ? `长期记忆：\n${session.long_term_memory}` : "",
+                    "请把这些记忆当作当前会话上下文；如果用户后续明确纠正，以最新消息为准。"
+                ].filter(Boolean).join("\n\n")
+            });
+        }
+        // 历史的最近记忆加入
+        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES));
+        // 新会话内容加入
+        context.push(...incoming.map(normalizeMessage));
+        return context;
+    }
+
+    private createTitle(text:string) {
+        const title = (text ?? "").replace(/\s+/g, " ").trim().slice(0, 28);
+        return title || "新会话";
+    }
+
+    private async compressIfNeeded(session:ai_agent_chat_session_item) {
+        const messages = session.messages ?? [];
+        if (messages.length <= COMPRESS_MESSAGE_COUNT && messageChars(messages) <= COMPRESS_CHAR_COUNT) {
+            return;
+        }
+        const oldMessages = messages.slice(0, -MAX_RECENT_MESSAGES);
+        const recentMessages = messages.slice(-MAX_RECENT_MESSAGES);
+        if (!oldMessages.length) return;
+
+        try {
+            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages);
+            session.summary = compressed.summary.slice(0, MAX_SUMMARY_CHARS);
+            session.long_term_memory = this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
+        } catch (e) {
+            const text = oldMessages.map(it => `${it.role}: ${it.content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
+            session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
+        }
+        session.messages = recentMessages;
+    }
+
+    private mergeMemory(oldMemory:string, nextMemory:string) {
+        const lines = `${oldMemory ?? ""}\n${nextMemory ?? ""}`
+            .split("\n")
+            .map(it => it.trim())
+            .filter(Boolean);
+        return Array.from(new Set(lines)).join("\n").slice(-MAX_LONG_MEMORY_CHARS);
+    }
+
+    private async compressWithAI(summary:string, longMemory:string, messages:ai_agent_messages):Promise<{summary:string,long_term_memory:string}> {
+        if (!ai_config) throw new Error("ai config not found");
+        const body:any = {
+            model: ai_config.model,
+            messages: [
+                {
+                    role: "system",
+                    content: "你是会话记忆压缩器。请只输出 JSON，格式为 {\"summary\":\"...\",\"long_term_memory\":\"...\"}。summary 保留任务进展、决定、未完成事项；long_term_memory 只保留跨会话仍有价值的用户偏好、长期事实、项目约定。不要编造。"
+                },
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        existing_summary: summary ?? "",
+                        existing_long_term_memory: longMemory ?? "",
+                        messages
+                    })
+                }
+            ],
+            temperature: 0.2
+        };
+        const res = await fetch(ai_config.url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${ai_config.token}`
+            },
+            body: JSON.stringify(body)
+        });
+        const text = await this.readAiText(res);
+        const match = text.match(/\{[\s\S]*\}/);
+        const json = JSON.parse(match ? match[0] : text);
+        return {
+            summary: json.summary ?? "",
+            long_term_memory: json.long_term_memory ?? ""
+        };
+    }
+
+    private async readAiText(res:Response) {
+        const contentType = res.headers.get("content-type") || "";
+        if (!res.ok) {
+            throw new Error(await res.text());
+        }
+        if (contentType.includes("text/event-stream") && res.body) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let text = "";
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, {stream: true});
+                for (const part of chunk.split("\n")) {
+                    const line = part.trim();
+                    if (!line.startsWith("data:")) continue;
+                    const data = line.slice(5).trim();
+                    if (!data || data === "[DONE]") continue;
+                    try {
+                        const json = JSON.parse(data);
+                        text += json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? "";
+                    } catch {
+                    }
+                }
+            }
+            return text;
+        }
+        const json = await res.json();
+        return json.choices?.[0]?.message?.content ?? "";
+    }
+}
+
+export const aiAgentMemoryService = new AiAgentMemoryService();

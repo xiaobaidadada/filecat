@@ -277,3 +277,15 @@ table th {
 .site_edit {
   background: var(--background);
 }
+
+.chat-session-list {
+  background: var(--background);
+}
+
+.chat-session-item {
+  background: var(--textPrimary);
+}
+.chat-session-item.active,
+.chat-session-item:hover {
+  background: var(--textPrimary);
+}

@@ -65,6 +65,27 @@ export class ai_agent_message_item {
 }
 export type ai_agent_messages = ai_agent_message_item[];
 
+export class ai_agent_chat_session_item {
+    id:string;
+    title:string;
+    messages:ai_agent_message_item[] = [];
+    summary:string = "";
+    // 长期记忆
+    long_term_memory:string = "";
+    created_at:number;
+    updated_at:number;
+}
+
+export class ai_agent_chat_session_meta {
+    id:string;
+    title:string;
+    message_count:number;
+    summary?:string;
+    long_term_memory?:string;
+    created_at:number;
+    updated_at:number;
+}
+
 export interface env_item {
     path:string;
     note:string;

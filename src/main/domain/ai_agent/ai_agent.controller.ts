@@ -10,6 +10,7 @@ import {Sucess} from "../../other/Result";
 import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
+import {aiAgentMemoryService} from "./ai_agent.memory";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -26,7 +27,7 @@ export class Ai_AgentController {
         const token = ctx.headers.authorization
         let stream ;
         try {
-            stream =  await ai_agentService.chat(data.messages, res, token)
+            stream =  await ai_agentService.chat(data.messages, res, token, data.session_id)
         } catch (err) {
             console.log(err);
             if (!res.writableEnded && !res.destroyed) {
@@ -46,6 +47,51 @@ export class Ai_AgentController {
             }
         }
         return stream
+    }
+
+    @Get("/sessions")
+    async sessions(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        return Sucess(aiAgentMemoryService.list(user?.id ?? user?.user_id ?? user?.username ?? "default"))
+    }
+
+    @Post("/session")
+    async session_create(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        return Sucess(aiAgentMemoryService.create_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.title))
+    }
+
+    @Post("/session/get")
+    async session_get(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        return Sucess(aiAgentMemoryService.get_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id))
+    }
+
+    @Post("/session/delete")
+    async session_delete(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.delete(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id)
+        return Sucess("")
+    }
+
+    @Post("/session/messages")
+    async session_messages(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.updateMessages(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id, data?.messages)
+        return Sucess("")
+    }
+
+    @Post("/sessions/clear")
+    async sessions_clear(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.clear(user?.id ?? user?.user_id ?? user?.username ?? "default")
+        return Sucess("")
     }
 
     @msg(CmdType.ai_load_info)

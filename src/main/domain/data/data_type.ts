@@ -24,6 +24,7 @@ export enum data_dir_tem_name {
     http_proxy_server_dir = "http_proxy_server_dir",
     sys_database_dir = "sys_database_dir", // 存放一些数据库
     filecat_upgrade_dir = "filecat_upgrade_dir",
+    ai_agent_chat_session_dir = "ai_agent_chat_session_dir",
 }
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择
 // key
@@ -85,6 +86,7 @@ export enum data_common_key {
     ai_agent_model_setting = "ai_agent_model_setting", // ai模型的设置
     ai_agent_mcp_setting = "ai_agent_mcp_setting", // ai mcp 服务设置
     ai_agent_docs_setting = "ai_agent_docs_setting",
+    ai_agent_chat_session_store = "ai_agent_chat_session_store",
     share_file_list_key = "share_file_list_key",
     share_file_list_key_download_statics = "share_file_list_key_download_statics",
     tcp_proxy_server_base = "tcp_proxy_server_base",
