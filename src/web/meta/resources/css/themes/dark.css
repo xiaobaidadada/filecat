@@ -85,9 +85,9 @@ nav > div {
   color: var(--textPrimary);
   border-color: var(--divider) !important;
 }
-#listing .item i {
-  color: var(--icon);
-}
+/*#listing .item i {*/
+/*  color: var(--icon);*/
+/*}*/
 #listing .item .modified {
   color: var(--textSecondary);
 }
@@ -129,6 +129,8 @@ nav > div {
 .dashboard p label {
   color: var(--textPrimary);
 }
+
+.select_dropdown,
 .card#share input,
 .card#share select,
 .input {
@@ -147,6 +149,15 @@ nav > div {
 .input--green {
   background: #147A41;
 }
+
+.select_option:hover {
+  background: var(--surfacePrimary);
+}
+
+.select_option--selected {
+  background: var(--surfacePrimary);
+}
+
 
 .dashboard #nav .wrapper,
 .collapsible {

@@ -574,8 +574,6 @@ export class NetService {
         data: HttpServerProxy
     ) {
         if (proxyServer) return;
-
-
         const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
             // if (!req.url) return res.end();
             // const protocol = 'http:';
@@ -634,31 +632,26 @@ export class NetService {
                 proxyServerSocketSet.delete(socket);
             });
         });
-        // ws 走升级
+        // ws 走升级 一般不会触发
         proxyServer.on('upgrade', (req, socket, head) => {
             const host = req.headers.host!;
             const targetUrl = new URL(`http://${host}${req.url}`);
-
             const port = targetUrl.port ? Number(targetUrl.port) : 80;
-
             const proxySocket = net.connect(port, targetUrl.hostname);
-
             proxySocket.on('connect', () => {
                 proxySocket.write(head);
                 proxySocket.pipe(socket);
                 socket.pipe(proxySocket);
             });
-
             const cleanup = () => {
                 socket.destroy();
                 proxySocket.destroy();
             };
-
             socket.on('error', cleanup);
             socket.on('close', cleanup);
             proxySocket.on('error', cleanup);
         });
-        // https wss 走connect  处理 HTTPS CONNECT 隧道
+        // https wss ws（概率） 走connect  处理 HTTPS CONNECT 隧道
         proxyServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
             const targetPort = Number(targetPortStr || 443);
@@ -720,9 +713,7 @@ export class NetService {
                     client.connect().catch(console.error);
                     return;
                 }
-                //
-                // ✅ 命中规则：走上游代理（例如 127.0.0.1:3067）
-                //
+                //  走上游代理 自己请求建立http隧道
                 const rewritten = fullUrl.replace(
                     new RegExp(item.rewrite_regexp_source),
                     item.rewrite_target
@@ -766,10 +757,11 @@ export class NetService {
                     }
                 };
                 upstreamSocket.on('data', onUpstreamData);
-                upstreamSocket.setTimeout(10000, () => {
-                    clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nUpstream proxy timeout\r\n');
-                    upstreamSocket.destroy();
-                });
+                upstreamSocket.setKeepAlive(true);
+                // upstreamSocket.setTimeout(10000, () => {
+                //     clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nUpstream proxy timeout\r\n');
+                //     upstreamSocket.destroy();
+                // });
                 upstreamSocket.on('error', (err) => {
                     clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nUpstream socket error: ${err.message}\r\n`);
                 });
@@ -780,19 +772,18 @@ export class NetService {
                 upstreamSocket.on('close', cleanup);
                 return
             }
-            //
-            // ✅ 未命中规则：直连目标网站（标准 HTTPS 隧道）
-            //
+            // 直接请求 http/https
             const directSocket = net.connect(targetPort, targetHost, () => {
                 clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
                 if (head && head.length) directSocket.write(head);
                 directSocket.pipe(clientSocket);
                 clientSocket.pipe(directSocket);
             });
-            directSocket.setTimeout(10000, () => {
-                clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nDirect connection timeout\r\n');
-                directSocket.destroy();
-            });
+            directSocket.setKeepAlive(true);
+            // directSocket.setTimeout(10000, () => {
+            //     clientSocket.end('HTTP/1.1 504 Gateway Timeout\r\n\r\nDirect connection timeout\r\n');
+            //     directSocket.destroy();
+            // });
             directSocket.on('error', (err) => {
                 clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\nDirect socket error: ${err.message}\r\n`);
             });
@@ -803,7 +794,6 @@ export class NetService {
             clientSocket.on('error', cleanup);
             clientSocket.on('close', cleanup);
         });
-
         proxyServer.listen(data.port, () => {
             console.log(`HTTP Proxy server running on port ${data.port}`);
         });

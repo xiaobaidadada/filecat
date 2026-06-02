@@ -252,55 +252,135 @@ export interface SelectProps {
     disabled?: boolean
 }
 
+// export function Select(props: SelectProps) {
+//     return (
+//         <div style={{
+//             display: "flex",
+//             alignItems: "center", // 让前置 tip 和下拉框在水平方向完美居中对齐
+//             width: props.width || "100%",
+//         }}>
+//             {props.tip && (
+//                 <p className={`input input_left`}>
+//                     {props.tip}
+//                 </p>
+//             )}
+//
+//             {/* 🌟 核心：外层增加一个相对定位的容器 */}
+//             <div style={{
+//                 position: "relative",
+//                 flex: 1,
+//                 display: "flex",
+//                 alignItems: "center"
+//             }}>
+//                 <select
+//                     defaultValue={props.defaultValue}
+//                     value={props.value}
+//                     disabled={!!props.disabled}
+//                     className={`input input--block ${props.no_border ? "input--no_border" : ""}`}
+//                     onChange={(event) => props.onChange(event.target.value)}
+//                     style={{
+//                         // margin: 0, // 消除 input--block 默认的下边距干扰
+//                         cursor: props.disabled ? "not-allowed" : "pointer"
+//                     }}
+//                 >
+//                     {props.options.map((item, index) => {
+//                         return <option key={index} value={item.value} style={{ color: item.color || '' }} >{item.title ?? item.value}</option>;
+//                     })}
+//                 </select>
+//
+//                 {/* 🌟 核心：在此处放置你的 MaterialIcon，并通过内联样式将其固定在右侧 */}
+//                 <i
+//                     className="material-icons"
+//                     style={{
+//                         position: "absolute",
+//                         right: "12px",
+//                         pointerEvents: "none", // 💡 穿透点击：点击图标依然能打开下拉菜单
+//                         color: props.disabled ? "#9ca3af" : "#666", // 随禁用状态变灰
+//                         fontSize: "18px" // 根据 UI 调整现代化的图标大小
+//                     }}
+//                 >
+//                     expand_more {/* 或者使用 arrow_drop_down */}
+//                 </i>
+//             </div>
+//         </div>
+//     );
+// }
+
 export function Select(props: SelectProps) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = props.options.find(o => o.value === (props.value ?? props.defaultValue));
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
     return (
-        <div style={{
-            display: "flex",
-            alignItems: "center", // 让前置 tip 和下拉框在水平方向完美居中对齐
-            width: props.width || "100%",
-        }}>
-            {props.tip && (
-                <p className={`input input_left`}>
-                    {props.tip}
-                </p>
-            )}
+        <div
+            className="select_wrapper"
+            style={{ width: props.width || "100%" }}
+        >
+            {props.tip && <p className="input input_left">{props.tip}</p>}
 
-            {/* 🌟 核心：外层增加一个相对定位的容器 */}
-            <div style={{
-                position: "relative",
-                flex: 1,
-                display: "flex",
-                alignItems: "center"
-            }}>
-                <select
-                    defaultValue={props.defaultValue}
-                    value={props.value}
-                    disabled={!!props.disabled}
-                    className={`input input--block ${props.no_border ? "input--no_border" : ""}`}
-                    onChange={(event) => props.onChange(event.target.value)}
-                    style={{
-                        // margin: 0, // 消除 input--block 默认的下边距干扰
-                        cursor: props.disabled ? "not-allowed" : "pointer"
-                }}
+            <div ref={ref} className="select_container">
+                {/* 触发器 */}
+                <div
+                    className={[
+                        "input input--block",
+                        props.no_border ? "input--no_border" : "",
+                        "select_trigger",
+                        props.disabled ? "select_trigger--disabled" : "",
+                    ].join(" ")}
+                    onClick={() => !props.disabled && setOpen(o => !o)}
                 >
-                    {props.options.map((item, index) => {
-                        return <option key={index} value={item.value} style={{ color: item.color || '' }} >{item.title ?? item.value}</option>;
-                    })}
-                </select>
+                    <span
+                        className="select_trigger__label"
+                        style={{ color: selected?.color || "inherit" }}
+                    >
+                        {selected?.title ?? selected?.value ?? "请选择"}
+                    </span>
+                    <i
+                        className={[
+                            "material-icons",
+                            "select_trigger__icon",
+                            open ? "select_trigger__icon--open" : "",
+                            props.disabled ? "select_trigger__icon--disabled" : "",
+                        ].join(" ")}
+                    >
+                        expand_more
+                    </i>
+                </div>
 
-                {/* 🌟 核心：在此处放置你的 MaterialIcon，并通过内联样式将其固定在右侧 */}
-                <i
-                    className="material-icons"
-                    style={{
-                        position: "absolute",
-                        right: "12px",
-                        pointerEvents: "none", // 💡 穿透点击：点击图标依然能打开下拉菜单
-                        color: props.disabled ? "#9ca3af" : "#666", // 随禁用状态变灰
-                        fontSize: "18px" // 根据 UI 调整现代化的图标大小
-                    }}
-                >
-                    expand_more {/* 或者使用 arrow_drop_down */}
-                </i>
+                {/* 下拉列表 */}
+                {open && (
+                    <div className="select_dropdown">
+                        {props.options.map((item, index) => (
+                            <div
+                                key={index}
+                                className={[
+                                    "select_option",
+                                    item.value === (props.value ?? props.defaultValue)
+                                        ? "select_option--selected"
+                                        : "",
+                                ].join(" ")}
+                                style={{ color: item.color || "#111" }}
+                                onClick={() => {
+                                    props.onChange(item.value);
+                                    setOpen(false);
+                                }}
+                            >
+                                {item.title ?? item.value}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

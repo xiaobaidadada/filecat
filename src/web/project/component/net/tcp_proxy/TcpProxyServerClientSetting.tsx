@@ -125,8 +125,8 @@ export function TcpProxyServerClientSetting() {
                         const defaultTarget = all_client_options?.[1]?.value ?? all_client_options?.[0]?.value;
                         sync_task_list.push({
                             open: false,
-                            source_client_num_id: defaultSource ? parseInt(String(defaultSource)) : undefined,
-                            target_client_num_id: defaultTarget ? parseInt(String(defaultTarget)) : undefined,
+                            // source_client_num_id: defaultSource ? parseInt(String(defaultSource)) : undefined,
+                            // target_client_num_id: defaultTarget ? parseInt(String(defaultTarget)) : undefined,
                             source_dir: "",
                             target_dir: "",
                             // ignore_text: "",
