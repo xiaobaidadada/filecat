@@ -139,7 +139,7 @@ export function Env() {
     }
 
     const dir_upload_rows_add = () => {
-        set_dir_upload_rows([...dir_upload_rows, {path: "", note: ""}]);
+        set_dir_upload_rows([...dir_upload_rows, {path: "", note: "",user_upload_num:2,sys_upload_num:6,ws_file_standard_size:50*1024*1024,ws_file_parallel_num:2,ws_file_block_mb_size:0.5*1024*1024}]);
     }
 
     const protection_sys_dir_del = (index) => {

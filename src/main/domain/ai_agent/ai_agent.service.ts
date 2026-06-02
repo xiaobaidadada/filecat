@@ -1,5 +1,5 @@
 import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
-import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
+import {ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
@@ -56,6 +56,11 @@ export let ai_config_search_doc = new ai_docs_setting_param()
 // 判断是否中文
 function isChinese(str: string) {
     return /[\u4e00-\u9fa5]/.test(str);
+}
+
+function formatAttachmentTitle(attachments?: ai_agent_message_attachment_item[]) {
+    if (!attachments?.length) return "";
+    return attachments.map(it => it.name).filter(Boolean).slice(0, 3).join(", ");
 }
 
 /**
@@ -548,9 +553,12 @@ export class Ai_agentService {
             });
         }
        const userId = userService.get_user_info_by_token(token).id;
-       const incomingMessages = (originMessages ?? []).filter(it => it?.content);
+       const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
        const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
-       const session = aiAgentMemoryService.ensure_session(userId, session_id, latestUserMessage?.content);
+       const sessionTitle = latestUserMessage?.content?.trim()
+           || formatAttachmentTitle(latestUserMessage?.attachments)
+           || "新会话";
+       const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
        let assistantText = "";
        try {

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import fse from "fs-extra";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_config} from "./ai_agent.service";
@@ -48,16 +48,56 @@ function cloneSession(session: ai_agent_chat_session_item): ai_agent_chat_sessio
     };
 }
 
+// 序列化json
+function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_agent_message_attachment_item {
+    return {
+        name: attachment.name ?? "unknown",
+        mime_type: attachment.mime_type,
+        size: attachment.size ?? 0,
+        kind: attachment.kind ?? "text",
+        content: attachment.content ?? ""
+    };
+}
+
 function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
     return {
         role: message.role,
         content: message.content ?? "",
-        tool_call_id: message.tool_call_id
+        tool_call_id: message.tool_call_id,
+        attachments: (message.attachments ?? []).map(normalizeAttachment)
+    };
+}
+
+function formatAttachment(attachment: ai_agent_message_attachment_item) {
+    return [
+        "\n",
+        `[附件 ${attachment.name}]`,
+        `${attachment.name} mime类型: ${attachment.mime_type ?? "unknown"} `,
+        `${attachment.name} 大小: ${attachment.size ?? 0} bytes`,
+        `${attachment.name} 类型: ${attachment.kind ?? "text"}`,
+        `${attachment.name} 文件内容:\n ${attachment.content ? attachment.content : "[内容为空或无法预览]"}`
+    ].join("\n");
+}
+
+// 格式化 用户消息 把一些json结构化的数据 字符串化
+function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
+    const normalized = normalizeMessage(message);
+    if (!normalized.attachments?.length) {
+        return normalized;
+    }
+
+    return {
+        role: normalized.role,
+        content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${normalized.content ?? ""}`.trim(),
+        tool_call_id: normalized.tool_call_id
     };
 }
 
 function messageChars(messages: ai_agent_messages) {
-    return messages.reduce((sum, it) => sum + (it.content?.length ?? 0), 0);
+    return messages.reduce((sum, it) => {
+        const attachmentChars = (it.attachments ?? []).reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
+        return sum + (it.content?.length ?? 0) + attachmentChars;
+    }, 0);
 }
 
 export class AiAgentMemoryService {
@@ -122,13 +162,13 @@ export class AiAgentMemoryService {
         return nextFileName;
     }
 
-    private readSession(userId: string, meta: SessionMeta) {
+    private read_session(userId: string, meta: SessionMeta) {
         try {
             const fileName = meta.file_name || this.sessionFileName(meta.id);
             const filePath = this.sessionPath(userId, fileName);
             if (!fs.existsSync(filePath)) return null;
             const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
-            session.messages = session.messages ?? [];
+            session.messages = (session.messages ?? []).map(normalizeMessage);
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
             session.source = session.source ?? meta.source;
@@ -179,7 +219,7 @@ export class AiAgentMemoryService {
         const store = this.read_index_of_session();
         const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
-        const session = this.readSession(userId, meta);
+        const session = this.read_session(userId, meta);
         return session ? cloneSession(session) : null;
     }
 
@@ -243,14 +283,15 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    public updateMessages(userId: string, sessionId: string, messages: ai_agent_messages) {
+    // 更新消息到会话 整体更新
+    public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_messages) {
         const store = this.read_index_of_session();
         const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.readSession(userId, meta);
+        const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = (messages ?? [])
-            .filter(it => it?.content && (it.role === "user" || it.role === "assistant"))
+            .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
             .map(normalizeMessage);
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
@@ -262,7 +303,7 @@ export class AiAgentMemoryService {
         const store = this.read_index_of_session();
         const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.readSession(userId, meta);
+        const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
         session.messages.push(normalizeMessage(userMessage));
@@ -278,7 +319,12 @@ export class AiAgentMemoryService {
 
     // 为聊天构建新的上下文
     public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_messages):ai_agent_messages {
-        const context:ai_agent_messages = [];
+        const context:ai_agent_messages = [
+            {
+                role: "system",
+                content: '当你需要读取文件内容，而用户的消息中自带附件的时候，优先使用附件的内容，只有需要最新的文件内容的时候，才到本地进行文件搜索。'
+            }
+        ];
         if (session?.summary || session?.long_term_memory) {
             // 记忆加入
             context.push({
@@ -291,9 +337,9 @@ export class AiAgentMemoryService {
             });
         }
         // 历史的最近记忆加入
-        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES));
+        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES).map(renderMessageForPrompt));
         // 新会话内容加入
-        context.push(...incoming.map(normalizeMessage));
+        context.push(...incoming.map(renderMessageForPrompt));
         return context;
     }
 
@@ -312,11 +358,11 @@ export class AiAgentMemoryService {
         if (!oldMessages.length) return;
 
         try {
-            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages);
+            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(renderMessageForPrompt));
             session.summary = compressed.summary.slice(0, MAX_SUMMARY_CHARS);
             session.long_term_memory = this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
         } catch (e) {
-            const text = oldMessages.map(it => `${it.role}: ${it.content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
+            const text = oldMessages.map(it => `${it.role}: ${renderMessageForPrompt(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
             session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
         }
         session.messages = recentMessages;

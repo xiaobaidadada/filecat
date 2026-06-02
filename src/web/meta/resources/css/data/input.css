@@ -11,6 +11,8 @@
     border-radius: 6px;      /* 现代 UI 标配：更圆润的倒角 */
 
     padding: .6em 1.2em;     /* 稍微加大一点内边距，让呼吸感更强 */
+    /*min-height: 2.6rem;*/
+    line-height: 1.5rem;
     background: white;
 
     /* border: 1px solid rgba(0, 0, 0, 0.1); <- 旧的 */
@@ -68,7 +70,7 @@
 }
 
 .input_left {
-    /*margin-bottom: .5em;*/
+    margin-bottom: .5em;
     display: inline-flex;     /* 改为 inline-flex 方便对齐 */
     align-items: center;       /* 垂直居中 */
     background-color: #f1f5f9; /* 更清爽的现代灰（Slate） */
@@ -160,6 +162,7 @@
     font-size: 18px;
     color: #666;
     transition: transform 0.2s;
+    /*height: 1.rem;*/
 }
 
 .select_trigger__icon--open {

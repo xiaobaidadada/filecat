@@ -1,10 +1,10 @@
-import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
+﻿import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle, debounce} from "../../../../common/fun.util";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_item} from "../../../../common/req/common.pojo";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item} from "../../../../common/req/common.pojo";
 import Header from "../../../meta/component/Header";
-import {ActionButton} from "../../../meta/component/Button";
+import {ActionButton, ButtonLittle} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {copyToClipboard} from "../../util/FunUtil";
@@ -22,6 +22,7 @@ interface Message {
     id: number;
     sender: 'user' | 'bot';
     text: string;
+    attachments?: ai_agent_message_attachment_item[];
 }
 
 function MessageActions({
@@ -40,13 +41,46 @@ function MessageActions({
     );
 }
 
+function AttachmentList({attachments = []}: { attachments?: ai_agent_message_attachment_item[] }) {
+    if (!attachments.length) {
+        return null;
+    }
+    return (
+        <div className="chat-message-attachments">
+            {attachments.map((attachment, index) => (
+                <div key={`${attachment.name}_${index}`} className="chat-message-attachment">
+                    <i className="material-icons">attach_file</i>
+                    <span>{attachment.name}</span>
+                    <small>{attachment.size} B</small>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function guessAttachmentKind(file: File): "text" | "image" | "binary" {
+    const textLikeExt = /\.(md|txt|json|js|jsx|ts|tsx|css|html?|xml|ya?ml|py|java|go|rs|c|cpp|h|hpp|sh|bat|cmd|ini|toml|csv|log|sql|env|gitignore|dockerfile)$/i;
+    if (file.type?.startsWith("image/")) {
+        return "image";
+    }
+    if (file.type?.startsWith("text/") || textLikeExt.test(file.name)) {
+        return "text";
+    }
+    return "binary";
+}
+
+function readFileAsText(file: File) {
+    return file.text();
+}
+
 function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
     return messages
         .filter(it => it.role === "user" || it.role === "assistant")
         .map((it, index) => ({
             id: Date.now() + index,
             sender: it.role === "assistant" ? "bot" : "user",
-            text: it.content
+            text: it.content,
+            attachments: it.attachments ?? []
         }));
 }
 
@@ -57,7 +91,8 @@ function toSessionTitle(title:string) {
 function toAiMessages(messages: Message[]): ai_agent_message_item[] {
     return messages.map(it => ({
         role: it.sender === "bot" ? "assistant" : "user",
-        content: it.text
+        content: it.text,
+        attachments: it.attachments ?? []
     }));
 }
 
@@ -66,8 +101,10 @@ export default function AiAgentChatPage() {
     const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
     const [ai_session_collapsed,set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
+    const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
     const { t } = useTranslation();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const toggleSessionPanel = () => {
         if (window.innerWidth <= 736) {
@@ -112,6 +149,45 @@ export default function AiAgentChatPage() {
             top: el.scrollHeight,
             behavior: smooth ? "smooth" : "auto"
         });
+    };
+
+    const addAttachments = (files: FileList | File[]) => {
+        const list = Array.from(files ?? []).filter(Boolean);
+        if (!list.length) return;
+        setPendingAttachments(prev => [...prev, ...list]);
+    };
+
+    const buildAttachments = async (files: File[]) => {
+        const attachments: ai_agent_message_attachment_item[] = [];
+        for (const file of files) {
+            const kind = guessAttachmentKind(file);
+            let content = "";
+            if (kind === "text") {
+                try {
+                    const text = await readFileAsText(file);
+                    const maxLen = 120000;
+                    content = text.length > maxLen ? `${text.slice(0, maxLen)}\n\n[内容已截断，原始长度 ${text.length} 字符]` : text;
+                } catch {
+                    content = "[文本读取失败]";
+                }
+            } else if (kind === "image") {
+                content = `[图片文件: ${file.name}]`;
+            } else {
+                content = `[二进制文件: ${file.name}]`;
+            }
+            attachments.push({
+                name: file.name,
+                mime_type: file.type,
+                size: file.size,
+                kind,
+                content
+            });
+        }
+        return attachments;
+    };
+
+    const openFilePicker = () => {
+        fileInputRef.current?.click();
     };
 
     const loadSessions = async (selectId?: string | null) => {
@@ -193,16 +269,17 @@ export default function AiAgentChatPage() {
     const get_message = (message: Message): ai_agent_message_item[] => {
         return [{
             content: message.text,
-            role: message.sender === 'bot' ? 'assistant' : 'user'
+            role: message.sender === 'bot' ? 'assistant' : 'user',
+            attachments: message.attachments ?? []
         }];
     };
 
     const handleSend = async () => {
         const text = inputValue.trim();
-        if (!text || sending) return;
+        if (sending || (!text && pendingAttachments.length === 0)) return;
         let sessionId = activeSessionId;
         if (!sessionId) {
-            const result = await ai_agentHttp.post("session", {title: text.slice(0, 28)});
+            const result = await ai_agentHttp.post("session", {title: (text || pendingAttachments[0]?.name || "新会话").slice(0, 28)});
             if (result.code !== RCode.Success) return;
 
             const session = result.data as ai_agent_chat_session_item;
@@ -211,10 +288,12 @@ export default function AiAgentChatPage() {
             await loadSessions(sessionId);
         }
 
-        const user_message: Message = { id: Date.now(), sender: 'user', text }
+        const attachments = await buildAttachments(pendingAttachments);
+        const user_message: Message = { id: Date.now(), sender: 'user', text, attachments }
         const new_messages = [...messages, user_message]
         setMessages(new_messages);
         setInputValue('');
+        setPendingAttachments([]);
 
         set_sending(true)
         const call_pojo: Message =  {
@@ -268,6 +347,32 @@ export default function AiAgentChatPage() {
         el.style.height = 'auto';
         el.style.height = Math.min(el.scrollHeight, 200) + 'px';
         setInputValue(el.value);
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const files = e.clipboardData?.files;
+        if (files && files.length > 0) {
+            e.preventDefault();
+            addAttachments(files);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            e.preventDefault();
+            addAttachments(files);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        if (e.dataTransfer?.types?.includes("Files")) {
+            e.preventDefault();
+        }
+    };
+
+    const removePendingAttachment = (index: number) => {
+        setPendingAttachments(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDelete = (id: number) => {
@@ -358,6 +463,7 @@ export default function AiAgentChatPage() {
                                className={`chat-message ${msg.sender}`}
                            >
                                <Md context={msg.text}/>
+                               <AttachmentList attachments={msg.attachments}/>
                                <MessageActions
                                    onDelete={() => handleDelete(msg.id)}
                                    onCopy={() => handleCopy(msg.text)}
@@ -367,16 +473,45 @@ export default function AiAgentChatPage() {
                        <div ref={messagesEndRef} />
                    </div>
 
-                   <div className="chat-input-area">
-                    <textarea
-                        value={inputValue}
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder={t("输入消息")}
-                        className="chat-input"
-                    />
+                   <div className="chat-input-area" onDrop={handleDrop} onDragOver={handleDragOver}>
+                       <input
+                           ref={fileInputRef}
+                           type="file"
+                           multiple
+                           style={{display: "none"}}
+                           onChange={(e) => {
+                               if (e.target.files?.length) {
+                                   addAttachments(e.target.files);
+                                   e.currentTarget.value = "";
+                               }
+                           }}
+                       />
+                       <div className="chat-input-shell">
+                           {pendingAttachments.length > 0 && (
+                               <div className="chat-attachment-strip">
+                                   {pendingAttachments.map((file, index) => (
+                                       <div key={`${file.name}_${index}`} className="chat-attachment-chip">
+                                           <i className="material-icons">attach_file</i>
+                                           <span title={file.name}>{file.name}</span>
+                                           <button type="button" onClick={() => removePendingAttachment(index)}>
+                                               <i className="material-icons">close</i>
+                                           </button>
+                                       </div>
+                                   ))}
+                               </div>
+                           )}
+                           <textarea
+                               value={inputValue}
+                               onChange={handleChange}
+                               onPaste={handlePaste}
+                               onKeyDown={handleKeyDown}
+                               placeholder={t("输入消息")}
+                               className="chat-input"
+                           />
+                       </div>
+                       <ActionButton title={"添加文件"} icon={"attach_file"} onClick={openFilePicker}/>
                        {sending === false &&
-                           <button  onClick={handleSend}>{t("发送")}</button>
+                           <ButtonLittle text={t("发送")} clickFun={handleSend}/>
                        }
                    </div>
                </section>

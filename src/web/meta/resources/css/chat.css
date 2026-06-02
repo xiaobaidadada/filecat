@@ -250,21 +250,6 @@
     box-sizing: border-box;
 }
 
-/* 按钮 */
-.chat-input-area button {
-    padding: 0 16px;
-    background: #0078ff;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.chat-input-area button:hover {
-    background: #005bb5;
-}
-
 
 .chat-message {
     position: relative;
@@ -316,4 +301,97 @@
 .message-actions button:hover {
     transform: scale(1.2); /* hover 变大 */
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.chat-input-area {
+    align-items: flex-end;
+}
+
+.chat-input-shell {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-attachment-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chat-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #d6d9de;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+}
+
+.chat-attachment-chip span {
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-attachment-chip button {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.chat-attach-button {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d6d9de;
+    border-radius: 12px;
+    background: #fff;
+    color: #475569;
+}
+
+.chat-attach-button:hover {
+    background: #f8fafc;
+}
+
+.chat-message-attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.chat-message-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.4);
+    color: inherit;
+}
+
+.chat-message-attachment span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-message-attachment small {
+    color: inherit;
+    opacity: 0.7;
 }

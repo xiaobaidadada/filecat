@@ -82,7 +82,7 @@ export class Ai_AgentController {
     async session_messages(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.updateMessages(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id, data?.messages)
+        aiAgentMemoryService.update_messages_to_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id, data?.messages)
         return Sucess("")
     }
 

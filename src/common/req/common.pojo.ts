@@ -58,10 +58,19 @@ export type AI_Agent_Role =
     /** 工具输出消息，表示模型调用工具后的结果 */
     | 'tool';
 
+export class ai_agent_message_attachment_item {
+    name: string;
+    mime_type?: string;
+    size: number;
+    kind?: "text" | "image" | "binary";
+    content: string;
+}
+
 export class ai_agent_message_item {
     role:AI_Agent_Role;
     content:string;
     tool_call_id?: string;
+    attachments?: ai_agent_message_attachment_item[];
 }
 export type ai_agent_messages = ai_agent_message_item[];
 
