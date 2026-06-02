@@ -95,7 +95,7 @@ export function CustomerApiRouter() {
                         setRows([...rows]);
                     }} no_border={true}/>,
                     <Select defaultValue={item.needAuth} onChange={(value) => {
-                        item.needAuth = value === "true";
+                        item.needAuth = value
                         setRows([...rows]);
                     }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                     <InputText value={item.note} handleInputChange={(value) => {

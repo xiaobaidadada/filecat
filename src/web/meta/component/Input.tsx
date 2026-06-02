@@ -243,7 +243,7 @@ export function InputPassword(props: {
 
 export interface SelectProps {
     options: { title?: string, value: any,color?:string }[];
-    onChange: (value: string) => void;
+    onChange: (value: any) => void;
     defaultValue?: any,
     no_border?: boolean,
     value?: any,

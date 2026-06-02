@@ -306,7 +306,7 @@ export function TcpProxyServerClient() {
                                     item.proxy_port = parseInt(value);
                                 }} no_border={true}/>,
                                 <Select value={!!item.open} onChange={(value) => {
-                                    item.open = value === "true"
+                                    item.open = value
                                     set_edit_client({...edit_client})
                                 }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
 
@@ -364,7 +364,7 @@ export function TcpProxyServerClient() {
                                     item.client_proxy_port = parseInt(value);
                                 }} no_border={true}/>,
                                 <Select value={!!item.open} onChange={(value) => {
-                                    item.open = value === "true"
+                                    item.open = value
                                     set_edit_client_bridge_fig([...edit_client_bridge_fig])
                                 }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {

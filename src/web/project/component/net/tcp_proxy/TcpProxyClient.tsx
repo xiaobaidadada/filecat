@@ -190,7 +190,7 @@ export function TcpProxyClient(props) {
                             }} no_border={true}/>,
                             <StatusCircle ok={!!item.status}/>,
                             <Select value={!!item.open} onChange={(value) => {
-                                item.open = value === "true"
+                                item.open = value
                                 set_clients([...clients])
                             }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {

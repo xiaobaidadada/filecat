@@ -154,7 +154,7 @@ export function PrivateEnv() {
             if (i !== index) {
                 rows[i].default = false;
             } else {
-                rows[i].default = value === "true";
+                rows[i].default = value
             }
             list.push(rows[i])
         }

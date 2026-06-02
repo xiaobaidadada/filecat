@@ -178,7 +178,7 @@ export function NetProxy(props) {
 
     const mac_onChange = (index1, index2, value) => {
         const list = [...mac_proxies];
-        list[index1].proxies[index2].enabled = value === "true";
+        list[index1].proxies[index2].enabled = value
         setMacProxies(list);
     }
 
@@ -302,7 +302,7 @@ export function NetProxy(props) {
                                 item.target_port = parseInt(value);
                             }} no_border={true}/>,
                             <Select value={item.open} onChange={(value) => {
-                                tcp_proxy_list[index].open = value === "true";
+                                tcp_proxy_list[index].open = value
                                 set_tcp_proxy_list([...tcp_proxy_list]);
                             }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                     no_border={true}/>,
@@ -335,7 +335,7 @@ export function NetProxy(props) {
                                 }}/>
                             </div>,
                             <Select value={item.open} onChange={(value) => {
-                                httpServer.list[index].open = value === "true";
+                                httpServer.list[index].open = value
                                 setHttpServer({...httpServer})
                             }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                     no_border={true}/>,

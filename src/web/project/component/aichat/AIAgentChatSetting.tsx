@@ -130,7 +130,7 @@ export default function AIAgentChatSetting() {
             if (i !== index) {
                 rows[i].open = false;
             } else {
-                rows[i].open = value === "true";
+                rows[i].open = value;
             }
             list.push(rows[i])
         }

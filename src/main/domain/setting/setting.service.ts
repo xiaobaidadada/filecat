@@ -797,7 +797,7 @@ export class SettingService {
                 item.sys_upload_num = parseInt(item.sys_upload_num);
             }
             if (typeof item.open_ws_file === "string") {
-                item.open_ws_file = item.open_ws_file === "true";
+                item.open_ws_file = item.open_ws_file === "true" || item.open_ws_file === true;
             }
             if (item.open_ws_file) {
                 if (typeof item.ws_file_block_mb_size !== "number") {

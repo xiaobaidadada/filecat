@@ -188,10 +188,10 @@ export function  Sys() {
         <Column widthPer={30}>
             <Dashboard>
                 <Card title={t("自定义登录auth")} rightBottomCom={<ButtonText text={t('保存')} clickFun={authOpenSave}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={jscode}/>}>
-                    <Select value={authopen} onChange={(value)=>{setAuthopen(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+                    <Select value={authopen} onChange={(value)=>{setAuthopen(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
                 <Card title={t("自定义shell命令校验")} rightBottomCom={<ButtonText text={t('保存')} clickFun={auth_shell_open_Save}/>} titleCom={<ActionButton icon={"edit"} title={t("代码修改")} onClick={shell_cmd_jscode}/>}>
-                    <Select value={shell_cmd_open} onChange={(value)=>{set_shell_cmd_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+                    <Select value={shell_cmd_open} onChange={(value)=>{set_shell_cmd_open(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
                 </Card>
             </Dashboard>
 
@@ -208,7 +208,7 @@ export function  Sys() {
                       }} title={"信息"}/></span>}
                       rightBottomCom={<ButtonText text={t('确定修改')} clickFun={set_recycle_save}/>}>
                     <InputText placeholder={t('目录')}  value={recycle_dir} handleInputChange={(value)=>{set_recycle_dir(value)}} />
-                    <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value==="true")}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+                    <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
 
                 </Card>
                 {/*<Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>*/}

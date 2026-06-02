@@ -213,7 +213,7 @@ export function Env() {
                                }} no_border={true}/>,
 
                                <Select value={item.open_ws_file === true} onChange={(value) => {
-                                   item.open_ws_file = value === "true";
+                                   item.open_ws_file = value
                                    set_dir_upload_rows([...dir_upload_rows])
                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                        no_border={true}/>,
@@ -259,7 +259,7 @@ export function Env() {
                                     item.path = value;
                                 }} no_border={true}/>,
                                 <Select value={!!item.open} onChange={(value: any) => {
-                                    item.open = (value === true || value === "true")
+                                    item.open = value
                                     set_env_path_dir_rows([...env_path_dir_rows])
                                 }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                         no_border={true}/>,
@@ -299,13 +299,13 @@ export function Env() {
                                 }} no_border={true}/>,
 
                                 <Select value={!!item.open} onChange={(value: any) => {
-                                    item.open = (value === true || value === "true")
+                                    item.open = value
                                     set_workflow_setting_rows([...workflow_setting_rows])
                                 }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                         no_border={true}/>,
 
                                 <Select value={!!item.sys_power_on} onChange={(value: any) => {
-                                    item.sys_power_on = (value === true || value === "true")
+                                    item.sys_power_on = value
                                     set_workflow_setting_rows([...workflow_setting_rows])
                                 }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                         no_border={true}/>,
