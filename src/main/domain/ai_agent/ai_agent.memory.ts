@@ -134,7 +134,7 @@ export class AiAgentMemoryService {
         DataUtil.set(data_common_key.ai_agent_chat_session_store, store);
     }
 
-    private userIndex(store: SessionIndexStore, userId: string) {
+    private user_meta_index_by_store(store: SessionIndexStore, userId: string) {
         if (!store.users[userId]) {
             store.users[userId] = {sessions: []};
         }
@@ -180,7 +180,7 @@ export class AiAgentMemoryService {
     }
 
     private upsertMeta(store: SessionIndexStore, userId: string, session: ai_agent_chat_session_item, fileName?: string) {
-        const user = this.userIndex(store, userId);
+        const user = this.user_meta_index_by_store(store, userId);
         const nextFileName = fileName || this.sessionFileName(session.id);
         const meta = this.toMeta(session, nextFileName);
         const index = user.sessions.findIndex(it => it.id === session.id);
@@ -195,12 +195,12 @@ export class AiAgentMemoryService {
 
     private findMetaBySource(userId: string, source: "web" | "cli") {
         const store = this.read_index_of_session();
-        return this.userIndex(store, userId).sessions.find(it => it.source === source) ?? null;
+        return this.user_meta_index_by_store(store, userId).sessions.find(it => it.source === source) ?? null;
     }
 
     public list(userId: string): ai_agent_chat_session_meta[] {
         const store = this.read_index_of_session();
-        return this.userIndex(store, userId).sessions
+        return this.user_meta_index_by_store(store, userId).sessions
             .slice()
             .sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0))
             .map(it => ({
@@ -217,7 +217,7 @@ export class AiAgentMemoryService {
 
     public get_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
-        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
         const session = this.read_session(userId, meta);
         return session ? cloneSession(session) : null;
@@ -258,7 +258,7 @@ export class AiAgentMemoryService {
 
     public delete(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
-        const user = this.userIndex(store, userId);
+        const user = this.user_meta_index_by_store(store, userId);
         const meta = user.sessions.find(it => it.id === sessionId);
         if (meta) {
             const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(sessionId));
@@ -272,7 +272,7 @@ export class AiAgentMemoryService {
 
     public clear(userId: string) {
         const store = this.read_index_of_session();
-        const user = this.userIndex(store, userId);
+        const user = this.user_meta_index_by_store(store, userId);
         for (const meta of user.sessions) {
             const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(meta.id));
             if (fs.existsSync(filePath)) {
@@ -286,7 +286,7 @@ export class AiAgentMemoryService {
     // 更新消息到会话 整体更新
     public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_messages) {
         const store = this.read_index_of_session();
-        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
         const session = this.read_session(userId, meta);
         if (!session) return;
@@ -298,10 +298,18 @@ export class AiAgentMemoryService {
         this.upsertMeta(store, userId, session, fileName);
     }
 
+    public sessions_update_meta(userId: string, session:ai_agent_chat_session_meta ) {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === session.id);
+        if (!meta) return;
+        meta.title = session.title;
+        this.saveIndex(store);
+    }
+
     // 将本次机器人的聊天结果加入到历史会话中
     public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item) {
         const store = this.read_index_of_session();
-        const meta = this.userIndex(store, userId).sessions.find(it => it.id === sessionId);
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
         const session = this.read_session(userId, meta);
         if (!session) return;

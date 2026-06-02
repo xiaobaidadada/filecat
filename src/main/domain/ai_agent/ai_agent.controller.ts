@@ -56,6 +56,14 @@ export class Ai_AgentController {
         return Sucess(aiAgentMemoryService.list(user?.id ?? user?.user_id ?? user?.username ?? "default"))
     }
 
+    @Post("/sessions/update/meta")
+    async sessions_update_meta(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.sessions_update_meta(user?.id ,data)
+        return Sucess("ok")
+    }
+
     @Post("/session")
     async session_create(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);

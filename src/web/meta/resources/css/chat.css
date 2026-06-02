@@ -99,23 +99,7 @@
     color: #7c3aed;
 }
 
-.chat-session-item i {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    width: 18px;
-    height: 18px;
-    line-height: 16px;
-    text-align: center;
-    border-radius: 50%;
-    font-style: normal;
-    color: #667085;
-}
 
-.chat-session-item i:hover {
-    background: #eef0f3;
-    color: #111827;
-}
 
 @media (max-width: 736px) {
     .chat-session-list {

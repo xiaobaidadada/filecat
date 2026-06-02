@@ -10,10 +10,12 @@ export function using_confirm() {
                 sub_title,
                 confirm_fun,
                 title,
+                context_div
             }: {
-        sub_title: string,
+        sub_title?: string,
         confirm_fun: () => any,
         title?: string,
+        context_div?:any
     }) => {
         setShowPrompt({
             open: true,
@@ -22,7 +24,8 @@ export function using_confirm() {
                 confirm_fun()
                 setShowPrompt({open:false,handle:null})
             },
-            title
+            title,
+            context_div
         })
     }
 }

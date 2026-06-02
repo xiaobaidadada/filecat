@@ -300,3 +300,11 @@ table th {
 .chat-session-item:hover {
   background: var(--textPrimary);
 }
+
+.menu-select-popup {
+  background: var(--background);
+}
+
+.menu-select-item:hover {
+  background:var(--surfacePrimary)
+}

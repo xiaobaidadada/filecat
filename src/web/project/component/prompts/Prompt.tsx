@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FilesUpload} from "./FilesUpload";
 import {FilesDelete} from "./FilesDelete";
 import {useRecoilState} from "recoil";
@@ -135,5 +135,86 @@ export default function Prompt() {
         {showPrompt.show && div}
         {showPrompt.show && showPrompt.overlay && <Overlay click={click}/>}
     </div>)
+}
+
+export interface MenuSelectProps {
+
+    list:{
+        name:string;
+        click:()=>void;
+    }[];
+
+    children?:React.ReactNode;
+}
+
+export function MenuSelect(props:MenuSelectProps){
+
+    const [open,setOpen] = useState(false);
+
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(()=>{
+
+        const handleClick = (e:MouseEvent)=>{
+
+            if(
+                ref.current &&
+                !ref.current.contains(
+                    e.target as Node
+                )
+            ){
+                setOpen(false);
+            }
+        }
+
+        document.addEventListener(
+            "mousedown",
+            handleClick
+        );
+
+        return ()=>{
+            document.removeEventListener(
+                "mousedown",
+                handleClick
+            );
+        }
+
+    },[]);
+
+    return (
+        <div
+            ref={ref}
+            className="menu-select-wrapper"
+        >
+            <div
+                onClick={(e)=>{
+                    e.stopPropagation();
+                    setOpen(v=>!v);
+                }}
+            >
+                {props.children}
+            </div>
+
+            {
+                open &&
+                <div className="menu-select-popup">
+                    {
+                        props.list.map((it,index)=>(
+                            <div
+                                key={index}
+                                className="menu-select-item"
+                                onClick={()=>{
+                                    it.click();
+                                    setOpen(false);
+                                }}
+                            >
+                                {it.name}
+                            </div>
+                        ))
+                    }
+                </div>
+            }
+        </div>
+    )
 }
 

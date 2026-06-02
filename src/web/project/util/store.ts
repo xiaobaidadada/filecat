@@ -111,6 +111,7 @@ export const $stroe = {
             handle: () => void,
             title?: string,
             sub_title?: string,
+            context_div?: any
         }
     }),
     // 通用卡片

@@ -17,6 +17,8 @@ import {routerConfig} from "../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
+import {MenuSelect} from "../prompts/Prompt";
+import {InputText} from "../../../meta/component/Input";
 
 interface Message {
     id: number;
@@ -406,6 +408,21 @@ export default function AiAgentChatPage() {
         })
     }
 
+    const renameSession = (sessionId: string,title:string) => {
+        let new_name = title
+        confirm_dell_all({
+            // sub_title:"确认删除这个会话吗?",
+            confirm_fun:async ()=>{
+                await ai_agentHttp.post("sessions/update/meta", {id: sessionId,title:new_name})
+                await loadSessions(activeSessionId);
+            },
+            context_div: <div className="card-content">
+                <InputText  value={new_name}
+                           handleInputChange={(value) => new_name = value}/>
+            </div>
+        })
+    }
+
     return (
        <React.Fragment>
            <Header>
@@ -434,22 +451,37 @@ export default function AiAgentChatPage() {
                {ai_session_collapsed && <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(false)}></div>}
                <aside className={`chat-session-list ${ai_session_collapsed ? "active" : ""} ${ai_session_collapsed ? "collapsed" : ""}`}>
                    {sessions.map(session => (
-                       <button
-                           key={session.id}
-                           className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
-                           onClick={() => loadSession(session.id, true)}
-                           title={session.summary || session.long_term_memory || session.title}
-                       >
-                           <span>{toSessionTitle(session.title)}</span>
-                           <small>{session.message_count}
-                               {/*{t("条")}*/}
-                           </small>
-                           {session.source === "cli" && <em className="chat-session-source">CLI</em>}
-                           <i onClick={(e)=>{
-                               e.stopPropagation();
-                               deleteSession(session.id);
-                           }}>×</i>
-                       </button>
+                       <React.Fragment key={session.id}>
+                           <MenuSelect
+                               list={[
+                                   {
+                                       name: t('重命名'),
+                                       click: () => {
+                                           renameSession(session.id,session.title)
+                                       }
+                                   },
+                                   {
+                                       name: t('删除'),
+                                       click: () => deleteSession(session.id)
+                                   }
+                               ]}  >
+                               <button
+
+                                   className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
+                                   onClick={() => loadSession(session.id, true)}
+                                   title={session.summary || session.long_term_memory || session.title}
+                               >
+
+
+                                   <span>{toSessionTitle(session.title)}</span>
+                                   <small>{session.message_count}
+                                       {/*{t("条")}*/}
+                                   </small>
+                                   {session.source === "cli" && <em className="chat-session-source">CLI</em>}
+
+                               </button>
+                           </MenuSelect>
+                       </React.Fragment>
                    ))}
                </aside>
                <section className="chat-main">
