@@ -315,7 +315,7 @@ export const $stroe = {
     nav_style:atom({
         key: 'nav_style',
         default: {
-            open_menu: true,
+            open_menu: false,
 
         } as {
             open_menu?: boolean,
