@@ -4,6 +4,8 @@ import { aiAgentMemoryService } from "../../ai_agent/ai_agent.memory";
 import { userService } from "../../user/user.service";
 import {CharUtil, PtyShell} from "pty-shell";
 import {ShellUtil} from "./shell.util";
+import fs from 'fs'
+import path from "path";
 
 export class ai_agent_class {
 
@@ -42,6 +44,14 @@ export class ai_agent_class {
         });
     }
 
+    isFile(path) {
+        try {
+            return fs.statSync(path).isFile();
+        } catch {
+            return false;
+        }
+    }
+
     constructor(
         pty: PtyShell,
         exit: () => void,
@@ -52,12 +62,34 @@ export class ai_agent_class {
         this.exit = exit
         this.print = print;
         this.token = params[params.length - 1];
+        const messages:string[] = [];
+        for (let i=0;i<params.length-1;i++) {
+            try {
+                const str1 = params[i]
+                if(str1 === '-f') {
+                    let  p = params[i+1]
+                    if(!path.isAbsolute(p)) {
+                        p = path.join(pty.cwd,p)
+                        if(!this.isFile(p)) {
+                            continue
+                        }
+                    }
+                    const content = fs.readFileSync(p).toString();
+                    messages.push(content)
+                    i++; // 跳过下一个
+                } else {
+                    messages.push(str1);
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
         this.userId = userService.get_user_info_by_token(this.token).id;
         const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
         this.sessionId = session.id;
         this.messages = [
             ...(session.messages ?? []),
-            ...params.slice(0, params.length - 1).map(v => ({
+            ...messages.map(v => ({
                 content: v,
                 role: "user" as const
             })) as ai_agent_message_item[]
