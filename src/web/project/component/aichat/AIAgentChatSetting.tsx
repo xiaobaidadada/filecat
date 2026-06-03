@@ -463,7 +463,7 @@ export default function AIAgentChatSetting() {
                                             mcp_update_tag.current = true
                                         }} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
-                                            item.open = value === 'true';
+                                            item.open = value ;
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
                                         }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
@@ -532,7 +532,7 @@ export default function AIAgentChatSetting() {
                                             mcp_update_tag.current = true
                                         }} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
-                                            item.open = value === 'true';
+                                            item.open = value ;
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
                                         }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
@@ -640,7 +640,7 @@ export default function AIAgentChatSetting() {
                                                 docs_update_tag.current = true
                                             }} no_border={true}/>,
                                             <Select value={item.auto_load} onChange={(value) => {
-                                                item.auto_load = value === 'true';
+                                                item.auto_load = value;
                                                 set_docs_list([...docs_list]);
                                                 docs_update_tag.current = true
                                             }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
