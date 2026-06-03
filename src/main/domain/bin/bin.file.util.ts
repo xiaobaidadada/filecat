@@ -9,7 +9,8 @@ export class BinFileUtil {
     static base_dir = [
         path.join(__dirname,'..','..','threads','filecat'), // 本地 dev 使用
         path.join(__dirname, 'build'),
-        path.join(__dirname)
+        path.join(__dirname),
+        path.join(process.cwd(),'build'), // dev 使用
     ];
 
     /**

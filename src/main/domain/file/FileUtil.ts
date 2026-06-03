@@ -72,6 +72,10 @@ export class FileUtil {
         return fs.promises.unlink(path);
     }
 
+    static async remove(path: string) {
+        return fs.promises.unlink(path);
+    }
+
     static async mkdirSync(path: string,param?:any) {
         return fs.promises.mkdir(path,param);
     }

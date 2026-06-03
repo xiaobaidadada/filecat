@@ -270,7 +270,7 @@ export class TcpSyncWorkerService {
         watcher.on("addDir", (fullPath) => { sendEvent("addDir", fullPath); });
         watcher.on("unlinkDir", (fullPath) => { sendEvent("unlinkDir", fullPath); });
         watcher.on("error", (error) => { console.error("sync watcher error", error); });
-        watcher.on("ready", () => { console.log(`[Sync] 任务 ${task.id} 的初始化本地盘点遍历完成。`); });
+        watcher.on("ready", () => { console.log(`[Sync] 文件同步任务 ${task.id} 的初始化本地盘点遍历完成。`); });
     }
 
     public async open_task(task: tcp_proxy_sync_task_item, client_num_id: number, cache_path: string) {

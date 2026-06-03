@@ -3,14 +3,15 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
+import {ai_tools} from "./tools/ai_agent.constant";
 import {ai_agentService,  ai_config, ai_config_env, ai_config_search_doc} from "./ai_agent.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
 import * as path from "path";
 import {StringUtil} from "../../../common/StringUtil";
-import { createParser } from 'eventsource-parser'; // 引入库
+import { createParser } from 'eventsource-parser';
+import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 
 export class ChatCore {
 
@@ -220,7 +221,7 @@ ${sys_prompt ?? ''}
                             content: resultStr
                         });
                     } catch (e) {
-                        const msg = String(e)
+                        const msg = e?.message??JSON.stringify(e)
                         on_msg(`\n\r工具执行失败 ${ tool_info_value.get_name()} ${msg}`)
                         if (env.tool_error_max-- <= 0) throw e;
 

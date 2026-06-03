@@ -1,9 +1,8 @@
-import {ai_tools, ai_tools_search_docs} from "./ai_agent.constant";
 import {ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
-import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./ai_agent.tools";
+import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./tools/ai_agent.tools";
 import {settingService} from "../setting/setting.service";
 import {ai_agentMcpService} from "./ai_agent.mcp";
 import path from "path";
