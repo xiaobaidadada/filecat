@@ -60,71 +60,38 @@ export const ai_tools = [
         function: {
             name: "edit_file",
             description: `
-编辑文件工具，支持六种模式。优先使用 replace，其次 append，最后考虑 overwrite。
+编辑文件，使用 unified diff 格式修改文件内容。
 
-- replace: 主力操作。用 find 精确定位一段代码，替换为 replace。
-  find 必须与文件内容完全一致（包括缩进空格），且在文件中唯一。
-  如果不唯一，请在 find 中加入前后各1-2行上下文。
-  使用前请先 read_file 确认内容。
+规则：
+- 使用标准 unified diff 格式（--- / +++ / @@ 行）
+- 每个 hunk 必须包含足够的 context 行（至少 2-3 行）以确保定位准确
+- 操作前请先用 read_file 读取最新文件内容，再生成 diff
+- 支持同一个 diff 中包含多个 hunk，实现多处同时修改
 
-- append: 追加内容到文件末尾。
-
-- overwrite: 整个文件替换，适合小文件或全量重写。
-
-- insert: 在某段内容之后(after)或之前(before)插入，用内容定位而非行号。
-
-- delete: 删除某段唯一的代码片段，用 target 指定内容。
-
-- patch: unified diff 格式，适合复杂多处修改。
-        `,
+示例：
+\`\`\`
+--- a/src/foo.ts
++++ b/src/foo.ts
+@@ -10,7 +10,7 @@
+ function hello() {
+-  return "world"
++  return "earth"
+ }
+\`\`\`
+`,
             parameters: {
                 type: "object",
                 properties: {
-                    path: { type: "string" },
-                    action: {
+                    path: {
                         type: "string",
-                        enum: ["overwrite", "replace", "append", "patch", "insert", "delete"]
+                        description: "要修改的文件路径"
                     },
                     content: {
-                        oneOf: [
-                            {
-                                description: "overwrite / append / patch 使用 string",
-                                type: "string"
-                            },
-                            {
-                                description: "replace: [{find, replace}]，find 必须唯一且完全匹配",
-                                type: "array",
-                                items: {
-                                    type: "object",
-                                    properties: {
-                                        find: { type: "string" },
-                                        replace: { type: "string" }
-                                    },
-                                    required: ["find"]
-                                }
-                            },
-                            {
-                                description: "insert: {after?: string, before?: string, content: string}，用内容定位插入位置",
-                                type: "object",
-                                properties: {
-                                    after: { type: "string" },
-                                    before: { type: "string" },
-                                    content: { type: "string" }
-                                },
-                                required: ["content"]
-                            },
-                            {
-                                description: "delete: {target: string}，target 必须唯一",
-                                type: "object",
-                                properties: {
-                                    target: { type: "string" }
-                                },
-                                required: ["target"]
-                            }
-                        ]
+                        type: "string",
+                        description: "unified diff 格式的补丁内容"
                     }
                 },
-                required: ["path", "action"]
+                required: ["path", "content"]
             }
         }
     },
