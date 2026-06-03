@@ -27,13 +27,15 @@ import {
     UserAuth
 } from "../../../../common/req/user.req";
 import {isAbsolutePath, path_join} from '../../../../common/path_util';
-import {FileMenuData} from "../../../../common/FileMenuType";
+import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "./FileListLoad";
 import {FileMenu, use_handleContextMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
 import {cloneDeep} from "lodash";
 import {formatDate} from "../../../../common/StringUtil";
+import {webPathJoin} from "../../../../common/ListUtil";
+import {ActionButton} from "../../../meta/component/Button";
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
@@ -226,6 +228,48 @@ export default function FileList() {
         setNowFileList({files: [], folders: []});
     }
 
+    // FileList.tsx
+    const handleMobileMenu = () => {
+        const selected = selectList[selectList.length - 1]; // 取最后一个选中的
+
+        if (selected !== undefined) {
+            // 有选中文件，触发文件右键菜单
+            const allFiles = [...(nowFileList.folders ?? []), ...(nowFileList.files ?? [])];
+            const item = allFiles[selected];
+            if (item) {
+                // 找到选中文件对应的 DOM 元素位置
+                const els = document.querySelectorAll('.item');
+                const el = els[selected];
+                const rect = el ? el.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: 100 };
+
+                const fakeEvent = {
+                    preventDefault: () => {},
+                    stopPropagation: () => {},
+                    clientX: rect.left + 10,
+                    clientY: rect.bottom ?? 100,
+                };
+                // 复用 FileItem 里的 handleContextMenu 逻辑
+                const pojo = new FileMenuData();
+                pojo.path = webPathJoin(getRouterPath(), item.name);
+                pojo.filename = item.name;
+                pojo.x = fakeEvent.clientX;
+                pojo.y = fakeEvent.clientY;
+                pojo.type = item.type === FileTypeEnum.folder ? FileTypeEnum.folder : getFileFormat(item.name);
+                pojo.size = item.origin_size;
+                setShowPrompt({ show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo });
+            }
+        } else {
+            // 没有选中文件，触发空白区域右键菜单（复用 handleContextMenu）
+            const fakeEvent = {
+                preventDefault: () => {},
+                stopPropagation: () => {},
+                clientX: window.innerWidth / 2,
+                clientY: window.innerHeight / 2,
+            };
+            handleContextMenu(fakeEvent);
+        }
+    };
+
     return (
         <React.Fragment>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
@@ -233,6 +277,9 @@ export default function FileList() {
                                                   handleInputChange={(v) => {
                                                       setSearch(v)
                                                   }} max_width={"25em"}/>}>
+                <div className="mobile-context-btn">
+                    <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>
+                </div>
                 <FileMenu/>
             </Header>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}

@@ -199,3 +199,14 @@
 .select_option:hover {
     background: var(--hover);
 }
+
+/* mobile.css */
+.mobile-context-btn {
+    display: none;
+}
+
+@media (max-width: 736px) {
+    .mobile-context-btn {
+        display: inline-block;
+    }
+}

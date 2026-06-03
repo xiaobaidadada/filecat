@@ -188,3 +188,16 @@
     width: 100%;
   }
 }
+
+/* 只有鼠标设备才会应用这段样式 hover的值是hover */
+@media (hover: hover) {
+  .action:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  .action ul li:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+  .nav_2:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}

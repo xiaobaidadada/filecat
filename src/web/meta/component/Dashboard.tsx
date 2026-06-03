@@ -78,18 +78,30 @@ export function Dashboard(props) {
 // 容器内的列
 export const Column: React.FC<{
     widthPer?: number,
+    minWidth?:number,
+    maxWidth?:number,
     children: React.ReactNode
 }> = (props) => {
-    return <div className={"column"} style={{
+    const style = {
         "width": props.widthPer ? `${props.widthPer}%` : "50%"
-    }}>{props.children}</div>
+    }
+    if (props.minWidth) {
+        style['minWidth'] = props.minWidth ? `${props.minWidth}%` : "50%";
+    }
+    if(props.maxWidth) {
+        style['maxWidth'] = props.maxWidth ? `${props.maxWidth}%` : "50%";
+    }
+    return <div className={"column"} style={style}>{props.children}</div>
 }
 
 export function Row(props) {
     return <div className={"row"}>{props.children}</div>
 }
 
-export function RowColumn(props?:{ widthPer?: number,
+export function RowColumn(props?:{
+    widthPer?: number,
+    minWidth?:number,
+    maxWidth?:number,
     children?: React.ReactNode}) {
     return (<div className={"row"}>
         <Column {...props}>
