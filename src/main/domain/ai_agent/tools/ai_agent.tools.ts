@@ -35,7 +35,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     edit_file: {
         get_name: () => "edit file",
         get_params: (args) => {
-            return ` ${args.path} ${args.action} content：${typeof args.content === "string" ? args.content : JSON.stringify(args.content)}`
+            return ` ${args.path} `
         }
     },
     exec_cmd: {
