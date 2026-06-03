@@ -4,7 +4,7 @@ import Md from "../file/component/markdown/Md";
 import {throttle, debounce} from "../../../../common/fun.util";
 import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item} from "../../../../common/req/common.pojo";
 import Header from "../../../meta/component/Header";
-import {ActionButton, ButtonLittle} from "../../../meta/component/Button";
+import {ActionButton, ButtonLittle, Icon} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {copyToClipboard} from "../../util/FunUtil";
@@ -213,13 +213,13 @@ export default function AiAgentChatPage() {
         }
     }
 
-    const loadSession = async (sessionId: string, closeMenu = false) => {
+    const loadSession = async (sessionId: string, switch_menu = false) => {
         const result = await ai_agentHttp.post("session/get", {session_id: sessionId});
         if (result.code !== RCode.Success || !result.data) return;
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         setMessages(toUiMessages(session.messages));
-        if (closeMenu) {
+        if (switch_menu) {
             set_ai_session_collapsed(false);
         }
         requestAnimationFrame(() => scrollToBottom(false));
@@ -452,35 +452,37 @@ export default function AiAgentChatPage() {
                <aside className={`chat-session-list ${ai_session_collapsed ? "active" : ""} ${ai_session_collapsed ? "collapsed" : ""}`}>
                    {sessions.map(session => (
                        <React.Fragment key={session.id}>
-                           <MenuSelect
-                               list={[
-                                   {
-                                       name: t('重命名'),
-                                       click: () => {
-                                           renameSession(session.id,session.title)
+                           <button
+
+                               className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
+                               onClick={() => loadSession(session.id, false)}
+                               title={session.summary || session.long_term_memory || session.title}
+                           >
+
+
+                               <span>{toSessionTitle(session.title)}</span>
+                               <small>{session.message_count}
+                                   {/*{t("条")}*/}
+                               </small>
+                               {session.source === "cli" && <em className="chat-session-source">CLI</em>}
+                               <MenuSelect
+                                   list={[
+                                       {
+                                           name: t('重命名'),
+                                           click: () => {
+                                               renameSession(session.id,session.title)
+                                           }
+                                       },
+                                       {
+                                           name: t('删除'),
+                                           click: () => deleteSession(session.id)
                                        }
-                                   },
-                                   {
-                                       name: t('删除'),
-                                       click: () => deleteSession(session.id)
-                                   }
-                               ]}  >
-                               <button
+                                   ]}  >
+                                    <Icon icon={'more_horiz'}/>
+                               </MenuSelect>
 
-                                   className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
-                                   onClick={() => loadSession(session.id, true)}
-                                   title={session.summary || session.long_term_memory || session.title}
-                               >
+                           </button>
 
-
-                                   <span>{toSessionTitle(session.title)}</span>
-                                   <small>{session.message_count}
-                                       {/*{t("条")}*/}
-                                   </small>
-                                   {session.source === "cli" && <em className="chat-session-source">CLI</em>}
-
-                               </button>
-                           </MenuSelect>
                        </React.Fragment>
                    ))}
                </aside>

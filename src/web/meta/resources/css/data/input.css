@@ -173,17 +173,15 @@
     color: #9ca3af;
 }
 
+/* input.css */
 .select_dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 999;
+    /* 去掉 position/top/left/right，由 JS 动态注入 */
+    z-index: 9999;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    margin-top: 4px;
+    margin-top: 0;  /* 间距已在 JS 里加了 +4px */
     overflow: hidden;
 }
 

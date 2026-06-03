@@ -112,3 +112,7 @@ export default function Switch({
         </div>
     );
 }
+
+export function Icon(props:{icon: MaterialIcon}) {
+    return <i className="material-icons " style={{color:"#546e7a"}}>{props.icon}</i>
+}

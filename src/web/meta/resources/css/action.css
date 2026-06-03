@@ -12,7 +12,7 @@
 @import "./listing.css";
 @import "./listing-icons.css";
 @import "./upload-files.css";
-@import "./mobile.css";
+@import "mobile/mobile.css";
 @import "_variables.css";
 /*
 功能按钮

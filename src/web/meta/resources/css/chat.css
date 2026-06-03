@@ -55,6 +55,13 @@
     color: #222;
 }
 
+
+.chat-session-item > *:last-child {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
 .chat-session-list.collapsed .chat-session-item {
     min-height: 42px;
     padding: 7px 4px;
@@ -113,7 +120,7 @@
         padding-top: var(--top-length);
         /*border-right: 1px solid #e5e7eb;*/
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        transition: .1s ease left;
+        /*transition: .1s ease left;*/
         overflow-y: auto;
         overflow-x: hidden;
     }

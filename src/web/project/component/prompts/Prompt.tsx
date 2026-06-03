@@ -24,6 +24,7 @@ import {DdnsAddHttp} from "./DdnsAddHttp";
 import {UploadFile} from "./UploadFile";
 import {FolderInfo} from "./FolderInfo";
 import {ZoomAdjust} from "./ZoomAdjust";
+import {createPortal} from "react-dom";
 
 export enum PromptEnum {
     FilesUpload = "FilesUpload",
@@ -147,74 +148,67 @@ export interface MenuSelectProps {
     children?:React.ReactNode;
 }
 
-export function MenuSelect(props:MenuSelectProps){
-
-    const [open,setOpen] = useState(false);
-
+export function MenuSelect(props: MenuSelectProps) {
+    const [open, setOpen] = useState(false);
+    const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
+    const popupRef = useRef<HTMLDivElement>(null);
 
-    useEffect(()=>{
-
-        const handleClick = (e:MouseEvent)=>{
-
-            if(
-                ref.current &&
-                !ref.current.contains(
-                    e.target as Node
-                )
-            ){
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (
+                ref.current && !ref.current.contains(e.target as Node) &&
+                popupRef.current && !popupRef.current.contains(e.target as Node)
+            ) {
                 setOpen(false);
             }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, []);
+
+    const handleToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!open && ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            setPopupStyle({
+                position: "fixed",
+                top: rect.bottom + 4,
+                left: rect.left,
+                zIndex: 9999,
+            });
         }
-
-        document.addEventListener(
-            "mousedown",
-            handleClick
-        );
-
-        return ()=>{
-            document.removeEventListener(
-                "mousedown",
-                handleClick
-            );
-        }
-
-    },[]);
+        setOpen(v => !v);
+    };
 
     return (
-        <div
-            ref={ref}
-            className="menu-select-wrapper"
-        >
-            <div
-                onClick={(e)=>{
-                    e.stopPropagation();
-                    setOpen(v=>!v);
-                }}
-            >
+        <div ref={ref} className="menu-select-wrapper">
+            <div onClick={handleToggle}>
                 {props.children}
             </div>
 
-            {
-                open &&
-                <div className="menu-select-popup">
-                    {
-                        props.list.map((it,index)=>(
-                            <div
-                                key={index}
-                                className="menu-select-item"
-                                onClick={()=>{
-                                    it.click();
-                                    setOpen(false);
-                                }}
-                            >
-                                {it.name}
-                            </div>
-                        ))
-                    }
-                </div>
-            }
+            {open && createPortal(
+                <div
+                    ref={popupRef}
+                    className="menu-select-popup"
+                    style={popupStyle}
+                >
+                    {props.list.map((it, index) => (
+                        <div
+                            key={index}
+                            className="menu-select-item"
+                            onClick={() => {
+                                it.click();
+                                setOpen(false);
+                            }}
+                        >
+                            {it.name}
+                        </div>
+                    ))}
+                </div>,
+                document.body
+            )}
         </div>
-    )
+    );
 }
 

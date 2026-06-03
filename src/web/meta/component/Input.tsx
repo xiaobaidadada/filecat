@@ -4,6 +4,7 @@ import {MaterialIcon} from "material-icons";
 import {UserAuth} from "../../../common/req/user.req";
 import Awesomplete from "awesomplete";
 import "awesomplete/awesomplete.css";
+import { createPortal } from 'react-dom';
 
 export function InputTextIcon(props: {
     placeholder?: string,
@@ -308,19 +309,40 @@ export interface SelectProps {
 
 export function Select(props: SelectProps) {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+    const triggerRef = useRef<HTMLDivElement>(null);  // 绑到触发器
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selected = props.options.find(o => o.value === (props.value ?? props.defaultValue));
 
+    // 点击外部关闭
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+            if (
+                triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+                dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+            ) {
                 setOpen(false);
             }
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    const handleOpen = () => {
+        if (props.disabled) return;
+        if (!open && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setDropdownStyle({
+                position: "fixed",
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width,
+                zIndex: 9999,
+            });
+        }
+        setOpen(o => !o);
+    };
 
     return (
         <div
@@ -329,16 +351,17 @@ export function Select(props: SelectProps) {
         >
             {props.tip && <p className="input input_left">{props.tip}</p>}
 
-            <div ref={ref} className="select_container">
-                {/* 触发器 */}
+            <div className="select_container">
+                {/* 触发器 - ref 移到这里 */}
                 <div
+                    ref={triggerRef}
                     className={[
                         "input input--block",
                         props.no_border ? "input--no_border" : "",
                         "select_trigger",
                         props.disabled ? "select_trigger--disabled" : "",
                     ].join(" ")}
-                    onClick={() => !props.disabled && setOpen(o => !o)}
+                    onClick={handleOpen}
                 >
                     <span
                         className="select_trigger__label"
@@ -358,9 +381,13 @@ export function Select(props: SelectProps) {
                     </i>
                 </div>
 
-                {/* 下拉列表 */}
-                {open && (
-                    <div className="select_dropdown">
+                {/* 下拉列表 - 用 Portal 渲染到 body */}
+                {open && createPortal(
+                    <div
+                        ref={dropdownRef}
+                        className="select_dropdown"
+                        style={dropdownStyle}
+                    >
                         {props.options.map((item, index) => (
                             <div
                                 key={index}
@@ -379,7 +406,8 @@ export function Select(props: SelectProps) {
                                 {item.title ?? item.value}
                             </div>
                         ))}
-                    </div>
+                    </div>,
+                    document.body
                 )}
             </div>
         </div>
