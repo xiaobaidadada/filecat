@@ -75,7 +75,6 @@ export class ai_agent_class {
         this.print("User:");
     }
 
-    // todo 记忆功能 pty输出优化 skills记忆持久化
     async chat() {
 
         this.print(ShellUtil.color("Ai:",'ai'));
@@ -95,15 +94,6 @@ export class ai_agent_class {
                     // }
                     this.pty.on_call(msg)
                     this.system_line += msg;
-
-                    // this.print_buffer += msg;
-
-                    // let lines = this.print_buffer.split("\n");
-                    // this.print_buffer = lines.pop() || "";
-                    //
-                    // for (const line of lines) {
-                    //     this.print(line.replace(/\s+$/, "") + "\r\n");
-                    // }
                 },
 
                 // end callback
@@ -124,7 +114,7 @@ export class ai_agent_class {
                 `
                 当前 xterm的 行长度为${this.pty.rows} 列长度为${this.pty.cols}
                 用户当前使用 xterm.js 终端。输出格式按照VT 系列终端协议输出.
-                当前目录：${this.pty.cwd}
+                用户所在的当前最新目录是：${this.pty.cwd}
                 
                 `,
                 this.pty.cwd

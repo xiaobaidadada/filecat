@@ -1,6 +1,6 @@
-import {readFile, writeFile, readdir, appendFile,mkdir} from 'fs/promises';
-import {shellServiceImpl} from "../shell/shell.service";
-import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
+import {readFile, writeFile, readdir, appendFile, mkdir} from 'fs/promises';
+// import {shellServiceImpl} from "../shell/shell.service";
+// import {exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {SystemUtil} from "../sys/sys.utl";
 import {ai_agentService} from "./ai_agent.service";
 import fg from "fast-glob";
@@ -149,13 +149,11 @@ export const Ai_agentTools = {
     // 读取目录
     list_files: async ({path = '.'}) => {
         const files = await readdir(path, {withFileTypes: true});
-        return  `${path}下的文件列表为: ${files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n')}`;
+        return `${path}下的文件列表为: ${files.map(f => `${f.isDirectory() ? 'DIR ' : 'FILE'} ${f.name}`).join('\n')}`;
     },
     // 修改文件
-    edit_file: async ({ path, action, content }: any) => {
-        // =========================
-        // 0️⃣ ensure file exists
-        // =========================
+    edit_file: async ({path, action, content}: any) => {
+
         const exists = await FileUtil.access(path);
         if (!exists) {
             await writeFile(path, "", "utf-8");
@@ -163,166 +161,216 @@ export const Ai_agentTools = {
 
         switch (action) {
 
-            // =========================
-            // 1️⃣ overwrite
-            // =========================
+            // ===================================================
+            // overwrite: 整个文件替换，适合小文件或全量重写
+            // ===================================================
             case "overwrite": {
                 if (typeof content !== "string") {
                     throw new Error("overwrite requires string content");
                 }
-
                 await writeFile(path, content, "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true
-                };
+                return {ok: true, action, path};
             }
 
-            // =========================
-            // 2️⃣ replace
-            // =========================
+            // ===================================================
+            // replace: 核心操作，Claude Code / Cursor 同款
+            // 用 old_string 精确定位，替换为 new_string
+            // old_string 必须在文件中唯一，否则报错让 AI 加更多上下文
+            // ===================================================
             case "replace": {
                 let fileContent = await readFile(path, "utf-8");
-
                 const ops = Array.isArray(content) ? content : [content];
+                const report: { find: string; found: boolean; unique: boolean }[] = [];
 
                 for (const op of ops) {
                     if (!op || typeof op.find !== "string") {
-                        throw new Error("replace requires {find: string}");
+                        throw new Error("replace requires { find: string, replace?: string }");
                     }
-
                     const replaceValue = typeof op.replace === "string" ? op.replace : "";
 
-                    fileContent = fileContent.replaceAll(op.find, replaceValue);
+                    // 统计出现次数，不唯一就拒绝（Claude Code 的做法）
+                    const occurrences = fileContent.split(op.find).length - 1;
+
+                    if (occurrences === 0) {
+                        // 尝试 trim 后模糊匹配给出提示（Cursor 的做法）
+                        const trimmedFind = op.find.trim();
+                        const fuzzyFound = fileContent.includes(trimmedFind);
+                        report.push({find: op.find, found: false, unique: false});
+                        throw new Error(
+                            `replace failed: find 内容在文件中不存在。\n` +
+                            (fuzzyFound
+                                ? `提示：去掉首尾空白后可以找到，请检查缩进或空格是否与文件完全一致。\n`
+                                : `提示：请用 read_file 确认文件内容后再重试。\n`) +
+                            `find 内容: "${op.find.slice(0, 200)}"`
+                        );
+                    }
+
+                    if (occurrences > 1) {
+                        // 不唯一，要求 AI 提供更多上下文（Claude Code 的做法）
+                        throw new Error(
+                            `replace failed: find 内容在文件中出现了 ${occurrences} 次，无法唯一定位。\n` +
+                            `请在 find 中加入更多上下文行使其唯一，例如包含前后各1-2行代码。\n` +
+                            `find 内容: "${op.find.slice(0, 200)}"`
+                        );
+                    }
+
+                    fileContent = fileContent.replace(op.find, replaceValue);
+                    report.push({find: op.find, found: true, unique: true});
                 }
 
                 await writeFile(path, fileContent, "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true,
-                    ops: ops.length
-                };
+                return {ok: true, action, path, ops: ops.length, report};
             }
 
-            // =========================
-            // 3️⃣ append
-            // =========================
+            // ===================================================
+            // append: 追加到文件末尾
+            // ===================================================
             case "append": {
                 if (typeof content !== "string") {
                     throw new Error("append requires string content");
                 }
-
-                await appendFile(path, `\n${content}`, "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true
-                };
+                const existing = await readFile(path, "utf-8");
+                // 自动处理末尾换行，避免两段内容粘连
+                const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+                await appendFile(path, `${separator}${content}`, "utf-8");
+                return {ok: true, action, path};
             }
 
-            // =========================
-            // 3.5️⃣ patch
-            // =========================
+            // ===================================================
+            // patch: unified diff，保留给复杂多处修改场景
+            // 用 trim 模糊匹配 context，容忍尾随空格
+            // ===================================================
             case "patch": {
                 if (typeof content !== "string") {
-                    throw new Error("patch requires unified diff string content");
+                    throw new Error("patch requires unified diff string");
+                }
+                const fileContent = await readFile(path, "utf-8");
+                const normalized = normalizeText(fileContent);
+                const originalLines = normalized === "" ? [] : normalized.split("\n");
+                const hunks = parseUnifiedPatch(content);
+                const result: string[] = [];
+                let sourceIndex = 0;
+
+                for (const hunk of hunks) {
+                    const targetIndex = Math.max(hunk.oldStart - 1, 0);
+                    if (targetIndex < sourceIndex) {
+                        throw new Error("patch hunk 顺序非法或发生重叠");
+                    }
+                    while (sourceIndex < targetIndex) {
+                        result.push(originalLines[sourceIndex]);
+                        sourceIndex++;
+                    }
+                    for (const line of hunk.lines) {
+                        if (line.type === "context" || line.type === "delete") {
+                            const actual = (originalLines[sourceIndex] ?? "").trim();
+                            const expected = line.text.trim();
+                            if (actual !== expected) {
+                                throw new Error(
+                                    `patch ${line.type} 不匹配，第 ${sourceIndex + 1} 行\n` +
+                                    `  文件实际: "${originalLines[sourceIndex]}"\n` +
+                                    `  patch期望: "${line.text}"\n` +
+                                    `提示：请用 read_file 重新读取文件后再生成 patch`
+                                );
+                            }
+                            if (line.type === "context") result.push(originalLines[sourceIndex]);
+                            sourceIndex++;
+                            continue;
+                        }
+                        result.push(line.text); // add
+                    }
+                }
+                while (sourceIndex < originalLines.length) {
+                    result.push(originalLines[sourceIndex++]);
                 }
 
-                const fileContent = await readFile(path, "utf-8");
-                const nextContent = applyUnifiedPatch(fileContent, content);
-
-                await writeFile(path, nextContent, "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true
-                };
+                await writeFile(path, result.join("\n"), "utf-8");
+                return {ok: true, action, path};
             }
 
-            // =========================
-            // 4️⃣ insert
-            // =========================
+            // ===================================================
+            // insert: 在某段内容之后插入（内容定位，不用行号）
+            // after: 定位锚点字符串（找到它之后插入）
+            // content: 要插入的内容
+            // ===================================================
             case "insert": {
-                const fileContent = await readFile(path, "utf-8");
-                const lines = fileContent ? fileContent.split("\n") : [];
+                const insertOp = content as {
+                    after?: string;   // 在这段内容之后插入
+                    before?: string;  // 或在这段内容之前插入
+                    content: string;
+                };
 
-                const { line, content: insertContent } = content;
-
-                if (typeof line !== "number" || Number.isNaN(line)) {
-                    throw new Error("insert requires valid line number");
+                if (!insertOp?.content) {
+                    throw new Error("insert requires { after?: string, before?: string, content: string }");
                 }
 
-                const insertLines = Array.isArray(insertContent)
-                    ? insertContent
-                    : [insertContent];
+                let fileContent = await readFile(path, "utf-8");
 
-                lines.splice(line + 1, 0, ...insertLines);
+                if (insertOp.after) {
+                    const idx = fileContent.indexOf(insertOp.after);
+                    if (idx === -1) {
+                        throw new Error(
+                            `insert failed: after 内容未找到，请用 read_file 确认文件内容。\nafter: "${insertOp.after.slice(0, 200)}"`
+                        );
+                    }
+                    const insertAt = idx + insertOp.after.length;
+                    const sep = fileContent[insertAt - 1] === "\n" ? "" : "\n";
+                    fileContent = fileContent.slice(0, insertAt) + sep + insertOp.content + fileContent.slice(insertAt);
+                } else if (insertOp.before) {
+                    const idx = fileContent.indexOf(insertOp.before);
+                    if (idx === -1) {
+                        throw new Error(
+                            `insert failed: before 内容未找到，请用 read_file 确认文件内容。\nbefore: "${insertOp.before.slice(0, 200)}"`
+                        );
+                    }
+                    const sep = insertOp.content.endsWith("\n") ? "" : "\n";
+                    fileContent = fileContent.slice(0, idx) + insertOp.content + sep + fileContent.slice(idx);
+                } else {
+                    // 没有锚点就追加到末尾
+                    fileContent += (fileContent.endsWith("\n") ? "" : "\n") + insertOp.content;
+                }
 
-                await writeFile(path, lines.join("\n"), "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true,
-                    insertedAt: line,
-                    lines: insertLines.length
-                };
+                await writeFile(path, fileContent, "utf-8");
+                return {ok: true, action, path};
             }
 
-            // =========================
-            // 5️⃣ delete
-            // =========================
+            // ===================================================
+            // delete: 删除某段内容（内容定位，不用行号）
+            // ===================================================
             case "delete": {
-                const fileContent = await readFile(path, "utf-8");
-                const lines = fileContent ? fileContent.split("\n") : [];
+                const deleteOp = content as { target: string };
 
-                const { start, end } = content;
-
-                if (
-                    typeof start !== "number" ||
-                    typeof end !== "number" ||
-                    Number.isNaN(start) ||
-                    Number.isNaN(end)
-                ) {
-                    throw new Error("delete requires valid start/end");
+                if (!deleteOp?.target) {
+                    throw new Error("delete requires { target: string }，target 是要删除的完整代码片段");
                 }
 
-                if (start < 0 || end > lines.length - 1 || start > end) {
-                    throw new Error("invalid line range");
+                let fileContent = await readFile(path, "utf-8");
+                const occurrences = fileContent.split(deleteOp.target).length - 1;
+
+                if (occurrences === 0) {
+                    throw new Error(
+                        `delete failed: target 内容在文件中不存在。\n` +
+                        `请用 read_file 确认后重试。\ntarget: "${deleteOp.target.slice(0, 200)}"`
+                    );
+                }
+                if (occurrences > 1) {
+                    throw new Error(
+                        `delete failed: target 内容出现了 ${occurrences} 次，无法唯一定位。\n` +
+                        `请在 target 中加入更多上下文使其唯一。`
+                    );
                 }
 
-                const deletedCount = end - start + 1;
-                lines.splice(start, deletedCount);
-
-                await writeFile(path, lines.join("\n"), "utf-8");
-
-                return {
-                    ok: true,
-                    action,
-                    path,
-                    updated: true,
-                    deleted: { start, end, count: deletedCount }
-                };
+                fileContent = fileContent.replace(deleteOp.target, "");
+                await writeFile(path, fileContent, "utf-8");
+                return {ok: true, action, path};
             }
 
             default:
-                throw new Error(`Unknown action: ${action}`);
+                throw new Error(`unknown action: ${action}，支持: overwrite / replace / append / patch / insert / delete`);
         }
     },
     // 执行命令 todo 更多执行参数
-    exec_cmd: async ({cmd,cwd}: { cmd: string,cwd:string }) => {
-        return SystemUtil.execAsync(cmd,cwd)
+    exec_cmd: async ({cmd, cwd}: { cmd: string, cwd: string }) => {
+        return SystemUtil.execAsync(cmd, cwd)
     },
     // 搜索本地知识库
     search_docs: async ({keywords}: { keywords: string[] }) => {
@@ -387,7 +435,7 @@ export const Ai_agentTools = {
                 text = JSON.stringify(res.body);
             }
 
-            if (max_length >=0 && text.length > max_length) {
+            if (max_length >= 0 && text.length > max_length) {
                 text =
                     text.slice(0, max_length) +
                     "\n\n...（响应内容过长，已截断）";
@@ -418,18 +466,18 @@ export const Ai_agentTools = {
         }
     },
     search_in_files: async ({
-                        pattern,
-                        path: searchPath,
-                        max_files = 50,
-                        max_matches_per_file = 20,
-                        ignore_case = true
-                    }: {
+                                pattern,
+                                path: searchPath,
+                                max_files = 50,
+                                max_matches_per_file = 20,
+                                ignore_case = true
+                            }: {
         pattern: string;
         path: string;
         max_files?: number;
         max_matches_per_file?: number;
         ignore_case?: boolean;
-    })=> {
+    }) => {
 
         const rg_path = BinFileUtil.get_bin_path(RG_PATH)
         // ======================================================
@@ -476,7 +524,7 @@ export const Ai_agentTools = {
 
                 const results = Array.from(fileMap.entries())
                     .slice(0, max_files)
-                    .map(([file, matches]) => ({ file, matches }))
+                    .map(([file, matches]) => ({file, matches}))
 
                 return JSON.stringify({
                     mode: "ripgrep",
@@ -531,7 +579,7 @@ export const Ai_agentTools = {
                 }
 
                 if (matches.length > 0) {
-                    results.push({ file, matches })
+                    results.push({file, matches})
                     fileCount++
                 }
 
@@ -563,7 +611,7 @@ export const Ai_agentTools = {
         // 📁 创建目录
         // =========================
         if (type === "dir") {
-            await mkdir(path, { recursive });
+            await mkdir(path, {recursive});
             return {
                 ok: true,
                 type,
@@ -580,7 +628,7 @@ export const Ai_agentTools = {
             // 自动创建父目录（避免 writeFile 报错）
             const dir = path.substring(0, path.lastIndexOf("/"));
             if (dir) {
-                await mkdir(dir, { recursive: true });
+                await mkdir(dir, {recursive: true});
             }
 
             await writeFile(path, content ?? "", "utf-8");
@@ -601,54 +649,54 @@ export const Ai_agentTools = {
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;
 
 export const tools_des_map: Record<Ai_agentTools_type, {
-    get_name:()=>string,
-    get_params:(args:any)=>string,
+    get_name: () => string,
+    get_params: (args: any) => string,
 }> = {
     edit_file: {
-        get_name:()=> "edit file",
-        get_params:(args)=>{
-            return ` ${args.path} ${args.action} content：${typeof args.content === "string"?args.content:JSON.stringify(args.content)}`
+        get_name: () => "edit file",
+        get_params: (args) => {
+            return ` ${args.path} ${args.action} content：${typeof args.content === "string" ? args.content : JSON.stringify(args.content)}`
         }
     },
     exec_cmd: {
-        get_name:()=>"exe cmd",
-        get_params:(args)=>{
+        get_name: () => "exe cmd",
+        get_params: (args) => {
             return ` ${args.cmd} at ${args.cwd}`
         }
     },
     http_request: {
-        get_name:()=>"request http",
-        get_params:(args)=>{
+        get_name: () => "request http",
+        get_params: (args) => {
             return `url is ${args.url}`
         }
     },
     list_files: {
-        get_name:()=>"query file dir",
-        get_params:(args)=>{
+        get_name: () => "query file dir",
+        get_params: (args) => {
             return ` ${args.path}`
         }
     },
     read_file: {
-        get_name:()=>"read file",
-        get_params:(args)=>{
+        get_name: () => "read file",
+        get_params: (args) => {
             return ` ${args.path}`
         }
     },
     search_docs: {
-        get_name:()=>"search docs",
-        get_params:(args)=>{
+        get_name: () => "search docs",
+        get_params: (args) => {
             return `keys： ${args.keywords?.join(" ")}`
         }
     },
     search_in_files: {
-        get_name:()=>"search in file",
-        get_params:(args)=>{
+        get_name: () => "search in file",
+        get_params: (args) => {
             return `path： ${args.path}`
         }
     },
-    create_fs_entry:{
-        get_name:()=>"create file",
-        get_params:(args)=>{
+    create_fs_entry: {
+        get_name: () => "create file",
+        get_params: (args) => {
             return `path： ${args.path}`
         }
     }

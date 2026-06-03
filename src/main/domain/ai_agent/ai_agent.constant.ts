@@ -60,31 +60,39 @@ export const ai_tools = [
         function: {
             name: "edit_file",
             description: `
-编辑文件工具，支持六种模式：
-overwrite / replace / append / patch / insert / delete
-内容修改操作使用顺序  append overwrite patch insert replace
-    `,
+编辑文件工具，支持六种模式。优先使用 replace，其次 append，最后考虑 overwrite。
+
+- replace: 主力操作。用 find 精确定位一段代码，替换为 replace。
+  find 必须与文件内容完全一致（包括缩进空格），且在文件中唯一。
+  如果不唯一，请在 find 中加入前后各1-2行上下文。
+  使用前请先 read_file 确认内容。
+
+- append: 追加内容到文件末尾。
+
+- overwrite: 整个文件替换，适合小文件或全量重写。
+
+- insert: 在某段内容之后(after)或之前(before)插入，用内容定位而非行号。
+
+- delete: 删除某段唯一的代码片段，用 target 指定内容。
+
+- patch: unified diff 格式，适合复杂多处修改。
+        `,
             parameters: {
                 type: "object",
                 properties: {
-                    path: {
-                        type: "string"
-                    },
-
+                    path: { type: "string" },
                     action: {
                         type: "string",
                         enum: ["overwrite", "replace", "append", "patch", "insert", "delete"]
                     },
-
                     content: {
                         oneOf: [
                             {
-                                description: "overwrite / append / patch，patch 使用 unified diff 文本，支持 @@、空格上下文、+新增、-删除、patch 行必须以空格/+/- 开头",
+                                description: "overwrite / append / patch 使用 string",
                                 type: "string"
                             },
-
                             {
-                                description: "replace operations",
+                                description: "replace: [{find, replace}]，find 必须唯一且完全匹配",
                                 type: "array",
                                 items: {
                                     type: "object",
@@ -95,33 +103,23 @@ overwrite / replace / append / patch / insert / delete
                                     required: ["find"]
                                 }
                             },
-
                             {
-                                description: "insert",
+                                description: "insert: {after?: string, before?: string, content: string}，用内容定位插入位置",
                                 type: "object",
                                 properties: {
-                                    line: { type: "number" },
-                                    content: {
-                                        oneOf: [
-                                            { type: "string" },
-                                            {
-                                                type: "array",
-                                                items: { type: "string" }
-                                            }
-                                        ]
-                                    }
+                                    after: { type: "string" },
+                                    before: { type: "string" },
+                                    content: { type: "string" }
                                 },
-                                required: ["line", "content"]
+                                required: ["content"]
                             },
-
                             {
-                                description: "delete",
+                                description: "delete: {target: string}，target 必须唯一",
                                 type: "object",
                                 properties: {
-                                    start: { type: "number" },
-                                    end: { type: "number" }
+                                    target: { type: "string" }
                                 },
-                                required: ["start", "end"]
+                                required: ["target"]
                             }
                         ]
                     }
