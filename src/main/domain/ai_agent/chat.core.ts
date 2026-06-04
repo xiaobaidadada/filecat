@@ -329,8 +329,6 @@ ${sys_prompt ?? ''}
 
                 const parser = createParser({
                     onEvent: (event) => {
-                        // 统计输出字符（完整的 SSE event.data 原始内容）
-                        ioStats.output_chars += (event.data?.length ?? 0);
                         // 直接判断 data 即可
                         if (event.data === '[DONE]') return;
                         try {
