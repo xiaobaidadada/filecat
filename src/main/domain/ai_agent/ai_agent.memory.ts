@@ -19,6 +19,8 @@ type SessionIndexStore = {
     };
 };
 
+// 以下值的范围符合主流 agent的范围值内
+
 // 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
 const MAX_RECENT_MESSAGES = 24;
 // 当单个会话累计消息条数超过该值时，触发历史内容压缩。

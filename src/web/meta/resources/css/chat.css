@@ -200,7 +200,7 @@
 .chat-message {
     padding: .1rem .5rem;
     border-radius: 12px;
-    /*max-width: 70%;*/
+    max-width: 100%;
     word-break: break-word;
     line-height: 1.5em;
 }

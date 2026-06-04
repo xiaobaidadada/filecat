@@ -118,11 +118,7 @@ export default function AiAgentChatPage() {
 
     const set_messages = useRef(
         debounce((mes) => {
-            let next = mes;
-            if (mes.length > env_config.current.messages_show_max) {
-                next = mes.slice(-env_config.current.messages_show_max);
-            }
-            setMessages(next);
+            setMessages(mes);
             if (autoScrollRef.current) {
                 scrollToBottom(false);
             }
