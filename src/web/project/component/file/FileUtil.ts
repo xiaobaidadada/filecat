@@ -329,30 +329,23 @@ const copy = throttle((text) => {
 
 export function using_add_md__copy_button(){
     useEffect(() => {
-        // 在组件渲染完成后为复制按钮添加事件处理
-        const copyButtons = document.querySelectorAll('.copy-btn');
-
-        // 先删除
-        const delete_all = ()=>{
-            copyButtons.forEach(button => {
-                button.removeEventListener('click', function () {
-                    const code = this.getAttribute('data-code');
+        // 使用事件委托，避免重复绑定问题
+        const handleCopyClick = (event: Event) => {
+            const target = event.target as HTMLElement;
+            if (target.classList.contains('copy-btn')) {
+                const code = target.getAttribute('data-code');
+                if (code) {
                     copy(code);
-                });
-            });
-        }
-        delete_all()
+                }
+            }
+        };
 
-        copyButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const code = this.getAttribute('data-code');
-                copy(code);
-            });
-        });
+        // 添加全局事件监听
+        document.addEventListener('click', handleCopyClick);
 
-        // 清理事件绑定，防止重复绑定
+        // 清理事件绑定
         return () => {
-            delete_all()
+            document.removeEventListener('click', handleCopyClick);
         };
     }, []);
 }

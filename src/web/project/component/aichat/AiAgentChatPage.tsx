@@ -338,6 +338,11 @@ export default function AiAgentChatPage() {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
+        if (e.key === 'Process' || e.nativeEvent.isComposing) {
+            return; // 忽略输入法回车键
+        }
+        
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();

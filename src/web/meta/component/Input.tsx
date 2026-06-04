@@ -41,6 +41,11 @@ export function InputTextIcon(props: {
                     setValue(event.target.value);
                 }}
                 onKeyPress={(event) => {
+                    // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
+                    if (event.key === 'Process' || event.nativeEvent.isComposing) {
+                        return; // 忽略输入法回车键
+                    }
+                    
                     if (event.key === 'Enter') {
                         if (props.handleEnterPress) {
                             props.handleEnterPress();
@@ -185,6 +190,11 @@ function Input(props: {
                         }
                     }}
                     onKeyPress={(event) => {
+                        // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
+                        if (event.key === 'Process' || event.nativeEvent.isComposing) {
+                            return; // 忽略输入法回车键
+                        }
+                        
                         if (event.key === 'Enter' && props.handlerEnter) {
                             props.handlerEnter(event.currentTarget.value);
                         }

@@ -79,6 +79,7 @@
     "flv.js": "^1.6.2",
     "fs-extra": "^11.2.0",
     "github-markdown-css": "^5.6.1",
+    "highlight.js": "^11.11.1",
     "html-webpack-plugin": "^5.6.6",
     "http-proxy-middleware": "3.0.5",
     "i18next": "^25.5.2",

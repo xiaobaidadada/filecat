@@ -10,20 +10,8 @@ import 'github-markdown-css/github-markdown.css';
 import {join_url} from "../../../../../../common/StringUtil";
 import {using_add_md__copy_button} from "../../FileUtil";
 
-// import hljs from 'highlight.js' // https://highlightjs.org
-
-// Actual default values
-// const md = markdownit({
-//     highlight: function (str, lang) {
-//         if (lang && hljs.getLanguage(lang)) {
-//             try {
-//                 return hljs.highlight(str, { language: lang }).value;
-//             } catch (__) {}
-//         }
-//
-//         return ''; // use external default escaping
-//     }
-// });
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github-dark.css' // 使用GitHub暗色主题
 // 自定义 markdown-it 插件来为代码块添加复制按钮
 const markdownItCopyButton = (md) => {
     const defaultRender = md.renderer.rules.fence || function (tokens, idx, options, env, self) {
@@ -33,12 +21,33 @@ const markdownItCopyButton = (md) => {
     md.renderer.rules.fence = (tokens, idx, options, env, self) => {
         const token = tokens[idx];
         const code = token.content.trim();
+        const lang = token.info.trim();
+
+        // 获取高亮后的HTML
+        let highlightedCode = '';
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                highlightedCode = hljs.highlight(code, { language: lang }).value;
+            } catch (__) {
+                highlightedCode = md.utils.escapeHtml(code);
+            }
+        } else {
+            // 尝试自动检测语言
+            try {
+                highlightedCode = hljs.highlightAuto(code).value;
+            } catch (__) {
+                highlightedCode = md.utils.escapeHtml(code);
+            }
+        }
 
         // 添加复制按钮到代码块
         return `
       <div class="code-block-with-copy">
-        <button class="copy-btn" data-code="${md.utils.escapeHtml(code)}">复制</button>
-        <pre><code>${md.utils.escapeHtml(code)}</code></pre>
+        <div class="code-header">
+          <span class="code-language">${lang || 'code'}</span>
+          <button class="copy-btn" data-code="${md.utils.escapeHtml(code)}">复制</button>
+        </div>
+        <pre><code class="hljs ${lang ? `language-${lang}` : ''}">${highlightedCode}</code></pre>
       </div>`;
     };
 
@@ -67,7 +76,21 @@ const markdownItAddPrefixToLinks = (md) => {
 const md = new markdownit({
     html: true,
     highlight: function (str, lang) {
-        return `<pre class="custom-code-block"><code>${md.utils.escapeHtml(str)}</code></pre>`;
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                const highlighted = hljs.highlight(str, { language: lang }).value;
+                return `<pre class="hljs code-block-with-copy"><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+            } catch (__) {}
+        }
+        
+        // 如果没有指定语言或语言不支持，尝试自动检测
+        try {
+            const highlighted = hljs.highlightAuto(str).value;
+            return `<pre class="hljs code-block-with-copy"><code class="hljs">${highlighted}</code></pre>`;
+        } catch (__) {}
+        
+        // 如果高亮失败，返回原始代码
+        return `<pre class="hljs code-block-with-copy"><code>${md.utils.escapeHtml(str)}</code></pre>`;
     }
 });
 md.use(emoji)       // 支持 Emoji
