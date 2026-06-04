@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import fse from "fs-extra";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages, ai_agent_usage_stats} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_config} from "./ai_agent.service";
@@ -47,6 +47,7 @@ function cloneSession(session: ai_agent_chat_session_item): ai_agent_chat_sessio
         messages: [...(session.messages ?? [])],
         summary: session.summary ?? "",
         long_term_memory: session.long_term_memory ?? "",
+        usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
     };
 }
 
@@ -154,7 +155,8 @@ export class AiAgentMemoryService {
             source: session.source,
             created_at: session.created_at,
             updated_at: session.updated_at,
-            file_name: fileName
+            file_name: fileName,
+            usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
         };
     }
 
@@ -213,7 +215,8 @@ export class AiAgentMemoryService {
                 long_term_memory: it.long_term_memory,
                 source: it.source,
                 created_at: it.created_at,
-                updated_at: it.updated_at
+                updated_at: it.updated_at,
+                usage_stats: it.usage_stats ? {...it.usage_stats} : undefined,
             }));
     }
 
@@ -309,7 +312,7 @@ export class AiAgentMemoryService {
     }
 
     // 将本次机器人的聊天结果加入到历史会话中
-    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item) {
+    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_chars?: number;input_chars?: number; }) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
@@ -319,6 +322,20 @@ export class AiAgentMemoryService {
         session.messages.push(normalizeMessage(userMessage));
         session.messages.push(normalizeMessage(assistantMessage));
         session.updated_at = Date.now();
+
+        // 更新字符消耗统计
+        if (!session.usage_stats) {
+            session.usage_stats = new ai_agent_usage_stats();
+        }
+        const stats = session.usage_stats;
+        stats.turns = (stats.turns || 0) + 1;
+        if (turnStats?.output_chars) {
+            stats.output_chars = (stats.output_chars || 0) + turnStats.output_chars;
+        }
+        if (turnStats?.input_chars) {
+            stats.input_chars = (stats.input_chars || 0) + turnStats.input_chars;
+        }
+
         if (!session.title || session.title === "新会话") {
             session.title = this.createTitle(userMessage.content);
         }
@@ -351,6 +368,16 @@ export class AiAgentMemoryService {
         // 新会话内容加入
         context.push(...incoming.map(renderMessageForPrompt));
         return context;
+    }
+
+    /** 获取会话的字符消耗统计 */
+    public get_usage_stats(userId: string, sessionId: string): ai_agent_usage_stats | null {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return null;
+        const session = this.read_session(userId, meta);
+        if (!session) return null;
+        return session.usage_stats ?? null;
     }
 
     private createTitle(text: string) {

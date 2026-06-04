@@ -308,3 +308,55 @@ table th {
 .menu-select-item:hover {
   background:var(--surfacePrimary)
 }
+
+.usage-stats-popup {
+  background: var(--surfacePrimary);
+}
+
+.usage-stats-header {
+  border-color: var(--divider);
+}
+
+.usage-stats-header h3 {
+  color: var(--textPrimary);
+}
+
+.usage-stats-close {
+  color: var(--textSecondary);
+}
+
+.usage-stats-close:hover {
+  color: var(--textPrimary);
+  background: var(--surfaceSecondary);
+}
+
+.usage-stats-loading,
+.usage-stats-empty {
+  color: var(--textSecondary);
+}
+
+.usage-stats-row {
+  background: var(--background);
+}
+
+.usage-stats-row:nth-child(even) {
+  background: var(--surfaceSecondary);
+}
+
+.usage-stats-label {
+  color: var(--textSecondary);
+}
+
+.usage-stats-value {
+  color: var(--textPrimary);
+}
+
+.usage-stats-total {
+  background: #1e3a5f !important;
+  border-color: #2563eb;
+}
+
+.usage-stats-total .usage-stats-label,
+.usage-stats-total .usage-stats-value {
+  color: #93c5fd;
+}

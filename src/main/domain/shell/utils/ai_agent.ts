@@ -112,14 +112,21 @@ export class ai_agent_class {
         this.print(ShellUtil.color("Ai:",'ai'));
         this.pty.not_write = true
 
+        const sysPrompt = `
+                当前 xterm的 行长度为${this.pty.rows} 列长度为${this.pty.cols}
+                用户当前使用 xterm.js 终端。输出格式按照VT 系列终端协议输出.
+                用户所在的当前最新目录是：${this.pty.cwd}
+                
+                `;
+
         try {
-            await chat_core.chat(
-                this.messages,
-                this.token,
-                this.controller,
+            await chat_core.chat({
+                originMessages: this.messages,
+                token: this.token,
+                controller: this.controller,
 
                 // stream output
-                (msg: string) => {
+                on_msg: (msg: string) => {
                     // if(msg.includes('')) {
                     //     // 豆包这样的弱模型不会处理换行
                     //     msg = '\n\r'
@@ -129,7 +136,7 @@ export class ai_agent_class {
                 },
 
                 // end callback
-                () => {
+                on_end: (stats) => {
                     if (this.system_line.trim() && this.messages.length > 0) {
                         const latestUserMessage = [...this.messages].reverse().find(it => it.role === "user");
                         if (latestUserMessage) {
@@ -137,20 +144,18 @@ export class ai_agent_class {
                                 content: this.system_line,
                                 role: "assistant" as const
                             };
-                            aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage).catch(console.error);
+                            aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
+                                input_chars: stats?.input_chars ?? 0,
+                                output_chars: stats?.output_chars ?? 0,
+                            }).catch(console.error);
                             this.messages.push(assistantMessage);
                         }
                     }
                     this.system_line = "";
                 },
-                `
-                当前 xterm的 行长度为${this.pty.rows} 列长度为${this.pty.cols}
-                用户当前使用 xterm.js 终端。输出格式按照VT 系列终端协议输出.
-                用户所在的当前最新目录是：${this.pty.cwd}
-                
-                `,
-                this.pty.cwd
-            );
+                sys_prompt: sysPrompt,
+                cwd: this.pty.cwd,
+            });
 
         } catch (e) {
             this.pty.on_call(e?.message ?? JSON.stringify(e));

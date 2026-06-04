@@ -84,6 +84,19 @@ export class ai_agent_chat_session_item {
     source?: "web" | "cli";
     created_at:number;
     updated_at:number;
+    // 字符消耗统计
+    usage_stats?: ai_agent_usage_stats;
+}
+
+/** AI Agent 字符消耗统计 */
+export class ai_agent_usage_stats {
+
+    /** AI 输出的总字符数 */
+    output_chars: number = 0;
+    /** AI 输入总字符 */
+    input_chars: number = 0;
+    /** 对话轮次 */
+    turns: number = 0;
 }
 
 export class ai_agent_chat_session_meta {
@@ -95,6 +108,7 @@ export class ai_agent_chat_session_meta {
     source?: "web" | "cli";
     created_at:number;
     updated_at:number;
+    usage_stats?: ai_agent_usage_stats;
 }
 
 export interface env_item {

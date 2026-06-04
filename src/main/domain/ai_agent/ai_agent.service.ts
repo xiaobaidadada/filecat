@@ -560,20 +560,37 @@ export class Ai_agentService {
        const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
        let assistantText = "";
+       let turnInputChars = 0;
+       let turnOutputChars = 0;
+       const sysPrompt = "使用 markdown格式回答用户";
        try {
-           await chat_core.chat(workMessages,token,controller,(msg)=>{
-               assistantText += msg;
-               this.write_to_res(res, msg);
-           },()=>{
-               responseFinished = true;
-               this.end_to_res(res);
-           },"使用 markdown格式回答用户")
+           await chat_core.chat({
+               originMessages: workMessages,
+               token,
+               controller,
+               on_msg: (msg) => {
+                   assistantText += msg;
+                   this.write_to_res(res, msg);
+               },
+               on_end: (stats) => {
+                   responseFinished = true;
+                   if (stats) {
+                       turnInputChars = stats.input_chars;
+                       turnOutputChars = stats.output_chars;
+                   }
+                   this.end_to_res(res);
+               },
+               sys_prompt: sysPrompt,
+           })
            if (latestUserMessage && assistantText) {
                const assistantMessage:ai_agent_message_item = {
                    role: "assistant",
                    content: assistantText
                };
-               await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage);
+               await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
+                   input_chars: turnInputChars,
+                   output_chars: turnOutputChars,
+               });
            }
        } catch (error) {
            this.write_to_res(res,error.message??JSON.stringify(error) );

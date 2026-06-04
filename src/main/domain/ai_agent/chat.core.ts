@@ -13,6 +13,16 @@ import {StringUtil} from "../../../common/StringUtil";
 import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 
+export interface ChatOptions {
+    originMessages: ai_agent_messages;
+    token: string;
+    controller: AbortController;
+    on_msg: (msg: string) => void;
+    on_end: (stats?: { input_chars: number; output_chars: number }) => void;
+    sys_prompt?: string;
+    cwd?: string;
+}
+
 export class ChatCore {
 
     // 检测权限 补充参数
@@ -61,15 +71,20 @@ export class ChatCore {
 
 
     // todo 长期记忆 短期记忆 等记忆处理
-    public async chat(
-        originMessages: ai_agent_messages,
-        token: string,
-        controller: AbortController,
-        on_msg: (msg: string) => void,
-        on_end: () => void,
-        sys_prompt?: string,
-        cwd?: string,
-    ) {
+    public async chat(options: ChatOptions) {
+        const {
+            originMessages,
+            token,
+            controller,
+            on_msg,
+            on_end,
+            sys_prompt,
+            cwd,
+        } = options;
+
+        // 统计每次 HTTP 请求大模型的输入/输出字符数
+        let total_input_chars = 0;
+        let total_output_chars = 0;
         if (!ai_config) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
@@ -89,6 +104,7 @@ export class ChatCore {
 
 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
 如果用户没有问题，不要做任何tools工具调用，直接回答用户。
+如果你需要修改代码，修改完最后要判断能够变异测试尝试进行测试，但是不要直接运行项目进行编译测试。
 
 如果你需要调用tools，在调用tools的时候向用户简要的说明你的意图是什么。
 
@@ -129,8 +145,10 @@ ${sys_prompt ?? ''}
 
 
             //  调用 LLM（流式）
+            const ioStats = { input_chars: 0, output_chars: 0 };
             await this.callLLSync(
                 workMessages,
+                ioStats,
                 // ===== call_data =====
                 (chunk) => {
                     if (!chunk) return;
@@ -184,13 +202,17 @@ ${sys_prompt ?? ''}
             on_msg("\n")
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
+            // 累加本次 HTTP 请求的输入/输出统计
+            total_input_chars += ioStats.input_chars;
+            total_output_chars += ioStats.output_chars;
+
 
             //  一次 LLM 完整结束，补 push assistant
             workMessages.push(assistantMessage);
 
             // 没有 tool_calls，直接结束
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                on_end();
+                on_end({ input_chars: total_input_chars, output_chars: total_output_chars });
                 return;
             }
             // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
@@ -239,12 +261,13 @@ ${sys_prompt ?? ''}
         }
 
         on_msg("超出最大理解语义次数");
-        on_end();
+        on_end({ input_chars: total_input_chars, output_chars: total_output_chars });
     }
 
 
     private async callLLSync(
         messages: ai_agent_messages,
+        ioStats: { input_chars: number; output_chars: number },
         call_data: (message: any) => void,
         error_call: (e: any) => void,
         controller: AbortController
@@ -271,6 +294,9 @@ ${sys_prompt ?? ''}
             console.error("解析 ai_config.json_params 失败", err);
         }
 
+        const requestBody = JSON.stringify(json_body);
+        ioStats.input_chars += requestBody.length;
+
         try {
             const res = await fetch(ai_config.url, {
                 method: "POST",
@@ -278,7 +304,7 @@ ${sys_prompt ?? ''}
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${ai_config.token}`
                 },
-                body: JSON.stringify(json_body),
+                body: requestBody,
                 signal: controller.signal
             });
 
@@ -303,6 +329,8 @@ ${sys_prompt ?? ''}
 
                 const parser = createParser({
                     onEvent: (event) => {
+                        // 统计输出字符（完整的 SSE event.data 原始内容）
+                        ioStats.output_chars += (event.data?.length ?? 0);
                         // 直接判断 data 即可
                         if (event.data === '[DONE]') return;
                         try {
@@ -323,7 +351,9 @@ ${sys_prompt ?? ''}
                     while (true) {
                         const {done, value} = await reader.read();
                         if (done) break;
-                        parser.feed(decoder.decode(value, {stream: true}));
+                        const chunk = decoder.decode(value, {stream: true});
+                        ioStats.output_chars += chunk.length;
+                        parser.feed(chunk);
                     }
                 } catch (e: any) {
                     if (e.name !== "AbortError") {
@@ -336,7 +366,9 @@ ${sys_prompt ?? ''}
             }
 
             // --- 非 SSE 处理逻辑 ---
-            const result = await res.json();
+            const resultText = await res.text();
+            ioStats.output_chars += resultText.length;
+            const result = JSON.parse(resultText);
             call_data(result.choices[0].message);
 
         } catch (e: any) {

@@ -12,7 +12,7 @@ export const read_file_schema:ai_agent_params_type = {
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "文件的路径"
+                    "description": "文件的绝对路径"
                 }
             },
             "required": ["path"]

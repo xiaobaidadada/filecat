@@ -2,7 +2,7 @@
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle, debounce} from "../../../../common/fun.util";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item} from "../../../../common/req/common.pojo";
+import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats} from "../../../../common/req/common.pojo";
 import Header from "../../../meta/component/Header";
 import {ActionButton, ButtonLittle, Icon} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
@@ -107,6 +107,7 @@ export default function AiAgentChatPage() {
 
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
 
     const toggleSessionPanel = () => {
         if (window.innerWidth <= 736) {
@@ -424,6 +425,66 @@ export default function AiAgentChatPage() {
         })
     }
 
+    const showUsageStatsPopup = async (sessionId: string) => {
+        set_prompt_card({
+            open: true,
+            title: t('字符消耗统计'),
+            context_div: <div className="usage-stats-loading">{t('加载中...')}</div>,
+            cancel: () => set_prompt_card({open: false}),
+        });
+        try {
+            const result = await ai_agentHttp.post("session/usage_stats", {session_id: sessionId});
+            if (result.code === RCode.Success && result.data) {
+                const stats: ai_agent_usage_stats = result.data;
+                set_prompt_card({
+                    open: true,
+                    title: t('字符消耗统计'),
+                    context_div: (
+                        <div className="usage-stats-panel">
+                            {[
+                                {l: t('对话轮次'), v: (stats.turns ?? 0).toString()},
+                                {l: t('AI输入字符'), v: formatChars(stats.input_chars)},
+                                {l: t('AI输出字符'), v: formatChars(stats.output_chars)},
+                            ].map((row, i) => (
+                                <div key={i} className="usage-stats-row">
+                                    <span className="usage-stats-label">{row.l}</span>
+                                    <span className="usage-stats-value">{row.v}</span>
+                                </div>
+                            ))}
+                            <div className="usage-stats-row usage-stats-total">
+                                <span className="usage-stats-label">{t('总计消耗')}</span>
+                                <span className="usage-stats-value">{formatChars((stats.input_chars || 0) + (stats.output_chars || 0))}</span>
+                            </div>
+                        </div>
+                    ),
+                    cancel: () => set_prompt_card({open: false}),
+                });
+            } else {
+                set_prompt_card({
+                    open: true,
+                    title: t('字符消耗统计'),
+                    context_div: <div className="usage-stats-empty">{t('暂无统计数据')}</div>,
+                    cancel: () => set_prompt_card({open: false}),
+                });
+            }
+        } catch {
+            set_prompt_card({
+                open: true,
+                title: t('字符消耗统计'),
+                context_div: <div className="usage-stats-empty">{t('暂无统计数据')}</div>,
+                cancel: () => set_prompt_card({open: false}),
+            });
+        }
+    }
+
+    const formatChars = (chars: number | undefined): string => {
+        // 如果是 undefined, null 或小于 0，统一返回 "0"
+        if (chars === undefined || chars === null || chars < 0) return "0";
+
+        // 使用 toLocaleString，它会自动添加千位分隔符
+        return chars.toLocaleString();
+    }
+
     return (
        <React.Fragment>
            <Header>
@@ -473,6 +534,10 @@ export default function AiAgentChatPage() {
                                            click: () => {
                                                renameSession(session.id,session.title)
                                            }
+                                       },
+                                       {
+                                           name: t('字符消耗统计'),
+                                           click: () => showUsageStatsPopup(session.id)
                                        },
                                        {
                                            name: t('删除'),

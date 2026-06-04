@@ -94,6 +94,17 @@ export class Ai_AgentController {
         return Sucess("")
     }
 
+    @Post("/session/usage_stats")
+    async session_usage_stats(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const stats = aiAgentMemoryService.get_usage_stats(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.session_id
+        );
+        return Sucess(stats);
+    }
+
     @Post("/sessions/clear")
     async sessions_clear(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
