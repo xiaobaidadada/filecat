@@ -228,9 +228,9 @@
 }
 
 .chat-input-area textarea.chat-input {
-    flex: 1;
+    /*flex: 1;*/
     min-height: 2.5em;
-    max-height: 10em;
+    max-height: 20em;
     padding: 10px;
     font-size: 1em;
     line-height: 1.4em;

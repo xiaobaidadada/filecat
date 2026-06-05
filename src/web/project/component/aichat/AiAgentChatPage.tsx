@@ -335,12 +335,15 @@ export default function AiAgentChatPage() {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
-        if (e.key === 'Process' || e.nativeEvent.isComposing) {
-            return; // 忽略输入法回车键
+        // 1. 检查输入法合成状态 (isComposing 是标准属性)
+        // 2. 检查是否按下了 Shift (Shift + Enter 通常用于换行)
+        // 3. 检查是否按下了 Ctrl (Ctrl + Enter 通常也用于换行或特殊操作)
+        if (e.key === 'Process' || e.nativeEvent.isComposing || e.shiftKey || e.ctrlKey) {
+            return;
         }
-        
-        if (e.key === 'Enter' && !e.shiftKey) {
+
+        // 如果只有 Enter 被按下，触发发送
+        if (e.key === 'Enter') {
             e.preventDefault();
             handleSend();
         }
