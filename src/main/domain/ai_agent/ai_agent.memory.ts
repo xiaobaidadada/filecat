@@ -331,9 +331,11 @@ export class AiAgentMemoryService {
         stats.turns = (stats.turns || 0) + 1;
         if (turnStats?.output_chars) {
             stats.output_chars = (stats.output_chars || 0) + turnStats.output_chars;
+            stats.recent_output_chars = turnStats.output_chars;
         }
         if (turnStats?.input_chars) {
             stats.input_chars = (stats.input_chars || 0) + turnStats.input_chars;
+            stats.recent_input_chars = turnStats.input_chars;
         }
 
         if (!session.title || session.title === "新会话") {

@@ -445,6 +445,8 @@ export default function AiAgentChatPage() {
                                 {l: t('对话轮次'), v: (stats.turns ?? 0).toString()},
                                 {l: t('AI输入字符'), v: formatChars(stats.input_chars)},
                                 {l: t('AI输出字符'), v: formatChars(stats.output_chars)},
+                                {l: t('AI输入字符(最近一轮)'), v: formatChars(stats.recent_input_chars)},
+                                {l: t('AI输出字符(最近一轮)'), v: formatChars(stats.recent_output_chars)},
                             ].map((row, i) => (
                                 <div key={i} className="usage-stats-row">
                                     <span className="usage-stats-label">{row.l}</span>
@@ -452,7 +454,7 @@ export default function AiAgentChatPage() {
                                 </div>
                             ))}
                             <div className="usage-stats-row usage-stats-total">
-                                <span className="usage-stats-label">{t('总计消耗')}</span>
+                                <span className="usage-stats-label">{t('AI字符总计消耗')}</span>
                                 <span className="usage-stats-value">{formatChars((stats.input_chars || 0) + (stats.output_chars || 0))}</span>
                             </div>
                         </div>

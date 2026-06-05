@@ -3,7 +3,7 @@ import { chat_core } from "../../ai_agent/chat.core";
 import { aiAgentMemoryService } from "../../ai_agent/ai_agent.memory";
 import { userService } from "../../user/user.service";
 import {CharUtil, PtyShell} from "pty-shell";
-import {ShellUtil} from "./shell.util";
+import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
 
@@ -22,7 +22,8 @@ export class ai_agent_class {
 
     system_line = "";
 
-    // private print_buffer = "";
+    /** Markdown → ANSI 流式转换器 */
+    private md2ansi = new MarkdownToAnsiConverter();
 
     killed: boolean = false;
     kill() {
@@ -33,7 +34,8 @@ export class ai_agent_class {
         this.controller.abort();
         this.messages = [];
         this.system_line = "";
-        // this.print_buffer = "";
+        // 回到 shell 输入模式前清掉转换器
+        this.md2ansi.reset();
         this.exit()
     }
 
@@ -97,13 +99,13 @@ export class ai_agent_class {
     }
 
     chat_done() {
+        // 刷新 Markdown 转换器缓冲区
+        const flushOut = this.md2ansi.flush();
+        if (flushOut) {
+            this.pty.on_call(flushOut);
+        }
+        this.md2ansi.reset();
         this.pty.not_write = false
-        // flush 残留输出
-        // if (this.print_buffer.trim()) {
-        //     this.print(this.print_buffer);
-        //     this.print_buffer = "";
-        // }
-        // const str =ShellUtil.color("User:",'user')
         this.print("User:");
     }
 
@@ -114,7 +116,10 @@ export class ai_agent_class {
 
         const sysPrompt = `
                 当前 xterm的 行长度为${this.pty.rows} 列长度为${this.pty.cols}
-                用户当前使用 xterm.js 终端。输出格式按照VT 系列终端协议输出.
+                用户当前使用 xterm.js 终端。
+                输出格式要求：你输出的内容是 Markdown 格式，服务端会自动转换为 ANSI 终端样式渲染。
+                支持的 Markdown 语法：**粗体**、*斜体*、# 标题、- 列表、\`行内代码\`、\`\`\`代码块\`\`\`、> 引用、[链接](url)、--- 分割线。
+                请尽量使用这些格式让终端输出更美观。
                 用户所在的当前最新目录是：${this.pty.cwd}
                 
                 `;
@@ -125,18 +130,24 @@ export class ai_agent_class {
                 token: this.token,
                 controller: this.controller,
 
-                // stream output
+                // stream output：将 Markdown 转为 ANSI 后写入终端
                 on_msg: (msg: string) => {
-                    // if(msg.includes('')) {
-                    //     // 豆包这样的弱模型不会处理换行
-                    //     msg = '\n\r'
-                    // }
-                    this.pty.on_call(msg)
+                    const ansi = this.md2ansi.push(msg);
+                    if (ansi) {
+                        this.pty.on_call(ansi);
+                    }
                     this.system_line += msg;
                 },
 
                 // end callback
                 on_end: (stats) => {
+                    // 刷新 Markdown 转换器缓冲区
+                    const flushOut = this.md2ansi.flush();
+                    if (flushOut) {
+                        this.pty.on_call(flushOut);
+                    }
+                    this.md2ansi.reset();
+
                     if (this.system_line.trim() && this.messages.length > 0) {
                         const latestUserMessage = [...this.messages].reverse().find(it => it.role === "user");
                         if (latestUserMessage) {

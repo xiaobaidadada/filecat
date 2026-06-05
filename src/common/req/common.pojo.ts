@@ -93,8 +93,12 @@ export class ai_agent_usage_stats {
 
     /** AI 输出的总字符数 */
     output_chars: number = 0;
+    // 最近一轮的
+    recent_output_chars: number = 0;
     /** AI 输入总字符 */
     input_chars: number = 0;
+    // 最近一轮的
+    recent_input_chars: number = 0;
     /** 对话轮次 */
     turns: number = 0;
 }
