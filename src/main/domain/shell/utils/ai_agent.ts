@@ -122,7 +122,8 @@ export class ai_agent_class {
                 请尽量使用这些格式让终端输出更美观。
                 用户所在的当前最新目录是：${this.pty.cwd}
                 
-                `;
+                当用户没有任何问题的时候，你只需要向用户表达你可以帮助用户就可以了，不要做多余的事情。
+                                `;
 
         try {
             await chat_core.chat({
