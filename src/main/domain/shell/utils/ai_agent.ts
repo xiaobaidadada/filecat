@@ -1,8 +1,8 @@
-import { ai_agent_message_item, ai_agent_messages } from "../../../../common/req/common.pojo";
-import { chat_core } from "../../ai_agent/chat.core";
-import { aiAgentMemoryService } from "../../ai_agent/ai_agent.memory";
-import { userService } from "../../user/user.service";
-import {CharUtil, PtyShell} from "pty-shell";
+import {ai_agent_message_item, ai_agent_messages} from "../../../../common/req/common.pojo";
+import {chat_core} from "../../ai_agent/chat.core";
+import {aiAgentMemoryService} from "../../ai_agent/ai_agent.memory";
+import {userService} from "../../user/user.service";
+import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
@@ -17,6 +17,7 @@ export class ai_agent_class {
     token: string;
     userId: string;
     sessionId: string;
+    isTemporarySession: boolean = false;
 
     controller = new AbortController();
 
@@ -63,16 +64,28 @@ export class ai_agent_class {
         this.pty = pty;
         this.exit = exit
         this.print = print;
-        this.token = params[params.length - 1];
-        const messages:string[] = [];
-        for (let i=0;i<params.length-1;i++) {
+        
+        // 检查是否有 --temp 参数
+        const filteredParams: string[] = [];
+        for (const param of params) {
+            if (param === '--temp' || param === '-t') {
+                this.isTemporarySession = true;
+            } else {
+                filteredParams.push(param);
+            }
+        }
+        
+        this.token = filteredParams[filteredParams.length - 1];
+        const messages: string[] = [];
+        
+        for (let i = 0; i < filteredParams.length - 1; i++) {
             try {
-                const str1 = params[i]
-                if(str1 === '-f') {
-                    let  p = params[i+1]
-                    if(!path.isAbsolute(p)) {
-                        p = path.join(pty.cwd,p)
-                        if(!this.isFile(p)) {
+                const str1 = filteredParams[i]
+                if (str1 === '-f' || str1 === '--file') {
+                    let p = filteredParams[i + 1]
+                    if (!path.isAbsolute(p)) {
+                        p = path.join(pty.cwd, p)
+                        if (!this.isFile(p)) {
                             continue
                         }
                     }
@@ -86,16 +99,31 @@ export class ai_agent_class {
                 console.log(e)
             }
         }
+        
         this.userId = userService.get_user_info_by_token(this.token).id;
-        const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
-        this.sessionId = session.id;
-        this.messages = [
-            ...(session.messages ?? []),
-            ...messages.map(v => ({
-                content: v,
-                role: "user" as const
-            })) as ai_agent_message_item[]
-        ];
+        
+        // 如果有 --new 参数，创建临时会话（不持久化）
+        if (this.isTemporarySession) {
+            this.sessionId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            this.messages = [
+                ...messages.map(v => ({
+                    content: v,
+                    role: "user" as const
+                })) as ai_agent_message_item[]
+            ];
+            // 设置标志表示这是临时会话
+        } else {
+            // 正常会话，持久化存储
+            const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
+            this.sessionId = session.id;
+            this.messages = [
+                ...(session.messages ?? []),
+                ...messages.map(v => ({
+                    content: v,
+                    role: "user" as const
+                })) as ai_agent_message_item[]
+            ];
+        }
     }
 
     chat_done() {
@@ -156,10 +184,15 @@ export class ai_agent_class {
                                 content: this.system_line,
                                 role: "assistant" as const
                             };
-                            aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
-                                input_chars: stats?.input_chars ?? 0,
-                                output_chars: stats?.output_chars ?? 0,
-                            }).catch(console.error);
+                            
+                            // 只有非临时会话才保存到持久化存储
+                            if (!this.isTemporarySession) {
+                                aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
+                                    input_chars: stats?.input_chars ?? 0,
+                                    output_chars: stats?.output_chars ?? 0,
+                                }).catch(console.error);
+                            }
+                            
                             this.messages.push(assistantMessage);
                         }
                     }
