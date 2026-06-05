@@ -315,10 +315,11 @@ export const $stroe = {
     nav_style:atom({
         key: 'nav_style',
         default: {
-            open_menu: false,
-
+            mobile_open: false,
+            pc_collapsed: false,
         } as {
-            open_menu?: boolean,
+            mobile_open?: boolean,
+            pc_collapsed?: boolean,
         }
         ,
         effects: [

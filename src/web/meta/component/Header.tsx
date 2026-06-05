@@ -12,11 +12,11 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
     const [nav_style,set_nav_style] = useRecoilState($stroe.nav_style);
 
     const mobile = () => {
-        set_nav_style((prev) => ({...prev, open_menu: true}))
+        set_nav_style((prev) => ({...prev, mobile_open: true}))
     }
 
     const toggleNavCollapsed = () => {
-        set_nav_style((prev) => ({...prev, open_menu: !(prev.open_menu ?? true)}))
+        set_nav_style((prev) => ({...prev, pc_collapsed: !(prev.pc_collapsed ?? false)}))
     }
 
     return (
@@ -30,7 +30,7 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
                     <div className={"header-nav-toggle"}>
                         <ActionButton
                             icon={"menu"}
-                            title={(nav_style.open_menu ?? true) ? "收起" : "展开"}
+                            title={(nav_style.pc_collapsed ?? false) ? "展开" : "收起"}
                             onClick={toggleNavCollapsed}
                         />
                     </div>

@@ -41,7 +41,7 @@ function Layout() {
     const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
     const [custom_fun_opt, set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
-    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
+    // const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
     const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
     const have_proxy_menuRots= get_proxy_menuRots()
@@ -115,10 +115,8 @@ function Layout() {
         // @ts-ignore
         MainNavList[MainNavList.length - 1].push(custom_fun_opt);
     }
-    const nav_close = () => {
-        set_nav_style((prev) => ({...prev, open_menu: false}))
-    }
-    const openMenu = nav_style?.open_menu ?? true;
+    // const pcCollapsed = nav_style?.pc_collapsed ?? false;
+
     return (
         <React.Fragment>
             {/*全局显示*/}
@@ -149,10 +147,9 @@ function Layout() {
             <CommonBody
                 navList={MainNavList}
                 hidden_navList={hidden_navList}
-                nav_is_mobile={openMenu}
-                nav_is_collapsed={!openMenu}
+                // nav_is_mobile={mobileOpen}
+                // nav_is_collapsed={pcCollapsed}
             />
-            {openMenu && <Overlay className={"layout-nav-overlay"} click={nav_close}/>}
         </React.Fragment>
     )
         ;

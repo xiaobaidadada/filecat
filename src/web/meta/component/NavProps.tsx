@@ -5,6 +5,7 @@ import {To} from "./To";
 import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/util/WebPath";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../project/util/store";
+import {Overlay} from "./Dashboard";
 
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
@@ -17,16 +18,16 @@ export interface NavItem {
 export interface NavProps {
     navList: NavItem[][],
     hidden_navList?: NavItem[],
-    nav_is_mobile: boolean,
-    nav_is_collapsed?: boolean,
+    // nav_is_mobile: boolean,
+    // nav_is_collapsed?: boolean,
 }
 
 export function Nav(props: NavProps) {
     const [selectedIndex, setSelectedIndex] = React.useState("");
-    const [, set_nav_style] = useRecoilState($stroe.nav_style);
+    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
     const closeMobileNav = () => {
         if (window.innerWidth <= 736) {
-            set_nav_style((prev) => ({...prev, open_menu: false}));
+            set_nav_style((prev) => ({...prev, mobile_open: false}));
         }
     }
     useEffect(() => {
@@ -53,23 +54,31 @@ export function Nav(props: NavProps) {
         }
 
     }, [props.navList]);
-    return (
-        <nav className={`${props.nav_is_mobile? "active" :""} ${props.nav_is_collapsed ? "collapsed" : ""}  not-select-div`}>
-            {props.navList.map((item, index) => {
-                return (<div key={index} className=" nav_1" >
-                    {item.map((item2, index2) => {
-                        return (
-                            <To rto={item2.rto} key={index2} clickFun={() => {
-                                if(item2.clickFun) item2.clickFun();
-                                closeMobileNav();
-                            }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
-                                <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>
-                                <span className=" nav_3">{item2.name}</span>
-                            </To>)
-                    })}
-                </div>)
 
-            })}
-        </nav>
+    const nav_close = () => {
+        set_nav_style((prev) => ({...prev, mobile_open: false}))
+    }
+
+    return (
+        <React.Fragment>
+            <nav className={`${nav_style.mobile_open? "active" :""} ${nav_style.pc_collapsed ? "collapsed" : ""}  not-select-div`}>
+                {props.navList.map((item, index) => {
+                    return (<div key={index} className=" nav_1" >
+                        {item.map((item2, index2) => {
+                            return (
+                                <To rto={item2.rto} key={index2} clickFun={() => {
+                                    if(item2.clickFun) item2.clickFun();
+                                    closeMobileNav();
+                                }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
+                                    <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>
+                                    <span className=" nav_3">{item2.name}</span>
+                                </To>)
+                        })}
+                    </div>)
+
+                })}
+            </nav>
+            {nav_style.mobile_open && <Overlay className={"layout-nav-overlay"} click={nav_close}/>}
+        </React.Fragment>
     );
 }
