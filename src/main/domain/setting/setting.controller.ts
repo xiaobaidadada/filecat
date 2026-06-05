@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {ai_agent_Item, ai_mcp_server_item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {ai_agent_Item, ai_mcp_server_item, ai_system_prompt_item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -238,6 +238,20 @@ export class SettingController {
     async ai_mcp_tools_reload(@Req() ctx, @Body() req: { index: number }) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(await ai_agentService.reloadMcpServer(Number(req?.index)));
+    }
+
+    // 系统会话提示词
+    @Get("/ai_system_prompts")
+    ai_system_prompts_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(settingService.ai_system_prompts_get());
+    }
+
+    @Post("/ai_system_prompts/save")
+    ai_system_prompts_save(@Body() req: { list: ai_system_prompt_item[] }, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        settingService.ai_system_prompts_save(req.list);
+        return Sucess("1");
     }
 
     // @Post("/ai_mcp_tools/reload_all")

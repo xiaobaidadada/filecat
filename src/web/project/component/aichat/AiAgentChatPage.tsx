@@ -12,7 +12,7 @@ import {NotySucess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {using_confirm} from "../prompts/prompt.util";
 import {RCode} from "../../../../common/Result.pojo";
-import {ai_agent_item_dotenv} from "../../../../common/req/setting.req";
+import {ai_agent_item_dotenv, ai_system_prompt_item} from "../../../../common/req/setting.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
@@ -134,7 +134,8 @@ export default function AiAgentChatPage() {
     const confirm_dell_all = using_confirm()
     const navigate = useNavigate();
     const autoScrollRef = useRef(true);
-    const env_config = useRef(new ai_agent_item_dotenv())
+    const env_config = useRef(new ai_agent_item_dotenv());
+    const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
 
     const isNearBottom = (el: HTMLElement, threshold = 120) => {
         const { scrollTop, scrollHeight, clientHeight } = el;
@@ -222,15 +223,32 @@ export default function AiAgentChatPage() {
         requestAnimationFrame(() => scrollToBottom(false));
     }
 
-    const createSession = async () => {
+    const createSession = async (sysPrompt?: string) => {
         const result = await ai_agentHttp.post("session", {title: "新会话"});
         if (result.code !== RCode.Success) return;
+
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
-        setMessages([]);
+
+        if (sysPrompt) {
+            // 修改点 1：不直接塞入 messages，而是设置到 inputValue
+            setInputValue(sysPrompt);
+            setMessages([]);
+        } else {
+            setMessages([]);
+        }
+
         set_ai_session_collapsed(false);
         await loadSessions(session.id);
-    }
+
+        requestAnimationFrame(() => {
+            const el = document.querySelector('.chat-input') as HTMLTextAreaElement;
+            if (el) {
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+            }
+        });
+    };
 
     const init = async ()=>{
         const result = await settingHttp.get("ai_agent_setting/env");
@@ -238,6 +256,11 @@ export default function AiAgentChatPage() {
             env_config.current = result.data
         }
         await loadSessions();
+        // 加载系统会话提示词列表
+        const sysPromptResult = await ai_agentHttp.get("system_prompts");
+        if (sysPromptResult.code === RCode.Success) {
+            setSysPromptList(sysPromptResult.data ?? []);
+        }
     }
 
     useEffect(() => {
@@ -498,7 +521,21 @@ export default function AiAgentChatPage() {
                    title={t( "会话")}
                    onClick={toggleSessionPanel}
                />
-               <ActionButton icon={"add"} title={t("新会话")} onClick={createSession}/>
+               <ActionButton icon={"add"} title={t("新会话")} onClick={() => createSession()}/>
+               {sysPromptList.length > 0 && (
+                   <MenuSelect
+                       list={sysPromptList.map((item, idx) => ({
+                           name: item.note || `${t("提示词")} ${idx + 1}`,
+                           click: () => {
+                               if (item.prompt) {
+                                   createSession(item.prompt);
+                               }
+                           }
+                       }))}
+                   >
+                       <ActionButton icon={"add_comment"} title={t("提示词模板创建会话")} />
+                   </MenuSelect>
+               )}
                <ActionButton icon={"delete_sweep"} title={t("清空全部会话")} onClick={()=>{
                    confirm_dell_all({
                        sub_title:t("确认删除全部聊天会话吗?"),

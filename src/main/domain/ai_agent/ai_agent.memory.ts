@@ -351,7 +351,11 @@ export class AiAgentMemoryService {
         const context:ai_agent_messages = [
             {
                 role: "system",
-                content: '当你需要读取文件内容，而用户的消息中自带附件的时候，优先使用附件的内容，只有需要最新的文件内容的时候，才到本地进行文件搜索。'
+                content:
+                    `
+                    当你需要读取文件内容，而用户的消息中自带附件的时候，优先使用附件的内容，只有需要最新的文件内容的时候，才到本地进行文件搜索。
+                  
+                    `
             }
         ];
         if (session?.summary || session?.long_term_memory) {
@@ -361,7 +365,7 @@ export class AiAgentMemoryService {
                 content: [
                     session.summary ? `会话压缩摘要：\n${session.summary}` : "",
                     session.long_term_memory ? `长期记忆：\n${session.long_term_memory}` : "",
-                    "请把这些记忆当作当前会话上下文；如果用户后续明确纠正，以最新消息为准。"
+                    "请把这些记忆当作当前会话上下文；如果用户后续明确纠正，以最新消息为准。如果你要进行一些操作，要以实际的 tools 结果为结果，不能完全依赖记忆中的历史内容。"
                 ].filter(Boolean).join("\n\n")
             });
         }

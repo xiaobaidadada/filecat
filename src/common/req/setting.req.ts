@@ -162,6 +162,12 @@ export const json_params_default = JSON.stringify({
     "thinking" : { "type":"disabled" }
 })
 
+export class ai_system_prompt_item {
+    prompt: string;
+    note: string;
+    index?: number;
+}
+
 export class QuickCmdItem {
     cmd: string;
     note: string;

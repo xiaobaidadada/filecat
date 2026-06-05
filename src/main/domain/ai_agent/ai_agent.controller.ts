@@ -11,6 +11,7 @@ import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
 import {aiAgentMemoryService} from "./ai_agent.memory";
+import {settingService} from "../setting/setting.service";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -173,6 +174,13 @@ export class Ai_AgentController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         ai_agentService.delete_index_with_progress(data.param_path).catch(console.error);
         return  Sucess("")
+    }
+
+    // 获取系统会话提示词列表（聊天页面使用，不需要setting权限）
+    @Get("/system_prompts")
+    async system_prompts(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        return Sucess(settingService.ai_system_prompts_get());
     }
 
 

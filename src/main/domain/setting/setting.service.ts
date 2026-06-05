@@ -11,6 +11,7 @@ import {
     FileQuickCmdItem,
     FileSettingItem, json_params_default,
     ai_mcp_server_item,
+    ai_system_prompt_item,
     QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
@@ -470,6 +471,15 @@ export class SettingService {
         return DataUtil.get(data_common_key.ai_agent_mcp_setting) ?? {
             list: []
         };
+    }
+
+    // 系统会话提示词
+    ai_system_prompts_get(): ai_system_prompt_item[] {
+        return DataUtil.get(data_common_key.ai_system_prompts) ?? [];
+    }
+
+    ai_system_prompts_save(list: ai_system_prompt_item[]) {
+        DataUtil.set(data_common_key.ai_system_prompts, list);
     }
 
     async ai_mcp_setting_save(token: string, data: { list: ai_mcp_server_item[] }) {

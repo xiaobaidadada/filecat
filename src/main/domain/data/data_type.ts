@@ -98,6 +98,7 @@ export enum data_common_key {
     workflow_setting_item_list = "workflow_setting_item_list",
     server_bridge_config_list = "server_bridge_config_list",
     ai_agent_status  = "ai_agent_status",
+    ai_system_prompts = "ai_system_prompts",
     https_tunnel_server_fig = "https_tunnel_server_fig",
 }
 

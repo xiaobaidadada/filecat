@@ -18,6 +18,7 @@ import {UserAuth} from "../../../../common/req/user.req";
 import {
     ai_agent_Item,
     ai_agent_item_dotenv_default, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group,
+    ai_system_prompt_item,
     json_params_default
 } from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
@@ -51,6 +52,10 @@ const mcp_tip = `
 3. 保存后会自动重新加载 MCP 工具，agent 聊天时会把这些工具一起带给模型
 4. 建议把 cwd 配到具体项目目录，避免 server 在错误目录里运行
 `
+const sys_prompt_tip = `
+1. 系统会话提示词，在 AI 聊天页创建会话时可以选择，选中的提示词会自动填入聊天框作为第一条系统消息
+2. 适用于预先设定常用的会话场景模板，如"代码审查"、"翻译助手"、"运维诊断"等
+`
 export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
@@ -73,6 +78,10 @@ export default function AIAgentChatSetting() {
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
     const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
     const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
+    const headers_sys_prompt = [t("编号"), t("提示词"), t("备注"), t("操作")];
+
+    // 系统会话提示词
+    const [sys_prompt_list, set_sys_prompt_list] = useState<ai_system_prompt_item[]>([]);
 
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
@@ -119,6 +128,12 @@ export default function AIAgentChatSetting() {
         await loadMcpTools();
 
         load_index_switch()
+
+        // 加载系统提示词
+        const sys_prompt_result = await settingHttp.get("ai_system_prompts");
+        if (sys_prompt_result.code === RCode.Success) {
+            set_sys_prompt_list(sys_prompt_result.data ?? []);
+        }
     }
     useEffect(()=>{
         getItems()
@@ -354,6 +369,23 @@ export default function AIAgentChatSetting() {
             NotySucess("保存成功")
         }
     }
+    // 系统会话提示词相关
+    const add_sys_prompt = () => {
+        set_sys_prompt_list([...sys_prompt_list, {prompt: "", note: ""}]);
+    }
+    const del_sys_prompt = (index: number) => {
+        sys_prompt_list.splice(index, 1);
+        set_sys_prompt_list([...sys_prompt_list]);
+    }
+    const save_sys_prompts = async () => {
+        for (let i = 0; i < sys_prompt_list.length; i++) {
+            sys_prompt_list[i].index = i;
+        }
+        const result = await settingHttp.post("ai_system_prompts/save", {list: sys_prompt_list});
+        if (result.code === RCode.Success) {
+            NotySucess("保存成功")
+        }
+    }
     return <div>
         <Header>
             {check_user_auth(UserAuth.ai_agent_setting) &&
@@ -576,6 +608,42 @@ export default function AIAgentChatSetting() {
                                     return new_list;
                                 })} width={"10rem"}/>
                             </CardFull>
+
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("系统会话提示词")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(sys_prompt_tip)}} title={"信息"}/></span>}
+                                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add_sys_prompt}/>
+                                          <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
+                                              save_sys_prompts()
+                                          }}/></div>}>
+                                <Table headers={headers_sys_prompt} rows={sys_prompt_list.map((item, index) => {
+                                    const new_list = [
+                                        <div>{index}</div>,
+                                        <div>
+                                            <ActionButton icon={"short_text"} title={"提示词"} onClick={() => {
+                                                editor_data.set_value_temp(item.prompt ?? '')
+                                                setEditorSetting({
+                                                    model: "ace/mode/text",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        item.prompt = context
+                                                        set_sys_prompt_list([...sys_prompt_list])
+                                                        editor_data.set_value_temp('')
+                                                        save_sys_prompts()
+                                                    }
+                                                })
+                                            }}/>
+                                        </div>,
+                                        <InputText value={item.note} handleInputChange={(value) => {
+                                            item.note = value;
+                                        }} no_border={true}/>,
+                                        <div>
+                                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_sys_prompt(index)}/>
+                                        </div>,
+                                    ];
+                                    return new_list;
+                                })} width={"10rem"}/>
+                            </CardFull>
+
                         </Column>
                     </Row>
                     <Row>
