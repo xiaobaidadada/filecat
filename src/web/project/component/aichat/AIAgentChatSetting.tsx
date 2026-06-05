@@ -618,7 +618,7 @@ export default function AIAgentChatSetting() {
                                     const new_list = [
                                         <div>{index}</div>,
                                         <div>
-                                            <ActionButton icon={"short_text"} title={"提示词"} onClick={() => {
+                                            <ActionButton icon={"short_text"} title={t("提示词")} onClick={() => {
                                                 editor_data.set_value_temp(item.prompt ?? '')
                                                 setEditorSetting({
                                                     model: "ace/mode/text",
