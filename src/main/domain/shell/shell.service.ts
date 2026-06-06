@@ -178,9 +178,10 @@ export class ShellService {
     }
 
     check_exe_cmd({
-                      token, user_id,cwd,pty_shell
+                       user_id,cwd,pty_shell
                   }: {
-        token?: string,  user_id?: string,
+        // token?: string,
+        user_id: string,
         pty_shell?: PtyShell,cwd?: string // 二选一
     }) {
         return async (exe_cmd:string, params:string[]) => {
@@ -189,26 +190,26 @@ export class ShellService {
             switch (exe_cmd) {
                 case filecat_cmd.filecat_restart:
                     // 重启filecat
-                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_restart})) {
+                    if (!this.check_permission({user_id, permission: UserAuth.shell_cmd_filecat_restart})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
                 case    filecat_cmd.filecat_upgrade:
-                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
+                    if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
                 case    filecat_cmd.filecat_down:
-                    if (!this.check_permission({token, user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
+                    if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
                     }
                 case filecat_cmd.ai:
                     params.push(user_id)
-                    if (!this.check_permission({token, user_id, permission: UserAuth.ai_chat_cmd})) {
+                    if (!this.check_permission({ user_id, permission: UserAuth.ai_chat_cmd})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
@@ -220,7 +221,7 @@ export class ShellService {
                 const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
                 // 开启了自定义的处理
                 if (selfHandler) {
-                    const ok = selfHandler.handler(token, exe_cmd, params);
+                    const ok = selfHandler.handler( exe_cmd, params);
                     if (ok !== exec_type.continue) {
                         return ok;
                     }
@@ -229,10 +230,7 @@ export class ShellService {
             }
 
             // 命令通用权限检测
-            if (token != null && !userService.check_user_cmd(token, exe_cmd, false)) {
-                // 检测命令能不能执行
-                return exec_type.not;
-            } else if (user_id != null && !userService.check_user_cmd_by_id(user_id, exe_cmd, false)) {
+            if (userService.check_user_cmd_by_id(user_id, exe_cmd, false)) {
                 // 检测命令能不能执行
                 return exec_type.not;
             }
@@ -246,18 +244,9 @@ export class ShellService {
                 }
                 const p = path.isAbsolute(params[0])?params[0]: path.join(cwd, params[0])
                 // 需要检测一下目录
-                if (token) {
-                    if (userService.check_user_path(token, p)) {
-                        return exec_type.auto_child_process;
-                    }
-                } else if (user_id) {
-                    if (userService.check_user_path_by_user_id(user_id, p)) {
-                        return exec_type.auto_child_process;
-                    }
-                } else {
-                    return exec_type.not;
+                if (userService.check_user_path_by_user_id(user_id, p)) {
+                    return exec_type.auto_child_process;
                 }
-
             }
 
             // 其实就是通过了 可以继续了  continue 是不通过 也不继续
@@ -303,7 +292,7 @@ export class ShellService {
             }
         });
         ptyShell.check_exe_cmd = this.check_exe_cmd({
-            token: (data.wss as Wss).token, pty_shell:ptyShell,
+             pty_shell:ptyShell,user_id: user_data.id
         })
         this.add_handle_for_type_shell(ptyShell)
         ptyShell.cmd_exe_auto_completion = (exe) => {

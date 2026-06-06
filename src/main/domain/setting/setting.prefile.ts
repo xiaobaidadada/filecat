@@ -56,7 +56,6 @@ export const self_shell_cmd_check_js_code_file =
     
     /*
     *  check command to exec 
-    * @params token: token
     * @params cmd : command string
     * @params params: string [] 
     * return  -1 (reject)  0 (to  use child_process ) 1 (to use node_pty ) 2 (continue sys judge)
