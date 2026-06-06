@@ -29,7 +29,7 @@ export default function MarkDown(props) {
                 left_children={[<ActionButton key={1} title={t("取消")} icon={"close"} onClick={cancel}/>,
                     <title key={2}>{markdown.filename}</title>]}>
         </Header>
-        <div className={"md-context markdown-body "}>
+        <div className={"md-context  "}>
             <Md context={markdown.context}/>
         </div>
     </div>
