@@ -39,6 +39,7 @@ export class ai_agent_class {
         // 回到 shell 输入模式前清掉转换器
         this.md2ansi.reset();
         this.exit()
+        this.pty.on_child_kill(0)
     }
 
     init() {
