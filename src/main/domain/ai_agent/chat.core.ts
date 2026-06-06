@@ -66,6 +66,7 @@ export class ChatCore {
                     UserAuth.filecat_file_delete_cut_rename,
                     {
                         auto_throw: true,
+                        root_check: true
                     }
                 );
                 break;
