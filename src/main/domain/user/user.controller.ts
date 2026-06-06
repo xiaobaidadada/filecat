@@ -1,6 +1,6 @@
 import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {UserAuth, UserBaseInfo, UserData, UserLogin} from "../../../common/req/user.req";
-import {AuthFail, Sucess} from "../../other/Result";
+import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {generateSaltyUUID} from "../../../common/StringUtil";
 import {data_dir_tem_name} from "../data/data_type";
@@ -39,7 +39,7 @@ export class UserController {
                 const selfHandler = settingService.getHandlerClass(self_auth_jscode, data_dir_tem_name.sys_file_dir);
                 if (!selfHandler) {
                     await CommonUtil.sleep_lock_key(user.username,1000)
-                    return false;
+                    return AuthFail("self hand error");
                 }
                 // 开启了自定义处理
                 try {
@@ -68,11 +68,11 @@ export class UserController {
             }
 
         } catch(err){
-            await CommonUtil.sleep_lock_key("",1000)
+            await CommonUtil.sleep_lock_key("-",1000)
             throw err;
         }
 
-        await CommonUtil.sleep_lock_key(user.username,1000)
+        await CommonUtil.sleep_lock_key('-',1000)
         return AuthFail('password error');
     }
 
