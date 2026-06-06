@@ -294,13 +294,9 @@ export function DropdownItem(props: {
                 <div
                     className="dropdown_item_children"
                     style={{
-                        position: 'absolute',
-                        top: '-.5rem',
                         // 根据空间动态调整左右偏移
                         left: alignLeft ? 'auto' : '100%',
                         right: alignLeft ? '100%' : 'auto',
-                        zIndex: 1003,
-                        display: 'block'
                     }}
                 >
                     {props.c}
@@ -309,9 +305,6 @@ export function DropdownItem(props: {
         </div>
     );
 }
-
-export type DropdownItemsPojo = { r: React.ReactNode, v: any, items?: DropdownItemsPojo }[];
-
 
 export function Dropdown(props: {
     items?: { r: React.ReactNode, v: any, items?: any[] }[],

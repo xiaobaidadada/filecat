@@ -68,7 +68,7 @@ body.rtl .dropdown {
     border-radius: 0;
     width: 100%;
 }
-.dropdown .action span:not(.counter) {
+.dropdown .action > span:not(.counter) {
     display: inline-block;
     padding: .4em;
 }
@@ -77,5 +77,11 @@ body.rtl .dropdown {
 }
 
 
+.dropdown .dropdown_item_children  {
+    position: absolute;
+    z-index: 99999;
+    display: block;
+    top: -.5rem;
+}
 
 
