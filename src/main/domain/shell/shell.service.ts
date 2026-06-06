@@ -202,7 +202,7 @@ export class ShellService {
                         return exec_type.auto_child_process
                     }
                 case    filecat_cmd.filecat_down:
-                    if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
+                    if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_kill_self})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
                         return exec_type.auto_child_process
@@ -230,7 +230,7 @@ export class ShellService {
             }
 
             // 命令通用权限检测
-            if (userService.check_user_cmd_by_id(user_id, exe_cmd, false)) {
+            if (!userService.check_user_cmd_by_id(user_id, exe_cmd, false)) {
                 // 检测命令能不能执行
                 return exec_type.not;
             }

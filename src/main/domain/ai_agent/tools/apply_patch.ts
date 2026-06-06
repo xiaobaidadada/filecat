@@ -45,10 +45,8 @@ export const apply_patch_tool = async ({ patchText }: { patchText: string }) => 
                     break;
 
                 case 'delete':
-                    if (fs.existsSync(op.path)) {
-                        await FileUtil.remove(op.path);
-                        results.push(`已删除: ${op.path}`);
-                    }
+                    await FileUtil.remove(op.path);
+                    results.push(`已删除: ${op.path}`);
                     break;
 
                 case 'update':

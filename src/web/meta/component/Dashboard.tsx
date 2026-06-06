@@ -236,102 +236,105 @@ export function DropdownTag(props: {
 
 }
 
-function DropdownItem(props: { key, value,item, click, context, pre_value, c?: React.ReactNode }) {
-    const parentRef = useRef(null); // 父容器的引用
-    const childRef = useRef(null);  // 子容器的引用
-    const [isOutOfScreen, setIsOutOfScreen] = useState(false);
-    const [parentWidth, setParentWidth] = useState(0); // 存储父 div 宽度
+export function DropdownItem(props: {
+    item: any,
+    click?: (v: any, item: any) => void,
+    context: React.ReactNode,
+    pre_value?: any,
+    value?: any,
+    c?: React.ReactNode
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [alignLeft, setAlignLeft] = useState(false); // 决定子菜单是向左还是向右弹出
+    const itemRef = useRef<HTMLDivElement>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 计算子 div 是否超出屏幕
+    // 关键逻辑：检测屏幕剩余空间
     const checkPosition = () => {
-        if (parentRef.current && childRef.current) {
-            const parentRect = parentRef.current.getBoundingClientRect();
-            const childRect = childRef.current.getBoundingClientRect();
-
-            const width = parentRect.width;
-            setParentWidth(width); // 更新宽度状态
-
-            // 判断子 div 的右边缘是否超出屏幕
-            const screenWidth = window.innerWidth;
-            if (childRect.right + width > screenWidth) {
-                setIsOutOfScreen(true);
+        if (itemRef.current) {
+            const rect = itemRef.current.getBoundingClientRect();
+            // 假设子菜单宽度约为 160px (10rem)，加上父级宽度，判断右侧剩余空间
+            const spaceRight = window.innerWidth - rect.right;
+            if (spaceRight < 160) {
+                setAlignLeft(true); // 右侧空间不足，向左弹出
             } else {
-                setIsOutOfScreen(false);
+                setAlignLeft(false); // 默认向右弹出
             }
         }
     };
-    useEffect(() => {
-        // 组件加载时计算一次
-        checkPosition();
-        // 监听窗口变化（例如屏幕大小变化）
-        window.addEventListener('resize', checkPosition);
-        // 清理监听器
-        return () => {
-            window.removeEventListener('resize', checkPosition);
-        };
-    }, []); // 只在组件挂载时执行一次
 
-    // 处理鼠标进入父 div 时
     const handleMouseEnter = () => {
-        if (parentRef.current && childRef.current) {
-            childRef.current.style.display = 'block'; // 鼠标悬停时显示子 div
-            checkPosition();
-        }
-    };
-    // 处理鼠标离开父 div 时
-    const handleMouseLeave = () => {
-        if (childRef.current) {
-            childRef.current.style.display = 'none'; // 鼠标离开时隐藏子 div
-        }
+        if (timerRef.current) clearTimeout(timerRef.current);
+        checkPosition(); // 鼠标移入时校验位置
+        setIsOpen(true);
     };
 
-    return <div  ref={parentRef} className={`dropdown_item ${props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}`}
-                onClick={(e) => {
-                    e.stopPropagation()
-                    e.nativeEvent.stopImmediatePropagation()
-                    if (props.click) props.click(props.value,props.item)
-                }}
-                 onMouseEnter={handleMouseEnter} // 监听鼠标进入
-                 onMouseLeave={handleMouseLeave} // 监听鼠标离开
-    >
-        {props.context}
-        {props.c &&
-            <div
-                className={"dropdown_item_children"}
-                ref={childRef}
-                style={{
-                    position: 'absolute',
-                    top: '-.5rem',
-                    right: isOutOfScreen ?parentWidth:undefined ,
-                    left: isOutOfScreen?undefined:parentWidth, // 如果超出屏幕，子 div 显示在右边
-                    // transform: 'translateY(-50%)',
-                    // backgroundColor: 'lightgreen',
-                    // padding: '10px',
-                    display: 'none', // 默认隐藏
-                }}
-                onMouseEnter={()=>{
-                    childRef.current.style.display = 'block';
-                }} // 监听鼠标进入
-                // onMouseLeave={()=>{
-                //     childRef.current.style.display = 'none';
-                // }} // 监听鼠标离开
-            >
-                {props.c}
+    const handleMouseLeave = () => {
+        timerRef.current = setTimeout(() => {
+            setIsOpen(false);
+        }, 10);
+    };
+
+    return (
+        <div
+            ref={itemRef}
+            className={`dropdown_item ${props.value !== undefined && props.value === props.pre_value ? "dropdown_selected" : ""}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (props.click && props.value !== undefined) props.click(props.value, props.item);
+            }}
+        >
+            <div className="action">
+                <span>{props.context}</span>
             </div>
-        }
-    </div>
+
+            {isOpen && props.c && (
+                <div
+                    className="dropdown_item_children"
+                    style={{
+                        position: 'absolute',
+                        top: '-.5rem',
+                        // 根据空间动态调整左右偏移
+                        left: alignLeft ? 'auto' : '100%',
+                        right: alignLeft ? '100%' : 'auto',
+                        zIndex: 1003,
+                        display: 'block'
+                    }}
+                >
+                    {props.c}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export type DropdownItemsPojo = { r: React.ReactNode, v: any, items?: DropdownItemsPojo }[];
 
 
-export function Dropdown(props: { items?: DropdownItemsPojo, click?: (v,item) => void, pre_value?: any }) {
-
-    return <div className={"dropdown"}  >
-        {props.items && props.items.map((v, index) => (
-            <DropdownItem key={index} value={v.v} item={v} click={props.click} context={v.r} pre_value={props.pre_value}
-                          c={(<Dropdown items={v.items} click={props.click} pre_value={props.pre_value}/>)}/>))}
-    </div>
+export function Dropdown(props: {
+    items?: { r: React.ReactNode, v: any, items?: any[] }[],
+    click?: (v: any, item: any) => void,
+    pre_value?: any
+}) {
+    return (
+        <div className="dropdown">
+            {props.items && props.items.map((v, index) => (
+                <React.Fragment key={index}>
+                    <DropdownItem
+                        value={v.v}
+                        item={v}
+                        click={props.click}
+                        context={v.r}
+                        pre_value={props.pre_value}
+                        // 递归嵌套子菜单
+                        c={v.items ? <Dropdown items={v.items} click={props.click} pre_value={props.pre_value} /> : null}
+                    />
+                </React.Fragment>
+            ))}
+        </div>
+    );
 }
 
 export function Overlay(props: { click: () => void, className?: string }) {

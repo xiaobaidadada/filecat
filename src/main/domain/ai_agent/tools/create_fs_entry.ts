@@ -11,7 +11,7 @@ export const create_fs_entry_schema = {
             properties: {
                 path: {
                     type: "string",
-                    description: "文件或目录绝对路径"
+                    description: "绝对路径的文件或目录"
                 },
                 type: {
                     type: "string",

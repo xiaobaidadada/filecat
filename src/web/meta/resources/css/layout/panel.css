@@ -26,8 +26,8 @@
 }
 
 .dropdown_item {
-    padding-top:.3rem;
-    padding-bottom:.3rem;
+    /*padding-top:.3rem;*/
+    /*padding-bottom:.3rem;*/
     /*padding-left:.2rem;*/
     width:100%;
     margin:0;
@@ -49,7 +49,7 @@ body.rtl .dropdown {
     /*border-bottom: 1px solid #ccc;*/
     /*padding-top: .3rem;*/
     /*padding-bottom: .3rem;*/
-    padding-left: .2rem;
+    /*padding-left: .2rem;*/
     word-break: break-all;
     /*margin: 3px 3px 3px 0;*/
 }
