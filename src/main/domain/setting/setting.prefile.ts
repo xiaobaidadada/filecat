@@ -5,7 +5,6 @@ export const router_pre_file =
 /**
 * pre import
 * 1. fs path cache_map( a map object use to cache)
-* 2. needle (to http https://www.npmjs.com/package/needle)
 */
 
 class Api {  
@@ -30,7 +29,6 @@ export const self_auth_open_js_code_file =
 /**
 * pre import
 * 1. fs path cache_map( a map object use to cache)
-* 2. needle (to http https://www.npmjs.com/package/needle)
 */
  class Api {  
     
@@ -53,7 +51,6 @@ export const self_shell_cmd_check_js_code_file =
 /**
 * pre import
 * 1. fs path cache_map( a map object use to cache)
-* 2. needle (to http https://www.npmjs.com/package/needle)
 */
  class Api {  
     

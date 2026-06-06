@@ -1,5 +1,4 @@
 import {job_item, running_type, step_item} from "../../../../common/req/file.req";
-import needle from "needle";
 import vm from "node:vm";
 import path from "path";
 import {work_children} from "./workflow.service";
@@ -10,7 +9,6 @@ const Mustache = require('mustache');
 
 const frozenEnv = Object.freeze({...process.env});
 const sandbox = {
-    needle: needle, // needle http 请求工具
     fetch,
     sys_env: frozenEnv
     // fs: fs,

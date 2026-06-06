@@ -1,8 +1,8 @@
-import needle from "needle";
-import {ai_agent_params_type} from "./ai_agent.constant";
+import axios from "axios";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { ai_agent_params_type } from "./ai_agent.constant";
 
-
-export const http_request_schema:ai_agent_params_type = {
+export const http_request_schema: ai_agent_params_type = {
     type: "function",
     function: {
         name: "http_request",
@@ -40,14 +40,17 @@ export const http_request_schema:ai_agent_params_type = {
                 },
                 max_length: {
                     type: "number",
-                    description: "最大返回字符数，超出将被截断，默认 8000,-1s是不截断"
+                    description: "最大返回字符数，超出将被截断，默认 8000, -1 是不截断"
+                },
+                proxy: {
+                    type: "string",
+                    description: "HTTP 代理地址，例如 http://127.0.0.1:7890"
                 }
             },
             required: ["url"]
         }
     }
-}
-
+};
 
 export const http_request_tool = async ({
                                             url,
@@ -56,7 +59,8 @@ export const http_request_tool = async ({
                                             query,
                                             body,
                                             timeout = 10000,
-                                            max_length = 8000
+                                            max_length = 8000,
+                                            proxy
                                         }: {
     url: string;
     method?: string;
@@ -65,75 +69,77 @@ export const http_request_tool = async ({
     body?: any;
     timeout?: number;
     max_length?: number;
+    proxy?: string;
 }) => {
-
-    // ---------- URL ----------
+    // ---------- URL 处理 ----------
     const u = new URL(url);
-
     if (query) {
         for (const [k, v] of Object.entries(query)) {
             u.searchParams.set(k, String(v));
         }
     }
 
-    const finalUrl = u.toString();
-
-    // ---------- request options ----------
-    const options: any = {
+    // ---------- Axios 配置 ----------
+    const config: any = {
+        url: u.toString(),
+        method: method.toUpperCase(),
         headers: {
             "User-Agent": "ai-agent/1.0",
             ...headers
         },
-        timeout: timeout,
-        follow_max: 5,
-        parse: false // 我们自己处理 body
+        timeout: timeout, // axios 的 timeout 覆盖整个请求流程
+        data: body,
+        responseType: 'text', // 强制获取文本，方便后续截断处理
+        validateStatus: () => true // 允许所有状态码通过，方便由我们自己处理错误
     };
 
+    // 配置代理
+    if (proxy) {
+        const agent = new HttpsProxyAgent(proxy);
+        config.httpAgent = agent;
+        config.httpsAgent = agent;
+    }
+
     try {
-        const res = await needle(
-            method.toUpperCase() as any,
-            finalUrl,
-            body ?? undefined,
-            options
-        );
+        const res = await axios(config);
 
-        let text = "";
-
-        if (Buffer.isBuffer(res.body)) {
-            text = res.body.toString("utf8");
-        } else if (typeof res.body === "string") {
-            text = res.body;
-        } else {
-            text = JSON.stringify(res.body);
-        }
+        // ---------- 响应处理 ----------
+        let text = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
 
         if (max_length >= 0 && text.length > max_length) {
-            text =
-                text.slice(0, max_length) +
-                "\n\n...（响应内容过长，已截断）";
+            text = text.slice(0, max_length) + "\n\n...（响应内容过长，已截断）";
         }
 
-        const headersObj: Record<string, string> = {};
-        for (const [k, v] of Object.entries(res.headers || {})) {
-            headersObj[k] = String(v);
-        }
-
-        return JSON.stringify(
-            {
-                status: res.statusCode,
-                statusText: res.statusMessage,
-                headers: headersObj,
-                body: text
-            },
-            null,
-            2
-        );
+        return JSON.stringify({
+            status: res.status,
+            statusText: res.statusText,
+            headers: res.headers,
+            body: text
+        }, null, 2);
 
     } catch (e: any) {
-        // needle 错误统一处理
+        // Axios 错误处理 (如网络连接失败、超时等)
         return JSON.stringify({
-            error: e?.message ?? String(e),
-            code: e?.code
+            error: e.message,
+            code: e.code,
+            status: e.response?.status
         });
     }
-}
+};
+
+// async function runTests() {
+//     console.log("--- 开始测试 (Axios版) ---");
+//     try {
+//         const res = await http_request_tool({
+//             url: "https://www.google.com",
+//             proxy: "http://127.0.0.1:3067",
+//             timeout: 5000
+//         });
+//         const parsed = JSON.parse(res);
+//         console.log("状态码:", parsed.status);
+//     } catch (err) {
+//         console.error("测试运行出错:", err);
+//     }
+// }
+// runTests();
+//
