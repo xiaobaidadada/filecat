@@ -466,7 +466,7 @@ export class work_children {
                 // 再执行一次自己
                 workflow_util.reset_all_step_status(job)
                 await CommonUtil.sleep(100);
-                this.run_job(job);
+                await this.run_job(job);
                 console.log('run again job')
                 return
             }

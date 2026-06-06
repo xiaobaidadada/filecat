@@ -566,7 +566,7 @@ export class Ai_agentService {
        try {
            await chat_core.chat({
                originMessages: workMessages,
-               token,
+               user_id:userId,
                controller,
                on_msg: (msg) => {
                    assistantText += msg;

@@ -639,6 +639,12 @@ export class SettingService {
         // this.update_files_setting = null;
     }
 
+    public getFileRootPathById(user_id: string): string {
+        const user_data = userService.get_user_info_by_user_id(user_id);
+        return get_user_now_pwd(user_data)
+    }
+
+
     public getFileRootPath(token: string): string {
         // const obj = Cache.getValue(token);
         // const index = obj ? obj["root_index"] ?? null : null;

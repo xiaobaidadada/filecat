@@ -15,7 +15,8 @@ import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
-    token: string;
+    // token?: string;
+    user_id:string;
     controller: AbortController;
     on_msg: (msg: string) => void;
     on_end: (stats?: { input_chars: number; output_chars: number }) => void;
@@ -26,7 +27,7 @@ export interface ChatOptions {
 export class ChatCore {
 
     // 检测权限 补充参数
-    private async permission_test(token, user: UserData, toolName, args: any, cwd) {
+    private async permission_test(user_id, user: UserData, toolName, args: any, cwd) {
         switch (toolName) {
             case "exec_cmd": {
                 args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
@@ -51,7 +52,7 @@ export class ChatCore {
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }
-                userService.check_user_path(token, args.path);
+                userService.check_user_path_by_user_id(user_id, args.path);
                 break;
 
             case "edit_file":
@@ -59,10 +60,13 @@ export class ChatCore {
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }
-                userService.check_user_path(token, args.path);
-                userService.check_user_auth(
-                    token,
-                    UserAuth.filecat_file_delete_cut_rename
+                userService.check_user_path_by_user_id(user_id, args.path);
+                userService.check_user_auth_by_user_id(
+                    user_id,
+                    UserAuth.filecat_file_delete_cut_rename,
+                    {
+                        auto_throw: true,
+                    }
                 );
                 break;
         }
@@ -74,7 +78,8 @@ export class ChatCore {
     public async chat(options: ChatOptions) {
         const {
             originMessages,
-            token,
+            // token,
+            user_id,
             controller,
             on_msg,
             on_end,
@@ -89,8 +94,8 @@ export class ChatCore {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
 
-        const user = userService.get_user_info_by_token(token);
-        const rootPath = settingService.getFileRootPath(token);
+        const user = userService.get_user_info_by_user_id(user_id);
+        const rootPath = settingService.getFileRootPathById(user_id);
 
         const workMessages: ai_agent_messages = [
             {
@@ -232,7 +237,7 @@ ${sys_prompt ?? ''}
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
-                        await this.permission_test(token, user, toolName, args, cwd);
+                        await this.permission_test(user_id, user, toolName, args, cwd);
 
                         on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params()}\n\r`)
                         let result = await ai_agentService.callTool(toolName, args);

@@ -14,10 +14,11 @@ export class ai_agent_class {
     pty: PtyShell;
 
     messages: ai_agent_messages;
-    token: string;
+    // token: string;
     userId: string;
     sessionId: string;
     isTemporarySession: boolean = false;
+    is_once = false;
 
     controller = new AbortController();
 
@@ -70,12 +71,14 @@ export class ai_agent_class {
         for (const param of params) {
             if (param === '--temp' || param === '-t') {
                 this.isTemporarySession = true;
-            } else {
+            } else if( param === '--once') {
+                this.is_once = true;
+            }else {
                 filteredParams.push(param);
             }
         }
-        
-        this.token = filteredParams[filteredParams.length - 1];
+
+        this.userId = filteredParams[filteredParams.length - 1];
         const messages: string[] = [];
         
         for (let i = 0; i < filteredParams.length - 1; i++) {
@@ -100,7 +103,7 @@ export class ai_agent_class {
             }
         }
         
-        this.userId = userService.get_user_info_by_token(this.token).id;
+        // this.userId = userService.get_user_info_by_token(this.token).id;
         
         // 如果有 --new 参数，创建临时会话（不持久化）
         if (this.isTemporarySession) {
@@ -156,7 +159,8 @@ export class ai_agent_class {
         try {
             await chat_core.chat({
                 originMessages: this.messages,
-                token: this.token,
+                // token: this.token,
+                user_id:this.userId,
                 controller: this.controller,
 
                 // stream output：将 Markdown 转为 ANSI 后写入终端
@@ -197,6 +201,9 @@ export class ai_agent_class {
                         }
                     }
                     this.system_line = "";
+                    if(this.is_once) {
+                        this.kill()
+                    }
                 },
                 sys_prompt: sysPrompt,
                 cwd: this.pty.cwd,

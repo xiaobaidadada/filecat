@@ -165,7 +165,7 @@ export class ShellService {
         }
     }
 
-    add_handle_for_type_shell(pty_shell: PtyShell, ws_send?: (data) => void) {
+    add_handle_for_type_shell(pty_shell: PtyShell) {
         pty_shell.add_cmd_handle(filecat_cmd.filecat_restart, async (params, send) => {
             ChildProcessUtil.send_father(filecat_cmd.filecat_restart)
         })
@@ -207,7 +207,7 @@ export class ShellService {
                         return exec_type.auto_child_process
                     }
                 case filecat_cmd.ai:
-                    params.push(token)
+                    params.push(user_id)
                     if (!this.check_permission({token, user_id, permission: UserAuth.ai_chat_cmd})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
@@ -305,7 +305,7 @@ export class ShellService {
         ptyShell.check_exe_cmd = this.check_exe_cmd({
             token: (data.wss as Wss).token, pty_shell:ptyShell,
         })
-        this.add_handle_for_type_shell(ptyShell, (data.wss as Wss).sendData.bind(data.wss))
+        this.add_handle_for_type_shell(ptyShell)
         ptyShell.cmd_exe_auto_completion = (exe) => {
             // 系统命令检测
             let v = word_detection.detection_next_one_word(exe, ".");
