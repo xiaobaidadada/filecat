@@ -57,6 +57,7 @@ export class ChatCore {
 
             case "edit_file":
             case "create_fs_entry":
+            case "apply_patch":
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }

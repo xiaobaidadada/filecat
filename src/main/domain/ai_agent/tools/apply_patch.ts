@@ -1,96 +1,79 @@
 import { readFile, writeFile, unlink } from "fs/promises";
 import * as Diff from "diff";
-import { FileUtil } from "../../file/FileUtil";
 import path from "path";
 import fs from "fs";
+import { FileUtil } from "../../file/FileUtil";
 
-/**
- * 健壮的补丁解析器
- */
-function parseCustomPatch(patchText: string) {
-    const operations: any[] = [];
-    const blocks = patchText.split(/\*\*\* /).filter(b => b.trim() !== "");
-
-    for (const block of blocks) {
-        const lines = block.split('\n');
-        const header = lines[0].trim();
-        const content = lines.slice(1).join('\n').trim();
-
-        if (header.startsWith('Add File:')) {
-            operations.push({ type: 'add', path: header.replace('Add File:', '').trim(), content });
-        } else if (header.startsWith('Delete File:')) {
-            operations.push({ type: 'delete', path: header.replace('Delete File:', '').trim() });
-        } else if (header.startsWith('Update File:')) {
-            operations.push({ type: 'update', path: header.replace('Update File:', '').trim(), content });
-        }
+export const apply_patch_tool = async ({ path: targetPath, text: patchText }: { path: string, text: string }) => {
+    // 1. 严格校验绝对路径
+    if (!path.isAbsolute(targetPath)) {
+        return { ok: false, error: `路径必须是完整的绝对路径: ${targetPath}` };
     }
-    return operations;
-}
 
-export const apply_patch_tool = async ({ patchText }: { patchText: string }) => {
-    const operations = parseCustomPatch(patchText);
-    const results = [];
+    if (!await FileUtil.access(targetPath)) {
+        return { ok: false, error: `文件不存在: ${targetPath}` };
+    }
 
-    for (const op of operations) {
-        // 校验是否为绝对路径
-        if (!path.isAbsolute(op.path)) {
-            return { ok: false, error: `路径必须是绝对路径: ${op.path}` };
-        }
+    // 2. 解析补丁文本
+    const patches = Diff.parsePatch(patchText);
+    if (!patches || patches.length === 0) {
+        return { ok: false, error: "无法解析补丁内容，请确保提供的是标准的 Unified Diff 格式" };
+    }
+
+    // 3. 限制一次只能处理一个文件
+    if (patches.length > 1) {
+        return { ok: false, error: "该工具一次只能修改一个文件，请针对每个文件分别调用本工具" };
+    }
+
+    const patch = patches[0];
+
+    try {
+        // 读取原文并备份
+        const original = await readFile(targetPath, 'utf-8');
+        const backupPath = `${targetPath}.bak`;
+        await writeFile(backupPath, original);
 
         try {
-            switch (op.type) {
-                case 'add':
-                    await writeFile(op.path, op.content, 'utf-8');
-                    results.push(`已创建: ${op.path}`);
-                    break;
+            // 4. 将补丁应用到目标文件
+            const patched = Diff.applyPatch(original, patch);
 
-                case 'delete':
-                    await FileUtil.remove(op.path);
-                    results.push(`已删除: ${op.path}`);
-                    break;
-
-                case 'update':
-                    if (!fs.existsSync(op.path)) throw new Error(`文件不存在: ${op.path}`);
-
-                    const original = await readFile(op.path, 'utf-8');
-                    const backupPath = `${op.path}.bak`;
-                    await writeFile(backupPath, original);
-
-                    try {
-                        const patched = Diff.applyPatch(original, op.content);
-                        if (patched === false) throw new Error(`补丁内容无法与当前文件匹配`);
-                        await writeFile(op.path, patched, 'utf-8');
-                        await unlink(backupPath);
-                        results.push(`已更新: ${op.path}`);
-                    } catch (err: any) {
-                        await writeFile(op.path, original);
-                        await unlink(backupPath);
-                        throw err;
-                    }
-                    break;
+            if (patched === false) {
+                throw new Error(`补丁上下文无法与当前文件匹配，请检查是否基于最新代码生成`);
             }
-        } catch (error: any) {
-            return { ok: false, error: `操作 ${op.type} 失败: ${error.message}` };
-        }
-    }
 
-    return { ok: true, message: `操作完成: ${results.join(', ')}` };
+            await writeFile(targetPath, patched, 'utf-8');
+            await unlink(backupPath);
+            return { ok: true, message: `操作完成: 已成功更新文件 ${targetPath}` };
+
+        } catch (err: any) {
+            // 应用失败时回滚
+            await writeFile(targetPath, original);
+            await unlink(backupPath);
+            throw err;
+        }
+    } catch (error: any) {
+        return { ok: false, error: `更新文件 ${targetPath} 失败: ${error.message}` };
+    }
 };
 
 export const apply_patch_schema = {
     type: "function",
     function: {
         name: "apply_patch",
-        description: "高级补丁应用工具。所有路径参数必须使用完整的绝对路径。",
+        description: "高级代码补丁应用工具，一次仅限修改一个文件。必须使用标准的 Unified Diff 格式修改现有文件。",
         parameters: {
             type: "object",
             properties: {
-                patchText: {
+                path: {
                     type: "string",
-                    description: "包含 *** Add/Delete/Update File (必须是绝对路径) 的补丁块。"
+                    description: "要修改的目标文件的完整绝对路径"
+                },
+                text: {
+                    type: "string",
+                    description: "仅针对该文件的标准 Unified Diff 格式文本。请提供上下文信息（@@ -x,y +x,y @@）以便准确匹配。"
                 }
             },
-            required: ["patchText"]
+            required: ["path", "text"]
         }
     }
 };
