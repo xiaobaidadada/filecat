@@ -1,43 +1,50 @@
-import dgram from "dgram";
-import {tcp_stream_util} from "./tcp_stream_util";
 import crypto from "crypto";
 import {tcp_raw_socket} from "./tcp.client";
 import net from "net";
 
+export type handle_msg = (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+
 // 完全限制了一种类型的服务器中的消息可以访问另一种类型的服务的函数的可能性
 export const msgServerMap: Partial<{
     [K in tcp_server_type]: Partial<{
-        [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+        [M in NetMsgType]: handle_msg
     }>
 }> = {};
 
 // 客户端既然想要连接服务器了 就是信任服务器的 这里校验小一点 代码也少一点好写一点
 export const msgClientMap:Partial<{
-    [M in NetMsgType]: (data: Buffer, util: tcp_raw_socket, tag_id?: number) => void
+    [M in NetMsgType]: handle_msg
 }> = {};
-
-
 
 
 
 export function tcp_server_msg(msg:NetMsgType,type:tcp_server_type) {
     return (target: any, key: string, descriptor: PropertyDescriptor)=>{
-        if(!msgServerMap[type]) {
-            msgServerMap[type] = {}
-        }
-        const p = msgServerMap[type][msg];
+        const p = msgServerMap?.[type]?.[msg];
         const obj = p??new target.constructor();
-        msgServerMap[type][msg] = obj[key].bind(obj)
+        tcp_server_msg_add(msg,type,obj[key].bind(obj))
     }
+}
+
+export function tcp_server_msg_add(msg:NetMsgType,type:tcp_server_type,fun:handle_msg) {
+    if(!msgServerMap[type]) {
+        msgServerMap[type] = {}
+    }
+    msgServerMap[type][msg] = fun
 }
 
 export function tcp_client_msg(msg:NetMsgType) {
     return (target: any, key: string, descriptor: PropertyDescriptor)=>{
         const p = msgClientMap[msg];
         const obj = p??new target.constructor();
-        msgClientMap[msg] = obj[key].bind(obj)
+        // msgClientMap[msg] = obj[key].bind(obj)
         // msgClientMap.set(msg,obj[key].bind(obj))
+        tcp_client_msg_add(msg, obj[key].bind(obj))
     }
+}
+
+export function tcp_client_msg_add(msg:NetMsgType,fun:handle_msg) {
+    msgClientMap[msg] = fun
 }
 
 export enum tcp_server_type {

@@ -113,7 +113,7 @@ let base_url:string; // 前后端
 let parsed = false
 async function  init_pre_path() {
     if(!parsed) {
-        await Env.parseArgs()
+        Env.parseArgs()
         parsed = true
     }
     if (process.env.NODE_ENV === "production") {

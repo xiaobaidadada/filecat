@@ -63,6 +63,12 @@ const tasksLister = new Listr(
             }
         },
         {
+            title:"编译plugin到build/plugin目录",
+            task:async ()=>{
+                execSync("npx tsc -p tsconfig.plugin.json")
+            }
+        },
+        {
             title:"子线程构建",
             task:async ()=>{
                 return  Promise.all([new Promise((res, rej) => {

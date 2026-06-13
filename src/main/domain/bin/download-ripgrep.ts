@@ -82,7 +82,7 @@ function findBinary(dir) {
 // --------------------
 export async function download_ripgrep() {
   if (fs.existsSync(RG_PATH)) {
-    console.log("[ripgrep] exists, skip")
+    // console.log("[ripgrep] exists, skip")
     return
   }
 

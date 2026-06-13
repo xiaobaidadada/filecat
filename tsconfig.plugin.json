@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "outDir": "./build/plugin",
+    "declaration": true,
+    "declarationMap": false,
+    "strict": false,
+    "sourceMap": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/plugin"],
+  "exclude": ["build", "node_modules"]
+}

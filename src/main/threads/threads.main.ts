@@ -120,9 +120,9 @@ export class ThreadsMain {
      * 关闭所有 worker
      */
     public  async close() {
-        console.log('[main] closing all workers...');
+        // console.log('[main] closing all workers...');
         await this.forceTerminateAll()
-        console.log('[main] all workers closed');
+        // console.log('[main] all workers closed');
     }
 
 
@@ -222,7 +222,7 @@ export class ThreadsMain {
     }
 
     private async forceTerminateAll() {
-        console.log('[main] force terminating all workers...');
+        // console.log('[main] force terminating all workers...');
 
         this.running = false; // 防止 exit 自动重启
 
@@ -237,11 +237,11 @@ export class ThreadsMain {
             resolve(null); // 不执行就会有内存泄露
         })
         this.pending_resolves.clear();
-        console.log('[main] workers force terminated');
+        // console.log('[main] workers force terminated');
     }
 
     public async restart() {
-        console.log('[main] restarting worker pool...');
+        // console.log('[main] restarting worker pool...');
         await this.forceTerminateAll();
         // 等待事件循环释放
         await new Promise(resolve => setTimeout(resolve, 100));

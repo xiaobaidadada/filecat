@@ -121,10 +121,10 @@ export class ShellService {
                                 PATH_file_total++;
                             }
                         } else {
-                            console.log('path加载 路径存在，但它不是一个目录');
+                            console.log('path环境变量加载 路径存在，但它不是一个目录');
                         }
                     } else {
-                        console.log('path加载 目录不存在', item);
+                        // console.log('path加载 目录不存在', item);
                     }
                 } catch (err) {
                     console.error('path加载 检查目录时发生错误:', err);

@@ -33,6 +33,8 @@ import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
+import {plug_item, Plugin, PluginMeta} from "../../../plugin";
+import {Env} from "../../../common/node/Env";
 const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
@@ -945,6 +947,70 @@ export class SettingService {
         }
     }
 
+    // ============ 插件管理 ============
+
+    /**
+     * 插件配置项
+     */
+
+    running_plugin_list:Plugin[] = []
+
+    get_plugin_list(): plug_item[] {
+        return DataUtil.get(data_common_key.filecat_plugin_list) ?? [];
+    }
+
+
+    async save_plugin_list(list: plug_item[]) {
+        for (const item of list) {
+            if (!item.name) {
+                throw '插件名称不能为空';
+            }
+            if (!item.path) {
+                throw '插件路径不能为空';
+            }
+        }
+        DataUtil.set(data_common_key.filecat_plugin_list, list);
+        await this.close_all_plugin()
+        await this.load_all_plugin()
+        return Sucess('保存成功');
+    }
+
+    async load_all_plugin() {
+        this.running_plugin_list = [];
+        const list = this.get_plugin_list()
+        for (const item of list) {
+            try {
+                let plugin_tem:any = require(item.path);
+                let plugin:Plugin
+                if(plugin_tem?.default?.activate) {
+                    // ts 默认导出
+                    plugin = plugin_tem.default;
+                } else {
+                    // js commonjs 导出
+                    plugin = plugin_tem.filecat_plugin
+                }
+                plugin.activate({
+                    env:{
+                        port: Env.port
+                    }
+                });
+                this.running_plugin_list.push(plugin)
+            } catch (e) {
+                console.log(e)
+            }
+        }
+    }
+
+    async close_all_plugin() {
+        for (const plugin of this.running_plugin_list) {
+            try {
+                plugin.deactivate?.()
+            } catch (e) {
+                console.log(e)
+            }
+        }
+    }
+
 }
 
 export const settingService: SettingService = new SettingService();
@@ -952,4 +1018,5 @@ ServerEvent.on("start", (data) => {
     settingService.init();
     settingService.power_on_corn();
     settingService.init_corn();
+    settingService.load_all_plugin().catch(console.error);
 })

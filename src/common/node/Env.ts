@@ -42,16 +42,15 @@ export class Env {
     public static base_url: string; // 本地 dev的时候这个参数没有用  env.j会生效
     public static lan: UserLanguage = "sys";
 
-    public static https_tunnel_server_port: number;
-    public static https_tunnel_server_open:boolean
-    public static https_tunnel_key: string;
-    public static https_tunnel_key_kb_size:number;
-    public static https_tunnel_forbid_regexp:string;
+    // public static https_tunnel_server_port: number;
+    // public static https_tunnel_server_open:boolean
+    // public static https_tunnel_key: string;
+    // public static https_tunnel_key_kb_size:number;
+    // public static https_tunnel_forbid_regexp:string;
 
     // public static watch: boolean = false;
 
-    public static async parseArgs() {
-        return new Promise((resolve, reject) => {
+    public static  parseArgs() {
             const args = process.argv.slice(2);
             const result = {};
 
@@ -136,9 +135,6 @@ export class Env {
             for (const key of Object.keys(result)) {
                 this[key] = result[key];
             }
-            resolve(1);
-            // return result;
-        })
     }
 
     public static updateEnv(list: { key: string, value?: string }[]) {

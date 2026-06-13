@@ -131,6 +131,11 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
  | 超大日志文件查看     |✅|❌|❌|
  | ai agent     |✅|❌|❌|
 
+## 参与开发
+
+1. 请将PR先提交到dev分支
+2. 功能性提交请在qq群先沟通一下
+
 ##  Thanks
 以下项目为 FileCat 提供了灵感或基础
 

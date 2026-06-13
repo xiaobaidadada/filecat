@@ -1,7 +1,6 @@
 
 // 数据库 json 文件
-import {tcp_proxy_client_all_fig, workflow_setting_item} from "../../../common/req/common.pojo";
-import {https_tunnel_server_fig} from "../../../common/req/net.pojo";
+
 
 export enum file_key {
     data = "data.json",
@@ -99,7 +98,8 @@ export enum data_common_key {
     server_bridge_config_list = "server_bridge_config_list",
     ai_agent_status  = "ai_agent_status",
     ai_system_prompts = "ai_system_prompts",
-    https_tunnel_server_fig = "https_tunnel_server_fig",
+    // https_tunnel_server_fig = "https_tunnel_server_fig",
+    filecat_plugin_list = "filecat_plugin_list", // 插件配置列表
 }
 
 

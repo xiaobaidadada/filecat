@@ -5,7 +5,6 @@ import {
     HttpFormPojo,
     HttpProxy,
     HttpProxyITem,
-    https_tunnel_server_fig,
     HttpServerProxy,
     MacProxy,
     NetPojo
@@ -36,7 +35,6 @@ import {NetMsgType, NetUtil, tcp_server_type} from "./util/NetUtil";
 import {NetClientUtil} from "./util/NetClientUtil";
 import {tcp_client, tcp_raw_socket} from "./util/tcp.client";
 import {Env} from "../../../common/node/Env";
-import {https_tunnel} from "./https.tunnel";
 import * as util from "node:util";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { Duplex } from "node:stream";
@@ -862,86 +860,7 @@ export class NetService {
         return DataUtil.get(data_common_key.http_server_key) ?? {open: false, port: 0, list: []};
     }
 
-    public get_https_tunnel_fig():https_tunnel_server_fig {
-        let fig:https_tunnel_server_fig = DataUtil.get(data_common_key.https_tunnel_server_fig)
-        if (fig == null) {
-            fig = {open: false, port: 0, keys: []}
-            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
-            if(Env.https_tunnel_server_open) {
-                fig.open = true;
-                fig.port = Env.https_tunnel_server_port;
-                DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
-            }
-        }
-        fig.keys = fig.keys ?? [];
-        for (const key of fig.keys) {
-            if (key.used_size == null) {
-                key.used_size = 0;
-            }
-            key.forbid_regexp_list = key.forbid_regexp_list ?? [];
-        }
-        if(Env.https_tunnel_key) {
-            let have = false
-            for (const key of fig.keys) {
-                if(key.key === Env.https_tunnel_key) {
-                    have = true
-                    break;
-                }
-            }
-            if( have === false) {
-                const p = {
-                    key: Env.https_tunnel_key,
-                    size: Env.https_tunnel_key_kb_size,
-                    used_size: 0,
-                    forbid_regexp_list: []
-                }
-                if(Env.https_tunnel_forbid_regexp) {
-                    p.forbid_regexp_list.push(Env.https_tunnel_forbid_regexp);
-                }
-                fig.keys.push(p)
-            }
-            DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
-        }
-        return fig;
-    }
 
-    public save_https_tunnel_fig(fig:https_tunnel_server_fig) {
-        DataUtil.set(data_common_key.https_tunnel_server_fig, fig);
-    }
-
-    private start_https_tunnel_traffic_save_timer() {
-        if (this.https_tunnel_traffic_save_timer) {
-            return;
-        }
-        this.https_tunnel_traffic_save_timer = setInterval(() => {
-            https_tunnel.persist_traffic_stats();
-        }, 60 * 1000);
-    }
-
-    private stop_https_tunnel_traffic_save_timer() {
-        if (!this.https_tunnel_traffic_save_timer) {
-            return;
-        }
-        clearInterval(this.https_tunnel_traffic_save_timer);
-        this.https_tunnel_traffic_save_timer = undefined;
-    }
-
-    https_tunnel_server() {
-        const fig = this.get_https_tunnel_fig();
-        if(fig.open) {
-            console.log(`开启 https tunnel服务器 ${fig.port}`)
-            this.start_https_tunnel_traffic_save_timer()
-            NetServerUtil.start_tcp_server(fig.port,tcp_server_type.https_tunnel, NetMsgType.https_tunnel_tcp_connect)
-        }
-        // else {
-        //     // console.log(`关闭 https tunnel服务器 ${fig.port}`)
-        //     https_tunnel.persist_traffic_stats();
-        //     https_tunnel.clear_runtime_traffic_stats();
-        //     this.stop_https_tunnel_traffic_save_timer()
-        //     NetServerUtil.close_server(tcp_server_type.https_tunnel)
-        // }
-
-    }
 }
 
 export const netService: NetService = new NetService();
@@ -953,9 +872,6 @@ ServerEvent.on("start", async (data) => {
             netService.load_server_proxy()
             netService.httpServerStart(req)
         }
-
-        https_tunnel.get_socket_id(); // 加载模块
-        netService.https_tunnel_server()
     } catch (e) {
         console.error('启动虚拟网网络vpn失败', e);
     }

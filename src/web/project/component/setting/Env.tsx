@@ -22,6 +22,7 @@ import {use_auth_check} from "../../util/store.util";
 import {sort} from "../../../../common/ListUtil";
 import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
 import {using_env_prompt} from "./util";
+import {plug_item} from "../../../../plugin";
 
 export function Env() {
     const {t, i18n} = useTranslation();
@@ -34,12 +35,14 @@ export function Env() {
     const [env_path_dir_rows, set_env_path_dir_rows] = useState([] as env_item[]);
     const [workflow_setting_rows, set_workflow_setting_rows] = useState([] as workflow_setting_item[]);
     const [pty_cmd, set_pty_cmd] = useState("");
+    const [plugin_rows, set_plugin_rows] = useState<plug_item>([]);
 
     const headers_outside_software = [t("软件"), t("是否安装"), t("路径")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
     const workflow_setting_headers = [t("编号"), t("文件路径"),t("是否开启"), t("系统启动执行"), t("corn表达式"),t("用户id"),t("备注")];
     const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("是否开启大文件断点"), t("大文件判断大小MB"), t("大文件并发数量"), t("大文件分块大小MB"), t("备注")];
+    const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"),  t("备注")];
     const {check_user_auth} = use_auth_check();
 
     const get_env = async () => {
@@ -84,6 +87,12 @@ export function Env() {
         const result6 = await settingHttp.get("dir_upload_max_num");
         if (result6.code === RCode.Success) {
             set_dir_upload_rows(result6.data ?? []);
+        }
+
+        // 插件配置列表
+        const result7 = await settingHttp.get("plugin/list");
+        if (result7.code === RCode.Success) {
+            set_plugin_rows(result7.data ?? []);
         }
     }
     useEffect(() => {
@@ -186,6 +195,18 @@ export function Env() {
             NotySucess("ok")
             get_workflow_setting_rows()
         }
+    }
+
+    const save_plugin_list = async () => {
+        const result = await settingHttp.post("plugin/list/save", plugin_rows);
+        if (result.code === RCode.Success) {
+            NotySucess(t("保存成功"))
+        }
+    }
+
+    const plugin_rows_del = (index) => {
+        plugin_rows.splice(index, 1);
+        set_plugin_rows([...plugin_rows]);
     }
 
     return (<React.Fragment>
@@ -332,6 +353,41 @@ export function Env() {
                     </CardFull>
 
 
+                    {/* 插件配置管理 */}
+                    <CardFull self_title={<span className={" div-row "}><h2>{t("插件配置")}</h2>
+                        <ActionButton icon={"info"} onClick={() => {
+                            soft_ware_info_click("插件配置")
+                        }} title={"信息"}/></span>}
+                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>{
+                                  set_plugin_rows([...plugin_rows,{name:"",path:"",note:"",open:false,index:plugin_rows.length}])
+                              }}/>
+                                  <ActionButton icon={"save"} title={t("保存")} onClick={save_plugin_list}/></div>}>
+                        <Table headers={plugin_headers} rows={plugin_rows.map((item, index) => {
+                            const new_list = [
+                                <InputText value={item.index} placeholder={index} handleInputChange={(value) => {
+                                    item.index = parseInt(value);
+                                }} no_border={true}/>,
+                                <InputText value={item.name} handleInputChange={(value) => {
+                                    item.name = value;
+                                }} no_border={true}/>,
+                                <InputText value={item.path} handleInputChange={(value) => {
+                                    item.path = value;
+                                }} no_border={true}/>,
+                                <Select value={!!item.open} onChange={(value) => {
+                                    item.open = value
+                                    set_plugin_rows([...plugin_rows])
+                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        no_border={true}/>,
+                                <InputText value={item.note} handleInputChange={(value) => {
+                                    item.note = value;
+                                }} no_border={true}/>,
+                                <ActionButton icon={"delete"} title={t("删除")}
+                                              onClick={() => plugin_rows_del(index)}/>,
+                            ];
+                            return new_list;
+                        })} width={"10rem"}/>
+                    </CardFull>
+
                 </Dashboard>
 
             </Column>
@@ -359,6 +415,7 @@ export function Env() {
                             return new_list;
                         })} width={"10rem"}/>
                     </CardFull>
+
 
                     <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")}
                                                                             onClick={save_outside_software}/>}>

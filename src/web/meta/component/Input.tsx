@@ -320,12 +320,12 @@ export interface SelectProps {
 export function Select(props: SelectProps) {
     const [open, setOpen] = useState(false);
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-    const triggerRef = useRef<HTMLDivElement>(null);  // 绑到触发器
+    const triggerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selected = props.options.find(o => o.value === (props.value ?? props.defaultValue));
 
-    // 点击外部关闭
+    // 点击外部关闭逻辑保持不变
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (
@@ -339,30 +339,44 @@ export function Select(props: SelectProps) {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    const handleOpen = () => {
-        if (props.disabled) return;
-        if (!open && triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
+    // 核心修改：使用 useEffect 在 open 变化时重新计算位置
+    useEffect(() => {
+        if (open && triggerRef.current && dropdownRef.current) {
+            const triggerRect = triggerRef.current.getBoundingClientRect();
+            const dropdownHeight = dropdownRef.current.offsetHeight;
+            const viewportHeight = window.innerHeight;
+
+            // 计算空间
+            const spaceBelow = viewportHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+
+            let top;
+            // 如果下方空间不足，且上方空间足够，则渲染在上方
+            if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+                top = triggerRect.top - dropdownHeight - 4; // 在上方，且保留间距
+            } else {
+                top = triggerRect.bottom + 4; // 默认在下方
+            }
+
             setDropdownStyle({
                 position: "fixed",
-                top: rect.bottom + 4,
-                left: rect.left,
-                width: rect.width,
+                top: top,
+                left: triggerRect.left,
+                width: triggerRect.width,
                 zIndex: 9999,
             });
         }
-        setOpen(o => !o);
+    }, [open]); // 依赖 open 状态
+
+    const handleOpen = () => {
+        if (props.disabled) return;
+        setOpen(!open); // 只负责开关，位置计算交给 useEffect
     };
 
     return (
-        <div
-            className="select_wrapper"
-            style={{ width: props.width || "100%" }}
-        >
+        <div className="select_wrapper" style={{ width: props.width || "100%" }}>
             {props.tip && <p className="input input_left">{props.tip}</p>}
-
             <div className="select_container">
-                {/* 触发器 - ref 移到这里 */}
                 <div
                     ref={triggerRef}
                     className={[
@@ -373,40 +387,20 @@ export function Select(props: SelectProps) {
                     ].join(" ")}
                     onClick={handleOpen}
                 >
-                    <span
-                        className="select_trigger__label"
-                        style={{ color: selected?.color || "inherit" }}
-                    >
-                        {selected?.title ?? selected?.value ?? "请选择"}
+                    <span className="select_trigger__label" style={{ color: selected?.color || "inherit" }}>
+                        {selected?.title ?? selected?.value ?? ""}
                     </span>
-                    <i
-                        className={[
-                            "material-icons",
-                            "select_trigger__icon",
-                            open ? "select_trigger__icon--open" : "",
-                            props.disabled ? "select_trigger__icon--disabled" : "",
-                        ].join(" ")}
-                    >
+                    <i className={["material-icons", "select_trigger__icon", open ? "select_trigger__icon--open" : ""].join(" ")}>
                         expand_more
                     </i>
                 </div>
 
-                {/* 下拉列表 - 用 Portal 渲染到 body */}
                 {open && createPortal(
-                    <div
-                        ref={dropdownRef}
-                        className="select_dropdown"
-                        style={dropdownStyle}
-                    >
+                    <div ref={dropdownRef} className="select_dropdown" style={dropdownStyle}>
                         {props.options.map((item, index) => (
                             <div
                                 key={index}
-                                className={[
-                                    "select_option",
-                                    item.value === (props.value ?? props.defaultValue)
-                                        ? "select_option--selected"
-                                        : "",
-                                ].join(" ")}
+                                className={["select_option", item.value === (props.value ?? props.defaultValue) ? "select_option--selected" : ""].join(" ")}
                                 style={{ color: item.color || "#111" }}
                                 onClick={() => {
                                     props.onChange(item.value);

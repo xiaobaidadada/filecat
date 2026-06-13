@@ -52,7 +52,7 @@ const compression = require('compression'); // webpack-dev-server 包含的有
 
 export async function start_main() {
 
-    await Env.parseArgs();
+    Env.parseArgs();
     await init_pre()
     DataUtil.handle_history_data();
     await userService.root_init();

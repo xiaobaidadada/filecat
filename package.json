@@ -1,8 +1,17 @@
 {
   "name": "filecat",
-  "version": "5.72.4",
-  "description": "FileCat Server Manager",
+  "version": "6.0.0",
+  "description": "FileCat File Browser Server Manager",
   "author": "xiaobaidadada",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:xiaobaidadada/filecat.git"
+  },
+  "homepage": "https://github.com/xiaobaidadada/filecat",
+  "bugs": {
+    "url": "https://github.com/xiaobaidadada/filecat/issues"
+  },
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "ts-node --transpile-only  ./shell/dev.js --env ./env",
     "server-debug-js": "tsc && node build/server/main/server.js --env ./env",
@@ -15,6 +24,7 @@
     "i-dev": "npm i --omit=dev",
     "build": "npm run npm-build",
     "build-ts": "tsc",
+    "build-ts-plugin": "tsc -p tsconfig.plugin.json",
     "web-build-test": "tsc && npx webpack  --config shell/config/webpack.web.config.js",
     "server-build-test": "tsc && npx webpack --config shell/config/webpack.npm.config.js",
     "npm-build": "node shell/build.js npm",
@@ -27,18 +37,6 @@
     "test": "prebuild --upload-files-gz filecat-linux --set-version \"\" -u 11234 ",
     "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2"
   },
-  "bin": {
-    "filecat": "shell/filecat"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:xiaobaidadada/filecat.git"
-  },
-  "homepage": "https://github.com/xiaobaidadada/filecat",
-  "bugs": {
-    "url": "https://github.com/xiaobaidadada/filecat/issues"
-  },
-  "license": "Apache-2.0",
   "optionalDependencies": {
     "@xiaobaidadada/dockerode": "^4.0.9",
     "@xiaobaidadada/node-pty-prebuilt": "^1.1.0",
@@ -169,6 +167,11 @@
     "docker",
     "ddns"
   ],
+  "bin": {
+    "filecat": "shell/filecat"
+  },
+  "types": "build/plugin/index.d.ts",
+  "main": "build/plugin/index.js",
   "files": [
     "build/**/*",
     "shell",

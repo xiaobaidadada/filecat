@@ -467,4 +467,18 @@ export class SettingController {
         settingService.save_workflow_setting(req);
         return Sucess("1");
     }
+
+    // ============ 插件管理 API ============
+
+    @Get("/plugin/list")
+    async get_plugin_list(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+        return Sucess(settingService.get_plugin_list());
+    }
+
+    @Post("/plugin/list/save")
+    async save_plugin_list(@Body() req: any, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+        return settingService.save_plugin_list(req);
+    }
 }
