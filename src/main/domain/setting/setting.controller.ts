@@ -349,7 +349,7 @@ export class SettingController {
     // 获取保护目录
     @Get("/protection_dir")
     protectionDirGet(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.protectionDirGet(ctx.headers.authorization));
     }
 
@@ -363,7 +363,7 @@ export class SettingController {
     // 获取保护目录
     @Get("/protection_dir/sys")
     protectionSysDirGet(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.protectionSysDirGet());
     }
 
@@ -378,7 +378,7 @@ export class SettingController {
     // 获取并发数量限制
     @Get("/dir_upload_max_num")
     get_dir_upload_max_num(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.get_dir_upload_max_num());
     }
 
