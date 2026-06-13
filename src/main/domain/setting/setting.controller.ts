@@ -195,7 +195,7 @@ export class SettingController {
     // 获取文件设置
     @Get("/filesSetting")
     getFilesSetting(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        // userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.getFilesSetting(ctx.headers.authorization));
     }
 
