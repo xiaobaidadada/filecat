@@ -989,10 +989,17 @@ export class SettingService {
                     // js commonjs 导出
                     plugin = plugin_tem.filecat_plugin
                 }
+                const params = {}
+                if(item.params) {
+                    Env.load(item.params, params);
+                }
                 plugin.activate({
                     env:{
-                        port: Env.port
-                    }
+                        port: Env.port,
+                        work_dir: Env.work_dir,
+                        version:process.env.version
+                    },
+                    params
                 });
                 this.running_plugin_list.push(plugin)
             } catch (e) {

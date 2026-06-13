@@ -1,5 +1,8 @@
 import React, {useState} from 'react';
 import {MaterialIcon} from "material-icons";
+import {useRecoilState} from "recoil";
+import {$stroe} from "../../project/util/store";
+import {editor_data} from "../../project/util/store.util";
 
 
 export function ButtonLittle(props:{text:string,clickFun?:()=>void}) {
@@ -52,6 +55,21 @@ export function ActionButton(props:{icon?:MaterialIcon,title:string,onClick?:(ev
     );
 }
 
+export function AceButton(props:{icon?:MaterialIcon,title?:string,value?:string,save:(value:string) => void,model?:string }) {
+    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    return <ActionButton icon={props.icon} title={props.title} onClick={() => {
+        editor_data.set_value_temp(props.value ?? '')
+        setEditorSetting({
+            model: props.model??"ace/mode/ini",
+            open: true,
+            fileName: "",
+            save:async (context)=>{
+                props.save(context);
+                editor_data.set_value_temp('')
+            }
+        })
+    }}/>
+}
 
 export default function Switch({
                                    checked,

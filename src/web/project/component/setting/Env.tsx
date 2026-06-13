@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useRef, useState} from 'react'
 import {Column, Dashboard, Row, RowColumn} from "../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
+import {AceButton, ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
@@ -42,7 +42,7 @@ export function Env() {
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
     const workflow_setting_headers = [t("编号"), t("文件路径"),t("是否开启"), t("系统启动执行"), t("corn表达式"),t("用户id"),t("备注")];
     const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("是否开启大文件断点"), t("大文件判断大小MB"), t("大文件并发数量"), t("大文件分块大小MB"), t("备注")];
-    const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"),  t("备注")];
+    const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"),t("params"),  t("备注")];
     const {check_user_auth} = use_auth_check();
 
     const get_env = async () => {
@@ -359,14 +359,12 @@ export function Env() {
                             soft_ware_info_click("插件配置")
                         }} title={"信息"}/></span>}
                               titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>{
-                                  set_plugin_rows([...plugin_rows,{name:"",path:"",note:"",open:false,index:plugin_rows.length}])
+                                  set_plugin_rows([...plugin_rows,{name:"",path:"",note:"",open:false}])
                               }}/>
                                   <ActionButton icon={"save"} title={t("保存")} onClick={save_plugin_list}/></div>}>
                         <Table headers={plugin_headers} rows={plugin_rows.map((item, index) => {
                             const new_list = [
-                                <InputText value={item.index} placeholder={index} handleInputChange={(value) => {
-                                    item.index = parseInt(value);
-                                }} no_border={true}/>,
+                                index,
                                 <InputText value={item.name} handleInputChange={(value) => {
                                     item.name = value;
                                 }} no_border={true}/>,
@@ -376,8 +374,15 @@ export function Env() {
                                 <Select value={!!item.open} onChange={(value) => {
                                     item.open = value
                                     set_plugin_rows([...plugin_rows])
-                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                }} options={[
+                                    {title: t("是"), value: true},
+                                    {title: t("否"), value: false}
+                                ]}
                                         no_border={true}/>,
+                                <AceButton icon={"edit"} save={ async (value: string)=>  {
+                                    item.params = value
+                                    await save_plugin_list()
+                                }} title={""} />,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,

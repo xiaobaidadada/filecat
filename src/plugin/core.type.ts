@@ -5,6 +5,7 @@ export interface plug_item {
     note?: string;
     open:boolean;
     name:string;
+    params?:string;
 }
 
 /**
@@ -36,7 +37,10 @@ export interface PluginMeta {
 export interface PluginContext {
     env: {
         port: number;
-    }
+        work_dir: string;
+        version:string;
+    },
+    params: { [key: string]: any };
 }
 
 /**
