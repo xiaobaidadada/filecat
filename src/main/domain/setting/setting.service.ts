@@ -980,7 +980,7 @@ export class SettingService {
         const list = this.get_plugin_list()
         for (const item of list) {
             try {
-                let plugin_tem:any = require(item.path);
+                let plugin_tem:any = eval("require")(item.path);
                 let plugin:Plugin
                 if(plugin_tem?.default?.activate) {
                     // ts 默认导出
