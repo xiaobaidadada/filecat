@@ -195,6 +195,7 @@ export class SettingController {
     // 获取文件设置
     @Get("/filesSetting")
     getFilesSetting(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.getFilesSetting(ctx.headers.authorization));
     }
 
@@ -317,8 +318,9 @@ export class SettingController {
     }
 
     @Get("/pty_cmd")
-    get_pty_cmd() {
+    get_pty_cmd( @Req() ctx) {
         const list = settingService.get_pty_cmd();
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(list.join(" "));
     }
 
@@ -331,7 +333,8 @@ export class SettingController {
 
     // path路径
     @Get("/env/path/get")
-    getEnvPath() {
+    getEnvPath(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.get_en_path_list());
     }
 
@@ -346,6 +349,7 @@ export class SettingController {
     // 获取保护目录
     @Get("/protection_dir")
     protectionDirGet(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.protectionDirGet(ctx.headers.authorization));
     }
 
@@ -359,6 +363,7 @@ export class SettingController {
     // 获取保护目录
     @Get("/protection_dir/sys")
     protectionSysDirGet(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.protectionSysDirGet());
     }
 
@@ -373,6 +378,7 @@ export class SettingController {
     // 获取并发数量限制
     @Get("/dir_upload_max_num")
     get_dir_upload_max_num(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.get_dir_upload_max_num());
     }
 
@@ -458,12 +464,13 @@ export class SettingController {
 
     @Get("/workflow_setting_get")
     workflow_setting_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.get_workflow_setting());
     }
 
     @Post("/workflow_setting_save")
     workflow_setting_save(@Body() req: any, @Req() ctx) {
-        // userService.check_user_auth(ctx.headers.authorization, UserAuth.dir_upload_max_num);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.workflow_job);
         settingService.save_workflow_setting(req);
         return Sucess("1");
     }
@@ -472,13 +479,13 @@ export class SettingController {
 
     @Get("/plugin/list")
     async get_plugin_list(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return Sucess(settingService.get_plugin_list());
     }
 
     @Post("/plugin/list/save")
     async save_plugin_list(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return settingService.save_plugin_list(req);
     }
 }
