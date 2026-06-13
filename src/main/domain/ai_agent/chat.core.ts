@@ -289,6 +289,8 @@ ${sys_prompt ?? ''}
             tools.push(ai_tools_search_docs);
         }
         tools.push(...ai_agentService.getMcpTools());
+        // 合并插件工具
+        tools.push(...ai_agentService.getPluginToolSchemas());
 
         const json_body: any = {
             messages,

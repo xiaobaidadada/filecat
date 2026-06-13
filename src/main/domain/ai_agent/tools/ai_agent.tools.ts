@@ -71,7 +71,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     search_in_files: {
         get_name: () => "search in file",
         get_params: (args) => {
-            return `path： ${args.path}`
+            return `path： ${args.path} pattern ${args.pattern}`
         }
     },
     create_fs_entry: {

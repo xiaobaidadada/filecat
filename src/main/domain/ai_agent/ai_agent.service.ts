@@ -1,3 +1,4 @@
+import {AiToolItem} from "../../../plugin";
 import {ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
@@ -615,6 +616,61 @@ export class Ai_agentService {
         return ai_agentMcpService.reloadServer(index);
     }
 
+    // ============ 插件工具管理 ============
+
+    /**
+     * 插件工具注册表
+     * key: 插件 id
+     * value: 该插件注册的工具列表
+     */
+    private pluginToolsMap: Map<string, AiToolItem[]> = new Map();
+
+    /**
+     * 注册插件工具
+     */
+    public registerPluginTool(pluginId: string, tool: AiToolItem) {
+        if (!this.pluginToolsMap.has(pluginId)) {
+            this.pluginToolsMap.set(pluginId, []);
+        }
+        this.pluginToolsMap.get(pluginId)!.push(tool);
+    }
+
+    /**
+     * 注销某个插件的所有工具
+     */
+    public unregisterPluginTools(pluginId: string) {
+        this.pluginToolsMap.delete(pluginId);
+    }
+
+    /**
+     * 获取插件工具 schema 列表（用于向 LLM 注册）
+     */
+    public getPluginToolSchemas(): any[] {
+        const schemas: any[] = [];
+        for (const [pluginId, tools] of this.pluginToolsMap) {
+            for (const tool of tools) {
+                schemas.push(tool.schema);
+            }
+        }
+        return schemas;
+    }
+
+
+    /**
+     * 获取插件工具的 handler
+     */
+    private getPluginToolHandler(toolName: string): ((args: any) => Promise<string | object>) | undefined {
+        for (const [pluginId, tools] of this.pluginToolsMap) {
+            const tool = tools.find(t => t.schema.function.name === toolName);
+            if (tool) {
+                return tool.handler;
+            }
+        }
+        return undefined;
+    }
+
+    // =====================================
+
     public getToolInfo(toolName: string, args: any) {
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return {
@@ -626,8 +682,14 @@ export class Ai_agentService {
     }
 
     public async callTool(toolName: string, args: any) {
+        // 内置工具
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return Ai_agentTools[toolName as Ai_agentTools_type](args);
+        }
+        // 检查是否是插件工具
+        const pluginHandler = this.getPluginToolHandler(toolName);
+        if (pluginHandler) {
+            return pluginHandler(args);
         }
         return ai_agentMcpService.callTool(toolName, args);
     }

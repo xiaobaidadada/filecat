@@ -33,7 +33,7 @@ import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
-import {plug_item, Plugin, PluginMeta} from "../../../plugin";
+import {plug_item, Plugin, PluginMeta, AiToolPlugin, AiToolItem} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -975,47 +975,138 @@ export class SettingService {
         return Sucess('保存成功');
     }
 
+
     async load_all_plugin() {
         this.running_plugin_list = [];
-        const list = this.get_plugin_list()
-        for (const item of list) {
-            try {
-                let plugin_tem:any = eval("require")(item.path);
-                let plugin:Plugin
-                if(plugin_tem?.default?.activate) {
-                    // ts 默认导出
-                    plugin = plugin_tem.default;
-                } else {
-                    // js commonjs 导出
-                    plugin = plugin_tem.filecat_plugin
-                }
-                const params = {}
-                if(item.params) {
-                    Env.load(item.params, params);
-                }
-                plugin.activate({
-                    env:{
-                        port: Env.port,
-                        work_dir: Env.work_dir,
-                        version:process.env.version
-                    },
-                    params
-                });
-                this.running_plugin_list.push(plugin)
-            } catch (e) {
-                console.log(e)
+        const list = this.get_plugin_list();
+
+        const results = await Promise.allSettled(
+            list.map(item => this._load_single_plugin(item))
+        );
+
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`[Plugin] 加载失败: ${list[index].path}`, result.reason);
             }
+        });
+    }
+
+    private _resolve_plugin(item: plug_item): Plugin {
+        this._evict_require_cache(item.path);
+
+        const raw: any = this._native_require(item.path);
+
+        const plugin: Plugin = raw?.default?.activate
+            ? raw.default
+            : raw.filecat_plugin;
+
+        if (!plugin?.activate) {
+            throw new Error(`插件 ${item.path} 未找到有效导出`);
         }
+        return plugin;
+    }
+
+    private async _load_single_plugin(item: plug_item): Promise<void> {
+        const plugin = this._resolve_plugin(item);
+
+        const params: Record<string, any> = {};
+        if (item.params) {
+            Env.load(item.params, params);
+        }
+
+        await plugin.activate({
+            env: {
+                port: Env.port,
+                work_dir: Env.work_dir,
+                version: process.env.version,
+            },
+            params,
+        });
+
+        this._register_ai_tools(plugin);
+
+        // 保存 path 供卸载时清缓存
+        (plugin as any).__plugin_path__ = item.path;
+        this.running_plugin_list.push(plugin);
+    }
+
+    private _register_ai_tools(plugin: Plugin): void {
+        if (plugin.meta?.type !== 'ai_tool') return;
+        const aiToolPlugin = plugin as unknown as AiToolPlugin;
+        if (!aiToolPlugin.tools?.length) return;
+
+        for (const tool of aiToolPlugin.tools) {
+            ai_agentService.registerPluginTool(plugin.meta.id, tool);
+        }
+        console.log(
+            `[Plugin] "${plugin.meta.name}" 已注册工具:`,
+            aiToolPlugin.tools.map(t => t.schema.function.name).join(', ')
+        );
     }
 
     async close_all_plugin() {
-        for (const plugin of this.running_plugin_list) {
-            try {
-                plugin.deactivate?.()
-            } catch (e) {
-                console.log(e)
+        await Promise.allSettled(
+            this.running_plugin_list.map(plugin => this._unload_single_plugin(plugin))
+        );
+        this.running_plugin_list = [];
+    }
+
+    private async _unload_single_plugin(plugin: Plugin): Promise<void> {
+        try {
+            if (plugin.meta?.type === 'ai_tool') {
+                ai_agentService.unregisterPluginTools(plugin.meta.id);
             }
+            await plugin.deactivate?.();
+        } finally {
+            // 无论 deactivate 是否报错，都清除缓存
+            const pluginPath = (plugin as any).__plugin_path__;
+            if (pluginPath) this._evict_require_cache(pluginPath);
         }
+    }
+
+    // 热重载单个插件
+    async reload_plugin(pluginPath: string): Promise<void> {
+        const index = this.running_plugin_list.findIndex(
+            p => (p as any).__plugin_path__ === pluginPath
+        );
+
+        if (index !== -1) {
+            await this._unload_single_plugin(this.running_plugin_list[index]);
+            this.running_plugin_list.splice(index, 1);
+        }
+
+        const item = this.get_plugin_list().find(i => i.path === pluginPath);
+        if (item) await this._load_single_plugin(item);
+    }
+
+    private _evict_require_cache(pluginPath: string): void {
+        const nativeRequire = this._native_require;
+        // require.cache 也要通过 eval require 拿
+        const cache = nativeRequire.cache;
+
+        const resolvedPath = nativeRequire.resolve(pluginPath);
+        const mod = cache[resolvedPath];
+        if (!mod) return;
+
+        const pluginDir = path.dirname(resolvedPath);
+        const evict = (m: NodeModule) => {
+            if (!cache[m.id]) return;
+            delete cache[m.id];
+            m.children
+                .filter(child => child.id.startsWith(pluginDir))
+                .forEach(evict);
+        };
+
+        evict(mod);
+    }
+
+    _require_fn:any
+    private get _native_require(): NodeRequire {
+        // 缓存起来，避免每次都 eval
+        if (!this._require_fn) {
+            this._require_fn = eval("require");
+        }
+        return this._require_fn;
     }
 
 }

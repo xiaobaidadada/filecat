@@ -1,4 +1,21 @@
 
+/**
+ * AI Tool 的 schema 类型（与 ai_agent.constant 中的定义保持一致，
+ * 但不直接引用内部模块，以避免循环依赖）
+ */
+export interface AiToolSchema {
+    type: string;
+    function: {
+        name: string;
+        description: string;
+        parameters: {
+            type: string;
+            properties: any;
+            required: string[];
+        }
+    }
+}
+
 export interface plug_item {
     // 插件的路径
     path: string;
@@ -56,6 +73,30 @@ export interface Plugin {
     /** 插件停用时调用[cite: 4] */
     deactivate?(): void | Promise<void>;
 
+}
+
+/**
+ * AI Tool 插件 - 为 AI Agent 提供自定义工具
+ * 相比普通 Plugin，额外提供 tools 属性
+ */
+export interface AiToolPlugin extends Plugin {
+    readonly meta: PluginMeta & { type: 'ai_tool' };
+
+    /**
+     * AI 工具定义列表
+     * 每个工具包含 schema（给 LLM 的描述）和执行函数
+     */
+    tools: AiToolItem[];
+}
+
+/**
+ * AI 工具项
+ */
+export interface AiToolItem {
+    /** 工具 schema，用于向 LLM 描述工具（OpenAI function calling 格式） */
+    schema: AiToolSchema;
+    /** 工具执行函数，接收参数并返回结果 */
+    handler: (args: any) => Promise<string | object>;
 }
 
 export const run_test = () => {
