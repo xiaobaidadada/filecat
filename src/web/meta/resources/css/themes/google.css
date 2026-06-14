@@ -43,6 +43,8 @@
   --icon-teal: #009688;
 }
 
+
+
 body {
   background: var(--background);
   color: var(--textPrimary);
@@ -184,6 +186,14 @@ nav > div {
 .dashboard #nav,
 .dashboard p label {
   color: var(--textPrimary);
+}
+
+td .input {
+  background: transparent;
+  border: 0px ;
+}
+td .input:focus {
+  background: var(--surfaceSecondary);
 }
 
 .select_dropdown,
@@ -461,6 +471,8 @@ table th {
 }
 
 /* 根据 data-icon 属性定义不同颜色 */
+
+/* 基础图标 - 已定义 */
 .material-icons.icon[data-icon="home"] {
   color: #ff5722; /* 橙色 */
 }
@@ -477,3 +489,1236 @@ table th {
   color: #9c27b0; /* 紫色 */
 }
 
+/* 导航类图标 */
+.material-icons.icon[data-icon="menu"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="arrow_back"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="arrow_right"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="arrow_drop_down"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="keyboard_arrow_right"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="keyboard_arrow_down"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="navigate_before"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="navigate_next"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+/* 操作类图标 */
+.material-icons.icon[data-icon="add"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="save"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="delete"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="edit"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="close"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="refresh"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="search"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="more_horiz"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="more_vert"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="cancel"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="content_copy"] {
+  color: #1a73e8; /* Google蓝色 - 复制操作 */
+}
+
+.material-icons.icon[data-icon="content_cut"] {
+  color: #ea4335; /* Google红色 - 剪切操作 */
+}
+
+.material-icons.icon[data-icon="content_paste"] {
+  color: #34a853; /* Google绿色 - 粘贴操作 */
+}
+
+.material-icons.icon[data-icon="download"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="upload"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="send"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="play_arrow"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="stop"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="compress"] {
+  color: #607d8b; /* 蓝灰色 - 压缩操作 */
+}
+
+/* 文件类型图标 */
+.material-icons.icon[data-icon="folder"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="insert_drive_file"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="image"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="code"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="description"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="volume_up"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="movie"] {
+  color: #9c27b0; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="link_off"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="border_all"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="slideshow"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="web_asset"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="archive"] {
+  color: #607d8b; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="folder_zip"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="album"] {
+  color: #9c27b0; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="font_download"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="draw"] {
+  color: #e91e63; /* 粉红色 */
+}
+
+/* 状态类图标 */
+.material-icons.icon[data-icon="check_box"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="place"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="info"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="sort"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="percent"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="text_rotate_vertical"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+/* 特殊功能图标 */
+.material-icons.icon[data-icon="terminal"] {
+  color: #424242; /* 深灰色 - 终端命令行 */
+}
+
+.material-icons.icon[data-icon="share"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="api"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="link"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="schedule"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="grid_view"] {
+  color: #1a73e8; /* Google蓝色 - 网格视图 */
+}
+
+.material-icons.icon[data-icon="fullscreen"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="personal_video"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="print"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="sd_card"] {
+  color: #607d8b; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="health_and_safety"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="update"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="file_open"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="create_new_folder"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="note_add"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+/* 输入框图标 */
+.material-icons.icon[data-icon="manage_accounts"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="password"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="private_connectivity"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="location_on"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="outlet"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="network_ping"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="verified_user"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="laptop_mac"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+/* 其他特殊图标 */
+.material-icons.icon[data-icon="short_text"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="edit_attributes"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="copy_all"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="data_object"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="file_upload"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="save_as"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="unfold_less"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="unfold_more"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="add_box"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="add_comment"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="delete_sweep"] {
+  color: #ea4335; /* Google红色 */
+}
+
+.material-icons.icon[data-icon="details"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+.material-icons.icon[data-icon="table_chart"] {
+  color: #34a853; /* Google绿色 */
+}
+
+.material-icons.icon[data-icon="add_circle"] {
+  color: #1a73e8; /* Google蓝色 */
+}
+
+.material-icons.icon[data-icon="sentiment_dissatisfied"] {
+  color: #fbbc04; /* Google黄色 */
+}
+
+.material-icons.icon[data-icon="attach_file"] {
+  color: #5f6368; /* Google灰色 */
+}
+
+/* 补充的图标 */
+.material-icons.icon[data-icon="upload_file"] {
+  color: #1a73e8; /* Google蓝色 - 上传文件 */
+}
+
+.material-icons.icon[data-icon="question_answer"] {
+  color: #34a853; /* Google绿色 - 问答/聊天 */
+}
+
+.material-icons.icon[data-icon="computer"] {
+  color: #5f6368; /* Google灰色 - 计算机 */
+}
+
+.material-icons.icon[data-icon="cell_tower"] {
+  color: #607d8b; /* 蓝灰色 - 信号塔/网络 */
+}
+
+.material-icons.icon[data-icon="home_repair_service"] {
+  color: #fbbc04; /* Google黄色 - 家庭维修服务 */
+}
+
+.material-icons.icon[data-icon="vpn_lock"] {
+  color: #34a853; /* Google绿色 - VPN锁定/安全 */
+}
+
+.material-icons.icon[data-icon="dns"] {
+  color: #1a73e8; /* Google蓝色 - DNS服务器 */
+}
+
+.material-icons.icon[data-icon="logout"] {
+  color: #ea4335; /* Google红色 - 退出登录 */
+}
+
+/* 其他常用图标补充 */
+.material-icons.icon[data-icon="warning"] {
+  color: #fbbc04; /* Google黄色 - 警告 */
+}
+
+.material-icons.icon[data-icon="error"] {
+  color: #ea4335; /* Google红色 - 错误 */
+}
+
+.material-icons.icon[data-icon="success"] {
+  color: #34a853; /* Google绿色 - 成功 */
+}
+
+.material-icons.icon[data-icon="lock"] {
+  color: #607d8b; /* 蓝灰色 - 锁定 */
+}
+
+.material-icons.icon[data-icon="lock_open"] {
+  color: #34a853; /* Google绿色 - 解锁 */
+}
+
+.material-icons.icon[data-icon="visibility"] {
+  color: #1a73e8; /* Google蓝色 - 可见性 */
+}
+
+.material-icons.icon[data-icon="visibility_off"] {
+  color: #5f6368; /* Google灰色 - 不可见 */
+}
+
+.material-icons.icon[data-icon="star"] {
+  color: #fbbc04; /* Google黄色 - 星标 */
+}
+
+.material-icons.icon[data-icon="star_border"] {
+  color: #5f6368; /* Google灰色 - 空星标 */
+}
+
+.material-icons.icon[data-icon="bookmark"] {
+  color: #1a73e8; /* Google蓝色 - 书签 */
+}
+
+.material-icons.icon[data-icon="bookmark_border"] {
+  color: #5f6368; /* Google灰色 - 空书签 */
+}
+
+.material-icons.icon[data-icon="notifications"] {
+  color: #1a73e8; /* Google蓝色 - 通知 */
+}
+
+.material-icons.icon[data-icon="notifications_none"] {
+  color: #5f6368; /* Google灰色 - 无通知 */
+}
+
+.material-icons.icon[data-icon="notifications_active"] {
+  color: #fbbc04; /* Google黄色 - 活动通知 */
+}
+
+.material-icons.icon[data-icon="account_circle"] {
+  color: #1a73e8; /* Google蓝色 - 账户 */
+}
+
+.material-icons.icon[data-icon="group"] {
+  color: #34a853; /* Google绿色 - 群组 */
+}
+
+.material-icons.icon[data-icon="chat"] {
+  color: #34a853; /* Google绿色 - 聊天 */
+}
+
+.material-icons.icon[data-icon="email"] {
+  color: #1a73e8; /* Google蓝色 - 邮件 */
+}
+
+.material-icons.icon[data-icon="phone"] {
+  color: #34a853; /* Google绿色 - 电话 */
+}
+
+.material-icons.icon[data-icon="video_call"] {
+  color: #9c27b0; /* 紫色 - 视频通话 */
+}
+
+.material-icons.icon[data-icon="screen_share"] {
+  color: #1a73e8; /* Google蓝色 - 屏幕分享 */
+}
+
+.material-icons.icon[data-icon="security"] {
+  color: #34a853; /* Google绿色 - 安全 */
+}
+
+.material-icons.icon[data-icon="backup"] {
+  color: #1a73e8; /* Google蓝色 - 备份 */
+}
+
+.material-icons.icon[data-icon="restore"] {
+  color: #1a73e8; /* Google蓝色 - 恢复 */
+}
+
+.material-icons.icon[data-icon="sync"] {
+  color: #1a73e8; /* Google蓝色 - 同步 */
+}
+
+.material-icons.icon[data-icon="cloud"] {
+  color: #1a73e8; /* Google蓝色 - 云 */
+}
+
+.material-icons.icon[data-icon="cloud_upload"] {
+  color: #1a73e8; /* Google蓝色 - 云上传 */
+}
+
+.material-icons.icon[data-icon="cloud_download"] {
+  color: #1a73e8; /* Google蓝色 - 云下载 */
+}
+
+.material-icons.icon[data-icon="cloud_off"] {
+  color: #5f6368; /* Google灰色 - 离线云 */
+}
+
+.material-icons.icon[data-icon="wifi"] {
+  color: #1a73e8; /* Google蓝色 - WiFi */
+}
+
+.material-icons.icon[data-icon="wifi_off"] {
+  color: #5f6368; /* Google灰色 - WiFi关闭 */
+}
+
+.material-icons.icon[data-icon="bluetooth"] {
+  color: #1a73e8; /* Google蓝色 - 蓝牙 */
+}
+
+.material-icons.icon[data-icon="bluetooth_disabled"] {
+  color: #5f6368; /* Google灰色 - 蓝牙禁用 */
+}
+
+.material-icons.icon[data-icon="battery_full"] {
+  color: #34a853; /* Google绿色 - 电池满 */
+}
+
+.material-icons.icon[data-icon="battery_charging_full"] {
+  color: #34a853; /* Google绿色 - 电池充电 */
+}
+
+.material-icons.icon[data-icon="battery_alert"] {
+  color: #ea4335; /* Google红色 - 电池警报 */
+}
+
+.material-icons.icon[data-icon="signal_cellular_4_bar"] {
+  color: #34a853; /* Google绿色 - 信号满 */
+}
+
+.material-icons.icon[data-icon="signal_cellular_connected_no_internet_4_bar"] {
+  color: #fbbc04; /* Google黄色 - 无网络 */
+}
+
+.material-icons.icon[data-icon="signal_cellular_off"] {
+  color: #5f6368; /* Google灰色 - 信号关闭 */
+}
+
+.material-icons.icon[data-icon="location_disabled"] {
+  color: #5f6368; /* Google灰色 - 位置禁用 */
+}
+
+.material-icons.icon[data-icon="not_interested"] {
+  color: #ea4335; /* Google红色 - 不感兴趣 */
+}
+
+.material-icons.icon[data-icon="gavel"] {
+  color: #607d8b; /* 蓝灰色 - 法律 */
+}
+
+.material-icons.icon[data-icon="translate"] {
+  color: #1a73e8; /* Google蓝色 - 翻译 */
+}
+
+.material-icons.icon[data-icon="bug_report"] {
+  color: #ea4335; /* Google红色 - 错误报告 */
+}
+
+.material-icons.icon[data-icon="developer_board"] {
+  color: #607d8b; /* 蓝灰色 - 开发板 */
+}
+
+.material-icons.icon[data-icon="storage"] {
+  color: #607d8b; /* 蓝灰色 - 存储 */
+}
+
+.material-icons.icon[data-icon="graphic_eq"] {
+  color: #1a73e8; /* Google蓝色 - 均衡器 */
+}
+
+.material-icons.icon[data-icon="timelapse"] {
+  color: #1a73e8; /* Google蓝色 - 延时 */
+}
+
+.material-icons.icon[data-icon="timer"] {
+  color: #1a73e8; /* Google蓝色 - 计时器 */
+}
+
+.material-icons.icon[data-icon="hourglass_empty"] {
+  color: #5f6368; /* Google灰色 - 沙漏空 */
+}
+
+.material-icons.icon[data-icon="hourglass_full"] {
+  color: #1a73e8; /* Google蓝色 - 沙漏满 */
+}
+
+.material-icons.icon[data-icon="loop"] {
+  color: #1a73e8; /* Google蓝色 - 循环 */
+}
+
+.material-icons.icon[data-icon="shuffle"] {
+  color: #1a73e8; /* Google蓝色 - 随机 */
+}
+
+.material-icons.icon[data-icon="repeat"] {
+  color: #1a73e8; /* Google蓝色 - 重复 */
+}
+
+.material-icons.icon[data-icon="repeat_one"] {
+  color: #1a73e8; /* Google蓝色 - 单曲循环 */
+}
+
+.material-icons.icon[data-icon="queue_music"] {
+  color: #1a73e8; /* Google蓝色 - 音乐队列 */
+}
+
+.material-icons.icon[data-icon="playlist_add"] {
+  color: #1a73e8; /* Google蓝色 - 添加到播放列表 */
+}
+
+.material-icons.icon[data-icon="playlist_play"] {
+  color: #1a73e8; /* Google蓝色 - 播放列表播放 */
+}
+
+.material-icons.icon[data-icon="library_music"] {
+  color: #1a73e8; /* Google蓝色 - 音乐库 */
+}
+
+.material-icons.icon[data-icon="library_books"] {
+  color: #1a73e8; /* Google蓝色 - 书籍库 */
+}
+
+.material-icons.icon[data-icon="library_add"] {
+  color: #1a73e8; /* Google蓝色 - 添加到库 */
+}
+
+.material-icons.icon[data-icon="movie_filter"] {
+  color: #9c27b0; /* 紫色 - 电影滤镜 */
+}
+
+.material-icons.icon[data-icon="photo_camera"] {
+  color: #5f6368; /* Google灰色 - 相机 */
+}
+
+.material-icons.icon[data-icon="photo_library"] {
+  color: #1a73e8; /* Google蓝色 - 图片库 */
+}
+
+.material-icons.icon[data-icon="camera_alt"] {
+  color: #5f6368; /* Google灰色 - 相机 */
+}
+
+.material-icons.icon[data-icon="camera_enhance"] {
+  color: #1a73e8; /* Google蓝色 - 相机增强 */
+}
+
+.material-icons.icon[data-icon="flash_on"] {
+  color: #fbbc04; /* Google黄色 - 闪光灯开 */
+}
+
+.material-icons.icon[data-icon="flash_off"] {
+  color: #5f6368; /* Google灰色 - 闪光灯关 */
+}
+
+.material-icons.icon[data-icon="flash_auto"] {
+  color: #1a73e8; /* Google蓝色 - 闪光灯自动 */
+}
+
+.material-icons.icon[data-icon="panorama"] {
+  color: #1a73e8; /* Google蓝色 - 全景 */
+}
+
+.material-icons.icon[data-icon="panorama_fish_eye"] {
+  color: #1a73e8; /* Google蓝色 - 鱼眼全景 */
+}
+
+.material-icons.icon[data-icon="panorama_horizontal"] {
+  color: #1a73e8; /* Google蓝色 - 水平全景 */
+}
+
+.material-icons.icon[data-icon="panorama_vertical"] {
+  color: #1a73e8; /* Google蓝色 - 垂直全景 */
+}
+
+.material-icons.icon[data-icon="panorama_wide_angle"] {
+  color: #1a73e8; /* Google蓝色 - 广角全景 */
+}
+
+.material-icons.icon[data-icon="switch_camera"] {
+  color: #1a73e8; /* Google蓝色 - 切换相机 */
+}
+
+.material-icons.icon[data-icon="switch_video"] {
+  color: #1a73e8; /* Google蓝色 - 切换视频 */
+}
+
+.material-icons.icon[data-icon="video_label"] {
+  color: #1a73e8; /* Google蓝色 - 视频标签 */
+}
+
+.material-icons.icon[data-icon="video_library"] {
+  color: #1a73e8; /* Google蓝色 - 视频库 */
+}
+
+.material-icons.icon[data-icon="videocam"] {
+  color: #5f6368; /* Google灰色 - 摄像头 */
+}
+
+.material-icons.icon[data-icon="videocam_off"] {
+  color: #5f6368; /* Google灰色 - 摄像头关闭 */
+}
+
+.material-icons.icon[data-icon="fiber_manual_record"] {
+  color: #ea4335; /* Google红色 - 手动记录 */
+}
+
+.material-icons.icon[data-icon="fiber_smart_record"] {
+  color: #1a73e8; /* Google蓝色 - 智能记录 */
+}
+
+.material-icons.icon[data-icon="high_quality"] {
+  color: #1a73e8; /* Google蓝色 - 高质量 */
+}
+
+.material-icons.icon[data-icon="sd"] {
+  color: #fbbc04; /* Google黄色 - 标清 */
+}
+
+.material-icons.icon[data-icon="hd"] {
+  color: #1a73e8; /* Google蓝色 - 高清 */
+}
+
+.material-icons.icon[data-icon="4k"] {
+  color: #1a73e8; /* Google蓝色 - 4K */
+}
+
+.material-icons.icon[data-icon="closed_caption"] {
+  color: #1a73e8; /* Google蓝色 - 字幕 */
+}
+
+.material-icons.icon[data-icon="closed_caption_disabled"] {
+  color: #5f6368; /* Google灰色 - 字幕禁用 */
+}
+
+.material-icons.icon[data-icon="surround_sound"] {
+  color: #1a73e8; /* Google蓝色 - 环绕声 */
+}
+
+.material-icons.icon[data-icon="volume_down"] {
+  color: #5f6368; /* Google灰色 - 音量减 */
+}
+
+.material-icons.icon[data-icon="volume_mute"] {
+  color: #5f6368; /* Google灰色 - 静音 */
+}
+
+.material-icons.icon[data-icon="volume_off"] {
+  color: #5f6368; /* Google灰色 - 音量关闭 */
+}
+
+.material-icons.icon[data-icon="play_circle_filled"] {
+  color: #1a73e8; /* Google蓝色 - 播放圆圈填充 */
+}
+
+.material-icons.icon[data-icon="play_circle_outline"] {
+  color: #1a73e8; /* Google蓝色 - 播放圆圈轮廓 */
+}
+
+.material-icons.icon[data-icon="pause"] {
+  color: #5f6368; /* Google灰色 - 暂停 */
+}
+
+.material-icons.icon[data-icon="pause_circle_filled"] {
+  color: #5f6368; /* Google灰色 - 暂停圆圈填充 */
+}
+
+.material-icons.icon[data-icon="pause_circle_outline"] {
+  color: #5f6368; /* Google灰色 - 暂停圆圈轮廓 */
+}
+
+.material-icons.icon[data-icon="skip_next"] {
+  color: #1a73e8; /* Google蓝色 - 下一个 */
+}
+
+.material-icons.icon[data-icon="skip_previous"] {
+  color: #1a73e8; /* Google蓝色 - 上一个 */
+}
+
+.material-icons.icon[data-icon="fast_forward"] {
+  color: #1a73e8; /* Google蓝色 - 快进 */
+}
+
+.material-icons.icon[data-icon="fast_rewind"] {
+  color: #1a73e8; /* Google蓝色 - 快退 */
+}
+
+.material-icons.icon[data-icon="replay"] {
+  color: #1a73e8; /* Google蓝色 - 重播 */
+}
+
+.material-icons.icon[data-icon="replay_5"] {
+  color: #1a73e8; /* Google蓝色 - 重播5秒 */
+}
+
+.material-icons.icon[data-icon="replay_10"] {
+  color: #1a73e8; /* Google蓝色 - 重播10秒 */
+}
+
+.material-icons.icon[data-icon="replay_30"] {
+  color: #1a73e8; /* Google蓝色 - 重播30秒 */
+}
+
+.material-icons.icon[data-icon="forward_5"] {
+  color: #1a73e8; /* Google蓝色 - 前进5秒 */
+}
+
+.material-icons.icon[data-icon="forward_10"] {
+  color: #1a73e8; /* Google蓝色 - 前进10秒 */
+}
+
+.material-icons.icon[data-icon="forward_30"] {
+  color: #1a73e8; /* Google蓝色 - 前进30秒 */
+}
+
+.material-icons.icon[data-icon="mic"] {
+  color: #5f6368; /* Google灰色 - 麦克风 */
+}
+
+.material-icons.icon[data-icon="mic_none"] {
+  color: #5f6368; /* Google灰色 - 麦克风无 */
+}
+
+.material-icons.icon[data-icon="mic_off"] {
+  color: #5f6368; /* Google灰色 - 麦克风关闭 */
+}
+
+.material-icons.icon[data-icon="speaker"] {
+  color: #5f6368; /* Google灰色 - 扬声器 */
+}
+
+.material-icons.icon[data-icon="speaker_group"] {
+  color: #5f6368; /* Google灰色 - 扬声器组 */
+}
+
+.material-icons.icon[data-icon="speaker_notes"] {
+  color: #1a73e8; /* Google蓝色 - 演讲者备注 */
+}
+
+.material-icons.icon[data-icon="speaker_notes_off"] {
+  color: #5f6368; /* Google灰色 - 演讲者备注关闭 */
+}
+
+.material-icons.icon[data-icon="text_fields"] {
+  color: #5f6368; /* Google灰色 - 文本字段 */
+}
+
+.material-icons.icon[data-icon="format_bold"] {
+  color: #5f6368; /* Google灰色 - 粗体 */
+}
+
+.material-icons.icon[data-icon="format_italic"] {
+  color: #5f6368; /* Google灰色 - 斜体 */
+}
+
+.material-icons.icon[data-icon="format_underlined"] {
+  color: #5f6368; /* Google灰色 - 下划线 */
+}
+
+.material-icons.icon[data-icon="format_strikethrough"] {
+  color: #5f6368; /* Google灰色 - 删除线 */
+}
+
+.material-icons.icon[data-icon="format_size"] {
+  color: #5f6368; /* Google灰色 - 字体大小 */
+}
+
+.material-icons.icon[data-icon="format_color_text"] {
+  color: #5f6368; /* Google灰色 - 文本颜色 */
+}
+
+.material-icons.icon[data-icon="format_color_fill"] {
+  color: #5f6368; /* Google灰色 - 填充颜色 */
+}
+
+.material-icons.icon[data-icon="format_align_left"] {
+  color: #5f6368; /* Google灰色 - 左对齐 */
+}
+
+.material-icons.icon[data-icon="format_align_center"] {
+  color: #5f6368; /* Google灰色 - 居中对齐 */
+}
+
+.material-icons.icon[data-icon="format_align_right"] {
+  color: #5f6368; /* Google灰色 - 右对齐 */
+}
+
+.material-icons.icon[data-icon="format_align_justify"] {
+  color: #5f6368; /* Google灰色 - 两端对齐 */
+}
+
+.material-icons.icon[data-icon="format_list_bulleted"] {
+  color: #5f6368; /* Google灰色 - 项目符号列表 */
+}
+
+.material-icons.icon[data-icon="format_list_numbered"] {
+  color: #5f6368; /* Google灰色 - 编号列表 */
+}
+
+.material-icons.icon[data-icon="format_indent_increase"] {
+  color: #5f6368; /* Google灰色 - 增加缩进 */
+}
+
+.material-icons.icon[data-icon="format_indent_decrease"] {
+  color: #5f6368; /* Google灰色 - 减少缩进 */
+}
+
+.material-icons.icon[data-icon="format_clear"] {
+  color: #5f6368; /* Google灰色 - 清除格式 */
+}
+
+.material-icons.icon[data-icon="insert_emoticon"] {
+  color: #fbbc04; /* Google黄色 - 表情 */
+}
+
+.material-icons.icon[data-icon="insert_chart"] {
+  color: #1a73e8; /* Google蓝色 - 图表 */
+}
+
+.material-icons.icon[data-icon="insert_comment"] {
+  color: #1a73e8; /* Google蓝色 - 评论 */
+}
+
+.material-icons.icon[data-icon="insert_invitation"] {
+  color: #1a73e8; /* Google蓝色 - 邀请 */
+}
+
+.material-icons.icon[data-icon="insert_link"] {
+  color: #1a73e8; /* Google蓝色 - 链接 */
+}
+
+.material-icons.icon[data-icon="insert_photo"] {
+  color: #1a73e8; /* Google蓝色 - 照片 */
+}
+
+.material-icons.icon[data-icon="mode_comment"] {
+  color: #1a73e8; /* Google蓝色 - 评论模式 */
+}
+
+.material-icons.icon[data-icon="mode_edit"] {
+  color: #fbbc04; /* Google黄色 - 编辑模式 */
+}
+
+.material-icons.icon[data-icon="publish"] {
+  color: #1a73e8; /* Google蓝色 - 发布 */
+}
+
+.material-icons.icon[data-icon="vertical_align_top"] {
+  color: #5f6368; /* Google灰色 - 垂直顶部对齐 */
+}
+
+.material-icons.icon[data-icon="vertical_align_bottom"] {
+  color: #5f6368; /* Google灰色 - 垂直底部对齐 */
+}
+
+.material-icons.icon[data-icon="vertical_align_center"] {
+  color: #5f6368; /* Google灰色 - 垂直居中对齐 */
+}
+
+.material-icons.icon[data-icon="wrap_text"] {
+  color: #5f6368; /* Google灰色 - 自动换行 */
+}
+
+.material-icons.icon[data-icon="money_off"] {
+  color: #ea4335; /* Google红色 - 无钱 */
+}
+
+.material-icons.icon[data-icon="monetization_on"] {
+  color: #fbbc04; /* Google黄色 - 货币化 */
+}
+
+.material-icons.icon[data-icon="euro_symbol"] {
+  color: #1a73e8; /* Google蓝色 - 欧元符号 */
+}
+
+.material-icons.icon[data-icon="attach_money"] {
+  color: #34a853; /* Google绿色 - 附加钱 */
+}
+
+.material-icons.icon[data-icon="bubble_chart"] {
+  color: #1a73e8; /* Google蓝色 - 气泡图 */
+}
+
+.material-icons.icon[data-icon="multiline_chart"] {
+  color: #1a73e8; /* Google蓝色 - 多线图 */
+}
+
+.material-icons.icon[data-icon="pie_chart"] {
+  color: #1a73e8; /* Google蓝色 - 饼图 */
+}
+
+.material-icons.icon[data-icon="scatter_plot"] {
+  color: #1a73e8; /* Google蓝色 - 散点图 */
+}
+
+.material-icons.icon[data-icon="show_chart"] {
+  color: #1a73e8; /* Google蓝色 - 显示图表 */
+}
+
+.material-icons.icon[data-icon="equalizer"] {
+  color: #1a73e8; /* Google蓝色 - 均衡器 */
+}
+
+.material-icons.icon[data-icon="linear_scale"] {
+  color: #5f6368; /* Google灰色 - 线性比例 */
+}
+
+.material-icons.icon[data-icon="timeline"] {
+  color: #1a73e8; /* Google蓝色 - 时间线 */
+}
+
+.material-icons.icon[data-icon="trending_up"] {
+  color: #34a853; /* Google绿色 - 趋势上升 */
+}
+
+.material-icons.icon[data-icon="trending_down"] {
+  color: #ea4335; /* Google红色 - 趋势下降 */
+}
+
+.material-icons.icon[data-icon="trending_flat"] {
+  color: #5f6368; /* Google灰色 - 趋势平缓 */
+}
+
+.material-icons.icon[data-icon="call_made"] {
+  color: #1a73e8; /* Google蓝色 - 呼出 */
+}
+
+.material-icons.icon[data-icon="call_received"] {
+  color: #1a73e8; /* Google蓝色 - 呼入 */
+}
+
+.material-icons.icon[data-icon="call_merge"] {
+  color: #1a73e8; /* Google蓝色 - 合并呼叫 */
+}
+
+.material-icons.icon[data-icon="call_missed"] {
+  color: #ea4335; /* Google红色 - 未接来电 */
+}
+
+.material-icons.icon[data-icon="call_missed_outgoing"] {
+  color: #ea4335; /* Google红色 - 未接外呼 */
+}
+
+.material-icons.icon[data-icon="call_split"] {
+  color: #1a73e8; /* Google蓝色 - 分割呼叫 */
+}
+
+.material-icons.icon[data-icon="chat_bubble"] {
+  color: #1a73e8; /* Google蓝色 - 聊天气泡 */
+}
+
+.material-icons.icon[data-icon="chat_bubble_outline"] {
+  color: #5f6368; /* Google灰色 - 聊天气泡轮廓 */
+}
+
+.material-icons.icon[data-icon="forum"] {
+  color: #1a73e8; /* Google蓝色 - 论坛 */
+}
+
+.material-icons.icon[data-icon="speaker_phone"] {
+  color: #1a73e8; /* Google蓝色 - 扬声器电话 */
+}
+
+.material-icons.icon[data-icon="stay_current_portrait"] {
+  color: #5f6368; /* Google灰色 - 保持当前竖屏 */
+}
+
+.material-icons.icon[data-icon="stay_current_landscape"] {
+  color: #5f6368; /* Google灰色 - 保持当前横屏 */
+}
+
+.material-icons.icon[data-icon="smartphone"] {
+  color: #5f6368; /* Google灰色 - 智能手机 */
+}
+
+.material-icons.icon[data-icon="tablet"] {
+  color: #5f6368; /* Google灰色 - 平板电脑 */
+}
+
+.material-icons.icon[data-icon="tablet_mac"] {
+  color: #5f6368; /* Google灰色 - 平板电脑Mac */
+}
+
+.material-icons.icon[data-icon="desktop_mac"] {
+  color: #5f6368; /* Google灰色 - 桌面Mac */
+}
+
+.material-icons.icon[data-icon="desktop_windows"] {
+  color: #5f6368; /* Google灰色 - 桌面Windows */
+}
+
+.material-icons.icon[data-icon="laptop_chromebook"] {
+  color: #5f6368; /* Google灰色 - 笔记本Chromebook */
+}
+
+.material-icons.icon[data-icon="laptop_windows"] {
+  color: #5f6368; /* Google灰色 - 笔记本Windows */
+}
+
+.material-icons.icon[data-icon="watch"] {
+  color: #5f6368; /* Google灰色 - 手表 */
+}
+
+.material-icons.icon[data-icon="watch_later"] {
+  color: #1a73e8; /* Google蓝色 - 手表稍后 */
+}
+
+.material-icons.icon[data-icon="devices"] {
+  color: #5f6368; /* Google灰色 - 设备 */
+}
+
+.material-icons.icon[data-icon="devices_other"] {
+  color: #5f6368; /* Google灰色 - 其他设备 */
+}
+
+.material-icons.icon[data-icon="scanner"] {
+  color: #5f6368; /* Google灰色 - 扫描仪 */
+}
+
+.material-icons.icon[data-icon="headset"] {
+  color: #5f6368; /* Google灰色 - 耳机 */
+}
+
+.material-icons.icon[data-icon="headset_mic"] {
+  color: #5f6368; /* Google灰色 - 耳机麦克风 */
+}
+
+.material-icons.icon[data-icon="keyboard"] {
+  color: #5f6368; /* Google灰色 - 键盘 */
+}
+
+.material-icons.icon[data-icon="keyboard_backspace"] {
+  color: #5f6368; /* Google灰色 - 键盘退格 */
+}
+
+.material-icons.icon[data-icon="keyboard_capslock"] {
+  color: #5f6368; /* Google灰色 - 键盘大写锁定 */
+}
+
+.material-icons.icon[data-icon="keyboard_hide"] {
+  color: #5f6368; /* Google灰色 - 键盘隐藏 */
+}
+
+.material-icons.icon[data-icon="keyboard_return"] {
+  color: #5f6368; /* Google灰色 - 键盘回车 */
+}
+
+.material-icons.icon[data-icon="keyboard_tab"] {
+  color: #5f6368; /* Google灰色 - 键盘Tab */
+}
+
+.material-icons.icon[data-icon="keyboard_voice"] {
+  color: #5f6368; /* Google灰色 - 键盘语音 */
+}
+
+.material-icons.icon[data-icon="mouse"] {
+  color: #5f6368; /* Google灰色 - 鼠标 */
+}
+
+/* 移除硬编码颜色，改用 CSS 变量 */
+nav .nav_2 {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* 使用更柔和的缓动曲线 */
+  border-radius: var(--border-radius-lg); /* 使用你定义的圆角变量 */
+  margin: 4px 8px; /* 给菜单项之间留出空间 */
+  width: auto;
+}
+
+/* 现代悬停态 */
+nav .nav_2:hover {
+  background-color: var(--surfaceSecondary);
+  transform: scale(1.02); /* 轻微放大，提供物理反馈 */
+}
+
+/* 现代激活态 */
+nav .nav_2_active {
+  background-color: var(--primary-light) !important;
+  color: var(--primary) !important;
+  font-weight: 500;
+}
+
+/* 激活态图标颜色 */
+nav .nav_2_active i {
+  color: var(--primary);
+}
+
+/* 整体悬停时，图标也会有一个微小的放大或颜色变化 */
+nav .nav_2:hover i {
+  color: var(--textPrimary);
+  transition: color 0.2s;
+}
+
+.nav_list_a {
+  background: transparent; /* 默认透明 */
+  border-radius: var(--border-radius-lg);
+  transition: all 0.25s ease;
+  border: 1px solid transparent; /* 预留边框，防止 Hover 时布局抖动 */
+}
+
+.nav_list_a:hover {
+  background: var(--surfacePrimary);
+  box-shadow: var(--shadow-sm); /* 悬停时浮起 */
+  border-color: var(--divider);
+}
+
+/* 激活时呈现边框高亮 */
+.nav_list_a.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+nav {
+  /*border-right: 1px solid var(--divider); !* 增加右侧分割线 *!*/
+  background: var(--background);
+}
+
+/* 滚动条隐藏但在悬停时可见（增强交互感） */
+nav::-webkit-scrollbar {
+  width: 6px;
+}
+nav:hover::-webkit-scrollbar-thumb {
+  background: var(--divider);
+  border-radius: 4px;
+}

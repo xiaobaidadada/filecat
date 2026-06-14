@@ -660,8 +660,16 @@ export default function AiAgentChatPage() {
                            />
                        </div>
                        <ActionButton title={"添加文件"} icon={"attach_file"} onClick={openFilePicker}/>
-                       {sending === false &&
+                       {sending === false ?
                            <ButtonLittle text={t("发送")} clickFun={handleSend}/>
+                           :
+                           <div className="ai-thinking-indicator">
+                               <div className="ai-thinking-dots">
+                                   <div className="ai-thinking-dot"></div>
+                                   <div className="ai-thinking-dot"></div>
+                                   <div className="ai-thinking-dot"></div>
+                               </div>
+                           </div>
                        }
                    </div>
                </section>

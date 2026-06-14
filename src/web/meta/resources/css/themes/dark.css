@@ -130,6 +130,14 @@ nav > div {
   color: var(--textPrimary);
 }
 
+td .input {
+  background: transparent;
+  border: 0px ;
+}
+td .input:focus {
+  background: var(--surfaceSecondary);
+}
+
 .select_dropdown,
 .card#share input,
 .card#share select,
