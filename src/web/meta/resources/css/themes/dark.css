@@ -363,6 +363,7 @@ table th {
 .chat-input-area textarea {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);
+  color: var(--textPrimary);
 }
 
 .common-box  {
