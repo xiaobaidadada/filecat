@@ -33,8 +33,8 @@ export function useCmdConfirm() {
                     context_div: (
                         <div>
                             <span>${ctx.cmd}</span>
-                            <Button text={t('拒绝')} clickFun={() => handleCmdConfirmResponse(ctx.askId, false)}/>
-                            <Button text={t('允许')} clickFun={() => handleCmdConfirmResponse(ctx.askId, true)}/>
+                            <Button text={t('允许')}  clickFun={() => handleCmdConfirmResponse(ctx.askId, true)}/>
+                            <Button text={t('拒绝')} color={"var(--red)"} clickFun={() => handleCmdConfirmResponse(ctx.askId, false)}/>
                         </div>
                     ),
 

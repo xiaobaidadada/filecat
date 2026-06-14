@@ -22,12 +22,15 @@ export function ButtonLittleStatus(props:{text:string,clickFun?:(open?:boolean)=
     }}>{props.text}</button>)
 }
 
-export function Button(props: { text: string, clickFun?: ()=>void }) {
+export function Button(props: { text: string,color?:string, clickFun?: ()=>void }) {
     return (<input
         className="button button--block"
         type="submit"
         value={props.text}
         onClick={props.clickFun}
+        style={{
+            backgroundColor: props.color??'var(--blue)'
+        }}
     />)
 }
 

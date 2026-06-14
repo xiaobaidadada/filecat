@@ -5,7 +5,8 @@
   outline: 0;
   /*border: 0;*/
   padding: .5em 1em;
-  border-radius: .1em;
+  /*border-radius: .1em;*/
+  border-radius: 6px;
   cursor: pointer;
   background: var(--blue);
   color: white;
