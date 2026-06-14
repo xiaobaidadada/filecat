@@ -5,7 +5,7 @@
   max-height: calc(100% - 4em);
   background: white;
   color: #212121;
-  z-index: 9997;
+  z-index: 1000;
   width: 100%;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   transition: .2s ease transform;

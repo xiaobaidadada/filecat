@@ -114,6 +114,28 @@ export class Ai_AgentController {
         return Sucess("")
     }
 
+    @msg(CmdType.ai_confirm_cmd)
+    async confirmCmd(data: WsData<any>) {
+        const ctx = data.context || {};
+        const { askId, approved } = ctx;
+        if (!askId) return '';
+        const pending = ai_agentService.pendingConfirmMap.get(askId);
+        if (pending) {
+            clearTimeout(pending.timeout);
+            pending.resolve(approved === true);
+            ai_agentService.pendingConfirmMap.delete(askId);
+        }
+        data.wss.setClose(()=>{
+            const pending_p = ai_agentService.pendingConfirmMap.get(askId);
+            if (pending_p) {
+                clearTimeout(pending_p.timeout);
+                pending_p.resolve(false);
+                ai_agentService.pendingConfirmMap.delete(askId);
+            }
+        })
+        return '';
+    }
+
     @msg(CmdType.ai_load_info)
     async get_info(data: WsData<any>) {
         const wss = (data.wss as Wss)

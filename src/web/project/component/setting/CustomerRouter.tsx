@@ -3,7 +3,6 @@ import {Column,  Row, RowColumn} from "../../../meta/component/Dashboard";
 import {Card, CardFull} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputText, Select} from "../../../meta/component/Input";
-import Noty from "noty";
 import {settingHttp} from "../../util/config";
 import {UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";

@@ -1,4 +1,4 @@
-﻿import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
+﻿import React, {useState, useRef, useEffect, useLayoutEffect, useCallback} from 'react';
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle, debounce} from "../../../../common/fun.util";
@@ -8,7 +8,7 @@ import {ActionButton, ButtonLittle, Icon} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {copyToClipboard} from "../../util/FunUtil";
-import {NotySucess} from "../../util/noty";
+import {NotySucess, NotyFail} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {using_confirm} from "../prompts/prompt.util";
 import {RCode} from "../../../../common/Result.pojo";
@@ -19,6 +19,7 @@ import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {MenuSelect} from "../prompts/Prompt";
 import {InputText} from "../../../meta/component/Input";
+import {useCmdConfirm} from "./useCmdConfirm";
 
 interface Message {
     id: number;
@@ -104,6 +105,7 @@ export default function AiAgentChatPage() {
     const [activeSessionId, setActiveSessionId] = useState<string>("");
     const [ai_session_collapsed,set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+    useCmdConfirm();
 
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +252,11 @@ export default function AiAgentChatPage() {
         });
     };
 
+    // handleCmdConfirmResponse 来自 useCmdConfirm hook
+
     const init = async ()=>{
+        // 注：cmdConfirm 的 WS 监听已由 useCmdConfirm hook 处理
+
         const result = await settingHttp.get("ai_agent_setting/env");
         if (result.code === RCode.Success) {
             env_config.current = result.data
@@ -268,6 +274,8 @@ export default function AiAgentChatPage() {
         requestAnimationFrame(() => {
             scrollToBottom(false);
         });
+
+        // 清理（cmdConfirm 的 WS 清理在 useCmdConfirm 中自动处理）
     }, []);
 
     useEffect(() => {

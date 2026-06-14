@@ -14,7 +14,7 @@ export class ai_agent_class {
     pty: PtyShell;
 
     messages: ai_agent_messages;
-    // token: string;
+    token: string;
     userId: string;
     sessionId: string;
     isTemporarySession: boolean = false;
@@ -79,7 +79,9 @@ export class ai_agent_class {
             }
         }
 
-        this.userId = filteredParams[filteredParams.length - 1];
+        this.userId = filteredParams[filteredParams.length - 2];
+        this.token = filteredParams[filteredParams.length - 1];
+
         const messages: string[] = [];
         
         for (let i = 0; i < filteredParams.length - 1; i++) {
@@ -160,7 +162,7 @@ export class ai_agent_class {
         try {
             await chat_core.chat({
                 originMessages: this.messages,
-                // token: this.token,
+                token: this.token,
                 user_id:this.userId,
                 controller: this.controller,
 

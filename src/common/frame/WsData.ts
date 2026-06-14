@@ -126,6 +126,8 @@ export enum CmdType {
 
     tcp_forward_server_load,
 
+    ai_confirm_cmd, // AI 执行命令前需要用户确认
+
 }
 
 
@@ -224,7 +226,9 @@ export type ws_cmd_type_map = {
 
     [CmdType.ai_load_info]: [any, any]
 
-    [CmdType.tcp_forward_server_load]: [any, any]
+    [CmdType.tcp_forward_server_load]: [any, any],
+
+    [CmdType.ai_confirm_cmd]: [any, any]
 }
 
 export enum WsConnectType {

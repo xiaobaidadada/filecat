@@ -39,7 +39,6 @@ export function TcpProxyServerClient() {
     const [client_list, set_client_list] = useState([] as tcp_proxy_server_client[]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     // const [is_save,set_is_is_save] = useState(false);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
 
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
     const [client_filter_Key,set_client_filter_Key] = useState<string>(undefined)

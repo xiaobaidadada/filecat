@@ -582,6 +582,7 @@ export class Ai_agentService {
                    this.end_to_res(res);
                },
                sys_prompt: sysPrompt,
+               token
            })
            if (latestUserMessage && assistantText) {
                const assistantMessage:ai_agent_message_item = {
@@ -615,6 +616,22 @@ export class Ai_agentService {
     public async reloadMcpServer(index: number) {
         return ai_agentMcpService.reloadServer(index);
     }
+
+    // ============ AI 命令确认管理 ============
+
+    /**
+     * 待用户确认的命令映射
+     * key: askId
+     * value: { user_id, cmd, createdAt, resolve, timeout }
+     */
+    public pendingConfirmMap = new Map<string, {
+        user_id: string;
+        cmd: string;
+        createdAt: number;
+        resolve: (approved: boolean) => void;
+        timeout: any;
+        token: string;
+    }>();
 
     // ============ 插件工具管理 ============
 

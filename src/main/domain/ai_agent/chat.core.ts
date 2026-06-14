@@ -12,10 +12,12 @@ import * as path from "path";
 import {StringUtil} from "../../../common/StringUtil";
 import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
+import {CmdType, WsData} from "../../../common/frame/WsData";
+import { WsUtil} from "../../../common/frame/ws.server";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
-    // token?: string;
+    token?: string;
     user_id:string;
     controller: AbortController;
     on_msg: (msg: string) => void;
@@ -26,8 +28,60 @@ export interface ChatOptions {
 
 export class ChatCore {
 
+    /**
+     * AI 命令确认 - 等待用户确认
+     * 同时支持 WS 前端和 CLI 命令行两种确认方式，任意一个先响应即采用
+     */
+    private async waitForCmdConfirm(user_id: string, cmd: string,token?:string): Promise<boolean> {
+        // 如果 dotenv 配置了直接执行，跳过确认
+        if (ai_config_env.allow_exec_cmd_directly || token == null) {
+            return true;
+        }
+
+        // 生成一个唯一的确认ID
+        const askId = `confirm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+        // 先在 ai_agentService 中注册 pending 确认，供 WS handler 匹配
+        ai_agentService.pendingConfirmMap.set(askId, {
+            user_id,
+            cmd,
+            createdAt: Date.now(),
+            resolve: null as any,
+            timeout: null as any,
+            token: token,
+        });
+
+        return new Promise<boolean>((resolve) => {
+            const pending = ai_agentService.pendingConfirmMap.get(askId)!;
+            pending.resolve = resolve;
+
+            let resolved = false;
+            const safeResolve = (approved: boolean) => {
+                if (resolved) return;
+                resolved = true;
+                clearTimeout(pending.timeout);
+                ai_agentService.pendingConfirmMap.delete(askId);
+                resolve(approved);
+            };
+
+            // 超时，默认拒绝
+            pending.timeout = setTimeout(() => {
+                safeResolve(false);
+            }, 60000);
+
+            // ===== 1. 向该用户的 WS 连接发送确认请求（只找第一个匹配的） =====
+            const wss = WsUtil.get_wss_by_token(token)
+            const data = new WsData(CmdType.ai_confirm_cmd, {
+                askId,
+                cmd,
+                user_id
+            });
+            wss.sendData(data.encode());
+        });
+    }
+
     // 检测权限 补充参数
-    private async permission_test(user_id, user: UserData, toolName, args: any, cwd) {
+    private async permission_test(user_id, user: UserData, toolName, args: any, cwd,token) {
         switch (toolName) {
             case "exec_cmd": {
                 args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
@@ -36,12 +90,19 @@ export class ChatCore {
                     const argv = cmd.split(" ");
                     const code = await shellServiceImpl.check_exe_cmd({
                         user_id: user.id,
-                        cwd: args.cwd
+                        cwd: args.cwd,
+                        token: token
                     })(argv[0], argv.slice(1));
 
                     if (code === exec_type.not) {
                         throw new Error(`没有权限执行命令：${cmd}`);
                     }
+                }
+
+                // 执行命令前需要用户确认
+                const approved = await this.waitForCmdConfirm(user_id, args.cmd,token);
+                if (!approved) {
+                    throw new Error(`用户拒绝了命令执行：${args.cmd}`);
                 }
                 break;
             }
@@ -80,7 +141,7 @@ export class ChatCore {
     public async chat(options: ChatOptions) {
         const {
             originMessages,
-            // token,
+            token,
             user_id,
             controller,
             on_msg,
@@ -241,7 +302,7 @@ ${sys_prompt ?? ''}
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
-                        await this.permission_test(user_id, user, toolName, args, cwd);
+                        await this.permission_test(user_id, user, toolName, args, cwd,token);
 
                         on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params()}\n\r`)
                         let result = await ai_agentService.callTool(toolName, args);

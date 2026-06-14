@@ -178,9 +178,9 @@ export class ShellService {
     }
 
     check_exe_cmd({
-                       user_id,cwd,pty_shell
+                       user_id,cwd,pty_shell,token
                   }: {
-        // token?: string,
+        token?: string,
         user_id: string,
         pty_shell?: PtyShell,cwd?: string // 二选一
     }) {
@@ -209,6 +209,7 @@ export class ShellService {
                     }
                 case filecat_cmd.ai:
                     params.push(user_id)
+                    params.push(token)
                     if (!this.check_permission({ user_id, permission: UserAuth.ai_chat_cmd})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {
@@ -292,7 +293,7 @@ export class ShellService {
             }
         });
         ptyShell.check_exe_cmd = this.check_exe_cmd({
-             pty_shell:ptyShell,user_id: user_data.id
+             pty_shell:ptyShell,user_id: user_data.id,token: data.wss.token
         })
         this.add_handle_for_type_shell(ptyShell)
         ptyShell.cmd_exe_auto_completion = (exe) => {

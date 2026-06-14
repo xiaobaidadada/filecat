@@ -106,6 +106,7 @@ export class ai_agent_item_dotenv {
     tool_call_max = 300; // 聊天循环最大次数
     // char_max = 12000; // 单轮请求字符最大数量，多了会截断
     // messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
+    allow_exec_cmd_directly = false; // 是否允许AI直接执行命令而不需要用户确认
 }
 export const ai_agent_item_dotenv_default = `
 # 核心参数
@@ -113,6 +114,8 @@ export const ai_agent_item_dotenv_default = `
 tool_error_max=50
 # 聊天循环最大次数
 tool_call_max=300
+# 是否允许AI直接执行命令而不需要用户确认，默认为false，需要用户手动确认，如果使用 workflow 这里等价于为 true
+allow_exec_cmd_directly=false
 
 `
 

@@ -10,6 +10,17 @@ const url = require('url');
 
 const allWssSet = new Set<Wss>;
 
+export class WsUtil {
+
+    public static get_wss_by_token(token: string) {
+        for (const wss of allWssSet) {
+            if (!wss.token) continue;
+           if(wss.token === token)  return wss;
+        }
+    }
+
+}
+
 // 连接期间内一直存在
 export class Wss {
 
@@ -108,6 +119,7 @@ export class WsServer {
                             }
                         }
                         clearInterval(wss.heart_interval)
+                        delete wss.token;
                     }
                     wss.heart_interval = setInterval(() => {
                         if(Date.now() -wss.heart_time_stamp > max_heart_interval) {
