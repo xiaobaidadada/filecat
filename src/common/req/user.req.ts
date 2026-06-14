@@ -134,7 +134,7 @@ export enum FileListPaginationModeEmum {
     pagination = "pagination" // 分页滚动加载
 }
 
-export type themes = "light" | "dark" | "google" | "" | undefined;
+export type themes = "light" | "dark" | "google" | "google-dark" | "" | undefined;
 
 export enum user_file_time_show_type {
     current = "current",

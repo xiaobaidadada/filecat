@@ -264,7 +264,8 @@ export function PrivateEnv() {
                     }} options={[
                         {title:"light",value:"light"},
                         {title:"dark",value:"dark"},
-                        {title:"google",value:"google"}
+                        {title:"google",value:"google"},
+                        {title:"google dark",value:"google-dark"}
                     ]}/>
                     <InputText value={upload_file_ignore} handleInputChange={(value) => {
                         set_upload_file_ignore(value)

@@ -1,0 +1,1721 @@
+:root {
+  /* 深色 Google Material Design 风格主题 */
+  --background: #121212;
+  --surfacePrimary: #1e1e1e;
+  --surfaceSecondary: #2d2d2d;
+  --divider: rgba(255, 255, 255, 0.12);
+  --icon: #ffffff;
+  --textPrimary: rgba(255, 255, 255, 0.87);
+  --textSecondary: rgba(255, 255, 255, 0.6);
+
+  /* 圆角设计 */
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+
+  /* 现代化阴影 (深色版本) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
+
+  /* Google 风格色彩 (深色适配) */
+  --primary: #8ab4f8;
+  --primary-light: #1a2a3a;
+  --primary-dark: #4285f4;
+  --secondary: #81c995;
+  --secondary-light: #1a2e1a;
+  --accent: #f28b82;
+  --accent-light: #2e1a1a;
+  --warning: #fdd663;
+  --warning-light: #2e2a1a;
+
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+
+  /* 现代化图标颜色 (深色适配) */
+  --icon-blue: #8ab4f8;
+  --icon-green: #81c995;
+  --icon-yellow: #fdd663;
+  --icon-red: #f28b82;
+  --icon-purple: #d7aefb;
+  --icon-teal: #78d9ec;
+}
+
+body {
+  background: var(--background);
+  color: var(--textPrimary);
+  font-family: 'Google Sans', 'Segoe UI', Roboto, sans-serif;
+}
+
+#loading {
+  background: var(--background);
+}
+#loading .spinner div, main .spinner div {
+  background: var(--icon-blue);
+}
+
+#login {
+  background: var(--background);
+}
+
+.header {
+  background: var(--surfacePrimary);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+#search #input {
+  background: var(--surfaceSecondary);
+  border-color: var(--divider);
+  border-radius: var(--border-radius);
+}
+#search #input input::placeholder {
+  color: var(--textSecondary);
+}
+#search.active #input {
+  background: var(--surfacePrimary);
+  box-shadow: var(--shadow-md);
+}
+#search.active input {
+  color: var(--textPrimary);
+}
+#search #result {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+#search .boxes {
+  background: var(--surfaceSecondary);
+  border-radius: var(--border-radius-sm);
+}
+#search .boxes h3 {
+  color: var(--textPrimary);
+}
+
+.action {
+  color: var(--textPrimary) !important;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+}
+.action:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.action .counter {
+  border-color: var(--divider);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+nav > div {
+  border-color: var(--divider);
+}
+
+.breadcrumbs {
+  border-color: var(--divider);
+  color: var(--textPrimary) !important;
+}
+.breadcrumbs span {
+  color: var(--textPrimary) !important;
+}
+.breadcrumbs a:hover {
+  background-color: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+#listing .item {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-color: var(--divider) !important;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+#listing .item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+#listing .item .modified {
+  color: var(--textSecondary);
+}
+#listing h2,
+#listing.list .header span {
+  color: var(--textPrimary) !important;
+}
+#listing.list .header span {
+  color: var(--textPrimary);
+}
+#listing.list .header i {
+  color: var(--icon-blue);
+}
+#listing.list .item.header {
+  background: var(--background);
+  box-shadow: none;
+}
+
+.message {
+  color: var(--textPrimary);
+}
+
+.card {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+.button--flat:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+.dashboard #nav ul li {
+  color: var(--textSecondary);
+  border-radius: var(--border-radius-sm);
+}
+.dashboard #nav ul li:hover {
+  background: var(--primary-light);
+}
+
+.card h3,
+.dashboard #nav,
+.dashboard p label {
+  color: var(--textPrimary);
+}
+
+td .input {
+  background: transparent;
+  border: 0px ;
+}
+td .input:focus {
+  background: var(--surfaceSecondary);
+}
+
+.select_dropdown,
+.card#share input,
+.card#share select,
+.input {
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius-sm);
+}
+.input:hover,
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+.input--red {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.input--green {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.select_option:hover {
+  background: var(--primary-light);
+}
+
+.select_option--selected {
+  background: var(--primary-light);
+}
+
+
+.dashboard #nav .wrapper,
+.collapsible {
+  border-color: var(--divider);
+}
+.collapsible > label * {
+  color: var(--textPrimary);
+}
+
+table th {
+  color: var(--textSecondary);
+}
+
+.file-list li:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+.file-list li:before {
+  color: var(--textSecondary);
+}
+.file-list li[aria-selected=true]:before {
+  color: var(--icon-blue);
+}
+
+.shell {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+}
+.shell__divider {
+  background: var(--divider);
+  border-radius: 2px;
+}
+.shell__divider:hover {
+  background: var(--primary);
+}
+.shell__result {
+  border-top: 1px solid var(--divider);
+}
+.xterm-screen {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+
+#editor-container {
+  background: var(--background) !important;
+}
+
+#editor-container .bar {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+@media (max-width: 736px) {
+  #file-selection {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+  #file-selection span {
+    color: var(--textPrimary) !important;
+  }
+  nav {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+  #dropdown {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+}
+
+.share__box {
+  background: var(--surfacePrimary) !important;
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.share__box__element {
+  border-top-color: var(--divider);
+}
+
+.dropdown_item {
+  background: var(--surfacePrimary);
+  margin: 0;
+  border-radius: var(--border-radius-sm);
+}
+.dropdown > div:hover {
+  background: var(--primary-light);
+}
+.menu ul li:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+.md-context div{
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius-sm);
+}
+#md-container .md-context{
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+.card-content  textarea {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius-sm);
+}
+
+.nav_list_a,.nav_list_a a {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+.studio .studio-nav,.studio-nav div,.studio-body {
+  background: var(--surfacePrimary) !important;
+  border-radius: var(--border-radius);
+}
+
+.studio-item-title:hover * {
+  color: var(--primary);
+}
+
+.chat-message.bot{
+  background: var(--primary-light);
+  border-radius: var(--border-radius);
+  color: var(--textPrimary);
+}
+
+.chat-input-area textarea {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+.common-box  {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-header ,.chat-input-area {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.dashboard,.full_screen_context {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.site_edit {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-session-list {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-session-item {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius-sm);
+  color: var(--textPrimary);
+}
+.chat-session-item.active,
+.chat-session-item:hover {
+  background: var(--primary-light);
+}
+
+.menu-select-popup {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.menu-select-item:hover {
+  background:var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+.usage-stats-popup {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.usage-stats-header {
+  border-color: var(--divider);
+}
+
+.usage-stats-header h3 {
+  color: var(--textPrimary);
+}
+
+.usage-stats-close {
+  color: var(--textSecondary);
+  border-radius: 50%;
+}
+
+.usage-stats-close:hover {
+  color: var(--textPrimary);
+  background: var(--primary-light);
+}
+
+.usage-stats-loading,
+.usage-stats-empty {
+  color: var(--textSecondary);
+}
+
+.usage-stats-row {
+  background: var(--background);
+  border-radius: var(--border-radius-sm);
+}
+
+.usage-stats-row:nth-child(even) {
+  background: var(--surfaceSecondary);
+}
+
+.usage-stats-label {
+  color: var(--textSecondary);
+}
+
+.usage-stats-value {
+  color: var(--textPrimary);
+}
+
+.usage-stats-total {
+  background: var(--primary-light) !important;
+  border-color: var(--primary);
+  border-radius: var(--border-radius);
+}
+
+.usage-stats-total .usage-stats-label,
+.usage-stats-total .usage-stats-value {
+  color: var(--primary);
+}
+
+/* 移除硬编码颜色，改用 CSS 变量 */
+nav .nav_2 {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* 使用更柔和的缓动曲线 */
+  border-radius: var(--border-radius-lg); /* 使用你定义的圆角变量 */
+  margin: 4px 8px; /* 给菜单项之间留出空间 */
+  width: auto;
+}
+
+/* 现代悬停态 */
+nav .nav_2:hover {
+  background-color: var(--surfaceSecondary);
+  transform: scale(1.02); /* 轻微放大，提供物理反馈 */
+}
+
+/* 现代激活态 */
+nav .nav_2_active {
+  background-color: var(--primary-light) !important;
+  color: var(--primary) !important;
+  font-weight: 500;
+}
+
+/* 激活态图标颜色 */
+nav .nav_2_active i {
+  color: var(--primary);
+}
+
+/* 整体悬停时，图标也会有一个微小的放大或颜色变化 */
+nav .nav_2:hover i {
+  color: var(--textPrimary);
+  transition: color 0.2s;
+}
+
+.nav_list_a {
+  background: transparent; /* 默认透明 */
+  border-radius: var(--border-radius-lg);
+  transition: all 0.25s ease;
+  border: 1px solid transparent; /* 预留边框，防止 Hover 时布局抖动 */
+}
+
+.nav_list_a:hover {
+  background: var(--surfacePrimary);
+  box-shadow: var(--shadow-sm); /* 悬停时浮起 */
+  border-color: var(--divider);
+}
+
+/* 激活时呈现边框高亮 */
+.nav_list_a.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+nav {
+  /*border-right: 1px solid var(--divider); !* 增加右侧分割线 *!*/
+  background: var(--background);
+}
+
+/* 滚动条隐藏但在悬停时可见（增强交互感） */
+nav::-webkit-scrollbar {
+  width: 6px;
+}
+nav:hover::-webkit-scrollbar-thumb {
+  background: var(--divider);
+  border-radius: 4px;
+}
+
+/* 深色模式特有的图标颜色适配 */
+.material-icons.icon {
+  color: var(--textSecondary);
+}
+
+/* 深色模式下的图标颜色调整 */
+.material-icons.icon[data-icon="home"] {
+  color: #ff7043; /* 橙色 */
+}
+
+.material-icons.icon[data-icon="settings"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="favorite"] {
+  color: #f06292; /* 粉红色 */
+}
+
+.material-icons.icon[data-icon="person"] {
+  color: #ce93d8; /* 紫色 */
+}
+
+/* 导航类图标 */
+.material-icons.icon[data-icon="menu"] {
+  color: rgba(255, 255, 255, 0.7); /* 浅灰色 */
+}
+
+.material-icons.icon[data-icon="arrow_back"] {
+  color: var(--primary); /* 主色 */
+}
+
+.material-icons.icon[data-icon="arrow_right"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="arrow_drop_down"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_arrow_right"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_arrow_down"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="navigate_before"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="navigate_next"] {
+  color: var(--primary);
+}
+
+/* 操作类图标 */
+.material-icons.icon[data-icon="add"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="save"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="delete"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="edit"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="close"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="refresh"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="search"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="more_horiz"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="more_vert"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="cancel"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="content_copy"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="content_cut"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="content_paste"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="download"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="upload"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="send"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="play_arrow"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="stop"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="compress"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+/* 文件类型图标 */
+.material-icons.icon[data-icon="folder"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="insert_drive_file"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="image"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="code"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="description"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="volume_up"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="movie"] {
+  color: #ce93d8; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="link_off"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="border_all"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="slideshow"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="web_asset"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="archive"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="folder_zip"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="album"] {
+  color: #ce93d8; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="font_download"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="draw"] {
+  color: #f06292; /* 粉红色 */
+}
+
+/* 状态类图标 */
+.material-icons.icon[data-icon="check_box"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="place"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="info"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="sort"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="percent"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="text_rotate_vertical"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 特殊功能图标 */
+.material-icons.icon[data-icon="terminal"] {
+  color: #e0e0e0; /* 浅灰色 - 终端命令行 */
+}
+
+.material-icons.icon[data-icon="share"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="api"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="link"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="schedule"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="grid_view"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="fullscreen"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="personal_video"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="print"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="sd_card"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="health_and_safety"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="update"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="file_open"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="create_new_folder"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="note_add"] {
+  color: var(--primary);
+}
+
+/* 输入框图标 */
+.material-icons.icon[data-icon="manage_accounts"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="password"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="private_connectivity"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="location_on"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="outlet"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="network_ping"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="verified_user"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="laptop_mac"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 其他特殊图标 */
+.material-icons.icon[data-icon="short_text"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="edit_attributes"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="copy_all"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="data_object"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="file_upload"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="save_as"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="unfold_less"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="unfold_more"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="add_box"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="add_comment"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="delete_sweep"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="details"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="table_chart"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="add_circle"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="sentiment_dissatisfied"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="attach_file"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 补充的图标 */
+.material-icons.icon[data-icon="upload_file"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="question_answer"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="computer"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="cell_tower"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="home_repair_service"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="vpn_lock"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="dns"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="logout"] {
+  color: var(--accent);
+}
+
+/* 其他常用图标补充 */
+.material-icons.icon[data-icon="warning"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="error"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="success"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="lock"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="lock_open"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="visibility"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="visibility_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="star"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="star_border"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="bookmark"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="bookmark_border"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="notifications"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="notifications_none"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="notifications_active"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="account_circle"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="group"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="chat"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="email"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="phone"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="video_call"] {
+  color: #ce93d8; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="screen_share"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="security"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="backup"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="restore"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="sync"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="cloud"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="cloud_upload"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="cloud_download"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="cloud_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="wifi"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="wifi_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="bluetooth"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="bluetooth_disabled"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="battery_full"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="battery_charging_full"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="battery_alert"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="signal_cellular_4_bar"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="signal_cellular_connected_no_internet_4_bar"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="signal_cellular_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="location_disabled"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="not_interested"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="gavel"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="translate"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="bug_report"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="developer_board"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="storage"] {
+  color: #78909c; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="graphic_eq"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="timelapse"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="timer"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="hourglass_empty"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="hourglass_full"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="loop"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="shuffle"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="repeat"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="repeat_one"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="queue_music"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="playlist_add"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="playlist_play"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="library_music"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="library_books"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="library_add"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="movie_filter"] {
+  color: #ce93d8; /* 紫色 */
+}
+
+.material-icons.icon[data-icon="photo_camera"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="photo_library"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="camera_alt"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="camera_enhance"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="flash_on"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="flash_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="flash_auto"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="panorama"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="panorama_fish_eye"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="panorama_horizontal"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="panorama_vertical"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="panorama_wide_angle"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="switch_camera"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="switch_video"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="video_label"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="video_library"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="videocam"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="videocam_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="fiber_manual_record"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="fiber_smart_record"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="high_quality"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="sd"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="hd"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="4k"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="closed_caption"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="closed_caption_disabled"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="surround_sound"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="volume_down"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="volume_mute"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="volume_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="play_circle_filled"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="play_circle_outline"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="pause"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="pause_circle_filled"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="pause_circle_outline"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="skip_next"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="skip_previous"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="fast_forward"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="fast_rewind"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="replay"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="replay_5"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="replay_10"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="replay_30"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="forward_5"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="forward_10"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="forward_30"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="mic"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="mic_none"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="mic_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="speaker"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="speaker_group"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="speaker_notes"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="speaker_notes_off"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="text_fields"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_bold"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_italic"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_underlined"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_strikethrough"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_size"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_color_text"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_color_fill"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_align_left"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_align_center"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_align_right"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_align_justify"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_list_bulleted"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_list_numbered"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_indent_increase"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_indent_decrease"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="format_clear"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="insert_emoticon"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="insert_chart"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="insert_comment"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="insert_invitation"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="insert_link"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="insert_photo"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="mode_comment"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="mode_edit"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="publish"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="vertical_align_top"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="vertical_align_bottom"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="vertical_align_center"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="wrap_text"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="money_off"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="monetization_on"] {
+  color: var(--warning);
+}
+
+.material-icons.icon[data-icon="euro_symbol"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="attach_money"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="bubble_chart"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="multiline_chart"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="pie_chart"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="scatter_plot"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="show_chart"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="equalizer"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="linear_scale"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="timeline"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="trending_up"] {
+  color: var(--secondary);
+}
+
+.material-icons.icon[data-icon="trending_down"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="trending_flat"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="call_made"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="call_received"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="call_merge"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="call_missed"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="call_missed_outgoing"] {
+  color: var(--accent);
+}
+
+.material-icons.icon[data-icon="call_split"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="chat_bubble"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="chat_bubble_outline"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="forum"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="speaker_phone"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="stay_current_portrait"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="stay_current_landscape"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="smartphone"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="tablet"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="tablet_mac"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="desktop_mac"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="desktop_windows"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="laptop_chromebook"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="laptop_windows"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="watch"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="watch_later"] {
+  color: var(--primary);
+}
+
+.material-icons.icon[data-icon="devices"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="devices_other"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="scanner"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="headset"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="headset_mic"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_backspace"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_capslock"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_hide"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_return"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_tab"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="keyboard_voice"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.material-icons.icon[data-icon="mouse"] {
+  color: rgba(255, 255, 255, 0.7);
+}
