@@ -649,6 +649,9 @@ export class UserService {
             if(role.language) {
                 user_data.language = role.language;
             }
+            if(role.theme) {
+                user_data.theme = role.theme;
+            }
             if(role.auth_list && role.auth_list.length > 0) {
                 const set = new Set(role.auth_list);
                 const del_set = new Set();

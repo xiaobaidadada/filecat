@@ -12,7 +12,7 @@ import {GlobalContext} from "../../GlobalProvider";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
-import {UserAuth, UserData} from "../../../../common/req/user.req";
+import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {Permission} from "./component/Permission";
@@ -41,6 +41,7 @@ export function User() {
     const [access_cmd,set_access_cmd] = useState("");
     const [not_access_cmd,set_not_access_cmd] = useState("");
     const [language, setLanguage] = useState("en");
+    const [theme, set_theme] = useState<themes>("");
     const [auth_list,set_auth_list] = useState([]);
     const [note, set_note] = useState("");
     const [is_root, set_is_root] = useState(false);
@@ -95,6 +96,7 @@ export function User() {
         set_access_cmd(item?.access_cmd??"");
         set_not_access_cmd(item?.not_access_cmd??"")
         setLanguage(item?.language??"");
+        set_theme(item?.theme??"");
         set_auth_list(item?.auth_list??[]);
         set_note(item?.note??"");
         set_is_root(item?.is_root??false);
@@ -135,6 +137,8 @@ export function User() {
                 set_not_access_cmd(role.not_access_cmd);
             if(role.language)
                 setLanguage(role.language);
+            if(role.theme)
+                set_theme(role.theme);
             if(role.auth_list && role.auth_list.length > 0) {
                 const set = new Set(role.auth_list);
                 for (const key of auth_list) {
@@ -200,6 +204,7 @@ export function User() {
         }
         const user_data = new UserData();
         user_data.language = language;
+        user_data.theme = theme;
         user_data.access_dirs = access_dirs;
         user_data.username = username;
         user_data.password = password;
@@ -419,6 +424,18 @@ export function User() {
                             value={language} onChange={(value) => {
                             setLanguage(value);
                         }} options={[{title:t('跟随系统'),value:'sys'},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
+
+                        <label>{t("主题")}</label>
+                        <Select
+                            disabled={bind_role_item.theme !== "" && bind_role_item.theme !== undefined}
+                            value={theme} onChange={(value) => {
+                            set_theme(value);
+                        }} options={[
+                            {title:"light",value:"light"},
+                            {title:"dark",value:"dark"},
+                            {title:"google",value:"google"},
+                            {title:"google dark",value:"google-dark"}
+                        ]}/>
 
                         {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 

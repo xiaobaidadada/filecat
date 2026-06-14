@@ -12,7 +12,7 @@ import {GlobalContext} from "../../GlobalProvider";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
-import {UserAuth, UserData} from "../../../../common/req/user.req";
+import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {Permission} from "./component/Permission";
@@ -35,6 +35,7 @@ export function Role() {
     const [access_cmd,set_access_cmd] = useState("");
     const [not_access_cmd,set_not_access_cmd] = useState("");
     const [language, setLanguage] = useState("");
+    const [theme, set_theme] = useState<themes>("");
     const [auth_list,set_auth_list] = useState([]);
     const [role_id, set_role_id] = useState("");
     const [role_note, set_role_note] = useState("");
@@ -59,6 +60,7 @@ export function Role() {
         set_access_cmd(item?.access_cmd??"");
         set_not_access_cmd(item?.not_access_cmd??"");
         setLanguage(item?.language??"");
+        set_theme(item?.theme??"");
         set_auth_list(item?.auth_list??[]);
         set_role_id(item?.role_id??"");
         set_role_note(item?.role_note??"");
@@ -102,6 +104,7 @@ export function Role() {
         }
         const user_data = new UserData();
         user_data.language = language;
+        user_data.theme = theme;
         user_data.access_dirs = access_dirs;
         user_data.role_name = role_name;
         user_data.not_access_dirs = not_access_dirs;
@@ -260,6 +263,17 @@ export function Role() {
                         <Select value={language} onChange={(value) => {
                             setLanguage(value);
                         }} options={[{title:t('跟随系统'),value:'sys'},{title: "NOT", value: ""},{title: "English", value: "en"}, {title: "中文", value: "zh"}]}/>
+
+                        <label>{t("主题")}</label>
+                        <Select value={theme} onChange={(value) => {
+                            set_theme(value);
+                        }} options={[
+                            {title: "NOT", value: ""},
+                            {title:"light",value:"light"},
+                            {title:"dark",value:"dark"},
+                            {title:"google",value:"google"},
+                            {title:"google dark",value:"google-dark"}
+                        ]}/>
                         {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 
                         <Permission is_disable={() => {

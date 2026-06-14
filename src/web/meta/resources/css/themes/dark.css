@@ -529,3 +529,7 @@ nav:hover::-webkit-scrollbar-thumb {
   background: var(--divider);
   border-radius: 4px;
 }
+
+.dashboard label, .dashboard_label {
+  color: var(--textPrimary);
+}

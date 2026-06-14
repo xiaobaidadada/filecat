@@ -382,6 +382,10 @@ table th {
   border-radius: var(--border-radius);
 }
 
+.dashboard label, .dashboard_label {
+  color: var(--textPrimary);
+}
+
 .chat-session-list {
   background: var(--background);
   border-radius: var(--border-radius);
