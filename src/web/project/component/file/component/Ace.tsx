@@ -19,7 +19,7 @@ ace.config.set('themePath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_vers
 ace.config.set('workerPath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
 ace.config.set("basePath", `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`)
 
-import modelist from "ace-builds/src-noconflict/ext-modelist";
+import * as modest from "ace-builds/src-noconflict/ext-modelist";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
@@ -30,14 +30,14 @@ import {editor_data} from "../../../util/store.util";
 export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number}) {
     const editorRef = useRef(null);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const theme = userInfo.user_data.theme ===  "dark"? "cloud_editor_dark" : "cloud9_day";
+    const theme = userInfo.user_data.theme?.includes("dark") ? "cloud_editor_dark" : "cloud9_day";
     useEffect(() => {
         const editor = ace.edit(editorRef.current, {
             value: editor_data.get_value_temp(props.editor_id),
             showPrintMargin: false,
             // readOnly: true,
             theme: `ace/theme/${theme}`,
-            mode: props.model ?? modelist.getModeForPath(props.name ?? '').mode,
+            mode: props.model ?? modest.getModeForPath(props.name ?? '').mode,
             wrap: false,
             highlightActiveLine:false, // 鼠标放在一行上的高亮
             fontSize:14,

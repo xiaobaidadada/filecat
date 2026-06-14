@@ -5,6 +5,7 @@ import {UserAuth} from "../../../common/req/user.req";
 import Awesomplete from "awesomplete";
 import "awesomplete/awesomplete.css";
 import { createPortal } from 'react-dom';
+import {Icon} from "./Button";
 
 export function InputTextIcon(props: {
     placeholder?: string,
@@ -29,7 +30,7 @@ export function InputTextIcon(props: {
                 style={{"maxWidth": props.max_width, display: props.not_mobile ? "block" : undefined}}>
         {/*display:"block"取消移动样式下的搜索隐藏*/}
         <div id="input">
-            <i className="material-icons">{props.icon}</i>
+            <Icon icon={props.icon} />
             <input
                 type="text"
                 ref={inputRef}  // 使用 ref 关联到 input 元素

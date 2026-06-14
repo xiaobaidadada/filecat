@@ -1,9 +1,10 @@
 import React, {ReactNode, useEffect} from 'react';
+import {Icon} from "./Button";
 
 
 export function Blank(props:{context?:string}) {
     return <h2 className="message">
-        <i className="material-icons">sentiment_dissatisfied</i>
+        <Icon icon={'sentiment_dissatisfied'}/>
         <span>{props.context}</span>
     </h2>
 }

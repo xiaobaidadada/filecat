@@ -16,7 +16,7 @@ export function SystemdShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useRecoilState($stroe.systemd_shell_show);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const color =  userInfo.user_data.theme === "dark"?"#FFFFFF":"#000000";
+    const color =  userInfo.user_data.theme?.includes( "dark" )?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
         const terminal = new Terminal({
             // fontSize: 15,

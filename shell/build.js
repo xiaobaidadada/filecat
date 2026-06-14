@@ -149,7 +149,13 @@ const tasksLister = new Listr(
                         copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","proxy","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "meta","resources","img","favicon-16x16.png"), path.join(__dirname, "..", "build", "dist","favicon-16x16.png"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","img","favicon-32x32.png"), path.join(__dirname, "..", "build", "dist","favicon-32x32.png"));
-                        copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","css","themes","dark.css"), path.join(__dirname, "..", "build", "dist","dark.css"));
+                        const base_theme = path.join(__dirname, "..", "src", "web", "meta", "resources","css","themes")
+                        const files = fs.readdirSync(base_theme)
+                        for (const file of files) {
+                            copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","css","themes",file), path.join(__dirname, "..", "build", "dist",file));
+                        }
+                        // copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","css","themes","dark.css"), path.join(__dirname, "..", "build", "dist","dark.css"));
+                        // copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "resources","css","themes","modern.css"), path.join(__dirname, "..", "build", "dist","modern.css"));
                         // copyFileSync(path.join(__dirname, "..", "src", "web", "meta", "component","resources","img","svg.png"), path.join(__dirname, "..", "build", "dist","svg.png"))
                         res(true);
                     });

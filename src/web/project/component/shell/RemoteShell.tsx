@@ -18,7 +18,7 @@ export function RemoteShell(props) {
     const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
     const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const color =  userInfo.user_data.theme === "dark"?"#FFFFFF":"#000000";
+    const color =  userInfo.user_data.theme?.includes("dark" )?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
         const terminal = new Terminal({
             // fontSize: 15,

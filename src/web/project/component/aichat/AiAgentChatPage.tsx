@@ -52,7 +52,7 @@ function AttachmentList({attachments = []}: { attachments?: ai_agent_message_att
         <div className="chat-message-attachments">
             {attachments.map((attachment, index) => (
                 <div key={`${attachment.name}_${index}`} className="chat-message-attachment">
-                    <i className="material-icons">attach_file</i>
+                    <Icon icon={'attach_file'} />
                     <span>{attachment.name}</span>
                     <small>{attachment.size} B</small>
                 </div>
@@ -641,10 +641,10 @@ export default function AiAgentChatPage() {
                                <div className="chat-attachment-strip">
                                    {pendingAttachments.map((file, index) => (
                                        <div key={`${file.name}_${index}`} className="chat-attachment-chip">
-                                           <i className="material-icons">attach_file</i>
+                                           <Icon icon={'attach_file'} />
                                            <span title={file.name}>{file.name}</span>
                                            <button type="button" onClick={() => removePendingAttachment(index)}>
-                                               <i className="material-icons">close</i>
+                                               <Icon icon={'close'} />
                                            </button>
                                        </div>
                                    ))}

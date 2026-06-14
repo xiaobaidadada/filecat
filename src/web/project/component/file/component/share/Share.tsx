@@ -7,7 +7,7 @@ import {
     FileListLoad_file_folder_for_file_share,
     FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page
 } from "../../FileListLoad";
-import {ActionButton, ButtonText} from "../../../../../meta/component/Button";
+import {ActionButton, ButtonText, Icon} from "../../../../../meta/component/Button";
 import {getFileFormat} from "../../../../../../common/FileMenuType";
 import {getRouterAfter, getRouterPath, remove_router_tail} from "../../../../util/WebPath";
 import {routerConfig} from "../../../../../../common/RouterConfig";
@@ -221,12 +221,8 @@ export default function Share() {
                                                 data-dir={data.is_dir}
                                                 aria-label={data.name}
                                             >
-                                                <i
-                                                    className="material-icons"
-                                                    style={{fontSize: "10rem", display: "inline-block", lineHeight: 1}}
-                                                    aria-label={data.name}  // 注意 aria-label 放在 <i> 上
-                                                >
-                                                </i>
+
+                                                <Icon icon={''} style={{fontSize: "10rem", display: "inline-block", lineHeight: 1}} aria_label={data.name} />
                                             </div>
                                         </div>
 

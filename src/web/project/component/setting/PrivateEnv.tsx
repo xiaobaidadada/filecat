@@ -261,7 +261,11 @@ export function PrivateEnv() {
                     {t("主题")}
                     <Select  value={theme} onChange={(value)=>{
                         set_theme(value);
-                    }} options={[{title:"light",value:"light"},{title:"dark",value:"dark"}]}/>
+                    }} options={[
+                        {title:"light",value:"light"},
+                        {title:"dark",value:"dark"},
+                        {title:"google",value:"google"}
+                    ]}/>
                     <InputText value={upload_file_ignore} handleInputChange={(value) => {
                         set_upload_file_ignore(value)
                     }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"} no_border={true}/>

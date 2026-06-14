@@ -2,6 +2,7 @@ import React from 'react';
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {useTranslation} from "react-i18next";
+import {Icon} from "../../../meta/component/Button";
 
 export function UploadFile(props) {
 
@@ -54,7 +55,7 @@ export function UploadFile(props) {
                         // @ts-ignore 一次性扁平 系统自己递归遍历
                         document.getElementById("upload-input").click();
                     }}>
-                        <i className="material-icons">insert_drive_file</i>
+                        <Icon icon={'insert_drive_file'} />
                         <div className="title">{t("文件")}</div>
                     </div>
                     {!showPrompt.data?.extra_data?.only_file &&
@@ -64,7 +65,7 @@ export function UploadFile(props) {
                             // @ts-ignore
                             document.getElementById("upload-input-directory").click();
                         }}>
-                            <i className="material-icons">folder</i>
+                            <Icon icon={'folder'} />
                             <div className="title">{t("文件夹")}</div>
                         </div>
                     }

@@ -6,6 +6,7 @@ import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/u
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../project/util/store";
 import {Overlay} from "./Dashboard";
+import {Icon} from "./Button";
 
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
@@ -70,7 +71,7 @@ export function Nav(props: NavProps) {
                                     if(item2.clickFun) item2.clickFun();
                                     closeMobileNav();
                                 }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
-                                    <i className="material-icons " style={{color:"#546e7a"}}>{item2.icon}</i>
+                                    <Icon icon={item2.icon}/>
                                     <span className=" nav_3">{item2.name}</span>
                                 </To>)
                         })}

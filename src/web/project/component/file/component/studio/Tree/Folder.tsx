@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {FileTree, FileTypeEnum} from "../../../../../../../common/file.pojo";
 import {getFileFormat} from "../../../../../../../common/FileMenuType";
+import {Icon} from "../../../../../../meta/component/Button";
 
 export function Folder(props: FileTree & {
     key: any,
@@ -52,7 +53,7 @@ export function Folder(props: FileTree & {
                     }
                 }}
                      className={"studio-item-title"}>
-                    <i className={"material-icons studio-item-title-tag"}>{props.type == "file" ? "" : (expanded ? 'arrow_drop_down' : 'arrow_right')}</i>
+                    <i className={"material-icons studio-item-title-tag"} data-icon={(expanded ? 'arrow_drop_down' : 'arrow_right')}>{props.type == "file" ? "" : (expanded ? 'arrow_drop_down' : 'arrow_right')}</i>
                     {/*<i className={"material-icons"}*/}
                     {/*   aria-label={props.name}*/}
                     {/*   file-type={props.type}>{props.type === "folder" ? "folder" : "text_snippet"}</i>*/}
@@ -62,11 +63,7 @@ export function Folder(props: FileTree & {
                             data-dir={props.type === "folder"}
                             aria-label={props.name}
                         >
-                            <i
-                                className="material-icons"
-                                aria-label={props.name}
-                            >
-                            </i>
+                           <Icon icon={''} aria_label={props.name} />
                         </span>
                     </span>
 

@@ -5,6 +5,7 @@ import {getRouterPath} from "../../project/util/WebPath";
 import {InputText} from "./Input";
 import {DivOverlayTransparent, FileMenuItem, OverlayTransparent} from "./Dashboard";
 import {useTranslation} from "react-i18next";
+import {Icon} from "./Button";
 // import '../resources/css/all.css'
 // 依靠路由的面包屑
 
@@ -64,13 +65,13 @@ export function RouteBreadcrumbs(props: {
             {input_path === undefined ?
                 <React.Fragment>
                     <span className="chevron">
-                <Link to={prePath} onClick={handleChevronClick}><i className="material-icons">home</i></Link>
+                <Link to={prePath} onClick={handleChevronClick}><Icon icon={'home'}/></Link>
             </span>
                     {
                         totalRoutePaths.map((value, index) => {
                             return (
                                 <span className="chevron" key={index}>
-                            <i className="material-icons">keyboard_arrow_right</i>
+                            <Icon icon={'keyboard_arrow_right'} />
                             <Link to={value.href} onClick={handleChevronClick}>{decodeURIComponent(value.value)}</Link>
                     </span>)
                         })

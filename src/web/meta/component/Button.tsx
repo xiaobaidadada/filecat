@@ -48,9 +48,9 @@ export function ActionButton(props:{icon?:MaterialIcon,title:string,onClick?:(ev
         <div className="action" title={props.title} onClick={props.onClick}>
             {
                 props.icon ?
-                <i className="material-icons icon" style={{
-                    color:props.selected===true?"#2196f3":""
-                }}>{props.icon}</i> :
+                    <Icon icon={props.icon} style={{
+                        color:props.selected===true?"#2196f3":""
+                    }}/> :
                     props.title
             }
             {props.tip!==undefined && <div className={"actio_tip"}>{props.tip}</div>}
@@ -134,6 +134,6 @@ export default function Switch({
     );
 }
 
-export function Icon(props:{icon: MaterialIcon}) {
-    return <i className="material-icons " style={{color:"#546e7a"}}>{props.icon}</i>
+export function Icon(props:{icon: MaterialIcon|'',style?:any,aria_label?:string}) {
+    return <i className="material-icons icon" aria-label={props.aria_label} data-icon={props.icon} style={{...props.style}}>{props.icon}</i>
 }

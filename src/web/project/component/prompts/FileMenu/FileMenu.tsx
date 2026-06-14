@@ -29,6 +29,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {routerConfig} from "../../../../../common/RouterConfig";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
+import {Icon} from "../../../../meta/component/Button";
 
 
 export function FileMenu() {
@@ -441,12 +442,12 @@ export function FileMenu() {
             <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
                                                                       items={[
                                                                           {r: <div className={"common-tag-center"}>
-                                                                                  <i className="material-icons icon">{"download"}</i>
+                                                                                  <Icon icon={'download'}/>
                                                                                   <span>{"download"}</span>
                                                                           </div>, v: common_menu_type.share_file_download
                                                                           },
                                                                           {r: <div className={"common-tag-center"}>
-                                                                                  <i className="material-icons icon">{"link"}</i>
+                                                                                  <Icon icon={'link'}/>
                                                                                   <span>{"copy curl"}</span>
                                                                               </div>, v: common_menu_type.share_file_copy_url
                                                                           }

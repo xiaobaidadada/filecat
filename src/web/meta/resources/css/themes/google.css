@@ -1,0 +1,479 @@
+:root {
+  /* 现代化清新主题 - Google Material Design 风格 */
+  --background: #f8f9fa;
+  --surfacePrimary: #ffffff;
+  --surfaceSecondary: #f1f3f4;
+  --divider: rgba(0, 0, 0, 0.08);
+  --icon: #5f6368;
+  --textPrimary: #202124;
+  --textSecondary: #5f6368;
+
+  /* 圆角设计 */
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+
+  /* 现代化阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --shadow-md: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+  --shadow-lg: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+
+  /* 清新色彩 */
+  --primary: #1a73e8;
+  --primary-light: #d2e3fc;
+  --primary-dark: #174ea6;
+  --secondary: #34a853;
+  --secondary-light: #ceead6;
+  --accent: #ea4335;
+  --accent-light: #fadbd8;
+  --warning: #fbbc04;
+  --warning-light: #feefc3;
+
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+
+  /* 现代化图标颜色 */
+  --icon-blue: #4285f4;
+  --icon-green: #34a853;
+  --icon-yellow: #fbbc04;
+  --icon-red: #ea4335;
+  --icon-purple: #9c27b0;
+  --icon-teal: #009688;
+}
+
+body {
+  background: var(--background);
+  color: var(--textPrimary);
+  font-family: 'Google Sans', 'Segoe UI', Roboto, sans-serif;
+}
+
+#loading {
+  background: var(--background);
+}
+#loading .spinner div, main .spinner div {
+  background: var(--icon-blue);
+}
+
+#login {
+  background: var(--background);
+}
+
+.header {
+  background: var(--surfacePrimary);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+#search #input {
+  background: var(--surfaceSecondary);
+  border-color: var(--divider);
+  border-radius: var(--border-radius);
+}
+#search #input input::placeholder {
+  color: var(--textSecondary);
+}
+#search.active #input {
+  background: var(--surfacePrimary);
+  box-shadow: var(--shadow-md);
+}
+#search.active input {
+  color: var(--textPrimary);
+}
+#search #result {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+#search .boxes {
+  background: var(--surfaceSecondary);
+  border-radius: var(--border-radius-sm);
+}
+#search .boxes h3 {
+  color: var(--textPrimary);
+}
+
+.action {
+  color: var(--textPrimary) !important;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+}
+.action:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.action .counter {
+  border-color: var(--divider);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+nav > div {
+  border-color: var(--divider);
+}
+
+.breadcrumbs {
+  border-color: var(--divider);
+  color: var(--textPrimary) !important;
+}
+.breadcrumbs span {
+  color: var(--textPrimary) !important;
+}
+.breadcrumbs a:hover {
+  background-color: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+#listing .item {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-color: var(--divider) !important;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+#listing .item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+#listing .item .modified {
+  color: var(--textSecondary);
+}
+#listing h2,
+#listing.list .header span {
+  color: var(--textPrimary) !important;
+}
+#listing.list .header span {
+  color: var(--textPrimary);
+}
+#listing.list .header i {
+  color: var(--icon-blue);
+}
+#listing.list .item.header {
+  background: var(--background);
+  box-shadow: none;
+}
+
+.message {
+  color: var(--textPrimary);
+}
+
+.card {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+.button--flat:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+.dashboard #nav ul li {
+  color: var(--textSecondary);
+  border-radius: var(--border-radius-sm);
+}
+.dashboard #nav ul li:hover {
+  background: var(--primary-light);
+}
+
+.card h3,
+.dashboard #nav,
+.dashboard p label {
+  color: var(--textPrimary);
+}
+
+.select_dropdown,
+.card#share input,
+.card#share select,
+.input {
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius-sm);
+}
+.input:hover,
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+.input--red {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.input--green {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.select_option:hover {
+  background: var(--primary-light);
+}
+
+.select_option--selected {
+  background: var(--primary-light);
+}
+
+
+.dashboard #nav .wrapper,
+.collapsible {
+  border-color: var(--divider);
+}
+.collapsible > label * {
+  color: var(--textPrimary);
+}
+
+table th {
+  color: var(--textSecondary);
+}
+
+.file-list li:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+.file-list li:before {
+  color: var(--textSecondary);
+}
+.file-list li[aria-selected=true]:before {
+  color: var(--icon-blue);
+}
+
+.shell {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+}
+.shell__divider {
+  background: var(--divider);
+  border-radius: 2px;
+}
+.shell__divider:hover {
+  background: var(--primary);
+}
+.shell__result {
+  border-top: 1px solid var(--divider);
+}
+.xterm-screen {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+
+#editor-container {
+  background: var(--background) !important;
+}
+
+#editor-container .bar {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+@media (max-width: 736px) {
+  #file-selection {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+  #file-selection span {
+    color: var(--textPrimary) !important;
+  }
+  nav {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+  #dropdown {
+    background: var(--surfaceSecondary) !important;
+    border-radius: var(--border-radius);
+  }
+}
+
+.share__box {
+  background: var(--surfacePrimary) !important;
+  color: var(--textPrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.share__box__element {
+  border-top-color: var(--divider);
+}
+
+.dropdown_item {
+  background: var(--surfacePrimary);
+  margin: 0;
+  border-radius: var(--border-radius-sm);
+}
+.dropdown > div:hover {
+  background: var(--primary-light);
+}
+.menu ul li:hover {
+  background: var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+.md-context div{
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius-sm);
+}
+#md-container .md-context{
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+.card-content  textarea {
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+  border-radius: var(--border-radius-sm);
+}
+
+.nav_list_a,.nav_list_a a {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+.studio .studio-nav,.studio-nav div,.studio-body {
+  background: var(--surfacePrimary) !important;
+  border-radius: var(--border-radius);
+}
+
+.studio-item-title:hover * {
+  color: var(--primary);
+}
+
+.chat-message.bot{
+  background: var(--primary-light);
+  border-radius: var(--border-radius);
+}
+
+.chat-input-area textarea {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+}
+
+.common-box  {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-header ,.chat-input-area {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.dashboard,.full_screen_context {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.site_edit {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-session-list {
+  background: var(--background);
+  border-radius: var(--border-radius);
+}
+
+.chat-session-item {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius-sm);
+}
+.chat-session-item.active,
+.chat-session-item:hover {
+  background: var(--primary-light);
+}
+
+.menu-select-popup {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.menu-select-item:hover {
+  background:var(--primary-light);
+  border-radius: var(--border-radius-sm);
+}
+
+.usage-stats-popup {
+  background: var(--surfacePrimary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.usage-stats-header {
+  border-color: var(--divider);
+}
+
+.usage-stats-header h3 {
+  color: var(--textPrimary);
+}
+
+.usage-stats-close {
+  color: var(--textSecondary);
+  border-radius: 50%;
+}
+
+.usage-stats-close:hover {
+  color: var(--textPrimary);
+  background: var(--primary-light);
+}
+
+.usage-stats-loading,
+.usage-stats-empty {
+  color: var(--textSecondary);
+}
+
+.usage-stats-row {
+  background: var(--background);
+  border-radius: var(--border-radius-sm);
+}
+
+.usage-stats-row:nth-child(even) {
+  background: var(--surfaceSecondary);
+}
+
+.usage-stats-label {
+  color: var(--textSecondary);
+}
+
+.usage-stats-value {
+  color: var(--textPrimary);
+}
+
+.usage-stats-total {
+  background: var(--primary-light) !important;
+  border-color: var(--primary);
+  border-radius: var(--border-radius);
+}
+
+.usage-stats-total .usage-stats-label,
+.usage-stats-total .usage-stats-value {
+  color: var(--primary-dark);
+}
+
+
+/* 默认图标颜色 (当未选中时) */
+.material-icons.icon {
+  /*color: #757575; !* 默认灰色 *!*/
+}
+
+/* 根据 data-icon 属性定义不同颜色 */
+.material-icons.icon[data-icon="home"] {
+  color: #ff5722; /* 橙色 */
+}
+
+.material-icons.icon[data-icon="settings"] {
+  color: #607d8b; /* 蓝灰色 */
+}
+
+.material-icons.icon[data-icon="favorite"] {
+  color: #e91e63; /* 粉红色 */
+}
+
+.material-icons.icon[data-icon="person"] {
+  color: #9c27b0; /* 紫色 */
+}
+

@@ -18,7 +18,7 @@ export default function FileShell(props) {
     const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
     const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
-    const color =  userInfo.user_data.theme === "dark"?"#FFFFFF":"#000000";
+    const color =  userInfo.user_data.theme?.includes("dark")?"#FFFFFF":"#000000";
     useCmdConfirm();
     const initTerminal =  async () => {
         const terminal = new Terminal({

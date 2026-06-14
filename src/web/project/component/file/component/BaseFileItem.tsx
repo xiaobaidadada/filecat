@@ -10,6 +10,7 @@ import {NotySucess} from "../../../util/noty";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useNavigate} from "react-router-dom";
 import {getFileNameByLocation, getFilesByIndexs} from "../FileUtil";
+import {Icon} from "../../../../meta/component/Button";
 
 
 export function BaseFileItem(props: FileItemData & {
@@ -92,13 +93,13 @@ export function BaseFileItem(props: FileItemData & {
             <div >
                 {(props.type === FileTypeEnum.image && props.path != undefined && !user_base_info?.user_data?.not_pre_show_image) ? (
                         <img loading="lazy" src={fileHttp.getDownloadUrl(props.path,{mtime:props.mtime,cache:1})} alt={props.name}/>) :
-                    <i className="material-icons"></i>
+                    <Icon icon={''} />
                 }
             </div>
         }
         {props.icon !== undefined &&
             <div className={"rotating-div"}>
-                <span className="material-icons">{props.icon}</span>
+                <Icon icon={props.icon} />
             </div>
         }
 

@@ -1,5 +1,6 @@
 // import {MaterialIcon} from "material-icons";
 import {dir_upload_max_num_item} from "./req/setting.req";
+import {MaterialIcon} from "material-icons";
 
 export enum FileTypeEnum {
     audio = "audio",
@@ -34,7 +35,7 @@ export interface FileItemData {
     size?: any, // 数字和字符串
     isLink?: boolean,
     path?: string,
-    icon?: string,
+    icon?: MaterialIcon,
 }
 
 export interface FileInfoItemData {
