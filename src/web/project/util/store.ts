@@ -372,5 +372,13 @@ export const $stroe = {
             localStorageEffect("ai_session_collapsed")
         ]
     }),
+    // 空白搜索模式 - 进入目录时自动以空白搜索方式打开
+    blank_search_mode: atom({
+        key: 'blank_search_mode',
+        default: false as boolean,
+        effects: [
+            localStorageEffect("blank_search_mode")
+        ]
+    }),
 }
 

@@ -139,7 +139,7 @@ nav > div {
 }
 #listing .item:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  /*transform: translateY(-2px);*/
 }
 #listing .item .modified {
   color: var(--textSecondary);
@@ -323,11 +323,11 @@ table th {
   background: var(--primary-light);
   border-radius: var(--border-radius-sm);
 }
-.md-context div{
-  background: var(--surfaceSecondary);
-  color: var(--textPrimary);
-  border-radius: var(--border-radius-sm);
-}
+/*.md-context div{*/
+/*  background: var(--surfaceSecondary);*/
+/*  color: var(--textPrimary);*/
+/*  border-radius: var(--border-radius-sm);*/
+/*}*/
 #md-container .md-context{
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);

@@ -137,7 +137,7 @@ nav > div {
 }
 #listing .item:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  /*transform: translateY(-2px);*/
 }
 #listing .item .modified {
   color: var(--textSecondary);

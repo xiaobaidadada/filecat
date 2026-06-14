@@ -327,6 +327,7 @@ export function use_handleContextMenu() {
     const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
+    const [blankSearchMode, setBlankSearchMode] = useRecoilState($stroe.blank_search_mode);
 
     return (event) =>{
         event.preventDefault();
@@ -426,6 +427,11 @@ export function use_handleContextMenu() {
                     r: t("缩放调整"),
                     v: "zoom_adjust"
                 },
+                {
+                    r: (<span
+                        style={{color: blankSearchMode ? "green" : undefined}}>{t("以空白搜索模式打开目录")}</span>),
+                    v: "blank_search_mode"
+                },
             ]
         }
         const list: any[] = [
@@ -488,6 +494,10 @@ export function use_handleContextMenu() {
                     }
                 }
 
+            } else if(v === "blank_search_mode") {
+                setBlankSearchMode(!blankSearchMode);
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                return;
             } else if(v=== FileListPaginationModeEmum.all || v===FileListPaginationModeEmum.pagination) {
                 user_save_user_file_list_show_type_pojo['is_pagination_mode'] = true
             } else if(v === user_file_time_show_type.current || v === user_file_time_show_type.time) {

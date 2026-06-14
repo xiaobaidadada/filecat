@@ -68,6 +68,7 @@ export default function FileList() {
     const [to_running_files_set, set_to_running_files_set] = useRecoilState($stroe.to_running_files);
 
     const [file_page, set_file_page] = useRecoilState($stroe.file_page);
+    const [blankSearchMode] = useRecoilState($stroe.blank_search_mode);
 
     const handleContextMenu = use_handleContextMenu()
 
@@ -123,6 +124,10 @@ export default function FileList() {
     }
     const fileHandler = async () => {
         const path  = getRouterAfter('file', getRouterPath())
+        // 空白搜索模式下，进入目录时不请求文件列表，直接显示空白
+        if (blankSearchMode) {
+            return;
+        }
         // 文件列表初始化界面
         let rsp
         if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
@@ -187,7 +192,30 @@ export default function FileList() {
     }
 
     // 搜索
-    const searchHanle = () => {
+    const searchHanle = async () => {
+        if (blankSearchMode) {
+            // 空白搜索模式：调用后端接口进行搜索过滤
+            setSelectList([])
+            setClickList([])
+            if (!search || !search.trim()) {
+                setNowFileList({files: [], folders: []});
+                return;
+            }
+            const path = getRouterAfter('file', getRouterPath());
+            const rsp = await fileHttp.post("file_get_page", {
+                param_path: path,
+                page_num: 1,
+                page_size: 10000,
+                search: search.trim(),
+            });
+            if (rsp.code !== RCode.Success) return;
+            const data: GetFilePojo = rsp.data;
+            file_sort(data, user_base_info.user_data.dir_show_type);
+            file_after(data);
+            setNowFileList(data);
+            pre_search = data;
+            return;
+        }
         if (!pre_search) {
             return;
         }

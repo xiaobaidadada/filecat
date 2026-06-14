@@ -274,6 +274,11 @@ export class FileService  {
         const sysPath = path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
         let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+        // 如果传入了 search 参数，先按照名称过滤
+        if (search && search.trim()) {
+            const keyword = search.trim().toLowerCase();
+            items = items.filter(item => item.toLowerCase().includes(keyword));
+        }
         items = list_paginate(items, page_num,page_size).list;
         for (const item of items) {
             const filePath = path.join(sysPath, item);
