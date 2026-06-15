@@ -99,7 +99,7 @@ export function BaseFileItem(props: FileItemData & {
         }
         {props.icon !== undefined &&
             <div className={"rotating-div"}>
-                <Icon icon={props.icon} />
+                <span className="material-icons">{props.icon}</span>
             </div>
         }
 
