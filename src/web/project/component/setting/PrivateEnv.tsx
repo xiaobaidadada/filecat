@@ -5,7 +5,7 @@ import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {InputPassword, InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {settingHttp, userHttp} from "../../util/config";
+import {settingHttp, themes_list, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {
     dir_upload_max_num_item,
@@ -261,12 +261,7 @@ export function PrivateEnv() {
                     {t("主题")}
                     <Select  value={theme} onChange={(value)=>{
                         set_theme(value);
-                    }} options={[
-                        {title:"light",value:"light"},
-                        {title:"dark",value:"dark"},
-                        {title:"google",value:"google"},
-                        {title:"google dark",value:"google-dark"}
-                    ]}/>
+                    }} options={themes_list}/>
                     <InputText value={upload_file_ignore} handleInputChange={(value) => {
                         set_upload_file_ignore(value)
                     }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"} no_border={true}/>

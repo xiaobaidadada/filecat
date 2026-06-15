@@ -34,3 +34,11 @@ export const cryptoHttp = new Http(`${front_config.baseUrl}crypto/`);
 export const ai_agentHttp = new Http(`${front_config.baseUrl}ai_agent/`);
 
 export const tcpProxy = new Http(`${front_config.baseUrl}tcp_forward/`);
+
+
+export const themes_list = [
+    {title:"light",value:"light"},
+    {title:"dark",value:"dark"},
+    {title:"google",value:"google"},
+    {title:"google dark",value:"google-dark"}
+]

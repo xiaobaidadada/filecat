@@ -5,7 +5,7 @@ import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {cryptoHttp, settingHttp, userHttp} from "../../util/config";
+import {cryptoHttp, settingHttp, themes_list, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
@@ -267,13 +267,7 @@ export function Role() {
                         <label>{t("主题")}</label>
                         <Select value={theme} onChange={(value) => {
                             set_theme(value);
-                        }} options={[
-                            {title: "NOT", value: ""},
-                            {title:"light",value:"light"},
-                            {title:"dark",value:"dark"},
-                            {title:"google",value:"google"},
-                            {title:"google dark",value:"google-dark"}
-                        ]}/>
+                        }} options={themes_list}/>
                         {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
 
                         <Permission is_disable={() => {
