@@ -353,7 +353,7 @@ table th {
 }
 
 .chat-message.bot{
-  background: var(--primary-light);
+  /*background: var(--primary-light);*/
   border-radius: var(--border-radius);
 }
 

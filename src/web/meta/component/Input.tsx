@@ -402,7 +402,7 @@ export function Select(props: SelectProps) {
                             <div
                                 key={index}
                                 className={["select_option", item.value === (props.value ?? props.defaultValue) ? "select_option--selected" : ""].join(" ")}
-                                style={{ color: item.color || "#111" }}
+                                style={{ color: item.color }}
                                 onClick={() => {
                                     props.onChange(item.value);
                                     setOpen(false);
