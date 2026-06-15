@@ -21,6 +21,7 @@ import {NotyFail, NotySucess} from "../../util/noty";
 import {using_env_prompt} from "./util";
 import {themes, UserLogin} from "../../../../common/req/user.req";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
+import {use_select_config} from "../../util/react.config";
 export function PrivateEnv() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
@@ -30,6 +31,7 @@ export function PrivateEnv() {
     const [quick_cmd_rows,set_quick_cmd_rows] = useState([] as QuickCmdItem[]);
     const [file_quick_cmd_rows,set_file_quick_cmd_rows] = useState([] as FileQuickCmdItem[]);
     const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const select_list = use_select_config()
 
 
     const headers = [t("编号"),t("路径"), t("是否默认"), t("备注") ];
@@ -215,7 +217,7 @@ export function PrivateEnv() {
                                 }} no_border={true}/>,
                                 <Select value={item.default} onChange={(value) => {
                                     onChange(item,value,index);
-                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                }}  options={select_list} no_border={true}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,

@@ -3,7 +3,6 @@ import {Dashboard, } from "../../../meta/component/Dashboard";
 import {Card, CardFull} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputText, Select} from "../../../meta/component/Input";
-import Noty from "noty";
 import {fileHttp, settingHttp} from "../../util/config";
 import {UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
@@ -15,12 +14,14 @@ import {saveTxtReq} from "../../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import {editor_data} from "../../util/store.util";
 import {NotyFail} from "../../util/noty";
+import {use_select_config} from "../../util/react.config";
 
 
 
 export function CustomerApiRouter() {
     const { t } = useTranslation();
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const select_list = use_select_config()
 
     const headers = [t("路由"),t("auth"),  t("备注"), ];
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
@@ -97,7 +98,7 @@ export function CustomerApiRouter() {
                     <Select defaultValue={item.needAuth} onChange={(value) => {
                         item.needAuth = value
                         setRows([...rows]);
-                    }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                    }}  options={select_list} no_border={true}/>,
                     <InputText value={item.note} handleInputChange={(value) => {
                         item.note = value;
                         setRows([...rows]);

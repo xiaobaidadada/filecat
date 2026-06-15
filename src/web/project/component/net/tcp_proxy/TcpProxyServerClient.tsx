@@ -29,6 +29,7 @@ import {Global} from "../../../util/global";
 import {routerConfig} from "../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../util/FunUtil";
 import Header from "../../../../meta/component/Header";
+import {use_select_config} from "../../../util/react.config";
 
 let client_num_id_map:{[key:number]:tcp_proxy_server_client} = {}
 
@@ -39,6 +40,7 @@ export function TcpProxyServerClient() {
     const [client_list, set_client_list] = useState([] as tcp_proxy_server_client[]);
     const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
     // const [is_save,set_is_is_save] = useState(false);
+    const select_list = use_select_config()
 
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
     const [client_filter_Key,set_client_filter_Key] = useState<string>(undefined)
@@ -307,7 +309,7 @@ export function TcpProxyServerClient() {
                                 <Select value={!!item.open} onChange={(value) => {
                                     item.open = value
                                     set_edit_client({...edit_client})
-                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                }}  options={select_list} no_border={true}/>,
 
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
@@ -365,7 +367,7 @@ export function TcpProxyServerClient() {
                                 <Select value={!!item.open} onChange={(value) => {
                                     item.open = value
                                     set_edit_client_bridge_fig([...edit_client_bridge_fig])
-                                }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                }}  options={select_list} no_border={true}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,

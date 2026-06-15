@@ -5,6 +5,7 @@ import {settingService} from "../setting/setting.service";
 import os from "os";
 import {ai_tools} from "./tools/ai_agent.constant";
 import {ai_agentService,  ai_config, ai_config_env, ai_config_search_doc} from "./ai_agent.service";
+import {llmPostStream} from "./llm_request";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
@@ -369,19 +370,14 @@ ${sys_prompt ?? ''}
             console.error("解析 ai_config.json_params 失败", err);
         }
 
-        const requestBody = JSON.stringify(json_body);
-        ioStats.input_chars += requestBody.length;
+        const requestBodyStr = JSON.stringify(json_body);
+        ioStats.input_chars += requestBodyStr.length;
 
         try {
-            const res = await fetch(ai_config.url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${ai_config.token}`
-                },
-                body: requestBody,
-                signal: controller.signal
-            });
+            const res = await llmPostStream(
+                json_body,
+                controller.signal
+            );
 
             if (!res.ok) {
                 const text = await res.text();

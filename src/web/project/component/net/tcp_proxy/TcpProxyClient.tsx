@@ -17,6 +17,7 @@ import {
     tcp_proxy_server_client, tcp_proxy_sync_task_item
 } from "../../../../../common/req/common.pojo";
 import {generateRandomHash} from "../../../../../common/StringUtil";
+import {use_select_config} from "../../../util/react.config";
 
 export function TcpProxyClient(props) {
     const { t } = useTranslation();
@@ -43,6 +44,7 @@ export function TcpProxyClient(props) {
     const client_sync_task_headers = [t("序号"),t("原客户端"), t("目标客户端") , t("待同步文件数量") ];
 
     const all_client_headers = [t("序号"),t("port"), t("host"),t("名称"),t("key"),t("在线"),t("开启"),t("备注") ];
+    const select_list = use_select_config()
 
     const init = async ()=>{
         const result = await tcpProxy.get("client_get");
@@ -192,7 +194,7 @@ export function TcpProxyClient(props) {
                             <Select value={!!item.open} onChange={(value) => {
                                 item.open = value
                                 set_clients([...clients])
-                            }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                            }}  options={select_list} no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;
                             }} no_border={true}/>,

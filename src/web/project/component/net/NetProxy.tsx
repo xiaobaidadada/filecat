@@ -15,6 +15,7 @@ import {SysEnum} from "../../../../common/req/user.req";
 import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {editor_data} from "../../util/store.util";
 import {generateRandomHash} from "../../../../common/StringUtil";
+import {use_select_config} from "../../util/react.config";
 
 export function NetProxy(props) {
     const {t} = useTranslation();
@@ -38,6 +39,7 @@ export function NetProxy(props) {
     const [mac_proxies, setMacProxies] = useState<MacProxy[]>([]);
 
     const http_proxy_list_header = [t("编辑"), t("开启"), t("备注"), t("删除")];
+    const select_list = use_select_config()
 
 
     const win_proxy_init = async () => {
@@ -273,7 +275,7 @@ export function NetProxy(props) {
                                 </div>,
                                 <Select value={item.enabled} onChange={(value) => {
                                     mac_onChange(index1, index, value);
-                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                }} options={select_list}
                                         no_border={true}/>
                             ];
                             return new_list;
@@ -304,7 +306,7 @@ export function NetProxy(props) {
                             <Select value={item.open} onChange={(value) => {
                                 tcp_proxy_list[index].open = value
                                 set_tcp_proxy_list([...tcp_proxy_list]);
-                            }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                            }} options={select_list}
                                     no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;
@@ -337,7 +339,7 @@ export function NetProxy(props) {
                             <Select value={item.open} onChange={(value) => {
                                 httpServer.list[index].open = value
                                 setHttpServer({...httpServer})
-                            }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                            }} options={select_list}
                                     no_border={true}/>,
                             <InputText value={item.note} handleInputChange={(value) => {
                                 item.note = value;

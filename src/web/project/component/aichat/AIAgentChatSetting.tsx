@@ -28,6 +28,7 @@ import {formatDuration, formatFileSize} from "../../../../common/ValueUtil";
 import {using_confirm} from "../prompts/prompt.util";
 
 import {PromptPageItem, SwitchPagePrompt} from "../prompts/PromptCard";
+import {use_select_config} from "../../util/react.config";
 
 const tip_text = `
 1. 只能使用符合openai风格的ai接口，接口不能只填域名，而是类似 https://ark.cn-beijing.volces.com/api/v3/chat/completions 这样的全路径链接聊天url
@@ -88,6 +89,7 @@ export default function AIAgentChatSetting() {
     const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
     const navigate = useNavigate();
     const confirm_dell_all = using_confirm()
+    const select_list = use_select_config()
 
     const load_index_switch = async () => {
         const r = await ai_agentHttp.get("docs_on_get")
@@ -410,7 +412,7 @@ export default function AIAgentChatSetting() {
                                         }} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
-                                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                        }}  options={select_list} no_border={true}/>,
                                         <InputText value={item.token} handleInputChange={(value) => {
                                             item.token = value;
                                         }} no_border={true}/>,
@@ -498,7 +500,7 @@ export default function AIAgentChatSetting() {
                                             item.open = value ;
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
-                                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                        }}  options={select_list} no_border={true}/>,
                                         <InputText value={item.command} handleInputChange={(value) => {
                                             item.command = value;
                                             mcp_update_tag.current = true
@@ -567,7 +569,7 @@ export default function AIAgentChatSetting() {
                                             item.open = value ;
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
-                                        }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                        }}  options={select_list} no_border={true}/>,
                                         <InputText value={item.endpoint} handleInputChange={(value) => {
                                             item.endpoint = value;
                                             mcp_update_tag.current = true
@@ -711,7 +713,7 @@ export default function AIAgentChatSetting() {
                                                 item.auto_load = value;
                                                 set_docs_list([...docs_list]);
                                                 docs_update_tag.current = true
-                                            }}  options={[{title:t("是"),value:true},{title:t("否"),value:false}]} no_border={true}/>,
+                                            }}  options={select_list} no_border={true}/>,
                                             <InputText value={item.note} handleInputChange={(value) => {
                                                 item.note = value;
                                             }} no_border={true}/>,

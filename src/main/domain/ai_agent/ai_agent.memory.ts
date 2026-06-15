@@ -5,6 +5,7 @@ import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_config} from "./ai_agent.service";
+import {llmPost} from "./llm_request";
 
 type SessionMeta = ai_agent_chat_session_meta & {
     file_name: string;
@@ -439,14 +440,7 @@ export class AiAgentMemoryService {
             ],
             temperature: 0.2
         };
-        const res = await fetch(ai_config.url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${ai_config.token}`
-            },
-            body: JSON.stringify(body)
-        });
+        const res = await llmPost(body);
         const text = await this.readAiText(res);
         const match = text.match(/\{[\s\S]*\}/);
         const json = JSON.parse(match ? match[0] : text);

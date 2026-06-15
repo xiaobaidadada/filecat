@@ -23,6 +23,7 @@ import {sort} from "../../../../common/ListUtil";
 import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
 import {using_env_prompt} from "./util";
 import {plug_item} from "../../../../plugin";
+import {use_select_config} from "../../util/react.config";
 
 export function Env() {
     const {t, i18n} = useTranslation();
@@ -36,6 +37,7 @@ export function Env() {
     const [workflow_setting_rows, set_workflow_setting_rows] = useState([] as workflow_setting_item[]);
     const [pty_cmd, set_pty_cmd] = useState("");
     const [plugin_rows, set_plugin_rows] = useState<plug_item>([]);
+    const select_list = use_select_config()
 
     const headers_outside_software = [t("软件"), t("是否安装"), t("路径")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
@@ -236,7 +238,7 @@ export function Env() {
                                <Select value={item.open_ws_file === true} onChange={(value) => {
                                    item.open_ws_file = value
                                    set_dir_upload_rows([...dir_upload_rows])
-                               }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                               }} options={select_list}
                                        no_border={true}/>,
                                <InputText
                                    value={typeof item.ws_file_standard_size === "number" ? item.ws_file_standard_size / 1024 / 1024 : undefined}
@@ -282,7 +284,7 @@ export function Env() {
                                 <Select value={!!item.open} onChange={(value: any) => {
                                     item.open = value
                                     set_env_path_dir_rows([...env_path_dir_rows])
-                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                }} options={select_list}
                                         no_border={true}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
@@ -322,13 +324,13 @@ export function Env() {
                                 <Select value={!!item.open} onChange={(value: any) => {
                                     item.open = value
                                     set_workflow_setting_rows([...workflow_setting_rows])
-                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                }} options={select_list}
                                         no_border={true}/>,
 
                                 <Select value={!!item.sys_power_on} onChange={(value: any) => {
                                     item.sys_power_on = value
                                     set_workflow_setting_rows([...workflow_setting_rows])
-                                }} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                }} options={select_list}
                                         no_border={true}/>,
 
                                 <InputText value={item.cron_str} handleInputChange={(value) => {
@@ -374,10 +376,7 @@ export function Env() {
                                 <Select value={!!item.open} onChange={(value) => {
                                     item.open = value
                                     set_plugin_rows([...plugin_rows])
-                                }} options={[
-                                    {title: t("是"), value: true},
-                                    {title: t("否"), value: false}
-                                ]}
+                                }} options={select_list}
                                         no_border={true}/>,
                                 <AceButton icon={"edit"} save={ async (value: string)=>  {
                                     item.params = value
