@@ -3,6 +3,17 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import {ai_config, ai_config_env} from "./ai_agent.service";
 
 /**
+ * 处理 token，如果已经带有 Bearer 前缀则不再添加
+ */
+function getAuthHeader(token: string): string {
+    const trimmedToken = token.trim();
+    if (trimmedToken.toLowerCase().startsWith('bearer ')) {
+        return trimmedToken;
+    }
+    return `Bearer ${trimmedToken}`;
+}
+
+/**
  * 获取代理配置
  */
 function getProxyConfig(): Record<string, any> {
@@ -47,7 +58,7 @@ export async function llmPost(
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${ai_config.token}`
+                "Authorization": getAuthHeader(ai_config.token)
             },
             data: JSON.stringify(body),
             responseType: 'text',
@@ -61,7 +72,7 @@ export async function llmPost(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${ai_config.token}`
+            "Authorization": getAuthHeader(ai_config.token)
         },
         body: JSON.stringify(body),
         signal
@@ -83,7 +94,7 @@ export async function llmPostStream(
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${ai_config.token}`
+                "Authorization": getAuthHeader(ai_config.token)
             },
             data: JSON.stringify(body),
             responseType: 'stream',
@@ -112,7 +123,7 @@ export async function llmPostStream(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${ai_config.token}`
+            "Authorization": getAuthHeader(ai_config.token)
         },
         body: JSON.stringify(body),
         signal
