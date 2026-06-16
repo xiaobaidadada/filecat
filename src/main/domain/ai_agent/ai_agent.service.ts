@@ -30,6 +30,7 @@ import {chat_core} from "./chat.core";
 import {download_ripgrep} from "../bin/download-ripgrep";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {
+    ai_agent_content,
     ai_agent_Item,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
     ai_agent_option_item_extra,
@@ -38,6 +39,8 @@ import {
     ai_docs_setting_param,
     getContentAsString
 } from "../../../common/req/filecat.ai.pojo";
+import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost} from "./llm_request";
+import {ai_agent_params_type} from "./tools/ai_agent.constant";
 
 const {
     cut,
@@ -53,6 +56,9 @@ const {
 export let ai_config: ai_agent_Item
 export let ai_config_env = new ai_agent_item_dotenv()
 export let ai_config_search_doc = new ai_docs_setting_param()
+
+/** 注册为 tool 的 model 配置列表 */
+export let ai_tool_models: ai_agent_Item[] = [];
 
 // 判断是否中文
 function isChinese(str: string) {
@@ -82,7 +88,7 @@ export class Ai_agentService {
 
     public async search_docs({keywords}: { keywords: string[] }) {
         const scoreMap = new Map<string, number>();
-        const new_keywords = {}
+        const new_keywords:any = {}
         for (const k of keywords) {
             if (!k) continue;
             // 原文关键词
@@ -230,7 +236,7 @@ export class Ai_agentService {
         await ai_agentMcpService.reload().catch(console.error);
         if (!this.docs_switch_get()) return;
         start_worker_threads()
-        const body = {index_storage_type: ai_config_search_doc.index_storage_type}
+        const body:any = {index_storage_type: ai_config_search_doc.index_storage_type}
         if (ai_config_search_doc.index_storage_type === 'sqlite') {
             body['db_path'] = DataUtil.get_file_path(data_dir_tem_name.sys_database_dir, file_key.fts5_rag_db)
         }
@@ -499,7 +505,7 @@ export class Ai_agentService {
         return false;
     }
 
-    public ai_agent_setting_save(body) {
+    public ai_agent_setting_save(body:any) {
         DataUtil.set(data_common_key.ai_agent_model_setting,body)
         const list = settingService.ai_agent_setting()
         for (const p of list.models) {
@@ -521,7 +527,12 @@ export class Ai_agentService {
         ai_config_env = new ai_agent_item_dotenv()
         // this.have_ai_is_open = false
         const r = settingService.ai_agent_setting()
+        ai_tool_models = []; // 重置
+        let have_open = false
         for (const it of r.models) {
+            if (it.tool_mode) {
+                ai_tool_models.push(it);
+            }
             if (it.open) {
                 // MODEL = it.model
                 // BASE_URL = it.url
@@ -530,11 +541,14 @@ export class Ai_agentService {
                 if (it.dotenv) {
                     Env.load(it.dotenv, ai_config_env);
                 }
+                have_open = true
                 // this.have_ai_is_open = true
-                return
+                // 不 return，继续收集所有 tool 模型
             }
         }
-        ai_config = undefined
+        if(have_open === false) {
+            ai_config = undefined
+        }
         // API_KEY = undefined
         // BASE_URL = undefined
         // MODEL = undefined
@@ -582,9 +596,11 @@ export class Ai_agentService {
        let assistantText = "";
        let turnInputChars = 0;
        let turnOutputChars = 0;
-       const sysPrompt = "使用 markdown格式回答用户";
+
        try {
+           const tools =ai_agentService.getModelToolSchemas();
            await chat_core.chat({
+               tools,
                originMessages: workMessages,
                user_id:userId,
                controller,
@@ -600,7 +616,6 @@ export class Ai_agentService {
                    }
                    this.end_to_res(res);
                },
-               sys_prompt: sysPrompt,
                token
            })
            if (latestUserMessage && assistantText) {
@@ -614,11 +629,12 @@ export class Ai_agentService {
                });
            }
        } catch (error) {
-           this.write_to_res(res,error.message??JSON.stringify(error) );
-           this.end_to_res(res);
+           const msg = error.message??JSON.stringify(error)
+           await this.error_end_to_res(userId,session_id,latestUserMessage.content,msg,res)
        }
         return res;
     }
+
 
     public async reloadMcp() {
         await ai_agentMcpService.reload();
@@ -634,6 +650,203 @@ export class Ai_agentService {
 
     public async reloadMcpServer(index: number) {
         return ai_agentMcpService.reloadServer(index);
+    }
+
+    // ============ Model Tool 管理 ============
+
+    /**
+     * 获取所有 tool_mode 的 model 的 schema 列表（用于向 LLM 注册为 tools）
+     */
+    public getModelToolSchemas(): ai_agent_params_type[] {
+        const schemas: ai_agent_params_type[] = [];
+        for (const model of ai_tool_models) {
+            const name = `call_model_${model.index ?? 0}`;
+            const displayName = model.note || model.model || `model-${model.index}`;
+            const requestType = model.request_type || 'completions';
+
+            // 根据 request_type 生成能力描述
+            const abilityMap: Record<string, string> = {
+                'completions': '对话/文本生成/推理/代码/分析',
+                'images': '图片生成（根据文字描述生成图片）',
+                'embeddings': '向量嵌入（将文本转换为向量）',
+                'audio_speech': '文本转语音（将文字转为音频）',
+                'audio_transcription': '语音转文字',
+                'audio_translation': '语音翻译',
+            };
+            const abilityDesc = abilityMap[requestType] || requestType;
+
+            schemas.push({
+                type: "function",
+                function: {
+                    name,
+                    description: `调用另一个 AI 模型（${displayName}）来处理任务。该模型的能力类型为「${abilityDesc}」。适用于当前模型不擅长或需要不同能力的场景。把任务描述清楚，该模型会独立处理并返回结果。${model.sys_prompt??''}`,
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            prompt: {
+                                type: "string",
+                                description: `发送给模型 "${displayName}" 的完整提示词/指令（${abilityDesc}），要清晰描述任务目标、上下文和期望的输出格式。`
+                            }
+                        },
+                        required: ["prompt"]
+                    }
+                }
+            });
+        }
+        return schemas;
+    }
+
+    /**
+     * 调用一个注册为 tool 的模型
+     * 支持多种请求类型：
+     * - completions（对话）：再次调用 chat_core.chat 获得完整功能链（工具调用、流式、权限检查等）
+     * - images（图片生成）：直接请求 images/generations 接口
+     * - embeddings（向量）：直接请求 embeddings 接口
+     * - audio_speech（语音合成）：直接请求 audio/speech 接口
+     * - audio_transcription / audio_translation：直接请求对应接口
+     */
+    public async callModelTool(toolName: string, args: { prompt: string }): Promise<string> {
+        const index = parseInt(toolName.replace('call_model_', ''), 10);
+        const modelItem = ai_tool_models.find(m => m.index === index);
+        if (!modelItem) {
+            throw new Error(`未找到 index=${index} 的 model tool 配置`);
+        }
+
+        // 为目标模型构建独立的 env 配置（不修改全局变量）
+        const modelEnv = new ai_agent_item_dotenv();
+        if (modelItem.dotenv) {
+            Env.load(modelItem.dotenv, modelEnv);
+        }
+
+        const requestType = modelItem.request_type || 'completions';
+
+        // ====== 根据 request_type 分发，直接传入 config 和 env ======
+        switch (requestType) {
+            case 'completions': {
+                // 对话类型：调用 chat_core.chat 获得完整功能链
+                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt);
+            }
+
+            case 'images': {
+                // 图片生成
+                const res = await llmImagesGenerate({prompt: args.prompt}, modelItem, modelEnv);
+                const result = await res.json();
+                const images = (result?.data ?? []).map((img: any) =>
+                    `![生成图片](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`
+                );
+                return images.join('\n\n') || `生成了 ${(result?.data ?? []).length} 张图片`;
+            }
+
+            case 'embeddings': {
+                // 向量嵌入
+                const res = await llmEmbeddings({input: args.prompt}, modelItem, modelEnv);
+                const result = await res.json();
+                const data = result?.data ?? [];
+                const dims = data[0]?.embedding?.length ?? 0;
+                return `✅ Embeddings 结果 - 向量维度: ${dims}, 数量: ${data.length}\n\`\`\`json\n${JSON.stringify(result, null, 2).slice(0, 3000)}\n\`\`\``;
+            }
+
+            case 'audio_speech': {
+                // 文本转语音
+                const res = await llmAudioSpeech({input: args.prompt}, modelItem, modelEnv);
+                const arrayBuffer = await res.arrayBuffer();
+                const audioBuffer = Buffer.from(arrayBuffer);
+                const base64Audio = audioBuffer.toString('base64');
+                const mimeType = res.headers.get("content-type") || "audio/mpeg";
+                return `[音频文件: ${args.prompt.slice(0, 50)}...]\n\`audio: data:${mimeType};base64,${base64Audio.slice(0, 100)}...[已截断]\``;
+            }
+
+            case 'audio_transcription':
+            case 'audio_translation': {
+                // 语音转录/翻译 — 直接走原始 llmPost 非流式请求
+                return await this.callModelToolRaw(modelItem, modelEnv, args.prompt);
+            }
+
+            default: {
+                // 兜底：走原始非流式请求
+                return await this.callModelToolRaw(modelItem, modelEnv, args.prompt);
+            }
+        }
+    }
+
+    /**
+     * 以对话方式调用目标模型，再次使用 chat_core.chat 获得完整功能链
+     */
+    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string): Promise<string> {
+
+        let fullContent = "";
+        const controller = new AbortController();
+
+        await chat_core.chat({
+            originMessages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            user_id: "model_tool",
+            controller,
+            on_msg: (msg) => {
+                fullContent += msg;
+            },
+            on_end: () => {},
+            sys_prompt: `你是一个独立的 AI 模型（${modelItem.note || modelItem.model}），请根据用户的要求完成任务并返回结果。${modelItem.sys_prompt ?? ''}`,
+            aiConfig: modelItem,
+            aiEnv: modelEnv,
+        });
+
+        return fullContent || "模型未返回内容";
+    }
+
+    /**
+     * 以原始非流式方式调用目标模型（用于非对话类型的兜底请求）
+     */
+    private async callModelToolRaw(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string): Promise<string> {
+        const json_body: any = {
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            model: modelItem.model,
+        };
+
+        // 合并自定义参数
+        try {
+            if (modelItem.json_params) {
+                const obj = JSON.parse(modelItem.json_params);
+                // 非流式请求，去掉 stream
+                delete obj.stream;
+                Object.assign(json_body, obj);
+            }
+        } catch (err) {
+            console.error("解析 model tool json_params 失败", err);
+        }
+
+        const res = await llmPost(json_body, modelItem, modelEnv);
+
+        if (!res.ok) {
+            const text = await res.text();
+            try {
+                const json = JSON.parse(text);
+                throw new Error(json.message || json.error?.message || text);
+            } catch {
+                throw new Error(text);
+            }
+        }
+
+        const resultText = await res.text();
+        const result = JSON.parse(resultText);
+        const content = result.choices?.[0]?.message?.content ?? "";
+        return content || "模型未返回内容";
+    }
+
+    /**
+     * 判断某个 toolName 是否是 model tool
+     */
+    public isModelTool(toolName: string): boolean {
+        return toolName.startsWith('call_model_');
     }
 
     // ============ AI 命令确认管理 ============
@@ -681,8 +894,8 @@ export class Ai_agentService {
     /**
      * 获取插件工具 schema 列表（用于向 LLM 注册）
      */
-    public getPluginToolSchemas(): any[] {
-        const schemas: any[] = [];
+    public getPluginToolSchemas(): ai_agent_params_type[] {
+        const schemas: ai_agent_params_type[] = [];
         for (const [pluginId, tools] of this.pluginToolsMap) {
             for (const tool of tools) {
                 schemas.push(tool.schema);
@@ -708,6 +921,16 @@ export class Ai_agentService {
     // =====================================
 
     public getToolInfo(toolName: string, args: any) {
+        // model tool
+        if (this.isModelTool(toolName)) {
+            const index = parseInt(toolName.replace('call_model_', ''), 10);
+            const modelItem = ai_tool_models.find(m => m.index === index);
+            const displayName = modelItem?.note || modelItem?.model || toolName;
+            return {
+                get_name: () => displayName,
+                get_params: () => args?.prompt ? `"${args.prompt?.slice(0, 50)}..."` : ""
+            };
+        }
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return {
                 get_name: () => tools_des_map[toolName as Ai_agentTools_type]?.get_name?.() ?? toolName,
@@ -718,6 +941,10 @@ export class Ai_agentService {
     }
 
     public async callTool(toolName: string, args: any) {
+        // model tool（调用其他注册为 tool 的 AI 模型）
+        if (this.isModelTool(toolName)) {
+            return this.callModelTool(toolName, args);
+        }
         // 内置工具
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return Ai_agentTools[toolName as Ai_agentTools_type](args);
@@ -756,6 +983,27 @@ export class Ai_agentService {
         res.end();
     }
 
+    public async error_end_to_res(userId:string,session_id:string,user_msg:ai_agent_content,error_msg:string,res: Response) {
+        this.write_to_res(res,error_msg);
+        this.end_to_res(res);
+        try {
+            const userMsg: ai_agent_message_item = {
+                role: "user",
+                content: user_msg,
+            };
+            const errMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: error_msg,
+            };
+            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, {
+                input_chars: userMsg.content?.length??0,
+                output_chars: getContentAsString(errMsg.content).length,
+            });
+        } catch (e) {
+            console.log(e)
+        }
+
+    }
 
 }
 

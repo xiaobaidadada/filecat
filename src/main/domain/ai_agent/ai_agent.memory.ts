@@ -3,6 +3,7 @@ import path from "path";
 import fse from "fs-extra";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {ai_agent_Item} from "../../../common/req/filecat.ai.pojo";
 import {ai_config} from "./ai_agent.service";
 import {llmPost} from "./llm_request";
 import {
@@ -398,9 +399,11 @@ export class AiAgentMemoryService {
         return title || "新会话";
     }
 
+    // 一轮消息回答完，判断是不是要压缩一下上下文，进行一下总结
     private async compressIfNeeded(session: ai_agent_chat_session_item) {
         const messages = session.messages ?? [];
         if (messages.length <= COMPRESS_MESSAGE_COUNT && messageChars(messages) <= COMPRESS_CHAR_COUNT) {
+            // 消息数量  字符数量 都超过了 才进行压缩
             return;
         }
         const oldMessages = messages.slice(0, -MAX_RECENT_MESSAGES);
@@ -426,10 +429,11 @@ export class AiAgentMemoryService {
         return Array.from(new Set(lines)).join("\n").slice(-MAX_LONG_MEMORY_CHARS);
     }
 
-    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_messages): Promise<{ summary: string, long_term_memory: string }> {
-        if (!ai_config) throw new Error("ai config not found");
+    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_messages, config?: ai_agent_Item): Promise<{ summary: string, long_term_memory: string }> {
+        const cfg = config || ai_config;
+        if (!cfg) throw new Error("ai config not found");
         const body: any = {
-            model: ai_config.model,
+            model: cfg.model,
             messages: [
                 {
                     role: "system",
@@ -446,7 +450,7 @@ export class AiAgentMemoryService {
             ],
             temperature: 0.2
         };
-        const res = await llmPost(body);
+        const res = await llmPost(body, cfg);
         const text = await this.readAiText(res);
         const match = text.match(/\{[\s\S]*\}/);
         const json = JSON.parse(match ? match[0] : text);

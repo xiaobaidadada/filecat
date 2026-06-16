@@ -14,13 +14,16 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
-import {ai_agent_message_item, getContentAsString} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../common/req/filecat.ai.pojo";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
 
     @Post("/chat")
-    async chat(@Body({options: {limit: max_req_size}}) data: any, @Res() res: Response, @Req() ctx) {
+    async chat(@Body({options: {limit: max_req_size}}) data: {
+        messages:ai_agent_messages,
+        session_id:string
+    }, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
 
         // SSE headers
@@ -39,23 +42,8 @@ export class Ai_AgentController {
                     typeof err === 'string'
                         ? err
                         : err?.message || 'AI service error';
-
-                // 1️⃣ 先发 error 数据
-                ai_agentService.write_to_res(res, message);
-
-                // 2️⃣ 再发 DONE
-                res.write(`data: [DONE]\n\n`);
-
-                // 3️⃣ 最后 end
-                res.end();
-                // 错误也保存到会话
-                const errMsg: ai_agent_message_item = {
-                    role: "assistant",
-                    content: message,
-                };
                 const user = userService.get_user_info_by_token(ctx.headers.authorization);
-                await this.saveNonCompletionTurn(user.id, data?.session_id, data.prompt, errMsg);
-
+                await ai_agentService.error_end_to_res(user.id,data.session_id,data.messages[data.messages.length-1].content,message,res)
             }
         }
         return stream

@@ -7,6 +7,7 @@ import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
 import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
+import {ai_agentService} from "../../ai_agent/ai_agent.service";
 
 export class ai_agent_class {
 
@@ -161,7 +162,10 @@ export class ai_agent_class {
                                 `;
 
         try {
+            // 合并 model tool（注册为 tool 的其他 AI 模型）
+            const tools =ai_agentService.getModelToolSchemas();
             await chat_core.chat({
+                tools,
                 originMessages: this.messages,
                 token: this.token,
                 user_id:this.userId,

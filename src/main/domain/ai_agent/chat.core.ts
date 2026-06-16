@@ -2,7 +2,7 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {ai_tools} from "./tools/ai_agent.constant";
+import {ai_agent_params_type, ai_tools} from "./tools/ai_agent.constant";
 import {ai_agentService,  ai_config, ai_config_env, ai_config_search_doc} from "./ai_agent.service";
 import {llmPostStream} from "./llm_request";
 import {UserAuth, UserData} from "../../../common/req/user.req";
@@ -14,7 +14,7 @@ import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
-import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_item, ai_agent_messages, getContentAsString, ai_docs_setting_param} from "../../../common/req/filecat.ai.pojo";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
@@ -25,6 +25,11 @@ export interface ChatOptions {
     on_end: (stats?: { input_chars: number; output_chars: number }) => void;
     sys_prompt?: string;
     cwd?: string;
+    /** 可动态传入的 AI 模型配置，不传则使用全局 ai_config */
+    aiConfig?: ai_agent_Item;
+    /** 可动态传入的环境变量配置，不传则使用全局 ai_config_env */
+    aiEnv?: ai_agent_item_dotenv;
+    tools?:ai_agent_params_type[]
 }
 
 export class ChatCore {
@@ -141,7 +146,6 @@ export class ChatCore {
     }
 
 
-    // todo 长期记忆 短期记忆 等记忆处理
     public async chat(options: ChatOptions) {
         const {
             originMessages,
@@ -152,12 +156,19 @@ export class ChatCore {
             on_end,
             sys_prompt,
             cwd,
+            aiConfig,
+            aiEnv,
+            tools
         } = options;
+
+        // 使用传入的配置，如果未传入则回退到全局变量
+        const config = aiConfig ?? ai_config;
+        const env = aiEnv ?? ai_config_env;
 
         // 统计每次 HTTP 请求大模型的输入/输出字符数
         let total_input_chars = 0;
         let total_output_chars = 0;
-        if (!ai_config) {
+        if (!config) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
 
@@ -180,14 +191,14 @@ export class ChatCore {
 如果你要修改项目的代码，修改完有条件的话，可以进行最小动作的测试，但是不要以执行项目来测试。
 除非用户需要你直接操作本地文件，否则选择文字输出的形式给用户。
 当用户没有任何问题的时候，你只需要向用户表达你可以帮助用户就可以了。
-如果用户需要画图，生成画图文件，要以 .draw 后缀结尾，是标准的Excalidraw格式文件。
-
+如果用户需要有结构的画图，生成画图文件，可以询问用户是否要生成Excalidraw格式的文件，以 .draw 后缀结尾。
+如果没有特殊要求，以markdown格式回答用户。
 
 如果你需要调用tools，在调用tools的时候向用户简要的说明你的意图是什么。
 
 ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
-${ai_config.sys_prompt ?? ''}
+${config.sys_prompt ?? ''}
 
 ${sys_prompt ?? ''}
 `
@@ -197,14 +208,14 @@ ${sys_prompt ?? ''}
         ];
 
 
-        const env = {
-            toolLoop: ai_config_env.tool_call_max,
-            tool_error_max: ai_config_env.tool_error_max
+        const loopEnv = {
+            toolLoop: env.tool_call_max,
+            tool_error_max: env.tool_error_max
         };
 
         // 隐式 planner
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
-        while (env.toolLoop-- > 0) {
+        while (loopEnv.toolLoop-- > 0) {
 
             //  用来拼完整 assistant message
             let assistantMessage: any = {
@@ -218,11 +229,15 @@ ${sys_prompt ?? ''}
 
             //  调用 LLM（流式）
             const ioStats = { input_chars: 0, output_chars: 0 };
-            await this.callLLSync(
-                workMessages,
+
+            await this.callLLSync({
+                tools,
+                config:config,
+                env:env,
+                messages:workMessages,
                 ioStats,
                 // ===== call_data =====
-                (chunk) => {
+                call_data:(chunk) => {
                     if (!chunk) return;
                     // ===== 1. 普通内容流 =====
                     if (chunk.content) {
@@ -266,10 +281,10 @@ ${sys_prompt ?? ''}
                 }
                 ,
                 // ===== error_call =====
-                (e) => {
+                error_call:(e) => {
                     throw e
                 },
-                controller
+                    controller:controller}
             );
             on_msg("\n")
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
@@ -318,7 +333,7 @@ ${sys_prompt ?? ''}
                     } catch (e) {
                         const msg = e?.message??JSON.stringify(e)
                         on_msg(`\n\r工具执行失败 ${ tool_info_value.get_name()} ${msg}`)
-                        if (env.tool_error_max-- <= 0) throw e;
+                        if (loopEnv.tool_error_max-- <= 0) throw e;
 
                         workMessages.push({
                             role: "tool",
@@ -338,30 +353,38 @@ ${sys_prompt ?? ''}
 
 
     private async callLLSync(
-        messages: ai_agent_messages,
-        ioStats: { input_chars: number; output_chars: number },
-        call_data: (message: any) => void,
-        error_call: (e: any) => void,
-        controller: AbortController
+        props:{
+            config: ai_agent_Item,
+            env: ai_agent_item_dotenv,
+            messages: ai_agent_messages,
+            ioStats: { input_chars: number; output_chars: number },
+            call_data: (message: any) => void,
+            error_call: (e: any) => void,
+            controller: AbortController,
+            tools:ai_agent_params_type[]
+        }
     ) {
-        const tools: any[] = [...ai_tools];
+        const tools: ai_agent_params_type[] = [...ai_tools];
         if (ai_agentService.docs_switch_get()) {
             tools.push(ai_tools_search_docs);
         }
         tools.push(...ai_agentService.getMcpTools());
         // 合并插件工具
         tools.push(...ai_agentService.getPluginToolSchemas());
+        if(props.tools) {
+            tools.push(...props.tools);
+        }
 
         const json_body: any = {
-            messages,
+            messages:props.messages,
             tools: tools,
-            model: ai_config.model,
+            model: props.config.model,
         };
 
         // 合并自定义配置参数
         try {
-            if (ai_config.json_params) {
-                const obj = JSON.parse(ai_config.json_params);
+            if (props.config.json_params) {
+                const obj = JSON.parse(props.config.json_params);
                 Object.assign(json_body, obj);
             }
         } catch (err) {
@@ -369,21 +392,23 @@ ${sys_prompt ?? ''}
         }
 
         const requestBodyStr = JSON.stringify(json_body);
-        ioStats.input_chars += requestBodyStr.length;
+        props.ioStats.input_chars += requestBodyStr.length;
 
         try {
             const res = await llmPostStream(
                 json_body,
-                controller.signal
+                props.controller.signal,
+                props.config,
+                props.env
             );
 
             if (!res.ok) {
                 const text = await res.text();
                 try {
                     const json = JSON.parse(text);
-                    error_call(json.message || json.error?.message || text);
+                    props.error_call(json.message || json.error?.message || text);
                 } catch {
-                    error_call(text);
+                    props.error_call(text);
                 }
                 return;
             }
@@ -405,7 +430,7 @@ ${sys_prompt ?? ''}
                             // 兼容 OpenAI 格式
                             const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
                             if (message) {
-                                call_data(message);
+                                props.call_data(message);
                             }
                         } catch (e) {
                             // 解析失败可能是因为收到了非 JSON 的数据行，可以忽略或记录
@@ -419,12 +444,12 @@ ${sys_prompt ?? ''}
                         const {done, value} = await reader.read();
                         if (done) break;
                         const chunk = decoder.decode(value, {stream: true});
-                        ioStats.output_chars += chunk.length;
+                        props.ioStats.output_chars += chunk.length;
                         parser.feed(chunk);
                     }
                 } catch (e: any) {
                     if (e.name !== "AbortError") {
-                        error_call(e);
+                        props.error_call(e);
                     }
                 } finally {
                     parser.reset();
@@ -434,13 +459,13 @@ ${sys_prompt ?? ''}
 
             // --- 非 SSE 处理逻辑 ---
             const resultText = await res.text();
-            ioStats.output_chars += resultText.length;
+            props.ioStats.output_chars += resultText.length;
             const result = JSON.parse(resultText);
-            call_data(result.choices[0].message);
+            props.call_data(result.choices[0].message);
 
         } catch (e: any) {
             if (e.name !== "AbortError") {
-                error_call(e);
+                props.error_call(e);
             }
         }
     }

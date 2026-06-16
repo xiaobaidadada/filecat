@@ -2,6 +2,7 @@ import {ChildProcessWithoutNullStreams, spawn} from "child_process";
 import readline from "readline";
 import {Env} from "../../../common/node/Env";
 import {ai_mcp_server_item} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_params_type} from "./tools/ai_agent.constant";
 
 export interface JsonRpcRequest {
     jsonrpc: "2.0";
@@ -21,14 +22,7 @@ export interface JsonRpcResponse {
     };
 }
 
-export interface McpToolDefinition {
-    type: "function";
-    function: {
-        name: string;
-        description?: string;
-        parameters: any;
-    };
-}
+export type McpToolDefinition  = ai_agent_params_type
 
 export interface McpRuntimeToolInfo {
     server_name: string;

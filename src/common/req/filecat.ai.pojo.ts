@@ -113,6 +113,9 @@ export class ai_agent_Item {
 
     dotenv?: string = '';
 
+    /** 是否将此 model 注册为一个 tool，供 AI agent 在对话中动态调用 */
+    tool_mode?: boolean = false;
+
     // show time
     show_options?:ai_agent_option_item_extra
 

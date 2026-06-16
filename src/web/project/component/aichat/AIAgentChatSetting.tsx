@@ -11,7 +11,7 @@ import {Card, CardFull} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotySucess} from "../../util/noty";
+import {NotyFail, NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
@@ -45,6 +45,8 @@ const tip_text = `
     }
 }\`关闭(豆包例子)
 6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
+7. 成为tool 后，该模型将会作为一个工具被加载，可以实现不同模型作为不能角色的能力。
+8. model 类型是必须要设置的，因为不同类型的 model 接口格式不同。
 `
 const docs_tip = `
 1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据（需要有模型开启才能使用)
@@ -65,7 +67,7 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("请求类型"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("model类型"), t("是否开启"), t("token"),"model",t("成为tool"),t("更多属性"),t("备注") ];
     const requestTypeOptions = use_llm_request_type()
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item[]>([]);
@@ -405,7 +407,7 @@ export default function AIAgentChatSetting() {
             <FullScreenContext>
                 <Dashboard>
                     <Row>
-                        <Column widthPer={80}>
+                        <Column widthPer={100}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save()
                             }}/></div>}>
@@ -428,6 +430,14 @@ export default function AIAgentChatSetting() {
                                         <InputText value={ai_agent_Item.get_label_by_v(item.model,item.show_options?.options_agent_model_list)} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
                                             item.model = value;
                                         }} no_border={true}/>,
+                                        <Select value={item.tool_mode} onChange={(value) => {
+                                            if(item.open && value === true) {
+                                                NotyFail(t("开启状态不能成为tool"))
+                                                return
+                                            }
+                                            item.tool_mode = value;
+                                            setRows([...rows]);
+                                        }}  options={select_list} no_border={true}/>,
                                         <div>
                                             <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
                                                 editor_data.set_value_temp(rows[index].sys_prompt??'')

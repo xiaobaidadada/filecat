@@ -1,7 +1,7 @@
 import axios, {AxiosResponse} from "axios";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import {ai_config, ai_config_env} from "./ai_agent.service";
-import {LLMRequestType} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_Item, ai_agent_item_dotenv, LLMRequestType} from "../../../common/req/filecat.ai.pojo";
 
 /**
  * 处理 token，如果已经带有 Bearer 前缀则不再添加
@@ -17,9 +17,9 @@ function getAuthHeader(token: string): string {
 /**
  * 获取代理配置
  */
-function getProxyConfig(): Record<string, any> {
-    if (ai_config_env?.proxy_url) {
-        const agent = new HttpsProxyAgent(ai_config_env.proxy_url);
+function getProxyConfig(env: ai_agent_item_dotenv): Record<string, any> {
+    if (env?.proxy_url) {
+        const agent = new HttpsProxyAgent(env.proxy_url);
         return {
             httpAgent: agent,
             httpsAgent: agent,
@@ -60,13 +60,13 @@ const REQUEST_TYPE_PATH_MAP: Record<LLMRequestType, string> = {
  * 根据 request_type 和用户填写的 url，计算出最终的请求 url。
  *
  * 规则：
- * 1. 如果 request_type 是 'completions'（默认），直接使用 ai_config.url（兼容旧配置）
- * 2. 否则，尝试从 ai_config.url 中提取 base URL（去掉末尾的 /chat/completions 等），
+ * 1. 如果 request_type 是 'completions'（默认），直接使用 config.url（兼容旧配置）
+ * 2. 否则，尝试从 config.url 中提取 base URL（去掉末尾的 /chat/completions 等），
  *    再拼接上 request_type 对应的路径。
  *    如果提取失败（即 url 不包含已知路径），则直接在 url 后加路径。
  */
-function resolveRequestUrl(requestType?: LLMRequestType): string {
-    const rawUrl = ai_config.url;
+function resolveRequestUrl(config: ai_agent_Item, requestType?: LLMRequestType): string {
+    const rawUrl = config.url;
     if (!requestType || requestType === 'completions') {
         // completions 直接使用原 url
         return rawUrl;
@@ -172,9 +172,9 @@ function buildEmbeddingsBody(params: {
 //  请求头构建
 // ============================================================
 
-function buildHeaders(contentType?: string): Record<string, string> {
+function buildHeaders(config: ai_agent_Item, contentType?: string): Record<string, string> {
     const headers: Record<string, string> = {
-        "Authorization": getAuthHeader(ai_config.token)
+        "Authorization": getAuthHeader(config.token)
     };
     if (contentType) {
         headers["Content-Type"] = contentType;
@@ -190,11 +190,12 @@ async function sendPost(
     url: string,
     headers: Record<string, string>,
     body: any,
+    env: ai_agent_item_dotenv,
     signal?: AbortSignal,
     streamMode: boolean = false
 ): Promise<Response> {
-    if (ai_config_env?.proxy_url) {
-        const proxyConfig = getProxyConfig();
+    if (env?.proxy_url) {
+        const proxyConfig = getProxyConfig(env);
         const res = await axios({
             url,
             method: "POST",
@@ -239,29 +240,37 @@ async function sendPost(
 /**
  * 发送非流式请求到大模型（用于记忆压缩等场景）
  * 返回 fetch 风格的 Response
- * 根据 ai_config.request_type 自动构建不同的请求体和 URL
+ * 根据 config.request_type 自动构建不同的请求体和 URL
  */
 export async function llmPost(
     body: any,
+    config?: ai_agent_Item,
+    env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
-    const url = resolveRequestUrl(ai_config.request_type);
-    const headers = buildHeaders("application/json");
-    return sendPost(url, headers, body, signal, false);
+    const cfg = config || ai_config;
+    const envCfg = env || ai_config_env;
+    const url = resolveRequestUrl(cfg, cfg.request_type);
+    const headers = buildHeaders(cfg, "application/json");
+    return sendPost(url, headers, body, envCfg, signal, false);
 }
 
 /**
  * 发送流式大模型请求（支持代理）
  * 返回 fetch 风格的 Response，兼容现有 SSE 处理逻辑
- * 根据 ai_config.request_type 自动构建不同的请求体和 URL
+ * 根据 config.request_type 自动构建不同的请求体和 URL
  */
 export async function llmPostStream(
     body: any,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    config?: ai_agent_Item,
+    env?: ai_agent_item_dotenv,
 ): Promise<Response> {
-    const url = resolveRequestUrl(ai_config.request_type);
-    const headers = buildHeaders("application/json");
-    return sendPost(url, headers, body, signal, true);
+    const cfg = config || ai_config;
+    const envCfg = env || ai_config_env;
+    const url = resolveRequestUrl(cfg, cfg.request_type);
+    const headers = buildHeaders(cfg, "application/json");
+    return sendPost(url, headers, body, envCfg, signal, true);
 }
 
 // ============================================================
@@ -279,16 +288,20 @@ export async function llmImagesGenerate(
         quality?: string;
         style?: string;
     },
+    config?: ai_agent_Item,
+    env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
+    const cfg = config || ai_config;
+    const envCfg = env || ai_config_env;
     const body = buildImagesBody({
         ...params,
-        model: ai_config.model,
-        extraParams: parseExtraParams(),
+        model: cfg.model,
+        extraParams: parseExtraParams(cfg),
     });
-    const url = resolveRequestUrl('images');
-    const headers = buildHeaders("application/json");
-    return sendPost(url, headers, body, signal, false);
+    const url = resolveRequestUrl(cfg, 'images');
+    const headers = buildHeaders(cfg, "application/json");
+    return sendPost(url, headers, body, envCfg, signal, false);
 }
 
 /**
@@ -301,16 +314,20 @@ export async function llmAudioSpeech(
         speed?: number;
         response_format?: string;
     },
+    config?: ai_agent_Item,
+    env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
+    const cfg = config || ai_config;
+    const envCfg = env || ai_config_env;
     const body = buildAudioSpeechBody({
         ...params,
-        model: ai_config.model,
-        extraParams: parseExtraParams(),
+        model: cfg.model,
+        extraParams: parseExtraParams(cfg),
     });
-    const url = resolveRequestUrl('audio_speech');
-    const headers = buildHeaders("application/json");
-    return sendPost(url, headers, body, signal, false);
+    const url = resolveRequestUrl(cfg, 'audio_speech');
+    const headers = buildHeaders(cfg, "application/json");
+    return sendPost(url, headers, body, envCfg, signal, false);
 }
 
 /**
@@ -322,25 +339,30 @@ export async function llmEmbeddings(
         encoding_format?: string;
         dimensions?: number;
     },
+    config?: ai_agent_Item,
+    env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
+    const cfg = config || ai_config;
+    const envCfg = env || ai_config_env;
     const body = buildEmbeddingsBody({
         ...params,
-        model: ai_config.model,
-        extraParams: parseExtraParams(),
+        model: cfg.model,
+        extraParams: parseExtraParams(cfg),
     });
-    const url = resolveRequestUrl('embeddings');
-    const headers = buildHeaders("application/json");
-    return sendPost(url, headers, body, signal, false);
+    const url = resolveRequestUrl(cfg, 'embeddings');
+    const headers = buildHeaders(cfg, "application/json");
+    return sendPost(url, headers, body, envCfg, signal, false);
 }
 
 /**
  * 解析 extraParams（来自 json_params 配置）
  */
-function parseExtraParams(): Record<string, any> | undefined {
+function parseExtraParams(config?: ai_agent_Item): Record<string, any> | undefined {
     try {
-        if (ai_config.json_params) {
-            const obj = JSON.parse(ai_config.json_params);
+        const cfg = config || ai_config;
+        if (cfg.json_params) {
+            const obj = JSON.parse(cfg.json_params);
             // 对于非 completions 类型，stream 等参数不适用
             return obj;
         }
