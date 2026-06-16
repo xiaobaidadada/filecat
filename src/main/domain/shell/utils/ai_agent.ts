@@ -6,7 +6,7 @@ import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
-import {ai_agent_message_item, ai_agent_messages} from "../../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
 
 export class ai_agent_class {
 

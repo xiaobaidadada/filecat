@@ -34,7 +34,6 @@ export class ai_docs_load_info {
 
 export class ai_docs_setting_param {
     docs_max_char_num = 10000
-    force_use_local_data = false;
     dir_recursion_depth = 10
     ignore_dir: string | string[] = ["node_modules", ".git", "*.pdf", "*.dll", "build", ".ieda", "package-lock.json", "*.zip", "*.exe", "*.rar", "*.gz", "*.lock", "*.png", "images", "*.woff2", "*.svg", "*.webp", "*.jpg"]
     max_file_num = 5000
@@ -50,8 +49,6 @@ export class ai_docs_setting_param {
 export const ai_docs_setting_param_default = `
 # 获取的最多字符数量 优先级大于docs_max_char_num
 docs_max_char_num=10000
-# 强制每次聊天前都执行本地知识库搜索，建议在模型的系统提示词中设置，让AI每次都调用本地知识库搜索，会更加精准
-force_use_local_data=false
 # 读取知识库目录的时候，递归最大深度
 dir_recursion_depth=10
 # gitignore类型的忽略表达式，用于忽略某些文件不被索引，也支持数组 ["abc","node_modules"]
@@ -85,6 +82,23 @@ export class ai_agent_option_item_extra {
     options_agent_model_list?:ai_agent_option_item[]
 }
 
+/**
+ * 请求类型枚举
+ * - completions: 标准对话/聊天补全 (chat/completions)
+ * - images:      图片生成 (images/generations)
+ * - audio_speech: 文本转语音 (audio/speech)
+ * - audio_transcription: 语音转文字 (audio/transcriptions)
+ * - audio_translation: 语音翻译 (audio/translations)
+ * - embeddings:  向量嵌入 (embeddings)
+ */
+export type LLMRequestType =
+    | 'completions'
+    | 'images'
+    | 'audio_speech'
+    | 'audio_transcription'
+    | 'audio_translation'
+    | 'embeddings';
+
 export class ai_agent_Item {
     token: string;
     open: boolean = false;
@@ -92,6 +106,8 @@ export class ai_agent_Item {
     index: number;
     url: string;
     model: string;
+    /** 请求类型，默认 completions */
+    request_type?: LLMRequestType;
     json_params?: string;
     sys_prompt?: string;
 
@@ -206,11 +222,65 @@ export class ai_agent_message_attachment_item {
     content: string;
 }
 
+/**
+ * 多模态内容项 - 文本类型
+ */
+export type ai_agent_content_text = {
+    type: "text";
+    text: string;
+};
+
+/**
+ * 多模态内容项 - 图片类型（URL或base64）
+ */
+export type ai_agent_content_image = {
+    type: "image_url";
+    image_url: { url: string }; // todo 进行真实url 更省token
+};
+
+/**
+ * 多模态内容项
+ */
+export type ai_agent_content_part = ai_agent_content_text | ai_agent_content_image;
+
+/**
+ * 消息内容：可以是纯文本字符串，也可以是多模态内容数组
+ */
+export type ai_agent_content = string | ai_agent_content_part[];
+
 export class ai_agent_message_item {
     role: AI_Agent_Role;
-    content: string;
+    content: ai_agent_content;
     tool_call_id?: string;
     attachments?: ai_agent_message_attachment_item[];
+}
+
+/** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */
+export function getContentAsString(content: ai_agent_content): string {
+    if (typeof content === 'string') {
+        return content;
+    }
+    if (Array.isArray(content)) {
+        return content
+            .map(part => part.type === 'text' ? part.text : `[图片]`)
+            .join('\n');
+    }
+    return '';
+}
+
+/** 获取内容长度（用于字符统计） */
+export function getContentLength(content: ai_agent_content): number {
+    if (typeof content === 'string') {
+        return content.length;
+    }
+    if (Array.isArray(content)) {
+        return content.reduce((sum, part) => {
+            if (part.type === 'text') return sum + part.text.length;
+            if (part.type === 'image_url') return sum + (part.image_url.url?.length ?? 0);
+            return sum;
+        }, 0);
+    }
+    return 0;
 }
 
 export type ai_agent_messages = ai_agent_message_item[];

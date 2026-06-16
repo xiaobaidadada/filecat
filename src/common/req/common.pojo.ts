@@ -193,3 +193,7 @@ export interface browser_file_pojo {
     name:string;
     size:number
 }
+
+
+// 6MB
+export const max_req_size = 6250000

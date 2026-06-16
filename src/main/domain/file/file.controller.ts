@@ -38,6 +38,7 @@ import {Stats} from "fs";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {Public} from "../../other/middleware/decorator";
 import {sqliteQueryReq} from "../../../common/req/file.req";
+import {max_req_size} from "../../../common/req/common.pojo";
 
 
 @JsonController("/file")
@@ -126,7 +127,7 @@ export class FileController {
 
     // base保存支持分片
     @Post('/base64/save/:path([^"]{0,})')
-    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: {
+    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: max_req_size}}) data?: {
         base64_context: string,
         type: base64UploadType
     }) {

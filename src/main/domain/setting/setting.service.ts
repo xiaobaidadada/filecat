@@ -461,9 +461,17 @@ export class SettingService {
             xiaomi_pojo.open = false
             xiaomi_pojo.dotenv = ai_agent_item_dotenv_default
             xiaomi_pojo.json_params = json_params_default
+            const deepseek_pojo = new ai_agent_Item()
+            deepseek_pojo.url = 'https://api.deepseek.com/v1/chat/completions'
+            deepseek_pojo.model = "deepseek-v4-pro"
+            deepseek_pojo.note = "deepseek"
+            deepseek_pojo.open = false
+            deepseek_pojo.dotenv = ai_agent_item_dotenv_default
+            deepseek_pojo.json_params = json_params_default
+            deepseek_pojo.request_type = 'completions'
             return {
                 models:[
-                    doubao_pojo,longcat_pojo,zhipu_pojo,openai_pojo,xiaomi_pojo
+                    doubao_pojo,longcat_pojo,zhipu_pojo,openai_pojo,xiaomi_pojo,deepseek_pojo
                 ]
             }
         } else {

@@ -199,7 +199,7 @@ export class Env {
         for (const rawLine of envVariables) {
             const line = rawLine.trim();
 
-            if (!line || line.startsWith('#')) continue;
+            if (!line || line.startsWith('#') || line.startsWith(';')) continue;
 
             const equalIndex = line.indexOf('=');
             if (equalIndex === -1) continue;

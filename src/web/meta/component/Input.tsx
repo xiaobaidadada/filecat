@@ -254,7 +254,7 @@ export function InputPassword(props: {
 }
 
 export interface SelectProps {
-    options: { title?: string, value: any,color?:string }[];
+    options: { title?: string,label?:string, value: any,color?:string }[];
     onChange: (value: any) => void;
     defaultValue?: any,
     no_border?: boolean,
@@ -408,7 +408,7 @@ export function Select(props: SelectProps) {
                                     setOpen(false);
                                 }}
                             >
-                                {item.title ?? item.value}
+                                {item.title ?? item.label ??item.value}
                             </div>
                         ))}
                     </div>,

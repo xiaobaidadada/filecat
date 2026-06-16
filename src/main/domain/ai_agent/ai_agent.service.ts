@@ -35,7 +35,8 @@ import {
     ai_agent_option_item_extra,
     ai_docs_item,
     ai_docs_load_info,
-    ai_docs_setting_param
+    ai_docs_setting_param,
+    getContentAsString
 } from "../../../common/req/filecat.ai.pojo";
 
 const {
@@ -573,7 +574,7 @@ export class Ai_agentService {
        const userId = userService.get_user_info_by_token(token).id;
        const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
        const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
-       const sessionTitle = latestUserMessage?.content?.trim()
+       const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
            || formatAttachmentTitle(latestUserMessage?.attachments)
            || "新会话";
        const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);

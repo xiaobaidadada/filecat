@@ -1,4 +1,3 @@
-
 import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
@@ -15,7 +14,7 @@ import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
-import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../common/req/filecat.ai.pojo";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
@@ -73,6 +72,9 @@ export class ChatCore {
 
             // ===== 1. 向该用户的 WS 连接发送确认请求（只找第一个匹配的） =====
             const wss = WsUtil.get_wss_by_token(token)
+            if(!wss) {
+                throw "ws connecting not found";
+            }
             const data = new WsData(CmdType.ai_confirm_cmd, {
                 askId,
                 cmd,
@@ -194,11 +196,6 @@ ${sys_prompt ?? ''}
             // ...await this.trimMessages(originMessages, config_env.char_max, on_msg, controller),
         ];
 
-        if (ai_config_search_doc.force_use_local_data) {
-            const t_ = await ai_agentService.search_docs({keywords: [workMessages[workMessages.length - 1].content]})
-            workMessages[workMessages.length - 1].content = `本地知识库搜到 ${t_} 
-            ${workMessages[workMessages.length - 1].content}`
-        }
 
         const env = {
             toolLoop: ai_config_env.tool_call_max,

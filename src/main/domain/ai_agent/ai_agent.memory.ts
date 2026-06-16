@@ -8,7 +8,7 @@ import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
-    ai_agent_usage_stats
+    ai_agent_usage_stats, getContentAsString, getContentLength
 } from "../../../common/req/filecat.ai.pojo";
 
 type SessionMeta = ai_agent_chat_session_meta & {
@@ -94,9 +94,10 @@ function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_messag
         return normalized;
     }
 
+    const contentStr = getContentAsString(normalized.content);
     return {
         role: normalized.role,
-        content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${normalized.content ?? ""}`.trim(),
+        content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim(),
         tool_call_id: normalized.tool_call_id
     };
 }
@@ -104,7 +105,7 @@ function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_messag
 function messageChars(messages: ai_agent_messages) {
     return messages.reduce((sum, it) => {
         const attachmentChars = (it.attachments ?? []).reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
-        return sum + (it.content?.length ?? 0) + attachmentChars;
+        return sum + getContentLength(it.content) + attachmentChars;
     }, 0);
 }
 
@@ -344,7 +345,7 @@ export class AiAgentMemoryService {
         }
 
         if (!session.title || session.title === "新会话") {
-            session.title = this.createTitle(userMessage.content);
+            session.title = this.createTitle(getContentAsString(userMessage.content));
         }
         await this.compressIfNeeded(session);
         const fileName = this.writeSession(userId, session, meta.file_name);

@@ -380,5 +380,13 @@ export const $stroe = {
             localStorageEffect("blank_search_mode")
         ]
     }),
+    // AI 聊天请求类型选择
+    ai_request_type: atom({
+        key: 'ai_request_type',
+        default: 'completions' as string,
+        effects: [
+            localStorageEffect("ai_request_type")
+        ]
+    }),
 }
 

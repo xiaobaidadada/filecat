@@ -29,8 +29,10 @@ import {
     ai_mcp_server_item,
     ai_mcp_server_tool_group,
     ai_system_prompt_item,
-    json_params_default
+    json_params_default,
+    LLMRequestType
 } from "../../../../common/req/filecat.ai.pojo";
+import {use_llm_request_type} from "./type";
 
 const tip_text = `
 1. 只能使用符合openai风格的ai接口，接口不能只填域名，而是类似 https://ark.cn-beijing.volces.com/api/v3/chat/completions 这样的全路径链接聊天url
@@ -63,7 +65,8 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("请求类型"), t("是否开启"), t("token"),"model",t("prompt|model|setting"),t("备注") ];
+    const requestTypeOptions = use_llm_request_type()
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item[]>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item[]>([]);
@@ -402,7 +405,7 @@ export default function AIAgentChatSetting() {
             <FullScreenContext>
                 <Dashboard>
                     <Row>
-                        <Column widthPer={70}>
+                        <Column widthPer={80}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save()
                             }}/></div>}>
@@ -412,6 +415,10 @@ export default function AIAgentChatSetting() {
                                         <InputText value={item.url} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
                                             item.url = value;
                                         }} no_border={true}/>,
+                                        <Select value={item.request_type ?? 'completions'} onChange={(value) => {
+                                            item.request_type = value;
+                                            setRows([...rows]);
+                                        }} options={requestTypeOptions} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,

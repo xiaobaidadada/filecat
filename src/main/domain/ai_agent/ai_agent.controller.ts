@@ -12,12 +12,14 @@ import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
+import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
+import {max_req_size} from "../../../common/req/common.pojo";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
 
     @Post("/chat")
-    async chat(@Body() data: any, @Res() res: Response, @Req() ctx) {
+    async chat(@Body({options: {limit: max_req_size}}) data: any, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
 
         // SSE headers
@@ -113,6 +115,81 @@ export class Ai_AgentController {
         aiAgentMemoryService.clear(user?.id ?? user?.user_id ?? user?.username ?? "default")
         return Sucess("")
     }
+
+    // ============================================================
+    //  非 chat/completions 的模型请求接口
+    // ============================================================
+
+    /**
+     * 图片生成接口 (POST /ai_agent/images/generations)
+     */
+    @Post("/images/generations")
+    async imagesGenerate(@Body() data: {
+        prompt: string;
+        n?: number;
+        size?: string;
+        quality?: string;
+        style?: string;
+    }, @Res() res: Response, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        try {
+            const response = await llmImagesGenerate(data);
+            const result = await response.json();
+            return Sucess(result);
+        } catch (err) {
+            const errorMessage = err?.message || "图片生成失败";
+            // 如果错误信息包含 size 相关关键词，添加提示
+            let hint = "";
+            if (errorMessage.toLowerCase().includes("size") || errorMessage.toLowerCase().includes("resolution")) {
+                hint = "。提示：不同模型支持的 size 不同，常见的有 1024x1024、1792x1024、1024x1792（DALL-E 3）。您可以在聊天页面顶部的请求类型菜单中点击「图片参数设置」修改 size 参数。";
+            }
+            return {code: 500, message: errorMessage + hint};
+        }
+    }
+
+    /**
+     * 文本转语音接口 (POST /ai_agent/audio/speech)
+     */
+    @Post("/audio/speech")
+    async audioSpeech(@Body() data: {
+        input: string;
+        voice?: string;
+        speed?: number;
+        response_format?: string;
+    }, @Res() res: Response, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        try {
+            const response = await llmAudioSpeech(data);
+            // 音频直接返回二进制流
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = Buffer.from(arrayBuffer);
+            res.setHeader("Content-Type", response.headers.get("content-type") || "audio/mpeg");
+            res.send(audioBuffer);
+        } catch (err) {
+            res.status(500).send(err?.message || "语音合成失败");
+        }
+    }
+
+    /**
+     * Embeddings 接口 (POST /ai_agent/embeddings)
+     */
+    @Post("/embeddings")
+    async embeddings(@Body() data: {
+        input: string | string[];
+        encoding_format?: string;
+        dimensions?: number;
+    }, @Res() res: Response, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        try {
+            const response = await llmEmbeddings(data);
+            const result = await response.json();
+            return Sucess(result);
+        } catch (err) {
+            return {code: 500, message: err?.message || "Embeddings 请求失败"};
+        }
+    }
+
+    // ============================================================
 
     @msg(CmdType.ai_confirm_cmd)
     async confirmCmd(data: WsData<any>) {

@@ -1,68 +1,43 @@
-﻿import React, {useState, useRef, useEffect, useLayoutEffect, useCallback} from 'react';
-import {ai_agentHttp, settingHttp} from "../../util/config";
-import Md from "../file/component/markdown/Md";
-import {throttle, debounce} from "../../../../common/fun.util";
-import Header from "../../../meta/component/Header";
-import {ActionButton, ButtonLittle, Icon} from "../../../meta/component/Button";
-import {use_auth_check} from "../../util/store.util";
-import {UserAuth} from "../../../../common/req/user.req";
-import {copyToClipboard} from "../../util/FunUtil";
-import {NotySucess, NotyFail} from "../../util/noty";
+﻿import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
+import {ai_agentHttp, settingHttp} from "../../../util/config";
+import {throttle, debounce} from "../../../../../common/fun.util";
+import Header from "../../../../meta/component/Header";
+import {ActionButton, Icon} from "../../../../meta/component/Button";
+import {use_auth_check} from "../../../util/store.util";
+import {UserAuth} from "../../../../../common/req/user.req";
+import {copyToClipboard} from "../../../util/FunUtil";
+import {NotySucess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
-import {using_confirm} from "../prompts/prompt.util";
-import {RCode} from "../../../../common/Result.pojo";
-import {routerConfig} from "../../../../common/RouterConfig";
+import {using_confirm} from "../../prompts/prompt.util";
+import {RCode} from "../../../../../common/Result.pojo";
+import {routerConfig} from "../../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
-import {$stroe} from "../../util/store";
-import {MenuSelect} from "../prompts/Prompt";
-import {InputText} from "../../../meta/component/Input";
-import {useCmdConfirm} from "./useCmdConfirm";
+import {$stroe} from "../../../util/store";
+import {MenuSelect} from "../../prompts/Prompt";
+import {InputText} from "../../../../meta/component/Input";
+import {useCmdConfirm} from "../useCmdConfirm";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta,
+    ai_agent_content, ai_agent_content_part,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats,
-    ai_system_prompt_item
-} from "../../../../common/req/filecat.ai.pojo";
+    ai_system_prompt_item,
+    getContentAsString
+} from "../../../../../common/req/filecat.ai.pojo";
+
+// ===== 导入拆分的子组件 =====
+import SessionList from "./SessionList";
+import ChatInput from "./ChatInput";
+import RequestTypeSelector from "./RequestTypeSelector";
+import {renderMessageByType, handleNonCompletionsRequest} from "./RequestTypeRenderers";
+import {use_llm_request_type} from "../type";
 
 interface Message {
     id: number;
     sender: 'user' | 'bot';
     text: string;
     attachments?: ai_agent_message_attachment_item[];
-}
-
-function MessageActions({
-                            onDelete,
-                            onCopy
-                        }: {
-    onDelete: () => void;
-    onCopy: () => void;
-}) {
-    const {t} = useTranslation();
-    return (
-        <div className="message-actions">
-            <button onClick={onDelete}>{t("删除")}</button>
-            <button onClick={onCopy}>{t("复制")}</button>
-        </div>
-    );
-}
-
-function AttachmentList({attachments = []}: { attachments?: ai_agent_message_attachment_item[] }) {
-    if (!attachments.length) {
-        return null;
-    }
-    return (
-        <div className="chat-message-attachments">
-            {attachments.map((attachment, index) => (
-                <div key={`${attachment.name}_${index}`} className="chat-message-attachment">
-                    <Icon icon={'attach_file'} />
-                    <span>{attachment.name}</span>
-                    <small>{attachment.size} B</small>
-                </div>
-            ))}
-        </div>
-    );
 }
 
 function guessAttachmentKind(file: File): "text" | "image" | "binary" {
@@ -80,19 +55,25 @@ function readFileAsText(file: File) {
     return file.text();
 }
 
+/** 将图片文件转为 base64 字符串 */
+function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
     return messages
         .filter(it => it.role === "user" || it.role === "assistant")
         .map((it, index) => ({
             id: Date.now() + index,
             sender: it.role === "assistant" ? "bot" : "user",
-            text: it.content,
+            text: getContentAsString(it.content),
             attachments: it.attachments ?? []
         }));
-}
-
-function toSessionTitle(title:string) {
-    return title || "新会话";
 }
 
 function toAiMessages(messages: Message[]): ai_agent_message_item[] {
@@ -109,7 +90,9 @@ export default function AiAgentChatPage() {
     const [activeSessionId, setActiveSessionId] = useState<string>("");
     const [ai_session_collapsed,set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+    const [requestType, setRequestType] = useRecoilState($stroe.ai_request_type);
     useCmdConfirm();
+    const REQUEST_TYPE_OPTIONS = use_llm_request_type()
 
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +160,12 @@ export default function AiAgentChatPage() {
                     content = "[文本读取失败]";
                 }
             } else if (kind === "image") {
-                content = `[图片文件: ${file.name}]`;
+                // 将图片转为 base64 数据，用于多模态请求
+                try {
+                    content = await fileToBase64(file);
+                } catch {
+                    content = `[图片文件: ${file.name}]`;
+                }
             } else {
                 content = `[二进制文件: ${file.name}]`;
             }
@@ -301,12 +289,46 @@ export default function AiAgentChatPage() {
     }, [messages]);
 
     const get_message = (message: Message): ai_agent_message_item[] => {
+        // 如果有图片附件，构建多模态 content 数组
+        const imageAttachments = (message.attachments ?? []).filter(a => a.kind === "image");
+        if (imageAttachments.length > 0) {
+            // 构建 OpenAI 多模态格式的 content 数组
+            const content: ai_agent_content_part[] = [];
+            if (message.text) {
+                content.push({ type: "text", text: message.text });
+            }
+            for (const img of imageAttachments) {
+                // img.content 是 base64 DataURL
+                content.push({
+                    type: "image_url",
+                    image_url: { url: img.content }
+                });
+            }
+            return [{
+                content,
+                role: 'user',
+                attachments: message.attachments ?? []
+            }];
+        }
         return [{
             content: message.text,
             role: message.sender === 'bot' ? 'assistant' : 'user',
             attachments: message.attachments ?? []
         }];
     };
+
+    /** 保存当前会话的所有消息到后端 */
+    // const saveMessagesToSession = async (sessionId: string, msgs: Message[]) => {
+    //     if (!sessionId) return;
+    //     try {
+    //         await ai_agentHttp.post("session/messages", {
+    //             session_id: sessionId,
+    //             messages: toAiMessages(msgs)
+    //         });
+    //     } catch (e) {
+    //         console.error("保存会话消息失败", e);
+    //     }
+    // };
 
     const handleSend = async () => {
         const text = inputValue.trim();
@@ -329,7 +351,42 @@ export default function AiAgentChatPage() {
         setInputValue('');
         setPendingAttachments([]);
 
-        set_sending(true)
+        set_sending(true);
+
+        // 非 completions 类型：使用专用请求处理器
+        if (requestType !== 'completions') {
+            const bot_message: Message = {
+                id: user_message.id + 1,
+                sender: 'bot',
+                text: "处理中..."
+            };
+            new_messages.push(bot_message);
+            setMessages([...new_messages]);
+
+            const handled = await handleNonCompletionsRequest(
+                requestType,
+                text,
+                sessionId,
+                async (resultText) => {
+                    bot_message.text = resultText;
+                    setMessages([...new_messages]);
+                    set_sending(false);
+
+                    refreshSessions();
+                    scrollToBottom(true);
+                }
+            );
+
+            if (!handled) {
+                // 如果没被处理（如新增类型），回退到默认提示
+                bot_message.text = `请求类型 "${requestType}" 的专用处理器尚未实现，请使用 completions 类型。`;
+                setMessages([...new_messages]);
+                set_sending(false);
+           }
+            return;
+        }
+
+        // completions 类型：走原有的 SSE 流式请求
         const call_pojo: Message =  {
             id:user_message.id +1,
             sender:'bot',
@@ -548,6 +605,8 @@ export default function AiAgentChatPage() {
                        <ActionButton icon={"add_comment"} title={t("提示词模板创建会话")} />
                    </MenuSelect>
                )}
+               {/* 请求类型选择器 */}
+               <RequestTypeSelector />
                <ActionButton icon={"delete_sweep"} title={t("清空全部会话")} onClick={()=>{
                    confirm_dell_all({
                        sub_title:t("确认删除全部聊天会话吗?"),
@@ -565,50 +624,22 @@ export default function AiAgentChatPage() {
            </Header>
            <div className="chat-page chat-page-with-sessions">
                {ai_session_collapsed && <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(false)}></div>}
-               <aside className={`chat-session-list ${ai_session_collapsed ? "active" : ""} ${ai_session_collapsed ? "collapsed" : ""}`}>
-                   {sessions.map(session => (
-                       <React.Fragment key={session.id}>
-                           <button
-
-                               className={`chat-session-item ${activeSessionId === session.id ? "active" : ""}`}
-                               onClick={() => loadSession(session.id, false)}
-                               title={session.summary || session.long_term_memory || session.title}
-                           >
-
-
-                               <span>{toSessionTitle(session.title)}</span>
-                               <small>{session.message_count}
-                                   {/*{t("条")}*/}
-                               </small>
-                               {session.source === "cli" && <em className="chat-session-source">CLI</em>}
-                               <MenuSelect
-                                   list={[
-                                       {
-                                           name: t('重命名'),
-                                           click: () => {
-                                               renameSession(session.id,session.title)
-                                           }
-                                       },
-                                       {
-                                           name: t('字符消耗统计'),
-                                           click: () => showUsageStatsPopup(session.id)
-                                       },
-                                       {
-                                           name: t('删除'),
-                                           click: () => deleteSession(session.id)
-                                       }
-                                   ]}  >
-                                    <Icon icon={'more_horiz'}/>
-                               </MenuSelect>
-
-                           </button>
-
-                       </React.Fragment>
-                   ))}
-               </aside>
+               <SessionList
+                   sessions={sessions}
+                   activeSessionId={activeSessionId}
+                   onSelectSession={(id) => loadSession(id, false)}
+                   onRenameSession={renameSession}
+                   onDeleteSession={deleteSession}
+                   onShowUsageStats={showUsageStatsPopup}
+               />
                <section className="chat-main">
                    {
-                       messages?.length === 0 && <div className="chat-header">{t('询问服务器的一切')}</div>
+                       messages?.length === 0 &&
+                       <div className="chat-header">
+                           {requestType === 'completions'
+                               ? t('询问服务器的一切')
+                               : REQUEST_TYPE_OPTIONS.find(o => o.value === requestType)?.label ?? requestType}
+                       </div>
                    }
                    <div className="chat-messages" ref={chatContainerRef}>
                        {messages.map(msg => (
@@ -616,66 +647,32 @@ export default function AiAgentChatPage() {
                                key={msg.id}
                                className={`chat-message ${msg.sender}`}
                            >
-                               <Md context={msg.text}/>
-                               <AttachmentList attachments={msg.attachments}/>
-                               <MessageActions
-                                   onDelete={() => handleDelete(msg.id)}
-                                   onCopy={() => handleCopy(msg.text)}
-                               />
+                               {/* 根据请求类型使用不同的渲染器 */}
+                               {renderMessageByType(msg, requestType)}
+                               <div className="message-actions">
+                                   <button onClick={() => handleDelete(msg.id)}>{t("删除")}</button>
+                                   <button onClick={() => handleCopy(msg.text)}>{t("复制")}</button>
+                               </div>
                            </div>
                        ))}
                        <div ref={messagesEndRef} />
                    </div>
 
-                   <div className="chat-input-area" onDrop={handleDrop} onDragOver={handleDragOver}>
-                       <input
-                           ref={fileInputRef}
-                           type="file"
-                           multiple
-                           style={{display: "none"}}
-                           onChange={(e) => {
-                               if (e.target.files?.length) {
-                                   addAttachments(e.target.files);
-                                   e.currentTarget.value = "";
-                               }
-                           }}
-                       />
-                       <div className="chat-input-shell">
-                           {pendingAttachments.length > 0 && (
-                               <div className="chat-attachment-strip">
-                                   {pendingAttachments.map((file, index) => (
-                                       <div key={`${file.name}_${index}`} className="chat-attachment-chip">
-                                           <Icon icon={'attach_file'} />
-                                           <span title={file.name}>{file.name}</span>
-                                           <button type="button" onClick={() => removePendingAttachment(index)}>
-                                               <Icon icon={'close'} />
-                                           </button>
-                                       </div>
-                                   ))}
-                               </div>
-                           )}
-                           <textarea
-                               value={inputValue}
-                               onChange={handleChange}
-                               onPaste={handlePaste}
-                               onKeyDown={handleKeyDown}
-                               placeholder={t("输入消息")}
-                               className="chat-input"
-                           />
-                       </div>
-                       <ActionButton title={"添加文件"} icon={"attach_file"} onClick={openFilePicker}/>
-                       {sending === false ?
-                           <ButtonLittle text={t("发送")} clickFun={handleSend}/>
-                           :
-                           <div className="ai-thinking-indicator">
-                               <div className="ai-thinking-dots">
-                                   <div className="ai-thinking-dot"></div>
-                                   <div className="ai-thinking-dot"></div>
-                                   <div className="ai-thinking-dot"></div>
-                               </div>
-                           </div>
-                       }
-                   </div>
+                   <ChatInput
+                       inputValue={inputValue}
+                       onInputChange={handleChange}
+                       onKeyDown={handleKeyDown}
+                       onPaste={handlePaste}
+                       onSend={handleSend}
+                       sending={sending}
+                       pendingAttachments={pendingAttachments}
+                       onRemoveAttachment={removePendingAttachment}
+                       onOpenFilePicker={openFilePicker}
+                       onAddFiles={addAttachments}
+                       onDrop={handleDrop}
+                       onDragOver={handleDragOver}
+                       fileInputRef={fileInputRef}
+                   />
                </section>
            </div>
        </React.Fragment>
