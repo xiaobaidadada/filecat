@@ -1,4 +1,4 @@
-import {ai_mcp_server_item, ai_mcp_server_tool_group, ai_mcp_server_tool_item} from "../../../common/req/setting.req";
+
 import {
     getToolTextContent,
     HttpMcpTransport,
@@ -9,6 +9,11 @@ import {
     sanitizeName,
     StdioMcpServerClient
 } from "./mcp.cleint";
+import {
+    ai_mcp_server_item,
+    ai_mcp_server_tool_group,
+    ai_mcp_server_tool_item
+} from "../../../common/req/filecat.ai.pojo";
 
 
 export class AiMcpRuntimeService {

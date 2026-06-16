@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {ai_agent_Item, ai_mcp_server_item, ai_system_prompt_item, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -14,6 +14,7 @@ import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {ServerEvent} from "../../other/config";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
+import {ai_agent_Item, ai_mcp_server_item, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 
 @JsonController("/setting")
 export class SettingController {
@@ -203,7 +204,7 @@ export class SettingController {
     async ai_agent_settingsave(@Body() req: {models:ai_agent_Item[]}, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         DataUtil.set(data_common_key.ai_agent_model_setting,req)
-        ai_agentService.load_key()
+        ai_agentService.ai_agent_setting_save(req)
         return Sucess("1");
     }
 

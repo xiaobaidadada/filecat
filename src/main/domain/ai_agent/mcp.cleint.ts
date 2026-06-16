@@ -1,7 +1,7 @@
 import {ChildProcessWithoutNullStreams, spawn} from "child_process";
 import readline from "readline";
-import {ai_mcp_server_item} from "../../../common/req/setting.req";
 import {Env} from "../../../common/node/Env";
+import {ai_mcp_server_item} from "../../../common/req/filecat.ai.pojo";
 
 export interface JsonRpcRequest {
     jsonrpc: "2.0";

@@ -1,4 +1,4 @@
-import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
+
 import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
@@ -15,6 +15,7 @@ import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
+import {ai_agent_message_item, ai_agent_messages} from "../../../common/req/filecat.ai.pojo";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;

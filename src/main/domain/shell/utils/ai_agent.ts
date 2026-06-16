@@ -1,4 +1,4 @@
-import {ai_agent_message_item, ai_agent_messages} from "../../../../common/req/common.pojo";
+
 import {chat_core} from "../../ai_agent/chat.core";
 import {aiAgentMemoryService} from "../../ai_agent/ai_agent.memory";
 import {userService} from "../../user/user.service";
@@ -6,6 +6,7 @@ import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
+import {ai_agent_message_item, ai_agent_messages} from "../../../../common/req/filecat.ai.pojo";
 
 export class ai_agent_class {
 

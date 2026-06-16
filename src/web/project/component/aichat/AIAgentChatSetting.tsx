@@ -15,12 +15,6 @@ import {NotySucess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {
-    ai_agent_Item,
-    ai_agent_item_dotenv_default, ai_docs_item, ai_docs_load_info, ai_mcp_server_item, ai_mcp_server_tool_group,
-    ai_system_prompt_item,
-    json_params_default
-} from "../../../../common/req/setting.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
@@ -29,6 +23,14 @@ import {using_confirm} from "../prompts/prompt.util";
 
 import {PromptPageItem, SwitchPagePrompt} from "../prompts/PromptCard";
 import {use_select_config} from "../../util/react.config";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv_default, ai_docs_item, ai_docs_load_info,
+    ai_mcp_server_item,
+    ai_mcp_server_tool_group,
+    ai_system_prompt_item,
+    json_params_default
+} from "../../../../common/req/filecat.ai.pojo";
 
 const tip_text = `
 1. 只能使用符合openai风格的ai接口，接口不能只填域名，而是类似 https://ark.cn-beijing.volces.com/api/v3/chat/completions 这样的全路径链接聊天url
@@ -407,16 +409,16 @@ export default function AIAgentChatSetting() {
                                 <Table headers={headers} rows={rows.map((item, index) => {
                                     const new_list = [
                                         <div>{index}</div>,
-                                        <InputText value={item.url} handleInputChange={(value) => {
+                                        <InputText value={item.url} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
                                             item.url = value;
                                         }} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
-                                        <InputText value={item.token} handleInputChange={(value) => {
+                                        <InputText value={item.token} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
                                             item.token = value;
                                         }} no_border={true}/>,
-                                        <InputText value={item.model} handleInputChange={(value) => {
+                                        <InputText value={item.model} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
                                             item.model = value;
                                         }} no_border={true}/>,
                                         <div>

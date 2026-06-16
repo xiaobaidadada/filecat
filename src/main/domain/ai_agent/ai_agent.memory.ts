@@ -1,11 +1,15 @@
 import fs from "fs";
 import path from "path";
 import fse from "fs-extra";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages, ai_agent_usage_stats} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_config} from "./ai_agent.service";
 import {llmPost} from "./llm_request";
+import {
+    ai_agent_chat_session_item,
+    ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
+    ai_agent_usage_stats
+} from "../../../common/req/filecat.ai.pojo";
 
 type SessionMeta = ai_agent_chat_session_meta & {
     file_name: string;

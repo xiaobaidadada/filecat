@@ -1,5 +1,4 @@
 import {running_type} from "./file.req";
-import {VirServerEnum} from "./net.pojo";
 
 export interface NavIndexItem {
     name:string;
@@ -43,76 +42,6 @@ export class vg_item {
     free_size:string; // 可使用大小
     lv_list:lv_item[] = [];
     pv_list:pv_item[] = [];
-}
-
-/**
- * AI Agent 消息角色类型
- */
-export type AI_Agent_Role =
-/** 系统消息，通常用于设定上下文、规则、系统指令等 */
-    'system'
-    /** 用户消息，表示用户输入或请求 */
-    | 'user'
-    /** 模型助手的回复消息，可能包含工具调用指令 */
-    | 'assistant'
-    /** 工具输出消息，表示模型调用工具后的结果 */
-    | 'tool';
-
-export class ai_agent_message_attachment_item {
-    name: string;
-    mime_type?: string;
-    size: number;
-    kind?: "text" | "image" | "binary";
-    content: string;
-}
-
-export class ai_agent_message_item {
-    role:AI_Agent_Role;
-    content:string;
-    tool_call_id?: string;
-    attachments?: ai_agent_message_attachment_item[];
-}
-export type ai_agent_messages = ai_agent_message_item[];
-
-export class ai_agent_chat_session_item {
-    id:string;
-    title:string;
-    messages:ai_agent_message_item[] = [];
-    summary:string = "";
-    // 长期记忆
-    long_term_memory:string = "";
-    source?: "web" | "cli";
-    created_at:number;
-    updated_at:number;
-    // 字符消耗统计
-    usage_stats?: ai_agent_usage_stats;
-}
-
-/** AI Agent 字符消耗统计 */
-export class ai_agent_usage_stats {
-
-    /** AI 输出的总字符数 */
-    output_chars: number = 0;
-    // 最近一轮的
-    recent_output_chars: number = 0;
-    /** AI 输入总字符 */
-    input_chars: number = 0;
-    // 最近一轮的
-    recent_input_chars: number = 0;
-    /** 对话轮次 */
-    turns: number = 0;
-}
-
-export class ai_agent_chat_session_meta {
-    id:string;
-    title:string;
-    message_count:number;
-    summary?:string;
-    long_term_memory?:string;
-    source?: "web" | "cli";
-    created_at:number;
-    updated_at:number;
-    usage_stats?: ai_agent_usage_stats;
 }
 
 export interface env_item {

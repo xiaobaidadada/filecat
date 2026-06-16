@@ -1,5 +1,4 @@
 import {AiToolItem} from "../../../plugin";
-import {ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages} from "../../../common/req/common.pojo";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
@@ -11,13 +10,6 @@ import {userService} from "../user/user.service";
 import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
-import {
-    ai_agent_Item,
-    ai_agent_item_dotenv,
-    ai_docs_item,
-    ai_docs_load_info,
-    ai_docs_setting_param
-} from "../../../common/req/setting.req";
 import {Env} from "../../../common/node/Env";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
@@ -37,6 +29,14 @@ import {ServerEvent} from "../../other/config";
 import {chat_core} from "./chat.core";
 import {download_ripgrep} from "../bin/download-ripgrep";
 import {aiAgentMemoryService} from "./ai_agent.memory";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
+    ai_agent_option_item_extra,
+    ai_docs_item,
+    ai_docs_load_info,
+    ai_docs_setting_param
+} from "../../../common/req/filecat.ai.pojo";
 
 const {
     cut,
@@ -496,6 +496,24 @@ export class Ai_agentService {
             }
         }
         return false;
+    }
+
+    public ai_agent_setting_save(body) {
+        DataUtil.set(data_common_key.ai_agent_model_setting,body)
+        const list = settingService.ai_agent_setting()
+        for (const p of list.models) {
+            const pojo:ai_agent_option_item_extra = {}
+            Env.load(p.dotenv,pojo)
+            if(pojo.options_agent_model_list || pojo.options_agent_token_list || pojo.options_agent_url_list) {
+                if(p.show_options == null) {
+                    p.show_options = {}
+                }
+                p.show_options.options_agent_model_list = pojo.options_agent_model_list
+                p.show_options.options_agent_token_list = pojo.options_agent_token_list
+                p.show_options.options_agent_url_list = pojo.options_agent_url_list
+            }
+        }
+        this.load_key()
     }
 
     public load_key() {

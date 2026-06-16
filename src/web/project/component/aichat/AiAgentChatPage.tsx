@@ -2,7 +2,6 @@
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import Md from "../file/component/markdown/Md";
 import {throttle, debounce} from "../../../../common/fun.util";
-import {ai_agent_chat_session_item, ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats} from "../../../../common/req/common.pojo";
 import Header from "../../../meta/component/Header";
 import {ActionButton, ButtonLittle, Icon} from "../../../meta/component/Button";
 import {use_auth_check} from "../../util/store.util";
@@ -12,7 +11,6 @@ import {NotySucess, NotyFail} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {using_confirm} from "../prompts/prompt.util";
 import {RCode} from "../../../../common/Result.pojo";
-import {ai_agent_item_dotenv, ai_system_prompt_item} from "../../../../common/req/setting.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
 import {useRecoilState} from "recoil";
@@ -20,6 +18,12 @@ import {$stroe} from "../../util/store";
 import {MenuSelect} from "../prompts/Prompt";
 import {InputText} from "../../../meta/component/Input";
 import {useCmdConfirm} from "./useCmdConfirm";
+import {
+    ai_agent_chat_session_item,
+    ai_agent_chat_session_meta,
+    ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats,
+    ai_system_prompt_item
+} from "../../../../common/req/filecat.ai.pojo";
 
 interface Message {
     id: number;

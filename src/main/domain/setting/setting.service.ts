@@ -6,13 +6,9 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
-    ai_agent_Item, ai_agent_item_dotenv_default, ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
     dir_upload_max_num_item,
     FileQuickCmdItem,
-    FileSettingItem, json_params_default,
-    ai_mcp_server_item,
-    ai_system_prompt_item,
-    QuickCmdItem,
+    FileSettingItem, QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
     TokenTimeMode
@@ -35,6 +31,13 @@ import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
 import {plug_item, Plugin, PluginMeta, AiToolPlugin, AiToolItem} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv_default, ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
+    ai_mcp_server_item,
+    ai_system_prompt_item,
+    json_params_default
+} from "../../../common/req/filecat.ai.pojo";
 const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
