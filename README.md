@@ -39,12 +39,12 @@ FileCat 是一个web文件服务器、也是一个轻量级的服务器管理工
 ## 部分功能截图
 ### 文件列表
 ![](./doc/文件列表.png)
+### 强大的AI Agent能力（需要自己配置大模型的api）
+![](./doc/AI能力.png)
 ### 内网穿透
 ![](./doc/内网穿透.png)
 ### 系统信息看板
 ![](./doc/系统信息看板.png)
-### AI能力
-![](./doc/AI能力.png)
 
 除了以上功能之外，还支持一些可能会对你有帮助的功能，任意大小的文本日志文件秒开，windows远程桌面，图片简单编辑，CI/CD工作流，excalidraw绘图 ...
 
@@ -85,9 +85,10 @@ demo服务器由[ 野草云 ](https://my.yecaoyun.com/aff.php?aff=7185)赞助提
 `npm run dev` or `npm run build && node dist/main.js`
 
 ## 运行
-安装完以后运行命令 `filecat --port 5567`
+1. npm 安装完以后运行命令 `filecat --port 5567`，
+2. 二进制下载后的，解压缩后目录内有 `filecat-run.sh`|`filecat-run.cmd`两个运行脚本。
 
-默认账号/密码: admin/admin
+**默认账号/密码**: admin/admin
 
 更多参数可以使用 `filecat --help` 查看
 

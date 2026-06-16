@@ -397,7 +397,7 @@ export function Select(props: SelectProps) {
                     onClick={handleOpen}
                 >
                     <span className="select_trigger__label" style={{ color: selected?.color || "inherit" }}>
-                        {selected?.title ?? selected?.value ?? ""}
+                        {selected?.title ?? selected?.label ?? selected?.value ?? ""}
                     </span>
                     <i className={["material-icons", "select_trigger__icon", open ? "select_trigger__icon--open" : ""].join(" ")}>
                         expand_more

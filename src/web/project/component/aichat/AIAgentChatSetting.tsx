@@ -67,8 +67,8 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("model类型"), t("是否开启"), t("token"),"model",t("成为tool"),t("更多属性"),t("备注") ];
-    const requestTypeOptions = use_llm_request_type()
+    const headers = [t("编号"),t("url"), t("model类型"), t("是否开启"), t("key"),"model",t("成为tool"),t("更多属性"),t("备注") ];
+    const request_type = use_llm_request_type()
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item[]>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item[]>([]);
@@ -420,7 +420,7 @@ export default function AIAgentChatSetting() {
                                         <Select value={item.request_type ?? 'completions'} onChange={(value) => {
                                             item.request_type = value;
                                             setRows([...rows]);
-                                        }} options={requestTypeOptions} no_border={true}/>,
+                                        }} options={request_type} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
