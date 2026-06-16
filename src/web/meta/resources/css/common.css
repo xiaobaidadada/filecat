@@ -80,7 +80,7 @@
 .menu-select-popup {
     /* position/top/left 由 JS 控制，不要写在这里 */
     background: #fff;
-    border: 1px solid #e5e7eb;
+    /*border: 1px solid #e5e7eb;*/
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     min-width: 100px;

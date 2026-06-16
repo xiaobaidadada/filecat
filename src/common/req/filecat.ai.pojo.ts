@@ -106,7 +106,7 @@ export class ai_agent_Item {
     index: number;
     url: string;
     model: string;
-    /** 请求类型，默认 completions */
+    /** 请求类型，默认 completions 现在只用于动态拼凑 llm 的 url */
     request_type?: LLMRequestType;
     json_params?: string;
     sys_prompt?: string;
@@ -115,6 +115,13 @@ export class ai_agent_Item {
 
     // show time
     show_options?:ai_agent_option_item_extra
+
+    public static get_label_by_v(v?:string,list?:ai_agent_option_item[]) {
+        if(!v || !list?.length) return v;
+        for (const i of list) {
+            if(i.value === v) return i.label;
+        }
+    }
 }
 
 export class ai_agent_item_dotenv extends ai_agent_option_item_extra{

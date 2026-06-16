@@ -412,7 +412,7 @@ export default function AIAgentChatSetting() {
                                 <Table headers={headers} rows={rows.map((item, index) => {
                                     const new_list = [
                                         <div>{index}</div>,
-                                        <InputText value={item.url} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
+                                        <InputText value={ai_agent_Item.get_label_by_v(item.url,item.show_options?.options_agent_url_list)} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
                                             item.url = value;
                                         }} no_border={true}/>,
                                         <Select value={item.request_type ?? 'completions'} onChange={(value) => {
@@ -422,10 +422,10 @@ export default function AIAgentChatSetting() {
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
-                                        <InputText value={item.token} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
+                                        <InputText value={ai_agent_Item.get_label_by_v(item.token,item.show_options?.options_agent_token_list)} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
                                             item.token = value;
                                         }} no_border={true}/>,
-                                        <InputText value={item.model} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
+                                        <InputText value={ai_agent_Item.get_label_by_v(item.model,item.show_options?.options_agent_model_list)} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
                                             item.model = value;
                                         }} no_border={true}/>,
                                         <div>
