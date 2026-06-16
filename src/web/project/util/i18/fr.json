@@ -489,5 +489,13 @@
   "删除记录": "Supprimer l'enregistrement",
   "手动加载": "Chargement manuel",
   "从索引删除": "Supprimer de l'index",
-  "知识库开关": "Interrupteur de base de connaissances"
+  "知识库开关": "Interrupteur de base de connaissances",
+  "文本对话": "Dialogue textuel",
+  "图片生成": "Génération d'images",
+  "向量嵌入": "Plongement vectoriel",
+  "图片参数设置": "Paramètres d'image",
+  "更多属性": "Plus d'attributs",
+  "model类型": "Type de modèle",
+  "成为tool": "Devenir un outil",
+  "操作": "Opérations"
 }

@@ -136,16 +136,16 @@ export function TcpProxyClient(props) {
                     save(clients[0])
                 }}/>} titleCom={<div>{t("连接状态")}<StatusCircle ok={!!clients[0]?.status} /></div>}>
 
-                    <InputText placeholder={`${t("服务器")}ip`} value={clients[0]?.serverIp} handleInputChange={(d)=>{
+                    <InputText placeholder={`${t("服务器")} ip`} value={clients[0]?.serverIp} handleInputChange={(d)=>{
                         clients[0].serverIp = d
                     }}/>
-                    <InputText placeholder={`${t("服务器")}port`} value={clients[0]?.serverPort} handleInputChange={(d)=>{
+                    <InputText placeholder={`${t("服务器")} port`} value={clients[0]?.serverPort} handleInputChange={(d)=>{
                         clients[0].serverPort = parseInt(d)
                     }}/>
                     <InputText placeholder={t("名称")} value={clients[0]?.client_name} handleInputChange={(d)=>{
                         clients[0].client_name = d
                     }}/>
-                    <InputText placeholder={"key "} value={clients[0]?.key} handleInputChange={(d)=>{
+                    <InputText type={"password"} placeholder={"key "} value={clients[0]?.key} handleInputChange={(d)=>{
                         clients[0].key = d
                     }}/>
                     <form>

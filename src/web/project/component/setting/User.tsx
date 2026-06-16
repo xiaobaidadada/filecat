@@ -312,7 +312,7 @@ export function User() {
                         <label>{t("用户名")}</label>
                         <InputText value={username} handleInputChange={(value) => setUsername(value)}/>
                         <label>{t("密码")}</label>
-                        <InputText value={password} handleInputChange={(value) => setPassword(value)}/>
+                        <InputText type={"password"} value={password} handleInputChange={(value) => setPassword(value)}/>
 
                         <label>
                             {!bind_role_item?.access_dirs?.length &&

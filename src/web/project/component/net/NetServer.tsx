@@ -101,7 +101,7 @@ export function NetServer(props) {
                         setServerPort(d)
                     }}/>
                     {/*<InputText placeholder={"udp port 不设置p2p服务将无法使用 "} value={udp_port} handleInputChange={(d)=>{set_udp_port(d)}}/>*/}
-                    <InputText placeholder={"key "} value={key} handleInputChange={(d) => {
+                    <InputText  type={"password"} placeholder={"key "} value={key} handleInputChange={(d) => {
                         setKey(d)
                     }}/>
                     <form>

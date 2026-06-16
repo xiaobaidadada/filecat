@@ -489,5 +489,13 @@
   "删除记录": "Eintrag löschen",
   "手动加载": "Manuell laden",
   "从索引删除": "Aus Index löschen",
-  "知识库开关": "Wissensdatenbank-Schalter"
+  "知识库开关": "Wissensdatenbank-Schalter",
+  "文本对话": "Textdialog",
+  "图片生成": "Bildgenerierung",
+  "向量嵌入": "Vektoreinbettung",
+  "图片参数设置": "Bildparametereinstellungen",
+  "更多属性": "Weitere Attribute",
+  "model类型": "Modelltyp",
+  "成为tool": "Werkzeug werden",
+  "操作": "Aktionen"
 }

@@ -15,6 +15,7 @@ export function InputTextIcon(props: {
     max_width?: string,
     handleEnterPress?: Function,
     not_mobile?: boolean,
+    type?:input_type
 }) {
     const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
@@ -32,7 +33,7 @@ export function InputTextIcon(props: {
         <div id="input">
             <Icon icon={props.icon} />
             <input
-                type="text"
+                type={props.type}
                 ref={inputRef}  // 使用 ref 关联到 input 元素
                 placeholder={value || props.placeholder}
                 onChange={(event) => {
@@ -58,10 +59,17 @@ export function InputTextIcon(props: {
     </div>
 }
 
+export type input_type =
+    | 'text' | 'password' | 'checkbox' | 'radio' | 'hidden'
+    | 'button' | 'submit' | 'reset' | 'image' | 'file'
+    | 'email' | 'number' | 'tel' | 'url' | 'search'
+    | 'color' | 'date' | 'datetime-local' | 'time'
+    | 'month' | 'week' | 'range';
+
 function Input(props: {
     placeholder?: string,
     placeholderOut?: string,
-    type?: string,
+    type?: input_type,
     handleInputChange?: (event: string, target: any) => void,
     value?: string,
     handlerEnter?: (v) => void,
@@ -227,7 +235,7 @@ export function InputText(props: {
     maxWidth?: string,
     width?: string,
     options?: (string|{ label: string, value: string })[] // 使用了 必须每次更新state才算修改，这是为啥 ?
-    type?: string
+    type?: input_type
 }) {
     return Input({
         ...props

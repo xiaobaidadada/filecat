@@ -123,15 +123,20 @@ export function TcpProxyServerSetting() {
                     {/*<InputText placeholder={"key "} value={key} handleInputChange={(d) => {*/}
                     {/*    setKey(d)*/}
                     {/*}}/>*/}
-                    <label><ActionButton icon={"add"} onClick={() => {
+                    <label>
+                        <ActionButton icon={"add"} onClick={() => {
                         set_option_keys([...option_keys, ""])
-                    }} title={t("添加")}/>{t("key")}</label>
+                        }} title={t("添加")}/>{t("key")}
+                    </label>
+
                     {(option_keys ?? []).map((item, index) => {
                         return <div key={index} style={{display: "flex",}}>
-                            <div style={{width: "90%"}}><InputText value={item} handleInputChange={(value) => {
+                            <div style={{width: "90%"}}>
+                                <InputText type={"password"} value={item} handleInputChange={(value) => {
                                 option_keys[index] = value;
                                 set_option_keys([...option_keys]);
-                            }}/></div>
+                                }}/>
+                            </div>
                             <ActionButton icon={"delete"} onClick={() => {
                                 option_keys.splice(index, 1);
                                 set_option_keys([...option_keys]);

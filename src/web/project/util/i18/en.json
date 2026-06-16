@@ -495,5 +495,13 @@
   "删除记录": "Delete Record",
   "手动加载": "Manual Load",
   "从索引删除": "Delete from Index",
-  "知识库开关": "Knowledge Base Switch"
+  "知识库开关": "Knowledge Base Switch",
+  "文本对话": "Text Chat",
+  "图片生成": "Image Generation",
+  "向量嵌入": "Vector Embedding",
+  "图片参数设置": "Image Parameter Settings",
+  "更多属性": "More Attributes",
+  "model类型": "Model Type",
+  "成为tool": "Become Tool",
+  "操作": "Operations"
 }

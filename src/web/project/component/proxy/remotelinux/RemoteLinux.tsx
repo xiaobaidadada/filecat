@@ -3,7 +3,6 @@ import {InputText, InputTextIcon, Select} from "../../../../meta/component/Input
 import {Card} from "../../../../meta/component/Card";
 import {ActionButton, Button, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
 import {getRouterPath, isNumeric} from "../../../util/WebPath";
-import Noty from "noty";
 import Header from "../../../../meta/component/Header";
 import {FullScreenDiv} from "../../../../meta/component/Dashboard";
 import {netHttp, sshHttp} from "../../../util/config";
@@ -134,7 +133,7 @@ export function RemoteLinux(props) {
         <Header>
             <InputTextIcon placeholder={t("目录")} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("账号")} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
-            <InputTextIcon placeholder={t("密码")} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
+            <InputTextIcon type={"password"} placeholder={t("密码")} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("私钥路径")} icon={"private_connectivity"} value={private_path} handleInputChange={(v)=>setPrivatePath(v)} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("连接地址")} icon={"location_on"} value={domain} handleInputChange={(v) => {setDomain(v);}} max_width={"15rem"}/>
             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>

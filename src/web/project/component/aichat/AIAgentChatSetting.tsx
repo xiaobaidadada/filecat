@@ -86,7 +86,7 @@ export default function AIAgentChatSetting() {
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
     const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
     const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
-    const headers_sys_prompt = [t("编号"), t("提示词"), t("备注"), t("操作")];
+    const headers_sys_prompt = [t("编号"), t("提示词"), t("备注")];
 
     // 系统会话提示词
     const [sys_prompt_list, set_sys_prompt_list] = useState<ai_system_prompt_item[]>([]);
@@ -424,7 +424,7 @@ export default function AIAgentChatSetting() {
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
-                                        <InputText value={ai_agent_Item.get_label_by_v(item.token,item.show_options?.options_agent_token_list)} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
+                                        <InputText  type={"password"} value={ai_agent_Item.get_label_by_v(item.token,item.show_options?.options_agent_token_list)} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
                                             item.token = value;
                                         }} no_border={true}/>,
                                         <InputText value={ai_agent_Item.get_label_by_v(item.model,item.show_options?.options_agent_model_list)} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
