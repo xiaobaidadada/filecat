@@ -97,7 +97,7 @@ function Input(props: {
 
     // 监听 options 变化，动态初始化或销毁 Awesomplete
     useEffect(() => {
-        if (props.options != null && inputRef.current) {
+        if (props.options != null && inputRef.current && Array.isArray(props.options)  ) {
             // 格式化数据
             const listData = props.options.map(item => {
                 if (typeof item === 'object' && item !== null) {
