@@ -69,10 +69,11 @@ function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_a
 
 function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
     return {
+        ...message,
         role: message.role,
         content: message.content ?? "",
         tool_call_id: message.tool_call_id,
-        attachments: (message.attachments ?? []).map(normalizeAttachment)
+        attachments: (message.attachments ?? []).map(normalizeAttachment),
     };
 }
 

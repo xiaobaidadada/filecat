@@ -1,0 +1,199 @@
+/* =============================================
+   AiChat Page - 内联样式迁移
+   用于存放从 page 组件中提取的 CSS
+   ============================================= */
+
+/* --- RequestTypeSelector --- */
+.menu-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.menu-select-trigger .menu-select-arrow {
+    font-size: 0.7em;
+    opacity: 0.6;
+}
+
+/* 图片参数设置弹窗 */
+.images-params-card {
+    padding: 1rem;
+    min-width: 320px;
+}
+
+.images-params-card h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.images-params-hint {
+    font-size: 0.85em;
+    color: var(--textSecondary);
+    margin-bottom: 0.75rem;
+}
+
+.images-params-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.images-params-fields label {
+    display: block;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    color: var(--textSecondary);
+}
+
+.images-params-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+/* 模态覆盖层 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- RequestTypeRenderers --- */
+
+/* 图片生成结果 */
+.image-generation-result {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.image-generation-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.image-generation-image-wrapper img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+.image-generation-prompt {
+    margin: 4px 0;
+    color: var(--textSecondary);
+}
+
+/* 音频结果 */
+.audio-result audio {
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* Embeddings 结果 - 增强可复制性 */
+.embeddings-result {
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.embeddings-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--surfaceSecondary);
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+.embeddings-summary strong {
+    color: var(--textPrimary);
+}
+
+.embeddings-summary span {
+    color: var(--textSecondary);
+    background: var(--surfacePrimary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--divider);
+}
+
+.embeddings-raw {
+    max-height: 300px;
+    overflow: auto;
+    font-size: 12px;
+    background: var(--surfaceSecondary);
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--divider);
+    white-space: pre;
+    word-wrap: normal;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* 嵌入向量复制工具栏 */
+.embeddings-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.embeddings-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--divider);
+    background: var(--surfacePrimary);
+    color: var(--textPrimary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.embeddings-copy-btn:hover {
+    background: var(--primary-light);
+}
+
+.embeddings-copy-btn:active {
+    transform: scale(0.95);
+}
+
+/* 嵌入向量预览行 */
+.embeddings-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    font-size: 0.85em;
+    color: var(--textSecondary);
+    background: var(--surfacePrimary);
+    border-radius: 6px;
+    border: 1px solid var(--divider);
+    overflow: hidden;
+}
+
+.embeddings-preview span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}

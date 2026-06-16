@@ -14,6 +14,7 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
+import {ai_agent_message_item, getContentAsString} from "../../../common/req/filecat.ai.pojo";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -47,6 +48,14 @@ export class Ai_AgentController {
 
                 // 3️⃣ 最后 end
                 res.end();
+                // 错误也保存到会话
+                const errMsg: ai_agent_message_item = {
+                    role: "assistant",
+                    content: message,
+                };
+                const user = userService.get_user_info_by_token(ctx.headers.authorization);
+                await this.saveNonCompletionTurn(user.id, data?.session_id, data.prompt, errMsg);
+
             }
         }
         return stream
@@ -121,7 +130,29 @@ export class Ai_AgentController {
     // ============================================================
 
     /**
+     * 保存多模态请求到会话记录
+     */
+    private async saveNonCompletionTurn(
+        userId: string,
+        sessionId: string | undefined,
+        prompt: string,
+        assistantMessage: ai_agent_message_item,
+    ) {
+        const session = aiAgentMemoryService.ensure_session(userId, sessionId, prompt.slice(0, 28) );
+        const userMsg: ai_agent_message_item = {
+            role: "user",
+            content: prompt,
+        };
+        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, {
+            input_chars: prompt.length,
+            output_chars: getContentAsString(assistantMessage.content).length,
+        });
+        return session.id;
+    }
+
+    /**
      * 图片生成接口 (POST /ai_agent/images/generations)
+     * 自动保存会话记录
      */
     @Post("/images/generations")
     async imagesGenerate(@Body() data: {
@@ -130,25 +161,49 @@ export class Ai_AgentController {
         size?: string;
         quality?: string;
         style?: string;
+        session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
             const response = await llmImagesGenerate(data);
             const result = await response.json();
-            return Sucess(result);
+            // 构造带多模态属性的 assistant 消息
+            const images = (result?.data ?? []).map((img: any) => ({
+                url: img.url,
+                b64_json: img.b64_json,
+                revised_prompt: img.revised_prompt,
+            }));
+            const imageTexts = images
+                .map((img: any, i: number) => `![生成图片${i + 1}](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`)
+                .join('\n\n');
+            const assistantMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: imageTexts || `生成了 ${images.length} 张图片`,
+                images,
+            };
+            const finalSessionId = await this.saveNonCompletionTurn(userId, data?.session_id, data.prompt, assistantMsg);
+            return Sucess({...result, session_id: finalSessionId});
         } catch (err) {
             const errorMessage = err?.message || "图片生成失败";
-            // 如果错误信息包含 size 相关关键词，添加提示
             let hint = "";
             if (errorMessage.toLowerCase().includes("size") || errorMessage.toLowerCase().includes("resolution")) {
                 hint = "。提示：不同模型支持的 size 不同，常见的有 1024x1024、1792x1024、1024x1792（DALL-E 3）。您可以在聊天页面顶部的请求类型菜单中点击「图片参数设置」修改 size 参数。";
             }
+            // 错误也保存到会话
+            const errMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: `❌ 图片生成失败: ${errorMessage}${hint}`,
+            };
+            await this.saveNonCompletionTurn(userId, data?.session_id, data.prompt, errMsg);
             return {code: 500, message: errorMessage + hint};
         }
     }
 
     /**
      * 文本转语音接口 (POST /ai_agent/audio/speech)
+     * 自动保存会话记录
      */
     @Post("/audio/speech")
     async audioSpeech(@Body() data: {
@@ -156,35 +211,74 @@ export class Ai_AgentController {
         voice?: string;
         speed?: number;
         response_format?: string;
+        session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
             const response = await llmAudioSpeech(data);
             // 音频直接返回二进制流
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = Buffer.from(arrayBuffer);
-            res.setHeader("Content-Type", response.headers.get("content-type") || "audio/mpeg");
+            const mimeType = response.headers.get("content-type") || "audio/mpeg";
+            const base64Audio = audioBuffer.toString('base64');
+
+            // 保存到会话
+            const assistantMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: `[音频文件: ${(data.input || '').slice(0, 50)}...]`,
+                audio: { data: base64Audio, mime_type: mimeType },
+            };
+            const finalSessionId = await this.saveNonCompletionTurn(userId, data?.session_id, data.input, assistantMsg);
+
+            // 仍然返回二进制
+            res.setHeader("Content-Type", mimeType);
+            res.setHeader("X-Session-Id", finalSessionId);
             res.send(audioBuffer);
         } catch (err) {
+            const errMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: `❌ 语音合成失败: ${err?.message || "未知错误"}`,
+            };
+            await this.saveNonCompletionTurn(userId, data?.session_id, data.input, errMsg);
             res.status(500).send(err?.message || "语音合成失败");
         }
     }
 
     /**
      * Embeddings 接口 (POST /ai_agent/embeddings)
+     * 自动保存会话记录
      */
     @Post("/embeddings")
     async embeddings(@Body() data: {
         input: string | string[];
         encoding_format?: string;
         dimensions?: number;
+        session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
             const response = await llmEmbeddings(data);
             const result = await response.json();
-            return Sucess(result);
+            const embeddingsData = result?.data ?? [];
+            const firstDim = embeddingsData[0]?.embedding?.length ?? 0;
+            const summary = `向量维度: ${firstDim}, 数量: ${embeddingsData.length}`;
+            const assistantMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: `✅ Embeddings 结果 - ${summary}\n\`\`\`json\n${JSON.stringify(result, null, 2).slice(0, 2000)}\n\`\`\``,
+                embeddings: result,
+            };
+            const finalSessionId = await this.saveNonCompletionTurn(userId, data?.session_id, typeof data.input === 'string' ? data.input : data.input.join(', '), assistantMsg);
+            return Sucess({...result, session_id: finalSessionId});
         } catch (err) {
+            const errMsg: ai_agent_message_item = {
+                role: "assistant",
+                content: `❌ Embeddings 请求失败: ${err?.message || "未知错误"}`,
+            };
+            await this.saveNonCompletionTurn(userId, data?.session_id, typeof data.input === 'string' ? data.input : data.input.join(', '), errMsg);
             return {code: 500, message: err?.message || "Embeddings 请求失败"};
         }
     }

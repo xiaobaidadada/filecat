@@ -38,6 +38,10 @@ interface Message {
     sender: 'user' | 'bot';
     text: string;
     attachments?: ai_agent_message_attachment_item[];
+    // 多模态结果属性（由后端返回，前端自判断渲染，有哪个就渲染哪个）
+    images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
+    audio?: { data?: string; url?: string; mime_type?: string };
+    embeddings?: any;
 }
 
 function guessAttachmentKind(file: File): "text" | "image" | "binary" {
@@ -72,7 +76,10 @@ function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
             id: Date.now() + index,
             sender: it.role === "assistant" ? "bot" : "user",
             text: getContentAsString(it.content),
-            attachments: it.attachments ?? []
+            attachments: it.attachments ?? [],
+            images: it.images,
+            audio: it.audio,
+            embeddings: it.embeddings,
         }));
 }
 
@@ -80,7 +87,10 @@ function toAiMessages(messages: Message[]): ai_agent_message_item[] {
     return messages.map(it => ({
         role: it.sender === "bot" ? "assistant" : "user",
         content: it.text,
-        attachments: it.attachments ?? []
+        attachments: it.attachments ?? [],
+        images: it.images,
+        audio: it.audio,
+        embeddings: it.embeddings,
     }));
 }
 
@@ -367,8 +377,12 @@ export default function AiAgentChatPage() {
                 requestType,
                 text,
                 sessionId,
-                async (resultText) => {
+                async (resultText, extra) => {
                     bot_message.text = resultText;
+                    // 如果后端返回了结构化多模态数据，赋值给消息对象
+                    if (extra?.images) bot_message.images = extra.images;
+                    if (extra?.audio) bot_message.audio = extra.audio;
+                    if (extra?.embeddings) bot_message.embeddings = extra.embeddings;
                     setMessages([...new_messages]);
                     set_sending(false);
 
@@ -380,6 +394,7 @@ export default function AiAgentChatPage() {
             if (!handled) {
                 // 如果没被处理（如新增类型），回退到默认提示
                 bot_message.text = `请求类型 "${requestType}" 的专用处理器尚未实现，请使用 completions 类型。`;
+                
                 setMessages([...new_messages]);
                 set_sending(false);
            }
@@ -647,8 +662,8 @@ export default function AiAgentChatPage() {
                                key={msg.id}
                                className={`chat-message ${msg.sender}`}
                            >
-                               {/* 根据请求类型使用不同的渲染器 */}
-                               {renderMessageByType(msg, requestType)}
+                               {/* 消息自判断渲染：消息对象携带 images/audio/embeddings 等属性时自动选择对应渲染器 */}
+                               {renderMessageByType(msg)}
                                <div className="message-actions">
                                    <button onClick={() => handleDelete(msg.id)}>{t("删除")}</button>
                                    <button onClick={() => handleCopy(msg.text)}>{t("复制")}</button>

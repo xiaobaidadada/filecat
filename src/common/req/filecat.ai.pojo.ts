@@ -253,6 +253,14 @@ export class ai_agent_message_item {
     content: ai_agent_content;
     tool_call_id?: string;
     attachments?: ai_agent_message_attachment_item[];
+
+    // ============ 多模态结果字段（前端自判断） ============
+    /** 图片生成结果（OpenAI 格式 images/generations 的 response.data） */
+    images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
+    /** 音频数据（base64 或 URL） */
+    audio?: { data?: string; url?: string; mime_type?: string };
+    /** Embeddings 向量数据 */
+    embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */

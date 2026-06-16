@@ -2,13 +2,15 @@ import React from 'react';
 import {ai_agentHttp} from "../../../util/config";
 import {Icon} from "../../../../meta/component/Button";
 import Md from "../../file/component/markdown/Md";
+import {copyToClipboard} from "../../../util/FunUtil";
 
 /**
- * 根据请求类型渲染不同的消息展示
+ * 根据消息自身携带的多模态属性渲染不同的消息展示
+ * 消息对象中如果带有 images/audio/embeddings 等属性，自动选择对应渲染器
+ * 不再依赖全局 requestType 状态
  */
 export function renderMessageByType(
-    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[] },
-    requestType: string,
+    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[]; images?: any[]; audio?: any; embeddings?: any },
 ): React.ReactNode {
     // 先渲染附件信息
     const attachmentsEl = msg.attachments && msg.attachments.length > 0 ? (
@@ -23,50 +25,60 @@ export function renderMessageByType(
         </div>
     ) : null;
 
-    // completions 类型使用标准 Markdown 渲染
-    if (requestType === 'completions') {
+    // ===== 消息自判断：根据消息自带的属性选择渲染器 =====
+    // 现在支持同时渲染多个多模态属性（如果同时存在）
+
+    const renderers: React.ReactNode[] = [];
+
+    // 1. 有 images 属性 → 图片生成结果渲染
+    if (msg.images && msg.sender === 'bot') {
+        renderers.push(<React.Fragment key="images"><ImageResultRenderer  images={msg.images} text={msg.text}/></React.Fragment>);
+    }
+
+    // 2. 有 audio 属性 → 音频结果渲染
+    if (msg.audio && msg.sender === 'bot') {
+        renderers.push(<React.Fragment key="audio"><AudioResultRenderer  audio={msg.audio} text={msg.text}/></React.Fragment>);
+    }
+
+    // 3. 有 embeddings 属性 → 向量结果渲染
+    if (msg.embeddings && msg.sender === 'bot') {
+        renderers.push(<React.Fragment key="embeddings"><EmbeddingsResultRenderer  embeddings={msg.embeddings} text={msg.text}/></React.Fragment>);
+    }
+
+    // 4. 如果没有任何多模态属性，使用标准 Markdown 渲染（同时附带 attachments）
+    if (renderers.length === 0) {
         return <>{attachmentsEl}<Md context={msg.text}/></>;
     }
 
-    // images 类型：如果是 bot 回复，尝试解析图片 JSON
-    if (requestType === 'images' && msg.sender === 'bot') {
-        return <>{attachmentsEl}<ImageResultRenderer text={msg.text}/></>;
-    }
-
-    // audio_speech 类型：如果是 bot 回复且包含音频 URL
-    if (requestType === 'audio_speech' && msg.sender === 'bot') {
-        return <>{attachmentsEl}<AudioResultRenderer text={msg.text}/></>;
-    }
-
-    // embeddings 类型：展示向量数据概要
-    if (requestType === 'embeddings' && msg.sender === 'bot') {
-        return <>{attachmentsEl}<EmbeddingsResultRenderer text={msg.text}/></>;
-    }
-
-    // 默认 fallback
-    return <>{attachmentsEl}<Md context={msg.text}/></>;
+    // 5. 多个多模态属性同时渲染，并在最后附加 attachments 和 text
+    return (
+        <>
+            {renderers}
+            {attachmentsEl}
+            {msg.text && <Md context={msg.text}/>}
+        </>
+    );
 }
 
 /**
  * 图片生成结果渲染
+ * 支持 props 直接传入 images 数据，也兼容旧版从 text JSON 解析
  */
-function ImageResultRenderer({text}: { text: string }) {
-    let imageData: any = null;
-    let parseError = false;
-    try {
-        imageData = JSON.parse(text);
-    } catch {
-        parseError = true;
+function ImageResultRenderer({images: propImages, text}: { images?: any[]; text?: string }) {
+    let images: any[] = propImages || [];
+
+    // 如果 props 没有 images，尝试从 text JSON 解析（兼容旧数据）
+    if (!images.length && text) {
+        try {
+            const parsed = JSON.parse(text);
+            images = parsed.data || [];
+        } catch {
+            // not JSON
+        }
     }
 
-    if (parseError || !imageData) {
-        return <Md context={text}/>;
-    }
-
-    // OpenAI 图片生成返回格式: { data: [{ url, b64_json, revised_prompt }] }
-    const images = imageData.data || [];
     if (!images.length) {
-        return <Md context={text}/>;
+        return <Md context={text || ''}/>;
     }
 
     return (
@@ -78,7 +90,6 @@ function ImageResultRenderer({text}: { text: string }) {
                             <img
                                 src={img.url}
                                 alt={img.revised_prompt || `生成的图片 ${idx + 1}`}
-                                style={{maxWidth: "100%", borderRadius: "8px"}}
                                 loading="lazy"
                             />
                         </div>
@@ -88,7 +99,6 @@ function ImageResultRenderer({text}: { text: string }) {
                             <img
                                 src={`data:image/png;base64,${img.b64_json}`}
                                 alt={`生成的图片 ${idx + 1}`}
-                                style={{maxWidth: "100%", borderRadius: "8px"}}
                             />
                         </div>
                     )}
@@ -99,35 +109,61 @@ function ImageResultRenderer({text}: { text: string }) {
                     )}
                 </div>
             ))}
+            {/* 有文本描述时也展示 */}
+            {text && !propImages && <Md context={text}/>}
         </div>
     );
 }
 
 /**
  * 音频结果渲染
+ * 支持 props 直接传入 audio 数据，也兼容旧版从 text 解析 URL
  */
-function AudioResultRenderer({text}: { text: string }) {
-    // 检查是否为音频 URL
-    const isUrl = text.startsWith("http://") || text.startsWith("https://");
+function AudioResultRenderer({audio: propAudio, text}: { audio?: { data?: string; url?: string; mime_type?: string }; text?: string }) {
+    // 优先使用 props 传入的结构化 audio 数据
+    if (propAudio) {
+        if (propAudio.url) {
+            return (
+                <div className="audio-result">
+                    <audio controls src={propAudio.url}>
+                        您的浏览器不支持音频播放
+                    </audio>
+                </div>
+            );
+        }
+        if (propAudio.data) {
+            const mimeType = propAudio.mime_type || "audio/mpeg";
+            return (
+                <div className="audio-result">
+                    <audio controls src={`data:${mimeType};base64,${propAudio.data}`}>
+                        您的浏览器不支持音频播放
+                    </audio>
+                </div>
+            );
+        }
+    }
+
+    // 兼容旧版：检查 text 是否为音频 URL
+    const textStr = text || '';
+    const isUrl = textStr.startsWith("http://") || textStr.startsWith("https://");
     if (isUrl) {
         return (
             <div className="audio-result">
-                <audio controls style={{width: "100%"}} src={text}>
+                <audio controls src={textStr}>
                     您的浏览器不支持音频播放
                 </audio>
             </div>
         );
     }
 
-    // 尝试解析为 base64 音频数据
+    // 兼容旧版：尝试从 text JSON 解析 base64
     try {
-        const parsed = JSON.parse(text);
+        const parsed = JSON.parse(textStr);
         if (parsed?.data || parsed?.audio_data) {
             const audioData = parsed.data || parsed.audio_data;
             return (
                 <div className="audio-result">
-                    <audio controls style={{width: "100%"}}
-                           src={`data:audio/mpeg;base64,${audioData}`}>
+                    <audio controls src={`data:audio/mpeg;base64,${audioData}`}>
                         您的浏览器不支持音频播放
                     </audio>
                 </div>
@@ -137,22 +173,50 @@ function AudioResultRenderer({text}: { text: string }) {
         // not JSON
     }
 
-    return <Md context={text}/>;
+    return <Md context={textStr}/>;
+}
+
+
+/**
+ * 复制按钮组件
+ */
+function CopyButton({content, label}: { content: string; label?: string }) {
+    const [copied, setCopied] = React.useState(false);
+    return (
+        <button
+            className="embeddings-copy-btn"
+            onClick={() => {
+                copyToClipboard(content);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+            }}
+        >
+            <Icon icon={copied ? 'check' : 'content_copy'}/>
+            {copied ? '已复制' : (label || '复制')}
+        </button>
+    );
 }
 
 /**
  * Embeddings 结果渲染
+ * 支持 props 直接传入 embeddings 数据，也兼容旧版从 text JSON 解析
  */
-function EmbeddingsResultRenderer({text}: { text: string }) {
-    let data: any = null;
-    try {
-        data = JSON.parse(text);
-    } catch {
-        return <Md context={text}/>;
+function EmbeddingsResultRenderer({embeddings: propEmbeddings, text}: { embeddings?: any; text?: string }) {
+    let data: any = propEmbeddings || null;
+    if (!data && text) {
+        try {
+            data = JSON.parse(text);
+        } catch {
+            return <Md context={text}/>;
+        }
+    }
+    if (!data) {
+        return <Md context={text || ''}/>;
     }
 
     const embeddings = data?.data || [];
     const usage = data?.usage;
+    const fullJson = JSON.stringify(data, null, 2);
 
     return (
         <div className="embeddings-result">
@@ -164,18 +228,37 @@ function EmbeddingsResultRenderer({text}: { text: string }) {
                     <span>使用 tokens: {usage.total_tokens ?? 'N/A'}</span>
                 )}
             </div>
+
+            {/* 复制工具栏 */}
+            <div className="embeddings-toolbar">
+                <CopyButton content={fullJson} label="复制全部结果"/>
+                {embeddings.length > 0 && embeddings[0]?.embedding && (
+                    <CopyButton
+                        content={JSON.stringify(embeddings[0].embedding, null, 2)}
+                        label="复制第一条向量"
+                    />
+                )}
+                {embeddings.length > 0 && (
+                    <CopyButton
+                        content={JSON.stringify(embeddings.map((e: any) => e.embedding), null, 2)}
+                        label="复制所有向量数据"
+                    />
+                )}
+            </div>
+
+            {/* 向量预览 */}
+            {embeddings.length > 0 && embeddings[0]?.embedding && (
+                <div className="embeddings-preview">
+                    <span>向量预览: [{embeddings[0].embedding.slice(0, 5).join(', ')}{embeddings[0].embedding.length > 5 ? ', ...' : ''}]</span>
+                </div>
+            )}
+
+            {/* 详细数据 */}
             {embeddings.length > 0 && (
                 <details>
                     <summary>查看详细数据</summary>
-                    <pre className="embeddings-raw" style={{
-                        maxHeight: "300px",
-                        overflow: "auto",
-                        fontSize: "12px",
-                        background: "var(--surfaceSecondary)",
-                        padding: "8px",
-                        borderRadius: "4px"
-                    }}>
-                        {JSON.stringify(embeddings, null, 2)}
+                    <pre className="embeddings-raw">
+                        {fullJson}
                     </pre>
                 </details>
             )}
@@ -201,118 +284,164 @@ function getImagesExtraParams(): Record<string, any> {
 }
 
 /**
- * 发送图片生成请求
+ * 发送图片生成请求（后端自动保存到会话）
+ * 返回 { session_id, images, text } 结构化数据
  */
 export async function sendImagesRequest(
     prompt: string,
     sessionId: string,
-    onResult: (text: string) => void,
-    onError: (err: any) => void,
-) {
-    try {
-        // 从 localStorage 读取用户自定义的额外参数（如 size, n, quality, style 等）
-        const extraParams = getImagesExtraParams();
-        const body: Record<string, any> = {
-            prompt,
-            n: extraParams.n ?? 1,
-            size: extraParams.size ?? "1024x1024",
-        };
-        if (extraParams.quality) body.quality = extraParams.quality;
-        if (extraParams.style) body.style = extraParams.style;
-        // 如果用户填了额外 JSON，尝试解析合并到 body
-        if (extraParams.extra_json) {
-            try {
-                const parsed = JSON.parse(extraParams.extra_json);
-                Object.assign(body, parsed);
-            } catch (e) {
-                console.warn("图片额外参数 JSON 解析失败:", e);
-            }
+): Promise<{ session_id: string; images: any[]; text: string } | null> {
+    const extraParams = getImagesExtraParams();
+    const body: Record<string, any> = {
+        prompt,
+        n: extraParams.n ?? 1,
+        size: extraParams.size ?? "1024x1024",
+        session_id: sessionId,
+    };
+    if (extraParams.quality) body.quality = extraParams.quality;
+    if (extraParams.style) body.style = extraParams.style;
+    if (extraParams.extra_json) {
+        try {
+            const parsed = JSON.parse(extraParams.extra_json);
+            Object.assign(body, parsed);
+        } catch (e) {
+            console.warn("图片额外参数 JSON 解析失败:", e);
         }
-
-        const result = await ai_agentHttp.post("images/generations", body);
-        if (result.data) {
-            onResult(JSON.stringify(result.data, null, 2));
-        } else {
-            onError(result.message || "图片生成失败");
-        }
-    } catch (err) {
-        onError(err);
     }
+
+    const result = await ai_agentHttp.post("images/generations", body);
+    if (result.code !== 0) {
+        throw new Error(result.message || "图片生成失败");
+    }
+    const data = result.data || {};
+    const images = (data.data || []).map((img: any) => ({
+        url: img.url,
+        b64_json: img.b64_json,
+        revised_prompt: img.revised_prompt,
+    }));
+    const imageTexts = images
+        .map((img: any, i: number) => `![生成图片${i + 1}](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`)
+        .join('\n\n');
+    return {
+        session_id: data.session_id || sessionId,
+        images,
+        text: imageTexts || `生成了 ${images.length} 张图片`,
+    };
 }
 
 /**
- * 发送文本转语音请求
+ * 发送文本转语音请求（后端自动保存到会话）
  */
 export async function sendAudioSpeechRequest(
     text: string,
     sessionId: string,
-    onResult: (text: string) => void,
-    onError: (err: any) => void,
-) {
+): Promise<{ session_id: string; audio: any; text: string }> {
+    // 目前 audio/speech 返回的是二进制，后端已自动保存会话
+    // 这里发送请求拿到二进制后前端直接播放
+    const body: Record<string, any> = {
+        input: text,
+        session_id: sessionId,
+    };
+    // 从 localStorage 读取语音参数
     try {
-        const result = await ai_agentHttp.post("audio/speech", {
-            input: text,
-        });
-        // 如果返回的是二进制，会直接下载；这里如果有 URL 则展示
-        onResult(JSON.stringify(result, null, 2));
-    } catch (err) {
-        onError(err);
+        const saved = localStorage.getItem("ai_audio_extra_params");
+        if (saved) {
+            const p = JSON.parse(saved);
+            if (p.voice) body.voice = p.voice;
+            if (p.speed) body.speed = parseFloat(p.speed);
+        }
+    } catch {}
+
+    // 由于 audio/speech 返回二进制，需要用 fetch 获取
+    const token = localStorage.getItem("token") || "";
+    const resp = await fetch(`/api/ai_agent/audio/speech`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+        throw new Error(`语音合成失败: ${resp.statusText}`);
     }
+
+    const sessionIdFromHeader = resp.headers.get("X-Session-Id") || sessionId;
+    const arrayBuffer = await resp.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...Array.from(new Uint8Array(arrayBuffer))));
+
+    return {
+        session_id: sessionIdFromHeader,
+        audio: { data: base64, mime_type: resp.headers.get("content-type") || "audio/mpeg" },
+        text: `[音频文件: ${text.slice(0, 50)}...]`,
+    };
 }
 
 /**
- * 发送 Embeddings 请求
+ * 发送 Embeddings 请求（后端自动保存到会话）
  */
 export async function sendEmbeddingsRequest(
     text: string,
     sessionId: string,
-    onResult: (text: string) => void,
-    onError: (err: any) => void,
-) {
-    try {
-        const result = await ai_agentHttp.post("embeddings", {
-            input: text,
-        });
-        if (result.data) {
-            onResult(JSON.stringify(result.data, null, 2));
-        } else {
-            onResult(JSON.stringify(result, null, 2));
-        }
-    } catch (err) {
-        onError(err);
+): Promise<{ session_id: string; embeddings: any; text: string }> {
+    const result = await ai_agentHttp.post("embeddings", {
+        input: text,
+        session_id: sessionId,
+    });
+    if (result.code !== 0) {
+        throw new Error(result.message || "Embeddings 请求失败");
     }
+    const data = result.data || {};
+    const embeddingsData = data?.data ?? [];
+    const firstDim = embeddingsData[0]?.embedding?.length ?? 0;
+    const summary = `向量维度: ${firstDim}, 数量: ${embeddingsData.length}`;
+    return {
+        session_id: data.session_id || sessionId,
+        embeddings: data,
+        text: `✅ Embeddings 结果 - ${summary}\n\`\`\`json\n${JSON.stringify(data, null, 2).slice(0, 2000)}\n\`\`\``,
+    };
 }
 
 /**
  * 根据请求类型发送对应的非流式请求
  * 返回 true 表示已由专用处理器处理，false 表示需要走 completions 的 SSE 流
+ * 现在每个请求后端都会自动保存会话，返回值包含结构化多模态数据
  */
 export async function handleNonCompletionsRequest(
     requestType: string,
     text: string,
     sessionId: string,
-    onResult: (text: string) => void,
+    onResult: (text: string, extra?: { images?: any[]; audio?: any; embeddings?: any }) => void,
 ): Promise<boolean> {
-    switch (requestType) {
-        case 'images': {
-            await sendImagesRequest(text, sessionId, onResult, (err) => {
-                onResult(`图片生成失败: ${err?.message || JSON.stringify(err)}`);
-            });
-            return true;
+    try {
+        switch (requestType) {
+            case 'images': {
+                const result = await sendImagesRequest(text, sessionId);
+                if (result) {
+                    onResult(result.text, { images: result.images });
+                }
+                return true;
+            }
+            case 'audio_speech': {
+                const result = await sendAudioSpeechRequest(text, sessionId);
+                if (result) {
+                    onResult(result.text, { audio: result.audio });
+                }
+                return true;
+            }
+            case 'embeddings': {
+                const result = await sendEmbeddingsRequest(text, sessionId);
+                if (result) {
+                    onResult(result.text, { embeddings: result.embeddings });
+                }
+                return true;
+            }
+            default:
+                return false; // completions 走原有 SSE 流
         }
-        case 'audio_speech': {
-            await sendAudioSpeechRequest(text, sessionId, onResult, (err) => {
-                onResult(`语音合成失败: ${err?.message || JSON.stringify(err)}`);
-            });
-            return true;
-        }
-        case 'embeddings': {
-            await sendEmbeddingsRequest(text, sessionId, onResult, (err) => {
-                onResult(`Embeddings 请求失败: ${err?.message || JSON.stringify(err)}`);
-            });
-            return true;
-        }
-        default:
-            return false; // completions 走原有 SSE 流
+    } catch (err: any) {
+        onResult(`请求失败: ${err?.message || JSON.stringify(err)}`);
+        return true;
     }
 }

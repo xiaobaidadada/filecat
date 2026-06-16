@@ -52,12 +52,12 @@ function ImagesParamsDialog({onClose}: { onClose: () => void }) {
     };
 
     return (
-        <div className="card" style={{padding: "1rem", minWidth: "320px"}}>
+        <div className="card images-params-card">
             <h3>{t("图片生成参数设置")}</h3>
-            <p style={{fontSize: "0.85em", color: "var(--textSecondary)", marginBottom: "0.75rem"}}>
+            <p className="images-params-hint">
                 不同模型支持的参数不同，请参考模型文档。常见 size 值: 1024x1024, 1792x1024, 1024x1792 (DALL-E 3)
             </p>
-            <div style={{display: "flex", flexDirection: "column", gap: "0.75rem"}}>
+            <div className="images-params-fields">
                 <div>
                     <label>size (图片尺寸)</label>
                     <InputText value={size} handleInputChange={setSize} no_border={false}/>
@@ -79,7 +79,7 @@ function ImagesParamsDialog({onClose}: { onClose: () => void }) {
                     <InputText value={extraJson} handleInputChange={setExtraJson} no_border={false}/>
                 </div>
             </div>
-            <div style={{display: "flex", gap: "0.5rem", marginTop: "1rem", justifyContent: "flex-end"}}>
+            <div className="images-params-actions">
                 <ActionButton icon={"close"} title={t("取消")} onClick={onClose}/>
                 <ActionButton icon={"save"} title={t("保存")} onClick={handleSave}/>
             </div>
@@ -135,26 +135,14 @@ export default function RequestTypeSelector() {
                     }] : []),
                 ]}
             >
-                <div className="menu-select-trigger" style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    cursor: "pointer",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    whiteSpace: "nowrap",
-                }}>
+                <div className="menu-select-trigger">
                     <span>{currentOption.label}</span>
-                    <span style={{fontSize: "0.7em", opacity: 0.6}}>▾</span>
+                    <span className="menu-select-arrow">▾</span>
                 </div>
             </MenuSelect>
 
             {showImagesParams && (
-                <div className="modal-overlay" style={{
-                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-                    background: "rgba(0,0,0,0.4)", zIndex: 1000,
-                    display: "flex", alignItems: "center", justifyContent: "center"
-                }} onClick={() => setShowImagesParams(false)}>
+                <div className="modal-overlay" onClick={() => setShowImagesParams(false)}>
                     <div onClick={e => e.stopPropagation()}>
                         <ImagesParamsDialog onClose={() => setShowImagesParams(false)}/>
                     </div>
