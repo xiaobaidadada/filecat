@@ -705,7 +705,7 @@ export class Ai_agentService {
      * - audio_speech（语音合成）：直接请求 audio/speech 接口
      * - audio_transcription / audio_translation：直接请求对应接口
      */
-    public async callModelTool(toolName: string, args: { prompt: string }): Promise<string> {
+    public async callModelTool(toolName: string, args: { prompt: string },user_id:string): Promise<string> {
         const index = parseInt(toolName.replace('call_model_', ''), 10);
         const modelItem = ai_tool_models.find(m => m.index === index);
         if (!modelItem) {
@@ -724,7 +724,7 @@ export class Ai_agentService {
         switch (requestType) {
             case 'completions': {
                 // 对话类型：调用 chat_core.chat 获得完整功能链
-                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt);
+                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id);
             }
 
             case 'images': {
@@ -772,7 +772,7 @@ export class Ai_agentService {
     /**
      * 以对话方式调用目标模型，再次使用 chat_core.chat 获得完整功能链
      */
-    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string): Promise<string> {
+    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string,user_id:string): Promise<string> {
 
         let fullContent = "";
         const controller = new AbortController();
@@ -784,7 +784,7 @@ export class Ai_agentService {
                     content: prompt
                 }
             ],
-            user_id: "model_tool",
+            user_id: user_id,
             controller,
             on_msg: (msg) => {
                 fullContent += msg;
@@ -940,10 +940,10 @@ export class Ai_agentService {
         return ai_agentMcpService.getToolInfo(toolName, args);
     }
 
-    public async callTool(toolName: string, args: any) {
+    public async callTool(toolName: string, args: any,user_id:string) {
         // model tool（调用其他注册为 tool 的 AI 模型）
         if (this.isModelTool(toolName)) {
-            return this.callModelTool(toolName, args);
+            return this.callModelTool(toolName, args,user_id);
         }
         // 内置工具
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {

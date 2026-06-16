@@ -319,7 +319,7 @@ ${sys_prompt ?? ''}
                         await this.permission_test(user_id, user, toolName, args, cwd,token);
 
                         on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params()}\n\r`)
-                        let result = await ai_agentService.callTool(toolName, args);
+                        let result = await ai_agentService.callTool(toolName, args,user_id);
                         let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         // on_msg(`\n\r${tool_des_name} 执行完成`)
                         // if (resultStr.length > 5000) {
