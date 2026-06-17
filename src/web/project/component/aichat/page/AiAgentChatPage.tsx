@@ -627,7 +627,9 @@ export default function AiAgentChatPage() {
                        sub_title:t("确认删除全部聊天会话吗?"),
                        confirm_fun:async ()=>{
                            await ai_agentHttp.post("sessions/clear", {})
-                           await init()
+                           setActiveSessionId("");
+                           setMessages([]);
+                           await loadSessions(null);
                        }
                    })
                }}/>
