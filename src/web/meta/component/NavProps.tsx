@@ -71,7 +71,7 @@ export function Nav(props: NavProps) {
                                     if(item2.clickFun) item2.clickFun();
                                     closeMobileNav();
                                 }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
-                                    <Icon icon={item2.icon}/>
+                                    <Icon icon={item2.icon} className={"action"} />
                                     <span className=" nav_3">{item2.name}</span>
                                 </To>)
                         })}
