@@ -1,159 +1,202 @@
-# ![](./src/web/meta/resources/img/logo-70.png) FileCat
+<p align="center">
+  <img src="../src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
+</p>
 
-<p align="left">
-  <!-- npm downloads -->
+<h1 align="center">FileCat</h1>
+
+<p align="center">
+  <i>A self-hosted web file server & lightweight server management tool</i>
+</p>
+
+<p align="center">
   <a href="https://www.npmjs.com/package/filecat">
     <img src="https://img.shields.io/npm/dm/filecat.svg" alt="npm downloads">
   </a>
-
-  <!-- npm version -->
-
   <a href="https://www.npmjs.com/package/filecat">
     <img src="https://img.shields.io/npm/v/filecat.svg" alt="npm version">
   </a>
-
-  <!-- GitHub stars -->
-
   <a href="https://github.com/xiaobaidadada/filecat">
     <img src="https://img.shields.io/github/stars/xiaobaidadada/filecat.svg" alt="stars">
   </a>
-
-
-  <!-- Docker pulls -->
-
   <a href="https://ghcr.io/xiaobaidadada/filecat">
     <img src="https://img.shields.io/badge/docker-ghcr.io-blue.svg" alt="docker">
   </a>
-
-  <!-- license -->
-
   <a href="https://github.com/xiaobaidadada/filecat/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/xiaobaidadada/filecat.svg" alt="license">
   </a>
 </p>
 
-[中文文档](../README.md)
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-screenshots">Screenshots</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-upgrade">Upgrade</a> •
+  <a href="#-comparison">Comparison</a>
+</p>
 
-FileCat is a web file server and also a lightweight server management tool. After deploying it on a server, you can browse files on the server and preview multiple file formats online (images, videos, drawings, Markdown, etc.).
+<p align="center">
+  <a href="../README.md"> 中文文档</a>
+</p>
 
-Based on file management, FileCat integrates many server operation and management features, allowing you to have a lightweight server management tool at the same time. These features help users access and operate files on the server more conveniently.
+---
 
-## Partial Feature Screenshots
+FileCat is a **self-hosted web file server** and a **lightweight server management tool**. Once deployed on your server, you can browse, manage, and preview files from any browser, while also enjoying a rich set of server administration features.
 
-### File List
+> **Core Philosophy**: File management at the core, enhanced with AI Agent, remote desktop, intranet penetration, system monitoring, and more — making server management simpler than ever.
 
-![](./文件列表.png)
+---
 
-### Intranet Penetration
+##  Features
 
-![](./内网穿透.png)
+| Category | Capabilities |
+|----------|-------------|
+|  **File Management** | Browse, upload, download, edit, and preview files (images, videos, Markdown, drawings, etc.) |
+|  **AI Agent** | Integrated LLM-powered assistant for intelligent operations (BYO API key) |
+|  **Intranet Penetration** | Expose internal services to the internet without a public IP |
+| ️ **SSH Terminal** | Built-in web terminal for direct server access |
+|  **Windows Remote Desktop** | Access Windows remote desktops directly in your browser (RDP) |
+|  **System Dashboard** | Real-time CPU, memory, disk, and network monitoring |
+|  **CI/CD Workflow** | Custom command pipelines for continuous integration & deployment |
+|  **Large Log Viewer** | Instantly open text log files of any size |
+|  **Excalidraw Drawing** | Built-in collaborative whiteboard |
+| ️ **Image Editor** | Online crop, annotate, and adjust images |
+|  **Multi-user Management** | Granular permission control with SSO support |
+|  **Shareable Links** | Generate share links for easy file sharing |
+|  **Multi-path Mounting** | Mount multiple file system paths |
 
-### System Information Dashboard
+---
 
-![](./系统信息看板.png)
+## Screenshots
 
-### AI Features
+<table>
+  <tr>
+    <td align="center"><b> File List</b></td>
+    <td align="center"><b> AI Agent</b></td>
+  </tr>
+  <tr>
+    <td><img src="./文件列表.png" alt="File List"/></td>
+    <td><img src="./AI能力.png" alt="AI Agent"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b> Intranet Penetration</b></td>
+    <td align="center"><b> System Dashboard</b></td>
+  </tr>
+  <tr>
+    <td><img src="./内网穿透.png" alt="Intranet Penetration"/></td>
+    <td><img src="./系统信息看板.png" alt="System Dashboard"/></td>
+  </tr>
+</table>
 
-![](./AI能力.png)
-
-In addition to the features above, it also supports some functions that may be helpful to you, such as instantly opening text log files of any size, Windows remote desktop, simple image editing, CI/CD workflows, Excalidraw drawing, and more.
+---
 
 ## Demo
 
-[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)
+Try it online: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)**
 
-username/password: demo/demo
-Chinese account: demo-zh/demo
+| Account Type | Username | Password |
+|-------------|----------|----------|
+| English     | `demo`   | `demo`   |
+| Chinese     | `demo-zh`| `demo`   |
 
-The demo server is sponsored by [Yecao Cloud](https://my.yecaoyun.com/aff.php?aff=7185)
+>  Demo server is sponsored by [Yecao Cloud](https://my.yecaoyun.com/aff.php?aff=7185)
+
+---
 
 ## Installation
 
-Small bug fixes and feature updates are only released and synchronized on npm in real time.
+> Minor bug fixes and feature updates are published to npm in real time.
 
-### 1. Npm
+### 1️⃣ NPM (Recommended)
 
-`npm install -g filecat`
+```bash
+npm install -g filecat
+```
 
-For Linux systems, after installation, you can choose to keep it alive using pm2, or use `filecat --install` to register it to systemd.
+For Linux systems, use `pm2` to keep it alive, or run `filecat --install` to register it with systemd.
 
-### 2. Linux curl
+### 2️⃣ Linux One-Click Script
 
-`curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh`
+```bash
+curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh
+```
 
-On Linux systems, you can execute this command to automatically download the binary package and run the installer. Just follow the prompts to enter parameters.
+Automatically downloads the binary and runs the installer. Follow the prompts to configure.
 
-### 3. Binary
+### 3️⃣ Binary Package
 
-Download the latest [Releases](https://github.com/xiaobaidadada/filecat/releases)
+Download the latest version from [Releases](https://github.com/xiaobaidadada/filecat/releases).
 
-### 4. Docker
+### 4️⃣ Docker
 
-`docker run -d --name filecat --restart=always --net=host -v /home:/home ghcr.io/xiaobaidadada/filecat:latest --port 5567 --base_folder /home`
+```bash
+docker run -d --name filecat --restart=always --net=host \
+  -v /home:/home \
+  ghcr.io/xiaobaidadada/filecat:latest \
+  --port 5567 --base_folder /home
+```
 
-### 5. Git Clone
+### 5️⃣ Build from Source
 
-`git clone https://github.com/xiaobaidadada/filecat.git`
+```bash
+git clone https://github.com/xiaobaidadada/filecat.git
+cd filecat
+npm install
+npm run dev        # Development mode
+# or
+npm run build && node build/main.js  # Production mode
+```
 
-`npm install`
+---
 
-`npm run dev` or `npm run build && node dist/main.js`
+##  Quick Start
 
-## Run
+**Option 1** — After NPM installation:
+```bash
+filecat --port 5567
+```
 
-After installation, run the command:
+**Option 2** — Extract the binary package and run the script inside:
+- Linux/Mac: `filecat-run.sh`
+- Windows: `filecat-run.cmd`
 
-`filecat --port 5567`
+**Default credentials**: `admin` / `admin`
 
-Default username/password: admin/admin
+>  Use `filecat --help` to see all available options.
 
-You can use `filecat --help` to view more parameters.
+> ️ **Important**: After installation, the default accessible directory is the installation directory. Please configure user access permissions in the settings.
 
-Usage tip: Permission management is something that must be taken seriously. After installation, the default accessible server file directory is the installation directory. You need to configure which directories and permissions each user can access in the settings.
+---
 
-## Upgrade
+## Community
 
-1. Upgrade using your installation method. For example, if installed with npm, use `npm -g i filecat`; for Docker, pull the latest image again; for binary installation, download and replace it again.
-2. Starting from version 5.33.0, you can use the `filecat-upgrade` command to upgrade automatically according to the installation environment. For Docker and binary installation methods, the `filecat-upgrade` command also supports a custom download URL parameter (by default it downloads the latest package from GitHub).
+Join our QQ Group: **824838674**
 
-## QQ Group
+---
 
-824838674
+## Contributing
 
+1. Submit PRs to the `dev` branch
+2. For feature contributions, please discuss in the QQ group first
 
-## Software Comparison
+---
 
-| Software                         | ![](./src/web/meta/resources/img/logo-70.png) [FileCat](https://github.com/xiaobaidadada/filecat) | <img width="48" src="https://github.com/user-attachments/assets/c40b22c9-33da-47b7-bc4c-ce69bb5cc174" > [Quantum](https://github.com/gtsteffaniak/filebrowser) | <img width="48" src="https://raw.githubusercontent.com/filebrowser/filebrowser/master/branding/banner.png" > [Filebrowser](https://github.com/filebrowser/filebrowser) |
-| -------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| File System Support              | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Linux                            | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Windows                          | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Mac                              | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Self-hosted                      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| WebDAV Support                   | ❌                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| Multi-user Login Management      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Terminal Shell                   | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| Open Source                      | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Single Sign-On Support           | ✅                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| Shareable Web Links              | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Text-based File Editor           | ✅                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Detailed Documentation           | ❌                                                     | ✅                                                                                                               | ✅                                                                                                                        |
-| Office File Preview              | ❌                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| Indexed Search                   | ❌                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| Multiple File System Path Mounts | ✅                                                     | ✅                                                                                                               | ❌                                                                                                                        |
-| Intranet Penetration             | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| SSH Terminal                     | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| Real-time System Information     | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| Windows Remote Desktop           | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| Command CI/CD Workflow Support   | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| Large Log File Viewer            | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
-| AI Agent                         | ✅                                                     | ❌                                                                                                               | ❌                                                                                                                        |
+## Credits
 
+FileCat is inspired by or built upon these great projects:
 
-## Thanks
+- [filebrowser](https://github.com/filebrowser/filebrowser) — Excellent file browsing implementation
+- [MeshCentral](https://github.com/Ylianst/MeshCentral) — Remote management insights
+- [mstsc](https://github.com/citronneur/mstsc.js) — Web RDP foundation
 
-The following projects provided inspiration or foundations for FileCat:
+---
 
-* [filebrowser](https://github.com/filebrowser/filebrowser)
-* [MeshCentral](https://github.com/Ylianst/MeshCentral)
-* [mstsc](https://github.com/citronneur/mstsc.js)
+<p align="center">
+  <a href="https://github.com/xiaobaidadada/filecat">
+    <img src="https://img.shields.io/github/stars/xiaobaidadada/filecat?style=social" alt="Star on GitHub">
+  </a>
+</p>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/xiaobaidadada">xiaobaidadada</a>
+</p>
