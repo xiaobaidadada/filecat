@@ -104,8 +104,8 @@ body {
   background-color: var(--primary-light);
   /*transform: translateY(-1px);*/
 }
-.action i {
-  color: var(--icon) !important;
+.action i,.material-icons.icon {
+  color: var(--icon) ;
 }
 .action .counter {
   border-color: var(--divider);

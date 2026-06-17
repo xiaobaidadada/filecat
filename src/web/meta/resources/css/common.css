@@ -97,3 +97,7 @@
 .menu-select-item:hover {
     background: #f3f4f6;
 }
+
+.material-icons.icon  {
+    color: var(--action);
+}
