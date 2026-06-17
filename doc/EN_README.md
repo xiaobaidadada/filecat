@@ -5,7 +5,7 @@
 <h1 align="center">FileCat</h1>
 
 <p align="center">
-  <i>A self-hosted web file server & lightweight server management tool</i>
+  <i>A self-hosted web file server and lightweight server management tool</i>
 </p>
 
 <p align="center">
@@ -27,43 +27,43 @@
 </p>
 
 <p align="center">
-  <a href="#-features">Features</a> •
-  <a href="#-screenshots">Screenshots</a> •
-  <a href="#-installation">Installation</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-upgrade">Upgrade</a> •
-  <a href="#-comparison">Comparison</a>
+  <a href="#features">Features</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#demo">Demo</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#upgrade">Upgrade</a>
 </p>
 
 <p align="center">
-  <a href="../README.md"> 中文文档</a>
+  <a href="../README.md">中文文档</a>
 </p>
 
 ---
 
 FileCat is a **self-hosted web file server** and a **lightweight server management tool**. Once deployed on your server, you can browse, manage, and preview files from any browser, while also enjoying a rich set of server administration features.
 
-> **Core Philosophy**: File management at the core, enhanced with AI Agent, remote desktop, intranet penetration, system monitoring, and more — making server management simpler than ever.
+> **Core Philosophy**: File management at the core, enhanced with AI Agent, remote desktop, intranet penetration, system monitoring, and more - making server management simpler than ever.
 
 ---
 
-##  Features
+## Features
 
 | Category | Capabilities |
 |----------|-------------|
-|  **File Management** | Browse, upload, download, edit, and preview files (images, videos, Markdown, drawings, etc.) |
-|  **AI Agent** | Integrated LLM-powered assistant for intelligent operations (BYO API key) |
-|  **Intranet Penetration** | Expose internal services to the internet without a public IP |
-| ️ **SSH Terminal** | Built-in web terminal for direct server access |
-|  **Windows Remote Desktop** | Access Windows remote desktops directly in your browser (RDP) |
-|  **System Dashboard** | Real-time CPU, memory, disk, and network monitoring |
-|  **CI/CD Workflow** | Custom command pipelines for continuous integration & deployment |
-|  **Large Log Viewer** | Instantly open text log files of any size |
-|  **Excalidraw Drawing** | Built-in collaborative whiteboard |
-| ️ **Image Editor** | Online crop, annotate, and adjust images |
-|  **Multi-user Management** | Granular permission control with SSO support |
-|  **Shareable Links** | Generate share links for easy file sharing |
-|  **Multi-path Mounting** | Mount multiple file system paths |
+| File Management | Browse, upload, download, edit, and preview files (images, videos, Markdown, drawings, etc.) |
+| AI Agent | Integrated LLM-powered assistant for intelligent operations (BYO API key) |
+| Intranet Penetration | Expose internal services to the internet without a public IP |
+| SSH Terminal | Built-in web terminal for direct server access |
+| Windows Remote Desktop | Access Windows remote desktops directly in your browser (RDP) |
+| System Dashboard | Real-time CPU, memory, disk, and network monitoring |
+| CI/CD Workflow | Custom command pipelines for continuous integration and deployment |
+| Large Log Viewer | Instantly open text log files of any size |
+| Excalidraw Drawing | Built-in collaborative whiteboard |
+| Image Editor | Online crop, annotate, and adjust images |
+| Multi-user Management | Granular permission control |
+| Shareable Links | Generate share links for easy file sharing |
+| Multi-path Mounting | Mount multiple file system paths |
 
 ---
 
@@ -71,16 +71,16 @@ FileCat is a **self-hosted web file server** and a **lightweight server manageme
 
 <table>
   <tr>
-    <td align="center"><b> File List</b></td>
-    <td align="center"><b> AI Agent</b></td>
+    <td align="center"><b>File List</b></td>
+    <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
     <td><img src="./文件列表.png" alt="File List"/></td>
     <td><img src="./AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
-    <td align="center"><b> Intranet Penetration</b></td>
-    <td align="center"><b> System Dashboard</b></td>
+    <td align="center"><b>Intranet Penetration</b></td>
+    <td align="center"><b>System Dashboard</b></td>
   </tr>
   <tr>
     <td><img src="./内网穿透.png" alt="Intranet Penetration"/></td>
@@ -99,7 +99,7 @@ Try it online: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xi
 | English     | `demo`   | `demo`   |
 | Chinese     | `demo-zh`| `demo`   |
 
->  Demo server is sponsored by [Yecao Cloud](https://my.yecaoyun.com/aff.php?aff=7185)
+> Demo server is sponsored by [Yecao Cloud](https://my.yecaoyun.com/aff.php?aff=7185)
 
 ---
 
@@ -107,7 +107,7 @@ Try it online: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xi
 
 > Minor bug fixes and feature updates are published to npm in real time.
 
-### 1️⃣ NPM (Recommended)
+### 1. NPM (Recommended)
 
 ```bash
 npm install -g filecat
@@ -115,7 +115,7 @@ npm install -g filecat
 
 For Linux systems, use `pm2` to keep it alive, or run `filecat --install` to register it with systemd.
 
-### 2️⃣ Linux One-Click Script
+### 2. Linux One-Click Script
 
 ```bash
 curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh
@@ -123,11 +123,11 @@ curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && b
 
 Automatically downloads the binary and runs the installer. Follow the prompts to configure.
 
-### 3️⃣ Binary Package
+### 3. Binary Package
 
 Download the latest version from [Releases](https://github.com/xiaobaidadada/filecat/releases).
 
-### 4️⃣ Docker
+### 4. Docker
 
 ```bash
 docker run -d --name filecat --restart=always --net=host \
@@ -136,7 +136,7 @@ docker run -d --name filecat --restart=always --net=host \
   --port 5567 --base_folder /home
 ```
 
-### 5️⃣ Build from Source
+### 5. Build from Source
 
 ```bash
 git clone https://github.com/xiaobaidadada/filecat.git
@@ -149,22 +149,32 @@ npm run build && node build/main.js  # Production mode
 
 ---
 
-##  Quick Start
+## Quick Start
 
-**Option 1** — After NPM installation:
+**Option 1** - After NPM installation:
 ```bash
 filecat --port 5567
 ```
 
-**Option 2** — Extract the binary package and run the script inside:
+**Option 2** - Extract the binary package and run the script inside:
 - Linux/Mac: `filecat-run.sh`
 - Windows: `filecat-run.cmd`
 
 **Default credentials**: `admin` / `admin`
 
->  Use `filecat --help` to see all available options.
+> Use `filecat --help` to see all available options.
 
-> ️ **Important**: After installation, the default accessible directory is the installation directory. Please configure user access permissions in the settings.
+> **Important**: After installation, the default accessible directory is the installation directory. Please configure user access permissions in the settings.
+
+---
+
+## Upgrade
+
+1. **Regular Upgrade**: Based on your installation method
+   - NPM: `npm -g i filecat`
+   - Docker: Pull the latest image
+   - Binary: Download the latest package and replace
+2. **Auto Upgrade** (v5.33.0+): Run `filecat-upgrade` to automatically upgrade based on your installation environment. Docker and binary installations also support custom download URL parameters.
 
 ---
 
@@ -185,9 +195,9 @@ Join our QQ Group: **824838674**
 
 FileCat is inspired by or built upon these great projects:
 
-- [filebrowser](https://github.com/filebrowser/filebrowser) — Excellent file browsing implementation
-- [MeshCentral](https://github.com/Ylianst/MeshCentral) — Remote management insights
-- [mstsc](https://github.com/citronneur/mstsc.js) — Web RDP foundation
+- [filebrowser](https://github.com/filebrowser/filebrowser) - Excellent file browsing implementation
+- [MeshCentral](https://github.com/Ylianst/MeshCentral) - Remote management insights
+- [mstsc](https://github.com/citronneur/mstsc.js) - Web RDP foundation
 
 ---
 
@@ -198,5 +208,5 @@ FileCat is inspired by or built upon these great projects:
 </p>
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/xiaobaidadada">xiaobaidadada</a>
+  Made with love by <a href="https://github.com/xiaobaidadada">xiaobaidadada</a>
 </p>
