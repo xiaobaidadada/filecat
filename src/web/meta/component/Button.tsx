@@ -12,7 +12,7 @@ export function ButtonLittle(props:{text:string,clickFun?:()=>void}) {
 export function ButtonLittleStatus(props:{text:string,clickFun?:(open?:boolean)=>void,defaultStatus:boolean}) {
     const [color, setColor] = React.useState(props.defaultStatus);
     return (<button className={"little-button-status"}  style={{
-        backgroundColor:!color?"var(--surfaceSecondary)":"var(--blue)"
+        backgroundColor:!color?"var(--surfaceSecondary)":"var(--icon-blue)"
     }} onClick={()=>{
         const v = !color;
         setColor(v);

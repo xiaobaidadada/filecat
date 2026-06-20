@@ -511,12 +511,12 @@ export class Ai_agentService {
         for (const p of list.models) {
             const pojo:ai_agent_option_item_extra = {}
             Env.load(p.dotenv,pojo)
-            if(pojo.options_agent_model_list || pojo.options_agent_token_list || pojo.options_agent_url_list) {
+            if(pojo.options_agent_model_list || pojo.options_agent_key_list || pojo.options_agent_url_list) {
                 if(p.show_options == null) {
                     p.show_options = {}
                 }
                 p.show_options.options_agent_model_list = pojo.options_agent_model_list
-                p.show_options.options_agent_token_list = pojo.options_agent_token_list
+                p.show_options.options_agent_key_list = pojo.options_agent_key_list
                 p.show_options.options_agent_url_list = pojo.options_agent_url_list
             }
         }

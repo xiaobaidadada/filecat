@@ -22,7 +22,7 @@
     font-size: 16px;
     border: none;
     border-radius: 4px;
-    background-color: var(--blue);
+    background-color: var(--icon-blue);
     color: white;
     cursor: pointer;
 }

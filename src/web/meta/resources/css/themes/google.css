@@ -321,8 +321,9 @@ table th {
 }
 .menu ul li:hover {
   background: var(--primary-light);
-  border-radius: var(--border-radius-sm);
+  /*border-radius: var(--border-radius-sm);*/
 }
+
 /*.md-context div{*/
 /*  background: var(--surfaceSecondary);*/
 /*  color: var(--textPrimary);*/

@@ -312,14 +312,14 @@ table th {
 .dropdown_item {
   background: var(--surfacePrimary);
   margin: 0;
-  border-radius: var(--border-radius-sm);
+  /*border-radius: var(--border-radius-sm);*/
 }
 .dropdown > div:hover {
   background: var(--primary-light);
 }
 .menu ul li:hover {
   background: var(--primary-light);
-  border-radius: var(--border-radius-sm);
+  /*border-radius: var(--border-radius-sm);*/
 }
 .md-context div{
   background: var(--surfaceSecondary);

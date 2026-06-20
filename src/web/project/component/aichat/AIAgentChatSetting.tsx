@@ -424,7 +424,7 @@ export default function AIAgentChatSetting() {
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
-                                        <InputText  type={"password"} value={ai_agent_Item.get_label_by_v(item.token,item.show_options?.options_agent_token_list)} options={item.show_options?.options_agent_token_list} handleInputChange={(value) => {
+                                        <InputText  type={ai_agent_Item.have_label_by_v(item.token,item.show_options?.options_agent_key_list)?null:"password"} value={ai_agent_Item.get_label_by_v(item.token,item.show_options?.options_agent_key_list)} options={item.show_options?.options_agent_key_list} handleInputChange={(value) => {
                                             item.token = value;
                                         }} no_border={true}/>,
                                         <InputText value={ai_agent_Item.get_label_by_v(item.model,item.show_options?.options_agent_model_list)} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {

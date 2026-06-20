@@ -82,7 +82,7 @@
 .chat-session-item.active,
 .chat-session-item:hover {
     background: #fff;
-    border-color: #d6d9de;
+    /*border-color: #d6d9de;*/
 }
 
 .chat-session-item span {
@@ -206,7 +206,7 @@
 }
 
 .chat-message.user {
-    background: #0078ff;
+    background: var(--icon-blue);
     color: #fff;
     align-self: flex-end;
 }
