@@ -66,7 +66,7 @@ export function Tabs(props: TabsProps) {
 
                         // 动态组合类名
                         const classNames = [
-                            'input', // 保留你原有的 input 基础风格
+                            // 'input', // 保留你原有的 input 基础风格
                             'modern-tabs-tab',
                             isActive ? 'active' : '',
                             header.disabled ? 'disabled' : ''
