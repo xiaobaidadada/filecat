@@ -1,8 +1,10 @@
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {SysSoftware} from "../../../../common/req/setting.req";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
+import {themes_list} from "../../../../common/req/user.req";
+import {settingHttp} from "../../util/config";
 
 
 export function using_env_prompt() {
@@ -97,4 +99,31 @@ export function using_env_prompt() {
             )
         })
     }
+}
+
+let dynamic_themes_list:{ value: string; title: string; id?: string }[] = themes_list
+
+export function use_themes_list() {
+    const [d_themes_list,set_themes_list] = useState([]);
+    const fetch_themes = async () => {
+        try {
+            const result = await settingHttp.get("themes");
+            if (result.code === 0) { // RCode.Success = 0
+                const list =   result.data || [];
+                dynamic_themes_list = [...themes_list,...list];
+                // console.log(dynamic_themes_list)
+                set_themes_list(dynamic_themes_list);
+            } else {
+                console.warn("获取主题列表失败，使用默认列表");
+                set_themes_list(dynamic_themes_list);
+            }
+        } catch (error) {
+            set_themes_list(dynamic_themes_list);
+        }
+    }
+    useEffect(() => {
+        fetch_themes()
+    },[])
+
+    return d_themes_list;
 }

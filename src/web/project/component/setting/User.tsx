@@ -5,7 +5,7 @@ import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {cryptoHttp, settingHttp, themes_list, userHttp} from "../../util/config";
+import { userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
@@ -16,6 +16,7 @@ import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {Permission} from "./component/Permission";
+import {use_themes_list} from "./util";
 
 /**
  *  没有数据权限 所有数据用户都能看到（除了文件）
@@ -49,6 +50,8 @@ export function User() {
     const [bind_role_id, set_bind_role_id] = useState("");
 
     const [bind_role_item, set_bind_role_item] = useState({});
+    const themes_list = use_themes_list()
+
 
     const [roles,set_roles] = useState([]);
 

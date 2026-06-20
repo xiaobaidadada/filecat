@@ -1,5 +1,6 @@
 // 实现复制功能
-import {themes} from "../../../common/req/user.req";
+import {themes, themes_list} from "../../../common/req/user.req";
+import {Global} from "../util/global";
 
 export function copyToClipboard(text) {
     // const textarea = document.createElement('textarea');
@@ -29,7 +30,8 @@ export function copyToClipboard(text) {
     document.body.removeChild(textArea);
 }
 
-
+// 内置主题列表的 value 集合，用于判断是否为内置主题
+const builtin_theme_values = new Set(themes_list.map(t => t.value));
 
 export function setTheme(theme: themes) {
 
@@ -43,7 +45,15 @@ export function setTheme(theme: themes) {
     if (theme === "light" || !theme) {
         return;
     }
-    const href = `${theme}.css`; // 确保文件在 public 目录
+
+    let href: string;
+    if (builtin_theme_values.has(theme)) {
+        // 内置主题：CSS 文件在 dist 目录下
+        href = `${theme}.css`;
+    } else {
+        // 插件主题：通过 API 代理获取 CSS
+        href = `${Global.base_url}/api/setting/plugin/theme?theme_id=${encodeURIComponent(theme)}`;
+    }
 
     // 创建新的 link
     const link = document.createElement('link');

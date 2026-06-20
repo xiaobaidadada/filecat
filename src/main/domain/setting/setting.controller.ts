@@ -1,4 +1,4 @@
-import {Body, Get, JsonController, Param, Post, Req} from "routing-controllers";
+import {Body, Get, JsonController, Param, Post, QueryParam, Req, Res} from "routing-controllers";
 import {UserAuth} from "../../../common/req/user.req";
 import {Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -15,6 +15,7 @@ import {Http_controller_router} from "../../../common/req/http_controller_router
 import {ServerEvent} from "../../other/config";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {ai_agent_Item, ai_mcp_server_item, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
+import {Public} from "../../other/middleware/decorator";
 
 @JsonController("/setting")
 export class SettingController {
@@ -488,5 +489,32 @@ export class SettingController {
     async save_plugin_list(@Body() req: any, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
         return settingService.save_plugin_list(req);
+    }
+
+    // ============ 主题 API ============
+
+    /**
+     * 获取所有可用主题列表（内置 + 插件注册的主题）
+     */
+    @Get("/themes")
+    async get_themes(@Req() ctx) {
+        return Sucess(settingService.get_all_themes());
+    }
+
+    /**
+     * 获取插件主题的 CSS 文件内容（通过 API 代理提供）
+     */
+    @Public('/setting/plugin/theme')
+    @Get("/plugin/theme")
+    async get_plugin_theme_css(@QueryParam("theme_id") theme_id: string,  @Res() res: any) {
+        const cssPath = settingService.get_plugin_theme_path(decodeURIComponent(theme_id));
+        if (!cssPath) {
+            res.status(404).send('Theme not found');
+            return;
+        }
+        const cssContent = await require('fs').promises.readFile(cssPath, 'utf-8');
+        res.header('Content-Type', 'text/css');
+        res.header('Cache-Control', 'public, max-age=3600');
+        return res.send(cssContent);
     }
 }

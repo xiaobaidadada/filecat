@@ -25,6 +25,11 @@ export interface plug_item {
     params?:string;
 }
 
+export interface plug_css_item {
+    label: string;
+    path: string;
+}
+
 /**
  * 插件元信息
  */
@@ -36,7 +41,7 @@ export interface PluginMeta {
     /** 插件版本[cite: 4] */
     version: string;
     /** 插件类型[cite: 4] */
-    type:  'backend' | 'ai_tool';
+    // type:  'backend' | 'ai_tool' | 'theme';
     /** 插件描述[cite: 4] */
     description?: string;
     /** 作者[cite: 4] */
@@ -73,21 +78,16 @@ export interface Plugin {
     /** 插件停用时调用[cite: 4] */
     deactivate?(): void | Promise<void>;
 
-}
-
-/**
- * AI Tool 插件 - 为 AI Agent 提供自定义工具
- * 相比普通 Plugin，额外提供 tools 属性
- */
-export interface AiToolPlugin extends Plugin {
-    readonly meta: PluginMeta & { type: 'ai_tool' };
 
     /**
      * AI 工具定义列表
      * 每个工具包含 schema（给 LLM 的描述）和执行函数
      */
-    tools: AiToolItem[];
+    tools?: AiToolItem[];
+
+    css_list?: plug_css_item[];
 }
+
 
 /**
  * AI 工具项

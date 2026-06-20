@@ -163,12 +163,13 @@ export class Ai_AgentController {
                 b64_json: img.b64_json,
                 revised_prompt: img.revised_prompt,
             }));
-            const imageTexts = images
-                .map((img: any, i: number) => `![生成图片${i + 1}](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`)
-                .join('\n\n');
+            // const imageTexts = images
+            //     .map((img: any, i: number) => `![生成图片${i + 1}](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`)
+            //     .join('\n\n');
             const assistantMsg: ai_agent_message_item = {
                 role: "assistant",
-                content: imageTexts || `生成了 ${images.length} 张图片`,
+                // content: imageTexts || `生成了 ${images.length} 张图片`,
+                content: `生成了 ${images?.length??0} 张图片`,
                 images,
             };
             const finalSessionId = await this.saveNonCompletionTurn(userId, data?.session_id, data.prompt, assistantMsg);

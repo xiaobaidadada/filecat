@@ -134,7 +134,16 @@ export enum FileListPaginationModeEmum {
     pagination = "pagination" // 分页滚动加载
 }
 
-export type themes = "light" | "dark" | "google" | "google-dark" | "" | undefined;
+export type themes = "light" | "dark" | "google" | "google-dark" | (string & {}) | "" | undefined;
+
+
+// 静态的 fallback 主题列表
+export const themes_list = [
+    {title:"light",value:"light"},
+    {title:"dark",value:"dark"},
+    {title:"google",value:"google"},
+    {title:"google dark",value:"google-dark"}
+];
 
 export enum user_file_time_show_type {
     current = "current",

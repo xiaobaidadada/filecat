@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from 'react';
-import Noty from "noty";
 import {InputText} from "./Input";
 import {copyToClipboard} from "../../project/util/FunUtil";
 

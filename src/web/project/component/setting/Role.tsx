@@ -5,7 +5,7 @@ import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {cryptoHttp, settingHttp, themes_list, userHttp} from "../../util/config";
+import { userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
@@ -16,6 +16,7 @@ import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
 import {Permission} from "./component/Permission";
+import {use_themes_list} from "./util";
 
 
 export function Role() {
@@ -39,6 +40,7 @@ export function Role() {
     const [auth_list,set_auth_list] = useState([]);
     const [role_id, set_role_id] = useState("");
     const [role_note, set_role_note] = useState("");
+    const themes_list = use_themes_list()
 
     const headers = [t("角色id"),t("角色名"), t("备注") ];
 

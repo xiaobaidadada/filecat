@@ -29,7 +29,7 @@ import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
-import {plug_item, Plugin, PluginMeta, AiToolPlugin, AiToolItem} from "../../../plugin";
+import {plug_item, Plugin, PluginMeta, AiToolItem} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
     ai_agent_Item,
@@ -960,9 +960,8 @@ export class SettingService {
 
     // ============ 插件管理 ============
 
-    /**
-     * 插件配置项
-     */
+    /** 插件注册的主题列表：{主题标识: CSS文件路径} */
+    plugin_themes: Map<string, string> = new Map();
 
     running_plugin_list:Plugin[] = []
 
@@ -989,6 +988,7 @@ export class SettingService {
 
     async load_all_plugin() {
         this.running_plugin_list = [];
+        this.plugin_themes.clear();
         const list = this.get_plugin_list();
 
         const results = await Promise.allSettled(
@@ -1000,6 +1000,37 @@ export class SettingService {
                 console.error(`[Plugin] 加载失败: ${list[index].path}`, result.reason);
             }
         });
+    }
+
+    /**
+     * 获取所有可用主题列表（内置 + 插件注册的）
+     */
+    get_all_themes(): {label:string,value:string}[] {
+        const pluginEntries:  {label:string,value:string}[] = [];
+        for (const [themeId, cssPath] of this.plugin_themes) {
+            pluginEntries.push({
+                label:themeId,
+                value:themeId
+            });
+        }
+        return pluginEntries;
+    }
+
+    /**
+     * 根据主题ID获取插件主题的CSS文件路径
+     */
+    get_plugin_theme_path(themeId: string): string | undefined {
+        return this.plugin_themes.get(themeId);
+    }
+
+    /**
+     * 将 .css 文件注册为主题插件
+     */
+    private  _register_css_theme_plugin(plugin: Plugin) {
+        if(!plugin.css_list?.length) return
+        for (const item of plugin.css_list) {
+            this.plugin_themes.set(item.label, item.path);
+        }
     }
 
     private _resolve_plugin(item: plug_item): Plugin {
@@ -1018,6 +1049,10 @@ export class SettingService {
     }
 
     private async _load_single_plugin(item: plug_item): Promise<void> {
+        if(!item.open) {
+            // 没有开启
+            return ;
+        }
         const plugin = this._resolve_plugin(item);
 
         const params: Record<string, any> = {};
@@ -1035,6 +1070,7 @@ export class SettingService {
         });
 
         this._register_ai_tools(plugin);
+        this._register_css_theme_plugin(plugin);
 
         // 保存 path 供卸载时清缓存
         (plugin as any).__plugin_path__ = item.path;
@@ -1042,16 +1078,14 @@ export class SettingService {
     }
 
     private _register_ai_tools(plugin: Plugin): void {
-        if (plugin.meta?.type !== 'ai_tool') return;
-        const aiToolPlugin = plugin as unknown as AiToolPlugin;
-        if (!aiToolPlugin.tools?.length) return;
-
-        for (const tool of aiToolPlugin.tools) {
+        // if (plugin.meta?.type !== 'ai_tool') return;
+        if(!plugin.tools?.length) return;
+        for (const tool of plugin.tools) {
             ai_agentService.registerPluginTool(plugin.meta.id, tool);
         }
         console.log(
             `[Plugin] "${plugin.meta.name}" 已注册工具:`,
-            aiToolPlugin.tools.map(t => t.schema.function.name).join(', ')
+            plugin.tools.map(t => t.schema.function.name).join(', ')
         );
     }
 
@@ -1060,11 +1094,12 @@ export class SettingService {
             this.running_plugin_list.map(plugin => this._unload_single_plugin(plugin))
         );
         this.running_plugin_list = [];
+        this.plugin_themes.clear();
     }
 
     private async _unload_single_plugin(plugin: Plugin): Promise<void> {
         try {
-            if (plugin.meta?.type === 'ai_tool') {
+            if (plugin.tools?.length) {
                 ai_agentService.unregisterPluginTools(plugin.meta.id);
             }
             await plugin.deactivate?.();
