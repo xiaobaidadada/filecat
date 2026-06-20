@@ -1,7 +1,6 @@
 import React, {useState} from 'react'
 import {InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import Noty from "noty";
 import Header from "../../../meta/component/Header";
 import {netHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";

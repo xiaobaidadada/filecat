@@ -7,7 +7,6 @@ import {InputPassword, InputRadio, InputText} from "../../../../meta/component/I
 import {ddnsHttp,} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type, Tengxun} from "../../../../../common/req/ddns.pojo";
-import Noty from "noty";
 import {useTranslation} from "react-i18next";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../../util/store";

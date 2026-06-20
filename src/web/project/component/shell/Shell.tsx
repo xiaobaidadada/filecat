@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import lodash from "lodash";
+import * as lodash from "lodash";
 import {FitAddon} from "@xterm/addon-fit";
 import {Terminal} from "@xterm/xterm";
 import '@xterm/xterm/css/xterm.css'

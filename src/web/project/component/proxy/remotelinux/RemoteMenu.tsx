@@ -110,7 +110,7 @@ export function RemoteMenu(props: { close: any }) {
                     let folder_upload = !!files[0].webkitRelativePath;
 
                     const uploadFiles: any = [];
-                    const dirs = new Set(); // 文件夹需要提前创建
+                    const dirs = new Set<string>(); // 文件夹需要提前创建
                     for (let i = 0; i < files.length; i++) {
                         const file = files[i];
                         const fullPath = folder_upload ? file.webkitRelativePath : `${file.webkitRelativePath}${file.name}`;
@@ -129,7 +129,7 @@ export function RemoteMenu(props: { close: any }) {
                     }
                     const list = [];
                     if (folder_upload) {
-                        for (const file of dirs) {
+                        for (const file of Array.from(dirs)) {
                             list.push({
                                 isDir: true,
                                 fullPath: file,

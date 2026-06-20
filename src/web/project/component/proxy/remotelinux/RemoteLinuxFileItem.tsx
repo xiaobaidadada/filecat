@@ -6,7 +6,6 @@ import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, joinPaths, webPathJoin} from "../../../../../common/ListUtil";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import Noty from "noty";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {BaseFileItem} from "../../file/component/BaseFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";

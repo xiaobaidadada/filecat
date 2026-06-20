@@ -4,7 +4,6 @@ import {$stroe} from "../../util/store";
 import {InputText} from "../../../meta/component/Input";
 import {navHttp} from "../../util/config";;
 import {useLocation, useNavigate} from "react-router-dom";
-import Noty from "noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {getRouterPath} from "../../util/WebPath";

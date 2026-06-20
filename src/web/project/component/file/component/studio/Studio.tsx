@@ -12,7 +12,7 @@ import {editor_data} from "../../../../util/store.util";
 // import {getEditModelType} from "../../../../../../common/StringUtil";
 import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
-import lodash from "lodash";
+import * as lodash from "lodash";
 import {ableExtBeautify, FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";

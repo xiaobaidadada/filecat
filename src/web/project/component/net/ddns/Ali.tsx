@@ -7,7 +7,6 @@ import {InputPassword, InputRadio, InputText} from "../../../../meta/component/I
 import {ddnsHttp,} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../../common/req/ddns.pojo";
-import Noty from "noty";
 
 export function Ali(props: any) {
     const [ipv4s,setIpv4s] = useState([]);
