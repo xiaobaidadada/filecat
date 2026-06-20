@@ -63,9 +63,15 @@ const tasksLister = new Listr(
             }
         },
         {
-            title:"编译plugin到build/plugin目录",
-            task:async ()=>{
-                execSync("npx tsc -p tsconfig.plugin.json")
+            title:"清理build目录执行tsc",
+            task: async () => {
+                fse.removeSync(path.join(__dirname, "..", "build"));
+                try {
+                    execSync("npx tsc")
+                } catch (error) {
+                    // 将标准输出的 Buffer 转换为可读字符串并抛出
+                    throw new Error(error.stdout ? error.stdout.toString() : error.message);
+                }
             }
         },
         {

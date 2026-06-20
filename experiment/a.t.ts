@@ -1,5 +1,5 @@
 import FlexSearch, {Charset} from "flexsearch";
-import fs from "fs";
+import * as fs from "fs";
 import * as path from "path";
 
 // 原理是倒排索引
@@ -74,6 +74,7 @@ for (const k of keywords) {
     }
 }
 
+// @ts-ignore
 const sorted = [...scoreMap.entries()]
     .sort((a, b) => b[1] - a[1]) // 从大到小排序 按得分排序
     .map(([id]) => id); // 只保留 key也就是id
