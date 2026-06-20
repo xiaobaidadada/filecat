@@ -135,7 +135,7 @@ function sha256(message: string, secret = "", encoding?: string): string {
   return hmac.update(message).digest(encoding as any)
 }
 
-function getHash(message: crypto.BinaryLike, encoding = "hex"): string {
+function getHash(message: string | Buffer, encoding = "hex"): string {
   const hash = crypto.createHash("sha256")
   return hash.update(message).digest(encoding as any)
 }
