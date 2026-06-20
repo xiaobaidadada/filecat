@@ -53,25 +53,28 @@ function get_exe() {
     }
 }
 
+function exec_sync(cmd) {
+    try {
+        execSync(cmd)
+    } catch (error) {
+        // 将标准输出的 Buffer 转换为可读字符串并抛出
+        throw new Error(error.stdout ? error.stdout.toString() : error.message);
+    }
+}
+
 const tasksLister = new Listr(
     [
         {
             title:"清理build目录执行tsc",
             task:async ()=>{
                 fse.removeSync(path.join(__dirname, "..", "build"));
-                execSync("npx tsc")
+                exec_sync("npx tsc")
             }
         },
         {
-            title:"清理build目录执行tsc",
-            task: async () => {
-                fse.removeSync(path.join(__dirname, "..", "build"));
-                try {
-                    execSync("npx tsc")
-                } catch (error) {
-                    // 将标准输出的 Buffer 转换为可读字符串并抛出
-                    throw new Error(error.stdout ? error.stdout.toString() : error.message);
-                }
+            title:"编译plugin到build/plugin目录",
+            task:async ()=>{
+                exec_sync("npx tsc -p tsconfig.plugin.json")
             }
         },
         {
