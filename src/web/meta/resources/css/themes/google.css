@@ -131,7 +131,7 @@ nav > div {
 
 #listing .item {
   background: var(--surfacePrimary);
-  color: var(--textPrimary);
+  color: var(--textSecondary);
   border-color: var(--divider) !important;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);

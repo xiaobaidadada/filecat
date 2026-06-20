@@ -131,7 +131,7 @@ nav > div {
 
 #listing .item {
   background: var(--surfacePrimary);
-  color: var(--textPrimary);
+  color: var(--textSecondary);
   border-color: var(--divider) !important;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
@@ -468,7 +468,7 @@ table th {
 nav .nav_2 {
   /*transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); !* 使用更柔和的缓动曲线 *!*/
   border-radius: var(--border-radius-lg); /* 使用你定义的圆角变量 */
-  margin: 4px 8px; /* 给菜单项之间留出空间 */
+  /*margin: 4px 8px; !* 给菜单项之间留出空间 *!*/
   width: auto;
 }
 
