@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {$stroe} from "../../../util/store";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import { FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
@@ -13,11 +13,11 @@ import {SysSoftware} from "../../../../../common/req/setting.req";
 export function DiskMountAction(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [items, setItems,] = useState([{r:t("挂载"),v:t("挂载")}]);
     const [tarDir, setTarDir] = useState(undefined);
     const [is_opt, setIs_opt] = useState(true);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     const close = ()=>{
         setShowPrompt({show: false, type: '', overlay: false,data: {}});

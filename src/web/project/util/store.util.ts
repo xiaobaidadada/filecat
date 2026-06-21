@@ -6,7 +6,7 @@ import {getEditModelType} from "../../../common/StringUtil";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {getRouterAfter, getRouterPath} from "./WebPath";
 import {RCode} from "../../../common/Result.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "./store";
 import {saveTxtReq} from "../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
@@ -32,14 +32,14 @@ import {routerConfig} from "../../../common/RouterConfig";
 
 export const user_click_file = () => {
     // 四个预览
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
-    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview)
-    const [markdown, set_markdown] = useRecoilState($stroe.markdown)
-    const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
-    const [sqlite_query_context, set_sqlite_query_context] = useRecoilState($stroe.sqlite_query_context);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
+    const [file_preview, setFilePreview] = useAtom($stroe.file_preview)
+    const [markdown, set_markdown] = useAtom($stroe.markdown)
+    const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
+    const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const navigate = useNavigate();
     const {t} = useTranslation();
 
@@ -192,7 +192,7 @@ export const user_click_file = () => {
 }
 export const auth_key_map = new Map() // 更新的时候清空一下
 export const use_auth_check = () => {
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     const check_user_auth = (auth: UserAuth) => {
         const v = auth_key_map.get(auth);
@@ -215,7 +215,7 @@ export const use_auth_check = () => {
 }
 
 export const use_file_to_running = () => {
-    const [to_running_files_set, set_to_runing_files_set] = useRecoilState($stroe.to_running_files);
+    const [to_running_files_set, set_to_runing_files_set] = useAtom($stroe.to_running_files);
     // useEffect(()=>{
     //     // console.log(to_runing_files_set)
     // },[to_running_files_set])

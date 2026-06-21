@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Excalidraw, MainMenu, serializeAsJSON} from "@excalidraw/excalidraw";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
@@ -9,6 +9,7 @@ import {useNavigate} from "react-router-dom";
 import {Http} from "../../../util/http";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../../common/Result.pojo";
+import "@excalidraw/excalidraw/index.css";
 
 type ExcalidrawSceneData = {
     type?: string;
@@ -38,7 +39,7 @@ function parseScene(raw: any): ExcalidrawSceneData | null {
 }
 
 export default function ExcalidrawEditor() {
-    const [excalidraw_editor, set_excalidraw_editor] = useRecoilState($stroe.excalidraw_editor);
+    const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
     const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
     const [initialData, setInitialData] = useState<ExcalidrawSceneData | null>(null);
     const [loading, setLoading] = useState(false);

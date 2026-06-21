@@ -20,7 +20,7 @@ ace.config.set('workerPath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_ver
 ace.config.set("basePath", `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`)
 
 import * as modest from "ace-builds/src-noconflict/ext-modelist";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
 // import "ace-builds/src-noconflict/ext-language_tools";
@@ -29,7 +29,7 @@ import {editor_data} from "../../../util/store.util";
 // name 是用于获取 类型的方式
 export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number}) {
     const editorRef = useRef(null);
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const theme = userInfo.user_data.theme?.includes("dark") ? "cloud_editor_dark" : "cloud9_day";
     useEffect(() => {
         const editor = ace.edit(editorRef.current, {

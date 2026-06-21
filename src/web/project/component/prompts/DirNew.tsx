@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {InputText, Select} from "../../../meta/component/Input";
 import {fileHttp} from "../../util/config";
@@ -12,7 +12,7 @@ import {CardPrompt, ProgressCard} from "../../../meta/component/Card";
 export function DirNew(props) {
     const {t} = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [name, setName] = useState("");
     const navigate = useNavigate();
     const location = useLocation();

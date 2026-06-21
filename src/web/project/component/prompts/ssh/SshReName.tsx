@@ -1,11 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {InputText} from "../../../../meta/component/Input";
 import { sshHttp} from "../../../util/config";
 import {getFilesByIndexs} from "../../file/FileUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
-import {joinPaths} from "../../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
 import {CardPrompt} from "../../../../meta/component/Card";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
@@ -14,12 +13,12 @@ import {useNavigate} from "react-router-dom";
 export function SshReName(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [nowFileList,setNowFileList] = useAtom($stroe.nowFileList);
     const [name, setName] = useState("");
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
     const navigate = useNavigate();
 
     const cancel=()=> {

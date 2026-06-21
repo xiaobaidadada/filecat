@@ -13,7 +13,7 @@ import {routerConfig} from "../../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../../util/FunUtil";
 import Header from "../../../../../meta/component/Header";
 import {useNavigate} from "react-router-dom";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
 import {Global} from "../../../../util/global";
 import {join_url} from "../../../../../../common/StringUtil";
@@ -26,7 +26,7 @@ export default function ShareListSetting() {
 
     const headers = [t("编号"),t("路径"),t("过期小时"),t("token"),t("备注"),t("剩余时间(h)"),t("下载次数")];
     const [rows,set_rows] = useState<file_share_item>([]);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     const add = ()=>{
         set_rows([...rows,{note:"",path:""}]);

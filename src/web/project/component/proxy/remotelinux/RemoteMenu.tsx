@@ -6,7 +6,7 @@ import {ActionButton} from "../../../../meta/component/Button";
 import {PromptEnum} from "../../prompts/Prompt";
 import {getFilesByIndexs, unsing_switch_grid_view} from "../../file/FileUtil";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {getNextByLoop} from "../../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
@@ -21,18 +21,18 @@ export function RemoteMenu(props: { close: any }) {
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
 
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    // const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
-    const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
-    const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
-    const [copyedFileList, setCopyedFileList] = useRecoilState($stroe.copyedFileList);
-    const [cutedFileList, setCutedFileList] = useRecoilState($stroe.cutedFileList);
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [shellShow, setShellShow] = useRecoilState($stroe.remoteShellShow);
-    const [sshInfo, setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    // const [fileType, setFileType] = useAtom($stroe.fileShowType);
+    const [uploadFiles, setUploadFiles] = useAtom($stroe.uploadFiles);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
+    const [copyedFileList, setCopyedFileList] = useAtom($stroe.copyedFileList);
+    const [cutedFileList, setCutedFileList] = useAtom($stroe.cutedFileList);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [shellShow, setShellShow] = useAtom($stroe.remoteShellShow);
+    const [sshInfo, setSSHInfo] = useAtom<any>($stroe.sshInfo);
 
     const  switchGridView = unsing_switch_grid_view()
 

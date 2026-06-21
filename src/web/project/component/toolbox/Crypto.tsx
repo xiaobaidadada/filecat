@@ -11,7 +11,7 @@ import {Rows} from "../../../meta/component/Table";
 import {Card} from "../../../meta/component/Card";
 import {cryptoHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {copyToClipboard} from "../../util/FunUtil";
@@ -22,7 +22,7 @@ export function Crypto() {
     const [method, set_method] = useState('rsa'); // 算法
     const [form, set_form] = useState('pem') // 格式
     const {t, i18n} = useTranslation();
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
     const [publicKey, set_publicKey] = useState('');
     const [privateKey, set_privateKey] = useState('');
 

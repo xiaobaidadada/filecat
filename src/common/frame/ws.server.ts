@@ -4,11 +4,12 @@ import {CmdType, protocolIsProto2, WsConnectType, WsData} from "./WsData";
 import {RCode} from "../Result.pojo";
 import {generateRandomHash} from "../StringUtil";
 import {heart_interval, max_heart_interval} from "./constant";
+import {wss_interface} from "./type";
 
 const url = require('url');
 
 
-const allWssSet = new Set<Wss>;
+const allWssSet = new Set<wss_interface>;
 
 export class WsUtil {
 
@@ -22,7 +23,7 @@ export class WsUtil {
 }
 
 // 连接期间内一直存在
-export class Wss {
+export class Wss implements wss_interface{
 
     private _ws: WebSocket;
     // 0 是未验证,1是验证过的 目前不需要心跳
@@ -102,7 +103,7 @@ export class WsServer {
                 }
                 if (query['type'] === `${WsConnectType.data}`) {
                     // routerHandlerMap.get(CmdType.connection)!(ws,token);
-                    const wss = new Wss(ws);
+                    const wss:wss_interface = new Wss(ws);
                     allWssSet.add(wss);
                     wss.token = token;
                     let closed = false;

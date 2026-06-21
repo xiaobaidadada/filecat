@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {$stroe} from "../../../../util/store";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {FolderTree} from "./Tree/FolderTree";
@@ -25,7 +25,7 @@ const Ace = React.lazy(() => import("../Ace"));
 
 
 export default function Studio(props) {
-    // const [studio, set_studio] = useRecoilState($stroe.studio);
+    // const [studio, set_studio] = useAtom($stroe.studio);
     const [list, set_list] = useState([]);
     const [pre_path, set_pre_path] = useState("")
     const [editorValue, setEditorValue] = useState("");
@@ -33,15 +33,15 @@ export default function Studio(props) {
     // const [edit_model, set_edit_model] = useState("text");
     const [edit_filename, set_edit_filename] = useState({path: "", name: ""});
     const [edit_file_path, set_edit_file_path] = useState("");
-    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
+    const [confirm, set_confirm] = useAtom($stroe.confirm);
     const [have_update, set_have_update] = useState(false);
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const [file_shell_hidden, set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
+    const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
+    const [file_shell_hidden, set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
     const studioDividerRef = useRef(null);
     const studio_nav_ref = useRef(null);
     const [drag, setShellDrag] = useState(false);
     const [nav_width, set_nav_width] = useState(16);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const {t} = useTranslation();
     const navigate = useNavigate();
 

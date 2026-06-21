@@ -9,7 +9,7 @@ import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../../util/config"
 import {RCode} from "../../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.req";
 import {GlobalContext} from "../../../GlobalProvider";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {UserAuth, UserData} from "../../../../../common/req/user.req";
@@ -30,10 +30,10 @@ import {editor_data} from "../../../util/store.util";
 export function TcpProxyServerClientSetting() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-    const [, set_confirm] = useRecoilState($stroe.confirm);
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
+    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [, set_confirm] = useAtom($stroe.confirm);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
 
     const [sync_task_list,set_sync_task_list] = useState<(tcp_proxy_sync_task_item & {ignore_text?: string})[]>([])
 

@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import React, {useEffect, useState} from "react";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
 import {CmdType, WsData} from "../../../../../../common/frame/WsData";
 import {ws} from "../../../../util/ws";
@@ -34,7 +34,7 @@ let input_page_num = -1;
 
 export default function WorkFlow(props) {
     const {t} = useTranslation();
-    const [workflow_show,set_workflow_show] = useRecoilState($stroe.workflow_show);
+    const [workflow_show,set_workflow_show] = useAtom($stroe.workflow_show);
     const [task_rows,set_task_rows] = useState([]);
     const [job_list,set_job_list] = useState([])
     const [shellShow,setShellShow] = useState(false);

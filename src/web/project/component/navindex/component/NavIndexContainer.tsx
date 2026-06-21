@@ -4,7 +4,7 @@ import {getByListRandom, getNewDeleteByList} from "../../../../../common/ListUti
 import {InputText, InputTextIcon} from "../../../../meta/component/Input";
 import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
 import {useLocation, useNavigate} from "react-router-dom";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
 
@@ -58,7 +58,7 @@ export function NavIndexContainer(props: {
     const {t} = useTranslation();
     const [edit_index, setEdit_index] = useState<number[]>([]);
 
-    const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useRecoilState($stroe.nav_index_add_item_by_now_list);
+    const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useAtom($stroe.nav_index_add_item_by_now_list);
 
 
     const handleDragStart = (event, index) => {

@@ -1,9 +1,9 @@
-import {Wss} from "./ws.server";
 import {RCode} from "../Result.pojo";
 import {DataEncode} from "./data.encode";
 import {FileCompressPojo, LogViewerPojo} from "../file.pojo";
 import {WorkFlowRealTimeOneReq} from "../req/file.req";
 import {ShellInitPojo} from "../req/ssh.pojo";
+import {wss_interface} from "./type";
 // import WebSocket from 'ws'; // 浏览器不能用
 
 export const protocolIsProto2 = true;
@@ -240,7 +240,7 @@ export class WsData<T> {
     public cmdType: CmdType;
     public context: T|any;
     public bin_context: Uint8Array;
-    public wss:Wss;
+    public wss:wss_interface;
     public client_wss:WebSocket;
     public code:RCode; // 只有返回的时候用
     public message:string; // 只有返回的时候用 错误时候的信息

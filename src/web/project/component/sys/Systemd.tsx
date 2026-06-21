@@ -8,7 +8,7 @@ import {ws} from "../../util/ws";
 import {InputText} from "../../../meta/component/Input";
 import {ActionButton, ButtonLittleStatus} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {useTranslation} from "react-i18next";
 import {formatFileSize} from "../../../../common/ValueUtil";
@@ -28,8 +28,8 @@ export function Systemd(props) {
     const { t } = useTranslation();
     const {check_user_auth} = use_auth_check();
 
-    const [shellShow, setShellShow] = useRecoilState($stroe.systemd_shell_show);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+    const [shellShow, setShellShow] = useAtom($stroe.systemd_shell_show);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
 
     const [headers, setHeaders] = useState(["pid","name","process", t("创建用户"),t("内存"), t("cpu%"),t("active状态"), t("选择")]);
     const [systemd_headers, set_systemd_headers] = useState(["单元名字","加载状态", t("active(sub)状态"),t("描述"), t("选择")]);
@@ -46,7 +46,7 @@ export function Systemd(props) {
     const [filterKey,setFilterKey] = useState("");
     const [inside_systemd,set_inside_systemd] = useState(new Set());
 
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
 
     const init = async () => {
         setRows([]);

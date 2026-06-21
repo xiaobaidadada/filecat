@@ -1,7 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {NavItem, SiteIndexItem,} from "./NavIndexContainer";
-import {list} from "tar";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 
 
@@ -18,7 +17,7 @@ export function NavIndexItem(props: {
     item:SiteIndexItem
 }) {
 
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
 
     return <div>
         {props.div ?

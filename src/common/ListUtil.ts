@@ -95,22 +95,47 @@ export function webPathJoin(...pathList) {
     return webPath;
 }
 
+// 去掉字符串开头的所有 '/'
+function trimStart(str) {
+    let i = 0;
+    while (i < str.length && str[i] === '/') {
+        i++;
+    }
+    return str.slice(i);
+}
+
+// 去掉字符串结尾的所有 '/'
+function trimEnd(str) {
+    let i = str.length;
+    while (i > 0 && str[i - 1] === '/') {
+        i--;
+    }
+    return str.slice(0, i);
+}
+
 // 简单合并路径
 export function joinPaths(...parts) {
-    let p = parts[0];
-    for (let i = 1; i < parts.length; i++) {
-        if (parts[i][parts[i].length-1] === '/') {
-            p += parts[i];
-            continue
-        }
-        p += '/' + parts[i];
+    const list = parts
+        .filter(p => p !== undefined && p !== null && p !== '')
+        .map(p => String(p));
+
+    if (list.length === 0) {
+        return '';
     }
-    // return parts
-    //     // .map(part => part.replace(/\/+$/, ''))  // 移除结尾的斜杠
-    //     // .map(part => part.replace(/^\/+/, ''))  // 移除开头的斜杠
-    //     .filter(part => part)  // 移除空字符串
-    //     .join('/');  // 使用斜杠连接
-    return p;
+    if (list.length === 1) {
+        return list[0];
+    }
+    return list
+        .map((part, index) => {
+            if (index !== 0) {
+                part = trimStart(part); // 非首段去掉开头的 '/'
+            }
+            if (index !== list.length - 1) {
+                part = trimEnd(part); // 非末段去掉结尾的 '/'
+            }
+            return part;
+        })
+        .join('/');
 }
 
 // 获取特定下标下的元素

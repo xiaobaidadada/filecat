@@ -28,7 +28,7 @@
     cursor: pointer;
     opacity: 1;
     /* 之前给你的进阶丝滑过渡效果，这里默认带上 */
-    border-bottom: 2px solid transparent;
+    border-bottom: .15rem solid transparent;
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 

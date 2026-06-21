@@ -1,6 +1,6 @@
 import React from 'react';
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {MenuSelect} from "../../prompts/Prompt";
 import {Icon} from "../../../../meta/component/Button";
@@ -29,7 +29,7 @@ export default function SessionList({
     onShowUsageStats: (id: string) => void;
 }) {
     const {t} = useTranslation();
-    const [ai_session_collapsed, set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
+    const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
 
     return (
         <aside

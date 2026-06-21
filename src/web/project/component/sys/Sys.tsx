@@ -11,7 +11,7 @@ import {ActionButton, ButtonLittleStatus} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {RCode} from "../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {SysSoftware} from "../../../../common/req/setting.req";
 import {NotyFail} from "../../util/noty";
@@ -26,7 +26,7 @@ export function Sys(props) {
 
     const diskheaders = [t("名字"), t("厂商名称"), t("类型"), t("容量"),];
     const filediskheaders = [t("名字"), t("物理硬盘"), t("文件系统类型"), t("挂载位置"), t("总容量"), t("剩余容量")];
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
 
     const [memPercentage, setmemPercentage] = useState(0);
     const [memLeft, setMemLeft] = useState(0)
@@ -42,8 +42,8 @@ export function Sys(props) {
 
     const [diskList, setDiskList] = useState([]);
     const [fileDiskList, setFileDiskList] = useState([]);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
-    const [disk_check, set_disk_check] = useRecoilState($stroe.disk);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
+    const [disk_check, set_disk_check] = useAtom($stroe.disk);
 
     const  get_real_time_info = async ()=>{
         if (!real_time_p) {

@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {fileHttp} from "../../util/config";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
@@ -9,9 +9,9 @@ import {useTranslation} from "react-i18next";
 export function Paste(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [copyedFileList,setCopyedFileList] = useRecoilState($stroe.copyedFileList);
-    const [cutedFileList,setCutedFileList] = useRecoilState($stroe.cutedFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [copyedFileList,setCopyedFileList] = useAtom($stroe.copyedFileList);
+    const [cutedFileList,setCutedFileList] = useAtom($stroe.cutedFileList);
     const navigate = useNavigate();
 
     function cancel(){

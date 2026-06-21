@@ -15,6 +15,7 @@ import net from "net";
 import {server_key} from "./tcp.forward.server.service";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {TcpForwardUtil} from "./tcp.forward.util";
+import {wss_interface} from "../../../common/frame/type";
 
 
 export class tcp_forward_server_service {
@@ -176,7 +177,7 @@ export class tcp_forward_server_service {
 
 
 
-    wssSet: Set<Wss> = new Set();
+    wssSet: Set<wss_interface> = new Set();
     // client_staus:boolean = false;
 
     push_client_status( ){

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {NotyFail, NotySucess} from "../../../util/noty";
@@ -18,7 +18,7 @@ import {useTranslation} from "react-i18next";
 export function VideoTrans(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [items, setItems,] = useState([{r:`${t("转到")}mp4`,v:"mp4"},{r:`${t("转到")}flv`,v:"flv"},{r:t("自定义"),v:""}]);
     const [prompt, setPrompt] = useState("");
     const [newFileName, setNewFileName] = useState("");

@@ -3,6 +3,7 @@ import SimpleRoutes from "./SimpleRoutes";
 import {Nav, NavProps} from "./NavProps";
 import {Main} from "./Main";
 import {flatten} from "../../project/util/ListUitl";
+import {joinPaths} from "../../../common/ListUtil";
 
 export const CommonBody: React.FC<NavProps> = (props:NavProps) => {
     const hidden_navList= props.hidden_navList && flatten(props.hidden_navList)
@@ -17,13 +18,13 @@ export const CommonBody: React.FC<NavProps> = (props:NavProps) => {
         {/*网页主要内容 | 不管什么位置都是位于右边*/}
         {/*{JSON.stringify(flatten(props.list).map(v=>v.rto+"*"))}*/}
         <Main >
-            <SimpleRoutes rtos={navRouteList.map(v=>v.rto+"*")}>
+            <SimpleRoutes rtos={navRouteList.map(v=>joinPaths(v.rto,"*"))}>
                 {navRouteList.map(v => <React.Fragment key={v.rto}>{v.component}</React.Fragment>)}
             </SimpleRoutes>
             {
                hidden_navList &&
                 // 没有按钮的路由
-                <SimpleRoutes rtos={hidden_navList.map(v=>v.rto+"*")}>
+                <SimpleRoutes rtos={hidden_navList.map(v=>joinPaths(v.rto,"*"))}>
                     {hidden_navList.map(v=> <React.Fragment key={v.rto} >{v.component}</React.Fragment>)}
                 </SimpleRoutes>
             }

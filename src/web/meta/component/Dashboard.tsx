@@ -1,8 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link, NavLink, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
 import SimpleRoutes from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
 import { have_key_by_router_key_list} from "../../project/util/WebPath";
+import {joinPaths, webPathJoin} from "../../../common/ListUtil";
 // 1. 定义每个配置项的类型，支持传入 React 组件
 export interface MenuOption {
     rto: string;
@@ -11,57 +12,49 @@ export interface MenuOption {
     index?: number;
 }
 
-export function Menu(props: {
-    optionList: MenuOption[];
-}) {
+export function Menu(props: { optionList: MenuOption[], father_route: string }) {
+
     const optionList = [...props.optionList].sort(
         (a, b) => (a.index ?? 0) - (b.index ?? 0)
     );
     const components = optionList.map(v=>v.component);
     const have_key = have_key_by_router_key_list(props.optionList.map(v=>v.rto))
+
     return (
-        <div className={"dashboard"}>
-            {/* 菜单 */}
-            <div className={"menu not-select-div"}>
-                <div className={"wrapper"}>
+        <div className="dashboard">
+            <div className="menu not-select-div">
+                <div className="wrapper">
                     <ul>
-                        {optionList.map((v, index) => (
-                            <NavLink
-                                key={index}
-                                to={`${v.rto}`.replace(/\*$/, "")}
-                                end={v.rto === "/"} // 根路径精确匹配
-                                className={({ isActive }) =>
-                                {
-                                    if(have_key === false && index === 0) {
-                                        isActive = true
+                        {optionList.map((v, index) => {
+                            const isDefaultActive = have_key === false && index === 0;
+                            return (
+                                <NavLink
+                                    key={v.rto}
+                                    to={joinPaths(props.father_route,v.rto)}
+                                    // 根据需要设置 end
+                                    end={v.rto === "/"}
+                                    className={({ isActive }) =>
+                                        `${isActive || isDefaultActive ? "active-link" : ""}`.trim()
                                     }
-                                    return isActive ? "active-link" : ""
-                                }
-                                }
-                            >
-                                {({ isActive }) => {
-                                    if(have_key === false && index === 0) {
-                                        isActive = true
-                                    }
-                                    return (
-                                        <li className={isActive ? "active" : ""}>
+                                >
+                                    {({ isActive }) => (
+                                        <li className={isActive || isDefaultActive ? "active" : ""}>
                                             {v.name}
                                         </li>
-                                    )
-                                }}
-                            </NavLink>
-                        ))}
+                                    )}
+                                </NavLink>
+                            );
+                        })}
                     </ul>
                 </div>
             </div>
 
-            {/*标签内容路由*/}
-            <div className={" scroll-div-y "}>
-                <div style={{
-                    padding:".5rem"
-                }}>
-                    <SimpleRoutes rtos={props.optionList.filter(v=>!!v).map(value => value.rto)}
-                                  children={components}/>
+            <div className="scroll-div-y">
+                <div style={{ padding: ".5rem" }}>
+                    <SimpleRoutes
+                        rtos={optionList.map(v => joinPaths(v.rto,"*"))}
+                        children={components}
+                    />
                 </div>
             </div>
         </div>

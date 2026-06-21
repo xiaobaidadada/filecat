@@ -4,7 +4,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {FileTypeEnum} from "../../../../common/file.pojo";
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {use_auth_check, user_click_file} from "../../util/store.util";
@@ -39,30 +39,30 @@ export function FileMenu() {
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
 
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    // const [fileType, setFileType] = useRecoilState($stroe.fileShowType);
-    const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
-    const [copyedFileList, setCopyedFileList] = useRecoilState($stroe.copyedFileList);
-    const [cutedFileList, setCutedFileList] = useRecoilState($stroe.cutedFileList);
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    // const [windows_width, set_windows_width] = useRecoilState($stroe.windows_width);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    // const [fileType, setFileType] = useAtom($stroe.fileShowType);
+    const [uploadFiles, setUploadFiles] = useAtom($stroe.uploadFiles);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [copyedFileList, setCopyedFileList] = useAtom($stroe.copyedFileList);
+    const [cutedFileList, setCutedFileList] = useAtom($stroe.cutedFileList);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
+    // const [windows_width, set_windows_width] = useAtom($stroe.windows_width);
 
-    const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
-    const [file_root_path, setFile_root_path] = useRecoilState($stroe.file_root_index);
+    const [file_paths, setFile_paths] = useAtom($stroe.file_root_list);
+    const [file_root_path, setFile_root_path] = useAtom($stroe.file_root_index);
     const [itemWidth, setItemWidth] = useState(undefined);
     const [search, setSearch] = useState("");
-    const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_show);
-    const [workflow_realtime_show, set_workflow_realtime_show] = useRecoilState($stroe.workflow_realtime_show);
-    const [workflow_show_click, set_workflow_show_click] = useRecoilState($stroe.work_flow_show);
+    const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_show);
+    const [workflow_realtime_show, set_workflow_realtime_show] = useAtom($stroe.workflow_realtime_show);
+    const [workflow_show_click, set_workflow_show_click] = useAtom($stroe.work_flow_show);
 
     const {initUserInfo} = useContext(GlobalContext);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {click_file} = user_click_file();
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const file_num = useMemo(() => {
         return nowFileList.files.reduce(
             (count, v) => count + (v.type !== FileTypeEnum.folder ? 1 : 0),
@@ -317,17 +317,17 @@ export function FileMenu() {
 
 
 export function use_handleContextMenu() {
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {t} = useTranslation();
     const {check_user_auth} = use_auth_check();
-    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
+    const [router_jump, set_router_jump] = useAtom($stroe.router_jump);
     const navigate = useNavigate();
     const {initUserInfo} = useContext(GlobalContext);
 
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const [blankSearchMode, setBlankSearchMode] = useRecoilState($stroe.blank_search_mode);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
+    const [blankSearchMode, setBlankSearchMode] = useAtom($stroe.blank_search_mode);
 
     return (event) =>{
         event.preventDefault();

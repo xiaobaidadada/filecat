@@ -1,12 +1,12 @@
 import React from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {useTranslation} from "react-i18next";
 import {Icon} from "../../../meta/component/Button";
 
 export function UploadFile(props) {
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const {t} = useTranslation();
     return (
         <div>

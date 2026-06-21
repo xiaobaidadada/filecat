@@ -1,6 +1,6 @@
 import React from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../common/file.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../common/ListUtil";
@@ -16,12 +16,12 @@ import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [confirm, set_confirm] = useAtom($stroe.confirm);
 
-    const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
+    const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const {click_file} = user_click_file();
     const {t} = useTranslation();
 
@@ -84,7 +84,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     }
 
     // 右键功能
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
 
 
     const handleContextMenu = (event, name, isDir, size) => {

@@ -1,21 +1,25 @@
-import {atom, RecoilState, useRecoilState} from 'recoil';
+// import {atom, RecoilState, useAtom} from 'recoil';
+import { atom } from 'jotai';
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {DirListShowTypeEmum, UserBaseInfo, UserData} from "../../../common/req/user.req";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 import {http_download_map} from "../../../common/req/net.pojo";
 import {PromptEnum} from "../component/prompts/Prompt";
+import {atomWithStorage} from "jotai/utils";
 
-const localStorageEffect = key => ({setSelf, onSet}) => {
-    const savedValue = localStorage.getItem(key);
-    if (savedValue != null) {
-        setSelf(JSON.parse(savedValue));
-    }
+// const localStorageEffect = key => ({setSelf, onSet}) => {
+//     const savedValue = localStorage.getItem(key);
+//     if (savedValue != null) {
+//         setSelf(JSON.parse(savedValue));
+//     }
+//
+//     onSet(newValue => {
+//         localStorage.setItem(key, JSON.stringify(newValue));
+//     });
+// };
 
-    onSet(newValue => {
-        localStorage.setItem(key, JSON.stringify(newValue));
-    });
-};
+const default_v:any = null
 
 export class ShowPromptData {
     show: boolean;
@@ -32,361 +36,148 @@ export class SqliteQueryContext {
 
 export const $stroe = {
     // 当前的所有文件
-    nowFileList: atom({
-        key: 'nowFileList', // 唯一标识符，用于区分不同的原子状态
-        default: {
-            folders: [{name: "文件夹1"}, {name: "文件夹2"}],
-            files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
-        } as GetFilePojo // 初始值
+    nowFileList: atom<GetFilePojo>({
+        folders: [{name: "文件夹1"}, {name: "文件夹2"}],
+        files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
     }),
     // 当前因为各种原因正在运行的文件
-    to_running_files:atom({
-       key: 'to_running_files',
-       default: new Set<string>(),
-    }),
+    to_running_files: atom<Set<string>>(new Set<string>()),
     // 按下的键盘按键
-    enterKey: atom({
-        key: "enterKey",
-        default: ""
-    }),
+    enterKey: atom<string>(""),
     // 选中的文件 下标
-    selectedFileList: atom({
-        key: 'selectedFileList', // 唯一标识符，用于区分不同的原子状态
-        default: [] // 初始值
-    }),
+    selectedFileList: atom<number[]>([]),
     // 选中要被复制的文件名列表 不是下标
-    copyedFileList: atom({
-        key: 'copyedFileList', // 唯一标识符，用于区分不同的原子状态
-        default: [] // 初始值
-    }),
+    copyedFileList: atom<string[]>([]),
     // 剪切
-    cutedFileList: atom({
-        key: 'cutedFileList', // 唯一标识符，用于区分不同的原子状态
-        default: [] // 初始值
-    }),
+    cutedFileList: atom<string[]>([]),
     // 临时作为单击和双击判断条件 下标
-    clickFileList: atom({
-        key: 'clickFileList', // 唯一标识符，用于区分不同的原子状态
-        default: [] // 初始值
-    }),
+    clickFileList: atom<number[]>([]),
     // 目前只用于 shell远程文件操作，控制当前目录的进退
-    shellNowDir: atom({
-        key: 'shellNowDir',
-        default: []
-    }),
-    // fileShowType: atom({
-    //     key: 'fileShowType',
-    //     default: ""
-    // }),
+    shellNowDir: atom<string[]>([]),
 
     // 上传队列中的文件
-    uploadFiles: atom({
-        key: 'uploadFiles',
-        default: []
-    }),
+    uploadFiles: atom<any[]>([]),
     // 一次上传一个文件，当前文件的上传进度
-    nowProgress: atom({
-        key: 'nowProgress',
-        default: {
-            name: '',
-            value: 1,
-            index: 0
-        }
+    nowProgress: atom<{name: string, value: number, index: number}>({
+        name: '',
+        value: 1,
+        index: 0
     }),
     // 通用 prompt 是否显示
-    showPrompt: atom(
-        {
-            key: 'showPrompt',
-            default: new ShowPromptData()
-        }
-    ),
+    showPrompt: atom<any>(new ShowPromptData()),
     // 通用确认
-    confirm: atom({
-        key: 'confirm',
-        default: {
-            open: false,
-            handle: null
-        } as {
-            open: boolean,
-            handle: () => void,
-            title?: string,
-            sub_title?: string,
-            context_div?: any
-        }
+    confirm: atom<{open: boolean, handle: (() => void) | null, title?: string, sub_title?: string, context_div?: any}>({
+        open: false,
+        handle: null
     }),
     // 通用卡片
-    prompt_card: atom({
-        key: "prompt_card",
-        default: {open: false} as {
-            context_div?: any,
-            open: boolean,
-            title?: string,
-            cancel?:()=>any
-            confirm?:()=>any
-        }
+    prompt_card: atom<{open: boolean, context_div?: any, title?: string, cancel?: () => any, confirm?: () => any}>({
+        open: false
     }),
     // 编辑器设置
-    editorSetting: atom({
-        key: 'editorSetting',
-        default: {
-            model: 'text',
-            open: false,
-            fileName: '',
-            save: null,
-            can_format: false
-        } as {
-            menu_list?: any[],
-            model?: string,
-            open?: boolean,
-            fileName?: string,
-            save?: any,
-            opt_shell?: boolean,
-            can_format?: boolean,
-            close?:()=>any
-        }
+    editorSetting: atom<{menu_list?: any[], model?: string, open?: boolean, fileName?: string, save?: any, opt_shell?: boolean, can_format?: boolean, close?: () => any}>({
+        model: 'text',
+        open: false,
+        fileName: '',
+        save: null,
+        can_format: false
     }),
-    windows_width:atom({
-       key: 'windows_width',
-       default: {
-           width: window.innerWidth,
-           is_mobile: window.innerWidth <= 736,
-       }
+    windows_width: atom<{width: number, is_mobile: boolean}>({
+        width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+        is_mobile: typeof window !== 'undefined' ? window.innerWidth <= 736 : false,
     }),
     // shell是否开启 并传递初始目录
-    fileShellShow: atom({
-        key: "shellShow",
-        default: {
-            show: false,
-            path: '',
-            cmd:""
-        } as {
-            show: boolean,
-            path: string,
-            cmd?:string
-        }
+    fileShellShow: atom<{show: boolean, path: string, cmd?: string}>({
+        show: false,
+        path: '',
+        cmd: ""
     }),
     // 只是隐藏不消失
-    file_shell_hidden: atom({
-        key: 'file_shell_hidden',
-        default: undefined
-    }),
+    file_shell_hidden: atom<any | undefined>(default_v),
     // 远程shell是否开启
-    remoteShellShow: atom({
-        key: "remoteShellShow",
-        default: {
-            show: false,
-            path: ''
-        }
+    remoteShellShow: atom<{show: boolean, path: string}>({
+        show: false,
+        path: ''
     }),
     // docker 的shell是否开启
-    dockerShellShow: atom({
-        key: 'dockerShellShow',
-        default: {
-            type: "", // print exec
-            show: false,
-            dockerId: ""
-        }
+    dockerShellShow: atom<{type: string, show: boolean, dockerId: string}>({
+        type: "",
+        show: false,
+        dockerId: ""
     }),
     // systemd 的shell是否开启
-    systemd_shell_show: atom({
-        key: 'systemd_shell_show',
-        default: {
-            show: false,
-            unit_name: ""
-        }
+    systemd_shell_show: atom<{show: boolean, unit_name: string}>({
+        show: false,
+        unit_name: ""
     }),
     // 日志 文件
-    log_viewer: atom({
-       key: 'log_viewer',
-       default: {} as {
-           show: boolean,
-           fileName?: string,
-           encoding?: string
-       }
+    log_viewer: atom<{show: boolean, fileName?: string, encoding?: string}>({
+        show: false
     }),
     // ssh工具连接信息
-    sshInfo: atom({
-        key: 'sshInfo',
-        default: {},
-        effects: [
-            localStorageEffect("linux_key")
-        ]
-    }),
+    sshInfo: atomWithStorage("linux_key", {} as any),
     // 文件根路径主
-    file_root_index: atom({
-        key: 'file_root_index',
-        default: null,
-        effects: [
-            localStorageEffect("file_root_index")
-        ]
-    }),
+    file_root_index: atomWithStorage<number | null>("file_root_index", default_v),
     // root根路径
-    file_root_list: atom({
-        key: 'file_root_list',
-        default: [],
-        effects: [
-            localStorageEffect("file_root_list")
-        ]
-    }),
+    file_root_list: atomWithStorage<any[]>("file_root_list", []),
     // 用户基本信息
-    user_base_info: atom({
-        key: 'user_base_info',
-        default: {
-            user_data: new UserData(),
-            sysSoftWare:{}
-        } as UserBaseInfo,
-        effects: [
-            localStorageEffect("user_base_info")
-        ]
+    user_base_info: atomWithStorage<UserBaseInfo|any>("user_base_info", {
+        user_data: new UserData(),
+        sysSoftWare: {}
     }),
     // 自定义选项
-    custom_fun_opt: atom({
-       key: 'custom_fun_opt',
-       default: null,
-       effects: [
-           localStorageEffect("custom_fun_opt")
-       ]
-    }),
+    custom_fun_opt: atomWithStorage<any>("custom_fun_opt", default_v),
     // 头部菜单状态
-    header_min: atom({
-        key: 'header_min',
-        default: false
-    }),
+    header_min: atom<boolean>(false),
     // 文件预览
-    file_preview: atom({
-        key: 'file_preview',
-        default: {open: false} as { open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string,close?:()=>any },
+    file_preview: atom<{open: boolean, type?: FileTypeEnum, name?: string, url?: string, context?: string, close?: () => any}>({
+        open: false
     }),
     // 分享页文件时间排序方式
-    share_sort_type: atom({
-        key: 'share_sort_type',
-        default: DirListShowTypeEmum.time_max_min
-    }),
+    share_sort_type: atom<any>(DirListShowTypeEmum.time_max_min),
     // md预览
-    markdown: atom({
-        key: 'markdown',
-        default: {} as { filename?: string, context?: string,close?:()=>any },
-    }),
+    markdown: atom<{filename?: string, context?: string, close?: () => any}>({}),
     // sqlite 查询页上下文
-    sqlite_query_context: atom({
-        key: 'sqlite_query_context',
-        default: new SqliteQueryContext(),
-        effects: [
-            localStorageEffect("sqlite_query_context")
-        ]
-    }),
+    sqlite_query_context: atomWithStorage<any>("sqlite_query_context", new SqliteQueryContext()),
     // 编辑器
-    studio: atom({
-        key: 'studio',
-        default: {} as { folder_path?: string, name?: string }
-    }),
+    studio: atom<{folder_path?: string, name?: string}>({}),
     // 图片编辑器
-    image_editor: atom({
-        key: 'image_editor',
-        default: {} as { path?: string, name?: string }
-    }),
+    image_editor: atom<{path?: string, name?: string}>({}),
     // excalidraw编辑器
-    excalidraw_editor: atom({
-        key: 'excalidraw_editor',
-        default: {} as { url?: string, name?: string ,close?:()=>any}
-    }),
+    excalidraw_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
     // 磁盘
-    disk: atom({
-        key: "disk",
-        default: {
-            type: ""
-        } as { type?: string, data?: DiskDevicePojo }
+    disk: atom<{type?: string, data?: DiskDevicePojo}>({
+        type: ""
     }),
     // 导航列表当前插入元素
-    nav_index_add_item_by_now_list: atom({
-        key: 'nav_index_add_item_by_now_list',
-        default: undefined as any
-    }),
+    nav_index_add_item_by_now_list: atom<any>(default_v),
     // workflow
-    workflow_show:atom({
-        key: 'workflow_show',
-        default: false
-    }),
-    workflow_realtime_show:atom({
-        key: 'workflow_realtime_show',
-        default: {} as {open:boolean,filename?:string}
-    }),
+    workflow_show: atom<boolean>(false),
+    workflow_realtime_show: atom<{open: boolean, filename?: string}>({open: false}),
     // nav 效果
-    nav_style:atom({
-        key: 'nav_style',
-        default: {
-            mobile_open: false,
-            pc_collapsed: false,
-        } as {
-            mobile_open?: boolean,
-            pc_collapsed?: boolean,
-        }
-        ,
-        effects: [
-            localStorageEffect("nav_style")
-        ]
+    nav_style: atomWithStorage<{mobile_open?: boolean, pc_collapsed?: boolean}>("nav_style", {
+        mobile_open: false,
+        pc_collapsed: false,
     }),
     // router jump 跳转资源
-    router_jump : atom({
-        key: 'router_jump',
-        default: {} as {
-            page_self_router_api_data?:any; // 页面资源路由添加
-            http_download_map_path?:string , //http代理下载资源路由添加
-        }
-    }),
+    router_jump: atom<{page_self_router_api_data?: any, http_download_map_path?: string}>({}),
     // 文件夹信息
-    folder_info_list_data: atom({
-        key:"folder_info_list_data",
-        default:[0,0]
-    }),
+    folder_info_list_data: atom<number[]>([0, 0]),
     // 用于分页的信息
-    file_page:atom({
-        key: 'file_page',
-        default:{
-            page_size:200,
-            page_num:1
-        }
+    file_page: atom<{page_size: number, page_num: number}>({
+        page_size: 200,
+        page_num: 1
     }),
     // workflow展示
-    work_flow_show:atom({
-        key: 'work_flow_show',
-        default: false as boolean
-    }),
+    work_flow_show: atom<boolean>(false),
     // 文件单元的长度
-    file_item_width_atom:atom({
-        key: 'file_item_width_atom',
-        default: 0
-    }),
+    file_item_width_atom: atom<number>(0),
     // 文件列表缩放
-    zoom_style_by_percent:atom(
-        {
-            key: 'zoom_style_by_percent',
-            default: 100 // 0 - 100
-        }
-    ),
+    zoom_style_by_percent: atom<number>(100),
     // ai 会话列表
-    ai_session_collapsed:atom({
-        key: 'ai_session_collapsed',
-        default: false as boolean,
-        effects: [
-            localStorageEffect("ai_session_collapsed")
-        ]
-    }),
-    // 空白搜索模式 - 进入目录时自动以空白搜索方式打开
-    blank_search_mode: atom({
-        key: 'blank_search_mode',
-        default: false as boolean,
-        effects: [
-            localStorageEffect("blank_search_mode")
-        ]
-    }),
+    ai_session_collapsed: atomWithStorage<boolean>("ai_session_collapsed", false),
+    // 空白搜索模式
+    blank_search_mode: atomWithStorage<boolean>("blank_search_mode", false),
     // AI 聊天请求类型选择
-    ai_request_type: atom({
-        key: 'ai_request_type',
-        default: 'completions' as string,
-        effects: [
-            localStorageEffect("ai_request_type")
-        ]
-    }),
-}
-
+    ai_request_type: atomWithStorage<string>("ai_request_type", 'completions')
+};

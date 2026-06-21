@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
@@ -26,7 +26,7 @@ export default function Rtsp() {
 
     const [address, setAddress] = useState(undefined);
     const [status, setStatus] = useState<boolean>(false);
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
 
     const videoRef = useRef(null);

@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
@@ -33,9 +33,9 @@ import {Icon} from "../../../../meta/component/Button";
 
 
 export function FileMenu() {
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {t} = useTranslation();
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
@@ -116,15 +116,15 @@ export function FileMenu() {
         }
     }
     const [items, setItems,] = useState(show_items);
-    // const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    // const [studio, set_studio] = useRecoilState($stroe.studio);
+    // const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
+    // const [studio, set_studio] = useAtom($stroe.studio);
     const {click_file} = user_click_file();
-    const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
-    const [shell_file_log, set_file_log] = useRecoilState($stroe.log_viewer);
-    const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_realtime_show);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
+    const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
+    const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_realtime_show);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const {initUserInfo} = useContext(GlobalContext);
-    const [folder_info_list_data, set_folder_info_list_data] = useRecoilState($stroe.folder_info_list_data);
+    const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
 
 
     const items_folder = [{r: t("以studio打开"), v: common_menu_type.sutdio}, {

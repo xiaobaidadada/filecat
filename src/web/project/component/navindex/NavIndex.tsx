@@ -1,7 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {NavIndexContainer} from "./component/NavIndexContainer";
 import {PromptEnum} from "../prompts/Prompt";
-import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
 import {navHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -10,13 +9,14 @@ import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import { useAtom } from 'jotai';
 
 
 
 export default function NavIndex() {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const {check_user_auth} = use_auth_check();
 
     const add =  ()=>{

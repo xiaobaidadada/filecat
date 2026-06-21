@@ -11,7 +11,7 @@ import {TableListRender} from "./component/TableListRend";
 import {useTranslation} from "react-i18next";
 import {CustomerApiRouter} from "./CustomerApiRouter";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotyWaring} from "../../util/noty";
 import Header from "../../../meta/component/Header";
@@ -19,8 +19,8 @@ import Header from "../../../meta/component/Header";
 
 export function CustomerRouter() {
     const {t} = useTranslation();
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [router_jump, set_router_jump] = useAtom($stroe.router_jump);
 
     const headers = [t("路由"), t("路径"), t("过期时间(s)"),t("备注"),];
     const headers_workflow = [t("路由"), t("文件路径"),"token","user id", t("备注"),];

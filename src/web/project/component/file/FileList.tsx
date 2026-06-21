@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate} from "react-router-dom";
@@ -44,31 +44,31 @@ const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowR
 let pre_search: GetFilePojo;
 
 export default function FileList() {
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
-    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
+    const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
 
     let location = useLocation();
     const navigate = useNavigate();
 
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [shellShow, setShellShow] = useRecoilState($stroe.fileShellShow);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
     const [search, setSearch] = useState("");
-    const [workflow_show, set_workflow_show] = useRecoilState($stroe.workflow_show);
-    const [workflow_realtime_show, set_workflow_realtime_show] = useRecoilState($stroe.workflow_realtime_show);
-    const [workflow_show_click, set_workflow_show_click] = useRecoilState($stroe.work_flow_show);
+    const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_show);
+    const [workflow_realtime_show, set_workflow_realtime_show] = useAtom($stroe.workflow_realtime_show);
+    const [workflow_show_click, set_workflow_show_click] = useAtom($stroe.work_flow_show);
 
     const {initUserInfo} = useContext(GlobalContext);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {click_file} = user_click_file();
-    const [to_running_files_set, set_to_running_files_set] = useRecoilState($stroe.to_running_files);
+    const [to_running_files_set, set_to_running_files_set] = useAtom($stroe.to_running_files);
 
-    const [file_page, set_file_page] = useRecoilState($stroe.file_page);
-    const [blankSearchMode] = useRecoilState($stroe.blank_search_mode);
+    const [file_page, set_file_page] = useAtom($stroe.file_page);
+    const [blankSearchMode] = useAtom($stroe.blank_search_mode);
 
     const handleContextMenu = use_handleContextMenu()
 

@@ -3,7 +3,7 @@ import {Terminal} from '@xterm/xterm';
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 // import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
@@ -15,9 +15,9 @@ const ShellLazy = React.lazy(() => import("./ShellLazy"))
 
 export default function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
-    const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
-    const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [shellShow,setShellShow] = useAtom($stroe.fileShellShow);
+    const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const color =  userInfo.user_data.theme?.includes("dark")?"#FFFFFF":"#000000";
     useCmdConfirm();
     const initTerminal =  async () => {

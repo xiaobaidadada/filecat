@@ -9,7 +9,7 @@ import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../../util/config"
 import {RCode} from "../../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.req";
 import {GlobalContext} from "../../../GlobalProvider";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {NotyFail, NotySucess} from "../../../util/noty";
 import {
@@ -25,8 +25,8 @@ import {CmdType} from "../../../../../common/frame/WsData";
 export function TcpProxyServerSetting() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     const [isOpen, setIsOpen] = useState(false);
     const [online_server,set_online_server] = useState<server_client_proxy[]>([])

@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {ws} from '../../util/ws';
 import {CmdType, WsData} from '../../../../common/frame/WsData';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {Button} from "../../../meta/component/Button";
 
@@ -12,7 +12,7 @@ interface ConfirmRequest {
 }
 
 export function useCmdConfirm() {
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const {t} = useTranslation();
     
     // 使用 useRef 存储队列和处理状态，避免闭包问题

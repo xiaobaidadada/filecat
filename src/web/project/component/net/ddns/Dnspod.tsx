@@ -10,7 +10,7 @@ import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type} from "../.
 import {useTranslation} from "react-i18next";
 import Header from "../../../../meta/component/Header";
 import {PromptEnum} from "../../prompts/Prompt";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {NotySucess} from "../../../util/noty";
 
@@ -22,8 +22,8 @@ export function Dnspod(props: any) {
     const [id, setId] = useState("");
     const [token, setToken] = useState("");
     const [isOpen, setIsOpen] = useState(false);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [confirm, set_confirm] = useAtom($stroe.confirm);
 
     useEffect(() => {
         (async () => {

@@ -9,7 +9,7 @@ import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
 import {HttpProxy, HttpServerProxy, MacProxy, TcpProxyITem} from "../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {SysEnum} from "../../../../common/req/user.req";
 import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
@@ -26,9 +26,9 @@ export function NetProxy(props) {
     const [enabled, setEnabled] = useState(false);
     const [useForLocal, setUseForLocal] = useState<boolean>(false);
     const [httpServer, setHttpServer] = useState<HttpServerProxy>({port: 0, open: false, list: []});
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
 
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     // tcp代理
     const tcp_proxy_list_header = [t("端口"), t("目标地址"), t("目标端口"), t("开启"), t("备注"), t("删除")];

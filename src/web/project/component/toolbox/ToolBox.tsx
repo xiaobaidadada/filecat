@@ -6,6 +6,7 @@ import {useTranslation} from "react-i18next";
 import {Crypto} from "./Crypto";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {routerConfig} from "../../../../common/RouterConfig";
 
 
 export default function ToolBox(props) {
@@ -23,7 +24,7 @@ export default function ToolBox(props) {
     }
 
     return (
-        <Menu optionList={menuRots}>
+        <Menu optionList={menuRots} father_route={routerConfig.toolbox}>
         </Menu>
 
     )

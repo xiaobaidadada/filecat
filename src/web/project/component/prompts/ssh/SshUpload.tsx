@@ -1,10 +1,9 @@
 import React, {useEffect} from 'react';
 import {ActionButton} from "../../../../meta/component/Button";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {fileHttp, sshHttp} from "../../../util/config";
-import {getNewDeleteByList, joinPaths} from "../../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useTranslation} from "react-i18next";
 
@@ -12,13 +11,13 @@ import {useTranslation} from "react-i18next";
 export function SshUpload() {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [open, setOpen] = React.useState(false);
-    const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
-    const [nowProgress, setNowProgress] = useRecoilState($stroe.nowProgress);
+    const [uploadFiles, setUploadFiles] = useAtom($stroe.uploadFiles);
+    const [nowProgress, setNowProgress] = useAtom($stroe.nowProgress);
 
-    const [sshInfo,setSSHInfo] = useRecoilState($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const [sshInfo,setSSHInfo] = useAtom($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
     const navigate = useNavigate();
     function click() {
         setOpen(!open);

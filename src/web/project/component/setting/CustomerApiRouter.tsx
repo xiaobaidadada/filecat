@@ -8,7 +8,7 @@ import {UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {Table} from "../../../meta/component/Table";
 import {TableListRender} from "./component/TableListRend";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
@@ -20,11 +20,11 @@ import {use_select_config} from "../../util/react.config";
 
 export function CustomerApiRouter() {
     const { t } = useTranslation();
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const select_list = use_select_config()
 
     const headers = [t("路由"),t("auth"),  t("备注"), ];
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
     const [rows, setRows] = useState([]);
     const getItems = async () => {
         const result = await settingHttp.get("api/customer_router");

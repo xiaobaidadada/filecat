@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
@@ -13,7 +13,7 @@ const Md = React.lazy(() => import("./markdown/Md"));
 
 export default function MarkDown(props) {
     const {t} = useTranslation();
-    const [markdown, set_markdown] = useRecoilState($stroe.markdown)
+    const [markdown, set_markdown] = useAtom($stroe.markdown)
     if (!markdown.context) {
         return;
     }

@@ -1,4 +1,4 @@
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {SysSoftware} from "../../../../common/req/setting.req";
 import React, {useEffect, useState} from "react";
@@ -8,7 +8,7 @@ import {settingHttp} from "../../util/config";
 
 
 export function using_env_prompt() {
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const { t, i18n } = useTranslation();
 
     return (id) => {

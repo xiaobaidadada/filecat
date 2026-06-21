@@ -42,7 +42,7 @@
   flex: 0 0 auto;
 }
 
-.header title {
+.header .title {
   display: block;
   flex: 1 1 auto;
   /*padding: 0 1em;*/

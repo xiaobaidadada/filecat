@@ -9,7 +9,7 @@ import { Rows, Table } from "../../../meta/component/Table";
 import { Card, TextTip } from "../../../meta/component/Card";
 import { netHttp } from "../../util/config";
 import { RCode } from "../../../../common/Result.pojo";
-import { useRecoilState } from "recoil";
+import { useAtom } from "jotai";
 import { $stroe } from "../../util/store";
 import { NotyFail, NotySucess } from "../../util/noty";
 import { copyToClipboard } from "../../util/FunUtil";
@@ -35,12 +35,12 @@ let respone_headers;
 
 export function Http() {
     const { t } = useTranslation();
-    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [confirm, set_confirm] = useAtom($stroe.confirm);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const { check_user_auth } = use_auth_check();
 
     const [status_body, set_status_body] = useState('');
-    const [router_jump, set_router_jump] = useRecoilState($stroe.router_jump);
+    const [router_jump, set_router_jump] = useAtom($stroe.router_jump);
 
     const [url_type, set_url_type] = useState('get');
     const [url, set_url] = useState('');
@@ -56,8 +56,8 @@ export function Http() {
     const [responseTabKey, setResponseTabKey] = useState("body"); // "body" | "headers"
 
     const [status_code, set_status_code] = useState();
-    const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useRecoilState($stroe.nav_index_add_item_by_now_list);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [nav_index_add_item_by_now_list, set_nav_index_add_item_by_now_list] = useAtom($stroe.nav_index_add_item_by_now_list);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     editor_data.set_value_temp("{}", 0);
     editor_data.set_value_temp("", 1);

@@ -1,5 +1,5 @@
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import React from "react";
 import {TextLine} from "../../../meta/component/Dashboard";
@@ -7,7 +7,7 @@ import { formatFileSize } from "../../../../common/ValueUtil";
 
 export function FolderInfo() {
     const { t } = useTranslation();
-    const [folder_info_list_data, setShowPrompt] = useRecoilState($stroe.folder_info_list_data);
+    const [folder_info_list_data, setShowPrompt] = useAtom($stroe.folder_info_list_data);
 
     return (<div className={"card floating"}>
         <div className="card-title">

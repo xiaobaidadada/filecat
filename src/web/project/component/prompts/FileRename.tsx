@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {InputText} from "../../../meta/component/Input";
 import {fileHttp} from "../../util/config";
@@ -12,9 +12,9 @@ import {CardPrompt} from "../../../meta/component/Card";
 export function FileRename(props) {
     const {t} = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
     const [name, setName] = useState("");
     const navigate = useNavigate();
     const location = useLocation();

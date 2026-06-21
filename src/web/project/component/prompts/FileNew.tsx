@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {InputText, Select} from "../../../meta/component/Input";
 import {fileHttp} from "../../util/config";
@@ -17,7 +17,7 @@ export function FileNew(props) {
     const { t } = useTranslation();
     const [format, setFormat] = useState("");
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [name, setName] = useState("");
     const navigate = useNavigate();
     const location = useLocation();

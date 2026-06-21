@@ -6,8 +6,9 @@ const TerserPlugin = require("terser-webpack-plugin");
 
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
+const {common_plugins} = require("./base.webpack.config");
 module.exports = {
-    mode: 'production',
+    mode: process.env.NODE_ENV === 'development' ? 'development' : 'production',
     entry: path.join(__dirname, "..", "..", "src", "web", "project", 'index.js'),
     output: {
         // path: path.resolve(__dirname, '..','..','dist'),
@@ -38,7 +39,13 @@ module.exports = {
             {
                 test: /workflow.yml/,
                 type: 'asset/source', // 直接把文件内容导出为字符串
-            }
+            },
+            {
+                test: /\.m?js/,
+                resolve: {
+                    fullySpecified: false, // 关闭对文件扩展名的严格要求
+                },
+            },
         ],
     },
     resolve: {
@@ -48,11 +55,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: path.join(__dirname, "..", "..", "src", "web", "project", 'index.html'),
         }),
-        new webpack.DefinePlugin({
-            'process.env': JSON.stringify(process.env),
-            'process.env.version': JSON.stringify(package_data.version),
-            'process.env.base_url': JSON.stringify(base_url),
-        }),
+        new webpack.DefinePlugin(common_plugins),
         // new BundleAnalyzerPlugin({
         //     analyzerMode: 'server',  // 启动本地服务器查看分析报告
         //     openAnalyzer: true,      // 是否自动打开浏览器
@@ -68,8 +71,8 @@ module.exports = {
     },
     devServer: {
         static: [
-            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
-            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev","locales"),},
+            // {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
+            // {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev","locales"),},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "proxy", "rdp", "client", "js")},

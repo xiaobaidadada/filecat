@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
 import {getRouterAfter, getRouterPath, getRouterPrePath} from "../../../../util/WebPath";
 import {fileHttp} from "../../../../util/config";
@@ -16,7 +16,7 @@ let filerobotImageEditor;
 const max_length = 1024 * 1000 ;
 
 export default function ImageEditor() {
-    const [image_editor, set_image_editor] = useRecoilState($stroe.image_editor);
+    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const navigate = useNavigate();
     const location = useLocation();
 

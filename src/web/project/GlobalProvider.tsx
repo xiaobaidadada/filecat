@@ -1,7 +1,7 @@
 // src/context/GlobalState.js
 import React, { createContext, useState } from 'react';
 import {UserBaseInfo} from "../../common/req/user.req";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "./util/store";
 import {fileHttp, settingHttp, userHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
@@ -15,10 +15,10 @@ export const GlobalContext = createContext(undefined);
 export const GlobalProvider = ({ children }) => {
     const [state, setState] = useState({} as UserBaseInfo);
 
-    const [file_paths, setFile_paths] = useRecoilState($stroe.file_root_list);
-    const [file_root_path,setFile_root_path] = useRecoilState($stroe.file_root_index);
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
-    const [zoomPercent, setZoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
+    const [file_paths, setFile_paths] = useAtom($stroe.file_root_list);
+    const [file_root_path,setFile_root_path] = useAtom($stroe.file_root_index);
+    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
+    const [zoomPercent, setZoomPercent] = useAtom($stroe.zoom_style_by_percent);
     const { t, i18n } = useTranslation();
 
     const getItems = async () => {

@@ -13,7 +13,7 @@ import {NavIndexContainer} from "../../navindex/component/NavIndexContainer";
 import {RemoteShell} from "../../shell/RemoteShell";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteLinuxFileList} from "./RemoteLinuxFileList";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../../../util/store.util";
@@ -36,8 +36,8 @@ export function RemoteLinux(props) {
     const [port,setPort] = useState(undefined);
     const [dir,setDir] = useState('');
     // const [status,setStatus] = useState<boolean>(false);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
     const {check_user_auth} = use_auth_check();
 
     const close = async () => {

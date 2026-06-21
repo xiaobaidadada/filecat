@@ -3,7 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 // import {Shell} from "./Shell";
 import {ShellInitPojo, SshPojo} from "../../../../common/req/ssh.pojo";
@@ -13,11 +13,11 @@ const ShellLazy = React.lazy(() => import("./ShellLazy"))
 
 export function RemoteShell(props) {
     const [terminalState,setTerminalState] = useState(null)
-    const [shellShow,setShellShow] = useRecoilState($stroe.remoteShellShow);
+    const [shellShow,setShellShow] = useAtom($stroe.remoteShellShow);
     const [shellShowInit,setShellShowInit] = useState(false);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const color =  userInfo.user_data.theme?.includes("dark" )?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
         const terminal = new Terminal({

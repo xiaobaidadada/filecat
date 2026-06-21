@@ -1,21 +1,20 @@
 import React, {useEffect} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useNavigate} from "react-router-dom";
-import {joinPaths} from "../../../../../common/ListUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {useTranslation} from "react-i18next";
 
 export function SshPaste(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [copyedFileList,setCopyedFileList] = useRecoilState($stroe.copyedFileList);
-    const [cutedFileList,setCutedFileList] = useRecoilState($stroe.cutedFileList);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [copyedFileList,setCopyedFileList] = useAtom($stroe.copyedFileList);
+    const [cutedFileList,setCutedFileList] = useAtom($stroe.cutedFileList);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
     const navigate = useNavigate();
 
     function cancel(){

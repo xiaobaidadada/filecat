@@ -2,7 +2,7 @@ import CookieUtils from "../util/cookie";
 
 Global.init();
 import React, {useContext, useEffect, useState} from 'react'
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {InputPassword, InputText} from "../../meta/component/Input";
 import {Button} from "../../meta/component/Button";
 import {useNavigate} from "react-router-dom";
@@ -21,7 +21,7 @@ function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const {initUserInfo} = useContext(GlobalContext);
-    const [custom_fun_opt, set_custom_fun_opt] = useRecoilState($stroe.custom_fun_opt);
+    const [custom_fun_opt, set_custom_fun_opt] = useAtom($stroe.custom_fun_opt);
 
     const {t} = useTranslation();
 

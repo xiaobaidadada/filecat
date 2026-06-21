@@ -12,7 +12,7 @@ import {using_confirm} from "../../prompts/prompt.util";
 import {RCode} from "../../../../../common/Result.pojo";
 import {routerConfig} from "../../../../../common/RouterConfig";
 import {useNavigate} from "react-router-dom";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {MenuSelect} from "../../prompts/Prompt";
 import {InputText} from "../../../../meta/component/Input";
@@ -98,15 +98,15 @@ export default function AiAgentChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
-    const [ai_session_collapsed,set_ai_session_collapsed] = useRecoilState($stroe.ai_session_collapsed);
+    const [ai_session_collapsed,set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
-    const [requestType, setRequestType] = useRecoilState($stroe.ai_request_type);
+    const [requestType, setRequestType] = useAtom($stroe.ai_request_type);
     useCmdConfirm();
     const REQUEST_TYPE_OPTIONS = use_llm_request_type()
 
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     const toggleSessionPanel = () => {
         if (window.innerWidth <= 736) {

@@ -1,6 +1,6 @@
 import React, {ReactNode} from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../../../common/file.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
 import {useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../../../common/ListUtil";
@@ -16,14 +16,14 @@ import {use_share_preview, useUpdateUrlParams} from "../../FileUtil";
 
 
 export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], index?: number, itemWidth?: string,share:{share_id:string,share_token:string} }) {
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const {click_file} = user_click_file();
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
     const {t} = useTranslation();
     // 右键功能
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const updateParams = useUpdateUrlParams();
     const share_review = use_share_preview()
 

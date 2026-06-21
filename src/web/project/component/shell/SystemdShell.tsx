@@ -4,7 +4,7 @@ import {Terminal} from '@xterm/xterm';
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {SysPojo} from "../../../../common/req/sys.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 // import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
@@ -14,8 +14,8 @@ const ShellLazy = React.lazy(() => import("./ShellLazy"))
 
 export function SystemdShell(props) {
     const [terminalState,setTerminalState] = useState(null)
-    const [shellShow,setShellShow] = useRecoilState($stroe.systemd_shell_show);
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [shellShow,setShellShow] = useAtom($stroe.systemd_shell_show);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const color =  userInfo.user_data.theme?.includes( "dark" )?"#FFFFFF":"#000000";
     const initTerminal =  async () => {
         const terminal = new Terminal({

@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import React, {useEffect, useState} from "react";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {DiskCheckInfo, SysCmd} from "../../../../../common/req/sys.pojo";
 import {fileHttp, sysHttp} from "../../../util/config";
@@ -64,17 +64,17 @@ function LvRow() {
 
 export function DiskMount() {
     const {t} = useTranslation();
-    const [disk_check, set_disk_check] = useRecoilState($stroe.disk);
+    const [disk_check, set_disk_check] = useAtom($stroe.disk);
     const [info, set_info] = useState({} as DiskCheckInfo);
     const [list, set_list] = useState([]);
     const [info_list, set_info_list] = useState([]);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const {check_user_auth} = use_auth_check();
 
     const [lvm_list, set_lvm_list] = useState([] as vg_item[]);
 
     const {click_file} = user_click_file();
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     const diskheaders = [t("挂载点"), "uuid", t("类型"), t("文件系统类型"), t("文件系统容量"), t("卷容量"), t("设备路径"), t("分区表类型")];
 

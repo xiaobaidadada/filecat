@@ -1,11 +1,10 @@
 import React, {useEffect} from 'react';
 
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {fileReq} from "../../../../../common/req/file.req";
-import {getByIndexs, joinPaths} from "../../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
@@ -16,11 +15,11 @@ import {useTranslation} from "react-i18next";
 export function SshDelete(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFileList,setSelectedFileList] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFileList,setSelectedFileList] = useAtom($stroe.selectedFileList);
+    const [nowFileList,setNowFileList] = useAtom($stroe.nowFileList);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
     const navigate = useNavigate();
 
     function cancel(){

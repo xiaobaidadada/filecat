@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {MaterialIcon} from "material-icons";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../project/util/store";
 import {editor_data} from "../../project/util/store.util";
 
@@ -59,7 +59,7 @@ export function ActionButton(props:{icon?:MaterialIcon,title:string,onClick?:(ev
 }
 
 export function AceButton(props:{icon?:MaterialIcon,title?:string,value?:string,save:(value:string) => void,model?:string }) {
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
     return <ActionButton icon={props.icon} title={props.title} onClick={() => {
         editor_data.set_value_temp(props.value ?? '')
         setEditorSetting({

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {InputText, Select} from "../../../meta/component/Input";
 import {ddnsHttp, fileHttp} from "../../util/config";
@@ -15,7 +15,7 @@ export function DdnsAddHttp(props) {
     const { t } = useTranslation();
     const [format, setFormat] = useState("");
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [url, setUrl] = useState("");
     const [ip_formt, set_ip_formt] = useState("ipv4");
     const navigate = useNavigate();

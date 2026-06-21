@@ -4,7 +4,7 @@ import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {DirListShowTypeEmum, fileTypes} from "../../../../common/req/user.req";
 import {QuickCmdItem} from "../../../../common/req/setting.req";
 import {PromptEnum} from "../prompts/Prompt";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {useContext, useEffect, useState} from "react";
@@ -100,9 +100,9 @@ export type file_show_item = {
 
 // 获取操作拖动文件上传 的函数方法
 export function using_drop_file_upload(inputRef:any,call_fun_type:PromptEnum) {
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [uploadFiles, setUploadFiles] = useAtom($stroe.uploadFiles);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     const drop = async (event) => {
         event.preventDefault();
@@ -143,8 +143,8 @@ export function using_drop_file_upload(inputRef:any,call_fun_type:PromptEnum) {
 
 // 多选文件快捷键
 export function using_file_quick_keyboard(file_list, folder_list,inputRef) {
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [enterKey, setEnterKey] = useRecoilState($stroe.enterKey);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
@@ -283,8 +283,8 @@ const columnWidth = 280;
 // 让文件页面的文件可以子适应 （控制 width参数)
 export function using_file_page_handle_width_auto() {
     const [itemWidth, setItemWidth] = useState($stroe.file_item_width_atom);
-    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
-    const [zoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
+    const [nav_style, set_nav_style] = useAtom($stroe.nav_style);
+    const [zoomPercent] = useAtom($stroe.zoom_style_by_percent);
 
     const handleResize = () => {
         const scale = Math.max(30, Math.min(200, zoomPercent??100)) / 100;// 最大缩放 200 最小缩放30
@@ -351,7 +351,7 @@ export function using_add_md__copy_button(){
 }
 
 export function unsing_switch_grid_view (is_local = false) {
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
 
     return async () => {

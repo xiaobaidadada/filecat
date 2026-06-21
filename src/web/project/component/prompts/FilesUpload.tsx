@@ -1,7 +1,7 @@
 // ver:1.0
 import React, {useEffect, useState} from 'react';
 import {ActionButton} from "../../../meta/component/Button";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
@@ -34,11 +34,11 @@ export function FilesUpload() {
     const {t} = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [open, setOpen] = React.useState(false);
-    const [uploadFiles, setUploadFiles] = useRecoilState<browser_file_pojo[]>($stroe.uploadFiles);
+    const [uploadFiles, setUploadFiles] = useAtom<browser_file_pojo[]>($stroe.uploadFiles);
     const [progresses, setProgresses] = useState<number[]>([]);
     const [progresses_speed, set_progresses_speed] = useState<number[]>([]);
     const [progresses_tip, set_progresses_tip] = useState<string[]>([]);

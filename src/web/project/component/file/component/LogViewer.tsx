@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react'
 
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {ws} from "../../../util/ws";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import Header from "../../../../meta/component/Header";
 import {ActionButton} from "../../../../meta/component/Button";
@@ -34,7 +34,7 @@ var search_index_r = -1;
 var search_all_index_r = [];
 
 export default function LogViewer(props) {
-    const [shellShow, setShellShow] = useRecoilState($stroe.log_viewer);
+    const [shellShow, setShellShow] = useAtom($stroe.log_viewer);
     const shellRef = useRef(null);
     const [progress, set_progress] = useState(0);
     const [go_progress, set_go_progress] = useState(100);

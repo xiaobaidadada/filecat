@@ -5,6 +5,7 @@ import {TcpProxyServerClient} from "./TcpProxyServerClient";
 import {TcpProxyClient} from "./TcpProxyClient";
 import {TcpProxyServerSetting} from "./TcpProxyServerSetting";
 import {TcpProxyServerClientSetting} from "./TcpProxyServerClientSetting";
+import {routerConfig} from "../../../../../common/RouterConfig";
 
 
 
@@ -19,6 +20,6 @@ export default function  TcpProxy() {
         {index: 4, name:t("服务端")+"-"+t("客户端功能"), rto: "tcp_proxy_server_client_setting/",component:<TcpProxyServerClientSetting />},
     ];
 
-    return  <Menu optionList={menuRots}>
+    return  <Menu optionList={menuRots} father_route={routerConfig.net_proxy}>
     </Menu>
 }

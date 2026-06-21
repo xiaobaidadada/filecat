@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {InputText} from "../../../meta/component/Input";
 import {navHttp} from "../../util/config";;
@@ -12,7 +12,7 @@ import {getRouterPath} from "../../util/WebPath";
 export function NavIndexAdd(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [name, setName] = useState("");
     const [url,setUrl] = useState("");
     const navigate = useNavigate();

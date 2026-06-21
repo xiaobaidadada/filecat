@@ -10,7 +10,7 @@ import {InputCheckbox, InputRadio, InputText} from "../../../meta/component/Inpu
 import {ActionButton, Button, ButtonLittleStatus, ButtonText} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {DockerShell} from "../shell/DockerShell";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {PromptEnum} from "../prompts/Prompt";
 import {useTranslation} from "react-i18next";
@@ -32,9 +32,9 @@ export function Docker(props) {
     const [rows_images, set_rows_images] = useState([]);
     const {check_user_auth} = use_auth_check();
 
-    const [shellShow, setShellShow] = useRecoilState($stroe.dockerShellShow);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [show_confirm, set_show_confirm] = useRecoilState($stroe.confirm);
+    const [shellShow, setShellShow] = useAtom($stroe.dockerShellShow);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [show_confirm, set_show_confirm] = useAtom($stroe.confirm);
     const [filterKey,setFilterKey] = useState(filter);
     const [headers, setHeaders] = useState(["id", t("名字"), t("镜像"), t("命令"), t("状态"),t("内存"),"cpu%", t("选择")]);
 

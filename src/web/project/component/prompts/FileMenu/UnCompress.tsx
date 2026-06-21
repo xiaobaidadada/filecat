@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {$stroe} from "../../../util/store";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import { FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
@@ -26,7 +26,7 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
         list.push(...props.list);
     }
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [items, setItems,] = useState(list);
     const [tarDir, setTarDir] = useState(undefined);
     const [is_opt, setIs_opt] = useState(true);

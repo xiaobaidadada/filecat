@@ -6,7 +6,7 @@ const package_data = require("../../package.json")
 const {base_url} = require("./env");
 
 const common_plugins = {
-    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     'process.env.version': JSON.stringify(package_data.version),
     'process.env.base_url': JSON.stringify(base_url),
     'process.env.run_env': JSON.stringify("npm") // 必须用 JSON.stringify

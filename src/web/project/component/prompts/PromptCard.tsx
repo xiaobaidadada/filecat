@@ -1,12 +1,12 @@
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import React, {useEffect, useMemo, useState} from "react";
 import {ActionButton} from "../../../meta/component/Button";
 
 export function PromptCard() {
     const { t } = useTranslation();
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.prompt_card);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.prompt_card);
     const cancel = ()=>{
         if(showPrompt.cancel) showPrompt.cancel()
         setShowPrompt({open: false});

@@ -10,16 +10,21 @@ export interface RouteContainerProps {
     children: ReactNode[];
 }
 const SimpleRoutes: React.FC<RouteContainerProps> = (props:RouteContainerProps) => {
-    return ( <Routes>
-        {props.children.map((value, index) => {
-            return (
-                <React.Fragment key={index}>
-                    <Route  path={props.rtos[index]} element={   <Suspense fallback={<div></div>} >{value} </Suspense>} />
-                </React.Fragment>
-            )
-        })}
-        ( <Route  path={"/"} element={(props.children[0])}/>)
-    </Routes>)
+    const routes = props.rtos.map((rto, index) => {
+        const child = props.children[index];
+        return <React.Fragment key={index} >
+            <Route path={rto} element={<Suspense fallback={<div></div>}>{child}</Suspense>} />
+        </React.Fragment>;
+    });
+    // 如果没有根路由，添加一个默认指向第一个子路由
+    if (!props.rtos.some(r => r === "/" || r === "")) {
+        routes.push(
+            <React.Fragment key="root" >
+                <Route path="/" element={<Suspense fallback={<div></div>}>{props.children[0]}</Suspense>} />
+            </React.Fragment>
+        );
+    }
+    return (<Routes>{routes}</Routes>)
 }
 
 export default SimpleRoutes;

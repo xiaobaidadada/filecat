@@ -6,7 +6,8 @@ import {
 // import Layout from "./component/Layout";
 // import SimpleRoutes from "../meta/component/SimpleRoutes";
 import { useLocation   } from 'react-router-dom';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
+
 import {$stroe} from "./util/store";
 import {GlobalContext} from "./GlobalProvider";
 import {getRouterPath, is_share} from "./util/WebPath";
@@ -21,7 +22,7 @@ function App() {
     const location = useLocation();
     const navigate = useNavigate();
     const [befor,setBefor] = useState('');
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
     useEffect(() => {
         if (localStorage.getItem("token")) {

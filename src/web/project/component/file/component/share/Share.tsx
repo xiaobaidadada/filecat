@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Dashboard, FullScreenDiv} from "../../../../../meta/component/Dashboard";
 import {CardFull} from "../../../../../meta/component/Card";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
 import {
     FileListLoad_file_folder_for_file_share,
@@ -48,11 +48,11 @@ export default function Share() {
     const [data, setData] = useState<ShareData | null>(null);
     const share_id = useRef<string>("");
     const share_token = useRef<string>("");
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-    const [share_sort_type, setShareSortType] = useRecoilState($stroe.share_sort_type);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [share_sort_type, setShareSortType] = useAtom($stroe.share_sort_type);
     const {t} = useTranslation();
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const {click_file} = user_click_file();
     const [searchParams] = useSearchParams()
     const updateParams = useUpdateUrlParams();

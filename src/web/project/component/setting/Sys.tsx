@@ -7,7 +7,7 @@ import {settingHttp, userHttp} from "../../util/config";
 import {themes, UserAuth, UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
 import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
 import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
@@ -28,15 +28,15 @@ export function  Sys() {
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
 
     const [tokenMode,setTokenMode]  = useState(TokenTimeMode.close);
     const [tokenSeconds,setTokenSeconds] = useState(undefined);
 
     const { t, i18n } = useTranslation();
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
 
     const {initUserInfo} = useContext(GlobalContext);

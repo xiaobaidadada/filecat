@@ -20,7 +20,7 @@ export default function Ddns() {
 //     rto: "ali/"
 // }
     ];
-    return <Menu optionList={[]}>
+    return <Menu optionList={[]} father_route={'ddns'}>
         <Dnspod/>
         <TengXun/>
         {/*<Ali/>*/}

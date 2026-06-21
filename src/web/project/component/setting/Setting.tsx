@@ -9,6 +9,7 @@ import {User} from "./User";
 import {use_auth_check} from "../../util/store.util";
 import {Role} from "./Role";
 import {PrivateEnv} from "./PrivateEnv";
+import {routerConfig} from "../../../../common/RouterConfig";
 
 
 export default function  Settings() {
@@ -16,8 +17,8 @@ export default function  Settings() {
     const {check_user_auth} = use_auth_check();
 
     const menuRots = [
-        {index: 1, name: t("系统"), rto: "password/",component: <Sys />},
-        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting/",component:  <PrivateEnv />},
+        {index: 1, name: t("系统"), rto: "password",component: <Sys />},
+        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting",component:  <PrivateEnv />},
     ];
     if(check_user_auth(UserAuth.sys_page)) {
         menuRots.push(     {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/",component: <Env />},)
@@ -33,6 +34,6 @@ export default function  Settings() {
     }
 
 
-    return  <Menu optionList={menuRots}>
+    return  <Menu optionList={menuRots} father_route={routerConfig.setting}>
     </Menu>
 }

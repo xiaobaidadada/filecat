@@ -2,7 +2,7 @@
 import React, {useContext, useEffect, useRef, useState} from "react";
 import Switch, {ActionButton} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Table} from "../../../meta/component/Table";
@@ -79,8 +79,8 @@ export default function AIAgentChatSetting() {
     const docs_update_tag = useRef(false);
     const [mcp_tool_groups, set_mcp_tool_groups] = useState<ai_mcp_server_tool_group[]>([]);
     const [mcp_tool_loading, set_mcp_tool_loading] = useState(false);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const [index_switch,set_index_switch] = useState(false);
     const mcp_stdio_list = mcp_list.filter((item) => (item.transport ?? "stdio") !== "http");
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
@@ -93,7 +93,7 @@ export default function AIAgentChatSetting() {
 
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
     const navigate = useNavigate();
     const confirm_dell_all = using_confirm()
     const select_list = use_select_config()

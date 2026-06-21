@@ -9,7 +9,7 @@ import { userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
@@ -23,10 +23,10 @@ export function Role() {
     const { t, i18n } = useTranslation();
     const {initUserInfo} = useContext(GlobalContext);
     const [rows, setRows] = useState([]);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [is_create,set_is_create] = useState(false);
     const [is_save,set_is_is_save] = useState(false);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
 
     const [role_name, set_role_name] = useState("");
     const [cwd, setwd] = useState("");

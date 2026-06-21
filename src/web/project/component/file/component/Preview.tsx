@@ -2,7 +2,7 @@ import React from 'react';
 // import VideoPlayer from "./VideoPlayer";
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {FileTypeEnum} from "../../../../../common/file.pojo";
 import {ExtendedImage} from "./ExtendedImage";
@@ -12,7 +12,7 @@ const VideoPlayer = React.lazy(() => import("./VideoPlayer"))
 
 export default function Preview(props: any) {
     const {t} = useTranslation();
-    const [file_preview, setFilePreview] = useRecoilState($stroe.file_preview);
+    const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
     if (!file_preview.open) {
         return ;
     }

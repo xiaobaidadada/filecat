@@ -6,7 +6,7 @@ import {InputText} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {useTranslation} from "react-i18next";
 import {SysSoftware} from "../../../../../common/req/setting.req";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 
 

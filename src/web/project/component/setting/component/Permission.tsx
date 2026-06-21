@@ -1,5 +1,5 @@
 import React from 'react'
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
 import {UserAuth} from "../../../../../common/req/user.req";
@@ -10,7 +10,7 @@ export function Permission(props:{
     select_auth:(auth: UserAuth) => void;
 }) {
     const {t, i18n} = useTranslation();
-    const [user_base_info,setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
 
     const list:{
         title: string,

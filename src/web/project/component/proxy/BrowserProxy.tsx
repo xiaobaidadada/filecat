@@ -9,7 +9,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {useTranslation} from "react-i18next";
 import {$stroe} from "../../util/store";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {NotyFail} from "../../util/noty";
@@ -17,7 +17,7 @@ import {NotyFail} from "../../util/noty";
 
 export function BrowserProxy(props) {
     const { t } = useTranslation();
-    const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
+    const [headerMin, setHeaderMin] = useAtom($stroe.header_min);
 
     const [showUrl, setshowUrl] = useState('');
     const [gourl,setGourl] = useState('');

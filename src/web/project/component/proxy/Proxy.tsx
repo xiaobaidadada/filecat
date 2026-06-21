@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import {Http} from "./Http";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {routerConfig} from "../../../../common/RouterConfig";
 const Rtsp = React.lazy(()=> import("./Rtsp"))
 
 
@@ -21,7 +22,7 @@ export default function Proxy({}) {
         menuRots.push({index: 1, name: t("http代理"), rto: 'http/',component:<Http /> })
     }
     if (check_user_auth(UserAuth.ssh_proxy)) {
-        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/*",component:<RemoteLinux />})
+        menuRots.push({index: 1, name: `ssh${t("代理")}`, rto: "remoteShell/",component:<RemoteLinux />})
     }
     if (check_user_auth(UserAuth.browser_proxy)) {
         menuRots.push({index: 1, name: `${t("浏览器")}${t("代理")}`, rto: "browserproxy/",component:<BrowserProxy />})
@@ -33,7 +34,7 @@ export default function Proxy({}) {
         menuRots.push({index: 1, name: t("rtsp播放器"), rto: "rtsp/",component:<Rtsp />})
     }
     return (
-        <Menu optionList={menuRots}>
+        <Menu optionList={menuRots} father_route={routerConfig.proxy}>
         </Menu>
 
     )

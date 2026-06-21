@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import React, {useEffect, useState} from "react";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {ws} from "../../../util/ws";
@@ -20,7 +20,7 @@ import {InputText} from "../../../../meta/component/Input";
 
 export function DiskCheck(props: DiskDevicePojo) {
     const {t} = useTranslation();
-    const [disk_check, set_disk_check] = useRecoilState($stroe.disk);
+    const [disk_check, set_disk_check] = useAtom($stroe.disk);
     const [info, set_info] = useState({} as DiskCheckInfo);
     const [list,set_list] = useState([]);
 

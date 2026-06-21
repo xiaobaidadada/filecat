@@ -1,6 +1,6 @@
 import React, {ReactNode} from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../../common/file.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {getByList} from "../../../../../common/ListUtil";
 import {$stroe} from "../../../util/store";
 import {fileHttp, userHttp} from "../../../util/config";
@@ -21,11 +21,11 @@ export function BaseFileItem(props: FileItemData & {
     children?: React.ReactNode,
     draggable_handle?: (to:string) => any // 拖拽文件到另一个地方
 }) {
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     async function click(index: number) {
         if (props.click) {

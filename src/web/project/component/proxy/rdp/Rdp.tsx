@@ -13,7 +13,7 @@ import {rdpHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {NotyFail} from "../../../util/noty";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {loadJsFileOnce} from "../../../util/file";
 import {use_auth_check} from "../../../util/store.util";
@@ -24,7 +24,7 @@ import {UserAuth} from "../../../../../common/req/user.req";
 let load;
 export function Rdp() {
     const { t } = useTranslation();
-    const [headerMin, setHeaderMin] = useRecoilState($stroe.header_min);
+    const [headerMin, setHeaderMin] = useAtom($stroe.header_min);
     const {check_user_auth} = use_auth_check();
 
     const [address, setAddress] = useState(undefined);
@@ -73,7 +73,7 @@ export function Rdp() {
             }
             load("rdpwebview");
             // Mstsc.$("main").style.display = 'none';
-            var canvas = Mstsc.$("rdpwebview");
+            var canvas:any = Mstsc.$("rdpwebview");
             canvas.style.display = 'inline';
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -97,7 +97,7 @@ export function Rdp() {
         setFullScreen(false);
 
         await ws.sendData(CmdType.rdp_disconnect, "")
-        var canvas = Mstsc.$("rdpwebview");
+        var canvas:any = Mstsc.$("rdpwebview");
         const context = canvas.getContext('2d');
         context.clearRect(0, 0, canvas.width, canvas.height);
         Mstsc.$("rdpwebview").style.display = 'none';

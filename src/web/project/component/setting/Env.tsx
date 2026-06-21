@@ -15,7 +15,7 @@ import {
     TokenSettingReq
 } from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
@@ -30,7 +30,7 @@ export function Env() {
     const {initUserInfo, reloadUserInfo} = useContext(GlobalContext);
     const [rows, setRows] = useState([]);
     const [rows_outside_software, setRows_outside_software] = useState([]);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [protection_sys_dir_rows, set_protection_sys_dir_rows] = useState([]);
     const [dir_upload_rows, set_dir_upload_rows] = useState<dir_upload_max_num_item[]>([]);
     const [env_path_dir_rows, set_env_path_dir_rows] = useState([] as env_item[]);

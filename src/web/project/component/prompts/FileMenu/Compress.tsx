@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {$stroe} from "../../../util/store";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText, Select} from "../../../../meta/component/Input";
@@ -20,9 +20,9 @@ for (let i = 1; i <= 9; i++) {
 
 export function Compress(props) {
     const {t} = useTranslation();
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
 
     const [tar_filename, setTar_filename] = useState("");
     const [placeholder, setPlaceholder] = useState(".tar");

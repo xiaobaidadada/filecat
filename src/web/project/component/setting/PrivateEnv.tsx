@@ -15,7 +15,7 @@ import {
     TokenSettingReq
 } from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySucess} from "../../util/noty";
 import {use_themes_list, using_env_prompt} from "./util";
@@ -26,11 +26,11 @@ export function PrivateEnv() {
     const { t, i18n } = useTranslation();
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [rows, setRows] = useState([]);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [protection_dir_rows,set_protection_dir_rows] = useState([]);
     const [quick_cmd_rows,set_quick_cmd_rows] = useState([] as QuickCmdItem[]);
     const [file_quick_cmd_rows,set_file_quick_cmd_rows] = useState([] as FileQuickCmdItem[]);
-    const [userInfo, setUserInfo] = useRecoilState($stroe.user_base_info);
+    const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const select_list = use_select_config()
     const themes_list = use_themes_list()
 

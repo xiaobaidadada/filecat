@@ -33,6 +33,6 @@ export default function  Net() {
             {index: 5, name: `ddns-${t("腾讯")}${t("云")}`, rto: "tengxun/",component: <TengXun/>},
         ])
     }
-    return  <Menu optionList={menuRots}>
+    return  <Menu optionList={menuRots} father_route={routerConfig.net}>
     </Menu>
 }

@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {FilesUpload} from "./FilesUpload";
 import {FilesDelete} from "./FilesDelete";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Paste} from "./Paste";
 import {Overlay} from "../../../meta/component/Dashboard";
@@ -50,9 +50,9 @@ export enum PromptEnum {
 }
 
 export default function Prompt() {
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [confirm, set_confirm] = useRecoilState($stroe.confirm);
-    const [prompt_card, set_prompt_card] = useRecoilState($stroe.prompt_card);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [confirm, set_confirm] = useAtom($stroe.confirm);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
     function click() {
         setShowPrompt({show: false, type: '', overlay: false, data: {}});

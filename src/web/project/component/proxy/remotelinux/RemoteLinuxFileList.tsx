@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 
 import {RouteBreadcrumbs} from "../../../../meta/component/RouteBreadcrumbs";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
@@ -45,14 +45,14 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
 
     const location = useLocation();
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [sshInfo, setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [sshInfo, setSSHInfo] = useAtom<any>($stroe.sshInfo);
 
     const [search, setSearch] = useState("");
     const navigate = useNavigate();
-    const [user_base_info, setUser_base_info] = useRecoilState($stroe.user_base_info);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
 
     const fileHandler = async (path?: string) => {
         // 文件列表初始化界面

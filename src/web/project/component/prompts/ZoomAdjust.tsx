@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {CardPrompt} from "../../../meta/component/Card";
 import {useTranslation} from "react-i18next";
@@ -12,7 +12,7 @@ import {NotySucess} from "../../util/noty";
 
 export function ZoomAdjust() {
     const { t } = useTranslation();
-    const [zoomPercent, setZoomPercent] = useRecoilState($stroe.zoom_style_by_percent);
+    const [zoomPercent, setZoomPercent] = useAtom($stroe.zoom_style_by_percent);
     const [inputValue, setInputValue] = useState(zoomPercent.toString());
     const {initUserInfo} = useContext(GlobalContext);
 
@@ -24,7 +24,7 @@ export function ZoomAdjust() {
         setShowPrompt({show: false, type: "", overlay: false, data: {}});
     };
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
 
     const handleIncrement = () => {
         const newValue = Math.min(200, zoomPercent + 10);

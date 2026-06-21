@@ -2,7 +2,7 @@ import {ws} from "../../../util/ws";
 import {CmdType} from "../../../../../common/frame/WsData";
 import {workflow_pre_input, WorkflowReq, WorkRunType} from "../../../../../common/req/file.req";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
 

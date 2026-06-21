@@ -1,12 +1,12 @@
-import React, {ReactNode, useEffect} from 'react';
-// import '../resources/css/all.css'
+import React, {ReactNode, useCallback, useEffect, useMemo} from 'react';
 import {MaterialIcon} from "material-icons";
 import {To} from "./To";
-import {get_filter_key, get_router_key_set, getRouterPath} from "../../project/util/WebPath";
-import {useRecoilState} from "recoil";
+import {get_filter_key, get_router_key_set} from "../../project/util/WebPath";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../project/util/store";
 import {Overlay} from "./Dashboard";
 import {Icon} from "./Button";
+import {useLocation} from "react-router-dom";
 
 export interface NavItem {
     icon?: MaterialIcon, // 隐藏的不需要
@@ -24,62 +24,60 @@ export interface NavProps {
 }
 
 export function Nav(props: NavProps) {
-    const [selectedIndex, setSelectedIndex] = React.useState("");
-    const [nav_style, set_nav_style] = useRecoilState($stroe.nav_style);
-    const closeMobileNav = () => {
-        if (window.innerWidth <= 736) {
-            set_nav_style((prev) => ({...prev, mobile_open: false}));
-        }
-    }
-    useEffect(() => {
-        let have = true;
-        const set = get_router_key_set()
-        for (let index = 0; index < props.navList.length; index++) {
-            let ok = false;
-            for (let i=0;i<props.navList[index].length;i++) {
-                if (!props.navList[index][i]?.rto) {
-                    continue;
-                }
-                const filter_key = get_filter_key(props.navList[index][i].rto)
-                if (set.has(filter_key)) {
-                    setSelectedIndex(`${index}_${i}`);
-                    have = false;
-                    ok = true;
-                    break;
+    const [navStyle, setNavStyle] = useAtom($stroe.nav_style);
+    const location = useLocation();
+
+    // 1. 使用 useMemo 动态计算当前激活项的 key，无需手动维护 state
+    const activeKey = useMemo(() => {
+        for (let i = 0; i < props.navList.length; i++) {
+            for (let j = 0; j < props.navList[i].length; j++) {
+                const item = props.navList[i][j];
+                // 简单的路径匹配逻辑
+                if (item?.rto && location.pathname.startsWith(item.rto.replace(/\*$/, ""))) {
+                    return `${i}_${j}`;
                 }
             }
-            if(ok)break;
         }
-        if(have) {
-            setSelectedIndex("0_0");
-        }
+        return "0_0"; // 默认选中项
+    }, [props.navList, location.pathname]);
 
-    }, [props.navList]);
+    // 2. 合并关闭逻辑
+    const toggleMobileNav = (open: boolean) => {
+        setNavStyle((prev) => ({ ...prev, mobile_open: open }));
+    };
 
-    const nav_close = () => {
-        set_nav_style((prev) => ({...prev, mobile_open: false}))
-    }
+    const handleLinkClick = (item: NavItem) => {
+        if (item.clickFun) item.clickFun();
+        if (window.innerWidth <= 736) toggleMobileNav(false);
+    };
 
     return (
         <React.Fragment>
-            <nav className={`${nav_style.mobile_open? "active" :""} ${nav_style.pc_collapsed ? "collapsed" : ""}  not-select-div`}>
-                {props.navList.map((item, index) => {
-                    return (<div key={index} className=" nav_1" >
-                        {item.map((item2, index2) => {
+            <nav className={`
+                ${navStyle.mobile_open ? "active" : ""} 
+                ${navStyle.pc_collapsed ? "collapsed" : ""} 
+                not-select-div
+            `}>
+                {props.navList.map((group, groupIndex) => (
+                    <div key={groupIndex} className="nav_1">
+                        {group.map((item, itemIndex) => {
+                            const key = `${groupIndex}_${itemIndex}`;
                             return (
-                                <To rto={item2.rto} key={index2} clickFun={() => {
-                                    if(item2.clickFun) item2.clickFun();
-                                    closeMobileNav();
-                                }} className={` nav_2  ${selectedIndex === `${index}_${index2}` ? "nav_2_active" : ""}`}>
-                                    <Icon icon={item2.icon}  />
-                                    <span className=" nav_3">{item2.name}</span>
-                                </To>)
+                                <To
+                                    key={key}
+                                    rto={item.rto}
+                                    clickFun={() => handleLinkClick(item)}
+                                    className={`nav_2 ${activeKey === key ? "nav_2_active" : ""}`}
+                                >
+                                    <Icon icon={item.icon} />
+                                    <span className="nav_3">{item.name}</span>
+                                </To>
+                            );
                         })}
-                    </div>)
-
-                })}
+                    </div>
+                ))}
             </nav>
-            {nav_style.mobile_open && <Overlay className={"layout-nav-overlay"} click={nav_close}/>}
+            {navStyle.mobile_open && <Overlay className="layout-nav-overlay" click={() => toggleMobileNav(false)} />}
         </React.Fragment>
     );
 }

@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {useTranslation} from "react-i18next";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {MenuSelect} from "../../prompts/Prompt";
 import {ActionButton} from "../../../../meta/component/Button";
@@ -89,12 +89,12 @@ function ImagesParamsDialog({onClose}: { onClose: () => void }) {
 
 /**
  * 请求类型选择器
- * 选择当前聊天页面使用的请求类型，使用 useRecoilState 持久化
+ * 选择当前聊天页面使用的请求类型，使用 useAtom 持久化
  * 使用 MenuSelect 组件实现下拉菜单
  */
 export default function RequestTypeSelector() {
     const {t} = useTranslation();
-    const [requestType, setRequestType] = useRecoilState($stroe.ai_request_type);
+    const [requestType, setRequestType] = useAtom($stroe.ai_request_type);
     const [showImagesParams, setShowImagesParams] = useState(false);
     const REQUEST_TYPE_OPTIONS = use_llm_request_type()
 

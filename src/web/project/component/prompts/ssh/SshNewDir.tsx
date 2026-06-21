@@ -1,21 +1,20 @@
 import React, {useEffect, useState} from 'react';
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {InputText} from "../../../../meta/component/Input";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useLocation, useNavigate} from "react-router-dom";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
-import {joinPaths} from "../../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
 import {CardPrompt} from "../../../../meta/component/Card";
 
 export function SshNewDir(props) {
     const { t } = useTranslation();
 
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
 
     const [name, setName] = useState("");
     const navigate = useNavigate();

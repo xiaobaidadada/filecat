@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {fileHttp} from "../../util/config";
 import {fileReq} from "../../../../common/req/file.req";
@@ -17,9 +17,9 @@ export function FilesDelete(props) {
 
     let location = useLocation();
     const navigate = useNavigate();
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [selectedFileList,setSelectedFileList] = useRecoilState($stroe.selectedFileList);
-    const [nowFileList,setNowFileList] = useRecoilState($stroe.nowFileList);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
+    const [selectedFileList,setSelectedFileList] = useAtom($stroe.selectedFileList);
+    const [nowFileList,setNowFileList] = useAtom($stroe.nowFileList);
 
 
     function cancel(){

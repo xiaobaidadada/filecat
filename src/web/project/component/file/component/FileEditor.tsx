@@ -2,7 +2,7 @@ import React, {ReactNode, useEffect, useRef, useState} from 'react';
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
 // import AceEditor from "react-ace";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {editor_data} from "../../../util/store.util";
@@ -15,10 +15,10 @@ import {ableExtBeautify} from "../../../../../common/FileMenuType";
 
 
 export default function FileEditor() {
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
     const [have_update,set_have_update] = useState(false);
-    const [shellShow,setShellShow] = useRecoilState($stroe.fileShellShow);
-    const [file_shell_hidden,set_file_shell_hidden] = useRecoilState($stroe.file_shell_hidden);
+    const [shellShow,setShellShow] = useAtom($stroe.fileShellShow);
+    const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
 
     function shellClick() {
         if (!shellShow.show) {

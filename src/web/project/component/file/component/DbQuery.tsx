@@ -6,7 +6,7 @@ import {useNavigate} from "react-router-dom";
 import {Table} from "../../../../meta/component/Table";
 import {sqliteQueryResult} from "../../../../../common/req/file.req";
 import {Card, TextTip} from "../../../../meta/component/Card";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import Ace from "./Ace";
 import {editor_data} from "../../../util/store.util";
@@ -25,7 +25,7 @@ function formatCell(value: any) {
 
 export default function DbQuery() {
     const navigate = useNavigate();
-    const [sqlite_query_context] = useRecoilState($stroe.sqlite_query_context);
+    const [sqlite_query_context] = useAtom($stroe.sqlite_query_context);
     const dbPath = useMemo(() => sqlite_query_context?.path ?? "", [sqlite_query_context?.path]);
     const dbLabel = useMemo(() => {
         if (!sqlite_query_context?.path) {

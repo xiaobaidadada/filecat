@@ -1,6 +1,6 @@
 import React, {ReactNode} from 'react';
 import {FileItemData, FileTypeEnum} from "../../../../../common/file.pojo";
-import {useRecoilState} from "recoil";
+import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {useLocation, useMatch, useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, joinPaths, webPathJoin} from "../../../../../common/ListUtil";
@@ -17,14 +17,14 @@ import {useTranslation} from "react-i18next";
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string,fileHandler:()=>any }) {
-    const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
-    const [clickList, setClickList] = useRecoilState($stroe.clickFileList);
-    const [editorSetting, setEditorSetting] = useRecoilState($stroe.editorSetting)
-    const [shellNowDir, setShellNowDir] = useRecoilState($stroe.shellNowDir);
-    const [sshInfo,setSSHInfo] = useRecoilState<any>($stroe.sshInfo);
-    const [nowFileList, setNowFileList] = useRecoilState($stroe.nowFileList);
-    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
-    const [showPrompt, setShowPrompt] = useRecoilState($stroe.confirm);
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
+    const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
+    const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [enterKey,setEnterKey] = useAtom($stroe.enterKey);
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
     const navigate = useNavigate();
     const { t } = useTranslation();
 
