@@ -104,7 +104,7 @@ body {
 }
 .action:hover {
   background-color: var(--primary-light);
-  transform: translateY(-1px);
+  /*transform: translateY(-1px);*/
 }
 
 .action .counter {
@@ -1670,7 +1670,7 @@ nav .nav_2 {
 /* 现代悬停态 */
 nav .nav_2:hover {
   background-color: var(--surfaceSecondary);
-  transform: scale(1.02); /* 轻微放大，提供物理反馈 */
+  /*transform: scale(1.02); !* 轻微放大，提供物理反馈 *!*/
 }
 
 /* 现代激活态 */
