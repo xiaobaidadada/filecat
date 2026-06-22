@@ -85,6 +85,8 @@ function Input(props: {
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = React.useState("");
     const [css, setCss] = React.useState("input input--block awesomplete");
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const isPassword = props.type === "password";
 
     // 同步外部传入的 value
     useEffect(() => {
@@ -184,33 +186,58 @@ function Input(props: {
                     </div>
                 )}
 
-                <input
-                    style={{ flex: 1, minWidth: 0 }}
-                    onClick={(event) => event.stopPropagation()}
-                    disabled={!!props.disabled}
-                    className={css}
-                    type={props.type}
-                    placeholder={props.placeholder}
-                    onChange={(event) => {
-                        const val = event.target.value;
-                        setValue(val);
-                        if (props.handleInputChange) {
-                            props.handleInputChange(val, event.target);
-                        }
-                    }}
-                    onKeyPress={(event) => {
-                        // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
-                        if (event.key === 'Process' || event.nativeEvent.isComposing) {
-                            return; // 忽略输入法回车键
-                        }
-                        
-                        if (event.key === 'Enter' && props.handlerEnter) {
-                            props.handlerEnter(event.currentTarget.value);
-                        }
-                    }}
-                    value={value}
-                    ref={inputRef}
-                />
+                <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+                    <input
+                        style={{ flex: 1, minWidth: 0, paddingRight: isPassword ? "2.4em" : undefined }}
+                        onClick={(event) => event.stopPropagation()}
+                        disabled={!!props.disabled}
+                        className={css}
+                        type={isPassword && passwordVisible ? "text" : props.type}
+                        placeholder={props.placeholder}
+                        onChange={(event) => {
+                            const val = event.target.value;
+                            setValue(val);
+                            if (props.handleInputChange) {
+                                props.handleInputChange(val, event.target);
+                            }
+                        }}
+                        onKeyPress={(event) => {
+                            // 检查是否是输入法回车键（macOS下输入法按回车选中文字）
+                            if (event.key === 'Process' || event.nativeEvent.isComposing) {
+                                return; // 忽略输入法回车键
+                            }
+                            
+                            if (event.key === 'Enter' && props.handlerEnter) {
+                                props.handlerEnter(event.currentTarget.value);
+                            }
+                        }}
+                        value={value}
+                        ref={inputRef}
+                    />
+                    {isPassword && (
+                        <i
+                            className="material-icons input-password-toggle"
+                            style={{
+                                position: "absolute",
+                                right: "8px",
+                                cursor: "pointer",
+                                fontSize: "1.2em",
+                                userSelect: "none",
+                                lineHeight: 1,
+                            }}
+                            onMouseDown={(e) => {
+                                e.preventDefault(); // 防止 input 失焦
+                                setPasswordVisible(!passwordVisible);
+                            }}
+                            onMouseUp={(e) => {
+                                e.preventDefault(); // 防止 input 失焦
+                            }}
+                            aria-label={passwordVisible ? "隐藏密码" : "显示密码"}
+                        >
+                            {passwordVisible ? "visibility_off" : "visibility"}
+                        </i>
+                    )}
+                </div>
 
                 {props.right_placeholder && (
                     <div style={{ flex: "0 0 auto", marginLeft: "4px" }}>

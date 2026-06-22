@@ -102,6 +102,18 @@
     cursor: pointer;
 }
 
+/* 密码框内查看密码按钮 */
+.input-password-toggle {
+    transition: color 0.15s ease;
+    border-radius: 4px;
+    padding: 2px;
+    color: var(--textSecondary)
+}
+.input-password-toggle:hover {
+    color: var(--textPrimary) !important;
+    background: var(--hover, rgba(0, 0, 0, 0.06));
+}
+
 .black-tip {
     border-radius: .1em;
     padding: .2em ;
