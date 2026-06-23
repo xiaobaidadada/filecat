@@ -157,7 +157,7 @@ const tasksLister = new Listr(
                         }
                         // fse.copySync(path.join(__dirname, "..", "src", "web", "meta", 'resources',"assets","excalidraw-assets"),path.join(__dirname, "..", "build", "dist","excalidraw-assets"));
                         fse.copySync(
-                            path.resolve('node_modules', '@excalidraw', 'excalidraw', 'dist', 'prod', 'fonts'),
+                            path.resolve('node_modules', '@xiaobaidadada', 'excalidraw', 'dist', 'prod', 'fonts'),
                             path.join(__dirname, "..", "build", "dist", "fonts")
                         );
                         copyFileSync(path.join(__dirname, "..", "src", "web", "project", 'component',"file","component","image","js","filerobot-image-editor.min.js"), path.join(__dirname, "..", "build", "dist","filerobot-image-editor.min.js"));

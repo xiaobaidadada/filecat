@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Excalidraw, MainMenu, serializeAsJSON} from "@excalidraw/excalidraw";
+import {Excalidraw, MainMenu, serializeAsJSON} from "@xiaobaidadada/excalidraw";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp} from "../../../util/config";
@@ -9,7 +9,7 @@ import {useNavigate} from "react-router-dom";
 import {Http} from "../../../util/http";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../../common/Result.pojo";
-import "@excalidraw/excalidraw/index.css";
+import "@xiaobaidadada/excalidraw/index.css";
 
 type ExcalidrawSceneData = {
     type?: string;

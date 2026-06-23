@@ -85,6 +85,7 @@ export function PrivateEnv() {
         if (result.code === RCode.Success) {
             NotySuccess("保存成功")
             reloadUserInfo();
+            initUserInfo()
         }
     }
     const quick_cmd_save = async () => {
