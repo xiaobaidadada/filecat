@@ -11,7 +11,10 @@ export const routerConfig = {
     ddns:"/ddns",
     net:"/net",
     net_proxy:"/net_proxy", // 内网穿透
+
     setting:"/setting",
+    setting_private_env_setting:"/setting/private_env_setting",
+
     share:"/share",
     share_list_setting_page:"/share_list_setting_page",
     ai_agent_setting_page:"/ai_agent_setting_page",

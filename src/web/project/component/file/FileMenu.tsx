@@ -4,13 +4,13 @@ import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData} from "../../../../common/FileMenuType";
 import {FileTypeEnum} from "../../../../common/file.pojo";
 import {useTranslation} from "react-i18next";
-import { useAtom } from 'jotai'; 
+import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {use_auth_check, user_click_file} from "../../util/store.util";
 import {GlobalContext} from "../../GlobalProvider";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {create_quick_cmd_items, getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "./FileUtil";
 import {fileHttp, userHttp} from "../../util/config";
 import {getNextByLoop} from "../../../../common/ListUtil";
@@ -103,7 +103,7 @@ export function FileMenu() {
     }
 
     function ok(txt) {
-        NotySucess(txt)
+        NotySuccess(txt)
     }
 
 
@@ -305,7 +305,13 @@ export function FileMenu() {
             pojo.type = FileTypeEnum.directory;
             pojo.items = file_paths;
             pojo.item_pre_value = file_root_path
-            pojo.textClick = async (v) => {
+            pojo.textClick = async (v:number) => {
+                if(v===-1) {
+                    // 添加
+                    navigate(`/${routerConfig.setting_private_env_setting}`);
+                    setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                    return;
+                }
                 baseSwitch(v);
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
             }
@@ -462,7 +468,7 @@ export function use_handleContextMenu() {
                     // type: "",
                     path: getRouterAfter('file', getRouterPath())
                 });
-                set_router_jump({page_self_router_api_data: ["", result.context.now_absolute_path]});
+                set_router_jump({page_self_router_api_data: [`/api/${Date.now()}`, result.context.now_absolute_path]});
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate("/setting/customer_router/");
                 return;

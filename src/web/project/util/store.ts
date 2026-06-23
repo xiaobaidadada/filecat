@@ -77,7 +77,7 @@ export const $stroe = {
         index: 0
     }),
     // 通用 prompt 是否显示
-    showPrompt: atom<any>(new ShowPromptData()),
+    showPrompt: atom<ShowPromptData|undefined>(new ShowPromptData()),
     // 通用确认
     confirm: atom<{open: boolean, handle: (() => void) | null, title?: string, sub_title?: string, context_div?: any}>({
         open: false,
@@ -191,6 +191,7 @@ export const $stroe = {
     ai_session_collapsed: sync_atomWithStorage<boolean>("ai_session_collapsed", false),
     // 空白搜索模式
     blank_search_mode: sync_atomWithStorage<boolean>("blank_search_mode", false),
+    blank_search_mode_for_temp: atom<boolean>(false),
     // AI 聊天请求类型选择
     ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions')
 };

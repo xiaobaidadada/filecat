@@ -8,6 +8,7 @@ import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {NotyFail, NotySuccess} from "../../util/noty";
 
 
 export function NetWol(props) {
@@ -18,24 +19,14 @@ export function NetWol(props) {
     const go = async (macAddress?: string) => {
         const mac_v = macAddress?macAddress:mac;
         if (!mac_v) {
-            new Noty({
-                type: 'error',
-                text: 'mac地址不能为空',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotyFail('mac地址不能为空')
             return;
         }
         const rsp = await netHttp.post("wol/exec", {mac:mac_v});
         if (rsp.code !== RCode.Success) {
             return;
         }
-        new Noty({
-            type: 'success',
-            text: '发送唤醒命令成功',
-            timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-            layout: "bottomLeft"
-        }).show();
+        NotySuccess('发送唤醒命令成功')
     }
 
     const getItems = async () => {
@@ -48,12 +39,7 @@ export function NetWol(props) {
     const saveItems = async (items) => {
         const rsq = await netHttp.post("wol/tag/save", items);
         if (rsq.code !== RCode.Success) {
-            new Noty({
-                type: 'error',
-                text: '网络错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotyFail('网络错误')
         }
     }
     const clickItem = async (item: any) => {

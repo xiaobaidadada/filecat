@@ -6,7 +6,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
 import {editor_data} from "../../../util/store.util";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import Ace from "./Ace";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {ableExtBeautify} from "../../../../../common/FileMenuType";

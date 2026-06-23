@@ -16,7 +16,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import {sysHttp, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotyFail, NotySucess, NotyWaring} from "../../util/noty";
+import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
 import {UserAuth, UserData} from "../../../../common/req/user.req";
 import {use_auth_check} from "../../util/store.util";
 
@@ -193,7 +193,7 @@ export function Docker(props) {
                     if (checkRsq.data.length === 0) {
                         const rsq = await sysHttp.post("docker/delete",{ids:keys});
                         if (rsq.code === RCode.Success) {
-                            NotySucess("删除完成");
+                            NotySuccess("删除完成");
                             load_images();
                             set_show_confirm({open:false,handle:null});
                         }

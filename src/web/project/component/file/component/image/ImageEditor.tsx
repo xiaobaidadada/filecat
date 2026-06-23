@@ -4,7 +4,7 @@ import {$stroe} from "../../../../util/store";
 import {getRouterAfter, getRouterPath, getRouterPrePath} from "../../../../util/WebPath";
 import {fileHttp} from "../../../../util/config";
 import {loadJsFileOnce} from "../../../../util/file";
-import {NotyFail, NotySucess} from "../../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {base64UploadType} from "../../../../../../common/file.pojo";
 import {createChunks} from "../../../../util/store.util";
@@ -65,7 +65,7 @@ export default function ImageEditor() {
                     }
 
                 }
-                NotySucess('保存成功')
+                NotySuccess('保存成功')
 
             },
             annotationsCommon: {

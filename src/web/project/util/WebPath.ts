@@ -3,18 +3,24 @@ import {routerConfig} from "../../../common/RouterConfig";
 
 Global.init();
 // 获取某段路由以后的全部路径 最后会带一个 /
-export function getRouterAfter(keyRouter,router) {
+export function getRouterAfter(keyRouter: string, router: string) {
     let result = '';
-    let keys = router.split('/');
-    keys = keys.filter(function (key) {return key!==''})
+    // 1. 去掉 keyRouter 中的斜杠，确保匹配的是纯路径段
+    const targetKey = keyRouter.replace(/\//g, '');
+
+    // 2. 分割并过滤空字符串
+    let keys = router.split('/').filter(key => key !== '');
+
     let start = false;
     for (let i = 0; i < keys.length; i++) {
+        // 3. 使用清理过的 targetKey 进行匹配
+        if (keys[i] === targetKey) {
+            start = true;
+            continue;
+        }
 
         if (start) {
-            result+= `${keys[i]}/`;
-        }
-        if (keys[i]===keyRouter) {
-            start = true;
+            result += `${keys[i]}/`;
         }
     }
     return result;
@@ -83,8 +89,9 @@ export function get_router_key_set() {
    return new Set(getRouterPath().split("/"));
 }
 
-export function get_filter_key(key:string) {
-    return  key.replaceAll("/", "").replaceAll("*", "")
+export function get_filter_key(key: string) {
+    // [/*] 匹配斜杠或星号，g 代表全局替换
+    return key.replace(/[/*]/g, "");
 }
 
 export function have_key_by_router_key_list(router_key_list:string[]) {

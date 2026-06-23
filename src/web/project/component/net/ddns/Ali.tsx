@@ -7,6 +7,7 @@ import {InputPassword, InputRadio, InputText} from "../../../../meta/component/I
 import {ddnsHttp,} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, Tengxun} from "../../../../../common/req/ddns.pojo";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 
 export function Ali(props: any) {
     const [ipv4s,setIpv4s] = useState([]);
@@ -42,12 +43,7 @@ export function Ali(props: any) {
     },[]);
     const save = async ()=>{
         if (isOpen && (!accesskey_id || !accesskey_secret)) {
-            new Noty({
-                type: 'error',
-                text: 'accesskey_id和accesskey_secret都不能为空',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('accesskey_id和accesskey_secret都不能为空')
             return;
         }
         const data = new DdnsConnection();
@@ -63,19 +59,9 @@ export function Ali(props: any) {
         data.ddnsType=DdnsType.ali;
         const rsq = await ddnsHttp.post("save",data);
         if (rsq.code === RCode.DdnsAuthFail) {
-            new Noty({
-                type: 'error',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('鉴权失败')
         } else {
-            new Noty({
-                type: 'success',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotySuccess('success')
         }
     }
     return <div>

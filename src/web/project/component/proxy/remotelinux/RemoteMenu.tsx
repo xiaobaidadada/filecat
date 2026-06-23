@@ -10,7 +10,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {getNextByLoop} from "../../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import {fileTypes} from "../../../../../common/req/user.req";
 import {removeLastDir} from '../../../util/ListUitl';
 
@@ -53,7 +53,7 @@ export function RemoteMenu(props: { close: any }) {
     }
 
     function ok(txt) {
-        NotySucess(txt);
+        NotySuccess(txt);
     }
 
     function copy() {

@@ -8,7 +8,7 @@ import {InputText} from "../../../meta/component/Input";
 import {GlobalContext} from "../../GlobalProvider";
 import {userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
-import {NotySucess} from "../../util/noty";
+import {NotySuccess} from "../../util/noty";
 
 export function ZoomAdjust() {
     const { t } = useTranslation();
@@ -53,7 +53,7 @@ export function ZoomAdjust() {
             setZoomPercent(num);
         }
         await userHttp.post(Http_controller_router.user_save_private_attr, {is_file_list_zoom:true,value:num});
-        NotySucess(t("缩放调整成功"));
+        NotySuccess(t("缩放调整成功"));
         initUserInfo();
         close();
     };

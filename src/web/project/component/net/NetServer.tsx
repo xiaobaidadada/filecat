@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {netHttp} from "../../util/config";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {RCode} from "../../../../common/Result.pojo";
 import {Column, Row} from "../../../meta/component/Dashboard";
 import {Card, StatusCircle, TextTip} from "../../../meta/component/Card";
@@ -81,7 +81,7 @@ export function NetServer(props) {
             NotyFail("网络错误")
             return;
         }
-        NotySucess("保存成功");
+        NotySuccess("保存成功");
         set_opt_server_async(false);
     }
     const delete_h = async () => {

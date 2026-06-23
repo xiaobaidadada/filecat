@@ -5,7 +5,7 @@ import {Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard"
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {FileCompressPojo, FileCompressType, FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
@@ -58,7 +58,7 @@ export function Compress(props) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySucess("完成");
+                NotySuccess("完成");
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()

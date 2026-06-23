@@ -11,7 +11,7 @@ import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.re
 import {GlobalContext} from "../../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {UserAuth, UserData} from "../../../../../common/req/user.req";
 import {deleteList} from "../../../../../common/ListUtil";
 import {have_empty_char} from "../../../../../common/StringUtil";
@@ -83,7 +83,7 @@ export function TcpProxyServerClientSetting() {
         const payload: tcp_proxy_sync_task_item = item;
         const r = await tcpProxy.post("sync_task_save", payload)
         if (r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             await load_sync_tasks()
         }
     }
@@ -91,7 +91,7 @@ export function TcpProxyServerClientSetting() {
     const del_sync_task = async (id: string) => {
         const r = await tcpProxy.post("sync_task_del", {id})
         if (r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             await load_sync_tasks()
         }
     }
@@ -198,7 +198,7 @@ export function TcpProxyServerClientSetting() {
                                             // sub_title: ``,
                                             handle: async () => {
                                                 await del_sync_task(item.id)
-                                                NotySucess("删除完成");
+                                                NotySuccess("删除完成");
                                                 set_confirm({open:false,handle:null});
                                             }
                                         })

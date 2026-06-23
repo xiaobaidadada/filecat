@@ -11,7 +11,7 @@ import {SysSoftware, TokenSettingReq} from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {themes, UserAuth, UserData} from "../../../../common/req/user.req";
 import {deleteList} from "../../../../common/ListUtil";
 import {have_empty_char} from "../../../../common/StringUtil";
@@ -124,7 +124,7 @@ export function Role() {
         const r =await userHttp.post("create_role", user_data);
         getItems();
         if(r.code === RCode.Success) {
-            NotySucess("创建完成");
+            NotySuccess("创建完成");
             getItems();
             set_is_create(false);
             set_is_is_save(false);
@@ -138,7 +138,7 @@ export function Role() {
         user_data.role_id = role_id;
         const r = await userHttp.post("save_role", user_data);
         if(r.code === RCode.Success) {
-            NotySucess("保存完成");
+            NotySuccess("保存完成");
             getItems();
         }
     }
@@ -152,7 +152,7 @@ export function Role() {
                 user_data.role_id = role_id;
                 const result = await userHttp.post("delete_role", user_data);
                 if(result.code === RCode.Success) {
-                    NotySucess("删除完成");
+                    NotySuccess("删除完成");
                     getItems();
                     setShowPrompt({open:false,handle:null});
                 }

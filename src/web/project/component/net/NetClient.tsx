@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {ddnsHttp, netHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotySucess,NotyFail} from "../../util/noty";
+import {NotySuccess,NotyFail} from "../../util/noty";
 import {Column, Row} from "../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
@@ -74,7 +74,7 @@ export function NetClient(props) {
             NotyFail("网络错误")
             return;
         }
-        NotySucess("保存成功")
+        NotySuccess("保存成功")
     }
 
 

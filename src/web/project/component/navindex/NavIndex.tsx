@@ -10,6 +10,7 @@ import {useTranslation} from "react-i18next";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import { useAtom } from 'jotai';
+import {NotyFail, NotySuccess} from "../../util/noty";
 
 
 
@@ -36,13 +37,8 @@ export default function NavIndex() {
     }
     const save = async (items)=>{
         const rsq = await navHttp.post("save",items);
-        if (rsq.code !== RCode.Success) {
-            new Noty({
-                type: 'error',
-                text: '网络错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+        if (rsq.code === RCode.Success) {
+            NotySuccess('保存成功')
         }
     }
 

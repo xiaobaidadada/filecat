@@ -13,7 +13,7 @@ import {file_sort, getFilesByIndexs, using_drop_file_upload} from "../../file/Fi
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {formatFileSize} from '../../../../../common/ValueUtil';
 import {getShortTime} from "../../../../project/util/common_util";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";

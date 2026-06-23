@@ -95,15 +95,7 @@ export function RemoteLinux(props) {
         return [];
     }
     const saveItems = async (items)=>{
-        const rsq = await sshHttp.post("tag/save",items);
-        if (rsq.code !== RCode.Success) {
-            new Noty({
-                type: 'error',
-                text: '网络错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
-        }
+         await sshHttp.post("tag/save",items);
     }
     const clickItem = async (item: SshPojo)=>{
         setDomain(item.domain);
@@ -120,12 +112,7 @@ export function RemoteLinux(props) {
         }
         const isNumber = /^\d+$/.test(v);
         if (!isNumber) {
-            new Noty({
-                type: 'error',
-                text: '不是数字',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('不是数字');
         }
         setPort(parseInt(v));
     }

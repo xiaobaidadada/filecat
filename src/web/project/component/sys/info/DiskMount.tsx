@@ -7,7 +7,7 @@ import {fileHttp, sysHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {Card, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import Header from "../../../../meta/component/Header";
 import {Column, FlexContainer, FullScreenContext, FullScreenDiv, Row} from "../../../../meta/component/Dashboard";
 import {Table} from "../../../../meta/component/Table";
@@ -172,7 +172,7 @@ export function DiskMount() {
                       onClick={async () => {
                           const rsq2 = await sysHttp.post("cmd/exe", {type: SysCmd.mount});
                           if (rsq2.code === RCode.Success) {
-                              NotySucess("挂载文件已生效")
+                              NotySuccess("挂载文件已生效")
                           }
                       }}/>
     ]
@@ -209,7 +209,7 @@ export function DiskMount() {
                                 }}/>}
                             <ActionButton icon={"update"} title={t("刷新")} onClick={async () => {
                                 if (await get_blk() === RCode.Success) {
-                                    NotySucess("刷新成功")
+                                    NotySuccess("刷新成功")
                                 }
                             }}/>
                         </div>}>

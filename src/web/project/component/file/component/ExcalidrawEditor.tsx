@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp} from "../../../util/config";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {useNavigate} from "react-router-dom";
 import {Http} from "../../../util/http";
 import {useTranslation} from "react-i18next";
@@ -117,7 +117,7 @@ export default function ExcalidrawEditor() {
         );
 
         if (rsq.code === RCode.Success) {
-            NotySucess("保存成功");
+            NotySuccess("保存成功");
         }
     };
 

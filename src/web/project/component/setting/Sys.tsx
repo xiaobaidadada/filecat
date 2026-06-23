@@ -14,7 +14,7 @@ import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../comm
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {getShortTime} from "../../../project/util/common_util";
 import {GlobalContext} from "../../GlobalProvider";
@@ -51,7 +51,7 @@ export function  Sys() {
         }
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.cyc,value:recycle_dir,open:recycle_open});
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         }
     }
     useEffect(() => {
@@ -130,14 +130,14 @@ export function  Sys() {
     const authOpenSave = async () =>{
         const result = await settingHttp.post("self_auth_open/save", {open:authopen});
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         }
     }
 
     const auth_shell_open_Save = async () =>{
         const result = await settingHttp.post("shell_cmd_check_open/save", {open:shell_cmd_open});
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         }
     }
 
@@ -151,7 +151,7 @@ export function  Sys() {
         data.length = parseInt(tokenSeconds);
         const result1 = await settingHttp.post("token/save",data);
         if (result1.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
 
@@ -163,7 +163,7 @@ export function  Sys() {
     const tokenClearAll = async () => {
         const result1 = await settingHttp.get("token/clear");
         if (result1.code === RCode.Success) {
-            NotySucess("清理完成，重新登录")
+            NotySuccess("清理完成，重新登录")
         }
     }
     const save_sys_env = async () =>{
@@ -173,7 +173,7 @@ export function  Sys() {
                 show_login_user_info
             }});
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         } else {
             return;
         }

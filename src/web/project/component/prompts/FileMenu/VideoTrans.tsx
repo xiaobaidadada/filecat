@@ -5,7 +5,7 @@ import {InputText} from "../../../../meta/component/Input";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {StringUtil} from "../../../../../common/StringUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {FileVideoFormatTransPojo} from "../../../../../common/file.pojo";
@@ -60,7 +60,7 @@ export function VideoTrans(props) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySucess("完成");
+                NotySuccess("完成");
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()

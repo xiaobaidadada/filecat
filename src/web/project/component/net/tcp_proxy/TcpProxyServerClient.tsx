@@ -11,7 +11,7 @@ import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.re
 import {GlobalContext} from "../../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {UserAuth, UserData} from "../../../../../common/req/user.req";
 import {deleteList} from "../../../../../common/ListUtil";
 import {have_empty_char, join_url} from "../../../../../common/StringUtil";
@@ -121,13 +121,13 @@ export function TcpProxyServerClient() {
     const save_client_fig = async ()=>{
         const r = await tcpProxy.post("server_client_save",edit_client)
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
         }
     }
     const server_client_del = async (client_num_id:number) => {
         const r = await tcpProxy.post("server_client_del",{client_num_id})
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             getItems()
         }
     }
@@ -139,7 +139,7 @@ export function TcpProxyServerClient() {
         }
         const r = await tcpProxy.post("server_bridge_add_fig",item)
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             get_server_bridge_get_one_fig(item.server_client_num_id)
 
         }
@@ -152,7 +152,7 @@ export function TcpProxyServerClient() {
         }
         const r = await tcpProxy.post("server_bridge_edit_fig",item)
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             get_server_bridge_get_one_fig(item.server_client_num_id)
 
         }
@@ -161,7 +161,7 @@ export function TcpProxyServerClient() {
     const bridge_del = async (id:string,server_client_num_id) => {
         const r = await tcpProxy.post("server_bridge_del_fig",{id})
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
             get_server_bridge_get_one_fig(server_client_num_id)
 
         }
@@ -276,7 +276,7 @@ export function TcpProxyServerClient() {
                                     <ActionButton icon={'content_copy'} title={t('复制filecat代理url')}  onClick={() => {
                                         const url = `${window.location.origin}?tcp_client_num_id=${edit_client.client_num_id}`
                                         copyToClipboard(url)
-                                        NotySucess(url)
+                                        NotySuccess(url)
                                     }}  />
                                 </React.Fragment>
                             )

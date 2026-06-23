@@ -13,7 +13,7 @@ import {CustomerApiRouter} from "./CustomerApiRouter";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {NotyFail, NotyWaring} from "../../util/noty";
+import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
 import Header from "../../../meta/component/Header";
 
 
@@ -26,15 +26,11 @@ export function CustomerRouter() {
     const headers_workflow = [t("路由"), t("文件路径"),"token","user id", t("备注"),];
 
     const save = async (req: [[]]) => {
-        const result = await settingHttp.post(Http_controller_router.setting_customer_router_save, req);
-        if (result.code === RCode.Success) {
-            new Noty({
-                type: 'success',
-                text: '保存成功',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
-        }
+       const rsq = await settingHttp.post(Http_controller_router.setting_customer_router_save, req);
+       if(rsq.code === RCode.Success){
+           NotySuccess("success")
+       }
+
     }
     const getItems = async () => {
         const result = await settingHttp.get(Http_controller_router.setting_customer_router);
@@ -118,12 +114,7 @@ export function CustomerRouter() {
                 }} save={async (req: [[]]) => {
                     const result = await settingHttp.post(Http_controller_router.setting_customer_workflow_router_save, req);
                     if (result.code === RCode.Success) {
-                        new Noty({
-                            type: 'success',
-                            text: '保存成功',
-                            timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                            layout: "bottomLeft"
-                        }).show();
+                        NotySuccess('保存成功')
                     }
                 }} info_click={worlfow_api_info_click}/>
             </Column>

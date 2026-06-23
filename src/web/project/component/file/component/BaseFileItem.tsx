@@ -6,7 +6,7 @@ import {$stroe} from "../../../util/store";
 import {fileHttp, userHttp} from "../../../util/config";
 import {FileListPaginationModeEmum, UserData} from "../../../../../common/req/user.req";
 import {RCode} from "../../../../../common/Result.pojo";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useNavigate} from "react-router-dom";
 import {getFileNameByLocation, getFilesByIndexs} from "../FileUtil";

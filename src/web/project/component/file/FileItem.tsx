@@ -12,7 +12,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
 import {user_click_file} from "../../util/store.util";
-import {getFileNameByLocation, getFilesByIndexs} from "./FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, use_click_folder} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
@@ -28,6 +28,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
 
     const navigate = useNavigate();
     let location = useLocation();
+    const click_folder = use_click_folder()
     // const match = useMatch('/:pre/file/*');
     const clickHandler = async (index, name) => {
         const select = getByList(selectList, index);
@@ -69,14 +70,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
             if (item !== undefined) {
                 // 双击文件夹
                 // debugger;
-                navigate(webPathJoin(getRouterPath(), name))
-                setSelectList([])
-                setClickList([])
-                setNowFileList({files: [], folders: []});
-                set_file_page({
-                    page_num: 1,
-                    page_size: 200
-                })
+                click_folder(name)
                 return;
             }
         } else {

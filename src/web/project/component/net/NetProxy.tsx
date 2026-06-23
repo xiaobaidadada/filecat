@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {netHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotySucess} from "../../util/noty";
+import {NotySuccess} from "../../util/noty";
 import {Column, Row} from "../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
@@ -118,7 +118,7 @@ export function NetProxy(props) {
         const result = await netHttp.post("http/proxy/set/win", pojo);
         if (result.code === RCode.Success) {
             init();
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
 
@@ -127,7 +127,7 @@ export function NetProxy(props) {
         const result = await netHttp.post("http/proxy/set/mac", [pojo]);
         if (result.code === RCode.Success) {
             init();
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
     const save_outside_software = async () => {
@@ -138,7 +138,7 @@ export function NetProxy(props) {
         }
         const result = await netHttp.post("vir/client/tcp_proxy/save", list);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             init()
         }
     }
@@ -147,7 +147,7 @@ export function NetProxy(props) {
         const result = await netHttp.post("http/proxy/server/save", httpServer);
         if (result.code === RCode.Success) {
             init();
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
 

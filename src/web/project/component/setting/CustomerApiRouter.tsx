@@ -1,21 +1,17 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {Dashboard, } from "../../../meta/component/Dashboard";
-import {Card, CardFull} from "../../../meta/component/Card";
-import {ActionButton, ButtonText} from "../../../meta/component/Button";
+import React, {useEffect, useState} from 'react'
+import {Dashboard,} from "../../../meta/component/Dashboard";
+import {CardFull} from "../../../meta/component/Card";
+import {ActionButton} from "../../../meta/component/Button";
 import {InputText, Select} from "../../../meta/component/Input";
-import {fileHttp, settingHttp} from "../../util/config";
-import {UserLogin} from "../../../../common/req/user.req";
+import {settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {Table} from "../../../meta/component/Table";
-import {TableListRender} from "./component/TableListRend";
-import { useAtom } from 'jotai'; 
+import {useAtom} from 'jotai';
 import {$stroe} from "../../util/store";
-import {saveTxtReq} from "../../../../common/req/file.req";
 import {useTranslation} from "react-i18next";
 import {editor_data} from "../../util/store.util";
-import {NotyFail} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_select_config} from "../../util/react.config";
-
 
 
 export function CustomerApiRouter() {
@@ -38,12 +34,7 @@ export function CustomerApiRouter() {
     const save = async () => {
         const result = await settingHttp.post("api/customer_router/save", rows);
         if (result.code === RCode.Success) {
-            new Noty({
-                type: 'success',
-                text: '保存成功',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotySuccess('保存成功')
         }
     }
     const add = ()=>{
@@ -69,9 +60,10 @@ export function CustomerApiRouter() {
                     router:item.router
                 }
                 const rsq = await settingHttp.post("jscode/save", data);
-                if (rsq.code === 0) {
+                if (rsq.code === RCode.Success) {
                     editor_data.set_value_temp('')
                     setEditorSetting({open: false,model:'',fileName:'',save:null})
+                    NotySuccess('成功')
                 }
             }
         })

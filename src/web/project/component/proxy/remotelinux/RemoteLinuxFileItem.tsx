@@ -9,7 +9,7 @@ import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {saveTxtReq} from "../../../../../common/req/file.req";
 import {BaseFileItem} from "../../file/component/BaseFileItem";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {editor_data} from "../../../util/store.util";
 import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
 import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
@@ -111,7 +111,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                                 const rsq = await sshHttp.post("update/file/text",req);
                                 if (rsq.code === 0) {
                                     editor_data.set_value_temp('')
-                                    NotySucess("success");
+                                    NotySuccess("success");
                                     // setEditorSetting({open: false,  fileName: '', save: null})
                                 }
                             }

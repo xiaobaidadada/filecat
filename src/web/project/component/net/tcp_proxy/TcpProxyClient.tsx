@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {tcpProxy} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {Column, Row} from "../../../../meta/component/Dashboard";
 import {Card, StatusCircle, TextTip} from "../../../../meta/component/Card";
 import {InputRadio, InputText, Select} from "../../../../meta/component/Input";
@@ -102,7 +102,7 @@ export function TcpProxyClient(props) {
             NotyFail("网络错误")
             return;
         }
-        NotySucess("保存成功")
+        NotySuccess("保存成功")
         init()
     }
     const save =async (item:tcp_proxy_client_fig)=>{
@@ -122,7 +122,7 @@ export function TcpProxyClient(props) {
             NotyFail("网络错误")
             return;
         }
-        NotySucess("保存成功")
+        NotySuccess("保存成功")
     }
 
 

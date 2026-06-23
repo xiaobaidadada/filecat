@@ -12,7 +12,7 @@ import Header from "../../../../meta/component/Header";
 import {PromptEnum} from "../../prompts/Prompt";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
-import {NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 
 export function Dnspod(props: any) {
     const {t} = useTranslation();
@@ -53,12 +53,7 @@ export function Dnspod(props: any) {
     }, []);
     const save = async () => {
         if (isOpen && (!id || !token)) {
-            new Noty({
-                type: 'error',
-                text: 'id和token都不能为空',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotyFail('id和token都不能为空')
             return;
         }
         const data = new DdnsConnection();
@@ -74,19 +69,9 @@ export function Dnspod(props: any) {
         data.ddnsType = DdnsType.dnspod;
         const rsq = await ddnsHttp.post("save", data);
         if (rsq.code === RCode.DdnsAuthFail) {
-            new Noty({
-                type: 'error',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotyFail('鉴权失败')
         } else {
-            new Noty({
-                type: 'success',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout: "bottomLeft"
-            }).show();
+            NotySuccess('success')
         }
     }
 
@@ -98,7 +83,7 @@ export function Dnspod(props: any) {
             open: true, handle: async () => {
                 const rsq = await ddnsHttp.post('http/del', data)
                 if (rsq.code === 0) {
-                    NotySucess("删除成功，稍后请刷新");
+                    NotySuccess("删除成功，稍后请刷新");
                 }
                 set_confirm({open: false, handle: null});
             }, title: t("确定删除吗")

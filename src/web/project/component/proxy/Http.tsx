@@ -11,7 +11,7 @@ import { netHttp } from "../../util/config";
 import { RCode } from "../../../../common/Result.pojo";
 import { useAtom } from "jotai";
 import { $stroe } from "../../util/store";
-import { NotyFail, NotySucess } from "../../util/noty";
+import { NotyFail, NotySuccess } from "../../util/noty";
 import { copyToClipboard } from "../../util/FunUtil";
 import { editor_data, use_auth_check } from "../../util/store.util";
 import { http_body_type, http_download_map, HttpFormData, HttpFormPojo } from "../../../../common/req/net.pojo";
@@ -458,7 +458,7 @@ export function Http() {
                             }} />
                             <ActionButton title={t("复制")} icon={"copy_all"} onClick={() => {
                                 const val = editor_data.get_editor_value(2);
-                                if (val) { copyToClipboard(val); NotySucess("完成"); }
+                                if (val) { copyToClipboard(val); NotySuccess("完成"); }
                             }} />
                         </div>
                     }>

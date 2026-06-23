@@ -15,7 +15,7 @@ import {fileHttp} from "../../../../util/config";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
-import {NotyFail, NotySucess} from "../../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
 import Header from "../../../../../meta/component/Header";
 import {
@@ -254,7 +254,7 @@ export default function Share() {
                                             });
                                             const f = fileHttp.get_full_url(url)
                                             copyToClipboard(f)
-                                            NotySucess(f)
+                                            NotySuccess(f)
                                         }}/>
 
                                         <ButtonText text={"preview"} clickFun={() => {

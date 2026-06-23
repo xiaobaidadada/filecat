@@ -14,7 +14,7 @@ import TreeView from "../../../../../meta/component/TreeView";
 import {tree_list, workflow_realtime_tree_list} from "../../../../../../common/req/common.pojo";
 // import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
-import {NotyFail, NotySucess} from "../../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../../util/noty";
 import { get_children_list } from "./workflow.util";
 
 const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))

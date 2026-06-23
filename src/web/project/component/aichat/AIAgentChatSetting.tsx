@@ -11,7 +11,7 @@ import {Card, CardFull} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
@@ -203,7 +203,7 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
     const save_mcp = async (data_rows?:any) => {
@@ -212,7 +212,7 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_mcp_setting/save", {list:data_rows??mcp_list});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             mcp_update_tag.current = false;
             await loadMcpTools();
         }
@@ -245,7 +245,7 @@ export default function AIAgentChatSetting() {
             const result = await settingHttp.post("ai_mcp_tools/reload", {index});
             if (result.code === RCode.Success) {
                 await loadMcpTools();
-                NotySucess("MCP工具加载成功")
+                NotySuccess("MCP工具加载成功")
                 return result.data ?? null;
             }
         } finally {
@@ -375,7 +375,7 @@ export default function AIAgentChatSetting() {
         docs_update_tag.current = false;
         const result = await settingHttp.post("ai_docs_setting_save", body);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
     // 系统会话提示词相关
@@ -392,7 +392,7 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_system_prompts/save", {list: sys_prompt_list});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
         }
     }
     return <div>
@@ -745,7 +745,7 @@ export default function AIAgentChatSetting() {
                                                             ai_agentHttp.post("ai_load_one_file", {
                                                                 param_path:item.dir
                                                             });
-                                                            NotySucess("ok")
+                                                            NotySuccess("ok")
                                                         }
                                                     })
                                                 }}
@@ -757,7 +757,7 @@ export default function AIAgentChatSetting() {
                                                             ai_agentHttp.post("ai_del", {
                                                                 param_path:item.dir
                                                             });
-                                                            NotySucess("ok")
+                                                            NotySuccess("ok")
                                                         }
                                                     })
                                                 }}

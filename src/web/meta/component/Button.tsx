@@ -134,6 +134,6 @@ export default function Switch({
     );
 }
 
-export function Icon(props:{icon: MaterialIcon|'',style?:any,aria_label?:string}) {
-    return <i className="material-icons icon" aria-label={props.aria_label} data-icon={props.icon} style={{...props.style}}>{props.icon}</i>
+export function Icon(props:{icon: MaterialIcon|'',style?:any,aria_label?:string,not_use_icon_style?:boolean}) {
+    return <i className={`material-icons ${props.not_use_icon_style?"":"icon"}`} aria-label={props.aria_label} data-icon={props.icon} style={{...props.style}}>{props.icon}</i>
 }

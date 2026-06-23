@@ -8,7 +8,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {FileCompressType} from "../../../../common/file.pojo";
 import {CardPrompt} from "../../../meta/component/Card";
-import {NotySucess} from "../../util/noty";
+import {NotySuccess} from "../../util/noty";
 import {DdnsIPPojo, ip_source_type} from "../../../../common/req/ddns.pojo";
 
 export function DdnsAddHttp(props) {
@@ -36,7 +36,7 @@ export function DdnsAddHttp(props) {
         ipPojo.source_type = ip_source_type.http_get;
         const rsq = await ddnsHttp.post('http/add', ipPojo)
         if (rsq.code === 0) {
-            NotySucess("添加成功，稍后刷新")
+            NotySuccess("添加成功，稍后刷新")
             navigate(getRouterPath());
         }
         cancel();

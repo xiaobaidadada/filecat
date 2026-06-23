@@ -4,7 +4,7 @@ import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
 import {FileCompressType, FileInfo, FileTypeEnum} from "../../../../../common/file.pojo";
@@ -30,6 +30,7 @@ import {routerConfig} from "../../../../../common/RouterConfig";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
+import {use_click_folder} from "../../file/FileUtil";
 
 
 export function FileMenu() {
@@ -125,9 +126,16 @@ export function FileMenu() {
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const {initUserInfo} = useContext(GlobalContext);
     const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
+    const click_folder = use_click_folder()
+    const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
 
-
-    const items_folder = [{r: t("以studio打开"), v: common_menu_type.sutdio}, {
+    const items_folder = [
+        {r: t("以studio打开"), v: common_menu_type.sutdio},
+        {
+            r: t("以空白搜索模式打开目录"),
+            v: common_menu_type.blank_search_mode
+        },
+        {
         r: t("统计信息"),
         v: common_menu_type.folder_size_info
     },...must_needs];
@@ -281,6 +289,11 @@ export function FileMenu() {
                 navigate(`/${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
             }
             break;
+            case common_menu_type.blank_search_mode : {
+                set_blank_search_mode_for_temp(true)
+                click_folder(showPrompt.data.filename)
+            }
+            break;
             case common_menu_type.folder_size_info: {
                 ws.addMsg(CmdType.folder_size_info, (data) => {
                     set_folder_info_list_data([data.context[0], data.context[1]]);
@@ -298,7 +311,7 @@ export function FileMenu() {
                     // 确定保存
                     const result = await settingHttp.post("add_share_file_list", item);
                     if (result.code === RCode.Success) {
-                        NotySucess("添加成功")
+                        NotySuccess("添加成功")
                         set_prompt_card({open:false})
                         navigate(`/${routerConfig.share_list_setting_page}`);
                     }
@@ -337,7 +350,7 @@ export function FileMenu() {
                 });
                 const p = fileHttp.get_full_url(uu)
                 copyToClipboard(p);
-                NotySucess(p)
+                NotySuccess(p)
                 break;
             case common_menu_type.ai_load_one_file: {
                 set_prompt_card({
@@ -349,7 +362,7 @@ export function FileMenu() {
                             param_path:get_ab_path()
                         });
                         if (result.code === RCode.Success) {
-                            NotySucess("更新到AI知识库成功")
+                            NotySuccess("更新到AI知识库成功")
                         }
                     },
                     context_div: (
@@ -371,7 +384,7 @@ export function FileMenu() {
                             param_path:get_ab_path()
                         });
                         if (result.code === RCode.Success) {
-                            NotySucess("ok")
+                            NotySuccess("ok")
                         }
                     }
                 })
@@ -442,12 +455,12 @@ export function FileMenu() {
             <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
                                                                       items={[
                                                                           {r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'download'}/>
+                                                                                  <Icon icon={'download'} not_use_icon_style={true}/>
                                                                                   <span>{"download"}</span>
                                                                           </div>, v: common_menu_type.share_file_download
                                                                           },
                                                                           {r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'link'}/>
+                                                                                  <Icon icon={'link'} not_use_icon_style={true}/>
                                                                                   <span>{"copy curl"}</span>
                                                                               </div>, v: common_menu_type.share_file_copy_url
                                                                           }

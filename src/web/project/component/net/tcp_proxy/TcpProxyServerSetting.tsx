@@ -11,7 +11,7 @@ import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.re
 import {GlobalContext} from "../../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
     server_client_proxy, tcp_proxy_bridge_fig_item,
     tcp_proxy_client_item,
@@ -100,7 +100,7 @@ export function TcpProxyServerSetting() {
             notice_client:notice_client
         })
         if(r.code === RCode.Success) {
-            NotySucess("成功")
+            NotySuccess("成功")
         }
     }
 

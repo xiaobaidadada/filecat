@@ -17,7 +17,7 @@ import {
 import {GlobalContext} from "../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {sort} from "../../../../common/ListUtil";
 import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
@@ -104,7 +104,7 @@ export function Env() {
     const save_pty_cmd = async () => {
         const result = await settingHttp.post("pty_cmd/save", {str: pty_cmd});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             reloadUserInfo();
         }
     }
@@ -113,7 +113,7 @@ export function Env() {
     const protection_sys_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/sys/save", protection_sys_dir_rows);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             reloadUserInfo();
         }
     }
@@ -139,7 +139,7 @@ export function Env() {
         sort(dir_upload_rows, v => v.index);
         const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             reloadUserInfo();
         }
     }
@@ -174,7 +174,7 @@ export function Env() {
     const save_outside_software = async () => {
         const result = await settingHttp.post("outside/software/save", rows_outside_software);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             initUserInfo();
         }
     }
@@ -185,7 +185,7 @@ export function Env() {
     const update_env_path = async () => {
         const result = await settingHttp.post("env/path/save", {paths: env_path_dir_rows});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             get_env()
             initUserInfo();
         }
@@ -194,7 +194,7 @@ export function Env() {
     const workflow_setting_rows_save = async ()=>{
         const result2 = await settingHttp.post("workflow_setting_save",workflow_setting_rows);
         if (result2.code === RCode.Success) {
-            NotySucess("ok")
+            NotySuccess("ok")
             get_workflow_setting_rows()
         }
     }
@@ -202,7 +202,7 @@ export function Env() {
     const save_plugin_list = async () => {
         const result = await settingHttp.post("plugin/list/save", plugin_rows);
         if (result.code === RCode.Success) {
-            NotySucess(t("保存成功"))
+            NotySuccess(t("保存成功"))
         }
     }
 

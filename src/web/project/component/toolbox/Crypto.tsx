@@ -13,7 +13,7 @@ import {cryptoHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {copyToClipboard} from "../../util/FunUtil";
 
 let home_path;
@@ -54,7 +54,7 @@ export function Crypto() {
                     context: type === "pub" ? publicKey : privateKey,
                 });
                 if (result.code === RCode.Success) {
-                    NotySucess("完成");
+                    NotySuccess("完成");
                     setShowPrompt({open:false,handle:null});
                 }
             }
@@ -80,7 +80,7 @@ export function Crypto() {
                     <Card title={t('公钥')} titleCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (publicKey) {
                             copyToClipboard(publicKey);
-                            NotySucess("完成")
+                            NotySuccess("完成")
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&
@@ -104,7 +104,7 @@ export function Crypto() {
                     <Card title={t('私钥')} titleCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (privateKey) {
                             copyToClipboard(privateKey);
-                            NotySucess("成功")
+                            NotySuccess("成功")
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&

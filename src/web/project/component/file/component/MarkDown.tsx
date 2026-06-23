@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {ActionButton} from "../../../../meta/component/Button";
 import Header from "../../../../meta/component/Header";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import {join_url} from "../../../../../common/StringUtil";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {useTranslation} from "react-i18next";

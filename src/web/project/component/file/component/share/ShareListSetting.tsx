@@ -8,7 +8,7 @@ import {useTranslation} from "react-i18next";
 import {file_share_item} from "../../../../../../common/req/file.req";
 import {settingHttp} from "../../../../util/config";
 import {RCode} from "../../../../../../common/Result.pojo";
-import {NotySucess} from "../../../../util/noty";
+import {NotySuccess} from "../../../../util/noty";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../../util/FunUtil";
 import Header from "../../../../../meta/component/Header";
@@ -57,7 +57,7 @@ export default function ShareListSetting() {
     const save = async ()=>{
         const result = await settingHttp.post("set_share_file_list", rows);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             get_items()
         }
     }
@@ -117,7 +117,14 @@ export default function ShareListSetting() {
                                 <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
                                     const url = join_url(`${window.location.origin}${Global.base_url}`,`${routerConfig.share}/${item.id}`)
                                     copyToClipboard(url)
-                                    NotySucess(url)
+                                    NotySuccess(url)
+                                }}/>
+                            }
+                            {
+                                item.id &&
+                                <ActionButton icon={"open_in_new"} title={t("复制地址")} onClick={() => {
+                                    const url = join_url(`${window.location.origin}${Global.base_url}`,`${routerConfig.share}/${item.id}`)
+                                    window.open(url);
                                 }}/>
                             }
                         </div>

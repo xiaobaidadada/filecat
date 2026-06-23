@@ -71,12 +71,7 @@ export function BrowserProxy(props) {
     const saveItems = async (items)=>{
         const rsq = await netHttp.post("tag/save",items);
         if (rsq.code !== RCode.Success) {
-            new Noty({
-                type: 'error',
-                text: '网络错误',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('网络错误')
         }
     }
     const clickItem = async (item: { url?: string, name?: string })=>{
@@ -89,12 +84,7 @@ export function BrowserProxy(props) {
         }
         const isNumber = /^\d+$/.test(v);
         if (!isNumber) {
-            new Noty({
-                type: 'error',
-                text: '不是数字',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('不是数字')
         }
         setSysPort(parseInt(v));
     }

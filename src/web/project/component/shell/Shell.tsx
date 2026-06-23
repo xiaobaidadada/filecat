@@ -4,7 +4,7 @@ import {FitAddon} from "@xterm/addon-fit";
 import {Terminal} from "@xterm/xterm";
 import '@xterm/xterm/css/xterm.css'
 import {copyToClipboard} from "../../util/FunUtil";
-import {NotySucess} from "../../util/noty";
+import {NotySuccess} from "../../util/noty";
 
 export interface ShellProps {
     show:boolean,
@@ -56,7 +56,7 @@ export default function Shell(props:ShellProps) {
                     const selectedText = props.terminal.getSelection();
                     if (selectedText) {
                         copyToClipboard(selectedText);
-                        NotySucess("已复制");
+                        NotySuccess("已复制");
                         // 阻止默认的 Ctrl + C 事件（防止它发送中断信号）
                         event.preventDefault();
                         props.terminal.focus();

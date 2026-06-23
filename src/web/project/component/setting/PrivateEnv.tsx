@@ -17,7 +17,7 @@ import {
 import {GlobalContext} from "../../GlobalProvider";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_themes_list, using_env_prompt} from "./util";
 import {themes, UserLogin} from "../../../../common/req/user.req";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
@@ -83,7 +83,7 @@ export function PrivateEnv() {
         }
         const result = await settingHttp.post("filesSetting/save", {dirs:rows});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             reloadUserInfo();
         }
     }
@@ -98,7 +98,7 @@ export function PrivateEnv() {
         // }
         const result = await settingHttp.post("filesSetting/save", {quick_cmd:quick_cmd_rows});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             // reloadUserInfo();
             initUserInfo();
         }
@@ -106,7 +106,7 @@ export function PrivateEnv() {
     const file_quick_cmd_save = async () => {
         const result = await settingHttp.post("filesSetting/save", {file_quick_cmd:file_quick_cmd_rows});
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             initUserInfo();
         }
     }
@@ -114,7 +114,7 @@ export function PrivateEnv() {
     const protection_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/save", protection_dir_rows);
         if (result.code === RCode.Success) {
-            NotySucess("保存成功")
+            NotySuccess("保存成功")
             reloadUserInfo();
         }
     }
@@ -185,7 +185,7 @@ export function PrivateEnv() {
         user.user_id = userInfo.user_data.id;
         const result = await userHttp.post("updatePassword",user);
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         }
     }
 
@@ -197,7 +197,7 @@ export function PrivateEnv() {
                 upload_file_ignore
             }});
         if (result.code === RCode.Success) {
-            NotySucess("修改成功")
+            NotySuccess("修改成功")
         } else {
             return;
         }

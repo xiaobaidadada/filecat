@@ -11,7 +11,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {create_quick_cmd_items, file_sort, title_workflow_file_fail, title_workflow_file_success} from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {use_auth_check, user_click_file} from "../../util/store.util";
@@ -69,6 +69,7 @@ export default function FileList() {
 
     const [file_page, set_file_page] = useAtom($stroe.file_page);
     const [blankSearchMode] = useAtom($stroe.blank_search_mode);
+    const [blank_search_mode_for_temp,set_blank_search_mode_for_temp ] = useAtom($stroe.blank_search_mode_for_temp);
 
     const handleContextMenu = use_handleContextMenu()
 
@@ -125,7 +126,7 @@ export default function FileList() {
     const fileHandler = async () => {
         const path  = getRouterAfter('file', getRouterPath())
         // 空白搜索模式下，进入目录时不请求文件列表，直接显示空白
-        if (blankSearchMode) {
+        if (blankSearchMode || blank_search_mode_for_temp) {
             return;
         }
         // 文件列表初始化界面
@@ -193,7 +194,7 @@ export default function FileList() {
 
     // 搜索
     const searchHanle = async () => {
-        if (blankSearchMode) {
+        if (blankSearchMode || blank_search_mode_for_temp) {
             // 空白搜索模式：调用后端接口进行搜索过滤
             setSelectList([])
             setClickList([])

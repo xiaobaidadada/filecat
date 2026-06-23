@@ -6,7 +6,7 @@ import {ActionButton, Icon} from "../../../../meta/component/Button";
 import {use_auth_check} from "../../../util/store.util";
 import {UserAuth} from "../../../../../common/req/user.req";
 import {copyToClipboard} from "../../../util/FunUtil";
-import {NotySucess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {using_confirm} from "../../prompts/prompt.util";
 import {RCode} from "../../../../../common/Result.pojo";
@@ -502,7 +502,7 @@ export default function AiAgentChatPage() {
 
     const handleCopy = async (text: string) => {
         copyToClipboard(text);
-        NotySucess('复制成功')
+        NotySuccess('复制成功')
     };
 
     const deleteSession = (sessionId: string) => {

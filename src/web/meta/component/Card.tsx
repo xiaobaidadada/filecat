@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {InputText} from "./Input";
 import {copyToClipboard} from "../../project/util/FunUtil";
+import {NotySuccess} from "../../project/util/noty";
 
 export interface CardProps {
     title?: string;
@@ -54,12 +55,7 @@ export function TextTip(props: TextProps) {
     const copyRef = useRef<HTMLDivElement>(null);
     const click = () => {
         copyToClipboard(props.tip_context ?? props.context ?? props.children)
-        new Noty({
-            type: 'info',
-            text: '复制完成',
-            timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-            layout: "bottomLeft"
-        }).show();
+        NotySuccess('复制完成')
     }
     return (
         <div className="card-text">

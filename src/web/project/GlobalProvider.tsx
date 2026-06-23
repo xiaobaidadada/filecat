@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import {auth_key_map} from "./util/store.util";
 import {setTheme} from "./util/FunUtil";
 import {is_share} from "./util/WebPath";
+import {Icon} from "../meta/component/Button";
 
 export const GlobalContext = createContext(undefined);
 
@@ -35,6 +36,13 @@ export const GlobalProvider = ({ children }) => {
                     v:i
                 })
             }
+            list.push({
+                r:(<div className={"common-tag-center"}>
+                    <Icon icon={'add'} not_use_icon_style={true}/>
+                    <span>{"添加"}</span>
+                </div>),
+                v: -1
+            })
             setFile_paths(list);
         }
     }

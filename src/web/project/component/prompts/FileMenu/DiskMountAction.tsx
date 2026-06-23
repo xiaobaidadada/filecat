@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import { FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {sysHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";

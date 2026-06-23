@@ -5,7 +5,7 @@ import { FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/compo
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
 import {useLocation, useNavigate} from "react-router-dom";
-import {NotyFail, NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {get_zip_file_format_util, StringUtil} from "../../../../../common/StringUtil";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {
@@ -68,7 +68,7 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySucess("完成");
+                NotySuccess("完成");
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()

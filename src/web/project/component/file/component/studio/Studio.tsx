@@ -10,7 +10,7 @@ import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
 import {editor_data} from "../../../../util/store.util";
 // import {getEditModelType} from "../../../../../../common/StringUtil";
-import {NotyFail, NotySucess, NotyWaring} from "../../../../util/noty";
+import {NotyFail, NotySuccess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
 import * as lodash from "lodash";
 import {ableExtBeautify, FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";

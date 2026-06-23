@@ -11,7 +11,7 @@ import {useTranslation} from "react-i18next";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {PromptEnum} from "../../prompts/Prompt";
-import {NotySucess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import Header from "../../../../meta/component/Header";
 
 export function TengXun(props: any) {
@@ -53,12 +53,7 @@ export function TengXun(props: any) {
     },[]);
     const save = async ()=>{
         if (isOpen && (!secretid || !secretkey)) {
-            new Noty({
-                type: 'error',
-                text: 'SecretId和SecretKey都不能为空',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('SecretId和SecretKey都不能为空')
             return;
         }
         const data = new DdnsConnection();
@@ -74,19 +69,9 @@ export function TengXun(props: any) {
         data.ddnsType=DdnsType.tengxun;
         const rsq = await ddnsHttp.post("save",data);
         if (rsq.code === RCode.DdnsAuthFail) {
-            new Noty({
-                type: 'error',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('鉴权失败')
         } else {
-            new Noty({
-                type: 'success',
-                text: rsq.data,
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotySuccess("成功")
         }
     }
 
@@ -98,7 +83,7 @@ export function TengXun(props: any) {
             open: true, handle: async () => {
                 const rsq = await ddnsHttp.post('http/del', data)
                 if (rsq.code === 0) {
-                    NotySucess("删除成功，稍后请刷新");
+                    NotySuccess("删除成功，稍后请刷新");
                 }
                 set_confirm({open: false, handle: null});
             }, title: t("确定删除吗")

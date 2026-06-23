@@ -1,4 +1,4 @@
-import {getByIndexs, getNextByLoop, sort} from "../../../../common/ListUtil";
+import {getByIndexs, getNextByLoop, sort, webPathJoin} from "../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {DirListShowTypeEmum, fileTypes} from "../../../../common/req/user.req";
@@ -8,13 +8,13 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {useContext, useEffect, useState} from "react";
-import {NotyFail, NotySucess} from "../../util/noty";
+import {NotyFail, NotySuccess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
 import {userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
-import {useSearchParams} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {browser_file_pojo} from "../../../../common/req/common.pojo";
 
@@ -308,9 +308,9 @@ export function using_file_page_handle_width_auto() {
 
 export function title_workflow_file_success(it){
     if (it.endsWith('.workflow.yml')) {
-        NotySucess(`${it.slice(0, -13)} done!`);
+        NotySuccess(`${it.slice(0, -13)} done!`);
     } else if (it.endsWith('.act')) {
-        NotySucess(`${it.slice(0, -4)} done!`);
+        NotySuccess(`${it.slice(0, -4)} done!`);
     }
 }
 
@@ -324,7 +324,7 @@ export function title_workflow_file_fail(it){
 
 const copy = throttle((text) => {
     copyToClipboard(text)
-    NotySucess('复制成功');
+    NotySuccess('复制成功');
 });
 
 export function using_add_md__copy_button(){
@@ -371,7 +371,7 @@ export function unsing_switch_grid_view (is_local = false) {
     }
 }
 
-
+// 更新 url 的参数 配合 const [searchParams] = useSearchParams() 可以及时得到有没有更新
 export function useUpdateUrlParams() {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -388,6 +388,7 @@ export function useUpdateUrlParams() {
     };
 }
 
+// 检测 并执行 能不能预览
 export function use_share_preview() {
     const updateParams = useUpdateUrlParams();
     const list = ["text",
@@ -405,5 +406,24 @@ export function use_share_preview() {
             return true;
         }
         return false;
+    }
+}
+
+export function use_click_folder() {
+    const navigate = useNavigate();
+    const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
+    const [clickList, setClickList] = useAtom($stroe.clickFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [file_page, set_file_page] = useAtom($stroe.file_page);
+
+    return (name:string)=>{
+        navigate(webPathJoin(getRouterPath(), name))
+        setSelectList([])
+        setClickList([])
+        setNowFileList({files: [], folders: []});
+        set_file_page({
+            page_num: 1,
+            page_size: 200
+        })
     }
 }

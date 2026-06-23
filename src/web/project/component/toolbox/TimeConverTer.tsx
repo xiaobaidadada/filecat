@@ -26,12 +26,7 @@ export function TimeConverTer(props) {
     }
     function switchTime() {
         if (!stamp && !time) {
-            new Noty({
-                type: 'error',
-                text: '不能都为空',
-                timeout: 1000, // 设置通知消失的时间（单位：毫秒）
-                layout:"bottomLeft"
-            }).show();
+            NotyFail('不能都为空')
             return;
         }
         let stampp:number|string = 0;

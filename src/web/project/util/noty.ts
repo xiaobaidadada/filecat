@@ -2,7 +2,7 @@ import Noty from "noty";
 
 let now = Date.now();
 const time_out = 500
-export function NotySucess(text) {
+export function NotySuccess(text) {
     // if (Date.now() - now < time_out) {
     //     return ;
     // }
