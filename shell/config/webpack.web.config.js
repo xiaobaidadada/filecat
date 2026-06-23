@@ -87,8 +87,8 @@ module.exports = {
     },
     devServer: {
         static: [
-            // {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
-            // {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev","locales"),},
+            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
+            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev","locales"),},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "proxy", "rdp", "client", "js")},

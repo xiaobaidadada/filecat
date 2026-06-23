@@ -96,6 +96,29 @@ export function FileMenu() {
         },
         ...must_needs
     ]
+
+    const getItemsForDefault = () => {
+        // 基于 show_items 创建一份拷贝，避免污染原始定义
+        let currentItems = [...show_items];
+
+        if (pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
+            if (file_is_running(pojo.filename)) {
+                currentItems.unshift({r: t("停止") + " workflow", v: common_menu_type.stop_workflow});
+                currentItems.unshift({r: t("实时查看") + " workflow", v: common_menu_type.real_time_workflow});
+            } else {
+                currentItems.unshift({
+                    r: t("运行") + " workflow",
+                    v: common_menu_type.run_workflow,
+                    items: [
+                        {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow},
+                        {r: t("输入参数运行"), v: common_menu_type.run_workflow_by_pre_inputs}
+                    ]
+                });
+            }
+        }
+        return currentItems;
+    }
+
     if (showPrompt.data?.type === FileTypeEnum.database || /\.(db|sqlite|sqlite3)$/i.test(showPrompt.data?.filename ?? "")) {
         show_items.unshift({
             r: t("数据库查询"),
@@ -116,7 +139,7 @@ export function FileMenu() {
             }
         }
     }
-    const [items, setItems,] = useState(show_items);
+    // const [items, setItems,] = useState(show_items);
     // const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
     // const [studio, set_studio] = useAtom($stroe.studio);
     const {click_file} = user_click_file();
@@ -544,28 +567,15 @@ export function FileMenu() {
             break;
         case FileTypeEnum.unknow:
         default: {
-            if (pojo.filename.endsWith(".workflow.yml") || pojo.filename.endsWith(".act")) {
-                if (file_is_running(pojo.filename)) {
-                    items.unshift({r: t("停止") + " workflow", v: common_menu_type.stop_workflow})
-                    items.unshift({r: t("实时查看") + " workflow", v: common_menu_type.real_time_workflow})
-                } else {
-                    items.unshift({
-                        r: t("运行") + " workflow", v: common_menu_type.run_workflow, items: [
-                            {r: t("运行并实时查看"), v: common_menu_type.run_real_time_workflow}, {
-                                r: t("输入参数运行"),
-                                v: common_menu_type.run_workflow_by_pre_inputs
-                            }
-                        ]
-                    })
-                }
-            }
-            div = <div onWheel={() => {
-                close();
-            }}>
-                <OverlayTransparent click={close}
-                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items}
-                                                            click={right_click}/>}/>
-            </div>
+            const finalItems = getItemsForDefault();
+            div = (
+                <div onWheel={close}>
+                    <OverlayTransparent click={close}
+                                        children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                                                items={finalItems} click={right_click}/>}
+                    />
+                </div>
+            );
         }
     }
     return (div);

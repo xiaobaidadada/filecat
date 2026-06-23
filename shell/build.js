@@ -155,11 +155,11 @@ const tasksLister = new Listr(
                             rej(false);
                             return;
                         }
-                        // fse.copySync(path.join(__dirname, "..", "src", "web", "meta", 'resources',"assets","excalidraw-assets"),path.join(__dirname, "..", "build", "dist","excalidraw-assets"));
-                        fse.copySync(
-                            path.resolve('node_modules', '@xiaobaidadada', 'excalidraw', 'dist', 'prod', 'fonts'),
-                            path.join(__dirname, "..", "build", "dist", "fonts")
-                        );
+                        fse.copySync(path.join(__dirname, "..", "src", "web", "meta", 'resources',"assets","excalidraw-assets"),path.join(__dirname, "..", "build", "dist","excalidraw-assets"));
+                        // fse.copySync(
+                        //     path.resolve('node_modules', '@xiaobaidadada', 'excalidraw', 'dist', 'prod', 'fonts'),
+                        //     path.join(__dirname, "..", "build", "dist", "fonts")
+                        // );
                         copyFileSync(path.join(__dirname, "..", "src", "web", "project", 'component',"file","component","image","js","filerobot-image-editor.min.js"), path.join(__dirname, "..", "build", "dist","filerobot-image-editor.min.js"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "project", "component","proxy","rdp","client","js","rle.js"), path.join(__dirname, "..", "build", "dist","rle.js"));
                         copyFileSync(path.join(__dirname, "..", "src", "web", "meta","resources","img","favicon-16x16.png"), path.join(__dirname, "..", "build", "dist","favicon-16x16.png"));
