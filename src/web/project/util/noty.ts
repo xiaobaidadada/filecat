@@ -38,8 +38,8 @@ export function NotyWaring(text) {
         type: 'warning',
         text: text,
         // timeout:false, // 需要点击才消失
-        timeout: 300, // 设置通知消失的时间（单位：毫秒）
-        layout: "topRight"
+        timeout: 1000, // 设置通知消失的时间（单位：毫秒）
+        layout: "topLeft"
     }).show();
 }
 

@@ -10,7 +10,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {use_auth_check, user_click_file} from "../../util/store.util";
 import {GlobalContext} from "../../GlobalProvider";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
-import {NotyFail, NotySuccess} from "../../util/noty";
+import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
 import {create_quick_cmd_items, getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "./FileUtil";
 import {fileHttp, userHttp} from "../../util/config";
 import {getNextByLoop} from "../../../../common/ListUtil";
@@ -310,6 +310,7 @@ export function FileMenu() {
                     // 添加
                     navigate(`/${routerConfig.setting_private_env_setting}`);
                     setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                    NotyWaring(t('请配置 文件夹路径'))
                     return;
                 }
                 baseSwitch(v);
