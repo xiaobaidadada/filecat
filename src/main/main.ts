@@ -121,13 +121,13 @@ export async function start_main() {
                 if (router.has(req.originalUrl) || router.has(getWebFirstKey(req.originalUrl))) {
                     throw "";
                 }
-                let url;
-                if (req.originalUrl.includes("excalidraw-assets")) {
-                    req.originalUrl = req.originalUrl.slice(1); // 删去/
-                    url = path.join(__dirname, 'dist', req.originalUrl);
-                } else {
-                    url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
-                }
+                let url
+                // if (req.originalUrl.includes("excalidraw-assets")) {
+                //     req.originalUrl = req.originalUrl.slice(1); // 删去/
+                //     url = path.join(__dirname, 'dist', req.originalUrl);
+                // } else {
+                    = path.join(__dirname, 'dist', path.basename(req.originalUrl));
+                // }
                 if (!await FileUtil.access(url)) {
                     throw "";
                 }
@@ -159,6 +159,10 @@ export async function start_main() {
                 const dot_index = path.indexOf('.')
                 if (dot_index !== -1 && dot_index > 0 && path[dot_index - 1] !== '/') {
                     const paths = path.split('/') // 带后缀的静态文件
+                    if(paths[paths.length - 1].includes('.woff2')) {
+                        // 字体映射的有目录 画图的
+                        return path;
+                    }
                     return '/' + paths[paths.length - 1]
                 } else {
                     return '/'; // 其它所有的非文件类型

@@ -87,10 +87,13 @@ module.exports = {
     },
     devServer: {
         static: [
-            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
-            {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev","locales"),},
-            {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},
-            {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
+            // {directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist","excalidraw-assets-dev"),},
+            {
+                directory: path.join(__dirname, "..", "..", "node_modules", "@excalidraw", "excalidraw", "dist", "dev", "fonts"),
+                publicPath: "/fonts" // 重点：将 URL 中的 /fonts 映射到上述物理文件夹 多个路径可以一样 按优先级查找
+            },
+            {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},// web index.js
+            // {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "proxy", "rdp", "client", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "img", "./",)},
             {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "css", "themes",)}
