@@ -20,6 +20,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
     const [confirm, set_confirm] = useAtom($stroe.confirm);
+    const [file_page, set_file_page] = useAtom($stroe.file_page);
 
     const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const {click_file} = user_click_file();
@@ -72,6 +73,10 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                 setSelectList([])
                 setClickList([])
                 setNowFileList({files: [], folders: []});
+                set_file_page({
+                    page_num: 1,
+                    page_size: 200
+                })
                 return;
             }
         } else {

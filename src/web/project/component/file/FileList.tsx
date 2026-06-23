@@ -154,14 +154,14 @@ export default function FileList() {
         setNowFileList(rsp.data)
         pre_search = rsp.data;
     }
-    const init_page =  () => {
-        set_file_page({
-            page_num: 1,
-            page_size: 200
-        })
-    }
+    // const init_page =  () => {
+    //     set_file_page({
+    //         page_num: 1,
+    //         page_size: 200
+    //     })
+    // }
     useEffect(() => {
-        init_page()
+        // init_page()
         return async () => {
             set_to_running_files_set(new Set())
         }
@@ -174,16 +174,16 @@ export default function FileList() {
     }
     // 在组件挂载后执行的逻辑
     useEffect(() => {
-        setNowFileList({
-            files:[],
-            folders:[]
-        })
-        init_page()
+        // setNowFileList({
+        //     files:[],
+        //     folders:[]
+        // })
+        // init_page()
         init()
-    }, [location]);
-    useEffect(() => {
-        init()
-    }, [file_page]);
+    }, [location,file_page]);
+    // useEffect(() => {
+    //     init()
+    // }, [file_page]);
 
 
     function routerClick() {

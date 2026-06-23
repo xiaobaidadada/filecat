@@ -19,6 +19,19 @@ import {atomWithStorage} from "jotai/utils";
 //     });
 // };
 
+const getInitialValue = (key: string, defaultValue: any) => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch {
+        return defaultValue;
+    }
+};
+
+function sync_atomWithStorage<Value>(key:string,default_value:Value){
+    return atomWithStorage<Value>(key,getInitialValue(key,default_value));
+}
+
 const default_v:any = null
 
 export class ShowPromptData {
@@ -115,18 +128,18 @@ export const $stroe = {
         show: false
     }),
     // ssh工具连接信息
-    sshInfo: atomWithStorage("linux_key", {} as any),
+    sshInfo: sync_atomWithStorage("linux_key", {} as any),
     // 文件根路径主
-    file_root_index: atomWithStorage<number | null>("file_root_index", default_v),
+    file_root_index: sync_atomWithStorage<number | null>("file_root_index", default_v),
     // root根路径
-    file_root_list: atomWithStorage<any[]>("file_root_list", []),
+    file_root_list: sync_atomWithStorage<any[]>("file_root_list", []),
     // 用户基本信息
-    user_base_info: atomWithStorage<UserBaseInfo|any>("user_base_info", {
+    user_base_info: sync_atomWithStorage<UserBaseInfo|any>("user_base_info", {
         user_data: new UserData(),
         sysSoftWare: {}
     }),
     // 自定义选项
-    custom_fun_opt: atomWithStorage<any>("custom_fun_opt", default_v),
+    custom_fun_opt: sync_atomWithStorage<any>("custom_fun_opt", default_v),
     // 头部菜单状态
     header_min: atom<boolean>(false),
     // 文件预览
@@ -138,7 +151,7 @@ export const $stroe = {
     // md预览
     markdown: atom<{filename?: string, context?: string, close?: () => any}>({}),
     // sqlite 查询页上下文
-    sqlite_query_context: atomWithStorage<any>("sqlite_query_context", new SqliteQueryContext()),
+    sqlite_query_context: sync_atomWithStorage<any>("sqlite_query_context", new SqliteQueryContext()),
     // 编辑器
     studio: atom<{folder_path?: string, name?: string}>({}),
     // 图片编辑器
@@ -155,7 +168,7 @@ export const $stroe = {
     workflow_show: atom<boolean>(false),
     workflow_realtime_show: atom<{open: boolean, filename?: string}>({open: false}),
     // nav 效果
-    nav_style: atomWithStorage<{mobile_open?: boolean, pc_collapsed?: boolean}>("nav_style", {
+    nav_style: sync_atomWithStorage<{mobile_open?: boolean, pc_collapsed?: boolean}>("nav_style", {
         mobile_open: false,
         pc_collapsed: false,
     }),
@@ -175,9 +188,9 @@ export const $stroe = {
     // 文件列表缩放
     zoom_style_by_percent: atom<number>(100),
     // ai 会话列表
-    ai_session_collapsed: atomWithStorage<boolean>("ai_session_collapsed", false),
+    ai_session_collapsed: sync_atomWithStorage<boolean>("ai_session_collapsed", false),
     // 空白搜索模式
-    blank_search_mode: atomWithStorage<boolean>("blank_search_mode", false),
+    blank_search_mode: sync_atomWithStorage<boolean>("blank_search_mode", false),
     // AI 聊天请求类型选择
-    ai_request_type: atomWithStorage<string>("ai_request_type", 'completions')
+    ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions')
 };
