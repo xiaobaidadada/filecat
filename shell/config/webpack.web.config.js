@@ -68,6 +68,22 @@ module.exports = {
                 // extractComments: true,//不将注释提取到单独的文件中
             }),
         ],
+        splitChunks: {
+            chunks: 'all', // 对所有 chunk 进行优化
+            maxInitialRequests: Infinity,
+            minSize: 20000, // 超过 20kb 的模块进行拆分
+            cacheGroups: {
+                // 将所有 node_modules 中的库打包为一个 vendors 文件
+                vendors: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name(module) {
+                        // 获取包名，将第三方库按包名拆分，防止 vendors.js 过大
+                        const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+                        return `npm.${packageName.replace('@', '')}`;
+                    },
+                },
+            },
+        },
     },
     devServer: {
         static: [
