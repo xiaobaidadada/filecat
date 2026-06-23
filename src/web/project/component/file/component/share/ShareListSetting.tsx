@@ -122,7 +122,7 @@ export default function ShareListSetting() {
                             }
                             {
                                 item.id &&
-                                <ActionButton icon={"open_in_new"} title={t("复制地址")} onClick={() => {
+                                <ActionButton icon={"open_in_new"} title={t("打开新页面")} onClick={() => {
                                     const url = join_url(`${window.location.origin}${Global.base_url}`,`${routerConfig.share}/${item.id}`)
                                     window.open(url);
                                 }}/>

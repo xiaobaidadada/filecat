@@ -12,6 +12,9 @@ import {useTranslation} from "react-i18next";
 import {editor_data} from "../../util/store.util";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_select_config} from "../../util/react.config";
+import {join_url} from "../../../../common/StringUtil";
+import {copyToClipboard} from "../../util/FunUtil";
+import {Global} from "../../util/global";
 
 
 export function CustomerApiRouter() {
@@ -98,6 +101,10 @@ export function CustomerApiRouter() {
                     <div>
                         <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
                         <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
+                        {item.router && <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
+                            copyToClipboard(join_url(window.location.origin + Global.base_url, item.router));
+                            NotySuccess(t("已复制"))
+                        }}/>}
                     </div>,
                 ];
                 return new_list;

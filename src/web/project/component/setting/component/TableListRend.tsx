@@ -8,6 +8,10 @@ import {useTranslation} from "react-i18next";
 import {SysSoftware} from "../../../../../common/req/setting.req";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
+import {copyToClipboard} from "../../../util/FunUtil";
+import {NotySuccess} from "../../../util/noty";
+import {join_url} from "../../../../../common/StringUtil";
+import {Global} from "../../../util/global";
 
 
 
@@ -18,7 +22,8 @@ export function TableListRender(props: {
     save?: (items: {}[][]) => Promise<void>, // 保存
     headers: string[],
     info_click?:()=>void,
-    title:string
+    title:string,
+    need_copy?:boolean,
 }) {
     const { t } = useTranslation();
 
@@ -61,7 +66,24 @@ export function TableListRender(props: {
                             setRows([...rows]);
                         }} no_border={true}/>)
                     }
-                    list.push(<ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>)
+                    list.push(<div>
+                        <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>
+                        {
+                            itemList[0] &&
+                            <ActionButton icon={"content_copy"} title={t("复制地址")} onClick={() => {
+                                const url = join_url(`${window.location.origin}${Global.base_url}`, itemList[0])
+                                copyToClipboard(url)
+                                NotySuccess(url)
+                            }}/>
+                        }
+                        {
+                            itemList[0] && props.need_copy &&
+                            <ActionButton icon={"open_in_new"} title={t("打开新页面")} onClick={() => {
+                                const url = join_url(`${window.location.origin}${Global.base_url}`, itemList[0])
+                                window.open(url);
+                            }}/>
+                        }
+                    </div>)
                     return list;
                 })} width={"10rem"}/>
             </CardFull>
