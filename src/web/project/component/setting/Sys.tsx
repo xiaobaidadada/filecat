@@ -10,7 +10,7 @@ import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
-import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
+import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
@@ -29,6 +29,11 @@ export function  Sys() {
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+
+    // HTTPS 设置
+    const [https_open, set_https_open] = useState(false);
+    const [https_cert_path, set_https_cert_path] = useState("");
+    const [https_key_path, set_https_key_path] = useState("");
 
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
 
@@ -65,6 +70,13 @@ export function  Sys() {
                 const sys_env = all_open_result.data.sys_env;
                 set_web_site_title(sys_env?.web_site_title);
                 set_show_login_user_info(sys_env?.show_login_user_info);
+                // HTTPS 设置
+                const https_setting = all_open_result.data.https_setting;
+                if (https_setting) {
+                    set_https_open(https_setting.open);
+                    set_https_cert_path(https_setting.cert_path || '');
+                    set_https_key_path(https_setting.key_path || '');
+                }
             }
             // const result = await settingHttp.get("self_auth_open");
             // setAuthopen(result.data);
@@ -166,6 +178,31 @@ export function  Sys() {
             NotySuccess("清理完成，重新登录")
         }
     }
+    const save_https = async () => {
+        if (https_open) {
+            if (!https_cert_path) {
+                NotyFail("证书路径不能为空");
+                return;
+            }
+            if (!https_key_path) {
+                NotyFail("私钥路径不能为空");
+                return;
+            }
+        }
+        const httpsReq = new HttpsSettingReq();
+        httpsReq.open = https_open;
+        httpsReq.cert_path = https_cert_path;
+        httpsReq.key_path = https_key_path;
+        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
+            type: sys_setting_type.https,
+            value: httpsReq,
+            open: https_open
+        });
+        if (result.code === RCode.Success) {
+            NotySuccess("HTTPS 设置已保存，需重启服务器才能生效");
+        }
+    }
+
     const save_sys_env = async () =>{
 
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.sys_env,value:{
@@ -241,6 +278,15 @@ export function  Sys() {
                             set_show_login_user_info(!show_login_user_info)
                         }}
                     />
+                </Card>
+                <Card title={t("HTTPS 设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_https}/>}>
+                    <Select value={https_open} onChange={(value)=>{set_https_open(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
+                    {https_open && <>
+                        <div>{t("SSL 证书路径")}</div>
+                        <InputText placeholder={t('证书文件路径(cert.pem/fullchain.pem)')} value={https_cert_path} handleInputChange={(value)=>{set_https_cert_path(value)}} />
+                        <div>{t("SSL 私钥路径")}</div>
+                        <InputText placeholder={t('私钥文件路径(privkey.pem)')} value={https_key_path} handleInputChange={(value)=>{set_https_key_path(value)}} />
+                    </>}
                 </Card>
             </Dashboard>
         </Column>

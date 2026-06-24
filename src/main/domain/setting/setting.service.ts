@@ -8,7 +8,7 @@ import {ServerEvent} from "../../other/config";
 import {
     dir_upload_max_num_item,
     FileQuickCmdItem,
-    FileSettingItem, QuickCmdItem,
+    FileSettingItem, HttpsSettingReq, QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
     TokenTimeMode
@@ -38,6 +38,7 @@ import {
     ai_system_prompt_item,
     json_params_default
 } from "../../../common/req/filecat.ai.pojo";
+import axios from "axios";
 const ffmpeg = require('fluent-ffmpeg');
 
 const needle = require('needle');
@@ -58,7 +59,8 @@ const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 const sandbox = {
     fs: fs,
     path: path,
-    cache_map: customer_cache_map
+    cache_map: customer_cache_map,
+    axios:axios,
 };
 const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
@@ -187,6 +189,7 @@ export class SettingService {
                             const token = ctx.headers.authorization;
                             if (!await this.check(token)) {
                                 ctx.res.send(AuthFail('失败'));
+                                ctx.res.end()
                                 return true;
                             }
                         }
@@ -204,10 +207,10 @@ export class SettingService {
                             });
                             const r = await instance.handler(ctx.headers, data, ctx);
                             if (r !== null && r !== undefined) {
-                                ctx.res.send(r);
+                                ctx.res.status(200).send(r);
                             }
                         } catch (e) {
-                            ctx.res.send(Sucess(e.toString()))
+                            ctx.res.status(500).send(Sucess(e.toString()))
                         }
                         return true;
                     }
@@ -334,6 +337,27 @@ export class SettingService {
 
     public set_sys_env(req:{web_site_title: string ,show_login_user_info:boolean}) {
         return DataUtil.set(data_common_key.sys_env_key, req);
+    }
+
+    public get_https_setting(): HttpsSettingReq {
+        return DataUtil.get(data_common_key.https_setting) ?? {open: false, cert_path: '', key_path: ''};
+    }
+
+    public set_https_setting(req: HttpsSettingReq) {
+        // 校验路径
+        if (req.open) {
+            if (!req.cert_path || !req.key_path) {
+                throw '证书路径和私钥路径不能为空';
+            }
+            if (!fs.existsSync(req.cert_path)) {
+                throw `证书文件不存在: ${req.cert_path}`;
+            }
+            if (!fs.existsSync(req.key_path)) {
+                throw `私钥文件不存在: ${req.key_path}`;
+            }
+        }
+        DataUtil.set(data_common_key.https_setting, req);
+        // 通知服务器需要重启以应用 HTTPS 设置
     }
 
     public get_recycle_dir_map_list(): string[][] {

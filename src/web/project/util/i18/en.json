@@ -503,5 +503,10 @@
   "更多属性": "More Attributes",
   "model类型": "Model Type",
   "成为tool": "Become Tool",
-  "操作": "Operations"
+  "操作": "Operations",
+  "HTTPS 设置": "HTTPS Settings",
+  "SSL 证书路径": "SSL Certificate Path",
+  "SSL 私钥路径": "SSL Private Key Path",
+  "证书文件路径(cert.pem/fullchain.pem)": "Certificate Path (cert.pem/fullchain.pem)",
+  "私钥文件路径(privkey.pem)": "Private Key Path (privkey.pem)"
 }

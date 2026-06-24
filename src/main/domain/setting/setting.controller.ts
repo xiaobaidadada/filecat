@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
+import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -164,7 +164,8 @@ export class SettingController {
 
 
     @Get('/token')
-    async getToken() {
+    async getToken(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         return Sucess(settingService.getToken());
     }
 
@@ -322,7 +323,7 @@ export class SettingController {
     @Get("/pty_cmd")
     get_pty_cmd( @Req() ctx) {
         const list = settingService.get_pty_cmd();
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(list.join(" "));
     }
 
@@ -336,7 +337,7 @@ export class SettingController {
     // path路径
     @Get("/env/path/get")
     getEnvPath(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_en_path_list());
     }
 
@@ -394,6 +395,7 @@ export class SettingController {
     // 获取系统所有的配置
     @Get("/sys_option/status")
     get_sys_option_status(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         // 获取系统所有功能的状态
         const r = {
             self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
@@ -401,6 +403,7 @@ export class SettingController {
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
             recycle_dir: settingService.get_recycle_dir_str(), // 垃圾回收站 目录也返回
             sys_env: settingService.get_sys_env(),
+            https_setting: settingService.get_https_setting(),
         }
         return Sucess(r);
     }
@@ -460,13 +463,18 @@ export class SettingController {
             user_data.theme = body.value.theme;
             user_data.upload_file_ignore = body.value.upload_file_ignore
             await userService.save_user_info(user_data.id, user_data);
+        } else if (body.type === sys_setting_type.https) {
+            userService.check_user_auth(ctx.headers.authorization, UserAuth.https_file);
+            const httpsReq: HttpsSettingReq = body.value;
+            settingService.set_https_setting(httpsReq);
+            // ServerEvent.emit("https_setting_update");
         }
         return Sucess("1");
     }
 
     @Get("/workflow_setting_get")
     workflow_setting_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_workflow_setting());
     }
 
@@ -481,13 +489,13 @@ export class SettingController {
 
     @Get("/plugin/list")
     async get_plugin_list(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_plugin_list());
     }
 
     @Post("/plugin/list/save")
     async save_plugin_list(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_page);
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return settingService.save_plugin_list(req);
     }
 

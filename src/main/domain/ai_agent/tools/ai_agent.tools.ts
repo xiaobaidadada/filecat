@@ -83,7 +83,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     apply_patch: {
         get_name: () => "apply patch file",
         get_params: (args) => {
-            return `patchText： ${args.patchText}`
+            return `path： ${args.path}`
         }
     },
 };

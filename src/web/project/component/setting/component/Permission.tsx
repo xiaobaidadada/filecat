@@ -65,6 +65,8 @@ export function Permission(props:{
         {
             title: t("系统设置权限"),
             list: [
+                { title: t("系统页面"), permission: UserAuth.sys_setting_page },
+                { title: t("htts"), permission: UserAuth.https_file },
                 { title: t("token时间修改"), permission: UserAuth.token_update },
                 { title: t("自定义auth"), permission: UserAuth.code_auth },
                 { title: t("修改密码"), permission: UserAuth.update_password },
@@ -76,7 +78,7 @@ export function Permission(props:{
         {
             title: t("系统环境设置"),
             list: [
-                { title: t("系统环境设置页面"), permission: UserAuth.sys_page },
+                { title: t("系统环境设置页面"), permission: UserAuth.sys_env_page },
                 { title: t("目录文件上传数量限制修改"), permission: UserAuth.dir_upload_max_num },
                 { title: t("PATH路径修改"), permission: UserAuth.env_path_update },
                 { title: "pty cmd " + t("更新"), permission: UserAuth.pty_cmd_update },

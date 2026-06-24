@@ -121,12 +121,12 @@ export async function start_main() {
                 if (router.has(req.originalUrl) || router.has(getWebFirstKey(req.originalUrl))) {
                     throw "";
                 }
-                let url
+                // let url
                 // if (req.originalUrl.includes("excalidraw-assets")) {
                 //     req.originalUrl = req.originalUrl.slice(1); // 删去/
                 //     url = path.join(__dirname, 'dist', req.originalUrl);
                 // } else {
-                    = path.join(__dirname, 'dist', path.basename(req.originalUrl));
+                const url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 // }
                 if (!await FileUtil.access(url)) {
                     throw "";
@@ -172,11 +172,34 @@ export async function start_main() {
     }
 
     const base_url = await get_base()
+
+    // 检查是否启用了 HTTPS
+    const https_setting = settingService.get_https_setting();
+    let server;
+    let protocol = 'http';
+
+    if (https_setting.open && https_setting.cert_path && https_setting.key_path) {
+        try {
+            const httpsOptions = {
+                cert: fs.readFileSync(https_setting.cert_path),
+                key: fs.readFileSync(https_setting.key_path),
+            };
+            server = https.createServer(httpsOptions, app);
+            protocol = 'https';
+            console.log(`HTTPS 已启用，证书: ${https_setting.cert_path}，私钥: ${https_setting.key_path}`);
+        } catch (e) {
+            console.error('HTTPS 证书加载失败，回退到 HTTP:', e?.message);
+            server = http.createServer(app);
+        }
+    } else {
+        server = http.createServer(app);
+    }
+
     // 启动服务器
-    const server = app.listen(Env.port, () => {
+    server.listen(Env.port, () => {
         const version = get_package_json().version;
 
-        const urls = [`http://localhost:${Env.port}${base_url}`];
+        const urls = [`${protocol}://localhost:${Env.port}${base_url}`];
         try {
             const interfaces = os.networkInterfaces();
             for (const name of Object.keys(interfaces)) {
@@ -184,7 +207,7 @@ export async function start_main() {
                     // 只关心 IPv4 且非内部地址
                     if (iface.family === "IPv4") {
                         const ip = iface.address;
-                        urls.push(`http://${ip}:${Env.port}${base_url}`);
+                        urls.push(`${protocol}://${ip}:${Env.port}${base_url}`);
                     }
                 }
             }

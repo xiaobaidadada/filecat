@@ -101,14 +101,15 @@ export enum UserAuth {
     ai_agent_setting, // ai 模型设置
     ai_agent_page= 50, // ai 聊天页面
     share_file , // 文件分享功能
-    sys_page, //  系统页面
+    sys_env_page, //  系统页面
     auth_router_page= 53, // 自定义路由页面
     shell_cmd_filecat_upgrade , // 升级命令
     shell_cmd_filecat_kill_self= 55, //
     ai_chat_cmd,
     private_sys_env, //个性化设置 语言 属性
     tcp_proxy = 85, // 内网穿透
-
+    sys_setting_page, // 系统设置页面
+    https_file,
 }
 
 

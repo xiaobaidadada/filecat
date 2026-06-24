@@ -505,5 +505,10 @@
   "更多属性": "更多属性",
   "model类型": "model类型",
   "成为tool": "成为tool",
-  "操作": "操作"
+  "操作": "操作",
+  "HTTPS 设置": "HTTPS 设置",
+  "SSL 证书路径": "SSL 证书路径",
+  "SSL 私钥路径": "SSL 私钥路径",
+  "证书文件路径(cert.pem/fullchain.pem)": "证书文件路径(cert.pem/fullchain.pem)",
+  "私钥文件路径(privkey.pem)": "私钥文件路径(privkey.pem)"
 }

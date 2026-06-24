@@ -52,6 +52,13 @@ export class systemdPojo {
     isSys: boolean; // 是系统创建的(或者加入到filecat监管的)
 }
 
+// HTTPS 设置
+export class HttpsSettingReq {
+    open: boolean = false;
+    cert_path: string = ''; // SSL 证书文件路径 (fullchain/cert.pem)
+    key_path: string = '';  // SSL 私钥文件路径 (privkey.pem)
+}
+
 // 系统设置类型
 export const enum sys_setting_type {
     auth,
@@ -59,6 +66,7 @@ export const enum sys_setting_type {
     cyc, // 垃圾站
     sys_env= 3,
     private_sys_env,
+    https = 5,
 }
 
 export interface dir_upload_max_num_item {

@@ -17,11 +17,13 @@ export default function  Settings() {
     const {check_user_auth} = use_auth_check();
 
     const menuRots = [
-        {index: 1, name: t("系统"), rto: "password",component: <Sys />},
-        {index: 1, name: `${t('个人')}${t("环境")}`, rto: "private_env_setting",component:  <PrivateEnv />},
+        {index: 1, name: `${t('个人环境')}`, rto: "private_env_setting",component:  <PrivateEnv />},
     ];
-    if(check_user_auth(UserAuth.sys_page)) {
-        menuRots.push(     {index: 1, name: `${t("系统")}${t("环境")}`, rto: "env_setting/",component: <Env />},)
+    if(check_user_auth(UserAuth.sys_setting_page)) {
+        menuRots.unshift(    {index: 1, name: t("系统"), rto: "password",component: <Sys />},)
+    }
+    if(check_user_auth(UserAuth.sys_env_page)) {
+        menuRots.push(     {index: 1, name: `${t("系统环境")}`, rto: "env_setting/",component: <Env />},)
     }
     if(check_user_auth(UserAuth.auth_router_page)) {
         menuRots.push( {index: 1, name: t("自定义路由"), rto: "customer_router/",component: <CustomerRouter />},)
