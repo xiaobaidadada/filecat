@@ -518,6 +518,8 @@ export class Ai_agentService {
                 p.show_options.options_agent_model_list = pojo.options_agent_model_list
                 p.show_options.options_agent_key_list = pojo.options_agent_key_list
                 p.show_options.options_agent_url_list = pojo.options_agent_url_list
+            } else {
+                delete p.show_options
             }
         }
         this.load_key()

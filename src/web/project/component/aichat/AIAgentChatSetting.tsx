@@ -408,8 +408,8 @@ export default function AIAgentChatSetting() {
                 <Dashboard>
                     <Row>
                         <Column widthPer={100}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={()=>{
-                                save()
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={async ()=>{
+                                await save()
                             }}/></div>}>
                                 <Table headers={headers} rows={rows.map((item, index) => {
                                     const new_list = [

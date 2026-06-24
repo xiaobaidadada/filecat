@@ -124,6 +124,7 @@ export class ai_agent_Item {
         for (const i of list) {
             if(i.value === v) return i.label;
         }
+        return v;
     }
 
     public static have_label_by_v(v?:string,list?:ai_agent_option_item[]) {
@@ -157,13 +158,13 @@ allow_exec_cmd_directly=false
 #proxy_url=
 
 # 可选的多个url 以数组分割
-# options_agent_url_list=[{"value":"http://..",label:"openai"}]
+# options_agent_url_list=[{"value":"http://..","label":"openai"}]
 
 # 可选的多个 key
-# options_agent_key_list=[{"value":"sh-aaa",label:"option1"}]
+# options_agent_key_list=[{"value":"sh-aaa","label":"option1"}]
 
 # 可选的多个 model
-# options_agent_model_list=[{"value":"gpt-5.5",label:"gpt"}]
+# options_agent_model_list=[{"value":"gpt-5.5","label":"gpt"}]
 
 `
 
