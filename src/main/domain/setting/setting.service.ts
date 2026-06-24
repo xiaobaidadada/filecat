@@ -29,7 +29,7 @@ import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
-import {plug_item, Plugin, PluginMeta, AiToolItem} from "../../../plugin";
+import {plug_item, Plugin, PluginMeta, AiToolItem, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
     ai_agent_Item,
@@ -181,6 +181,29 @@ export class SettingService {
                     }
                 }
             }
+            // 插件自定义路由拦截（优先级高于用户自定义 API 路由）
+            const plugin_route = this.plugin_routes.get(c_url);
+            if (plugin_route) {
+                if (plugin_route.needAuth !== false) {
+                    const token = ctx.headers.authorization;
+                    if (!await this.check(token)) {
+                        ctx.res.send(AuthFail('失败'));
+                        ctx.res.end();
+                        return true;
+                    }
+                }
+                try {
+                    // 直接把 ctx (Express Request) 传给插件，让插件自己处理 body 等
+                    const r = await plugin_route.handler(ctx, ctx.res);
+                    if (r !== null && r !== undefined) {
+                        ctx.res.status(200).send(r);
+                    }
+                } catch (e) {
+                    ctx.res.status(500).send(Sucess(e.toString()));
+                }
+                return true;
+            }
+
             const list_api_router = DataUtil.get<CustomerApiRouterPojo[]>(customer_api_router_key);
             if (!!list_api_router && list_api_router.length > 0) {
                 for (let item of list_api_router) {
@@ -987,6 +1010,9 @@ export class SettingService {
     /** 插件注册的主题列表：{主题标识: CSS文件路径} */
     plugin_themes: Map<string, string> = new Map();
 
+    /** 插件注册的自定义路由：{路由路径: PluginRoute} */
+    plugin_routes: Map<string, PluginRoute> = new Map();
+
     running_plugin_list:Plugin[] = []
 
     get_plugin_list(): plug_item[] {
@@ -1013,6 +1039,7 @@ export class SettingService {
     async load_all_plugin() {
         this.running_plugin_list = [];
         this.plugin_themes.clear();
+        this.plugin_routes.clear();
         const list = this.get_plugin_list();
 
         const results = await Promise.allSettled(
@@ -1057,6 +1084,33 @@ export class SettingService {
         }
     }
 
+    /**
+     * 将插件的自定义路由注册到全局路由表
+     */
+    private _register_plugin_routes(plugin: Plugin) {
+        if (!plugin.routes?.length) return;
+        for (const route of plugin.routes) {
+            if (this.plugin_routes.has(route.router)) {
+                console.warn(`[Plugin] 路由冲突: "${route.router}" 被插件 "${plugin.meta.name}" 覆盖`);
+            }
+            this.plugin_routes.set(route.router, route);
+        }
+        console.log(
+            `[Plugin] "${plugin.meta.name}" 已注册路由:` ,
+            plugin.routes.map(r => r.router).join(', ')
+        );
+    }
+
+    /**
+     * 卸载插件的自定义路由
+     */
+    private _unregister_plugin_routes(plugin: Plugin) {
+        if (!plugin.routes?.length) return;
+        for (const route of plugin.routes) {
+            this.plugin_routes.delete(route.router);
+        }
+    }
+
     private _resolve_plugin(item: plug_item): Plugin {
         this._evict_require_cache(item.path);
 
@@ -1095,6 +1149,7 @@ export class SettingService {
 
         this._register_ai_tools(plugin);
         this._register_css_theme_plugin(plugin);
+        this._register_plugin_routes(plugin);
 
         // 保存 path 供卸载时清缓存
         (plugin as any).__plugin_path__ = item.path;
@@ -1119,12 +1174,16 @@ export class SettingService {
         );
         this.running_plugin_list = [];
         this.plugin_themes.clear();
+        this.plugin_routes.clear();
     }
 
     private async _unload_single_plugin(plugin: Plugin): Promise<void> {
         try {
             if (plugin.tools?.length) {
                 ai_agentService.unregisterPluginTools(plugin.meta.id);
+            }
+            if (plugin.routes?.length) {
+                this._unregister_plugin_routes(plugin);
             }
             await plugin.deactivate?.();
         } finally {

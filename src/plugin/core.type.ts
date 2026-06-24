@@ -66,6 +66,25 @@ export interface PluginContext {
 }
 
 /**
+ * 插件自定义路由定义
+ * 和系统自定义 API 路由一样的功能，让插件也能注册 HTTP 路由处理器
+ */
+export interface PluginRoute {
+    /** 路由路径，必须以系统 API 前缀开头，例如 /api/plugin/my-route */
+    router: string;
+    /** 是否需要鉴权，默认 true */
+    needAuth?: boolean;
+
+    /**
+     * 路由处理函数
+     * @param req - Express Request 对象，插件自己读取 body、headers 等
+     * @param res - Express Response 对象，插件自己控制响应
+     * @returns 返回的内容会作为 HTTP 响应发送，返回 null/undefined 则不自动发送（由插件自己通过 res 发送）
+     */
+    handler: (req: import('express').Request, res: import('express').Response) => Promise<string | object | null | undefined>;
+}
+
+/**
  * 插件定义[cite: 4] 可以默认导出
  */
 export interface Plugin {
@@ -86,6 +105,12 @@ export interface Plugin {
     tools?: AiToolItem[];
 
     css_list?: plug_css_item[];
+
+    /**
+     * 插件自定义 HTTP API 路由列表
+     * 功能等同于系统的「自定义 API 路由」，handler 直接拿到 Request/Response
+     */
+    routes?: PluginRoute[];
 }
 
 
