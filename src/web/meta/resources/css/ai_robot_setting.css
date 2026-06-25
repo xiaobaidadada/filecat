@@ -1,0 +1,101 @@
+/* AIRebotSetting.css */
+
+/* 主容器 — 作为 main 的直接子元素，需要自己处理滚动 */
+.airebot-setting {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.airebot-setting__toolbar {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.airebot-setting__add-select {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* 为空提示 */
+.airebot-setting__empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--textSecondary);
+}
+
+.airebot-setting__empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin: 0 auto 0.5rem;
+}
+
+.airebot-setting__empty-hint {
+    font-size: 0.85rem;
+}
+
+/* 卡片网格 */
+.airebot-setting__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 1rem;
+}
+
+/* 单个卡片内部 */
+.airebot-setting__card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.airebot-setting__card-icon {
+    font-size: 1.3rem;
+}
+
+.airebot-setting__card-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+/* 卡片表单区域 */
+.airebot-setting__card-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+}
+
+.airebot-setting__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.airebot-setting__field-label {
+    font-size: 0.8rem;
+    color: var(--textSecondary);
+    font-weight: 500;
+}
+
+.airebot-setting__field-required {
+    color: #ff4d4f;
+    margin-left: 2px;
+}
+
+.airebot-setting__field-full {
+    grid-column: 1 / -1;
+}
+
+/* 页面头部 */
+.airebot-setting__page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}

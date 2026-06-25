@@ -31,7 +31,7 @@ const ChatPage =   React.lazy(()=> import('./aichat/page/AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/share/Share'))
 const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
 const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting'))
-const AIRebotSetting = React.lazy(()=> import('./aichat/AIRebotSetting'))
+const AIRebotSetting = React.lazy(()=> import('./aichat/./AIRobotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
 

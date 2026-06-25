@@ -106,12 +106,12 @@ export function RebotCardContainer(props: {
     };
 
     return (
-        <div>
-            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', alignItems: 'center' }}>
+        <React.Fragment>
+            <div className="airebot-setting__toolbar">
                 {props.have_auth_edit !== false && (
                     <>
                         {showAddSelect ? (
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <div className="airebot-setting__add-select">
                                 <Select
                                     options={PLATFORM_SELECT_OPTIONS}
                                     defaultValue={DEFAULT_PLATFORM}
@@ -133,23 +133,15 @@ export function RebotCardContainer(props: {
             </div>
 
             {props.items.length === 0 ? (
-                <div style={{
-                    textAlign: 'center',
-                    padding: '3rem 1rem',
-                    color: 'var(--textSecondary)',
-                }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '3rem', display: 'block', margin: '0 auto 0.5rem' }}>
+                <div className="airebot-setting__empty">
+                    <span className="material-symbols-outlined airebot-setting__empty-icon">
                         smart_toy
                     </span>
                     <p>{t("还没有配置任何机器人")}</p>
-                    <p style={{ fontSize: '0.85rem' }}>{t("点击上方「添加机器人」按钮来开始配置")}</p>
+                    <p className="airebot-setting__empty-hint">{t("点击上方「添加机器人」按钮来开始配置")}</p>
                 </div>
             ) : (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))',
-                    gap: '1rem',
-                }}>
+                <div className="airebot-setting__grid">
                     {props.items.map((item, index) => (
                         <RebotCard
                             key={index}
@@ -162,7 +154,7 @@ export function RebotCardContainer(props: {
                     ))}
                 </div>
             )}
-        </div>
+        </React.Fragment>
     );
 }
 
@@ -183,23 +175,14 @@ export const RebotCard: React.FC<{
     return (
         <Card
             self_title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="material-symbols-outlined" style={{ color: meta.color, fontSize: '1.3rem' }}>
+                <div className="airebot-setting__card-header">
+                    <span className="material-symbols-outlined airebot-setting__card-icon" style={{ color: meta.color }}>
                         {meta.icon}
                     </span>
-                    {/*<span style={{ fontWeight: 600, fontSize: '1rem' }}>*/}
-                    {/*    {item.name || meta.label}*/}
-                    {/*</span>*/}
-                    {/*<span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: 'auto' }}>*/}
-                    {/*    <StatusCircle*/}
-                    {/*        success={effectiveStatus === 'connected'}*/}
-                    {/*        running={effectiveStatus === 'connecting'}*/}
-                    {/*    />*/}
-                    {/*</span>*/}
                 </div>
             }
             titleCom={
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <div className="airebot-setting__card-actions">
                     <Switch
                         checked={!!item.open}
                         onChange={(v) => onChange(index, { open: v })}
@@ -209,15 +192,10 @@ export const RebotCard: React.FC<{
                 </div>
             }
         >
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                gap: '0.75rem',
-                padding: '0.25rem 0',
-            }}>
+            <div className="airebot-setting__card-fields">
                 {/* 平台选择 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
+                <div className="airebot-setting__field">
+                    <label className="airebot-setting__field-label">
                         {t("平台")}
                     </label>
                     <Select
@@ -229,8 +207,8 @@ export const RebotCard: React.FC<{
                 </div>
 
                 {/* 备注名称 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
+                <div className="airebot-setting__field">
+                    <label className="airebot-setting__field-label">
                         {t("名称")}
                     </label>
                     <InputText
@@ -244,10 +222,10 @@ export const RebotCard: React.FC<{
                 {meta.fields.map((field) => {
                     const value = (item as any)[field.key] ?? '';
                     return (
-                        <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
+                        <div key={field.key} className="airebot-setting__field">
+                            <label className="airebot-setting__field-label">
                                 {field.label}
-                                {field.required && <span style={{ color: '#ff4d4f', marginLeft: '2px' }}>*</span>}
+                                {field.required && <span className="airebot-setting__field-required">*</span>}
                             </label>
                             <InputText
                                 type={field.type}
@@ -259,9 +237,21 @@ export const RebotCard: React.FC<{
                     );
                 })}
 
+                {/* 用户id */}
+                <div className="airebot-setting__field airebot-setting__field-full">
+                    <label className="airebot-setting__field-label">
+                        {t("用户id")}
+                    </label>
+                    <InputText
+                        value={item.user_id || ''}
+                        handleInputChange={(v) => onChange(index, { user_id: v })}
+                        placeholder={t("默认使用root账户（继承权限，可选）")}
+                    />
+                </div>
+
                 {/* 备注 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
+                <div className="airebot-setting__field airebot-setting__field-full">
+                    <label className="airebot-setting__field-label">
                         {t("备注")}
                     </label>
                     <InputText
@@ -272,23 +262,13 @@ export const RebotCard: React.FC<{
                 </div>
 
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
-                        {t("用户id")}
-                    </label>
-                    <InputText
-                        value={item.user_id || ''}
-                        handleInputChange={(v) => onChange(index, { user_id: v })}
-                        placeholder={t("默认使用root账户（继承权限，可选）")}
-                    />
-                </div>
             </div>
         </Card>
     );
 };
 
 /* ---------- 主页面 ---------- */
-export default function AIRebotSetting() {
+export default function AIRobotSetting() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { check_user_auth } = use_auth_check();
@@ -318,33 +298,28 @@ export default function AIRebotSetting() {
     };
 
     return (
-        <div>
+        <div className="airebot-setting">
             <Header>
                 {check_user_auth(UserAuth.ai_agent_setting) &&
                     <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => navigate(-1)} />
                 }
             </Header>
-            <Dashboard>
-                <Row>
-                    <Column widthPer={100}>
-                        <Card
-                            self_title={
-                                <span className="div-row">
-                                    <h2>{t("机器人配置")}</h2>
-                                    <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("机器人配置")}} title={"信息"}/>
-                                </span>
-                            }
-                        >
-                            <RebotCardContainer
-                                items={rows}
-                                setItems={setRows}
-                                save={save}
-                                have_auth_edit={check_user_auth(UserAuth.ai_agent_setting)}
-                            />
-                        </Card>
-                    </Column>
-                </Row>
-            </Dashboard>
+
+            <Row>
+                <Column widthPer={100}>
+                    <div className="airebot-setting__page-title">
+                        <h2>{t("机器人配置")}</h2>
+                        <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click("机器人配置")}} title={"信息"}/>
+                    </div>
+
+                    <RebotCardContainer
+                        items={rows}
+                        setItems={setRows}
+                        save={save}
+                        have_auth_edit={check_user_auth(UserAuth.ai_agent_setting)}
+                    />
+                </Column>
+            </Row>
         </div>
     );
 }
