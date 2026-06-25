@@ -236,10 +236,10 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" = "web") {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" = "web",sessionId?:string) {
         const store = this.read_index_of_session();
         const session: ai_agent_chat_session_item = {
-            id: nowId(),
+            id: sessionId??nowId(),
             title,
             messages: [],
             summary: "",
@@ -258,7 +258,7 @@ export class AiAgentMemoryService {
             const session = this.get_session(userId, sessionId);
             if (session) return session;
         }
-        return this.create_session(userId, title, source);
+        return this.create_session(userId, title, source,sessionId);
     }
 
     public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq", title: string) {

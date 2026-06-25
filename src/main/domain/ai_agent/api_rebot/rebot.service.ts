@@ -77,7 +77,7 @@ async function sendGroupMessage(groupOpenid: string, content: string, msg_id: st
                 'Content-Type': 'application/json',
             },
         });
-        console.log('[QQ Bot] 回复群聊消息:', resp.status, resp.data);
+        // console.log('[QQ Bot] 回复群聊消息:', resp.status, resp.data);
     } catch (err) {
         console.error('[QQ Bot] 回复群聊消息失败:', err.message);
     }
