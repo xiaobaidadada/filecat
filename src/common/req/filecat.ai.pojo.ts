@@ -319,7 +319,7 @@ export class ai_agent_chat_session_item {
     summary: string = "";
     // 长期记忆
     long_term_memory: string = "";
-    source?: "web" | "cli";
+    source?: "web" | "cli" | "robot_qq";
     created_at: number;
     updated_at: number;
     // 字符消耗统计
@@ -347,8 +347,39 @@ export class ai_agent_chat_session_meta {
     message_count: number;
     summary?: string;
     long_term_memory?: string;
-    source?: "web" | "cli";
+    source?: "web" | "cli" | "robot_qq";
     created_at: number;
     updated_at: number;
     usage_stats?: ai_agent_usage_stats;
+}
+
+// ============ 机器人配置 ============
+
+/** 机器人平台类型 */
+export type RobotPlatform = 'qq';
+
+/** 单个机器人配置 */
+export class ai_rebot_item {
+    /** 机器人平台 */
+    platform: RobotPlatform = 'qq';
+    /** 机器人名称/备注 */
+    name: string = '';
+    /** 是否开启 */
+    open: boolean = false;
+    /** QQ机器人 appId */
+    appId: string = '';
+    /** QQ机器人 clientSecret */
+    clientSecret: string = '';
+    /** 备注 */
+    note?: string;
+    /** 索引 */
+    index?: number;
+    /** 运行时状态 */
+    _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
+    _status_msg?: string;
+}
+
+/** 机器人配置存储结构 */
+export class ai_rebot_setting {
+    list: ai_rebot_item[] = [];
 }

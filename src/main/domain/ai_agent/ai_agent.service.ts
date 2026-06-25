@@ -41,6 +41,7 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
+import {rebotService} from "./api_rebot/rebot.service";
 
 const {
     cut,
@@ -234,6 +235,8 @@ export class Ai_agentService {
         await ThreadsFilecat.close()
         this.init_search_docs_param()
         await ai_agentMcpService.reload().catch(console.error);
+        // 启动机器人服务
+        await this.reloadRebots().catch(console.error);
         if (!this.docs_switch_get()) return;
         start_worker_threads()
         const body:any = {index_storage_type: ai_config_search_doc.index_storage_type}
@@ -640,6 +643,10 @@ export class Ai_agentService {
 
     public async reloadMcp() {
         await ai_agentMcpService.reload();
+    }
+
+    public async reloadRebots() {
+        await rebotService.reload();
     }
 
     public getMcpTools() {

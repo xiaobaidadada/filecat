@@ -35,6 +35,7 @@ import {
     ai_agent_Item,
     ai_agent_item_dotenv_default, ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
     ai_mcp_server_item,
+    ai_rebot_item, ai_rebot_setting,
     ai_system_prompt_item,
     json_params_default
 } from "../../../common/req/filecat.ai.pojo";
@@ -539,6 +540,16 @@ export class SettingService {
 
     ai_system_prompts_save(list: ai_system_prompt_item[]) {
         DataUtil.set(data_common_key.ai_system_prompts, list);
+    }
+
+    // ============ 机器人配置 ============
+
+    ai_rebot_setting(): ai_rebot_setting {
+        return DataUtil.get(data_common_key.ai_rebot_setting) ?? { list: [] };
+    }
+
+    ai_rebot_setting_save(data: ai_rebot_setting) {
+        DataUtil.set(data_common_key.ai_rebot_setting, data);
     }
 
     async ai_mcp_setting_save(token: string, data: { list: ai_mcp_server_item[] }) {

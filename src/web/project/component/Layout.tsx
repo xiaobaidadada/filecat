@@ -31,6 +31,7 @@ const ChatPage =   React.lazy(()=> import('./aichat/page/AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/share/Share'))
 const ShareListSetting = React.lazy(()=> import('./file/component/share/ShareListSetting'))
 const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting'))
+const AIRebotSetting = React.lazy(()=> import('./aichat/AIRebotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
 
@@ -97,6 +98,7 @@ function Layout() {
             { rto: `${routerConfig.share}`, component: <Share />},
             { rto: `${routerConfig.share_list_setting_page}`, component: <ShareListSetting />},
             { rto: `${routerConfig.ai_agent_setting_page}`, component: <AIAgentChatSetting />},
+            { rto: `${routerConfig.ai_rebot_setting_page}`, component: <AIRebotSetting />},
             { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
             { rto: `${routerConfig.studio_page}`, component: <StudioLazy />}
         ]

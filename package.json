@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "6.10.0",
+  "version": "6.11.0",
   "description": "FileCat File Browser Server Manager",
   "author": "xiaobaidadada",
   "repository": {
@@ -52,10 +52,10 @@
     "@babel/preset-env": "^8.0.2 ",
     "@babel/preset-react": "^8.0.1",
     "@babel/preset-typescript": "^8.0.1",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.0.0",
-    "@excalidraw/excalidraw": "^0.18.1",
     "@xiaobaidadada/prebuild": "^13.0.1-9",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",

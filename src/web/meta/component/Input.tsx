@@ -64,7 +64,7 @@ export type input_type =
     | 'button' | 'submit' | 'reset' | 'image' | 'file'
     | 'email' | 'number' | 'tel' | 'url' | 'search'
     | 'color' | 'date' | 'datetime-local' | 'time'
-    | 'month' | 'week' | 'range';
+    | 'month' | 'week' | 'range' | 'textarea';
 
 function Input(props: {
     placeholder?: string,

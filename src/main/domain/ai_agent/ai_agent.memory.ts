@@ -205,7 +205,7 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    private findMetaBySource(userId: string, source: "web" | "cli") {
+    private findMetaBySource(userId: string, source: "web" | "cli" | "robot_qq") {
         const store = this.read_index_of_session();
         return this.user_meta_index_by_store(store, userId).sessions.find(it => it.source === source) ?? null;
     }
@@ -236,7 +236,7 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" = "web") {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" = "web") {
         const store = this.read_index_of_session();
         const session: ai_agent_chat_session_item = {
             id: nowId(),
@@ -253,7 +253,7 @@ export class AiAgentMemoryService {
         return cloneSession(session);
     }
 
-    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" = "web") {
+    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" = "web") {
         if (sessionId) {
             const session = this.get_session(userId, sessionId);
             if (session) return session;
@@ -261,7 +261,7 @@ export class AiAgentMemoryService {
         return this.create_session(userId, title, source);
     }
 
-    public ensure_single_session(userId: string, source: "web" | "cli", title: string) {
+    public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq", title: string) {
         const meta = this.findMetaBySource(userId, source);
         if (meta) {
             return this.get_session(userId, meta.id);

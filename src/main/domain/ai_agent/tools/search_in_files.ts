@@ -3,6 +3,7 @@ import {RG_PATH} from "../../bin/download-ripgrep";
 import {SystemUtil} from "../../sys/sys.utl";
 import fg from "fast-glob";
 import {readFile} from "fs/promises";
+import {FileUtil} from "../../file/FileUtil";
 
 export const search_in_files_tool = async ({
                                                pattern,
@@ -19,6 +20,9 @@ export const search_in_files_tool = async ({
     ignore_case?: boolean;
     ignore_paths?: string[];
 }) => {
+// 1. 获取路径信息，判断是文件还是目录
+    const stats = await FileUtil.statSync(searchPath);
+    const isFile = stats.isFile();
 
     const rg_path = BinFileUtil.get_bin_path(RG_PATH);
 
@@ -27,24 +31,16 @@ export const search_in_files_tool = async ({
     // ======================================================
     if (rg_path) {
         try {
-            console.log("[search] using ripgrep");
+            const args = [rg_path, "--vimgrep", "--no-heading", "--with-filename", "--line-number", "--column"];
 
-            const args = [
-                rg_path,
-                "--vimgrep",
-                "--no-heading",
-                "--with-filename",
-                "--line-number",
-                "--column"
-            ];
-
-            // 添加忽略路径 (ripgrep 需要使用 --glob "!pattern")
-            ignore_paths.forEach(p => {
-                args.push("--glob", `!${p}`);
-            });
+            // 只有当是目录时，才添加忽略路径的 glob 参数
+            if (!isFile) {
+                ignore_paths.forEach(p => args.push("--glob", `!${p}`));
+            }
 
             if (ignore_case) args.push("-i");
 
+            // 将 searchPath 直接传给 rg
             args.push(pattern, searchPath);
 
             const output = await SystemUtil.execAsync(args.join(" "));
@@ -85,10 +81,15 @@ export const search_in_files_tool = async ({
     // ======================================================
     // ❌ CASE 2: JS fallback
     // ======================================================
-    const files = await fg([`${searchPath}/**/*.*`], {
-        onlyFiles: true,
-        ignore: ignore_paths
-    });
+    let files: string[] = [];
+    if (isFile) {
+        files = [searchPath];
+    } else {
+        files = await fg([`${searchPath}/**/*.*`], {
+            onlyFiles: true,
+            ignore: ignore_paths
+        });
+    }
 
     const regex = new RegExp(pattern, ignore_case ? "i" : "");
     const results: any[] = [];

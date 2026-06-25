@@ -18,6 +18,7 @@ export const routerConfig = {
     share:"/share",
     share_list_setting_page:"/share_list_setting_page",
     ai_agent_setting_page:"/ai_agent_setting_page",
+    ai_rebot_setting_page:"/ai_rebot_setting_page",
     studio_page:"/studio_page",
     sqlite_query_page:"/sqlite_query_page",
     "/":"/",

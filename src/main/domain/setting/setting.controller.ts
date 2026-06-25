@@ -14,7 +14,7 @@ import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {ServerEvent} from "../../other/config";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
-import {ai_agent_Item, ai_mcp_server_item, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 import {Public} from "../../other/middleware/decorator";
 
 @JsonController("/setting")
@@ -255,6 +255,23 @@ export class SettingController {
     ai_system_prompts_save(@Body() req: { list: ai_system_prompt_item[] }, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         settingService.ai_system_prompts_save(req.list);
+        return Sucess("1");
+    }
+
+    // ============ 机器人配置 API ============
+
+    @Get("/ai_rebot_setting")
+    ai_rebot_setting_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(settingService.ai_rebot_setting());
+    }
+
+    @Post("/ai_rebot_setting/save")
+    async ai_rebot_setting_save(@Body() req: ai_rebot_setting, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        settingService.ai_rebot_setting_save(req);
+        // 通知机器人服务重新加载配置
+        await ai_agentService.reloadRebots().catch(console.error);
         return Sucess("1");
     }
 

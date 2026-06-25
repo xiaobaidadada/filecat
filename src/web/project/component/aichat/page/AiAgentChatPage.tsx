@@ -638,6 +638,11 @@ export default function AiAgentChatPage() {
                        navigate(`/${routerConfig.ai_agent_setting_page}`);
                    }}/>
                }
+               {check_user_auth(UserAuth.ai_agent_setting) &&
+                   <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={()=>{
+                       navigate(`/${routerConfig.ai_rebot_setting_page}`);
+                   }}/>
+               }
            </Header>
            <div className="chat-page chat-page-with-sessions">
                {ai_session_collapsed && <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(false)}></div>}

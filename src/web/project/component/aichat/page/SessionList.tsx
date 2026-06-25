@@ -43,7 +43,7 @@ export default function SessionList({
                     >
                         <span>{toSessionTitle(session.title)}</span>
                         <small>{session.message_count}</small>
-                        {session.source === "cli" && <em className="chat-session-source">CLI</em>}
+                        {session.source !== "web" && <em className="chat-session-source">{session.source}</em>}
                         <MenuSelect
                             list={[
                                 {
