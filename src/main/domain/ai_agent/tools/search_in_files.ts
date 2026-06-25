@@ -140,7 +140,7 @@ export const search_in_files_schema = {
             type: "object",
             properties: {
                 pattern: { type: "string", description: "要搜索的正则或关键词" },
-                path: { type: "string", description: "搜索目录,是绝对路径" },
+                path: { type: "string", description: "搜索路径,是绝对路径" },
                 max_files: { type: "number", description: "最多扫描多少个文件" },
                 max_matches_per_file: { type: "number", description: "每个文件最多匹配多少条结果" },
                 ignore_case: { type: "boolean", description: "是否忽略大小写" },
