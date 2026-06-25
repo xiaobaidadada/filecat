@@ -375,8 +375,9 @@ export class ai_rebot_item {
     /** 索引 */
     index?: number;
     /** 运行时状态 */
-    _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
+    // _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
     _status_msg?: string;
+    user_id?: string;
 }
 
 /** 机器人配置存储结构 */

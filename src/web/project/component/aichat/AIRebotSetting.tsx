@@ -270,6 +270,18 @@ export const RebotCard: React.FC<{
                         placeholder={t("备注信息（可选）")}
                     />
                 </div>
+
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--textSecondary)', fontWeight: 500 }}>
+                        {t("用户id")}
+                    </label>
+                    <InputText
+                        value={item.user_id || ''}
+                        handleInputChange={(v) => onChange(index, { user_id: v })}
+                        placeholder={t("默认使用root账户（继承权限，可选）")}
+                    />
+                </div>
             </div>
         </Card>
     );

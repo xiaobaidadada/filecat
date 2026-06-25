@@ -91,6 +91,7 @@ class QQBotConnection {
     private clientSecret: string = '';
     private config: ai_rebot_item;
     private seqNum: number = 0;
+    private user_id?: string;
 
     // 使用 root 用户（id="1"）来标识机器人系统
     private readonly SYSTEM_USER_ID = '1';
@@ -99,6 +100,7 @@ class QQBotConnection {
         this.config = config;
         this.appId = config.appId;
         this.clientSecret = config.clientSecret;
+        this.user_id = config.user_id
     }
 
     async start(): Promise<void> {
@@ -319,7 +321,7 @@ class QQBotConnection {
                 chat_core.chat({
                     tools: ai_agentService.getModelToolSchemas(),
                     originMessages: workMessages,
-                    user_id: this.SYSTEM_USER_ID,
+                    user_id: this.user_id??this.SYSTEM_USER_ID,
                     controller,
                     on_msg: (msg: string) => {
                         assistantText += msg;
@@ -384,8 +386,8 @@ class QQBotConnection {
     }
 
     private updateStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error', msg?: string) {
-        this.config._status = status;
-        this.config._status_msg = msg;
+        // this.config._status = status;
+        // this.config._status_msg = msg;
         // 将状态广播给前端（通过 WebSocket）
         // 此项通过 rebotService 统一处理状态查询
     }
@@ -449,8 +451,8 @@ class RebotService {
                 this.connections.set(i, conn);
                 conn.start().catch(err => {
                     console.error('[Rebot] QQ 机器人启动失败:', err);
-                    item._status = 'error';
-                    item._status_msg = err.message;
+                    // item._status = 'error';
+                    // item._status_msg = err.message;
                 });
             }
         }
@@ -466,10 +468,10 @@ class RebotService {
             const conn = this.connections.get(index);
             return {
                 ...item,
-                _status: item.open
-                    ? (conn ? item._status || 'connected' : item._status || 'disconnected')
-                    : 'disconnected',
-                _status_msg: item._status_msg,
+                // _status: item.open
+                //     ? (conn ? item._status || 'connected' : item._status || 'disconnected')
+                //     : 'disconnected',
+                // _status_msg: item._status_msg,
             };
         });
     }

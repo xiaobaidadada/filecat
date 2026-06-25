@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "6.11.0",
+  "version": "6.11.1",
   "description": "FileCat File Browser Server Manager",
   "author": "xiaobaidadada",
   "repository": {
@@ -119,7 +119,6 @@
     "style-loader": "^3.3.4",
     "systeminformation": "5.31.0",
     "tar": "7.5.11",
-    "terser-webpack-plugin": "^5.6.1",
     "tldts": "^6.1.20",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
