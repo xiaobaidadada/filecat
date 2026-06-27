@@ -296,6 +296,8 @@ export interface SelectProps {
     value?: any,
     tip?: any,
     width?: string,
+    maxWidth?: string,
+    minWidth?: string,
     disabled?: boolean
 }
 
@@ -410,7 +412,11 @@ export function Select(props: SelectProps) {
     };
 
     return (
-        <div className="select_wrapper" style={{ width: props.width || "100%" }}>
+        <div className="select_wrapper" style={{
+            width: props.width || '100%',
+            maxWidth:props.width == null && props.maxWidth  ,
+            minWidth: props.width == null && props.minWidth ,
+        }}>
             {props.tip && <p className="input input_left">{props.tip}</p>}
             <div className="select_container">
                 <div

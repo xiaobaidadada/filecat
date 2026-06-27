@@ -41,7 +41,7 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
-import {rebotService} from "./api_rebot/rebot.service";
+import {robotService} from "./api_robot/robotService";
 
 const {
     cut,
@@ -484,7 +484,10 @@ export class Ai_agentService {
     }
 
     get_env() {
-        return ai_config_env;
+        return {
+            ...ai_config_env,
+            current_model_note: ai_config?.model,
+        };
     }
 
     // 只要开启了任意一个ai
@@ -506,6 +509,26 @@ export class Ai_agentService {
             }
         }
         return false;
+    }
+
+    /**
+     * 设置指定模型为当前激活模型（将其 open 设为 true，其他设为 false）
+     * @param modelName 模型的 note 或 model 字段值，用于查找
+     */
+    public set_active_model(modelName: string) {
+        const body =  settingService.ai_agent_setting()
+        if (!body?.models?.length) return;
+        let found = false;
+        for (const m of body.models) {
+            if(m.open) {
+                found = true;
+                m.model = modelName;
+                break
+            }
+        }
+        if (!found) return;
+        DataUtil.set(data_common_key.ai_agent_model_setting, body);
+        this.load_key();
     }
 
     public ai_agent_setting_save(body:any) {
@@ -578,7 +601,7 @@ export class Ai_agentService {
         originMessages: ai_agent_messages, // 只有一条用户的了
         res: Response,
         token: string,
-        session_id?: string
+        session_id?: string,
     ) {
         const controller = new AbortController();
         let responseFinished = false;
@@ -603,11 +626,12 @@ export class Ai_agentService {
        let turnOutputChars = 0;
 
        try {
-           const tools =ai_agentService.getModelToolSchemas();
+           const tools = ai_agentService.getModelToolSchemas();
+
            await chat_core.chat({
                tools,
                originMessages: workMessages,
-               user_id:userId,
+               user_id: userId,
                controller,
                on_msg: (msg) => {
                    assistantText += msg;
@@ -646,7 +670,7 @@ export class Ai_agentService {
     }
 
     public async reloadRebots() {
-        await rebotService.reload();
+        await robotService.reload();
     }
 
     public getMcpTools() {

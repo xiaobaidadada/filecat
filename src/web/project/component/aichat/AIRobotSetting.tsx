@@ -237,8 +237,20 @@ export const RebotCard: React.FC<{
                     );
                 })}
 
+                {/* 模型 index */}
+                <div className="airebot-setting__field ">
+                    <label className="airebot-setting__field-label">
+                        {t("模型编号")}
+                    </label>
+                    <InputText
+                        value={item.model_index}
+                        handleInputChange={(v) => onChange(index, { model_index: v })}
+                        placeholder={t("使用指定模型（可选）")}
+                    />
+                </div>
+
                 {/* 用户id */}
-                <div className="airebot-setting__field airebot-setting__field-full">
+                <div className="airebot-setting__field ">
                     <label className="airebot-setting__field-label">
                         {t("用户id")}
                     </label>

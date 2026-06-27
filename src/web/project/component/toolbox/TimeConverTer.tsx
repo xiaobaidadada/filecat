@@ -87,7 +87,7 @@ export function TimeConverTer(props) {
     return <Row>
         <Column>
             <Card title={t("时间转换器")} rightBottomCom={<ButtonText text={t('确定')} clickFun={switchTime}/>}>
-                <Select options={[{title:t("毫秒"),value:"毫秒"},{title:t("分秒"),value:"分秒"}]} onChange={changeType}/>
+                <Select value={type} options={[{title:t("毫秒"),value:"毫秒"},{title:t("分秒"),value:"分秒"}]} onChange={changeType}/>
                 <InputText placeholder={type} value={stamp} handleInputChange={(value)=>{setStamp(value)}} />
                 <InputText placeholder={t('格式化时间')}  value={time} handleInputChange={(value)=>{setTime(value)}}/>
             </Card>

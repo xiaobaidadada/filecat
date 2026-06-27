@@ -1,10 +1,11 @@
 import WebSocket from 'ws';
 import axios from 'axios';
-import { ai_rebot_item } from "../../../../common/req/filecat.ai.pojo";
+import { ai_rebot_item, ai_agent_Item, ai_agent_item_dotenv } from "../../../../common/req/filecat.ai.pojo";
 import { ai_agentService } from "../ai_agent.service";
 import { aiAgentMemoryService } from "../ai_agent.memory";
 import { settingService } from "../../setting/setting.service";
 import { ai_agent_message_item, getContentAsString } from "../../../../common/req/filecat.ai.pojo";
+import { Env } from "../../../../common/node/Env";
 
 const BASE_URL = 'https://api.sgroup.qq.com';
 
@@ -58,7 +59,7 @@ async function sendC2CMessage(openid: string, content: string, msg_id: string, a
                 'Content-Type': 'application/json',
             },
         });
-        console.log('[QQ Bot] 回复单聊消息:', resp.status, resp.data);
+        // console.log('[QQ Bot] 回复单聊消息:', resp.status, resp.data);
     } catch (err) {
         console.error('[QQ Bot] 回复单聊消息失败:', err.message);
     }
@@ -96,11 +97,43 @@ class QQBotConnection {
     // 使用 root 用户（id="1"）来标识机器人系统
     private readonly SYSTEM_USER_ID = '1';
 
+    // 根据 model_index 指定的模型配置（如果设置了的话）
+    private modelConfig?: ai_agent_Item;
+    private modelEnv?: ai_agent_item_dotenv;
+
     constructor(config: ai_rebot_item) {
         this.config = config;
         this.appId = config.appId;
         this.clientSecret = config.clientSecret;
-        this.user_id = config.user_id
+        this.user_id = config.user_id;
+        this.resolveModelConfig();
+    }
+
+    /**
+     * 根据 model_index 解析对应的模型配置。
+     * 如果 model_index 未设置或找不到对应模型，则使用全局默认 ai_config（不传 aiConfig 即为默认）。
+     */
+    private resolveModelConfig() {
+        if (this.config.model_index == null || this.config.model_index === undefined) {
+            return;
+        }
+        const modelIndex = Number(this.config.model_index);
+        if (isNaN(modelIndex)) {
+            console.warn(`[QQ Bot] model_index "${this.config.model_index}" 不是有效数字，将使用全局默认模型`);
+            return;
+        }
+        const { models } = settingService.ai_agent_setting();
+        const matched = models.find(m => m.index === modelIndex);
+        if (!matched) {
+            console.warn(`[QQ Bot] 未找到 model_index=${modelIndex} 的模型配置，将使用全局默认模型`);
+            return;
+        }
+        this.modelConfig = matched;
+        this.modelEnv = new ai_agent_item_dotenv();
+        if (matched.dotenv) {
+            Env.load(matched.dotenv, this.modelEnv);
+        }
+        console.log(`[QQ Bot] 机器人 "${this.config.name}" 使用指定模型: ${matched.note || matched.model} (index=${modelIndex})`);
     }
 
     async start(): Promise<void> {
@@ -318,7 +351,7 @@ class QQBotConnection {
                     reject(new Error('AI 回复超时'));
                 }, 120_000); // 2分钟超时
 
-                chat_core.chat({
+                const chatOpts: any = {
                     tools: ai_agentService.getModelToolSchemas(),
                     originMessages: workMessages,
                     user_id: this.user_id??this.SYSTEM_USER_ID,
@@ -334,7 +367,13 @@ class QQBotConnection {
                         }
                         resolve();
                     },
-                }).catch((err: Error) => {
+                };
+                // 如果机器人指定了 model_index，则使用对应的模型配置
+                if (this.modelConfig) {
+                    chatOpts.aiConfig = this.modelConfig;
+                    chatOpts.aiEnv = this.modelEnv;
+                }
+                chat_core.chat(chatOpts).catch((err: Error) => {
                     clearTimeout(timeout);
                     reject(err);
                 });
@@ -405,7 +444,7 @@ class QQBotConnection {
 /**
  * QQ 机器人服务管理器
  */
-class RebotService {
+class RobotService {
     private connections: Map<number, QQBotConnection> = new Map();
 
     /**
@@ -416,7 +455,10 @@ class RebotService {
         const list = setting.list || [];
 
         // 停止已删除或已关闭的连接
-        const activeIndexes = new Set(list.filter(it => it.open).map((it, i) => i));
+        const activeIndexes = new Set<number>();
+        list.forEach((it, i) => {
+            if (it.open) activeIndexes.add(i);
+        });
         for (const [index, conn] of this.connections) {
             if (!activeIndexes.has(index)) {
                 console.log('[Rebot] 停止机器人连接:', index);
@@ -432,9 +474,12 @@ class RebotService {
 
             const existing = this.connections.get(i);
             if (existing) {
-                // 检查配置是否变更
+                // 检查配置是否变更（包括 model_index、user_id 等关键字段）
                 const existingConfig = list[i];
-                if (existingConfig.appId !== item.appId || existingConfig.clientSecret !== item.clientSecret) {
+                if (existingConfig.appId !== item.appId ||
+                    existingConfig.clientSecret !== item.clientSecret ||
+                    existingConfig.model_index !== item.model_index ||
+                    existingConfig.user_id !== item.user_id) {
                     console.log('[Rebot] 机器人配置变更，重新启动:', i);
                     existing.stop();
                     this.connections.delete(i);
@@ -487,4 +532,4 @@ class RebotService {
     }
 }
 
-export const rebotService = new RebotService();
+export const robotService = new RobotService();

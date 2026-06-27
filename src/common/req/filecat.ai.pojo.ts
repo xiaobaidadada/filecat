@@ -378,6 +378,8 @@ export class ai_rebot_item {
     // _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
     _status_msg?: string;
     user_id?: string;
+
+    model_index?: number; // 使用指定模型编号
 }
 
 /** 机器人配置存储结构 */

@@ -15,7 +15,7 @@ import {useNavigate} from "react-router-dom";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {MenuSelect} from "../../prompts/Prompt";
-import {InputText} from "../../../../meta/component/Input";
+import {InputText, Select} from "../../../../meta/component/Input";
 import {useCmdConfirm} from "../useCmdConfirm";
 import {
     ai_agent_chat_session_item,
@@ -108,6 +108,74 @@ export default function AiAgentChatPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
 
+    // ===== 批量勾选相关状态 =====
+    const [batchMode, setBatchMode] = useState(false); // 是否批量选择模式
+    const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
+    const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set());
+
+    const toggleBatchMode = () => {
+        if (batchMode) {
+            setSelectedMsgIds(new Set());
+            setSelectedSessionIds(new Set());
+        }
+        setBatchMode(prev => !prev);
+    };
+
+    const toggleMsgSelect = (id: number) => {
+        setSelectedMsgIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSessionSelect = (id: string) => {
+        setSelectedSessionIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const batchDeleteMessages = () => {
+        if (selectedMsgIds.size === 0) return;
+        confirm_dell_all({
+            sub_title: t("确认删除选中的聊天消息吗?"),
+            confirm_fun: () => {
+                const newMessages = messages.filter(m => !selectedMsgIds.has(m.id));
+                setMessages(newMessages);
+                setSelectedMsgIds(new Set());
+                setBatchMode(false);
+                if (activeSessionId && newMessages.length !== messages.length) {
+                    ai_agentHttp.post("session/messages", {
+                        session_id: activeSessionId,
+                        messages: toAiMessages(newMessages)
+                    }).catch(console.error);
+                }
+            }
+        });
+    };
+
+    const batchDeleteSessions = () => {
+        if (selectedSessionIds.size === 0) return;
+        confirm_dell_all({
+            sub_title: t("确认删除选中的会话吗?"),
+            confirm_fun: async () => {
+                for (const sid of selectedSessionIds) {
+                    await ai_agentHttp.post("session/delete", { session_id: sid });
+                }
+                setSelectedSessionIds(new Set());
+                setBatchMode(false);
+                if (selectedSessionIds.has(activeSessionId)) {
+                    setActiveSessionId("");
+                    await loadSessions(null);
+                } else {
+                    await loadSessions(activeSessionId);
+                }
+            }
+        });
+    };
+
     const toggleSessionPanel = () => {
         if (window.innerWidth <= 736) {
             set_ai_session_collapsed(true);
@@ -135,6 +203,7 @@ export default function AiAgentChatPage() {
     const autoScrollRef = useRef(true);
     const env_config = useRef(new ai_agent_item_dotenv());
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
+    const [currentModelName, setCurrentModelName] = useState('');
 
     const isNearBottom = (el: HTMLElement, threshold = 120) => {
         const { scrollTop, scrollHeight, clientHeight } = el;
@@ -262,6 +331,10 @@ export default function AiAgentChatPage() {
         const result = await settingHttp.get("ai_agent_setting/env");
         if (result.code === RCode.Success) {
             env_config.current = result.data
+            // 从后端获取当前激活的模型
+            const note = result.data.current_model_note || '';
+            const found = (result.data.options_agent_model_list ?? []).find(m => m.label === note);
+            setCurrentModelName(found ? found.value : note);
         }
         await loadSessions();
         // 加载系统会话提示词列表
@@ -410,7 +483,10 @@ export default function AiAgentChatPage() {
         new_messages.push(call_pojo);
         setMessages([...new_messages]);
         let thinking_start = true
-        ai_agentHttp.sse_post("chat", {messages:get_message(user_message), session_id: sessionId},{
+        ai_agentHttp.sse_post("chat", {
+            messages: get_message(user_message),
+            session_id: sessionId,
+        },{
             onMessage: (res) => {
                 if(thinking_start) {
                     call_pojo.text = ""
@@ -490,14 +566,19 @@ export default function AiAgentChatPage() {
     };
 
     const handleDelete = (id: number) => {
-        const newMessages = messages.filter(m => m.id !== id);
-        setMessages(newMessages);
-        if (activeSessionId) {
-            ai_agentHttp.post("session/messages", {
-                session_id: activeSessionId,
-                messages: toAiMessages(newMessages)
-            }).catch(console.error);
-        }
+        confirm_dell_all({
+            sub_title: t("确认删除这条消息吗?"),
+            confirm_fun: () => {
+                const newMessages = messages.filter(m => m.id !== id);
+                setMessages(newMessages);
+                if (activeSessionId) {
+                    ai_agentHttp.post("session/messages", {
+                        session_id: activeSessionId,
+                        messages: toAiMessages(newMessages)
+                    }).catch(console.error);
+                }
+            }
+        });
     };
 
     const handleCopy = async (text: string) => {
@@ -622,6 +703,40 @@ export default function AiAgentChatPage() {
                )}
                {/* 请求类型选择器 */}
                <RequestTypeSelector />
+               {/* 当前模型下拉选择器：仅在有模型配置时显示 */}
+               {(env_config.current?.options_agent_model_list?.length ?? 0) > 0 && (
+                   <Select
+                       value={currentModelName}
+                       options={env_config.current.options_agent_model_list?.map(m => ({title: m.label, value: m.value})) ?? []}
+                       onChange={(value) => {
+                           // 调用后端接口，真正切换模型（修改 ai_config 中的 open 状态）
+                           setCurrentModelName(value);
+                           ai_agentHttp.post("set_active_model", { model_name: value }).then(() => {
+                               // 切换成功后重新获取 env_config，更新 current_model_note
+                               NotySuccess('success')
+                               settingHttp.get("ai_agent_setting/env").then(res => {
+                                   if (res.code === RCode.Success) {
+                                       env_config.current = res.data;
+                                   }
+                               });
+                           }).catch(console.error);
+                       }}
+                       no_border={true}
+                       maxWidth={"10rem"}
+                   />
+               )}
+               {/* 批量选择模式切换 */}
+               <ActionButton
+                   icon={batchMode ? "check_circle" : "checklist"}
+                   title={batchMode ? t("取消批量选择") : t("批量选择")}
+                   onClick={toggleBatchMode}
+               />
+               {batchMode && selectedMsgIds.size > 0 && (
+                   <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={batchDeleteMessages} />
+               )}
+               {batchMode && selectedSessionIds.size > 0 && (
+                   <ActionButton icon={"delete"} title={t("删除选中会话")} onClick={batchDeleteSessions} />
+               )}
                <ActionButton icon={"delete_sweep"} title={t("清空全部会话")} onClick={()=>{
                    confirm_dell_all({
                        sub_title:t("确认删除全部聊天会话吗?"),
@@ -654,28 +769,41 @@ export default function AiAgentChatPage() {
                    onRenameSession={renameSession}
                    onDeleteSession={deleteSession}
                    onShowUsageStats={showUsageStatsPopup}
+                   batchMode={batchMode}
+                   selectedSessionIds={selectedSessionIds}
+                   onToggleSessionSelect={toggleSessionSelect}
                />
                <section className="chat-main">
                    {
                        messages?.length === 0 &&
                        <div className="chat-header">
-                           {requestType === 'completions'
+                           <div>{requestType === 'completions'
                                ? t('询问服务器的一切')
-                               : REQUEST_TYPE_OPTIONS.find(o => o.value === requestType)?.label ?? requestType}
+                               : REQUEST_TYPE_OPTIONS.find(o => o.value === requestType)?.label ?? requestType}</div>
                        </div>
                    }
                    <div className="chat-messages" ref={chatContainerRef}>
                        {messages.map(msg => (
                            <div
                                key={msg.id}
-                               className={`chat-message ${msg.sender}`}
+                               className={`chat-message ${msg.sender} ${batchMode ? 'batch-mode' : ''}`}
                            >
+                               {batchMode && (
+                                   <input
+                                       type="checkbox"
+                                       className="chat-message-checkbox"
+                                       checked={selectedMsgIds.has(msg.id)}
+                                       onChange={() => toggleMsgSelect(msg.id)}
+                                   />
+                               )}
                                {/* 消息自判断渲染：消息对象携带 images/audio/embeddings 等属性时自动选择对应渲染器 */}
                                {renderMessageByType(msg)}
-                               <div className="message-actions">
-                                   <button onClick={() => handleDelete(msg.id)}>{t("删除")}</button>
-                                   <button onClick={() => handleCopy(msg.text)}>{t("复制")}</button>
-                               </div>
+                               {!batchMode && (
+                                   <div className="message-actions">
+                                       <button onClick={() => handleDelete(msg.id)}>{t("删除")}</button>
+                                       <button onClick={() => handleCopy(msg.text)}>{t("复制")}</button>
+                                   </div>
+                               )}
                            </div>
                        ))}
                        <div ref={messagesEndRef} />

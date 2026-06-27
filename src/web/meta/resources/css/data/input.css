@@ -147,11 +147,14 @@
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0;       /* 允许 flex 子项收缩到 maxWidth 以下 */
+    flex-shrink: 1;     /* 允许在 flex 容器中收缩 */
 }
 
 .select_container {
     position: relative;
     flex: 1;
+    min-width: 0;       /* 确保内部 flex 子项也能收缩 */
 }
 
 .select_trigger {
@@ -160,6 +163,9 @@
     justify-content: space-between;
     cursor: pointer;
     user-select: none;
+    gap: 4px;
+    min-width: 0;       /* 允许文本溢出时收缩 */
+    overflow: hidden;   /* 防止内容撑大容器 */
 }
 
 .select_trigger--disabled {
@@ -168,6 +174,12 @@
 
 .select_trigger__label {
     color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .select_trigger__icon {

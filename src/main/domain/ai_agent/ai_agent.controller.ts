@@ -22,7 +22,7 @@ export class Ai_AgentController {
     @Post("/chat")
     async chat(@Body({options: {limit: max_req_size}}) data: {
         messages:ai_agent_messages,
-        session_id:string
+        session_id:string,
     }, @Res() res: Response, @Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
 
@@ -356,6 +356,17 @@ export class Ai_AgentController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         ai_agentService.delete_index_with_progress(data.param_path).catch(console.error);
         return  Sucess("")
+    }
+
+    /**
+     * 切换当前激活的模型（前端模型选择器调用）
+     * 直接将对应模型的 open 设为 true，其他设为 false，并重新加载配置
+     */
+    @Post("/set_active_model")
+    async setActiveModel(@Req() ctx, @Body() data: { model_name: string }) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        ai_agentService.set_active_model(data.model_name);
+        return Sucess("ok");
     }
 
     // 获取系统会话提示词列表（聊天页面使用，不需要setting权限）

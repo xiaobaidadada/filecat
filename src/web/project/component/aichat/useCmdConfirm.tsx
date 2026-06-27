@@ -55,19 +55,35 @@ export function useCmdConfirm() {
             },
             context_div: (
                 <div>
-                    <span>{nextRequest.cmd}</span>
-                    <Button text={t('允许')} clickFun={() => {
-                        ws.sendData(CmdType.ai_confirm_cmd, {askId: nextRequest.askId, approved: true});
-                        set_prompt_card({open: false});
-                        isProcessingRef.current = false;
-                        processQueue();
-                    }}/>
-                    <Button text={t('拒绝')} color={"var(--red)"} clickFun={() => {
-                        ws.sendData(CmdType.ai_confirm_cmd, {askId: nextRequest.askId, approved: false});
-                        set_prompt_card({open: false});
-                        isProcessingRef.current = false;
-                        processQueue();
-                    }}/>
+                    <div style={{
+                        maxHeight: '60vh',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                        background: 'var(--surfaceSecondary)',
+                        padding: '0.75em',
+                        borderRadius: '0.5em',
+                        marginBottom: '0.75em',
+                        fontFamily: 'monospace',
+                        fontSize: '0.9em',
+                        lineHeight: '1.5'
+                    }}>
+                        {nextRequest.cmd}
+                    </div>
+                    <div style={{display: 'flex', gap: '0.5em', justifyContent: 'flex-end'}}>
+                        <Button text={t('拒绝')} color={"var(--red)"} clickFun={() => {
+                            ws.sendData(CmdType.ai_confirm_cmd, {askId: nextRequest.askId, approved: false});
+                            set_prompt_card({open: false});
+                            isProcessingRef.current = false;
+                            processQueue();
+                        }}/>
+                        <Button text={t('允许')} clickFun={() => {
+                            ws.sendData(CmdType.ai_confirm_cmd, {askId: nextRequest.askId, approved: true});
+                            set_prompt_card({open: false});
+                            isProcessingRef.current = false;
+                            processQueue();
+                        }}/>
+                    </div>
                 </div>
             ),
         });

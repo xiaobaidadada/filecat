@@ -401,6 +401,21 @@ table th {
   background: var(--primary-light);
 }
 
+.chat-session-search-input {
+  background: var(--surfaceSecondary);
+  border-color: var(--divider);
+  color: var(--textPrimary);
+}
+
+.chat-session-search-input::placeholder {
+  color: var(--textSecondary);
+}
+
+.chat-session-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
 .menu-select-popup {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);
