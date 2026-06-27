@@ -295,9 +295,7 @@ export interface SelectProps {
     no_border?: boolean,
     value?: any,
     tip?: any,
-    width?: string,
-    maxWidth?: string,
-    minWidth?: string,
+    width?: string, // 自动扩容可以写 auto
     disabled?: boolean
 }
 
@@ -414,8 +412,6 @@ export function Select(props: SelectProps) {
     return (
         <div className="select_wrapper" style={{
             width: props.width || '100%',
-            maxWidth:props.width == null && props.maxWidth  ,
-            minWidth: props.width == null && props.minWidth ,
         }}>
             {props.tip && <p className="input input_left">{props.tip}</p>}
             <div className="select_container">

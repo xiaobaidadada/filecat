@@ -722,7 +722,7 @@ export default function AiAgentChatPage() {
                            }).catch(console.error);
                        }}
                        no_border={true}
-                       maxWidth={"10rem"}
+                       width={"auto"}
                    />
                )}
                {/* 批量选择模式切换 */}

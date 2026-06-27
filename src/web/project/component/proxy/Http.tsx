@@ -363,7 +363,7 @@ export function Http() {
                     {/* 核心请求包裹器 */}
                     <Card title={""} rightBottomCom={Number(bodyTabKey) === http_body_type.form && mainTabKey === 'body' && <ActionButton icon={"add"} title={t("添加")} onClick={add} />}>
                         <div className={'http_url'}>
-                            <Select width={'23rem'} value={url_type} onChange={(value) => { set_url_type(value) }} options={[
+                            <Select width={'10rem'} value={url_type} onChange={(value) => { set_url_type(value) }} options={[
                                 { value: 'get', color: '#28a745' },
                                 { value: 'post', color: '#007bff' },
                                 { value: 'put', color: '#fd7e14' },
