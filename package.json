@@ -106,7 +106,7 @@
     "normalize.css": "^8.0.1",
     "noty": "^3.2.0-beta-deprecated",
     "pinyin-pro": "^3.28.0",
-    "pty-shell": "1.4.0",
+    "pty-shell": "1.5.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",

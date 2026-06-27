@@ -378,13 +378,22 @@ export class UserService {
     }
 
     // 一个路径是不是另一个路径的子路径
-    public isSubPath(parent, child) {
-        if(parent === "/") return true;
-        parent = removeTrailingPath(parent);
-        child = removeTrailingPath(child);
-        const relativePath = path.relative(parent, child);
-        // 如果相对路径不以 .. 开头，说明 child 是 parent 的子目录
-        return relativePath=== "" ||  (!relativePath.startsWith('..') && relativePath !== child && relativePath !== '.');
+    public isSubPath(parent: string, child: string): boolean {
+        // 1. 规范化路径：resolve 会自动移除多余的 /，并处理 .. 和 .
+        const p = path.resolve(parent);
+        const c = path.resolve(child);
+
+        // 2. 如果它们完全相同，显然是“子路径”
+        if (p === c) return true;
+
+        // 3. 构建规范化的父路径，确保以分隔符结尾
+        // 比如 /abc -> /abc/
+        const pWithSep = p.endsWith(path.sep) ? p : p + path.sep;
+
+        // 4. 关键点：child 必须以 parent 的路径加上一个分隔符开头
+        // 同时，为了防止 /abc/def 被误判为 /abc/de 的子目录
+        // 必须确保 child 是以 pWithSep 开头的
+        return c.startsWith(pWithSep);
     }
 
     // 加载所有用户的路径
