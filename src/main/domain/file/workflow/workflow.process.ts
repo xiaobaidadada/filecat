@@ -102,7 +102,7 @@ export class WorkflowProcess {
                 }
                 this.run_exec_resolve = resolve;
                 for (let cmd of runs) {
-                    await this.pty.write(`${cmd}\r`); // 这里没有必要使用 await
+                    await this.pty.write(`${cmd}\r`);
                 }
                 this.instance.logger.send_all_wss();
             } catch (e) {
