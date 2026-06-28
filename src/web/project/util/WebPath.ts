@@ -11,17 +11,17 @@ export function getRouterAfter(keyRouter: string, router: string) {
     // 2. 分割并过滤空字符串
     let keys = router.split('/').filter(key => key !== '');
 
-    let start = false;
-    for (let i = 0; i < keys.length; i++) {
-        // 3. 使用清理过的 targetKey 进行匹配
-        if (keys[i] === targetKey) {
-            start = true;
-            continue;
-        }
+    // 3. 查找 keyRouter 在路径中的位置
+    // 注意：由于路由前缀位于路径的第一个段位置（如 /file/xxx），
+    // 我们应该只匹配第一个出现的 targetKey，避免路径中同名的目录名导致误匹配
+    const keyIndex = keys.indexOf(targetKey);
+    if (keyIndex === -1) {
+        return result;
+    }
 
-        if (start) {
-            result += `${keys[i]}/`;
-        }
+    // 4. 从 keyRouter 的下一个段开始收集
+    for (let i = keyIndex + 1; i < keys.length; i++) {
+        result += `${keys[i]}/`;
     }
     return result;
 }

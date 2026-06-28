@@ -21,11 +21,13 @@ export function using_env_prompt() {
             context = <div>
                 磁盘检查需要这个软件。linux下你可以使用apt或者yum来安装，或者直接输入软件的位置。
             </div>
-        } else if (id === SysSoftware.ntfs_3g) {
-            context = <div>
-                如果在linux需要挂载ntfs的硬盘，需要这个软件支持。
-            </div>
-        } else if (id === "保护目录") {
+        }
+        // else if (id === SysSoftware.ntfs_3g) {
+        //     context = <div>
+        //         如果在linux需要挂载ntfs的硬盘，需要这个软件支持。
+        //     </div>
+        // }
+        else if (id === "保护目录") {
             context = <div>
                 在删除的时候保护目录会拒绝删除。
                 <ul>

@@ -41,12 +41,14 @@ export function DiskMountAction(props) {
         if (!showPrompt.data.extra_data.fstype) {
             NotyFail("该设备块没有文件系统");
             return;
-        } else if (showPrompt.data.extra_data.fstype === "ntfs") {
-            if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ntfs_3g] || !user_base_info.sysSoftWare[SysSoftware.ntfs_3g].installed) {
-                NotyFail(t("找不到ntfs-3g"))
-                return;
-            }
-        } else if (showPrompt.data.extra_data.fstype !== "ext4" && showPrompt.data.extra_data.mountpoint) {
+        }
+        // else if (showPrompt.data.extra_data.fstype === "ntfs") {
+        //     if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ntfs_3g] || !user_base_info.sysSoftWare[SysSoftware.ntfs_3g].installed) {
+        //         NotyFail(t("找不到ntfs-3g"))
+        //         return;
+        //     }
+        // }
+        else if (showPrompt.data.extra_data.fstype !== "ext4" && showPrompt.data.extra_data.mountpoint) {
             NotyFail(t("非ext4格式，可能不支持多目录挂载"))
             return;
         }

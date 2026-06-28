@@ -757,16 +757,16 @@ export class SettingService {
     }
 
     ntfs_3g:string
-
-    async get_ntfs_3g() {
-        const list = await settingService.getSoftware();
-        for (const item of list) {
-            if (item.id === SysSoftware.ntfs_3g && item.installed && !!item.path) {
-                this.ntfs_3g = item.path;
-            }
-        }
-        return this.ntfs_3g;
-    }
+    //
+    // async get_ntfs_3g() {
+    //     const list = await settingService.getSoftware();
+    //     for (const item of list) {
+    //         if (item.id === SysSoftware.ntfs_3g && item.installed && !!item.path) {
+    //             this.ntfs_3g = item.path;
+    //         }
+    //     }
+    //     return this.ntfs_3g;
+    // }
 
     public async getSoftware() {
         if (this.cacheSysSoftwareItem) {

@@ -148,7 +148,7 @@ export function DiskMount() {
                             <li>挂载点，就是文件路径，例如 /mnt/data
                                 ，这个目录要提前创建，且为空
                             </li>
-                            <li>类型，就是文件系统类型，对于系统不支持的类型，例如ntfs需要额外前提安装ntfs-3g</li>
+                            <li>类型，就是文件系统类型，对于系统不支持的类型，例如ntfs需要额外前提安装ntfs-3g（linux 5.15内核以后自带 ntfs）</li>
                             <li>挂载选项的值只能是以下这些，可以用 "," 同时使用多个选项
                                 <ul>
                                     <li>defaults：使用默认挂载选项</li>
