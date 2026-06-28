@@ -12,7 +12,7 @@ import {GlobalContext} from "../../GlobalProvider";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
 import {create_quick_cmd_items, getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "./FileUtil";
-import {fileHttp, userHttp} from "../../util/config";
+import {fileHttp, gitHttp, userHttp} from "../../util/config";
 import {getNextByLoop} from "../../../../common/ListUtil";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {ws} from "../../util/ws";
@@ -443,7 +443,8 @@ export function use_handleContextMenu() {
         }
         const list: any[] = [
             common_handle_item,
-            {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"}
+            {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"},
+            {r: t("查看Git提交"), v: "git_page"}
         ];
         if (check_user_auth(UserAuth.code_resource)) {
             list.push({r: t("添加http资源根目录"), v: "code_resource"})
@@ -470,6 +471,12 @@ export function use_handleContextMenu() {
                 const dirPath = getRouterAfter('file', getRouterPath());
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate(`/${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
+                return;
+            } else if (v === "git_page") {
+                // 打开Git管理页面
+                const dirPath = getRouterAfter('file', getRouterPath());
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                navigate(`/${routerConfig.git_page}/${encodeURIComponent(dirPath)}`);
                 return;
             } else if (v === "code_resource") {
                 const result = await ws.sendData(CmdType.file_info, {
