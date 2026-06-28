@@ -35,6 +35,7 @@ const AIRebotSetting = React.lazy(()=> import('./aichat/./AIRobotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
 const GcfgEntry = React.lazy(() => import("./file/component/gcfg/GcfgEntry"));
+const GcfgStudio = React.lazy(() => import("./file/component/gcfg/GcfgStudio"));
 
 function Layout() {
     const {t} = useTranslation();
@@ -101,7 +102,8 @@ function Layout() {
             { rto: `${routerConfig.ai_agent_setting_page}`, component: <AIAgentChatSetting />},
             { rto: `${routerConfig.ai_rebot_setting_page}`, component: <AIRebotSetting />},
             { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
-            { rto: `${routerConfig.studio_page}`, component: <StudioLazy />}
+            { rto: `${routerConfig.studio_page}`, component: <StudioLazy />},
+            { rto: `${routerConfig.gcfg_page}`, component: <GcfgStudio />}
         ]
     ]
     if(user_base_info.sys_env?.show_login_user_info) {

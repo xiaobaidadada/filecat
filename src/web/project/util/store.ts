@@ -198,4 +198,6 @@ export const $stroe = {
     gcfg_editor: atom<{open: boolean, path?: string, name?: string, close?: () => any}>({open: false}),
     // gcfg 目录配置模式
     gcfg_dir_config: atom<{open: boolean, dir?: string, files?: string[]}>({open: false}),
+    // gcfg 当前编辑的文件路径（用于路由持久化）
+    gcfg_file_path: atom<string>(''),
 };

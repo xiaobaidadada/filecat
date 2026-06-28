@@ -333,9 +333,10 @@ export function FileMenu() {
             }
             break;
             case common_menu_type.gcfg_dir_config: {
-                // 目录: getRouterAfter 返回当前目录路径 + 目录名
+                // 以配置表方式打开目录 - 导航到 GcfgStudio 路由页面
                 const dirPath = `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`;
-                set_gcfg_dir_config({open: true, dir: dirPath});
+                close();
+                navigate(`/${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
             }
             break;
             case common_menu_type.folder_size_info: {

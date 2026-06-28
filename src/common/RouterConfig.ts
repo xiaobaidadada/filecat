@@ -21,6 +21,7 @@ export const routerConfig = {
     ai_rebot_setting_page:"/ai_rebot_setting_page",
     studio_page:"/studio_page",
     sqlite_query_page:"/sqlite_query_page",
+    gcfg_page:"/gcfg_page",
     "/":"/",
     "":""
 }

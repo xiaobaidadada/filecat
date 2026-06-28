@@ -48,7 +48,13 @@ function ensureConfigByType(cfg: GcfgPageConfig): GcfgPageConfig {
     return c;
 }
 
-export default function GcfgEditor() {
+interface GcfgEditorProps {
+    filePath?: string;
+    fileName?: string;
+    onClose?: () => void;
+}
+
+export default function GcfgEditor(props?: GcfgEditorProps) {
     const [gcfgEditor, setGcfgEditor] = useAtom($stroe.gcfg_editor);
     const {t} = useTranslation();
     const [content, setContent] = useState<GcfgFileContent>(emptyContent());
@@ -56,8 +62,10 @@ export default function GcfgEditor() {
     const [dirty, setDirty] = useState(false);
     const [activeTab, setActiveTab] = useState<'config' | 'data'>('config');
 
-    const filePath = gcfgEditor.path;
-    const fileName = gcfgEditor.name;
+    // 优先使用 props, 再 fallback 到 atom
+    const filePath = props?.filePath || gcfgEditor.path;
+    const fileName = props?.fileName || gcfgEditor.name;
+    const onCloseProp = props?.onClose;
     // 区分已有文件 vs 新建文件：已有文件不允许修改类型
     const [isExistingFile, setIsExistingFile] = useState(false);
 
@@ -77,6 +85,8 @@ export default function GcfgEditor() {
                 const data = rsq.data.data || {};
                 setContent({config: cfg, data});
                 setIsExistingFile(true);
+                // 已有文件：默认打开数据输入页面
+                setActiveTab('data');
             } else {
                 setContent(emptyContent());
                 setIsExistingFile(false);
@@ -131,6 +141,10 @@ export default function GcfgEditor() {
         if (dirty) {
             if (!window.confirm(t('有未保存的更改，确定关闭吗？'))) return;
         }
+        if (onCloseProp) {
+            onCloseProp();
+            return;
+        }
         setGcfgEditor({open: false});
         gcfgEditor.close?.();
     };
@@ -166,8 +180,14 @@ export default function GcfgEditor() {
         }
     };
 
+    // 如果是嵌入模式（有 onCloseProp），使用普通布局；否则使用全屏 fixed 弹窗
+    const isEmbedded = !!onCloseProp;
+
     return (
-        <div style={{
+        <div style={isEmbedded ? {
+            width: '100%', height: '100%', background: V.surface, color: V.text,
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        } : {
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
             zIndex: 2000, background: V.surface, color: V.text,
             display: 'flex', flexDirection: 'column',

@@ -442,7 +442,8 @@ export function use_handleContextMenu() {
             ]
         }
         const list: any[] = [
-            common_handle_item
+            common_handle_item,
+            {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"}
         ];
         if (check_user_auth(UserAuth.code_resource)) {
             list.push({r: t("添加http资源根目录"), v: "code_resource"})
@@ -464,7 +465,13 @@ export function use_handleContextMenu() {
             console.log(v)
             if (v === false) return;
             const user_save_user_file_list_show_type_pojo:any = {}
-            if (v === "code_resource") {
+            if (v === "gcfg_dir_config") {
+                // 以配置表方式打开当前目录
+                const dirPath = getRouterAfter('file', getRouterPath());
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                navigate(`/${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
+                return;
+            } else if (v === "code_resource") {
                 const result = await ws.sendData(CmdType.file_info, {
                     // type: "",
                     path: getRouterAfter('file', getRouterPath())

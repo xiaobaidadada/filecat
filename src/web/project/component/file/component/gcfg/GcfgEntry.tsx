@@ -20,7 +20,7 @@ export default function GcfgEntry() {
         });
     };
 
-    // 右键文件打开编辑器
+    // 右键文件打开编辑器（全局 GcfgEditor 弹窗）
     if (gcfgEditor.open) {
         return (
             <Suspense fallback={<div></div>}>
