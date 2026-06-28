@@ -15,9 +15,6 @@ export enum GcfgFieldType {
     String = 'string',
     Number = 'number',
     Boolean = 'boolean',
-    StringArray = 'string[]',
-    NumberArray = 'number[]',
-    BooleanArray = 'boolean[]',
 }
 
 // 字典表：一个 key 字段定义

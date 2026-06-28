@@ -28,9 +28,6 @@ export const FieldTypeOptions = [
     {value: GcfgFieldType.String, label: '字符串'},
     {value: GcfgFieldType.Number, label: '数字'},
     {value: GcfgFieldType.Boolean, label: '布尔'},
-    {value: GcfgFieldType.StringArray, label: '字符串数组'},
-    {value: GcfgFieldType.NumberArray, label: '数字数组'},
-    {value: GcfgFieldType.BooleanArray, label: '布尔数组'},
 ];
 
 /** 校验英文名是否符合代码变量命名规范 */

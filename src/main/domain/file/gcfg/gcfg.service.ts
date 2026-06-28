@@ -23,18 +23,12 @@ const GcfgFieldTypeTsMap: Record<string, string> = {
     [GcfgFieldType.String]: 'string',
     [GcfgFieldType.Number]: 'number',
     [GcfgFieldType.Boolean]: 'boolean',
-    [GcfgFieldType.StringArray]: 'string[]',
-    [GcfgFieldType.NumberArray]: 'number[]',
-    [GcfgFieldType.BooleanArray]: 'boolean[]',
 };
 
 const GcfgFieldTypeGoMap: Record<string, string> = {
     [GcfgFieldType.String]: 'string',
     [GcfgFieldType.Number]: 'float64',
     [GcfgFieldType.Boolean]: 'bool',
-    [GcfgFieldType.StringArray]: '[]string',
-    [GcfgFieldType.NumberArray]: '[]float64',
-    [GcfgFieldType.BooleanArray]: '[]bool',
 };
 
 export class GcfgService {
@@ -187,9 +181,6 @@ export class GcfgService {
             return `${parseFloat(raw) || 0}`;
         } else if (tsType === 'boolean') {
             return `${raw === 'true' || raw === '1'}`;
-        } else if (tsType.includes('[]')) {
-            const arr = raw ? raw.split(',').map(v => v.trim()).filter(Boolean) : [];
-            return JSON.stringify(arr);
         } else {
             return JSON.stringify(raw);
         }
@@ -201,9 +192,6 @@ export class GcfgService {
             return `${parseFloat(raw) || 0}`;
         } else if (goType === 'bool') {
             return `${raw === 'true' || raw === '1'}`;
-        } else if (goType.startsWith('[]')) {
-            const arr = raw ? raw.split(',').map(v => `"${v.trim()}"`).join(', ') : '';
-            return `[]string{${arr}}`;
         } else {
             return `"${raw}"`;
         }
