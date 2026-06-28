@@ -102,6 +102,7 @@ export enum data_common_key {
     filecat_plugin_list = "filecat_plugin_list", // 插件配置列表
     https_setting = "https_setting", // HTTPS 证书配置
     ai_rebot_setting = "ai_rebot_setting", // 机器人配置
+    token_cache = "token_cache", // token 缓存持久化
 }
 
 

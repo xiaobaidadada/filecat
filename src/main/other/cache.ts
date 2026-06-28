@@ -1,3 +1,6 @@
+import {DataUtil} from "../domain/data/DataUtil";
+import {data_common_key} from "../domain/data/data_type";
+
 export class Cache {
 
     private static time_len = 1000 * 60 * 60;
@@ -5,6 +8,45 @@ export class Cache {
     private static valueMap: Map<string, any> = new Map();
     private static timeLenMap: Map<string, number> = new Map();
     private static stampMap: Map<string, number> = new Map();
+
+    /**
+     * 持久化 token 到文件（通过 DataUtil）
+     * 仅在新建 token、过期删除、修改过期模式、清空时调用，频率很低
+     */
+    private static persist(): void {
+        const data = {
+            valueMap: Object.fromEntries(this.valueMap),
+            timeLenMap: Object.fromEntries(this.timeLenMap),
+            stampMap: Object.fromEntries(this.stampMap),
+        };
+        DataUtil.set(data_common_key.token_cache, data);
+    }
+
+    /**
+     * 从文件恢复 token 缓存（通过 DataUtil）
+     * 在服务启动时调用
+     */
+    public static restore(): void {
+        const data = DataUtil.get<{
+            valueMap?: Record<string, any>;
+            timeLenMap?: Record<string, number>;
+            stampMap?: Record<string, number>;
+        }>(data_common_key.token_cache);
+        if (!data) return;
+        try {
+            if (data.valueMap) {
+                this.valueMap = new Map(Object.entries(data.valueMap));
+            }
+            if (data.timeLenMap) {
+                this.timeLenMap = new Map(Object.entries(data.timeLenMap));
+            }
+            if (data.stampMap) {
+                this.stampMap = new Map(Object.entries(data.stampMap));
+            }
+        } catch (e) {
+            console.log('token 缓存恢复失败', e);
+        }
+    }
 
     /**
      * 设置缓存
@@ -20,6 +62,7 @@ export class Cache {
             this.timeLenMap.set(key, this.time_len);
         }
         this.stampMap.set(key, Date.now());
+        this.persist();
     }
 
     /**
@@ -50,6 +93,7 @@ export class Cache {
         this.stampMap.delete(key);
         this.timeLenMap.delete(key);
         this.valueMap.delete(key);
+        this.persist();
         throw "out of date";
     }
 
@@ -59,6 +103,7 @@ export class Cache {
      */
     public static set_default_time_len(len: number): void {
         this.time_len = len;
+        this.persist();
     }
 
     /**
@@ -68,6 +113,7 @@ export class Cache {
         this.valueMap.clear();
         this.timeLenMap.clear();
         this.stampMap.clear();
+        this.persist();
     }
 
     /**

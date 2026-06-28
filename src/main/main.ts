@@ -29,6 +29,7 @@ import {Request, Response} from 'express';
 import {DataUtil} from "./domain/data/DataUtil";
 import {userService} from "./domain/user/user.service";
 import {shellServiceImpl} from "./domain/shell/shell.service";
+import {Cache} from "./other/cache";
 import {FileUtil} from "./domain/file/FileUtil";
 import {settingService} from "./domain/setting/setting.service";
 import mime from "mime-types";
@@ -56,6 +57,7 @@ export async function start_main() {
     Env.parseArgs();
     await init_pre()
     DataUtil.handle_history_data();
+    Cache.restore();
     await userService.root_init();
     await shellServiceImpl.path_init();
 
