@@ -110,7 +110,8 @@ export function have_key_by_router_key_list(router_key_list:string[]) {
 // todo 所有计算可以缓存的都缓存一下
 export function is_share (){
    const path = getRouterPath()
-   const cleanPath = path.split("?")[0].split("#")[0].replace(/^\/+/, "");
-   const firstPath = cleanPath.split("/")[0];
-    return firstPath === routerConfig.share
+   // const cleanPath = path.split("?")[0].split("#")[0].replace(/^\/+/, "");
+   // const firstPath = cleanPath.split("/")[0];
+   // debugger
+    return path.startsWith(routerConfig.share)
 }
