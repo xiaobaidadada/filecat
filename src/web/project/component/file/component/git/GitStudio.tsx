@@ -340,7 +340,7 @@ export default function GitStudio() {
             <Header ignore_tags={true}
                     left_children={[
                         <ActionButton key={1} title={t("取消")} icon={"close"} onClick={cancel}/>,
-                        <title key={2}>🔀 {t('Git')} - {dirName}</title>
+                        <span>{dirPath}</span>,
                     ]}>
                 <ActionButton icon={"refresh"} title={t("刷新")} onClick={() => {
                     loadStatus();
