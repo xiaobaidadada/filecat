@@ -175,6 +175,8 @@ export function getEditModelType(name) {
             return 'c_cpp'
         case "excalidraw":
             return 'json'
+        case "go":
+            return "golang"
     }
     return "";
 }

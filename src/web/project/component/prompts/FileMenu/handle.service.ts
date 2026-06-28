@@ -57,4 +57,6 @@ export enum common_menu_type {
     file_rename = "file_rename",
     sqlite_query = "sqlite_query",
     blank_search_mode = "blank_search_mode",
+    gcfg_open_editor = "gcfg_open_editor",
+    gcfg_dir_config = "gcfg_dir_config",
 }

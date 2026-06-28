@@ -34,6 +34,7 @@ const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting')
 const AIRebotSetting = React.lazy(()=> import('./aichat/./AIRobotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
+const GcfgEntry = React.lazy(() => import("./file/component/gcfg/GcfgEntry"));
 
 function Layout() {
     const {t} = useTranslation();
@@ -143,6 +144,9 @@ function Layout() {
             {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <ExcalidrawEditor/>
             </Suspense>}
+            <Suspense fallback={<div></div>}>
+                <GcfgEntry/>
+            </Suspense>
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody

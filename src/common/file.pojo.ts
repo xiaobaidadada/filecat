@@ -22,6 +22,7 @@ export enum FileTypeEnum {
     excalidraw = "excalidraw",
     draw = "draw",
     workflow_act = "act",
+    gcfg = "gcfg", // 游戏配置表
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"
 }
