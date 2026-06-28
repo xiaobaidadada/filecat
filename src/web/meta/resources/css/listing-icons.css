@@ -34,7 +34,8 @@
 .file-icons [aria-label$=".odb"] i::before,
 .file-icons [aria-label$=".ods"] i::before,
 .file-icons [aria-label$=".xls"] i::before,
-.file-icons [aria-label$=".xlsx"] i::before
+.file-icons [aria-label$=".xlsx"] i::before,
+.file-icons [aria-label$=".gcfg"] i::before
 { content: 'border_all' }
 
 /* #00f - Document */
@@ -171,7 +172,8 @@
 .file-icons [aria-label$=".go"] i,
 .file-icons [aria-label$=".ods"] i,
 .file-icons [aria-label$=".xls"] i,
-.file-icons [aria-label$=".xlsx"] i
+.file-icons [aria-label$=".xlsx"] i,
+.file-icons [aria-label$=".gcfg"] i
 { color: var(--icon-green) }
 
 /* #00f - Document/Microsoft/Apple/Closed */

@@ -556,6 +556,12 @@ export class GcfgService {
             return Fail("请选择导出语言", RCode.Fail);
         }
 
+        // 导出前：删除之前的导出目录（完全清理后重新生成）
+        if (fs.existsSync(exportDir)) {
+            fs.rmSync(exportDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(exportDir, { recursive: true });
+
         const generated: string[] = [];
         const errors: string[] = [];
 

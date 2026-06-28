@@ -18,6 +18,8 @@ export const V = {
     yellow: 'var(--warning, #fbbc04)',
 };
 
+
+
 export const PageTypeOptions = [
     {value: GcfgPageType.Dict, label: '字典(Dict)'},
     {value: GcfgPageType.TwoDim, label: '二维表(TwoDim)'},

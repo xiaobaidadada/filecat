@@ -120,15 +120,14 @@ export default function GcfgEditor(props?: GcfgEditorProps) {
     const markDirty = () => setDirty(true);
 
     const updateConfig = (partial: Partial<GcfgPageConfig>) => {
-        // 已有文件不允许修改 type
+        // 已有文件不允许修改表类型
         if (isExistingFile && partial.type !== undefined && partial.type !== content.config.type) {
-            NotyFail(t('文件已创建，表结构类型不可修改'));
             return;
         }
-        setContent(prev => ({
-            ...prev,
-            config: ensureConfigByType({...prev.config, ...partial}),
-        }));
+        setContent(prev => {
+            const newCfg = ensureConfigByType({...prev.config, ...partial});
+            return {config: newCfg, data: prev.data};
+        });
         markDirty();
     };
 
@@ -200,15 +199,29 @@ export default function GcfgEditor(props?: GcfgEditorProps) {
             }}>
                 <span style={{fontWeight: 'bold', fontSize: 16, color: V.primary}}>⚙ Gcfg Editor</span>
                 <span style={{color: V.text2}}>{fileName}</span>
-                {/* 类型标签（不可修改） */}
-                <span style={{
-                    padding: '3px 10px', borderRadius: 12, fontSize: 12,
-                    background: V.primaryLight, color: V.primary,
-                    border: `1px solid ${V.primary}`,
-                    display: 'flex', alignItems: 'center', gap: 4,
-                }}>
-                    {isExistingFile ? '🔒' : '🔓'} {PageTypeOptions.find(o => o.value === cfg.type)?.label || cfg.type}
-                </span>
+                {/* 表类型：已有文件不可修改，新建文件用下拉选择 */}
+                {isExistingFile ? (
+                    <span style={{
+                        padding: '3px 10px', borderRadius: 12, fontSize: 12,
+                        background: V.BG2, color: V.text2,
+                        border: `1px solid ${V.border}`,
+                    }}>🔒 {PageTypeOptions.find(o => o.value === cfg.type)?.label || cfg.type}</span>
+                ) : (
+                    <select
+                        value={cfg.type}
+                        onChange={e => updateConfig({ type: e.target.value as GcfgPageType })}
+                        style={{
+                            padding: '3px 10px', borderRadius: 12, fontSize: 12,
+                            background: V.primaryLight, color: V.primary,
+                            border: `1px solid ${V.primary}`,
+                            cursor: 'pointer', outline: 'none',
+                        }}
+                    >
+                        {PageTypeOptions.map(o => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                    </select>
+                )}
                 <div style={{flex: 1}}/>
                 <button onClick={() => setActiveTab('config')}
                         style={btnStyle(activeTab === 'config')}>{t('表结构')}</button>
