@@ -99,6 +99,19 @@ export function useCmdConfirm() {
     useEffect(() => {
         ws.addMsg(CmdType.ai_confirm_cmd, (data: WsData<any>) => {
             const ctx = data.context || {};
+            // 如果收到 dismiss（已被其他标签页处理），从队列中移除
+            if (ctx.dismiss && ctx.askId) {
+                confirmQueueRef.current = confirmQueueRef.current.filter(
+                    req => req.askId !== ctx.askId
+                );
+                // 如果当前正在显示的就是这个 askId，关闭弹窗并继续处理下一个
+                if (isProcessingRef.current) {
+                    isProcessingRef.current = false;
+                    set_prompt_card({open: false});
+                    processQueue();
+                }
+                return;
+            }
             if (ctx.askId && ctx.cmd) {
                 addToQueue({
                     askId: ctx.askId,

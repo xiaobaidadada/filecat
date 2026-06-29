@@ -68,6 +68,16 @@ export class ChatCore {
                 clearTimeout(pending.timeout);
                 ai_agentService.pendingConfirmMap.delete(askId);
                 resolve(approved);
+                // 通知所有标签页关闭该 askId 的弹框
+                const dismissData = new WsData(CmdType.ai_confirm_cmd, {
+                    askId,
+                    dismiss: true,
+                });
+                const dismissEncoded = dismissData.encode();
+                const allWssDismiss = WsUtil.get_all_wss_by_token(token);
+                for (const w of allWssDismiss) {
+                    w.sendData(dismissEncoded);
+                }
             };
 
             // 超时，默认拒绝
@@ -75,9 +85,9 @@ export class ChatCore {
                 safeResolve(false);
             }, 60000);
 
-            // ===== 1. 向该用户的 WS 连接发送确认请求（只找第一个匹配的） =====
-            const wss = WsUtil.get_wss_by_token(token)
-            if(!wss) {
+            // ===== 1. 向该用户的所有 WS 连接发送确认请求（同一 token 可能在多个标签页） =====
+            const allWss = WsUtil.get_all_wss_by_token(token)
+            if(!allWss || allWss.length === 0) {
                 throw "ws connecting not found";
             }
             const data = new WsData(CmdType.ai_confirm_cmd, {
@@ -85,7 +95,10 @@ export class ChatCore {
                 cmd,
                 user_id
             });
-            wss.sendData(data.encode());
+            const encoded = data.encode();
+            for (const wss of allWss) {
+                wss.sendData(encoded);
+            }
         });
     }
 

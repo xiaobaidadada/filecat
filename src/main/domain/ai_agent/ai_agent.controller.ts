@@ -5,7 +5,7 @@ import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {Wss} from "../../../common/frame/ws.server";
+import {Wss, WsUtil} from "../../../common/frame/ws.server";
 import {Sucess} from "../../other/Result";
 import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {DataUtil} from "../data/DataUtil";
@@ -284,6 +284,18 @@ export class Ai_AgentController {
             clearTimeout(pending.timeout);
             pending.resolve(approved === true);
             ai_agentService.pendingConfirmMap.delete(askId);
+            // 通知同一 token 的其他标签页关闭该 askId 的弹框（已被处理）
+            const dismissData = new WsData(CmdType.ai_confirm_cmd, {
+                askId,
+                dismiss: true,
+            });
+            const dismissEncoded = dismissData.encode();
+            const allWss = WsUtil.get_all_wss_by_token(pending.token);
+            for (const w of allWss) {
+                if (w !== data.wss) {
+                    w.sendData(dismissEncoded);
+                }
+            }
         }
         data.wss.setClose(()=>{
             const pending_p = ai_agentService.pendingConfirmMap.get(askId);
@@ -291,6 +303,16 @@ export class Ai_AgentController {
                 clearTimeout(pending_p.timeout);
                 pending_p.resolve(false);
                 ai_agentService.pendingConfirmMap.delete(askId);
+                // 通知其他标签页关闭该 askId 的弹框
+                const closeDismissData = new WsData(CmdType.ai_confirm_cmd, {
+                    askId,
+                    dismiss: true,
+                });
+                const closeDismissEncoded = closeDismissData.encode();
+                const closeAllWss = WsUtil.get_all_wss_by_token(pending_p.token);
+                for (const w of closeAllWss) {
+                    w.sendData(closeDismissEncoded);
+                }
             }
         })
         return '';

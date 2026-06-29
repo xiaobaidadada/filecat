@@ -20,6 +20,17 @@ export class WsUtil {
         }
     }
 
+    /** 获取所有匹配 token 的 WS 连接（同一 token 可能在多个标签页） */
+    public static get_all_wss_by_token(token: string): wss_interface[] {
+        const result: wss_interface[] = [];
+        for (const wss of allWssSet) {
+            if (wss.token && wss.token === token) {
+                result.push(wss);
+            }
+        }
+        return result;
+    }
+
 }
 
 // 连接期间内一直存在
