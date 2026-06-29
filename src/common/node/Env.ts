@@ -49,6 +49,7 @@ export class Env {
     // public static https_tunnel_forbid_regexp:string;
 
     // public static watch: boolean = false;
+    public static installMode: boolean = false;
 
     public static  parseArgs() {
             const args = process.argv.slice(2);
@@ -87,7 +88,10 @@ export class Env {
                             console.log("sorry现在只支持linux")
                             process.exit();
                         }
+                        Env.installMode = true;
                         require("./install");
+                        // install.js 是交互式异步的，这里不 return，
+                        // 但设置 installMode 让 start_main 跳过启动
                         return;
                     } else if (key === "version") {
                         console.log(process.env.version)

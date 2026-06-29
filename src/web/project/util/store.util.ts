@@ -37,7 +37,6 @@ export const user_click_file = () => {
     const [markdown, set_markdown] = useAtom($stroe.markdown)
     const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
     const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
-    const [gcfg_editor, set_gcfg_editor] = useAtom($stroe.gcfg_editor);
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
@@ -111,7 +110,7 @@ export const user_click_file = () => {
             //     model = "text";
             // }
             let m = undefined;
-            if (type === FileTypeEnum.workflow_act || type === FileTypeEnum.gcfg) {
+            if (type === FileTypeEnum.workflow_act ) {
                 m = "ace/mode/yaml"
             } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw) {
                 m = "ace/mode/json"
@@ -170,9 +169,6 @@ export const user_click_file = () => {
                 case FileTypeEnum.workflow_act:
                     param.model = "text";
                     click_file(param);
-                    break;
-                case FileTypeEnum.gcfg:
-                    set_gcfg_editor({open: true, path: `${getRouterAfter('file', getRouterPath())}${name}`, name, close: param.close});
                     break;
                 case FileTypeEnum.url:
                     window.open(await Http.get(url), '_blank');

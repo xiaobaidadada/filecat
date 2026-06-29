@@ -1,5 +1,6 @@
 const readline = require('readline');
 const fs  = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn ,execSync} = require('child_process');
 // 创建 readline 接口
@@ -114,16 +115,26 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
     `
+    // 先写入临时文件，再用 sudo 移动到 /etc/systemd/system/
+    const tmpServicePath = path.join(os.tmpdir(), 'filecat.service');
     try {
-        fs.writeFileSync("/etc/systemd/system/filecat.service", model);
-        execSync(`sudo chmod +x ${data.exe_path}`)
-        execSync(`sudo systemctl daemon-reload`)
-        execSync(`sudo systemctl start filecat`)
-        execSync(`sudo systemctl enable filecat`)
-    } catch (e ){
-        console.error(e);
+        fs.writeFileSync(tmpServicePath, model);
+        execSync(`sudo mv ${tmpServicePath} /etc/systemd/system/filecat.service`);
+        execSync(`sudo chmod 644 /etc/systemd/system/filecat.service`);
+        if (data.exe_path && !data.exe_path.includes(' ')) {
+            // 仅当 exe_path 不含空格时才 chmod（含空格的可能是 "node script.js" 形式）
+            execSync(`sudo chmod +x ${data.exe_path}`);
+        }
+        execSync(`sudo systemctl daemon-reload`);
+        execSync(`sudo systemctl start filecat`);
+        execSync(`sudo systemctl enable filecat`);
+        console.log("安装完成！");
+    } catch (e) {
+        console.error('安装失败:', e.message);
+        // 清理临时文件
+        try { fs.unlinkSync(tmpServicePath); } catch (_) {}
+        process.exit(1);
     }
-    console.log("安装完成！");
     process.exit();
 };
 

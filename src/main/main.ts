@@ -38,7 +38,6 @@ import {VirtualController} from "./domain/net/virtual/virtual.controller";
 import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
 import os from "os";
 import {TcpForwardController} from "./domain/net/tcp.forward.controller";
-import {GcfgController} from "./domain/file/gcfg/gcfg.controller";
 import {GitController} from "./domain/file/git/git.controller";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
 import { tcpForwardService } from "./domain/net/tcp.forward.server.service";
@@ -56,6 +55,12 @@ const compression = require('compression'); // webpack-dev-server 包含的有
 export async function start_main() {
 
     Env.parseArgs();
+
+    // --install 模式下不启动 web 服务器，install.js 会自行处理生命周期
+    if (Env.installMode) {
+        return;
+    }
+
     await init_pre()
     DataUtil.handle_history_data();
     Cache.restore();
@@ -91,7 +96,7 @@ export async function start_main() {
             FileController, DdnsController, NetController,
             VirtualController,NavindexController, SettingController,
             SSHController, RdpController, VideoController,
-            CryptoController,Ai_AgentController,TcpForwardController,GcfgController,GitController
+            CryptoController,Ai_AgentController,TcpForwardController,GitController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理

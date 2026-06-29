@@ -107,7 +107,7 @@ FileCat 是一个需要自己部署的 Web 文件服务器，同时也是一款*
 npm install -g filecat
 ```
 
-对于 Linux 系统，安装后可以选择使用 `pm2` 保活，或执行 `filecat --install` 注册到 systemd。
+对于 linux 系统，安装后可以选择使用 `pm2` 保活，或注册到 systemd保活。
 
 ### 2. Linux 一键脚本
 

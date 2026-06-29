@@ -8,17 +8,11 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {FileCompressType} from "../../../../common/file.pojo";
 import {CardPrompt} from "../../../meta/component/Card";
-import {GcfgPageType} from "../../../../common/gcfg.pojo";
 // @ts-ignore
 import ymlRaw  from "../../../../common/template/workflow.yml?raw"
 
 const workflow_txt = ymlRaw
 
-const gcfg_type_options = [
-    {title: '字典(Dict)', value: GcfgPageType.Dict},
-    {title: '二维表(TwoDim)', value: GcfgPageType.TwoDim},
-    {title: '常量(Const)', value: GcfgPageType.Const},
-];
 
 export function FileNew(props) {
     const { t } = useTranslation();
@@ -26,7 +20,6 @@ export function FileNew(props) {
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [name, setName] = useState("");
-    const [gcfgType, setGcfgType] = useState<GcfgPageType>(GcfgPageType.Dict);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -34,7 +27,6 @@ export function FileNew(props) {
         {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
         {title: `workflow${t("格式")}`, value:".act"},
-        {title: `gcfg${t("格式")}`, value:".gcfg"},
         {title: `url${t("格式")}`, value:".url"},
     ]
     const cancel=()=> {
@@ -55,17 +47,7 @@ export function FileNew(props) {
                 context = "{}";
             } else if (format === ".act") {
                 context = workflow_txt;
-            } else if (format === ".gcfg") {
-                let cfgBlock = '';
-                if (gcfgType === GcfgPageType.Dict) {
-                    cfgBlock = `config:\n  type: dict\n  enName: ''\n  dict:\n    keys: []\n    valueType: string\ndata:\n  rows: []\n`;
-                } else if (gcfgType === GcfgPageType.Const) {
-                    cfgBlock = `config:\n  type: const\n  enName: ''\n  const_:\n    keys: []\ndata:\n  values: {}\n`;
-                } else if (gcfgType === GcfgPageType.TwoDim) {
-                    cfgBlock = `config:\n  type: twodim\n  enName: ''\n  twoDim:\n    xKeys: []\n    yKeys: []\n    valueType: string\ndata:\n  cells: {}\n`;
-                }
-                context = cfgBlock;
-            } else if (format === ".url") {
+            }  else if (format === ".url") {
                 context = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
             }
         }
@@ -90,9 +72,6 @@ export function FileNew(props) {
                                 <Select value={format} onChange={(value:FileCompressType)=>{
                                     setFormat(value);
                                 }} options={select_item}/>
-                                {format === '.gcfg' && (
-                                    <Select value={gcfgType} onChange={(value: GcfgPageType) => setGcfgType(value)} options={gcfg_type_options} />
-                                )}
                             </div>]}
                         confirm_enter={dirnew}
     />)

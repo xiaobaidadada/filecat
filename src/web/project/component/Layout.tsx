@@ -34,8 +34,6 @@ const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting')
 const AIRebotSetting = React.lazy(()=> import('./aichat/./AIRobotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
-const GcfgEntry = React.lazy(() => import("./file/component/gcfg/GcfgEntry"));
-const GcfgStudio = React.lazy(() => import("./file/component/gcfg/GcfgStudio"));
 const GitStudio = React.lazy(() => import("./file/component/git/GitStudio"));
 
 function Layout() {
@@ -104,7 +102,6 @@ function Layout() {
             { rto: `${routerConfig.ai_rebot_setting_page}`, component: <AIRebotSetting />},
             { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
             { rto: `${routerConfig.studio_page}`, component: <StudioLazy />},
-            { rto: `${routerConfig.gcfg_page}`, component: <GcfgStudio />},
             { rto: `${routerConfig.git_page}`, component: <GitStudio />}
         ]
     ]
@@ -148,9 +145,6 @@ function Layout() {
             {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <ExcalidrawEditor/>
             </Suspense>}
-            <Suspense fallback={<div></div>}>
-                <GcfgEntry/>
-            </Suspense>
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {!headerMin && <Header/>}
             <CommonBody

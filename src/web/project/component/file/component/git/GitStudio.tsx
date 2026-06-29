@@ -10,6 +10,7 @@ import {useNavigate} from "react-router-dom";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import * as lodash from "lodash";
+import {getPathLastname} from "../../../../../../common/ListUtil";
 
 // 复用 shared 中的颜色变量
 const V = {
@@ -340,7 +341,7 @@ export default function GitStudio() {
             <Header ignore_tags={true}
                     left_children={[
                         <ActionButton key={1} title={t("取消")} icon={"close"} onClick={cancel}/>,
-                        <span>{dirPath}</span>,
+                        <span>{decodeURIComponent(dirName)}</span>,
                     ]}>
                 <ActionButton icon={"refresh"} title={t("刷新")} onClick={() => {
                     loadStatus();

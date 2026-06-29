@@ -283,3 +283,27 @@ export class AsyncPool {
         }
     }
 }
+
+export function getPathLastname(path: string, includeExt: boolean = true): string {
+    if (!path) {
+        return '';
+    }
+
+    // 统一替换反斜杠为正斜杠，并去除末尾的分隔符
+    let normalized = path.replace(/\\/g, '/');
+    normalized = trimEnd(normalized); // 使用你已有的 trimEnd 函数
+
+    // 获取最后一个 / 之后的部分
+    const lastIndex = normalized.lastIndexOf('/');
+    let lastname = lastIndex === -1 ? normalized : normalized.slice(lastIndex + 1);
+
+    // 如果不包含扩展名，去掉扩展名
+    if (!includeExt) {
+        const extIndex = lastname.lastIndexOf('.');
+        if (extIndex > 0) {
+            lastname = lastname.slice(0, extIndex);
+        }
+    }
+
+    return decodeURIComponent(lastname??'');
+}

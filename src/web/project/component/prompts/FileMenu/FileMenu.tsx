@@ -116,9 +116,6 @@ export function FileMenu() {
                 });
             }
         }
-        if (pojo.filename.endsWith(".gcfg")) {
-            currentItems.unshift({r: t("配置表编辑器"), v: common_menu_type.gcfg_open_editor});
-        }
         return currentItems;
     }
 
@@ -152,8 +149,6 @@ export function FileMenu() {
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const {initUserInfo} = useContext(GlobalContext);
     const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
-    const [gcfg_editor, set_gcfg_editor] = useAtom($stroe.gcfg_editor);
-    const [gcfg_dir_config, set_gcfg_dir_config] = useAtom($stroe.gcfg_dir_config);
     const click_folder = use_click_folder()
     const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
 
@@ -166,10 +161,6 @@ export function FileMenu() {
         {
         r: t("统计信息"),
         v: common_menu_type.folder_size_info
-        },
-        {
-            r: t("以配置表方式打开"),
-            v: common_menu_type.gcfg_dir_config
         },
     ...must_needs];
     const items_images = [{
@@ -325,18 +316,6 @@ export function FileMenu() {
             case common_menu_type.blank_search_mode : {
                 set_blank_search_mode_for_temp(true)
                 click_folder(showPrompt.data.filename)
-            }
-            break;
-            case common_menu_type.gcfg_open_editor: {
-                const name = showPrompt.data.filename;
-                set_gcfg_editor({open: true, path: get_menu_file_path(), name});
-            }
-            break;
-            case common_menu_type.gcfg_dir_config: {
-                // 以配置表方式打开目录 - 导航到 GcfgStudio 路由页面
-                const dirPath = `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`;
-                close();
-                navigate(`/${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
             }
             break;
             case common_menu_type.folder_size_info: {

@@ -194,10 +194,4 @@ export const $stroe = {
     blank_search_mode_for_temp: atom<boolean>(false),
     // AI 聊天请求类型选择
     ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions'),
-    // gcfg 配置表编辑器
-    gcfg_editor: atom<{open: boolean, path?: string, name?: string, close?: () => any}>({open: false}),
-    // gcfg 目录配置模式
-    gcfg_dir_config: atom<{open: boolean, dir?: string, files?: string[]}>({open: false}),
-    // gcfg 当前编辑的文件路径（用于路由持久化）
-    gcfg_file_path: atom<string>(''),
 };
