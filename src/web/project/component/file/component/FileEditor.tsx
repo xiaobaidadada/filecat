@@ -74,11 +74,12 @@ export default function FileEditor() {
     }, [have_update,editorSetting]);
     return editorSetting.open && (<div id="editor-container">
         <Header ignore_tags={true} left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
-            <title key={2}>{editorSetting.fileName}</title>]}>
+            <div key={2}>{editorSetting.fileName}</div>]}>
             {editorSetting.menu_list && editorSetting.menu_list}
             { (editorSetting.can_format || ableExtBeautify(editorSetting.fileName)) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             {editorSetting.opt_shell && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
+            <title key={2}>{editorSetting.fileName}</title>
         </Header>
         <Ace name={editorSetting.fileName} model={editorSetting.model} on_change={handleEditorChange} />
     </div>)

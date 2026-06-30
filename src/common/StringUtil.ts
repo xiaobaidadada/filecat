@@ -177,6 +177,8 @@ export function getEditModelType(name) {
             return 'json'
         case "go":
             return "golang"
+        case 'proto':
+            return 'proto'
     }
     return "";
 }

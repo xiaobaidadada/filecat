@@ -8,6 +8,10 @@
   main {
     width: calc(100% - 13em)
   }
+  #md-container .md-context {
+    padding-left: 2%;
+    padding-right: 2%;
+  }
 }
 
 @media (max-width: 736px) {
@@ -177,6 +181,11 @@
 
   .header .header-nav-toggle {
     display: none;
+  }
+
+  #md-container .md-context {
+    padding-left: 2%;
+    padding-right: 2%;
   }
 }
 
