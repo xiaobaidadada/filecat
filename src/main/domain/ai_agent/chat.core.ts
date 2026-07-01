@@ -207,8 +207,6 @@ export class ChatCore {
 如果用户需要有结构的画图，生成画图文件，可以询问用户是否要生成Excalidraw json格式的文件，Excalidraw 的格式要求 appState 里必须有 scrollToContent 字段、zoom 等,以 .draw 后缀结尾。
 如果没有特殊要求，以markdown格式回答用户。
 
-如果你需要调用tools，在调用tools的时候向用户简要的说明你的意图是什么。
-
 ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
 ${config.sys_prompt ?? ''}
