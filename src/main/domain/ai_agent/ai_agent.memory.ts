@@ -75,6 +75,8 @@ function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item
         content: message.content ?? "",
         tool_call_id: message.tool_call_id,
         attachments: (message.attachments ?? []).map(normalizeAttachment),
+        // 构建 LLM 上下文时，移除 call_list（仅前端渲染使用）
+        call_list: undefined,
     };
 }
 
@@ -180,7 +182,15 @@ export class AiAgentMemoryService {
             const filePath = this.sessionPath(userId, fileName);
             if (!fs.existsSync(filePath)) return null;
             const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
-            session.messages = (session.messages ?? []).map(normalizeMessage);
+            session.messages = (session.messages ?? []).map(msg => {
+                const callList = msg.call_list; // 先保留 call_list
+                const normalized = normalizeMessage(msg);
+                // 恢复 call_list（仅前端渲染使用，不参与 LLM 上下文）
+                if (callList?.length) {
+                    normalized.call_list = callList;
+                }
+                return normalized;
+            });
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
             session.source = session.source ?? meta.source;
@@ -328,7 +338,10 @@ export class AiAgentMemoryService {
         if (!session) return;
         session.messages = session.messages ?? [];
         session.messages.push(normalizeMessage(userMessage));
-        session.messages.push(normalizeMessage(assistantMessage));
+        // 保存 assistant 消息时保留 call_list（供前端渲染），但在 build_context 时会过滤掉
+        const normalizedAssistant = normalizeMessage(assistantMessage);
+        normalizedAssistant.call_list = assistantMessage.call_list;
+        session.messages.push(normalizedAssistant);
         session.updated_at = Date.now();
 
         // 更新字符消耗统计

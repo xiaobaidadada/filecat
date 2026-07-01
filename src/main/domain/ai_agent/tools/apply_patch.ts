@@ -60,7 +60,7 @@ export const apply_patch_schema = {
     type: "function",
     function: {
         name: "apply_patch",
-        description: "高级代码补丁应用工具，一次仅限修改一个文件。必须使用标准的 Unified Diff 格式修改现有文件。",
+        description: "高级代码补丁应用工具，一次仅限修改一个文件。必须使用标准的 Unified Diff 格式修改现有文件。优先使用 edit_file 修改文件，不要使用这个。",
         parameters: {
             type: "object",
             properties: {

@@ -221,6 +221,26 @@ export class ai_system_prompt_item {
 }
 
 /**
+ * AI Agent 工具调用项（用于 call_list 字段，不加入 LLM 上下文）
+ */
+export class ai_agent_tool_call_item {
+    /** 工具名称 */
+    tool_name: string;
+    /** 工具显示名称（中文描述） */
+    tool_display_name?: string;
+    /** 传入的参数 */
+    tool_args?: any;
+    /** 工具执行结果 */
+    tool_result?: string;
+    /** 是否执行成功 */
+    success: boolean;
+    /** 错误消息（如果失败） */
+    error?: string;
+    /** 执行耗时（毫秒） */
+    duration_ms?: number;
+}
+
+/**
  * AI Agent 消息角色类型
  */
 export type AI_Agent_Role =
@@ -280,6 +300,12 @@ export class ai_agent_message_item {
     audio?: { data?: string; url?: string; mime_type?: string };
     /** Embeddings 向量数据 */
     embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
+
+    /** 
+     * 工具调用列表（仅用于前端特殊渲染，不加入 LLM 上下文）
+     * 记录本轮 assistant 消息中调用的工具及其结果
+     */
+    call_list?: ai_agent_tool_call_item[];
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */

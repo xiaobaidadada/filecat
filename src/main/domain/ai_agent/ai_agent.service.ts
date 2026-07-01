@@ -624,6 +624,7 @@ export class Ai_agentService {
        let assistantText = "";
        let turnInputChars = 0;
        let turnOutputChars = 0;
+       let turnCallList: any[] = [];
 
        try {
            const tools = ai_agentService.getModelToolSchemas();
@@ -642,15 +643,17 @@ export class Ai_agentService {
                    if (stats) {
                        turnInputChars = stats.input_chars;
                        turnOutputChars = stats.output_chars;
+                       turnCallList = stats.call_list ?? [];
                    }
-                   this.end_to_res(res);
+                   this.end_to_res(res, turnCallList);
                },
                token
            })
            if (latestUserMessage && assistantText) {
                const assistantMessage:ai_agent_message_item = {
                    role: "assistant",
-                   content: assistantText
+                   content: assistantText,
+                   call_list: turnCallList
                };
                await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
                    input_chars: turnInputChars,
@@ -1011,7 +1014,11 @@ export class Ai_agentService {
         // console.log("已尝试发送数据，res.write 返回:", flushed);
     }
 
-    public end_to_res(res: Response) {
+    public end_to_res(res: Response, call_list?: any[]) {
+        if (call_list?.length) {
+            const metaData = JSON.stringify({ __meta__: true, call_list });
+            res.write(`data: ${metaData}\n\n`);
+        }
         res.write(`data: [DONE]\n\n`);
         res.end();
     }

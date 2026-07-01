@@ -661,3 +661,149 @@
     accent-color: var(--primary, #4f46e5);
     z-index: 1;
 }
+
+/* ===== 工具调用列表样式 ===== */
+.chat-message-call-list {
+    margin-top: 8px;
+    border: 1px solid #d6d9de;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.6);
+    font-size: 0.85em;
+}
+
+.call-list-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    user-select: none;
+    color: #475569;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.call-list-header:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.call-list-summary {
+    font-weight: 500;
+}
+
+.call-list-fail {
+    color: #dc2626;
+    margin-left: 4px;
+}
+
+.call-list-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 8px 8px;
+}
+
+.call-list-item {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.call-list-item.call-success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.call-list-item.call-fail {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.call-list-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.call-list-tool-name {
+    flex: 1;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.call-list-duration {
+    color: #6b7280;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+}
+
+.call-list-details {
+    margin-top: 4px;
+    padding: 2px 0;
+}
+
+.call-list-details summary {
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #6b7280;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.call-list-details summary:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.call-list-pre {
+    margin: 4px 0 0;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 4px;
+    font-size: 0.85em;
+    max-height: 200px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.call-list-error-text {
+    color: #dc2626;
+}
+
+/* 暗色主题兼容 */
+.chat-message.user .chat-message-call-list {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-message.user .call-list-header {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-message.user .call-list-item.call-success {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.chat-message.user .call-list-item.call-fail {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.chat-message.user .call-list-tool-name {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-message.user .call-list-duration {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.chat-message.user .call-list-pre {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-message.user .call-list-details summary {
+    color: rgba(255, 255, 255, 0.7);
+}

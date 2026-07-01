@@ -10,7 +10,7 @@ import {copyToClipboard} from "../../../util/FunUtil";
  * 不再依赖全局 requestType 状态
  */
 export function renderMessageByType(
-    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[]; images?: any[]; audio?: any; embeddings?: any },
+    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[]; images?: any[]; audio?: any; embeddings?: any; call_list?: any[] },
 ): React.ReactNode {
     // 先渲染附件信息
     const attachmentsEl = msg.attachments && msg.attachments.length > 0 ? (
@@ -45,18 +45,79 @@ export function renderMessageByType(
         renderers.push(<React.Fragment key="embeddings"><EmbeddingsResultRenderer  embeddings={msg.embeddings} text={msg.text}/></React.Fragment>);
     }
 
-    // 4. 如果没有任何多模态属性，使用标准 Markdown 渲染（同时附带 attachments）
+    // 4. 工具调用列表渲染（bot 消息专用）
+    const callListEl = msg.call_list && msg.call_list.length > 0 && msg.sender === 'bot' ? (
+        <React.Fragment key="call_list">
+            <CallListRenderer  callList={msg.call_list}/>
+        </React.Fragment>
+    ) : null;
+
+    // 5. 如果没有任何多模态属性，使用标准 Markdown 渲染（同时附带 attachments 和 call_list）
     if (renderers.length === 0) {
-        return <>{attachmentsEl}<Md context={msg.text}/></>;
+        return <>{callListEl}{attachmentsEl}<Md context={msg.text}/></>;
     }
 
-    // 5. 多个多模态属性同时渲染，并在最后附加 attachments 和 text
+    // 6. 多个多模态属性同时渲染，并在最后附加 attachments 和 text
     return (
         <>
             {renderers}
+            {callListEl}
             {attachmentsEl}
             {msg.text && <Md context={msg.text}/>}
         </>
+    );
+}
+
+
+/**
+ * 工具调用列表渲染组件（折叠面板形式）
+ */
+function CallListRenderer({callList}: { callList: any[] }) {
+    const [expanded, setExpanded] = React.useState(false);
+    if (!callList?.length) return null;
+    const successCount = callList.filter(c => c.success).length;
+    const failCount = callList.filter(c => !c.success).length;
+    return (
+        <div className="chat-message-call-list">
+            <div className="call-list-header" onClick={() => setExpanded(!expanded)}>
+                <Icon icon={expanded ? 'expand_less' : 'expand_more'}/>
+                <span className="call-list-summary">
+                    工具调用 ({callList.length})
+                    {failCount > 0 && <span className="call-list-fail"> 失败: {failCount}</span>}
+                </span>
+            </div>
+            {expanded && (
+                <div className="call-list-body">
+                    {callList.map((item, idx) => (
+                        <div key={idx} className={`call-list-item ${item.success ? 'call-success' : 'call-fail'}`}>
+                            <div className="call-list-item-header">
+                                <Icon icon={item.success ? 'check_circle' : 'error'}/>
+                                <span className="call-list-tool-name">{item.tool_display_name || item.tool_name}</span>
+                                <span className="call-list-duration">{item.duration_ms}ms</span>
+                            </div>
+                            {item.tool_args && (
+                                <details className="call-list-details">
+                                    <summary>参数</summary>
+                                    <pre className="call-list-pre">{JSON.stringify(item.tool_args, null, 2)}</pre>
+                                </details>
+                            )}
+                            {!item.success && item.error && (
+                                <details className="call-list-details">
+                                    <summary>错误</summary>
+                                    <pre className="call-list-pre call-list-error-text">{item.error}</pre>
+                                </details>
+                            )}
+                            {item.success && item.tool_result && (
+                                <details className="call-list-details">
+                                    <summary>结果</summary>
+                                    <pre className="call-list-pre">{item.tool_result.length > 500 ? item.tool_result.slice(0, 500) + '...' : item.tool_result}</pre>
+                                </details>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 

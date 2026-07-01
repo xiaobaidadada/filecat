@@ -22,7 +22,7 @@ import {
     ai_agent_chat_session_meta,
     ai_agent_content, ai_agent_content_part,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats,
-    ai_system_prompt_item,
+    ai_system_prompt_item, ai_agent_tool_call_item,
     getContentAsString
 } from "../../../../../common/req/filecat.ai.pojo";
 
@@ -42,6 +42,8 @@ interface Message {
     images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
     audio?: { data?: string; url?: string; mime_type?: string };
     embeddings?: any;
+    /** 工具调用列表（仅前端渲染，不参与 LLM 上下文） */
+    call_list?: ai_agent_tool_call_item[];
 }
 
 function guessAttachmentKind(file: File): "text" | "image" | "binary" {
@@ -80,6 +82,7 @@ function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
             images: it.images,
             audio: it.audio,
             embeddings: it.embeddings,
+            call_list: it.call_list,
         }));
 }
 
@@ -91,6 +94,7 @@ function toAiMessages(messages: Message[]): ai_agent_message_item[] {
         images: it.images,
         audio: it.audio,
         embeddings: it.embeddings,
+        call_list: it.call_list,
     }));
 }
 
@@ -509,11 +513,17 @@ export default function AiAgentChatPage() {
                 }
                 set_messages([...new_messages]);
             },
-            onDone:throttle(async ()=>{
+            onDone: async (meta)=>{
                 set_sending(false)
+                // 设置工具调用列表到 bot 消息
+                if (meta?.call_list?.length) {
+                    call_pojo.call_list = meta.call_list;
+                    // 直接使用 setMessages 确保立即渲染，不受 debounce 影响
+                    setMessages([...new_messages]);
+                }
                 await refreshSessions();
                 scrollToBottom(true);
-            },100)
+            }
         });
     };
 

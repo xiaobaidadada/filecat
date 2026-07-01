@@ -199,11 +199,12 @@ export class Http {
             onError
         }: {
             onMessage?: (data: string) => void;
-            onDone?: () => void;
+            onDone?: (meta?: { call_list?: any[] }) => void;
             onError?: (err: any) => void;
         } = {}
     ) {
         const controller = new AbortController();
+        let metaData: { call_list?: any[] } | undefined;
         // onerror	网络错误 / 500	默认：重试
         // onclose	连接断开	默认：重试
         try {
@@ -219,8 +220,18 @@ export class Http {
                 onmessage: (event) => {
                     if (event.data === '[DONE]') {
                         controller.abort();   // ⭐ 关键
-                        onDone?.();
+                        onDone?.(metaData);
                         return;
+                    }
+                    // 检查是否是 meta 数据（携带 call_list 等）
+                    try {
+                        const parsed = JSON.parse(event.data);
+                        if (parsed.__meta__) {
+                            metaData = parsed;
+                            return;
+                        }
+                    } catch {
+                        // 普通文本，继续
                     }
                     onMessage?.(event.data);
                 },
@@ -228,11 +239,11 @@ export class Http {
                 onerror: (err) => {
                     controller.abort();       // ⭐ 防止无限重试
                     onError?.(err);
-                    onDone?.();
+                    onDone?.(metaData);
                     throw err
                 },
                 onclose:()=>{
-                    onDone?.();
+                    onDone?.(metaData);
                 },
                 openWhenHidden: true
             });

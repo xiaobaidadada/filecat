@@ -22,7 +22,7 @@ export interface ChatOptions {
     user_id:string;
     controller: AbortController;
     on_msg: (msg: string) => void;
-    on_end: (stats?: { input_chars: number; output_chars: number }) => void;
+    on_end: (stats?: { input_chars: number; output_chars: number; call_list?: any[] }) => void;
     sys_prompt?: string;
     cwd?: string;
     /** 可动态传入的 AI 模型配置，不传则使用全局 ai_config */
@@ -228,13 +228,16 @@ ${sys_prompt ?? ''}
 
         // 隐式 planner
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
+        // 在整个循环中累积所有工具调用记录（跨多轮循环），最终传给 on_end
+        const allCallList: any[] = [];
         while (loopEnv.toolLoop-- > 0) {
 
             //  用来拼完整 assistant message
             let assistantMessage: any = {
                 role: "assistant",
                 content: "",
-                tool_calls: []
+                tool_calls: [],
+                call_list: []  // 收集工具调用记录，不加入 LLM 上下文
             };
 
             const toolCallMap = new Map<number, any>();
@@ -283,7 +286,6 @@ ${sys_prompt ?? ''}
                             // name 只会来一次
                             if (tc.function?.name) {
                                 call.function.name += tc.function.name;
-                                on_msg(`\n${`等待 ${ai_agentService.getToolInfo(call.function.name, {})?.get_name?.() ?? call.function.name} ...`}`)
                             }
                             // arguments 是流式拼接的
                             if (tc.function?.arguments) {
@@ -310,9 +312,9 @@ ${sys_prompt ?? ''}
             //  一次 LLM 完整结束，补 push assistant
             workMessages.push(assistantMessage);
 
-            // 没有 tool_calls，直接结束
+            // 没有 tool_calls，直接结束（附带 call_list 供前端渲染）
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                on_end({ input_chars: total_input_chars, output_chars: total_output_chars });
+                on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
                 return;
             }
             // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
@@ -326,26 +328,36 @@ ${sys_prompt ?? ''}
                         get_name: () => toolName,
                         get_params: () => ""
                     };
+                    const startTime = Date.now();
+                    const callItem: any = {
+                        tool_name: toolName,
+                        tool_display_name: tool_info_value.get_name?.() ?? toolName,
+                        tool_args: null,
+                        success: false,
+                        error: undefined,
+                        tool_result: undefined,
+                        duration_ms: 0
+                    };
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
+                        callItem.tool_args = args;
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
+                        callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
                         await this.permission_test(user_id, user, toolName, args, cwd,token);
 
-                        on_msg(`\n\r${tool_info_value.get_name()}  ${tool_info_value.get_params()}\n\r`)
                         let result = await ai_agentService.callTool(toolName, args,user_id);
                         let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-                        // on_msg(`\n\r${tool_des_name} 执行完成`)
-                        // if (resultStr.length > 5000) {
-                        //     resultStr = resultStr.slice(0, 4000) + "\n...（内容过长已截断）";
-                        // }
+                        callItem.success = true;
+                        callItem.tool_result = resultStr;
                         workMessages.push({
                             role: "tool",
                             tool_call_id: call.id,
                             content: resultStr
                         });
                     } catch (e) {
-                        const msg = e?.message??JSON.stringify(e)
-                        on_msg(`\n\r工具执行失败 ${ tool_info_value.get_name()} ${msg}`)
+                        const msg = `${e?.message??JSON.stringify(e)} ${e?.stack??""}`
+                        callItem.success = false;
+                        callItem.error = msg;
                         if (loopEnv.tool_error_max-- <= 0) throw e;
 
                         workMessages.push({
@@ -353,15 +365,18 @@ ${sys_prompt ?? ''}
                             tool_call_id: call.id,
                             content: msg
                         });
+                    } finally {
+                        callItem.duration_ms = Date.now() - startTime;
+                        assistantMessage.call_list.push(callItem);
+                        allCallList.push(callItem);  // 累积到总列表中
                     }
                 })()
             }))
-            // console.log(`工具执行结束 ${log_text} `)
 
         }
 
         on_msg("超出最大理解语义次数");
-        on_end({ input_chars: total_input_chars, output_chars: total_output_chars });
+        on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
     }
 
 
