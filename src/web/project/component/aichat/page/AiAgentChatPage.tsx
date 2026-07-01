@@ -145,15 +145,25 @@ export default function AiAgentChatPage() {
         if (selectedMsgIds.size === 0) return;
         confirm_dell_all({
             sub_title: t("确认删除选中的聊天消息吗?"),
-            confirm_fun: () => {
+            confirm_fun: async () => {
+                // 计算所有要删除的消息在 messages 数组中的索引
+                const indicesToDelete: number[] = [];
+                messages.forEach((m, idx) => {
+                    if (selectedMsgIds.has(m.id)) {
+                        indicesToDelete.push(idx);
+                    }
+                });
+
                 const newMessages = messages.filter(m => !selectedMsgIds.has(m.id));
                 setMessages(newMessages);
                 setSelectedMsgIds(new Set());
                 setBatchMode(false);
-                if (activeSessionId && newMessages.length !== messages.length) {
-                    ai_agentHttp.post("session/messages", {
+
+                // 使用增量删除接口，只传索引数组，避免整体覆盖 messages 导致请求体过大
+                if (activeSessionId && indicesToDelete.length > 0) {
+                    ai_agentHttp.post("session/message/delete", {
                         session_id: activeSessionId,
-                        messages: toAiMessages(newMessages)
+                        indices: indicesToDelete
                     }).catch(console.error);
                 }
             }
@@ -578,13 +588,19 @@ export default function AiAgentChatPage() {
     const handleDelete = (id: number) => {
         confirm_dell_all({
             sub_title: t("确认删除这条消息吗?"),
-            confirm_fun: () => {
+            confirm_fun: async () => {
+                // 找到要删除的消息在当前 messages 数组中的索引
+                const targetIndex = messages.findIndex(m => m.id === id);
+                if (targetIndex < 0) return;
+
                 const newMessages = messages.filter(m => m.id !== id);
                 setMessages(newMessages);
+
+                // 使用增量删除接口，只传索引，不传整个 messages 数组，避免请求体过大
                 if (activeSessionId) {
-                    ai_agentHttp.post("session/messages", {
+                    ai_agentHttp.post("session/message/delete", {
                         session_id: activeSessionId,
-                        messages: toAiMessages(newMessages)
+                        indices: [targetIndex]
                     }).catch(console.error);
                 }
             }

@@ -94,6 +94,22 @@ export class Ai_AgentController {
         return Sucess("")
     }
 
+    /**
+     * 增量删除会话中的指定消息（按索引删除，请求体仅传索引数组，避免整体覆盖 messages 导致请求体过大）
+     * body: { session_id: string, indices: number[] }
+     */
+    @Post("/session/message/delete")
+    async session_message_delete(@Req() ctx, @Body() data: { session_id: string; indices: number[] }) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.delete_messages_from_session(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.session_id,
+            data?.indices ?? []
+        );
+        return Sucess("");
+    }
+
     @Post("/session/usage_stats")
     async session_usage_stats(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);

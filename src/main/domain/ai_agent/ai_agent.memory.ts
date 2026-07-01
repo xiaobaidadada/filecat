@@ -306,7 +306,7 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    // 更新消息到会话 整体更新
+    // 更新消息到会话 整体更新（不推荐使用，消息量大时请求体可能超限，优先使用 delete_messages_from_session）
     public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_messages) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
@@ -316,6 +316,34 @@ export class AiAgentMemoryService {
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
             .map(normalizeMessage);
+        session.updated_at = Date.now();
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
+    }
+
+    /**
+     * 增量删除会话中的指定消息（按索引删除，避免整体覆盖导致请求体过大）
+     * @param userId 用户 ID
+     * @param sessionId 会话 ID
+     * @param indices 要删除的消息在 messages 数组中的索引（从 0 开始），会自动排序并去重
+     */
+    public delete_messages_from_session(userId: string, sessionId: string, indices: number[]) {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.read_session(userId, meta);
+        if (!session) return;
+        if (!session.messages?.length) return;
+
+        // 对索引去重并降序排序（降序 splice 不会影响前面的索引）
+        const sortedIndices = [...new Set(indices)]
+            .filter(i => i >= 0 && i < session.messages.length)
+            .sort((a, b) => b - a);
+
+        for (const idx of sortedIndices) {
+            session.messages.splice(idx, 1);
+        }
+
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
