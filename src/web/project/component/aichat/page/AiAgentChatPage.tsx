@@ -23,7 +23,8 @@ import {
     ai_agent_content, ai_agent_content_part,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats,
     ai_system_prompt_item, ai_agent_tool_call_item,
-    getContentAsString
+    getContentAsString,
+    isContentNestedMessages
 } from "../../../../../common/req/filecat.ai.pojo";
 
 // ===== 导入拆分的子组件 =====
@@ -42,8 +43,14 @@ interface Message {
     images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
     audio?: { data?: string; url?: string; mime_type?: string };
     embeddings?: any;
-    /** 工具调用列表（仅前端渲染，不参与 LLM 上下文） */
+    /** 工具调用列表（旧格式兼容 - 仅前端渲染，不参与 LLM 上下文） */
     call_list?: ai_agent_tool_call_item[];
+    /** 
+     * 【新格式】嵌套消息内容数组。
+     * 当 AI 回复使用嵌套消息数组时，content_parts 包含交替的文本和工具调用片段，
+     * 前端按顺序渲染，工具调用卡片嵌入到聊天气泡内容之间。
+     */
+    content_parts?: ai_agent_message_item[];
 }
 
 function guessAttachmentKind(file: File): "text" | "image" | "binary" {
@@ -74,16 +81,26 @@ function fileToBase64(file: File): Promise<string> {
 function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
     return messages
         .filter(it => it.role === "user" || it.role === "assistant")
-        .map((it, index) => ({
-            id: Date.now() + index,
-            sender: it.role === "assistant" ? "bot" : "user",
-            text: getContentAsString(it.content),
-            attachments: it.attachments ?? [],
-            images: it.images,
-            audio: it.audio,
-            embeddings: it.embeddings,
-            call_list: it.call_list,
-        }));
+        .map((it, index) => {
+            const base: Message = {
+                id: Date.now() + index,
+                sender: it.role === "assistant" ? "bot" : "user",
+                text: getContentAsString(it.content),
+                attachments: it.attachments ?? [],
+                images: it.images,
+                audio: it.audio,
+                embeddings: it.embeddings,
+            };
+            // 【新格式】如果 content 是嵌套消息数组，提取为 content_parts
+            if (isContentNestedMessages(it.content)) {
+                base.content_parts = it.content;
+            }
+            // 【旧格式兼容】保留 call_list
+            if (it.call_list?.length) {
+                base.call_list = it.call_list;
+            }
+            return base;
+        });
 }
 
 function toAiMessages(messages: Message[]): ai_agent_message_item[] {
@@ -525,10 +542,14 @@ export default function AiAgentChatPage() {
             },
             onDone: async (meta)=>{
                 set_sending(false)
-                // 设置工具调用列表到 bot 消息
+                // 【新格式】设置嵌套内容数组（工具调用卡片嵌入到内容之间）
+                if (meta?.content_parts?.length) {
+                    call_pojo.content_parts = meta.content_parts;
+                    setMessages([...new_messages]);
+                }
+                // 【旧格式兼容】设置工具调用列表
                 if (meta?.call_list?.length) {
                     call_pojo.call_list = meta.call_list;
-                    // 直接使用 setMessages 确保立即渲染，不受 debounce 影响
                     setMessages([...new_messages]);
                 }
                 await refreshSessions();

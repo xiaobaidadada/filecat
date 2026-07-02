@@ -6,11 +6,11 @@ import {copyToClipboard} from "../../../util/FunUtil";
 
 /**
  * 根据消息自身携带的多模态属性渲染不同的消息展示
- * 消息对象中如果带有 images/audio/embeddings 等属性，自动选择对应渲染器
+ * 消息对象中如果带有 images/audio/embeddings/content_parts 等属性，自动选择对应渲染器
  * 不再依赖全局 requestType 状态
  */
 export function renderMessageByType(
-    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[]; images?: any[]; audio?: any; embeddings?: any; call_list?: any[] },
+    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: any[]; images?: any[]; audio?: any; embeddings?: any; call_list?: any[]; content_parts?: any[] },
 ): React.ReactNode {
     // 先渲染附件信息
     const attachmentsEl = msg.attachments && msg.attachments.length > 0 ? (
@@ -26,7 +26,6 @@ export function renderMessageByType(
     ) : null;
 
     // ===== 消息自判断：根据消息自带的属性选择渲染器 =====
-    // 现在支持同时渲染多个多模态属性（如果同时存在）
 
     const renderers: React.ReactNode[] = [];
 
@@ -45,19 +44,29 @@ export function renderMessageByType(
         renderers.push(<React.Fragment key="embeddings"><EmbeddingsResultRenderer  embeddings={msg.embeddings} text={msg.text}/></React.Fragment>);
     }
 
-    // 4. 工具调用列表渲染（bot 消息专用）
+    // 4. 【新格式】content_parts 渲染：嵌套消息数组，工具调用卡片嵌入到文本之间
+    if (msg.content_parts && msg.content_parts.length > 0 && msg.sender === 'bot') {
+        return (
+            <>
+                <ContentPartsRenderer contentParts={msg.content_parts} />
+                {attachmentsEl}
+            </>
+        );
+    }
+
+    // 5. 旧格式 call_list 兼容（放在顶部）
     const callListEl = msg.call_list && msg.call_list.length > 0 && msg.sender === 'bot' ? (
         <React.Fragment key="call_list">
             <CallListRenderer  callList={msg.call_list}/>
         </React.Fragment>
     ) : null;
 
-    // 5. 如果没有任何多模态属性，使用标准 Markdown 渲染（同时附带 attachments 和 call_list）
+    // 6. 如果没有任何多模态属性，使用标准 Markdown 渲染
     if (renderers.length === 0) {
         return <>{callListEl}{attachmentsEl}<Md context={msg.text}/></>;
     }
 
-    // 6. 多个多模态属性同时渲染，并在最后附加 attachments 和 text
+    // 7. 多个多模态属性同时渲染
     return (
         <>
             {renderers}
@@ -70,7 +79,81 @@ export function renderMessageByType(
 
 
 /**
- * 工具调用列表渲染组件（折叠面板形式）
+ * 【新格式】嵌套消息内容渲染组件
+ * 按数组顺序渲染文本片段和工具调用卡片，实现工具调用嵌入到聊天气泡内容之间。
+ * 
+ * content_parts 中的每项：
+ * - { role: "assistant", content: "文本" } → 渲染 Markdown
+ * - { role: "tool", content: "...", call_item: {...} } → 渲染单个工具调用卡片
+ */
+function ContentPartsRenderer({contentParts}: { contentParts: any[] }) {
+    if (!contentParts?.length) return null;
+    
+    return (
+        <div className="chat-content-parts">
+            {contentParts.map((part, idx) => {
+                if (part.role === "assistant") {
+                    // 文本片段：渲染 Markdown
+                    const text = typeof part.content === 'string' ? part.content : '';
+                    return <React.Fragment key={idx}>
+                        <Md  context={text} />
+                    </React.Fragment>;
+                }
+                if (part.role === "tool" && part.call_item) {
+                    // 工具调用片段：渲染单个工具调用卡片
+                    return <React.Fragment key={idx}>
+                        <SingleCallRenderer  callItem={part.call_item} />
+                    </React.Fragment>;
+                }
+                return null;
+            })}
+        </div>
+    );
+}
+
+/**
+ * 单个工具调用卡片渲染（嵌入在内容流中）
+ */
+function SingleCallRenderer({callItem}: { callItem: any }) {
+    const [expanded, setExpanded] = React.useState(false);
+    if (!callItem) return null;
+    const success = callItem.success;
+    return (
+        <div className={`call-list-item ${success ? 'call-success' : 'call-fail'}`} style={{margin: '8px 0'}}>
+            <div className="call-list-item-header" onClick={() => setExpanded(!expanded)} style={{cursor: 'pointer'}}>
+                <Icon icon={expanded ? 'expand_less' : 'expand_more'}/>
+                <Icon icon={success ? 'check_circle' : 'error'}/>
+                <span className="call-list-tool-name">{callItem.tool_display_name || callItem.tool_name}</span>
+                <span className="call-list-duration">{callItem.duration_ms}ms</span>
+            </div>
+            {expanded && (
+                <>
+                    {callItem.tool_args && (
+                        <details className="call-list-details">
+                            <summary>参数</summary>
+                            <pre className="call-list-pre">{JSON.stringify(callItem.tool_args, null, 2)}</pre>
+                        </details>
+                    )}
+                    {!success && callItem.error && (
+                        <details className="call-list-details">
+                            <summary>错误</summary>
+                            <pre className="call-list-pre call-list-error-text">{callItem.error}</pre>
+                        </details>
+                    )}
+                    {success && callItem.tool_result && (
+                        <details className="call-list-details">
+                            <summary>结果</summary>
+                            <pre className="call-list-pre">{callItem.tool_result.length > 500 ? callItem.tool_result.slice(0, 500) + '...' : callItem.tool_result}</pre>
+                        </details>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+/**
+ * 工具调用列表渲染组件（折叠面板形式）— 【旧格式兼容】
  */
 function CallListRenderer({callList}: { callList: any[] }) {
     const [expanded, setExpanded] = React.useState(false);

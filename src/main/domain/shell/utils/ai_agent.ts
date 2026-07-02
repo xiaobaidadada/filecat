@@ -6,7 +6,7 @@ import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
-import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
+import {ai_agent_chat_session_item, ai_agent_message_item, ai_agent_messages, getContentAsString, isContentNestedMessages} from "../../../../common/req/filecat.ai.pojo";
 import {ai_agentService} from "../../ai_agent/ai_agent.service";
 
 export class ai_agent_class {
@@ -15,7 +15,10 @@ export class ai_agent_class {
     print: (str: string) => void;
     pty: PtyShell;
 
-    messages: ai_agent_messages;
+    /** 当前会话的持久化对象（非临时会话时使用） */
+    session: ai_agent_chat_session_item | null = null;
+    /** 本轮新增的、尚未持久化的用户消息（传给 build_context_by_session 的 incoming） */
+    incomingMessages: ai_agent_messages = [];
     token: string;
     userId: string;
     sessionId: string;
@@ -36,7 +39,8 @@ export class ai_agent_class {
         }
         this.killed = true;
         this.controller.abort();
-        this.messages = [];
+        this.incomingMessages = [];
+        this.session = null;
         this.system_line = "";
         // 回到 shell 输入模式前清掉转换器
         this.md2ansi.reset();
@@ -69,7 +73,7 @@ export class ai_agent_class {
         this.exit = exit
         this.print = print;
         
-        // 检查是否有 --temp 参数
+        // 检查是否有 --temp / --once 参数
         const filteredParams: string[] = [];
         for (const param of params) {
             if (param === '--temp' || param === '-t') {
@@ -108,29 +112,30 @@ export class ai_agent_class {
             }
         }
         
-        // this.userId = userService.get_user_info_by_token(this.token).id;
-        
-        // 如果有 --new 参数，创建临时会话（不持久化）
+        // 构建本轮用户消息（incoming）
+        this.incomingMessages = messages.map(v => ({
+            content: v,
+            role: "user" as const
+        })) as ai_agent_message_item[];
+
+        // 如果有 --temp 参数，创建临时会话（不持久化）
         if (this.isTemporarySession) {
             this.sessionId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-            this.messages = [
-                ...messages.map(v => ({
-                    content: v,
-                    role: "user" as const
-                })) as ai_agent_message_item[]
-            ];
-            // 设置标志表示这是临时会话
+            // 临时会话：构造一个虚拟 session，让 build_context_by_session 也能正常工作
+            this.session = {
+                id: this.sessionId,
+                title: "临时会话",
+                messages: [],
+                summary: "",
+                long_term_memory: "",
+                source: "cli",
+                created_at: Date.now(),
+                updated_at: Date.now()
+            };
         } else {
             // 正常会话，持久化存储
-            const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
-            this.sessionId = session.id;
-            this.messages = [
-                ...(session.messages ?? []),
-                ...messages.map(v => ({
-                    content: v,
-                    role: "user" as const
-                })) as ai_agent_message_item[]
-            ];
+            this.session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
+            this.sessionId = this.session.id;
         }
     }
 
@@ -163,10 +168,20 @@ export class ai_agent_class {
 
         try {
             // 合并 model tool（注册为 tool 的其他 AI 模型）
-            const tools =ai_agentService.getModelToolSchemas();
+            const tools = ai_agentService.getModelToolSchemas();
+
+            // 【关键修复】通过 build_context_by_session 构建上下文，
+            // 与 Web 端 ai_agent.service.ts 保持一致，获得：
+            // - 压缩记忆（summary / long_term_memory）注入
+            // - 最近消息截断（MAX_RECENT_MESSAGES）
+            // - 附件优先使用的 system 提示
+            const workMessages = this.session
+                ? aiAgentMemoryService.build_context_by_session(this.session, this.incomingMessages)
+                : this.incomingMessages; // 临时会话兜底：直接使用本轮消息
+
             await chat_core.chat({
                 tools,
-                originMessages: this.messages,
+                originMessages: workMessages,
                 token: this.token,
                 user_id:this.userId,
                 controller: this.controller,
@@ -189,25 +204,37 @@ export class ai_agent_class {
                     }
                     this.md2ansi.reset();
 
-                    if (this.system_line.trim() && this.messages.length > 0) {
-                        const latestUserMessage = [...this.messages].reverse().find(it => it.role === "user");
+                    if (this.system_line.trim() && this.incomingMessages.length > 0) {
+                        // 找到本轮最后一条用户消息作为 "latestUserMessage"
+                        const latestUserMessage = [...this.incomingMessages].reverse().find(it => it.role === "user");
                         if (latestUserMessage) {
-                            const assistantMessage = {
-                                content: this.system_line,
+                            // shell 场景使用嵌套消息数组（如果有的话），回退到纯文本
+                            const content = stats?.content_parts?.length
+                                ? stats.content_parts
+                                : this.system_line;
+                            const assistantMessage: ai_agent_message_item = {
+                                content: content,
                                 role: "assistant" as const
                             };
-                            
+
                             // 只有非临时会话才保存到持久化存储
                             if (!this.isTemporarySession) {
-                                aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
-                                    input_chars: stats?.input_chars ?? 0,
-                                    output_chars: stats?.output_chars ?? 0,
-                                }).catch(console.error);
+                                aiAgentMemoryService.appendTurn(
+                                    this.userId,
+                                    this.sessionId,
+                                    latestUserMessage,
+                                    assistantMessage,
+                                    {
+                                        input_chars: stats?.input_chars ?? 0,
+                                        output_chars: stats?.output_chars ?? 0,
+                                    }
+                                ).catch(console.error);
                             }
-                            
-                            this.messages.push(assistantMessage);
                         }
                     }
+
+                    // 本轮结束后清空 incomingMessages（下一轮重新收集）
+                    this.incomingMessages = [];
                     this.system_line = "";
                     if(this.is_once) {
                         this.kill()
@@ -230,7 +257,9 @@ export class ai_agent_class {
             this.kill()
             return;
         }
-        this.messages.push({
+        // 新一轮对话：将用户输入放入 incomingMessages，
+        // 由 chat() 中的 build_context_by_session 统一处理
+        this.incomingMessages.push({
             content: line,
             role: "user"
         });

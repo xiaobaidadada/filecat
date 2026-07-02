@@ -25,7 +25,7 @@ export const list_files_schema:ai_agent_params_type =   {
     type: "function",
     function: {
         name: "list_files",
-        description: "列出指定目录下的文件和文件夹，以树形结构展示",
+        description: "列出指定目录下的文件和文件夹，以树形结构展示，你要先看一下项目中有什么需要被忽略的文件，depth设置为1，不要直接就查询好几层，避免遇到较大的比如node_modules这样的目录",
         parameters: {
             type: "object",
             properties: {

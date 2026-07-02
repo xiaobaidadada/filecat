@@ -6,6 +6,7 @@ import { aiAgentMemoryService } from "../ai_agent.memory";
 import { settingService } from "../../setting/setting.service";
 import { ai_agent_message_item, getContentAsString } from "../../../../common/req/filecat.ai.pojo";
 import { Env } from "../../../../common/node/Env";
+import {chat_core, ChatOptions} from "../chat.core";
 
 const BASE_URL = 'https://api.sgroup.qq.com';
 
@@ -344,14 +345,13 @@ class QQBotConnection {
             let outputChars = 0;
 
             await new Promise<void>((resolve, reject) => {
-                const chat_core = require('../chat.core').chat_core;
                 const controller = new AbortController();
                 const timeout = setTimeout(() => {
                     controller.abort();
                     reject(new Error('AI 回复超时'));
                 }, 120_000); // 2分钟超时
 
-                const chatOpts: any = {
+                const chatOpts: ChatOptions = {
                     tools: ai_agentService.getModelToolSchemas(),
                     originMessages: workMessages,
                     user_id: this.user_id??this.SYSTEM_USER_ID,
@@ -364,6 +364,7 @@ class QQBotConnection {
                         if (stats) {
                             inputChars = stats.input_chars || 0;
                             outputChars = stats.output_chars || 0;
+                            // robot 场景不需要 content_parts，只需字符串回复
                         }
                         resolve();
                     },
