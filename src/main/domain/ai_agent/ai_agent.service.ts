@@ -625,8 +625,6 @@ export class Ai_agentService {
        let turnInputChars = 0;
        let turnOutputChars = 0;
        let turnCallList: any[] = [];
-       // 【新格式】嵌套消息内容数组
-       let turnContentParts: ai_agent_message_item[] | undefined;
 
        try {
            const tools = ai_agentService.getModelToolSchemas();
@@ -646,26 +644,17 @@ export class Ai_agentService {
                        turnInputChars = stats.input_chars;
                        turnOutputChars = stats.output_chars;
                        turnCallList = stats.call_list ?? [];
-                       turnContentParts = stats.content_parts;
                    }
-                   this.end_to_res(res, turnCallList, turnContentParts);
+                   this.end_to_res(res, turnCallList);
                },
                token
            })
            if (latestUserMessage && assistantText) {
-               // 【新设计】如果有嵌套消息数组（content_parts），使用它作为 content
-               // 否则使用纯文本字符串（兼容旧格式）
-               const assistantMessage:ai_agent_message_item = turnContentParts?.length
-                   ? {
-                       role: "assistant",
-                       content: turnContentParts,
-                       call_list: turnCallList?.length ? turnCallList : undefined
-                     }
-                   : {
-                       role: "assistant",
-                       content: assistantText,
-                       call_list: turnCallList?.length ? turnCallList : undefined
-                     };
+               const assistantMessage:ai_agent_message_item = {
+                   role: "assistant",
+                   content: assistantText,
+                   call_list: turnCallList
+               };
                await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
                    input_chars: turnInputChars,
                    output_chars: turnOutputChars,
@@ -1025,16 +1014,10 @@ export class Ai_agentService {
         // console.log("已尝试发送数据，res.write 返回:", flushed);
     }
 
-    public end_to_res(res: Response, call_list?: any[], content_parts?: any[]) {
-        const meta: any = { __meta__: true };
+    public end_to_res(res: Response, call_list?: any[]) {
         if (call_list?.length) {
-            meta.call_list = call_list;
-        }
-        if (content_parts?.length) {
-            meta.content_parts = content_parts;
-        }
-        if (meta.call_list || meta.content_parts) {
-            res.write(`data: ${JSON.stringify(meta)}\n\n`);
+            const metaData = JSON.stringify({ __meta__: true, call_list });
+            res.write(`data: ${metaData}\n\n`);
         }
         res.write(`data: [DONE]\n\n`);
         res.end();

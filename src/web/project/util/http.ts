@@ -199,12 +199,12 @@ export class Http {
             onError
         }: {
             onMessage?: (data: string) => void;
-            onDone?: (meta?: { call_list?: any[]; content_parts?: any[] }) => void;
+            onDone?: (meta?: { call_list?: any[] }) => void;
             onError?: (err: any) => void;
         } = {}
     ) {
         const controller = new AbortController();
-        let metaData: { call_list?: any[]; content_parts?: any[] } | undefined;
+        let metaData: { call_list?: any[] } | undefined;
         // onerror	网络错误 / 500	默认：重试
         // onclose	连接断开	默认：重试
         try {

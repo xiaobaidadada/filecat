@@ -283,18 +283,9 @@ export type ai_agent_content_image = {
 export type ai_agent_content_part = ai_agent_content_text | ai_agent_content_image;
 
 /**
- * 消息内容：可以是纯文本字符串、多模态内容数组、或嵌套的消息数组。
- *
- * 【嵌套消息数组的用途】
- * 当 role=assistant 时，content 可以是 ai_agent_message_item[]，
- * 用于精细记录一轮 AI 回复中的：
- *   - 文本片段（role: "assistant", content: "文本"）
- *   - 工具调用片段（role: "tool", call_item: {...}）
- *
- * 前端可以按数组顺序渲染，将工具调用卡片嵌入到聊天气泡内容之间。
- * shell / 机器人等文本场景使用 getContentAsString() 合并为完整字符串。
+ * 消息内容：可以是纯文本字符串，也可以是多模态内容数组
  */
-export type ai_agent_content = string | ai_agent_content_part[] | ai_agent_message_item[];
+export type ai_agent_content = string | ai_agent_content_part[];
 
 export class ai_agent_message_item {
     role: AI_Agent_Role;
@@ -311,53 +302,18 @@ export class ai_agent_message_item {
     embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
 
     /** 
-     * 【已废弃，保留兼容】工具调用列表。
-     * 新代码应将工具调用作为嵌套消息放入 content 数组中，
-     * 该字段仅用于旧数据兼容或简化场景。
+     * 工具调用列表（仅用于前端特殊渲染，不加入 LLM 上下文）
+     * 记录本轮 assistant 消息中调用的工具及其结果
      */
     call_list?: ai_agent_tool_call_item[];
-
-    /**
-     * 当此消息作为 content 数组中的子项、且 role=tool 时，
-     * 携带工具调用的详细信息（替代原来的 call_list 数组项）。
-     */
-    call_item?: ai_agent_tool_call_item;
 }
 
-/**
- * 判断 content 是否为嵌套消息数组（结构化回复）
- */
-export function isContentNestedMessages(content: ai_agent_content): content is ai_agent_message_item[] {
-    if (!Array.isArray(content)) return false;
-    if (content.length === 0) return false;
-    // 判断数组元素是否为 ai_agent_message_item（有 role 字段）
-    const first = content[0];
-    return first && typeof first === 'object' && 'role' in first;
-}
-
-/**
- * 判断 content 是否为多模态内容数组
- */
-export function isContentParts(content: ai_agent_content): content is ai_agent_content_part[] {
-    if (!Array.isArray(content)) return false;
-    if (content.length === 0) return false;
-    const first = content[0];
-    return first && typeof first === 'object' && 'type' in first && !('role' in first);
-}
-
-/** 获取消息内容的字符串表示（用于标题、存储、统计、shell/机器人等场景）。
- *  递归处理嵌套消息数组，将所有文本片段合并为一个字符串。 */
+/** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */
 export function getContentAsString(content: ai_agent_content): string {
     if (typeof content === 'string') {
         return content;
     }
-    if (isContentNestedMessages(content)) {
-        // 递归：嵌套消息数组 → 提取每条的文本
-        return content
-            .map(item => getContentAsString(item.content))
-            .join('\n');
-    }
-    if (isContentParts(content)) {
+    if (Array.isArray(content)) {
         return content
             .map(part => part.type === 'text' ? part.text : `[图片]`)
             .join('\n');
@@ -365,16 +321,12 @@ export function getContentAsString(content: ai_agent_content): string {
     return '';
 }
 
-/** 获取内容长度（用于字符统计）。
- *  递归处理嵌套消息数组，统计所有文本的总长度。 */
+/** 获取内容长度（用于字符统计） */
 export function getContentLength(content: ai_agent_content): number {
     if (typeof content === 'string') {
         return content.length;
     }
-    if (isContentNestedMessages(content)) {
-        return content.reduce((sum, item) => sum + getContentLength(item.content), 0);
-    }
-    if (isContentParts(content)) {
+    if (Array.isArray(content)) {
         return content.reduce((sum, part) => {
             if (part.type === 'text') return sum + part.text.length;
             if (part.type === 'image_url') return sum + (part.image_url.url?.length ?? 0);
@@ -459,67 +411,4 @@ export class ai_rebot_item {
 /** 机器人配置存储结构 */
 export class ai_rebot_setting {
     list: ai_rebot_item[] = [];
-}
-
-/**
- * 将一条消息渲染为适合发给 LLM prompt 的格式。
- * 与 getContentAsString 不同，本函数会：
- * 1. 处理嵌套消息数组（ai_agent_message_item[]），提取 tool 调用的摘要信息
- * 2. 格式化 attachments 附件内容
- * 3. 确保返回的 content 始终是字符串
- *
- * 用于 chat.core 中归一化 originMessages，防止来自历史会话等入口的
- * content 为非字符串格式（嵌套数组 / 多模态数组）导致 LLM API 解析失败。
- */
-export function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
-    // 1. 如果 content 是嵌套消息数组，展开为纯文本
-    if (isContentNestedMessages(message.content)) {
-        const textParts = message.content.map(child => {
-            if (child.role === "tool" && child.call_item) {
-                const ci = child.call_item;
-                const status = ci.success ? "成功" : "失败";
-                const resultPreview = ci.tool_result
-                    ? ci.tool_result.slice(0, 200) + (ci.tool_result.length > 200 ? "..." : "")
-                    : "";
-                return `[工具调用: ${ci.tool_display_name || ci.tool_name} - ${status}${resultPreview ? `\n结果: ${resultPreview}` : ""}]`;
-            }
-            // 递归：子消息的 content 也可能是嵌套数组
-            return getContentAsString(child.content);
-        });
-        return {
-            role: message.role,
-            content: textParts.join("\n"),
-            tool_call_id: message.tool_call_id,
-        };
-    }
-
-    // 2. 如果 content 是多模态数组，直接用 getContentAsString 提取文本
-    // （getContentAsString 已处理 ai_agent_content_part[] 的情况）
-    const contentStr = getContentAsString(message.content);
-
-    // 3. 格式化附件
-    if (message.attachments?.length) {
-        const attachmentParts = message.attachments.map(att =>
-            [
-                "\n",
-                `[附件 ${att.name}]`,
-                `${att.name} mime类型: ${att.mime_type ?? "unknown"} `,
-                `${att.name} 大小: ${att.size ?? 0} bytes`,
-                `${att.name} 类型: ${att.kind ?? "text"}`,
-                `${att.name} 文件内容:\n ${att.content ? att.content : "[内容为空或无法预览]"}`
-            ].join("\n")
-        );
-        return {
-            role: message.role,
-            content: `${attachmentParts.join("\n")} \n ${contentStr}`.trim(),
-            tool_call_id: message.tool_call_id,
-        };
-    }
-
-    // 4. 纯字符串，直接返回
-    return {
-        role: message.role,
-        content: contentStr,
-        tool_call_id: message.tool_call_id,
-    };
 }

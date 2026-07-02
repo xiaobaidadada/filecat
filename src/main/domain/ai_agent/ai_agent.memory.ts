@@ -9,8 +9,7 @@ import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
-    ai_agent_usage_stats, getContentAsString, getContentLength,
-    isContentNestedMessages, renderMessageForPrompt
+    ai_agent_usage_stats, getContentAsString, getContentLength
 } from "../../../common/req/filecat.ai.pojo";
 
 type SessionMeta = ai_agent_chat_session_meta & {
@@ -69,34 +68,42 @@ function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_a
     };
 }
 
-/**
- * 存储层白名单过滤：只保留 ai_agent_message_item 的已知字段，
- * 丢弃 LLM 返回的 transient 字段（如 tool_calls、type、refusal 等），
- * 避免脏数据写入磁盘或被带入 LLM 上下文导致 API 报错。
- *
- * 注意：call_list、call_item 是 ai_agent_message_item 的合法字段，
- * 用于前端渲染工具调用卡片，存储层必须保留。
- * LLM 上下文的清理由 renderMessageForPrompt 独立负责。
- */
-function sanitizeMessage(message: ai_agent_message_item): ai_agent_message_item {
-    const sanitized: ai_agent_message_item = {
+function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
+    return {
+        ...message,
         role: message.role,
         content: message.content ?? "",
         tool_call_id: message.tool_call_id,
         attachments: (message.attachments ?? []).map(normalizeAttachment),
-        // 保留前端渲染字段
-        ...(message.call_list?.length ? { call_list: message.call_list } : {}),
-        ...(message.call_item ? { call_item: message.call_item } : {}),
-        // 保留多模态结果字段（images、audio、embeddings），但仅当存在时
-        ...(message.images?.length ? { images: message.images } : {}),
-        ...(message.audio ? { audio: message.audio } : {}),
-        ...(message.embeddings ? { embeddings: message.embeddings } : {}),
+        // 构建 LLM 上下文时，移除 call_list（仅前端渲染使用）
+        call_list: undefined,
     };
-    // 如果 content 是嵌套消息数组，递归清理子消息
-    if (isContentNestedMessages(sanitized.content)) {
-        sanitized.content = sanitized.content.map(child => sanitizeMessage(child));
+}
+
+function formatAttachment(attachment: ai_agent_message_attachment_item) {
+    return [
+        "\n",
+        `[附件 ${attachment.name}]`,
+        `${attachment.name} mime类型: ${attachment.mime_type ?? "unknown"} `,
+        `${attachment.name} 大小: ${attachment.size ?? 0} bytes`,
+        `${attachment.name} 类型: ${attachment.kind ?? "text"}`,
+        `${attachment.name} 文件内容:\n ${attachment.content ? attachment.content : "[内容为空或无法预览]"}`
+    ].join("\n");
+}
+
+// 格式化 用户消息 把一些json结构化的数据 字符串化
+function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
+    const normalized = normalizeMessage(message);
+    if (!normalized.attachments?.length) {
+        return normalized;
     }
-    return sanitized;
+
+    const contentStr = getContentAsString(normalized.content);
+    return {
+        role: normalized.role,
+        content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim(),
+        tool_call_id: normalized.tool_call_id
+    };
 }
 
 function messageChars(messages: ai_agent_messages) {
@@ -169,19 +176,21 @@ export class AiAgentMemoryService {
         return nextFileName;
     }
 
-    /**
-     * 从磁盘读取会话并反序列化。
-     * 使用 sanitizeMessage 进行白名单过滤，丢弃可能混入的 transient 字段，
-     * 同时保留 call_list / call_item 等前端渲染所需的字段。
-     */
     private read_session(userId: string, meta: SessionMeta) {
         try {
             const fileName = meta.file_name || this.sessionFileName(meta.id);
             const filePath = this.sessionPath(userId, fileName);
             if (!fs.existsSync(filePath)) return null;
             const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
-            // 对每条消息做白名单过滤，清理脏字段，同时保留前端渲染字段
-            session.messages = (session.messages ?? []).map(sanitizeMessage);
+            session.messages = (session.messages ?? []).map(msg => {
+                const callList = msg.call_list; // 先保留 call_list
+                const normalized = normalizeMessage(msg);
+                // 恢复 call_list（仅前端渲染使用，不参与 LLM 上下文）
+                if (callList?.length) {
+                    normalized.call_list = callList;
+                }
+                return normalized;
+            });
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
             session.source = session.source ?? meta.source;
@@ -306,7 +315,7 @@ export class AiAgentMemoryService {
         if (!session) return;
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
-            .map(sanitizeMessage);
+            .map(normalizeMessage);
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
@@ -356,10 +365,11 @@ export class AiAgentMemoryService {
         const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
-        // sanitizeMessage 做白名单过滤：丢弃 LLM 的 transient 字段，
-        // 同时保留 call_list / call_item 等前端渲染所需字段
-        session.messages.push(sanitizeMessage(userMessage));
-        session.messages.push(sanitizeMessage(assistantMessage));
+        session.messages.push(normalizeMessage(userMessage));
+        // 保存 assistant 消息时保留 call_list（供前端渲染），但在 build_context 时会过滤掉
+        const normalizedAssistant = normalizeMessage(assistantMessage);
+        normalizedAssistant.call_list = assistantMessage.call_list;
+        session.messages.push(normalizedAssistant);
         session.updated_at = Date.now();
 
         // 更新字符消耗统计

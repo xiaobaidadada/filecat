@@ -14,7 +14,7 @@ import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
-import {ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_item, ai_agent_messages, getContentAsString, ai_agent_tool_call_item} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_item, ai_agent_messages, getContentAsString, ai_docs_setting_param} from "../../../common/req/filecat.ai.pojo";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
@@ -22,14 +22,7 @@ export interface ChatOptions {
     user_id:string;
     controller: AbortController;
     on_msg: (msg: string) => void;
-    /** 
-     * 对话结束回调
-     * @param stats.input_chars 输入字符数
-     * @param stats.output_chars 输出字符数
-     * @param stats.call_list 工具调用列表（旧格式兼容）
-     * @param stats.content_parts 【新格式】嵌套消息数组，前端按顺序渲染（文本+工具卡片交织）
-     */
-    on_end: (stats?: { input_chars: number; output_chars: number; call_list?: any[]; content_parts?: ai_agent_message_item[] }) => void;
+    on_end: (stats?: { input_chars: number; output_chars: number; call_list?: any[] }) => void;
     sys_prompt?: string;
     cwd?: string;
     /** 可动态传入的 AI 模型配置，不传则使用全局 ai_config */
@@ -207,13 +200,12 @@ export class ChatCore {
 
 你是开源项目filecat的一部分，项目地址 https://github.com/xiaobaidadada/filecat。
 如果用户没有问题，不要做任何tools工具调用，直接回答用户。
-不要把tools工具调用的结果打印输出给用户，也不要输出太多无用的东西给用户。
+如果要使用tools，必须输出 tools 进行工具调用得到结果，不要自己猜。
 如果你要修改项目的代码，修改完有条件的话，可以进行最小动作的测试，但是不要以执行项目来测试。
 除非用户需要你直接操作本地文件，否则选择文字输出的形式给用户。
 当用户没有任何问题的时候，你只需要向用户表达你可以帮助用户就可以了。
 如果用户需要有结构的画图，生成画图文件，可以询问用户是否要生成Excalidraw json格式的文件，Excalidraw 的格式要求 appState 里必须有 scrollToContent 字段、zoom 等,以 .draw 后缀结尾。
 如果没有特殊要求，以markdown格式回答用户。
-
 
 ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 
@@ -236,17 +228,14 @@ ${sys_prompt ?? ''}
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
         // 在整个循环中累积所有工具调用记录（跨多轮循环），最终传给 on_end
         const allCallList: any[] = [];
-        // 【新设计】跨多轮循环累积所有嵌套消息（文本片段 + 工具调用），用于最终 content_parts
-        const allNestedContentItems: ai_agent_message_item[] = [];
         while (loopEnv.toolLoop-- > 0) {
 
-            // 当前正在构建的文本片段（流式拼接）
-            let currentTextChunk = "";
-
+            //  用来拼完整 assistant message
             let assistantMessage: any = {
                 role: "assistant",
-                content: allNestedContentItems,  // 引用全局累积的嵌套消息数组
+                content: "",
                 tool_calls: [],
+                call_list: []  // 收集工具调用记录，不加入 LLM 上下文
             };
 
             const toolCallMap = new Map<number, any>();
@@ -266,27 +255,19 @@ ${sys_prompt ?? ''}
                     if (!chunk) return;
                     // ===== 1. 普通内容流 =====
                     if (chunk.content) {
-                        currentTextChunk += chunk.content;
+                        assistantMessage.content += chunk.content;
                         on_msg(chunk.content);
                     }
 
                     // ===== 2. tool_calls 流 =====
                     if (chunk.tool_calls) {
-                        // 当第一次出现 tool_calls 时，将之前的文本片段保存为子消息
-                        if (currentTextChunk && toolCallMap.size === 0) {
-                            // 判断此轮之前是否已经有 allNestedContentItems 内容
-                            // 如果有，说明上一轮也产生了文本片段或工具调用，直接追加
-                            allNestedContentItems.push({
-                                role: "assistant",
-                                content: currentTextChunk,
-                            });
-                            currentTextChunk = "";
-                        }
-
                         for (const tc of chunk.tool_calls) {
                             const idx = tc.index;
 
                             if (!toolCallMap.has(idx)) {
+                                // if(tc.function.name) {
+                                //     on_msg(`\n${`ai正在补充 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
+                                // }
                                 toolCallMap.set(idx, {
                                     id: tc.id,
                                     type: "function",
@@ -319,13 +300,6 @@ ${sys_prompt ?? ''}
                     controller:controller}
             );
             on_msg("\n")
-
-            // 如果没有 tool_calls，把当前文本片段作为纯文本 content
-            if (toolCallMap.size === 0 && currentTextChunk) {
-                // 没有工具调用，直接用纯文本字符串作为 content（兼容旧格式）
-                assistantMessage.content = currentTextChunk;
-            }
-
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
             // 累加本次 HTTP 请求的输入/输出统计
@@ -333,36 +307,17 @@ ${sys_prompt ?? ''}
             total_output_chars += ioStats.output_chars;
 
 
-            //  一次 LLM 完整结束，补 push assistant 到 workMessages
-            // 注意：workMessages 需要标准 OpenAI 格式（content 为字符串），
-            // 所以这里创建一个副本，content 用 getContentAsString 展平
-            const llmAssistantMessage: any = {
-                role: "assistant",
-                content: getContentAsString(assistantMessage.content),
-                tool_calls: assistantMessage.tool_calls,
-            };
-            workMessages.push(llmAssistantMessage);
+            //  一次 LLM 完整结束，补 push assistant
+            workMessages.push(assistantMessage);
 
-            // 没有 tool_calls，直接结束
+            // 没有 tool_calls，直接结束（附带 call_list 供前端渲染）
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                // 如果之前有累积 content_parts，把当前文本片段也加入
-                if (allNestedContentItems.length > 0 && currentTextChunk) {
-                    allNestedContentItems.push({
-                        role: "assistant",
-                        content: currentTextChunk,
-                    });
-                }
-                on_end({
-                    input_chars: total_input_chars,
-                    output_chars: total_output_chars,
-                    call_list: allCallList,
-                    content_parts: allNestedContentItems?.length ? allNestedContentItems : undefined
-                });
+                on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
                 return;
             }
-
-            // 有 tool_calls，开始执行工具
-            // 执行完所有工具后，在嵌套数组中追加工具调用子消息，然后继续循环
+            // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
+            // console.log(`工具执行开始 ${log_text} `)
+            // 有 tool_calls，开始执行工具 这些工具必须是可以并发执行的，如果工具之前自己本身有前后顺序（工具函数内部自己处理），ai提供的列表是可以并发的
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
                     if(!call.function?.name)return; // 有问题
@@ -372,7 +327,7 @@ ${sys_prompt ?? ''}
                         get_params: () => ""
                     };
                     const startTime = Date.now();
-                    const callItem: ai_agent_tool_call_item = {
+                    const callItem: any = {
                         tool_name: toolName,
                         tool_display_name: tool_info_value.get_name?.() ?? toolName,
                         tool_args: null,
@@ -392,7 +347,6 @@ ${sys_prompt ?? ''}
                         let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         callItem.success = true;
                         callItem.tool_result = resultStr;
-                        // 添加到 LLM 上下文（标准 OpenAI tool 消息格式）
                         workMessages.push({
                             role: "tool",
                             tool_call_id: call.id,
@@ -411,12 +365,7 @@ ${sys_prompt ?? ''}
                         });
                     } finally {
                         callItem.duration_ms = Date.now() - startTime;
-                        // 【新设计】将工具调用作为子消息追加到嵌套 content 数组中
-                        allNestedContentItems.push({
-                            role: "tool",
-                            content: callItem.tool_result ?? callItem.error ?? "",
-                            call_item: callItem,
-                        });
+                        assistantMessage.call_list.push(callItem);
                         allCallList.push(callItem);  // 累积到总列表中
                     }
                 })()
@@ -425,12 +374,7 @@ ${sys_prompt ?? ''}
         }
 
         on_msg("超出最大理解语义次数");
-        on_end({
-            input_chars: total_input_chars,
-            output_chars: total_output_chars,
-            call_list: allCallList,
-            content_parts: allNestedContentItems?.length ? allNestedContentItems : undefined
-        });
+        on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
     }
 
 
