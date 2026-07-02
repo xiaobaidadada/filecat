@@ -621,10 +621,8 @@ export class Ai_agentService {
            || "新会话";
        const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
-       let assistantText = "";
        let turnInputChars = 0;
        let turnOutputChars = 0;
-       let turnCallList: any[] = [];
 
        try {
            const tools = ai_agentService.getModelToolSchemas();
@@ -635,7 +633,6 @@ export class Ai_agentService {
                user_id: userId,
                controller,
                on_msg: (msg) => {
-                   assistantText += msg;
                    this.write_to_res(res, msg);
                },
                on_end: (stats) => {
@@ -643,23 +640,25 @@ export class Ai_agentService {
                    if (stats) {
                        turnInputChars = stats.input_chars;
                        turnOutputChars = stats.output_chars;
-                       turnCallList = stats.call_list ?? [];
                    }
-                   this.end_to_res(res, turnCallList);
+                   this.end_to_res(res, stats);
+                   const assistantText = (stats?.once_messages_list ?? [])
+                       .map(it => getContentAsString(it.content))
+                       .filter(Boolean)
+                       .join("\n\n");
+                   const assistantMessage:ai_agent_message_item = {
+                       role: "assistant",
+                       content: assistantText,
+                       content_list: stats?.once_messages_list ?? [],
+                   };
+                   aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
+                       input_chars: turnInputChars,
+                       output_chars: turnOutputChars,
+                   }).catch(console.error);
                },
                token
            })
-           if (latestUserMessage && assistantText) {
-               const assistantMessage:ai_agent_message_item = {
-                   role: "assistant",
-                   content: assistantText,
-                   call_list: turnCallList
-               };
-               await aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
-                   input_chars: turnInputChars,
-                   output_chars: turnOutputChars,
-               });
-           }
+
        } catch (error) {
            const msg = error.message??JSON.stringify(error)
            await this.error_end_to_res(userId,session_id,latestUserMessage.content,msg,res)
@@ -1014,9 +1013,15 @@ export class Ai_agentService {
         // console.log("已尝试发送数据，res.write 返回:", flushed);
     }
 
-    public end_to_res(res: Response, call_list?: any[]) {
-        if (call_list?.length) {
-            const metaData = JSON.stringify({ __meta__: true, call_list });
+    public end_to_res(
+        res: Response,
+        stats?: { input_chars: number; output_chars: number; once_messages_list?: ai_agent_message_item[] }
+    ) {
+        if (stats?.once_messages_list?.length) {
+            const metaData = JSON.stringify({
+                __meta__: true,
+                once_messages_list: stats.once_messages_list,
+            });
             res.write(`data: ${metaData}\n\n`);
         }
         res.write(`data: [DONE]\n\n`);

@@ -28,5 +28,5 @@ export const ai_tools = [
     http_request_schema,
     search_in_files_schema,
     create_fs_entry_schema,
-    apply_patch_schema
+    // apply_patch_schema
 ];

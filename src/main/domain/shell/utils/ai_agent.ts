@@ -6,7 +6,7 @@ import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
-import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
+import {ai_agent_chat_session_item, ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
 import {ai_agentService} from "../../ai_agent/ai_agent.service";
 
 export class ai_agent_class {
@@ -16,6 +16,8 @@ export class ai_agent_class {
     pty: PtyShell;
 
     messages: ai_agent_messages;
+    pendingMessages: ai_agent_messages = [];
+    session: ai_agent_chat_session_item;
     token: string;
     userId: string;
     sessionId: string;
@@ -86,7 +88,7 @@ export class ai_agent_class {
 
         const messages: string[] = [];
         
-        for (let i = 0; i < filteredParams.length - 1; i++) {
+        for (let i = 0; i < filteredParams.length - 2; i++) {
             try {
                 const str1 = filteredParams[i]
                 if (str1 === '-f' || str1 === '--file') {
@@ -113,7 +115,18 @@ export class ai_agent_class {
         // 如果有 --new 参数，创建临时会话（不持久化）
         if (this.isTemporarySession) {
             this.sessionId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-            this.messages = [
+            this.session = {
+                id: this.sessionId,
+                title: "命令行会话",
+                messages: [],
+                summary: "",
+                long_term_memory: "",
+                source: "cli",
+                created_at: Date.now(),
+                updated_at: Date.now(),
+            };
+            this.messages = [];
+            this.pendingMessages = [
                 ...messages.map(v => ({
                     content: v,
                     role: "user" as const
@@ -122,10 +135,12 @@ export class ai_agent_class {
             // 设置标志表示这是临时会话
         } else {
             // 正常会话，持久化存储
-            const session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
-            this.sessionId = session.id;
+            this.session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
+            this.sessionId = this.session.id;
             this.messages = [
-                ...(session.messages ?? []),
+                ...(this.session.messages ?? []),
+            ];
+            this.pendingMessages = [
                 ...messages.map(v => ({
                     content: v,
                     role: "user" as const
@@ -164,9 +179,10 @@ export class ai_agent_class {
         try {
             // 合并 model tool（注册为 tool 的其他 AI 模型）
             const tools =ai_agentService.getModelToolSchemas();
+            const workMessages = aiAgentMemoryService.build_context_by_session(this.session, this.pendingMessages);
             await chat_core.chat({
                 tools,
-                originMessages: this.messages,
+                originMessages: workMessages,
                 token: this.token,
                 user_id:this.userId,
                 controller: this.controller,
@@ -189,13 +205,25 @@ export class ai_agent_class {
                     }
                     this.md2ansi.reset();
 
-                    if (this.system_line.trim() && this.messages.length > 0) {
-                        const latestUserMessage = [...this.messages].reverse().find(it => it.role === "user");
+                    if (this.system_line.trim() && this.pendingMessages.length > 0) {
+                        const latestUserMessage = [...this.pendingMessages].reverse().find(it => it.role === "user");
                         if (latestUserMessage) {
+                            const assistantText = (stats?.once_messages_list ?? [])
+                                .map(it => getContentAsString(it.content))
+                                .filter(Boolean)
+                                .join("\n\n");
                             const assistantMessage = {
-                                content: this.system_line,
+                                content: assistantText,
+                                content_list: stats?.once_messages_list ?? [],
                                 role: "assistant" as const
                             };
+                            this.session.messages = [
+                                ...(this.session.messages ?? []),
+                                ...this.pendingMessages,
+                                assistantMessage
+                            ];
+                            this.messages = this.session.messages;
+                            this.pendingMessages = [];
                             
                             // 只有非临时会话才保存到持久化存储
                             if (!this.isTemporarySession) {
@@ -204,8 +232,6 @@ export class ai_agent_class {
                                     output_chars: stats?.output_chars ?? 0,
                                 }).catch(console.error);
                             }
-                            
-                            this.messages.push(assistantMessage);
                         }
                     }
                     this.system_line = "";
@@ -230,7 +256,7 @@ export class ai_agent_class {
             this.kill()
             return;
         }
-        this.messages.push({
+        this.pendingMessages.push({
             content: line,
             role: "user"
         });

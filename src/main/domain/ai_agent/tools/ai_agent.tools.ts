@@ -23,7 +23,7 @@ export const Ai_agentTools = {
     http_request: http_request_tool,
     search_in_files: search_in_files_tool,
     create_fs_entry: create_fs_entry_tool,
-    apply_patch: apply_patch_tool
+    // apply_patch: apply_patch_tool
 }
 
 export type Ai_agentTools_type = keyof typeof Ai_agentTools;
@@ -80,10 +80,10 @@ export const tools_des_map: Record<Ai_agentTools_type, {
             return `path： ${args.path}`
         }
     },
-    apply_patch: {
-        get_name: () => "apply patch file",
-        get_params: (args) => {
-            return `path： ${args.path}`
-        }
-    },
+    // apply_patch: {
+    //     get_name: () => "apply patch file",
+    //     get_params: (args) => {
+    //         return `path： ${args.path}`
+    //     }
+    // },
 };

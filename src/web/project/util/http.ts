@@ -199,12 +199,12 @@ export class Http {
             onError
         }: {
             onMessage?: (data: string) => void;
-            onDone?: (meta?: { call_list?: any[] }) => void;
+            onDone?: (meta?: { once_messages_list?: any[] }) => void;
             onError?: (err: any) => void;
         } = {}
     ) {
         const controller = new AbortController();
-        let metaData: { call_list?: any[] } | undefined;
+        let metaData: { once_messages_list?: any[] } | undefined;
         // onerror	网络错误 / 500	默认：重试
         // onclose	连接断开	默认：重试
         try {
@@ -223,7 +223,7 @@ export class Http {
                         onDone?.(metaData);
                         return;
                     }
-                    // 检查是否是 meta 数据（携带 call_list 等）
+                    // 检查是否是 meta 数据
                     try {
                         const parsed = JSON.parse(event.data);
                         if (parsed.__meta__) {
@@ -253,4 +253,3 @@ export class Http {
     }
 
 }
-

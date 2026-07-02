@@ -221,7 +221,7 @@ export class ai_system_prompt_item {
 }
 
 /**
- * AI Agent 工具调用项（用于 call_list 字段，不加入 LLM 上下文）
+ * AI Agent 工具调用项
  */
 export class ai_agent_tool_call_item {
     /** 工具名称 */
@@ -238,6 +238,7 @@ export class ai_agent_tool_call_item {
     error?: string;
     /** 执行耗时（毫秒） */
     duration_ms?: number;
+    tool_call_id:string
 }
 
 /**
@@ -285,11 +286,11 @@ export type ai_agent_content_part = ai_agent_content_text | ai_agent_content_ima
 /**
  * 消息内容：可以是纯文本字符串，也可以是多模态内容数组
  */
-export type ai_agent_content = string | ai_agent_content_part[];
+export type ai_agent_content = string | ai_agent_content_part[]
 
 export class ai_agent_message_item {
     role: AI_Agent_Role;
-    content: ai_agent_content;
+    content?: ai_agent_content;
     tool_call_id?: string;
     attachments?: ai_agent_message_attachment_item[];
 
@@ -301,11 +302,13 @@ export class ai_agent_message_item {
     /** Embeddings 向量数据 */
     embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
 
-    /** 
-     * 工具调用列表（仅用于前端特殊渲染，不加入 LLM 上下文）
-     * 记录本轮 assistant 消息中调用的工具及其结果
-     */
-    call_list?: ai_agent_tool_call_item[];
+    tool_calls?:any[]
+
+    // 临时用
+    tool_call_ends?:ai_agent_tool_call_item[];
+
+    // 不给 ai 给前端
+    content_list?:ai_agent_message_item[];
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */
@@ -328,8 +331,11 @@ export function getContentLength(content: ai_agent_content): number {
     }
     if (Array.isArray(content)) {
         return content.reduce((sum, part) => {
-            if (part.type === 'text') return sum + part.text.length;
-            if (part.type === 'image_url') return sum + (part.image_url.url?.length ?? 0);
+            const part_p = part as ai_agent_content_part
+            if(part_p.type) {
+                if (part_p.type === 'text') return sum + part_p.text.length;
+                if (part_p.type === 'image_url') return sum + (part_p.image_url.url?.length ?? 0);
+            }
             return sum;
         }, 0);
     }

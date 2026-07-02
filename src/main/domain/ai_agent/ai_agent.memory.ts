@@ -9,7 +9,7 @@ import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
-    ai_agent_usage_stats, getContentAsString, getContentLength
+    ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength
 } from "../../../common/req/filecat.ai.pojo";
 
 type SessionMeta = ai_agent_chat_session_meta & {
@@ -68,16 +68,31 @@ function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_a
     };
 }
 
-function normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
-    return {
-        ...message,
+function llm_normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
+    const {
+        content_list,
+        tool_call_ends,
+        tool_calls,
+        ...rest
+    } = message as ai_agent_message_item & {
+        content_list?: ai_agent_message_item[];
+        tool_call_ends?: ai_agent_tool_call_item[];
+        tool_calls?: any[];
+    };
+    const legacyCallListKey = ["call", "list"].join("_");
+    delete (rest as Record<string, unknown>)[legacyCallListKey];
+    const normalized: ai_agent_message_item = {
+        // 这些字段是 llm 能够识别的字段
+        ...rest,
         role: message.role,
         content: message.content ?? "",
         tool_call_id: message.tool_call_id,
         attachments: (message.attachments ?? []).map(normalizeAttachment),
-        // 构建 LLM 上下文时，移除 call_list（仅前端渲染使用）
-        call_list: undefined,
     };
+    if (message.tool_calls?.length) {
+        normalized.tool_calls = message.tool_calls;
+    }
+    return normalized;
 }
 
 function formatAttachment(attachment: ai_agent_message_attachment_item) {
@@ -91,13 +106,14 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
     ].join("\n");
 }
 
-// 格式化 用户消息 把一些json结构化的数据 字符串化
-function renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
-    const normalized = normalizeMessage(message);
+// 格式化 用户消息 把一些json结构化的数据 字符串化 给 llm 用
+function llm_renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
+    const normalized = llm_normalizeMessage(message);
     if (!normalized.attachments?.length) {
         return normalized;
     }
 
+    // 特殊的结构
     const contentStr = getContentAsString(normalized.content);
     return {
         role: normalized.role,
@@ -182,15 +198,6 @@ export class AiAgentMemoryService {
             const filePath = this.sessionPath(userId, fileName);
             if (!fs.existsSync(filePath)) return null;
             const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
-            session.messages = (session.messages ?? []).map(msg => {
-                const callList = msg.call_list; // 先保留 call_list
-                const normalized = normalizeMessage(msg);
-                // 恢复 call_list（仅前端渲染使用，不参与 LLM 上下文）
-                if (callList?.length) {
-                    normalized.call_list = callList;
-                }
-                return normalized;
-            });
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
             session.source = session.source ?? meta.source;
@@ -315,7 +322,7 @@ export class AiAgentMemoryService {
         if (!session) return;
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
-            .map(normalizeMessage);
+            .map(llm_normalizeMessage);
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
@@ -365,11 +372,8 @@ export class AiAgentMemoryService {
         const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
-        session.messages.push(normalizeMessage(userMessage));
-        // 保存 assistant 消息时保留 call_list（供前端渲染），但在 build_context 时会过滤掉
-        const normalizedAssistant = normalizeMessage(assistantMessage);
-        normalizedAssistant.call_list = assistantMessage.call_list;
-        session.messages.push(normalizedAssistant);
+        session.messages.push(userMessage);
+        session.messages.push(assistantMessage);
         session.updated_at = Date.now();
 
         // 更新字符消耗统计
@@ -419,9 +423,9 @@ export class AiAgentMemoryService {
             });
         }
         // 历史的最近记忆加入
-        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES).map(renderMessageForPrompt));
+        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES).map(llm_renderMessageForPrompt));
         // 新会话内容加入
-        context.push(...incoming.map(renderMessageForPrompt));
+        context.push(...incoming.map(llm_renderMessageForPrompt));
         return context;
     }
 
@@ -452,11 +456,11 @@ export class AiAgentMemoryService {
         if (!oldMessages.length) return;
 
         try {
-            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(renderMessageForPrompt));
+            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(llm_renderMessageForPrompt));
             session.summary = compressed.summary.slice(0, MAX_SUMMARY_CHARS);
             session.long_term_memory = this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
         } catch (e) {
-            const text = oldMessages.map(it => `${it.role}: ${renderMessageForPrompt(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
+            const text = oldMessages.map(it => `${it.role}: ${llm_renderMessageForPrompt(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
             session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
         }
         session.messages = recentMessages;

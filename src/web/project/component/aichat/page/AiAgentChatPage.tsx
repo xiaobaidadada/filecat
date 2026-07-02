@@ -22,7 +22,7 @@ import {
     ai_agent_chat_session_meta,
     ai_agent_content, ai_agent_content_part,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_usage_stats,
-    ai_system_prompt_item, ai_agent_tool_call_item,
+    ai_system_prompt_item,
     getContentAsString
 } from "../../../../../common/req/filecat.ai.pojo";
 
@@ -38,12 +38,22 @@ interface Message {
     sender: 'user' | 'bot';
     text: string;
     attachments?: ai_agent_message_attachment_item[];
+    content_list?: ai_agent_message_item[];
     // 多模态结果属性（由后端返回，前端自判断渲染，有哪个就渲染哪个）
     images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
     audio?: { data?: string; url?: string; mime_type?: string };
     embeddings?: any;
-    /** 工具调用列表（仅前端渲染，不参与 LLM 上下文） */
-    call_list?: ai_agent_tool_call_item[];
+}
+
+function getMessageText(message: ai_agent_message_item): string {
+    const content = getContentAsString(message.content);
+    if (content) return content;
+    const contentList = message.content_list ?? [];
+    if (!contentList.length) return "";
+    return contentList
+        .map(it => getContentAsString(it.content))
+        .filter(Boolean)
+        .join("\n\n");
 }
 
 function guessAttachmentKind(file: File): "text" | "image" | "binary" {
@@ -77,12 +87,12 @@ function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
         .map((it, index) => ({
             id: Date.now() + index,
             sender: it.role === "assistant" ? "bot" : "user",
-            text: getContentAsString(it.content),
+            text: getMessageText(it),
             attachments: it.attachments ?? [],
+            content_list: it.content_list,
             images: it.images,
             audio: it.audio,
             embeddings: it.embeddings,
-            call_list: it.call_list,
         }));
 }
 
@@ -94,7 +104,6 @@ function toAiMessages(messages: Message[]): ai_agent_message_item[] {
         images: it.images,
         audio: it.audio,
         embeddings: it.embeddings,
-        call_list: it.call_list,
     }));
 }
 
@@ -502,9 +511,9 @@ export default function AiAgentChatPage() {
             session_id: sessionId,
         },{
             onMessage: (res) => {
-                if(thinking_start) {
-                    call_pojo.text = ""
-                    thinking_start = false
+                if (thinking_start) {
+                    call_pojo.text = "";
+                    thinking_start = false;
                 }
                 try {
                     const json = JSON.parse(res);
@@ -525,9 +534,13 @@ export default function AiAgentChatPage() {
             },
             onDone: async (meta)=>{
                 set_sending(false)
-                // 设置工具调用列表到 bot 消息
-                if (meta?.call_list?.length) {
-                    call_pojo.call_list = meta.call_list;
+                if (meta?.once_messages_list?.length) {
+                    call_pojo.content_list = meta.once_messages_list;
+                    call_pojo.text = getMessageText({
+                        role: "assistant",
+                        content: call_pojo.text,
+                        content_list: meta.once_messages_list,
+                    } as ai_agent_message_item);
                     // 直接使用 setMessages 确保立即渲染，不受 debounce 影响
                     setMessages([...new_messages]);
                 }

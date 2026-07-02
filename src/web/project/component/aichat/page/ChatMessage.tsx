@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {useTranslation} from "react-i18next";
-import Md from "../../file/component/markdown/Md";
 import {Icon} from "../../../../meta/component/Button";
 import {ai_agent_message_attachment_item, ai_agent_tool_call_item} from "../../../../../common/req/filecat.ai.pojo";
+import {renderOrderedContent} from "./RequestTypeRenderers";
 
 /**
  * 消息操作按钮（删除、复制）
@@ -104,14 +104,13 @@ export function ChatMessageItem({
                                     onDelete,
                                     onCopy
                                 }: {
-    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: ai_agent_message_attachment_item[]; call_list?: ai_agent_tool_call_item[] };
+    msg: { id: number; sender: 'user' | 'bot'; text: string; attachments?: ai_agent_message_attachment_item[]; content_list?: { tool_call_ends?: ai_agent_tool_call_item[] }[] };
     onDelete: () => void;
     onCopy: () => void;
 }) {
     return (
         <div className={`chat-message ${msg.sender}`}>
-            <Md context={msg.text}/>
-            <CallListRenderer callList={msg.call_list}/>
+            {renderOrderedContent(msg)}
             <AttachmentList attachments={msg.attachments}/>
             <MessageActions
                 onDelete={onDelete}

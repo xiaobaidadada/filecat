@@ -14,7 +14,15 @@ import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
-import {ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_item, ai_agent_messages, getContentAsString, ai_docs_setting_param} from "../../../common/req/filecat.ai.pojo";
+import {
+    ai_agent_Item,
+    ai_agent_item_dotenv,
+    ai_agent_message_item,
+    ai_agent_messages,
+    getContentAsString,
+    ai_docs_setting_param,
+    ai_agent_tool_call_item
+} from "../../../common/req/filecat.ai.pojo";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
@@ -22,7 +30,7 @@ export interface ChatOptions {
     user_id:string;
     controller: AbortController;
     on_msg: (msg: string) => void;
-    on_end: (stats?: { input_chars: number; output_chars: number; call_list?: any[] }) => void;
+    on_end: (stats?: { input_chars: number; output_chars: number; once_messages_list?:ai_agent_message_item[]  }) => void;
     sys_prompt?: string;
     cwd?: string;
     /** 可动态传入的 AI 模型配置，不传则使用全局 ai_config */
@@ -226,17 +234,18 @@ ${sys_prompt ?? ''}
 
         // 隐式 planner
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
-        // 在整个循环中累积所有工具调用记录（跨多轮循环），最终传给 on_end
-        const allCallList: any[] = [];
+
+        const once_messages_list:ai_agent_message_item[] = []
         while (loopEnv.toolLoop-- > 0) {
 
             //  用来拼完整 assistant message
-            let assistantMessage: any = {
+            let assistantMessage:ai_agent_message_item = {
                 role: "assistant",
                 content: "",
-                tool_calls: [],
-                call_list: []  // 收集工具调用记录，不加入 LLM 上下文
+                tool_call_ends:[]
             };
+            once_messages_list.push(assistantMessage);
+
 
             const toolCallMap = new Map<number, any>();
 
@@ -306,13 +315,19 @@ ${sys_prompt ?? ''}
             total_input_chars += ioStats.input_chars;
             total_output_chars += ioStats.output_chars;
 
-
             //  一次 LLM 完整结束，补 push assistant
-            workMessages.push(assistantMessage);
+            const assistantWorkMessage: ai_agent_message_item = {
+                role: assistantMessage.role,
+                content: assistantMessage.content,
+            };
+            if (assistantMessage.tool_calls?.length) {
+                assistantWorkMessage.tool_calls = assistantMessage.tool_calls;
+            }
+            workMessages.push(assistantWorkMessage);
 
-            // 没有 tool_calls，直接结束（附带 call_list 供前端渲染）
+            // 没有 tool_calls，直接结束
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
+                on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
                 return;
             }
             // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
@@ -327,14 +342,15 @@ ${sys_prompt ?? ''}
                         get_params: () => ""
                     };
                     const startTime = Date.now();
-                    const callItem: any = {
+                    const callItem: ai_agent_tool_call_item = {
                         tool_name: toolName,
                         tool_display_name: tool_info_value.get_name?.() ?? toolName,
                         tool_args: null,
                         success: false,
                         error: undefined,
                         tool_result: undefined,
-                        duration_ms: 0
+                        duration_ms: 0,
+                        tool_call_id: call.id
                     };
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
@@ -365,8 +381,7 @@ ${sys_prompt ?? ''}
                         });
                     } finally {
                         callItem.duration_ms = Date.now() - startTime;
-                        assistantMessage.call_list.push(callItem);
-                        allCallList.push(callItem);  // 累积到总列表中
+                        assistantMessage.tool_call_ends.push(callItem)
                     }
                 })()
             }))
@@ -374,7 +389,7 @@ ${sys_prompt ?? ''}
         }
 
         on_msg("超出最大理解语义次数");
-        on_end({ input_chars: total_input_chars, output_chars: total_output_chars, call_list: allCallList });
+        on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
     }
 
 
@@ -490,6 +505,7 @@ ${sys_prompt ?? ''}
             props.call_data(result.choices[0].message);
 
         } catch (e: any) {
+            console.log(`llm请求报错 ${e?.message} }`)
             if (e.name !== "AbortError") {
                 props.error_call(e);
             }

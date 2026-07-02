@@ -6,6 +6,7 @@ import { aiAgentMemoryService } from "../ai_agent.memory";
 import { settingService } from "../../setting/setting.service";
 import { ai_agent_message_item, getContentAsString } from "../../../../common/req/filecat.ai.pojo";
 import { Env } from "../../../../common/node/Env";
+import {chat_core, ChatOptions} from "../chat.core";
 
 const BASE_URL = 'https://api.sgroup.qq.com';
 
@@ -344,14 +345,13 @@ class QQBotConnection {
             let outputChars = 0;
 
             await new Promise<void>((resolve, reject) => {
-                const chat_core = require('../chat.core').chat_core;
                 const controller = new AbortController();
                 const timeout = setTimeout(() => {
                     controller.abort();
                     reject(new Error('AI 回复超时'));
                 }, 120_000); // 2分钟超时
 
-                const chatOpts: any = {
+                const chatOpts: ChatOptions = {
                     tools: ai_agentService.getModelToolSchemas(),
                     originMessages: workMessages,
                     user_id: this.user_id??this.SYSTEM_USER_ID,
@@ -359,13 +359,33 @@ class QQBotConnection {
                     on_msg: (msg: string) => {
                         assistantText += msg;
                     },
-                    on_end: (stats: any) => {
+                    on_end: (stats) => {
                         clearTimeout(timeout);
                         if (stats) {
                             inputChars = stats.input_chars || 0;
                             outputChars = stats.output_chars || 0;
                         }
                         resolve();
+                        const assistantText = (stats?.once_messages_list ?? [])
+                            .map(it => getContentAsString(it.content))
+                            .filter(Boolean)
+                            .join("\n\n");
+                        const assistantMsg: ai_agent_message_item = {
+                            role: 'assistant',
+                            content: assistantText,
+                            content_list: stats?.once_messages_list ?? [],
+                        };
+                        // 保存到会话
+                        aiAgentMemoryService.appendTurn(
+                            this.SYSTEM_USER_ID,
+                            session.id,
+                            userMsg,
+                            assistantMsg,
+                            {
+                                input_chars: inputChars,
+                                output_chars: outputChars,
+                            }
+                        ).catch(console.error);
                     },
                 };
                 // 如果机器人指定了 model_index，则使用对应的模型配置
@@ -378,25 +398,6 @@ class QQBotConnection {
                     reject(err);
                 });
             });
-
-            if (assistantText) {
-                const assistantMsg: ai_agent_message_item = {
-                    role: 'assistant',
-                    content: assistantText,
-                };
-
-                // 保存到会话
-                await aiAgentMemoryService.appendTurn(
-                    this.SYSTEM_USER_ID,
-                    session.id,
-                    userMsg,
-                    assistantMsg,
-                    {
-                        input_chars: inputChars,
-                        output_chars: outputChars,
-                    }
-                );
-            }
 
             return assistantText || null;
         } catch (err: any) {
