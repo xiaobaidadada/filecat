@@ -41,6 +41,11 @@ export class StringUtil {
     }
 
     public static splitBashCommands(input) {
+        // 处理 undefined / null / 非字符串类型，直接返回空数组
+        if (input == null || typeof input !== "string") {
+            return [];
+        }
+
         const result = [];
 
         let buf = "";

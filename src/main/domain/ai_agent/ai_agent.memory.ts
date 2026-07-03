@@ -82,12 +82,13 @@ function llm_normalizeMessage_one(message: ai_agent_message_item) {
         attachments: (message.attachments ?? []).map(normalizeAttachment),
     };
     if (message.tool_calls?.length) {
-        normalized.tool_calls = message.tool_calls.map(v=>{
-            if(v.function?.arguments) {
-                v.function.arguments = v.function.arguments.slice(-MAX_TOOL_CONTENT_CHARS)+";省略..."
-            }
-            return v
-        });
+        normalized.tool_calls = message.tool_calls
+        // normalized.tool_calls = message.tool_calls.map(v=>{
+        //     if(v.function?.arguments) {
+        //         v.function.arguments = v.function.arguments.slice(-MAX_TOOL_CONTENT_CHARS)+";省略..."
+        //     }
+        //     return v
+        // });
     }
     if(normalized.attachments?.length) {
         const contentStr = getContentAsString(normalized.content);
@@ -118,7 +119,7 @@ function llm_normalizeMessage(message: ai_agent_message_item) {
             list.push({
                 role: "tool",
                 tool_call_id: it.tool_call_id,
-                content: (it.tool_result??it.error??"").slice(-MAX_TOOL_CONTENT_CHARS)+";省略..."
+                content: (it.tool_result??it.error??"").slice(0,MAX_TOOL_CONTENT_CHARS)
             })
         }
     }
