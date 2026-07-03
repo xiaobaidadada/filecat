@@ -358,12 +358,88 @@ table th {
   background: var(--primary-light);
   border-radius: var(--border-radius);
   color: var(--textPrimary);
+  border-bottom: 1px solid var(--divider);
+}
+.chat-message.user {
+  background: #1a2a3a;
+  color: var(--textPrimary);
+  border-bottom: none;
+}
+.chat-message.bot::before {
+  background: var(--primary);
+  opacity: 0.6;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+.chat-message.user::after {
+  background: var(--icon-blue);
+  opacity: 0.8;
+}
+
+/* 暗黑模式 - AI 执行中最后一个气泡头像呼吸 */
+[data-sending="true"] .chat-message.bot:last-of-type::before {
+  opacity: 1;
+  background: var(--primary);
+  box-shadow: 0 0 10px 3px var(--primary-light);
+  animation: ai-avatar-pulse-dark 1.5s ease-in-out infinite;
+}
+
+@keyframes ai-avatar-pulse-dark {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px var(--primary-light);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 18px 6px var(--primary-light);
+    transform: scale(1.15);
+  }
+}
+
+/* 暗黑模式 - 工具调用中头像橙色旋转 */
+[data-sending="true"] .chat-message.bot.tool-info:last-of-type::before {
+  background: #f59e0b;
+  box-shadow: 0 0 10px 3px rgba(245, 158, 11, 0.5);
+  animation: ai-avatar-spin-dark 1.5s linear infinite;
+}
+
+@keyframes ai-avatar-spin-dark {
+  0% {
+    box-shadow: 0 0 10px 3px rgba(245, 158, 11, 0.5);
+    transform: rotate(0deg) scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 16px 5px rgba(245, 158, 11, 0.7);
+    transform: rotate(360deg) scale(1.1);
+  }
 }
 
 .chat-input-area textarea {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);
   color: var(--textPrimary);
+  border-color: var(--divider);
+}
+.chat-input-area textarea:focus {
+  border-color: var(--primary);
+  background: var(--surfaceSecondary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.chat-input-area {
+  background: var(--background);
+  border-top: 1px solid var(--divider);
+}
+
+.chat-main {
+  background: var(--background);
+}
+
+.chat-header {
+  background: var(--background);
+  color: var(--textPrimary);
+}
+
+.chat-messages {
+  background: var(--background);
 }
 
 .common-box  {
@@ -409,6 +485,184 @@ table th {
 .chat-session-item.active,
 .chat-session-item:hover {
   background: var(--primary-light);
+}
+
+/* ===== 暗黑模式 - AI 加载气泡 ===== */
+.ai-loading-bubble .ai-loading-text {
+  color: var(--textSecondary);
+}
+.ai-loading-dot {
+  background-color: var(--textSecondary);
+}
+
+/* ===== 暗黑模式 - 工具调用状态气泡 ===== */
+.tool-status-bubble {
+  background: var(--surfacePrimary);
+  border-color: var(--borderPrimary);
+  color: var(--textPrimary);
+}
+
+/* ===== 暗黑模式 - 输入区迷你指示器 ===== */
+.ai-thinking-mini {
+  background: var(--surfacePrimary);
+}
+.ai-thinking-mini .ai-thinking-dot {
+  background-color: var(--textSecondary);
+}
+
+/* ===== 暗黑模式 - 消息操作按钮 ===== */
+.message-actions button {
+  border-color: var(--borderPrimary);
+  background: var(--surfacePrimary);
+  color: var(--textSecondary);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.message-actions button:hover {
+  color: var(--textPrimary);
+  border-color: var(--borderSecondary);
+  background: var(--surfaceSecondary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ===== 暗黑模式 - 附件 ===== */
+.chat-attachment-chip {
+  border-color: var(--divider);
+  background: var(--surfaceSecondary);
+  color: var(--textPrimary);
+}
+.chat-attachment-chip button {
+  color: var(--textSecondary);
+}
+.chat-attach-button {
+  border-color: var(--divider);
+  background: var(--surfacePrimary);
+  color: var(--textSecondary);
+}
+.chat-attach-button:hover {
+  background: var(--primary-light);
+}
+
+.chat-message-attachment {
+  background: var(--surfaceSecondary);
+}
+
+/* ===== 暗黑模式 - AI思考指示器 ===== */
+.ai-thinking-indicator {
+  border-color: var(--divider);
+  background: var(--surfacePrimary);
+}
+
+.ai-thinking-spinner {
+  border-color: var(--divider);
+  background: var(--surfacePrimary);
+}
+.ai-thinking-spinner::after {
+  border-color: var(--divider);
+  border-top-color: var(--primary);
+}
+
+.chat-session-item small {
+  color: var(--textSecondary);
+}
+.chat-session-source {
+  color: var(--icon-purple);
+}
+
+/* ===== 暗黑模式 - 模型选择器 ===== */
+.model-selector-dropdown {
+  border-color: var(--divider);
+  background: var(--surfacePrimary);
+  color: var(--textPrimary);
+}
+.model-selector-dropdown:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* ===== 暗黑模式 - 用量统计弹框 ===== */
+.usage-stats-popup {
+  background: var(--surfacePrimary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.usage-stats-header {
+  border-color: var(--divider);
+}
+.usage-stats-header h3 {
+  color: var(--textPrimary);
+}
+.usage-stats-close {
+  color: var(--textSecondary);
+}
+.usage-stats-close:hover {
+  background: var(--primary-light);
+  color: var(--textPrimary);
+}
+.usage-stats-loading,
+.usage-stats-empty {
+  color: var(--textSecondary);
+}
+.usage-stats-row {
+  background: var(--background);
+}
+.usage-stats-row:nth-child(even) {
+  background: var(--surfaceSecondary);
+}
+.usage-stats-label {
+  color: var(--textSecondary);
+}
+.usage-stats-value {
+  color: var(--textPrimary);
+}
+.usage-stats-total {
+  background: var(--primary-light) !important;
+  border-color: var(--primary);
+}
+.usage-stats-total .usage-stats-label,
+.usage-stats-total .usage-stats-value {
+  color: var(--primary);
+}
+
+/* ===== 暗黑模式 - 工具调用列表 ===== */
+.chat-message-call-list {
+  border-color: var(--divider);
+  background: rgba(255,255,255,0.03);
+}
+.call-list-header {
+  color: var(--textSecondary);
+  background: rgba(255,255,255,0.02);
+}
+.call-list-header:hover {
+  background: rgba(255,255,255,0.05);
+}
+.call-list-item.call-success {
+  border-color: rgba(34,197,94,0.25);
+  background: rgba(34,197,94,0.08);
+}
+.call-list-item.call-fail {
+  border-color: rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.08);
+}
+.call-list-tool-name {
+  color: var(--textPrimary);
+}
+.call-list-duration {
+  color: var(--textSecondary);
+}
+.call-list-details summary {
+  color: var(--textSecondary);
+}
+.call-list-details summary:hover {
+  background: rgba(255,255,255,0.04);
+}
+.call-list-pre {
+  background: rgba(255,255,255,0.04);
+}
+.call-list-error-text {
+  color: var(--accent);
+}
+
+.chat-header-model {
+  color: var(--textSecondary);
 }
 
 .menu-select-popup {

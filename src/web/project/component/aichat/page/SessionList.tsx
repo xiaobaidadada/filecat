@@ -46,7 +46,7 @@ export default function SessionList({
 
     return (
         <aside
-            className={`chat-session-list ${ai_session_collapsed ? "active" : ""} ${ai_session_collapsed ? "collapsed" : ""}`}>
+            className={`chat-session-list ${!ai_session_collapsed ? "" : "active"} ${ai_session_collapsed ? "collapsed" : ""}`}>
             {!ai_session_collapsed && (
                 <div className="chat-session-search">
                     <input

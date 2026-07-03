@@ -25,12 +25,29 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {wss_interface} from "../../../common/frame/type";
 
+/** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
+export interface ChatMsgPayload {
+    /** 文本内容片段 */
+    text: string;
+    /** 当前消息块在本次聊天中的序号（从 0 开始递增），前端用它区分不同气泡 */
+    chunk_index: number;
+    /** 消息类型：text-普通文本, tool_start-工具调用开始, tool_end-工具调用结束 */
+    msg_type: 'text' | 'tool_start' | 'tool_end';
+    /** 工具调用相关信息（仅 tool_start / tool_end 时有效） */
+    tool_info?: {
+        tool_name?: string;
+        tool_display_name?: string;
+        tool_count?: number;
+    };
+}
+
 export interface ChatOptions {
     originMessages: ai_agent_messages;
     token?: string;
     user_id:string;
     controller: AbortController;
-    on_msg: (msg: string) => void;
+    /** 流式消息回调，携带分块序号和消息类型，前端据此创建独立气泡 */
+    on_msg: (payload: ChatMsgPayload) => void;
     on_end: (stats?: { input_chars: number; output_chars: number; once_messages_list?:ai_agent_message_item[]  }) => void;
     sys_prompt?: string;
     cwd?: string;
@@ -250,6 +267,9 @@ ${sys_prompt ?? ''}
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
 
         const once_messages_list:ai_agent_message_item[] = []
+        /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
+        let globalChunkIndex = 0;
+
         while (loopEnv.toolLoop-- > 0) {
 
             //  用来拼完整 assistant message
@@ -262,7 +282,8 @@ ${sys_prompt ?? ''}
 
 
             const toolCallMap = new Map<number, any>();
-
+            /** 本轮的 chunk 索引，用于区分同一轮 LLM 调用中的不同消息块 */
+            let localChunkIdx = 0;
 
             //  调用 LLM（流式）
             const ioStats = { input_chars: 0, output_chars: 0 };
@@ -279,7 +300,16 @@ ${sys_prompt ?? ''}
                     // ===== 1. 普通内容流 =====
                     if (chunk.content) {
                         assistantMessage.content += chunk.content;
-                        on_msg(chunk.content);
+                        // 携带 chunk_index，让前端可以区分独立气泡
+                        on_msg({
+                            text: chunk.content,
+                            chunk_index: globalChunkIndex,
+                            msg_type: 'text',
+                        });
+                        // 首次文本产生时递增 local chunk index
+                        if (localChunkIdx === 0) {
+                            localChunkIdx = 1;
+                        }
                     }
 
                     // ===== 2. tool_calls 流 =====
@@ -288,9 +318,6 @@ ${sys_prompt ?? ''}
                             const idx = tc.index;
 
                             if (!toolCallMap.has(idx)) {
-                                // if(tc.function.name) {
-                                //     on_msg(`\n${`ai正在补充 ${tools_des_map[tc.function.name]?.get_name()} ...`}`)
-                                // }
                                 toolCallMap.set(idx, {
                                     id: tc.id,
                                     type: "function",
@@ -322,7 +349,12 @@ ${sys_prompt ?? ''}
                 },
                     controller:controller}
             );
-            on_msg("\n")
+            on_msg({
+                text: "\n",
+                chunk_index: globalChunkIndex,
+                msg_type: 'text',
+            });
+            globalChunkIndex++;
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
             // 累加本次 HTTP 请求的输入/输出统计
@@ -344,12 +376,11 @@ ${sys_prompt ?? ''}
                 on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
                 return;
             }
-            // const log_text =    `${assistantMessage.tool_calls.length} 工具。${JSON.stringify(assistantMessage.tool_calls.map(v=>v.function?.name))}`
-            // console.log(`工具执行开始 ${log_text} `)
-            // 有 tool_calls，开始执行工具 这些工具必须是可以并发执行的，如果工具之前自己本身有前后顺序（工具函数内部自己处理），ai提供的列表是可以并发的
+
+            // 有 tool_calls，开始执行工具
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
-                    if(!call.function?.name)return; // 有问题
+                    if(!call.function?.name)return;
                     const toolName = call.function.name as string;
                     let tool_info_value = ai_agentService.getToolInfo(toolName, {}) ?? {
                         get_name: () => toolName,
@@ -402,7 +433,11 @@ ${sys_prompt ?? ''}
 
         }
 
-        on_msg("超出最大理解语义次数");
+        on_msg({
+            text: "超出最大理解语义次数",
+            chunk_index: globalChunkIndex,
+            msg_type: 'text',
+        });
         on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
     }
 

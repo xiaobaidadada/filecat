@@ -356,8 +356,8 @@ class QQBotConnection {
                     originMessages: workMessages,
                     user_id: this.user_id??this.SYSTEM_USER_ID,
                     controller,
-                    on_msg: (msg: string) => {
-                        assistantText += msg;
+                    on_msg: (payload) => {
+                        assistantText += payload.text;
                     },
                     on_end: (stats) => {
                         clearTimeout(timeout);

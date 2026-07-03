@@ -633,8 +633,9 @@ export class Ai_agentService {
                originMessages: workMessages,
                user_id: userId,
                controller,
-               on_msg: (msg) => {
-                   this.write_to_res(res, msg);
+               on_msg: (payload) => {
+                   // SSE 方式：只推文本内容（保持兼容）
+                   this.write_to_res(res, payload.text);
                },
                on_end: (stats) => {
                    responseFinished = true;
@@ -738,9 +739,14 @@ export class Ai_agentService {
                 originMessages: workMessages,
                 user_id: userId,
                 controller,
-                // ===== 流式推送：每个文本片段通过 ai_chat_msg 推送给客户端 =====
-                on_msg: (msg) => {
-                    wss.send(CmdType.ai_chat_msg, { text: msg });
+                // ===== 流式推送：每个文本片段通过 ai_chat_msg 推送给客户端，携带分块序号和消息类型 =====
+                on_msg: (payload) => {
+                    wss.send(CmdType.ai_chat_msg, {
+                        text: payload.text,
+                        chunk_index: payload.chunk_index,
+                        msg_type: payload.msg_type,
+                        tool_info: payload.tool_info,
+                    });
                 },
                 // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====
                 on_end: (stats) => {
@@ -960,8 +966,8 @@ export class Ai_agentService {
             ],
             user_id: user_id,
             controller,
-            on_msg: (msg) => {
-                fullContent += msg;
+            on_msg: (payload) => {
+                fullContent += payload.text;
             },
             on_end: () => {},
             sys_prompt: `你是一个独立的 AI 模型（${modelItem.note || modelItem.model}），请根据用户的要求完成任务并返回结果。${modelItem.sys_prompt ?? ''}`,

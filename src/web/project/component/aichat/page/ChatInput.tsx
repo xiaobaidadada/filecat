@@ -91,10 +91,11 @@ export default function ChatInput({
                 />
             </div>
             <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>
-            {sending === false ? (
-                <ButtonLittle text={t("发送")} clickFun={onSend}/>
-            ) : (
-                <div className="ai-thinking-indicator">
+            {/* 发送按钮：无论是否在 AI 执行中都可以发送（消息会排队） */}
+            <ButtonLittle text={sending ? t("排队发送") : t("发送")} clickFun={onSend}/>
+            {/* AI 执行中显示小型指示器 */}
+            {sending && (
+                <div className="ai-thinking-mini" title="AI 正在回复中...">
                     <div className="ai-thinking-dots">
                         <div className="ai-thinking-dot"/>
                         <div className="ai-thinking-dot"/>

@@ -195,7 +195,8 @@ export class ai_agent_class {
                 controller: this.controller,
 
                 // stream output：将 Markdown 转为 ANSI 后写入终端
-                on_msg: (msg: string) => {
+                on_msg: (payload) => {
+                    const msg = payload.text;
                     const ansi = this.md2ansi.push(msg);
                     if (ansi) {
                         this.pty.on_call(ansi);
