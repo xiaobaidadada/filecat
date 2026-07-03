@@ -450,7 +450,7 @@ export class AiAgentMemoryService {
         for (const it of session.messages) {
             llm_render_message(new_content,it)
         }
-        return context;
+        return new_content;
     }
 
     /** 获取会话的字符消耗统计 */

@@ -96,6 +96,9 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
         pojo.y = event.clientY;
         pojo.type = isDir ? FileTypeEnum.folder : getFileFormat(name);
         pojo.size = size;
+        // 检测：如果右键点击的文件已经在选中列表中，则标记"使用选中列表"
+        // 这样在删除等操作时，会删除所有选中的文件，而不仅仅是右键点击的文件
+        pojo.useSelectedList = selectList.includes(props.index);
         setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
     };
     const draggable_handle = async ( to: string) => {

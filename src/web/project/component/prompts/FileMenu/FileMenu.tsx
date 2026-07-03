@@ -441,15 +441,25 @@ export function FileMenu() {
             }
             case    common_menu_type.file_delete:
             {
-                setShowPrompt({
-                    show: true,
-                    type: PromptEnum.FilesDelete,
-                    overlay: true,
-                    data: {
-                        path: get_menu_file_path(),
-                        filename: showPrompt.data.filename
-                    }
-                });
+                // 如果右键的文件在选中列表中，则删除所有选中的文件（不传 path，FilesDelete 会走选中列表逻辑）
+                if (showPrompt.data.useSelectedList) {
+                    setShowPrompt({
+                        show: true,
+                        type: PromptEnum.FilesDelete,
+                        overlay: true,
+                        data: {}
+                    });
+                } else {
+                    setShowPrompt({
+                        show: true,
+                        type: PromptEnum.FilesDelete,
+                        overlay: true,
+                        data: {
+                            path: get_menu_file_path(),
+                            filename: showPrompt.data.filename
+                        }
+                    });
+                }
             }
             break
             case    common_menu_type.file_rename:

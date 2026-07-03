@@ -22,6 +22,8 @@ export class FileMenuData {
     is_share?:boolean;
     share_id?:string;
     share_token?:string;
+    /** 右键菜单时，如果右键的文件已在选中列表中，此标记为 true，表示操作应作用于选中列表 */
+    useSelectedList?:boolean;
 }
 
 
