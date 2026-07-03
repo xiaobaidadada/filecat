@@ -29,16 +29,18 @@
     min-width: 180px;
     padding: 10px;
     /*border-right: 1px solid #e5e7eb;*/
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 6px;
     background: #fafafa;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 /* 会话搜索框 */
 .chat-session-search {
     padding: 0 0 8px 0;
+    flex-shrink: 0;
 }
 
 .chat-session-search-input {
@@ -148,8 +150,9 @@
         /*border-right: 1px solid #e5e7eb;*/
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
         /*transition: .1s ease left;*/
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .chat-session-list.collapsed {
@@ -225,6 +228,7 @@
     flex: 1;
     padding: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -249,7 +253,7 @@
     color: #1e293b;
     align-self: flex-end;
     border-radius: 12px;
-    margin: 6px 0 6px 60px;
+    margin: 6px 36px 6px 60px;
     border-bottom: none;
 }
 
@@ -823,6 +827,25 @@
 
 .chat-session-item.batch-mode {
     padding-left: 2.5rem;
+}
+
+/* ===== 会话列表底部操作栏 ===== */
+.chat-session-items-wrap {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+}
+
+.chat-session-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 0 0;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
 }
 
 .chat-session-checkbox {

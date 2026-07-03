@@ -12,6 +12,7 @@ import { ws } from "../../../util/ws";
 import { CmdType, WsData } from "../../../../../common/frame/WsData";
 import { ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_content_part } from "../../../../../common/req/filecat.ai.pojo";
 import { Message } from "./chatTypes";
+import React, {useState} from 'react';
 
 /** 排队消息的结构 */
 interface QueuedMsg {
@@ -92,7 +93,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
             const ctx = data.context || {};
             const chunkText: string = ctx.text || '';
             const chunkIndex: number = ctx.chunk_index ?? 0;
-
             if (chunkText === '[DONE]') return;
 
             // 普通文本
@@ -129,25 +129,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const handleChatEnd = (data: WsData<any>) => {
             cleanup();
             setSending(false);
-            const ctx = data.context || {};
-
             // 清理未完成的加载气泡
-            if (currentLoading.is_loading) {
-                currentLoading.is_loading = false;
-                if (!currentLoading.text || currentLoading.text === "AI思考中...") {
-                    currentLoading.text = "（AI 未返回内容）";
-                }
-            }
-
-            // once_messages_list → 合并到最后一个 bot 气泡
-            if (ctx.once_messages_list?.length) {
-                const lastBot = [...newMessages].reverse().find(m => m.sender === 'bot');
-                if (lastBot) {
-                    lastBot.content_list = ctx.once_messages_list;
-                }
-            }
-
-            setMessages([...newMessages]);
+            currentLoading.is_loading = false;
             refreshSessions();
             scrollToBottom(true);
             onDone();

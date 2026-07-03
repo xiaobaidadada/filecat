@@ -547,13 +547,10 @@ export default function AiAgentChatPage() {
                 sysPromptList={sysPromptList}
                 batchMode={batchMode}
                 selectedMsgCount={selectedMsgIds.size}
-                selectedSessionCount={selectedSessionIds.size}
                 onToggleSessionPanel={toggleSessionPanel}
                 onCreateSession={createSession}
                 onToggleBatchMode={toggleBatchMode}
                 onBatchDeleteMessages={batchDeleteMessages}
-                onBatchDeleteSessions={batchDeleteSessions}
-                onClearAllSessions={clearAllSessions}
             />
 
             <div className="chat-page chat-page-with-sessions">
@@ -570,6 +567,9 @@ export default function AiAgentChatPage() {
                     batchMode={batchMode}
                     selectedSessionIds={selectedSessionIds}
                     onToggleSessionSelect={toggleSessionSelect}
+                    onToggleBatchMode={toggleBatchMode}
+                    onBatchDeleteSessions={batchDeleteSessions}
+                    onClearAllSessions={clearAllSessions}
                 />
 
                 <section className="chat-main">
@@ -593,6 +593,7 @@ export default function AiAgentChatPage() {
                         onToggleMsgSelect={toggleMsgSelect}
                         onDelete={handleDelete}
                         onCopy={handleCopy}
+                        onToggleBatchMode={toggleBatchMode}
                         t={t}
                     />
 

@@ -31,14 +31,6 @@ export interface ChatMsgPayload {
     text: string;
     /** 当前消息块在本次聊天中的序号（从 0 开始递增），前端用它区分不同气泡 */
     chunk_index: number;
-    /** 消息类型：text-普通文本, tool_start-工具调用开始, tool_end-工具调用结束 */
-    msg_type: 'text' | 'tool_start' | 'tool_end';
-    /** 工具调用相关信息（仅 tool_start / tool_end 时有效） */
-    tool_info?: {
-        tool_name?: string;
-        tool_display_name?: string;
-        tool_count?: number;
-    };
 }
 
 export interface ChatOptions {
@@ -279,11 +271,7 @@ ${sys_prompt ?? ''}
                 tool_call_ends:[]
             };
             once_messages_list.push(assistantMessage);
-
-
             const toolCallMap = new Map<number, any>();
-            /** 本轮的 chunk 索引，用于区分同一轮 LLM 调用中的不同消息块 */
-            let localChunkIdx = 0;
 
             //  调用 LLM（流式）
             const ioStats = { input_chars: 0, output_chars: 0 };
@@ -303,13 +291,8 @@ ${sys_prompt ?? ''}
                         // 携带 chunk_index，让前端可以区分独立气泡
                         on_msg({
                             text: chunk.content,
-                            chunk_index: globalChunkIndex,
-                            msg_type: 'text',
+                            chunk_index: globalChunkIndex
                         });
-                        // 首次文本产生时递增 local chunk index
-                        if (localChunkIdx === 0) {
-                            localChunkIdx = 1;
-                        }
                     }
 
                     // ===== 2. tool_calls 流 =====
@@ -351,8 +334,7 @@ ${sys_prompt ?? ''}
             );
             on_msg({
                 text: "\n",
-                chunk_index: globalChunkIndex,
-                msg_type: 'text',
+                chunk_index: globalChunkIndex
             });
             globalChunkIndex++;
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
@@ -435,8 +417,7 @@ ${sys_prompt ?? ''}
 
         on_msg({
             text: "超出最大理解语义次数",
-            chunk_index: globalChunkIndex,
-            msg_type: 'text',
+            chunk_index: globalChunkIndex
         });
         on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
     }

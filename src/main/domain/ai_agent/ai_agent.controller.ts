@@ -19,35 +19,36 @@ import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../.
 @JsonController("/ai_agent")
 export class Ai_AgentController {
 
-    @Post("/chat")
-    async chat(@Body({options: {limit: max_req_size}}) data: {
-        messages:ai_agent_messages,
-        session_id:string,
-    }, @Res() res: Response, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
 
-        // SSE headers
-        res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        res.setHeader("X-Accel-Buffering", "no");
-        const token = ctx.headers.authorization
-        let stream ;
-        try {
-        stream =  await ai_agentService.chat(data.messages, res, token, data.session_id)
-        } catch (err) {
-            console.log(err);
-            if (!res.writableEnded && !res.destroyed) {
-                const message =
-                    typeof err === 'string'
-                        ? err
-                        : err?.message || 'AI service error';
-                const user = userService.get_user_info_by_token(ctx.headers.authorization);
-                await ai_agentService.error_end_to_res(user.id,data.session_id,data.messages[data.messages.length-1].content,message,res)
-            }
+    // ===== AI 聊天 WebSocket 路由（替代 SSE /chat） =====
+
+    /**
+     * 客户端发起 AI 聊天请求（通过 WS）
+     * 服务端收到后异步处理，通过 ai_chat_msg / ai_chat_end / ai_chat_error 推送结果
+     */
+    @msg(CmdType.ai_chat_req)
+    async aiChatReq(data: WsData<any>) {
+        const ctx = data.context || {};
+        const wss = data.wss as Wss;
+        // 权限校验
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const { messages, session_id, sys_prompt } = ctx;
+        if (!messages?.length) {
+            return ''; // 没有消息，不处理
         }
-        return stream
+        // 异步启动聊天，不阻塞 WS 消息循环
+        ai_agentService.chat_ws(
+            messages,
+            wss.token,
+            wss,
+            session_id,
+            sys_prompt,
+        ).catch((err) => {
+            console.error('ai_chat_ws 异常:', err);
+        });
+        return ''; // 立即返回空，实际结果通过 ai_chat_msg/ai_chat_end/ai_chat_error 推送
     }
+
 
     @Get("/sessions")
     async sessions(@Req() ctx) {
@@ -290,34 +291,6 @@ export class Ai_AgentController {
 
     // ============================================================
 
-    // ===== AI 聊天 WebSocket 路由（替代 SSE /chat） =====
-
-    /**
-     * 客户端发起 AI 聊天请求（通过 WS）
-     * 服务端收到后异步处理，通过 ai_chat_msg / ai_chat_end / ai_chat_error 推送结果
-     */
-    @msg(CmdType.ai_chat_req)
-    async aiChatReq(data: WsData<any>) {
-        const ctx = data.context || {};
-        const wss = data.wss as Wss;
-        // 权限校验
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
-        const { messages, session_id, sys_prompt } = ctx;
-        if (!messages?.length) {
-            return ''; // 没有消息，不处理
-        }
-        // 异步启动聊天，不阻塞 WS 消息循环
-        ai_agentService.chat_ws(
-            messages,
-            wss.token,
-            wss,
-            session_id,
-            sys_prompt,
-        ).catch((err) => {
-            console.error('ai_chat_ws 异常:', err);
-        });
-        return ''; // 立即返回空，实际结果通过 ai_chat_msg/ai_chat_end/ai_chat_error 推送
-    }
 
     /**
      * 客户端主动取消正在进行的 AI 聊天

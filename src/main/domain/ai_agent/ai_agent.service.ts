@@ -589,84 +589,6 @@ export class Ai_agentService {
     //     return this.docs_data_map.size > 0
     // }
 
-    /**
-     * todo 把记忆当作知识库 每次会话都会保存一个 记忆列表并给出概要 让ai自己根据需求 去搜索多个概要 并可以创建子目录 子归类
-     * 对话每一次都需要把之前全部的message填充过去，所以对话越长，每一次对话的时候消耗的token越多
-     * todo 添加记忆能力，每一次对话都不断的让ai总结之前的聊天内容，节省token，现在可以通过让AI返回的时候内容尽量简洁一点，从而节省一点token
-     * @param originMessages
-     * @param res
-     * @param token
-     * @param session_id
-     */
-    public async chat(
-        originMessages: ai_agent_messages, // 只有一条用户的了
-        res: Response,
-        token: string,
-        session_id?: string,
-    ) {
-        const controller = new AbortController();
-        let responseFinished = false;
-
-        if (res) {
-            res.on("close", () => {
-                if (!responseFinished) {
-                    controller.abort();
-                }
-            });
-        }
-       const userId = userService.get_user_info_by_token(token).id;
-       const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
-       const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
-       const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
-           || formatAttachmentTitle(latestUserMessage?.attachments)
-           || "新会话";
-       const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
-       const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
-       let turnInputChars = 0;
-       let turnOutputChars = 0;
-
-       try {
-           const tools = ai_agentService.getModelToolSchemas();
-
-           await chat_core.chat({
-               tools,
-               originMessages: workMessages,
-               user_id: userId,
-               controller,
-               on_msg: (payload) => {
-                   // SSE 方式：只推文本内容（保持兼容）
-                   this.write_to_res(res, payload.text);
-               },
-               on_end: (stats) => {
-                   responseFinished = true;
-                   if (stats) {
-                       turnInputChars = stats.input_chars;
-                       turnOutputChars = stats.output_chars;
-                   }
-                   this.end_to_res(res, stats);
-                   const assistantText = (stats?.once_messages_list ?? [])
-                       .map(it => getContentAsString(it.content))
-                       .filter(Boolean)
-                       .join("\n\n");
-                   const assistantMessage:ai_agent_message_item = {
-                       role: "assistant",
-                       content: assistantText,
-                       content_list: stats?.once_messages_list ?? [],
-                   };
-                   aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
-                       input_chars: turnInputChars,
-                       output_chars: turnOutputChars,
-                   }).catch(console.error);
-               },
-               token
-           })
-
-       } catch (error) {
-           const msg = error.message??JSON.stringify(error)
-           await this.error_end_to_res(userId,session_id,latestUserMessage.content,msg,res)
-       }
-        return res;
-    }
 
     // ============ WebSocket 聊天方法（替代 SSE） ============
 
@@ -743,9 +665,7 @@ export class Ai_agentService {
                 on_msg: (payload) => {
                     wss.send(CmdType.ai_chat_msg, {
                         text: payload.text,
-                        chunk_index: payload.chunk_index,
-                        msg_type: payload.msg_type,
-                        tool_info: payload.tool_info,
+                        chunk_index: payload.chunk_index
                     });
                 },
                 // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====
@@ -759,10 +679,6 @@ export class Ai_agentService {
                         turnOutputChars = stats.output_chars;
                     }
                     wss.send(CmdType.ai_chat_end, {
-                        input_chars: turnInputChars,
-                        output_chars: turnOutputChars,
-                        once_messages_list: stats?.once_messages_list ?? [],
-                        session_id: session.id,
                     });
                     // 保存会话记录
                     const assistantText = (stats?.once_messages_list ?? [])
