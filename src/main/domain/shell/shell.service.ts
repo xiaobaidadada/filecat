@@ -24,6 +24,7 @@ import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUt
 import {DataUtil} from "../data/DataUtil";
 import {filecat_upgrade_class} from "./utils/filecat_upgrade";
 import {ai_agent_class} from "./utils/ai_agent";
+import {wss_interface} from "../../../common/frame/type";
 
 const {spawn, exec} = require('child_process');
 const platform = os.platform()
@@ -178,13 +179,14 @@ export class ShellService {
     }
 
     check_exe_cmd({
-                       user_id,cwd,pty_shell,token
+                       user_id,cwd,pty_shell,token,wss
                   }: {
         token?: string,
         user_id: string,
         pty_shell?: PtyShell,cwd?: string // 二选一
+        wss?:wss_interface
     }) {
-        return async (exe_cmd:string, params:string[]) => {
+        return async (exe_cmd:string, params:any[]) => {
             cwd = pty_shell?.cwd ?? cwd
             // 特殊自定义命令
             switch (exe_cmd) {
@@ -210,6 +212,7 @@ export class ShellService {
                 case filecat_cmd.ai:
                     params.push(user_id)
                     params.push(token)
+                    params.push(wss)
                     if (!this.check_permission({ user_id, permission: UserAuth.ai_chat_cmd})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行
                     } else {

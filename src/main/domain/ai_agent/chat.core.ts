@@ -23,6 +23,7 @@ import {
     ai_docs_setting_param,
     ai_agent_tool_call_item
 } from "../../../common/req/filecat.ai.pojo";
+import {wss_interface} from "../../../common/frame/type";
 
 export interface ChatOptions {
     originMessages: ai_agent_messages;
@@ -38,17 +39,25 @@ export interface ChatOptions {
     /** 可动态传入的环境变量配置，不传则使用全局 ai_config_env */
     aiEnv?: ai_agent_item_dotenv;
     tools?:ai_agent_params_type[]
+    wss?:wss_interface
 }
 
 export class ChatCore {
 
     /**
      * AI 命令确认 - 等待用户确认
-     * 同时支持 WS 前端和 CLI 命令行两种确认方式，任意一个先响应即采用
+     * 通过 wss（WebSocket 连接）向当前用户的所有标签页推送确认请求
      */
-    private async waitForCmdConfirm(user_id: string, cmd: string,token?:string): Promise<boolean> {
-        // 如果 dotenv 配置了直接执行，跳过确认
-        if (ai_config_env.allow_exec_cmd_directly || token == null) {
+    private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface): Promise<boolean> {
+        // 如果 dotenv 配置了直接执行，或者没有 wss 连接，跳过确认
+        if (ai_config_env.allow_exec_cmd_directly || wss == null) {
+            return true;
+        }
+
+        // 从 wss 对象上获取 token（用于查找该用户的所有标签页）
+        const token = wss.token;
+        if (!token) {
+            // 没有 token 的情况下，直接允许（兼容旧逻辑）
             return true;
         }
 
@@ -56,13 +65,14 @@ export class ChatCore {
         const askId = `confirm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         // 先在 ai_agentService 中注册 pending 确认，供 WS handler 匹配
+        // 直接存储 wss 对象，后续通过 wss.token 找到同一用户的所有标签页
         ai_agentService.pendingConfirmMap.set(askId, {
             user_id,
             cmd,
             createdAt: Date.now(),
             resolve: null as any,
             timeout: null as any,
-            token: token,
+            wss: wss,
         });
 
         return new Promise<boolean>((resolve) => {
@@ -94,9 +104,11 @@ export class ChatCore {
             }, 60000);
 
             // ===== 1. 向该用户的所有 WS 连接发送确认请求（同一 token 可能在多个标签页） =====
-            const allWss = WsUtil.get_all_wss_by_token(token)
-            if(!allWss || allWss.length === 0) {
-                throw "ws connecting not found";
+            const allWss = WsUtil.get_all_wss_by_token(token);
+            if (!allWss || allWss.length === 0) {
+                // 没有活跃的 WebSocket 连接，直接允许
+                safeResolve(true);
+                return;
             }
             const data = new WsData(CmdType.ai_confirm_cmd, {
                 askId,
@@ -104,14 +116,14 @@ export class ChatCore {
                 user_id
             });
             const encoded = data.encode();
-            for (const wss of allWss) {
-                wss.sendData(encoded);
+            for (const w of allWss) {
+                w.sendData(encoded);
             }
         });
     }
 
     // 检测权限 补充参数
-    private async permission_test(user_id, user: UserData, toolName, args: any, cwd,token) {
+    private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface) {
         switch (toolName) {
             case "exec_cmd": {
                 args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
@@ -121,7 +133,8 @@ export class ChatCore {
                     const code = await shellServiceImpl.check_exe_cmd({
                         user_id: user.id,
                         cwd: args.cwd,
-                        token: token
+                        token: token,
+                        wss
                     })(argv[0], argv.slice(1));
 
                     if (code === exec_type.not) {
@@ -130,7 +143,7 @@ export class ChatCore {
                 }
 
                 // 执行命令前需要用户确认
-                const approved = await this.waitForCmdConfirm(user_id, args.cmd,token);
+                const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss);
                 if (!approved) {
                     throw new Error(`用户拒绝了命令执行：${args.cmd}`);
                 }
@@ -357,9 +370,9 @@ ${sys_prompt ?? ''}
                         callItem.tool_args = args;
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
                         callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
-                        await this.permission_test(user_id, user, toolName, args, cwd,token);
+                        await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss);
 
-                        let result = await ai_agentService.callTool(toolName, args,user_id);
+                        let result = await ai_agentService.callTool(toolName, args,user_id,options.wss);
                         let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         callItem.success = true;
                         callItem.tool_result = resultStr;

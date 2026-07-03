@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from "path";
 import {ai_agent_chat_session_item, ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
 import {ai_agentService} from "../../ai_agent/ai_agent.service";
+import {wss_interface} from "../../../../common/frame/type";
 
 export class ai_agent_class {
 
@@ -23,6 +24,7 @@ export class ai_agent_class {
     sessionId: string;
     isTemporarySession: boolean = false;
     is_once = false;
+    wss:wss_interface
 
     controller = new AbortController();
 
@@ -65,7 +67,7 @@ export class ai_agent_class {
         pty: PtyShell,
         exit: () => void,
         print: (str: string) => void,
-        params: string[]
+        params: any[]
     ) {
         this.pty = pty;
         this.exit = exit
@@ -79,6 +81,10 @@ export class ai_agent_class {
             } else if( param === '--once') {
                 this.is_once = true;
             }else {
+                if(typeof param === 'object') {
+                    this.wss = param;
+                    continue
+                }
                 filteredParams.push(param);
             }
         }
@@ -181,6 +187,7 @@ export class ai_agent_class {
             const tools =ai_agentService.getModelToolSchemas();
             const workMessages = aiAgentMemoryService.build_context_by_session(this.session, this.pendingMessages);
             await chat_core.chat({
+                wss:this.wss,
                 tools,
                 originMessages: workMessages,
                 token: this.token,

@@ -42,6 +42,7 @@ import {
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
 import {robotService} from "./api_robot/robotService";
+import {wss_interface} from "../../../common/frame/type";
 
 const {
     cut,
@@ -666,6 +667,143 @@ export class Ai_agentService {
         return res;
     }
 
+    // ============ WebSocket 聊天方法（替代 SSE） ============
+
+    /** 存储活跃的 AI 聊天 AbortController，key 为 session_id，用于支持客户端取消 */
+    public activeChatControllers = new Map<string, AbortController>();
+
+    /**
+     * 通过 WebSocket 进行 AI 聊天（替代 SSE 的 /chat 接口）
+     * 
+     * 流程：
+     * 1. 客户端发送 ai_chat_req，服务端收到后调用此方法
+     * 2. 服务端通过 ai_chat_msg 推送 AI 流式回复片段
+     * 3. 服务端通过 ai_chat_end 推送结束信息（含 meta）
+     * 4. 如果出错，服务端通过 ai_chat_error 推送错误
+     * 5. 客户端可发送 ai_chat_abort 取消正在进行的聊天
+     * 
+     * @param originMessages - 原始消息列表
+     * @param token - 用户 token
+     * @param wss - WebSocket 连接对象（用于向该客户端推送消息）
+     * @param session_id - 可选的会话 ID
+     * @param sys_prompt - 可选的系统提示词
+     */
+    public async chat_ws(
+        originMessages: ai_agent_messages,
+        token: string,
+        wss: Wss,
+        session_id?: string,
+        sys_prompt?: string,
+    ) {
+        const controller = new AbortController();
+        let chatFinished = false;
+
+        // 注册 AbortController，以便客户端通过 ai_chat_abort 取消
+        if (session_id) {
+            // 如果同一个 session 已有活跃的聊天，先取消旧的
+            const oldController = this.activeChatControllers.get(session_id);
+            if (oldController) {
+                oldController.abort();
+            }
+            this.activeChatControllers.set(session_id, controller);
+        }
+
+        // 客户端断开时，自动取消
+        wss.setClose(() => {
+            if (!chatFinished) {
+                controller.abort();
+                if (session_id) {
+                    this.activeChatControllers.delete(session_id);
+                }
+            }
+        });
+
+        const userId = userService.get_user_info_by_token(token).id;
+        const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
+        const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
+        const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
+            || formatAttachmentTitle(latestUserMessage?.attachments)
+            || "新会话";
+        const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
+        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
+        let turnInputChars = 0;
+        let turnOutputChars = 0;
+
+        try {
+            const tools = ai_agentService.getModelToolSchemas();
+
+            await chat_core.chat({
+                wss,
+                tools,
+                originMessages: workMessages,
+                user_id: userId,
+                controller,
+                // ===== 流式推送：每个文本片段通过 ai_chat_msg 推送给客户端 =====
+                on_msg: (msg) => {
+                    wss.send(CmdType.ai_chat_msg, { text: msg });
+                },
+                // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====
+                on_end: (stats) => {
+                    chatFinished = true;
+                    if (session_id) {
+                        this.activeChatControllers.delete(session_id);
+                    }
+                    if (stats) {
+                        turnInputChars = stats.input_chars;
+                        turnOutputChars = stats.output_chars;
+                    }
+                    wss.send(CmdType.ai_chat_end, {
+                        input_chars: turnInputChars,
+                        output_chars: turnOutputChars,
+                        once_messages_list: stats?.once_messages_list ?? [],
+                        session_id: session.id,
+                    });
+                    // 保存会话记录
+                    const assistantText = (stats?.once_messages_list ?? [])
+                        .map(it => getContentAsString(it.content))
+                        .filter(Boolean)
+                        .join("\n\n");
+                    const assistantMessage: ai_agent_message_item = {
+                        role: "assistant",
+                        content: assistantText,
+                        content_list: stats?.once_messages_list ?? [],
+                    };
+                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
+                        input_chars: turnInputChars,
+                        output_chars: turnOutputChars,
+                    }).catch(console.error);
+                },
+                token,
+                sys_prompt,
+            });
+
+        } catch (error: any) {
+            chatFinished = true;
+            if (session_id) {
+                this.activeChatControllers.delete(session_id);
+            }
+            const errorMsg = error?.message ?? JSON.stringify(error);
+            wss.send(CmdType.ai_chat_error, { message: errorMsg });
+            // 保存错误到会话
+            try {
+                const userMsg: ai_agent_message_item = {
+                    role: "user",
+                    content: latestUserMessage?.content ?? "",
+                };
+                const errMsg: ai_agent_message_item = {
+                    role: "assistant",
+                    content: errorMsg,
+                };
+                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg, {
+                    input_chars: getContentAsString(userMsg.content).length,
+                    output_chars: errorMsg.length,
+                });
+            } catch (e) {
+                console.error("保存错误会话失败", e);
+            }
+        }
+    }
+
 
     public async reloadMcp() {
         await ai_agentMcpService.reload();
@@ -740,7 +878,7 @@ export class Ai_agentService {
      * - audio_speech（语音合成）：直接请求 audio/speech 接口
      * - audio_transcription / audio_translation：直接请求对应接口
      */
-    public async callModelTool(toolName: string, args: { prompt: string },user_id:string): Promise<string> {
+    public async callModelTool(toolName: string, args: { prompt: string },user_id:string,wss?:wss_interface): Promise<string> {
         const index = parseInt(toolName.replace('call_model_', ''), 10);
         const modelItem = ai_tool_models.find(m => m.index === index);
         if (!modelItem) {
@@ -759,7 +897,7 @@ export class Ai_agentService {
         switch (requestType) {
             case 'completions': {
                 // 对话类型：调用 chat_core.chat 获得完整功能链
-                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id);
+                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id,wss);
             }
 
             case 'images': {
@@ -807,12 +945,13 @@ export class Ai_agentService {
     /**
      * 以对话方式调用目标模型，再次使用 chat_core.chat 获得完整功能链
      */
-    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string,user_id:string): Promise<string> {
+    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string,user_id:string,wss?:wss_interface): Promise<string> {
 
         let fullContent = "";
         const controller = new AbortController();
 
         await chat_core.chat({
+            wss,
             originMessages: [
                 {
                     role: "user",
@@ -897,7 +1036,8 @@ export class Ai_agentService {
         createdAt: number;
         resolve: (approved: boolean) => void;
         timeout: any;
-        token: string;
+        /** 发起确认请求的 wss 连接（通过 wss.token 可以找到同一用户的所有标签页） */
+        wss?: wss_interface;
     }>();
 
     // ============ 插件工具管理 ============
@@ -975,10 +1115,10 @@ export class Ai_agentService {
         return ai_agentMcpService.getToolInfo(toolName, args);
     }
 
-    public async callTool(toolName: string, args: any,user_id:string) {
+    public async callTool(toolName: string, args: any,user_id:string,wss?:wss_interface) {
         // model tool（调用其他注册为 tool 的 AI 模型）
         if (this.isModelTool(toolName)) {
-            return this.callModelTool(toolName, args,user_id);
+            return this.callModelTool(toolName, args,user_id,wss);
         }
         // 内置工具
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {

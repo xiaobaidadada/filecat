@@ -1,4 +1,4 @@
-﻿import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
+import React, {useState, useRef, useEffect, useLayoutEffect} from 'react';
 import {ai_agentHttp, settingHttp} from "../../../util/config";
 import {throttle, debounce} from "../../../../../common/fun.util";
 import Header from "../../../../meta/component/Header";
@@ -17,6 +17,8 @@ import {$stroe} from "../../../util/store";
 import {MenuSelect} from "../../prompts/Prompt";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {useCmdConfirm} from "../useCmdConfirm";
+import {ws} from "../../../util/ws";
+import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta,
@@ -497,7 +499,7 @@ export default function AiAgentChatPage() {
             return;
         }
 
-        // completions 类型：走原有的 SSE 流式请求
+        // completions 类型：走 WebSocket 流式请求（替代 SSE）
         const call_pojo: Message =  {
             id:user_message.id +1,
             sender:'bot',
@@ -506,47 +508,64 @@ export default function AiAgentChatPage() {
         new_messages.push(call_pojo);
         setMessages([...new_messages]);
         let thinking_start = true
-        ai_agentHttp.sse_post("chat", {
-            messages: get_message(user_message),
-            session_id: sessionId,
-        },{
-            onMessage: (res) => {
+
+        // ===== WebSocket 方式 =====
+        // 注册 ai_chat_msg 监听：处理流式文本片段
+        const handleChatMsg = (data: WsData<any>) => {
+            const ctx = data.context || {};
+            if (ctx.text && ctx.text !== '[DONE]') {
                 if (thinking_start) {
                     call_pojo.text = "";
                     thinking_start = false;
                 }
-                try {
-                    const json = JSON.parse(res);
-                    const call_text_r = typeof json === "string"
-                        ? json
-                        : json?.choices?.[0]?.delta?.content ?? json?.choices?.[0]?.message?.content;
-                    if(call_text_r) {
-                        call_pojo.text+=call_text_r;
-                    }
-                } catch (e) {
-                    try {
-                        call_pojo.text+=JSON.parse(res);
-                    } catch (e) {
-                        call_pojo.text+=res;
-                    }
-                }
+                call_pojo.text += ctx.text;
                 set_messages([...new_messages]);
-            },
-            onDone: async (meta)=>{
-                set_sending(false)
-                if (meta?.once_messages_list?.length) {
-                    call_pojo.content_list = meta.once_messages_list;
-                    call_pojo.text = getMessageText({
-                        role: "assistant",
-                        content: call_pojo.text,
-                        content_list: meta.once_messages_list,
-                    } as ai_agent_message_item);
-                    // 直接使用 setMessages 确保立即渲染，不受 debounce 影响
-                    setMessages([...new_messages]);
-                }
-                await refreshSessions();
-                scrollToBottom(true);
             }
+        };
+
+        // 注册 ai_chat_end 监听：处理结束
+        const handleChatEnd = (data: WsData<any>) => {
+            // 清理监听器
+            ws.off_message(`message_${CmdType.ai_chat_msg}`, handleChatMsg);
+            ws.off_message(`message_${CmdType.ai_chat_end}`, handleChatEnd);
+            ws.off_message(`message_${CmdType.ai_chat_error}`, handleChatError);
+
+            set_sending(false);
+            const ctx = data.context || {};
+            if (ctx.once_messages_list?.length) {
+                call_pojo.content_list = ctx.once_messages_list;
+                call_pojo.text = getMessageText({
+                    role: "assistant",
+                    content: call_pojo.text,
+                    content_list: ctx.once_messages_list,
+                } as ai_agent_message_item);
+                setMessages([...new_messages]);
+            }
+            refreshSessions();
+            scrollToBottom(true);
+        };
+
+        // 注册 ai_chat_error 监听：处理错误
+        const handleChatError = (data: WsData<any>) => {
+            ws.off_message(`message_${CmdType.ai_chat_msg}`, handleChatMsg);
+            ws.off_message(`message_${CmdType.ai_chat_end}`, handleChatEnd);
+            ws.off_message(`message_${CmdType.ai_chat_error}`, handleChatError);
+
+            set_sending(false);
+            const ctx = data.context || {};
+            call_pojo.text = "AI请求出错: " + (ctx.message || '未知错误');
+            setMessages([...new_messages]);
+        };
+
+        // 注册监听
+        ws.addMsg(CmdType.ai_chat_msg, handleChatMsg);
+        ws.addMsg(CmdType.ai_chat_end, handleChatEnd);
+        ws.addMsg(CmdType.ai_chat_error, handleChatError);
+
+        // 发送 ai_chat_req 请求
+        ws.sendData(CmdType.ai_chat_req, {
+            messages: get_message(user_message),
+            session_id: sessionId,
         });
     };
 

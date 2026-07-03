@@ -290,6 +290,54 @@ export class Ai_AgentController {
 
     // ============================================================
 
+    // ===== AI 聊天 WebSocket 路由（替代 SSE /chat） =====
+
+    /**
+     * 客户端发起 AI 聊天请求（通过 WS）
+     * 服务端收到后异步处理，通过 ai_chat_msg / ai_chat_end / ai_chat_error 推送结果
+     */
+    @msg(CmdType.ai_chat_req)
+    async aiChatReq(data: WsData<any>) {
+        const ctx = data.context || {};
+        const wss = data.wss as Wss;
+        // 权限校验
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const { messages, session_id, sys_prompt } = ctx;
+        if (!messages?.length) {
+            return ''; // 没有消息，不处理
+        }
+        // 异步启动聊天，不阻塞 WS 消息循环
+        ai_agentService.chat_ws(
+            messages,
+            wss.token,
+            wss,
+            session_id,
+            sys_prompt,
+        ).catch((err) => {
+            console.error('ai_chat_ws 异常:', err);
+        });
+        return ''; // 立即返回空，实际结果通过 ai_chat_msg/ai_chat_end/ai_chat_error 推送
+    }
+
+    /**
+     * 客户端主动取消正在进行的 AI 聊天
+     */
+    @msg(CmdType.ai_chat_abort)
+    async aiChatAbort(data: WsData<any>) {
+        const ctx = data.context || {};
+        const wss = data.wss as Wss;
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const { session_id } = ctx;
+        if (session_id) {
+            const controller = ai_agentService.activeChatControllers.get(session_id);
+            if (controller) {
+                controller.abort();
+                ai_agentService.activeChatControllers.delete(session_id);
+            }
+        }
+        return '';
+    }
+
     @msg(CmdType.ai_confirm_cmd)
     async confirmCmd(data: WsData<any>) {
         const ctx = data.context || {};
@@ -306,14 +354,20 @@ export class Ai_AgentController {
                 dismiss: true,
             });
             const dismissEncoded = dismissData.encode();
-            const allWss = WsUtil.get_all_wss_by_token(pending.token);
-            for (const w of allWss) {
-                if (w !== data.wss) {
-                    w.sendData(dismissEncoded);
+            // 通过 pending.wss.token 找到同一用户的所有连接
+            const token = pending.wss?.token;
+            if (token) {
+                const allWss = WsUtil.get_all_wss_by_token(token);
+                for (const w of allWss) {
+                    if (w !== data.wss) {
+                        w.sendData(dismissEncoded);
+                    }
                 }
             }
         }
-        data.wss.setClose(()=>{
+        // 当前连接关闭时，自动拒绝确认请求
+        const currentWss = data.wss as Wss;
+        currentWss.setClose(() => {
             const pending_p = ai_agentService.pendingConfirmMap.get(askId);
             if (pending_p) {
                 clearTimeout(pending_p.timeout);
@@ -325,9 +379,12 @@ export class Ai_AgentController {
                     dismiss: true,
                 });
                 const closeDismissEncoded = closeDismissData.encode();
-                const closeAllWss = WsUtil.get_all_wss_by_token(pending_p.token);
-                for (const w of closeAllWss) {
-                    w.sendData(closeDismissEncoded);
+                const token_p = pending_p.wss?.token;
+                if (token_p) {
+                    const closeAllWss = WsUtil.get_all_wss_by_token(token_p);
+                    for (const w of closeAllWss) {
+                        w.sendData(closeDismissEncoded);
+                    }
                 }
             }
         })
