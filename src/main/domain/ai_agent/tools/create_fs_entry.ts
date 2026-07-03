@@ -1,5 +1,5 @@
 import {mkdir, writeFile} from "fs/promises";
-
+import pathLib from "path"; // 导入 path 模块
 
 export const create_fs_entry_schema = {
     type: "function",
@@ -44,37 +44,31 @@ export const create_fs_entry_tool = async ({
     content?: string;
     recursive?: boolean;
 }) => {
+    // 使用 pathLib.normalize 确保路径格式正确，处理跨平台差异
+    const normalizedPath = pathLib.normalize(path);
 
     // =========================
     // 📁 创建目录
     // =========================
     if (type === "dir") {
-        await mkdir(path, {recursive});
-        return {
-            ok: true,
-            type,
-            path,
-            created: true
-        };
+        await mkdir(normalizedPath, { recursive });
+        return { ok: true, type, path: normalizedPath, created: true };
     }
 
     // =========================
     // 📄 创建文件
     // =========================
     if (type === "file") {
+        // 使用 pathLib.dirname 自动获取父目录，无需手动计算字符串位置
+        const dir = pathLib.dirname(normalizedPath);
 
-        // 自动创建父目录（避免 writeFile 报错）
-        const dir = path.substring(0, path.lastIndexOf("/"));
-        if (dir) {
-            await mkdir(dir, {recursive: true});
-        }
-
-        await writeFile(path, content ?? "", "utf-8");
+        await mkdir(dir, { recursive: true });
+        await writeFile(normalizedPath, content ?? "", "utf-8");
 
         return {
             ok: true,
             type,
-            path,
+            path: normalizedPath,
             created: true,
             hasContent: !!content
         };

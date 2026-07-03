@@ -447,7 +447,7 @@ export class AiAgentMemoryService {
         // 新会话内容加入
         context.push(...incoming)
         const new_content:ai_agent_messages = []
-        for (const it of session.messages) {
+        for (const it of context) {
             llm_render_message(new_content,it)
         }
         return new_content;

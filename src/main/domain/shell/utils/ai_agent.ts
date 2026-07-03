@@ -89,8 +89,8 @@ export class ai_agent_class {
             }
         }
 
-        this.userId = filteredParams[filteredParams.length - 2];
-        this.token = filteredParams[filteredParams.length - 1];
+        this.userId = filteredParams[filteredParams.length - 3];
+        this.token = filteredParams[filteredParams.length - 2];
 
         const messages: string[] = [];
         
