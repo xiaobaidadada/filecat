@@ -71,6 +71,14 @@
     overflow-x: hidden;
 }
 
+/* 桌面端 collapsed 窄栏时隐藏搜索框和操作栏 */
+@media (min-width: 737px) {
+    .chat-session-list.collapsed .chat-session-search,
+    .chat-session-list.collapsed .chat-session-actions {
+        display: none;
+    }
+}
+
 .chat-session-item {
     width: 100%;
     min-height: 44px;
@@ -160,6 +168,9 @@
         min-width: 16em;
         padding: 10px;
         padding-top: var(--top-length);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .chat-session-list.collapsed .chat-session-item {

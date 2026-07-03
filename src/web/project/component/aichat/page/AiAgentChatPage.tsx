@@ -19,7 +19,6 @@ import { NotySuccess } from "../../../util/noty";
 import { using_confirm } from "../../prompts/prompt.util";
 import { RCode } from "../../../../../common/Result.pojo";
 import { useCmdConfirm } from "../useCmdConfirm";
-import { use_llm_request_type } from "../type";
 import { $stroe } from "../../../util/store";
 import { InputText } from "../../../../meta/component/Input";
 
@@ -31,6 +30,7 @@ import {
     ai_agent_content_part,
     ai_agent_usage_stats,
     ai_system_prompt_item,
+    ai_agent_Item,
 } from "../../../../../common/req/filecat.ai.pojo";
 
 // ===== 拆分的子模块 =====
@@ -67,7 +67,6 @@ export default function AiAgentChatPage() {
 
     // ===== 全局/持久化状态 =====
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
-    const [requestType, setRequestType] = useAtom($stroe.ai_request_type);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [batchMode, setBatchMode] = useState(false);
     const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
@@ -82,7 +81,8 @@ export default function AiAgentChatPage() {
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
     const [currentModelName, setCurrentModelName] = useState('');
 
-    const REQUEST_TYPE_OPTIONS = use_llm_request_type();
+    /** 从 env_config 中读取当前模型的 request_type */
+    const getRequestType = () => env_config?.current?.ai_config?.request_type || 'completions';
 
     // ===== 防抖版 setMessages（自动滚动） =====
     const setMessagesDebounced = useRef(
@@ -262,6 +262,9 @@ export default function AiAgentChatPage() {
         const userMsg: Message = { id: Date.now(), sender: 'user', text, attachments };
         setInputValue('');
         setPendingAttachments([]);
+
+
+        const requestType = getRequestType();
 
         // 非 completions → 走专用处理器
         if (requestType !== 'completions') {
@@ -498,11 +501,12 @@ export default function AiAgentChatPage() {
 
     // ===== 生命周期 =====
     const init = async () => {
-        const result = await settingHttp.get("ai_agent_setting/env");
-        if (result.code === RCode.Success) {
-            env_config.current = result.data;
-            const note = result.data.current_model_note || '';
-            const found = (result.data.options_agent_model_list ?? []).find((m: any) => m.label === note);
+        // 拉取 env 配置
+        const envResult = await settingHttp.get("ai_agent_setting/env");
+        if (envResult.code === RCode.Success) {
+            env_config.current = envResult.data;
+            const note = envResult.data.ai_config?.model || '';
+            const found = (envResult.data.ai_config_env?.options_agent_model_list ?? []).find((m: any) => m.label === note);
             setCurrentModelName(found ? found.value : note);
         }
         await loadSessions();
@@ -530,10 +534,6 @@ export default function AiAgentChatPage() {
     }, [messages]);
 
     const toggleSessionPanel = () => {
-        if (window.innerWidth <= 736) {
-            set_ai_session_collapsed(true);
-            return;
-        }
         set_ai_session_collapsed(prev => !prev);
     };
 
@@ -549,7 +549,6 @@ export default function AiAgentChatPage() {
                 selectedMsgCount={selectedMsgIds.size}
                 onToggleSessionPanel={toggleSessionPanel}
                 onCreateSession={createSession}
-                onToggleBatchMode={toggleBatchMode}
                 onBatchDeleteMessages={batchDeleteMessages}
             />
 
@@ -575,11 +574,7 @@ export default function AiAgentChatPage() {
                 <section className="chat-main">
                     {messages?.length === 0 && (
                         <div className="chat-header">
-                            <div>
-                                {requestType === 'completions'
-                                    ? t('询问服务器的一切')
-                                    : REQUEST_TYPE_OPTIONS.find(o => o.value === requestType)?.label ?? requestType}
-                            </div>
+                            <div>{t('询问服务器的一切')}</div>
                         </div>
                     )}
 
@@ -611,6 +606,7 @@ export default function AiAgentChatPage() {
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                         fileInputRef={fileInputRef}
+                        requestType={getRequestType()}
                     />
                 </section>
             </div>

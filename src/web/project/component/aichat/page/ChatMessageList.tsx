@@ -19,6 +19,7 @@ interface ChatMessageListProps {
     onToggleMsgSelect: (id: number) => void;
     onDelete: (id: number) => void;
     onCopy: (text: string) => void;
+    onToggleBatchMode: () => void;
     t: (key: string) => string;
 }
 
@@ -32,6 +33,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     onToggleMsgSelect,
     onDelete,
     onCopy,
+    onToggleBatchMode,
     t,
 }) => {
     return (
@@ -65,12 +67,19 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                         /* 正常消息气泡 */
                         <>
                             {renderMessageByType(msg)}
-                            {!batchMode && (
-                                <div className="message-actions">
-                                    <button onClick={() => onDelete(msg.id)}>{t("删除")}</button>
-                                    <button onClick={() => onCopy(msg.text)}>{t("复制")}</button>
-                                </div>
-                            )}
+                            <div className="message-actions">
+                                {batchMode ? (
+                                    <button onClick={() => onToggleMsgSelect(msg.id)}>
+                                        {selectedMsgIds.has(msg.id) ? t("取消选择") : t("选择")}
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button onClick={() => onDelete(msg.id)}>{t("删除")}</button>
+                                        <button onClick={() => onCopy(msg.text)}>{t("复制")}</button>
+                                        <button onClick={onToggleBatchMode}>{t("多选")}</button>
+                                    </>
+                                )}
+                            </div>
                         </>
                     )}
                 </div>

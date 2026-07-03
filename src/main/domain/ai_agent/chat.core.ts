@@ -332,10 +332,10 @@ ${sys_prompt ?? ''}
                 },
                     controller:controller}
             );
-            on_msg({
-                text: "\n",
-                chunk_index: globalChunkIndex
-            });
+            // on_msg({
+            //     text: "\n",
+            //     chunk_index: globalChunkIndex
+            // });
             globalChunkIndex++;
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 

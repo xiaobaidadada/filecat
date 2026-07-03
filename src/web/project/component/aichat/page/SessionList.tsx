@@ -54,17 +54,15 @@ export default function SessionList({
     return (
         <aside
             className={`chat-session-list ${!ai_session_collapsed ? "" : "active"} ${ai_session_collapsed ? "collapsed" : ""}`}>
-            {!ai_session_collapsed && (
-                <div className="chat-session-search">
-                    <input
-                        type="text"
-                        className="chat-session-search-input"
-                        placeholder={t('搜索会话')}
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                    />
-                </div>
-            )}
+            <div className="chat-session-search">
+                <input
+                    type="text"
+                    className="chat-session-search-input"
+                    placeholder={t('搜索会话')}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                />
+            </div>
             <div className="chat-session-items-wrap">
                 {filteredSessions.map(session => (
                     <div key={session.id}>
@@ -114,30 +112,28 @@ export default function SessionList({
                     </div>
                 ))}
             </div>
-            {/* 底部操作栏 */}
-            {!ai_session_collapsed && (
-                <div className="chat-session-actions">
+            {/* 底部操作栏：始终渲染，桌面端 collapsed 窄栏时通过 CSS 隐藏 */}
+            <div className="chat-session-actions">
+                <ActionButton
+                    icon={batchMode ? "check_circle" : "checklist"}
+                    title={batchMode ? t("取消批量选择") : t("批量选择")}
+                    onClick={onToggleBatchMode}
+                />
+                {batchMode && (selectedSessionIds?.size ?? 0) > 0 && (
                     <ActionButton
-                        icon={batchMode ? "check_circle" : "checklist"}
-                        title={batchMode ? t("取消批量选择") : t("批量选择")}
-                        onClick={onToggleBatchMode}
+                        icon={"delete"}
+                        title={t("删除选中会话")}
+                        onClick={onBatchDeleteSessions}
                     />
-                    {batchMode && (selectedSessionIds?.size ?? 0) > 0 && (
-                        <ActionButton
-                            icon={"delete"}
-                            title={t("删除选中会话")}
-                            onClick={onBatchDeleteSessions}
-                        />
-                    )}
-                    {!batchMode && (
-                        <ActionButton
-                            icon={"delete_sweep"}
-                            title={t("删除全部会话")}
-                            onClick={onClearAllSessions}
-                        />
-                    )}
-                </div>
-            )}
+                )}
+                {!batchMode && (
+                    <ActionButton
+                        icon={"delete_sweep"}
+                        title={t("删除全部会话")}
+                        onClick={onClearAllSessions}
+                    />
+                )}
+            </div>
         </aside>
     );
 }

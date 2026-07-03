@@ -1,9 +1,11 @@
 import React from 'react';
+import { getDefaultStore } from 'jotai';
 import {ai_agentHttp} from "../../../util/config";
 import {Icon} from "../../../../meta/component/Button";
 import Md from "../../file/component/markdown/Md";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {ai_agent_tool_call_item, getContentAsString} from "../../../../../common/req/filecat.ai.pojo";
+import { $stroe } from "../../../util/store";
 
 /**
  * 根据消息自身携带的多模态属性渲染不同的消息展示
@@ -353,16 +355,15 @@ function EmbeddingsResultRenderer({embeddings: propEmbeddings, text}: { embeddin
 // ============================================================
 
 /**
- * 从 localStorage 读取图片生成的自定义参数
+ * 从 jotai store 读取图片生成的自定义参数
  */
 function getImagesExtraParams(): Record<string, any> {
     try {
-        const saved = localStorage.getItem("ai_images_extra_params");
-        if (saved) {
-            return JSON.parse(saved);
-        }
-    } catch {}
-    return {};
+        const store = getDefaultStore();
+        return store.get($stroe.ai_images_extra_params) || {};
+    } catch {
+        return {};
+    }
 }
 
 /**

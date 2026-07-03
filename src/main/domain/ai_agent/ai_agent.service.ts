@@ -486,8 +486,8 @@ export class Ai_agentService {
 
     get_env() {
         return {
-            ...ai_config_env,
-            current_model_note: ai_config?.model,
+            ai_config_env:ai_config_env,
+            ai_config:ai_config
         };
     }
 

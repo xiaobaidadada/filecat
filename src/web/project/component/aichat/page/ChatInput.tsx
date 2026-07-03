@@ -1,6 +1,7 @@
 import React, {useRef} from 'react';
 import {useTranslation} from "react-i18next";
 import {Icon, ActionButton, ButtonLittle} from "../../../../meta/component/Button";
+import ModelParamsButton from "./ModelParamsDialog";
 
 /**
  * 待发送附件条（文件标签展示）
@@ -44,7 +45,8 @@ export default function ChatInput({
                                       onAddFiles,
                                       onDrop,
                                       onDragOver,
-                                      fileInputRef
+                                      fileInputRef,
+                                      requestType,
                                   }: {
     inputValue: string;
     onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -59,6 +61,7 @@ export default function ChatInput({
     onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
+    requestType: string;
 }) {
     const {t} = useTranslation();
 
@@ -91,6 +94,7 @@ export default function ChatInput({
                 />
             </div>
             <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>
+            <ModelParamsButton requestType={requestType} />
             {/* 发送按钮：无论是否在 AI 执行中都可以发送（消息会排队） */}
             <ButtonLittle text={sending ? t("排队发送") : t("发送")} clickFun={onSend}/>
             {/* AI 执行中显示小型指示器 */}

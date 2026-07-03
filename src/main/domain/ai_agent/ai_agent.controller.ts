@@ -174,6 +174,9 @@ export class Ai_AgentController {
         try {
             const response = await llmImagesGenerate(data);
             const result = await response.json();
+            if( result?.data == null) {
+                throw result;
+            }
             // 构造带多模态属性的 assistant 消息
             const images = (result?.data ?? []).map((img: any) => ({
                 url: img.url,
@@ -186,7 +189,7 @@ export class Ai_AgentController {
             const assistantMsg: ai_agent_message_item = {
                 role: "assistant",
                 // content: imageTexts || `生成了 ${images.length} 张图片`,
-                content: `生成了 ${images?.length??0} 张图片`,
+                // content: `生成了 ${images?.length??0} 张图片`,
                 images,
             };
             const finalSessionId = await this.saveNonCompletionTurn(userId, data?.session_id, data.prompt, assistantMsg);
