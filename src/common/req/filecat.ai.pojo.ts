@@ -278,6 +278,16 @@ export type ai_agent_content_image = {
     image_url: { url: string }; // todo 进行真实url 更省token
 };
 
+
+export type tool_call_type = {
+    "id": string,
+    "type": "function"|string,
+    "function": {
+        "name": string,
+        "arguments": string
+    }
+}
+
 /**
  * 多模态内容项
  */
@@ -289,10 +299,12 @@ export type ai_agent_content_part = ai_agent_content_text | ai_agent_content_ima
 export type ai_agent_content = string | ai_agent_content_part[]
 
 export class ai_agent_message_item {
+    // ai 能识别的字段
     role: AI_Agent_Role;
     content?: ai_agent_content;
     tool_call_id?: string;
     attachments?: ai_agent_message_attachment_item[];
+    tool_calls?:tool_call_type[]
 
     // ============ 多模态结果字段（前端自判断） ============
     /** 图片生成结果（OpenAI 格式 images/generations 的 response.data） */
@@ -302,11 +314,10 @@ export class ai_agent_message_item {
     /** Embeddings 向量数据 */
     embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
 
-    tool_calls?:any[]
+
 
     // 临时用
     tool_call_ends?:ai_agent_tool_call_item[];
-
     // 不给 ai 给前端
     content_list?:ai_agent_message_item[];
 }

@@ -38,6 +38,9 @@ const MAX_SUMMARY_CHARS = 6000;
 // 长期记忆的最大字符数，超过后保留最新内容，避免长期记忆无限增长。
 const MAX_LONG_MEMORY_CHARS = 6000;
 
+// tool工具内容最大长度，只起到展示 让AI知道调用了就行
+const MAX_TOOL_CONTENT_CHARS  = 100;
+
 //  id of session
 function nowId() {
     return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -68,31 +71,58 @@ function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_a
     };
 }
 
-function llm_normalizeMessage(message: ai_agent_message_item): ai_agent_message_item {
-    const {
-        content_list,
-        tool_call_ends,
-        tool_calls,
-        ...rest
-    } = message as ai_agent_message_item & {
-        content_list?: ai_agent_message_item[];
-        tool_call_ends?: ai_agent_tool_call_item[];
-        tool_calls?: any[];
-    };
-    const legacyCallListKey = ["call", "list"].join("_");
-    delete (rest as Record<string, unknown>)[legacyCallListKey];
+function llm_normalizeMessage_one(message: ai_agent_message_item) {
+    // delete (rest as Record<string, unknown>)['call_list'];
     const normalized: ai_agent_message_item = {
         // 这些字段是 llm 能够识别的字段
-        ...rest,
+        // ...rest,
         role: message.role,
         content: message.content ?? "",
-        tool_call_id: message.tool_call_id,
+        // tool_call_id: message.tool_call_id,
         attachments: (message.attachments ?? []).map(normalizeAttachment),
     };
     if (message.tool_calls?.length) {
-        normalized.tool_calls = message.tool_calls;
+        normalized.tool_calls = message.tool_calls.map(v=>{
+            if(v.function?.arguments) {
+                v.function.arguments = v.function.arguments.slice(-MAX_TOOL_CONTENT_CHARS)+";省略..."
+            }
+            return v
+        });
     }
-    return normalized;
+    if(normalized.attachments?.length) {
+        const contentStr = getContentAsString(normalized.content);
+        return  {
+            role: normalized.role,
+            content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim(),
+            tool_call_id: normalized.tool_call_id
+        }
+    }
+    return normalized
+}
+
+function llm_normalizeMessage(message: ai_agent_message_item) {
+    const list:ai_agent_message_item[] = []
+    if(message.content_list?.length) {
+        for (const it of message.content_list) {
+            list.push(...llm_normalizeMessage(it))
+        }
+        return list;
+    }
+    const normalized = llm_normalizeMessage_one(message)
+    list.push(normalized)
+    if(normalized.attachments?.length) {
+        return list;
+    }
+    if(message.tool_call_ends?.length) {
+        for (const it of message.tool_call_ends) {
+            list.push({
+                role: "tool",
+                tool_call_id: it.tool_call_id,
+                content: (it.tool_result??it.error??"").slice(-MAX_TOOL_CONTENT_CHARS)+";省略..."
+            })
+        }
+    }
+    return list;
 }
 
 function formatAttachment(attachment: ai_agent_message_attachment_item) {
@@ -107,19 +137,9 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
 }
 
 // 格式化 用户消息 把一些json结构化的数据 字符串化 给 llm 用
-function llm_renderMessageForPrompt(message: ai_agent_message_item): ai_agent_message_item {
+function llm_render_message(content:ai_agent_messages,message: ai_agent_message_item) {
     const normalized = llm_normalizeMessage(message);
-    if (!normalized.attachments?.length) {
-        return normalized;
-    }
-
-    // 特殊的结构
-    const contentStr = getContentAsString(normalized.content);
-    return {
-        role: normalized.role,
-        content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim(),
-        tool_call_id: normalized.tool_call_id
-    };
+    content.push(...normalized)
 }
 
 function messageChars(messages: ai_agent_messages) {
@@ -322,7 +342,7 @@ export class AiAgentMemoryService {
         if (!session) return;
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
-            .map(llm_normalizeMessage);
+            .map(llm_normalizeMessage_one);
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
@@ -423,9 +443,13 @@ export class AiAgentMemoryService {
             });
         }
         // 历史的最近记忆加入
-        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES).map(llm_renderMessageForPrompt));
+        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES));
         // 新会话内容加入
-        context.push(...incoming.map(llm_renderMessageForPrompt));
+        context.push(...incoming)
+        const new_content:ai_agent_messages = []
+        for (const it of session.messages) {
+            llm_render_message(new_content,it)
+        }
         return context;
     }
 
@@ -456,11 +480,11 @@ export class AiAgentMemoryService {
         if (!oldMessages.length) return;
 
         try {
-            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(llm_renderMessageForPrompt));
+            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(llm_normalizeMessage_one));
             session.summary = compressed.summary.slice(0, MAX_SUMMARY_CHARS);
             session.long_term_memory = this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
         } catch (e) {
-            const text = oldMessages.map(it => `${it.role}: ${llm_renderMessageForPrompt(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
+            const text = oldMessages.map(it => `${it.role}: ${llm_normalizeMessage_one(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
             session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
         }
         session.messages = recentMessages;
