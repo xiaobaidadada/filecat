@@ -83,10 +83,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </MenuSelect>
             )}
             {/* 当前模型下拉选择器 */}
-            {(envConfigRef.current?.options_agent_model_list?.length ?? 0) > 0 && (
+            {(envConfigRef.current?.ai_config_env?.options_agent_model_list?.length ?? 0) > 0 && (
                 <Select
                     value={currentModelName}
-                    options={envConfigRef.current.options_agent_model_list?.map(m => ({ title: m.label, value: m.value })) ?? []}
+                    options={envConfigRef.current.ai_config_env.options_agent_model_list?.map(m => ({ title: m.label, value: m.value })) ?? []}
                     onChange={(value) => {
                         setCurrentModelName(value);
                         ai_agentHttp.post("set_active_model", { model_name: value }).then(() => {

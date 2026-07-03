@@ -366,10 +366,7 @@ table th {
   opacity: 0.6;
   transition: opacity 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
-.chat-message.user::after {
-  background: var(--icon-blue);
-  opacity: 0.8;
-}
+
 
 /* Google 暗黑模式 - AI 执行中最后一个气泡头像呼吸 */
 [data-sending="true"] .chat-message.bot:last-of-type::before {
