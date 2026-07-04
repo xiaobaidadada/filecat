@@ -4,12 +4,16 @@ import * as fs from 'fs'
 import {threads_msg_type, WorkerMessage} from "./threads.type";
 const EventEmitter = require('events');
 
+/**
+ * on_message 回调的 reply 函数：主线程在处理子线程发来的带 msg.id 的消息时，
+ * 可以调用 reply(data) 来主动回复子线程，让子线程的 threads_send_async 能收到响应。
+ */
+export type MainThreadReply = (data: any, error?: string) => void;
+
 export interface on_threads_event {
-    message: (msg: WorkerMessage, worker: NodeWorker) => void;
+    message: (msg: WorkerMessage, worker: NodeWorker, reply: MainThreadReply) => void;
     threads_exit: (index:number) => void;
-    [key: `message_${number}`]: (msg: WorkerMessage, worker: NodeWorker) => void;
-    // ab/d/${a}，a 可以是 string 或 number
-    // [key: `ab/d/${string | number}`]: (msg: WorkerMessage, worker: NodeWorker) => void;
+    [key: `message_${number}`]: (msg: WorkerMessage, worker: NodeWorker, reply: MainThreadReply) => void;
 }
 
 
@@ -209,16 +213,28 @@ export class ThreadsMain {
 
     /**
      * 内部消息分发
+     *
+     * reply 机制：当子线程通过 threads_send_async 发来带 msg.id 的消息时，
+     * 主线程 on_message 回调可以通过第三个参数 reply(data) 主动回复子线程，
+     * 使子线程的 threads_send_async Promise 被 resolve。
      */
-    private  handle_message(msg: WorkerMessage, worker: NodeWorker) {
-        // 如果带 id，则 resolve 对应 promise
+    private handle_message(msg: WorkerMessage, worker: NodeWorker) {
+        // 如果带 id，则 resolve 对应 promise（这是主线程 post 等子线程响应的场景）
         if (msg.id && this.pending_resolves.has(msg.id)) {
             const fn = this.pending_resolves.get(msg.id)!;
             fn(msg.data);
             this.pending_resolves.delete(msg.id);
         }
-        this.emit_message('message',msg,worker)
-        this.emit_message(`message_${msg.type}`, msg,worker);
+
+        // 构建 reply 函数：当 on_message 回调需要主动回复子线程时调用
+        const reply: MainThreadReply = msg.id != null
+            ? (data: any, error?: string) => {
+                worker.postMessage({ id: msg.id, type: msg.type, data, error });
+              }
+            : () => {}; // 如果没有 id，reply 是空操作（fire-and-forget）
+
+        this.emit_message('message', msg, worker, reply);
+        this.emit_message(`message_${msg.type}`, msg, worker, reply);
     }
 
     private async forceTerminateAll() {

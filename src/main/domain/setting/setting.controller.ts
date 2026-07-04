@@ -14,6 +14,8 @@ import path from "path"
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {ServerEvent} from "../../other/config";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
+import {aiAgentMemoryService} from "../ai_agent/ai_agent.memory";
+import {aiAgentLongTermMemoryService} from "../ai_agent/ai_agent.long_term_memory";
 import {ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 import {Public} from "../../other/middleware/decorator";
 
@@ -242,6 +244,42 @@ export class SettingController {
     async ai_mcp_tools_reload(@Req() ctx, @Body() req: { index: number }) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(await ai_agentService.reloadMcpServer(Number(req?.index)));
+    }
+
+    // ============ 长期记忆 API ============
+
+    @Get("/ai_long_term_memory_setting")
+    ai_long_term_memory_setting_get(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(aiAgentLongTermMemoryService.get_setting());
+    }
+
+    @Post("/ai_long_term_memory_setting/save")
+    ai_long_term_memory_setting_save(@Body() req: { open: boolean }, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        aiAgentLongTermMemoryService.save_setting({ open: req.open });
+        return Sucess("1");
+    }
+
+    /** 获取指定时间桶类型的长期记忆内容 */
+    @Get("/ai_long_term_memory_bucket/:type")
+    ai_long_term_memory_bucket_get(@Param("type") type: string, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        if (!['week', 'month', 'year', 'forever'].includes(type)) {
+            return Fail("type must be week/month/year/forever");
+        }
+        return Sucess(aiAgentLongTermMemoryService.readTypeFile(type as 'week' | 'month' | 'year' | 'forever'));
+    }
+
+    /** 保存指定时间桶类型的长期记忆内容（编辑器直接写入纯文本） */
+    @Post("/ai_long_term_memory_bucket/:type/save")
+    ai_long_term_memory_bucket_save(@Param("type") type: string, @Body() req: { data: string }, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        if (!['week', 'month', 'year', 'forever'].includes(type)) {
+            return Fail("type must be week/month/year/forever");
+        }
+        aiAgentLongTermMemoryService.writeTypeFile(type as 'week' | 'month' | 'year' | 'forever', req.data);
+        return Sucess("1");
     }
 
     // 系统会话提示词

@@ -127,12 +127,14 @@ export class QQBotConnection {
             case OpCode.HeartAck: break;
             case OpCode.Reconnect:
                 console.log('[QQ Bot] 服务端要求重连');
-                this.stop();
+                this.clearHeartbeat();
+                if (this.ws) { this.ws.close(); this.ws = null; }
                 if (this.config.open) this.start().catch(console.error);
                 break;
             case OpCode.InvalidSession:
                 console.log('[QQ Bot] 无效 session，重新连接');
-                this.stop();
+                this.clearHeartbeat();
+                if (this.ws) { this.ws.close(); this.ws = null; }
                 if (this.config.open) this.start().catch(console.error);
                 break;
         }

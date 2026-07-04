@@ -110,10 +110,12 @@ export class TcpSyncClientService {
 
 export const tcpSyncClientService = new TcpSyncClientService();
 
-ThreadsFilecat.on_message('message', (msg)=>{
+ThreadsFilecat.on_message('message', (msg, _worker, reply)=>{
     const { type  } = msg
     if(type === threads_msg_type.file_watch_send) {
         const {current_client_id,buffer} = msg.data
-        tcpSyncClientService.send_data(current_client_id, buffer).catch(console.error);
+        tcpSyncClientService.send_data(current_client_id, buffer)
+            .then(() => reply(null))          // 发送成功，通知子线程
+            .catch((err) => reply(null, err?.message || String(err))); // 发送失败，也通知子线程
     }
 })

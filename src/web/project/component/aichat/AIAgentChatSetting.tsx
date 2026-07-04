@@ -91,6 +91,9 @@ export default function AIAgentChatSetting() {
     // 系统会话提示词
     const [sys_prompt_list, set_sys_prompt_list] = useState<ai_system_prompt_item[]>([]);
 
+    // 长期记忆开关
+    const [long_term_memory_open, set_long_term_memory_open] = useState(false);
+
     const tip = using_tip()
     const {check_user_auth} = use_auth_check();
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
@@ -142,6 +145,12 @@ export default function AIAgentChatSetting() {
         const sys_prompt_result = await settingHttp.get("ai_system_prompts");
         if (sys_prompt_result.code === RCode.Success) {
             set_sys_prompt_list(sys_prompt_result.data ?? []);
+        }
+
+        // 加载长期记忆设置
+        const ltm_result = await settingHttp.get("ai_long_term_memory_setting");
+        if (ltm_result.code === RCode.Success) {
+            set_long_term_memory_open(ltm_result.data?.open ?? false);
         }
     }
     useEffect(()=>{
@@ -663,6 +672,41 @@ export default function AIAgentChatSetting() {
                                     ];
                                     return new_list;
                                 })} width={"10rem"}/>
+                            </CardFull>
+
+                            {/* ============ 长期记忆 ============ */}
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("长期记忆")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(t("开启后跨会话保存记忆。四个固定文件：周/月/年/永久。每周结束自动压缩周→月，每月结束自动压缩月→年，每年结束自动压缩年→永久。编辑按钮可手动查看和修改。"))}} title={"信息"}/></span>}
+                                      titleCom={<div>
+                                          <Switch checked={long_term_memory_open} onChange={async (v)=>{
+                                              set_long_term_memory_open(v);
+                                              await settingHttp.post("ai_long_term_memory_setting/save", {open: v});
+                                              NotySuccess(t("长期记忆设置已保存"));
+                                          }} title={t("开关")}/>
+                                      </div>}>
+                                <div style={{display: "flex", gap: "0.5rem", padding: "0.5rem 0", flexWrap: "wrap"}}>
+                                    {([
+                                        {type: "week", label: t("周记忆"), tip: t("上限3000字")},
+                                        {type: "month", label: t("月记忆"), tip: t("上限6000字")},
+                                        {type: "year", label: t("年记忆"), tip: t("上限9000字")},
+                                        {type: "forever", label: t("永久记忆"), tip: t("上限12000字")},
+                                    ] as const).map(({type, label, tip}) => (
+                                        <ActionButton key={type} icon={"edit"} title={`${t("编辑")} ${label} (${tip})`} onClick={async () => {
+                                            const res = await settingHttp.get(`ai_long_term_memory_bucket/${type}`);
+                                            const content = res.code === RCode.Success ? (res.data ?? '') : '';
+                                            editor_data.set_value_temp(content);
+                                            setEditorSetting({
+                                                model: "ace/mode/text",
+                                                open: true,
+                                                fileName: `long_term_memory_${type}.txt`,
+                                                save: async (context) => {
+                                                    await settingHttp.post(`ai_long_term_memory_bucket/${type}/save`, {data: context});
+                                                    editor_data.set_value_temp('');
+                                                    NotySuccess(`${label} ${t("已保存")}`);
+                                                },
+                                            });
+                                        }}/>
+                                    ))}
+                                </div>
                             </CardFull>
 
                         </Column>

@@ -433,3 +433,11 @@ export class ai_rebot_item {
 export class ai_rebot_setting {
     list: ai_rebot_item[] = [];
 }
+
+// ============ 长期记忆 ============
+
+/** 长期记忆设置 */
+export class ai_long_term_memory_setting {
+    /** 是否开启长期记忆 */
+    open: boolean = false;
+}

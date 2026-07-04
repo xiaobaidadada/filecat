@@ -43,7 +43,7 @@ export function search_file(data: WsData<LogViewerPojo>) {
     start_worker_threads()
     const ram_id = ThreadsFilecat.generate_random_id()
     wss.dataMap.set('worker', ram_id);
-    const on_message = (msg)=>{
+    const on_message = (msg, _worker, _reply)=>{
         const { type  } = msg
         const {find_index, progress,ram_id} = msg.data
         if(msg.data.ram_id !== ram_id) return;

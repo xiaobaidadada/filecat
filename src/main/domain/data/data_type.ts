@@ -104,6 +104,7 @@ export enum data_common_key {
     ai_rebot_setting = "ai_rebot_setting", // 机器人配置
     token_cache = "token_cache", // token 缓存持久化
     auto_upgrade_setting = "auto_upgrade_setting", // 自动升级设置
+    ai_long_term_memory_setting = "ai_long_term_memory_setting", // 长期记忆开关设置
 }
 
 

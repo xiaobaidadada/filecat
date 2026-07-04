@@ -236,6 +236,7 @@ export class ChatCore {
                 content: `
 用户当前所在的根目录是 ${rootPath}，
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
+当前 execPath 的位置是${process.execPath}。
 
 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
 你的能力是控制电脑服务器，执行任何可以控制服务器的命令，实现高效的运维，写代码，服务器问答，智能电脑服务器的自动化助手。

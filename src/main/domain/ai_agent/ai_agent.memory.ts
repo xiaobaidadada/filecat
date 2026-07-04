@@ -5,11 +5,13 @@ import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_agent_Item} from "../../../common/req/filecat.ai.pojo";
 import {ai_agentService} from "./ai_agent.service";
+import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
 import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
-    ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength
+    ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength,
+    ai_long_term_memory_setting,
 } from "../../../common/req/filecat.ai.pojo";
 
 type SessionMeta = ai_agent_chat_session_meta & {
@@ -432,6 +434,15 @@ export class AiAgentMemoryService {
                     `
             }
         ];
+        // 跨会话长期记忆（按周/月/年/永久桶存储）
+        const longTermContext = aiAgentLongTermMemoryService.buildContext();
+        if (longTermContext) {
+            context.push({
+                role: "system",
+                content: longTermContext
+            });
+        }
+
         if (session?.summary || session?.long_term_memory) {
             // 记忆加入
             context.push({
@@ -489,6 +500,9 @@ export class AiAgentMemoryService {
             session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
         }
         session.messages = recentMessages;
+
+        // 将压缩后的 long_term_memory 同步到跨会话长期记忆
+        aiAgentLongTermMemoryService.syncMemory(session);
     }
 
     private mergeMemory(oldMemory: string, nextMemory: string) {
@@ -549,17 +563,16 @@ export class AiAgentMemoryService {
                     const data = line.slice(5).trim();
                     if (!data || data === "[DONE]") continue;
                     try {
-                        const json = JSON.parse(data);
-                        text += json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? "";
-                    } catch {
-                    }
+                        const json1 = JSON.parse(data);
+                        text += json1.choices?.[0]?.delta?.content ?? json1.choices?.[0]?.message?.content ?? "";
+                    } catch {}
                 }
             }
             return text;
         }
-        const json = await res.json();
-        return json.choices?.[0]?.message?.content ?? "";
+        const json2 = await res.json();
+        return json2.choices?.[0]?.message?.content ?? "";
     }
-}
 
+}
 export const aiAgentMemoryService = new AiAgentMemoryService();
