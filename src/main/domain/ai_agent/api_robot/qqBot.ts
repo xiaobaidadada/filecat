@@ -32,7 +32,7 @@ async function sendC2CMessage(openid: string, content: string, msg_id: string, a
             content, msg_type: 0, msg_id,
         }, { headers: { Authorization: get_token(accessToken), 'Content-Type': 'application/json' } });
     } catch (err: any) {
-        console.error('[QQ Bot] 回复单聊消息失败:', err.message);
+        console.error('[QQ Bot] 回复单聊消息失败:', err);
     }
 }
 
