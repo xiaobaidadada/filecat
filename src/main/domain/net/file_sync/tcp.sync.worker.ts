@@ -148,10 +148,13 @@ export class TcpSyncWorkerService {
                     mtime = stats.mtimeMs;
                     size = stats.size;
 
-                    const pathHash = getFilePathHash(runtime.local_dir, fullPath);
-                    if (runtime.cache_file_map[pathHash]) {
-                        if (runtime.cache_file_map[pathHash].mtime === mtime) {
-                            return;
+                    // 全量同步模式下不依赖缓存，强制同步所有文件
+                    if (!runtime.task.full_sync) {
+                        const pathHash = getFilePathHash(runtime.local_dir, fullPath);
+                        if (runtime.cache_file_map[pathHash]) {
+                            if (runtime.cache_file_map[pathHash].mtime === mtime) {
+                                return;
+                            }
                         }
                     }
 

@@ -385,6 +385,16 @@ export class AiAgentMemoryService {
         if (!meta) return;
         meta.title = session.title;
         this.saveIndex(store);
+        // 同步更新 session 文件中的 title，防止 appendTurn 回写时覆盖掉用户修改的标题
+        try {
+            const sessionData = this.read_session(userId, meta);
+            if (sessionData) {
+                sessionData.title = session.title;
+                this.writeSession(userId, sessionData, meta.file_name);
+            }
+        } catch (e) {
+            console.error("sessions_update_meta: 同步更新 session 文件失败", e);
+        }
     }
 
     // 将本次机器人的聊天结果加入到历史会话中
