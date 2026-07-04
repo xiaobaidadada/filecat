@@ -62,8 +62,9 @@ export class HttpsSettingReq {
 // 自动升级设置
 export class AutoUpgradeSettingReq {
     open: boolean = false;
-    // npm 模式：镜像地址（registry URL）
-    npm_registry: string = '';
+    // 统一的系统版本检测地址（npm registry 或镜像），用于获取最新版本号
+    // 默认 https://registry.npmjs.org，npm 升级时也作为 registry 地址
+    version_check_url: string = 'https://registry.npmjs.org';
     // exe 模式：下载地址模板（用户可自定义，留空则用官方默认）
     exe_download_url: string = '';
     // 定时检测频率，单位秒，默认 180 秒（3分钟）

@@ -112,10 +112,13 @@ export class UserController {
         pojo.process_env_run_env = process.env.run_env as string
         pojo.sys_env = settingService.get_sys_env()
         if(Date.now() - this.latest_count_time > 3000) {
-            HttpRequest.get(`https://registry.npmjs.org/filecat`,{},5000).then((res) => {
+            const registryUrl = settingService.get_version_check_url();
+            HttpRequest.get(`${registryUrl}/filecat`,{},5000).then((res) => {
                 if(res && typeof res === "object") {
                     this.latest_version = res["dist-tags"].latest;
                 }
+            }).catch(e=>{
+                console.log(e)
             })
             this.latest_count_time = Date.now();
         }

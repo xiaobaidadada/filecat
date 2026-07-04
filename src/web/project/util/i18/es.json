@@ -542,11 +542,11 @@
   "「强制推送」会覆盖远程分支，请谨慎使用": "\"Force Push\" will overwrite the remote branch, use with caution",
   "配置表": "Config Table",
   "自动升级": "Actualización Automática",
-  "npm 镜像地址": "npm Registry Mirror",
-  "留空使用官方 registry.npmjs.org": "Dejar vacío para usar registry.npmjs.org oficial",
   "exe 下载地址模板": "Plantilla de URL de descarga EXE",
   "留空使用官方 GitHub Releases": "Dejar vacío para usar GitHub Releases oficial",
   "检测频率（秒）": "Intervalo de verificación (segundos)",
   "默认180秒（3分钟）": "Predeterminado 180s (3 minutos)",
-  "检测间隔不能小于10秒": "El intervalo de verificación no puede ser menor de 10 segundos"
+  "检测间隔不能小于10秒": "El intervalo de verificación no puede ser menor de 10 segundos",
+  "系统版本检测地址": "URL de verificación de versión",
+  "版本检测地址不能为空": "La URL de verificación no puede estar vacía"
 }

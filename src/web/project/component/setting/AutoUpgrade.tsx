@@ -15,19 +15,18 @@ export function AutoUpgrade() {
     const {check_user_auth} = use_auth_check();
     
     const [open, setOpen] = useState(false);
-    const [npmRegistry, setNpmRegistry] = useState('');
+    const [versionCheckUrl, setVersionCheckUrl] = useState('https://registry.npmjs.org');
     const [exeDownloadUrl, setExeDownloadUrl] = useState('');
     const [checkInterval, setCheckInterval] = useState(180);
     
-    // 获取安装方式
-    const runEnv = process.env.run_env as string || 'npm'; // 默认 npm
+    const runEnv = process.env.run_env as string || 'npm';
     
     const fetchSetting = async () => {
         const result = await settingHttp.get("auto_upgrade_setting");
         if (result.code === RCode.Success) {
             const data = result.data as AutoUpgradeSettingReq;
             setOpen(data.open || false);
-            setNpmRegistry(data.npm_registry || '');
+            setVersionCheckUrl(data.version_check_url || 'https://registry.npmjs.org');
             setExeDownloadUrl(data.exe_download_url || '');
             setCheckInterval(data.check_interval_seconds || 180);
         }
@@ -38,13 +37,17 @@ export function AutoUpgrade() {
     }, []);
     
     const saveSetting = async () => {
+        if (!versionCheckUrl) {
+            NotyFail(t("版本检测地址不能为空"));
+            return;
+        }
         if (open && (!checkInterval || checkInterval < 10)) {
             NotyFail(t("检测间隔不能小于10秒"));
             return;
         }
         const req = new AutoUpgradeSettingReq();
         req.open = open;
-        req.npm_registry = npmRegistry;
+        req.version_check_url = versionCheckUrl;
         req.exe_download_url = exeDownloadUrl;
         req.check_interval_seconds = checkInterval;
         const result = await settingHttp.post("auto_upgrade_setting/save", req);
@@ -58,22 +61,22 @@ export function AutoUpgrade() {
     }
     
     return <Card title={t("自动升级")} rightBottomCom={<ButtonText text={t('保存')} clickFun={saveSetting}/>}>
+        {/* 版本检测地址：始终显示 */}
+        <div>{t("系统版本检测地址")}</div>
+        <InputText 
+            placeholder={'https://registry.npmjs.org'} 
+            value={versionCheckUrl} 
+            handleInputChange={(value) => { setVersionCheckUrl(value); }} 
+        />
+
+        {/* 开启/关闭开关 */}
         <Select 
             value={open} 
             onChange={(value) => { setOpen(value); }} 
             options={[{title: t("开启"), value: true}, {title: t("关闭"), value: false}]} 
         />
         {open && <>
-            {runEnv === 'npm' ? (
-                <div>
-                    <div>{t("npm 镜像地址")}</div>
-                    <InputText 
-                        placeholder={t('留空使用官方 registry.npmjs.org')} 
-                        value={npmRegistry} 
-                        handleInputChange={(value) => { setNpmRegistry(value); }} 
-                    />
-                </div>
-            ) : (
+            {runEnv === 'exe' && (
                 <div>
                     <div>{t("exe 下载地址模板")}</div>
                     <InputText 

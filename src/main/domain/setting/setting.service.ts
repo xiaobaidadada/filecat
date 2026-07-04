@@ -41,11 +41,11 @@ import {
     ai_system_prompt_item,
     json_params_default
 } from "../../../common/req/filecat.ai.pojo";
+import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
 const ffmpeg = require('fluent-ffmpeg');
 
-const needle = require('needle');
 const Mustache = require('mustache');
 const cron = require("node-cron");
 
@@ -146,12 +146,17 @@ export class SettingService {
                         const location = item[1];
                         if (location) {
                             if ((location as string).startsWith("http")) {
-                                const response = await needle('get', location, ctx.headers);
+                                const response = await axios.get(location, {
+                                    headers: ctx.headers as any,
+                                    responseType: 'arraybuffer',
+                                    validateStatus: () => true,
+                                });
                                 for (let key in response.headers) {
+                                    // 跳过 transfer-encoding 等导致分块问题的头
+                                    if (['transfer-encoding', 'connection'].includes(key.toLowerCase())) continue;
                                     ctx.res.setHeader(key, response.headers[key]);
-                                    // ctx.set(key, response.headers[key]);
                                 }
-                                ctx.res.status(response.statusCode).send(response.body);
+                                ctx.res.status(response.status).send(Buffer.from(response.data));
                             } else {
                                 let sys_file_path = path.join(location); // 可以删除 .. 符号
                                 let stats = await FileUtil.statSync(location);
@@ -393,27 +398,32 @@ export class SettingService {
         const data = DataUtil.get(data_common_key.auto_upgrade_setting);
         if (!data) {
             const def = new AutoUpgradeSettingReq();
-            def.open = false;
-            def.check_interval_seconds = 180;
-            def.npm_registry = '';
-            def.exe_download_url = '';
             return def;
         }
         return data as AutoUpgradeSettingReq;
     }
 
+    /**
+     * 获取版本检测地址（npm registry），统一入口：
+     * user.controller.ts 获取最新版本、自动升级检测、npm 升级镜像，都走这个地址
+     */
+    public get_version_check_url(): string {
+        const setting = this.get_auto_upgrade_setting();
+        return setting.version_check_url || 'https://registry.npmjs.org';
+    }
+
     public set_auto_upgrade_setting(req: AutoUpgradeSettingReq) {
+        if (!req.version_check_url) {
+            req.version_check_url = 'https://registry.npmjs.org';
+        }
+        try {
+            new URL(req.version_check_url);
+        } catch {
+            throw '版本检测地址格式不正确';
+        }
         if (req.open) {
             if (!req.check_interval_seconds || req.check_interval_seconds < 10) {
                 throw '检测间隔不能小于10秒';
-            }
-            // npm registry 格式校验（可选，留空则默认官方）
-            if (req.npm_registry) {
-                try {
-                    new URL(req.npm_registry);
-                } catch {
-                    throw 'npm 镜像地址格式不正确';
-                }
             }
         }
         DataUtil.set(data_common_key.auto_upgrade_setting, req);
@@ -432,16 +442,14 @@ export class SettingService {
         console.log(`[AutoUpgrade] 开始检测更新，当前版本: ${process.env.version}，安装方式: ${runEnv}`);
 
         try {
-            // 获取最新版本号（从 npm registry）
-            const registryUrl = runEnv === 'npm' && setting.npm_registry
-                ? setting.npm_registry
-                : 'https://registry.npmjs.org';
-            const res = await needle('get', `${registryUrl}/filecat`, {}, { timeout: 15000 });
-            if (!res || !res.body || typeof res.body !== 'object') {
+            // 获取最新版本号（统一使用 version_check_url）
+            const registryUrl = this.get_version_check_url();
+            const body = await HttpRequest.get(`${registryUrl}/filecat`, {}, 15000);
+            if (!body || typeof body !== 'object') {
                 console.log('[AutoUpgrade] 获取版本信息失败');
                 return;
             }
-            const latestVersion = res.body['dist-tags']?.latest;
+            const latestVersion = body['dist-tags']?.latest;
             if (!latestVersion) {
                 console.log('[AutoUpgrade] 未获取到最新版本号');
                 return;
@@ -471,10 +479,10 @@ export class SettingService {
                     file_path: localPath,
                 });
             } else {
-                // npm 模式
+                // npm 模式：registry 也用 version_check_url
                 await ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade, {
                     run_env: 'npm',
-                    registry: setting.npm_registry || undefined,
+                    registry: registryUrl,
                     paths: process.env.PATH,
                 });
             }
