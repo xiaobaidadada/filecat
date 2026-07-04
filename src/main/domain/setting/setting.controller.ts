@@ -517,6 +517,13 @@ export class SettingController {
         return Sucess("1");
     }
 
+    @Post("/auto_upgrade_setting/upgrade_now")
+    async upgrade_now(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        await settingService.upgrade_now();
+        return Sucess("1");
+    }
+
     // ============ 插件管理 API ============
 
     @Get("/plugin/list")

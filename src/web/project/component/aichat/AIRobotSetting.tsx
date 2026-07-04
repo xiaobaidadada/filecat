@@ -42,6 +42,16 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
             { key: 'clientSecret', label: '密钥', type: 'password', placeholder: '请输入机器人密钥', required: true },
         ],
     },
+    dingtalk: {
+        key: 'dingtalk',
+        label: '钉钉机器人',
+        icon: 'chat',
+        color: '#0089FF',
+        fields: [
+            { key: 'appId', label: 'ClientId (AppKey)', type: 'text', placeholder: '请输入应用 ClientId', required: true },
+            { key: 'clientSecret', label: 'ClientSecret (AppSecret)', type: 'password', placeholder: '请输入应用 ClientSecret', required: true },
+        ],
+    },
 };
 
 // 默认平台 key（添加卡片时的默认选择）

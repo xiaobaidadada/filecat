@@ -104,6 +104,8 @@ export function using_env_prompt() {
                 <ul>
                    <li> 1. qq 机器人需要先在手机 app 中添加，然后在https://q.qq.com/qqbot/ 登录机器人配置页面，在开发管理中复制机器人的 appId,appSecret 到这里就完成了配置了。
                    </li>
+                    <li> 2. https://opensource.dingtalk.com/developerpedia/docs/explore/tutorials/stream/bot/nodejs/create-bot 这个是钉钉机器人开通教程，注意复制钉钉的 clientId 的是时候不要复制成appId 了。
+                    </li>
                 </ul>
             </div>
         }

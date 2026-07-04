@@ -510,6 +510,17 @@ export class SettingService {
         }, intervalMs);
     }
 
+    /** 立即检查并升级（幂等：调用后仍复用已有的 timer，不会创建多个） */
+    public async upgrade_now(): Promise<void> {
+        const setting = this.get_auto_upgrade_setting();
+        if (!setting.open) {
+            throw '自动升级未开启';
+        }
+        console.log('[AutoUpgrade] 手动触发立即升级检查...');
+        // _auto_upgrade_do 本身已经有 withLock 防止并发
+        await this._auto_upgrade_do();
+    }
+
     public get_recycle_dir_map_list(): string[][] {
         let v = DataUtil.get(data_common_key.recycle_bin_key) ?? []
         if (typeof v === "string") {

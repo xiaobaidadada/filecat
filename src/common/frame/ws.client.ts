@@ -61,7 +61,6 @@ export class WsClient {
             this._socket.binaryType = "arraybuffer";
 
             this._socket.addEventListener('open', () => {
-                console.log(`WebSocket 已连接: ${this._url}`);
                 resolve(true);
                 this.start_heart_interval()
             });

@@ -18,6 +18,7 @@ export function AutoUpgrade() {
     const [versionCheckUrl, setVersionCheckUrl] = useState('https://registry.npmjs.org');
     const [exeDownloadUrl, setExeDownloadUrl] = useState('');
     const [checkInterval, setCheckInterval] = useState(180);
+    const [upgrading, setUpgrading] = useState(false);
     
     const runEnv = process.env.run_env as string || 'npm';
     
@@ -53,6 +54,20 @@ export function AutoUpgrade() {
         const result = await settingHttp.post("auto_upgrade_setting/save", req);
         if (result.code === RCode.Success) {
             NotySuccess(t("保存成功"));
+        }
+    };
+
+    const upgradeNow = async () => {
+        setUpgrading(true);
+        try {
+            const result = await settingHttp.post("auto_upgrade_setting/upgrade_now", {});
+            if (result.code === RCode.Success) {
+                NotySuccess(t("已触发升级检测，请查看服务端日志"));
+            }
+        } catch (e) {
+            NotyFail(t("触发升级失败"));
+        } finally {
+            setUpgrading(false);
         }
     };
     
@@ -92,6 +107,13 @@ export function AutoUpgrade() {
                 value={checkInterval} 
                 handleInputChange={(value) => { setCheckInterval(Number(value) || 180); }} 
             />
+            {/* 立即升级按钮 */}
+            <div style={{ marginTop: '12px' }}>
+                <ButtonText 
+                    text={upgrading ? t("升级检测中...") : t("立即升级")} 
+                    clickFun={upgradeNow}
+                />
+            </div>
         </>}
     </Card>;
 }

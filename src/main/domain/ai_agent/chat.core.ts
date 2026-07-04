@@ -3,7 +3,7 @@ import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
 import {ai_agent_params_type, ai_tools} from "./tools/ai_agent.constant";
-import {ai_agentService,  ai_config, ai_config_env, ai_config_search_doc} from "./ai_agent.service";
+import {ai_agentService} from "./ai_agent.service";
 import {llmPostStream} from "./llm_request";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
@@ -60,7 +60,7 @@ export class ChatCore {
      */
     private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface): Promise<boolean> {
         // 如果 dotenv 配置了直接执行，或者没有 wss 连接，跳过确认
-        if (ai_config_env.allow_exec_cmd_directly || wss == null) {
+        if (ai_agentService.ai_config_env?.allow_exec_cmd_directly || wss == null) {
             return true;
         }
 
@@ -206,8 +206,8 @@ export class ChatCore {
         } = options;
 
         // 使用传入的配置，如果未传入则回退到全局变量
-        const config = aiConfig ?? ai_config;
-        const env = aiEnv ?? ai_config_env;
+        const config = aiConfig ?? ai_agentService.ai_config;
+        const env = aiEnv ?? ai_agentService.ai_config_env;
 
         // 统计每次 HTTP 请求大模型的输入/输出字符数
         let total_input_chars = 0;

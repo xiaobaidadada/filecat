@@ -55,8 +55,8 @@ const {
 // export let API_KEY = process.env.AI_API_KEY;
 // export let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 // export let MODEL = "doubao-seed-1-6";
-export let ai_config: ai_agent_Item
-export let ai_config_env = new ai_agent_item_dotenv()
+// export let ai_config: ai_agent_Item
+// export let ai_config_env = new ai_agent_item_dotenv()
 export let ai_config_search_doc = new ai_docs_setting_param()
 
 /** 注册为 tool 的 model 配置列表 */
@@ -86,6 +86,9 @@ export class Ai_agentService {
     }> = new Map()
     docs_info = new ai_docs_load_info()
     public all_wss_set = new Set<Wss>;
+
+    public ai_config: ai_agent_Item
+    public ai_config_env = new ai_agent_item_dotenv()
 
 
     public async search_docs({keywords}: { keywords: string[] }) {
@@ -486,8 +489,8 @@ export class Ai_agentService {
 
     get_env() {
         return {
-            ai_config_env:ai_config_env,
-            ai_config:ai_config
+            ai_config_env:ai_agentService.ai_config_env,
+            ai_config:ai_agentService.ai_config
         };
     }
 
@@ -553,7 +556,7 @@ export class Ai_agentService {
     }
 
     public load_key() {
-        ai_config_env = new ai_agent_item_dotenv()
+        this.ai_config_env = new ai_agent_item_dotenv()
         // this.have_ai_is_open = false
         const r = settingService.ai_agent_setting()
         ai_tool_models = []; // 重置
@@ -566,9 +569,9 @@ export class Ai_agentService {
                 // MODEL = it.model
                 // BASE_URL = it.url
                 // API_KEY = it.token
-                ai_config = it
+                this.ai_config = it
                 if (it.dotenv) {
-                    Env.load(it.dotenv, ai_config_env);
+                    Env.load(it.dotenv, this.ai_config_env);
                 }
                 have_open = true
                 // this.have_ai_is_open = true
@@ -576,7 +579,7 @@ export class Ai_agentService {
             }
         }
         if(have_open === false) {
-            ai_config = undefined
+            this.ai_config = undefined
         }
         // API_KEY = undefined
         // BASE_URL = undefined

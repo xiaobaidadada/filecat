@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "6.19.0",
+  "version": "6.20.0",
   "description": "FileCat File Browser Server Manager",
   "author": "xiaobaidadada",
   "repository": {
@@ -133,7 +133,8 @@
     "webpack-node-externals": "^3.0.0",
     "windows-shortcuts": "^0.1.6",
     "ws": "^8.16.0",
-    "xxhashjs": "^0.2.2"
+    "xxhashjs": "^0.2.2",
+    "dingtalk-stream": "^2.1.6-beta.1"
   },
   "keywords": [
     "文件服务器",
