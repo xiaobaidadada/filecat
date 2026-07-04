@@ -439,7 +439,7 @@ export class SettingService {
         if (!setting.open) return;
 
         const runEnv = process.env.run_env as string;
-        console.log(`[AutoUpgrade] 开始检测更新，当前版本: ${process.env.version}，安装方式: ${runEnv}`);
+        // console.log(`[AutoUpgrade] 开始检测更新，当前版本: ${process.env.version}，安装方式: ${runEnv}`);
 
         try {
             // 获取最新版本号（统一使用 version_check_url）
@@ -455,7 +455,7 @@ export class SettingService {
                 return;
             }
             if (latestVersion === process.env.version) {
-                console.log(`[AutoUpgrade] 已经是最新版本: ${process.env.version}`);
+                // console.log(`[AutoUpgrade] 已经是最新版本: ${process.env.version}`);
                 return;
             }
             console.log(`[AutoUpgrade] 发现新版本: ${latestVersion}，当前: ${process.env.version}`);
