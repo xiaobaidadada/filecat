@@ -366,7 +366,7 @@ export class ai_agent_chat_session_item {
     summary: string = "";
     // 长期记忆
     long_term_memory: string = "";
-    source?: "web" | "cli" | "robot_qq" | "robot_dingtalk";
+    source?: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom";
     created_at: number;
     updated_at: number;
     // 字符消耗统计
@@ -394,7 +394,7 @@ export class ai_agent_chat_session_meta {
     message_count: number;
     summary?: string;
     long_term_memory?: string;
-    source?: "web" | "cli" | "robot_qq" | "robot_dingtalk";
+    source?: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom";
     created_at: number;
     updated_at: number;
     usage_stats?: ai_agent_usage_stats;
@@ -403,7 +403,7 @@ export class ai_agent_chat_session_meta {
 // ============ 机器人配置 ============
 
 /** 机器人平台类型 */
-export type RobotPlatform = 'qq' | 'dingtalk';
+export type RobotPlatform = 'qq' | 'dingtalk' | 'wecom';
 
 /** 单个机器人配置 */
 export class ai_rebot_item {

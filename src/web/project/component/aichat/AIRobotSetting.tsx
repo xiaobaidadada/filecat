@@ -52,6 +52,16 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
             { key: 'clientSecret', label: 'ClientSecret (AppSecret)', type: 'password', placeholder: '请输入应用 ClientSecret', required: true },
         ],
     },
+    wecom: {
+        key: 'wecom',
+        label: '企业微信机器人',
+        icon: '企业微信',
+        color: '#07C160',
+        fields: [
+            { key: 'appId', label: 'botId', type: 'text', placeholder: '请输入机器人 botId', required: true },
+            { key: 'clientSecret', label: 'Secret', type: 'password', placeholder: '请输入机器人 Secret', required: true },
+        ],
+    },
 };
 
 // 默认平台 key（添加卡片时的默认选择）

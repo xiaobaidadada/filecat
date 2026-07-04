@@ -54,8 +54,8 @@ export class QQBotConnection {
     config: ai_rebot_item;
 
     private readonly SYSTEM_USER_ID = '1';
-    private modelConfig: ai_agent_Item;
-    private modelEnv: ai_agent_item_dotenv;
+    private modelConfig: ai_agent_Item | null;
+    private modelEnv: ai_agent_item_dotenv | null;
 
     constructor(config: ai_rebot_item) {
         this.config = config;

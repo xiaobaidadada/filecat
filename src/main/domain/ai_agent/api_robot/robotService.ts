@@ -2,9 +2,10 @@ import { ai_rebot_item } from "../../../../common/req/filecat.ai.pojo";
 import { settingService } from "../../setting/setting.service";
 import { QQBotConnection } from "./qqBot";
 import { DingTalkBotConnection } from "./dingtalkBot";
+import { WeComBotConnection } from "./wecomBot";
 
 /** 统一的连接类型 */
-export type BotConnection = QQBotConnection | DingTalkBotConnection;
+export type BotConnection = QQBotConnection | DingTalkBotConnection | WeComBotConnection;
 
 function isSameConfig(a: ai_rebot_item, b: ai_rebot_item): boolean {
     return (
@@ -53,6 +54,8 @@ class RobotService {
             let conn: BotConnection;
             if (item.platform === 'dingtalk') {
                 conn = new DingTalkBotConnection({ ...item });
+            } else if (item.platform === 'wecom') {
+                conn = new WeComBotConnection({ ...item });
             } else {
                 conn = new QQBotConnection({ ...item });
             }
