@@ -32,6 +32,7 @@ export interface ChatMsgPayload {
     text: string;
     /** 当前消息块在本次聊天中的序号（从 0 开始递增），前端用它区分不同气泡 */
     chunk_index: number;
+    tool_call_ends?:ai_agent_tool_call_item[];
 }
 
 export interface ChatOptions {
@@ -345,11 +346,7 @@ ${user_local_file_prompt}
                 },
                     controller:controller}
             );
-            // on_msg({
-            //     text: "\n",
-            //     chunk_index: globalChunkIndex
-            // });
-            globalChunkIndex++;
+
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
             // 累加本次 HTTP 请求的输入/输出统计
@@ -426,10 +423,18 @@ ${user_local_file_prompt}
                 })()
             }))
 
+            // 只是发送工具调用
+            on_msg({
+                text: "",
+                chunk_index: globalChunkIndex,
+                tool_call_ends: assistantMessage.tool_call_ends
+            });
+            globalChunkIndex++;
+
         }
 
         on_msg({
-            text: "超出最大理解语义次数",
+            text: "超出最大工具调用次数",
             chunk_index: globalChunkIndex
         });
         on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});

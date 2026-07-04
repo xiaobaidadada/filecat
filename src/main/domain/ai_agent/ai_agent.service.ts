@@ -668,7 +668,8 @@ export class Ai_agentService {
                 on_msg: (payload) => {
                     wss.send(CmdType.ai_chat_msg, {
                         text: payload.text,
-                        chunk_index: payload.chunk_index
+                        chunk_index: payload.chunk_index,
+                        tool_call_ends:payload.tool_call_ends
                     });
                 },
                 // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====

@@ -7,11 +7,15 @@
  * 3. 处理聊天结束 / 错误，自动清理 WS 监听
  * 4. 消息排队机制：sending 时用户发送的消息进入队列，当前轮结束后自动处理
  */
-import { useRef } from "react";
-import { ws } from "../../../util/ws";
-import { CmdType, WsData } from "../../../../../common/frame/WsData";
-import { ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_content_part } from "../../../../../common/req/filecat.ai.pojo";
-import { Message } from "./chatTypes";
+import {useRef} from "react";
+import {ws} from "../../../util/ws";
+import {CmdType, WsData} from "../../../../../common/frame/WsData";
+import {
+    ai_agent_message_attachment_item,
+    ai_agent_message_item,
+    ai_agent_content_part
+} from "../../../../../common/req/filecat.ai.pojo";
+import {Message} from "./chatTypes";
 import React, {useState} from 'react';
 
 /** 排队消息的结构 */
@@ -92,6 +96,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const handleChatMsg = (data: WsData<any>) => {
             const ctx = data.context || {};
             const chunkText: string = ctx.text || '';
+            const tool_call_ends = ctx.tool_call_ends
             const chunkIndex: number = ctx.chunk_index ?? 0;
             if (chunkText === '[DONE]') return;
 
@@ -100,6 +105,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 // 第一个文本块：替换加载气泡
                 firstTextChunk = false;
                 currentLoading.text = chunkText;
+                if (tool_call_ends) {
+                    currentLoading.content_list = [{
+                        tool_call_ends,
+                        content: currentLoading.text,
+                        role: "assistant"
+                    }]
+                }
                 currentLoading.is_loading = false;
                 currentLoading.chunk_index = chunkIndex;
                 chunkBubbleMap.set(chunkIndex, currentLoading);
@@ -109,6 +121,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 if (existing) {
                     // 同一 chunk 追加文本
                     existing.text += chunkText;
+                    if (tool_call_ends) {
+                        existing.content_list = [{
+                            tool_call_ends,
+                            content: existing.text,
+                            role: "assistant"
+                        }]
+                    }
                     setMessagesDebounced([...newMessages]);
                 } else {
                     // 新的 chunk_index → 创建新气泡
@@ -118,6 +137,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
                         text: chunkText,
                         chunk_index: chunkIndex,
                     };
+                    if (tool_call_ends) {
+                        newBubble.content_list = [{
+                            tool_call_ends,
+                            content: newBubble.text,
+                            role: "assistant"
+                        }]
+                    }
                     newMessages.push(newBubble);
                     chunkBubbleMap.set(chunkIndex, newBubble);
                     setMessagesDebounced([...newMessages]);
@@ -179,7 +205,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         // 清理之前排队消息的 "⏳" 标记
         setMessages(prev => prev.map(m => {
             if (m.sender === 'user' && m.text.includes('⏳(排队中...)')) {
-                return { ...m, text: m.text.replace(' ⏳(排队中...)', '') };
+                return {...m, text: m.text.replace(' ⏳(排队中...)', '')};
             }
             return m;
         }));
@@ -198,7 +224,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
      * 将一条新消息加入排队队列
      */
     const enqueueMessage = (text: string, attachments: ai_agent_message_attachment_item[]) => {
-        pendingQueueRef.current.push({ text, attachments });
+        pendingQueueRef.current.push({text, attachments});
     };
 
     /** 获取当前队列长度 */
