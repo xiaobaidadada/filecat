@@ -80,6 +80,8 @@ export class ai_agent_option_item_extra {
     options_agent_url_list?:ai_agent_option_item[]
     options_agent_key_list?:ai_agent_option_item[]
     options_agent_model_list?:ai_agent_option_item[]
+
+    options_local_file_path_prompt_list?:string[];
 }
 
 /**
@@ -166,6 +168,8 @@ allow_exec_cmd_directly=false
 # 可选的多个 model
 # options_agent_model_list=[{"value":"gpt-5.5","label":"gpt"}]
 
+# 存放本地的 prompt 文件 用于每次聊天的时候自动读取并加载
+# options_local_file_path_prompt_list=["/prompt/a.txt"]
 `
 
 export class ai_mcp_server_item {
