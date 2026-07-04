@@ -540,5 +540,13 @@
   "输入提交信息后点击「提交」": "Enter commit message and click \"Commit\"",
   "如有冲突，请自行在shell中解决冲突后再提交": "If conflicts occur, please resolve them in shell before committing",
   "「强制推送」会覆盖远程分支，请谨慎使用": "\"Force Push\" will overwrite the remote branch, use with caution",
-  "配置表": "Config Table"
+  "配置表": "Config Table",
+  "自动升级": "Mise à jour automatique",
+  "npm 镜像地址": "Miroir npm Registry",
+  "留空使用官方 registry.npmjs.org": "Laisser vide pour utiliser le registry.npmjs.org officiel",
+  "exe 下载地址模板": "Modèle d'URL de téléchargement EXE",
+  "留空使用官方 GitHub Releases": "Laisser vide pour utiliser les GitHub Releases officiels",
+  "检测频率（秒）": "Intervalle de vérification (secondes)",
+  "默认180秒（3分钟）": "Défaut 180s (3 minutes)",
+  "检测间隔不能小于10秒": "L'intervalle de vérification ne peut pas être inférieur à 10 secondes"
 }

@@ -551,5 +551,13 @@
   "输入提交信息后点击「提交」": "Enter commit message and click \"Commit\"",
   "如有冲突，请自行在shell中解决冲突后再提交": "If conflicts occur, please resolve them in shell before committing",
   "「强制推送」会覆盖远程分支，请谨慎使用": "\"Force Push\" will overwrite the remote branch, use with caution",
-  "配置表": "Config Table"
+  "配置表": "Config Table",
+  "自动升级": "Auto Upgrade",
+  "npm 镜像地址": "npm Registry Mirror",
+  "留空使用官方 registry.npmjs.org": "Leave empty to use official registry.npmjs.org",
+  "exe 下载地址模板": "EXE Download URL Template",
+  "留空使用官方 GitHub Releases": "Leave empty to use official GitHub Releases",
+  "检测频率（秒）": "Check Interval (seconds)",
+  "默认180秒（3分钟）": "Default 180s (3 minutes)",
+  "检测间隔不能小于10秒": "Check interval cannot be less than 10 seconds"
 }

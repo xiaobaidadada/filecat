@@ -10,7 +10,7 @@ import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
-import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
+import {AutoUpgradeSettingReq, HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
 import Header from "../../../meta/component/Header";
 import {editor_data, use_auth_check} from "../../util/store.util";
@@ -18,6 +18,7 @@ import {NotyFail, NotySuccess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {getShortTime} from "../../../project/util/common_util";
 import {GlobalContext} from "../../GlobalProvider";
+import {AutoUpgrade} from "./AutoUpgrade";
 
 
 export function  Sys() {
@@ -288,6 +289,7 @@ export function  Sys() {
                         <InputText placeholder={t('私钥文件路径(privkey.pem)')} value={https_key_path} handleInputChange={(value)=>{set_https_key_path(value)}} />
                     </>}
                 </Card>
+                <AutoUpgrade />
             </Dashboard>
         </Column>
         <Header left_children={<>

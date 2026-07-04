@@ -103,6 +103,7 @@ export enum data_common_key {
     https_setting = "https_setting", // HTTPS 证书配置
     ai_rebot_setting = "ai_rebot_setting", // 机器人配置
     token_cache = "token_cache", // token 缓存持久化
+    auto_upgrade_setting = "auto_upgrade_setting", // 自动升级设置
 }
 
 

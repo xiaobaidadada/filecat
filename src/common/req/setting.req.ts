@@ -59,6 +59,17 @@ export class HttpsSettingReq {
     key_path: string = '';  // SSL 私钥文件路径 (privkey.pem)
 }
 
+// 自动升级设置
+export class AutoUpgradeSettingReq {
+    open: boolean = false;
+    // npm 模式：镜像地址（registry URL）
+    npm_registry: string = '';
+    // exe 模式：下载地址模板（用户可自定义，留空则用官方默认）
+    exe_download_url: string = '';
+    // 定时检测频率，单位秒，默认 180 秒（3分钟）
+    check_interval_seconds: number = 180;
+}
+
 // 系统设置类型
 export const enum sys_setting_type {
     auth,
@@ -67,6 +78,7 @@ export const enum sys_setting_type {
     sys_env= 3,
     private_sys_env,
     https = 5,
+    auto_upgrade = 6,
 }
 
 export interface dir_upload_max_num_item {
