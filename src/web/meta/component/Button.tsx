@@ -5,8 +5,10 @@ import {$stroe} from "../../project/util/store";
 import {editor_data} from "../../project/util/store.util";
 
 
-export function ButtonLittle(props:{text:string,clickFun?:()=>void}) {
-    return (<button className={"little-button button"}  onClick={props.clickFun}>{props.text}</button>)
+export function ButtonLittle(props:{text:string,clickFun?:()=>void,color?:string}) {
+    return (<button className={"little-button button"} style={{
+        backgroundColor: props.color
+    }}  onClick={props.clickFun}>{props.text}</button>)
 }
 
 export function ButtonLittleStatus(props:{text:string,clickFun?:(open?:boolean)=>void,defaultStatus:boolean}) {

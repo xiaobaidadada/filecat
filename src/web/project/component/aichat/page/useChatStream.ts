@@ -60,6 +60,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
     /** 排队消息队列 */
     const pendingQueueRef = useRef<QueuedMsg[]>([]);
+    /** 当前请求的 AbortSignal 引用，用于暂停 */
+    const abortRef = useRef<{ abort: () => void } | null>(null);
 
     /**
      * 核心：发起一次 completions 流式聊天
@@ -75,6 +77,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const newMessages = [...getMessages(), userMsg];
         setMessages(newMessages);
         setSending(true);
+
+        // 创建 AbortSignal 控制句柄
+        const abortHandle = { abort: () => {} };
+        abortRef.current = abortHandle;
 
         // 创建初始加载气泡
         const loadingMsg: Message = {
@@ -154,6 +160,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         // ===== ai_chat_end：清理并收尾 =====
         const handleChatEnd = (data: WsData<any>) => {
             cleanup();
+            abortRef.current = null;
             setSending(false);
             // 清理未完成的加载气泡
             currentLoading.is_loading = false;
@@ -165,6 +172,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         // ===== ai_chat_error：清理并显示错误 =====
         const handleChatError = (data: WsData<any>) => {
             cleanup();
+            abortRef.current = null;
             setSending(false);
             const ctx = data.context || {};
             currentLoading.text = "AI请求出错: " + (ctx.message || '未知错误');
@@ -230,10 +238,21 @@ export function useChatStream(opts: UseChatStreamOptions) {
     /** 获取当前队列长度 */
     const getQueueLength = () => pendingQueueRef.current.length;
 
+    /** 暂停当前 AI 请求 */
+    const abort = () => {
+        if (abortRef.current) {
+            // 发送取消指令给后端
+            ws.sendData(CmdType.ai_chat_abort, { session_id: getActiveSessionId() });
+            abortRef.current = null;
+            setSending(false);
+        }
+    };
+
     return {
         startChatStream,
         processPendingQueue,
         enqueueMessage,
         getQueueLength,
+        abort,
     };
 }

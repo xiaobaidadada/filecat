@@ -45,7 +45,7 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
     dingtalk: {
         key: 'dingtalk',
         label: '钉钉机器人',
-        icon: 'chat',
+        icon: '钉钉',
         color: '#0089FF',
         fields: [
             { key: 'appId', label: 'ClientId (AppKey)', type: 'text', placeholder: '请输入应用 ClientId', required: true },

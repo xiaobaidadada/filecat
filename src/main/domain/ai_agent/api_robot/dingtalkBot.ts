@@ -42,13 +42,19 @@ export class DingTalkBotConnection {
 
             await client
                 .registerCallbackListener(TOPIC_ROBOT, async (msg: DingTalkStreamMessage) => {
-                    try {
-                        const payload = JSON.parse(msg.data || '{}');
-                        await self.handleRobotMessage(payload, client);
-                    } catch (err) {
-                        console.error('[DingTalk Bot] 处理消息异常:', err);
-                    }
-                    return { status: EventAck.SUCCESS, message: 'OK' };
+                    const ack = { status: EventAck.SUCCESS, message: 'OK' };
+
+                    setImmediate(async () => {
+                        try {
+                            const payload = JSON.parse(msg.data || '{}');
+                            await self.handleRobotMessage(payload, client);
+                        } catch (err) {
+                            console.error('[DingTalk Bot] 处理消息异常:', err);
+                        }
+                    });
+
+                    client.socketCallBackResponse(msg.headers.messageId,{ack})
+                    return ack
                 })
                 .connect();
 
@@ -98,7 +104,6 @@ export class DingTalkBotConnection {
         this.config.open = false;
         if (this.client) {
             try {
-                // DWClient 的 disconnect 后可能还会重连，需要彻底销毁
                 this.client.socket?.close?.();
                 this.client.disconnect?.();
             } catch (_) {}

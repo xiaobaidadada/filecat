@@ -39,6 +39,7 @@ export default function ChatInput({
                                       onPaste,
                                       onSend,
                                       sending,
+                                      onAbort,
                                       pendingAttachments,
                                       onRemoveAttachment,
                                       onOpenFilePicker,
@@ -54,6 +55,7 @@ export default function ChatInput({
     onPaste: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
     onSend: () => void;
     sending: boolean;
+    onAbort: () => void;
     pendingAttachments: File[];
     onRemoveAttachment: (index: number) => void;
     onOpenFilePicker: () => void;
@@ -95,17 +97,11 @@ export default function ChatInput({
             </div>
             <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>
             <ModelParamsButton requestType={requestType} />
-            {/* 发送按钮：无论是否在 AI 执行中都可以发送（消息会排队） */}
-            <ButtonLittle text={sending ? t("排队发送") : t("发送")} clickFun={onSend}/>
-            {/* AI 执行中显示小型指示器 */}
-            {sending && (
-                <div className="ai-thinking-mini" title="AI 正在回复中...">
-                    <div className="ai-thinking-dots">
-                        <div className="ai-thinking-dot"/>
-                        <div className="ai-thinking-dot"/>
-                        <div className="ai-thinking-dot"/>
-                    </div>
-                </div>
+            {/* 发送中 → 暂停按钮；空闲 → 发送按钮 */}
+            {sending ? (
+                <ButtonLittle color={"var( --icon-red)"} text={t("暂停")} clickFun={onAbort} />
+            ) : (
+                <ButtonLittle  text={t("发送")} clickFun={onSend} />
             )}
         </div>
     );

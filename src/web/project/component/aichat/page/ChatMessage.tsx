@@ -57,7 +57,7 @@ function CallListRenderer({callList}: { callList?: ai_agent_tool_call_item[] }) 
             <div className="call-list-header" onClick={() => setExpanded(!expanded)}>
                 <Icon icon={expanded ? 'expand_less' : 'expand_more'}/>
                 <span className="call-list-summary">
-                    {t('工具调用')} ({callList.length})
+                    {t('工具调用')}
                     {failCount > 0 && <span className="call-list-fail"> {t('失败')}: {failCount}</span>}
                 </span>
             </div>

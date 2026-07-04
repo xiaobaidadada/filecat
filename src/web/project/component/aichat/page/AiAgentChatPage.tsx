@@ -599,6 +599,7 @@ export default function AiAgentChatPage() {
                         onPaste={handlePaste}
                         onSend={handleSend}
                         sending={sending}
+                        onAbort={chatStream.abort}
                         pendingAttachments={pendingAttachments}
                         onRemoveAttachment={removePendingAttachment}
                         onOpenFilePicker={openFilePicker}
