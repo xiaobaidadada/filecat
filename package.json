@@ -53,6 +53,7 @@
     "@babel/preset-react": "^8.0.1",
     "@babel/preset-typescript": "^8.0.1",
     "@excalidraw/excalidraw": "^0.18.1",
+    "@larksuiteoapi/node-sdk": "^1.68.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.0.0",

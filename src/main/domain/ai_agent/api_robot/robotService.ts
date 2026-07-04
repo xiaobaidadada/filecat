@@ -3,9 +3,10 @@ import { settingService } from "../../setting/setting.service";
 import { QQBotConnection } from "./qqBot";
 import { DingTalkBotConnection } from "./dingtalkBot";
 import { WeComBotConnection } from "./wecomBot";
+import { LarkBotConnection } from "./larkBot";
 
 /** 统一的连接类型 */
-export type BotConnection = QQBotConnection | DingTalkBotConnection | WeComBotConnection;
+export type BotConnection = QQBotConnection | DingTalkBotConnection | WeComBotConnection | LarkBotConnection;
 
 function isSameConfig(a: ai_rebot_item, b: ai_rebot_item): boolean {
     return (
@@ -56,6 +57,8 @@ class RobotService {
                 conn = new DingTalkBotConnection({ ...item });
             } else if (item.platform === 'wecom') {
                 conn = new WeComBotConnection({ ...item });
+            } else if (item.platform === 'lark') {
+                conn = new LarkBotConnection({ ...item });
             } else {
                 conn = new QQBotConnection({ ...item });
             }

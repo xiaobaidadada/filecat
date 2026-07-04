@@ -62,6 +62,16 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
             { key: 'clientSecret', label: 'Secret', type: 'password', placeholder: '请输入机器人 Secret', required: true },
         ],
     },
+    lark: {
+        key: 'lark',
+        label: '飞书机器人',
+        icon: '飞书',
+        color: '#3370FF',
+        fields: [
+            { key: 'appId', label: 'App ID', type: 'text', placeholder: '请输入应用 App ID', required: true },
+            { key: 'clientSecret', label: 'App Secret', type: 'password', placeholder: '请输入应用 App Secret', required: true },
+        ],
+    },
 };
 
 // 默认平台 key（添加卡片时的默认选择）

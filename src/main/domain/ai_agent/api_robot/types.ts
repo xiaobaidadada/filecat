@@ -7,7 +7,7 @@ import { chat_core, ChatOptions } from "../chat.core";
 import axios from "axios";
 
 /** 消息来源类型，各个机器人共用 */
-export type MessageSource = 'robot_qq' | 'robot_dingtalk' | 'robot_wecom';
+export type MessageSource = 'robot_qq' | 'robot_dingtalk' | 'robot_wecom' | 'robot_lark';
 
 /** AI 聊天参数 */
 export interface BotChatParams {

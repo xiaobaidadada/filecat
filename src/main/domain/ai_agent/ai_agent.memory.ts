@@ -243,7 +243,7 @@ export class AiAgentMemoryService {
         this.saveIndex(store);
     }
 
-    private findMetaBySource(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_wecom") {
+    private findMetaBySource(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark") {
         const store = this.read_index_of_session();
         return this.user_meta_index_by_store(store, userId).sessions.find(it => it.source === source) ?? null;
     }
@@ -274,7 +274,7 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_wecom" = "web",sessionId?:string) {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sessionId?:string) {
         const store = this.read_index_of_session();
         const session: ai_agent_chat_session_item = {
             id: sessionId??nowId(),
@@ -291,7 +291,7 @@ export class AiAgentMemoryService {
         return cloneSession(session);
     }
 
-    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_wecom" = "web") {
+    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web") {
         if (sessionId) {
             const session = this.get_session(userId, sessionId);
             if (session) return session;
@@ -299,7 +299,7 @@ export class AiAgentMemoryService {
         return this.create_session(userId, title, source,sessionId);
     }
 
-    public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_wecom", title: string) {
+    public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark", title: string) {
         const meta = this.findMetaBySource(userId, source);
         if (meta) {
             return this.get_session(userId, meta.id);

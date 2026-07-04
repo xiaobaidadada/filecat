@@ -106,6 +106,10 @@ export function using_env_prompt() {
                    </li>
                     <li> 2. https://opensource.dingtalk.com/developerpedia/docs/explore/tutorials/stream/bot/nodejs/create-bot 这个是钉钉机器人开通教程，注意复制钉钉的 clientId 的是时候不要复制成appId 了。
                     </li>
+                    <li> 3. 企业微信机器人的开通甚至不需要 pc 操作，在通讯录中点击智能机器人，选择 api 模式，就创建完成了，手机上直接复制 id 和密钥。
+                    </li>
+                    <li> 4. 飞书https://open.feishu.cn/document/develop-an-echo-bot/introduction?from=banner 登录这个开发者后台，按照这个地址教程创建机器人，使用的时候这个机器人是作为一个应用，可以在工作台内搜索你的这个机器人的名字。
+                    </li>
                 </ul>
             </div>
         }
