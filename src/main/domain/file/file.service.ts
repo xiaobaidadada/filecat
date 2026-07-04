@@ -1098,9 +1098,6 @@ export class FileService  {
             case FileCompressType.gz:
                 await fileCompress.compressGz(pojo.compress_level,targerFilePath,filePaths,directorys,handle_progress)
                 return
-            case FileCompressType.sevenZip:
-                await fileCompress.compress7z(targerFilePath,filePaths,directorys,handle_progress)
-                return
             case FileCompressType.rar:
                 // 不支持
                 return

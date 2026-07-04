@@ -2,7 +2,6 @@ process.env.NODE_ENV = 'production';
 
 const {Listr} = require("listr2");
 const webpack = require('webpack');
-const os = require("os");
 const config = require('./config/webpack.web.config.js');
 const args = process.argv.slice(2)??[];  // slice to remove the first two default values
 let serverConfig ;
@@ -33,26 +32,6 @@ const {execSync} = require("child_process");
 function ensure_copyFileSync(sourcePath, destPath) {
     fse.ensureDirSync(path.dirname(destPath))
     copyFileSync(sourcePath, destPath);
-}
-
-function get_platform () {
-    const platform = os.platform();
-    if(platform === "win32") {
-        return 'win'
-    } else if (platform === "linux") {
-        return 'linux'
-    } else if (platform === "darwin") {
-        return 'mac'
-    }
-}
-
-function get_exe() {
-    const arch = os.platform()
-    if(arch === "win32") {
-        return '7za.exe'
-    } else {
-        return '7za'
-    }
 }
 
 function exec_sync(cmd) {
@@ -126,10 +105,6 @@ const tasksLister = new Listr(
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
-                            fse.copySync(path.resolve('node_modules','7zip-min'), path.resolve('build','node_modules','7zip-min'));
-                            fse.copySync(path.resolve('node_modules','7zip-bin','package.json'), path.resolve('build','node_modules','7zip-bin','package.json'));
-                            fse.copySync(path.resolve('node_modules','7zip-bin','index.js'), path.resolve('build','node_modules','7zip-bin','index.js'));
-                            fse.copySync(path.resolve('node_modules','7zip-bin',get_platform(),os.arch(),get_exe()), path.resolve('build','node_modules','7zip-bin',get_platform(),os.arch(),get_exe()));
                         }
 
                         ensure_copyFileSync(path.resolve("node_modules/node-unrar-js/esm/js/unrar.wasm"), path.join(__dirname, "..", "build", "unrar.wasm"))

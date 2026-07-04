@@ -91,7 +91,6 @@
 
 /* #999 - Compressed */
 
-.file-icons [aria-label$=".7z"] i::before,
 .file-icons [aria-label$=".bz2"] i::before,
 .file-icons [aria-label$=".cab"] i::before,
 .file-icons [aria-label$=".gz"] i::before,
