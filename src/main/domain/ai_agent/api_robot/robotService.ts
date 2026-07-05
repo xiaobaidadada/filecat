@@ -19,33 +19,16 @@ function isSameConfig(a: ai_rebot_item, b: ai_rebot_item): boolean {
 }
 
 class RobotService {
-    private connections: Map<number, BotConnection> = new Map();
+    private connections: BotConnection[] = []
 
     /** 重新加载所有机器人配置。先全部关闭，再判断哪些需要开启。 */
     async reload(): Promise<void> {
         // 1. 先全部关闭
-        for (const [, conn] of this.connections) {
+        for (const conn of this.connections) {
             conn.stop();
         }
-        const oldConnections = this.connections;
-        this.connections = new Map();
-
+        this.connections = []
         const list = settingService.ai_rebot_setting().list || [];
-
-        for (let i = 0; i < list.length; i++) {
-            const item = list[i];
-            if (!item.open) continue;
-
-            for (const [oldIdx, oldConn] of oldConnections) {
-                if (isSameConfig(item, oldConn.config)) {
-                    // 配置未变，复用旧连接
-                    oldConn.config.open = true;
-                    this.connections.set(i, oldConn);
-                    break;
-                }
-            }
-        }
-
         // 3. 启动新增或配置变更的机器人
         for (let i = 0; i < list.length; i++) {
             const item = list[i];
@@ -62,7 +45,7 @@ class RobotService {
             } else {
                 conn = new QQBotConnection({ ...item });
             }
-            this.connections.set(i, conn);
+            this.connections.push(conn);
             conn.start().catch(err => {
                 console.error(`[Rebot] ${item.platform} 机器人启动失败:`, err);
             });
@@ -75,10 +58,10 @@ class RobotService {
     }
 
     stopAll(): void {
-        for (const [, conn] of this.connections) {
+        for (const conn of this.connections) {
             conn.stop();
         }
-        this.connections.clear();
+        this.connections = []
     }
 }
 

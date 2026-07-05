@@ -8,6 +8,10 @@ export class CommonUtil {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    public static sleep_lock_has(key:string) {
+        return lockQueue.has(key);
+    }
+
     // 同一个 key 会被锁 直到上一个解锁
     public static async sleep_lock_key(key: string, ms: number) {
         // 取出上一个
