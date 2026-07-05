@@ -309,7 +309,7 @@ export class SettingController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         settingService.ai_rebot_setting_save(req);
         // 通知机器人服务重新加载配置
-        await ai_agentService.reloadRebots().catch(console.error);
+        await ai_agentService.reloadRobots().catch(console.error);
         return Sucess("1");
     }
 

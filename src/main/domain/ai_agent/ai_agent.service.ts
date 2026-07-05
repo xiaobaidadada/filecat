@@ -240,7 +240,7 @@ export class Ai_agentService {
         this.init_search_docs_param()
         await ai_agentMcpService.reload().catch(console.error);
         // 启动机器人服务
-        await this.reloadRebots().catch(console.error);
+        await this.reloadRobots().catch(console.error);
         if (!this.docs_switch_get()) return;
         start_worker_threads()
         const body:any = {index_storage_type: ai_config_search_doc.index_storage_type}
@@ -735,7 +735,7 @@ export class Ai_agentService {
         await ai_agentMcpService.reload();
     }
 
-    public async reloadRebots() {
+    public async reloadRobots() {
         await robotService.reload();
     }
 
