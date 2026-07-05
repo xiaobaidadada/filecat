@@ -694,7 +694,7 @@ export class FileService  {
             return;
         }
         let sysPath = decodeURIComponent(filePath)
-        if(isAbsolutePath(sysPath)) {
+        if(path.isAbsolute(sysPath)) {
 
         } else {
             sysPath = path.join(settingService.getFileRootPath(token), sysPath);

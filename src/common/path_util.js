@@ -88,15 +88,14 @@ export function get_best_cmd(list) {
 }
 
 export function isAbsolutePath(path) {
-    if (typeof path!== 'string') {
+    if (typeof path !== 'string' || path.length === 0) {
         return false;
     }
-    // 检查是否为 Windows 绝对路径，以盘符（如 C:）开头
-    const windowsRegex = /^[a-zA-Z]:[\\\/]/;
-    // 检查是否为 Unix/Linux 绝对路径，以斜杠 / 开头
+    const windowsDriveRegex = /^[a-zA-Z]:[\\\/]/;
+    const windowsUncRegex = /^\\\\[^\\/]+[\\/]/; // UNC 路径,如 \\server\share
     const unixRegex = /^\//;
 
-    return windowsRegex.test(path) || unixRegex.test(path);
+    return windowsDriveRegex.test(path) || windowsUncRegex.test(path) || unixRegex.test(path);
 }
 
 // console.log(get_best_cmd(['ab','ab.bat','ab.exe']))
