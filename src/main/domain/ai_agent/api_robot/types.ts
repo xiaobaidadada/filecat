@@ -81,7 +81,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
             const chatOpts: ChatOptions = {
                 tools: ai_agentService.getModelToolSchemas(),
                 originMessages: workMessages,
-                user_id: userId ?? systemUserId,
+                user_id: userId || systemUserId,
                 controller,
                 on_msg: (payload) => { assistantText += payload.text; },
                 on_end: (stats) => {
