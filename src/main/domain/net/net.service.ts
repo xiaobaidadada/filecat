@@ -5,6 +5,7 @@ import {
     HttpFormPojo,
     HttpProxy,
     HttpProxyITem,
+    HttpProxyServerInstance,
     HttpServerProxy,
     MacProxy,
     NetPojo
@@ -44,10 +45,17 @@ const {node_process_watcher} = get_bin_dependency("node-process-watcher", false)
 
 const needle = require('needle');
 
-let proxyServer: http.Server | null = null;
-const proxyServerSocketSet: Set<net.Socket> = new Set();
-// let proxy_server_data: HttpServerProxy;
-let proxy_server_list_data: HttpProxyITem[] = []
+/**
+ * 多端口代理服务器实例管理器
+ * key: 端口号字符串, value: { server, socketSet }
+ * 每个端口实例维护自己的 http.Server 和连接集合
+ */
+const proxyServerMap: Map<number, { server: http.Server; socketSet: Set<net.Socket> }> = new Map();
+/**
+ * 全局的转发规则列表（所有端口实例的所有规则合并后的结果）
+ * 每个 HttpProxyITem 会附加一个 _source_port 字段，用于标识它来自哪个端口
+ */
+let proxy_server_list_data: (HttpProxyITem & { _source_port?: number })[] = []
 
 
 const dgram = require('dgram');
@@ -528,39 +536,51 @@ export class NetService {
     }
 
 
+    /**
+     * 加载所有代理服务器实例的转发规则
+     * 遍历每个端口实例，加载其下所有启用的 js 规则文件，
+     * 合并到全局 proxy_server_list_data 中，并为每条规则标记来源端口
+     */
     load_server_proxy() {
-        const data = this.getHttpServerProxy()
-        // proxy_server_data = data
-        const list = []
-        for (const it of data.list ?? []) {
-            if (it.open) {
+        const data = this.getHttpServerProxy();
+        const list: (HttpProxyITem & { _source_port?: number })[] = [];
+        // 遍历每个端口实例
+        for (const instance of data.list ?? []) {
+            if (!instance.open) continue; // 端口实例未启用则跳过
+            // 遍历该端口下的每个规则文件
+            for (const item of instance.list ?? []) {
+                if (!item.open) continue; // 规则未启用则跳过
+                if (!item.random_key) continue;
                 try {
                     const context = DataUtil.getFile(
-                        `data_common_key.proxy_server_code_prefix_${it.random_key}`,
+                        `data_common_key.proxy_server_code_prefix_${item.random_key}`,
                         data_dir_tem_name.http_proxy_server_dir
                     );
-                    let p
+                    if (!context) continue;
+                    let p;
                     try {
-                        p = JSON.parse(context)
+                        p = JSON.parse(context);
                     } catch (e) {
+                        // 可能是一个立即执行函数 (() => { return [...] })()
                         const sandbox_context = vm.createContext({
                             ...sandbox
-                        }); // 创建沙箱上下文
-                        p = vm.runInContext(context, sandbox_context)
+                        });
+                        p = vm.runInContext(context, sandbox_context);
                     }
                     if (p) {
-                        if (Array.isArray(p)) {
-                            list.push(...p);
-                        } else {
-                            list.push(p);
+                        const items: HttpProxyITem[] = Array.isArray(p) ? p : [p];
+                        // 为每条规则标记来源端口
+                        for (const rule of items) {
+                            list.push({ ...rule, _source_port: instance.port });
                         }
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error(`[HttpProxyServer] 加载规则文件失败, port=${instance.port}, key=${item.random_key}`, e);
                 }
             }
         }
-        proxy_server_list_data = list
+        proxy_server_list_data = list;
+        console.log(`[HttpProxyServer] 转发规则已加载，共 ${list.length} 条规则`);
     }
 
     findProxyRule(fullUrl: string): HttpProxyITem | undefined {
@@ -568,15 +588,33 @@ export class NetService {
     };
 
 
-    httpServerStart(
-        data: HttpServerProxy
-    ) {
-        if (proxyServer) return;
+    /**
+     * 为单个端口实例创建并启动 HTTP 代理服务器
+     * @param instance 端口实例配置（包含端口号和启用的转发规则）
+     */
+    private httpServerStartForInstance(instance: HttpProxyServerInstance) {
+        const port = instance.port;
+        if (!port || port <= 0) return;
+        // 如果该端口已经有 server 在运行，先关闭
+        if (proxyServerMap.has(port)) {
+            console.log(`[HttpProxyServer] 端口 ${port} 已有服务运行，先关闭旧服务`);
+            this.httpServerCloseForPort(port);
+        }
+
+        const socketSet: Set<net.Socket> = new Set();
+        // 需要从响应头中剔除的 hop-by-hop 头，不能原样转发给客户端
+        const hopByHopHeaders = [
+            'transfer-encoding',
+            'connection',
+            'keep-alive',
+            'proxy-authenticate',
+            'proxy-authorization',
+            'te',
+            'trailer',
+            'upgrade',
+        ];
         const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
-            // if (!req.url) return res.end();
-            // const protocol = 'http:';
-            // const host = req.headers.host;
-            // const fullUrl = `${protocol}//${host}${req.url}`;
+            // 浏览器走 HTTP 代理时，req.url 是完整的绝对 URL（如 http://hsk.xiaohei123.fun:5567/...）
             const fullUrl = req.url;
             const item = this.findProxyRule(fullUrl);
             let targetUrl: URL;
@@ -604,30 +642,44 @@ export class NetService {
                 headers: {
                     ...req.headers,
                     ...headers,
-                    connection: 'close'   // ✅ 强制关闭连接
                 },
             };
+            // 清理代理特有头
             delete options.headers['proxy-connection'];
-            res.setHeader('Connection', 'close');
             const proxyReq = http.request(
                 options,
                 proxyRes => {
-                    res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+                    // 过滤 hop-by-hop 头，避免转发给客户端导致行为异常（如 chunked 编码问题导致挂起）
+                    const cleanHeaders: Record<string, string | string[]> = {};
+                    for (const [key, val] of Object.entries(proxyRes.headers)) {
+                        if (!hopByHopHeaders.includes(key.toLowerCase()) && val !== undefined) {
+                            cleanHeaders[key] = val;
+                        }
+                    }
+                    res.writeHead(proxyRes.statusCode || 502, cleanHeaders);
                     proxyRes.pipe(res, {end: true});
                 }
             );
             proxyReq.on('error', err => {
-                res.writeHead(500);
+                if (!res.headersSent) {
+                    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+                }
                 res.end('Proxy error: ' + err.message);
+            });
+            // 客户端断开时，中止上游请求，避免资源泄漏
+            res.on('close', () => {
+                if (!proxyReq.destroyed) {
+                    proxyReq.destroy();
+                }
             });
             req.pipe(proxyReq, {end: true});
         };
-        // http 走requestHandler
-        proxyServer = http.createServer(requestHandler);
-        proxyServer.on('connection', (socket: net.Socket) => {
-            proxyServerSocketSet.add(socket);
+        // http 走 requestHandler
+        const newServer = http.createServer(requestHandler);
+        newServer.on('connection', (socket: net.Socket) => {
+            socketSet.add(socket);
             socket.on('close', () => {
-                proxyServerSocketSet.delete(socket);
+                socketSet.delete(socket);
             });
         });
         // ws 走升级 一般不会触发
@@ -673,7 +725,7 @@ export class NetService {
         //     proxySocket.on('error', cleanup);
         // });
         // https wss ws（概率） 走connect  处理 HTTPS CONNECT 隧道
-        proxyServer.on('connect', (req, clientSocket, head) => {
+        newServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
             const targetPort = Number(targetPortStr || 443);
             // 根据端口推断协议：443 大概率是 HTTPS/WSS，80 可能是 WS 走 CONNECT 隧道
@@ -817,72 +869,101 @@ export class NetService {
             clientSocket.on('error', cleanup);
             clientSocket.on('close', cleanup);
         });
-        proxyServer.listen(data.port, () => {
-            console.log(`HTTP Proxy server running on port ${data.port}`);
+        newServer.listen(port, () => {
+            console.log(`[HttpProxyServer] HTTP 代理服务器已启动，端口: ${port}`);
         });
+
+        proxyServerMap.set(port, { server: newServer, socketSet });
     }
 
-    stop_socket() {
-        if (!proxyServer) return;
-
-        proxyServer.close();
-
-        for (const socket of proxyServerSocketSet) {
+    /**
+     * 关闭指定端口的代理服务器
+     */
+    private httpServerCloseForPort(port: number) {
+        const entry = proxyServerMap.get(port);
+        if (!entry) return;
+        const { server, socketSet } = entry;
+        proxyServerMap.delete(port);
+        // 强制销毁所有连接
+        for (const socket of socketSet) {
             if (!socket.destroyed) {
-                socket.destroy();   // ✅ 强制断所有连接
+                socket.destroy();
             }
         }
-
-        proxyServerSocketSet.clear();
-        proxyServer = null;
+        socketSet.clear();
+        server.close(() => {
+            console.log(`[HttpProxyServer] 端口 ${port} 代理服务器已关闭`);
+        });
+        server.closeAllConnections?.();
+        server.closeIdleConnections?.();
     }
 
+    /**
+     * 关闭所有代理服务器
+     */
+    private stopAllProxyServers() {
+        for (const port of proxyServerMap.keys()) {
+            this.httpServerCloseForPort(port);
+        }
+    }
 
-    safeDestroy  (...sockets: (net.Socket |Duplex| undefined)[]) {
+    safeDestroy(...sockets: (net.Socket | Duplex | undefined)[]) {
         sockets.forEach(s => {
             if (s && !s.destroyed) {
-                s.destroy(); // 直接 destroy，不优雅关闭，确保连接立即释放
+                s.destroy();
             }
         });
     };
 
-
     /**
-     * 关闭 HTTP 代理服务
+     * 关闭所有 HTTP 代理服务（对外接口）
      */
     public httpServerProxyClose(): Promise<void> {
-        this.stop_socket()
-        return new Promise((resolve) => {
-            if (!proxyServer) {
-                resolve();
-                return;
-            }
-            const server = proxyServer;
-            proxyServer = null;
-            server.close(() => {
-                console.log('Proxy server closed.');
-                resolve();
-            });
-            server.closeAllConnections?.();
-            server.closeIdleConnections?.();
-            for (const socket of proxyServerSocketSet) {
-                socket.destroy();
-            }
-            proxyServerSocketSet.clear();
-        });
+        this.stopAllProxyServers();
+        return Promise.resolve();
     }
 
+    /**
+     * 保存 HTTP 代理服务器配置并重启所有服务
+     */
     public async saveHttpServer(req: HttpServerProxy) {
         DataUtil.set(data_common_key.http_server_key, req);
-        await this.httpServerProxyClose()
-        if (req.open) {
-            this.httpServerStart(req)
-        }
-        this.load_server_proxy()
+        // 关闭所有现有服务
+        this.stopAllProxyServers();
+        // 重新加载规则
+        this.load_server_proxy();
+        // 启动所有启用的端口实例
+        this.httpServerStart(req);
     }
 
+    /**
+     * 启动所有已启用的端口实例
+     */
+    httpServerStart(data: HttpServerProxy) {
+        for (const instance of data.list ?? []) {
+            if (instance.open && instance.port > 0) {
+                this.httpServerStartForInstance(instance);
+            }
+        }
+    }
+
+    /**
+     * 获取 HTTP 代理服务器配置，兼容旧格式
+     */
     public getHttpServerProxy(): HttpServerProxy {
-        return DataUtil.get(data_common_key.http_server_key) ?? {open: false, port: 0, list: []};
+        const raw: any = DataUtil.get(data_common_key.http_server_key);
+        // 兼容旧格式（单端口结构），在内存中做兼容处理
+        if (raw && (typeof raw.port !== 'undefined' || typeof raw.open !== 'undefined')) {
+            const instance: HttpProxyServerInstance = {
+                open: raw.open ?? false,
+                port: raw.port ?? 0,
+                note: "",
+                list: raw.list ?? [],
+            };
+            return { list: [instance] };
+        }
+        // 新格式
+        return raw ?? { list: [] };
     }
 
 
@@ -892,13 +973,15 @@ export const netService: NetService = new NetService();
 
 ServerEvent.on("start", async (data) => {
     try {
-        const req = netService.getHttpServerProxy()
-        if (req.open) {
-            netService.load_server_proxy()
-            netService.httpServerStart(req)
+        const req = netService.getHttpServerProxy();
+        // 检查是否有启用的端口实例
+        const hasOpenInstance = req.list?.some(instance => instance.open && instance.port > 0);
+        if (hasOpenInstance) {
+            netService.load_server_proxy();
+            netService.httpServerStart(req);
         }
     } catch (e) {
-        console.error('启动虚拟网网络vpn失败', e);
+        console.error('启动 Http Proxy Server 失败', e);
     }
 })
 // console.log(netService.getMacProxy())

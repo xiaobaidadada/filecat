@@ -119,16 +119,40 @@ export const http_proxy_item_sample = {
     "headers": {}
 } as HttpProxyITem;
 
+/**
+ * 每个端口实例下的转发规则项
+ * 对应一个 js 文件，该 js 文件返回 HttpProxyITem[] 数组
+ */
 export class HttpServerProxyItem {
+    /** 是否启用此规则 */
     open: boolean;
+    /** 备注名称 */
     note: string;
+    /** 随机生成的 key，用于关联存储的 js 代码文件 */
     random_key: string;
 }
 
+/**
+ * 单个 HTTP 代理服务器端口实例
+ * 每个端口实例有自己独立的转发规则列表
+ */
+export class HttpProxyServerInstance {
+    /** 是否启用此端口实例 */
+    open: boolean = false;
+    /** 端口号 */
+    port: number = 0;
+    /** 备注名称 */
+    note: string = "";
+    /** 该端口下的转发规则列表（每个规则对应一个 js 文件） */
+    list: HttpServerProxyItem[] = [];
+}
+
+/**
+ * HTTP 代理服务器整体配置（支持多端口）
+ */
 export class HttpServerProxy {
-    port: number;
-    list: HttpServerProxyItem[]
-    open: boolean
+    /** 端口实例列表，每个实例监听不同端口 */
+    list: HttpProxyServerInstance[] = [];
 }
 
 

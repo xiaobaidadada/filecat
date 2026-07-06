@@ -7,7 +7,7 @@ import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {InputRadio, InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Rows, Table} from "../../../meta/component/Table";
-import {HttpProxy, HttpServerProxy, MacProxy, TcpProxyITem} from "../../../../common/req/net.pojo";
+import {HttpProxy, HttpProxyServerInstance, HttpServerProxy, MacProxy, TcpProxyITem} from "../../../../common/req/net.pojo";
 import {useTranslation} from "react-i18next";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
@@ -25,7 +25,7 @@ export function NetProxy(props) {
     const [ignore_ips, setIgnoredIps] = useState("");
     const [enabled, setEnabled] = useState(false);
     const [useForLocal, setUseForLocal] = useState<boolean>(false);
-    const [httpServer, setHttpServer] = useState<HttpServerProxy>({port: 0, open: false, list: []});
+    const [httpServer, setHttpServer] = useState<HttpServerProxy>({list: []});
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
 
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
@@ -184,13 +184,22 @@ export function NetProxy(props) {
         setMacProxies(list);
     }
 
-    const httpProxyEdit = async (index) => {
-        if (!httpServer.list[index].random_key) {
-            httpServer.list[index].random_key = generateRandomHash()
+    /**
+     * 编辑某个端口实例下的某个规则项的 js 代码
+     * @param instanceIndex 端口实例在 list 中的索引
+     * @param itemIndex 规则项在该端口实例 list 中的索引
+     */
+    const httpProxyEdit = async (instanceIndex, itemIndex) => {
+        const instance = httpServer.list[instanceIndex];
+        if (!instance) return;
+        const item = instance.list[itemIndex];
+        if (!item) return;
+        if (!item.random_key) {
+            item.random_key = generateRandomHash()
             setHttpServer({...httpServer});
             await http_proxy_save()
         }
-        const res = await netHttp.post(`http/proxy/server/code/get`, {key: httpServer.list[index].random_key});
+        const res = await netHttp.post(`http/proxy/server/code/get`, {key: item.random_key, name: item.random_key});
         setEditorSetting({
             model: "ace/mode/javascript",
             open: true,
@@ -199,7 +208,7 @@ export function NetProxy(props) {
             save: async (context) => {
                 const rsq = await netHttp.post("http/proxy/server/code/save", {
                     context,
-                    key: httpServer.list[index].random_key
+                    key: item.random_key
                 });
                 if (rsq.code === 0) {
                     editor_data.set_value_temp('')
@@ -321,67 +330,79 @@ export function NetProxy(props) {
 
 
                 <CardFull self_title={<span className={" div-row "}><h2>{t("Http Proxy Server")}</h2> </span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
-                              httpServer.list.push({
-                                  note: "",
-                                  open: false
-                              })
-                              setHttpServer({...httpServer})
-                          }}/><ActionButton
-                              icon={"save"} title={t("保存")} onClick={http_proxy_save}/></div>}>
-                    <Table headers={http_proxy_list_header} rows={httpServer.list.map((item, index) => {
-                        const new_list = [
-                            <div>
-                                <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
-                                    httpProxyEdit(index)
-                                }}/>
-                            </div>,
-                            <Select value={item.open} onChange={(value) => {
-                                httpServer.list[index].open = value
-                                setHttpServer({...httpServer})
-                            }} options={select_list}
-                                    no_border={true}/>,
-                            <InputText value={item.note} handleInputChange={(value) => {
-                                item.note = value;
-                            }} no_border={true}/>,
-                            <div>
-                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
-                                    httpServer.list.splice(index, 1);
+                          titleCom={<div>
+                              <ActionButton icon={"add"} title={t("添加端口实例")} onClick={() => {
+                                  httpServer.list.push({
+                                      open: false,
+                                      port: 0,
+                                      note: "",
+                                      list: []
+                                  })
+                                  setHttpServer({...httpServer})
+                              }}/>
+                              <ActionButton icon={"save"} title={t("保存")} onClick={http_proxy_save}/>
+                          </div>}>
+
+                    {/* 遍历每个端口实例 */}
+                    {httpServer.list.map((instance, instanceIndex) => (
+                        <div key={instanceIndex} className={"net-proxy-instance"}>
+                            {/* 端口实例头部：状态 + 端口 + 备注 + 操作按钮 */}
+                            <div className={"net-proxy-instance__toolbar"}>
+                                <span className={"net-proxy-instance__label"}>{t("端口实例")} #{instanceIndex + 1}</span>
+                                <span>{t("状态")}</span>
+                                <Select value={instance.open} width={"15%"} onChange={(value) => {
+                                    instance.open = value;
+                                    setHttpServer({...httpServer})
+                                }} options={select_list} no_border={true}/>
+                                <span>{t("端口")}</span>
+                                <InputText value={instance.port || ''} handleInputChange={(value) => {
+                                    instance.port = value ? parseInt(value) : 0;
+                                    setHttpServer({...httpServer})
+                                }} no_border={true} width={'80px'}/>
+                                <ActionButton icon={"add"} title={t("添加规则")} onClick={() => {
+                                    instance.list.push({
+                                        note: "",
+                                        open: false
+                                    })
                                     setHttpServer({...httpServer})
                                 }}/>
-                            </div>,
-                        ];
-                        return new_list;
-                    })} width={"10rem"}/>
+                                <ActionButton icon={"delete"} title={t("删除端口实例")} onClick={() => {
+                                    httpServer.list.splice(instanceIndex, 1);
+                                    setHttpServer({...httpServer})
+                                }}/>
 
-                    <form>
-                        {t("状态")}
-                        <Rows isFlex={true} columns={[
-                            <InputRadio value={1} context={t("开启")} selected={httpServer.open} onchange={() => {
-                                setHttpServer({
-                                    ...httpServer,
-                                    open: !httpServer.open
-                                })
-                            }}/>,
-                            <InputRadio value={1} context={t("关闭")} selected={!httpServer.open} onchange={() => {
-                                setHttpServer({
-                                    ...httpServer,
-                                    open: !httpServer.open
-                                })
-                            }}/>
-                        ]}/>
-                    </form>
+                                <InputText placeholder={t("备注")} width={"100%"} value={instance.note} handleInputChange={(value) => {
+                                    instance.note = value;
+                                    setHttpServer({...httpServer})
+                                }} no_border={true} />
+                            </div>
 
-                    port
-                    <InputText value={httpServer.port} handleInputChange={(value) => {
-                        if(value) {
-                            httpServer.port = parseInt(value);
-                        } else {
-                            httpServer.port = '';
-                        }
-                        setHttpServer({...httpServer})
-                    }} no_border={true}/>
-
+                            {/* 规则列表 Table */}
+                            <Table headers={http_proxy_list_header} rows={instance.list.map((item, itemIndex) => {
+                                const new_list = [
+                                    <div>
+                                        <ActionButton icon={"edit"} title={t("编辑")} onClick={() => {
+                                            httpProxyEdit(instanceIndex, itemIndex)
+                                        }}/>
+                                    </div>,
+                                    <Select value={item.open} onChange={(value) => {
+                                        instance.list[itemIndex].open = value
+                                        setHttpServer({...httpServer})
+                                    }} options={select_list} no_border={true}/>,
+                                    <InputText value={item.note} handleInputChange={(value) => {
+                                        item.note = value;
+                                    }} no_border={true}/>,
+                                    <div>
+                                        <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
+                                            instance.list.splice(itemIndex, 1);
+                                            setHttpServer({...httpServer})
+                                        }}/>
+                                    </div>,
+                                ];
+                                return new_list;
+                            })} width={"10rem"}/>
+                        </div>
+                    ))}
                 </CardFull>
 
             </Column>

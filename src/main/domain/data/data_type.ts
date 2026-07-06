@@ -115,6 +115,7 @@ export enum data_version_type{
     filecat_1 = 2 , // 这个版本会 将navindex_key http_tag_key 独立文件检测独立拷贝出来
     handle_tcp_proxy_server_key = 3,
     tcp_proxy_client_all_fig = 4,
+    http_proxy_server_multi_port = 5, // http代理服务器从单端口升级为多端口列表
 
 }
 

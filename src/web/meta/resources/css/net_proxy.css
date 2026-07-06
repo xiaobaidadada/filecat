@@ -1,0 +1,23 @@
+/* ============================================
+   Http Proxy Server - 多端口实例列表样式
+   ============================================ */
+
+/* 单个端口实例容器 */
+.net-proxy-instance {
+    margin-bottom: 16px;
+}
+
+/* 端口实例头部工具栏：状态、端口、备注、操作按钮平铺 */
+.net-proxy-instance__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+/* 端口实例编号加粗 */
+.net-proxy-instance__label {
+    font-weight: bold;
+    min-width: fit-content;
+}

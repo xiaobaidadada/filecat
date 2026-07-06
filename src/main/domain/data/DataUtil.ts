@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import {Env} from "../../../common/node/Env";
 import {data_common_key, data_dir_tem_name, data_version_type, file_key, is_data_version_type} from "./data_type";
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {HttpProxyServerInstance, HttpServerProxy, HttpServerProxyItem} from "../../../common/req/net.pojo";
 
 
 export class DataUtil {
@@ -75,6 +76,34 @@ export class DataUtil {
                     DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
                 }
                 fs.writeFileSync(p_v, `${data_version_type.tcp_proxy_client_all_fig}`);
+            }
+
+            // 🌟 数据迁移：Http Proxy Server 从单端口升级为多端口列表
+            if(version < data_version_type.http_proxy_server_multi_port) {
+                const old_data: any = DataUtil.get(data_common_key.http_server_key);
+                if(old_data) {
+                    // 旧数据结构: { port, open, list: HttpServerProxyItem[] }
+                    // 新数据结构: { list: HttpProxyServerInstance[] }
+                    const new_data: HttpServerProxy = { list: [] };
+
+                    // 检查是否为旧格式（旧格式有 port 和 open 属性在顶层）
+                    if(typeof old_data.port !== 'undefined' || typeof old_data.open !== 'undefined') {
+                        // 旧格式：将旧的单端口数据迁移到新格式的第一个实例中
+                        const instance: HttpProxyServerInstance = {
+                            open: old_data.open ?? false,
+                            port: old_data.port ?? 0,
+                            note: "",
+                            list: old_data.list ?? [],
+                        };
+                        new_data.list.push(instance);
+                    } else if(old_data.list && Array.isArray(old_data.list)) {
+                        // 可能已经是新格式或者空数据，直接保留
+                        new_data.list = old_data.list;
+                    }
+
+                    DataUtil.set(data_common_key.http_server_key, new_data);
+                }
+                fs.writeFileSync(p_v, `${data_version_type.http_proxy_server_multi_port}`);
             }
         } catch (e) {
             console.log('历史数据处理失败',e);
