@@ -139,7 +139,8 @@ export async function start_main() {
                 const url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 // }
                 if (!await FileUtil.access(url)) {
-                    throw "file not found ";
+                    res.type('text/html').send(index_text);
+                    return;
                 }
 
                 const readStream = fs.createReadStream(url);
