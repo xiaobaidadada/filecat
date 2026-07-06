@@ -128,7 +128,8 @@ export async function start_main() {
             }
             try {
                 if (router.has(req.originalUrl) || router.has(getWebFirstKey(req.originalUrl))) {
-                    throw "";
+                    res.type('text/html').send(index_text);
+                    return;
                 }
                 // let url
                 // if (req.originalUrl.includes("excalidraw-assets")) {
@@ -138,7 +139,7 @@ export async function start_main() {
                 const url = path.join(__dirname, 'dist', path.basename(req.originalUrl));
                 // }
                 if (!await FileUtil.access(url)) {
-                    throw "";
+                    throw "file not found ";
                 }
 
                 const readStream = fs.createReadStream(url);
@@ -146,10 +147,31 @@ export async function start_main() {
                 if (url.endsWith('.js') || url.endsWith(".woff2")) {
                     res.setHeader('Cache-Control', 'public, max-age=86400 '); // 让js类型的数据缓存一下 有一些类库的资源请求 js 除非版本变了否则不会更改 webpack打包的有版本hash会变名字
                 }
+                // 处理流错误，防止请求挂起：readStream 读取失败 或 客户端提前断开连接时，需要正确结束响应
+                readStream.on('error', (err) => {
+                    console.error(`静态资源读取失败: ${url}`, err?.message);
+                    if (!res.headersSent) {
+                        res.status(500).end();
+                    } else {
+                        res.end();
+                    }
+                });
+                res.on('close', () => {
+                    // 客户端断开连接时，销毁读取流，释放资源
+                    readStream.destroy();
+                });
                 readStream.pipe(res);
             } catch (e) {
-                res.type('text/html').send(index_text);
-                // fs.createReadStream(path.join(__dirname, 'dist', "index.html")).pipe(res);
+                // 静态资源匹配不到或读取失败，直接抛 500，不再兜底返回 index.html
+                let txt:string;
+                if(typeof e === 'string') {
+                    txt = e as string;
+                } else if(e?.message) {
+                    txt = e.message;
+                } else {
+                    txt = "file not found "
+                }
+                res.status(500).send(`${txt}: ` + req.originalUrl);
             }
         });
     } else {
