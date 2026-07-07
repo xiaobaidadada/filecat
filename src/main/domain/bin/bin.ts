@@ -83,18 +83,8 @@ export function get_wintun_dll_path(): string {
 
 // let child;
 export function getProcessAddon() {
-    // if (child) {
-    //     return child;
-    // }
-    const type = getSys();
-    // if (type === SysEnum.linux || type === SysEnum.win) {
-    // child = require_c(path.join(__dirname,'linux-process.node'));
     const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);
     return node_process_watcher;
-    // }
-    // else if(getSys()===SysEnum.win) {
-    //     child = require_c(path.join(__dirname,'win-process.node'));
-    // }
 }
 
 let wasmBinary;
