@@ -799,3 +799,49 @@ nav:hover::-webkit-scrollbar-thumb {
 .dashboard label, .dashboard_label {
   color: var(--textPrimary);
 }
+/* ===== 暗黑模式 - 后台进程面板 ===== */
+.chat-bg-process-panel {
+  background: var(--background);
+  border-left-color: var(--divider);
+}
+.chat-bg-process-header {
+  border-bottom-color: var(--divider);
+}
+.chat-bg-process-title {
+  color: var(--textPrimary);
+}
+.chat-bg-process-toolbar {
+  border-bottom-color: var(--divider);
+}
+.chat-bg-process-count {
+  color: var(--textSecondary);
+}
+.chat-bg-process-empty {
+  color: var(--textSecondary);
+}
+.chat-bg-process-item:hover,
+.chat-bg-process-item.active {
+  background: var(--surfacePrimary);
+  border-color: var(--divider);
+}
+.chat-bg-process-pid {
+  color: var(--textPrimary);
+}
+.chat-bg-process-cmd {
+  color: var(--textSecondary);
+}
+.chat-bg-process-time,
+.chat-bg-process-exit-code {
+  color: var(--textSecondary);
+}
+.chat-bg-process-output {
+  border-top-color: var(--divider);
+}
+.chat-bg-process-output-header {
+  border-bottom-color: var(--divider);
+  color: var(--textPrimary);
+}
+.chat-bg-process-output-pre {
+  background: #0d0d0d;
+  color: #d4d4d4;
+}

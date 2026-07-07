@@ -135,6 +135,14 @@ export enum CmdType {
     ai_chat_error,    // 服务端推送 AI 错误信息
     ai_chat_abort,    // 客户端主动取消正在进行的 AI 聊天
 
+    // ===== AI 后台进程管理 =====
+    ai_bg_process_list_req,   // 客户端请求后台进程列表
+    ai_bg_process_list_rsq,   // 服务端返回后台进程列表
+    ai_bg_process_output_req, // 客户端请求某个进程的输出
+    ai_bg_process_output_rsq, // 服务端返回某个进程的输出
+    ai_bg_process_kill_req,   // 客户端请求终止某个进程
+    ai_bg_process_kill_rsq,   // 服务端返回终止结果
+
 }
 
 
@@ -243,6 +251,14 @@ export type ws_cmd_type_map = {
     [CmdType.ai_chat_end]: [any, any],
     [CmdType.ai_chat_error]: [any, any],
     [CmdType.ai_chat_abort]: [any, any],
+
+    // ===== AI 后台进程管理 WS 类型映射 =====
+    [CmdType.ai_bg_process_list_req]: [any, any],
+    [CmdType.ai_bg_process_list_rsq]: [any, any],
+    [CmdType.ai_bg_process_output_req]: [any, any],
+    [CmdType.ai_bg_process_output_rsq]: [any, any],
+    [CmdType.ai_bg_process_kill_req]: [any, any],
+    [CmdType.ai_bg_process_kill_rsq]: [any, any],
 }
 
 export enum WsConnectType {

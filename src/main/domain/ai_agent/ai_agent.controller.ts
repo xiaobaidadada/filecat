@@ -15,6 +15,8 @@ import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
 import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../common/req/filecat.ai.pojo";
+import {backgroundProcessManager} from "./background_process.manager";
+import {FileUtil} from "../file/FileUtil";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -447,5 +449,55 @@ export class Ai_AgentController {
         return Sucess(settingService.ai_system_prompts_get());
     }
 
+    // ===== AI 后台进程管理 WS 路由 =====
+
+    /** 客户端请求后台进程列表 */
+    @msg(CmdType.ai_bg_process_list_req)
+    async aiBgProcessList(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const ctx = data.context || {};
+        const processes = backgroundProcessManager.listProcesses(ctx.session_id || undefined);
+        return { processes };
+    }
+
+    /** 客户端请求某个进程的输出 */
+    @msg(CmdType.ai_bg_process_output_req)
+    async aiBgProcessOutput(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const ctx = data.context || {};
+        const { pid } = ctx;
+        const result = backgroundProcessManager.getProcessOutput(pid);
+        if (!result) {
+            return { success: false, message: `进程 PID=${pid} 不存在或已被清理。` };
+        }
+        let output = "";
+        try {
+            if (await FileUtil.access(result.output_file)) {
+                output = (await FileUtil.readFileSync(result.output_file)).toString();
+            }
+        } catch (e: any) {
+            return { success: false, message: `读取输出失败: ${e.message}` };
+        }
+        return {
+            success: true,
+            pid,
+            running: result.running,
+            output_file: result.output_file,
+            output,
+        };
+    }
+
+    /** 客户端请求终止某个进程 */
+    @msg(CmdType.ai_bg_process_kill_req)
+    async aiBgProcessKill(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const ctx = data.context || {};
+        const { pid } = ctx;
+        const killed = backgroundProcessManager.killProcess(pid);
+        return { success: killed, pid, message: killed ? "进程已终止" : "进程不存在或已退出" };
+    }
 
 }

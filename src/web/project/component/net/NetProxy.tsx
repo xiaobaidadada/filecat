@@ -146,7 +146,6 @@ export function NetProxy(props) {
     const http_proxy_save = async () => {
         const result = await netHttp.post("http/proxy/server/save", httpServer);
         if (result.code === RCode.Success) {
-            init();
             NotySuccess("保存成功")
         }
     }
@@ -197,7 +196,7 @@ export function NetProxy(props) {
         if (!item.random_key) {
             item.random_key = generateRandomHash()
             setHttpServer({...httpServer});
-            await http_proxy_save()
+            // await http_proxy_save()
         }
         const res = await netHttp.post(`http/proxy/server/code/get`, {key: item.random_key, name: item.random_key});
         setEditorSetting({

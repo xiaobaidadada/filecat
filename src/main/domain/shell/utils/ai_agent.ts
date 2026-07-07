@@ -188,6 +188,7 @@ export class ai_agent_class {
             const workMessages = aiAgentMemoryService.build_context_by_session(this.session, this.pendingMessages);
             await chat_core.chat({
                 wss:this.wss,
+                session_id: this.sessionId,
                 tools,
                 originMessages: workMessages,
                 token: this.token,

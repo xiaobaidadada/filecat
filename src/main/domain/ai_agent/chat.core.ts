@@ -45,6 +45,8 @@ export interface ChatOptions {
     on_end: (stats?: { input_chars: number; output_chars: number; once_messages_list?:ai_agent_message_item[]  }) => void;
     sys_prompt?: string;
     cwd?: string;
+    /** 当前会话 ID，用于后台进程等需要关联会话的功能 */
+    session_id?: string;
     /** 可动态传入的 AI 模型配置，不传则使用全局 ai_config */
     aiConfig?: ai_agent_Item;
     /** 可动态传入的环境变量配置，不传则使用全局 ai_config_env */
@@ -136,6 +138,7 @@ export class ChatCore {
     // 检测权限 补充参数
     private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface) {
         switch (toolName) {
+            case "exec_cmd_background":
             case "exec_cmd": {
                 args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
                 const cmds = StringUtil.splitBashCommands(args.cmd)
@@ -201,6 +204,7 @@ export class ChatCore {
             on_end,
             sys_prompt,
             cwd,
+            session_id,
             aiConfig,
             aiEnv,
             tools
@@ -237,6 +241,7 @@ export class ChatCore {
 用户当前所在的根目录是 ${rootPath}，
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
+当前会话id 为：${session_id}
 
 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
 你的能力是控制电脑服务器，执行任何可以控制服务器的命令，实现高效的运维，写代码，服务器问答，智能电脑服务器的自动化助手。
@@ -343,6 +348,8 @@ ${user_local_file_prompt}
                 ,
                 // ===== error_call =====
                 error_call:(e) => {
+                    // API 错误时先保存已收集的消息，再抛出
+                    on_end({ input_chars: total_input_chars, output_chars: total_output_chars, once_messages_list });
                     throw e
                 },
                     controller:controller}
@@ -397,7 +404,7 @@ ${user_local_file_prompt}
                         callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
                         await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss);
 
-                        let result = await ai_agentService.callTool(toolName, args,user_id,options.wss);
+                        let result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss);
                         let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         callItem.success = true;
                         callItem.tool_result = resultStr;
@@ -554,7 +561,7 @@ ${user_local_file_prompt}
             props.call_data(result.choices[0].message);
 
         } catch (e: any) {
-            console.log(`llm请求报错 ${e?.message} }`)
+            console.log(`llm请求报错`,e)
             if (e.name !== "AbortError") {
                 props.error_call(e);
             }

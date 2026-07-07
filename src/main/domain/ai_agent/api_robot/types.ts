@@ -97,6 +97,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
                         input_chars: inputChars, output_chars: outputChars,
                     }).catch(console.error);
                 },
+                session_id:session.id
             };
             chatOpts.aiConfig = modelConfig||ai_agentService.ai_config;
             chatOpts.aiEnv = modelEnv||ai_agentService.ai_config_env;

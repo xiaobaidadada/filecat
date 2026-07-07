@@ -43,6 +43,7 @@ import ChatHeader from "./ChatHeader";
 import SessionList from "./SessionList";
 import ChatMessageList from "./ChatMessageList";
 import ChatInput from "./ChatInput";
+import BackgroundProcessPanel from "./BackgroundProcessPanel";
 
 /** 格式化数字（加千位分隔符） */
 const formatChars = (chars: number | undefined): string => {
@@ -67,6 +68,7 @@ export default function AiAgentChatPage() {
 
     // ===== 全局/持久化状态 =====
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
+    const [ai_bg_expanded, set_ai_bg_expanded] = useAtom($stroe.ai_bg_expanded);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [batchMode, setBatchMode] = useState(false);
     const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
@@ -168,7 +170,11 @@ export default function AiAgentChatPage() {
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         setMessages(toUiMessages(session.messages));
-        if (switch_menu) set_ai_session_collapsed(false);
+        if (switch_menu) {
+            set_ai_session_collapsed(false);
+        }
+        // 后台进程面板打开时，切换会话后刷新进程列表
+        BackgroundProcessPanel.refresh?.();
         requestAnimationFrame(() => scrollToBottom(false));
     };
 
@@ -550,6 +556,8 @@ export default function AiAgentChatPage() {
                 onToggleSessionPanel={toggleSessionPanel}
                 onCreateSession={createSession}
                 onBatchDeleteMessages={batchDeleteMessages}
+                bgProcessVisible={ai_bg_expanded}
+                onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
             />
 
             <div className="chat-page chat-page-with-sessions">
@@ -570,6 +578,9 @@ export default function AiAgentChatPage() {
                     onBatchDeleteSessions={batchDeleteSessions}
                     onClearAllSessions={clearAllSessions}
                 />
+
+                {/* 后台进程面板 — 与会话列表一样始终存在，折叠通过 atom 控制 */}
+                <BackgroundProcessPanel />
 
                 <section className="chat-main">
                     {messages?.length === 0 && (

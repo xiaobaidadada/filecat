@@ -1005,3 +1005,195 @@
 .chat-message.user .call-list-details summary {
     color: rgba(255, 255, 255, 0.7);
 }
+
+/* ===== 后台进程面板样式 ===== */
+/* PC 端：默认 display:none，通过顶部按钮切换，展开时显示在右侧 */
+/* 移动端：默认 display:none，展开时从右侧滑入，与会话列表互斥 */
+
+.chat-bg-process-panel {
+    display: none;
+    width: 280px;
+    min-width: 220px;
+    flex-direction: column;
+    background: #fafafa;
+    border-left: 1px solid #e5e7eb;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* PC 端展开 */
+.chat-bg-process-panel.expanded {
+    display: flex;
+}
+
+/* ===== 展开状态内容 ===== */
+.chat-bg-process-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.chat-bg-process-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #1f2937;
+}
+
+.chat-bg-process-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.chat-bg-process-count {
+    font-size: 0.8em;
+    color: #6b7280;
+}
+
+.chat-bg-process-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+}
+
+.chat-bg-process-empty {
+    text-align: center;
+    padding: 24px 0;
+    color: #9ca3af;
+    font-size: 0.9em;
+}
+
+.chat-bg-process-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s ease;
+}
+
+.chat-bg-process-item:hover,
+.chat-bg-process-item.active {
+    background: #fff;
+    border-color: #d6d9de;
+}
+
+.chat-bg-process-item.running {
+    border-left: 3px solid #22c55e;
+}
+
+.chat-bg-process-item.finished {
+    border-left: 3px solid #9ca3af;
+    opacity: 0.7;
+}
+
+.chat-bg-process-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chat-bg-process-pid {
+    font-weight: 600;
+    font-size: 0.85em;
+    color: #1f2937;
+}
+
+.chat-bg-process-cmd {
+    font-size: 0.8em;
+    color: #4b5563;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.chat-bg-process-time {
+    font-size: 0.75em;
+    color: #9ca3af;
+}
+
+.chat-bg-process-status.running-dot {
+    color: #22c55e;
+    font-size: 0.7em;
+}
+
+.chat-bg-process-exit-code {
+    font-size: 0.75em;
+    color: #9ca3af;
+    font-family: monospace;
+}
+
+.chat-bg-process-item-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* 输出查看区 */
+.chat-bg-process-output {
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    max-height: 40%;
+    flex-shrink: 0;
+}
+
+.chat-bg-process-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.chat-bg-process-output-content {
+    flex: 1;
+    overflow: auto;
+    padding: 8px;
+}
+
+.chat-bg-process-output-pre {
+    margin: 0;
+    padding: 8px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+    line-height: 1.4;
+}
+
+/* ===== 移动端适配 ===== */
+@media (max-width: 736px) {
+    .chat-bg-process-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 1002;
+        width: 17em;
+        min-width: 17em;
+        height: 100%;
+        padding-top: var(--top-length);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+}

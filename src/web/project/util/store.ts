@@ -189,6 +189,8 @@ export const $stroe = {
     zoom_style_by_percent: atom<number>(100),
     // ai 会话列表
     ai_session_collapsed: sync_atomWithStorage<boolean>("ai_session_collapsed", false),
+    // ai 后台进程面板
+    ai_bg_expanded: sync_atomWithStorage<boolean>("ai_bg_expanded", false),
     // 空白搜索模式
     blank_search_mode: sync_atomWithStorage<boolean>("blank_search_mode", false),
     blank_search_mode_for_temp: atom<boolean>(false),

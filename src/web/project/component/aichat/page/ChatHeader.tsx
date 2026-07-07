@@ -41,6 +41,10 @@ interface ChatHeaderProps {
     onToggleBatchMode: () => void;
     /** 批量删除消息 */
     onBatchDeleteMessages: () => void;
+    /** 后台进程面板是否可见 */
+    bgProcessVisible?: boolean;
+    /** 切换后台进程面板 */
+    onToggleBgProcess?: () => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -54,6 +58,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     onCreateSession,
     onToggleBatchMode,
     onBatchDeleteMessages,
+    bgProcessVisible,
+    onToggleBgProcess,
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -106,6 +112,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             {batchMode && selectedMsgCount > 0 && (
                 <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={onBatchDeleteMessages} />
             )}
+            <ActionButton
+                icon={"terminal"}
+                title={t("后台进程")}
+                onClick={onToggleBgProcess}
+                selected={bgProcessVisible}
+            />
             {check_user_auth(UserAuth.ai_agent_setting) && (
                 <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={() => {
                     navigate(`/${routerConfig.ai_rebot_setting_page}`);
