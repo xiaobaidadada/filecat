@@ -529,8 +529,9 @@ export default function AiAgentChatPage() {
         init();
         requestAnimationFrame(() => scrollToBottom(false));
 
-        // 初始化拉取全局后台进程总数
-        bgPanelRef.fetchCount?.().then(setBgProcessCount);
+        // 复用 BackgroundProcessPanel 的请求结果获取全局进程总数
+        bgPanelRef.onCountChange = setBgProcessCount;
+        bgPanelRef.refresh?.();
 
         // 订阅后台进程数变化通知
         ws.addMsg(CmdType.ai_bg_process_count_notify, (data: any) => {
