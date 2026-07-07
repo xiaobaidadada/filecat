@@ -33,12 +33,10 @@ interface BgProcessOutput {
     message?: string;
 }
 
-// 组件静态方法声明
-interface BackgroundProcessPanelType extends React.FC<{}> {
-    refresh?: () => void;
-}
+// 暴露给外部的 refresh 方法引用
+const bgPanelRef: { refresh?: () => void; fetchCount?: () => Promise<number> } = {};
 
-const BackgroundProcessPanel: BackgroundProcessPanelType = function BackgroundProcessPanel() {
+const BackgroundProcessPanel: React.FC<{}> = function BackgroundProcessPanel() {
     const { t } = useTranslation();
     const [processes, setProcesses] = useState<BgProcessInfo[]>([]);
     const [loading, setLoading] = useState(false);
@@ -69,8 +67,21 @@ const BackgroundProcessPanel: BackgroundProcessPanelType = function BackgroundPr
         }
     }, []);
 
-    // 暴露静态方法供外部调用（如切换会话时刷新进程列表）
-    BackgroundProcessPanel.refresh = fetchProcessList;
+    // 把 refresh 挂到外部可访问的引用上
+    bgPanelRef.refresh = fetchProcessList;
+
+    // 拉取全局后台进程总数（不依赖组件状态，纯返回）
+    const fetchGlobalCount = useCallback(async (): Promise<number> => {
+        try {
+            const wsd = new WsData(CmdType.ai_bg_process_list_req);
+            wsd.context = {}; // 空 context → 全局所有会话
+            const result = await ws.send(wsd);
+            return result?.context?.processes?.length ?? 0;
+        } catch {
+            return 0;
+        }
+    }, []);
+    bgPanelRef.fetchCount = fetchGlobalCount;
 
     const fetchOutput = useCallback(async (pid: number) => {
         setOutputLoading(true);
@@ -210,4 +221,5 @@ const BackgroundProcessPanel: BackgroundProcessPanelType = function BackgroundPr
     );
 };
 
+export { bgPanelRef };
 export default BackgroundProcessPanel;

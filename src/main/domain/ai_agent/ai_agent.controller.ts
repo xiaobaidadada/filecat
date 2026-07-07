@@ -501,3 +501,8 @@ export class Ai_AgentController {
     }
 
 }
+
+// 注入进程数变化回调：通过 WS 广播给所有在线客户端
+backgroundProcessManager.onCountChange = (count: number) => {
+    Wss.sendToAllClient(CmdType.ai_bg_process_count_notify, { count });
+};

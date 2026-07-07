@@ -43,6 +43,8 @@ interface ChatHeaderProps {
     onBatchDeleteMessages: () => void;
     /** 后台进程面板是否可见 */
     bgProcessVisible?: boolean;
+    /** 所有会话的后台进程总数 */
+    bgProcessCount?: number;
     /** 切换后台进程面板 */
     onToggleBgProcess?: () => void;
 }
@@ -59,6 +61,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     onToggleBatchMode,
     onBatchDeleteMessages,
     bgProcessVisible,
+    bgProcessCount,
     onToggleBgProcess,
 }) => {
     const { t } = useTranslation();
@@ -117,6 +120,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 title={t("后台进程")}
                 onClick={onToggleBgProcess}
                 selected={bgProcessVisible}
+                tip={bgProcessCount?bgProcessCount:null}
             />
             {check_user_auth(UserAuth.ai_agent_setting) && (
                 <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={() => {

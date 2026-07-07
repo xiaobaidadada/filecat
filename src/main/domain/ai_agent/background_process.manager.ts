@@ -59,6 +59,9 @@ export class BackgroundProcessManager {
     /** 输出目录路径 */
     private outputDir: string;
 
+    /** 进程数量变化时的回调（由 controller 层注入，用于 WS 推送通知） */
+    public onCountChange?: (count: number) => void;
+
     constructor() {
         this.outputDir = DataUtil.get_tem_path(data_dir_tem_name.sys_file_dir);
         const bgDir = path.join(this.outputDir, "background_cmd_output");
@@ -147,6 +150,7 @@ export class BackgroundProcessManager {
             writeStream.end();
             this.processes.delete(record.pid);
             FileUtil.remove(outputFile);
+            this.onCountChange?.(this.processes.size);
         });
 
         // 进程错误（spawn 失败等）
@@ -157,9 +161,11 @@ export class BackgroundProcessManager {
             writeStream.end();
             this.processes.delete(record.pid);
             FileUtil.remove(outputFile);
+            this.onCountChange?.(this.processes.size);
         });
 
         this.processes.set(record.pid, record);
+        this.onCountChange?.(this.processes.size);
 
         return this.toInfo(record);
     }

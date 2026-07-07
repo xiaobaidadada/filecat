@@ -9,6 +9,9 @@ import {exec_cmd_background_schema} from "./exec_cmd_background";
 import {list_background_processes_schema} from "./list_background_processes";
 import {get_background_process_output_schema} from "./get_background_process_output";
 import {sleep_schema} from "./sleep.tools";
+import {getProcessAddon} from "../../bin/bin";
+import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
+import {kill_background_processes_schema, kill_background_processes_tool} from "./kill_background_processes";
 
 export type ai_agent_params_type = {
     type: string,
@@ -38,3 +41,19 @@ export const ai_tools = [
     sleep_schema
     // apply_patch_schema
 ];
+
+
+// 特殊处理
+const kill_proc = getProcessAddon();
+if(kill_proc) {
+    ai_tools.push(kill_background_processes_schema)
+    Ai_agentTools['kill_background_processes'] = kill_background_processes_tool
+    tools_des_map['kill_background_processes'] = {
+        sleep: {
+            get_name: () => "kill background processes",
+            get_params: (args) => {
+                return `kill pid： ${args.pid}`
+            }
+        }
+    }
+}

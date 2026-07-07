@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { CmdType } from "../../../../../common/frame/WsData";
 
 import { ai_agentHttp, settingHttp } from "../../../util/config";
 import { debounce } from "../../../../../common/fun.util";
@@ -43,7 +44,8 @@ import ChatHeader from "./ChatHeader";
 import SessionList from "./SessionList";
 import ChatMessageList from "./ChatMessageList";
 import ChatInput from "./ChatInput";
-import BackgroundProcessPanel from "./BackgroundProcessPanel";
+import BackgroundProcessPanel, { bgPanelRef } from "./BackgroundProcessPanel";
+import { ws } from "../../../util/ws";
 
 /** 格式化数字（加千位分隔符） */
 const formatChars = (chars: number | undefined): string => {
@@ -82,6 +84,7 @@ export default function AiAgentChatPage() {
     const env_config = useRef(new ai_agent_item_dotenv());
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
     const [currentModelName, setCurrentModelName] = useState('');
+    const [bgProcessCount, setBgProcessCount] = useState(0); // 所有会话的后台进程总数
 
     /** 从 env_config 中读取当前模型的 request_type */
     const getRequestType = () => env_config?.current?.ai_config?.request_type || 'completions';
@@ -174,7 +177,7 @@ export default function AiAgentChatPage() {
             set_ai_session_collapsed(false);
         }
         // 后台进程面板打开时，切换会话后刷新进程列表
-        BackgroundProcessPanel.refresh?.();
+        bgPanelRef.refresh?.();
         requestAnimationFrame(() => scrollToBottom(false));
     };
 
@@ -525,6 +528,21 @@ export default function AiAgentChatPage() {
     useEffect(() => {
         init();
         requestAnimationFrame(() => scrollToBottom(false));
+
+        // 初始化拉取全局后台进程总数
+        bgPanelRef.fetchCount?.().then(setBgProcessCount);
+
+        // 订阅后台进程数变化通知
+        ws.addMsg(CmdType.ai_bg_process_count_notify, (data: any) => {
+            const count = data?.context?.count;
+            if (typeof count === 'number') {
+                setBgProcessCount(count);
+            }
+        });
+
+        return () => {
+            ws.removeMsg(CmdType.ai_bg_process_count_notify);
+        };
     }, []);
 
     useEffect(() => {
@@ -557,6 +575,7 @@ export default function AiAgentChatPage() {
                 onCreateSession={createSession}
                 onBatchDeleteMessages={batchDeleteMessages}
                 bgProcessVisible={ai_bg_expanded}
+                bgProcessCount={bgProcessCount}
                 onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
             />
 

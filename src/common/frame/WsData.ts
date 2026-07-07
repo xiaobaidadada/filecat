@@ -142,6 +142,7 @@ export enum CmdType {
     ai_bg_process_output_rsq, // 服务端返回某个进程的输出
     ai_bg_process_kill_req,   // 客户端请求终止某个进程
     ai_bg_process_kill_rsq,   // 服务端返回终止结果
+    ai_bg_process_count_notify, // 服务端推送后台进程总数变化
 
 }
 
@@ -259,6 +260,7 @@ export type ws_cmd_type_map = {
     [CmdType.ai_bg_process_output_rsq]: [any, any],
     [CmdType.ai_bg_process_kill_req]: [any, any],
     [CmdType.ai_bg_process_kill_rsq]: [any, any],
+    [CmdType.ai_bg_process_count_notify]: [any, any],
 }
 
 export enum WsConnectType {
