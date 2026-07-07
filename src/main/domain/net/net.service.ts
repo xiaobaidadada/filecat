@@ -682,48 +682,71 @@ export class NetService {
                 socketSet.delete(socket);
             });
         });
-        // ws 走升级 一般不会触发
-        // proxyServer.on('upgrade', (req, socket, head) => {
-        //     const host = req.headers.host!;
-        //     const fullUrl = `http://${host}${req.url}`;
-        //     const item = this.findProxyRule(fullUrl);
-        //     let targetHost: string;
-        //     let targetPort: number;
-        //     if (item) {
-        //         // 命中代理规则，改写目标地址
-        //         const rewritten = fullUrl.replace(
-        //             new RegExp(item.rewrite_regexp_source),
-        //             item.rewrite_target
-        //         );
-        //         const rewrittenUrl = new URL(rewritten);
-        //         targetHost = rewrittenUrl.hostname;
-        //         targetPort = Number(rewrittenUrl.port) || 80;
-        //     } else {
-        //         const targetUrl = new URL(`http://${host}${req.url}`);
-        //         targetHost = targetUrl.hostname;
-        //         targetPort = Number(targetUrl.port) || 80;
-        //     }
-        //     const proxySocket = net.connect(targetPort, targetHost);
-        //     proxySocket.on('connect', () => {
-        //         // 关键：先发送原始请求行 + 头给目标服务器
-        //         const rawRequest =
-        //             `${req.method} ${req.url} HTTP/1.1\r\n` +
-        //             Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n') +
-        //             `\r\n\r\n`;
-        //         proxySocket.write(rawRequest);
-        //         if (head && head.length) proxySocket.write(head);
-        //         // 双向管道
-        //         proxySocket.pipe(socket);
-        //         socket.pipe(proxySocket);
-        //     });
-        //     const cleanup = () => {
-        //         socket.destroy();
-        //         proxySocket.destroy();
-        //     };
-        //     socket.on('error', cleanup);
-        //     socket.on('close', cleanup);
-        //     proxySocket.on('error', cleanup);
-        // });
+        // ws pc 不走手机走
+        newServer.on('upgrade', (req, socket, head) => {
+            const host = req.headers.host!;
+            // req.url 可能是完整 URL（如 ws://host:port/path）或路径（如 /path）
+            // 先解析出 hostname/port/path，构造用于规则匹配的 http:// URL
+            let urlHost: string;
+            let urlPort: number;
+            let urlPath: string;
+            let wsProtocol: string;
+            if (req.url!.startsWith('ws://') || req.url!.startsWith('wss://')) {
+                // 完整 WebSocket URL
+                const parsedWsUrl = new URL(req.url!);
+                urlHost = parsedWsUrl.hostname;
+                urlPort = Number(parsedWsUrl.port) || (parsedWsUrl.protocol === 'wss:' ? 443 : 80);
+                urlPath = parsedWsUrl.pathname + parsedWsUrl.search;
+                wsProtocol = parsedWsUrl.protocol; // 'ws:' 或 'wss:'
+            } else {
+                // 相对路径，用 Host 头补全
+                urlHost = host.split(':')[0];
+                urlPort = Number(host.split(':')[1]) || 80;
+                urlPath = req.url!;
+                wsProtocol = 'ws:';
+            }
+            // 构造 http:// URL 用于规则匹配（规则通常以 http:// 或 https:// 编写）
+            const matchUrl = `http://${urlHost}:${urlPort}${urlPath}`;
+            const item = this.findProxyRule(matchUrl);
+            let targetHost: string;
+            let targetPort: number;
+            if (item) {
+                // 命中代理规则，改写目标地址
+                const rewritten = matchUrl.replace(
+                    new RegExp(item.rewrite_regexp_source),
+                    item.rewrite_target
+                );
+                const rewrittenUrl = new URL(rewritten);
+                targetHost = rewrittenUrl.hostname;
+                targetPort = Number(rewrittenUrl.port) || 80;
+            } else {
+                targetHost = urlHost;
+                targetPort = urlPort;
+            }
+            const proxySocket = net.connect(targetPort, targetHost);
+            proxySocket.on('connect', () => {
+                // 发送给目标服务器的请求行应使用路径（而非完整 URL）
+                const requestPath = req.url!.startsWith('ws://') || req.url!.startsWith('wss://')
+                    ? new URL(req.url!).pathname + new URL(req.url!).search
+                    : req.url!;
+                const rawRequest =
+                    `${req.method} ${requestPath} HTTP/1.1\r\n` +
+                    Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n') +
+                    `\r\n\r\n`;
+                proxySocket.write(rawRequest);
+                if (head && head.length) proxySocket.write(head);
+                // 双向管道
+                proxySocket.pipe(socket);
+                socket.pipe(proxySocket);
+            });
+            const cleanup = () => {
+                socket.destroy();
+                proxySocket.destroy();
+            };
+            socket.on('error', cleanup);
+            socket.on('close', cleanup);
+            proxySocket.on('error', cleanup);
+        });
         // https wss ws（概率） 走connect  处理 HTTPS CONNECT 隧道
         newServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
