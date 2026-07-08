@@ -558,7 +558,7 @@ export class SettingController {
     @Post("/auto_upgrade_setting/upgrade_now")
     async upgrade_now(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
-        await settingService.upgrade_now();
+        settingService.upgrade_now().catch(console.error);
         return Sucess("1");
     }
 
