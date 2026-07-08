@@ -75,7 +75,7 @@ export default function ShareListSetting() {
                 </div>
             )})
     }
-    return <div className="common-box ">
+    return <div className="common-box " style={{ overflowY: "auto" }}>
         <Header>
             <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={()=>{
                 navigate(-1);
