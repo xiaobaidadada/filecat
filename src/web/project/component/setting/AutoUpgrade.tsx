@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {Card} from "../../../meta/component/Card";
-import {ButtonText} from "../../../meta/component/Button";
+import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputText, Select} from "../../../meta/component/Input";
 import {settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -9,6 +9,8 @@ import {useTranslation} from "react-i18next";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
+import {useAtom} from "jotai/index";
+import {$stroe} from "../../util/store";
 
 export function AutoUpgrade() {
     const { t } = useTranslation();
@@ -19,7 +21,8 @@ export function AutoUpgrade() {
     const [exeDownloadUrl, setExeDownloadUrl] = useState('');
     const [checkInterval, setCheckInterval] = useState(180);
     const [upgrading, setUpgrading] = useState(false);
-    
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+
     const runEnv = process.env.run_env as string || 'npm';
     
     const fetchSetting = async () => {
@@ -75,7 +78,22 @@ export function AutoUpgrade() {
         return null;
     }
     
-    return <Card title={t("自动升级")} rightBottomCom={<ButtonText text={t('保存')} clickFun={saveSetting}/>}>
+    return <Card
+                 self_title={
+                     <span className={" div-row "}>
+                         <h2>
+                             {t("自动升级")}
+                         </h2>
+                         <ActionButton icon={"info"} onClick={()=>{
+                             set_prompt_card({open:true,title:"信息",context_div : (
+                                     <div >
+                                         {t(`自动升级在 windows 下目前可能不稳定`)}
+                                     </div>
+                                 )})
+                         }} title={"信息"}/>
+                     </span>
+        }
+                 rightBottomCom={<ButtonText text={t('保存')} clickFun={saveSetting}/>}>
         {/* 版本检测地址：始终显示 */}
         <div>{t("系统版本检测地址")}</div>
         <InputText 
