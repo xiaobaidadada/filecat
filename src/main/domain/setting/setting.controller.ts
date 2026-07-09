@@ -177,7 +177,7 @@ export class SettingController {
         if (req.mode === TokenTimeMode.length && req.length < 10) {
             return Fail("时间过短小于10秒");
         }
-        settingService.saveToken(req.mode, req.length);
+        settingService.saveToken(req.mode, req.length, req.persist);
         return Sucess("1");
     }
 

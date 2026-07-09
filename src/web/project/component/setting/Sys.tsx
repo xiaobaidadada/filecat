@@ -39,6 +39,7 @@ export function  Sys() {
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
 
     const [tokenMode,setTokenMode]  = useState(TokenTimeMode.close);
+    const [tokenPersist, setTokenPersist] = useState(false);
     const [tokenSeconds,setTokenSeconds] = useState(undefined);
 
     const { t, i18n } = useTranslation();
@@ -96,6 +97,9 @@ export function  Sys() {
                 }
                 if (data['mode']){
                     setTokenMode(data['mode']);
+                }
+                if (data['persist'] !== undefined){
+                    setTokenPersist(data['persist']);
                 }
             }
         }
@@ -158,6 +162,7 @@ export function  Sys() {
     const tokenUpdate = async ()=>{
         const data = new TokenSettingReq();
         data.mode = tokenMode;
+        data.persist = tokenPersist;
         if (TokenTimeMode.length === data.mode && !tokenSeconds) {
             NotyFail("秒数不能为空")
         }
@@ -261,6 +266,10 @@ export function  Sys() {
                         <InputRadio value={1} context={t("永不过期")} selected={tokenMode === TokenTimeMode.forver}  onchange={()=>{setTokenMode(TokenTimeMode.forver)}}/>
                     ]}/>
                     {tokenMode === TokenTimeMode.length && <InputText placeholder={t('秒')}  value={tokenSeconds} handleInputChange={(value)=>{setTokenSeconds(value)}} />}
+                    <label style={{display:'flex',alignItems:'center',gap:6,marginTop:8,whiteSpace:'nowrap'}}>
+                        <input type="checkbox" checked={tokenPersist} onChange={()=>setTokenPersist(!tokenPersist)} />
+                        {t("持久化")}
+                    </label>
 
                 </Card>
             </Dashboard>

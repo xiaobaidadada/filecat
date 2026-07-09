@@ -9,7 +9,8 @@ import {get_proxy_menuRots, use_auth_check} from "../util/store.util";
 import {UserAuth} from "../../../common/req/user.req";
 import {Overlay} from "../../meta/component/Dashboard";
 import CookieUtils from "../util/cookie";
-import { useAtom } from 'jotai'; 
+import { useAtom } from 'jotai';
+import {userHttp} from "../util/config";
 
 const FileList = React.lazy(() => import("./file/FileList"))
 const Prompt = React.lazy(() => import("./prompts/Prompt"))
@@ -47,7 +48,8 @@ function Layout() {
     const {check_user_auth} = use_auth_check();
     const have_proxy_menuRots= get_proxy_menuRots()
 
-    function logout() {
+    async function logout() {
+        try { await userHttp.post('logout'); } catch {}
         localStorage.setItem('token', '')
     }
 

@@ -9,11 +9,16 @@ export class Cache {
     private static timeLenMap: Map<string, number> = new Map();
     private static stampMap: Map<string, number> = new Map();
 
+    /** 是否开启持久化（服务重启后 token 仍然有效） */
+    private static persist_open = false;
+
+
     /**
      * 持久化 token 到文件（通过 DataUtil）
      * 仅在新建 token、过期删除、修改过期模式、清空时调用，频率很低
      */
     private static persist(): void {
+        if (!this.persist_open) return;
         const data = {
             valueMap: Object.fromEntries(this.valueMap),
             timeLenMap: Object.fromEntries(this.timeLenMap),
@@ -27,6 +32,10 @@ export class Cache {
      * 在服务启动时调用
      */
     public static restore(): void {
+        // 先恢复持久化开关
+        const config = DataUtil.get<{ persist?: boolean }>(data_common_key.token_setting);
+        if (config && config.persist) this.persist_open = true;
+        if (!this.persist_open) return;
         const data = DataUtil.get<{
             valueMap?: Record<string, any>;
             timeLenMap?: Record<string, number>;
@@ -103,6 +112,16 @@ export class Cache {
      */
     public static set_default_time_len(len: number): void {
         this.time_len = len;
+        this.persist();
+    }
+
+    /**
+     * 删除单个 token
+     */
+    public static deleteValue(key: string): void {
+        this.valueMap.delete(key);
+        this.timeLenMap.delete(key);
+        this.stampMap.delete(key);
         this.persist();
     }
 

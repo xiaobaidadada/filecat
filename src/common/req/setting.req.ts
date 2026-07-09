@@ -7,6 +7,7 @@ export enum TokenTimeMode {
 export class TokenSettingReq {
     mode: TokenTimeMode;
     length: number; // 秒
+    persist?: boolean; // 是否持久化到磁盘（服务重启后还能用）
 }
 
 export class FileSettingItem {

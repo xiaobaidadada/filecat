@@ -125,6 +125,16 @@ export class UserController {
         return Sucess(pojo);
     }
 
+    // 退出登录，删除当前 token
+    @Post('/logout')
+    async logout(@Req() req: Request) {
+        const token = req.headers.authorization;
+        if (token) {
+            Cache.deleteValue(token);
+        }
+        return Sucess("ok");
+    }
+
     // 获取所有用户
     @Get('/all_users')
     all_users(@Req() req: Request) {

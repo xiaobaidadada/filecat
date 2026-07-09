@@ -53,7 +53,7 @@ const customer_router_key = data_common_key.customer_router_key;
 
 const customer_api_router_key = data_common_key.customer_api_router_key;
 
-const token_setting = data_common_key.token_setting;
+// const token_setting = data_common_key.token_setting;
 
 // const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
 
@@ -536,21 +536,18 @@ export class SettingService {
     }
 
     getToken() {
-        return DataUtil.get(token_setting);
+        return DataUtil.get(data_common_key.token_setting);
     }
 
-    saveToken(mode: TokenTimeMode, length: number) {
+    saveToken(mode: TokenTimeMode, length: number, persist?: boolean) {
         if (mode === TokenTimeMode.close) {
-            // 使用默认长度模式
             Cache.set_default_time_len(60 * 60 * 1000);
         } else if (mode === TokenTimeMode.length) {
-            // 使用指定长度模式
             Cache.set_default_time_len(length * 1000);
         } else if (mode === TokenTimeMode.forver) {
-            // 永不过期
             Cache.set_default_time_len(-1);
         }
-        DataUtil.set(token_setting, {mode, length});
+        DataUtil.set(data_common_key.token_setting, {mode, length, persist});
     }
 
     share_timer :NodeJS.Timeout[] = []
@@ -591,9 +588,9 @@ export class SettingService {
 
 
     public init() {
-        const data = DataUtil.get(token_setting);
+        const data = DataUtil.get(data_common_key.token_setting);
         if (!!data && !!data['mode']) {
-            this.saveToken(data['mode'], data["length"]);
+            this.saveToken(data['mode'], data["length"],data['persist']);
         }
         // 高版本的 npm 也需要用pty环境了
         const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe', 'vim', 'nano', 'cat', 'tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
