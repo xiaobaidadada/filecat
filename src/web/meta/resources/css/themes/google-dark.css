@@ -405,13 +405,16 @@ table th {
   }
 }
 
-.chat-input-area textarea {
+.chat-input-area textarea,
+.chat-input-area .ace-input-container.chat-input .ace_editor,
+.chat-input-area .rich-textarea.chat-input {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);
   color: var(--textPrimary);
   border-color: var(--divider);
 }
-.chat-input-area textarea:focus {
+.chat-input-area textarea:focus,
+.chat-input-area .rich-textarea.chat-input:focus {
   border-color: var(--primary);
   background: var(--surfaceSecondary);
   box-shadow: 0 0 0 3px var(--primary-light);

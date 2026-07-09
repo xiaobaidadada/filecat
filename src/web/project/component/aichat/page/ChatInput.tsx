@@ -1,7 +1,8 @@
-import React, {useRef} from 'react';
+import React, {useRef, useImperativeHandle, forwardRef} from 'react';
 import {useTranslation} from "react-i18next";
 import {Icon, ActionButton, ButtonLittle} from "../../../../meta/component/Button";
 import ModelParamsButton from "./ModelParamsDialog";
+import RichTextarea, {RichTextareaHandle} from "../../RichTextarea";
 
 /**
  * 待发送附件条（文件标签展示）
@@ -29,30 +30,17 @@ export function AttachmentStrip({
     );
 }
 
+export interface ChatInputHandle {
+    getValue(): string;
+    setValue(val: string): void;
+    clear(): void;
+}
+
 /**
- * 聊天输入区域
+ * 聊天输入区域。使用 AceInput 替代 textarea，
+ * 避免受控模式下"有初始值就必须修改"的问题。
  */
-export default function ChatInput({
-                                      inputValue,
-                                      onInputChange,
-                                      onKeyDown,
-                                      onPaste,
-                                      onSend,
-                                      sending,
-                                      onAbort,
-                                      pendingAttachments,
-                                      onRemoveAttachment,
-                                      onOpenFilePicker,
-                                      onAddFiles,
-                                      onDrop,
-                                      onDragOver,
-                                      fileInputRef,
-                                      requestType,
-                                  }: {
-    inputValue: string;
-    onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-    onPaste: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+const ChatInput = forwardRef<ChatInputHandle, {
     onSend: () => void;
     sending: boolean;
     onAbort: () => void;
@@ -64,8 +52,15 @@ export default function ChatInput({
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
     requestType: string;
-}) {
+}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef, requestType }, ref) => {
     const {t} = useTranslation();
+    const rtRef = useRef<RichTextareaHandle>(null);
+
+    useImperativeHandle(ref, () => ({
+        getValue: () => rtRef.current?.getValue() ?? '',
+        setValue: (val: string) => rtRef.current?.setValue(val),
+        clear: () => rtRef.current?.clear(),
+    }));
 
     return (
         <div className="chat-input-area" onDrop={onDrop} onDragOver={onDragOver}>
@@ -86,12 +81,17 @@ export default function ChatInput({
                     pendingAttachments={pendingAttachments}
                     onRemove={onRemoveAttachment}
                 />
-                <textarea
-                    value={inputValue}
-                    onChange={onInputChange}
-                    onPaste={onPaste}
-                    onKeyDown={onKeyDown}
+                <RichTextarea
+                    ref={rtRef}
                     placeholder={t("输入消息")}
+                    onEnter={() => onSend()}
+                    onPaste={(e) => {
+                        const files = e.clipboardData?.files;
+                        if (files && files.length > 0) {
+                            e.preventDefault();
+                            onAddFiles(files);
+                        }
+                    }}
                     className="chat-input"
                 />
             </div>
@@ -105,4 +105,6 @@ export default function ChatInput({
             )}
         </div>
     );
-}
+});
+
+export default ChatInput;

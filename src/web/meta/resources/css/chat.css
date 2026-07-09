@@ -343,9 +343,11 @@
     align-items: flex-end;
 }
 
-.chat-input-area textarea.chat-input {
+.chat-input-area textarea.chat-input,
+.chat-input-area .ace-input-container.chat-input,
+.chat-input-area .rich-textarea.chat-input {
     width: 100%;
-    min-height: 2.5em;
+    min-height: 5rem;
     max-height: 20em;
     padding: 10px 14px;
     font-size: 0.95em;
@@ -360,10 +362,17 @@
     background: #fafafa;
 }
 
-.chat-input-area textarea.chat-input:focus {
+.chat-input-area textarea.chat-input:focus,
+.chat-input-area .ace-input-container.chat-input:focus-within,
+.chat-input-area .rich-textarea.chat-input:focus {
     border-color: #6366f1;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+/* ace 编辑器内部去掉默认背景，继承外层 */
+.chat-input-area .ace-input-container.chat-input .ace_editor {
+    background: transparent !important;
 }
 
 
@@ -1196,4 +1205,17 @@
         padding-top: var(--top-length);
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     }
+}
+
+/* RichTextarea 基础重置 */
+.rich-textarea {
+    outline: none;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+/* placeholder 用伪元素实现 */
+.rich-textarea[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
 }

@@ -463,3 +463,40 @@ body.rtl .card.floating .card-content .file-list {
   direction: ltr;
   text-align: left;
 }
+
+/* AceInput 模拟 input 样式 */
+.ace-input-container .ace_editor {
+    border: 1px solid var(--border-color, #d9d9d9);
+    border-radius: 4px;
+    font-family: inherit;
+    line-height: 28px !important;
+}
+.ace-input-container .ace_editor:focus-within {
+    border-color: var(#1677ff);
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+    outline: none;
+}
+/* 隐藏 gutter（行号区） */
+.ace-input-container .ace_gutter {
+    display: none;
+}
+/* placeholder 样式 */
+.ace-input-container .ace_placeholder {
+    color: var( #bfbfbf);
+    font-style: italic;
+    opacity: 0.7;
+    padding-left: 4px;
+}
+/* 光标行无背景 */
+.ace-input-container .ace_active-line {
+    background: transparent !important;
+}
+/* 选中颜色 */
+.ace-input-container .ace_selection {
+    background: rgba(22, 119, 255, 0.2) !important;
+}
+/* 内容区域 padding，让文字和边框有间距 */
+.ace-input-container .ace_scroller {
+    left: 4px !important;
+    right: 4px !important;
+}

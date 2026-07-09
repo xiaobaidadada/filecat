@@ -43,7 +43,7 @@ import { handleNonCompletionsRequest } from "./RequestTypeRenderers";
 import ChatHeader from "./ChatHeader";
 import SessionList from "./SessionList";
 import ChatMessageList from "./ChatMessageList";
-import ChatInput from "./ChatInput";
+import ChatInput, { ChatInputHandle } from "./ChatInput";
 import BackgroundProcessPanel, { bgPanelRef } from "./BackgroundProcessPanel";
 import { ws } from "../../../util/ws";
 
@@ -65,7 +65,7 @@ export default function AiAgentChatPage() {
     const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
     const [sending, setSending] = useState(false);
-    const [inputValue, setInputValue] = useState('');
+    const chatInputRef = useRef<ChatInputHandle>(null);
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
     // ===== 全局/持久化状态 =====
@@ -187,7 +187,7 @@ export default function AiAgentChatPage() {
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         if (sysPrompt) {
-            setInputValue(sysPrompt);
+            chatInputRef.current?.setValue(sysPrompt);
             setMessages([]);
         } else {
             setMessages([]);
@@ -235,14 +235,14 @@ export default function AiAgentChatPage() {
 
     // ===== 发送消息 =====
     const handleSend = async () => {
-        const text = inputValue.trim();
+        const text = (chatInputRef.current?.getValue() ?? '').trim();
         if (!text && pendingAttachments.length === 0) return;
 
         // AI 正在执行中 → 加入排队
         if (sending) {
             const attachments = await buildAttachments(pendingAttachments);
             chatStream.enqueueMessage(text, attachments);
-            setInputValue('');
+            chatInputRef.current?.clear();
             setPendingAttachments([]);
             const queuedMsg: Message = {
                 id: Date.now(),
@@ -269,7 +269,7 @@ export default function AiAgentChatPage() {
 
         const attachments = await buildAttachments(pendingAttachments);
         const userMsg: Message = { id: Date.now(), sender: 'user', text, attachments };
-        setInputValue('');
+        chatInputRef.current?.clear();
         setPendingAttachments([]);
 
 
@@ -307,27 +307,6 @@ export default function AiAgentChatPage() {
 
         // completions → 走 WebSocket 流式
         chatStream.startChatStream(sessionId, userMsg, () => chatStream.processPendingQueue());
-    };
-
-    // ===== 输入框事件 =====
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Process' || e.nativeEvent.isComposing || e.shiftKey || e.ctrlKey) return;
-        if (e.key === 'Enter') { e.preventDefault(); handleSend(); }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const el = e.target;
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-        setInputValue(el.value);
-    };
-
-    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        const files = e.clipboardData?.files;
-        if (files && files.length > 0) {
-            e.preventDefault();
-            addAttachments(files);
-        }
     };
 
     // ===== 附件操作 =====
@@ -624,10 +603,7 @@ export default function AiAgentChatPage() {
                     />
 
                     <ChatInput
-                        inputValue={inputValue}
-                        onInputChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                        onPaste={handlePaste}
+                        ref={chatInputRef}
                         onSend={handleSend}
                         sending={sending}
                         onAbort={chatStream.abort}
