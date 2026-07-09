@@ -12,6 +12,7 @@ import {sleep_schema} from "./sleep.tools";
 import {getProcessAddon} from "../../bin/bin";
 import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
 import {kill_background_processes_schema, kill_background_processes_tool} from "./kill_background_processes";
+import {pick_model_schema} from "./pick_next_model";
 
 export type ai_agent_params_type = {
     type: string,
@@ -38,7 +39,8 @@ export const ai_tools = [
     http_request_schema,
     search_in_files_schema,
     create_fs_entry_schema,
-    sleep_schema
+    sleep_schema,
+    // pick_model_schema
     // apply_patch_schema
 ];
 

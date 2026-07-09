@@ -3,6 +3,7 @@ import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
 import {Env} from "../../../common/node/Env";
 import {settingService} from "../setting/setting.service";
+import {SysEnum} from "../../../common/req/user.req";
 
 const {exec} = require('child_process');
 const util = require('util');
@@ -24,12 +25,16 @@ export class SystemUtil {
 
     public static killProcess(pid): void {
         if (!pid) return;
-        // if (sysType === 'win' || sysType === 'linux') {
-        // SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
-        getProcessAddon().kill_process(pid, true);
-        // } else {
-        //     SystemUtil.commandIsExist(`kill -9 ${pid} `)
-        // }
+        const addon =  getProcessAddon()
+        if( addon) {
+            addon.kill_process(pid, true);
+            return;
+        }
+        if (sysType === SysEnum.win) {
+        SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
+        } else {
+            SystemUtil.commandIsExist(`kill -9 ${pid} `)
+        }
     }
 
     public static async execAsync(cmd: string,cwd?:string): Promise<any> {

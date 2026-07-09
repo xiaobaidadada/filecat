@@ -15,6 +15,7 @@ import { DataUtil } from "../data/DataUtil";
 import { data_dir_tem_name } from "../data/data_type";
 import { settingService } from "../setting/setting.service";
 import { FileUtil } from "../file/FileUtil";
+import {SystemUtil} from "../sys/sys.utl";
 
 // ==================== 类型定义 ====================
 
@@ -207,7 +208,6 @@ export class BackgroundProcessManager {
 
         try {
             // 使用 SystemUtil.killProcess（跨平台）
-            const { SystemUtil } = require("../sys/sys.utl");
             SystemUtil.killProcess(pid);
             return true;
         } catch (e) {

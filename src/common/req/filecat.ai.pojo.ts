@@ -145,6 +145,7 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
     // messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
     allow_exec_cmd_directly = false; // 是否允许AI直接执行命令而不需要用户确认
     proxy_url?: string;
+    open_pick_model?: boolean;
 }
 
 export const ai_agent_item_dotenv_default = `
@@ -170,6 +171,9 @@ allow_exec_cmd_directly=false
 
 # 存放本地的 prompt 文件 用于每次聊天的时候自动读取并加载
 # options_local_file_path_prompt_list=["/prompt/a.txt"]
+
+# 开启切换模型 ，开启以后，你可以自己写 prompt 提供多个模型让 ai 自己根据每次聊天切换下一步调用其他模型的次数
+# open_pick_model=false
 `
 
 export class ai_mcp_server_item {

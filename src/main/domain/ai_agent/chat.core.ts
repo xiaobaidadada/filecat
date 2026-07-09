@@ -25,6 +25,7 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
+import {pick_model_schema} from "./tools/pick_next_model";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -272,7 +273,9 @@ ${user_local_file_prompt}
 
         const loopEnv = {
             toolLoop: env.tool_call_max,
-            tool_error_max: env.tool_error_max
+            tool_error_max: env.tool_error_max,
+            max_call_num:0, // 最大调用别的模型次数
+            init_model:config.model,
         };
 
         // 隐式 planner
@@ -354,6 +357,12 @@ ${user_local_file_prompt}
                 },
                     controller:controller}
             );
+            if(config.model !== loopEnv.init_model) {
+                loopEnv.max_call_num --;
+                if(loopEnv.max_call_num <= 0) {
+                    config.model = loopEnv.init_model;
+                }
+            }
 
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
@@ -413,6 +422,13 @@ ${user_local_file_prompt}
                             tool_call_id: call.id,
                             content: resultStr
                         });
+
+                        // 其他 tool额外处理
+                        if (env.open_pick_model && toolName === "pick_model") {
+                            // 挑选模型
+                            config.model = args.model
+                            loopEnv.max_call_num = args.max_call_num??1
+                        }
                     } catch (e) {
                         const msg = `${e?.message??JSON.stringify(e)} ${e?.stack??""}`
                         callItem.success = false;
@@ -462,6 +478,9 @@ ${user_local_file_prompt}
         }
     ) {
         const tools: ai_agent_params_type[] = [...ai_tools];
+        if(props.env.open_pick_model) {
+            tools.push(pick_model_schema)
+        }
         if (ai_agentService.docs_switch_get()) {
             tools.push(ai_tools_search_docs);
         }
@@ -471,9 +490,17 @@ ${user_local_file_prompt}
         if(props.tools) {
             tools.push(...props.tools);
         }
-
+        let messages :ai_agent_messages
+        if(props.env.open_pick_model) {
+            messages = [{
+                role: "assistant",
+                content: `当前使用的模型model，也就是你  为${props.config.model}`,
+            },...props.messages]
+        } else {
+            messages = props.messages
+        }
         const json_body: any = {
-            messages:props.messages,
+            messages,
             tools: tools,
             model: props.config.model,
         };
