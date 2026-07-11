@@ -112,6 +112,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # 安装原生模块编译工具，better-sqlite3/node-pty 等需要 node-gyp 编译
+      - name: Install native build tools (Ubuntu)
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential python3 make g++
+          sudo rm -rf /var/lib/apt/lists/*
+      - name: Install native build tools (Windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: pip.exe install setuptools
       - run: npm install
       - if: ${{ startsWith(matrix.os, 'windows')}}
         run: |
