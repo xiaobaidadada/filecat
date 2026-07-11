@@ -21,7 +21,7 @@ on:
       win_version:
         description: 'windows版本'
         required: false
-        default: 'windows-latest'
+        default: 'windows-2022'
 
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
       DOCKER_REPO: ${{ secrets.DOCKER_USERNAME }}/filecat
       DOCKER_PLATFORMS: linux/amd64,linux/arm,linux/arm64 # 目标平台环境变量 构建的时候用
     steps:
-      - uses: actions/checkout@v4 
+      - uses: actions/checkout@v4
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -63,7 +63,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: | 
+          images: |
             ${{ env.DOCKER_REPO }}
             ghcr.io/${{ github.repository }}
           tags: |
@@ -75,11 +75,11 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v3
-#      - name: build
-#        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
-#          npm install
-#          npm run exe-build
-#          npm install --omit=dev # 构建完不要node_moule了
+      #      - name: build
+      #        run: |  # --ignore-scripts 不能使用不能跳过一些安装脚本
+      #          npm install
+      #          npm run exe-build
+      #          npm install --omit=dev # 构建完不要node_moule了
       - name: Login to Docker Hub # login to Docker Hub, automatically logout at the end of job
         uses: docker/login-action@v3
         with:
@@ -112,16 +112,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      # 安装原生模块编译工具，better-sqlite3/node-pty 等需要 node-gyp 编译
-      - name: Install native build tools (Ubuntu)
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential python3 make g++
-          sudo rm -rf /var/lib/apt/lists/*
-      - name: Install native build tools (Windows)
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        run: pip.exe install setuptools
       - run: npm install
       - if: ${{ startsWith(matrix.os, 'windows')}}
         run: |
