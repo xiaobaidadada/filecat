@@ -41,7 +41,7 @@ const MAX_SUMMARY_CHARS = 6000;
 const MAX_LONG_MEMORY_CHARS = 6000;
 
 // tool工具内容最大长度，只起到展示 让AI知道调用了就行
-const MAX_TOOL_CONTENT_CHARS  = 100;
+// const MAX_TOOL_CONTENT_CHARS  = 100;
 
 //  id of session
 function nowId() {
@@ -121,7 +121,8 @@ function llm_normalizeMessage(message: ai_agent_message_item) {
             list.push({
                 role: "tool",
                 tool_call_id: it.tool_call_id,
-                content: (it.tool_result??it.error??"").slice(0,MAX_TOOL_CONTENT_CHARS)
+                // content: (it.tool_result??it.error??"").slice(0,MAX_TOOL_CONTENT_CHARS)
+                content: it.tool_result??it.error??""
             })
         }
     }
@@ -148,7 +149,11 @@ function llm_render_message(content:ai_agent_messages,message: ai_agent_message_
 function messageChars(messages: ai_agent_messages) {
     return messages.reduce((sum, it) => {
         const attachmentChars = (it.attachments ?? []).reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
-        return sum + getContentLength(it.content) + attachmentChars;
+        // tool_calls 的参数字符数
+        const toolCallChars = (it.tool_calls ?? []).reduce((tcSum, tc) => tcSum + (tc.function?.arguments?.length ?? 0), 0);
+        // tool_call_ends 的结果字符数
+        const toolEndChars = (it.tool_call_ends ?? []).reduce((teSum, te) => teSum + ((te.tool_result ?? te.error ?? "").length), 0);
+        return sum + getContentLength(it.content) + attachmentChars + toolCallChars + toolEndChars;
     }, 0);
 }
 

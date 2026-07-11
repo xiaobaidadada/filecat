@@ -478,6 +478,7 @@
   "会话": "Sessions",
   "新会话": "Nouvelle session",
   "提示词": "Prompt",
+  "选择系统提示词": "Sélectionner le Prompt Système",
   "提示词模板创建会话": "Créer une session à partir du modèle de prompt",
   "清空全部会话": "Effacer toutes les sessions",
   "确认删除全部聊天会话吗?": "Confirmer la suppression de toutes les sessions de chat ?",

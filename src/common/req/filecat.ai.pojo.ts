@@ -350,7 +350,7 @@ export function getContentLength(content: ai_agent_content): number {
     }
     if (Array.isArray(content)) {
         return content.reduce((sum, part) => {
-            const part_p = part as ai_agent_content_part
+            const part_p = part
             if(part_p.type) {
                 if (part_p.type === 'text') return sum + part_p.text.length;
                 if (part_p.type === 'image_url') return sum + (part_p.image_url.url?.length ?? 0);
