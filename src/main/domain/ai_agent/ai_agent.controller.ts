@@ -34,7 +34,7 @@ export class Ai_AgentController {
         const wss = data.wss as Wss;
         // 权限校验
         userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
-        const { messages, session_id, sys_prompt } = ctx;
+        const { messages, session_id, sys_prompt_id } = ctx;
         if (!messages?.length) {
             return ''; // 没有消息，不处理
         }
@@ -44,7 +44,7 @@ export class Ai_AgentController {
             wss.token,
             wss,
             session_id,
-            sys_prompt,
+            sys_prompt_id,
         ).catch((err) => {
             console.error('ai_chat_ws 异常:', err);
         });

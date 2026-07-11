@@ -23,6 +23,7 @@ export class Cache {
             valueMap: Object.fromEntries(this.valueMap),
             timeLenMap: Object.fromEntries(this.timeLenMap),
             stampMap: Object.fromEntries(this.stampMap),
+            time_len: this.time_len,
         };
         DataUtil.set(data_common_key.token_cache, data);
     }
@@ -40,9 +41,14 @@ export class Cache {
             valueMap?: Record<string, any>;
             timeLenMap?: Record<string, number>;
             stampMap?: Record<string, number>;
+            time_len?: number;
         }>(data_common_key.token_cache);
         if (!data) return;
         try {
+            // 恢复默认过期时长（如永不过期 -1），确保 getValue 判断一致
+            if (data.time_len !== undefined) {
+                this.time_len = data.time_len;
+            }
             if (data.valueMap) {
                 this.valueMap = new Map(Object.entries(data.valueMap));
             }

@@ -75,6 +75,7 @@ export default function AiAgentChatPage() {
     const [batchMode, setBatchMode] = useState(false);
     const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
     const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set());
+    const [selectedSysPromptId, setSelectedSysPromptId] = useState<string>("");
 
     // ===== 引用 =====
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -148,6 +149,7 @@ export default function AiAgentChatPage() {
         refreshSessions,
         scrollToBottom,
         buildRequestMessages,
+        getSelectedSysPromptId: () => selectedSysPromptId,
     });
 
     // ===== 会话操作 =====
@@ -181,17 +183,12 @@ export default function AiAgentChatPage() {
         requestAnimationFrame(() => scrollToBottom(false));
     };
 
-    const createSession = async (sysPrompt?: string) => {
+    const createSession = async (sysPromptId?: string) => {
         const result = await ai_agentHttp.post("session", { title: "新会话" });
         if (result.code !== RCode.Success) return;
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
-        if (sysPrompt) {
-            chatInputRef.current?.setValue(sysPrompt);
-            setMessages([]);
-        } else {
-            setMessages([]);
-        }
+        setMessages([]);
         set_ai_session_collapsed(false);
         await loadSessions(session.id);
         requestAnimationFrame(() => {
@@ -557,6 +554,8 @@ export default function AiAgentChatPage() {
                 bgProcessVisible={ai_bg_expanded}
                 bgProcessCount={bgProcessCount}
                 onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
+                selectedSysPromptId={selectedSysPromptId}
+                setSelectedSysPromptId={setSelectedSysPromptId}
             />
 
             <div className="chat-page chat-page-with-sessions">

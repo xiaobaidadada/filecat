@@ -45,6 +45,7 @@ export interface ChatOptions {
     on_msg: (payload: ChatMsgPayload) => void;
     on_end: (stats?: { input_chars: number; output_chars: number; once_messages_list?:ai_agent_message_item[]  }) => void;
     sys_prompt?: string;
+    sys_prompt_id?: string; // 系统提示词 ID（通过 index 标识）
     cwd?: string;
     /** 当前会话 ID，用于后台进程等需要关联会话的功能 */
     session_id?: string;
@@ -204,12 +205,23 @@ export class ChatCore {
             on_msg,
             on_end,
             sys_prompt,
+            sys_prompt_id,
             cwd,
             session_id,
             aiConfig,
             aiEnv,
             tools
         } = options;
+
+        // 根据 sys_prompt_id（index）加载系统提示词
+        let loadedSysPrompt = '';
+        if (sys_prompt_id && !loadedSysPrompt) {
+            const prompts = settingService.ai_system_prompts_get();
+            const matched = prompts.find(p => String(p.index) === sys_prompt_id);
+            if (matched && matched.prompt) {
+                loadedSysPrompt = matched.prompt;
+            }
+        }
 
         // 使用传入的配置，如果未传入则回退到全局变量
         const config = aiConfig ?? ai_agentService.ai_config;
@@ -239,7 +251,7 @@ export class ChatCore {
             {
                 role: "system",
                 content: `
-用户当前所在的根目录是 ${rootPath}，
+filecat 当前软件用户当前所在的根目录是 ${rootPath}，
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
 当前会话id 为：${session_id}
@@ -262,6 +274,8 @@ ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，�
 ${config.sys_prompt ?? ''}
 
 ${sys_prompt ?? ''}
+
+${loadedSysPrompt ?? ''}
 
 ${user_local_file_prompt}
 `

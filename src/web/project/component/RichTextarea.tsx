@@ -32,6 +32,7 @@ const RichTextarea = forwardRef<RichTextareaHandle, Props>(function RichTextarea
 ) {
     const divRef = useRef<HTMLDivElement>(null);
     const [isEmpty, setIsEmpty] = useState(true);
+    const [isComposing, setIsComposing] = useState(false); // 是否正在输入中文（拼音输入法）
 
     // 获取纯文本（去掉 innerHTML 标签）
     const getText = useCallback(() => {
@@ -74,8 +75,12 @@ const RichTextarea = forwardRef<RichTextareaHandle, Props>(function RichTextarea
     }, []);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        // Enter 发送，Shift+Enter 换行
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // 如果正在输入中（如中文输入法选择候选词），不处理 Enter 键
+        if (isComposing) {
+            return;
+        }
+        // 只按单独的 Enter 发送消息，其他组合键（Shift+Enter, Ctrl+Enter 等）都换行
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
             onEnter?.();
         }
@@ -91,6 +96,8 @@ const RichTextarea = forwardRef<RichTextareaHandle, Props>(function RichTextarea
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
             onInput={() => onChange?.(getText())}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
             data-placeholder={isEmpty ? placeholder : undefined}
         />
     );

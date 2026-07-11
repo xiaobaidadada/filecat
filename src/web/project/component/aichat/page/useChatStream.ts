@@ -43,6 +43,8 @@ interface UseChatStreamOptions {
     scrollToBottom: (smooth?: boolean) => void;
     /** 从用户消息构建 AI 请求体 */
     buildRequestMessages: (msg: Message) => ai_agent_message_item[];
+    /** 获取当前选中的系统提示词 ID */
+    getSelectedSysPromptId: () => string;
 }
 
 export function useChatStream(opts: UseChatStreamOptions) {
@@ -56,6 +58,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         refreshSessions,
         scrollToBottom,
         buildRequestMessages,
+        getSelectedSysPromptId,
     } = opts;
 
     /** 排队消息队列 */
@@ -197,6 +200,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         ws.sendData(CmdType.ai_chat_req, {
             messages: buildRequestMessages(userMsg),
             session_id: sessionId,
+            sys_prompt_id: getSelectedSysPromptId(),
         });
     };
 

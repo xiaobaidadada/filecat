@@ -18,7 +18,6 @@ import { routerConfig } from "../../../../../common/RouterConfig";
 import { settingHttp, ai_agentHttp } from "../../../util/config";
 import { $stroe } from "../../../util/store";
 import { ai_system_prompt_item, ai_agent_item_dotenv } from "../../../../../common/req/filecat.ai.pojo";
-import {MenuSelect} from "../../prompts/Prompt";
 
 interface ChatHeaderProps {
     /** 当前模型名称 */
@@ -36,7 +35,7 @@ interface ChatHeaderProps {
     /** 切换会话面板 */
     onToggleSessionPanel: () => void;
     /** 创建新会话 */
-    onCreateSession: (sysPrompt?: string) => void;
+    onCreateSession: (sysPromptId?: string) => void;
     /** 切换批量模式（消息气泡多选入口） */
     onToggleBatchMode: () => void;
     /** 批量删除消息 */
@@ -47,6 +46,10 @@ interface ChatHeaderProps {
     bgProcessCount?: number;
     /** 切换后台进程面板 */
     onToggleBgProcess?: () => void;
+    /** 当前选中的系统提示词 ID */
+    selectedSysPromptId: string;
+    /** 设置当前选中的系统提示词 ID */
+    setSelectedSysPromptId: (id: string) => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -63,6 +66,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     bgProcessVisible,
     bgProcessCount,
     onToggleBgProcess,
+    selectedSysPromptId,
+    setSelectedSysPromptId,
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -78,18 +83,21 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             />
             <ActionButton icon={"add"} title={t("新会话")} onClick={() => onCreateSession()} />
             {sysPromptList.length > 0 && (
-                <MenuSelect
-                    list={sysPromptList.map((item, idx) => ({
-                        name: item.note || `${t("提示词")} ${idx + 1}`,
-                        click: () => {
-                            if (item.prompt) {
-                                onCreateSession(item.prompt);
-                            }
-                        }
-                    }))}
-                >
-                    <ActionButton icon={"add_comment"} title={t("提示词模板创建会话")} />
-                </MenuSelect>
+                <Select
+                    value={selectedSysPromptId}
+                    options={[
+                        { title: t("选择系统提示词"), value: "" },
+                        ...sysPromptList.map((item) => ({
+                            title: item.note || item.prompt.slice(0, 30),
+                            value: String(item.index)
+                        }))
+                    ]}
+                    onChange={(value) => {
+                        setSelectedSysPromptId(value);
+                    }}
+                    no_border={true}
+                    width={"10rem"}
+                />
             )}
             {/* 当前模型下拉选择器 */}
             {(envConfigRef.current?.ai_config_env?.options_agent_model_list?.length ?? 0) > 0 && (

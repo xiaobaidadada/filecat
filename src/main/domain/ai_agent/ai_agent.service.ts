@@ -603,26 +603,26 @@ export class Ai_agentService {
 
     /**
      * 通过 WebSocket 进行 AI 聊天（替代 SSE 的 /chat 接口）
-     * 
+     *
      * 流程：
      * 1. 客户端发送 ai_chat_req，服务端收到后调用此方法
      * 2. 服务端通过 ai_chat_msg 推送 AI 流式回复片段
      * 3. 服务端通过 ai_chat_end 推送结束信息（含 meta）
      * 4. 如果出错，服务端通过 ai_chat_error 推送错误
      * 5. 客户端可发送 ai_chat_abort 取消正在进行的聊天
-     * 
+     *
      * @param originMessages - 原始消息列表
      * @param token - 用户 token
      * @param wss - WebSocket 连接对象（用于向该客户端推送消息）
      * @param session_id - 可选的会话 ID
-     * @param sys_prompt - 可选的系统提示词
+     * @param sys_prompt_id - 可选的系统提示词 ID（通过 note 或 prompt 标识）
      */
     public async chat_ws(
         originMessages: ai_agent_messages,
         token: string,
         wss: Wss,
         session_id?: string,
-        sys_prompt?: string,
+        sys_prompt_id?: string,
     ) {
         const controller = new AbortController();
         let chatFinished = false;
@@ -704,7 +704,7 @@ export class Ai_agentService {
                     }).catch(console.error);
                 },
                 token,
-                sys_prompt,
+                sys_prompt_id,
             });
 
         } catch (error: any) {
