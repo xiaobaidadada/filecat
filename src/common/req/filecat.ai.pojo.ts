@@ -361,7 +361,7 @@ export function getContentLength(content: ai_agent_content): number {
     return 0;
 }
 
-export type ai_agent_messages = ai_agent_message_item[];
+export type ai_agent_message_list = ai_agent_message_item[];
 
 export class ai_agent_chat_session_item {
     id: string;

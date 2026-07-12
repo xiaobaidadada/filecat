@@ -6,7 +6,7 @@ import {PtyShell} from "pty-shell";
 import {MarkdownToAnsiConverter, ShellUtil} from "./shell.util";
 import fs from 'fs'
 import path from "path";
-import {ai_agent_chat_session_item, ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
+import {ai_agent_chat_session_item, ai_agent_message_item, ai_agent_message_list, getContentAsString} from "../../../../common/req/filecat.ai.pojo";
 import {ai_agentService} from "../../ai_agent/ai_agent.service";
 import {wss_interface} from "../../../../common/frame/type";
 
@@ -16,8 +16,8 @@ export class ai_agent_class {
     print: (str: string) => void;
     pty: PtyShell;
 
-    messages: ai_agent_messages;
-    pendingMessages: ai_agent_messages = [];
+    messages: ai_agent_message_list;
+    pendingMessages: ai_agent_message_list = [];
     session: ai_agent_chat_session_item;
     token: string;
     userId: string;

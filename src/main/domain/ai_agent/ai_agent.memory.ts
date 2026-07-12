@@ -9,7 +9,7 @@ import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
 import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
-    ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
+    ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
     ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength,
     ai_long_term_memory_setting,
 } from "../../../common/req/filecat.ai.pojo";
@@ -28,17 +28,18 @@ type SessionIndexStore = {
 };
 
 // 以下值的范围符合主流 agent的范围值内
+const max_param = 1
 
 // 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
 const MAX_RECENT_MESSAGES = 24;
 // 当单个会话累计消息条数超过该值时，触发历史内容压缩。
 const COMPRESS_MESSAGE_COUNT = 36;
 // 当单个会话累计消息字符数超过该值时，触发历史内容压缩。
-const COMPRESS_CHAR_COUNT = 18000;
+const COMPRESS_CHAR_COUNT = 18000*max_param;
 // 会话摘要的最大字符数，超过后截断，避免摘要本身无限增长。
-const MAX_SUMMARY_CHARS = 6000;
+const MAX_SUMMARY_CHARS = 6000*max_param;
 // 长期记忆的最大字符数，超过后保留最新内容，避免长期记忆无限增长。
-const MAX_LONG_MEMORY_CHARS = 6000;
+const MAX_LONG_MEMORY_CHARS = 6000*max_param;
 
 // tool工具内容最大长度，只起到展示 让AI知道调用了就行
 // const MAX_TOOL_CONTENT_CHARS  = 100;
@@ -141,20 +142,39 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
 }
 
 // 格式化 用户消息 把一些json结构化的数据 字符串化 给 llm 用
-function llm_render_message(content:ai_agent_messages,message: ai_agent_message_item) {
+function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item) {
     const normalized = llm_normalizeMessage(message);
     content.push(...normalized)
 }
 
-function messageChars(messages: ai_agent_messages) {
-    return messages.reduce((sum, it) => {
-        const attachmentChars = (it.attachments ?? []).reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
-        // tool_calls 的参数字符数
-        const toolCallChars = (it.tool_calls ?? []).reduce((tcSum, tc) => tcSum + (tc.function?.arguments?.length ?? 0), 0);
-        // tool_call_ends 的结果字符数
-        const toolEndChars = (it.tool_call_ends ?? []).reduce((teSum, te) => teSum + ((te.tool_result ?? te.error ?? "").length), 0);
-        return sum + getContentLength(it.content) + attachmentChars + toolCallChars + toolEndChars;
-    }, 0);
+function message_one_chars(it:ai_agent_message_item) {
+    let sum = 0;
+    if(it.attachments?.length ) {
+        const attachmentChars = it.attachments.reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
+        sum+=attachmentChars
+    }
+    if(it.tool_calls?.length) {
+        const toolCallChars = it.tool_calls.reduce((tcSum, tc) => tcSum + (tc.function?.arguments?.length ?? 0), 0);
+        sum+=toolCallChars
+    }
+    if(it.tool_call_ends?.length) {
+        const toolEndChars = it.tool_call_ends.reduce((teSum, te) => teSum + ((te.tool_result ?? te.error ?? "").length), 0);
+        sum+=toolEndChars
+    }
+    if(it.content_list?.length) {
+        for (const it1 of it.content_list) {
+            sum += message_one_chars(it1)
+        }
+    }
+    return sum
+}
+
+function messageChars(messages: ai_agent_message_list) {
+    let sum = 0;
+    for (const it of messages) {
+        sum += message_one_chars(it)
+    }
+    return sum
 }
 
 export class AiAgentMemoryService {
@@ -342,7 +362,7 @@ export class AiAgentMemoryService {
     }
 
     // 更新消息到会话 整体更新（不推荐使用，消息量大时请求体可能超限，优先使用 delete_messages_from_session）
-    public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_messages) {
+    public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_message_list) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
@@ -438,8 +458,8 @@ export class AiAgentMemoryService {
     }
 
     // 为聊天构建新的上下文
-    public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_messages):ai_agent_messages {
-        const context:ai_agent_messages = [
+    public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_message_list):ai_agent_message_list {
+        const context:ai_agent_message_list = [
             {
                 role: "system",
                 content:
@@ -473,7 +493,7 @@ export class AiAgentMemoryService {
         context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES));
         // 新会话内容加入
         context.push(...incoming)
-        const new_content:ai_agent_messages = []
+        const new_content:ai_agent_message_list = []
         for (const it of context) {
             llm_render_message(new_content,it)
         }
@@ -528,7 +548,7 @@ export class AiAgentMemoryService {
         return Array.from(new Set(lines)).join("\n").slice(-MAX_LONG_MEMORY_CHARS);
     }
 
-    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_messages, config?: ai_agent_Item): Promise<{ summary: string, long_term_memory: string }> {
+    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_message_list, config?: ai_agent_Item): Promise<{ summary: string, long_term_memory: string }> {
         const cfg = config || ai_agentService.ai_config;
         if (!cfg) throw new Error("ai config not found");
         const body: any = {

@@ -14,7 +14,7 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
-import {ai_agent_message_item, ai_agent_messages, getContentAsString} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item, ai_agent_message_list, getContentAsString} from "../../../common/req/filecat.ai.pojo";
 import {backgroundProcessManager} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
 

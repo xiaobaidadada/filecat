@@ -18,7 +18,7 @@ import {
     ai_agent_Item,
     ai_agent_item_dotenv,
     ai_agent_message_item,
-    ai_agent_messages,
+    ai_agent_message_list,
     getContentAsString,
     ai_docs_setting_param,
     ai_agent_tool_call_item
@@ -37,7 +37,7 @@ export interface ChatMsgPayload {
 }
 
 export interface ChatOptions {
-    originMessages: ai_agent_messages;
+    originMessages: ai_agent_message_list;
     token?: string;
     user_id:string;
     controller: AbortController;
@@ -247,7 +247,7 @@ export class ChatCore {
         const user = userService.get_user_info_by_user_id(user_id);
         const rootPath = settingService.getFileRootPathById(user_id);
 
-        const workMessages: ai_agent_messages = [
+        const workMessages: ai_agent_message_list = [
             {
                 role: "system",
                 content: `
@@ -484,7 +484,7 @@ ${user_local_file_prompt}
         props:{
             config: ai_agent_Item,
             env: ai_agent_item_dotenv,
-            messages: ai_agent_messages,
+            messages: ai_agent_message_list,
             ioStats: { input_chars: number; output_chars: number },
             call_data: (message: any) => void,
             error_call: (e: any) => void,
@@ -505,7 +505,7 @@ ${user_local_file_prompt}
         if(props.tools) {
             tools.push(...props.tools);
         }
-        let messages :ai_agent_messages
+        let messages :ai_agent_message_list
         if(props.env.open_pick_model) {
             messages = [{
                 role: "assistant",

@@ -32,7 +32,7 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {
     ai_agent_content,
     ai_agent_Item,
-    ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_messages,
+    ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
     ai_agent_option_item_extra,
     ai_docs_item,
     ai_docs_load_info,
@@ -618,7 +618,7 @@ export class Ai_agentService {
      * @param sys_prompt_id - 可选的系统提示词 ID（通过 note 或 prompt 标识）
      */
     public async chat_ws(
-        originMessages: ai_agent_messages,
+        originMessages: ai_agent_message_list,
         token: string,
         wss: Wss,
         session_id?: string,
