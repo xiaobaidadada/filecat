@@ -26,8 +26,4 @@ export async function estimateTokenCount(text: string): Promise<number> {
     return Math.ceil(text.length / 4);
 }
 
-export function estimateJsonTokenCount(obj: any): Promise<number> {
-    return estimateTokenCount(JSON.stringify(obj));
-}
-
 export { formatTokenCount };

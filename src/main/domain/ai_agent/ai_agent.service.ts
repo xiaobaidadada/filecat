@@ -656,8 +656,6 @@ export class Ai_agentService {
             || "新会话";
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
         const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
-        let turnInputChars = 0;
-        let turnOutputChars = 0;
 
         try {
             const tools = ai_agentService.getModelToolSchemas();
@@ -683,10 +681,6 @@ export class Ai_agentService {
                     if (session_id) {
                         this.activeChatControllers.delete(session_id);
                     }
-                    if (stats) {
-                        turnInputChars = stats.input_tokens;
-                        turnOutputChars = stats.output_tokens;
-                    }
                     wss.send(CmdType.ai_chat_end, {
                     });
                     // 保存会话记录
@@ -699,10 +693,8 @@ export class Ai_agentService {
                         content: assistantText,
                         content_list: stats?.once_messages_list ?? [],
                     };
-                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
-                        input_tokens: turnInputChars,
-                        output_tokens: turnOutputChars,
-                    }).catch(console.error);
+                    // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage).catch(console.error);
                 },
                 token,
                 sys_prompt_id,
@@ -725,10 +717,8 @@ export class Ai_agentService {
                     role: "assistant",
                     content: errorMsg,
                 };
-                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg, {
-                    input_tokens: getContentAsString(userMsg.content).length,
-                    output_tokens: errorMsg.length,
-                });
+                // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg);
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }
@@ -1097,7 +1087,7 @@ export class Ai_agentService {
 
     public end_to_res(
         res: Response,
-        stats?: { input_tokens: number; output_tokens: number; once_messages_list?: ai_agent_message_item[] }
+        stats?: { once_messages_list?: ai_agent_message_item[] }
     ) {
         if (stats?.once_messages_list?.length) {
             const metaData = JSON.stringify({
@@ -1122,10 +1112,8 @@ export class Ai_agentService {
                 role: "assistant",
                 content: error_msg,
             };
-            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, {
-                input_tokens: userMsg.content?.length??0,
-                output_tokens: getContentAsString(errMsg.content).length,
-            });
+            // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg);
         } catch (e) {
             console.log(e)
         }

@@ -138,6 +138,7 @@ export class Ai_AgentController {
 
     /**
      * 保存多模态请求到会话记录
+     * 注意：此处不传 turnStats，由 appendTurn 内部自动计算 token
      */
     private async saveNonCompletionTurn(
         userId: string,
@@ -150,10 +151,8 @@ export class Ai_AgentController {
             role: "user",
             content: prompt,
         };
-        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, {
-            input_tokens: prompt.length,
-            output_tokens: getContentAsString(assistantMessage.content).length,
-        });
+        // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage);
         return session.id;
     }
 

@@ -68,8 +68,6 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
     try {
         const workMessages = aiAgentMemoryService.build_context_by_session(session, [userMsg]);
         let assistantText = '';
-        let inputTokens = 0;
-        let outputTokens = 0;
 
         await new Promise<void>((resolve, reject) => {
             const controller = new AbortController();
@@ -86,16 +84,14 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
                 on_msg: (payload) => { assistantText += payload.text; },
                 on_end: (stats) => {
                     clearTimeout(timeout);
-                    if (stats) { inputTokens = stats.input_tokens || 0; outputTokens = stats.output_tokens || 0; }
                     resolve();
                     const finalText = (stats?.once_messages_list ?? [])
                         .map(it => getContentAsString(it.content)).filter(Boolean).join("\n\n");
                     const assistantMsg: ai_agent_message_item = {
                         role: 'assistant', content: finalText, content_list: stats?.once_messages_list ?? [],
                     };
-                    aiAgentMemoryService.appendTurn(systemUserId, session.id, userMsg, assistantMsg, {
-                        input_tokens: inputTokens, output_tokens: outputTokens,
-                    }).catch(console.error);
+                    // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+                    aiAgentMemoryService.appendTurn(systemUserId, session.id, userMsg, assistantMsg).catch(console.error);
                 },
                 session_id:session.id
             };

@@ -265,6 +265,8 @@ export function start_ai_agent_agent() {
         const { text } = msg.data;
         if (!text) return 0;
 
+        // 纯英文：按字符/4 估算（GPT-3/4 英文约 0.25 字符/token）
+        // 先检查是否包含中文
         let chineseChars = 0;
         let otherChars = 0;
         for (const char of text) {
@@ -272,14 +274,21 @@ export function start_ai_agent_agent() {
             else otherChars++;
         }
 
-        if (chineseChars > 0) {
-            try {
-                const words = tokenize(text, "search");
-                return Math.ceil(words.length * 1.3 + otherChars / 4);
-            } catch {
-                return Math.ceil(chineseChars * 1.6 + otherChars / 4);
-            }
+        if (chineseChars === 0) {
+            // 纯英文，直接用字符/4 估算
+            return Math.ceil(text.length / 4);
         }
-        return Math.ceil(text.length / 4);
+
+        // 混合中英文或纯中文
+        try {
+            // tokenize 会把整段文本（包括英文单词）分词，已经覆盖了英文部分
+            // 不再额外加 otherChars / 4，避免英文部分重复计算
+            const words = tokenize(text, "search");
+            // 中文约 1.3 个词 = 1 token（jieba 分词偏细）
+            return Math.ceil(words.length * 1.3);
+        } catch {
+            // 降级：纯中文 1.6 字符 = 1 token，英文部分再按字符/4 补充
+            return Math.ceil(chineseChars * 1.6 + otherChars / 4);
+        }
     });
 }

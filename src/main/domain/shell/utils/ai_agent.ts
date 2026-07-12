@@ -236,10 +236,8 @@ export class ai_agent_class {
                             
                             // 只有非临时会话才保存到持久化存储
                             if (!this.isTemporarySession) {
-                                aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
-                                    input_tokens: stats?.input_tokens ?? 0,
-                                    output_tokens: stats?.output_tokens ?? 0,
-                                }).catch(console.error);
+                                // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
+                                aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage).catch(console.error);
                             }
                         }
                     }
