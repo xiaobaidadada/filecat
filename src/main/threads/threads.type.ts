@@ -29,6 +29,9 @@ export enum threads_msg_type {
     file_watch_send,
     file_watch_close,
     file_watch_apply,
-    file_watch_sync_task_get
+    file_watch_sync_task_get,
+
+    // token 估算
+    estimate_token_count,
 
 }

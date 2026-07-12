@@ -13,6 +13,7 @@ import {
     ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength,
     ai_long_term_memory_setting,
 } from "../../../common/req/filecat.ai.pojo";
+import {estimateTokenCount} from "./token_counter";
 
 type SessionMeta = ai_agent_chat_session_meta & {
     file_name: string;
@@ -33,13 +34,13 @@ const max_param = 1
 // 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
 const MAX_RECENT_MESSAGES = 24;
 // 当单个会话累计消息条数超过该值时，触发历史内容压缩。
-const COMPRESS_MESSAGE_COUNT = 36;
-// 当单个会话累计消息字符数超过该值时，触发历史内容压缩。
-const COMPRESS_CHAR_COUNT = 18000*max_param;
-// 会话摘要的最大字符数，超过后截断，避免摘要本身无限增长。
-const MAX_SUMMARY_CHARS = 6000*max_param;
-// 长期记忆的最大字符数，超过后保留最新内容，避免长期记忆无限增长。
-const MAX_LONG_MEMORY_CHARS = 6000*max_param;
+// const COMPRESS_MESSAGE_COUNT = 36;
+// 当单个会话累计消息 token 数超过该值时，触发历史内容压缩。
+const COMPRESS_TOKEN_COUNT = 4500*max_param;  // 约等于 18000 英文字符 ≈ 4500 token
+// 会话摘要的最大 token 数，超过后截断，避免摘要本身无限增长。
+const MAX_SUMMARY_TOKENS = 1500*max_param;   // 约等于 6000 英文字符
+// 长期记忆的最大 token 数，超过后保留最新内容，避免长期记忆无限增长。
+const MAX_LONG_MEMORY_TOKENS = 1500*max_param;
 
 // tool工具内容最大长度，只起到展示 让AI知道调用了就行
 // const MAX_TOOL_CONTENT_CHARS  = 100;
@@ -147,34 +148,9 @@ function llm_render_message(content:ai_agent_message_list, message: ai_agent_mes
     content.push(...normalized)
 }
 
-function message_one_chars(it:ai_agent_message_item) {
-    let sum = 0;
-    if(it.attachments?.length ) {
-        const attachmentChars = it.attachments.reduce((attSum, attachment) => attSum + (attachment.content?.length ?? 0), 0);
-        sum+=attachmentChars
-    }
-    if(it.tool_calls?.length) {
-        const toolCallChars = it.tool_calls.reduce((tcSum, tc) => tcSum + (tc.function?.arguments?.length ?? 0), 0);
-        sum+=toolCallChars
-    }
-    if(it.tool_call_ends?.length) {
-        const toolEndChars = it.tool_call_ends.reduce((teSum, te) => teSum + ((te.tool_result ?? te.error ?? "").length), 0);
-        sum+=toolEndChars
-    }
-    if(it.content_list?.length) {
-        for (const it1 of it.content_list) {
-            sum += message_one_chars(it1)
-        }
-    }
-    return sum
-}
-
-function messageChars(messages: ai_agent_message_list) {
-    let sum = 0;
-    for (const it of messages) {
-        sum += message_one_chars(it)
-    }
-    return sum
+/** 读取消息的 token 数（直接读预计算字段） */
+function message_one_tokens(it: ai_agent_message_item): number {
+    return it.token_count ?? 0;
 }
 
 export class AiAgentMemoryService {
@@ -423,7 +399,7 @@ export class AiAgentMemoryService {
     }
 
     // 将本次机器人的聊天结果加入到历史会话中
-    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_chars?: number;input_chars?: number; }) {
+    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
@@ -434,19 +410,27 @@ export class AiAgentMemoryService {
         session.messages.push(assistantMessage);
         session.updated_at = Date.now();
 
-        // 更新字符消耗统计
+        // 预计算消息 token 并写入字段，持久化后压缩判断直接读
+        const [userTokens, assistantTokens] = await Promise.all([
+            estimateTokenCount(this.getMessageText(userMessage)),
+            estimateTokenCount(this.getMessageText(assistantMessage)),
+        ]);
+        userMessage.token_count = userTokens;
+        assistantMessage.token_count = assistantTokens;
+
+        // 更新 token 消耗统计
         if (!session.usage_stats) {
             session.usage_stats = new ai_agent_usage_stats();
         }
         const stats = session.usage_stats;
         stats.turns = (stats.turns || 0) + 1;
-        if (turnStats?.output_chars) {
-            stats.output_chars = (stats.output_chars || 0) + turnStats.output_chars;
-            stats.recent_output_chars = turnStats.output_chars;
+        if (turnStats?.output_tokens) {
+            stats.output_tokens = (stats.output_tokens || 0) + turnStats.output_tokens;
+            stats.recent_output_tokens = turnStats.output_tokens;
         }
-        if (turnStats?.input_chars) {
-            stats.input_chars = (stats.input_chars || 0) + turnStats.input_chars;
-            stats.recent_input_chars = turnStats.input_chars;
+        if (turnStats?.input_tokens) {
+            stats.input_tokens = (stats.input_tokens || 0) + turnStats.input_tokens;
+            stats.recent_input_tokens = turnStats.input_tokens;
         }
 
         if (!session.title || session.title === "新会话") {
@@ -455,6 +439,26 @@ export class AiAgentMemoryService {
         await this.compressIfNeeded(session);
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
+    }
+
+    /** 提取消息的纯文本内容用于 token 计算 */
+    private getMessageText(msg: ai_agent_message_item): string {
+        const parts: string[] = [];
+        const content = getContentAsString(msg.content);
+        if (content) parts.push(content);
+        if (msg.attachments?.length) {
+            for (const a of msg.attachments) if (a.content) parts.push(a.content);
+        }
+        if (msg.tool_calls?.length) {
+            for (const tc of msg.tool_calls) if (tc.function?.arguments) parts.push(tc.function.arguments);
+        }
+        if (msg.tool_call_ends?.length) {
+            for (const te of msg.tool_call_ends) parts.push(te.tool_result ?? te.error ?? "");
+        }
+        if (msg.content_list?.length) {
+            for (const c of msg.content_list) parts.push(this.getMessageText(c));
+        }
+        return parts.join("\n");
     }
 
     // 为聊天构建新的上下文
@@ -500,7 +504,7 @@ export class AiAgentMemoryService {
         return new_content;
     }
 
-    /** 获取会话的字符消耗统计 */
+    /** 获取会话的 token 消耗统计 */
     public get_usage_stats(userId: string, sessionId: string): ai_agent_usage_stats | null {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
@@ -518,21 +522,35 @@ export class AiAgentMemoryService {
     // 一轮消息回答完，判断是不是要压缩一下上下文，进行一下总结
     private async compressIfNeeded(session: ai_agent_chat_session_item) {
         const messages = session.messages ?? [];
-        if (messages.length <= COMPRESS_MESSAGE_COUNT && messageChars(messages) <= COMPRESS_CHAR_COUNT) {
-            // 消息数量  字符数量 都超过了 才进行压缩
+        let splitIndex = messages.length;
+        let tokenSum = 0;
+        // 从后往前累加 token，超过 COMPRESS_TOKEN_COUNT 的部分保留为最近消息
+        for (let i = messages.length - 1; i >= 0; i--) {
+            tokenSum += message_one_tokens(messages[i]);
+            if (tokenSum > COMPRESS_TOKEN_COUNT) {
+                splitIndex = i + 1;
+                break;
+            }
+        }
+        const oldMessages = messages.slice(0, splitIndex);
+        const recentMessages = messages.slice(splitIndex);
+        // 总 token 未超过阈值则不压缩
+        if (tokenSum < COMPRESS_TOKEN_COUNT) {
             return;
         }
-        const oldMessages = messages.slice(0, -MAX_RECENT_MESSAGES);
-        const recentMessages = messages.slice(-MAX_RECENT_MESSAGES);
         if (!oldMessages.length) return;
 
         try {
             const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(llm_normalizeMessage_one));
-            session.summary = compressed.summary.slice(0, MAX_SUMMARY_CHARS);
-            session.long_term_memory = this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
+            session.summary = compressed.summary.slice(0, MAX_SUMMARY_TOKENS);
+            session.long_term_memory = await this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
         } catch (e) {
-            const text = oldMessages.map(it => `${it.role}: ${llm_normalizeMessage_one(it).content}`).join("\n").slice(-MAX_SUMMARY_CHARS);
-            session.summary = [session.summary, text].filter(Boolean).join("\n").slice(-MAX_SUMMARY_CHARS);
+            const text = oldMessages.map(it => `${it.role}: ${llm_normalizeMessage_one(it).content}`).join("\n");
+            const estimatedTokens = await estimateTokenCount(text);
+            const truncatedText = estimatedTokens > MAX_SUMMARY_TOKENS
+                ? text.slice(0, MAX_SUMMARY_TOKENS * 4)
+                : text;
+            session.summary = [session.summary, truncatedText].filter(Boolean).join("\n");
         }
         session.messages = recentMessages;
 
@@ -540,12 +558,16 @@ export class AiAgentMemoryService {
         aiAgentLongTermMemoryService.syncMemory(session);
     }
 
-    private mergeMemory(oldMemory: string, nextMemory: string) {
+    private async mergeMemory(oldMemory: string, nextMemory: string) {
         const lines = `${oldMemory ?? ""}\n${nextMemory ?? ""}`
             .split("\n")
             .map(it => it.trim())
             .filter(Boolean);
-        return Array.from(new Set(lines)).join("\n").slice(-MAX_LONG_MEMORY_CHARS);
+        const joined = Array.from(new Set(lines)).join("\n");
+        // 按 token 数截断（通过 tiktoken 精确计算）
+        const estimatedTokens = await estimateTokenCount(joined);
+        if (estimatedTokens <= MAX_LONG_MEMORY_TOKENS) return joined;
+        return joined.slice(0, MAX_LONG_MEMORY_TOKENS * 4);
     }
 
     private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_message_list, config?: ai_agent_Item): Promise<{ summary: string, long_term_memory: string }> {

@@ -14,7 +14,6 @@ import {Sucess} from "../../../other/Result";
 import {msg} from "../../../../common/frame/router";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {tcp_raw_socket} from "../util/tcp.client";
-import {tag} from "jieba-wasm";
 
 // tcp 连接信息
 export const clientMap = new Map<string, tcp_client_item>(); // 虚拟ip与对方信息

@@ -55,6 +55,7 @@ const {
     add_word,
 } = require("jieba-wasm");
 
+
 // export let API_KEY = process.env.AI_API_KEY;
 // export let BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 // export let MODEL = "doubao-seed-1-6";
@@ -683,8 +684,8 @@ export class Ai_agentService {
                         this.activeChatControllers.delete(session_id);
                     }
                     if (stats) {
-                        turnInputChars = stats.input_chars;
-                        turnOutputChars = stats.output_chars;
+                        turnInputChars = stats.input_tokens;
+                        turnOutputChars = stats.output_tokens;
                     }
                     wss.send(CmdType.ai_chat_end, {
                     });
@@ -699,8 +700,8 @@ export class Ai_agentService {
                         content_list: stats?.once_messages_list ?? [],
                     };
                     aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, {
-                        input_chars: turnInputChars,
-                        output_chars: turnOutputChars,
+                        input_tokens: turnInputChars,
+                        output_tokens: turnOutputChars,
                     }).catch(console.error);
                 },
                 token,
@@ -725,8 +726,8 @@ export class Ai_agentService {
                     content: errorMsg,
                 };
                 await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg, {
-                    input_chars: getContentAsString(userMsg.content).length,
-                    output_chars: errorMsg.length,
+                    input_tokens: getContentAsString(userMsg.content).length,
+                    output_tokens: errorMsg.length,
                 });
             } catch (e) {
                 console.error("保存错误会话失败", e);
@@ -1096,7 +1097,7 @@ export class Ai_agentService {
 
     public end_to_res(
         res: Response,
-        stats?: { input_chars: number; output_chars: number; once_messages_list?: ai_agent_message_item[] }
+        stats?: { input_tokens: number; output_tokens: number; once_messages_list?: ai_agent_message_item[] }
     ) {
         if (stats?.once_messages_list?.length) {
             const metaData = JSON.stringify({
@@ -1122,8 +1123,8 @@ export class Ai_agentService {
                 content: error_msg,
             };
             await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, {
-                input_chars: userMsg.content?.length??0,
-                output_chars: getContentAsString(errMsg.content).length,
+                input_tokens: userMsg.content?.length??0,
+                output_tokens: getContentAsString(errMsg.content).length,
             });
         } catch (e) {
             console.log(e)

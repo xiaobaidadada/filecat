@@ -1,7 +1,7 @@
 import { register_threads_worker_handler } from "../../threads/threads.work";
 import { threads_msg_type } from "../../threads/threads.type";
 import FlexSearch, { Index } from "flexsearch";
-import { cut } from "jieba-wasm";
+import { cut, tokenize } from "jieba-wasm";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {FileUtil} from "../file/FileUtil";
 const sqlite3 = get_bin_dependency("sqlite3")
@@ -252,5 +252,34 @@ export function start_ai_agent_agent() {
             sqlite_db.close();
             sqlite_db = null;
         }
+    });
+
+    /* ---------------------------- Token 估算 ---------------------------- */
+
+    /** 判断字符是否为中文 */
+    function isChineseChar(char: string): boolean {
+        return /[\u4e00-\u9fff\u3400-\u4dbf]/.test(char);
+    }
+
+    register_threads_worker_handler(threads_msg_type.estimate_token_count, async (msg) => {
+        const { text } = msg.data;
+        if (!text) return 0;
+
+        let chineseChars = 0;
+        let otherChars = 0;
+        for (const char of text) {
+            if (isChineseChar(char)) chineseChars++;
+            else otherChars++;
+        }
+
+        if (chineseChars > 0) {
+            try {
+                const words = tokenize(text, "search");
+                return Math.ceil(words.length * 1.3 + otherChars / 4);
+            } catch {
+                return Math.ceil(chineseChars * 1.6 + otherChars / 4);
+            }
+        }
+        return Math.ceil(text.length / 4);
     });
 }

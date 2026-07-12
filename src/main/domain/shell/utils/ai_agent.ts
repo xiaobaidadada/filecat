@@ -237,8 +237,8 @@ export class ai_agent_class {
                             // 只有非临时会话才保存到持久化存储
                             if (!this.isTemporarySession) {
                                 aiAgentMemoryService.appendTurn(this.userId, this.sessionId, latestUserMessage, assistantMessage, {
-                                    input_chars: stats?.input_chars ?? 0,
-                                    output_chars: stats?.output_chars ?? 0,
+                                    input_tokens: stats?.input_tokens ?? 0,
+                                    output_tokens: stats?.output_tokens ?? 0,
                                 }).catch(console.error);
                             }
                         }

@@ -323,11 +323,13 @@ export class ai_agent_message_item {
     embeddings?: { data: Array<{ embedding: number[]; index: number }>; usage?: { total_tokens?: number } };
 
 
-
     // 临时用
     tool_call_ends?:ai_agent_tool_call_item[];
     // 不给 ai 给前端
     content_list?:ai_agent_message_item[];
+
+    /** 预计算的 token 数（存储时写入，压缩判断时直接读） */
+    token_count?: number;
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */
@@ -373,21 +375,21 @@ export class ai_agent_chat_session_item {
     source?: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark";
     created_at: number;
     updated_at: number;
-    // 字符消耗统计
+    // token 消耗统计
     usage_stats?: ai_agent_usage_stats;
 }
 
-/** AI Agent 字符消耗统计 */
+/** AI Agent token 消耗统计 */
 export class ai_agent_usage_stats {
 
-    /** AI 输出的总字符数 */
-    output_chars: number = 0;
+    /** AI 输出的总 token 数 */
+    output_tokens: number = 0;
     // 最近一轮的
-    recent_output_chars: number = 0;
-    /** AI 输入总字符 */
-    input_chars: number = 0;
+    recent_output_tokens: number = 0;
+    /** AI 输入总 token 数 */
+    input_tokens: number = 0;
     // 最近一轮的
-    recent_input_chars: number = 0;
+    recent_input_tokens: number = 0;
     /** 对话轮次 */
     turns: number = 0;
 }

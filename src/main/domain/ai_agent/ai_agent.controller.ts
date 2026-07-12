@@ -151,8 +151,8 @@ export class Ai_AgentController {
             content: prompt,
         };
         await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, {
-            input_chars: prompt.length,
-            output_chars: getContentAsString(assistantMessage.content).length,
+            input_tokens: prompt.length,
+            output_tokens: getContentAsString(assistantMessage.content).length,
         });
         return session.id;
     }

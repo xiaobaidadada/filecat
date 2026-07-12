@@ -33,6 +33,7 @@ import {
     ai_system_prompt_item,
     ai_agent_Item,
 } from "../../../../../common/req/filecat.ai.pojo";
+import {formatTokenCount} from "../../../../../common/token_counter";
 
 // ===== 拆分的子模块 =====
 import { Message } from "./chatTypes";
@@ -47,11 +48,7 @@ import ChatInput, { ChatInputHandle } from "./ChatInput";
 import BackgroundProcessPanel, { bgPanelRef } from "./BackgroundProcessPanel";
 import { ws } from "../../../util/ws";
 
-/** 格式化数字（加千位分隔符） */
-const formatChars = (chars: number | undefined): string => {
-    if (chars === undefined || chars === null || chars < 0) return "0";
-    return chars.toLocaleString();
-};
+/** @deprecated 已迁移到 token_counter.ts 的 formatTokenCount */
 
 export default function AiAgentChatPage() {
     const { t } = useTranslation();
@@ -433,7 +430,7 @@ export default function AiAgentChatPage() {
     const showUsageStatsPopup = async (sessionId: string) => {
         set_prompt_card({
             open: true,
-            title: t('字符消耗统计'),
+            title: t('Token消耗统计'),
             context_div: <div className="usage-stats-loading">{t('加载中...')}</div>,
             cancel: () => set_prompt_card({ open: false }),
         });
@@ -443,15 +440,15 @@ export default function AiAgentChatPage() {
                 const stats: ai_agent_usage_stats = result.data;
                 set_prompt_card({
                     open: true,
-                    title: t('字符消耗统计'),
+                    title: t('Token消耗统计'),
                     context_div: (
                         <div className="usage-stats-panel">
                             {[
                                 { l: t('对话轮次'), v: (stats.turns ?? 0).toString() },
-                                { l: t('AI输入字符'), v: formatChars(stats.input_chars) },
-                                { l: t('AI输出字符'), v: formatChars(stats.output_chars) },
-                                { l: t('AI输入字符(最近一轮)'), v: formatChars(stats.recent_input_chars) },
-                                { l: t('AI输出字符(最近一轮)'), v: formatChars(stats.recent_output_chars) },
+                                { l: t('AI输入Token'), v: formatTokenCount(stats.input_tokens) },
+                                { l: t('AI输出Token'), v: formatTokenCount(stats.output_tokens) },
+                                { l: t('AI输入Token(最近一轮)'), v: formatTokenCount(stats.recent_input_tokens) },
+                                { l: t('AI输出Token(最近一轮)'), v: formatTokenCount(stats.recent_output_tokens) },
                             ].map((row, i) => (
                                 <div key={i} className="usage-stats-row">
                                     <span className="usage-stats-label">{row.l}</span>
@@ -459,9 +456,9 @@ export default function AiAgentChatPage() {
                                 </div>
                             ))}
                             <div className="usage-stats-row usage-stats-total">
-                                <span className="usage-stats-label">{t('AI字符总计消耗')}</span>
+                                <span className="usage-stats-label">{t('AI Token总计消耗')}</span>
                                 <span className="usage-stats-value">
-                                    {formatChars((stats.input_chars || 0) + (stats.output_chars || 0))}
+                                    {formatTokenCount((stats.input_tokens || 0) + (stats.output_tokens || 0))}
                                 </span>
                             </div>
                         </div>
@@ -470,14 +467,14 @@ export default function AiAgentChatPage() {
                 });
             } else {
                 set_prompt_card({
-                    open: true, title: t('字符消耗统计'),
+                    open: true, title: t('Token消耗统计'),
                     context_div: <div className="usage-stats-empty">{t('暂无统计数据')}</div>,
                     cancel: () => set_prompt_card({ open: false }),
                 });
             }
         } catch {
             set_prompt_card({
-                open: true, title: t('字符消耗统计'),
+                open: true, title: t('Token消耗统计'),
                 context_div: <div className="usage-stats-empty">{t('暂无统计数据')}</div>,
                 cancel: () => set_prompt_card({ open: false }),
             });

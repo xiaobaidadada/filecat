@@ -24,6 +24,7 @@ import {
     ai_agent_tool_call_item
 } from "../../../common/req/filecat.ai.pojo";
 import {wss_interface} from "../../../common/frame/type";
+import {estimateTokenCount} from "./token_counter";
 import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/pick_next_model";
 
@@ -43,7 +44,7 @@ export interface ChatOptions {
     controller: AbortController;
     /** 流式消息回调，携带分块序号和消息类型，前端据此创建独立气泡 */
     on_msg: (payload: ChatMsgPayload) => void;
-    on_end: (stats?: { input_chars: number; output_chars: number; once_messages_list?:ai_agent_message_item[]  }) => void;
+    on_end: (stats?: { input_tokens: number; output_tokens: number; once_messages_list?:ai_agent_message_item[]  }) => void;
     sys_prompt?: string;
     sys_prompt_id?: string; // 系统提示词 ID（通过 index 标识）
     cwd?: string;
@@ -227,9 +228,9 @@ export class ChatCore {
         const config = aiConfig ?? ai_agentService.ai_config;
         const env = aiEnv ?? ai_agentService.ai_config_env;
 
-        // 统计每次 HTTP 请求大模型的输入/输出字符数
-        let total_input_chars = 0;
-        let total_output_chars = 0;
+        // 统计每次 HTTP 请求大模型的输入/输出 token 数
+        let total_input_tokens = 0;
+        let total_output_tokens = 0;
         if (!config) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
         }
@@ -311,7 +312,7 @@ ${user_local_file_prompt}
             const toolCallMap = new Map<number, any>();
 
             //  调用 LLM（流式）
-            const ioStats = { input_chars: 0, output_chars: 0 };
+            const ioStats = { input_tokens: 0, output_tokens: 0 };
 
             await this.callLLSync({
                 tools,
@@ -382,8 +383,8 @@ ${user_local_file_prompt}
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
             // 累加本次 HTTP 请求的输入/输出统计
-            total_input_chars += ioStats.input_chars;
-            total_output_chars += ioStats.output_chars;
+            total_input_tokens += ioStats.input_tokens;
+            total_output_tokens += ioStats.output_tokens;
 
             //  一次 LLM 完整结束，补 push assistant
             const assistantWorkMessage: ai_agent_message_item = {
@@ -397,7 +398,7 @@ ${user_local_file_prompt}
 
             // 没有 tool_calls，直接结束
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
+                on_end({ input_tokens: total_input_tokens, output_tokens: total_output_tokens ,once_messages_list});
                 return;
             }
 
@@ -476,7 +477,7 @@ ${user_local_file_prompt}
             text: "超出最大工具调用次数",
             chunk_index: globalChunkIndex
         });
-        on_end({ input_chars: total_input_chars, output_chars: total_output_chars ,once_messages_list});
+        on_end({ input_tokens: total_input_tokens, output_tokens: total_output_tokens ,once_messages_list});
     }
 
 
@@ -485,7 +486,7 @@ ${user_local_file_prompt}
             config: ai_agent_Item,
             env: ai_agent_item_dotenv,
             messages: ai_agent_message_list,
-            ioStats: { input_chars: number; output_chars: number },
+            ioStats: { input_tokens: number; output_tokens: number },
             call_data: (message: any) => void,
             error_call: (e: any) => void,
             controller: AbortController,
@@ -531,7 +532,8 @@ ${user_local_file_prompt}
         }
 
         const requestBodyStr = JSON.stringify(json_body);
-        props.ioStats.input_chars += requestBodyStr.length;
+        const requestBodyTokens = await estimateTokenCount(requestBodyStr);
+        props.ioStats.input_tokens += requestBodyTokens;
 
         try {
             const res = await llmPostStream(
@@ -583,7 +585,8 @@ ${user_local_file_prompt}
                         const {done, value} = await reader.read();
                         if (done) break;
                         const chunk = decoder.decode(value, {stream: true});
-                        props.ioStats.output_chars += chunk.length;
+                        const chunkTokens = await estimateTokenCount(chunk);
+                        props.ioStats.output_tokens += chunkTokens;
                         parser.feed(chunk);
                     }
                 } catch (e: any) {
@@ -598,7 +601,8 @@ ${user_local_file_prompt}
 
             // --- 非 SSE 处理逻辑 ---
             const resultText = await res.text();
-            props.ioStats.output_chars += resultText.length;
+            const resultTokens = await estimateTokenCount(resultText);
+            props.ioStats.output_tokens += resultTokens;
             const result = JSON.parse(resultText);
             props.call_data(result.choices[0].message);
 
