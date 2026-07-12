@@ -3,15 +3,11 @@ import path from "path";
 import fse from "fs-extra";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
-import {ai_agent_Item} from "../../../common/req/filecat.ai.pojo";
-import {ai_agentService} from "./ai_agent.service";
 import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
-import {llmPost} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
-    ai_agent_usage_stats, ai_agent_tool_call_item, getContentAsString, getContentLength,
-    ai_long_term_memory_setting,
+    ai_agent_usage_stats, getContentAsString,
 } from "../../../common/req/filecat.ai.pojo";
 import {estimateTokenCount} from "./token_counter";
 
@@ -28,22 +24,12 @@ type SessionIndexStore = {
     };
 };
 
-// 以下值的范围符合主流 agent的范围值内
-const max_param = 1
-
-// 压缩后仍然完整保留的最近消息数，保证短期上下文不丢失。
+// 压缩后仍然完整保留的最近消息数
 const MAX_RECENT_MESSAGES = 24;
-// 当单个会话累计消息条数超过该值时，触发历史内容压缩。
-// const COMPRESS_MESSAGE_COUNT = 36;
-// 当单个会话累计消息 token 数超过该值时，触发历史内容压缩。
-const COMPRESS_TOKEN_COUNT = 4500*max_param;  // 约等于 18000 英文字符 ≈ 4500 token
-// 会话摘要的最大 token 数，超过后截断，避免摘要本身无限增长。
-const MAX_SUMMARY_TOKENS = 1500*max_param;   // 约等于 6000 英文字符
-// 长期记忆的最大 token 数，超过后保留最新内容，避免长期记忆无限增长。
-const MAX_LONG_MEMORY_TOKENS = 1500*max_param;
-
-// tool工具内容最大长度，只起到展示 让AI知道调用了就行
-// const MAX_TOOL_CONTENT_CHARS  = 100;
+// 当单个会话累计消息条数超过该值时，触发历史消息裁剪
+const COMPRESS_MESSAGE_COUNT = 36;
+// 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
+const MAX_TOOL_CONTENT_CHARS = 200;
 
 //  id of session
 function nowId() {
@@ -120,11 +106,13 @@ function llm_normalizeMessage(message: ai_agent_message_item) {
     }
     if(message.tool_call_ends?.length) {
         for (const it of message.tool_call_ends) {
+            const raw = it.tool_result ?? it.error ?? "";
             list.push({
                 role: "tool",
                 tool_call_id: it.tool_call_id,
-                // content: (it.tool_result??it.error??"").slice(0,MAX_TOOL_CONTENT_CHARS)
-                content: it.tool_result??it.error??""
+                content: raw.length > MAX_TOOL_CONTENT_CHARS
+                    ? raw.slice(0, MAX_TOOL_CONTENT_CHARS) + "\n[...已截断]"
+                    : raw
             })
         }
     }
@@ -146,11 +134,6 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
 function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item) {
     const normalized = llm_normalizeMessage(message);
     content.push(...normalized)
-}
-
-/** 读取消息的 token 数（直接读预计算字段） */
-function message_one_tokens(it: ai_agent_message_item): number {
-    return it.token_count ?? 0;
 }
 
 export class AiAgentMemoryService {
@@ -463,6 +446,7 @@ export class AiAgentMemoryService {
     }
 
     // 为聊天构建新的上下文
+    // session.messages 已经在 compressIfNeeded 中被修剪为最新消息，无需再截断
     public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_message_list):ai_agent_message_list {
         const context:ai_agent_message_list = [
             {
@@ -494,8 +478,8 @@ export class AiAgentMemoryService {
                 ].filter(Boolean).join("\n\n")
             });
         }
-        // 历史的最近记忆加入
-        context.push(...(session?.messages ?? []).slice(-MAX_RECENT_MESSAGES));
+        // 历史消息（已经过压缩，直接使用全部）
+        context.push(...(session?.messages ?? []));
         // 新会话内容加入
         context.push(...incoming)
         const new_content:ai_agent_message_list = []
@@ -520,116 +504,12 @@ export class AiAgentMemoryService {
         return title || "新会话";
     }
 
-    // 一轮消息回答完，判断是不是要压缩一下上下文，进行一下总结
-    private async compressIfNeeded(session: ai_agent_chat_session_item) {
+    // 一轮消息回答完，消息数超限则裁剪旧消息（不调 AI 总结，tool 输出已在构建上下文时截断）
+    private compressIfNeeded(session: ai_agent_chat_session_item) {
         const messages = session.messages ?? [];
-        let splitIndex = messages.length;
-        let tokenSum = 0;
-        // 从后往前累加 token，超过 COMPRESS_TOKEN_COUNT 的部分保留为最近消息
-        for (let i = messages.length - 1; i >= 0; i--) {
-            tokenSum += message_one_tokens(messages[i]);
-            if (tokenSum > COMPRESS_TOKEN_COUNT) {
-                splitIndex = i + 1;
-                break;
-            }
-        }
-        const oldMessages = messages.slice(0, splitIndex);
-        const recentMessages = messages.slice(splitIndex);
-        // 总 token 未超过阈值则不压缩
-        if (tokenSum < COMPRESS_TOKEN_COUNT) {
-            return;
-        }
-        if (!oldMessages.length) return;
-
-        try {
-            const compressed = await this.compressWithAI(session.summary, session.long_term_memory, oldMessages.map(llm_normalizeMessage_one));
-            session.summary = compressed.summary.slice(0, MAX_SUMMARY_TOKENS);
-            session.long_term_memory = await this.mergeMemory(session.long_term_memory, compressed.long_term_memory);
-        } catch (e) {
-            const text = oldMessages.map(it => `${it.role}: ${llm_normalizeMessage_one(it).content}`).join("\n");
-            const estimatedTokens = await estimateTokenCount(text);
-            const truncatedText = estimatedTokens > MAX_SUMMARY_TOKENS
-                ? text.slice(0, MAX_SUMMARY_TOKENS * 4)
-                : text;
-            session.summary = [session.summary, truncatedText].filter(Boolean).join("\n");
-        }
-        session.messages = recentMessages;
-
-        // 将压缩后的 long_term_memory 同步到跨会话长期记忆
-        aiAgentLongTermMemoryService.syncMemory(session);
-    }
-
-    private async mergeMemory(oldMemory: string, nextMemory: string) {
-        const lines = `${oldMemory ?? ""}\n${nextMemory ?? ""}`
-            .split("\n")
-            .map(it => it.trim())
-            .filter(Boolean);
-        const joined = Array.from(new Set(lines)).join("\n");
-        // 按 token 数截断（通过 tiktoken 精确计算）
-        const estimatedTokens = await estimateTokenCount(joined);
-        if (estimatedTokens <= MAX_LONG_MEMORY_TOKENS) return joined;
-        return joined.slice(0, MAX_LONG_MEMORY_TOKENS * 4);
-    }
-
-    private async compressWithAI(summary: string, longMemory: string, messages: ai_agent_message_list, config?: ai_agent_Item): Promise<{ summary: string, long_term_memory: string }> {
-        const cfg = config || ai_agentService.ai_config;
-        if (!cfg) throw new Error("ai config not found");
-        const body: any = {
-            model: cfg.model,
-            messages: [
-                {
-                    role: "system",
-                    content: "你是会话记忆压缩器。请只输出 JSON，格式为 {\"summary\":\"...\",\"long_term_memory\":\"...\"}。summary 保留任务进展、决定、未完成事项；long_term_memory 只保留跨会话仍有价值的用户偏好、长期事实、项目约定。不要编造。"
-                },
-                {
-                    role: "user",
-                    content: JSON.stringify({
-                        existing_summary: summary ?? "",
-                        existing_long_term_memory: longMemory ?? "",
-                        messages
-                    })
-                }
-            ],
-            temperature: 0.2
-        };
-        const res = await llmPost(body, cfg);
-        const text = await this.readAiText(res);
-        const match = text.match(/\{[\s\S]*\}/);
-        const json = JSON.parse(match ? match[0] : text);
-        return {
-            summary: json.summary ?? "",
-            long_term_memory: json.long_term_memory ?? ""
-        };
-    }
-
-    private async readAiText(res: any) {
-        const contentType = res.headers.get("content-type") || "";
-        if (!res.ok) {
-            throw new Error(await res.text());
-        }
-        if (contentType.includes("text/event-stream") && res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let text = "";
-            while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                const chunk = decoder.decode(value, {stream: true});
-                for (const part of chunk.split("\n")) {
-                    const line = part.trim();
-                    if (!line.startsWith("data:")) continue;
-                    const data = line.slice(5).trim();
-                    if (!data || data === "[DONE]") continue;
-                    try {
-                        const json1 = JSON.parse(data);
-                        text += json1.choices?.[0]?.delta?.content ?? json1.choices?.[0]?.message?.content ?? "";
-                    } catch {}
-                }
-            }
-            return text;
-        }
-        const json2 = await res.json();
-        return json2.choices?.[0]?.message?.content ?? "";
+        if (messages.length <= COMPRESS_MESSAGE_COUNT) return;
+        // 直接保留最近 MAX_RECENT_MESSAGES 条，丢弃更早的消息
+        session.messages = messages.slice(-MAX_RECENT_MESSAGES);
     }
 
 }
