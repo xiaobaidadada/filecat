@@ -51,11 +51,9 @@ if(kill_proc) {
     ai_tools.push(kill_background_processes_schema)
     Ai_agentTools['kill_background_processes'] = kill_background_processes_tool
     tools_des_map['kill_background_processes'] = {
-        sleep: {
-            get_name: () => "kill background processes",
-            get_params: (args) => {
-                return `kill pid： ${args.pid}`
-            }
+        get_name: () => "kill background processes",
+        get_params: (args) => {
+            return `kill pid： ${args.pid}`
         }
     }
 }

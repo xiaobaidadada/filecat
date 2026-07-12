@@ -43,7 +43,7 @@ export interface ChatOptions {
     controller: AbortController;
     /** 流式消息回调，携带分块序号、消息类型等，前端据此创建独立气泡 */
     on_msg: (payload: ChatMsgPayload) => void;
-    on_end: (stats?: { once_messages_list?:ai_agent_message_item[]  }) => void;
+    on_end: (stats?: { once_messages_list?:ai_agent_message_item[],_interrupted?:boolean  }) => void;
     sys_prompt?: string;
     sys_prompt_id?: string; // 系统提示词 ID（通过 index 标识）
     cwd?: string;
@@ -293,6 +293,7 @@ ${user_local_file_prompt}
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
 
         const once_messages_list:ai_agent_message_item[] = []
+        let _interrupted = false
         /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
         let globalChunkIndex = 0;
 
@@ -364,6 +365,9 @@ ${user_local_file_prompt}
                     // 导致后续的 ai_chat_error 消息无人接收
                     throw e
                 },
+                abort_error_call:()=>{
+                    _interrupted = true
+                },
                     controller:controller}
             );
             if(config.model !== loopEnv.init_model) {
@@ -387,7 +391,7 @@ ${user_local_file_prompt}
 
             // 没有 tool_calls，直接结束
             if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-                on_end({ once_messages_list });
+                on_end({ once_messages_list ,_interrupted});
                 return;
             }
 
@@ -466,7 +470,7 @@ ${user_local_file_prompt}
             text: "超出最大工具调用次数",
             chunk_index: globalChunkIndex
         });
-        on_end({ once_messages_list });
+        on_end({ once_messages_list,_interrupted });
     }
 
 
@@ -477,6 +481,7 @@ ${user_local_file_prompt}
             messages: ai_agent_message_list,
             call_data: (message: any) => void,
             error_call: (e: any) => void,
+            abort_error_call?: () => void,
             controller: AbortController,
             tools:ai_agent_params_type[]
         }
@@ -574,6 +579,8 @@ ${user_local_file_prompt}
                 } catch (e: any) {
                     if (e.name !== "AbortError") {
                         props.error_call(e);
+                    } else {
+                        props.abort_error_call?.()
                     }
                 } finally {
                     parser.reset();
@@ -590,6 +597,8 @@ ${user_local_file_prompt}
             console.log(`llm请求报错`,e)
             if (e.name !== "AbortError") {
                 props.error_call(e);
+            } else {
+                props.abort_error_call?.()
             }
         }
     }

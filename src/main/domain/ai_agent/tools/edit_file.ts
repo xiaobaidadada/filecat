@@ -53,7 +53,7 @@ export const edit_schema: ai_agent_params_type = {
         parameters: {
             type: "object",
             properties: {
-                path: { type: "string", description: "绝对文件路径" },
+                path: { type: "string", description: "文件的绝对路径" },
                 oldString: { type: "string", description: "需要被替换的旧代码段（包含准确缩进）" },
                 newString: { type: "string", description: "替换后的新代码段" },
                 replaceAll: { type: "boolean", description: "是否替换所有匹配项" }

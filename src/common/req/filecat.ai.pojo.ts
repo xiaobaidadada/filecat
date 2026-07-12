@@ -330,6 +330,8 @@ export class ai_agent_message_item {
 
     /** 预计算的 token 数（存储时写入，压缩判断时直接读） */
     token_count?: number;
+    /** 网络中断标记（持久化到 session，恢复时该条 tool 结果不截断） */
+    _interrupted?: boolean;
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */

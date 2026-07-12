@@ -89,6 +89,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
                         .map(it => getContentAsString(it.content)).filter(Boolean).join("\n\n");
                     const assistantMsg: ai_agent_message_item = {
                         role: 'assistant', content: finalText, content_list: stats?.once_messages_list ?? [],
+                        _interrupted:stats?._interrupted
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
                     aiAgentMemoryService.appendTurn(systemUserId, session.id, userMsg, assistantMsg).catch(console.error);

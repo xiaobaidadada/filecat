@@ -224,7 +224,8 @@ export class ai_agent_class {
                             const assistantMessage = {
                                 content: assistantText,
                                 content_list: stats?.once_messages_list ?? [],
-                                role: "assistant" as const
+                                role: "assistant" as const,
+                                _interrupted:stats?._interrupted
                             };
                             this.session.messages = [
                                 ...(this.session.messages ?? []),

@@ -91,11 +91,16 @@ function llm_normalizeMessage_one(message: ai_agent_message_item) {
     return normalized
 }
 
-function llm_normalizeMessage(message: ai_agent_message_item) {
+/**
+ * 将 message 标准化为 LLM 可识别的格式（可能输出多条，如 assistant + tool results）
+ * @param message 原始消息
+ * @param _interrupted
+ */
+function llm_normalizeMessage(message: ai_agent_message_item,_interrupted:boolean) {
     const list:ai_agent_message_item[] = []
     if(message.content_list?.length) {
         for (const it of message.content_list) {
-            list.push(...llm_normalizeMessage(it))
+            list.push(...llm_normalizeMessage(it,_interrupted))
         }
         return list;
     }
@@ -107,13 +112,20 @@ function llm_normalizeMessage(message: ai_agent_message_item) {
     if(message.tool_call_ends?.length) {
         for (const it of message.tool_call_ends) {
             const raw = it.tool_result ?? it.error ?? "";
-            list.push({
-                role: "tool",
-                tool_call_id: it.tool_call_id,
-                content: raw.length > MAX_TOOL_CONTENT_CHARS
-                    ? raw.slice(0, MAX_TOOL_CONTENT_CHARS) + "\n[...已截断]"
-                    : raw
-            })
+            // 最近一条 assistant 的 tool 结果不截断（可能是网络中断恢复，需要完整结果让 AI 知道 tool 已完成）
+            if (_interrupted || raw.length <= MAX_TOOL_CONTENT_CHARS) {
+                list.push({
+                    role: "tool",
+                    tool_call_id: it.tool_call_id,
+                    content: raw
+                })
+            } else {
+                list.push({
+                    role: "tool",
+                    tool_call_id: it.tool_call_id,
+                    content: raw.slice(0, MAX_TOOL_CONTENT_CHARS) + "\n[...已截断]"
+                })
+            }
         }
     }
     return list;
@@ -130,9 +142,9 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
     ].join("\n");
 }
 
-// 格式化 用户消息 把一些json结构化的数据 字符串化 给 llm 用
+// 格式化消息，把 json 结构化的数据字符串化给 llm 用
 function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item) {
-    const normalized = llm_normalizeMessage(message);
+    const normalized = llm_normalizeMessage(message,message._interrupted);
     content.push(...normalized)
 }
 
@@ -389,6 +401,10 @@ export class AiAgentMemoryService {
         const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
+        // 历史处理
+        for (const message of session.messages) {
+            message._interrupted = false
+        }
         session.messages.push(userMessage);
         session.messages.push(assistantMessage);
         session.updated_at = Date.now();
@@ -420,7 +436,7 @@ export class AiAgentMemoryService {
         if (!session.title || session.title === "新会话") {
             session.title = this.createTitle(getContentAsString(userMessage.content));
         }
-        await this.compressIfNeeded(session);
+        this.compressIfNeeded(session);
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }

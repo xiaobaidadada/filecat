@@ -692,6 +692,7 @@ export class Ai_agentService {
                         role: "assistant",
                         content: assistantText,
                         content_list: stats?.once_messages_list ?? [],
+                        _interrupted:stats?._interrupted
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
                     aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage).catch(console.error);
