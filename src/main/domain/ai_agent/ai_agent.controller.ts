@@ -17,6 +17,7 @@ import {max_req_size} from "../../../common/req/common.pojo";
 import {ai_agent_message_item, ai_agent_message_list, getContentAsString} from "../../../common/req/filecat.ai.pojo";
 import {backgroundProcessManager} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
+import {ai_agent_item_dotenv} from "../../../common/req/filecat.ai.pojo";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -145,6 +146,7 @@ export class Ai_AgentController {
         sessionId: string | undefined,
         prompt: string,
         assistantMessage: ai_agent_message_item,
+        env?: ai_agent_item_dotenv,
     ) {
         const session = aiAgentMemoryService.ensure_session(userId, sessionId, prompt.slice(0, 28) );
         const userMsg: ai_agent_message_item = {
@@ -152,7 +154,7 @@ export class Ai_AgentController {
             content: prompt,
         };
         // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage);
+        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, undefined, env ?? ai_agentService.ai_config_env);
         return session.id;
     }
 

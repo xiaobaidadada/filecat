@@ -66,7 +66,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
     const userMsg: ai_agent_message_item = { role: 'user', content };
 
     try {
-        const workMessages = aiAgentMemoryService.build_context_by_session(session, [userMsg]);
+        const workMessages = aiAgentMemoryService.build_context_by_session(session, [userMsg], modelEnv || ai_agentService.ai_config_env);
         let assistantText = '';
 
         await new Promise<void>((resolve, reject) => {
@@ -92,7 +92,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
                         _interrupted:stats?._interrupted
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                    aiAgentMemoryService.appendTurn(systemUserId, session.id, userMsg, assistantMsg).catch(console.error);
+                    aiAgentMemoryService.appendTurn(systemUserId, session.id, userMsg, assistantMsg, undefined, modelEnv || ai_agentService.ai_config_env).catch(console.error);
                 },
                 session_id:session.id
             };

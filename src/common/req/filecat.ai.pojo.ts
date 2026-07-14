@@ -146,6 +146,9 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
     allow_exec_cmd_directly = false; // 是否允许AI直接执行命令而不需要用户确认
     proxy_url?: string;
     open_pick_model?: boolean;
+    max_recent_messages = 12; // 压缩后仍然完整保留的最近消息数
+    compress_message_count = 16; // 当单个会话累计消息条数超过该值时，触发历史消息裁剪
+    max_tool_content_chars = 200; // 历史消息中 tool 输出的最大字符数
 }
 
 export const ai_agent_item_dotenv_default = `
@@ -174,6 +177,13 @@ allow_exec_cmd_directly=false
 
 # 开启切换模型 ，开启以后，你可以自己写 prompt 提供多个模型让 ai 自己根据每次聊天切换下一步调用其他模型的次数
 # open_pick_model=false
+
+# 压缩后仍然完整保留的最近消息数
+max_recent_messages=12
+# 当单个会话累计消息条数超过该值时，触发历史消息裁剪
+compress_message_count=16
+# 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
+max_tool_content_chars=200
 `
 
 export class ai_mcp_server_item {

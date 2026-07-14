@@ -7,7 +7,7 @@ import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
-    ai_agent_usage_stats, getContentAsString,
+    ai_agent_usage_stats, ai_agent_item_dotenv, getContentAsString,
 } from "../../../common/req/filecat.ai.pojo";
 import {estimateTokenCount} from "./token_counter";
 
@@ -24,12 +24,10 @@ type SessionIndexStore = {
     };
 };
 
-// 压缩后仍然完整保留的最近消息数
-const MAX_RECENT_MESSAGES = 12;
-// 当单个会话累计消息条数超过该值时，触发历史消息裁剪
-const COMPRESS_MESSAGE_COUNT = 16;
-// 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
-const MAX_TOOL_CONTENT_CHARS = 200;
+// 三个配置的默认值，当 env 未传或未设置时使用
+const DEFAULT_MAX_RECENT_MESSAGES = 12;
+const DEFAULT_COMPRESS_MESSAGE_COUNT = 16;
+const DEFAULT_MAX_TOOL_CONTENT_CHARS = 200;
 
 //  id of session
 function nowId() {
@@ -95,12 +93,14 @@ function llm_normalizeMessage_one(message: ai_agent_message_item) {
  * 将 message 标准化为 LLM 可识别的格式（可能输出多条，如 assistant + tool results）
  * @param message 原始消息
  * @param _interrupted
+ * @param maxToolContentChars 历史消息中 tool 输出的最大字符数
  */
-function llm_normalizeMessage(message: ai_agent_message_item,_interrupted:boolean) {
+function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boolean, maxToolContentChars?: number) {
+    const toolContentLimit = maxToolContentChars ?? DEFAULT_MAX_TOOL_CONTENT_CHARS;
     const list:ai_agent_message_item[] = []
     if(message.content_list?.length) {
         for (const it of message.content_list) {
-            list.push(...llm_normalizeMessage(it,_interrupted))
+            list.push(...llm_normalizeMessage(it, _interrupted, toolContentLimit))
         }
         return list;
     }
@@ -113,7 +113,7 @@ function llm_normalizeMessage(message: ai_agent_message_item,_interrupted:boolea
         for (const it of message.tool_call_ends) {
             const raw = it.tool_result ?? it.error ?? "";
             // 最近一条 assistant 的 tool 结果不截断（可能是网络中断恢复，需要完整结果让 AI 知道 tool 已完成）
-            if (_interrupted || raw.length <= MAX_TOOL_CONTENT_CHARS) {
+            if (_interrupted || raw.length <= toolContentLimit) {
                 list.push({
                     role: "tool",
                     tool_call_id: it.tool_call_id,
@@ -123,7 +123,7 @@ function llm_normalizeMessage(message: ai_agent_message_item,_interrupted:boolea
                 list.push({
                     role: "tool",
                     tool_call_id: it.tool_call_id,
-                    content: raw.slice(0, MAX_TOOL_CONTENT_CHARS) + "\n[...已截断]"
+                    content: raw.slice(0, toolContentLimit) + "\n[...已截断]"
                 })
             }
         }
@@ -143,8 +143,8 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
 }
 
 // 格式化消息，把 json 结构化的数据字符串化给 llm 用
-function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item) {
-    const normalized = llm_normalizeMessage(message,message._interrupted);
+function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item, maxToolContentChars?: number) {
+    const normalized = llm_normalizeMessage(message, message._interrupted, maxToolContentChars);
     content.push(...normalized)
 }
 
@@ -394,7 +394,7 @@ export class AiAgentMemoryService {
     }
 
     // 将本次机器人的聊天结果加入到历史会话中
-    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }) {
+    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }, env?: ai_agent_item_dotenv) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
@@ -436,7 +436,7 @@ export class AiAgentMemoryService {
         if (!session.title || session.title === "新会话") {
             session.title = this.createTitle(getContentAsString(userMessage.content));
         }
-        this.compressIfNeeded(session);
+        this.compressIfNeeded(session, env);
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
@@ -463,7 +463,7 @@ export class AiAgentMemoryService {
 
     // 为聊天构建新的上下文
     // session.messages 已经在 compressIfNeeded 中被修剪为最新消息，无需再截断
-    public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_message_list):ai_agent_message_list {
+    public build_context_by_session(session:ai_agent_chat_session_item, incoming:ai_agent_message_list, env?: ai_agent_item_dotenv):ai_agent_message_list {
         const context:ai_agent_message_list = [
             {
                 role: "system",
@@ -500,7 +500,7 @@ export class AiAgentMemoryService {
         context.push(...incoming)
         const new_content:ai_agent_message_list = []
         for (const it of context) {
-            llm_render_message(new_content,it)
+            llm_render_message(new_content, it, env?.max_tool_content_chars)
         }
         return new_content;
     }
@@ -521,11 +521,13 @@ export class AiAgentMemoryService {
     }
 
     // 一轮消息回答完，消息数超限则裁剪旧消息（不调 AI 总结，tool 输出已在构建上下文时截断）
-    private compressIfNeeded(session: ai_agent_chat_session_item) {
+    private compressIfNeeded(session: ai_agent_chat_session_item, env?: ai_agent_item_dotenv) {
         const messages = session.messages ?? [];
-        if (messages.length <= COMPRESS_MESSAGE_COUNT) return;
-        // 直接保留最近 MAX_RECENT_MESSAGES 条，丢弃更早的消息
-        session.messages = messages.slice(-MAX_RECENT_MESSAGES);
+        const compressCount = env?.compress_message_count ?? DEFAULT_COMPRESS_MESSAGE_COUNT;
+        const maxRecent = env?.max_recent_messages ?? DEFAULT_MAX_RECENT_MESSAGES;
+        if (messages.length <= compressCount) return;
+        // 直接保留最近 maxRecent 条，丢弃更早的消息
+        session.messages = messages.slice(-maxRecent);
     }
 
 }

@@ -655,7 +655,7 @@ export class Ai_agentService {
             || formatAttachmentTitle(latestUserMessage?.attachments)
             || "新会话";
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
-        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages);
+        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.ai_config_env);
 
         try {
             const tools = ai_agentService.getModelToolSchemas();
@@ -695,7 +695,7 @@ export class Ai_agentService {
                         _interrupted:stats?._interrupted
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage).catch(console.error);
+                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.ai_config_env).catch(console.error);
                 },
                 token,
                 sys_prompt_id,
@@ -719,7 +719,7 @@ export class Ai_agentService {
                     content: errorMsg,
                 };
                 // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg);
+                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg, undefined, ai_agentService.ai_config_env);
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }
@@ -1114,7 +1114,7 @@ export class Ai_agentService {
                 content: error_msg,
             };
             // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg);
+            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, undefined, ai_agentService.ai_config_env);
         } catch (e) {
             console.log(e)
         }
