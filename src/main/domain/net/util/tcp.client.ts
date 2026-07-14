@@ -249,7 +249,7 @@ export class tcp_client {
                 if (this.options.not_reconnect_attempt) {
                     return;
                 }
-                console.log(`心跳超时，主动斩断当前失效连接，触发重连机制...`);
+                console.log(`心跳超时，主动斩断当前失效连接，触发重连机制... ${this.options?.server_host}:${this.options?.server_port} `);
                 this.client?.close(); // 这里 close 会触发绑定的 on_close() 进而调用 scheduleReconnect
             }
         }, -1);
