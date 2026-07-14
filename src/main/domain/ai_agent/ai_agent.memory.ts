@@ -25,9 +25,9 @@ type SessionIndexStore = {
 };
 
 // 压缩后仍然完整保留的最近消息数
-const MAX_RECENT_MESSAGES = 24;
+const MAX_RECENT_MESSAGES = 12;
 // 当单个会话累计消息条数超过该值时，触发历史消息裁剪
-const COMPRESS_MESSAGE_COUNT = 36;
+const COMPRESS_MESSAGE_COUNT = 16;
 // 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
 const MAX_TOOL_CONTENT_CHARS = 200;
 
