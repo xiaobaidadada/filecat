@@ -184,7 +184,7 @@ export class ChatCore {
                 userService.check_user_path_by_user_id(user_id, args.path);
                 userService.check_user_auth_by_user_id(
                     user_id,
-                    UserAuth.filecat_file_delete_cut_rename,
+                    UserAuth.filecat_file_context_update_upload_created_copy_decompression,
                     {
                         auto_throw: true,
                         root_check: true
