@@ -139,8 +139,11 @@ export function TcpProxyClient(props) {
                     <InputText placeholder={`${t("服务器")} ip`} value={clients[0]?.serverIp} handleInputChange={(d)=>{
                         clients[0].serverIp = d
                     }}/>
-                    <InputText placeholder={`${t("服务器")} port`} value={clients[0]?.serverPort} handleInputChange={(d)=>{
-                        clients[0].serverPort = parseInt(d)
+                    <InputText type={"number"} placeholder={`${t("服务器")} port`} value={clients[0]?.serverPort} handleInputChange={(d)=>{
+                        const v = parseInt(d);
+                        if (!isNaN(v) && v >= 0 && v <= 65535) {
+                            clients[0].serverPort = v;
+                        }
                     }}/>
                     <InputText placeholder={t("名称")} value={clients[0]?.client_name} handleInputChange={(d)=>{
                         clients[0].client_name = d
@@ -178,8 +181,11 @@ export function TcpProxyClient(props) {
                     <Table headers={all_client_headers} rows={clients.slice(1).map((item:tcp_proxy_client_fig, index) => {
                         const new_list = [
                             <p>{index}</p>,
-                            <InputText value={item.serverPort} handleInputChange={(value) => {
-                                item.serverPort = parseInt(value);
+                            <InputText type={"number"} value={item.serverPort} handleInputChange={(value) => {
+                                const v = parseInt(value);
+                                if (!isNaN(v) && v >= 0 && v <= 65535) {
+                                    item.serverPort = v;
+                                }
                             }} no_border={true}/>,
                             <InputText value={item.serverIp}  handleInputChange={(value) => {
                                 item.serverIp = value

@@ -199,6 +199,12 @@ export class tcp_forward_server_service {
 
     async open_client(fig:tcp_proxy_client_fig) {
         if (fig.open) {
+            // 端口号必须在有效范围内
+            if (fig.serverPort < 0 || fig.serverPort > 65535) {
+                const errMsg = `端口号无效 ${fig.serverPort}，必须在 0~65535 之间`;
+                console.log(errMsg);
+                throw errMsg;
+            }
             const register = async () => {
                 const info: tcp_forward_client_type = {
                     hash_token: NetUtil.get64Key(fig.key),
