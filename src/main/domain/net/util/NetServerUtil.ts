@@ -122,6 +122,7 @@ export class NetServerUtil {
                 });
                 // 处理错误事件
                 socket.on('error', (err) => {
+                    raw_socket.get_client().close();
                     console.log('Socket 错误:', socket.remoteAddress);
                 });
                 start_heart(raw_socket)
