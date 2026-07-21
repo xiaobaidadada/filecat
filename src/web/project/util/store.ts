@@ -201,4 +201,6 @@ export const $stroe = {
         size: "1024x1024",
         n: 1,
     }),
+    // AI 聊天输入框高度（行数）
+    ai_chat_input_height: sync_atomWithStorage<number>("ai_chat_input_height", 5),
 };

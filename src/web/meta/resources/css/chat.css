@@ -341,14 +341,45 @@
     background: #fff;
     border-top: 1px solid #e5e7eb;
     align-items: flex-end;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* 输入框顶部拖动条，定位在 border-top 上方 */
+.chat-input-resize-handle {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 1;
+    /* 透明，hover 时才显示 */
+    background: transparent;
+    transition: background 0.15s ease;
+}
+.chat-input-resize-handle:hover {
+    background: var(--primary-light, rgba(79, 70, 229, 0.12));
+}
+.chat-input-resize-handle.dragging {
+    background: var(--primary, rgba(79, 70, 229, 0.2));
+}
+
+/* 拖动时的遮罩层 */
+.chat-input-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: transparent;
+    cursor: ns-resize;
 }
 
 .chat-input-area textarea.chat-input,
 .chat-input-area .ace-input-container.chat-input,
 .chat-input-area .rich-textarea.chat-input {
     width: 100%;
-    min-height: 5rem;
-    max-height: 20em;
+    min-height: 3em;
+    max-height: none;
     padding: 10px 14px;
     font-size: 0.95em;
     line-height: 1.5em;

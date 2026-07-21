@@ -178,6 +178,13 @@
   .chat-input-area {
     padding: 0 16px;
   }
+  /* 移动端隐藏输入框拖动条 */
+  .chat-input-resize-handle {
+    display: none;
+  }
+  .chat-input-overlay {
+    display: none;
+  }
 
   .header .header-nav-toggle {
     display: none;

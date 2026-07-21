@@ -51,7 +51,7 @@ export default function Studio(props) {
     folder_path = decodeURIComponent(folder_path);
 
     function shellClick() {
-        if (file_shell_hidden !== undefined) {
+        if (file_shell_hidden === true || file_shell_hidden === false) {
             set_file_shell_hidden(!file_shell_hidden);
             return;
         }
