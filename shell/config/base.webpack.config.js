@@ -30,10 +30,6 @@ function get_exe_plugins() {
         new webpack.IgnorePlugin({
             resourceRegExp: /Debug/,
         }),
-        // 忽略 @ljharb 系列包对自身 tsconfig.json 的动态 require（仅类型检查用，运行时不需要）
-        new webpack.IgnorePlugin({
-            resourceRegExp: /[\\/]tsconfig\.json$/,
-        }),
     ]
 }
 

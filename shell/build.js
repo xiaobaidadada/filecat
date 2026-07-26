@@ -43,11 +43,80 @@ function exec_sync(cmd) {
     }
 }
 
+/**
+ * 清理 node_modules 中 @ljharb 系列包残留的 tsconfig.json
+ * 这些 tsconfig.json 中 extends 了 @ljharb/tsconfig，
+ * 但 @ljharb/tsconfig 通常被 npm hoist 到顶层或根本未安装，
+ * 在 Windows CI 上会导致 webpack ENOENT 错误
+ */
+function clean_ljharb_tsconfig() {
+    const patterns = [
+        'es-set-tostringtag',
+        'hasown',
+        'side-channel',
+        'is-generator-function',
+        'gopd',
+        'has-symbols',
+        'has-tostringtag',
+        'get-intrinsic',
+        'set-function-name',
+        'define-data-property',
+        'function-bind',
+        'es-define-property',
+        'es-errors',
+        'es-object-atoms',
+        'call-bind-apply-helpers',
+        'dunder-proto',
+        'es-abstract',
+    ];
+    const nodeModulesDir = path.join(__dirname, '..', 'node_modules');
+    let cleaned = 0;
+    for (const pkg of patterns) {
+        // 顶层 node_modules
+        const tsPath = path.join(nodeModulesDir, pkg, 'tsconfig.json');
+        if (fs.existsSync(tsPath)) {
+            fs.unlinkSync(tsPath);
+            cleaned++;
+        }
+        // 嵌套 node_modules（扫描所有 xxx/node_modules/{pkg}/tsconfig.json）
+        try {
+            const entries = fse.readdirSync(nodeModulesDir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (!entry.isDirectory()) continue;
+                const nestedDir = path.join(nodeModulesDir, entry.name, 'node_modules', pkg, 'tsconfig.json');
+                if (fs.existsSync(nestedDir)) {
+                    fs.unlinkSync(nestedDir);
+                    cleaned++;
+                }
+                // 再深一层 @scope/pkg
+                if (entry.name.startsWith('@')) {
+                    const scopeDir = path.join(nodeModulesDir, entry.name);
+                    const subEntries = fse.readdirSync(scopeDir, { withFileTypes: true });
+                    for (const subEntry of subEntries) {
+                        if (!subEntry.isDirectory()) continue;
+                        const deepPath = path.join(scopeDir, subEntry.name, 'node_modules', pkg, 'tsconfig.json');
+                        if (fs.existsSync(deepPath)) {
+                            fs.unlinkSync(deepPath);
+                            cleaned++;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // 忽略扫描错误
+        }
+    }
+    if (cleaned > 0) {
+        console.log(`[clean_ljharb_tsconfig] 已清理 ${cleaned} 个 tsconfig.json`);
+    }
+}
+
 const tasksLister = new Listr(
     [
         {
             title:"清理build目录执行tsc",
             task:async ()=>{
+                clean_ljharb_tsconfig();
                 fse.removeSync(path.join(__dirname, "..", "build"));
                 exec_sync("npx tsc")
             }

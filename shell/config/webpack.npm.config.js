@@ -23,10 +23,6 @@ module.exports = {
     externals: npm_externals,
     plugins: [
         new webpack.DefinePlugin(common_plugins),
-        // 忽略 @ljharb 系列包对自身 tsconfig.json 的动态 require（仅类型检查用，运行时不需要）
-        new webpack.IgnorePlugin({
-            resourceRegExp: /[\\/]tsconfig\.json$/,
-        }),
         // new webpack.IgnorePlugin({ // 前面已经排除了可能含义.node的项目 这里就不需要了
         //     resourceRegExp: /\.node$/
         //     // contextRegExp: /moment$/,
