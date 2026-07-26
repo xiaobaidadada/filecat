@@ -91,3 +91,174 @@
 
     height:100%
 }
+
+/* ===== GitStudio 专用样式 ===== */
+.git-studio-tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
+}
+.git-studio-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: var(--textSecondary, #5f6368);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+.git-studio-tab--active {
+    background: var(--primary-light, #d2e3fc);
+    color: var(--primary, #1a73e8);
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary, #1a73e8);
+}
+.git-studio-select-all {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--textSecondary, #5f6368);
+    cursor: pointer;
+}
+.git-studio-file-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+.git-studio-file-item--selected {
+    background: var(--primary-light, #d2e3fc);
+}
+.git-studio-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+}
+.git-studio-filename {
+    font-size: 13px;
+    color: var(--textPrimary, #202124);
+    word-break: break-all;
+}
+.git-studio-log-entry {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.git-studio-log-hash {
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--primary, #1a73e8);
+    background: var(--primary-light, #d2e3fc);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.git-studio-card {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--divider, rgba(0,0,0,0.08));
+    background: var(--surfacePrimary, #ffffff);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.git-studio-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--textPrimary, #202124);
+}
+.git-studio-input {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--divider, rgba(0,0,0,0.08));
+    background: var(--surfacePrimary, #ffffff);
+    color: var(--textPrimary, #202124);
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.git-studio-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--divider, rgba(0,0,0,0.08));
+    background: var(--surfacePrimary, #ffffff);
+    color: var(--textPrimary, #202124);
+    font-size: 13px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+.git-studio-btn-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.git-studio-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--primary, #1a73e8);
+    background: transparent;
+    color: var(--primary, #1a73e8);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+.git-studio-btn:hover {
+    opacity: 0.85;
+}
+.git-studio-branch-chip {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.8;
+    border: 1px solid var(--divider, rgba(0,0,0,0.08));
+    background: transparent;
+    color: var(--textSecondary, #5f6368);
+}
+.git-studio-branch-chip--current {
+    border: 1px solid var(--secondary, #34a853);
+    background: var(--primary-light, #d2e3fc);
+    color: var(--secondary, #34a853);
+    cursor: default;
+    opacity: 1;
+}
+.git-studio-config-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.git-studio-config-label {
+    font-size: 12px;
+    color: var(--textSecondary, #5f6368);
+    width: 80px;
+    flex-shrink: 0;
+    text-align: right;
+}
+.git-studio-proxy-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+.git-studio-proxy-label {
+    width: 100px;
+    flex-shrink: 0;
+    color: var(--textSecondary, #5f6368);
+}

@@ -552,5 +552,15 @@
   "默认180秒（3分钟）": "Défaut 180s (3 minutes)",
   "检测间隔不能小于10秒": "L'intervalle de vérification ne peut pas être inférieur à 10 secondes",
   "系统版本检测地址": "URL de vérification de version",
-  "版本检测地址不能为空": "L'URL de vérification ne peut pas être vide"
+  "版本检测地址不能为空": "L'URL de vérification ne peut pas être vide",
+  "用户配置": "Configuration utilisateur",
+  "邮箱": "E-mail",
+  "代理设置": "Paramètres proxy",
+  "全局代理": "Proxy global",
+  "仓库代理": "Proxy du dépôt",
+  "修改": "Modifier",
+  "用户配置已保存": "Configuration utilisateur enregistrée",
+  "代理配置已保存": "Paramètres proxy enregistrés",
+  "留空清除该代理设置": "Laisser vide pour effacer le proxy",
+  "用户配置和全局代理修改后对所有仓库生效": "La configuration utilisateur et le proxy global s'appliquent à tous les dépôts"
 }

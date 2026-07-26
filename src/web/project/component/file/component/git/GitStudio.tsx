@@ -10,21 +10,6 @@ import {useNavigate} from "react-router-dom";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import * as lodash from "lodash";
-import {getPathLastname} from "../../../../../../common/ListUtil";
-
-// 复用 shared 中的颜色变量
-const V = {
-    surface: 'var(--surfacePrimary, #ffffff)',
-    surface2: 'var(--surfaceSecondary, #f1f3f4)',
-    border: 'var(--divider, rgba(0,0,0,0.08))',
-    text: 'var(--textPrimary, #202124)',
-    text2: 'var(--textSecondary, #5f6368)',
-    primary: 'var(--primary, #1a73e8)',
-    primaryLight: 'var(--primary-light, #d2e3fc)',
-    green: 'var(--secondary, #34a853)',
-    red: 'var(--accent, #ea4335)',
-    yellow: '#f9ab00',
-};
 
 interface GitStatusFile {
     path: string;
@@ -44,12 +29,36 @@ interface GitBranchInfo {
     branches: string[];
 }
 
+interface GitUserConfig {
+    name: string;
+    email: string;
+}
+
+interface GitProxyConfig {
+    global: { http: string; https: string };
+    local: { http: string; https: string };
+}
+
+// 状态颜色映射
+const STATUS_COLORS: Record<string, string> = {
+    modified: '#f9ab00',
+    added: 'var(--secondary, #34a853)',
+    deleted: 'var(--accent, #ea4335)',
+    untracked: 'var(--textSecondary, #5f6368)',
+    renamed: 'var(--primary, #1a73e8)',
+    conflict: 'var(--accent, #ea4335)',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+    modified: 'M', added: 'A', deleted: 'D',
+    untracked: '?', renamed: 'R', conflict: '!',
+};
+
 export default function GitStudio() {
     const {t} = useTranslation();
     const navigate = useNavigate();
 
     let dirPath = decodeURIComponent(getRouterAfter(routerConfig.git_page, getRouterPath()));
-    // 去掉末尾多余的 /
     dirPath = dirPath.replace(/\/+$/, '');
 
     const [statusFiles, setStatusFiles] = useState<GitStatusFile[]>([]);
@@ -64,13 +73,30 @@ export default function GitStudio() {
     const studioDividerRef = useRef(null);
     const studioNavRef = useRef(null);
 
+    // Git 用户配置
+    const [userConfig, setUserConfig] = useState<GitUserConfig>({name: '', email: ''});
+    const [editName, setEditName] = useState('');
+    const [editEmail, setEditEmail] = useState('');
+    const [configEditing, setConfigEditing] = useState(false);
+
+    // Git 代理配置
+    const [proxyConfig, setProxyConfig] = useState<GitProxyConfig | null>(null);
+    const [proxyEditing, setProxyEditing] = useState(false);
+    const [editProxyGlobalHttp, setEditProxyGlobalHttp] = useState('');
+    const [editProxyGlobalHttps, setEditProxyGlobalHttps] = useState('');
+    const [editProxyLocalHttp, setEditProxyLocalHttp] = useState('');
+    const [editProxyLocalHttps, setEditProxyLocalHttps] = useState('');
+
     useEffect(() => {
         if (!dirPath) return;
         loadStatus();
         loadLog();
         loadBranches();
+        loadUserConfig();
+        loadProxy();
     }, [dirPath]);
 
+    // ===== 数据加载 =====
     const loadStatus = async () => {
         try {
             setLoading(true);
@@ -98,6 +124,33 @@ export default function GitStudio() {
         }
     };
 
+    const loadUserConfig = async () => {
+        try {
+            const rsq = await gitHttp.post('get_user_config', {path: dirPath});
+            if (rsq.code === 0) {
+                setUserConfig(rsq.data);
+                setEditName(rsq.data.name || '');
+                setEditEmail(rsq.data.email || '');
+            }
+        } catch (e) {
+        }
+    };
+
+    const loadProxy = async () => {
+        try {
+            const rsq = await gitHttp.post('get_proxy', {path: dirPath});
+            if (rsq.code === 0) {
+                setProxyConfig(rsq.data);
+                setEditProxyGlobalHttp(rsq.data.global?.http || '');
+                setEditProxyGlobalHttps(rsq.data.global?.https || '');
+                setEditProxyLocalHttp(rsq.data.local?.http || '');
+                setEditProxyLocalHttps(rsq.data.local?.https || '');
+            }
+        } catch (e) {
+        }
+    };
+
+    // ===== 文件选择 =====
     const toggleFile = (filePath: string) => {
         const next = new Set(selectedFiles);
         if (next.has(filePath)) next.delete(filePath);
@@ -113,208 +166,120 @@ export default function GitStudio() {
         }
     };
 
+    // ===== Git 操作 =====
     const handleAdd = async () => {
-        if (selectedFiles.size === 0) {
-            NotyFail(t('请先选择文件'));
-            return;
-        }
+        if (selectedFiles.size === 0) { NotyFail(t('请先选择文件')); return; }
         try {
             const rsq = await gitHttp.post('add', {path: dirPath, files: [...selectedFiles]});
-            if (rsq.code === 0) {
-                NotySuccess(t('已暂存'));
-                setSelectedFiles(new Set());
-                loadStatus();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        }
+            if (rsq.code === 0) { NotySuccess(t('已暂存')); setSelectedFiles(new Set()); loadStatus(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
     };
 
     const handleAddAll = async () => {
         try {
             const rsq = await gitHttp.post('add_all', {path: dirPath});
-            if (rsq.code === 0) {
-                NotySuccess(t('已暂存全部'));
-                loadStatus();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        }
+            if (rsq.code === 0) { NotySuccess(t('已暂存全部')); loadStatus(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
     };
 
     const handleReset = async () => {
-        if (selectedFiles.size === 0) {
-            NotyFail(t('请先选择文件'));
-            return;
-        }
+        if (selectedFiles.size === 0) { NotyFail(t('请先选择文件')); return; }
         try {
             const rsq = await gitHttp.post('reset', {path: dirPath, files: [...selectedFiles]});
-            if (rsq.code === 0) {
-                NotySuccess(t('已取消暂存'));
-                setSelectedFiles(new Set());
-                loadStatus();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        }
+            if (rsq.code === 0) { NotySuccess(t('已取消暂存')); setSelectedFiles(new Set()); loadStatus(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
     };
 
     const handleCommit = async () => {
-        if (!commitMessage.trim()) {
-            NotyFail(t('请输入提交信息'));
-            return;
-        }
+        if (!commitMessage.trim()) { NotyFail(t('请输入提交信息')); return; }
         try {
             setLoading(true);
-            // allChanged=true 对应 `git commit -am`：
-            // 已跟踪文件的修改无需先 git add 即可直接提交。
-            // 如果用户想提交"新增的未跟踪文件"，仍需先点击「暂存全部/暂存选中」。
             const rsq = await gitHttp.post('commit', {path: dirPath, message: commitMessage.trim(), allChanged: true});
-            if (rsq.code === 0) {
-                NotySuccess(t('提交成功'));
-                setCommitMessage('');
-                loadStatus();
-                loadLog();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        } finally {
-            setLoading(false);
-        }
+            if (rsq.code === 0) { NotySuccess(t('提交成功')); setCommitMessage(''); loadStatus(); loadLog(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+        finally { setLoading(false); }
     };
 
     const handlePush = async (force = false) => {
         try {
             setLoading(true);
             const rsq = await gitHttp.post('push', {path: dirPath, force});
-            if (rsq.code === 0) {
-                NotySuccess(t('推送成功'));
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        } finally {
-            setLoading(false);
-        }
+            if (rsq.code === 0) NotySuccess(t('推送成功'));
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+        finally { setLoading(false); }
     };
 
     const handlePull = async () => {
         try {
             setLoading(true);
             const rsq = await gitHttp.post('pull', {path: dirPath});
-            if (rsq.code === 0) {
-                NotySuccess(t('拉取成功'));
-                loadStatus();
-                loadLog();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        } finally {
-            setLoading(false);
-        }
+            if (rsq.code === 0) { NotySuccess(t('拉取成功')); loadStatus(); loadLog(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+        finally { setLoading(false); }
     };
 
     const handleCheckout = async (branch: string) => {
         try {
             setLoading(true);
             const rsq = await gitHttp.post('checkout', {path: dirPath, branch});
-            if (rsq.code === 0) {
-                NotySuccess(t('切换分支成功'));
-                loadStatus();
-                loadLog();
-                loadBranches();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        } finally {
-            setLoading(false);
-        }
+            if (rsq.code === 0) { NotySuccess(t('切换分支成功')); loadStatus(); loadLog(); loadBranches(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+        finally { setLoading(false); }
     };
 
     const handleStash = async () => {
         try {
             const rsq = await gitHttp.post('stash', {path: dirPath});
-            if (rsq.code === 0) {
-                NotySuccess(t('暂存工作区成功'));
-                loadStatus();
-            } else {
-                NotyFail(rsq.message);
-            }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        }
+            if (rsq.code === 0) { NotySuccess(t('暂存工作区成功')); loadStatus(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
     };
 
     const handleStashPop = async () => {
         try {
             const rsq = await gitHttp.post('stash_pop', {path: dirPath});
-            if (rsq.code === 0) {
-                NotySuccess(t('恢复工作区成功'));
-                loadStatus();
-            } else {
-                NotyFail(rsq.message);
+            if (rsq.code === 0) { NotySuccess(t('恢复工作区成功')); loadStatus(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+    };
+
+    // ===== 配置操作 =====
+    const handleSaveUserConfig = async () => {
+        try {
+            const rsq = await gitHttp.post('set_user_config', {path: dirPath, name: editName, email: editEmail});
+            if (rsq.code === 0) { NotySuccess(t('用户配置已保存')); setConfigEditing(false); loadUserConfig(); }
+            else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+    };
+
+    const handleSaveProxy = async () => {
+        try {
+            // 逐项保存，4 个可能的配置项
+            const items = [
+                {scope: 'global', type: 'http', value: editProxyGlobalHttp},
+                {scope: 'global', type: 'https', value: editProxyGlobalHttps},
+                {scope: 'local', type: 'http', value: editProxyLocalHttp},
+                {scope: 'local', type: 'https', value: editProxyLocalHttps},
+            ];
+            for (const item of items) {
+                await gitHttp.post('set_proxy', {path: dirPath, ...item});
             }
-        } catch (e: any) {
-            NotyFail(e?.message);
-        }
+            NotySuccess(t('代理配置已保存'));
+            setProxyEditing(false);
+            loadProxy();
+        } catch (e: any) { NotyFail(e?.message); }
     };
 
-    const cancel = () => {
-        navigate(-1);
-    };
+    const cancel = () => navigate(-1);
 
-    const statusColor = (status: string) => {
-        switch (status) {
-            case 'modified':
-                return V.yellow;
-            case 'added':
-                return V.green;
-            case 'deleted':
-                return V.red;
-            case 'untracked':
-                return V.text2;
-            case 'renamed':
-                return V.primary;
-            case 'conflict':
-                return V.red;
-            default:
-                return V.text2;
-        }
-    };
-
-    const statusLabel = (status: string) => {
-        switch (status) {
-            case 'modified':
-                return 'M';
-            case 'added':
-                return 'A';
-            case 'deleted':
-                return 'D';
-            case 'untracked':
-                return '?';
-            case 'renamed':
-                return 'R';
-            case 'conflict':
-                return '!';
-            default:
-                return status;
-        }
-    };
-
-    // 拖拽
+    // ===== 拖拽 =====
     const handleDrag = useCallback(lodash.throttle((event) => {
         const size = parseFloat(getComputedStyle(studioNavRef.current).fontSize);
         const left = window.innerWidth / size - 4;
@@ -344,38 +309,20 @@ export default function GitStudio() {
                         <span>{decodeURIComponent(dirName)}</span>,
                     ]}>
                 <ActionButton icon={"refresh"} title={t("刷新")} onClick={() => {
-                    loadStatus();
-                    loadLog();
-                    loadBranches();
+                    loadStatus(); loadLog(); loadBranches(); loadUserConfig(); loadProxy();
                 }}/>
             </Header>
             <div className={"studio-body"} ref={studioNavRef}>
                 {/* 左侧面板 */}
                 <div className={"studio-nav"} style={{width: `${navWidth - 1}em`}}>
                     {/* Tab 切换 */}
-                    <div style={{display: 'flex', borderBottom: `1px solid ${V.border}`}}>
-                        <button
-                            onClick={() => setActiveTab('status')}
-                            style={{
-                                flex: 1, padding: '10px 8px', border: 'none',
-                                background: activeTab === 'status' ? V.primaryLight : 'transparent',
-                                color: activeTab === 'status' ? V.primary : V.text2,
-                                cursor: 'pointer', fontSize: 13, fontWeight: activeTab === 'status' ? 600 : 400,
-                                borderBottom: activeTab === 'status' ? `2px solid ${V.primary}` : '2px solid transparent',
-                            }}
-                        >
+                    <div className="git-studio-tab-bar">
+                        <button className={`git-studio-tab ${activeTab === 'status' ? 'git-studio-tab--active' : ''}`}
+                                onClick={() => setActiveTab('status')}>
                             📝 {t('变更')} ({statusFiles.length})
                         </button>
-                        <button
-                            onClick={() => setActiveTab('log')}
-                            style={{
-                                flex: 1, padding: '10px 8px', border: 'none',
-                                background: activeTab === 'log' ? V.primaryLight : 'transparent',
-                                color: activeTab === 'log' ? V.primary : V.text2,
-                                cursor: 'pointer', fontSize: 13, fontWeight: activeTab === 'log' ? 600 : 400,
-                                borderBottom: activeTab === 'log' ? `2px solid ${V.primary}` : '2px solid transparent',
-                            }}
-                        >
+                        <button className={`git-studio-tab ${activeTab === 'log' ? 'git-studio-tab--active' : ''}`}
+                                onClick={() => setActiveTab('log')}>
                             📜 {t('提交记录')} ({logEntries.length})
                         </button>
                     </div>
@@ -383,48 +330,31 @@ export default function GitStudio() {
                     {/* 状态列表 */}
                     {activeTab === 'status' && (
                         <div style={{flex: 1, overflow: 'auto'}}>
-                            {/* 全选 */}
                             {statusFiles.length > 0 && (
-                                <div style={{
-                                    padding: '6px 12px', borderBottom: `1px solid ${V.border}`,
-                                    display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
-                                    color: V.text2, cursor: 'pointer',
-                                }} onClick={toggleAll}>
-                                    <input type="checkbox" checked={selectedFiles.size === statusFiles.length && statusFiles.length > 0}
-                                           onChange={toggleAll} style={{cursor: 'pointer'}}/>
+                                <div className="git-studio-select-all" onClick={toggleAll}>
+                                    <input type="checkbox"
+                                           checked={selectedFiles.size === statusFiles.length && statusFiles.length > 0}
+                                           onChange={toggleAll}/>
                                     <span>{t('全选')} ({selectedFiles.size}/{statusFiles.length})</span>
                                 </div>
                             )}
                             {statusFiles.map(f => (
                                 <div key={f.path}
-                                     onClick={() => toggleFile(f.path)}
-                                     style={{
-                                         padding: '8px 12px', cursor: 'pointer',
-                                         borderBottom: `1px solid ${V.border}`,
-                                         display: 'flex', alignItems: 'center', gap: 8,
-                                         background: selectedFiles.has(f.path) ? V.primaryLight : 'transparent',
-                                         transition: 'background 0.2s',
-                                     }}
-                                >
-                                    <input type="checkbox" checked={selectedFiles.has(f.path)} onChange={() => {
-                                    }} style={{cursor: 'pointer'}}/>
-                                    <span style={{
-                                        fontSize: 11, fontWeight: 600, width: 20, height: 20,
-                                        borderRadius: 4, display: 'inline-flex', alignItems: 'center',
-                                        justifyContent: 'center', color: '#fff',
-                                        background: statusColor(f.status),
-                                        flexShrink: 0,
-                                    }}>
-                                        {statusLabel(f.status)}
+                                     className={`git-studio-file-item ${selectedFiles.has(f.path) ? 'git-studio-file-item--selected' : ''}`}
+                                     onClick={() => toggleFile(f.path)}>
+                                    <input type="checkbox" checked={selectedFiles.has(f.path)} onChange={() => {}}/>
+                                    <span className="git-studio-status-badge"
+                                          style={{background: STATUS_COLORS[f.status] || STATUS_COLORS.untracked}}>
+                                        {STATUS_LABELS[f.status] || f.status}
                                     </span>
-                                    <span style={{fontSize: 13, color: V.text, wordBreak: 'break-all'}}>
+                                    <span className="git-studio-filename">
                                         {f.path}
-                                        {f.oldPath && <span style={{color: V.text2, fontSize: 11}}> (← {f.oldPath})</span>}
+                                        {f.oldPath && <span style={{color: 'var(--textSecondary)', fontSize: 11}}> (← {f.oldPath})</span>}
                                     </span>
                                 </div>
                             ))}
                             {statusFiles.length === 0 && (
-                                <p style={{color: V.text2, textAlign: 'center', padding: 20, fontSize: 12}}>
+                                <p style={{color: 'var(--textSecondary)', textAlign: 'center', padding: 20, fontSize: 12}}>
                                     {t('没有变更')}
                                 </p>
                             )}
@@ -435,31 +365,20 @@ export default function GitStudio() {
                     {activeTab === 'log' && (
                         <div style={{flex: 1, overflow: 'auto'}}>
                             {logEntries.map((entry, i) => (
-                                <div key={i}
-                                     style={{
-                                         padding: '10px 12px', borderBottom: `1px solid ${V.border}`,
-                                         display: 'flex', flexDirection: 'column', gap: 4,
-                                     }}
-                                >
+                                <div key={i} className="git-studio-log-entry">
                                     <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                        <span style={{
-                                            fontSize: 11, fontFamily: 'monospace',
-                                            color: V.primary, background: V.primaryLight,
-                                            padding: '2px 6px', borderRadius: 4,
-                                        }}>
-                                            {entry.hash}
-                                        </span>
-                                        <span style={{fontSize: 13, color: V.text, flex: 1}}>
+                                        <span className="git-studio-log-hash">{entry.hash}</span>
+                                        <span style={{fontSize: 13, color: 'var(--textPrimary)', flex: 1}}>
                                             {entry.message}
                                         </span>
                                     </div>
-                                    <div style={{fontSize: 11, color: V.text2, paddingLeft: 4}}>
+                                    <div style={{fontSize: 11, color: 'var(--textSecondary)', paddingLeft: 4}}>
                                         {entry.author} · {entry.date}
                                     </div>
                                 </div>
                             ))}
                             {logEntries.length === 0 && (
-                                <p style={{color: V.text2, textAlign: 'center', padding: 20, fontSize: 12}}>
+                                <p style={{color: 'var(--textSecondary)', textAlign: 'center', padding: 20, fontSize: 12}}>
                                     {t('暂无提交记录')}
                                 </p>
                             )}
@@ -473,32 +392,19 @@ export default function GitStudio() {
 
                 {/* 右侧操作区域 */}
                 <div className={"studio-editor"}>
-                    <div style={{
-                        display: 'flex', flexDirection: 'column', height: '100%',
-                        padding: '16px', gap: 12, overflow: 'auto',
-                    }}>
+                    <div style={{display: 'flex', flexDirection: 'column', height: '100%', padding: '16px', gap: 12, overflow: 'auto'}}>
+
                         {/* 分支信息 */}
-                        <div style={{
-                            padding: '12px', borderRadius: 8, border: `1px solid ${V.border}`,
-                            background: V.surface,
-                        }}>
-                            <div style={{fontSize: 13, fontWeight: 600, color: V.text, marginBottom: 8}}>
-                                🌿 {t('分支')}: <span style={{color: V.green}}>{branchInfo.current}</span>
+                        <div className="git-studio-card">
+                            <div className="git-studio-card-title">
+                                🌿 {t('分支')}: <span style={{color: 'var(--secondary, #34a853)'}}>{branchInfo.current}</span>
                             </div>
                             <div style={{display: 'flex', flexWrap: 'wrap', gap: 4}}>
                                 {branchInfo.branches.map(b => (
                                     <button key={b}
+                                            className={`git-studio-branch-chip ${b === branchInfo.current ? 'git-studio-branch-chip--current' : ''}`}
                                             onClick={() => handleCheckout(b)}
-                                            disabled={b === branchInfo.current || b.startsWith('*')}
-                                            style={{
-                                                padding: '4px 10px', borderRadius: 12, fontSize: 11,
-                                                border: b === branchInfo.current ? `1px solid ${V.green}` : `1px solid ${V.border}`,
-                                                background: b === branchInfo.current ? V.primaryLight : 'transparent',
-                                                color: b === branchInfo.current ? V.green : V.text2,
-                                                cursor: b === branchInfo.current ? 'default' : 'pointer',
-                                                opacity: b === branchInfo.current ? 1 : 0.8,
-                                            }}
-                                    >
+                                            disabled={b === branchInfo.current || b.startsWith('*')}>
                                         {b.replace('remotes/origin/', '')}
                                     </button>
                                 ))}
@@ -506,72 +412,152 @@ export default function GitStudio() {
                         </div>
 
                         {/* 提交区域 */}
-                        <div style={{
-                            padding: '12px', borderRadius: 8, border: `1px solid ${V.border}`,
-                            background: V.surface, display: 'flex', flexDirection: 'column', gap: 8,
-                        }}>
-                            <textarea
+                        <div className="git-studio-card">
+                            <textarea className="git-studio-textarea"
                                 placeholder={t('输入提交信息...')}
                                 value={commitMessage}
                                 onChange={e => setCommitMessage(e.target.value)}
-                                rows={2}
-                                style={{
-                                    width: '100%', padding: '8px 12px', borderRadius: 8,
-                                    border: `1px solid ${V.border}`, background: V.surface,
-                                    color: V.text, fontSize: 13, boxSizing: 'border-box',
-                                    resize: 'vertical',
-                                }}
-                            />
-                            <div style={{display: 'flex', gap: 6, flexWrap: 'wrap'}}>
-                                <button onClick={handleCommit} disabled={loading || !commitMessage.trim()}
-                                        style={actionBtn(V.green)}>
+                                rows={2}/>
+                            <div className="git-studio-btn-row">
+                                <button className="git-studio-btn" onClick={handleCommit}
+                                        disabled={loading || !commitMessage.trim()}
+                                        style={{borderColor: 'var(--secondary, #34a853)', color: 'var(--secondary, #34a853)'}}>
                                     ✅ {t('提交')}
                                 </button>
-                                <button onClick={handleAddAll} style={actionBtn(V.primary)}>
-                                    ➕ {t('暂存全部')}
-                                </button>
-                                <button onClick={handleAdd} style={actionBtn(V.primary)}>
-                                    📥 {t('暂存选中')}
-                                </button>
-                                <button onClick={handleReset} style={actionBtn(V.yellow)}>
+                                <button className="git-studio-btn" onClick={handleAddAll}>➕ {t('暂存全部')}</button>
+                                <button className="git-studio-btn" onClick={handleAdd}>📥 {t('暂存选中')}</button>
+                                <button className="git-studio-btn" onClick={handleReset}
+                                        style={{borderColor: '#f9ab00', color: '#f9ab00'}}>
                                     ↩ {t('取消暂存')}
                                 </button>
                             </div>
                         </div>
 
                         {/* 远程操作 */}
-                        <div style={{
-                            padding: '12px', borderRadius: 8, border: `1px solid ${V.border}`,
-                            background: V.surface, display: 'flex', flexDirection: 'column', gap: 8,
-                        }}>
-                            <div style={{fontSize: 13, fontWeight: 600, color: V.text}}>
-                                ☁️ {t('远程操作')}
-                            </div>
-                            <div style={{display: 'flex', gap: 6, flexWrap: 'wrap'}}>
-                                <button onClick={handlePull} disabled={loading} style={actionBtn(V.primary)}>
-                                    ⬇ {t('拉取')}
-                                </button>
-                                <button onClick={() => handlePush(false)} disabled={loading} style={actionBtn(V.primary)}>
-                                    ⬆ {t('推送')}
-                                </button>
-                                <button onClick={() => handlePush(true)} disabled={loading} style={actionBtn(V.red)}>
+                        <div className="git-studio-card">
+                            <div className="git-studio-card-title">☁️ {t('远程操作')}</div>
+                            <div className="git-studio-btn-row">
+                                <button className="git-studio-btn" onClick={handlePull} disabled={loading}>⬇ {t('拉取')}</button>
+                                <button className="git-studio-btn" onClick={() => handlePush(false)} disabled={loading}>⬆ {t('推送')}</button>
+                                <button className="git-studio-btn" onClick={() => handlePush(true)} disabled={loading}
+                                        style={{borderColor: 'var(--accent, #ea4335)', color: 'var(--accent, #ea4335)'}}>
                                     ⚠ {t('强制推送')}
                                 </button>
                             </div>
-                            <div style={{display: 'flex', gap: 6}}>
-                                <button onClick={handleStash} style={actionBtn(V.text2)}>
+                            <div className="git-studio-btn-row">
+                                <button className="git-studio-btn" onClick={handleStash}
+                                        style={{borderColor: 'var(--textSecondary)', color: 'var(--textSecondary)'}}>
                                     📦 {t('暂存工作区')}
                                 </button>
-                                <button onClick={handleStashPop} style={actionBtn(V.text2)}>
+                                <button className="git-studio-btn" onClick={handleStashPop}
+                                        style={{borderColor: 'var(--textSecondary)', color: 'var(--textSecondary)'}}>
                                     📤 {t('恢复工作区')}
                                 </button>
                             </div>
                         </div>
 
+                        {/* Git 用户配置 */}
+                        <div className="git-studio-card">
+                            <div className="git-studio-card-title">👤 {t('用户配置')}</div>
+                            {!configEditing ? (
+                                <>
+                                    <div className="git-studio-config-row">
+                                        <span className="git-studio-config-label">{t('用户名')}:</span>
+                                        <span style={{fontSize: 13, color: 'var(--textPrimary)'}}>{userConfig.name || '-'}</span>
+                                    </div>
+                                    <div className="git-studio-config-row">
+                                        <span className="git-studio-config-label">{t('邮箱')}:</span>
+                                        <span style={{fontSize: 13, color: 'var(--textPrimary)'}}>{userConfig.email || '-'}</span>
+                                    </div>
+                                    <div className="git-studio-btn-row">
+                                        <button className="git-studio-btn" onClick={() => setConfigEditing(true)}>✏ {t('修改')}</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="git-studio-config-row">
+                                        <span className="git-studio-config-label">{t('用户名')}:</span>
+                                        <input className="git-studio-input" value={editName}
+                                               onChange={e => setEditName(e.target.value)} placeholder="user.name"/>
+                                    </div>
+                                    <div className="git-studio-config-row">
+                                        <span className="git-studio-config-label">{t('邮箱')}:</span>
+                                        <input className="git-studio-input" value={editEmail}
+                                               onChange={e => setEditEmail(e.target.value)} placeholder="user.email"/>
+                                    </div>
+                                    <div className="git-studio-btn-row">
+                                        <button className="git-studio-btn" onClick={handleSaveUserConfig}>💾 {t('保存')}</button>
+                                        <button className="git-studio-btn" onClick={() => { setConfigEditing(false); setEditName(userConfig.name); setEditEmail(userConfig.email); }}>✖ {t('取消')}</button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Git 代理配置 */}
+                        <div className="git-studio-card">
+                            <div className="git-studio-card-title">🌐 {t('代理设置')}</div>
+                            {!proxyEditing ? (
+                                <>
+                                    <div style={{fontSize: 12, fontWeight: 600, color: 'var(--textSecondary)'}}>{t('全局代理')}</div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">http.proxy:</span>
+                                        <span style={{color: 'var(--textPrimary)'}}>{proxyConfig?.global?.http || '-'}</span>
+                                    </div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">https.proxy:</span>
+                                        <span style={{color: 'var(--textPrimary)'}}>{proxyConfig?.global?.https || '-'}</span>
+                                    </div>
+                                    <div style={{fontSize: 12, fontWeight: 600, color: 'var(--textSecondary)'}}>{t('仓库代理')}</div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">http.proxy:</span>
+                                        <span style={{color: 'var(--textPrimary)'}}>{proxyConfig?.local?.http || '-'}</span>
+                                    </div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">https.proxy:</span>
+                                        <span style={{color: 'var(--textPrimary)'}}>{proxyConfig?.local?.https || '-'}</span>
+                                    </div>
+                                    <div className="git-studio-btn-row">
+                                        <button className="git-studio-btn" onClick={() => setProxyEditing(true)}>✏ {t('修改')}</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{fontSize: 12, fontWeight: 600, color: 'var(--textSecondary)'}}>{t('全局代理')}</div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">http.proxy:</span>
+                                        <input className="git-studio-input" value={editProxyGlobalHttp}
+                                               onChange={e => setEditProxyGlobalHttp(e.target.value)} placeholder="http://127.0.0.1:7890"/>
+                                    </div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">https.proxy:</span>
+                                        <input className="git-studio-input" value={editProxyGlobalHttps}
+                                               onChange={e => setEditProxyGlobalHttps(e.target.value)} placeholder="http://127.0.0.1:7890"/>
+                                    </div>
+                                    <div style={{fontSize: 12, fontWeight: 600, color: 'var(--textSecondary)'}}>{t('仓库代理')}</div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">http.proxy:</span>
+                                        <input className="git-studio-input" value={editProxyLocalHttp}
+                                               onChange={e => setEditProxyLocalHttp(e.target.value)} placeholder="http://127.0.0.1:7890"/>
+                                    </div>
+                                    <div className="git-studio-proxy-item">
+                                        <span className="git-studio-proxy-label">https.proxy:</span>
+                                        <input className="git-studio-input" value={editProxyLocalHttps}
+                                               onChange={e => setEditProxyLocalHttps(e.target.value)} placeholder="http://127.0.0.1:7890"/>
+                                    </div>
+                                    <div style={{fontSize: 11, color: 'var(--textSecondary)'}}>{t('留空清除该代理设置')}</div>
+                                    <div className="git-studio-btn-row">
+                                        <button className="git-studio-btn" onClick={handleSaveProxy}>💾 {t('保存')}</button>
+                                        <button className="git-studio-btn" onClick={() => { setProxyEditing(false); loadProxy(); }}>✖ {t('取消')}</button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         {/* 说明 */}
                         <div style={{
-                            padding: '12px', borderRadius: 8, border: `1px solid ${V.border}`,
-                            background: V.surface2, fontSize: 11, color: V.text2, lineHeight: 1.6,
+                            padding: '12px', borderRadius: 8, border: '1px solid var(--divider, rgba(0,0,0,0.08))',
+                            background: 'var(--surfaceSecondary, #f1f3f4)', fontSize: 11,
+                            color: 'var(--textSecondary)', lineHeight: 1.6,
                         }}>
                             💡 {t('提示：')}
                             <ul style={{margin: '4px 0', paddingLeft: 16}}>
@@ -579,6 +565,7 @@ export default function GitStudio() {
                                 <li>{t('输入提交信息后点击「提交」')}</li>
                                 <li>{t('如有冲突，请自行在shell中解决冲突后再提交')}</li>
                                 <li>{t('「强制推送」会覆盖远程分支，请谨慎使用')}</li>
+                                <li>{t('用户配置和全局代理修改后对所有仓库生效')}</li>
                             </ul>
                         </div>
                     </div>
@@ -586,12 +573,4 @@ export default function GitStudio() {
             </div>
         </div>
     );
-}
-
-function actionBtn(color: string): React.CSSProperties {
-    return {
-        padding: '6px 12px', borderRadius: 6,
-        border: `1px solid ${color}`, background: 'transparent',
-        color, cursor: 'pointer', fontSize: 12,
-    };
 }

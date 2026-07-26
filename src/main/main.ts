@@ -192,8 +192,12 @@ export async function start_main() {
                 if (dot_index !== -1 && dot_index > 0 && path[dot_index - 1] !== '/') {
                     const paths = path.split('/') // 带后缀的静态文件
                     if(paths[paths.length - 1].includes('.woff2')) {
-                        // 字体映射的有目录 画图的
-                        return path;
+                        // excalidraw 字体文件映射到 /fonts 目录
+                        if(path.startsWith('/fonts/')) {
+                            return path;
+                        }
+                        // CSS 中引用的字体（如 roboto）由 webpack 处理为 hash 文件名，直接取文件名
+                        return '/' + paths[paths.length - 1];
                     }
                     return '/' + paths[paths.length - 1]
                 } else {

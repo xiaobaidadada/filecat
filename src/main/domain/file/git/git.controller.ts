@@ -79,4 +79,24 @@ export class GitController {
     async stashPop(@Req() ctx, @Body() data: { path: string }): Promise<Result<any>> {
         return gitService.gitStashPop(ctx.headers.authorization, data.path);
     }
+
+    @Post("/get_user_config")
+    async getUserConfig(@Req() ctx, @Body() data: { path: string }): Promise<Result<any>> {
+        return gitService.gitGetUserConfig(ctx.headers.authorization, data.path);
+    }
+
+    @Post("/set_user_config")
+    async setUserConfig(@Req() ctx, @Body() data: { path: string; name?: string; email?: string }): Promise<Result<any>> {
+        return gitService.gitSetUserConfig(ctx.headers.authorization, data.path, data.name, data.email);
+    }
+
+    @Post("/get_proxy")
+    async getProxy(@Req() ctx, @Body() data: { path: string }): Promise<Result<any>> {
+        return gitService.gitGetProxy(ctx.headers.authorization, data.path);
+    }
+
+    @Post("/set_proxy")
+    async setProxy(@Req() ctx, @Body() data: { path: string; scope: string; type: string; value: string }): Promise<Result<any>> {
+        return gitService.gitSetProxy(ctx.headers.authorization, data.path, data.scope, data.type, data.value);
+    }
 }

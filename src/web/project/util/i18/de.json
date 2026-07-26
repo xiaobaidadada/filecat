@@ -552,5 +552,15 @@
   "默认180秒（3分钟）": "Standard 180s (3 Minuten)",
   "检测间隔不能小于10秒": "Prüfintervall darf nicht weniger als 10 Sekunden betragen",
   "系统版本检测地址": "Versionsprüfungs-URL",
-  "版本检测地址不能为空": "Versionsprüfungs-URL darf nicht leer sein"
+  "版本检测地址不能为空": "Versionsprüfungs-URL darf nicht leer sein",
+  "用户配置": "Benutzerkonfiguration",
+  "邮箱": "E-Mail",
+  "代理设置": "Proxy-Einstellungen",
+  "全局代理": "Globaler Proxy",
+  "仓库代理": "Repository-Proxy",
+  "修改": "Bearbeiten",
+  "用户配置已保存": "Benutzerkonfiguration gespeichert",
+  "代理配置已保存": "Proxy-Einstellungen gespeichert",
+  "留空清除该代理设置": "Leer lassen, um Proxy zu löschen",
+  "用户配置和全局代理修改后对所有仓库生效": "Benutzerkonfiguration und globaler Proxy gelten für alle Repositories"
 }

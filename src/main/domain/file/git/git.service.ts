@@ -277,6 +277,72 @@ export class GitServiceImpl {
             return Fail(e.message);
         }
     }
+
+    /** 获取全局 git 用户配置（user.name、user.email） */
+    async gitGetUserConfig(token: string, relativePath: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            // 优先取全局配置，没有则取仓库级
+            let name = await this.execGit(cwd, "config --global user.name").catch(() => "");
+            if (!name) name = await this.execGit(cwd, "config user.name").catch(() => "");
+            let email = await this.execGit(cwd, "config --global user.email").catch(() => "");
+            if (!email) email = await this.execGit(cwd, "config user.email").catch(() => "");
+            return Sucess({name: name || "", email: email || ""});
+        } catch (e: any) {
+            return Fail(e.message);
+        }
+    }
+
+    /** 设置全局 git 用户配置 */
+    async gitSetUserConfig(token: string, relativePath: string, name: string, email: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            if (name !== undefined && name !== null) {
+                await this.execGit(cwd, `config --global user.name "${name.replace(/"/g, '\\"')}"`);
+            }
+            if (email !== undefined && email !== null) {
+                await this.execGit(cwd, `config --global user.email "${email.replace(/"/g, '\\"')}"`);
+            }
+            return Sucess("ok");
+        } catch (e: any) {
+            return Fail(e.message);
+        }
+    }
+
+    /** 获取 git 代理设置（http.proxy、https.proxy），全局 + 仓库级 */
+    async gitGetProxy(token: string, relativePath: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            const globalHttp = await this.execGit(cwd, "config --global http.proxy").catch(() => "");
+            const globalHttps = await this.execGit(cwd, "config --global https.proxy").catch(() => "");
+            const localHttp = await this.execGit(cwd, "config --local http.proxy").catch(() => "");
+            const localHttps = await this.execGit(cwd, "config --local https.proxy").catch(() => "");
+            return Sucess({
+                global: {http: globalHttp || "", https: globalHttps || ""},
+                local: {http: localHttp || "", https: localHttps || ""},
+            });
+        } catch (e: any) {
+            return Fail(e.message);
+        }
+    }
+
+    /** 设置 git 代理（scope: global | local；type: http | https；value 为空则清除） */
+    async gitSetProxy(token: string, relativePath: string, scope: string, type: string, value: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            const scopeFlag = scope === "local" ? "--local" : "--global";
+            const key = `${type}.proxy`;
+            if (value && value.trim()) {
+                await this.execGit(cwd, `config ${scopeFlag} ${key} "${value.trim().replace(/"/g, '\\"')}"`);
+            } else {
+                // 值为空则清除该配置
+                await this.execGit(cwd, `config ${scopeFlag} --unset ${key}`).catch(() => {});
+            }
+            return Sucess("ok");
+        } catch (e: any) {
+            return Fail(e.message);
+        }
+    }
 }
 
 export const gitService = new GitServiceImpl();
