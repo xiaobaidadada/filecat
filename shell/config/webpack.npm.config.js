@@ -13,7 +13,8 @@ module.exports = {
         filename: 'main.js', // 输出文件名
     },
     resolve: {
-        extensions: ['.ts', '.js', '.node'] // 解析文件时自动补全的文件扩展名
+        // 入口是 tsc 编译后的 .js，不需要 webpack 解析 .ts
+        extensions: ['.js', '.node']
     },
     module: {
         rules: [
