@@ -115,3 +115,24 @@ export function is_share (){
    // debugger
     return path.startsWith(routerConfig.share)
 }
+
+export function get_last_name(path:string) {
+    if(!path)  return '';
+    // 去掉末尾的 / 或 \
+    while (path.length > 0 && (path[path.length - 1] === '/' || path[path.length - 1] === '\\')) {
+        path = path.slice(0, -1);
+    }
+
+    // 找最后一个分隔符
+    const index1 = path.lastIndexOf('/');
+    const index2 = path.lastIndexOf('\\');
+
+    const index = Math.max(index1, index2);
+
+    // 没有分隔符，整个就是名字
+    if (index === -1) {
+        return path;
+    }
+
+    return path.slice(index + 1);
+}

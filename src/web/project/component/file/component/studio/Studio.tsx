@@ -5,7 +5,7 @@ import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {FolderTree} from "./Tree/FolderTree";
 import {fileHttp} from "../../../../util/config";
-import {getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
+import {get_last_name, getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
 import {editor_data} from "../../../../util/store.util";
@@ -72,6 +72,7 @@ export default function Studio(props) {
     const get_item = async () => {
         const p = getRouterAfter('file', folder_path);
         set_pre_path(p);
+        set_edit_filename({path: p, name: get_last_name(p)});
         const rsp = await fileHttp.post('studio/get/item', {path: p});
         if (rsp.code === RCode.Success) {
             const folder_list = [];
@@ -89,7 +90,7 @@ export default function Studio(props) {
     useEffect(() => {
         setEditorValue("");
         // @ts-ignore
-        set_edit_filename({});
+        // set_edit_filename({});
         set_have_update(false);
         // if (!studio.folder_path) {
         //     return;
@@ -275,8 +276,11 @@ export default function Studio(props) {
 
     return <div className={"studio"}>
         <Header ignore_tags={true}
-                left_children={[<ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
-                    <title key={2}>{edit_filename.name}</title>]}>
+                left_children={[
+                    <ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
+                    <div key={2}>{edit_filename.name}</div>
+                ]}>
+            <title>{edit_filename.name}</title>
             { ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
