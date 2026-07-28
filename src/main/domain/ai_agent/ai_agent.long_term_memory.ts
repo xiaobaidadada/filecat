@@ -1,7 +1,7 @@
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {ai_agentService} from "./ai_agent.service";
-import {llmPost} from "./llm_request";
+import {llmPost, readLlmResponse} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_long_term_memory_setting,
@@ -244,42 +244,13 @@ export class AiAgentLongTermMemoryService {
         };
         try {
             const res = await llmPost(body, cfg);
-            const text = await this.readAiResponse(res);
+            const text = await readLlmResponse(res);
             return text.trim();
         } catch (e) {
             console.error('[长期记忆] AI 压缩调用失败:', e?.message ?? e);
             // 降级：直接拼接
             return this.mergeText(dest, source);
         }
-    }
-
-    private async readAiResponse(res: any): Promise<string> {
-        const contentType = res.headers.get("content-type") || "";
-        if (!res.ok) throw new Error(await res.text());
-
-        if (contentType.includes("text/event-stream") && res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let text = "";
-            while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                const chunk = decoder.decode(value, {stream: true});
-                for (const part of chunk.split("\n")) {
-                    const line = part.trim();
-                    if (!line.startsWith("data:")) continue;
-                    const data = line.slice(5).trim();
-                    if (!data || data === "[DONE]") continue;
-                    try {
-                        const json = JSON.parse(data);
-                        text += json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? "";
-                    } catch {}
-                }
-            }
-            return text;
-        }
-        const json = await res.json();
-        return json.choices?.[0]?.message?.content ?? "";
     }
 
     // ====================================================================

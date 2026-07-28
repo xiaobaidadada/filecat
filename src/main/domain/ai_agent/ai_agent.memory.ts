@@ -4,6 +4,8 @@ import fse from "fs-extra";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
+import {ai_agentService} from "./ai_agent.service";
+import {llmPost, readLlmResponse} from "./llm_request";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
@@ -436,7 +438,13 @@ export class AiAgentMemoryService {
         if (!session.title || session.title === "新会话") {
             session.title = this.createTitle(getContentAsString(userMessage.content));
         }
-        this.compressIfNeeded(session, env);
+        await this.compressIfNeeded(session, env);
+
+        // 将会话的长期记忆同步到周/月/年/永久文件（跨会话持久化）
+        if (session.long_term_memory) {
+            aiAgentLongTermMemoryService.syncMemory(session);
+        }
+
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
@@ -520,14 +528,73 @@ export class AiAgentMemoryService {
         return title || "新会话";
     }
 
-    // 一轮消息回答完，消息数超限则裁剪旧消息（不调 AI 总结，tool 输出已在构建上下文时截断）
-    private compressIfNeeded(session: ai_agent_chat_session_item, env?: ai_agent_item_dotenv) {
+    // 一轮消息回答完，消息数超限则裁剪旧消息，并用 AI 从被裁消息中提取长期记忆
+    private async compressIfNeeded(session: ai_agent_chat_session_item, env?: ai_agent_item_dotenv) {
         const messages = session.messages ?? [];
         const compressCount = env?.compress_message_count ?? DEFAULT_COMPRESS_MESSAGE_COUNT;
         const maxRecent = env?.max_recent_messages ?? DEFAULT_MAX_RECENT_MESSAGES;
         if (messages.length <= compressCount) return;
-        // 直接保留最近 maxRecent 条，丢弃更早的消息
+
+        // 被裁掉的消息
+        const dropped = messages.slice(0, messages.length - maxRecent);
+
+        // 保留最近 maxRecent 条
         session.messages = messages.slice(-maxRecent);
+
+        // 从被裁消息中提取长期记忆
+        try {
+            const extracted = await this.extractLongTermMemory(dropped);
+            if (extracted) {
+                session.long_term_memory = session.long_term_memory
+                    ? this.mergeMemoryText(session.long_term_memory, extracted)
+                    : extracted;
+            }
+        } catch (e) {
+            console.error('[长期记忆] 提取失败:', e?.message ?? e);
+        }
+    }
+
+    /** 合并两段记忆文本，去重行 */
+    private mergeMemoryText(a: string, b: string): string {
+        const lines = new Set<string>();
+        for (const line of (a + '\n' + b).split('\n')) {
+            const t = line.trim();
+            if (t) lines.add(t);
+        }
+        return Array.from(lines).join('\n');
+    }
+
+    /** 用 AI 从消息中提取长期记忆要点 */
+    private async extractLongTermMemory(messages: ai_agent_message_list): Promise<string> {
+        if (!messages?.length) return '';
+        const cfg = ai_agentService.ai_config;
+        if (!cfg) return '';
+
+        // 把消息序列化为纯文本
+        const dialog = messages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => `[${m.role}]: ${getContentAsString(m.content)}`)
+            .join('\n');
+        if (!dialog.trim()) return '';
+
+        const body: any = {
+            model: cfg.model,
+            messages: [
+                {
+                    role: 'system',
+                    content:
+                        '你是记忆提取器。请从以下对话片段中提取对未来对话有价值的长期记忆。' +
+                        '只保留：用户偏好、长期事实、项目约定、重要决定、关键技术决策。' +
+                        '每条记忆一行，简洁明了。如果没有值得保留的内容，返回空。' +
+                        '只输出纯文本，不要 JSON，不要解释。',
+                },
+                { role: 'user', content: dialog },
+            ],
+            temperature: 0.2,
+        };
+
+        const res = await llmPost(body, cfg);
+        return (await readLlmResponse(res)).trim();
     }
 
 }

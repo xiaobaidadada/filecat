@@ -235,6 +235,59 @@ async function sendPost(
 }
 
 // ============================================================
+//  响应解析工具
+// ============================================================
+
+/**
+ * 从 llmPost / llmPostStream 返回的 Response 中提取完整文本内容。
+ *
+ * 自动处理 SSE 流式和非流式两种响应格式：
+ * - text/event-stream：逐块读取 data: 行，拼接 delta.content
+ * - 普通 JSON：直接取 choices[0].message.content
+ *
+ * @param res   fetch 风格的 Response 对象（由 llmPost / llmPostStream 返回）
+ * @returns      AI 回复的完整文本
+ *
+ * @example
+ *   const res = await llmPost(body, cfg);
+ *   const text = await readLlmResponse(res);
+ */
+export async function readLlmResponse(res: Response): Promise<string> {
+    if (!res.ok) throw new Error(await res.text());
+
+    const contentType = res.headers.get('content-type') || '';
+
+    // SSE 流式
+    if (contentType.includes('text/event-stream') && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let text = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            for (const part of chunk.split('\n')) {
+                const line = part.trim();
+                if (!line.startsWith('data:')) continue;
+                const data = line.slice(5).trim();
+                if (!data || data === '[DONE]') continue;
+                try {
+                    const json = JSON.parse(data);
+                    text += json.choices?.[0]?.delta?.content
+                         ?? json.choices?.[0]?.message?.content
+                         ?? '';
+                } catch {}
+            }
+        }
+        return text;
+    }
+
+    // 非 SSE：直接解析 JSON
+    const json = await res.json();
+    return json.choices?.[0]?.message?.content ?? '';
+}
+
+// ============================================================
 //  公开 API
 // ============================================================
 

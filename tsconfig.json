@@ -13,7 +13,7 @@
     "strict": false,
     "strictNullChecks": false,
     "noUnusedLocals": false,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noImplicitAny": false,

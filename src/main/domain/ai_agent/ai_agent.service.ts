@@ -39,7 +39,7 @@ import {
     ai_docs_setting_param,
     getContentAsString
 } from "../../../common/req/filecat.ai.pojo";
-import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost} from "./llm_request";
+import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
 import {robotService} from "./api_robot/robotService";
 import {wss_interface} from "../../../common/frame/type";
@@ -922,21 +922,7 @@ export class Ai_agentService {
         }
 
         const res = await llmPost(json_body, modelItem, modelEnv);
-
-        if (!res.ok) {
-            const text = await res.text();
-            try {
-                const json = JSON.parse(text);
-                throw new Error(json.message || json.error?.message || text);
-            } catch {
-                throw new Error(text);
-            }
-        }
-
-        const resultText = await res.text();
-        const result = JSON.parse(resultText);
-        const content = result.choices?.[0]?.message?.content ?? "";
-        return content || "模型未返回内容";
+        return (await readLlmResponse(res)) || "模型未返回内容";
     }
 
     /**
