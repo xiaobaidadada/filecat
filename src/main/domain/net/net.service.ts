@@ -39,7 +39,7 @@ import {Env} from "../../../common/node/Env";
 import * as util from "node:util";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { Duplex } from "node:stream";
-import { pipeWithBackpressure, back_pressure } from "./tcp.forward.util";
+import { pipeWithBackpressure, back_pressure } from "./util/tcp_stream_util";
 
 
 const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);

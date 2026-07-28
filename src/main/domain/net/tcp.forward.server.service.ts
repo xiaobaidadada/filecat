@@ -18,7 +18,7 @@ import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {generateSaltyUUID} from "../../../common/StringUtil";
 import {tcpSyncService} from "./file_sync/tcp.sync.service";
-import {pipeWithBackpressure} from "./tcp.forward.util";
+import { pipeWithBackpressure } from "./util/tcp_stream_util";
 
 
 export const server_key = "sockets";

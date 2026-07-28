@@ -14,7 +14,8 @@ import {Wss} from "../../../common/frame/ws.server";
 import net from "net";
 import {server_key} from "./tcp.forward.server.service";
 import {tcp_raw_socket} from "./util/tcp.client";
-import {TcpForwardUtil, pipeWithBackpressure} from "./tcp.forward.util";
+import {TcpForwardUtil} from "./tcp.forward.util";
+import { pipeWithBackpressure } from "./util/tcp_stream_util";
 import {wss_interface} from "../../../common/frame/type";
 
 
