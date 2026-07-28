@@ -17,7 +17,7 @@ import {virtualClientService} from "./virtual/virtual.client.service";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {tcp_forward_client_service} from "./tcp.forward.client.service";
-import {TcpForwardUtil} from "./tcp.forward.util";
+import {pipeWithBackpressure, TcpForwardUtil} from "./tcp.forward.util";
 import {Wss} from "../../../common/frame/ws.server";
 import {Env} from "../../../common/node/Env";
 import {tcpSyncService} from "./file_sync/tcp.sync.service";
@@ -245,24 +245,11 @@ export class TcpForwardController {
         }
         // console.log(`请求 ${tag_id}`)
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
-            // console.log(`连接成功 ${info.client_proxy_host}:${info.client_proxy_port}`)
             util.send_data_call(tag_id,Buffer.alloc(0))
-            // console.log(`结束 ${tag_id}`)
         });
-        // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
-        // tcp_client_target_map[key] = {
-        //     client_proxy_port: info.client_proxy_port,
-        //     client_proxy_host: info.client_proxy_host,
-        // }
-        targetSocket.on("data", (data) => {
-            const ok = util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
-            if(!ok) {
-                targetSocket.pause()
-                util.get_client().get_socket().once('drain',()=>{
-                    targetSocket.resume()
-                })
-            }
-        })
+        pipeWithBackpressure(targetSocket, util.get_client().get_socket(), (data) => {
+            return util.send_data(NetMsgType.tcp_socket_data, Buffer.concat([NetUtil.int16_to_buffer(info.socket_id), Buffer.from(data)]))
+        });
         const close = ()=>{
             util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(info.socket_id))
             delete tcp_forward_client_service.client_socket_map[info.socket_id]
@@ -425,21 +412,10 @@ export class TcpForwardController {
         const targetSocket = net.createConnection(info.client_proxy_port, info.client_proxy_host, () => {
             util.send_data_call(tag_id,Buffer.alloc(0))
         });
-        // const key = `${info.client_proxy_port}_${ info.client_proxy_host}`
-        // tcp_client_target_map[key] = {
-        //     client_proxy_port: info.client_proxy_port,
-        //     client_proxy_host: info.client_proxy_host,
-        // }
-        targetSocket.on("data", (data) => {
-            const ok = util.send_data(NetMsgType.bridge_tcp_socket_data,
-                Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id),Buffer.from(data)]))
-            if(!ok) {
-                targetSocket.pause()
-                util.get_client().get_socket().once('drain',()=>{
-                    targetSocket.resume()
-                })
-            }
-        })
+        pipeWithBackpressure(targetSocket, util.get_client().get_socket(), (data) => {
+            return util.send_data(NetMsgType.bridge_tcp_socket_data,
+                Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id), NetUtil.int16_to_buffer(info.socket_id), Buffer.from(data)]))
+        });
         targetSocket.on("close", () => {
             util.send_data(NetMsgType.bridge_tcp_socket_close,
                 Buffer.concat([NetUtil.int16_to_buffer(info.server_client_num_id),NetUtil.int16_to_buffer(info.socket_id)]))

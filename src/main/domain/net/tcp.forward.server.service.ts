@@ -18,6 +18,7 @@ import {tcp_forward_client_service} from "./tcp.forward.client.service";
 import {tcp_raw_socket} from "./util/tcp.client";
 import {generateSaltyUUID} from "../../../common/StringUtil";
 import {tcpSyncService} from "./file_sync/tcp.sync.service";
+import {pipeWithBackpressure} from "./tcp.forward.util";
 
 
 export const server_key = "sockets";
@@ -206,16 +207,9 @@ export class TcpForwardServerService {
                 client_proxy_port:proxy_fig.proxy_port,
                 client_proxy_host:proxy_fig.proxy_host,
             })))
-            clientSocket.on("data", (chunk) => {
-                // 用户访问服务器建立的客户端
-                const ok = client.client_util.send_data(NetMsgType.tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]));
-                if(!ok) {
-                    clientSocket.pause()
-                    client.client_util.get_client().get_socket().once('drain',()=>{
-                        clientSocket.resume()
-                    })
-                }
-            })
+            pipeWithBackpressure(clientSocket, client.client_util.get_client().get_socket(), (chunk) => {
+                return client.client_util.send_data(NetMsgType.tcp_socket_data, Buffer.concat([NetUtil.int16_to_buffer(socket_id), Buffer.from(chunk)]));
+            });
             clientSocket.on("close",()=>{
                 client.client_util.send_data(NetMsgType.tcp_socket_close,NetUtil.int16_to_buffer(socket_id));
                 // socket 删除
@@ -438,12 +432,10 @@ export class TcpForwardServerService {
         const socket_id =  NetUtil.buffer_to_int16(data.subarray(2,4))
         const ok = client.client_util.send_data(NetMsgType.bridge_client_tcp_socket_data,Buffer.concat([NetUtil.int16_to_buffer(socket_id),data.subarray(4)]))
         if(!ok) {
+            // 桥接场景下 pause/resume 由对端控制，这里不注册 drain
+            // 只通知对端暂停数据发送
             util.send_data(NetMsgType.bridge_socket_pause,NetUtil.int16_to_buffer(socket_id))
-            client.client_util.get_client().get_socket().once("drain",()=>{
-                util.send_data(NetMsgType.bridge_socket_resume,NetUtil.int16_to_buffer(socket_id))
-            })
         }
-
     }
 
     // bridge_close_port_for_client(data: Buffer, util: tcp_raw_socket,tag_id:number) {

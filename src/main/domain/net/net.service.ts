@@ -39,6 +39,7 @@ import {Env} from "../../../common/node/Env";
 import * as util from "node:util";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { Duplex } from "node:stream";
+import { pipeWithBackpressure, back_pressure } from "./tcp.forward.util";
 
 
 const {node_process_watcher} = get_bin_dependency("node-process-watcher", false);
@@ -765,14 +766,11 @@ export class NetService {
                         msg_map: {
                         }
                     }
+                    // 从远端收到数据写入 clientSocket
+                    const remoteBp = new back_pressure();
                     opt.msg_map[NetMsgType.https_tunnel_tcp_data] = (data:Buffer, util:tcp_raw_socket, tag_id?: number)=>{
-                        const ok = clientSocket.write(data)
-                        if(!ok) {
-                            util.get_client().get_socket().pause()
-                            clientSocket.once('drain',()=>{
-                                util.get_client().get_socket().resume()
-                            })
-                        }
+                        const ok = clientSocket.write(data);
+                        remoteBp.guard(util.get_client().get_socket(), clientSocket, ok);
                     }
                     const client = new tcp_client(opt,async ()=>{
                         try {
@@ -784,15 +782,9 @@ export class NetService {
                                 }
                             )))
                             clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-                            clientSocket.on("data", data => {
-                                const ok = client.send_data(NetMsgType.https_tunnel_tcp_data,Buffer.concat([socket_id_data,data]) )
-                                if(!ok) {
-                                    clientSocket.pause()
-                                    client.get_raw_client().get_client().get_socket().once('drain',()=>{
-                                        clientSocket.resume()
-                                    })
-                                }
-                            })
+                            pipeWithBackpressure(clientSocket, client.get_raw_client().get_client().get_socket(), (data) => {
+                                return client.send_data(NetMsgType.https_tunnel_tcp_data, Buffer.concat([socket_id_data, data]));
+                            });
                             const cleanup = () => {
                                 client.get_raw_client().remove_on_close(cleanup)
                                 clientSocket.end();

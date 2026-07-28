@@ -14,7 +14,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import net from "net";
 import {server_key} from "./tcp.forward.server.service";
 import {tcp_raw_socket} from "./util/tcp.client";
-import {TcpForwardUtil} from "./tcp.forward.util";
+import {TcpForwardUtil, pipeWithBackpressure} from "./tcp.forward.util";
 import {wss_interface} from "../../../common/frame/type";
 
 
@@ -274,17 +274,10 @@ export class tcp_forward_server_service {
             }
             await server_socket.send_data_async(NetMsgType.bridge_client_create_socket_for_server, Buffer.from(JSON.stringify(info)))
 
-            clientSocket.on("data", (chunk) => {
-                // 用户访问服务器建立的客户端
-                const ok = server_socket.send_data(NetMsgType.bridge_client_tcp_socket_data,
-                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id),Buffer.from(chunk)]))
-                if(!ok) {
-                    clientSocket.pause()
-                    server_socket.get_socket().once('drain',()=>{
-                        clientSocket.resume()
-                    })
-                }
-            })
+            pipeWithBackpressure(clientSocket, server_socket.get_socket(), (chunk) => {
+                return server_socket.send_data(NetMsgType.bridge_client_tcp_socket_data,
+                    Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id), NetUtil.int16_to_buffer(socket_id), Buffer.from(chunk)]));
+            });
             clientSocket.on("close",()=>{
                 server_socket.send_data(NetMsgType.bridge_tcp_socket_close,
                     Buffer.concat([NetUtil.int16_to_buffer(fig.client_num_id),NetUtil.int16_to_buffer(socket_id)]))
