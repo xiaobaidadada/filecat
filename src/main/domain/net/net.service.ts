@@ -637,7 +637,7 @@ export class NetService {
             }
             const options: http.RequestOptions = {
                 hostname: targetUrl.hostname,
-                port: targetUrl.port || 80,
+                port: targetUrl.port ? Number(targetUrl.port) : 80,
                 path: targetUrl.pathname + targetUrl.search,
                 method: req.method,
                 headers: {
@@ -702,7 +702,8 @@ export class NetService {
             } else {
                 // 相对路径，用 Host 头补全
                 urlHost = host.split(':')[0];
-                urlPort = Number(host.split(':')[1]) || 80;
+                const parsedPort = Number(host.split(':')[1]);
+                urlPort = !isNaN(parsedPort) && parsedPort > 0 ? parsedPort : 80;
                 urlPath = req.url!;
                 wsProtocol = 'ws:';
             }
@@ -752,6 +753,11 @@ export class NetService {
         newServer.on('connect', (req, clientSocket, head) => {
             const [targetHost, targetPortStr] = (req.url || '').split(':');
             const targetPort = Number(targetPortStr || 443);
+            // 端口号校验：防止非数字端口导致 net.connect 崩溃 (ERR_SOCKET_BAD_PORT)
+            if (!targetHost || isNaN(targetPort) || targetPort < 0 || targetPort > 65535) {
+                clientSocket.end('HTTP/1.1 400 Bad Request\r\n\r\nInvalid CONNECT target\r\n');
+                return;
+            }
             // 根据端口推断协议：443 大概率是 HTTPS/WSS，80 可能是 WS 走 CONNECT 隧道
             const protocol = targetPort === 80 ? 'http://' : 'https://';
             const fullUrl = `${protocol}${targetHost}:${targetPort}/`;

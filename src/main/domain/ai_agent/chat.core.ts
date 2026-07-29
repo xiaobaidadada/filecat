@@ -449,6 +449,7 @@ ${user_local_file_prompt}
                             tool_call_id: call.id,
                             content: msg
                         });
+                        console.log('tool执行失败',config?.model,call?.function?.arguments)
                     } finally {
                         callItem.duration_ms = Date.now() - startTime;
                         assistantMessage.tool_call_ends.push(callItem)
