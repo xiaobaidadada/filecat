@@ -1,4 +1,3 @@
-import {BinFileUtil} from "../../bin/bin.file.util";
 import {RG_PATH} from "../../bin/download-ripgrep";
 import {SystemUtil} from "../../sys/sys.utl";
 import fg from "fast-glob";
@@ -20,45 +19,44 @@ export const search_in_files_tool = async ({
     ignore_case?: boolean;
     ignore_paths?: string[];
 }) => {
-// 1. 获取路径信息，判断是文件还是目录
+    // 1. 获取路径信息，判断是文件还是目录
     const stats = await FileUtil.statSync(searchPath);
     const isFile = stats.isFile();
 
-    const rg_path = BinFileUtil.get_bin_path(RG_PATH);
+    // 2. 忽略路径统一转为 ripgrep 的 glob 通配（fast-glob 与 rg 格式通用）
+    const ignore = isFile ? [] : ignore_paths.map(p => p.replace(/^!/, ""));
+
 
     // ======================================================
     // ✅ CASE 1: 使用 ripgrep
     // ======================================================
-    if (rg_path) {
+    if (await FileUtil.access(RG_PATH)) {
         try {
-            const args = [rg_path, "--vimgrep", "--no-heading", "--with-filename", "--line-number", "--column"];
+            // 用单引号包裹含特殊字符的参数，避免 shell 拆分（空格/通配符等）
+            const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+            const args = [RG_PATH, "--vimgrep", "--no-heading", "--with-filename", "--line-number", "--column"];
 
             // 只有当是目录时，才添加忽略路径的 glob 参数
             if (!isFile) {
-                ignore_paths.forEach(p => args.push("--glob", `!${p}`));
+                ignore.forEach(p => args.push("--glob", `!${quote(p)}`));
             }
 
             if (ignore_case) args.push("-i");
 
-            // 将 searchPath 直接传给 rg
-            args.push(pattern, searchPath);
-
-            const output = await SystemUtil.execAsync(args.join(" "));
+            const output = await SystemUtil.execAsync([...args, quote(pattern), quote(searchPath)].join(" "));
             const lines = output.split("\n").filter(Boolean);
             const fileMap = new Map();
 
             for (const line of lines) {
-                const [file, lineNum, col, ...textArr] = line.split(":");
-                const text = textArr.join(":");
-
+                // rg --vimgrep 格式为：文件:行号:列号:文本，文本后续可能含冒号，
+                // 用非贪婪正则定位末尾的 "行号:列号" 结构，避免路径含冒号被 split 截断
+                const m = line.match(/^(.+?):(\d+):(\d+):(.*)$/);
+                if (!m) continue;
+                const [, file, lineNum, , rest] = m;
                 if (!fileMap.has(file)) fileMap.set(file, []);
                 const arr = fileMap.get(file);
-
                 if (arr.length < max_matches_per_file) {
-                    arr.push({
-                        line: Number(lineNum),
-                        text: text.slice(0, 300)
-                    });
+                    arr.push({line: Number(lineNum), text: rest.slice(0, 300)});
                 }
             }
 
@@ -81,25 +79,42 @@ export const search_in_files_tool = async ({
     // ======================================================
     // ❌ CASE 2: JS fallback
     // ======================================================
+    // fallback 中的 pattern 作为正则使用，需防止非法正则抛错
+    let regex: RegExp;
+    try {
+        regex = new RegExp(pattern, ignore_case ? "i" : "");
+    } catch (e) {
+        // 非法正则时退化为字面量匹配（转义所有元字符）
+        regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ignore_case ? "i" : "");
+    }
+
     let files: string[] = [];
     if (isFile) {
         files = [searchPath];
     } else {
-        files = await fg([`${searchPath}/**/*.*`], {
+        // 用 **/* 代替 **/*.*，保证能匹配 Dockerfile、Makefile 等无扩展名文件
+        files = await fg([`${searchPath}/**/*`], {
             onlyFiles: true,
-            ignore: ignore_paths
+            ignore,
+            dot: true
         });
     }
 
-    const regex = new RegExp(pattern, ignore_case ? "i" : "");
     const results: any[] = [];
-    let fileCount = 0;
 
-    for (const file of files) {
-        if (fileCount >= max_files) break;
+    // 单文件读取大小上限，避免大文件内存溢出
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const pending = files.slice(0, max_files);
 
+    await Promise.all(pending.map(async (file) => {
         try {
+            const stat = await FileUtil.statSync(file);
+            if (stat.size > MAX_FILE_SIZE) return;
+
             const content = await readFile(file, "utf-8");
+            // 含空字节视为二进制文件，跳过
+            if (content.indexOf("\u0000") >= 0) return;
+
             const lines = content.split("\n");
             const matches: any[] = [];
 
@@ -115,12 +130,14 @@ export const search_in_files_tool = async ({
 
             if (matches.length > 0) {
                 results.push({file, matches});
-                fileCount++;
             }
         } catch (e) {
             // 跳过二进制文件或权限错误
         }
-    }
+    }));
+
+    // 按扫描到的顺序返回（保持文件目录顺序稳定）
+    results.sort((a, b) => pending.indexOf(a.file) - pending.indexOf(b.file));
 
     return JSON.stringify({
         mode: "js-fallback",

@@ -596,10 +596,9 @@ ${user_local_file_prompt}
 
         } catch (e: any) {
             console.log(`llm请求报错`,e)
-            if (e.name !== "AbortError") {
-                props.error_call(e);
-            } else {
-                props.abort_error_call?.()
+            props.error_call(e)
+            if (e.name === "AbortError") {
+                props.abort_error_call?.();
             }
         }
     }
