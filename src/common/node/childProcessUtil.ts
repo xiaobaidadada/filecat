@@ -5,6 +5,7 @@ import https from "https";
 import {spawn} from "child_process";
 import needle from "needle";
 import {FileUtil} from "../../main/domain/file/FileUtil";
+import {HttpRequest} from "./http";
 
 export enum filecat_cmd  {
     filecat_restart = "filecat-restart",
@@ -144,152 +145,8 @@ export class ChildProcessUtil {
         dirPath: string,
         on_progress: (value: number) => void
     ): Promise<string> {
-
-        return new Promise(async (resolve, reject) => {
-
-            try {
-
-                await FileUtil.mkdirSync(dirPath, { recursive: true });
-
-                // ==============================
-                // 🔧 URL 修复（核心升级）
-                // ==============================
-                const safeUrl = encodeURI(url);
-
-                let urlObj: URL;
-                try {
-                    urlObj = new URL(safeUrl);
-                } catch (e) {
-                    return reject(new Error("非法 URL: " + url));
-                }
-
-                const stream = needle.get(safeUrl, {
-                    follow_max: 5,
-                    headers: {
-                        "User-Agent": "node",
-                        "Accept": "*/*"
-                    }
-                });
-
-                let fileName = "";
-                let total = 0;
-                let downloaded = 0;
-                let lastPercent = -1;
-
-                let filePath = "";
-                let fileStream: fs.WriteStream | null = null;
-
-                // ==============================
-                // ❌ 清理函数
-                // ==============================
-                const cleanup = (err: any) => {
-                    try {
-                        if (fileStream) fileStream.destroy();
-
-                        if (filePath && fs.existsSync(filePath)) {
-                            fs.unlinkSync(filePath);
-                        }
-                    } catch {}
-
-                    reject(err);
-                };
-
-                // ==============================
-                // 📦 response
-                // ==============================
-                stream.on("response", (res) => {
-
-                    if (res.statusCode && res.statusCode >= 400) {
-                        cleanup(new Error(`下载失败: ${res.statusCode}`));
-                        stream.destroy();
-                        return;
-                    }
-
-                    // ==========================
-                    // 📄 文件名解析（增强版）
-                    // ==========================
-                    const disposition = res.headers["content-disposition"];
-                    if (disposition) {
-                        const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
-                        if (match?.[1]) {
-                            try {
-                                fileName = decodeURIComponent(match[1]);
-                            } catch {
-                                fileName = match[1];
-                            }
-                        }
-                    }
-
-                    if (!fileName) {
-                        fileName = path.basename(urlObj.pathname);
-                    }
-
-                    if (!fileName || fileName === "/" || fileName === ".") {
-                        fileName = `download_${Date.now()}`;
-                    }
-
-                    filePath = path.resolve(dirPath, fileName);
-
-                    // ==========================
-                    // 📁 创建文件流（关键修复点）
-                    // ==========================
-                    fileStream = fs.createWriteStream(filePath);
-
-                    fileStream.on("error", cleanup);
-
-                    stream.pipe(fileStream);
-
-                    total = Number(res.headers["content-length"] || 0);
-                });
-
-                // ==============================
-                // 📊 进度
-                // ==============================
-                stream.on("data", (chunk) => {
-                    downloaded += chunk.length;
-
-                    if (total > 0) {
-                        const percent = Math.floor((downloaded / total) * 100);
-
-                        if (percent !== lastPercent) {
-                            lastPercent = percent;
-                            on_progress(percent);
-                        }
-                    }
-                });
-
-                // ==============================
-                // ✅ 完成
-                // ==============================
-                stream.on("end", () => {
-                    if (fileStream) {
-                        fileStream.end();
-                    }
-                });
-
-                if (fileStream) {
-                    fileStream.on("finish", () => {
-                        on_progress(100);
-                        resolve(filePath);
-                    });
-                } else {
-                    stream.on("close", () => {
-                        if (filePath) {
-                            on_progress(100);
-                            resolve(filePath);
-                        }
-                    });
-                }
-
-                // ==============================
-                // ❌ error
-                // ==============================
-                stream.on("error", cleanup);
-
-            } catch (e) {
-                reject(e);
-            }
-        });
+        // 统一使用 HttpRequest 下载（自动走 filecat 系统 http 代理）
+        return HttpRequest.download_file(url, dirPath, on_progress);
     }
 
 

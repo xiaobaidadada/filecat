@@ -434,6 +434,8 @@
   "ai 命令(Ai 聊天)": "AI Command (AI Chat)",
   "个性化设置": "Personalized Settings",
   "登陆展示用户信息": "Display User Info on Login",
+  "HTTP 代理地址": "HTTP Proxy Address",
+  "HTTP 代理说明": "Used for HTTP requests issued by the filecat system (version check, auto-upgrade, DDNS, command download, custom routing, etc.). Note: on macOS, if the system proxy is already enabled, leave this blank to avoid double proxying.",
   "个人环境": "Personal Environment",
   "系统环境": "System Environment",
   "持久化": "Persist",

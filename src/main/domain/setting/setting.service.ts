@@ -30,7 +30,7 @@ import {withLock} from "../../../common/fun.util";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
-import {env_item, workflow_setting_item} from "../../../common/req/common.pojo";
+import {env_item, sys_env_pojo, workflow_setting_item} from "../../../common/req/common.pojo";
 import {plug_item, Plugin, PluginMeta, AiToolItem, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
@@ -146,7 +146,9 @@ export class SettingService {
                         const location = item[1];
                         if (location) {
                             if ((location as string).startsWith("http")) {
-                                const response = await axios.get(location, {
+                                const response = await HttpRequest.request({
+                                    url: location,
+                                    method: 'GET',
                                     headers: ctx.headers as any,
                                     responseType: 'arraybuffer',
                                     validateStatus: () => true,
@@ -363,12 +365,24 @@ export class SettingService {
         return index_text;
     }
 
-    public get_sys_env(): { web_site_title: string, show_login_user_info:boolean} {
-        return DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true};
+    public get_sys_env(): sys_env_pojo {
+        const p:sys_env_pojo =  DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true, http_proxy: null}
+        if (p.http_proxy == null) {
+            p.http_proxy = process.env.http_proxy
+                || process.env.https_proxy
+                || process.env.HTTP_PROXY
+                || process.env.HTTPS_PROXY
+        }
+        return p;
     }
 
-    public set_sys_env(req:{web_site_title: string ,show_login_user_info:boolean}) {
+    public set_sys_env(req:sys_env_pojo) {
         return DataUtil.set(data_common_key.sys_env_key, req);
+    }
+
+    // 获取 filecat 系统全局 http 代理地址（空表示未设置）
+    public get_http_proxy(): string {
+        return this.get_sys_env()?.http_proxy;
     }
 
     public get_https_setting(): HttpsSettingReq {
@@ -1388,6 +1402,8 @@ export class SettingService {
 }
 
 export const settingService: SettingService = new SettingService();
+// 注入全局 http 代理地址获取函数，让所有 HttpRequest 请求走 filecat 系统设置的代理
+HttpRequest.set_proxy_getter(() => settingService.get_http_proxy());
 ServerEvent.on("start", (data) => {
     settingService.init();
     settingService.power_on_corn();

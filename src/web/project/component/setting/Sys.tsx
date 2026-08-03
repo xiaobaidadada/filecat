@@ -24,6 +24,7 @@ import {AutoUpgrade} from "./AutoUpgrade";
 export function  Sys() {
     const [web_site_title, set_web_site_title] = useState("");
     const [show_login_user_info,set_show_login_user_info]=useState(false);
+    const [http_proxy, set_http_proxy] = useState("");
 
     const [authopen, setAuthopen] = useState(false);
     const [shell_cmd_open, set_shell_cmd_open] = useState(false);
@@ -72,6 +73,7 @@ export function  Sys() {
                 const sys_env = all_open_result.data.sys_env;
                 set_web_site_title(sys_env?.web_site_title);
                 set_show_login_user_info(sys_env?.show_login_user_info);
+                set_http_proxy(sys_env?.http_proxy || '');
                 // HTTPS 设置
                 const https_setting = all_open_result.data.https_setting;
                 if (https_setting) {
@@ -213,7 +215,8 @@ export function  Sys() {
 
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {type:sys_setting_type.sys_env,value:{
                 web_site_title,
-                show_login_user_info
+                show_login_user_info,
+                http_proxy
             }});
         if (result.code === RCode.Success) {
             NotySuccess("修改成功")
@@ -277,9 +280,22 @@ export function  Sys() {
 
         <Column widthPer={40}>
             <Dashboard>
-                <Card title={t("通用设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                <Card
+                    self_title={<span className={"\u0020div-row\u0020"}><h2>{t("通用设置")}</h2> <ActionButton icon={"info"} onClick={()=>{
+                        set_prompt_card({open:true,title:"信息",context_div : (
+                                <div >
+                                    {t(`HTTP 代理说明`)}
+                                </div>
+                            )})
+                    }} title={"信息"}/></span>}
+                    rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+
                     {t("网站标题")}
                     <InputText   value={web_site_title} handleInputChange={(value)=>{set_web_site_title(value)}} />
+
+                    <div>{t("HTTP 代理地址")}</div>
+                    <InputText placeholder={'http://127.0.0.1:7890'} value={http_proxy} handleInputChange={(value)=>{set_http_proxy(value)}} />
+
                     {t("登陆展示用户信息")}
                     <input
                         type="checkbox"
@@ -288,6 +304,7 @@ export function  Sys() {
                             set_show_login_user_info(!show_login_user_info)
                         }}
                     />
+
                 </Card>
                 <Card title={t("HTTPS 设置")} rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_https}/>}>
                     <Select value={https_open} onChange={(value)=>{set_https_open(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>

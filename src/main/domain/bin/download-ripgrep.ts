@@ -1,6 +1,7 @@
 import { fileCompress } from "../file/file.compress"
 import { get_zip_file_format_util } from "../../../common/StringUtil"
 import { FileUtil } from "../file/FileUtil"
+import { HttpRequest } from "../../../common/node/http"
 
 const fs = require("fs")
 const path = require("path")
@@ -104,13 +105,16 @@ export async function download_ripgrep() {
   // --------------------
   // download
   // --------------------
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error("download failed: " + res.status)
+  const tmpDownloadDir = path.join(os.tmpdir(), "rg_download_" + Date.now())
+  try {
+    const local = await HttpRequest.download_file(url, tmpDownloadDir)
+    await FileUtil.copy(local,tmpFile)
+  } finally {
+    await FileUtil.remove_dir(tmpDownloadDir)
   }
-
-  const buffer = Buffer.from(await res.arrayBuffer())
-  fs.writeFileSync(tmpFile, buffer)
+  if (!(await FileUtil.access(tmpFile))) {
+    throw new Error("download failed: " + url)
+  }
 
   // --------------------
   // extract (your business dependency)

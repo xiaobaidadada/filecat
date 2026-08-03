@@ -1,17 +1,17 @@
 import {running_type} from "./file.req";
 
 export interface NavIndexItem {
-    name:string;
-    url:string;
-    index?:number
+    name: string;
+    url: string;
+    index?: number
 }
 
 
-export interface tree_item<T=any> {
+export interface tree_item<T = any> {
     name: string;
     children?: tree_item<T>[];
-    extra_data?:T; // 额外的字段数据
-    code?:number;
+    extra_data?: T; // 额外的字段数据
+    code?: number;
 }
 
 export type tree_list = tree_item[];
@@ -22,63 +22,63 @@ export type workflow_realtime_tree_list = tree_item<{
 
 // 逻辑卷
 export class lv_item {
-    name:string;
-    size:string; // 格式化展示大小
+    name: string;
+    size: string; // 格式化展示大小
 }
 
 // 物理卷
 export class pv_item {
-    name:string;
-    size:string; // 格式化展示大小
-    free_size:string; // 可使用大小
+    name: string;
+    size: string; // 格式化展示大小
+    free_size: string; // 可使用大小
 }
 
 // 卷组
 export class vg_item {
-    name:string;
-    pv_cout:any; // 拥有的pv数量
-    lv_count:any; // 拥有的逻辑卷数量
-    size:string; // 格式化展示大小
-    free_size:string; // 可使用大小
-    lv_list:lv_item[] = [];
-    pv_list:pv_item[] = [];
+    name: string;
+    pv_cout: any; // 拥有的pv数量
+    lv_count: any; // 拥有的逻辑卷数量
+    size: string; // 格式化展示大小
+    free_size: string; // 可使用大小
+    lv_list: lv_item[] = [];
+    pv_list: pv_item[] = [];
 }
 
 export interface env_item {
-    path:string;
-    note:string;
-    open:boolean;
+    path: string;
+    note: string;
+    open: boolean;
 }
 
 export class tcp_proxy_server_config {
-    open:boolean;
-    key?:string; // 废弃
-    option_keys?:string[]
-    port?:number;
+    open: boolean;
+    key?: string; // 废弃
+    option_keys?: string[]
+    port?: number;
 }
 
 export class tcp_proxy_client_item {
-    proxy_host:string;
-    proxy_port:number;
-    note?:string;
-    server_port:number;
-    open:boolean;
+    proxy_host: string;
+    proxy_port: number;
+    note?: string;
+    server_port: number;
+    open: boolean;
 }
 
 export class tcp_proxy_bridge_fig_item {
-    id?:string;
+    id?: string;
 
-    server_port:number;
-    server_client_num_id:number;
-    server_client_name?:string;
+    server_port: number;
+    server_client_num_id: number;
+    server_client_name?: string;
 
-    note?:string;
-    open:boolean;
+    note?: string;
+    open: boolean;
 
-    client_num_id:number;
-    client_proxy_port:number; // 作为客户端 请求的端口
-    client_proxy_host:string; // 作为客户端要建立连接的ip
-    client_name?:string;
+    client_num_id: number;
+    client_proxy_port: number; // 作为客户端 请求的端口
+    client_proxy_host: string; // 作为客户端要建立连接的ip
+    client_name?: string;
 
 }
 
@@ -97,7 +97,7 @@ export class tcp_proxy_sync_task_item {
     note?: string;
 
     ignore_list?: string[] = [];
-    ignore_text?:string
+    ignore_text?: string
 
     delete_missing?: boolean = true;
 
@@ -105,10 +105,10 @@ export class tcp_proxy_sync_task_item {
 
     running_num?: number; // 正在进行同步的文件数量
 
-    full_sync?:boolean; // 初始化的时候就全量同步
+    full_sync?: boolean; // 初始化的时候就全量同步
 }
 
-export const fault_ignore_text =  `
+export const fault_ignore_text = `
 node_modules
 .venv
 .gradle
@@ -119,81 +119,87 @@ vendor
 
 export class tcp_proxy_server_client {
     // 服务器状态与配置
-    index?:number;
-    note?:string;
+    index?: number;
+    note?: string;
 
     // 客户端需要的配置
-    proxy_fig_list:tcp_proxy_client_item[]= []
+    proxy_fig_list: tcp_proxy_client_item[] = []
     // 客户端原本信息
     // client_id:string;
-    client_num_id:number;
-    client_name:string;
+    client_num_id: number;
+    client_name: string;
 
-    status:boolean;
-    client_remote_address?:string;
-    online_start_time?:number;
-    offline_time?:number;
+    status: boolean;
+    client_remote_address?: string;
+    online_start_time?: number;
+    offline_time?: number;
 
     // 开启目标filecat的访问
-    open_filecat?:boolean;
+    open_filecat?: boolean;
     // 访问filecat的时候使用本地前端
-    filecat_use_local_page?:boolean;
+    filecat_use_local_page?: boolean;
     // 可以用 127.0.0.1:5567 的格式形式指定需要代理的地址
-    filecat_proxy_host_port?:string;
+    filecat_proxy_host_port?: string;
 }
 
 
-export class tcp_proxy_client_fig{
+export class tcp_proxy_client_fig {
     client_name: string;
     // client_id?:string;
-    client_num_id?:number;
+    client_num_id?: number;
     open: boolean = false;
 
     serverIp: string;
     serverPort: number;
     key: string = "";
 
-    note?: string ;
+    note?: string;
 
     //  展示用的
-    status?:boolean;
+    status?: boolean;
 
-    is_new?:boolean;
-    index?:number;
+    is_new?: boolean;
+    index?: number;
 
 }
 
-export class tcp_proxy_client_all_fig{
-    list:tcp_proxy_client_fig[];
+export class tcp_proxy_client_all_fig {
+    list: tcp_proxy_client_fig[];
 }
 
 export interface server_client_proxy {
-    server_port:number;
-    client_name:string;
-    proxy_host:string;
-    proxy_port:number;
+    server_port: number;
+    client_name: string;
+    proxy_host: string;
+    proxy_port: number;
 
-    server_port_note?:string;
-    open_success:boolean // 服务器是否开启成功
+    server_port_note?: string;
+    open_success: boolean // 服务器是否开启成功
 }
 
 export interface workflow_setting_item {
-    file_path:string;
-    cron_str?:string; // cron定时器表达式 秒 分 时 日 月 星期
-    sys_power_on?:boolean; // 开机就启动
-    note?:string;
-    user_id:string
-    open:boolean
+    file_path: string;
+    cron_str?: string; // cron定时器表达式 秒 分 时 日 月 星期
+    sys_power_on?: boolean; // 开机就启动
+    note?: string;
+    user_id: string
+    open: boolean
 }
 
 export interface browser_file_pojo {
 
-    fullPath:string;
-    isDir:boolean;
-    name:string;
-    size:number
+    fullPath: string;
+    isDir: boolean;
+    name: string;
+    size: number
 }
 
 
 // 6MB
 export const max_req_size = 6250000
+
+export interface sys_env_pojo {
+    web_site_title: string,
+    show_login_user_info: boolean,
+    http_proxy?: string
+}

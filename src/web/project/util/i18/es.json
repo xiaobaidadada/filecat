@@ -562,5 +562,7 @@
   "用户配置已保存": "Configuración de usuario guardada",
   "代理配置已保存": "Configuración de proxy guardada",
   "留空清除该代理设置": "Dejar vacío para borrar el proxy",
-  "用户配置和全局代理修改后对所有仓库生效": "La configuración de usuario y el proxy global se aplican a todos los repositorios"
+  "用户配置和全局代理修改后对所有仓库生效": "La configuración de usuario y el proxy global se aplican a todos los repositorios",
+  "HTTP 代理地址": "Dirección del proxy HTTP",
+  "HTTP 代理说明": "Se aplica a las solicitudes HTTP emitidas por el sistema filecat (verificación de versión, actualización automática, DDNS, descarga de comandos, reenvío personalizado, etc.). Nota: en macOS, si el proxy del sistema ya está activado, déjelo en blanco para evitar un doble proxy."
 }
