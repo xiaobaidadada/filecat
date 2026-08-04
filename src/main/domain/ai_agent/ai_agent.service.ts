@@ -237,7 +237,7 @@ export class Ai_agentService {
             if(ai_agentService.have_ai_open()) {
                 download_ripgrep().then(r => {
 
-                }).catch(console.error);
+                }).catch(e=>console.error(e?.message??e));
             }
         }
         await ThreadsFilecat.close()

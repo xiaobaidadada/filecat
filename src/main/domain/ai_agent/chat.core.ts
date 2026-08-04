@@ -293,7 +293,7 @@ ${user_local_file_prompt}
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
 
         const once_messages_list:ai_agent_message_item[] = []
-        let _interrupted = false
+        let _interrupted: boolean = false
         /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
         let globalChunkIndex = 0;
 
@@ -390,7 +390,7 @@ ${user_local_file_prompt}
             workMessages.push(assistantWorkMessage);
 
             // 没有 tool_calls，直接结束
-            if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+            if (_interrupted || (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0)) {
                 on_end({ once_messages_list ,_interrupted});
                 return;
             }

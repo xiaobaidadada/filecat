@@ -1,7 +1,7 @@
 import {RG_PATH} from "../../bin/download-ripgrep";
-import {SystemUtil} from "../../sys/sys.utl";
 import fg from "fast-glob";
 import {readFile} from "fs/promises";
+import {spawnSync} from "child_process";
 import {FileUtil} from "../../file/FileUtil";
 
 export const search_in_files_tool = async ({
@@ -32,31 +32,31 @@ export const search_in_files_tool = async ({
     // ======================================================
     if (await FileUtil.access(RG_PATH)) {
         try {
-            // 用单引号包裹含特殊字符的参数，避免 shell 拆分（空格/通配符等）
-            const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
-            const args = [RG_PATH, "--vimgrep", "--no-heading", "--with-filename", "--line-number", "--column"];
-
-            // 只有当是目录时，才添加忽略路径的 glob 参数
+            const args = ["--json"];
             if (!isFile) {
-                ignore.forEach(p => args.push("--glob", `!${quote(p)}`));
+                ignore.forEach(p => args.push("--glob", `!${p}`));
             }
-
             if (ignore_case) args.push("-i");
+            args.push(pattern, searchPath);
 
-            const output = await SystemUtil.execAsync([...args, quote(pattern), quote(searchPath)].join(" "));
-            const lines = output.split("\n").filter(Boolean);
-            const fileMap = new Map();
+            const result = spawnSync(RG_PATH, args, {encoding: "utf8", maxBuffer: 50 * 1024 * 1024});
+            const output = result.stdout || "";
+            const fileMap = new Map<string, { line: number; text: string }[]>();
 
-            for (const line of lines) {
-                // rg --vimgrep 格式为：文件:行号:列号:文本，文本后续可能含冒号，
-                // 用非贪婪正则定位末尾的 "行号:列号" 结构，避免路径含冒号被 split 截断
-                const m = line.match(/^(.+?):(\d+):(\d+):(.*)$/);
-                if (!m) continue;
-                const [, file, lineNum, , rest] = m;
+            for (const line of output.split("\n")) {
+                if (!line) continue;
+                let msg: any;
+                try { msg = JSON.parse(line); } catch { continue; }
+                if (msg.type !== "match") continue;
+
+                const file = msg.data.path.text;
+                const lineNum = msg.data.line_number;
+                const text = (msg.data.lines.text || "").replace(/\r?\n$/, "").slice(0, 300);
+
                 if (!fileMap.has(file)) fileMap.set(file, []);
-                const arr = fileMap.get(file);
+                const arr = fileMap.get(file)!;
                 if (arr.length < max_matches_per_file) {
-                    arr.push({line: Number(lineNum), text: rest.slice(0, 300)});
+                    arr.push({line: lineNum, text});
                 }
             }
 
