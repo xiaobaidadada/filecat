@@ -92,8 +92,9 @@ export const search_in_files_tool = async ({
     if (isFile) {
         files = [searchPath];
     } else {
-        // 用 **/* 代替 **/*.*，保证能匹配 Dockerfile、Makefile 等无扩展名文件
-        files = await fg([`${searchPath}/**/*`], {
+        // fast-glob 不支持 Windows 反斜杠，统一转为正斜杠
+        const globPath = searchPath.replace(/\\/g, "/");
+        files = await fg([`${globPath}/**/*`], {
             onlyFiles: true,
             ignore,
             dot: true
