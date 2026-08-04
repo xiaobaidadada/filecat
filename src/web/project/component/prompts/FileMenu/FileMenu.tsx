@@ -31,6 +31,7 @@ import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
 import {use_click_folder} from "../../file/FileUtil";
+import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 
 
 export function FileMenu() {
@@ -57,6 +58,7 @@ export function FileMenu() {
             ]
         },
         {r: t("重命名"), v: common_menu_type.file_rename},
+        {r: t("下载"), v: common_menu_type.file_download},
         {r: t("删除"), v: common_menu_type.file_delete}
     ]
 
@@ -151,6 +153,8 @@ export function FileMenu() {
     const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
     const click_folder = use_click_folder()
     const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
 
     const items_folder = [
         {r: t("以studio打开"), v: common_menu_type.sutdio},
@@ -474,6 +478,21 @@ export function FileMenu() {
                         filename: showPrompt.data.filename
                     }
                 });
+            }
+            break;
+            case common_menu_type.file_download: {
+                if (showPrompt.data.useSelectedList) {
+                    // 多选下载：与文件列表菜单栏的下载逻辑一致
+                    const files = getFilesByIndexs(nowFileList, selectedFile);
+                    const fileNames = files.map(file => encodeURIComponent(getFileNameByLocation(file.name)));
+                    const url = fileHttp.getDownloadUrl(fileNames);
+                    window.open(url);
+                } else {
+                    // 单选下载：下载右键点击的单个文件
+                    const filePath = encodeURIComponent(get_menu_file_path());
+                    const url = fileHttp.getDownloadUrl(filePath);
+                    window.open(url);
+                }
             }
             break;
 

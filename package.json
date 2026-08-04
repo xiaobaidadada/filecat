@@ -1,7 +1,7 @@
 {
   "name": "filecat",
-  "version": "6.45.3",
-  "description": "FileCat File Browser Server Manager",
+  "version": "6.46.0",
+  "description": "File browser and server manager",
   "author": "xiaobaidadada",
   "repository": {
     "type": "git",

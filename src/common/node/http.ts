@@ -21,7 +21,7 @@ export class HttpRequest {
       const p = proxy_getter();
       if (p) return p;
     } catch (e) {
-      console.log(e);
+      console.log(e?.message??e);
     }
     return undefined;
   }
@@ -50,7 +50,7 @@ export class HttpRequest {
       const res = await axios.post(url, data, config);
       return res.status === 200 ? res.data : null;
     } catch (e) {
-      console.error(`[HttpRequest] post 失败: ${url}`, e);
+      console.error(`[HttpRequest] post 失败: ${url}`, e?.message??e);
       return null;
     }
   }
@@ -63,7 +63,7 @@ export class HttpRequest {
       const res = await axios.get(url, config);
       return res.status === 200 ? res.data : null;
     } catch (e) {
-      console.error(`[HttpRequest] get 失败: ${url}`, e);
+      console.error(`[HttpRequest] get 失败: ${url}`, e?.message??e);
       return null;
     }
   }
@@ -158,7 +158,7 @@ export class HttpRequest {
       // 不支持 Range，回退到普通流式下载
       return await HttpRequest.download_stream(url, filePath, on_progress);
     } catch (e) {
-      console.error(`[HttpRequest] download_file 失败: ${url}`, e);
+      console.error(`[HttpRequest] download_file 失败: ${url}`, e?.message??e);
       throw e;
     }
   }
@@ -238,7 +238,7 @@ export class HttpRequest {
     response.data.on('error', async (e: Error) => {
       fileStream.destroy();
       if (await FileUtil.access(filePath)) await FileUtil.remove(filePath);
-      console.error(`[HttpRequest] download_stream 流错误: ${url}`, e);
+      console.error(`[HttpRequest] download_stream 流错误: ${url}`, e?.message??e);
     });
 
     response.data.pipe(fileStream);
