@@ -10,6 +10,7 @@ import {exec_cmd_background_tool} from "./exec_cmd_background";
 import {list_background_processes_tool} from "./list_background_processes";
 import {get_background_process_output_tool} from "./get_background_process_output";
 import {sleep_tool} from "./sleep.tools";
+import {rename_file_tool} from "./rename_file";
 import {pick_model_tool} from "./pick_next_model";
 
 
@@ -35,6 +36,7 @@ export const Ai_agentTools = {
     search_in_files: search_in_files_tool,
     create_fs_entry: create_fs_entry_tool,
     sleep:sleep_tool,
+    rename_file:rename_file_tool,
     pick_model:pick_model_tool
     // apply_patch: apply_patch_tool
 }
@@ -113,6 +115,12 @@ export const tools_des_map: Record<Ai_agentTools_type, {
         get_name: () => "sleep",
         get_params: (args) => {
             return `sleep length： ${args.sleep_length}`
+        }
+    },
+    rename_file: {
+        get_name: () => "rename file",
+        get_params: (args) => {
+            return ` ${args.path} → ${args.newPath}`
         }
     },
     pick_model:{

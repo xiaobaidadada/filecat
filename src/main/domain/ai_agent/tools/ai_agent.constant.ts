@@ -9,6 +9,7 @@ import {exec_cmd_background_schema} from "./exec_cmd_background";
 import {list_background_processes_schema} from "./list_background_processes";
 import {get_background_process_output_schema} from "./get_background_process_output";
 import {sleep_schema} from "./sleep.tools";
+import {rename_file_schema} from "./rename_file";
 import {getProcessAddon} from "../../bin/bin";
 import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
 import {kill_background_processes_schema, kill_background_processes_tool} from "./kill_background_processes";
@@ -40,6 +41,7 @@ export const ai_tools = [
     search_in_files_schema,
     create_fs_entry_schema,
     sleep_schema,
+    rename_file_schema,
     // pick_model_schema
     // apply_patch_schema
 ];

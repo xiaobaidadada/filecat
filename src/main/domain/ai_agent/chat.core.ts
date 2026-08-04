@@ -177,19 +177,31 @@ export class ChatCore {
 
             case "edit_file":
             case "create_fs_entry":
+            case "rename_file":
             case "apply_patch":
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }
                 userService.check_user_path_by_user_id(user_id, args.path);
-                userService.check_user_auth_by_user_id(
-                    user_id,
-                    UserAuth.filecat_file_context_update_upload_created_copy_decompression,
-                    {
-                        auto_throw: true,
-                        root_check: true
-                    }
-                );
+                if (toolName === "rename_file") {
+                    userService.check_user_auth_by_user_id(
+                        user_id,
+                        UserAuth.filecat_file_delete_cut_rename,
+                        {
+                            auto_throw: true,
+                            root_check: true
+                        }
+                    );
+                } else {
+                    userService.check_user_auth_by_user_id(
+                        user_id,
+                        UserAuth.filecat_file_context_update_upload_created_copy_decompression,
+                        {
+                            auto_throw: true,
+                            root_check: true
+                        }
+                    );
+                }
                 break;
         }
 
