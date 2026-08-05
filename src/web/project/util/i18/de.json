@@ -585,5 +585,7 @@
   "总计扫描": "Insgesamt gescannt",
   "已发现": "Gefunden",
   "当前": "Aktuell",
-  "扫描已取消": "Scan abgebrochen"
+  "扫描已取消": "Scan abgebrochen",
+  "自动换行": "Automatischer Umbruch",
+  "不换行": "Kein Umbruch"
 }

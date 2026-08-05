@@ -38,6 +38,8 @@ export enum common_menu_type {
     logviwer_windows1252 = "windows1252",
     // logviwer_big5 = "big5",
     // logviwer_ios_8859_1 = "ios-8859-1",
+    logviwer_wrap = "logviwer_wrap",     // 日志以自动换行方式打开
+    logviwer_nowrap = "logviwer_nowrap", // 日志以不换行方式打开
 
     sutdio = "sutdio",
     folder_size_info = "folder_size_info",

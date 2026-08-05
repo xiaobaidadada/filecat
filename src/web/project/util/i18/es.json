@@ -585,5 +585,7 @@
   "总计扫描": "Total Escaneado",
   "已发现": "Encontrado",
   "当前": "Actual",
-  "扫描已取消": "Escaneo cancelado"
+  "扫描已取消": "Escaneo cancelado",
+  "自动换行": "Ajuste automático",
+  "不换行": "Sin ajuste"
 }

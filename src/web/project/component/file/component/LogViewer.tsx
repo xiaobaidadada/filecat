@@ -54,9 +54,15 @@ export default function LogViewer(props) {
         } else {
             newDiv.innerHTML = data;
         }
-        newDiv.style.whiteSpace = 'pre-wrap';  // 或者 'pre' (不会自动换行) \r\n 在最后面不会有额外换行，在前面有换行
-        // newDiv.style.whiteSpace = 'break-word';
-        newDiv.style.overflowWrap = 'break-word';
+        // 换行/不换行用两套独立属性处理：
+        // 不换行模式用 white-space:nowrap（标准的单行不换行语义），超长行配合外层横向滚动
+        // 换行模式用 white-space:pre-wrap + overflow-wrap:break-word（保留原有良好的自动换行表现）
+        if (shellShow.wrap === 'wrap') {
+            newDiv.style.whiteSpace = 'pre-wrap';
+            newDiv.style.overflowWrap = 'break-word';
+        } else {
+            newDiv.style.whiteSpace = 'nowrap';
+        }
         newDiv.setAttribute('position', `${position}`);
         newDiv.setAttribute('start_position', `${start_postion}`);
         if (back) {
@@ -463,6 +469,7 @@ export default function LogViewer(props) {
         <div style={{height: `100%`}}>
             <div ref={shellRef} style={{
                 overflowY: 'auto',
+                overflowX: 'auto',
                 height: '100%'
             }}>
             </div>

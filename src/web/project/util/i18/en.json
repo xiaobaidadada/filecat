@@ -596,5 +596,7 @@
   "总计扫描": "Total Scanned",
   "已发现": "Found",
   "当前": "Current",
-  "扫描已取消": "Scan cancelled"
+  "扫描已取消": "Scan cancelled",
+  "自动换行": "Auto Wrap",
+  "不换行": "No Wrap"
 }

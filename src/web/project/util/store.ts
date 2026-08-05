@@ -124,7 +124,7 @@ export const $stroe = {
         unit_name: ""
     }),
     // 日志 文件
-    log_viewer: atom<{show: boolean, fileName?: string, encoding?: string}>({
+    log_viewer: atom<{show: boolean, fileName?: string, encoding?: string, wrap?: 'wrap' | 'nowrap'}>({
         show: false
     }),
     // ssh工具连接信息

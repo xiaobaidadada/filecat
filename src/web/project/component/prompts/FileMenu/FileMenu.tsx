@@ -79,22 +79,31 @@ export function FileMenu() {
         })
     }
 
+    // 日志编码列表，每项再嵌套换行模式（自动换行 / 不换行）
+    const logviwer_encodings = [
+        {code: "utf8", v: common_menu_type.logviwer_utf8},
+        {code: "utf16", v: common_menu_type.logviwer_utf16},
+        {code: "utf32", v: common_menu_type.logviwer_utf32},
+        {code: "gbk", v: common_menu_type.logviwer_gbk},
+        {code: "gb2312", v: common_menu_type.logviwer_gb2312},
+        {code: "gb18030", v: common_menu_type.logviwer_gb18030},
+        // {code: "usc2", v: common_menu_type.logviwer_usc2},
+        {code: "windows1252", v: common_menu_type.logviwer_windows1252},
+        // {code: "big5", v: common_menu_type.logviwer_big5},
+        // {code: "ios-8859-1", v: common_menu_type.logviwer_ios_8859_1},
+    ];
     const show_items:any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
             r: t("以日志打开"), v: common_menu_type.logviwer_text, items:
-                [
-                    {r: "utf8", v: common_menu_type.logviwer_utf8},
-                    {r: "utf16", v: common_menu_type.logviwer_utf16},
-                    {r: "utf32", v: common_menu_type.logviwer_utf32},
-                    {r: "gbk", v: common_menu_type.logviwer_gbk},
-                    {r: "gb2312", v: common_menu_type.logviwer_gb2312},
-                    {r: "gb18030", v: common_menu_type.logviwer_gb18030},
-                    // {r:"usc2",v: common_menu_type.logviwer_usc2},
-                    {r: "windows1252", v: common_menu_type.logviwer_windows1252},
-                    // {r:"big5",v: common_menu_type.logviwer_big5},
-                    // {r:"ios-8859-1",v: common_menu_type.logviwer_ios_8859_1},
-                ]
+                logviwer_encodings.map(enc => ({
+                    r: enc.code,
+                    v: enc.v,
+                    items: [
+                        {r: t("自动换行"), v: common_menu_type.logviwer_wrap, encoding: enc.code},
+                        {r: t("不换行"), v: common_menu_type.logviwer_nowrap, encoding: enc.code}
+                    ]
+                }))
         },
         ...must_needs
     ]
@@ -218,7 +227,15 @@ export function FileMenu() {
                 // case common_menu_type.logviwer_big5:
                 // case common_menu_type.logviwer_ios_8859_1:
             {
-                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v})
+                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v, wrap: 'wrap'})
+            }
+                break;
+            case common_menu_type.logviwer_wrap:
+            case common_menu_type.logviwer_nowrap:
+            {
+                // 从叶子菜单项读取所选编码，默认 utf8
+                const enc = item?.encoding ?? 'utf8';
+                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: enc, wrap: v === common_menu_type.logviwer_wrap ? 'wrap' : 'nowrap'})
             }
                 break;
             case common_menu_type.run_workflow:
