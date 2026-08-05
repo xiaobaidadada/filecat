@@ -144,6 +144,13 @@ export enum CmdType {
     ai_bg_process_kill_rsq,   // 服务端返回终止结果
     ai_bg_process_count_notify, // 服务端推送后台进程总数变化
 
+    // ===== TCP 端口扫描 =====
+    port_scan_req,      // 客户端发起端口扫描
+    port_scan_progress, // 服务端推送扫描进度（百分比、当前端口）
+    port_scan_result,   // 服务端推送发现的开放端口
+    port_scan_end,      // 服务端推送扫描结束
+    port_scan_cancel,   // 客户端取消扫描
+
 }
 
 
@@ -261,6 +268,13 @@ export type ws_cmd_type_map = {
     [CmdType.ai_bg_process_kill_req]: [any, any],
     [CmdType.ai_bg_process_kill_rsq]: [any, any],
     [CmdType.ai_bg_process_count_notify]: [any, any],
+
+    // ===== TCP 端口扫描 WS 类型映射 =====
+    [CmdType.port_scan_req]: [any, any],
+    [CmdType.port_scan_progress]: [any, any],
+    [CmdType.port_scan_result]: [any, any],
+    [CmdType.port_scan_end]: [any, any],
+    [CmdType.port_scan_cancel]: [any, any],
 }
 
 export enum WsConnectType {

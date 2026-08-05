@@ -130,6 +130,7 @@ export function Permission(props:{
                 { title: t("workflow 执行"), permission: UserAuth.workflow_exe },
                 { title: t("workflow 执行用户"), permission: UserAuth.workflow_exe_user, noDisable: true },
                 { title: t("网络唤醒"), permission: UserAuth.wol_proxy },
+                { title: t("端口扫描"), permission: UserAuth.port_scan },
                 { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy },
                 { title: t("ssh密钥保存到磁盘"), permission: UserAuth.crypto_ssh_file },
                 { title: t("网址导航"), permission: UserAuth.nav_net_tag },

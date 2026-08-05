@@ -988,6 +988,106 @@ export class NetService {
     }
 
 
+    // ==================== TCP 端口扫描 ====================
+
+    private scanPort(host: string, port: number, timeout: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            const socket = new net.Socket();
+            socket.setTimeout(timeout);
+            socket.once("connect", () => {
+                socket.destroy();
+                resolve(true);
+            });
+            socket.once("timeout", () => {
+                socket.destroy();
+                resolve(false);
+            });
+            socket.once("error", () => {
+                socket.destroy();
+                resolve(false);
+            });
+            socket.connect(port, host);
+        });
+    }
+
+    public portScan(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        const req = data.context;
+        if (!req.host) {
+            wss.send(CmdType.port_scan_end, {error: "host is required"});
+            return;
+        }
+
+        const startPort = Math.max(1, Math.min(65535, Math.floor(req.startPort ?? 1)));
+        const endPort = Math.max(startPort, Math.min(65535, Math.floor(req.endPort ?? 65535)));
+        const concurrency = Math.max(1, Math.min(1000, Math.floor(req.concurrency ?? 100)));
+        const timeout = Math.max(100, Math.min(10000, Math.floor(req.timeout ?? 2000)));
+        const totalPorts = endPort - startPort + 1;
+        wss.dataMap.set("portScanCancel",false)
+        wss.setClose(() => {
+            wss.dataMap.set("portScanCancel",true)
+        });
+
+        // 后台异步扫描，不阻塞 controller return
+        (async () => {
+            let scannedCount = 0;
+            const openPorts: number[] = [];
+
+            for (let p = startPort; p <= endPort; p += concurrency) {
+                if (wss.dataMap.get("portScanCancel")) {
+                    break;
+                }
+
+                const batch: number[] = [];
+                for (let i = 0; i < concurrency && p + i <= endPort; i++) {
+                    batch.push(p + i);
+                }
+
+                const batchResults = await Promise.all(
+                    batch.map(port => this.scanPort(req.host, port, timeout))
+                );
+
+                scannedCount += batch.length;
+
+                for (let i = 0; i < batchResults.length; i++) {
+                    if (batchResults[i]) {
+                        openPorts.push(batch[i]);
+                        const result = new WsData(CmdType.port_scan_result);
+                        result.context = {port: batch[i], open: true};
+                        wss.sendData(result.encode());
+                    }
+                }
+
+                const percent = Math.round((scannedCount / totalPorts) * 100);
+                const progress = new WsData(CmdType.port_scan_progress);
+                progress.context = {
+                    scanned: scannedCount,
+                    total: totalPorts,
+                    percent: percent,
+                    currentPort: batch[batch.length - 1],
+                    openCount: openPorts.length,
+                };
+                wss.sendData(progress.encode());
+            }
+
+            const end = new WsData(CmdType.port_scan_end);
+            end.context = {
+                host: req.host,
+                startPort,
+                endPort,
+                totalScanned: scannedCount,
+                totalOpen: openPorts.length,
+                cancelled: wss.dataMap.get("portScanCancel"),
+            };
+            wss.sendData(end.encode());
+        })();
+    }
+
+    public portScanCancel(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        wss.dataMap.set("portScanCancel",true);
+    }
+
 }
 
 export const netService: NetService = new NetService();

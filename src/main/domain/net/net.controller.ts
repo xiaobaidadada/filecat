@@ -192,4 +192,19 @@ export class NetController {
         netService.load_server_proxy()
         return Sucess("");
     }
+
+    @msg(CmdType.port_scan_req)
+    async startScan(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token, UserAuth.port_scan);
+        netService.portScan(data); // 不 await，后台异步执行，立即返回
+        return "";
+    }
+
+    @msg(CmdType.port_scan_cancel)
+    async cancelScan(data: WsData<any>) {
+        userService.check_user_auth((data.wss as Wss).token, UserAuth.port_scan);
+        netService.portScanCancel(data);
+        return "";
+    }
+
 }

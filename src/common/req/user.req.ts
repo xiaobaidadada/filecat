@@ -110,6 +110,7 @@ export enum UserAuth {
     tcp_proxy = 85, // 内网穿透
     sys_setting_page, // 系统设置页面
     https_file,
+    port_scan, // TCP端口扫描
 }
 
 
