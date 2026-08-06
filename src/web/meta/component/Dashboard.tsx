@@ -71,18 +71,18 @@ export function Dashboard(props) {
 // 容器内的列
 export const Column: React.FC<{
     widthPer?: number,
-    minWidth?:number,
-    maxWidth?:number,
+    minWidth?:string,
+    maxWidth?:string,
     children: React.ReactNode
 }> = (props) => {
     const style = {
         "width": props.widthPer ? `${props.widthPer}%` : "50%"
     }
     if (props.minWidth) {
-        style['minWidth'] = props.minWidth ? `${props.minWidth}%` : "50%";
+        style['minWidth'] = props.minWidth ;
     }
     if(props.maxWidth) {
-        style['maxWidth'] = props.maxWidth ? `${props.maxWidth}%` : "50%";
+        style['maxWidth'] = props.maxWidth ;
     }
     return <div className={"column"} style={style}>{props.children}</div>
 }

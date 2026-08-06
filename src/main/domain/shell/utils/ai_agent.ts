@@ -88,13 +88,14 @@ export class ai_agent_class {
                 filteredParams.push(param);
             }
         }
+        const tem_messages = filteredParams.slice(0,-3)
 
         this.userId = filteredParams[filteredParams.length - 3];
         this.token = filteredParams[filteredParams.length - 2];
 
         const messages: string[] = [];
         
-        for (let i = 0; i < filteredParams.length - 2; i++) {
+        for (let i = 0; i < tem_messages.length ; i++) {
             try {
                 const str1 = filteredParams[i]
                 if (str1 === '-f' || str1 === '--file') {

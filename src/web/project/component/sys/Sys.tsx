@@ -160,7 +160,7 @@ export function Sys(props) {
         <Dashboard>
             {real_time &&
                 <Row>
-                    <Column widthPer={33}>
+                    <Column widthPer={33} maxWidth={"30rem"}>
                         <Card title={"Sys "+t("内存")}>
                             <Row>
                                 <Column>
@@ -181,7 +181,7 @@ export function Sys(props) {
                             </Row>
                         </Card>
                     </Column>
-                    <Column widthPer={33}>
+                    <Column widthPer={33} maxWidth={"30rem"}>
                         <Card title={"Sys "+"cpu"}>
                             <Row>
                                 <Column>
@@ -195,7 +195,7 @@ export function Sys(props) {
                             </Row>
                         </Card>
                     </Column>
-                    <Column widthPer={33}>
+                    <Column widthPer={33} maxWidth={"30rem"}>
                         <Card title={"FileCat"}>
                             <Row>
                                 <Column>
