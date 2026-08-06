@@ -21,11 +21,13 @@ import {
     ai_agent_message_list,
     getContentAsString,
     ai_docs_setting_param,
-    ai_agent_tool_call_item
+    ai_agent_tool_call_item,
+    ai_system_prompt_item
 } from "../../../common/req/filecat.ai.pojo";
 import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/pick_next_model";
+import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -208,6 +210,86 @@ export class ChatCore {
     }
 
 
+    /**
+     * 处理 "update_llm_prompt" 工具调用。
+     * LLM 对当前会话进行总结后，调用本工具把总结内容写入所选的系统提示词列表项的
+     * `llm_prompt` 字段（全局保存），并供之后的新会话沿用。
+     *
+     * 通过数组下标 index 来定位并更新列表项：
+     * 每次调用都重新读取系统提示词数组，再按下标定位更新并保存，
+     * 避免持有过期的对象引用，也更符合全局设置"按位置更新"的管理方式。
+     *
+     * @param index 系统提示词列表项的数组下标
+     * @param args 工具参数 { content, note }
+     * @returns { ok: 是否成功; message: 展示给 LLM 的提示信息 }
+     */
+    private handleUpdateLlmPrompt(index: number, args: any): { ok: boolean; message: string } {
+        const content = (args?.content ?? "").trim();
+        if (!content) {
+            return { ok: false, message: "❌ 更新失败：content 不能为空。请把总结后的提示词内容传入 content 参数。" };
+        }
+        // 每次都重新读取系统提示词数组，按下标定位要更新的列表项
+        const prompts = settingService.ai_system_prompts_get();
+        if (index < 0 || index >= prompts.length) {
+            return { ok: false, message: `❌ 更新失败：系统提示词下标 ${index} 越界（当前共 ${prompts.length} 项）。` };
+        }
+        // 通过下标更新对应列表项的 llm_prompt 内容
+        prompts[index].llm_prompt = content;
+        // 保存到全局设置
+        try {
+            settingService.ai_system_prompts_save(prompts);
+        } catch (e: any) {
+            return { ok: false, message: `❌ 更新失败：保存系统提示词时出错：${e?.message ?? e}` };
+        }
+        const message = `✅ 已成功更新所选系统提示词的"LLM编辑提示词"内容（将供之后的新会话沿用）。\n更新后的内容如下：\n\n${content}\n\n${args?.note ? `\n[备注] ${args.note}` : ""}`;
+        return { ok: true, message };
+    }
+
+    /**
+     * 根据系统提示词 ID（index）加载系统提示词，并解析 LLM 编辑配置。
+     * 封装对 settingService 的读取与匹配逻辑，供 chat 方法复用。
+     * @param sys_prompt_id 系统提示词 ID（通过 index 标识）
+     * @returns 解析结果对象
+     */
+    private resolveSystemPromptConfig(sys_prompt_id?: string): {
+        /** 已加载的系统提示词内容 */
+        loadedSysPrompt: string;
+        /** 是否启用 LLM 编辑提示词工具（所选系统提示词开启了 llm_prompt_enable 开关） */
+        enableLlmEditPrompt: boolean;
+        /** 注入到 update_llm_prompt 工具 description 中的编辑规则说明 */
+        editPromptTip: string;
+        /** 所选系统提示词在数组中的下标（供 update_llm_prompt 工具写回使用） */
+        matchedPromptIndex: number;
+        /** 所选系统提示词的 llm_prompt 初始内容 */
+        matchedLlmPrompt: string;
+    } {
+        const result = {
+            loadedSysPrompt: '',
+            enableLlmEditPrompt: false,
+            editPromptTip: '',
+            matchedPromptIndex: -1,
+            matchedLlmPrompt: ''
+        };
+        if (!sys_prompt_id) return result;
+
+        const prompts = settingService.ai_system_prompts_get();
+        const matchedIndex = prompts.findIndex(p => String(p.index) === sys_prompt_id);
+        if (matchedIndex < 0) return result;
+
+        const matched = prompts[matchedIndex];
+        if (matched.prompt) {
+            result.loadedSysPrompt = matched.prompt;
+        }
+        // 如果该系统提示词开启了 LLM 编辑开关（llm_prompt_enable），则为 LLM 注册"编辑当前会话提示词"工具
+        if (matched.llm_prompt_enable) {
+            result.matchedPromptIndex = matchedIndex;
+            result.matchedLlmPrompt = matched.llm_prompt ?? '';
+            result.enableLlmEditPrompt = true;
+            result.editPromptTip = matched.llm_prompt_tip ?? '';
+        }
+        return result;
+    }
+
     public async chat(options: ChatOptions) {
         const {
             originMessages,
@@ -225,15 +307,18 @@ export class ChatCore {
             tools
         } = options;
 
-        // 根据 sys_prompt_id（index）加载系统提示词
-        let loadedSysPrompt = '';
-        if (sys_prompt_id && !loadedSysPrompt) {
-            const prompts = settingService.ai_system_prompts_get();
-            const matched = prompts.find(p => String(p.index) === sys_prompt_id);
-            if (matched && matched.prompt) {
-                loadedSysPrompt = matched.prompt;
-            }
-        }
+        // 根据 sys_prompt_id（index）加载系统提示词，并解析 LLM 编辑提示词配置
+        const promptConfig = this.resolveSystemPromptConfig(sys_prompt_id);
+        const {
+            loadedSysPrompt,
+            enableLlmEditPrompt,
+            editPromptTip,
+            matchedPromptIndex
+        } = promptConfig;
+
+        // 当前系统提示词的 LLM 编辑内容（LLM 可编辑，写入到系统提示词列表项的 llm_prompt 字段）
+        // 注意：该值可能被 update_llm_prompt 工具在执行过程中实时更新，因此在 tool 循环里是可变的
+        let current_llm_edit_prompt = enableLlmEditPrompt ? promptConfig.matchedLlmPrompt : '';
 
         // 使用传入的配置，如果未传入则回退到全局变量
         const config = aiConfig ?? ai_agentService.ai_config;
@@ -256,10 +341,9 @@ export class ChatCore {
         const user = userService.get_user_info_by_user_id(user_id);
         const rootPath = settingService.getFileRootPathById(user_id);
 
-        const workMessages: ai_agent_message_list = [
-            {
-                role: "system",
-                content: `
+                // 构建 system 消息内容。参数 currentLlmEdit 为当前 LLM 编辑提示词内容，
+        // 在 update_llm_prompt 工具更新后重新调用，可实时刷新注入的内容。
+        const buildSystemContent = (currentLlmEdit: string) => `
 filecat 当前软件用户当前所在的根目录是 ${rootPath}，
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
@@ -286,13 +370,36 @@ ${sys_prompt ?? ''}
 
 ${loadedSysPrompt ?? ''}
 
+${enableLlmEditPrompt ? `
+<!-- LLM_EDIT_PROMPT_START -->
+【当前系统提示词的 LLM 动态内容（由你在对话中通过 update_llm_prompt 工具维护，可随时更新；更新后写入所选系统提示词的"LLM编辑提示词"中，供之后的新会话沿用）】
+以下内容是你要维护的提示词，请作为本次对话的重要上下文参考。如需总结会话内容并更新这段提示词，请调用 update_llm_prompt 工具：
+-----
+${currentLlmEdit}
+-----
+
+<!-- LLM_EDIT_PROMPT_END -->
+` : ''}
+
 ${user_local_file_prompt}
-`
+`;
+
+const workMessages: ai_agent_message_list = [
+            {
+                role: "system",
+                content: buildSystemContent(current_llm_edit_prompt)
             },
             ...originMessages
-            // ...await this.trimMessages(originMessages, config_env.char_max, on_msg, controller),
         ];
 
+
+        // 如果用户选择的系统提示词开启了 LLM 编辑开关（llm_prompt_enable），
+        // 则向 LLM 注册"编辑当前会话提示词"工具，允许其总结会话并写回系统提示词列表项的 llm_prompt。
+        let finalTools = tools;
+        if (enableLlmEditPrompt) {
+            const updatePromptSchema = create_update_llm_prompt_schema(editPromptTip);
+            finalTools = finalTools ? [...finalTools, updatePromptSchema] : [updatePromptSchema];
+        }
 
         const loopEnv = {
             toolLoop: env.tool_call_max,
@@ -322,7 +429,7 @@ ${user_local_file_prompt}
 
             //  调用 LLM（流式）
             await this.callLLSync({
-                tools,
+                tools: finalTools,
                 config:config,
                 env:env,
                 messages:workMessages,
@@ -434,8 +541,18 @@ ${user_local_file_prompt}
                         callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
                         await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss);
 
-                        let result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss);
-                        let resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+                        let result;
+                        let resultStr;
+                        if (enableLlmEditPrompt && matchedPromptIndex >= 0 && toolName === "update_llm_prompt") {
+                            // 由 chat.core 内部处理：LLM 总结会话内容，通过下标写回系统提示词列表项的 llm_prompt
+                            // 更新后已全局保存，下一次对话会通过 resolveSystemPromptConfig 读取到最新内容，
+                            // 因此无需在本轮实时刷新注入的提示词。
+                            const updateResult = this.handleUpdateLlmPrompt(matchedPromptIndex, args);
+                            resultStr = updateResult.message;
+                        } else {
+                            result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss);
+                            resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+                        }
                         callItem.success = true;
                         callItem.tool_result = resultStr;
                         workMessages.push({

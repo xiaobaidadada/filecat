@@ -1015,6 +1015,13 @@ export class Ai_agentService {
                 get_params: () => args?.prompt ? `"${args.prompt?.slice(0, 50)}..."` : ""
             };
         }
+        // LLM 动态提示词更新工具（由 chat.core 内部处理，这里仅提供显示信息）
+        if (toolName === "update_llm_prompt") {
+            return {
+                get_name: () => "update llm prompt",
+                get_params: () => args?.content ? `更新提示词：${(args.content || "").slice(0, 50)}...` : ""
+            };
+        }
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return {
                 get_name: () => tools_des_map[toolName as Ai_agentTools_type]?.get_name?.() ?? toolName,

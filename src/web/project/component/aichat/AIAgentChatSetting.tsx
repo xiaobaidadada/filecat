@@ -62,6 +62,9 @@ const mcp_tip = `
 const sys_prompt_tip = `
 1. 系统会话提示词，在 AI 聊天页创建会话时可以选择，选中的提示词会自动填入聊天框作为第一条系统消息
 2. 适用于预先设定常用的会话场景模板，如"代码审查"、"翻译助手"、"运维诊断"等
+3. "LLM编辑开关"：开启后，当用户选择了该系统提示词发起对话时，AI 将会获得一个"更新会话提示词"工具，允许 AI 在对话中对当前会话进行总结，并写入到本提示词的"LLM编辑提示词"字段（全局保存，供之后的新会话沿用），使 AI 能自我维护长期上下文。
+4. "LLM编辑提示词"：可选。AI 编辑后写回的内容（可预填初始方向）。仅在"LLM编辑开关"开启时生效。
+5. "编辑规则"：可选。给 LLM 的编辑要求，例如"总结时不要超过 300 token"、"用简洁的项目要点记录"等。仅在"LLM编辑开关"开启时生效。
 `
 export default function AIAgentChatSetting() {
 
@@ -86,7 +89,7 @@ export default function AIAgentChatSetting() {
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
     const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
     const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
-    const headers_sys_prompt = [t("编号"), t("提示词"), t("备注")];
+    const headers_sys_prompt = [t("编号"), t("提示词"), t("LLM编辑开关"), t("LLM编辑提示词"), t("编辑规则"), t("备注")];
 
     // 系统会话提示词
     const [sys_prompt_list, set_sys_prompt_list] = useState<ai_system_prompt_item[]>([]);
@@ -389,7 +392,7 @@ export default function AIAgentChatSetting() {
     }
     // 系统会话提示词相关
     const add_sys_prompt = () => {
-        set_sys_prompt_list([...sys_prompt_list, {prompt: "", note: ""}]);
+        set_sys_prompt_list([...sys_prompt_list, {prompt: "", note: "", llm_prompt_enable: false}]);
     }
     const del_sys_prompt = (index: number) => {
         sys_prompt_list.splice(index, 1);
@@ -656,6 +659,45 @@ export default function AIAgentChatSetting() {
                                                     fileName: "",
                                                     save:async (context)=>{
                                                         item.prompt = context
+                                                        set_sys_prompt_list([...sys_prompt_list])
+                                                        editor_data.set_value_temp('')
+                                                        save_sys_prompts()
+                                                    }
+                                                })
+                                            }}/>
+                                        </div>,
+                                        // ===== LLM 编辑开关（llm_prompt_enable） =====
+                                        <Switch checked={!!item.llm_prompt_enable} onChange={(value) => {
+                                            item.llm_prompt_enable = value;
+                                            set_sys_prompt_list([...sys_prompt_list])
+                                        }} title={t("LLM编辑开关")}/>,
+                                        // ===== LLM 可编辑提示词（llm_prompt） =====
+                                        <div>
+                                            <ActionButton icon={"edit_note"} title={t("LLM编辑提示词")} onClick={() => {
+                                                editor_data.set_value_temp(item.llm_prompt ?? '')
+                                                setEditorSetting({
+                                                    model: "ace/mode/text",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        item.llm_prompt = context
+                                                        set_sys_prompt_list([...sys_prompt_list])
+                                                        editor_data.set_value_temp('')
+                                                        save_sys_prompts()
+                                                    }
+                                                })
+                                            }}/>
+                                        </div>,
+                                        // ===== LLM 编辑规则提示（llm_prompt_tip） =====
+                                        <div>
+                                            <ActionButton icon={"rule"} title={t("编辑规则")} onClick={() => {
+                                                editor_data.set_value_temp(item.llm_prompt_tip ?? '')
+                                                setEditorSetting({
+                                                    model: "ace/mode/text",
+                                                    open: true,
+                                                    fileName: "",
+                                                    save:async (context)=>{
+                                                        item.llm_prompt_tip = context
                                                         set_sys_prompt_list([...sys_prompt_list])
                                                         editor_data.set_value_temp('')
                                                         save_sys_prompts()

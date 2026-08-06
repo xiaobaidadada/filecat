@@ -236,6 +236,29 @@ export class ai_system_prompt_item {
     prompt: string;
     note: string;
     index?: number;
+
+    /**
+     * 是否启用"LLM 编辑提示词"能力（开关）。
+     * 用户选择了该系统提示词且本字段为 true 时，才会向 LLM 注册
+     * `update_llm_prompt` 工具，允许 LLM 总结会话并写入本列表项的 `llm_prompt`。
+     */
+    llm_prompt_enable?: boolean;
+
+    /**
+     * LLM 编辑后的提示词内容。
+     * 该字段是"初始终值"（用户在设置页可预填指导方向），
+     * 并在 AI 通过 `update_llm_prompt` 工具总结会话后，将总结结果写回该字段。
+     * 该内容归属本系统提示词列表项（全局保存），
+     * 用户每次选择该系统提示词发起对话时都会读取并使用最新的内容。
+     */
+    llm_prompt?: string;
+
+    /**
+     * LLM 编辑提示词时遵循的规则说明（由用户编写）。
+     * 例如："总结时不要超过 300 token"、"用简洁的项目要点记录" 等。
+     * 该提示会被注入到 system prompt 和 update_llm_prompt 工具的 description 中。
+     */
+    llm_prompt_tip?: string;
 }
 
 /**
