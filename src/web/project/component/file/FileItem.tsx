@@ -63,7 +63,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
         setTimeout(() => {
             // @ts-ignore 取消点击，也就是双击
             setClickList(getNewDeleteByList(clickList, index))
-        }, 300)
+        }, 500)
         if (props.type === FileTypeEnum.folder) {
             // 文件夹
             const item = clickList.find(v => v === index)

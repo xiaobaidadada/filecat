@@ -246,15 +246,15 @@ export default function FileList() {
     }
 
     const routeBreadcrumbsEnter = (path) => {
+        setSelectList([])
+        setClickList([])
+        setNowFileList({files: [], folders: []});
         if (isAbsolutePath(path)) {
             path = path.replace(get_user_now_pwd(user_base_info.user_data),"")
             navigate(path)
         } else {
             navigate(path_join(getRouterPath(), path))
         }
-        setSelectList([])
-        setClickList([])
-        setNowFileList({files: [], folders: []});
     }
 
     // FileList.tsx

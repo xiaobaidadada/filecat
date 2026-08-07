@@ -38,6 +38,8 @@ export interface ChatMsgPayload {
     tool_call_ends?:ai_agent_tool_call_item[];
 }
 
+export interface on_end_param { once_messages_list?: ai_agent_message_item[], _interrupted?: boolean }
+
 export interface ChatOptions {
     originMessages: ai_agent_message_list;
     token?: string;
@@ -45,7 +47,7 @@ export interface ChatOptions {
     controller: AbortController;
     /** 流式消息回调，携带分块序号、消息类型等，前端据此创建独立气泡 */
     on_msg: (payload: ChatMsgPayload) => void;
-    on_end: (stats?: { once_messages_list?:ai_agent_message_item[],_interrupted?:boolean  }) => void;
+    on_end: (stats?: on_end_param ) => void;
     sys_prompt?: string;
     sys_prompt_id?: string; // 系统提示词 ID（通过 index 标识）
     cwd?: string;

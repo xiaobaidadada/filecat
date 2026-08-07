@@ -417,10 +417,10 @@ export function use_click_folder() {
     const [file_page, set_file_page] = useAtom($stroe.file_page);
 
     return (name:string)=>{
-        navigate(webPathJoin(getRouterPath(), name))
         setSelectList([])
         setClickList([])
         setNowFileList({files: [], folders: []});
+        navigate(webPathJoin(getRouterPath(), name))
         set_file_page({
             page_num: 1,
             page_size: 200
