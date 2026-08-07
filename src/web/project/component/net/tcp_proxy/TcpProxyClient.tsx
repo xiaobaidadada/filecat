@@ -17,6 +17,7 @@ import {
     tcp_proxy_server_client, tcp_proxy_sync_task_item
 } from "../../../../../common/req/common.pojo";
 import {generateRandomHash} from "../../../../../common/StringUtil";
+import {debounce} from "../../../../../common/fun.util";
 import {use_select_config} from "../../../util/react.config";
 
 export function TcpProxyClient(props) {
@@ -90,10 +91,19 @@ export function TcpProxyClient(props) {
 
         init();
         ws.sendData(CmdType.tcp_proxy_client_status,{}).then(()=>{
-            ws.addMsg(CmdType.tcp_proxy_client_status,(data)=>{
-                init()
-            })
+            // 服务器会频繁推送穿透客户端状态，这里用防抖(500ms)合并，
+            // 避免每次推送都触发 init() 连发多个查询请求
+            const handler = debounce(() => init(), 500);
+            ws.addMsg(CmdType.tcp_proxy_client_status, handler)
         })
+
+        // 组件卸载时清理该状态消息的监听器。
+        // 因为该页面在 Menu 中会被反复卸载/重新挂载，若不清理，
+        // ws.addMsg（EventEmitter.on，末尾追加）会累积大量监听器，
+        // 导致一次状态推送触发多次 init()，进而发出成倍重复请求。
+        return () => {
+            ws.removeMsg(CmdType.tcp_proxy_client_status)
+        }
 
     }, []);
     const del_client = async (index:number) => {
