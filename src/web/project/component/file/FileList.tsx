@@ -37,11 +37,14 @@ import {formatDate} from "../../../../common/StringUtil";
 import {webPathJoin} from "../../../../common/ListUtil";
 import {ActionButton} from "../../../meta/component/Button";
 
+
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
 
 
 let pre_search: GetFilePojo;
+// 记录分页模式下最近一次加载的目录路径，用于识别目录切换（含浏览器前进/后退、URL 变化等入口）
+let pre_file_path = '';
 
 export default function FileList() {
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
@@ -132,18 +135,46 @@ export default function FileList() {
         // 文件列表初始化界面
         let rsp
         if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
-            if(file_page.page_num<0) return
-            // 分页查询
+            // 目录已切换（点击文件夹、面包屑、浏览器前进/后退、URL 变化等任意入口），重置分页从第一页重新加载
+            if(pre_file_path !== path) {
+                pre_file_path = path
+                if(file_page.page_num !== 1) {
+                    // 页码不是第一页（含 -1），重置为第一页，触发一次渲染后重新从第一页加载
+                    set_file_page({page_size: file_page.page_size, page_num: 1})
+                    return
+                }
+                // 页码已是第一页，继续往下加载第一页
+            } else if(file_page.page_num < 0) {
+                // 同一目录且已滚动到底，无需再加载
+                return
+            }
+            // 分页查询一页
             rsp = await fileHttp.post("file_get_page",{
                 param_path: path,
                 page_num:file_page.page_num,
                 page_size:file_page.page_size,
             });
+            if(rsp.code !== RCode.Success)return
             const pojo = rsp.data as GetFilePojo
+            file_after(pojo)
             if(!pojo.files?.length) {
+                // 没有更多数据，标记到底，避免继续滚动加载
                 set_file_page({page_size: file_page.page_size,page_num: -1})
+                return;
             }
-            pojo.files = cloneDeep([...nowFileList.files,...pojo.files]);
+            // 使用函数式更新基于最新的列表累积，避免 effect 闭包捕获旧目录文件导致重复显示
+            setNowFileList(prev => {
+                const files = cloneDeep(
+                    file_page.page_num === 1
+                        ? pojo.files                       // 进入新目录/第一页：直接替换
+                        : [...(prev?.files ?? []), ...pojo.files] // 同目录滚动加载后续页：追加
+                );
+                const data: GetFilePojo = {...prev, files};
+                file_sort(data, user_base_info.user_data.dir_show_type)
+                return data;
+            });
+            pre_search = rsp.data;
+            return;
         } else {
             rsp = await fileHttp.get(path);
         }
@@ -245,10 +276,13 @@ export default function FileList() {
         }
     }
 
+
     const routeBreadcrumbsEnter = (path) => {
         setSelectList([])
         setClickList([])
         setNowFileList({files: [], folders: []});
+        // 不在此手动重置分页：分页由 fileHandler 里的 pre_file_path 目录切换检测统一重置为第一页，
+        // 避免 navigate(改 location) 与 set_file_page(改 file_page) 分别触发两次加载请求
         if (isAbsolutePath(path)) {
             path = path.replace(get_user_now_pwd(user_base_info.user_data),"")
             navigate(path)

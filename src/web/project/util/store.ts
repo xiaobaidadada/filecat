@@ -50,8 +50,12 @@ export class SqliteQueryContext {
 export const $stroe = {
     // 当前的所有文件
     nowFileList: atom<GetFilePojo>({
-        folders: [{name: "文件夹1"}, {name: "文件夹2"}],
-        files: [{name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}]
+        folders: [
+            // {name: "文件夹1"}, {name: "文件夹2"}
+        ],
+        files: [
+            // {name: "文件1", type: FileTypeEnum.text}, {name: "文件2", type: FileTypeEnum.text}
+        ]
     }),
     // 当前因为各种原因正在运行的文件
     to_running_files: atom<Set<string>>(new Set<string>()),

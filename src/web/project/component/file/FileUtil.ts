@@ -414,16 +414,13 @@ export function use_click_folder() {
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
     const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
-    const [file_page, set_file_page] = useAtom($stroe.file_page);
 
     return (name:string)=>{
         setSelectList([])
         setClickList([])
         setNowFileList({files: [], folders: []});
         navigate(webPathJoin(getRouterPath(), name))
-        set_file_page({
-            page_num: 1,
-            page_size: 200
-        })
+        // 不在此手动重置分页：分页由 FileList 里的 pre_file_path 目录切换检测统一重置为第一页，
+        // 避免 navigate(改 location) 与 set_file_page(改 file_page) 分别触发两次加载请求
     }
 }
