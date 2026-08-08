@@ -444,6 +444,71 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+/* ===== 消息折叠 ===== */
+/* 折叠状态的一行摘要 */
+.chat-message-summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    color: #4b5563;
+    font-size: 0.9em;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.chat-message-summary-icon {
+    flex-shrink: 0;
+    font-size: 0.8em;
+    color: #9ca3af;
+    transition: transform 0.15s ease;
+}
+
+.chat-message-summary-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* 折叠时正文隐藏 */
+.chat-message.collapsed .chat-message-body {
+    display: none;
+}
+
+/* 消息底部操作条：默认隐藏，鼠标悬浮消息时才显示 */
+.message-collapse-bar {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 4;
+}
+
+.chat-message:hover .message-collapse-bar {
+    opacity: 1;
+}
+
+.message-collapse-bar button {
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #9ca3af;
+    transition: all 0.15s ease;
+}
+
+.message-collapse-bar button:hover {
+    color: #4b5563;
+    border-color: #e5e7eb;
+    background: #f9fafb;
+}
+
 .chat-input-shell {
     flex: 1;
     min-width: 0;

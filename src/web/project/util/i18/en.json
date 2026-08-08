@@ -244,6 +244,8 @@
   "全部编辑": "Edit All",
   "输入类目名": "Enter Category Name",
   "折叠": "Collapse",
+  "全部折叠": "Collapse All",
+  "（无内容）": "(No Content)",
   "请求头": "Request Header",
   "请求体": "Request Body",
   "值": "Value",
