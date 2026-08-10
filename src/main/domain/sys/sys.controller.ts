@@ -164,7 +164,17 @@ export class SysController {
     @Post("/systemd/sys/delete")
     async delte_systemd(@Body() pojo: { unit_name: string },@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
         return Sucess(await systemd.delete_sys_systemd(pojo.unit_name));
+    }
+
+    // 保存 systemd 服务文件内容（前端已通过 systemd/get/context 拿到绝对路径 path 一并传回）
+    @Post("/systemd/sys/save")
+    async save_sys_systemd(@Body() pojo: { unit_name: string, path: string, context: string },@Req()req) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        await systemd.save_sys_systemd(pojo.path, pojo.context);
+        return Sucess("");
     }
 
     // 日志

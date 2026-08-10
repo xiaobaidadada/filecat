@@ -6,6 +6,7 @@ import {Wss} from "../../../common/frame/ws.server";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {deleteList} from "../../../common/ListUtil";
 import fs from "fs";
+import {FileUtil} from "../file/FileUtil";
 const { spawn } = require('child_process');
 import WebSocket from "ws";
 import {data_common_key} from "../data/data_type";
@@ -229,12 +230,25 @@ export class SysSystemdService {
     }
 
 
-    async delete_sys_systemd(name:string) {
-        if(name.includes(" ")) {
-            throw "error name";
+    // 保存 systemd 服务文件内容
+    // path 是前端通过 systemd/get/context 接口拿到的系统绝对路径（如 /etc/systemd/system/xxx.service），
+    // 这里直接用它 + 项目里的 FileUtil 写入（不做任何提权操作）。
+    // 如果当前运行用户对目标文件没有写权限，fs.promises.writeFile 会直接抛出
+    // EACCES/EPERM/ENOENT 错误，此时就不执行写入，由上层报错。
+    async save_sys_systemd(path:string, context:string) {
+        // 只允许保存 systemd 服务文件，且必须是绝对路径，防止越权写任意文件
+        if (!path.startsWith("/") || !path.endsWith(".service")) {
+            throw "error path";
         }
-        const sdtout = (await SystemUtil.execAsync(`systemctl show ${name} --property=FragmentPath`)).toString();
-        const filePath = sdtout.split("=")[1].replaceAll("\n","");
+        // 不做提权，按现有权限直接写；没有权限会直接抛错，由上层处理
+        await FileUtil.writeFileSync(path, context);
+        await SystemUtil.execAsync(`systemctl daemon-reload`);
+    }
+
+
+    async delete_sys_systemd(name:string) {
+        // 复用 get_systemd_context 已有的绝对路径获取逻辑
+        const filePath = (await this.get_systemd_context(name)).path;
         await SystemUtil.execAsync(`sudo systemctl stop ${name}`);
         await SystemUtil.execAsync(`sudo systemctl disable  ${name}`);
         await SystemUtil.execAsync(`sudo rm ${filePath}`);

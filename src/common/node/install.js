@@ -111,7 +111,7 @@ ExecStart=${data.exe_path} ${param}
 Restart=always
 User=${data.User}
 Group=${data.Group}
-KillMode=process
+KillMode=control-group
 [Install]
 WantedBy=multi-user.target
     `

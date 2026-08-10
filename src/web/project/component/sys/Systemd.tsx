@@ -12,10 +12,9 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {useTranslation} from "react-i18next";
 import {formatFileSize} from "../../../../common/ValueUtil";
-import {fileHttp, sysHttp} from "../../util/config";
+import {sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotySuccess} from "../../util/noty";
-import {saveTxtReq} from "../../../../common/req/file.req";
 import {SystemdShell} from "../shell/SystemdShell";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
@@ -195,19 +194,16 @@ export function Systemd(props) {
                 open: true,
                 fileName: props.name,
                 save: async (context) => {
-                    // const data = {
-                    //     context,
-                    //     path:rsq.data.path
-                    // }
-                    const data: saveTxtReq = {
+                    // 直接把 systemd/get/context 接口已经返回的绝对路径 rsq.data.path 传给后端保存。
+                    // 系统 systemd 文件位于 /etc/systemd/system/ 下，必须走专用的 systemd/sys/save 接口
+                    // 用 FileUtil 按现有权限直接写；不能走通用文件 save/{path} 接口，那会把绝对路径
+                    // 当成相对路径拼到 filecat 根目录下，导致写到一个不存在的目录而报 ENOENT。
+                    const saveBody: any = {
+                        unit_name: name,
+                        path: rsq.data.path,
                         context
                     }
-                    if (rsq.data.path[0] === "/") {
-                        rsq.data.path =  rsq.data.path.slice(1);
-                    }
-                    // 取决于是否有修改这个文件的权限了
-                    const rsq1 = await fileHttp.post(`save/${rsq.data.path}`, data)
-                    // const rsq1 = await fileHttp.post("common/save", data)
+                    const rsq1 = await sysHttp.post("systemd/sys/save", saveBody)
                     if (rsq1.code === RCode.Success) {
                         editor_data.set_value_temp('')
                         setEditorSetting({open: false, model: '', fileName: '', save: null})
