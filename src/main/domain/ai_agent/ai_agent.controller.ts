@@ -72,7 +72,23 @@ export class Ai_AgentController {
     async session_create(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        return Sucess(aiAgentMemoryService.create_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.title))
+        return Sucess(aiAgentMemoryService.create_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.title, undefined, data?.sys_prompt_id))
+    }
+
+    /**
+     * 保存/更新当前会话选用的“系统提示词 ID”
+     * body: { session_id: string, sys_prompt_id?: string }
+     */
+    @Post("/session/sys_prompt")
+    async session_sys_prompt(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.update_sys_prompt(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.session_id,
+            data?.sys_prompt_id
+        );
+        return Sucess("ok");
     }
 
     @Post("/session/get")

@@ -412,6 +412,8 @@ export class ai_agent_chat_session_item {
     updated_at: number;
     // token 消耗统计
     usage_stats?: ai_agent_usage_stats;
+    // 系统提示词 ID（通过 index 标识），选择后随会话持久化，下次加载会话时自动选中
+    sys_prompt_id?: string;
 }
 
 /** AI Agent token 消耗统计 */

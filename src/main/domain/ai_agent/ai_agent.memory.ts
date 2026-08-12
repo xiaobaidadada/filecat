@@ -111,6 +111,8 @@ function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boole
     if(normalized.attachments?.length) {
         return list;
     }
+    // 已执行的工具结果（tool_call_ends 里的每一项都对应一条 tool 响应消息）
+    let toolResponseCount = 0;
     if(message.tool_call_ends?.length) {
         for (const it of message.tool_call_ends) {
             const raw = it.tool_result ?? it.error ?? "";
@@ -127,6 +129,28 @@ function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boole
                     tool_call_id: it.tool_call_id,
                     content: raw.slice(0, toolContentLimit) + "\n[...已截断]"
                 })
+            }
+            toolResponseCount++;
+        }
+    }
+    // 防脏数据兜底：若 assistant 声明了 tool_calls，但对应的 tool 响应消息数量不足
+    // （典型场景：用户中途“停止”，LLM 已返回 tool_calls 但工具尚未执行完，导致保存的
+    //   消息里只有带 tool_calls 的 assistant、没有对应的 tool 响应。）
+    // OpenAI 要求“带 tool_calls 的 assistant 消息必须紧跟对应数量的 tool 响应消息”，
+    // 否则下一次请求会报
+    //   “An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'”。
+    // 这里把缺失的 tool 响应补齐，避免历史 session 因中断残留不完整序列而报错。
+    const toolCalls = message.tool_calls ?? [];
+    if (toolCalls.length > toolResponseCount) {
+        for (const tc of toolCalls) {
+            // 该 tool_call 没有对应的 tool_call_end（未执行完成），补一条“中断”占位响应
+            const already = (message.tool_call_ends ?? []).some(end => end.tool_call_id === tc.id);
+            if (!already && tc.id) {
+                list.push({
+                    role: "tool",
+                    tool_call_id: tc.id,
+                    content: "[该工具调用因对话被中断而未执行完成，无结果返回。]"
+                });
             }
         }
     }
@@ -274,7 +298,7 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sessionId?:string) {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string) {
         const store = this.read_index_of_session();
         const session: ai_agent_chat_session_item = {
             id: sessionId??nowId(),
@@ -284,19 +308,20 @@ export class AiAgentMemoryService {
             long_term_memory: "",
             source,
             created_at: Date.now(),
-            updated_at: Date.now()
+            updated_at: Date.now(),
+            sys_prompt_id: sys_prompt_id,
         };
         const fileName = this.writeSession(userId, session);
         this.upsertMeta(store, userId, session, fileName);
         return cloneSession(session);
     }
 
-    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web") {
+    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web", sys_prompt_id?:string, ensureSessionId?:string) {
         if (sessionId) {
             const session = this.get_session(userId, sessionId);
             if (session) return session;
         }
-        return this.create_session(userId, title, source,sessionId);
+        return this.create_session(userId, title, source, sys_prompt_id, ensureSessionId);
     }
 
     public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark", title: string) {
@@ -393,6 +418,23 @@ export class AiAgentMemoryService {
         } catch (e) {
             console.error("sessions_update_meta: 同步更新 session 文件失败", e);
         }
+    }
+
+    /**
+     * 更新会话的“系统提示词 ID”（选择/切换后持久化，下次加载会话自动选中）
+     * @param userId 用户 ID
+     * @param sessionId 会话 ID
+     * @param sys_prompt_id 系统提示词 ID（可能为空字符串表示清除）
+     */
+    public update_sys_prompt(userId: string, sessionId: string, sys_prompt_id?: string) {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.read_session(userId, meta);
+        if (!session) return;
+        // 空/undefined 均视为清除该系统提示词
+        session.sys_prompt_id = sys_prompt_id || undefined;
+        this.writeSession(userId, session, meta.file_name);
     }
 
     // 将本次机器人的聊天结果加入到历史会话中

@@ -74,6 +74,21 @@ export default function AiAgentChatPage() {
     const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set());
     const [selectedSysPromptId, setSelectedSysPromptId] = useState<string>("");
 
+    /**
+     * 切换“系统提示词”选择：更新本地状态，并把选择持久化到当前会话，
+     * 这样下次加载该会话时会自动恢复该提示词。
+     */
+    const handleSystemPromptChange = (id: string) => {
+        setSelectedSysPromptId(id);
+        // 只有在已有活动会话时才需要持久化
+        if (activeSessionId) {
+            ai_agentHttp.post("session/sys_prompt", {
+                session_id: activeSessionId,
+                sys_prompt_id: id || undefined
+            }).catch(console.error);
+        }
+    };
+
     // ===== 引用 =====
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -172,6 +187,8 @@ export default function AiAgentChatPage() {
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         setMessages(toUiMessages(session.messages));
+        // 恢复该会话保存的系统提示词选择（自动选中）
+        setSelectedSysPromptId(session.sys_prompt_id ?? "");
         if (switch_menu) {
             set_ai_session_collapsed(false);
         }
@@ -181,11 +198,17 @@ export default function AiAgentChatPage() {
     };
 
     const createSession = async (sysPromptId?: string) => {
-        const result = await ai_agentHttp.post("session", { title: "新会话" });
+        // 未显式传提示词时，沿用当前选中的（保证新会话继承当前提示词）
+        const targetPromptId = sysPromptId !== undefined ? sysPromptId : selectedSysPromptId;
+        const result = await ai_agentHttp.post("session", {
+            title: "新会话",
+            sys_prompt_id: targetPromptId || undefined
+        });
         if (result.code !== RCode.Success) return;
         const session = result.data as ai_agent_chat_session_item;
         setActiveSessionId(session.id);
         setMessages([]);
+        setSelectedSysPromptId(session.sys_prompt_id ?? "");
         set_ai_session_collapsed(false);
         await loadSessions(session.id);
         requestAnimationFrame(() => {
@@ -252,7 +275,8 @@ export default function AiAgentChatPage() {
         let sessionId = activeSessionId;
         if (!sessionId) {
             const result = await ai_agentHttp.post("session", {
-                title: (text || pendingAttachments[0]?.name || "新会话").slice(0, 28)
+                title: (text || pendingAttachments[0]?.name || "新会话").slice(0, 28),
+                sys_prompt_id: selectedSysPromptId || undefined
             });
             if (result.code !== RCode.Success) return;
             const session = result.data as ai_agent_chat_session_item;
@@ -552,7 +576,7 @@ export default function AiAgentChatPage() {
                 bgProcessCount={bgProcessCount}
                 onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
                 selectedSysPromptId={selectedSysPromptId}
-                setSelectedSysPromptId={setSelectedSysPromptId}
+                setSelectedSysPromptId={handleSystemPromptChange}
             />
 
             <div className="chat-page chat-page-with-sessions">

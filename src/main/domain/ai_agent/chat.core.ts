@@ -512,6 +512,14 @@ const workMessages: ai_agent_message_list = [
 
             // 没有 tool_calls，直接结束
             if (_interrupted || (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0)) {
+                // 中断保护：若对话被停止（_interrupted）时，LLM 可能已经返回了 tool_calls，
+                // 但对应的工具结果（tool_call_ends）并未产生。若直接把带 tool_calls 的
+                // assistant 消息保存进会话，下一次请求会因为“缺少对应的 tool 响应消息”而报错
+                // （OpenAI: An assistant message with 'tool_calls' must be followed by tool messages...）。
+                // 因此中断时清空未完成的 tool_calls，只保留已产出的文本内容。
+                if (_interrupted && assistantMessage.tool_call_ends?.length === 0) {
+                    assistantMessage.tool_calls = undefined;
+                }
                 on_end({ once_messages_list ,_interrupted});
                 return;
             }
