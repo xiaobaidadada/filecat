@@ -53,7 +53,8 @@ export default function FileEditor() {
         editor_data.get_editor()?.['formatCode']()
     }
     const handleKeyDown = (event) => {
-        if (event.ctrlKey && event.key === 's') {
+        // macOS 使用 Command(metaKey)+S，Windows 使用 Ctrl+S，两者都兼容
+        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
             event.preventDefault();
             if (editorSetting.save && have_update) {
                 save();

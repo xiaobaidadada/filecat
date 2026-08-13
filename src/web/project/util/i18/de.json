@@ -9,11 +9,6 @@
   "路径": "Pfad",
   "是否默认": "Ist Standard?",
   "备注": "Bemerkung",
-  "替换规则正则错误": "Fehler im Ersetzungs-RegExp",
-  "字符串替换": "Zeichenkettenersetzung",
-  "正则匹配字符串": "RegExp-Muster",
-  "替换为": "Ersetzen durch",
-  "字符串替换查询": "Regex-Ersetzungsabfrage",
   "编辑SQL": "SQL bearbeiten",
   "SQL 预设": "SQL-Voreinstellung",
   "耗时": "Dauer",
@@ -613,5 +608,7 @@
   "当前": "Aktuell",
   "扫描已取消": "Scan abgebrochen",
   "自动换行": "Automatischer Umbruch",
-  "不换行": "Kein Umbruch"
+  "不换行": "Kein Umbruch",
+  "替换": "Ersetzen",
+  "env编辑": "Env bearbeiten"
 }

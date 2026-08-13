@@ -11,7 +11,7 @@ import {$stroe} from "../../../util/store";
 import Ace from "./Ace";
 import {editor_data} from "../../../util/store.util";
 import {InputText, Select} from "../../../../meta/component/Input";
-import {SqlPresetItem, SqlReplaceItem} from "../../../../../common/req/setting.req";
+import {SqlPresetItem} from "../../../../../common/req/setting.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
 import {NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
@@ -129,6 +129,9 @@ export default function DbQuery() {
         if (!item) return;
         setSelectedPreset(idx);
         setEditorSql(item.sql);
+        // env 里 opt 键的值作为 SQL 中要替换的源词，非空时显示替换输入框
+        setActiveEnv(parseEnvValue(item.env ?? "", "find"));
+        setEnvValue("");
         setError("");
     };
 
@@ -176,36 +179,31 @@ export default function DbQuery() {
         }
     };
 
-    // ===== 字符串替换查询 =====
-    // 当前用户的字符串替换规则
-    const [replaceRules, setReplaceRules] = useState<SqlReplaceItem[]>([]);
-    // 选中的替换规则下标，-1 表示未选择（不使用替换）
-    const [selectedReplace, setSelectedReplace] = useState<number>(-1);
-    // 替换输入框的值（将 SQL 中匹配的字符串替换为该值）
-    const [replaceValue, setReplaceValue] = useState("");
+    // ===== 预设 env 属性 =====
+    // env 为通用 key=value 配置文本（如 "find=替换词"）；当前用 find 键的值作为 SQL 中要替换的源词
+    const parseEnvValue = (envText: string, key: string): string => {
+        if (!envText) return "";
+        for (const line of envText.split("\n")) {
+            const idx = line.indexOf("=");
+            if (idx < 0) continue;
+            if (line.slice(0, idx).trim() === key) {
+                return line.slice(idx + 1).trim();
+            }
+        }
+        return "";
+    };
+    // 当前选中预设中要替换的源词（env 里 opt 的值）；空表示未启用替换
+    const [activeEnv, setActiveEnv] = useState<string>("");
+    // 替换输入框的值（用该值替换 SQL 中所有源词）
+    const [envValue, setEnvValue] = useState("");
 
-    // 从当前用户数据中加载字符串替换规则
-    useEffect(() => {
-        const list = user_base_info?.user_data?.sql_replace_list;
-        setReplaceRules(list?.length ? [...list] : []);
-        setSelectedReplace(-1);
-        setReplaceValue("");
-    }, [user_base_info?.user_data?.sql_replace_list]);
-
-    // 根据选中的替换规则，对 SQL 做字符串替换（大小写敏感）
-    const applyReplace = (sqlText: string): string => {
-        if (selectedReplace < 0 || !replaceRules[selectedReplace]) {
+    // 根据当前预设的 env，把 SQL 中的源词替换为输入值（纯字符串，大小写敏感）
+    const applyEnvReplace = (sqlText: string): string => {
+        if (!activeEnv) {
             return sqlText;
         }
-        const pattern = replaceRules[selectedReplace].pattern;
-        if (!pattern) {
-            return sqlText;
-        }
-        try {
-            return sqlText.replace(new RegExp(pattern, "g"), replaceValue);
-        } catch (e) {
-            throw new Error(t("替换规则正则错误"));
-        }
+        // 用输入值（可为空）替换 SQL 中的所有源词
+        return sqlText.split(activeEnv).join(envValue);
     };
 
     // 跳转到 SQL 预设设置独立页面
@@ -225,6 +223,8 @@ export default function DbQuery() {
         setTimerRunning(false);
         setHasQuery(false);
         setTimerKey(0);
+        setActiveEnv("");
+        setEnvValue("");
         editor_data.set_value_temp("", editorId);
         if (!dbPath) {
             setError("请先从文件右键打开一个数据库");
@@ -250,8 +250,8 @@ export default function DbQuery() {
         setTimerKey(prev => prev + 1);
         setTimerRunning(true);
         try {
-            // 若选中了字符串替换规则，先对 SQL 做替换再请求
-            const finalSql = applyReplace(query);
+            // 若当前预设设置了 env 占位符，先用 env 输入值替换再请求
+            const finalSql = applyEnvReplace(query);
             const rsp = await fileHttp.post("sqlite/query", {
                 path: dbPath,
                 sql: finalSql,
@@ -318,26 +318,11 @@ export default function DbQuery() {
                     title={"SQL 查询"}
                     titleCom={
                         <div className={"db-query-page__preset-bar"}>
-                            {replaceRules.length > 0 && (
-                                <Select
-                                    width={"12rem"}
-                                    tip={t("字符串替换")}
-                                    value={selectedReplace}
-                                    onChange={(idx) => {
-                                        setSelectedReplace(idx as number);
-                                        setReplaceValue("");
-                                    }}
-                                    options={replaceRules.map((v, i) => ({
-                                        value: i,
-                                        title: `${v.note || v.pattern.slice(0, 20)}`,
-                                    }))}
-                                />
-                            )}
-                            {selectedReplace >= 0 && (
+                            {activeEnv && (
                                 <InputText
-                                    placeholder={t("替换为")}
-                                    value={replaceValue}
-                                    handleInputChange={setReplaceValue}
+                                    placeholder={`${t("替换")}: ${activeEnv}`}
+                                    value={envValue}
+                                    handleInputChange={setEnvValue}
                                     width={"12rem"}
                                 />
                             )}

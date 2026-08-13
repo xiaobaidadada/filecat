@@ -36,13 +36,7 @@ export class SqlPresetItem {
     index?: number; // 序号
     note: string; // 备注
     sql: string; // SQL 代码
-}
-
-// SQL 字符串替换规则项（大小写敏感）
-export class SqlReplaceItem {
-    index?: number; // 序号
-    note: string; // 备注
-    pattern: string; // 正则匹配字符串（大小写敏感）
+    env?: string; // env 替换参数：设置了它，在查询页选择该预设时会显示替换输入框，用输入值替换 SQL 中的该占位符
 }
 
 export enum SysSoftware {

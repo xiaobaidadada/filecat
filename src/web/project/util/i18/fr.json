@@ -9,11 +9,6 @@
   "路径": "Chemin",
   "是否默认": "Est-ce par défaut?",
   "备注": "Remarque",
-  "替换规则正则错误": "Erreur de regex dans la règle",
-  "字符串替换": "Remplacer une chaîne",
-  "正则匹配字符串": "Motif regex",
-  "替换为": "Remplacer par",
-  "字符串替换查询": "Requête avec remplacement",
   "编辑SQL": "Modifier SQL",
   "SQL 预设": "Préréglage SQL",
   "耗时": "Temps écoulé",
@@ -613,5 +608,7 @@
   "当前": "Actuel",
   "扫描已取消": "Scan annulé",
   "自动换行": "Retour à la ligne automatique",
-  "不换行": "Pas de retour"
+  "不换行": "Pas de retour",
+  "替换": "Remplacer",
+  "env编辑": "Modifier env"
 }

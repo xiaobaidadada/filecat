@@ -9,11 +9,6 @@
   "路径": "Ruta",
   "是否默认": "¿Es el predeterminado?",
   "备注": "Nota",
-  "替换规则正则错误": "Error de regex en la regla",
-  "字符串替换": "Reemplazo de texto",
-  "正则匹配字符串": "Patrón regex",
-  "替换为": "Reemplazar por",
-  "字符串替换查询": "Consulta con reemplazo",
   "编辑SQL": "Editar SQL",
   "SQL 预设": "Preajuste SQL",
   "耗时": "Duración",
@@ -613,5 +608,7 @@
   "当前": "Actual",
   "扫描已取消": "Escaneo cancelado",
   "自动换行": "Ajuste automático",
-  "不换行": "Sin ajuste"
+  "不换行": "Sin ajuste",
+  "替换": "Reemplazar",
+  "env编辑": "Editar env"
 }
