@@ -38,6 +38,13 @@ export class SqlPresetItem {
     sql: string; // SQL 代码
 }
 
+// SQL 字符串替换规则项（大小写敏感）
+export class SqlReplaceItem {
+    index?: number; // 序号
+    note: string; // 备注
+    pattern: string; // 正则匹配字符串（大小写敏感）
+}
+
 export enum SysSoftware {
     ffmpeg = "ffmpeg",
     smartmontools = "smartctl",

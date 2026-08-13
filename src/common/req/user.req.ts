@@ -1,4 +1,4 @@
-import {FileQuickCmdItem, FileSettingItem, QuickCmdItem, SqlPresetItem, SysSoftware, SysSoftwareItem} from "./setting.req";
+import {FileQuickCmdItem, FileSettingItem, QuickCmdItem, SqlPresetItem, SqlReplaceItem, SysSoftware, SysSoftwareItem} from "./setting.req";
 import {path_join} from "pty-shell/dist/path_util";
 
 export class UserLogin {
@@ -189,6 +189,7 @@ export class UserData extends UserLogin {
     file_list_zoom?:number;
 
     sql_preset_list?: SqlPresetItem[]; // SQL 查询预设列表（个人保存）
+    sql_replace_list?: SqlReplaceItem[]; // SQL 字符串替换规则列表（个人保存）
 
     upload_file_ignore?:string
     upload_file_ignore_list?:string[]

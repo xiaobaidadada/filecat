@@ -1,6 +1,6 @@
 import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {UserAuth, UserBaseInfo, UserData, UserLogin} from "../../../common/req/user.req";
-import {SqlPresetItem} from "../../../common/req/setting.req";
+import {SqlPresetItem, SqlReplaceItem} from "../../../common/req/setting.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {generateSaltyUUID} from "../../../common/StringUtil";
@@ -197,6 +197,8 @@ export class UserController {
         is_file_list_zoom?: boolean,
         is_sql_preset?: boolean,
         sql_preset_list?: SqlPresetItem[],
+        is_sql_replace?: boolean,
+        sql_replace_list?: SqlReplaceItem[],
         value?:any,
     }, @Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
@@ -213,6 +215,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {file_list_zoom: body.value} as UserData);
         } else if(body.is_sql_preset) {
             userService.only_update_user_data(user_id, {sql_preset_list: body.sql_preset_list} as UserData);
+        } else if(body.is_sql_replace) {
+            userService.only_update_user_data(user_id, {sql_replace_list: body.sql_replace_list} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

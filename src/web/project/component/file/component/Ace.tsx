@@ -9,6 +9,7 @@ import "ace-builds/src-noconflict/mode-tsx";
 import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-sh";
 import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/mode-sql";
 import "ace-builds/src-noconflict/theme-cloud9_day";
 import "ace-builds/src-noconflict/theme-cloud_editor_dark";
 import 'ace-builds/src-noconflict/ext-beautify'

@@ -60,73 +60,6 @@
     color: #6b7280;
 }
 
-/* 设置弹窗内的预设列表 */
-.db-query-preset-setting {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 32rem;
-    max-width: 42rem;
-}
-
-.db-query-preset-setting__toolbar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.db-query-preset-setting__list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 55vh;
-    overflow-y: auto;
-}
-
-.db-query-preset-setting__row {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 8px;
-    border: 1px solid var(--borderColor, #e5e7eb);
-    border-radius: 8px;
-}
-
-.db-query-preset-setting__index {
-    flex: 0 0 auto;
-    width: 2rem;
-    line-height: 2rem;
-    text-align: center;
-    font-weight: 600;
-    opacity: 0.7;
-}
-
-.db-query-preset-setting__row > .select_wrapper,
-.db-query-preset-setting__row > div:not(.input_radio_row) {
-    flex: 1;
-    min-width: 0;
-}
-
-.db-query-preset-setting__sql {
-    flex: 2;
-    min-width: 0;
-    min-height: 3rem;
-    max-height: 10rem;
-    padding: 6px 8px;
-    border: 1px solid var(--borderColor, #e5e7eb);
-    border-radius: 6px;
-    background: transparent;
-    font-family: monospace;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-.db-query-preset-setting__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
 /* 创建新预设时的备注输入弹窗 */
 .db-query-preset-input {
     display: flex;
@@ -138,5 +71,12 @@
 .db-query-preset-input__actions {
     display: flex;
     justify-content: flex-end;
+}
+
+/* SQL 设置独立页面的卡片工具栏 */
+.db-query-setting__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 

@@ -35,6 +35,7 @@ const AIAgentChatSetting = React.lazy(()=> import('./aichat/AIAgentChatSetting')
 const AIRebotSetting = React.lazy(()=> import('./aichat/./AIRobotSetting'))
 const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
+const SqlPresetSetting = React.lazy(() => import("./file/component/./SqlPresetSetting"));
 const GitStudio = React.lazy(() => import("./file/component/git/GitStudio"));
 
 function Layout() {
@@ -103,6 +104,7 @@ function Layout() {
             { rto: `${routerConfig.ai_agent_setting_page}`, component: <AIAgentChatSetting />},
             { rto: `${routerConfig.ai_rebot_setting_page}`, component: <AIRebotSetting />},
             { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
+            { rto: `${routerConfig.sql_preset_setting_page}`, component: <SqlPresetSetting />},
             { rto: `${routerConfig.studio_page}`, component: <StudioLazy />},
             { rto: `${routerConfig.git_page}`, component: <GitStudio />}
         ]

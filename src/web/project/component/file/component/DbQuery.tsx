@@ -11,13 +11,14 @@ import {$stroe} from "../../../util/store";
 import Ace from "./Ace";
 import {editor_data} from "../../../util/store.util";
 import {InputText, Select} from "../../../../meta/component/Input";
-import {SqlPresetItem} from "../../../../../common/req/setting.req";
+import {SqlPresetItem, SqlReplaceItem} from "../../../../../common/req/setting.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
 import {NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../../common/Result.pojo";
 import {GlobalContext} from "../../../GlobalProvider";
 import Timer from "../../../../meta/component/Timer";
+import {routerConfig} from "../../../../../common/RouterConfig";
 
 type ViewMode = "table" | "json";
 
@@ -57,8 +58,8 @@ export default function DbQuery() {
     const {t} = useTranslation();
     const {initUserInfo} = useContext(GlobalContext);
     const [sqlite_query_context] = useAtom($stroe.sqlite_query_context);
-    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
-    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const dbPath = useMemo(() => sqlite_query_context?.path ?? "", [sqlite_query_context?.path]);
     const dbLabel = useMemo(() => {
         if (!sqlite_query_context?.path) {
@@ -175,71 +176,41 @@ export default function DbQuery() {
         }
     };
 
-    // 弹出 SQL 预设管理设置页面
-    const openPresetSetting = () => {
-        set_prompt_card({
-            open: true,
-            title: t("SQL 预设设置"),
-            context_div: (
-                <div className={"db-query-preset-setting"}>
-                    <div className={"db-query-preset-setting__toolbar"}>
-                        <ActionButton
-                            icon={"add"}
-                            title={t("添加预设")}
-                            onClick={() => {
-                                setSqlPresets(prev => [...prev, {note: "", sql: ""} as SqlPresetItem]);
-                                setSelectedPreset(-1);
-                            }}
-                        />
-                        <ActionButton
-                            icon={"save"}
-                            title={t("保存")}
-                            onClick={async () => {
-                                const ok = await savePresetList(sqlPresets);
-                                if (ok) NotySuccess(t("保存成功"));
-                            }}
-                        />
-                    </div>
-                    <div className={"db-query-preset-setting__list"}>
-                        {sqlPresets.map((item, index) => (
-                            <div key={index} className={"db-query-preset-setting__row"}>
-                                <span className={"db-query-preset-setting__index"}>{index + 1}</span>
-                                <InputText
-                                    placeholder={t("备注")}
-                                    value={item.note}
-                                    handleInputChange={(value) => {
-                                        item.note = value;
-                                        setSqlPresets([...sqlPresets]);
-                                    }}
-                                />
-                                <textarea
-                                    className={"db-query-preset-setting__sql"}
-                                    placeholder={t("SQL代码")}
-                                    value={item.sql}
-                                    onChange={(e) => {
-                                        item.sql = e.target.value;
-                                        setSqlPresets([...sqlPresets]);
-                                    }}
-                                />
-                                <ActionButton
-                                    icon={"delete"}
-                                    title={t("删除")}
-                                    onClick={() => {
-                                        const list = sqlPresets.filter((_, i) => i !== index);
-                                        setSqlPresets(list);
-                                        if (selectedPreset === index) setSelectedPreset(-1);
-                                    }}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    <div className={"db-query-preset-setting__footer"}>
-                        <ButtonText text={t("取消")} clickFun={() => set_prompt_card({open: false})}/>
-                    </div>
-                </div>
-            ),
-            cancel: () => set_prompt_card({open: false}),
-        });
+    // ===== 字符串替换查询 =====
+    // 当前用户的字符串替换规则
+    const [replaceRules, setReplaceRules] = useState<SqlReplaceItem[]>([]);
+    // 选中的替换规则下标，-1 表示未选择（不使用替换）
+    const [selectedReplace, setSelectedReplace] = useState<number>(-1);
+    // 替换输入框的值（将 SQL 中匹配的字符串替换为该值）
+    const [replaceValue, setReplaceValue] = useState("");
+
+    // 从当前用户数据中加载字符串替换规则
+    useEffect(() => {
+        const list = user_base_info?.user_data?.sql_replace_list;
+        setReplaceRules(list?.length ? [...list] : []);
+        setSelectedReplace(-1);
+        setReplaceValue("");
+    }, [user_base_info?.user_data?.sql_replace_list]);
+
+    // 根据选中的替换规则，对 SQL 做字符串替换（大小写敏感）
+    const applyReplace = (sqlText: string): string => {
+        if (selectedReplace < 0 || !replaceRules[selectedReplace]) {
+            return sqlText;
+        }
+        const pattern = replaceRules[selectedReplace].pattern;
+        if (!pattern) {
+            return sqlText;
+        }
+        try {
+            return sqlText.replace(new RegExp(pattern, "g"), replaceValue);
+        } catch (e) {
+            throw new Error(t("替换规则正则错误"));
+        }
+    };
+
+    // 跳转到 SQL 预设设置独立页面
+    const goPresetSetting = () => {
+        navigate(routerConfig.sql_preset_setting_page);
     };
 
     useEffect(() => {
@@ -279,9 +250,11 @@ export default function DbQuery() {
         setTimerKey(prev => prev + 1);
         setTimerRunning(true);
         try {
+            // 若选中了字符串替换规则，先对 SQL 做替换再请求
+            const finalSql = applyReplace(query);
             const rsp = await fileHttp.post("sqlite/query", {
                 path: dbPath,
-                sql: query,
+                sql: finalSql,
             });
             setResult(rsp.data);
             setViewMode("table");
@@ -334,7 +307,7 @@ export default function DbQuery() {
                         key={"preset-setting"}
                         icon={"settings"}
                         title={t("SQL预设设置")}
-                        onClick={openPresetSetting}
+                        onClick={goPresetSetting}
                     />,
                 ]}
                 children={<TextTip context={dbLabel} tip_context={"点击复制数据库信息"} />}
@@ -345,6 +318,29 @@ export default function DbQuery() {
                     title={"SQL 查询"}
                     titleCom={
                         <div className={"db-query-page__preset-bar"}>
+                            {replaceRules.length > 0 && (
+                                <Select
+                                    width={"12rem"}
+                                    tip={t("字符串替换")}
+                                    value={selectedReplace}
+                                    onChange={(idx) => {
+                                        setSelectedReplace(idx as number);
+                                        setReplaceValue("");
+                                    }}
+                                    options={replaceRules.map((v, i) => ({
+                                        value: i,
+                                        title: `${v.note || v.pattern.slice(0, 20)}`,
+                                    }))}
+                                />
+                            )}
+                            {selectedReplace >= 0 && (
+                                <InputText
+                                    placeholder={t("替换为")}
+                                    value={replaceValue}
+                                    handleInputChange={setReplaceValue}
+                                    width={"12rem"}
+                                />
+                            )}
                             {sqlPresets.length > 0 && (
                                 <Select
                                     width={"16rem"}
