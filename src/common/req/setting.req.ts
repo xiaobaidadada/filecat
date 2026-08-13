@@ -31,6 +31,13 @@ export class FileQuickCmdItem {
     params: string;
 }
 
+// SQL 查询预设项
+export class SqlPresetItem {
+    index?: number; // 序号
+    note: string; // 备注
+    sql: string; // SQL 代码
+}
+
 export enum SysSoftware {
     ffmpeg = "ffmpeg",
     smartmontools = "smartctl",

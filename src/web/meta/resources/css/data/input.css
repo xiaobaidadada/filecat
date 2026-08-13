@@ -149,6 +149,17 @@
     width: 100%;
 }
 
+/* 下拉框左侧的文字标签：只显示文字，不套用输入框样式 */
+.select_tip {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    margin-right: .5rem;
+    color: inherit;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
 .select_container {
     position: relative;
     flex: 1;

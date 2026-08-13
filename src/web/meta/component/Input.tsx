@@ -413,7 +413,7 @@ export function Select(props: SelectProps) {
         <div className="select_wrapper" style={{
             width: props.width || '100%',
         }}>
-            {props.tip && <p className="input input_left">{props.tip}</p>}
+            {props.tip && <span className="select_tip">{props.tip}</span>}
             <div className="select_container">
                 <div
                     ref={triggerRef}
