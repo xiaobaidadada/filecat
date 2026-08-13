@@ -13,10 +13,11 @@ import {editor_data} from "../../../util/store.util";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {SqlPresetItem} from "../../../../../common/req/setting.req";
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
-import {NotyFail, NotySuccess} from "../../../util/noty";
+import {NotySuccess} from "../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../../common/Result.pojo";
 import {GlobalContext} from "../../../GlobalProvider";
+import Timer from "../../../../meta/component/Timer";
 
 type ViewMode = "table" | "json";
 
@@ -72,6 +73,10 @@ export default function DbQuery() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [result, setResult] = useState<sqliteQueryResult | null>(null);
+    // 查询计时：是否正在计时、计时轮次、是否已发起过查询
+    const [timerRunning, setTimerRunning] = useState(false);
+    const [timerKey, setTimerKey] = useState(0);
+    const [hasQuery, setHasQuery] = useState(false);
 
     // ===== SQL 查询预设 =====
     const defaultSqlPreset = () => ({
@@ -246,6 +251,9 @@ export default function DbQuery() {
         setError("");
         setResult(null);
         setViewMode("table");
+        setTimerRunning(false);
+        setHasQuery(false);
+        setTimerKey(0);
         editor_data.set_value_temp("", editorId);
         if (!dbPath) {
             setError("请先从文件右键打开一个数据库");
@@ -266,6 +274,10 @@ export default function DbQuery() {
         }
         setLoading(true);
         setError("");
+        // 开启实时计时：重置轮次使其从 0 重新开始，并标记为计时中
+        setHasQuery(true);
+        setTimerKey(prev => prev + 1);
+        setTimerRunning(true);
         try {
             const rsp = await fileHttp.post("sqlite/query", {
                 path: dbPath,
@@ -277,7 +289,8 @@ export default function DbQuery() {
             setError(e?.message ?? `${e}`);
             setResult(null);
         } finally {
-        setLoading(false);
+            setTimerRunning(false); // 查询结束，停止计时并保留总耗时
+            setLoading(false);
         }
     };
 
@@ -383,7 +396,21 @@ export default function DbQuery() {
 
                 <Card
                     title={"查询结果"}
-                    titleCom={<span>{result ? `${result.row_count} 行` : "暂无结果"}</span>}
+                    titleCom={
+                        <span className={"db-query-page__result-meta"}>
+                            {result ? `${result.row_count} 行` : "暂无结果"}
+                            {hasQuery && (
+                                <span className={"db-query-page__elapsed"}>
+                                    <Timer
+                                        running={timerRunning}
+                                        resetKey={timerKey}
+                                        prefix={`${t("耗时")}: `}
+                                        format="auto"
+                                    />
+                                </span>
+                            )}
+                        </span>
+                    }
                 >
                     {result && viewMode === "table" && (
                         <Table

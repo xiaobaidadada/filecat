@@ -47,6 +47,19 @@
     flex-wrap: wrap;
 }
 
+/* 查询结果标题区的元信息（行数与耗时） */
+.db-query-page__result-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.db-query-page__elapsed {
+    opacity: 0.75;
+    font-size: 0.9em;
+    color: #6b7280;
+}
+
 /* 设置弹窗内的预设列表 */
 .db-query-preset-setting {
     display: flex;
