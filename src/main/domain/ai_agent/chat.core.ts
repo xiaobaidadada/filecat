@@ -484,7 +484,19 @@ const workMessages: ai_agent_message_list = [
                     // 直接抛出异常，由外层 chat_ws 的 catch 统一处理
                     // 注意：不能先调 on_end，否则前端收到 ai_chat_end 后会 cleanup()，
                     // 导致后续的 ai_chat_error 消息无人接收
-                    throw e
+                    // throw e
+                    _interrupted = true
+                    let m :string = "";
+                    if (typeof e === 'string') {
+                        m = e as string
+                    } else if(e != null) {
+                        try {
+                            m = e?.message || JSON.stringify(e)
+                        } catch (e1) {
+                            console.log(e1)
+                        }
+                    }
+                    assistantMessage.content += m;
                 },
                 abort_error_call:()=>{
                     _interrupted = true
