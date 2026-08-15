@@ -23,7 +23,10 @@ export function defaultSqlPreset(t: (key: string) => string): SqlPresetItem {
 }
 
 // SQL 预设 env 默认模板（ini 格式，带注释说明怎么填）
-export const sqlEnvDefault = `# 可选：设置 SQL 中的"替换词"（在查询页选中该预设后，会显示输入框）\n# 例子：SQL 为  SELECT * FROM t WHERE id = 123456 ，请填写下面的 find=123456\n# 这样查询页输入新值即可把 SQL 中的 123456 替换掉后再查询\nfind=`;
+export const sqlEnvDefault = `# 可选：设置 SQL 中的"替换词"（在查询页选中该预设后，会显示输入框）
+# 例子：SQL 为  SELECT * FROM t WHERE id = 123456 ，请填写下面的 find=123456
+# 这样查询页输入新值即可把 SQL 中的 123456 替换掉后再查询
+find=`;
 
 /**
  * SQL 设置独立页面（路由访问）

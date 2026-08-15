@@ -91,6 +91,22 @@ export class Ai_AgentController {
         return Sucess("ok");
     }
 
+    /**
+     * 设置会话的“命令检测”开关状态（开启后该会话执行命令不再弹确认框，自动允许）
+     * body: { session_id: string, allow: boolean }
+     */
+    @Post("/session/cmd_auto_allow")
+    async session_cmd_auto_allow(@Req() ctx, @Body() data: any) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        aiAgentMemoryService.sessions_update_cmd_auto_allow(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.session_id,
+            data?.allow === true
+        );
+        return Sucess("ok");
+    }
+
     @Post("/session/get")
     async session_get(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);

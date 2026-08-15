@@ -610,5 +610,11 @@
   "自动换行": "Ajuste automático",
   "不换行": "Sin ajuste",
   "替换": "Reemplazar",
-  "env编辑": "Editar env"
+  "env编辑": "Editar env",
+  "命令确认": "Confirmación de comando",
+  "命令检测开启": "Habilitar detección de comandos",
+  "命令检测关闭": "Deshabilitar detección de comandos",
+  "命令检测已开启": "Detección de comandos habilitada",
+  "命令检测已关闭": "Detección de comandos deshabilitada",
+  "此会话不再询问": "No preguntar más en esta sesión"
 }

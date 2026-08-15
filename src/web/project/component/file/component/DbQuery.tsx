@@ -19,6 +19,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {GlobalContext} from "../../../GlobalProvider";
 import Timer from "../../../../meta/component/Timer";
 import {routerConfig} from "../../../../../common/RouterConfig";
+import {sqlEnvDefault} from "./SqlPresetSetting";
 
 type ViewMode = "table" | "json";
 
@@ -170,7 +171,7 @@ export default function DbQuery() {
 
     // 确认新建预设：把 SQL 与备注一起保存为新的一条预设
     const doCreatePreset = async (query: string, note: string) => {
-        const list = [...sqlPresets, {note: note || t("SQL 预设"), sql: query} as SqlPresetItem];
+        const list = [...sqlPresets, {note: note || t("SQL 预设"), sql: query,env:sqlEnvDefault} as SqlPresetItem];
         const ok = await savePresetList(list);
         if (ok) {
             set_prompt_card({open: false});

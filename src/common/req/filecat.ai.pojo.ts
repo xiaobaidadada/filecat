@@ -414,6 +414,9 @@ export class ai_agent_chat_session_item {
     usage_stats?: ai_agent_usage_stats;
     // 系统提示词 ID（通过 index 标识），选择后随会话持久化，下次加载会话时自动选中
     sys_prompt_id?: string;
+
+    /** 命令检测是否开启：开启后该会话执行命令不再弹确认框（自动允许） */
+    cmd_auto_allow?: boolean;
 }
 
 /** AI Agent token 消耗统计 */
@@ -441,6 +444,8 @@ export class ai_agent_chat_session_meta {
     created_at: number;
     updated_at: number;
     usage_stats?: ai_agent_usage_stats;
+    /** 命令检测是否开启（免确认） */
+    cmd_auto_allow?: boolean;
 }
 
 // ============ 机器人配置 ============

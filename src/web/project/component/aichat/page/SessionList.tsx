@@ -20,6 +20,7 @@ export default function SessionList({
                                         onSelectSession,
                                         onRenameSession,
                                         onDeleteSession,
+                                        onToggleCmdAuto,
                                         onShowUsageStats,
                                         batchMode,
                                         selectedSessionIds,
@@ -33,6 +34,7 @@ export default function SessionList({
     onSelectSession: (id: string) => void;
     onRenameSession: (id: string, title: string) => void;
     onDeleteSession: (id: string) => void;
+    onToggleCmdAuto?: (id: string, allow: boolean) => void;
     onShowUsageStats: (id: string) => void;
     batchMode?: boolean;
     selectedSessionIds?: Set<string>;
@@ -95,6 +97,10 @@ export default function SessionList({
                                         {
                                             name: t('重命名'),
                                             click: () => onRenameSession(session.id, session.title)
+                                        },
+                                        {
+                                            name: session.cmd_auto_allow ? t('命令检测关闭') : t('命令检测开启'),
+                                            click: () => onToggleCmdAuto?.(session.id, !session.cmd_auto_allow)
                                         },
                                         {
                                             name: t('字符消耗统计'),

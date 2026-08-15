@@ -228,6 +228,7 @@ export class AiAgentMemoryService {
             updated_at: session.updated_at,
             file_name: fileName,
             usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
+            cmd_auto_allow: session.cmd_auto_allow ?? false,
         };
     }
 
@@ -287,6 +288,7 @@ export class AiAgentMemoryService {
                 created_at: it.created_at,
                 updated_at: it.updated_at,
                 usage_stats: it.usage_stats ? {...it.usage_stats} : undefined,
+                cmd_auto_allow: it.cmd_auto_allow ?? false,
             }));
     }
 
@@ -435,6 +437,23 @@ export class AiAgentMemoryService {
         // 空/undefined 均视为清除该系统提示词
         session.sys_prompt_id = sys_prompt_id || undefined;
         this.writeSession(userId, session, meta.file_name);
+    }
+
+    /**
+     * 更新会话的“命令检测”开关状态（开启后该会话执行命令不再弹确认框，自动允许）
+     * @param userId 用户 ID
+     * @param sessionId 会话 ID
+     * @param allow 是否开启免确认
+     */
+    public sessions_update_cmd_auto_allow(userId: string, sessionId: string, allow: boolean) {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.read_session(userId, meta);
+        if (!session) return;
+        session.cmd_auto_allow = allow;
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
     }
 
     // 将本次机器人的聊天结果加入到历史会话中

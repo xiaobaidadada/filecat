@@ -28,6 +28,7 @@ import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/pick_next_model";
 import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
+import {aiAgentMemoryService} from "./ai_agent.memory";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -66,11 +67,20 @@ export class ChatCore {
     /**
      * AI 命令确认 - 等待用户确认
      * 通过 wss（WebSocket 连接）向当前用户的所有标签页推送确认请求
+     * @param session_id 当前会话 ID（用于判断该会话是否开启了命令免确认）
      */
-    private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface): Promise<boolean> {
+    private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface, session_id?: string): Promise<boolean> {
         // 如果 dotenv 配置了直接执行，或者没有 wss 连接，跳过确认
         if (ai_agentService.ai_config_env?.allow_exec_cmd_directly || wss == null) {
             return true;
+        }
+
+        // 该会话开启了“命令免确认”（cmd_auto_allow），直接允许，不弹确认框
+        if (session_id) {
+            const session = aiAgentMemoryService.get_session(user_id, session_id);
+            if (session?.cmd_auto_allow) {
+                return true;
+            }
         }
 
         // 从 wss 对象上获取 token（用于查找该用户的所有标签页）
@@ -132,7 +142,8 @@ export class ChatCore {
             const data = new WsData(CmdType.ai_confirm_cmd, {
                 askId,
                 cmd,
-                user_id
+                user_id,
+                session_id,
             });
             const encoded = data.encode();
             for (const w of allWss) {
@@ -142,7 +153,7 @@ export class ChatCore {
     }
 
     // 检测权限 补充参数
-    private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface) {
+    private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface, session_id?:string) {
         switch (toolName) {
             case "exec_cmd_background":
             case "exec_cmd": {
@@ -163,7 +174,7 @@ export class ChatCore {
                 }
 
                 // 执行命令前需要用户确认
-                const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss);
+                const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss, session_id);
                 if (!approved) {
                     throw new Error(`用户拒绝了命令执行：${args.cmd}`);
                 }
@@ -561,7 +572,7 @@ const workMessages: ai_agent_message_list = [
                         callItem.tool_args = args;
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
                         callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
-                        await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss);
+                        await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss, session_id);
 
                         let result;
                         let resultStr;

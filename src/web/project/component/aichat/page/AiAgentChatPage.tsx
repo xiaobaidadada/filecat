@@ -250,6 +250,13 @@ export default function AiAgentChatPage() {
         });
     };
 
+    // 切换会话的命令检测开关（开启后该会话执行命令不再弹确认框）
+    const toggleCmdAuto = async (sessionId: string, allow: boolean) => {
+        await ai_agentHttp.post("session/cmd_auto_allow", { session_id: sessionId, allow });
+        NotySuccess(allow ? t('命令检测已开启') : t('命令检测已关闭'));
+        await loadSessions(activeSessionId);
+    };
+
     // ===== 发送消息 =====
     const handleSend = async () => {
         const text = (chatInputRef.current?.getValue() ?? '').trim();
@@ -589,6 +596,7 @@ export default function AiAgentChatPage() {
                     onSelectSession={(id) => loadSession(id, false)}
                     onRenameSession={renameSession}
                     onDeleteSession={deleteSession}
+                    onToggleCmdAuto={toggleCmdAuto}
                     onShowUsageStats={showUsageStatsPopup}
                     batchMode={batchMode}
                     selectedSessionIds={selectedSessionIds}

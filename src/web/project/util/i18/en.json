@@ -621,5 +621,11 @@
   "自动换行": "Auto Wrap",
   "不换行": "No Wrap",
   "替换": "Replace",
-  "env编辑": "Env edit"
+  "env编辑": "Env edit",
+  "命令确认": "Command Confirm",
+  "命令检测开启": "Enable command detection",
+  "命令检测关闭": "Disable command detection",
+  "命令检测已开启": "Command detection enabled",
+  "命令检测已关闭": "Command detection disabled",
+  "此会话不再询问": "Don't ask again for this session"
 }
