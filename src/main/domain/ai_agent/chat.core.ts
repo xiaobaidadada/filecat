@@ -416,7 +416,6 @@ const workMessages: ai_agent_message_list = [
 
         const loopEnv = {
             toolLoop: env.tool_call_max,
-            tool_error_max: env.tool_error_max,
             max_call_num:0, // 最大调用别的模型次数
             init_model:config.model,
         };
@@ -604,7 +603,6 @@ const workMessages: ai_agent_message_list = [
                         const msg = `${e?.message??JSON.stringify(e)} ${e?.stack??""}`
                         callItem.success = false;
                         callItem.error = msg;
-                        if (loopEnv.tool_error_max-- <= 0) throw e;
 
                         workMessages.push({
                             role: "tool",
