@@ -428,7 +428,30 @@ const workMessages: ai_agent_message_list = [
         /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
         let globalChunkIndex = 0;
 
+        // 幂等的结束通知：无论正常返回、中断还是异常退出，都确保只触发一次 on_end，
+        // 避免 LLM abort / reader 永久挂起等原因导致前端收不到 ai_chat_end 而一直“输出中”。
+        let ended = false;
+        const endOnce = (interrupted: boolean = _interrupted) => {
+            if (ended) return;
+            ended = true;
+            controller.signal.removeEventListener('abort', onAbort);
+            on_end({ once_messages_list, _interrupted: interrupted });
+        };
+        // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
+        const onAbort = () => {
+            _interrupted = true;
+            endOnce();
+        };
+        controller.signal.addEventListener('abort', onAbort);
+
+        try {
         while (loopEnv.toolLoop-- > 0) {
+
+            // 若已被取消，直接结束本轮（不再发起新的 LLM 请求）
+            if (_interrupted || controller.signal.aborted) {
+                endOnce(_interrupted);
+                return;
+            }
 
             //  用来拼完整 assistant message
             let assistantMessage:ai_agent_message_item = {
@@ -542,14 +565,23 @@ const workMessages: ai_agent_message_list = [
                 if (_interrupted && assistantMessage.tool_call_ends?.length === 0) {
                     assistantMessage.tool_calls = undefined;
                 }
-                on_end({ once_messages_list ,_interrupted});
+                endOnce(_interrupted);
                 return;
             }
 
             // 有 tool_calls，开始执行工具
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
-                    if(!call.function?.name)return;
+                    // 防御：即使 name 缺失（流式解析中断等），也确保生成一个 tool 响应，
+                    // 避免「assistant 带 tool_calls 却没有对应 tool 消息」导致 LLM 硬报错而终止对话。
+                    if(!call.function?.name) {
+                        workMessages.push({
+                            role: "tool",
+                            tool_call_id: call?.id ?? `unknown_${Math.random()}`,
+                            content: `工具调用缺少函数名称，已跳过（arguments: ${call?.function?.arguments ?? ""}）。`
+                        });
+                        return;
+                    }
                     const toolName = call.function.name as string;
                     let tool_info_value = ai_agentService.getToolInfo(toolName, {}) ?? {
                         get_name: () => toolName,
@@ -627,11 +659,16 @@ const workMessages: ai_agent_message_list = [
 
         }
 
+        // while 循环自然结束：触发一次用于提示的前端消息，并幂等结束。
         on_msg({
             text: "超出最大工具调用次数",
             chunk_index: globalChunkIndex
         });
-        on_end({ once_messages_list,_interrupted });
+        } finally {
+            // 无论正常结束、中断还是异常退出，都用幂等的 endOnce 收尾，
+            // 确保前端一定收到 ai_chat_end（避免工具失败 / abort 后一直“输出中”）。
+            endOnce(_interrupted);
+        }
     }
 
 
@@ -756,9 +793,11 @@ const workMessages: ai_agent_message_list = [
 
         } catch (e: any) {
             console.log(`llm请求报错`,e)
-            props.error_call(e)
-            if (e.name === "AbortError") {
+            // AbortError 视为正常中断：只标记 _interrupted，不把异常文本拼进回复内容。
+            if (e?.name === "AbortError") {
                 props.abort_error_call?.();
+            } else {
+                props.error_call(e);
             }
         }
     }
