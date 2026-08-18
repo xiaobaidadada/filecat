@@ -229,9 +229,9 @@ export default function FileList() {
         //  2) 同时把文件列表滚动条拉回顶部，让用户视野回到列表最上方。
         // 滚动容器是分页列表根节点 <div id="listing">（见 FileListLoad_file_folder_for_local_by_page）。
         if (user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
-            set_file_page({page_size: file_page.page_size, page_num: 1})
             const listing = document.getElementById("listing");
             if (listing) listing.scrollTop = 0;
+            set_file_page({page_size: file_page.page_size, page_num: 1})
         }
     }
 
