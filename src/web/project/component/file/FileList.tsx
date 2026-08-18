@@ -221,6 +221,18 @@ export default function FileList() {
     function routerClick() {
         setSelectList([])
         setClickList([])
+        // 点击面包屑 = 用户主动进入某目录（含当前所在目录）。
+        // 分页模式下：
+        //  1) 即使当前已滚动到底（page_num 被置为 -1），也应重置回第一页重新加载，
+        //     否则点击“当前所在层级”的面包屑时会命中 fileHandler 里 `else if(page_num<0) return`，
+        //     导致列表永远不刷新（表现为“点击最后一个没反应”）。
+        //  2) 同时把文件列表滚动条拉回顶部，让用户视野回到列表最上方。
+        // 滚动容器是分页列表根节点 <div id="listing">（见 FileListLoad_file_folder_for_local_by_page）。
+        if (user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
+            set_file_page({page_size: file_page.page_size, page_num: 1})
+            const listing = document.getElementById("listing");
+            if (listing) listing.scrollTop = 0;
+        }
     }
 
     // 搜索
