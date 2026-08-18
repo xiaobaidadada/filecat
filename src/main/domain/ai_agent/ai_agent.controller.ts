@@ -57,7 +57,13 @@ export class Ai_AgentController {
     async sessions(@Req() ctx) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        return Sucess(aiAgentMemoryService.list(user?.id ?? user?.user_id ?? user?.username ?? "default"))
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const list = aiAgentMemoryService.list(userId);
+        // 标记正在执行中的会话（前端据此显示“执行中”旋转动画）
+        return Sucess(list.map(it => ({
+            ...it,
+            running: ai_agentService.isChatRunning(it.id),
+        })));
     }
 
     @Post("/sessions/update/meta")
@@ -111,7 +117,27 @@ export class Ai_AgentController {
     async session_get(@Req() ctx, @Body() data: any) {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        return Sucess(aiAgentMemoryService.get_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id))
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const session = aiAgentMemoryService.get_session(userId, data?.session_id);
+        if (!session) return Sucess(null);
+        // 若该会话正在执行中，把未落盘的实时内容并入返回结果：
+        //  - 本轮 user 消息（last_user_message）并入 session.messages 末尾
+        //  - 未落盘的 assistant 输出放在 live_messages
+        // 这样前端把 messages 与 live_messages 直接拼接即可，无需额外去重。
+        if (ai_agentService.isChatRunning(session.id)) {
+            let msgs = session.messages ?? [];
+            // running 期间本轮 user 由 appendTurn 在会话结束时才落盘，此刻必然尚未写入文件，
+            // 所以直接追加到末尾即可，不会与已有消息重复。
+            const lastUser = ai_agentService.getRunningLastUserMessage(userId, session.id);
+            if (lastUser) msgs = [...msgs, lastUser];
+            return Sucess({
+                ...session,
+                messages: msgs,
+                running: true,
+                live_messages: ai_agentService.getRunningChatLive(userId, session.id) ?? [],
+            });
+        }
+        return Sucess(session);
     }
 
     @Post("/session/delete")
@@ -346,6 +372,33 @@ export class Ai_AgentController {
                 ai_agentService.activeChatControllers.delete(session_id);
             }
         }
+        return '';
+    }
+
+    /**
+     * 前端用当前 ws 连接订阅 / 退订某个正在运行的会话（切换/刷新会话时调用）。
+     * body(context): { session_id: string, subscribe: boolean }
+     * 订阅后，该会话的实时输出(ai_chat_msg/end/error)只推给这些“绑定”了该会话的连接，
+     * 而非向该用户所有连接广播。
+     */
+    @msg(CmdType.ai_chat_subscribe)
+    async aiChatSubscribe(data: WsData<any>) {
+        const ctx = data.context || {};
+        const wss = data.wss as Wss;
+        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        const { session_id, subscribe } = ctx;
+        if (!session_id) return '';
+        const user = userService.get_user_info_by_token(wss.token);
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        if (subscribe) {
+            ai_agentService.subscribeSession(userId, session_id, wss);
+        } else {
+            ai_agentService.unsubscribeSession(userId, session_id, wss);
+        }
+        // 连接关闭时，自动移除它在所有正在运行会话里的订阅，避免僵尸订阅
+        wss.setClose(() => {
+            ai_agentService.unsubscribeAllByWss(userId, wss.id);
+        });
         return '';
     }
 

@@ -61,7 +61,12 @@ export default function AiAgentChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
-    const [sending, setSending] = useState(false);
+    // 当前“本地正在发送”的会话 id；null 表示本地没有在发送。
+    // 用会话 id 而非布尔，是为了区分“本地发起”与“其它标签页/刷新后在跑”，
+    // 避免切换会话时误以为当前会话在发送（导致发送按钮/生成动画错显示）。
+    const [sendingSessionId, setSendingSessionId] = useState<string | null>(null);
+    /** 当前活动会话是否正在执行中（其它页面/发起后切走）；用于展示“执行中”状态和接收实时广播 */
+    const [activeSessionRunning, setActiveSessionRunning] = useState(false);
     const chatInputRef = useRef<ChatInputHandle>(null);
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
@@ -94,6 +99,17 @@ export default function AiAgentChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const autoScrollRef = useRef(true);
+    /** 当前活动会话在“接收其它页面广播”时的实时 assistant 气泡 id（用于追加文本） */
+    const liveBubbleIdRef = useRef<number | null>(null);
+    /** 上次刷新会话列表的时间（用于节流 running 旋转标记的刷新） */
+    const lastRefreshRef = useRef(0);
+    /** 当前已订阅(绑定 ws 与 session)的会话 id；用于切换/结束/卸载时退订 */
+    const subscribedSessionRef = useRef<string | null>(null);
+    // ===== 实时值 ref（供 useEffect([]) 的全局监听闭包读取最新 state） =====
+    const activeSessionIdRef = useRef(activeSessionId);
+    const sendingSessionIdRef = useRef<string | null>(sendingSessionId);
+    useEffect(() => { activeSessionIdRef.current = activeSessionId; }, [activeSessionId]);
+    useEffect(() => { sendingSessionIdRef.current = sendingSessionId; }, [sendingSessionId]);
     const env_config = useRef(new ai_agent_item_dotenv());
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
     const [currentModelName, setCurrentModelName] = useState('');
@@ -155,8 +171,9 @@ export default function AiAgentChatPage() {
         getMessages: () => messages,
         setMessages,
         setMessagesDebounced,
-        setSending,
-        getActiveSessionId: () => activeSessionId,
+        // setSending 语义改为：设置“本地正在发送的会话 id”（string|null）
+        setSending: setSendingSessionId,
+        getActiveSessionId: () => activeSessionIdRef.current,
         setActiveSessionId,
         refreshSessions,
         scrollToBottom,
@@ -184,9 +201,28 @@ export default function AiAgentChatPage() {
     const loadSession = async (sessionId: string, switch_menu = false) => {
         const result = await ai_agentHttp.post("session/get", { session_id: sessionId });
         if (result.code !== RCode.Success || !result.data) return;
-        const session = result.data as ai_agent_chat_session_item;
+        const session = result.data as ai_agent_chat_session_item & { running?: boolean; live_messages?: ai_agent_message_item[] };
         setActiveSessionId(session.id);
-        setMessages(toUiMessages(session.messages));
+        // 该会话是否正在执行中（其它标签页 / 发起后切走）
+        setActiveSessionRunning(!!session.running);
+        // ===== 订阅绑定：把当前 ws 连接与该会话绑定（仅当该会话正在执行时） =====
+        // 订阅后后端只向订阅此会话的连接推送实时输出；切换/结束时退订。
+        if (subscribedSessionRef.current && subscribedSessionRef.current !== session.id) {
+            ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: false });
+        }
+        subscribedSessionRef.current = session.running ? session.id : null;
+        if (subscribedSessionRef.current) {
+            ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: true });
+        }
+        // 若会话正在执行中，把后端返回的实时内容(未落盘 live_messages)与历史消息直接拼接渲染。
+        // 本轮 user 消息已由 session/get 并入 session.messages，live_messages 只含未落盘的 assistant 输出，
+        // 两者来源天然不重叠，直接拼接即可，无需额外去重。
+        const baseMessages = toUiMessages(session.messages);
+        if (session.running && session.live_messages?.length) {
+            setMessages([...baseMessages, ...toUiMessages(session.live_messages)]);
+        } else {
+            setMessages(baseMessages);
+        }
         // 恢复该会话保存的系统提示词选择（自动选中）
         setSelectedSysPromptId(session.sys_prompt_id ?? "");
         if (switch_menu) {
@@ -262,8 +298,8 @@ export default function AiAgentChatPage() {
         const text = (chatInputRef.current?.getValue() ?? '').trim();
         if (!text && pendingAttachments.length === 0) return;
 
-        // AI 正在执行中 → 加入排队
-        if (sending) {
+        // 当前活动会话本地正在执行中 → 加入排队（其它会话本地在跑不影响本会话发送）
+        if (sendingSessionId === activeSessionId) {
             const attachments = await buildAttachments(pendingAttachments);
             chatStream.enqueueMessage(text, attachments);
             chatInputRef.current?.clear();
@@ -305,7 +341,7 @@ export default function AiAgentChatPage() {
             const botMsg: Message = { id: userMsg.id + 1, sender: 'bot', text: "处理中...", is_loading: true };
             const newMessages = [...messages, userMsg, botMsg];
             setMessages(newMessages);
-            setSending(true);
+            setSendingSessionId(sessionId);
 
             const handled = await handleNonCompletionsRequest(requestType, text, sessionId, async (resultText, extra) => {
                 botMsg.text = resultText;
@@ -314,7 +350,7 @@ export default function AiAgentChatPage() {
                 if (extra?.audio) botMsg.audio = extra.audio;
                 if (extra?.embeddings) botMsg.embeddings = extra.embeddings;
                 setMessages([...newMessages]);
-                setSending(false);
+                setSendingSessionId(null);
                 refreshSessions();
                 scrollToBottom(true);
                 chatStream.processPendingQueue();
@@ -324,7 +360,7 @@ export default function AiAgentChatPage() {
                 botMsg.text = `请求类型 "${requestType}" 的专用处理器尚未实现，请使用 completions 类型。`;
                 botMsg.is_loading = false;
                 setMessages([...newMessages]);
-                setSending(false);
+                setSendingSessionId(null);
                 chatStream.processPendingQueue();
             }
             return;
@@ -558,6 +594,117 @@ export default function AiAgentChatPage() {
         return () => el.removeEventListener("scroll", onScroll);
     }, []);
 
+    // ===== 实时广播监听：接收“其它标签页 / 刷新后”正在进行的同一会话的输出 =====
+    // 核心诉求：切换会话 / 刷新页面后，切回正在执行的会话，不仅能通过 session/get 的
+    // live_messages 看到最新内容，还能继续实时收到该会话后续的输出。
+    useEffect(() => {
+        // 用 ref 读最新 state（useEffect 闭包捕获的是首渲染快照，必须用 ref 才能拿到实时值）
+        const activeId = () => activeSessionIdRef.current;
+        const sendingSessionIdNow = () => sendingSessionIdRef.current;
+
+        // 追加/更新实时文本到当前查看的会话
+        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any) => {
+            if (!activeId() || activeId() !== sessionId) return;
+            // 本地正在发送该会话时，由 useChatStream 负责渲染，这里跳过避免重复
+            if (sendingSessionIdNow() === sessionId) return;
+
+            setMessages(prev => {
+                // 若末尾已是 bot（正被实时输出的气泡），直接追加；否则新建一个实时气泡。
+                const last = prev[prev.length - 1];
+                if (last && last.sender === 'bot') {
+                    const next = [...prev];
+                    const m = { ...last };
+                    m.text += text;
+                    if (tool_call_ends) {
+                        m.content_list = [{ tool_call_ends, content: m.text, role: "assistant" }];
+                    }
+                    next[next.length - 1] = m;
+                    liveBubbleIdRef.current = m.id;
+                    if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
+                    return next;
+                }
+                const liveMsg: Message = {
+                    id: Date.now() + Math.random(),
+                    sender: 'bot',
+                    text,
+                };
+                if (tool_call_ends) {
+                    liveMsg.content_list = [{ tool_call_ends, content: text, role: "assistant" }];
+                }
+                liveBubbleIdRef.current = liveMsg.id;
+                if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
+                return [...prev, liveMsg];
+            });
+        };
+
+        // 结束：若当前查看的会话正是刚结束的会话：
+        //  - 若带最终 once_messages_list，直接用其替换末尾的“实时预览气泡”，刷新列表即可（避免读文件竞态）；
+        //  - 否则退化为重新 loadSession 拉取内容。
+        const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
+            if (activeId() && activeId() === sessionId) {
+                liveBubbleIdRef.current = null;
+                setActiveSessionRunning(false);
+                // 会话已结束，退订该会话（后端已不再有该会话的运行登记，退订避免残留）
+                if (subscribedSessionRef.current === sessionId) {
+                    ws.sendData(CmdType.ai_chat_subscribe, { session_id: sessionId, subscribe: false });
+                    subscribedSessionRef.current = null;
+                }
+                // 该会话若是“本地发起”的，则由 useChatStream 负责收尾渲染；这里只处理非本地的情况
+                if (sendingSessionIdNow() === sessionId) return;
+                if (once_messages_list?.length) {
+                    // 用最终助手内容替换“实时预览气泡”：仅当末尾确实是 bot(实时)气泡时才替换，否则直接追加，避免误删 user 消息
+                    setMessages(prev => {
+                        const finalMsgs = toUiMessages(once_messages_list);
+                        const last = prev[prev.length - 1];
+                        const replaceLast = last?.sender === 'bot';
+                        if (replaceLast) {
+                            return [...prev.slice(0, -1), ...finalMsgs];
+                        }
+                        return [...prev, ...finalMsgs];
+                    });
+                } else {
+                    loadSession(sessionId).catch(() => {});
+                }
+                refreshSessions();
+            }
+        };
+
+        const handleChatMsg = (data: any) => {
+            const ctx = data?.context || {};
+            if (!ctx.session_id) return; // 无会话 id（老版本）不处理
+            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends);
+            // 收到流式广播说明该会话确实在运行，更新会话列表的“执行中”旋转标记（节流避免频繁请求）
+            const now = Date.now();
+            if (now - lastRefreshRef.current > 1500) {
+                lastRefreshRef.current = now;
+                refreshSessions();
+            }
+        };
+        const handleChatEnd = (data: any) => {
+            const ctx = data?.context || {};
+            if (ctx.session_id) handleEnd(ctx.session_id, ctx.once_messages_list);
+        };
+        const handleChatError = (data: any) => {
+            const ctx = data?.context || {};
+            if (ctx.session_id) handleEnd(ctx.session_id);
+        };
+
+        ws.addMsg(CmdType.ai_chat_msg, handleChatMsg);
+        ws.addMsg(CmdType.ai_chat_end, handleChatEnd);
+        ws.addMsg(CmdType.ai_chat_error, handleChatError);
+
+        return () => {
+            ws.off_message(`message_${CmdType.ai_chat_msg}`, handleChatMsg);
+            ws.off_message(`message_${CmdType.ai_chat_end}`, handleChatEnd);
+            ws.off_message(`message_${CmdType.ai_chat_error}`, handleChatError);
+            // 组件卸载时退订正在绑定的会话
+            if (subscribedSessionRef.current) {
+                ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: false });
+                subscribedSessionRef.current = null;
+            }
+        };
+    }, []);
+
     useLayoutEffect(() => {
         if (autoScrollRef.current) scrollToBottom(false);
     }, [messages]);
@@ -620,7 +767,8 @@ export default function AiAgentChatPage() {
                         messages={messages}
                         batchMode={batchMode}
                         selectedMsgIds={selectedMsgIds}
-                        sending={sending}
+                        // 本地该会话在发 或 该会话正被其它页面执行 → 都显示“执行中”生成动画
+                        sending={sendingSessionId === activeSessionId || activeSessionRunning}
                         chatContainerRef={chatContainerRef}
                         messagesEndRef={messagesEndRef}
                         onToggleMsgSelect={toggleMsgSelect}
@@ -633,7 +781,9 @@ export default function AiAgentChatPage() {
                     <ChatInput
                         ref={chatInputRef}
                         onSend={handleSend}
-                        sending={sending}
+                        // 本地正在发当前会话，或当前会话本身正在执行中(running，比如刷新页面/其它页面在跑)
+                        // 都显示“发送中/停止”按钮；直接取会话的 running 状态，刷新后也不丢失
+                        sending={sendingSessionId === activeSessionId || activeSessionRunning}
                         onAbort={chatStream.abort}
                         pendingAttachments={pendingAttachments}
                         onRemoveAttachment={removePendingAttachment}

@@ -69,7 +69,7 @@ export default function SessionList({
                 {filteredSessions.map(session => (
                     <div key={session.id}>
                         <button
-                            className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''}`}
+                            className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''} ${session.running ? 'is-running' : ''}`}
                             onClick={() => {
                                 if (batchMode && onToggleSessionSelect) {
                                     onToggleSessionSelect(session.id);
@@ -89,6 +89,8 @@ export default function SessionList({
                                 />
                             )}
                             <span>{toSessionTitle(session.title)}</span>
+                            {/* 会话正在执行中：显示旋转 loading 动画 */}
+                            {session.running && <span className="chat-session-running" title={t('正在执行中')} />}
                             <small>{session.message_count}</small>
                             {session.source !== "web" && <em className="chat-session-source">{session.source}</em>}
                             {!batchMode && (

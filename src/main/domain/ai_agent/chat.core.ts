@@ -60,6 +60,13 @@ export interface ChatOptions {
     aiEnv?: ai_agent_item_dotenv;
     tools?:ai_agent_params_type[]
     wss?:wss_interface
+    /**
+     * 可选的“本轮消息列表”共享引用。
+     * 若外部传入一个数组，则 chat() 内部会直接使用该数组（替代内部新建的 once_messages_list），
+     * 每轮流式产出的内容会持续 push 到该数组上，外部可实时读取当前最新内容，
+     * 用于“切换/刷新页面后切回正在执行的会话，能展示尚未落盘的实时内容”。
+     */
+    once_messages_list?: ai_agent_message_item[];
 }
 
 export class ChatCore {
@@ -317,7 +324,8 @@ export class ChatCore {
             session_id,
             aiConfig,
             aiEnv,
-            tools
+            tools,
+            once_messages_list: externalOnceMessagesList
         } = options;
 
         // 根据 sys_prompt_id（index）加载系统提示词，并解析 LLM 编辑提示词配置
@@ -423,7 +431,9 @@ const workMessages: ai_agent_message_list = [
         // 隐式 planner
         // todo 文本 grep 搜索 历史会话搜索让ai有能力搜索到它需要知道的片面数据 让ai自己搜 只提供关键概要
 
-        const once_messages_list:ai_agent_message_item[] = []
+        // 本轮消息列表：若外部传入了共享引用，则直接复用它（外部可实时读取当前最新输出）；
+        // 否则内部新建一个空数组。
+        const once_messages_list: ai_agent_message_item[] = externalOnceMessagesList ?? []
         let _interrupted: boolean = false
         /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
         let globalChunkIndex = 0;

@@ -129,11 +129,30 @@
     text-overflow: ellipsis;
     line-height: 18px;
 }
-
 .chat-session-item small {
     color: #667085;
     font-size: 12px;
 }
+
+/* 会话正在执行中：标题右侧的旋转 loading 小圆点 */
+.chat-session-running {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin: 0 4px;
+    vertical-align: 1px;
+    border: 2px solid #c7d2fe;
+    border-top-color: var(--primary, #4f46e5);
+    border-radius: 50%;
+    animation: chat-session-running-spin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes chat-session-running-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 
 .chat-session-source {
     display: inline-block;

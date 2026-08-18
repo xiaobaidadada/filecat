@@ -31,8 +31,9 @@ interface UseChatStreamOptions {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
     /** 防抖版设置消息 */
     setMessagesDebounced: (msgs: Message[]) => void;
-    /** 设置发送状态 */
-    setSending: (v: boolean) => void;
+    /** 设置“本地正在发送的会话 id”（string | null）。
+        支持函数式更新：useChatStream 结束时可基于当前值判断后再清空，避免误清其它并行会话的标记 */
+    setSending: (v: string | null | ((prev: string | null) => string | null)) => void;
     /** 当前活动会话 ID 的引用 */
     getActiveSessionId: () => string;
     /** 设置活动会话 ID */
@@ -79,7 +80,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
     ) => {
         const newMessages = [...getMessages(), userMsg];
         setMessages(newMessages);
-        setSending(true);
+        // 标记“本地正在发送的会话”
+        setSending(sessionId);
 
         // 创建 AbortSignal 控制句柄
         const abortHandle = { abort: () => {} };
@@ -124,7 +126,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 currentLoading.is_loading = false;
                 currentLoading.chunk_index = chunkIndex;
                 chunkBubbleMap.set(chunkIndex, currentLoading);
-                setMessagesDebounced([...newMessages]);
+                // 若用户已切换会话，则不覆盖当前显示的 messages（仅维护本闭包）
+                if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
             } else {
                 const existing = chunkBubbleMap.get(chunkIndex);
                 if (existing) {
@@ -137,7 +140,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
                             role: "assistant"
                         }]
                     }
-                    setMessagesDebounced([...newMessages]);
+                    if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
                 } else {
                     // 新的 chunk_index → 创建新气泡
                     const newBubble: Message = {
@@ -155,7 +158,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
                     }
                     newMessages.push(newBubble);
                     chunkBubbleMap.set(chunkIndex, newBubble);
-                    setMessagesDebounced([...newMessages]);
+                    if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
                 }
             }
         };
@@ -164,7 +167,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const handleChatEnd = (data: WsData<any>) => {
             cleanup();
             abortRef.current = null;
-            setSending(false);
+            // 只清理自己发起的会话标记（避免误清并行运行的其它会话）
+            setSending(prev => prev === sessionId ? null : prev);
             // 清理未完成的加载气泡
             currentLoading.is_loading = false;
             refreshSessions();
@@ -176,11 +180,15 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const handleChatError = (data: WsData<any>) => {
             cleanup();
             abortRef.current = null;
-            setSending(false);
+            // 只清理自己发起的会话标记
+            setSending(prev => prev === sessionId ? null : prev);
             const ctx = data.context || {};
             currentLoading.text = "AI请求出错: " + (ctx.message || '未知错误');
             currentLoading.is_loading = false;
-            setMessages([...newMessages]);
+            // 若用户已切换会话，则不覆盖当前显示的 messages
+            if (getActiveSessionId() === sessionId) {
+                setMessages([...newMessages]);
+            }
             onDone();
         };
 
@@ -242,14 +250,18 @@ export function useChatStream(opts: UseChatStreamOptions) {
     /** 获取当前队列长度 */
     const getQueueLength = () => pendingQueueRef.current.length;
 
-    /** 暂停当前 AI 请求 */
+    /** 暂停当前 AI 请求（本地发起或其它页面在跑的会话都支持停止） */
     const abort = () => {
+        const sid = getActiveSessionId();
+        if (!sid) return;
+        // 发送取消指令给后端（无论是否本地发起；对非本地发起的会话也能停止）
+        ws.sendData(CmdType.ai_chat_abort, { session_id: sid });
         if (abortRef.current) {
-            // 发送取消指令给后端
-            ws.sendData(CmdType.ai_chat_abort, { session_id: getActiveSessionId() });
             abortRef.current = null;
-            setSending(false);
+            // 只清理自己发起的会话标记
+            setSending(prev => prev === sid ? null : prev);
         }
+        // 非本地发起的会话停止后，收尾由全局监听的 handleEnd(收到 ai_chat_end) 完成
     };
 
     return {

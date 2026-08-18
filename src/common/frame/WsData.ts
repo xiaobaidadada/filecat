@@ -134,6 +134,7 @@ export enum CmdType {
     ai_chat_end,      // 服务端推送 AI 回复结束（含 meta 信息）
     ai_chat_error,    // 服务端推送 AI 错误信息
     ai_chat_abort,    // 客户端主动取消正在进行的 AI 聊天
+    ai_chat_subscribe, // 客户端用当前 ws 连接订阅/退订某个正在运行的会话（切换/刷新会话时绑定，实现定向推送而非广播）
 
     // ===== AI 后台进程管理 =====
     ai_bg_process_list_req,   // 客户端请求后台进程列表
@@ -259,6 +260,7 @@ export type ws_cmd_type_map = {
     [CmdType.ai_chat_end]: [any, any],
     [CmdType.ai_chat_error]: [any, any],
     [CmdType.ai_chat_abort]: [any, any],
+    [CmdType.ai_chat_subscribe]: [any, any],
 
     // ===== AI 后台进程管理 WS 类型映射 =====
     [CmdType.ai_bg_process_list_req]: [any, any],

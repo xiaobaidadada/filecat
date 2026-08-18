@@ -15,8 +15,8 @@ import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
 import {formatDuration, formatFileSize} from "../../../common/ValueUtil";
 import {AsyncPool} from "../../../common/ListUtil";
-import {Wss} from "../../../common/frame/ws.server";
-import {CmdType} from "../../../common/frame/WsData";
+import {Wss, WsUtil} from "../../../common/frame/ws.server";
+import {CmdType, WsData} from "../../../common/frame/WsData";
 import {isAbsolutePath} from "../../../common/path_util";
 import {CommonUtil} from "../../../common/common.util";
 import {start_worker_threads, ThreadsFilecat} from "../../threads/filecat/threads.filecat";
@@ -75,6 +75,30 @@ function formatAttachmentTitle(attachments?: ai_agent_message_attachment_item[])
     if (!attachments?.length) return "";
     return attachments.map(it => it.name).filter(Boolean).slice(0, 3).join(", ");
 }
+
+type   runningChat_type  = {
+    controller: AbortController;
+    /**
+     * 本会话正在执行的这轮中，已经流式输出的完整消息列表（未落盘，供 session/get 拉取实时预览）。
+     * 由 chat_core.chat 在内部直接 push 到该共享引用上，外部可实时读取。
+     * 注意：该列表只包含 assistant 消息（chat() 内部只 push assistant），不含本轮 user 消息。
+     */
+    once_messages_list: ai_agent_message_list;
+    /** 本轮用户消息（在 chat_ws 开头由 appendUserMessage 落盘，这里额外保存一份，
+        用于 session/get 的 live_messages 预览：让前端切回正在执行的会话时也能看到“我刚发的那条”，
+        避免因尚未落盘/切回瞬间读不到而看不到自己的消息。 */
+    last_user_message: ai_agent_message_item | null;
+    /**
+     * 订阅了本会话的连接 id 集合（wss.id）。
+     * 订阅机制：切换会话时前端用当前 ws 调 ai_chat_subscribe 把连接绑定到该会话，
+     * 后端只向这些订阅连接推送本会话的实时输出，而非向该用户所有连接广播。
+     * 发起方连接也会自动成为订阅者。
+     */
+    subscribers: Set<string>;
+    /** 会话对应的用户 id（用于 session/get 校验） */
+    user_id: string;
+    started_at: number;
+};
 
 /**
  * 边输出部分结果，边进行工具调用，这是怎么做到的
@@ -603,6 +627,99 @@ export class Ai_agentService {
     public activeChatControllers = new Map<string, AbortController>();
 
     /**
+     * 正在运行的 AI 聊天会话注册表，key 为 session_id。
+     * 用途：
+     *  1. 会话列表据此标注“正在执行中”（旋转动画）；
+     *  2. session/get 时把“尚未落盘的实时内容(live_messages)”返回给前端，
+     *     这样切换会话/刷新页面回来，也能看到当前正在输出的最新内容；
+     *  3. 只有显式 ai_chat_abort 才会取消对应 controller，连接断开/刷新页面不会中断会话。
+     */
+    public runningChats = new Map<string, runningChat_type>();
+
+    /**
+     * 判断某个会话是否正在执行 AI 聊天（用于会话列表展示“执行中”旋转动画）
+     */
+    public isChatRunning(sessionId: string): boolean {
+        return this.runningChats.has(sessionId);
+    }
+
+    /**
+     * 取某个正在运行的会话的实时消息快照（未落盘的流式输出）。
+     * 若该会话未在运行，返回 null。
+     * 只返回本轮尚未落盘的 assistant 输出（once_messages_list）；
+     * 本轮 user 消息已并入 session/messages（由 session/get 组装），避免两处重复。
+     */
+    public getRunningChatLive(userId: string, sessionId: string): ai_agent_message_list | null {
+        const run = this.runningChats.get(sessionId);
+        if (!run || run.user_id !== userId) return null;
+        return run.once_messages_list?.length ? run.once_messages_list : null;
+    }
+
+    /**
+     * 向“订阅了某会话的连接”推送一条 AI 聊天消息。
+     * 订阅机制：只有绑定到该会话（订阅）的连接才会收到，避免向所有连接广播。
+     * @param token      用户 ws token（用于拿到该用户的连接池，再按 id 匹配订阅者）
+     * @param subscriberIds 该会话的订阅连接 id 集合
+     */
+    private sendToSubscribers(token: string, subscriberIds: Set<string>, cmdType: CmdType, context: any) {
+        if (!subscriberIds?.size) return;
+        const all = WsUtil.get_all_wss_by_token(token);
+        if (!all?.length) return;
+        const data = new WsData(cmdType);
+        data.context = context;
+        const encoded = data.encode();
+        for (const w of all) {
+            if (subscriberIds.has(w.id)) {
+                w.sendData(encoded);
+            }
+        }
+    }
+
+    /**
+     * 订阅某个正在运行的会话：把当前连接(wss)加入该会话的订阅者集合。
+     * 之后该会话的实时输出(ai_chat_msg/end/error)只推给订阅者连接。
+     * 若该会话不在运行中，则忽略（订阅不生效）。
+     */
+    public subscribeSession(userId: string, sessionId: string, wss: wss_interface): boolean {
+        const run = this.runningChats.get(sessionId);
+        if (!run || run.user_id !== userId) return false;
+        run.subscribers.add(wss.id);
+        return true;
+    }
+
+    /**
+     * 退订某个正在运行的会话：把当前连接从该会话的订阅者集合移除。
+     */
+    public unsubscribeSession(userId: string, sessionId: string, wss: wss_interface): void {
+        const run = this.runningChats.get(sessionId);
+        if (!run || run.user_id !== userId) return;
+        run.subscribers.delete(wss.id);
+    }
+
+    /**
+     * 取某个正在运行的会话的“本轮 user 消息”（未落盘但已由 appendUserMessage 处理）。
+     * 若会话未在运行或非本用户，返回 null。
+     */
+    public getRunningLastUserMessage(userId: string, sessionId: string): ai_agent_message_item | null {
+        const run = this.runningChats.get(sessionId);
+        if (!run || run.user_id !== userId) return null;
+        return run.last_user_message ?? null;
+    }
+
+    /**
+     * 连接关闭时，从所有正在运行的会话里移除此连接的订阅（避免僵尸订阅）。
+     * @param wssId 连接的 id（wss.id）
+     * @param userId 该连接所属用户
+     */
+    public unsubscribeAllByWss(userId: string, wssId: string): void {
+        for (const run of this.runningChats.values()) {
+            if (run.user_id === userId) {
+                run.subscribers.delete(wssId);
+            }
+        }
+    }
+
+    /**
      * 通过 WebSocket 进行 AI 聊天（替代 SSE 的 /chat 接口）
      *
      * 流程：
@@ -626,7 +743,8 @@ export class Ai_agentService {
         sys_prompt_id?: string,
     ) {
         const controller = new AbortController();
-        let chatFinished = false;
+        // let chatFinished = false;
+        const token_id = userService.get_user_info_by_token(token).id;
 
         // 注册 AbortController，以便客户端通过 ai_chat_abort 取消
         if (session_id) {
@@ -638,17 +756,12 @@ export class Ai_agentService {
             this.activeChatControllers.set(session_id, controller);
         }
 
-        // 客户端断开时，自动取消
-        wss.setClose(() => {
-            if (!chatFinished) {
-                controller.abort();
-                if (session_id) {
-                    this.activeChatControllers.delete(session_id);
-                }
-            }
-        });
+        // 注意：这里不再通过 wss.setClose 自动 abort。
+        // 诉求：切换会话 / 刷新页面导致本连接断开时，**不能中断正在进行的聊天**，
+        // 只有客户端显式发送 ai_chat_abort 才取消。
+        // 这样即使发起聊天的那个标签页关闭/刷新，会话也会继续执行完并保存。
 
-        const userId = userService.get_user_info_by_token(token).id;
+        const userId = token_id;
         const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
         const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
         const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
@@ -656,6 +769,45 @@ export class Ai_agentService {
             || "新会话";
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
         const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.ai_config_env);
+
+        // 最终会话 id（session_id 可能为空，此时用 ensure 出来的 session.id）
+        const finalSessionId = session_id || session.id;
+
+        // 注册“运行中聊天”条目（用于会话列表旋转标记 + session/get 实时预览）。
+        // 关键是给 chat_core.chat 传入一个共享的 once_messages_list 数组引用，
+        // chat() 内部会直接往这个数组 push 本轮产出的消息，外部这里实时读取即可。
+        let run_pojo: runningChat_type = this.runningChats.get(finalSessionId);
+        if (!run_pojo) {
+            run_pojo = {
+                controller,
+                once_messages_list: [],   // 本轮共享消息列表
+                last_user_message: latestUserMessage ? {
+                    role: "user",
+                    content: latestUserMessage.content,
+                    attachments: latestUserMessage.attachments,
+                } : null,
+                subscribers: new Set<string>(),
+                user_id: userId,
+                started_at: Date.now(),
+            };
+            this.runningChats.set(finalSessionId, run_pojo);
+        } else {
+            // 还没有完成 同一会话再次发起新的一轮 目前禁止
+            return;
+        }
+        // 发起方连接自动成为本会话的订阅者（保证发起方能实时收到推送）
+        run_pojo.subscribers.add(wss.id);
+        // 发起方连接断开时，自动移除它的订阅（避免僵尸订阅）
+        wss.setClose(() => {
+            const r = this.runningChats.get(finalSessionId);
+            if (r) r.subscribers?.delete(wss.id);
+        });
+
+        // 清理“运行中”登记（正常结束 / 中断 / 异常时都清理）
+        const cleanupRunning = () => {
+            this.runningChats.delete(finalSessionId);
+            this.activeChatControllers.delete(finalSessionId);
+        };
 
         try {
             const tools = ai_agentService.getModelToolSchemas();
@@ -666,22 +818,32 @@ export class Ai_agentService {
                 originMessages: workMessages,
                 user_id: userId,
                 controller,
-                session_id: session_id || session.id,
-                // ===== 流式推送：每个文本片段通过 ai_chat_msg 推送给客户端，携带分块序号和消息类型 =====
+                session_id: finalSessionId,
+                // 把共享引用传给 chat()，其内部会实时把本轮消息 push 进来
+                once_messages_list: run_pojo.once_messages_list,
+                // ===== 流式推送：把每个文本片段推送给【订阅了本会话的连接】 =====
+                // 订阅机制：切换会话/刷新后，前端用当前 ws 调 ai_chat_subscribe 绑定该会话，
+                // 这里只为订阅者（含发起方连接）推送实时输出，不做全局广播。
                 on_msg: (payload) => {
-                    wss.send(CmdType.ai_chat_msg, {
+                    this.sendToSubscribers(token, run_pojo.subscribers, CmdType.ai_chat_msg, {
+                        session_id: finalSessionId,
                         text: payload.text,
                         chunk_index: payload.chunk_index,
-                        tool_call_ends:payload.tool_call_ends
+                        tool_call_ends: payload.tool_call_ends,
                     });
                 },
                 // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====
                 on_end: (stats) => {
-                    chatFinished = true;
-                    if (session_id) {
-                        this.activeChatControllers.delete(session_id);
-                    }
-                    wss.send(CmdType.ai_chat_end, {
+                    // chatFinished = true;
+                    cleanupRunning();
+                    // 推结束事件给【订阅了本会话的连接】。
+                    // 关键：把本轮最终的 once_messages_list 一起带上，
+                    // 前端据此把“实时预览气泡”替换为最终内容，而不必依赖后端已落盘文件，
+                    // 避免 appendTurn(异步写盘) 尚未完成时前端去读文件拿到旧内容的竞态。
+                    this.sendToSubscribers(token, run_pojo.subscribers, CmdType.ai_chat_end, {
+                        session_id: finalSessionId,
+                        once_messages_list: stats?.once_messages_list ?? [],
+                        _interrupted: stats?._interrupted,
                     });
                     // 保存会话记录
                     const assistantText = (stats?.once_messages_list ?? [])
@@ -692,7 +854,7 @@ export class Ai_agentService {
                         role: "assistant",
                         content: assistantText,
                         content_list: stats?.once_messages_list ?? [],
-                        _interrupted:stats?._interrupted
+                        _interrupted: stats?._interrupted,
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
                     aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.ai_config_env).catch(console.error);
@@ -702,12 +864,14 @@ export class Ai_agentService {
             });
 
         } catch (error: any) {
-            chatFinished = true;
-            if (session_id) {
-                this.activeChatControllers.delete(session_id);
-            }
+            // chatFinished = true;
+            cleanupRunning();
             const errorMsg = error?.message ?? JSON.stringify(error);
-            wss.send(CmdType.ai_chat_error, { message: errorMsg });
+            // 推错误给【订阅了本会话的连接】
+            this.sendToSubscribers(token, run_pojo.subscribers, CmdType.ai_chat_error, {
+                session_id: finalSessionId,
+                message: errorMsg,
+            });
             // 保存错误到会话
             try {
                 const userMsg: ai_agent_message_item = {

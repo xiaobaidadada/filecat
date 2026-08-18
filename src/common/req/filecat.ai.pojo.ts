@@ -444,6 +444,9 @@ export class ai_agent_chat_session_meta {
     usage_stats?: ai_agent_usage_stats;
     /** 命令检测是否开启（免确认） */
     cmd_auto_allow?: boolean;
+
+    /** 会话是否正在执行 AI 聊天（动态标记，不持久化；用于前端显示“执行中”旋转动画） */
+    running?: boolean;
 }
 
 // ============ 机器人配置 ============
