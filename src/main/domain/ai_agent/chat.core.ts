@@ -9,7 +9,7 @@ import {UserAuth, UserData} from "../../../common/req/user.req";
 import {shellServiceImpl} from "../shell/shell.service";
 import {exec_type} from "pty-shell";
 import * as path from "path";
-import {StringUtil} from "../../../common/StringUtil";
+import {get_error_str, StringUtil} from "../../../common/StringUtil";
 import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
@@ -514,24 +514,16 @@ const workMessages: ai_agent_message_list = [
                 ,
                 // ===== error_call =====
                 error_call:(e) => {
-                    // 直接抛出异常，由外层 chat_ws 的 catch 统一处理
+                    // 真正的请求错误（非主动中断）：直接抛出，由外层 chat_ws 的 catch 统一处理。
+                    // catch 分支会向客户端发送 ai_chat_error 并保存错误信息；
+                    // 用户消息已在 chat_ws 开头通过 appendUserMessage 提前落盘，不会因抛错而丢失。
                     // 注意：不能先调 on_end，否则前端收到 ai_chat_end 后会 cleanup()，
-                    // 导致后续的 ai_chat_error 消息无人接收
-                    // throw e
-                    _interrupted = true
-                    let m :string = "";
-                    if (typeof e === 'string') {
-                        m = e as string
-                    } else if(e != null) {
-                        try {
-                            m = e?.message || JSON.stringify(e)
-                        } catch (e1) {
-                            console.log(e1)
-                        }
-                    }
-                    assistantMessage.content += m;
+                    // 导致后续的 ai_chat_error 消息无人接收。
+                    throw e
                 },
-                abort_error_call:()=>{
+                abort_error_call:(e)=>{
+                    // 主动中断（用户点暂停 / 关闭）：仅标记中断即可，
+                    // 不把 AbortError 的英文堆栈拼进回复内容，避免污染已输出的正常文本。
                     _interrupted = true
                 },
                     controller:controller}
@@ -664,10 +656,14 @@ const workMessages: ai_agent_message_list = [
             text: "超出最大工具调用次数",
             chunk_index: globalChunkIndex
         });
-        } finally {
-            // 无论正常结束、中断还是异常退出，都用幂等的 endOnce 收尾，
-            // 确保前端一定收到 ai_chat_end（避免工具失败 / abort 后一直“输出中”）。
-            endOnce(_interrupted);
+        // 工具循环耗尽（正常结束）：走 endOnce 收尾，向前端发送 ai_chat_end 并保存会话。
+        endOnce(_interrupted);
+        } catch (e) {
+            // 异常退出（error_call 抛出的真实错误，如 API key 无效 / 限流 / 网络错误等）：
+            // 只清理信号监听，不发送 ai_chat_end，而是把异常重新抛出给外层 chat_ws 的 catch，
+            // 由它发送 ai_chat_error 并保存错误信息，避免「ai_chat_end 与 ai_chat_error」消息冲突。
+            controller.signal.removeEventListener('abort', onAbort);
+            throw e;
         }
     }
 
@@ -678,8 +674,8 @@ const workMessages: ai_agent_message_list = [
             env: ai_agent_item_dotenv,
             messages: ai_agent_message_list,
             call_data: (message: any) => void,
-            error_call: (e: any) => void,
-            abort_error_call?: () => void,
+            error_call: (e: any) => void, // 出错抛给上层
+            abort_error_call?: (e:any) => void, // 正常收尾
             controller: AbortController,
             tools:ai_agent_params_type[]
         }
@@ -778,7 +774,7 @@ const workMessages: ai_agent_message_list = [
                     if (e.name !== "AbortError") {
                         props.error_call(e);
                     } else {
-                        props.abort_error_call?.()
+                        props.abort_error_call?.(e)
                     }
                 } finally {
                     parser.reset();
@@ -795,7 +791,7 @@ const workMessages: ai_agent_message_list = [
             console.log(`llm请求报错`,e)
             // AbortError 视为正常中断：只标记 _interrupted，不把异常文本拼进回复内容。
             if (e?.name === "AbortError") {
-                props.abort_error_call?.();
+                props.abort_error_call?.(e);
             } else {
                 props.error_call(e);
             }

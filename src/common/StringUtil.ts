@@ -352,3 +352,18 @@ export function fastHash(str: string): string {
     // 转为 16 位 16 进制字符串 (64 位)
     return hash.toString(16).padStart(16, '0');
 }
+
+
+export function get_error_str(e:any) {
+    let m :string = "";
+    if (typeof e === 'string') {
+        m = e as string
+    } else if(e != null) {
+        try {
+            m = e?.message || JSON.stringify(e)
+        } catch (e1) {
+            console.log(e1)
+        }
+    }
+    return m;
+}
