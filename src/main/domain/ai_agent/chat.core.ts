@@ -354,7 +354,7 @@ export class ChatCore {
                 try {
                     user_local_file_prompt += (await FileUtil.readFileSync(p)).toString();
                 } catch (e) {
-                    console.log(e)
+                    console.log(`path_prompt_file提取失败`,e)
                 }
             }
         }

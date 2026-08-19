@@ -287,7 +287,7 @@ export class FileService  {
             try {
                 stats = await FileUtil.statSync(filePath);
             } catch (e) {
-                console.log("读取错误", e);
+                // console.log("读取错误", e);
             }
             let type:FileTypeEnum
             let p:string
