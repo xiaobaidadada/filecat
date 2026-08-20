@@ -652,6 +652,7 @@ const workMessages: ai_agent_message_list = [
             }))
             if (_interrupted) {
                 // 已经中断
+                endOnce(_interrupted);
                 return
             }
 
