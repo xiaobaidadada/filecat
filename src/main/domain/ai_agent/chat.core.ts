@@ -650,6 +650,10 @@ const workMessages: ai_agent_message_list = [
                     }
                 })()
             }))
+            if (_interrupted) {
+                // 已经中断
+                return
+            }
 
             // 只是发送工具调用
             on_msg({
