@@ -46,6 +46,7 @@ import {wss_interface} from "../../../common/frame/type";
 import {exec_cmd_background_tool} from "./tools/exec_cmd_background";
 import {list_background_processes_tool} from "./tools/list_background_processes";
 import {get_background_process_output_tool} from "./tools/get_background_process_output";
+import {SystemUtil} from "../sys/sys.utl";
 
 const {
     cut,
@@ -874,16 +875,12 @@ export class Ai_agentService {
             });
             // 保存错误到会话
             try {
-                const userMsg: ai_agent_message_item = {
-                    role: "user",
-                    content: latestUserMessage?.content ?? "",
-                };
                 const errMsg: ai_agent_message_item = {
                     role: "assistant",
                     content: errorMsg,
                 };
                 // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, errMsg, undefined, ai_agentService.ai_config_env);
+                aiAgentMemoryService.append_message_to_session(userId, session.id, errMsg);
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }
@@ -1209,6 +1206,9 @@ export class Ai_agentService {
         }
         if (toolName === "get_background_process_output") {
             return get_background_process_output_tool(args);
+        }
+        if(toolName === "exec_cmd") {
+            return  SystemUtil.command(session_id,args);
         }
         // 其他内置
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {

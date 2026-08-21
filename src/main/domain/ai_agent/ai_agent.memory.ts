@@ -456,14 +456,40 @@ export class AiAgentMemoryService {
         this.upsertMeta(store, userId, session, fileName);
     }
 
-    // 将本次机器人的聊天结果加入到历史会话中
-    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }, env?: ai_agent_item_dotenv) {
+    private get_origin_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
         const session = this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
+        return {session,meta,store};
+    }
+
+    /**
+     * 仅追加一条消息到会话（轻量写入）
+     * 与 appendTurn 不同：不做 token 统计、不触发压缩、不改标题、不提取长期记忆，
+     * 纯粹把一条消息追加到末尾并落盘，适用于“手动补充/注入一条消息”等场景。
+     * @param userId 用户 ID
+     * @param sessionId 会话 ID
+     * @param message 要追加的消息（会被标准化为 LLM 可识别的格式）
+     */
+    public append_message_to_session(userId: string, sessionId: string, message: ai_agent_message_item) {
+        const r = this.get_origin_session(userId,sessionId);
+        if(!r)return;
+        const {session,meta,store} = r;
+        // 标准化消息，保证与历史消息结构一致（role/content/attachments/tool_calls）
+        session.messages.push(llm_normalizeMessage_one(message));
+        session.updated_at = Date.now();
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
+    }
+
+    // 将本次机器人的聊天结果加入到历史会话中
+    public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }, env?: ai_agent_item_dotenv) {
+        const r = this.get_origin_session(userId,sessionId);
+        if(!r)return;
+        const {session,meta,store} = r;
         // 历史处理
         for (const message of session.messages) {
             message._interrupted = false

@@ -29,6 +29,7 @@ import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/pick_next_model";
 import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
 import {aiAgentMemoryService} from "./ai_agent.memory";
+import {SystemUtil} from "../sys/sys.utl";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -446,11 +447,12 @@ const workMessages: ai_agent_message_list = [
             ended = true;
             controller.signal.removeEventListener('abort', onAbort);
             on_end({ once_messages_list, _interrupted: interrupted });
+            SystemUtil.kill_command(session_id)
         };
         // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
         const onAbort = () => {
             _interrupted = true;
-            endOnce();
+            // endOnce();
         };
         controller.signal.addEventListener('abort', onAbort);
 
@@ -469,7 +471,6 @@ const workMessages: ai_agent_message_list = [
                 content: "",
                 tool_call_ends:[]
             };
-            once_messages_list.push(assistantMessage);
             const toolCallMap = new Map<number, any>();
 
             //  调用 LLM（流式）
@@ -524,12 +525,14 @@ const workMessages: ai_agent_message_list = [
                 ,
                 // ===== error_call =====
                 error_call:(e) => {
-                    // 真正的请求错误（非主动中断）：直接抛出，由外层 chat_ws 的 catch 统一处理。
-                    // catch 分支会向客户端发送 ai_chat_error 并保存错误信息；
-                    // 用户消息已在 chat_ws 开头通过 appendUserMessage 提前落盘，不会因抛错而丢失。
-                    // 注意：不能先调 on_end，否则前端收到 ai_chat_end 后会 cleanup()，
-                    // 导致后续的 ai_chat_error 消息无人接收。
-                    throw e
+                    const str = get_error_str(e)
+                    assistantMessage.content += str
+                    // 携带 chunk_index，让前端可以区分独立气泡
+                    on_msg({
+                        text: str,
+                        chunk_index: globalChunkIndex
+                    });
+                    _interrupted = true;
                 },
                 abort_error_call:(e)=>{
                     // 主动中断（用户点暂停 / 关闭）：仅标记中断即可，
@@ -545,6 +548,7 @@ const workMessages: ai_agent_message_list = [
                 }
             }
 
+            once_messages_list.push(assistantMessage);
             assistantMessage.tool_calls = Array.from(toolCallMap.values());
 
             //  一次 LLM 完整结束，补 push assistant
@@ -559,13 +563,34 @@ const workMessages: ai_agent_message_list = [
 
             // 没有 tool_calls，直接结束
             if (_interrupted || (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0)) {
-                // 中断保护：若对话被停止（_interrupted）时，LLM 可能已经返回了 tool_calls，
-                // 但对应的工具结果（tool_call_ends）并未产生。若直接把带 tool_calls 的
-                // assistant 消息保存进会话，下一次请求会因为“缺少对应的 tool 响应消息”而报错
-                // （OpenAI: An assistant message with 'tool_calls' must be followed by tool messages...）。
-                // 因此中断时清空未完成的 tool_calls，只保留已产出的文本内容。
-                if (_interrupted && assistantMessage.tool_call_ends?.length === 0) {
-                    assistantMessage.tool_calls = undefined;
+                // 中断保护：若对话被停止（_interrupted）时，LLM 已经返回了 tool_calls，但对应的
+                // 工具结果（tool_call_ends）并未产生。此时不应删除这些 tool_calls，而是为每个
+                // 未执行的 tool_call 构建一个“假的 callItem”（标记为被中断/未完成）填充进
+                // tool_call_ends。这样：
+                //   1. 前端工具调用面板能完整展示每个调用（包括被中断的），而不是凭空消失；
+                //   2. 落盘后 llm_normalizeMessage 也能依据 tool_call_ends / tool_calls 自动生成
+                //      对应的“被中断”tool 响应，避免“带 tool_calls 却缺 tool 响应”报错
+                //      （OpenAI: An assistant message with 'tool_calls' must be followed by tool messages...）。
+                if (_interrupted && assistantMessage.tool_calls?.length) {
+                    for (const tc of assistantMessage.tool_calls) {
+                        // 该 tool_call 是否已产生结果（跳过已完成的）
+                        const hasEnd = (assistantMessage.tool_call_ends ?? [])
+                            .some(end => end.tool_call_id === tc.id);
+                        if (hasEnd) continue;
+                        // 尝试解析参数，失败则保留原始 arguments 字符串
+                        let toolArgs: any = tc.function?.arguments ?? null;
+                        try { toolArgs = JSON.parse(tc.function?.arguments || "{}"); } catch (e) { /* 保留原样 */ }
+                        assistantMessage.tool_call_ends!.push({
+                            tool_name: tc.function?.name ?? "",
+                            tool_display_name: tc.function?.name ?? "",
+                            tool_args: toolArgs,
+                            success: false,
+                            error: "工具调用因对话被中断而未执行完成（无结果返回）",
+                            tool_result: undefined,
+                            duration_ms: 0,
+                            tool_call_id: tc.id,
+                        });
+                    }
                 }
                 endOnce(_interrupted);
                 return;

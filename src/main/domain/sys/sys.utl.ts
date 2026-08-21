@@ -1,4 +1,4 @@
-import {execSync} from "child_process";
+import {ChildProcess, execSync, spawn} from "child_process";
 import {sysType} from "../shell/shell.service";
 import {getProcessAddon} from "../bin/bin";
 import {Env} from "../../../common/node/Env";
@@ -9,8 +9,109 @@ const {exec} = require('child_process');
 const util = require('util');
 const exec_async = util.promisify(exec);
 
+const child_map: {[key: string]: Set<ChildProcess>} = {};
 
 export class SystemUtil {
+
+
+    /**
+     * 执行命令
+     *
+     * 一个 command_id 可以对应多个 ChildProcess
+     */
+    public static command(
+        command_id: string,
+        {cmd, cwd}: { cmd: string, cwd: string }
+    ): Promise<string> {
+        return new Promise((resolve, reject) => {
+
+            const child = spawn(cmd, {
+                shell: true,
+                cwd,
+                env: {
+                    ...process.env,
+                    PATH: settingService.get_env_path(),
+                },
+                stdio: ["pipe", "pipe", "pipe"],
+            });
+
+            // 没有 Set 就创建
+            let children = child_map[command_id];
+
+            if (!children) {
+                children = new Set<ChildProcess>();
+                child_map[command_id] = children;
+            }
+
+            children.add(child);
+
+            let stdout = "";
+            let stderr = "";
+
+            child.stdout?.on("data", (data) => {
+                stdout += data.toString();
+            });
+
+            child.stderr?.on("data", (data) => {
+                stderr += data.toString();
+            });
+
+            child.once("error", (err) => {
+                children.delete(child);
+
+                if (children.size === 0) {
+                    delete child_map[command_id];
+                }
+
+                reject(err);
+            });
+
+            child.once("close", (code) => {
+                children.delete(child);
+
+                if (children.size === 0) {
+                    delete child_map[command_id];
+                }
+
+                if (code === 0) {
+                    resolve(stdout);
+                } else {
+                    reject(
+                        new Error(
+                            `Command failed with code ${code}: ${stderr || stdout}`
+                        )
+                    );
+                }
+            });
+        });
+    }
+
+    /**
+     * 杀掉 command_id 对应的所有进程
+     */
+    public static kill_command(command_id: string): boolean {
+        const children = child_map[command_id];
+
+        if (!children || children.size === 0) {
+            return false;
+        }
+
+        // 先从 map 移除
+        delete child_map[command_id];
+
+        // 再杀掉所有进程
+        for (const child of children) {
+            if (child.pid) {
+                this.killProcess(child.pid);
+            }
+        }
+
+        // 清空 Set
+        children.clear();
+
+        return true;
+    }
+
 
     // 执行某个命令 并返回 是否执行成功结果
     public static commandIsExist(cmd: string): boolean {
