@@ -595,6 +595,74 @@ export class WorkflowService {
         });
     }
 
+    /**
+     * 列出所有运行中的 workflow 任务（供 pty 命令 filecat-act-status 使用）
+     */
+    public act_get_running_list(): any[] {
+        const list: any[] = [];
+        for (const [file_path, worker] of work_exec_map) {
+            list.push({
+                path: file_path,
+                filename: worker.filename,
+                name: worker.name,
+                "run-name": worker["run-name"],
+                running_type: worker.running_type,
+            });
+        }
+        return list;
+    }
+
+    /**
+     * 查询指定 act 文件是否在运行，不在运行返回 null（供 filecat-act-status 使用）
+     */
+    public act_get_running(file_path: string): any {
+        const worker = work_exec_map.get(file_path);
+        if (!worker) return null;
+        return {
+            path: file_path,
+            filename: worker.filename,
+            name: worker.name,
+            "run-name": worker["run-name"],
+            running_type: worker.running_type,
+        };
+    }
+
+    /**
+     * 启动 workflow act 文件（供 filecat-act-start/restart 使用）
+     * @param file_path act 文件的绝对路径
+     * @param user_id 执行命令的用户 id
+     */
+    public async act_start(file_path: string, user_id: string) {
+        const user_info = userService.get_user_info_by_user_id(user_id);
+        if (!user_info) throw "user not found";
+        // 判断该 act 是否已在运行（这里复用 exec_file 的判重，失败会抛异常）
+        await this.exec_file(file_path, user_info);
+    }
+
+    /**
+     * 停止 workflow act 文件（供 filecat-act-stop 使用）
+     */
+    public async act_stop(file_path: string) {
+        const worker = work_exec_map.get(file_path);
+        if (!worker) throw "no task exists";
+        worker.close();
+        work_exec_map.delete(file_path);
+        this.online_change_push();
+    }
+
+    /**
+     * 重启 workflow act 文件（供 filecat-act-restart 使用）
+     */
+    public async act_restart(file_path: string, user_id: string) {
+        const worker = work_exec_map.get(file_path);
+        if (worker) {
+            worker.close();
+            work_exec_map.delete(file_path);
+            this.online_change_push();
+        }
+        await this.act_start(file_path, user_id);
+    }
+
     public async workflow_realtime_one(data: WsData<WorkFlowRealTimeOneReq>) {
 
         const token: string = (data.wss as Wss).token;

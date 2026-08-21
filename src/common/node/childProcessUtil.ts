@@ -11,7 +11,11 @@ export enum filecat_cmd  {
     filecat_restart = "filecat-restart",
     filecat_upgrade = "filecat-upgrade",
     filecat_down = "filecat-down",
-    ai = "ai"
+    ai = "ai",
+    filecat_act_start = "filecat-act-start",
+    filecat_act_restart = "filecat-act-restart",
+    filecat_act_stop = "filecat-act-stop",
+    filecat_act_status = "filecat-act-status",
 }
 
 export enum node_process_cmd  {

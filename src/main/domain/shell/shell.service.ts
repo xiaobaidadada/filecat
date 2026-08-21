@@ -24,6 +24,7 @@ import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUt
 import {DataUtil} from "../data/DataUtil";
 import {filecat_upgrade_class} from "./utils/filecat_upgrade";
 import {ai_agent_class} from "./utils/ai_agent";
+import {workflowService} from "../file/workflow/workflow.service";
 import {wss_interface} from "../../../common/frame/type";
 
 const {spawn, exec} = require('child_process');
@@ -176,6 +177,73 @@ export class ShellService {
 
         pty_shell.add_js_child(filecat_cmd.filecat_upgrade, filecat_upgrade_class)
         pty_shell.add_js_child(filecat_cmd.ai, ai_agent_class)
+
+        // pty 内 workflow act 控制命令（启动/重启/停止/状态）
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_act_start, (params, send) => this.act_cmd_base(filecat_cmd.filecat_act_start, params, send))
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_act_restart, (params, send) => this.act_cmd_base(filecat_cmd.filecat_act_restart, params, send))
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_act_stop, (params, send) => this.act_cmd_base(filecat_cmd.filecat_act_stop, params, send))
+        pty_shell.add_cmd_handle(filecat_cmd.filecat_act_status, (params, send) => this.act_cmd_base(filecat_cmd.filecat_act_status, params, send))
+    }
+
+    /** running_type 状态文本（not=0, running=1, success=2, fail=3） */
+    private act_status_text(running_type: number): string {
+        if (running_type === 1) return "执行中(running)";
+        if (running_type === 2) return "成功(success)";
+        if (running_type === 3) return "失败(fail)";
+        return "未运行(not)";
+    }
+
+    /**
+     * workflow act 控制的统一处理（启动/重启/停止/状态）
+     * params 末尾已由 check_exe_cmd 追加了 user_id，params[0] 为 act 文件绝对路径（status 可不带）
+     */
+    private async act_cmd_base(exe: string, params: string[], send: (str: string, enter?: boolean) => void) {
+        const user_id = params.pop();
+        const file_path = params[0];
+        try {
+            if (exe === filecat_cmd.filecat_act_start || exe === filecat_cmd.filecat_act_restart) {
+                if (!file_path) {
+                    send("缺少 act 文件路径参数");
+                    return;
+                }
+                if (exe === filecat_cmd.filecat_act_start) {
+                    await workflowService.act_start(file_path, user_id);
+                    send(`workflow 已启动: ${file_path}`);
+                } else {
+                    await workflowService.act_restart(file_path, user_id);
+                    send(`workflow 已重启: ${file_path}`);
+                }
+            } else if (exe === filecat_cmd.filecat_act_stop) {
+                if (!file_path) {
+                    send("缺少 act 文件路径参数");
+                    return;
+                }
+                await workflowService.act_stop(file_path);
+                send(`workflow 已停止: ${file_path}`);
+            } else {
+                // status
+                if (file_path) {
+                    const task = workflowService.act_get_running(file_path);
+                    if (!task) {
+                        send(`未在运行: ${file_path}`);
+                    } else {
+                        send(`[运行中] ${file_path}  name=${task.name} run-name=${task["run-name"]} 状态=${this.act_status_text(task.running_type)}`);
+                    }
+                } else {
+                    const list = workflowService.act_get_running_list();
+                    if (!list.length) {
+                        send("当前没有运行的 workflow");
+                        return;
+                    }
+                    const lines = list.map(it =>
+                        `[运行中] ${it.path}  name=${it.name} run-name=${it["run-name"]} 状态=${this.act_status_text(it.running_type)}`
+                    );
+                    send(lines.join("\n\r"));
+                }
+            }
+        } catch (e) {
+            send(e?.message ?? e);
+        }
     }
 
     check_exe_cmd({
@@ -218,6 +286,24 @@ export class ShellService {
                     } else {
                         return exec_type.auto_child_process
                     }
+
+                case filecat_cmd.filecat_act_start:
+                case filecat_cmd.filecat_act_restart:
+                case filecat_cmd.filecat_act_stop:
+                case filecat_cmd.filecat_act_status:
+                    // pty 内控制 workflow act 任务（启动/重启/停止/状态）
+                    if (!this.check_permission({ user_id, permission: UserAuth.workflow_exe})) {
+                        return exec_type.not
+                    }
+                    // 将 act 文件路径（相对路径）解析为绝对路径（基于当前终端 cwd），并把 user_id 追加到参数末尾
+                    if (params[0] && !path.isAbsolute(params[0])) {
+                        params[0] = path.join(cwd, params[0]);
+                    }
+                    if (!userService.check_user_path_by_user_id(user_id, params[0] )) {
+                        return exec_type.not;
+                    }
+                    params.push(user_id)
+                    return exec_type.auto_child_process
 
             }
             // 自定义命令检测
