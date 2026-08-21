@@ -157,27 +157,38 @@ export class FileService  {
             return Fail("请选择一个数据库文件", RCode.Fail);
         }
         const sql = data.sql.trim().replace(/;+\s*$/, "");
-        // if (!/^(select|with|pragma|explain)\b/i.test(sql)) {
-        //     return Fail("只允许查询语句", RCode.Fail);
-        // }
+        // 允许任意语句（查询 + DDL/DML/维护命令），数据库以可写模式打开
         let db;
         try {
-            db = new Database(sysPath, {readonly: true, fileMustExist: true});
-            const stmt = db.prepare(sql);
-            const rows = stmt.all().map(v => this.normalizeSqliteValue(v));
-            let columns: string[] = [];
-            try {
-                columns = stmt.columns().map(v => v.name);
-            } catch (e) {
-                columns = [];
+            db = new Database(sysPath, {fileMustExist: true});
+            // 查询类语句：prepare 单条语句并返回结果集
+            if (/^(select|with|pragma|explain)\b/i.test(sql)) {
+                const stmt = db.prepare(sql);
+                const rows = stmt.all().map(v => this.normalizeSqliteValue(v));
+                let columns: string[] = [];
+                try {
+                    columns = stmt.columns().map(v => v.name);
+                } catch (e) {
+                    columns = [];
+                }
+                if (!columns.length && rows.length) {
+                    columns = Object.keys(rows[0]);
+                }
+                const result: sqliteQueryResult = {
+                    columns,
+                    rows,
+                    row_count: rows.length,
+                };
+                return Sucess(result);
             }
-            if (!columns.length && rows.length) {
-                columns = Object.keys(rows[0]);
-            }
+            // 写类语句（CREATE/DROP/ALTER/INSERT/UPDATE/DELETE/VACUUM 等）：
+            // 用 exec 执行，支持以分号分隔的多条语句，返回受影响行数
+            const info = db.exec(sql);
+            const changes = db.prepare("SELECT changes() AS changes").get();
             const result: sqliteQueryResult = {
-                columns,
-                rows,
-                row_count: rows.length,
+                columns: ["changes"],
+                rows: [{changes: changes?.changes ?? 0}],
+                row_count: 1,
             };
             return Sucess(result);
         } catch (e) {
