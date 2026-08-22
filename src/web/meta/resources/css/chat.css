@@ -135,10 +135,11 @@
 }
 
 /* 会话正在执行中：标题右侧的旋转 loading 小圆点 */
+/* 用 !important 固定尺寸，避免被 .chat-session-item span 的 display:block / 折叠时 width:100% 等规则覆盖导致圆点被拉伸放大 */
 .chat-session-running {
-    display: inline-block;
-    width: 11px;
-    height: 11px;
+    display: inline-block !important;
+    width: 11px !important;
+    height: 11px !important;
     margin: 0 4px;
     vertical-align: 1px;
     border: 2px solid #c7d2fe;
