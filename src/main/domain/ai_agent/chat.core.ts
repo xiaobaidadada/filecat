@@ -641,7 +641,7 @@ const workMessages: ai_agent_message_list = [
                             const updateResult = this.handleUpdateLlmPrompt(matchedPromptIndex, args);
                             resultStr = updateResult.message;
                         } else {
-                            result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss);
+                            result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss, controller);
                             resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
                         }
                         callItem.success = true;

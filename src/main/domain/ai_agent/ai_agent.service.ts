@@ -961,7 +961,7 @@ export class Ai_agentService {
      * - audio_speech（语音合成）：直接请求 audio/speech 接口
      * - audio_transcription / audio_translation：直接请求对应接口
      */
-    public async callModelTool(toolName: string, args: { prompt: string },user_id:string, session_id?:string, wss?:wss_interface): Promise<string> {
+    public async callModelTool(toolName: string, args: { prompt: string },user_id:string, session_id?:string, wss?:wss_interface, externalController?: AbortController): Promise<string> {
         const index = parseInt(toolName.replace('call_model_', ''), 10);
         const modelItem = ai_tool_models.find(m => m.index === index);
         if (!modelItem) {
@@ -979,8 +979,8 @@ export class Ai_agentService {
         // ====== 根据 request_type 分发，直接传入 config 和 env ======
         switch (requestType) {
             case 'completions': {
-                // 对话类型：调用 chat_core.chat 获得完整功能链
-                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id, session_id, wss);
+                // 对话类型：调用 chat_core.chat 获得完整功能链；透传外部 controller 让子模型能被“暂停”中断
+                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id, session_id, wss, externalController);
             }
 
             case 'images': {
@@ -1027,11 +1027,16 @@ export class Ai_agentService {
 
     /**
      * 以对话方式调用目标模型，再次使用 chat_core.chat 获得完整功能链
+     * @param externalController 外部传人的 AbortController（可选）。
+     *   传了就复用该 controller，这样上层会话“点暂停/终止”时能同时中断正在进行的子模型调用，
+     *   避免“只置 _interrupted 而未真正终止子模型请求”导致点暂停没反应的假象。
+     *   不传则内部新建（与旧行为一致，子模型独立执行）。
      */
-    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string,user_id:string, session_id?:string, wss?:wss_interface): Promise<string> {
+    private async callModelToolAsChat(modelItem: ai_agent_Item, modelEnv: ai_agent_item_dotenv, prompt: string,user_id:string, session_id?:string, wss?:wss_interface, externalController?: AbortController): Promise<string> {
 
         let fullContent = "";
-        const controller = new AbortController();
+        // 复用外部传入的 controller（使子模型调用能被外层的“暂停”中断）；否则新建独立 controller
+        const controller = externalController ?? new AbortController();
 
         await chat_core.chat({
             wss,
@@ -1192,10 +1197,10 @@ export class Ai_agentService {
         return ai_agentMcpService.getToolInfo(toolName, args);
     }
 
-    public async callTool(toolName: string, args: any,user_id:string, session_id?:string, wss?:wss_interface) {
-        // model tool（调用其他注册为 tool 的 AI 模型）
+    public async callTool(toolName: string, args: any,user_id:string, session_id?:string, wss?:wss_interface, externalController?: AbortController) {
+        // model tool（调用其他注册为 tool 的 AI 模型）；透传 externalController 使其子模型调用可被外层“暂停”中断
         if (this.isModelTool(toolName)) {
-            return this.callModelTool(toolName, args,user_id, session_id, wss);
+            return this.callModelTool(toolName, args,user_id, session_id, wss, externalController);
         }
         // 内置工具 — 后台进程相关工具需要 session_id
         if (toolName === "exec_cmd_background") {
