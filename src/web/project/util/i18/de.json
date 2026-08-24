@@ -648,5 +648,6 @@
   "启用 iptables": "iptables aktivieren",
   "Live Restore": "Live-Restore",
   "存储 / 日志 / 网络": "Speicher / Logs / Netzwerk",
-  "配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Die Konfiguration wird in /etc/docker/daemon.json gespeichert; leerer Wert entfernt den Eintrag; mehrere Mirror/registries mit Kommas trennen. Wirkt nach Neustart von Docker. Vorsicht bei Änderung des Datenverzeichnisses."
+  "配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Die Konfiguration wird in /etc/docker/daemon.json gespeichert; leerer Wert entfernt den Eintrag; mehrere Mirror/registries mit Kommas trennen. Wirkt nach Neustart von Docker. Vorsicht bei Änderung des Datenverzeichnisses.",
+  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Der Proxy wird in die systemd-Dienst-Umgebungsvariablen geschrieben, die übrigen Felder in daemon.json. Wirkt nach Neustart von Docker. Vorsicht besonders bei Änderung des Datenverzeichnisses."
 }

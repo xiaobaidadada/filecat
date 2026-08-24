@@ -170,7 +170,7 @@ export default function DockerSetting() {
                                                     value={live_restore}
                                                     onChange={(v) => set_live_restore(!!v)} />
                                         </div>
-                                        <p className={"docker-setting__tip"}>{t("配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}</p>
+                                        <p className={"docker-setting__tip"}>{t("代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}</p>
                                     </div>
                                 </CardFull>
                             </Column>

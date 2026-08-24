@@ -362,11 +362,16 @@ class SysDockerService {
     }
 
 
-    // ==================== Docker daemon 代理配置（daemon.json 的 proxies 字段） ====================
+    // ==================== Docker daemon 配置（代理走 systemd 环境变量，其余走 daemon.json） ====================
 
-    /** daemon.json 路径（Linux 默认）；macOS 无该文件则当作空配置处理 */
+    /** daemon.json 路径（Linux 默认）；存放镜像加速/存储/日志等字段 */
     private get daemonPath(): string {
         return "/etc/docker/daemon.json";
+    }
+
+    /** docker daemon 环境变量 override 配置（存放代理，systemd 优先读取） */
+    private get proxyServicePath(): string {
+        return "/etc/systemd/system/docker.service.d/http-proxy.conf";
     }
 
     /** Docker daemon 配置与 systemctl 重启仅适用于 Linux，其余平台返回 false */
@@ -387,18 +392,72 @@ class SysDockerService {
     }
 
     /**
-     * 读取 Docker 配置（daemon.json 常用字段）
-     * 返回代理 + 镜像加速 + 不安全仓库 + 数据/日志/网络安全等字段
+     * 读取 docker daemon 的代理环境变量（来源与 systemctl show docker --property=Environment 一致）
+     * 返回 { http_proxy, https_proxy, no_proxy }
+     */
+    async read_docker_proxy_env(): Promise<{http_proxy: string; https_proxy: string; no_proxy: string}> {
+        const result = {http_proxy: "", https_proxy: "", no_proxy: ""};
+        if (!this.isLinux()) return result;
+        try {
+            const out = (await SystemUtil.execAsync("systemctl show docker --property=Environment")).toString();
+            // 形如：Environment=HTTP_PROXY=http://... HTTPS_PROXY=https://... NO_PROXY=localhost
+            const m = out.match(/Environment=(.*)/);
+            if (!m) return result;
+            const envStr = m[1].trim();
+            // systemd 环境变量可能用引号包裹（值含空格时），先整体按 "KEY=VALUE" "KEY=VALUE" 切分
+            const parts = envStr.match(/(?:[^\s"']|"[^"]*"|'[^']*')+/g) || [];
+            for (const p of parts) {
+                const idx = p.indexOf("=");
+                if (idx <= 0) continue;
+                const key = p.slice(0, idx).trim();
+                let val = p.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+                if (key === "HTTP_PROXY") result.http_proxy = val;
+                else if (key === "HTTPS_PROXY") result.https_proxy = val;
+                else if (key === "NO_PROXY") result.no_proxy = val;
+            }
+        } catch (e) {
+            // systemctl show 失败（如 docker 未装/非 systemd），保持空
+        }
+        return result;
+    }
+
+    /**
+     * 写入 docker daemon 的代理环境变量到 systemd override 配置（http-proxy.conf）
+     * 写完后需 systemctl daemon-reload 并 restart docker 才生效（由调用方处理）。
+     * 三个代理均为空时删除该 override 配置文件（相当于清除代理）。
+     */
+    async write_docker_proxy_env(data: {http_proxy?: string; https_proxy?: string; no_proxy?: string}) {
+        if (!this.isLinux()) throw new Error("Docker daemon 代理配置仅在 Linux 下支持");
+        const lines: string[] = [];
+        if (data.http_proxy) lines.push(`Environment="HTTP_PROXY=${data.http_proxy}"`);
+        if (data.https_proxy) lines.push(`Environment="HTTPS_PROXY=${data.https_proxy}"`);
+        if (data.no_proxy) lines.push(`Environment="NO_PROXY=${data.no_proxy}"`);
+
+        if (lines.length === 0) {
+            // 全部清除：删除 override 文件
+            await FileUtil.remove_dir(this.proxyServicePath).catch(() => {});
+            return;
+        }
+        const content = `[Service]\n${lines.join("\n")}\n`;
+        await FileUtil.mkdirSync(path.dirname(this.proxyServicePath), {recursive: true});
+        await FileUtil.writeFileSync(this.proxyServicePath, content);
+    }
+
+    /**
+     * 读取 Docker 配置
+     * 代理来自 systemd 环境变量（与 systemctl show docker --property=Environment 一致），
+     * 镜像加速/存储/日志/网络等来自 daemon.json。
      */
     async get_docker_config() {
-        // 仅 Linux 才有 /etc/docker/daemon.json 与 systemctl 管理能力
+        // 仅 Linux 才有 daemon.json 与 systemctl 管理能力
         if (!this.isLinux()) return null;
         const conf = await this.readDaemonConf();
-        const proxies = conf.proxies || {};
+        // 代理：从 systemd 环境变量读取（不是 daemon.json 的 proxies 字段）
+        const proxyEnv = await this.read_docker_proxy_env();
         return {
-            http_proxy: proxies["http-proxy"] || "",
-            https_proxy: proxies["https-proxy"] || "",
-            no_proxy: proxies["no-proxy"] || "",
+            http_proxy: proxyEnv.http_proxy,
+            https_proxy: proxyEnv.https_proxy,
+            no_proxy: proxyEnv.no_proxy,
             // 兼容字符串或数组两种写法
             registry_mirrors: Array.isArray(conf["registry-mirrors"]) ? conf["registry-mirrors"] : (conf["registry-mirrors"] ? [conf["registry-mirrors"]] : []),
             insecure_registries: Array.isArray(conf["insecure-registries"]) ? conf["insecure-registries"] : (conf["insecure-registries"] ? [conf["insecure-registries"]] : []),
@@ -413,8 +472,9 @@ class SysDockerService {
     }
 
     /**
-     * 保存 Docker 配置到 daemon.json（合并保留原有其他字段）
-     * 空字符串/空数组表示清除对应项；布尔字段传入 undefined 表示保留原值
+     * 保存 Docker 配置
+     * 代理写入 systemd 环境变量 override（http-proxy.conf），其余字段写入 daemon.json。
+     * 空字符串/空数组表示清除对应项；布尔字段传入 undefined 表示保留原值。
      */
     async save_docker_config(data: {
         http_proxy?: string; https_proxy?: string; no_proxy?: string;
@@ -422,18 +482,20 @@ class SysDockerService {
         data_root?: string; storage_driver?: string; log_driver?: string;
         iptables?: boolean; live_restore?: boolean;
     }) {
-        // 仅 Linux 下才存在可写的 /etc/docker/daemon.json
+        // 仅 Linux 下才存在可写的 /etc/docker/daemon.json 与 systemd override
         if (!this.isLinux()) throw new Error("Docker daemon 配置仅在 Linux 下支持");
-        const conf = await this.readDaemonConf();
 
-        // 代理（proxies 字段）：空字符串不写入（等价清除该项）
+        // 代理：写 systemd 环境变量（http-proxy.conf）
         if (data.http_proxy !== undefined || data.https_proxy !== undefined || data.no_proxy !== undefined) {
-            const proxies: any = {};
-            if (data.http_proxy) proxies["http-proxy"] = data.http_proxy;
-            if (data.https_proxy) proxies["https-proxy"] = data.https_proxy;
-            if (data.no_proxy) proxies["no-proxy"] = data.no_proxy;
-            conf.proxies = proxies;
+            await this.write_docker_proxy_env({
+                http_proxy: data.http_proxy,
+                https_proxy: data.https_proxy,
+                no_proxy: data.no_proxy,
+            });
         }
+
+        // 其余字段：写 daemon.json
+        const conf = await this.readDaemonConf();
 
         // 镜像加速 / 不安全仓库：数组形式（空数组清除）
         if (data.registry_mirrors !== undefined) {
@@ -467,9 +529,10 @@ class SysDockerService {
         await FileUtil.writeFileSync(this.daemonPath, JSON.stringify(conf, null, 4) + "\n");
     }
 
-    /** 重启 docker 服务（Linux，systemd）；需要用户在界面上二次确认后调用 */
+    /** 重启 docker 服务（Linux，systemd）；先 daemon-reload 让 override 配置生效；需用户二次确认后调用 */
     async restart_docker() {
         if (!this.isLinux()) throw new Error("重启 docker 仅在 Linux 下支持");
+        await SystemUtil.execAsync("systemctl daemon-reload");
         await SystemUtil.execAsync("systemctl restart docker");
     }
 
