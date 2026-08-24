@@ -99,6 +99,49 @@ export class FirewallServiceImpl {
     }
 
     /**
+     * 解析 ufw status numbered 输出，返回结构化规则列表（供前端列表化展示与按编号删除）
+     * 每条规则含：number(ufw 编号)、to、action、from、description（# 后的备注）
+     */
+    public async get_ufw_rules(): Promise<{number: number, to: string, action: string, from: string, description: string}[]> {
+        await this.require_backend(SysSoftware.ufw);
+        const raw = (await SystemUtil.execAsync("ufw status numbered")).toString();
+        const lines = raw.split(/\r?\n/);
+        const list: {number: number, to: string, action: string, from: string, description: string}[] = [];
+        const re = /^\s*\[\s*(\d+)\]\s+(.*)$/;
+        for (const line of lines) {
+            const m = line.match(re);
+            if (!m) continue;
+            let description = "";
+            let body = m[2].trim();
+            // 截取 # 后的备注
+            const hashIdx = body.indexOf("#");
+            if (hashIdx >= 0) {
+                description = body.slice(hashIdx + 1).trim();
+                body = body.slice(0, hashIdx).trim();
+            }
+            // ufw numbered 的列之间用多个空格分隔：To  | Action(如 ALLOW IN)  | From
+            const parts = body.split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
+            list.push({
+                number: parseInt(m[1], 10),
+                to: parts[0] || "",
+                action: parts[1] || "",
+                from: parts[2] || "",
+                description,
+            });
+        }
+        return list;
+    }
+
+    /**
+     * 按 ufw 编号删除一条规则（ufw delete <number>）
+     */
+    public async del_ufw_rule(number: number): Promise<string> {
+        await this.require_backend(SysSoftware.ufw);
+        await SystemUtil.execAsync(`ufw delete ${number}`);
+        return `规则 ${number} 已删除`;
+    }
+
+    /**
      * 放行（添加）一条端口规则
      * @param backend 后端
      * @param proto   tcp / udp

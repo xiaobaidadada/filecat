@@ -2,10 +2,13 @@ import React, {useEffect, useState} from 'react'
 import {Blank} from "../../../meta/component/Blank";
 import {Column, Dashboard, Row} from '../../../meta/component/Dashboard';
 import {Card, CardFull, TextTip} from "../../../meta/component/Card";
+import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
+import {useAtom} from "jotai";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
+import {$stroe} from "../../util/store";
 import {firewallHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
@@ -21,8 +24,21 @@ interface BackendStatus {
     note: string;
 }
 
+// ufw 结构化规则（ufw status numbered 解析）
+interface UfwRule {
+    number: number;
+    to: string;
+    action: string;
+    from: string;
+    description: string;
+}
+
+// 规则列表视图模式
+type ViewMode = "list" | "text";
+
 export function Firewall() {
     const {t} = useTranslation();
+    const [, set_confirm] = useAtom($stroe.confirm);
 
     // 状态：ufw / nft 是否安装、是否启用
     const [backends, setBackends] = useState<BackendStatus[]>([]);
@@ -32,8 +48,11 @@ export function Firewall() {
     const [proto, setProto] = useState<"tcp" | "udp">("tcp");
     const [port, setPort] = useState("");
     const [from, setFrom] = useState("");
-    // 规则列表文本
+    // 规则列表：文本 + ufw 结构化两种形态
     const [rules, setRules] = useState("");
+    const [ufwRules, setUfwRules] = useState<UfwRule[]>([]);
+    // 视图模式：list 结构化列表（ufw）/ text 纯文本
+    const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [loadRules, setLoadRules] = useState(false);
 
     const PROTO_OPTIONS = [
@@ -55,17 +74,26 @@ export function Firewall() {
         }
     };
 
-    // 拉取当前后端规则
+    // 拉取当前后端规则（文本 + ufw 结构化）
     const getRules = async () => {
         setLoadRules(true);
         try {
-            const rsq = await firewallHttp.get(`rules?backend=${manage}`);
-            if (rsq.code === RCode.Success) {
-                setRules(rsq.data ?? "");
+            if (manage === "ufw") {
+                // ufw：同时拉取文本和结构化列表，供名单/文本两种视图使用
+                const [textRsp, listRsp] = await Promise.all([
+                    firewallHttp.get(`rules?backend=${manage}`),
+                    firewallHttp.get("ufw/rules"),
+                ]);
+                if (textRsp.code === RCode.Success) setRules(textRsp.data ?? "");
+                if (listRsp.code === RCode.Success) setUfwRules(listRsp.data ?? []);
+            } else {
+                const rsq = await firewallHttp.get(`rules?backend=${manage}`);
+                if (rsq.code === RCode.Success) setRules(rsq.data ?? "");
             }
         } catch (e) {
-            // Http 内部已弹失败提示（如后端未安装）；这里仅清空规则并兜底
+            // Http 内部已弹失败提示（如后端未安装）；这里仅清空并兜底
             setRules("");
+            setUfwRules([]);
         } finally {
             setLoadRules(false);
         }
@@ -112,6 +140,24 @@ export function Firewall() {
             NotySuccess(rsq.data || t("已禁用放行"));
             getRules();
         } catch (e) { /* Http 已弹错 */ }
+    };
+
+    // 按 ufw 编号删除一条规则（列表视图下，二次确认后调用）
+    const delUfwRule = async (number: number) => {
+        set_confirm({
+            open: true,
+            title: t("确定删除该规则吗？"),
+            sub_title: `${t("规则编号")} ${number}`,
+            handle: async () => {
+                try {
+                    const rsq = await firewallHttp.post("ufw/rule/del", {number});
+                    set_confirm({open: false, handle: null});
+                    if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
+                    NotySuccess(rsq.data || t("已删除"));
+                    getRules();
+                } catch (e) { /* Http 已弹错 */ }
+            },
+        });
     };
 
     const manageInstalled = backends.find(b => b.id === manage)?.installed === true;
@@ -164,6 +210,9 @@ export function Firewall() {
                                        handleInputChange={(v) => setPort(v)} width={"10rem"}/>
                             <InputText placeholder={t("来源地址(可选)")} value={from}
                                        handleInputChange={(v) => setFrom(v)} width={"12rem"}/>
+                            {/* 来源地址填写说明信息按钮（参考 TextTip hover 提示） */}
+                            <TextTip context={<span className={"firewall-from-tip"} title={t("点击复制")}>?</span>}
+                                     tip_context={t("来源地址填写说明")}/>
                             <ButtonText text={t("放行")} clickFun={addRule}/>
                             <ButtonText text={t("禁用")} clickFun={delRule}/>
                         </div>
@@ -173,10 +222,37 @@ export function Firewall() {
 
             <Row>
                 <Column widthPer={100}>
-                    <CardFull title={`${t("规则列表")} (${manage})`}>
+                    <CardFull title={`${t("规则列表")} (${manage})`} titleCom={
+                        manage === "ufw" ? (
+                            <div style={{display: 'flex', gap: '0.4rem'}}>
+                                <ButtonText text={t("名单视图")} clickFun={() => setViewMode("list")}/>
+                                <ButtonText text={t("文本视图")} clickFun={() => setViewMode("text")}/>
+                            </div>
+                        ) : undefined
+                    }>
                         {loadRules && <Blank context={t("加载中...")}/>}
-                        {!loadRules && !rules && <Blank context={t("暂无规则")}/>}
-                        {!loadRules && rules && <pre style={{whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.85rem', margin: 0}}>{rules}</pre>}
+
+                        {/* ufw 名单视图：结构化列表 + 行内删除 */}
+                        {!loadRules && manage === "ufw" && viewMode === "list" && (
+                            ufwRules.length === 0
+                                ? <Blank context={t("暂无规则")}/>
+                                : <Table headers={[t("编号"), t("目标(To)"), t("动作"), t("来源(From)"), t("备注"), t("操作")]}
+                                        rows={ufwRules.map(r => [
+                                            r.number,
+                                            <TextTip context={r.to} tip_context={r.to}/>,
+                                            r.action,
+                                            r.from ? <TextTip context={r.from} tip_context={r.from}/> : "",
+                                            r.description || "",
+                                            <ActionButton icon={"delete"} title={t("删除规则")} onClick={() => delUfwRule(r.number)}/>,
+                                        ])} width={"8rem"}/>
+                        )}
+
+                        {/* 文本视图（ufw 文本 / nft） */}
+                        {!loadRules && (manage !== "ufw" || viewMode === "text") && (
+                            rules
+                                ? <pre style={{whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.85rem', margin: 0}}>{rules}</pre>
+                                : <Blank context={t("暂无规则")}/>
+                        )}
                     </CardFull>
                 </Column>
             </Row>

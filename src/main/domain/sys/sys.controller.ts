@@ -83,6 +83,29 @@ export class SysController {
         return Sucess(await SysDockerServiceImpl.check_image_delete(data.ids));
     }
 
+    // 读取 Docker 代理配置（daemon.json 的 proxies 字段）
+    @Get("/docker/config")
+    async get_docker_config(@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        return Sucess(await SysDockerServiceImpl.get_docker_config());
+    }
+
+    // 保存 Docker 配置（daemon.json：proxies + registry-mirrors + insecure-registries + debug + 存储/日志/网络字段，空值表示清除对应项）
+    @Post("/docker/config/save")
+    async save_docker_config(@Body() data: { http_proxy?: string, https_proxy?: string, no_proxy?: string, registry_mirrors?: string[], insecure_registries?: string[], debug?: boolean, data_root?: string, storage_driver?: string, log_driver?: string, iptables?: boolean, live_restore?: boolean },@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        await SysDockerServiceImpl.save_docker_config(data);
+        return Sucess("ok");
+    }
+
+    // 重启 docker 服务（需要用户二次确认后由前端调用）
+    @Post("/docker/restart")
+    async restart_docker(@Req() req: Request) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        await SysDockerServiceImpl.restart_docker();
+        return Sucess("ok");
+    }
+
     // docker开关
     @msg(CmdType.docker_switch)
     async dockerSwitch(data: WsData<any>) {

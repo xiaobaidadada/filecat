@@ -749,9 +749,34 @@ export class FileService  {
         }
     }
 
+    /**
+     * 判断两个路径是否位于同一个文件系统（同一设备/硬盘）。
+     * 跨盘的 renameSync 会报 EXDEV 错误，因此需要提前判断，跨盘时改用"复制+删除"实现移动。
+     * 通过比较路径所在设备的 dev（设备号）来判断，适用于 Linux/macOS/Windows。
+     * @param p1 已存在的源路径
+     * @param p2 已存在的路径（这里传目标文件的父目录）
+     */
+    private async isSameFileSystem(p1: string, p2: string): Promise<boolean> {
+        try {
+            const [s1, s2] = await Promise.all([FileUtil.statSync(p1), FileUtil.statSync(p2)]);
+            return s1.dev === s2.dev;
+        } catch (e) {
+            // 无法获取 stat 时保守地允许尝试 rename（交给 renameSync 自行抛 EXDEV 处理）
+            return true;
+        }
+    }
+
     public async cut_exec(source_path: string, to_file: string) {
-        await FileUtil.renameSync(source_path, to_file);
-        await rimraf(source_path);
+        // 先判断源与目标是否在同一个硬盘；不同盘 renameSync 会因 EXDEV 失败，需改用复制+删除
+        const sameFs = await this.isSameFileSystem(source_path, path.dirname(to_file));
+        if (sameFs) {
+            await FileUtil.renameSync(source_path, to_file);
+            await rimraf(source_path);
+        } else {
+            // 跨盘移动：复制到目标后删除源
+            await fse.copy(source_path, to_file, {overwrite: true});
+            await rimraf(source_path);
+        }
     }
 
     public async copy(token, data?: cutCopyReq) {

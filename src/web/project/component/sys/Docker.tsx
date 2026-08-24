@@ -19,6 +19,9 @@ import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
 import {UserAuth, UserData} from "../../../../common/req/user.req";
 import {use_auth_check} from "../../util/store.util";
+import {useNavigate} from "react-router-dom";
+import {routerConfig} from "../../../../common/RouterConfig";
+import {SysEnum} from "../../../../common/req/user.req";
 
 let filter = ""
 
@@ -27,6 +30,8 @@ let all_selected = false;
 
 export function Docker(props) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [user_base_info] = useAtom($stroe.user_base_info);
     const [images_selected,set_images_selected] = useState({});
     const [rows, setRows] = useState([]);
     const [rows_images, set_rows_images] = useState([]);
@@ -224,6 +229,8 @@ export function Docker(props) {
                 set_images_selected({});
             }
         }}/>}>
+            {/* Docker daemon 配置修改依赖 /etc/docker/daemon.json 与 systemctl restart，仅 Linux 可用 */}
+            {user_base_info.sys === SysEnum.linux && <ActionButton icon={"settings"} title={t("Docker 配置")} onClick={() => navigate(routerConfig.docker_setting_page)} />}
             {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={t("删除镜像")} onClick={delete_image}/>}
             {optRow.length > 0 && <div>
                 {optRow[1].props.context}

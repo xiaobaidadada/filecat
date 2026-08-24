@@ -41,6 +41,20 @@ export class FirewallController {
         return Sucess(await firewallService.get_rules(backend));
     }
 
+    // 查看 ufw 结构化规则列表（供前端列表化展示 + 按编号删除）
+    @Get("/ufw/rules")
+    async ufwRules(@Req() req: Request) {
+        this.auth(req);
+        return Sucess(await firewallService.get_ufw_rules());
+    }
+
+    // 按 ufw 编号删除一条规则
+    @Post("/ufw/rule/del")
+    async ufwRuleDel(@Body() body: { number: number }, @Req() req: Request) {
+        this.auth(req);
+        return Sucess(await firewallService.del_ufw_rule(body.number));
+    }
+
     // 放行（添加）端口规则
     @Post("/rule/add")
     async ruleAdd(@Body() body: {

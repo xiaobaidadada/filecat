@@ -37,6 +37,7 @@ const FileShell = React.lazy(() => import("./shell/FileShell"));
 const SqliteQuery = React.lazy(() => import("./file/component/./DbQuery"));
 const SqlPresetSetting = React.lazy(() => import("./file/component/./SqlPresetSetting"));
 const GitStudio = React.lazy(() => import("./file/component/git/GitStudio"));
+const DockerSetting = React.lazy(() => import("./sys/DockerSetting"));
 
 function Layout() {
     const {t} = useTranslation();
@@ -106,7 +107,8 @@ function Layout() {
             { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
             { rto: `${routerConfig.sql_preset_setting_page}`, component: <SqlPresetSetting />},
             { rto: `${routerConfig.studio_page}`, component: <StudioLazy />},
-            { rto: `${routerConfig.git_page}`, component: <GitStudio />}
+            { rto: `${routerConfig.git_page}`, component: <GitStudio />},
+            { rto: `${routerConfig.docker_setting_page}`, component: <DockerSetting />}
         ]
     ]
     if(user_base_info.sys_env?.show_login_user_info) {

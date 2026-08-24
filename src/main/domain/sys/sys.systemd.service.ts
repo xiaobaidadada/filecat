@@ -11,6 +11,7 @@ const { spawn } = require('child_process');
 import WebSocket from "ws";
 import {data_common_key} from "../data/data_type";
 import {SystemUtil} from "./sys.utl";
+import {withLock} from "../../../common/fun.util";
 const systemd_key = data_common_key.systemd_key;
 
 let  spawnChild = getProcessAddon();
@@ -23,7 +24,7 @@ let pid_name_map__ = new Map();
 //  这个只能用于linux系统
 export class SysSystemdService {
     public  async getAllSystemd() {
-        const stdoutlist = (await SystemUtil.execAsync(`systemctl list-units --type=service --output=json`)).toString();
+        const stdoutlist = (await SystemUtil.execAsync(`systemctl list-units --type=service --all --output=json`)).toString();
         return  JSON.parse(stdoutlist);
     }
     public getAllInsideSystemd() {
@@ -37,6 +38,10 @@ export class SysSystemdService {
             }
         }
         names.push(unit_name);
+        this.hand_names(names);
+    }
+
+    private hand_names(names:string[] ) {
         DataUtil.set(systemd_key,names);
         service_names = names.join(" ");
         this.getSytemdPids(names).then(data=>{
@@ -50,15 +55,7 @@ export class SysSystemdService {
     public async deleteSystemd(unit_name:string) {
         const names:string[] = DataUtil.get(systemd_key) ?? [];
         deleteList(names,value=>value === unit_name);
-        DataUtil.set(systemd_key,names);
-        service_names = names.join(" ");
-        this.getSytemdPids(names).then(data=>{
-            const {pids,pid_name_map} = data;
-            pid_name_map__ = pid_name_map;
-            spawnChild.pids("systemd",pids);
-        }).catch(e=>{
-            console.log(e);
-        })
+        this.hand_names(names);
     }
 
     // 每次都要重新获取，因为进程重新启动以后，pid会更改
@@ -194,7 +191,7 @@ export class SysSystemdService {
                 jobInterval = null;
                 this.clear();
             })
-            jobInterval = setInterval(async () => {
+            const job = withLock(async () => {
                 if (processWssSet.size === 0) {
                     clearInterval(jobInterval);
                     jobInterval = null;
@@ -214,7 +211,9 @@ export class SysSystemdService {
                         }
                     }
                 }
-            }, 1000);
+            })
+            await job()
+            jobInterval = setInterval(job, 1000);
         }
     }
 

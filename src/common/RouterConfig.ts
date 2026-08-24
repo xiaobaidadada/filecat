@@ -24,6 +24,7 @@ export const routerConfig = {
     sql_preset_setting_page:"/sql_preset_setting_page",
     gcfg_page:"/gcfg_page",
     git_page:"/git_page",
+    docker_setting_page:"/docker_setting_page",
     "/":"/",
     "":""
 }
