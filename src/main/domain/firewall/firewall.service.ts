@@ -73,16 +73,21 @@ export class FirewallServiceImpl {
     }
 
     /**
-     * 启用 / 停用系统防火墙（ufw 用 enable/disable；nftables 用 systemctl start/stop）
+     * 启用 / 停用系统防火墙（ufw 用 enable/disable；nftables 用 systemctl enable/disable --now）
      */
     public async set_enabled(backend: FirewallBackend, enabled: boolean): Promise<string> {
         await this.require_backend(backend);
         if (backend === "ufw") {
-            await SystemUtil.execAsync(enabled ? "ufw enable" : "ufw disable");
+            // ufw enable 是交互式命令（提示 Proceed with operation (y|n)?），
+            // 用 `yes |` 主动喂入确认应答，避免 execAsync（child_process.exec 无 stdin）永久阻塞卡死。
+            // ufw disable 一般不交互，但统一用 yes | 也无副作用。
+            await SystemUtil.execAsync(`yes | ufw ${enabled ? "enable" : "disable"}`);
             return enabled ? "ufw 已启用" : "ufw 已停用";
         }
+        // `--now` 让 enable/disable 立即生效（enable 同时 start、disable 同时 stop），
+        // 而不是仅设置开机自启；否则点了「启用」后 nftables.service 仍是 inactive。
         const act = enabled ? "enable" : "disable";
-        await SystemUtil.execAsync(`systemctl ${act} nftables`);
+        await SystemUtil.execAsync(`systemctl ${act} --now nftables`);
         return enabled ? "nftables 已启用" : "nftables 已停用";
     }
 
