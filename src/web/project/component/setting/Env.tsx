@@ -199,6 +199,12 @@ export function Env() {
         }
     }
 
+    // 删除一条 workflow job 配置
+    const workflow_setting_row_del = (index) => {
+        workflow_setting_rows.splice(index, 1);
+        set_workflow_setting_rows([...workflow_setting_rows]);
+    }
+
     const save_plugin_list = async () => {
         const result = await settingHttp.post("plugin/list/save", plugin_rows);
         if (result.code === RCode.Success) {
@@ -346,9 +352,7 @@ export function Env() {
                                 }} no_border={true}/>,
 
                                 <ActionButton icon={"delete"} title={t("删除")}
-                                              onClick={() => ()=>{
-                                                  set_workflow_setting_rows([...workflow_setting_rows.splice(index,1)])
-                                              }}/>,
+                                              onClick={() => workflow_setting_row_del(index)}/>,
                             ];
                             return new_list;
                         })} width={"10rem"}/>
