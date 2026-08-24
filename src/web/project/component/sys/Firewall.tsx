@@ -6,7 +6,7 @@ import {InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
-import {sysHttp} from "../../util/config";
+import {firewallHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
 
@@ -43,7 +43,7 @@ export function Firewall() {
 
     // 拉取防火墙状态
     const loadStatus = async () => {
-        const rsq = await sysHttp.get("firewall/status");
+        const rsq = await firewallHttp.get("firewall/status");
         if (rsq.code === RCode.Success) {
             const list: BackendStatus[] = rsq.data ?? [];
             setBackends(list);
@@ -59,7 +59,7 @@ export function Firewall() {
     const getRules = async () => {
         setLoadRules(true);
         try {
-            const rsq = await sysHttp.get(`firewall/rules?backend=${manage}`);
+            const rsq = await firewallHttp.get(`firewall/rules?backend=${manage}`);
             if (rsq.code === RCode.Success) {
                 setRules(rsq.data ?? "");
             }
@@ -84,7 +84,7 @@ export function Firewall() {
     // 启用 / 停用当前后端防火墙
     const setEnabled = async (enabled: boolean) => {
         try {
-            const rsq = await sysHttp.post("firewall/enable", {backend: manage, enabled});
+            const rsq = await firewallHttp.post("firewall/enable", {backend: manage, enabled});
             if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
             NotySuccess(rsq.data || (enabled ? t("已启用") : t("已停用")));
             loadStatus();
@@ -96,7 +96,7 @@ export function Firewall() {
     const addRule = async () => {
         if (!port.trim()) { NotyFail(t("请填写端口号")); return; }
         try {
-            const rsq = await sysHttp.post("firewall/rule/add", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
+            const rsq = await firewallHttp.post("firewall/rule/add", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
             if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
             NotySuccess(rsq.data || t("已放行"));
             getRules();
@@ -107,7 +107,7 @@ export function Firewall() {
     const delRule = async () => {
         if (!port.trim()) { NotyFail(t("请填写端口号")); return; }
         try {
-            const rsq = await sysHttp.post("firewall/rule/del", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
+            const rsq = await firewallHttp.post("firewall/rule/del", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
             if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
             NotySuccess(rsq.data || t("已禁用放行"));
             getRules();

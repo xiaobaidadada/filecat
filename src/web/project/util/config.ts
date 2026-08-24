@@ -34,5 +34,8 @@ export const cryptoHttp = new Http(`${front_config.baseUrl}crypto/`);
 export const ai_agentHttp = new Http(`${front_config.baseUrl}ai_agent/`);
 
 export const tcpProxy = new Http(`${front_config.baseUrl}tcp_forward/`);
+
 export const gitHttp = new Http(`${front_config.baseUrl}git/`);
+
+export const firewallHttp = new Http(`${front_config.baseUrl}firewall/`);
 
