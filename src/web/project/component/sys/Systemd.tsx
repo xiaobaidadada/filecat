@@ -16,6 +16,7 @@ import {sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotySuccess} from "../../util/noty";
 import {SystemdShell} from "../shell/SystemdShell";
+import {SystemdEditor} from "./SystemdEditor";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 
@@ -44,8 +45,9 @@ export function Systemd(props) {
     const [systemd_filterkey,set_systemd_filterkey] = useState("");
     const [filterKey,setFilterKey] = useState("");
     const [inside_systemd,set_inside_systemd] = useState(new Set());
-
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+
 
     const init = async () => {
         setRows([]);
@@ -177,6 +179,30 @@ export function Systemd(props) {
         }
         set_systemd_rows(left_rows);
     }
+    // 打开 systemd 可视化编辑面板（通过全局 set_prompt_card 弹框组件承载）
+    const openEditor = (mode: 'create' | 'edit', unit_name?: string) => {
+        set_prompt_card({
+            open: true,
+            title: mode === 'create' ? t('新建 systemd 服务') : t('编辑 systemd 服务'),
+            context_div: <SystemdEditor
+                mode={mode}
+                unit_name={unit_name}
+                onClose={() => set_prompt_card({open: false})}
+                onDone={() => {
+                    set_prompt_card({open: false});
+                    // 保存成功后刷新：
+                    // 1) 重新发一次 systemd_inside_get，让后端重建/维持实时监控订阅（handler 首屏已注册，这里不重复注册）；
+                    // 2) 若停留在系统单元界面，同步刷新系统单元列表。
+                    ws.send(new WsData(CmdType.systemd_inside_get));
+                    if (systemd) {
+                        load_systemd();
+                    }
+                    setOptRow([]);
+                    set_systemd_opt_row([]);
+                }}
+            />,
+        });
+    }
     // 添加到管理
     const add_systemd = async (name)=>{
         const rsq = await sysHttp.post("systemd/add",{unit_name:name});
@@ -224,6 +250,13 @@ export function Systemd(props) {
             }
         }}/>}>
 
+            {/* 顶部菜单栏：新建 systemd 服务（可视化面板） */}
+            {check_user_auth(UserAuth.systemd_update) && <div>
+                <ActionButton icon={"add_circle"} title={t("添加 systemd")} onClick={()=>{
+                    openEditor('create');
+                }}/>
+            </div>}
+
             {optRow.length > 0 && <div>
                 {optRow[1].props.context}
             </div>}
@@ -233,6 +266,9 @@ export function Systemd(props) {
             {/*ystemd管理的选项*/}
             {optRow.length > 0 && <div>
                 {check_user_auth(UserAuth.systemd_update)&& <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
+                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"edit"} title={"可视化编辑"} onClick={()=>{
+                    openEditor('edit', optRow[1].props.context);
+                }}/>}
                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(optRow[1].props.context)}}/>
                 {/*{optRow[1].props.context.includes("Up") ? (*/}
                 {/*        <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>) :*/}

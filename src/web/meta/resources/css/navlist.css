@@ -15,7 +15,7 @@
     text-decoration: none;
     position: relative;
     margin: 1rem;
-    color: var(--surfacePrimary);
+    color: var(--textBlack);
 }
 /* 在链接上悬停时显示灰色遮罩 */
 .nav_list_a:hover::before {

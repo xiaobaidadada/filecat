@@ -456,6 +456,27 @@ export function Select(props: SelectProps) {
     );
 }
 
+/**
+ * 通用「标签 + 控件」行组件：左侧固定宽度的 label，右侧自适应控件。
+ * 用于表单里"某个字段"的一行式布局，供各编辑器/表单面板复用。
+ * @param label  左侧标签文本
+ * @param width  label 固定宽度（默认 5.5rem）
+ * @param required  是否标红必填星号（可选）
+ */
+export function InputRow(props: React.PropsWithChildren<{
+    label: string,
+    width?: string,
+    required?: boolean,
+}>) {
+    return <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+        <label style={{whiteSpace: 'nowrap', flex: '0 0 auto', width: props.width || '5.5rem', textAlign: 'right'}}>
+            {props.required && <span style={{color: 'red', marginRight: '0.15rem'}}>*</span>}
+            {props.label}
+        </label>
+        <div style={{flex: 1, minWidth: 0}}>{props.children}</div>
+    </div>
+}
+
 export function InputRadio(props: {
     value: any,
     context: any,
