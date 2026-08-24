@@ -21,7 +21,10 @@ export default function SysInfo(props) {
         {index: 2, name: t("系统进程"), rto: "process/",component:<Process/>},
         {index: 3, name: t("docker容器"), rto: "docker/",component:<Docker/>},];
     if (userInfo.sys === SysEnum.linux) {
-        menuRots.push({index:4,name: t("systemd"),rto:"systemd/",component: <Systemd/>})
+        const can_systemd = userInfo.user_data?.is_root
+            || (userInfo.user_data?.auth_list ?? []).includes(UserAuth.systemd);
+        if(can_systemd)
+            menuRots.push({index:4,name: t("systemd"),rto:"systemd/",component: <Systemd/>})
         // 防火墙页：仅 Linux + 有 firewall 权限（root 默认拥有，is_root 天然通过）
         const can_firewall = userInfo.user_data?.is_root
             || (userInfo.user_data?.auth_list ?? []).includes(UserAuth.firewall);
