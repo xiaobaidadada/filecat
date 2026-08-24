@@ -90,6 +90,10 @@ export class tcp_stream_util {
     private now_all_head_length = this.protocol.length  + 4 // 协议头 + 数据长度
     private total_head_length = this.now_all_head_length + this.tag_len; // 总协议头长度
 
+    // 接收缓冲区的安全上限（字节）。防止对端声明巨大长度但迟迟不补齐时，this.buffer 无限拼接撑爆内存（OOM）。
+    // 超过上限视为协议错乱/异常流，直接清空缓冲并断开连接。
+    private static readonly MAX_BUFFER_LENGTH = 64 * 1024 * 1024; // 64MB
+
     private buffer:Buffer = Buffer.alloc(0); // 数据包
 
     // private on_data:(data:Buffer,tag_id?:number)=>any;
@@ -101,6 +105,9 @@ export class tcp_stream_util {
 
     private socket:net.Socket;
 
+    // 保留具名的 data / error 回调引用，便于 close() 时 removeListener 彻底清理，防止重连时监听器/闭包堆积
+    private data_listener: (data: Buffer) => void;
+    private error_listener: (err: Error) => void;
 
     /**
      *
@@ -109,20 +116,34 @@ export class tcp_stream_util {
      */
     constructor(socket) {
         this.socket = socket;
-        this.socket.on("data", (data:Buffer) => {
+        this.data_listener = (data:Buffer) => {
             this.handle_socket(data);
-        })
-        this.socket.on("error", (err:Error) => {
+        }
+        this.error_listener = (err:Error) => {
             console.error(` tcp_stream error: ${err?.message}`);
-        })
+        }
+        this.socket.on("data", this.data_listener);
+        this.socket.on("error", this.error_listener);
     }
 
     public close() {
+        // 彻底清理：仅 end/destroy socket 不足以释放内存。
+        // 这里只移除本类自己创建的 data / error 监听器，并清空 on_data_list 与 one_data_resolve_map，
+        // 否则这些闭包（各自捕获 this / socket / resolve 等）会在反复重连时持续滞留内存。
+        // 注意：绝不能 removeAllListeners("close")，close 事件是上层业务(如 tcp_raw_socket 的
+        // set_on_close → 触发重连调度)依靠的关键通道，粗暴清除会导致断线后无法自动重连。
+        if (this.data_listener) {
+            this.socket?.removeListener("data", this.data_listener);
+        }
+        if (this.error_listener) {
+            this.socket?.removeListener("error", this.error_listener);
+        }
         this.socket?.end();
         this.socket?.destroy();
-        // for (const close of this.on_close_list) {
-        //     close();
-        // }
+        // 清空重连场景下最易堆积的闭包容器
+        this.on_data_list.length = 0;
+        this.one_data_resolve_map = {};
+        this.buffer = Buffer.alloc(0);
     }
 
 
@@ -150,6 +171,15 @@ export class tcp_stream_util {
 
     // 处理buffer
     private handle_socket(buffer:Buffer) {
+        // 安全上限：若拼接后超过 MAX_BUFFER_LENGTH，说明对端持续送来不完整/超大声明长度的数据
+        // （this.buffer.length 一直 < total_len 而不断累积），无限拼接会撑爆内存触发 OOM。
+        // 此时判定为异常流，直接清空缓冲并关闭连接，避免内存无限上涨。
+        if (this.buffer.length + buffer.length > tcp_stream_util.MAX_BUFFER_LENGTH) {
+            console.error(` tcp_stream buffer overflow (${this.buffer.length + buffer.length} > ${tcp_stream_util.MAX_BUFFER_LENGTH})，断开异常连接`);
+            this.buffer = Buffer.alloc(0);
+            this.close();
+            return;
+        }
         this.buffer = NetUtil.fastBufferConcat([this.buffer,buffer]);
         if (this.buffer.length > this.total_head_length) {
             this.handle_buffer();
@@ -222,6 +252,9 @@ export class tcp_stream_util {
         const tag_id = NetUtil.next_tag_id();
         return new Promise((resolve, reject) => {
             const timer = setTimeout(()=>{
+                // 超时兜底：必须从 resolve_map 里移除该 tag_id，否则回调永远不触发但不被清理，
+                // 在反复请求+超时场景下会无限堆积，造成内存泄漏。
+                delete this.one_data_resolve_map[tag_id];
                 reject("超时请求tcp")
             },10*1000)
             this.one_data_resolve_map[tag_id] = (code:NetMsgType,tcpBuffer:Buffer)=>{
