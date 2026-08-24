@@ -2045,3 +2045,11 @@ nav:hover::-webkit-scrollbar-thumb {
 table tr {
   border-bottom: 1px solid var(--surfaceSecondary);
 }
+
+.chat-session-actions {
+  border-top: 1px solid var(--surfaceSecondary);
+}
+
+.docker-setting__separator {
+  border-top: 1px solid var(--surfaceSecondary);
+}
