@@ -134,10 +134,16 @@ export class FirewallServiceImpl {
 
     /**
      * 按 ufw 编号删除一条规则（ufw delete <number>）
+     * 用 `yes |` 喂入确认应答，避免 ufw 交互提示导致 execAsync 无标准输入而卡死；
+     * 按编号删除只会删掉对应编号的那一条规则，不会误删其它规则。
      */
     public async del_ufw_rule(number: number): Promise<string> {
         await this.require_backend(SysSoftware.ufw);
-        await SystemUtil.execAsync(`ufw delete ${number}`);
+        // 严格校验：只接受正整数编号，防止异常值进入命令
+        if (!Number.isInteger(number) || number < 1) {
+            throw "规则编号不合法";
+        }
+        await SystemUtil.execAsync(`yes | ufw delete ${number}`);
         return `规则 ${number} 已删除`;
     }
 
@@ -179,7 +185,8 @@ export class FirewallServiceImpl {
         }
         if (backend === "ufw") {
             const fromPart = from && from.trim() ? ` from ${from.trim()}` : "";
-            await SystemUtil.execAsync(`ufw delete allow proto ${proto} to any port ${port}${fromPart}`);
+            // yes | 喂入确认应答，防止 ufw 交互提示导致卡死；按完整规则描述删除，仅匹配完全相同的那条
+            await SystemUtil.execAsync(`yes | ufw delete allow proto ${proto} to any port ${port}${fromPart}`);
             return `${proto}/${port} 已禁用放行`;
         }
         // nft 删除：用 handle 定位，删除第一条匹配的规则

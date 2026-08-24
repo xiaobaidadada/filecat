@@ -1,22 +1,5 @@
 /* 防火墙页面专用样式 */
 
-/* 来源地址填写说明的 “?” 信息按钮（hover 时通过 TextTip 显示说明） */
-.firewall-from-tip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border: 1px solid var(--primary, #4f46e5);
-    border-radius: 50%;
-    color: var(--primary, #4f46e5);
-    font-size: 0.8rem;
-    font-weight: bold;
-    cursor: help;
-    user-select: none;
-    background: transparent;
-}
-
 /* —— 系统管理页面共用 —— */
 
 /* Docker 代理配置设置页：字段表单布局 */

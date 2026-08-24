@@ -200,6 +200,15 @@ export class SysController {
         return Sucess("");
     }
 
+    // 对系统上的 systemd 服务设置开机自启并立即启动（新建 systemd 后调用）
+    @Post("/systemd/sys/enable")
+    async enable_sys_systemd(@Body() pojo: { unit_name: string },@Req()req) {
+        userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
+        await systemd.enable_sys_systemd(pojo.unit_name);
+        return Sucess("");
+    }
+
     // 日志
     @msg(CmdType.systemd_logs_get)
     async systemd_logs_get(data: WsData<any>) {

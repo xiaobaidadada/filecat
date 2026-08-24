@@ -209,6 +209,8 @@ export function SystemdEditor(props: {
                 // （Http.post 对 code=Fail 会自动弹错并 throw，失败会走下方 catch）
                 const savePath = `/etc/systemd/system/${unit}`
                 await sysHttp.post('systemd/sys/save', {unit_name: unit, path: savePath, context})
+                // 设置开机自启（systemctl enable）并立即启动（systemctl start）
+                await sysHttp.post('systemd/sys/enable', {unit_name: unit})
                 // 自动加入实时监控
                 await sysHttp.post('systemd/add', {unit_name: unit})
                 NotySuccess(t('添加成功'))

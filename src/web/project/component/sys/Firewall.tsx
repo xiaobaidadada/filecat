@@ -39,6 +39,7 @@ type ViewMode = "list" | "text";
 export function Firewall() {
     const {t} = useTranslation();
     const [, set_confirm] = useAtom($stroe.confirm);
+    const [, set_prompt_card] = useAtom($stroe.prompt_card);
 
     // 状态：ufw / nft 是否安装、是否启用
     const [backends, setBackends] = useState<BackendStatus[]>([]);
@@ -210,9 +211,16 @@ export function Firewall() {
                                        handleInputChange={(v) => setPort(v)} width={"10rem"}/>
                             <InputText placeholder={t("来源地址(可选)")} value={from}
                                        handleInputChange={(v) => setFrom(v)} width={"12rem"}/>
-                            {/* 来源地址填写说明信息按钮（参考 TextTip hover 提示） */}
-                            <TextTip context={<span className={"firewall-from-tip"} title={t("点击复制")}>?</span>}
-                                     tip_context={t("来源地址填写说明")}/>
+                            {/* 来源地址填写说明信息按钮（参照 setting 页 soft_ware_info_click 弹窗说明） */}
+                            <ActionButton icon={"info"} title={t("信息")} onClick={() => {
+                                set_prompt_card({
+                                    open: true, title: t("信息"), context_div: (
+                                        <div>
+                                            {t("来源地址填写说明")}
+                                        </div>
+                                    )
+                                });
+                            }}/>
                             <ButtonText text={t("放行")} clickFun={addRule}/>
                             <ButtonText text={t("禁用")} clickFun={delRule}/>
                         </div>

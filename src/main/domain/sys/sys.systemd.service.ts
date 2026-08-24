@@ -244,6 +244,12 @@ export class SysSystemdService {
         await SystemUtil.execAsync(`systemctl daemon-reload`);
     }
 
+    // 对系统上的 systemd 服务设置开机自启并立即启动（新建服务后调用）
+    async enable_sys_systemd(name:string) {
+        await SystemUtil.execAsync(`sudo systemctl enable ${name}`);
+        await SystemUtil.execAsync(`sudo systemctl start ${name}`);
+    }
+
 
     async delete_sys_systemd(name:string) {
         // 复用 get_systemd_context 已有的绝对路径获取逻辑
