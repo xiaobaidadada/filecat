@@ -44,6 +44,7 @@ import {
 import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
+import {FirewallBackend} from "../firewall/firewall.service";
 const ffmpeg = require('fluent-ffmpeg');
 
 const Mustache = require('mustache');
@@ -906,7 +907,7 @@ export class SettingService {
         return this.smartctl;
     }
 
-    ntfs_3g:string
+    // ntfs_3g:string
     //
     // async get_ntfs_3g() {
     //     const list = await settingService.getSoftware();
@@ -917,6 +918,12 @@ export class SettingService {
     //     }
     //     return this.ntfs_3g;
     // }
+
+    private backend_active(backend: FirewallBackend): boolean {
+        const svc = backend === "ufw" ? "ufw" : "nftables";
+        // systemctl is-active 输出 active/inactive/unknown；仅为检测用
+        return SystemUtil.commandIsExist(`systemctl is-active --quiet ${svc}`);
+    }
 
     public async getSoftware() {
         if (this.cacheSysSoftwareItem) {
@@ -945,6 +952,9 @@ export class SettingService {
                         pojo.installed = true;
                     }
                 }
+            }
+            if (pojo.id === SysSoftware.ufw || pojo.id === SysSoftware.nftables) {
+                pojo.active = this.backend_active(pojo.id);
             }
             list.push(pojo);
         }

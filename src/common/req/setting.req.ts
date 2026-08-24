@@ -50,6 +50,7 @@ export enum SysSoftware {
 export class SysSoftwareItem {
     id: SysSoftware;
     installed: boolean; // 是否安装
+    active?:boolean;
     path?: string; // 如果没有在path环境变量内可以使用这个
 }
 

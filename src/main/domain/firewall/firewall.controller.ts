@@ -38,7 +38,7 @@ export class FirewallController {
     @Get("/rules")
     async rules(@QueryParam('backend') backend: FirewallBackend, @Req() req: Request) {
         this.auth(req);
-        return Sucess(await firewallService.get_rules(backend || "ufw"));
+        return Sucess(await firewallService.get_rules(backend));
     }
 
     // 放行（添加）端口规则

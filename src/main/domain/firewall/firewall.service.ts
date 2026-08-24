@@ -1,4 +1,6 @@
 import {SystemUtil} from "../sys/sys.utl";
+import {settingService} from "../setting/setting.service";
+import {SysSoftware} from "../../../common/req/setting.req";
 
 /**
  * 防火墙管理服务。
@@ -12,7 +14,7 @@ import {SystemUtil} from "../sys/sys.utl";
  */
 
 // 防火墙后端标识
-export type FirewallBackend = "ufw" | "nft";
+export type FirewallBackend = SysSoftware.ufw | SysSoftware.nftables;
 
 // 后端状态
 export interface FirewallBackendStatus {
@@ -30,16 +32,17 @@ export class FirewallServiceImpl {
     }
 
     /** 检测某个后端命令是否安装 */
-    private backend_installed(backend: FirewallBackend): boolean {
-        if (backend === "ufw") return SystemUtil.commandIsExist("ufw status");
-        return SystemUtil.commandIsExist("nft list ruleset");
+    private async backend_installed(backend: FirewallBackend) {
+        const soft_list = await settingService.getSoftware();
+        const f = soft_list.find(f => f.id === backend);
+        return f && f.installed;
     }
 
     /** 检测后端对应服务是否启用 */
-    private backend_active(backend: FirewallBackend): boolean {
-        const svc = backend === "ufw" ? "ufw" : "nftables";
-        // systemctl is-active 输出 active/inactive/unknown；仅为检测用
-        return SystemUtil.commandIsExist(`systemctl is-active --quiet ${svc}`);
+    private async backend_active(backend: FirewallBackend) {
+        const soft_list = await settingService.getSoftware();
+        const f = soft_list.find(f => f.id === backend);
+        return f && f.active;
     }
 
     /**
@@ -51,8 +54,8 @@ export class FirewallServiceImpl {
         for (const id of ["ufw", "nft"] as FirewallBackend[]) {
             list.push({
                 id,
-                installed: this.backend_installed(id),
-                active: this.backend_active(id),
+                installed: await this.backend_installed(id),
+                active: await this.backend_active(id),
                 note: id === "ufw" ? "ufw（易用，规则持久化）" : "nftables（nft 命令）",
             });
         }
@@ -62,9 +65,9 @@ export class FirewallServiceImpl {
     /**
      * 校验后端是否已安装，否则抛错（供所有需要真实操作的接口调用）
      */
-    public require_backend(backend: FirewallBackend): void {
+    public async require_backend(backend: FirewallBackend) {
         if (!this.is_linux()) throw "当前系统不是 Linux，无法管理防火墙";
-        if (!this.backend_installed(backend)) {
+        if (!await this.backend_installed(backend)) {
             throw `${backend === 'ufw' ? 'ufw' : 'nftables'} 未安装，请先在系统安装对应防火墙软件`;
         }
     }
@@ -73,7 +76,7 @@ export class FirewallServiceImpl {
      * 启用 / 停用系统防火墙（ufw 用 enable/disable；nftables 用 systemctl start/stop）
      */
     public async set_enabled(backend: FirewallBackend, enabled: boolean): Promise<string> {
-        this.require_backend(backend);
+        await this.require_backend(backend);
         if (backend === "ufw") {
             await SystemUtil.execAsync(enabled ? "ufw enable" : "ufw disable");
             return enabled ? "ufw 已启用" : "ufw 已停用";
@@ -88,7 +91,7 @@ export class FirewallServiceImpl {
      *  ufw：`ufw status numbered`   ；nft：`nft list ruleset`
      */
     public async get_rules(backend: FirewallBackend): Promise<string> {
-        this.require_backend(backend);
+        await this.require_backend(backend);
         if (backend === "ufw") {
             return (await SystemUtil.execAsync("ufw status numbered")).toString();
         }
@@ -103,7 +106,7 @@ export class FirewallServiceImpl {
      * @param from    来源地址（IP / 网段，可为空表示任意）
      */
     public async add_rule(backend: FirewallBackend, proto: "tcp" | "udp", port: number | string, from?: string): Promise<string> {
-        this.require_backend(backend);
+        await this.require_backend(backend);
         // 基础参数校验
         if (!/^\d+$/.test(`${port}`) || +port < 1 || +port > 65535) {
             throw "端口号不合法（1-65535）";
@@ -127,7 +130,7 @@ export class FirewallServiceImpl {
      * 删除（禁用）一条端口规则
      */
     public async del_rule(backend: FirewallBackend, proto: "tcp" | "udp", port: number | string, from?: string): Promise<string> {
-        this.require_backend(backend);
+        await this.require_backend(backend);
         if (!/^\d+$/.test(`${port}`) || +port < 1 || +port > 65535) {
             throw "端口号不合法（1-65535）";
         }
