@@ -2041,3 +2041,7 @@ nav:hover::-webkit-scrollbar-thumb {
   background: #0d0d0d;
   color: #d4d4d4;
 }
+
+table tr {
+  border-bottom: 1px solid var(--surfaceSecondary);
+}
