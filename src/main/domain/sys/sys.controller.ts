@@ -135,7 +135,7 @@ export class SysController {
     @Post("/systemd/add")
     async addAllSystemd(@Body() pojo: { unit_name: string },@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
         await systemd.addSystemd(pojo.unit_name);
         return Sucess(systemd.getAllInsideSystemd());
     }
@@ -149,7 +149,7 @@ export class SysController {
     @Post("/systemd/delete")
     async deleteAllSystemd(@Body() pojo: { unit_name: string },@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
         await systemd.deleteSystemd(pojo.unit_name);
         return Sucess("");
     }
@@ -157,14 +157,14 @@ export class SysController {
     @Post("/systemd/get/context")
     async get_systemd_context(@Body() pojo: { unit_name: string },@Req() req: Request) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
         return Sucess(await systemd.get_systemd_context(pojo.unit_name));
     }
 
     @Post("/systemd/sys/delete")
     async delte_systemd(@Body() pojo: { unit_name: string },@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
         return Sucess(await systemd.delete_sys_systemd(pojo.unit_name));
     }
 
@@ -172,7 +172,7 @@ export class SysController {
     @Post("/systemd/sys/save")
     async save_sys_systemd(@Body() pojo: { unit_name: string, path: string, context: string },@Req()req) {
         userService.check_user_auth(req.headers.authorization,UserAuth.all_sys);
-        userService.check_user_auth(req.headers.authorization,UserAuth.systemd_update);
+        userService.check_user_auth(req.headers.authorization,UserAuth.systemd);
         await systemd.save_sys_systemd(pojo.path, pojo.context);
         return Sucess("");
     }

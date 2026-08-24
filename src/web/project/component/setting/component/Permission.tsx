@@ -34,7 +34,8 @@ export function Permission(props:{
                 { title: t("系统进程关闭"), permission: UserAuth.sys_process_close },
                 { title: t("docker容器停止、删除"), permission: UserAuth.docker_container_update },
                 { title: t("docker镜像删除"), permission: UserAuth.docker_images_delete },
-                { title: t("systemd删除、添加管理"), permission: UserAuth.systemd_update }
+                { title: t("systemd管理"), permission: UserAuth.systemd },
+                { title: t("防火墙管理"), permission: UserAuth.firewall }
             ]
         },
         {

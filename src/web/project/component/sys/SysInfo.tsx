@@ -5,9 +5,10 @@ import {Docker} from "./Docker";
 import {Process} from "./Process";
 import {useTranslation} from "react-i18next";
 import {Systemd} from "./Systemd";
+import {Firewall} from "./Firewall";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
-import {SysEnum} from "../../../../common/req/user.req";
+import {SysEnum, UserAuth} from "../../../../common/req/user.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 
 
@@ -21,6 +22,12 @@ export default function SysInfo(props) {
         {index: 3, name: t("docker容器"), rto: "docker/",component:<Docker/>},];
     if (userInfo.sys === SysEnum.linux) {
         menuRots.push({index:4,name: t("systemd"),rto:"systemd/",component: <Systemd/>})
+        // 防火墙页：仅 Linux + 有 firewall 权限（root 默认拥有，is_root 天然通过）
+        const can_firewall = userInfo.user_data?.is_root
+            || (userInfo.user_data?.auth_list ?? []).includes(UserAuth.firewall);
+        if (can_firewall) {
+            menuRots.push({index:5, name: t("防火墙"), rto:"firewall/", component: <Firewall/>})
+        }
     }
     return <Menu optionList={menuRots} father_route={routerConfig.info}>
     </Menu>

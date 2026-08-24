@@ -251,7 +251,7 @@ export function Systemd(props) {
         }}/>}>
 
             {/* 顶部菜单栏：新建 systemd 服务（可视化面板） */}
-            {check_user_auth(UserAuth.systemd_update) && <div>
+            {check_user_auth(UserAuth.systemd) && <div>
                 <ActionButton icon={"add_circle"} title={t("添加 systemd")} onClick={()=>{
                     openEditor('create');
                 }}/>
@@ -265,8 +265,8 @@ export function Systemd(props) {
             </div>}
             {/*ystemd管理的选项*/}
             {optRow.length > 0 && <div>
-                {check_user_auth(UserAuth.systemd_update)&& <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
-                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"edit"} title={"可视化编辑"} onClick={()=>{
+                {check_user_auth(UserAuth.systemd)&& <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
+                {check_user_auth(UserAuth.systemd) && <ActionButton icon={"edit"} title={"可视化编辑"} onClick={()=>{
                     openEditor('edit', optRow[1].props.context);
                 }}/>}
                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(optRow[1].props.context)}}/>
@@ -277,11 +277,11 @@ export function Systemd(props) {
             </div>}
             {/*系统的选项*/}
             {systemd_opt_row.length > 0 && <div>
-                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"delete"} title={"删除系统上的sytemd"} onClick={()=>{delete_systemd_sys(systemd_opt_row[0].props.context)}}/>}
+                {check_user_auth(UserAuth.systemd) && <ActionButton icon={"delete"} title={"删除系统上的sytemd"} onClick={()=>{delete_systemd_sys(systemd_opt_row[0].props.context)}}/>}
 
                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(systemd_opt_row[0].props.context)}}/>
-                {check_user_auth(UserAuth.systemd_update) && <ActionButton icon={"text_fields"} title={"sytemd文件内容"} onClick={()=>{get_sytemd_context(systemd_opt_row[0].props.context)}}/>}
-                {(check_user_auth(UserAuth.systemd_update) && !inside_systemd.has(systemd_opt_row[0].props.context)) && (<ActionButton icon={"plus_one"} title={"添加到管理"} onClick={() => add_systemd(systemd_opt_row[0].props.context)}/>)}
+                {check_user_auth(UserAuth.systemd) && <ActionButton icon={"text_fields"} title={"sytemd文件内容"} onClick={()=>{get_sytemd_context(systemd_opt_row[0].props.context)}}/>}
+                {(check_user_auth(UserAuth.systemd) && !inside_systemd.has(systemd_opt_row[0].props.context)) && (<ActionButton icon={"plus_one"} title={"添加到管理"} onClick={() => add_systemd(systemd_opt_row[0].props.context)}/>)}
             </div>}
         </Header>
         <Dashboard>
