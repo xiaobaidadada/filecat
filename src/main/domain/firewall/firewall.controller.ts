@@ -59,23 +59,13 @@ export class FirewallController {
     @Post("/rule/add")
     async ruleAdd(@Body() body: {
         backend: FirewallBackend,
-        proto: "tcp" | "udp",
-        port: number | string,
+        action: "allow" | "deny" | "reject" | "limit",
+        direction: "in" | "out",
+        proto: "tcp" | "udp" | "both",
+        port: string,
         from?: string
     }, @Req() req: Request) {
         this.auth(req);
-        return Sucess(await firewallService.add_rule(body.backend, body.proto, body.port, body.from));
-    }
-
-    // 删除（禁用）端口规则
-    @Post("/rule/del")
-    async ruleDel(@Body() body: {
-        backend: FirewallBackend,
-        proto: "tcp" | "udp",
-        port: number | string,
-        from?: string
-    }, @Req() req: Request) {
-        this.auth(req);
-        return Sucess(await firewallService.del_rule(body.backend, body.proto, body.port, body.from));
+        return Sucess(await firewallService.add_rule(body.backend, body.action, body.direction, body.proto, body.port, body.from));
     }
 }

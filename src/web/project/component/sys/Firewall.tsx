@@ -3,7 +3,7 @@ import {Blank} from "../../../meta/component/Blank";
 import {Column, Dashboard, Row} from '../../../meta/component/Dashboard';
 import {Card, CardFull, TextTip} from "../../../meta/component/Card";
 import {Table} from "../../../meta/component/Table";
-import {InputText, Select} from "../../../meta/component/Input";
+import {InputRow, InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {useAtom} from "jotai";
 import Header from "../../../meta/component/Header";
@@ -45,8 +45,10 @@ export function Firewall() {
     const [backends, setBackends] = useState<BackendStatus[]>([]);
     // 当前管理后端（决定操作作用于谁）
     const [manage, setManage] = useState<Backend>("ufw");
-    // 端口规则表单
-    const [proto, setProto] = useState<"tcp" | "udp">("tcp");
+    // 端口规则表单（支持 ufw 完整能力）
+    const [action, setAction] = useState<"allow" | "deny" | "reject" | "limit">("allow");
+    const [direction, setDirection] = useState<"in" | "out">("in");
+    const [proto, setProto] = useState<"tcp" | "udp" | "both">("tcp");
     const [port, setPort] = useState("");
     const [from, setFrom] = useState("");
     // 规则列表：文本 + ufw 结构化两种形态
@@ -56,9 +58,20 @@ export function Firewall() {
     const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [loadRules, setLoadRules] = useState(false);
 
+    const ACTION_OPTIONS = [
+        {title: "allow", value: "allow"},
+        {title: "deny", value: "deny"},
+        {title: "reject", value: "reject"},
+        {title: "limit", value: "limit"},
+    ];
+    const DIRECTION_OPTIONS = [
+        {title: "in", value: "in"},
+        {title: "out", value: "out"},
+    ];
     const PROTO_OPTIONS = [
         {title: "tcp", value: "tcp"},
         {title: "udp", value: "udp"},
+        {title: "both", value: "both"},
     ];
 
     // 拉取防火墙状态
@@ -114,33 +127,35 @@ export function Firewall() {
     const setEnabled = async (enabled: boolean) => {
         try {
             const rsq = await firewallHttp.post("enable", {backend: manage, enabled});
-            if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
+            if (rsq.code !== RCode.Success) {
+                NotyFail(rsq.message || t("操作失败"));
+                return;
+            }
             NotySuccess(rsq.data || (enabled ? t("已启用") : t("已停用")));
             loadStatus();
             getRules();
-        } catch (e) { /* Http 已弹错 */ }
+        } catch (e) { /* Http 已弹错 */
+        }
     };
 
-    // 放行一条端口规则
+    // 添加一条端口/范围规则（动作 + 方向 + 协议 + 端口范围 + 来源）
     const addRule = async () => {
-        if (!port.trim()) { NotyFail(t("请填写端口号")); return; }
+        if (!port.trim()) {
+            NotyFail(t("请填写端口号"));
+            return;
+        }
         try {
-            const rsq = await firewallHttp.post("rule/add", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
-            if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
+            const rsq = await firewallHttp.post("rule/add", {
+                backend: manage, action, direction, proto, port: port.trim(), from: from.trim() || undefined,
+            });
+            if (rsq.code !== RCode.Success) {
+                NotyFail(rsq.message || t("操作失败"));
+                return;
+            }
             NotySuccess(rsq.data || t("已放行"));
             getRules();
-        } catch (e) { /* Http 已弹错 */ }
-    };
-
-    // 删除当前选中的端口规则（按 handle / ufw 删除语法）
-    const delRule = async () => {
-        if (!port.trim()) { NotyFail(t("请填写端口号")); return; }
-        try {
-            const rsq = await firewallHttp.post("rule/del", {backend: manage, proto, port: port.trim(), from: from.trim() || undefined});
-            if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
-            NotySuccess(rsq.data || t("已禁用放行"));
-            getRules();
-        } catch (e) { /* Http 已弹错 */ }
+        } catch (e) { /* Http 已弹错 */
+        }
     };
 
     // 按 ufw 编号删除一条规则（列表视图下，二次确认后调用）
@@ -153,10 +168,14 @@ export function Firewall() {
                 try {
                     const rsq = await firewallHttp.post("ufw/rule/del", {number});
                     set_confirm({open: false, handle: null});
-                    if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
+                    if (rsq.code !== RCode.Success) {
+                        NotyFail(rsq.message || t("操作失败"));
+                        return;
+                    }
                     NotySuccess(rsq.data || t("已删除"));
                     getRules();
-                } catch (e) { /* Http 已弹错 */ }
+                } catch (e) { /* Http 已弹错 */
+                }
             },
         });
     };
@@ -171,10 +190,12 @@ export function Firewall() {
                 <span style={{whiteSpace: 'nowrap'}}>{t("后端")}:</span>
                 <button className={`button button--flat ${manage === "ufw" ? '' : 'button--grey'}`}
                         disabled={backends.find(b => b.id === "ufw")?.installed !== true}
-                        onClick={() => setManage("ufw")}>ufw</button>
+                        onClick={() => setManage("ufw")}>ufw
+                </button>
                 <button className={`button button--flat ${manage === "nft" ? '' : 'button--grey'}`}
                         disabled={backends.find(b => b.id === "nft")?.installed !== true}
-                        onClick={() => setManage("nft")}>nftables</button>
+                        onClick={() => setManage("nft")}>nftables
+                </button>
             </div>
             {/* 启停 + 刷新规则 */}
             {manageInstalled && <ActionButton icon={"power_settings_new"} title={manageActive ? t("停用") : t("启用")}
@@ -189,10 +210,19 @@ export function Firewall() {
                     <Card title={t("状态")}>
                         <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
                             {backends.map(b => (
-                                <div key={b.id} style={{padding: '0.6rem 0.8rem', minWidth: '12rem', border: '1px solid var(--border-color)', borderRadius: '0.4rem'}}>
+                                <div key={b.id} style={{
+                                    padding: '0.6rem 0.8rem',
+                                    minWidth: '12rem',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '0.4rem'
+                                }}>
                                     <div style={{fontWeight: 'bold'}}>{b.id === "ufw" ? "ufw" : "nftables"}</div>
-                                    <div>{t("已安装")}: <TextTip context={b.installed ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'red'}}>✗</span>}/></div>
-                                    <div>{t("已启用")}: <TextTip context={b.active ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'gray'}}>✗</span>}/></div>
+                                    <div>{t("已安装")}: <TextTip
+                                        context={b.installed ? <span style={{color: 'green'}}>✓</span> :
+                                            <span style={{color: 'red'}}>✗</span>}/></div>
+                                    <div>{t("已启用")}: <TextTip
+                                        context={b.active ? <span style={{color: 'green'}}>✓</span> :
+                                            <span style={{color: 'gray'}}>✗</span>}/></div>
                                     <div style={{color: 'gray', fontSize: '0.8rem'}}>{b.note}</div>
                                 </div>
                             ))}
@@ -203,27 +233,42 @@ export function Firewall() {
 
             <Row>
                 <Column widthPer={100}>
-                    <CardFull title={t("端口放行 / 禁用")}>
-                        <div style={{display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap'}}>
-                            <Select options={PROTO_OPTIONS} value={proto} onChange={(v) => setProto(v as "tcp"|"udp")}
-                                    defaultValue={"tcp"}/>
-                            <InputText placeholder={t("端口号")} value={port}
-                                       handleInputChange={(v) => setPort(v)} width={"10rem"}/>
-                            <InputText placeholder={t("来源地址(可选)")} value={from}
-                                       handleInputChange={(v) => setFrom(v)} width={"12rem"}/>
-                            {/* 来源地址填写说明信息按钮（参照 setting 页 soft_ware_info_click 弹窗说明） */}
-                            <ActionButton icon={"info"} title={t("信息")} onClick={() => {
-                                set_prompt_card({
-                                    open: true, title: t("信息"), context_div: (
-                                        <div>
-                                            {t("来源地址填写说明")}
-                                        </div>
-                                    )
-                                });
-                            }}/>
-                            <ButtonText text={t("放行")} clickFun={addRule}/>
-                            <ButtonText text={t("禁用")} clickFun={delRule}/>
-                        </div>
+                    <CardFull self_title={<span className={"div-row"}>
+                        <h2>{t("添加规则")}</h2>
+                         <ActionButton icon={"info"} title={t("信息")} onClick={() => {
+                             set_prompt_card({
+                                 open: true, title: t("信息"), context_div: (
+                                     <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                                         {t("来源地址填写说明")}
+                                     </div>
+                                 )
+                             });
+                         }}/>
+                    </span>}>
+                            <InputRow label={t("动作")} width={"6rem"}>
+                                <Select width={"10rem"} options={ACTION_OPTIONS} value={action}
+                                        onChange={(v) => setAction(v as "allow" | "deny" | "reject" | "limit")}/>
+                            </InputRow>
+                            <InputRow label={t("方向")} width={"6rem"}>
+                                <Select width={"10rem"} options={DIRECTION_OPTIONS} value={direction}
+                                        onChange={(v) => setDirection(v as "in" | "out")}/>
+                            </InputRow>
+                            <InputRow label={t("协议")} width={"6rem"}>
+                                <Select width={"10rem"} options={PROTO_OPTIONS} value={proto}
+                                        onChange={(v) => setProto(v as "tcp" | "udp" | "both")}/>
+                            </InputRow>
+                            <InputRow label={t("端口")} width={"6rem"}>
+                                <InputText width={"16rem"} placeholder={t("端口(支持范围 1000:2000)")} value={port}
+                                           handleInputChange={(v) => setPort(v)}/>
+                            </InputRow>
+                            <InputRow label={t("来源地址")} width={"6rem"}>
+                                <InputText width={"16rem"} placeholder={t("来源地址(可选)")} value={from}
+                                           handleInputChange={(v) => setFrom(v)}/>
+                            </InputRow>
+                            <InputRow label={""} width={"6rem"}>
+                                <ButtonText text={t("添加规则")} clickFun={addRule}/>
+                            </InputRow>
+                       
                     </CardFull>
                 </Column>
             </Row>
@@ -244,21 +289,28 @@ export function Firewall() {
                         {!loadRules && manage === "ufw" && viewMode === "list" && (
                             ufwRules.length === 0
                                 ? <Blank context={t("暂无规则")}/>
-                                : <Table headers={[t("编号"), t("目标(To)"), t("动作"), t("来源(From)"), t("备注"), t("操作")]}
-                                        rows={ufwRules.map(r => [
-                                            r.number,
-                                            <TextTip context={r.to} tip_context={r.to}/>,
-                                            r.action,
-                                            r.from ? <TextTip context={r.from} tip_context={r.from}/> : "",
-                                            r.description || "",
-                                            <ActionButton icon={"delete"} title={t("删除规则")} onClick={() => delUfwRule(r.number)}/>,
-                                        ])} width={"8rem"}/>
+                                : <Table
+                                    headers={[t("编号"), t("目标(To)"), t("动作"), t("来源(From)"), t("备注"), t("操作")]}
+                                    rows={ufwRules.map(r => [
+                                        r.number,
+                                        <TextTip context={r.to} tip_context={r.to}/>,
+                                        r.action,
+                                        r.from ? <TextTip context={r.from} tip_context={r.from}/> : "",
+                                        r.description || "",
+                                        <ActionButton icon={"delete"} title={t("删除规则")}
+                                                      onClick={() => delUfwRule(r.number)}/>,
+                                    ])} width={"8rem"}/>
                         )}
 
                         {/* 文本视图（ufw 文本 / nft） */}
                         {!loadRules && (manage !== "ufw" || viewMode === "text") && (
                             rules
-                                ? <pre style={{whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.85rem', margin: 0}}>{rules}</pre>
+                                ? <pre style={{
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-all',
+                                    fontSize: '0.85rem',
+                                    margin: 0
+                                }}>{rules}</pre>
                                 : <Blank context={t("暂无规则")}/>
                         )}
                     </CardFull>

@@ -6,7 +6,7 @@ import Header from "../../../meta/component/Header";
 import {ActionButton} from "../../../meta/component/Button";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row} from "../../../meta/component/Dashboard";
 import {CardFull} from "../../../meta/component/Card";
-import {InputText, Select} from "../../../meta/component/Input";
+import {InputRow, InputText, Select} from "../../../meta/component/Input";
 import {$stroe} from "../../util/store";
 import {sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -22,6 +22,7 @@ export default function DockerSetting() {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [show_confirm, set_show_confirm] = useAtom($stroe.confirm);
+    const [, set_prompt_card] = useAtom($stroe.prompt_card);
 
     const [http_proxy, set_http_proxy] = useState("");
     const [https_proxy, set_https_proxy] = useState("");
@@ -107,70 +108,66 @@ export default function DockerSetting() {
                             <Column widthPer={60}>
                                 <CardFull self_title={<span className={"div-row"}><h2>{t("Docker 代理配置")}</h2></span>} titleCom={
                                     <div className={"db-query-setting__toolbar"}>
+                                        <ActionButton icon={"info"} title={t("信息")} onClick={() => {
+                                            set_prompt_card({
+                                                open: true, title: t("信息"), context_div: (
+                                                    <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                                                        {t("代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}
+                                                    </div>
+                                                )
+                                            });
+                                        }} />
                                         <ActionButton icon={"save"} title={t("保存")} onClick={() => save()} />
                                     </div>
                                 }>
-                                    <div className={"docker-setting__form"}>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("HTTP 代理")}</label>
-                                            <InputText placeholder={"http://127.0.0.1:3067"} value={http_proxy}
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0.2rem 0'}}>
+                                        <InputRow label={t("HTTP 代理")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"http://127.0.0.1:3067"} value={http_proxy}
                                                        handleInputChange={(v) => set_http_proxy(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("HTTPS 代理")}</label>
-                                            <InputText placeholder={"https://127.0.0.1:3067"} value={https_proxy}
+                                        </InputRow>
+                                        <InputRow label={t("HTTPS 代理")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"https://127.0.0.1:3067"} value={https_proxy}
                                                        handleInputChange={(v) => set_https_proxy(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("No Proxy")}</label>
-                                            <InputText placeholder={"localhost,127.0.0.1"} value={no_proxy}
+                                        </InputRow>
+                                        <InputRow label={t("No Proxy")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"localhost,127.0.0.1"} value={no_proxy}
                                                        handleInputChange={(v) => set_no_proxy(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("镜像加速")}</label>
-                                            <InputText placeholder={"https://docker.mirrors.ustc.edu.cn,https://hub-mirror.c.163.com"} value={registry_mirrors}
+                                        </InputRow>
+                                        <InputRow label={t("镜像加速")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"https://docker.mirrors.ustc.edu.cn,https://hub-mirror.c.163.com"} value={registry_mirrors}
                                                        handleInputChange={(v) => set_registry_mirrors(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("不安全仓库")}</label>
-                                            <InputText placeholder={"127.0.0.1:5000,registry.example.com"} value={insecure_registries}
+                                        </InputRow>
+                                        <InputRow label={t("不安全仓库")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"127.0.0.1:5000,registry.example.com"} value={insecure_registries}
                                                        handleInputChange={(v) => set_insecure_registries(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("开启调试")}</label>
-                                            <Select options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        </InputRow>
+                                        <InputRow label={t("开启调试")} width={"8rem"}>
+                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                                     value={debug}
                                                     onChange={(v) => set_debug(!!v)} />
-                                        </div>
-                                        <div className={"docker-setting__separator"}>{t("存储 / 日志 / 网络")}</div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("数据存储目录")}</label>
-                                            <InputText placeholder={"/var/lib/docker"} value={data_root}
+                                        </InputRow>
+                                        <InputRow label={t("数据存储目录")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"/var/lib/docker"} value={data_root}
                                                        handleInputChange={(v) => set_data_root(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("存储驱动")}</label>
-                                            <InputText placeholder={"overlay2"} value={storage_driver}
+                                        </InputRow>
+                                        <InputRow label={t("存储驱动")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"overlay2"} value={storage_driver}
                                                        handleInputChange={(v) => set_storage_driver(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("日志驱动")}</label>
-                                            <InputText placeholder={"json-file"} value={log_driver}
+                                        </InputRow>
+                                        <InputRow label={t("日志驱动")} width={"8rem"}>
+                                            <InputText width={"24rem"} placeholder={"json-file"} value={log_driver}
                                                        handleInputChange={(v) => set_log_driver(v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("启用 iptables")}</label>
-                                            <Select options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        </InputRow>
+                                        <InputRow label={t("启用 iptables")} width={"8rem"}>
+                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                                     value={iptables}
                                                     onChange={(v) => set_iptables(!!v)} />
-                                        </div>
-                                        <div className={"docker-setting__field"}>
-                                            <label className={"docker-setting__label"}>{t("Live Restore")}</label>
-                                            <Select options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
+                                        </InputRow>
+                                        <InputRow label={t("Live Restore")} width={"8rem"}>
+                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
                                                     value={live_restore}
                                                     onChange={(v) => set_live_restore(!!v)} />
-                                        </div>
-                                        <p className={"docker-setting__tip"}>{t("代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}</p>
+                                        </InputRow>
                                     </div>
                                 </CardFull>
                             </Column>

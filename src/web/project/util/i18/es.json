@@ -636,7 +636,7 @@
   "删除规则": "Eliminar regla",
   "确定删除该规则吗？": "¿Eliminar esta regla?",
   "规则编号": "Número de regla",
-  "来源地址填写说明": "Formato de dirección de origen: IP o CIDR, p. ej. 192.168.1.0/24; dejar vacío para Anywhere; separar varios con comas.",
+  "来源地址填写说明": "Descripción de campos de regla ufw:\nAcción: allow=permitir, deny=denegar, reject=denegar y responder inaccesible, limit=limitar velocidad.\nDirección: in=entrada (predeterminado) / out=salida.\nProtocolo: tcp / udp / both (both = TCP y UDP).\nPuerto: único (p. ej. 80) o rango (p. ej. 1000:2000).\nOrigen (opcional): IP o CIDR como 192.168.1.0/24; vacío = cualquiera (Anywhere).\n\"Agregar regla\" añade una regla; \"Eliminar regla\" quita una regla existente con la misma configuración (deshacer permitir).",
   "点击复制": "Clic para copiar",
   "镜像加速": "Espejos de registro",
   "不安全仓库": "Registros inseguros",
@@ -647,7 +647,13 @@
   "日志驱动": "Controlador de registros",
   "启用 iptables": "Habilitar iptables",
   "Live Restore": "Restauración en vivo",
-  "存储 / 日志 / 网络": "Almacenamiento / Registros / Red",
   "配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "La configuración se guarda en /etc/docker/daemon.json; un valor vacío elimina el elemento; separe varios espejos/registros con comas. Surte efecto tras reiniciar Docker. Tenga cuidado, sobre todo al cambiar el directorio de datos.",
-  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "El proxy se escribe en las variables de entorno del servicio systemd, el resto en daemon.json. Surte efecto tras reiniciar Docker. Tenga cuidado, sobre todo al cambiar el directorio de datos."
+  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "El proxy se escribe en las variables de entorno del servicio systemd, el resto en daemon.json. Surte efecto tras reiniciar Docker. Tenga cuidado, sobre todo al cambiar el directorio de datos.",
+  "添加规则": "Agregar regla",
+  "端口(支持范围 1000:2000)": "Puerto (admite rango 1000:2000)",
+  "来源地址(可选)": "Dirección de origen (opcional)",
+  "请填写端口号": "Introduzca un puerto",
+  "方向": "Dirección",
+  "协议": "Protocolo",
+  "来源地址": "Dirección de origen"
 }

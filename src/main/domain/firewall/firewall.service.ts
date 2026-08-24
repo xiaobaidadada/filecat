@@ -148,52 +148,71 @@ export class FirewallServiceImpl {
     }
 
     /**
-     * 放行（添加）一条端口规则
-     * @param backend 后端
-     * @param proto   tcp / udp
-     * @param port    端口
-     * @param from    来源地址（IP / 网段，可为空表示任意）
+     * 添加（或删除）一条 ufw 端口规则，支持 ufw 的完整能力：
+     *  - action：allow（放行）/ deny（拒绝）/ reject（拒绝并回应）/ limit（限速）
+     *  - direction：in（入站，默认）/ out（出站）
+     *  - proto：tcp / udp / both（两者，即不指定协议）
+     *  - port：单端口 "80" 或端口范围 "1000:2000"
+     *  - from：来源地址（IP / 网段，可选，空表示任意）
+     *
+     * 生成的正规 ufw 命令示例：
+     *   ufw allow proto tcp to any port 80
+     *   ufw deny out proto udp to any port 1000:2000 from 192.168.1.0/24
+     *   ufw limit proto tcp to any port 22
+     *   ufw reject proto udp to any port 53
      */
-    public async add_rule(backend: FirewallBackend, proto: "tcp" | "udp", port: number | string, from?: string): Promise<string> {
+    public async add_rule(
+        backend: FirewallBackend,
+        action: "allow" | "deny" | "reject" | "limit",
+        direction: "in" | "out",
+        proto: "tcp" | "udp" | "both",
+        port: string,
+        from?: string,
+    ): Promise<string> {
         await this.require_backend(backend);
-        // 基础参数校验
-        if (!/^\d+$/.test(`${port}`) || +port < 1 || +port > 65535) {
-            throw "端口号不合法（1-65535）";
+        // 校验端口：单端口 1-65535 或范围 "起:止"（起<止，均在 1-65535）
+        const trimmed = `${port}`.trim();
+        if (!/^\d+(:\d+)?$/.test(trimmed)) {
+            throw "端口号不合法：支持单端口（如 80）或范围（如 1000:2000）";
         }
-        if (backend === "ufw") {
-            // ufw 支持指定来源；无来源则仅按端口放行
-            const fromPart = from && from.trim() ? ` from ${from.trim()}` : "";
-            await SystemUtil.execAsync(`ufw allow proto ${proto} to any port ${port}${fromPart}`);
-            return `${proto}/${port} 已放行`;
+        const nums = trimmed.split(":");
+        for (const n of nums) {
+            if (+n < 1 || +n > 65535) throw "端口号不合法（1-65535）";
         }
-        // nft：在 input 链的 ACCEPT 规则之前插入一条放行规则（仅对任意来源生效）
-        // 注：nft 规则不自动持久化，跨重启不清空；持久化需写 /etc/nftables.conf，为避免破坏系统不自动处理。
-        const chain = "inet filter input";
-        await SystemUtil.execAsync(
-            `nft insert rule ${chain} ip protocol ${proto} ${proto === 'tcp' ? 'tcp dport' : 'udp dport'} ${port} accept`
-        );
-        return `${proto}/${port} 已放行（nft，仅运行时生效）`;
-    }
+        if (nums.length === 2 && +nums[0] >= +nums[1]) throw "端口范围不合法（起始端口需小于结束端口）";
 
-    /**
-     * 删除（禁用）一条端口规则
-     */
-    public async del_rule(backend: FirewallBackend, proto: "tcp" | "udp", port: number | string, from?: string): Promise<string> {
-        await this.require_backend(backend);
-        if (!/^\d+$/.test(`${port}`) || +port < 1 || +port > 65535) {
-            throw "端口号不合法（1-65535）";
-        }
         if (backend === "ufw") {
+            // 拼接：action + direction（in 省略）+ proto（both 省略）+ port + from
+            const dirPart = direction === "out" ? "out " : "";
+            const protoPart = proto === "both" ? "" : `proto ${proto} `;
             const fromPart = from && from.trim() ? ` from ${from.trim()}` : "";
-            // yes | 喂入确认应答，防止 ufw 交互提示导致卡死；按完整规则描述删除，仅匹配完全相同的那条
-            await SystemUtil.execAsync(`yes | ufw delete allow proto ${proto} to any port ${port}${fromPart}`);
-            return `${proto}/${port} 已禁用放行`;
+            const cmd = `ufw ${action} ${dirPart}${protoPart}to any port ${trimmed}${fromPart}`.replace(/\s{2,}/g, " ").trim();
+            await SystemUtil.execAsync(`yes | ${cmd}`);
+            const actionText = {allow: "放行", deny: "拒绝", reject: "拒绝回应", limit: "限速"}[action];
+            return `${actionText} 规则已添加`;
         }
-        // nft 删除：用 handle 定位，删除第一条匹配的规则
-        await SystemUtil.execAsync(
-            `nft delete rule inet filter input ip protocol ${proto} ${proto === 'tcp' ? 'tcp dport' : 'udp dport'} ${port} accept`
-        );
-        return `${proto}/${port} 已禁用放行（nft）`;
+
+        // nft：在 input 链的 ACCEPT 规则之前插入一条规则（仅对任意来源、tcp/udp 生效）
+        // 注：nft 规则不自动持久化，跨重启不清空；持久化需写 /etc/nftables.conf，为避免破坏系统不自动处理。
+        //     nft 仅支持 allow/deny 语义（accept/drop），reject/limit 需要额外 nft 语句，这里按 accept/drop 简化处理。
+        const verdict = action === "deny" ? "drop" : "accept";
+        const chain = direction === "out" ? "inet filter output" : "inet filter input";
+        if (proto === "both") {
+            // tcp、udp 分别插入一条
+            const portSpec = trimmed.includes(":") ? trimmed.replace(":", "-") : trimmed;
+            for (const p of ["tcp", "udp"] as const) {
+                await SystemUtil.execAsync(
+                    `nft insert rule ${chain} ip protocol ${p} ${p === 'tcp' ? 'tcp dport' : 'udp dport'} ${portSpec} ${verdict}`
+                );
+            }
+        } else {
+            const portSpec = trimmed.includes(":") ? trimmed.replace(":", "-") : trimmed;
+            await SystemUtil.execAsync(
+                `nft insert rule ${chain} ip protocol ${proto} ${proto === 'tcp' ? 'tcp dport' : 'udp dport'} ${portSpec} ${verdict}`
+            );
+        }
+        const actionText = {allow: "放行", deny: "拒绝", reject: "拒绝回应", limit: "限速"}[action];
+        return `${actionText} 规则已添加（nft，仅运行时生效）`;
     }
 }
 

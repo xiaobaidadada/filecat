@@ -636,7 +636,7 @@
   "删除规则": "Regel löschen",
   "确定删除该规则吗？": "Diese Regel löschen?",
   "规则编号": "Regelnummer",
-  "来源地址填写说明": "Quelladressformat: IP oder CIDR, z. B. 192.168.1.0/24; leer = Anywhere; mehrere mit Komma trennen.",
+  "来源地址填写说明": "ufw 规则填写说明：\n动作 allow=放行、deny=拒绝、reject=拒绝并回应不可达、limit=限速防暴力。\n方向 in=入站（默认）、out=出站。\n协议 tcp/udp/both（both=同时放行 TCP 和 UDP）。\n端口支持单个（如 80）或范围（如 1000:2000）。\n来源地址可选：IP 或网段如 192.168.1.0/24；留空表示任意来源(Anywhere)。\n「添加规则」用于新增防火墙规则，「删除规则」按相同配置删除一条已存在的规则（撤销放行）。",
   "点击复制": "Zum Kopieren klicken",
   "镜像加速": "Registry-Mirrors",
   "不安全仓库": "Unsichere Registries",
@@ -647,7 +647,13 @@
   "日志驱动": "Log-Treiber",
   "启用 iptables": "iptables aktivieren",
   "Live Restore": "Live-Restore",
-  "存储 / 日志 / 网络": "Speicher / Logs / Netzwerk",
   "配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Die Konfiguration wird in /etc/docker/daemon.json gespeichert; leerer Wert entfernt den Eintrag; mehrere Mirror/registries mit Kommas trennen. Wirkt nach Neustart von Docker. Vorsicht bei Änderung des Datenverzeichnisses.",
-  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Der Proxy wird in die systemd-Dienst-Umgebungsvariablen geschrieben, die übrigen Felder in daemon.json. Wirkt nach Neustart von Docker. Vorsicht besonders bei Änderung des Datenverzeichnisses."
+  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Der Proxy wird in die systemd-Dienst-Umgebungsvariablen geschrieben, die übrigen Felder in daemon.json. Wirkt nach Neustart von Docker. Vorsicht besonders bei Änderung des Datenverzeichnisses.",
+  "添加规则": "Regel hinzufügen",
+  "端口(支持范围 1000:2000)": "Port (Bereich 1000:2000 möglich)",
+  "来源地址(可选)": "Quelladresse (optional)",
+  "请填写端口号": "Bitte Port angeben",
+  "方向": "Richtung",
+  "协议": "Protokoll",
+  "来源地址": "Quelladresse"
 }

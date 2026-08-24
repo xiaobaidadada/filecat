@@ -636,7 +636,7 @@
   "删除规则": "Supprimer la règle",
   "确定删除该规则吗？": "Supprimer cette règle ?",
   "规则编号": "Numéro de règle",
-  "来源地址填写说明": "Format de l'adresse source : IP ou CIDR, ex. 192.168.1.0/24 ; laisser vide pour Anywhere ; séparer plusieurs par des virgules.",
+  "来源地址填写说明": "Description des champs de règle ufw :\nAction : allow=autoriser, deny=refuser, reject=refuser et répondre inaccessible, limit=limiter le débit.\nDirection : in=entrée (défaut) / out=sortie.\nProtocole : tcp / udp / both (both = TCP et UDP).\nPort : unique (ex. 80) ou plage (ex. 1000:2000).\nSource (facultatif) : IP ou CIDR comme 192.168.1.0/24 ; vide = n'importe (Anywhere).\n« Ajouter une règle » ajoute une règle ; « Supprimer » retire une règle existante de même config (annuler l'autorisation).",
   "点击复制": "Cliquer pour copier",
   "镜像加速": "Miroirs de registre",
   "不安全仓库": "Registres non sécurisés",
@@ -647,7 +647,13 @@
   "日志驱动": "Pilote de journaux",
   "启用 iptables": "Activer iptables",
   "Live Restore": "Restauration en direct",
-  "存储 / 日志 / 网络": "Stockage / Journaux / Réseau",
   "配置保存到 /etc/docker/daemon.json，空值表示清除对应项；多个镜像加速或不安全仓库用逗号分隔。修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "La configuration est enregistrée dans /etc/docker/daemon.json ; un champ vide supprime l'élément ; séparez plusieurs miroirs/registres par des virgules. Effet après redémarrage de Docker. Soyez prudent, surtout lors du changement du répertoire de données.",
-  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Le proxy est écrit dans les variables d'environnement du service systemd, le reste dans daemon.json. Effet après redémarrage de Docker. Soyez prudent, surtout lors du changement du répertoire de données."
+  "代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。": "Le proxy est écrit dans les variables d'environnement du service systemd, le reste dans daemon.json. Effet après redémarrage de Docker. Soyez prudent, surtout lors du changement du répertoire de données.",
+  "添加规则": "Ajouter une règle",
+  "端口(支持范围 1000:2000)": "Port (plage 1000:2000 possible)",
+  "来源地址(可选)": "Adresse source (facultatif)",
+  "请填写端口号": "Veuillez saisir un port",
+  "方向": "Direction",
+  "协议": "Protocole",
+  "来源地址": "Adresse source"
 }
