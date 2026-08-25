@@ -174,7 +174,7 @@ export function Firewall() {
 
                 {/* 添加规则 */}
                 <Column widthPer={35}>
-                    <CardFull title={t("防火墙规则")} titleCom={
+                    <CardFull title={t("添加ufw规则")} titleCom={
                         <ActionButton icon={"add"} title={t("添加")} onClick={addRule}/>
                     }>
                         <InputRow label={t("动作")} label_width={"4rem"} input_max_width={"8rem"}>
