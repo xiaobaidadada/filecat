@@ -58,7 +58,20 @@ export class FirewallServiceImpl {
     }
 
     /**
-     * ufw 是否已启用：解析 `ufw status` 输出的 `Status: active`。
+     * 执行 ufw 写命令（非交互）。
+     *
+     * UFW 在部分命令（如 `enable`、`delete`，以及添加可能影响当前连接的规则时）会交互式询问
+     * "Proceed with operation? (y|n)"。filecat 以 exec 非交互方式执行，无 stdin 输入会一直阻塞。
+     * 故统一用 ufw 自带的 `--force` 参数跳过确认，避免卡死。
+     *
+     * @param subcmd ufw 子命令，如 `enable`、`delete 3`、`allow in proto tcp to any port 80`
+     */
+    private async execUfw(subcmd: string): Promise<string> {
+        // 命令参数均已通过严格白名单校验，无命令注入风险
+        return (await SystemUtil.execAsync(`ufw --force ${subcmd}`)).toString();
+    }
+
+    /** ufw 是否已启用：解析 `ufw status` 输出的 `Status: active`。
      * 这比 systemctl is-active 更贴合「UFW 是否启用」的语义（ufw 规则状态与 ufw.service 运行状态可能不一致）。
      */
     public async is_enabled(): Promise<boolean> {
@@ -80,7 +93,7 @@ export class FirewallServiceImpl {
     /** 启用 / 停用 ufw */
     public async set_enabled(enabled: boolean): Promise<string> {
         await this.require_ufw();
-        await SystemUtil.execAsync(enabled ? "ufw enable" : "ufw disable");
+        await this.execUfw(enabled ? "enable" : "disable");
         return enabled ? "ufw 已启用" : "ufw 已停用";
     }
 
@@ -200,8 +213,8 @@ export class FirewallServiceImpl {
         if (action === "limit" && direction === "out") throw "limit（限速）仅支持入站方向";
         // 出站方向下 from 无意义（表示出站包源，一般无需指定），忽略之
         const fromPart = direction === "in" && f ? ` from ${f}` : "";
-        const cmd = `ufw ${action} ${direction} proto ${proto} to any port ${p}${fromPart}`.trim();
-        await SystemUtil.execAsync(cmd);
+        const cmd = `${action} ${direction} proto ${proto} to any port ${p}${fromPart}`.trim();
+        await this.execUfw(cmd);
         const dirLabel = direction === "out" ? "出站" : "入站";
         const actionLabel = {allow: "放行", deny: "拒绝", limit: "限速", reject: "拒绝响应"}[action];
         const fromLabel = direction === "in" && f ? ` (from ${f})` : "";
@@ -215,9 +228,9 @@ export class FirewallServiceImpl {
     public async del_ufw_rule(number: number): Promise<string> {
         await this.require_ufw();
         if (!Number.isInteger(number) || number < 1) throw "规则编号不合法";
-        const cmd = `ufw delete ${number}`;
+        const cmd = `delete ${number}`;
         try {
-            await SystemUtil.execAsync(cmd);
+            await this.execUfw(cmd);
         } catch (e) {
             // UFW 找不到对应编号规则时会以非零退出；转成中文提示
             throw `未找到编号为 ${number} 的规则，可能已被删除，请刷新规则列表`;
