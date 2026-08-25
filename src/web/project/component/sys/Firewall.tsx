@@ -7,9 +7,11 @@ import {Blank} from "../../../meta/component/Blank";
 import {Table} from "../../../meta/component/Table";
 import Header from "../../../meta/component/Header";
 import {useTranslation} from "react-i18next";
-import {firewallHttp} from "../../util/config";
+import {firewallHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
+import {useAtom} from "jotai/index";
+import {$stroe} from "../../util/store";
 
 // 端口规则协议
 type Proto = "tcp" | "udp";
@@ -74,6 +76,7 @@ export function Firewall() {
     const [ufwRules, setUfwRules] = useState<UFWRule[]>([]);
     const [rules, setRules] = useState("");          // 原始文本
     const [loadRules, setLoadRules] = useState(false);
+    const [show_confirm, set_show_confirm] = useAtom($stroe.confirm);
 
     // 拉取 ufw 状态
     const loadStatus = async () => {
@@ -135,13 +138,21 @@ export function Firewall() {
     };
 
     // 按编号删除一条规则
-    const delUfwRule = async (number: number) => {
-        try {
-            const rsq = await firewallHttp.post("ufw/rule/del", {number});
-            if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
-            NotySuccess(rsq.data || t("规则已删除"));
-            getRules();
-        } catch (e) { /* Http 已弹错 */ }
+    const delUfwRule = async (number: number,to:string,from:string) => {
+        set_show_confirm({
+            open: true,
+            title: t("确定删除吗"),
+            sub_title: t(`${to} ${from}`),
+            handle: async () => {
+                try {
+                    const rsq = await firewallHttp.post("ufw/rule/del", {number});
+                    if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
+                    NotySuccess(rsq.data || t("规则已删除"));
+                    getRules();
+                } catch (e) { /* Http 已弹错 */ }
+            },
+        });
+
     };
 
     const installed = status?.installed === true;
@@ -213,7 +224,7 @@ export function Firewall() {
                                         r.from ? <TextTip context={r.from} tip_context={r.from}/> : "",
                                         r.description || "",
                                         <ActionButton icon={"delete"} title={t("删除规则")}
-                                                      onClick={() => delUfwRule(r.number)}/>,
+                                                      onClick={() => delUfwRule(r.number,r.to,r.from)}/>,
                                     ])}
                                     width={"8rem"}/>
                         )}
