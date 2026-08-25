@@ -141,13 +141,14 @@ export function Firewall() {
     const delUfwRule = async (number: number,to:string,from:string) => {
         set_show_confirm({
             open: true,
-            title: t("确定删除吗"),
+            title: t("确定删除吗?"),
             sub_title: t(`${to} ${from}`),
             handle: async () => {
                 try {
                     const rsq = await firewallHttp.post("ufw/rule/del", {number});
                     if (rsq.code !== RCode.Success) { NotyFail(rsq.message || t("操作失败")); return; }
                     NotySuccess(rsq.data || t("规则已删除"));
+                    set_show_confirm({open:false,handle:null});
                     getRules();
                 } catch (e) { /* Http 已弹错 */ }
             },

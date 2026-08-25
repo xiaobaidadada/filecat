@@ -65,12 +65,15 @@ export class FirewallServiceImpl {
      * 故统一用 ufw 自带的 `--force` 参数跳过确认，避免卡死。
      *
      * @param subcmd ufw 子命令，如 `enable`、`delete 3`、`allow in proto tcp to any port 80`
+     * @param force
      */
-    private async execUfw(subcmd: string): Promise<string> {
-        // 命令参数均已通过严格白名单校验，无命令注入风险
-        return (await SystemUtil.execAsync(`ufw --force ${subcmd}`)).toString();
-    }
+    private async execUfw(subcmd: string, force = false): Promise<string> {
+        const cmd = force
+            ? `ufw --force ${subcmd}`
+            : `ufw ${subcmd}`;
 
+        return (await SystemUtil.execAsync(cmd)).toString();
+    }
     /** ufw 是否已启用：解析 `ufw status` 输出的 `Status: active`。
      * 这比 systemctl is-active 更贴合「UFW 是否启用」的语义（ufw 规则状态与 ufw.service 运行状态可能不一致）。
      */
@@ -93,7 +96,11 @@ export class FirewallServiceImpl {
     /** 启用 / 停用 ufw */
     public async set_enabled(enabled: boolean): Promise<string> {
         await this.require_ufw();
-        await this.execUfw(enabled ? "enable" : "disable");
+        if (enabled) {
+            await this.execUfw("enable", true);
+        } else {
+            await this.execUfw("disable");
+        }
         return enabled ? "ufw 已启用" : "ufw 已停用";
     }
 
@@ -230,7 +237,7 @@ export class FirewallServiceImpl {
         if (!Number.isInteger(number) || number < 1) throw "规则编号不合法";
         const cmd = `delete ${number}`;
         try {
-            await this.execUfw(cmd);
+            await this.execUfw(cmd,true);
         } catch (e) {
             // UFW 找不到对应编号规则时会以非零退出；转成中文提示
             throw `未找到编号为 ${number} 的规则，可能已被删除，请刷新规则列表`;
