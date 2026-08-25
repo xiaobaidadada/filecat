@@ -1,223 +1,228 @@
 import {SystemUtil} from "../sys/sys.utl";
-import {settingService} from "../setting/setting.service";
 import {SysSoftware} from "../../../common/req/setting.req";
+import {settingService} from "../setting/setting.service";
+import {is_linux} from "../shell/shell.service";
 
 /**
- * 防火墙管理服务。
+ * 防火墙管理服务（仅 UFW）。
  *
- * 支持两种后端：ufw（前端封装，命令简单可靠、原生持久化）与 nftables（nft 命令）。
- * 所有操作通过系统命令完成，执行前先检测对应后端是否安装；命令以 filecat 运行进程的用户身份执行，
- * 若权限不足会执行失败并抛错，不擅自 sudo 提权。
+ * UFW（Uncomplicated Firewall）是 iptables/nftables 之上的易用封装，命令简单可靠，且规则原生持久化。
+ * 所有操作通过系统命令完成，命令以 filecat 进程的身份执行，权限不足会失败并抛错，不擅自 sudo 提权。
  *
- * 「切换管理模式」是指前端选用哪个后端来管理防火墙（ufw / nft），
- * 而非改动系统底层引擎（任何后端都只是防火墙规则的管理入口）。
+ * 动作语义：
+ *   放行 = ufw allow            （添加一条放行规则）
+ *   删除 = ufw delete allow ...（删除对应放行规则）
+ *
+ * 安全：
+ *   1. from（来源地址）在拼进命令前做严格 IP/CIDR 校验（支持 IPv4 / IPv6），防止 shell 命令注入；
+ *   2. 采用外部软件检测（settingService.getSoftware()）统一判断 ufw 是否安装，避免与设置页检测逻辑重复。
  */
 
-// 防火墙后端标识
-export type FirewallBackend = SysSoftware.ufw | SysSoftware.nftables;
+// 规则动作
+export type FirewallAction = "allow" | "deny" | "limit" | "reject";
+// 规则方向：in=入站（默认） out=出站
+export type FirewallDirection = "in" | "out";
+// 放行 / 删除规则用到的协议
+export type FirewallProto = "tcp" | "udp";
 
-// 后端状态
-export interface FirewallBackendStatus {
-    id: FirewallBackend;
-    installed: boolean;   // 是否安装（外部软件检测逻辑一致：commandIsExist）
-    active: boolean;      // 对应服务是否已启用
-    note: string;         // 简单说明
+// UFW 状态
+export interface FirewallStatus {
+    installed: boolean;   // ufw 是否安装（复用外部软件检测结果）
+    active: boolean;      // ufw 是否已启用（ufw status 输出 Status: active）
+    note: string;
 }
 
 export class FirewallServiceImpl {
 
-    /** 当前系统是否为 Linux（防火墙仅在 Linux 上可用）*/
-    private is_linux(): boolean {
-        return process.platform === "linux";
-    }
-
-    /** 检测某个后端命令是否安装 */
-    private async backend_installed(backend: FirewallBackend) {
-        const soft_list = await settingService.getSoftware();
-        const f = soft_list.find(f => f.id === backend);
-        return f && f.installed;
-    }
-
-    /** 检测后端对应服务是否启用 */
-    private async backend_active(backend: FirewallBackend) {
-        const soft_list = await settingService.getSoftware();
-        const f = soft_list.find(f => f.id === backend);
-        return f && f.active;
-    }
-
-    /**
-     * 获取防火墙整体状态（仅 Linux 有意义，其它系统返回空列表）
-     */
-    public async get_status(): Promise<FirewallBackendStatus[]> {
-        if (!this.is_linux()) return [];
-        const list: FirewallBackendStatus[] = [];
-        for (const id of ["ufw", "nft"] as FirewallBackend[]) {
-            list.push({
-                id,
-                installed: await this.backend_installed(id),
-                active: await this.backend_active(id),
-                note: id === "ufw" ? "ufw（易用，规则持久化）" : "nftables（nft 命令）",
-            });
-        }
-        return list;
-    }
-
-    /**
-     * 校验后端是否已安装，否则抛错（供所有需要真实操作的接口调用）
-     */
-    public async require_backend(backend: FirewallBackend) {
-        if (!this.is_linux()) throw "当前系统不是 Linux，无法管理防火墙";
-        if (!await this.backend_installed(backend)) {
-            throw `${backend === 'ufw' ? 'ufw' : 'nftables'} 未安装，请先在系统安装对应防火墙软件`;
+    /** ufw 是否安装：复用外部软件检测逻辑（getSoftware），避免与设置页检测不一致 */
+    private async ufw_installed(): Promise<boolean> {
+        try {
+            const soft_list = await settingService.getSoftware();
+            const f = soft_list.find(s => s.id === SysSoftware.ufw);
+            return !!f && !!f.installed;
+        } catch (e) {
+            return false;
         }
     }
 
-    /**
-     * 启用 / 停用系统防火墙（ufw 用 enable/disable；nftables 用 systemctl enable/disable --now）
-     */
-    public async set_enabled(backend: FirewallBackend, enabled: boolean): Promise<string> {
-        await this.require_backend(backend);
-        if (backend === "ufw") {
-            // ufw enable 是交互式命令（提示 Proceed with operation (y|n)?），
-            // 用 `yes |` 主动喂入确认应答，避免 execAsync（child_process.exec 无 stdin）永久阻塞卡死。
-            // ufw disable 一般不交互，但统一用 yes | 也无副作用。
-            await SystemUtil.execAsync(`yes | ufw ${enabled ? "enable" : "disable"}`);
-            return enabled ? "ufw 已启用" : "ufw 已停用";
+    /** 获取 ufw 状态（仅 Linux 有意义；其它系统返回 installed=false） */
+    public async get_status(): Promise<FirewallStatus> {
+        if (!is_linux()) {
+            return {installed: false, active: false, note: "ufw 仅在 Linux 上可用"};
         }
-        // `--now` 让 enable/disable 立即生效（enable 同时 start、disable 同时 stop），
-        // 而不是仅设置开机自启；否则点了「启用」后 nftables.service 仍是 inactive。
-        const act = enabled ? "enable" : "disable";
-        await SystemUtil.execAsync(`systemctl ${act} --now nftables`);
-        return enabled ? "nftables 已启用" : "nftables 已停用";
+        return {
+            installed: await this.ufw_installed(),
+            active: await this.is_enabled(),
+            note: "ufw（易用、规则持久化）",
+        };
     }
 
     /**
-     * 查看某一后端的规则列表
-     *  ufw：`ufw status numbered`   ；nft：`nft list ruleset`
+     * ufw 是否已启用：解析 `ufw status` 输出的 `Status: active`。
+     * 这比 systemctl is-active 更贴合「UFW 是否启用」的语义（ufw 规则状态与 ufw.service 运行状态可能不一致）。
      */
-    public async get_rules(backend: FirewallBackend): Promise<string> {
-        await this.require_backend(backend);
-        if (backend === "ufw") {
-            return (await SystemUtil.execAsync("ufw status numbered")).toString();
+    public async is_enabled(): Promise<boolean> {
+        try {
+            const out = (await SystemUtil.execAsync("ufw status")).toString();
+            return /Status:\s*active/i.test(out);
+        } catch (e) {
+            return false;
         }
-        return (await SystemUtil.execAsync("nft list ruleset")).toString();
     }
 
-    /**
-     * 解析 ufw status numbered 输出，返回结构化规则列表（供前端列表化展示与按编号删除）
-     * 每条规则含：number(ufw 编号)、to、action、from、description（# 后的备注）
-     */
-    public async get_ufw_rules(): Promise<{number: number, to: string, action: string, from: string, description: string}[]> {
-        await this.require_backend(SysSoftware.ufw);
-        const raw = (await SystemUtil.execAsync("ufw status numbered")).toString();
-        const lines = raw.split(/\r?\n/);
-        const list: {number: number, to: string, action: string, from: string, description: string}[] = [];
-        const re = /^\s*\[\s*(\d+)\]\s+(.*)$/;
-        for (const line of lines) {
-            const m = line.match(re);
+    /** 校验 ufw 已安装，否则抛错 */
+    public async require_ufw(): Promise<void> {
+        if (process.platform !== "linux") throw "当前系统不是 Linux，无法管理防火墙";
+        const installed = await this.ufw_installed();
+        if (!installed) throw "ufw 未安装，请先在系统安装 ufw 防火墙软件";
+    }
+
+    /** 启用 / 停用 ufw */
+    public async set_enabled(enabled: boolean): Promise<string> {
+        await this.require_ufw();
+        await SystemUtil.execAsync(enabled ? "ufw enable" : "ufw disable");
+        return enabled ? "ufw 已启用" : "ufw 已停用";
+    }
+
+    /** 查看 ufw 规则列表：解析 `ufw status numbered`，返回结构化规则（编号/目标/动作/来源/备注）+ 原始文本 */
+    public async get_rules(): Promise<{
+        active: boolean;
+        raw: string;
+        rules: { number: number; to: string; action: string; from?: string; description?: string }[];
+    }> {
+        await this.require_ufw();
+        const out = (await SystemUtil.execAsync("ufw status numbered")).toString();
+        const active = /Status:\s*active/i.test(out);
+        const rules: { number: number; to: string; action: string; from?: string; description?: string }[] = [];
+        for (const line of out.split("\n")) {
+            // 匹配如 "[ 1] 22/tcp                     ALLOW IN    Anywhere" 或带备注 "[ 9] 80/tcp ... # web"
+            const m = /^\s*\[\s*(\d+)\]\s*(.*)$/.exec(line.trim());
             if (!m) continue;
-            let description = "";
-            let body = m[2].trim();
-            // 截取 # 后的备注
-            const hashIdx = body.indexOf("#");
-            if (hashIdx >= 0) {
-                description = body.slice(hashIdx + 1).trim();
-                body = body.slice(0, hashIdx).trim();
+            const rest = m[2].trim();
+            if (!rest) continue;
+            // UFW 用至少两个空格分隔 To / Action / From（From 后可带 "# comment" 备注）
+            const seg = rest.split(/\s{2,}/).map(s => s.trim()).filter(s => s.length > 0);
+            const to = seg[0] || "";
+            const action = seg[1] || "";
+            // From 与备注：seg[2] 为 From，其后（如 "# ssh"）为备注
+            let from: string | undefined;
+            let description: string | undefined;
+            if (seg.length >= 3) {
+                const fromSeg = seg[2];
+                // 备注形如 "# ssh"，拆出来
+                const hashIdx = fromSeg.indexOf("#");
+                if (hashIdx >= 0) {
+                    from = fromSeg.slice(0, hashIdx).trim() || undefined;
+                    description = fromSeg.slice(hashIdx + 1).trim();
+                } else {
+                    from = fromSeg;
+                }
+                if (seg.length >= 4) {
+                    description = (description ? description + " " : "") + seg.slice(3).join(" ").replace(/^#\s*/, "");
+                }
             }
-            // ufw numbered 的列之间用多个空格分隔：To  | Action(如 ALLOW IN)  | From
-            const parts = body.split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
-            list.push({
-                number: parseInt(m[1], 10),
-                to: parts[0] || "",
-                action: parts[1] || "",
-                from: parts[2] || "",
-                description,
-            });
+            if (to) {
+                rules.push({number: Number(m[1]), to, action, from, description});
+            }
         }
-        return list;
+        return {active, raw: out, rules};
     }
 
     /**
-     * 按 ufw 编号删除一条规则（ufw delete <number>）
-     * 用 `yes |` 喂入确认应答，避免 ufw 交互提示导致 execAsync 无标准输入而卡死；
-     * 按编号删除只会删掉对应编号的那一条规则，不会误删其它规则。
+     * 严格校验端口号（允许单端口 1-65535，或 ufw 端口范围 1000:2000）
+     */
+    private validate_port(port: number | string): string {
+        const s = `${port}`.trim();
+        if (!/^\d+$/.test(s)) {
+            // 端口不可控：要么是单个数字，要么是数字:数字的范围
+            if (!/^\d{1,5}:\d{1,5}$/.test(s)) throw "端口号不合法（单个 1-65535 或范围 如 1000:2000）";
+            const [a, b] = s.split(":").map(Number);
+            if (a < 1 || a > 65535 || b < 1 || b > 65535 || a > b) throw "端口号范围不合法";
+        } else {
+            const n = Number(s);
+            if (n < 1 || n > 65535) throw "端口号不合法（1-65535）";
+        }
+        return s;
+    }
+
+    /**
+     * 严格校验来源地址（可选）：仅允许 IP 或 CIDR（IPv4 / IPv6），防止 shell 命令注入。
+     *  - IPv4  如 192.168.1.0、192.168.1.0/24
+     *  - IPv6  如 ::1、2001:db8::1、2001:db8::/64
+     *  - IPv6 zone 如 fe80::1%eth0 也允许
+     */
+    private validate_from(from?: string): string | null {
+        if (!from || !from.trim()) return null;
+        const s = from.trim();
+        // 拒绝一切非 [0-9a-fA-F:.]/[.\]] 的字符（含空格、分号、$、`、|、&、括号等注入字符）
+        if (/[^\w:.\%\-/\[\]]/.test(s)) throw "来源地址包含非法字符";
+        // 按 / 拆分 CIDR 后缀
+        const parts = s.split("/");
+        if (parts.length > 2) throw "来源地址不合法（最多一个 / 表示网段）";
+        const ip = parts[0];
+        // 兼容 IPv6 zone（如 fe80::1%eth0）
+        const base = ip.includes("%") ? ip.split("%")[0] : ip;
+        const isIPv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(base);
+        const isIPv6 = /^[0-9a-fA-F:]+$/.test(base) && base.includes(":");
+        if (!isIPv4 && !isIPv6) throw "来源地址必须是合法 IP 或网段";
+        if (isIPv4 && base.split(".").some(seg => Number(seg) > 255)) throw "IPv4 地址段超出 0-255";
+        if (parts.length === 2) {
+            const mask = parts[1];
+            if (!/^\d{1,3}$/.test(mask)) throw "网段掩码不合法";
+            const m = Number(mask);
+            if (ip.includes(":") ? m > 128 : m > 32) throw "网段掩码超出范围";
+        }
+        return s;
+    }
+
+    /**
+     * 添加一条规则（按 动作 + 方向 + 协议 + 端口 [+ 来源]）
+     * @param action    allow / deny / limit / reject
+     * @param direction in（入站，默认）/ out（出站）
+     * @param proto     tcp / udp
+     * @param port      端口号或范围（如 80 或 "10000:20000"）
+     * @param from      来源地址（IP / CIDR，可选，仅入站有意义）
+     *
+     * 命令示例：
+     *   add_rule("allow","tcp",80)                    → ufw allow in proto tcp to any port 80
+     *   add_rule("allow","tcp",80,"192.168.1.0/24")   → ufw allow in proto tcp to any port 80 from 192.168.1.0/24
+     *   add_rule("deny","out","udp",53)               → ufw deny out proto udp to any port 53
+     *   add_rule("limit","tcp",22)                    → ufw limit in proto tcp to any port 22   （ssh 防爆破）
+     */
+    public async add_rule(action: FirewallAction, direction: FirewallDirection, proto: FirewallProto, port: number | string, from?: string): Promise<string> {
+        await this.require_ufw();
+        const p = this.validate_port(port);
+        const f = this.validate_from(from);
+        if (!(["allow", "deny", "limit", "reject"] as string[]).includes(action)) throw "动作不合法（allow / deny / limit / reject）";
+        if (!["in", "out"].includes(direction)) direction = "in";
+        if (!["tcp", "udp"].includes(proto)) throw "协议不合法（tcp / udp）";
+        // limit 仅支持入站（UFW 限速语义只对入站连接有效）
+        if (action === "limit" && direction === "out") throw "limit（限速）仅支持入站方向";
+        // 出站方向下 from 无意义（表示出站包源，一般无需指定），忽略之
+        const fromPart = direction === "in" && f ? ` from ${f}` : "";
+        const cmd = `ufw ${action} ${direction} proto ${proto} to any port ${p}${fromPart}`.trim();
+        await SystemUtil.execAsync(cmd);
+        const dirLabel = direction === "out" ? "出站" : "入站";
+        const actionLabel = {allow: "放行", deny: "拒绝", limit: "限速", reject: "拒绝响应"}[action];
+        const fromLabel = direction === "in" && f ? ` (from ${f})` : "";
+        return `${dirLabel} ${proto}/${p}${fromLabel} 已${actionLabel}`;
+    }
+
+    /**
+     * 按 ufw 编号删除一条规则（编号来自 `ufw status numbered` 的输出）
+     * @param number 规则编号（正整数）
      */
     public async del_ufw_rule(number: number): Promise<string> {
-        await this.require_backend(SysSoftware.ufw);
-        // 严格校验：只接受正整数编号，防止异常值进入命令
-        if (!Number.isInteger(number) || number < 1) {
-            throw "规则编号不合法";
+        await this.require_ufw();
+        if (!Number.isInteger(number) || number < 1) throw "规则编号不合法";
+        const cmd = `ufw delete ${number}`;
+        try {
+            await SystemUtil.execAsync(cmd);
+        } catch (e) {
+            // UFW 找不到对应编号规则时会以非零退出；转成中文提示
+            throw `未找到编号为 ${number} 的规则，可能已被删除，请刷新规则列表`;
         }
-        await SystemUtil.execAsync(`yes | ufw delete ${number}`);
-        return `规则 ${number} 已删除`;
-    }
-
-    /**
-     * 添加（或删除）一条 ufw 端口规则，支持 ufw 的完整能力：
-     *  - action：allow（放行）/ deny（拒绝）/ reject（拒绝并回应）/ limit（限速）
-     *  - direction：in（入站，默认）/ out（出站）
-     *  - proto：tcp / udp / both（两者，即不指定协议）
-     *  - port：单端口 "80" 或端口范围 "1000:2000"
-     *  - from：来源地址（IP / 网段，可选，空表示任意）
-     *
-     * 生成的正规 ufw 命令示例：
-     *   ufw allow proto tcp to any port 80
-     *   ufw deny out proto udp to any port 1000:2000 from 192.168.1.0/24
-     *   ufw limit proto tcp to any port 22
-     *   ufw reject proto udp to any port 53
-     */
-    public async add_rule(
-        backend: FirewallBackend,
-        action: "allow" | "deny" | "reject" | "limit",
-        direction: "in" | "out",
-        proto: "tcp" | "udp" | "both",
-        port: string,
-        from?: string,
-    ): Promise<string> {
-        await this.require_backend(backend);
-        // 校验端口：单端口 1-65535 或范围 "起:止"（起<止，均在 1-65535）
-        const trimmed = `${port}`.trim();
-        if (!/^\d+(:\d+)?$/.test(trimmed)) {
-            throw "端口号不合法：支持单端口（如 80）或范围（如 1000:2000）";
-        }
-        const nums = trimmed.split(":");
-        for (const n of nums) {
-            if (+n < 1 || +n > 65535) throw "端口号不合法（1-65535）";
-        }
-        if (nums.length === 2 && +nums[0] >= +nums[1]) throw "端口范围不合法（起始端口需小于结束端口）";
-
-        if (backend === "ufw") {
-            // 拼接：action + direction（in 省略）+ proto（both 省略）+ port + from
-            const dirPart = direction === "out" ? "out " : "";
-            const protoPart = proto === "both" ? "" : `proto ${proto} `;
-            const fromPart = from && from.trim() ? ` from ${from.trim()}` : "";
-            const cmd = `ufw ${action} ${dirPart}${protoPart}to any port ${trimmed}${fromPart}`.replace(/\s{2,}/g, " ").trim();
-            await SystemUtil.execAsync(`yes | ${cmd}`);
-            const actionText = {allow: "放行", deny: "拒绝", reject: "拒绝回应", limit: "限速"}[action];
-            return `${actionText} 规则已添加`;
-        }
-
-        // nft：在 input 链的 ACCEPT 规则之前插入一条规则（仅对任意来源、tcp/udp 生效）
-        // 注：nft 规则不自动持久化，跨重启不清空；持久化需写 /etc/nftables.conf，为避免破坏系统不自动处理。
-        //     nft 仅支持 allow/deny 语义（accept/drop），reject/limit 需要额外 nft 语句，这里按 accept/drop 简化处理。
-        const verdict = action === "deny" ? "drop" : "accept";
-        const chain = direction === "out" ? "inet filter output" : "inet filter input";
-        if (proto === "both") {
-            // tcp、udp 分别插入一条
-            const portSpec = trimmed.includes(":") ? trimmed.replace(":", "-") : trimmed;
-            for (const p of ["tcp", "udp"] as const) {
-                await SystemUtil.execAsync(
-                    `nft insert rule ${chain} ip protocol ${p} ${p === 'tcp' ? 'tcp dport' : 'udp dport'} ${portSpec} ${verdict}`
-                );
-            }
-        } else {
-            const portSpec = trimmed.includes(":") ? trimmed.replace(":", "-") : trimmed;
-            await SystemUtil.execAsync(
-                `nft insert rule ${chain} ip protocol ${proto} ${proto === 'tcp' ? 'tcp dport' : 'udp dport'} ${portSpec} ${verdict}`
-            );
-        }
-        const actionText = {allow: "放行", deny: "拒绝", reject: "拒绝回应", limit: "限速"}[action];
-        return `${actionText} 规则已添加（nft，仅运行时生效）`;
+        return `编号 ${number} 的规则已删除`;
     }
 }
 

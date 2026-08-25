@@ -44,7 +44,6 @@ import {
 import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
-import {FirewallBackend} from "../firewall/firewall.service";
 const ffmpeg = require('fluent-ffmpeg');
 
 const Mustache = require('mustache');
@@ -919,21 +918,17 @@ export class SettingService {
     //     return this.ntfs_3g;
     // }
 
-    private async backend_active(backend: FirewallBackend): Promise<boolean> {
-        if (backend === "ufw") {
-            // ufw 的「启用」应看 ufw 规则状态（ufw status 输出的 Status: active），
-            // 而不是 systemd 的 ufw.service 是否 active。二者在 Linux 上可能不一致：
-            // ufw.service 可能 active（开机自启的 Unit 在运行），但 ufw 规则本身被 disable（Status: inactive），
-            // 会导致前端「已启用 ✓」与「规则列表：不活动」互相矛盾。
-            try {
-                const out = (await SystemUtil.execAsync("ufw status")).toString();
-                return /Status:\s*active/i.test(out);
-            } catch (e) {
-                return false;
-            }
+    // ufw 的「启用」应看 ufw 规则状态（ufw status 输出的 Status: active），
+    // 而不是 systemd 的 ufw.service 是否 active。二者可能不一致：
+    // ufw.service 可能 active（开机自启的 Unit 在运行），但 ufw 规则本身被 disable（Status: inactive），
+    // 会导致「已启用 ✓」与「规则列表：不活动」互相矛盾。
+    private async backend_active(): Promise<boolean> {
+        try {
+            const out = (await SystemUtil.execAsync("ufw status")).toString();
+            return /Status:\s*active/i.test(out);
+        } catch (e) {
+            return false;
         }
-        // nftables 没有 ufw 那种 enable/disable 概念，服务运行（active）即视为已启用
-        return SystemUtil.commandIsExist(`systemctl is-active --quiet nftables`);
     }
 
     public async getSoftware() {
@@ -964,8 +959,8 @@ export class SettingService {
                     }
                 }
             }
-            if (pojo.id === SysSoftware.ufw || pojo.id === SysSoftware.nftables) {
-                pojo.active = await this.backend_active(pojo.id);
+            if (pojo.id === SysSoftware.ufw) {
+                pojo.active = await this.backend_active();
             }
             list.push(pojo);
         }

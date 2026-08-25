@@ -30,7 +30,7 @@ export default function DockerSetting() {
     // daemon.json 常用字段：镜像加速 / 不安全仓库（数组，表单内用逗号或换行分隔）
     const [registry_mirrors, set_registry_mirrors] = useState("");
     const [insecure_registries, set_insecure_registries] = useState("");
-    const [debug, set_debug] = useState(false);
+    // const [debug, set_debug] = useState(false);
     // daemon.json 存储 / 日志 / 网络安全等关键字段
     const [data_root, set_data_root] = useState("");
     const [storage_driver, set_storage_driver] = useState("");
@@ -49,7 +49,7 @@ export default function DockerSetting() {
             set_no_proxy(cfg.no_proxy ?? "");
             set_registry_mirrors((cfg.registry_mirrors || []).join(","));
             set_insecure_registries((cfg.insecure_registries || []).join(","));
-            set_debug(!!cfg.debug);
+            // set_debug(!!cfg.debug);
             set_data_root(cfg.data_root ?? "");
             set_storage_driver(cfg.storage_driver ?? "");
             set_log_driver(cfg.log_driver ?? "");
@@ -68,7 +68,7 @@ export default function DockerSetting() {
             no_proxy,
             registry_mirrors: splitList(registry_mirrors),
             insecure_registries: splitList(insecure_registries),
-            debug,
+            // debug,
             data_root,
             storage_driver,
             log_driver,
@@ -99,76 +99,93 @@ export default function DockerSetting() {
     return (
         <div>
             <Header>
-                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={() => navigate(-1)} />
+                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={() => navigate(-1)}/>
             </Header>
             <FullScreenDiv isFull={true} more={true}>
                 <FullScreenContext>
                     <Dashboard>
                         <Row>
-                            <Column widthPer={60}>
-                                <CardFull self_title={<span className={"div-row"}><h2>{t("Docker 代理配置")}</h2></span>} titleCom={
-                                    <div className={"db-query-setting__toolbar"}>
-                                        <ActionButton icon={"info"} title={t("信息")} onClick={() => {
-                                            set_prompt_card({
-                                                open: true, title: t("信息"), context_div: (
-                                                    <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
-                                                        {t("代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}
-                                                    </div>
-                                                )
-                                            });
-                                        }} />
-                                        <ActionButton icon={"save"} title={t("保存")} onClick={() => save()} />
-                                    </div>
-                                }>
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0.2rem 0'}}>
-                                        <InputRow label={t("HTTP 代理")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"http://127.0.0.1:3067"} value={http_proxy}
-                                                       handleInputChange={(v) => set_http_proxy(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("HTTPS 代理")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"https://127.0.0.1:3067"} value={https_proxy}
-                                                       handleInputChange={(v) => set_https_proxy(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("No Proxy")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"localhost,127.0.0.1"} value={no_proxy}
-                                                       handleInputChange={(v) => set_no_proxy(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("镜像加速")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"https://docker.mirrors.ustc.edu.cn,https://hub-mirror.c.163.com"} value={registry_mirrors}
-                                                       handleInputChange={(v) => set_registry_mirrors(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("不安全仓库")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"127.0.0.1:5000,registry.example.com"} value={insecure_registries}
-                                                       handleInputChange={(v) => set_insecure_registries(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("开启调试")} width={"8rem"}>
-                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
-                                                    value={debug}
-                                                    onChange={(v) => set_debug(!!v)} />
-                                        </InputRow>
-                                        <InputRow label={t("数据存储目录")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"/var/lib/docker"} value={data_root}
-                                                       handleInputChange={(v) => set_data_root(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("存储驱动")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"overlay2"} value={storage_driver}
-                                                       handleInputChange={(v) => set_storage_driver(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("日志驱动")} width={"8rem"}>
-                                            <InputText width={"24rem"} placeholder={"json-file"} value={log_driver}
-                                                       handleInputChange={(v) => set_log_driver(v)} />
-                                        </InputRow>
-                                        <InputRow label={t("启用 iptables")} width={"8rem"}>
-                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
-                                                    value={iptables}
-                                                    onChange={(v) => set_iptables(!!v)} />
-                                        </InputRow>
-                                        <InputRow label={t("Live Restore")} width={"8rem"}>
-                                            <Select width={"12rem"} options={[{title: t("是"), value: true}, {title: t("否"), value: false}]}
-                                                    value={live_restore}
-                                                    onChange={(v) => set_live_restore(!!v)} />
-                                        </InputRow>
-                                    </div>
+                            <Column widthPer={35}>
+                                <CardFull
+                                    self_title={<span className={"div-row"}>
+                                        <h2>{t("Docker 代理配置")}</h2>
+                                <ActionButton icon={"info"} title={t("信息")} onClick={() => {
+                                    set_prompt_card({
+                                        open: true, title: t("信息"), context_div: (
+                                            <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                                                {t("代理写入 systemd 服务环境变量，其余写入 daemon.json；修改后需重启 Docker 生效，请谨慎操作（尤其数据存储目录变更）。")}
+                                            </div>
+                                        )
+                                    });
+                                }}/>
+                                </span>}
+                                    titleCom={
+
+                                        <ActionButton icon={"save"} title={t("保存")} onClick={() => save()}/>
+                                    }>
+                                    <InputRow label={t("HTTP 代理")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"http://127.0.0.1:3067"}
+                                                   value={http_proxy}
+                                                   handleInputChange={(v) => set_http_proxy(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("HTTPS 代理")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"https://127.0.0.1:3067"}
+                                                   value={https_proxy}
+                                                   handleInputChange={(v) => set_https_proxy(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("No Proxy")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"localhost,127.0.0.1"}
+                                                   value={no_proxy}
+                                                   handleInputChange={(v) => set_no_proxy(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("镜像加速")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"}
+                                                   placeholder={"https://docker.mirrors.ustc.edu.cn,https://hub-mirror.c.163.com"}
+                                                   value={registry_mirrors}
+                                                   handleInputChange={(v) => set_registry_mirrors(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("不安全仓库")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"}
+                                                   placeholder={"127.0.0.1:5000,registry.example.com"}
+                                                   value={insecure_registries}
+                                                   handleInputChange={(v) => set_insecure_registries(v)}/>
+                                    </InputRow>
+                                    {/*<InputRow label={t("开启调试")} label_width={"8rem"} input_max_width={"8rem"}>*/}
+                                    {/*    <Select options={[{title: t("是"), value: true}, {*/}
+                                    {/*        title: t("否"),*/}
+                                    {/*        value: false*/}
+                                    {/*    }]}*/}
+                                    {/*            value={debug}*/}
+                                    {/*            onChange={(v) => set_debug(!!v)}/>*/}
+                                    {/*</InputRow>*/}
+                                    <InputRow label={t("数据存储目录")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"/var/lib/docker"} value={data_root}
+                                                   handleInputChange={(v) => set_data_root(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("存储驱动")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"overlay2"} value={storage_driver}
+                                                   handleInputChange={(v) => set_storage_driver(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("日志驱动")} label_width={"4rem"}>
+                                        <InputText maxWidth={"24rem"} placeholder={"json-file"} value={log_driver}
+                                                   handleInputChange={(v) => set_log_driver(v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("启用 iptables")} label_width={"4rem"} input_max_width={"8rem"}>
+                                        <Select options={[{title: t("是"), value: true}, {
+                                            title: t("否"),
+                                            value: false
+                                        }]}
+                                                value={iptables}
+                                                onChange={(v) => set_iptables(!!v)}/>
+                                    </InputRow>
+                                    <InputRow label={t("Live Restore")} label_width={"4rem"} input_max_width={"8rem"}>
+                                        <Select options={[{title: t("是"), value: true}, {
+                                            title: t("否"),
+                                            value: false
+                                        }]}
+                                                value={live_restore}
+                                                onChange={(v) => set_live_restore(!!v)}/>
+                                    </InputRow>
                                 </CardFull>
                             </Column>
                         </Row>

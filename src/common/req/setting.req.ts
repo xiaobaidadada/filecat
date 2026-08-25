@@ -42,7 +42,6 @@ export class SqlPresetItem {
 export enum SysSoftware {
     ffmpeg = "ffmpeg",
     smartmontools = "smartctl",
-    nftables = "nft", // 防火墙 nftables
     ufw = "ufw",      // 防火墙 ufw
     // ntfs_3g = "ntfs-3g"
 }

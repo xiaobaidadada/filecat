@@ -4,7 +4,7 @@ import {MaterialIcon} from "material-icons";
 import {UserAuth} from "../../../common/req/user.req";
 import Awesomplete from "awesomplete";
 import "awesomplete/awesomplete.css";
-import { createPortal } from 'react-dom';
+import {createPortal} from 'react-dom';
 import {Icon} from "./Button";
 
 export function InputTextIcon(props: {
@@ -15,7 +15,7 @@ export function InputTextIcon(props: {
     max_width?: string,
     handleEnterPress?: Function,
     not_mobile?: boolean,
-    type?:input_type
+    type?: input_type
 }) {
     const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
@@ -31,7 +31,7 @@ export function InputTextIcon(props: {
                 style={{"maxWidth": props.max_width, display: props.not_mobile ? "block" : undefined}}>
         {/*display:"block"取消移动样式下的搜索隐藏*/}
         <div id="input">
-            <Icon icon={props.icon} />
+            <Icon icon={props.icon}/>
             <input
                 type={props.type}
                 ref={inputRef}  // 使用 ref 关联到 input 元素
@@ -47,7 +47,7 @@ export function InputTextIcon(props: {
                     if (event.key === 'Process' || event.nativeEvent.isComposing) {
                         return; // 忽略输入法回车键
                     }
-                    
+
                     if (event.key === 'Enter') {
                         if (props.handleEnterPress) {
                             props.handleEnterPress();
@@ -80,7 +80,7 @@ function Input(props: {
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
-    options?: (string|{ label: string, value: string })[]
+    options?: (string | { label: string, value: string })[]
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = React.useState("");
@@ -107,11 +107,11 @@ function Input(props: {
 
     // 监听 options 变化，动态初始化或销毁 Awesomplete
     useEffect(() => {
-        if (props.options != null && inputRef.current && Array.isArray(props.options)  ) {
+        if (props.options != null && inputRef.current && Array.isArray(props.options)) {
             // 格式化数据
             const listData = props.options.map(item => {
                 if (typeof item === 'object' && item !== null) {
-                    return { label: item.label, value: item.value };
+                    return {label: item.label, value: item.value};
                 }
                 return String(item);
             });
@@ -181,14 +181,14 @@ function Input(props: {
                 maxWidth: props.maxWidth
             }}>
                 {props.left_placeholder && (
-                    <div style={{ flex: "0 0 auto", marginRight: "4px" }}>
+                    <div style={{flex: "0 0 auto", marginRight: "4px"}}>
                         {props.left_placeholder}
                     </div>
                 )}
 
-                <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+                <div style={{position: "relative", flex: 1, display: "flex", alignItems: "center"}}>
                     <input
-                        style={{ flex: 1, minWidth: 0, paddingRight: isPassword ? "2.4em" : undefined }}
+                        style={{flex: 1, minWidth: 0, paddingRight: isPassword ? "2.4em" : undefined}}
                         onClick={(event) => event.stopPropagation()}
                         disabled={!!props.disabled}
                         className={css}
@@ -206,7 +206,7 @@ function Input(props: {
                             if (event.key === 'Process' || event.nativeEvent.isComposing) {
                                 return; // 忽略输入法回车键
                             }
-                            
+
                             if (event.key === 'Enter' && props.handlerEnter) {
                                 props.handlerEnter(event.currentTarget.value);
                             }
@@ -240,7 +240,7 @@ function Input(props: {
                 </div>
 
                 {props.right_placeholder && (
-                    <div style={{ flex: "0 0 auto", marginLeft: "4px" }}>
+                    <div style={{flex: "0 0 auto", marginLeft: "4px"}}>
                         {props.right_placeholder}
                     </div>
                 )}
@@ -261,7 +261,7 @@ export function InputText(props: {
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
-    options?: (string|{ label: string, value: string })[] // 使用了 必须每次更新state才算修改，这是为啥 ?
+    options?: (string | { label: string, value: string })[] // 使用了 必须每次更新state才算修改，这是为啥 ?
     type?: input_type
 }) {
     return Input({
@@ -289,7 +289,7 @@ export function InputPassword(props: {
 }
 
 export interface SelectProps {
-    options: { title?: string,label?:string, value: any,color?:string }[];
+    options: { title?: string, label?: string, value: any, color?: string }[];
     onChange: (value: any) => void;
     defaultValue?: any,
     no_border?: boolean,
@@ -425,7 +425,7 @@ export function Select(props: SelectProps) {
                     ].join(" ")}
                     onClick={handleOpen}
                 >
-                    <span className="select_trigger__label" style={{ color: selected?.color || "inherit" }}>
+                    <span className="select_trigger__label" style={{color: selected?.color || "inherit"}}>
                         {selected?.title ?? selected?.label ?? selected?.value ?? ""}
                     </span>
                     <i className={["material-icons", "select_trigger__icon", open ? "select_trigger__icon--open" : ""].join(" ")}>
@@ -439,13 +439,13 @@ export function Select(props: SelectProps) {
                             <div
                                 key={index}
                                 className={["select_option", item.value === (props.value ?? props.defaultValue) ? "select_option--selected" : ""].join(" ")}
-                                style={{ color: item.color }}
+                                style={{color: item.color}}
                                 onClick={() => {
                                     props.onChange(item.value);
                                     setOpen(false);
                                 }}
                             >
-                                {item.title ?? item.label ??item.value}
+                                {item.title ?? item.label ?? item.value}
                             </div>
                         ))}
                     </div>,
@@ -461,17 +461,33 @@ export function Select(props: SelectProps) {
  * 用于表单里"某个字段"的一行式布局，供各编辑器/表单面板复用。
  * @param props
  */
-export function InputRow(props: React.PropsWithChildren<{
+export function InputRow(props: {
     label: string,
-    width?: string,
+    label_width?: string,
     required?: boolean,
-}>) {
+    input_max_width?: string,
+    children?:any
+}) {
+    const css: any = {
+        whiteSpace: 'nowrap',
+        flex: '0 0 auto',
+        // width: props.width || '5.5rem',
+        textAlign: 'right'
+    }
+    if(props.label_width) {
+        css['width'] = props.label_width;
+    }
+    const input_css = {flex: 1, minWidth: 0}
+    if(props.input_max_width) {
+        input_css['maxWidth'] = props.input_max_width;
+    }
     return <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
-        <label style={{whiteSpace: 'nowrap', flex: '0 0 auto', width: props.width || '5.5rem', textAlign: 'right'}}>
+        <label style={css}
+        >
             {props.required && <span style={{color: 'red', marginRight: '0.15rem'}}>*</span>}
             {props.label}
         </label>
-        <div style={{flex: 1, minWidth: 0}}>{props.children}</div>
+        <div style={input_css}>{props.children}</div>
     </div>
 }
 

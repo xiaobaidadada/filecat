@@ -43,6 +43,10 @@ export function getSys() {
     return sysType
 }
 
+export function is_linux() {
+    return sysType === SysEnum.linux;
+}
+
 function getSysShell() {
     if (sysType === SysEnum.win) {
         if (SystemUtil.commandIsExist("pwsh")) {

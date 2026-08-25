@@ -478,7 +478,8 @@ class SysDockerService {
      */
     async save_docker_config(data: {
         http_proxy?: string; https_proxy?: string; no_proxy?: string;
-        registry_mirrors?: string[]; insecure_registries?: string[]; debug?: boolean;
+        registry_mirrors?: string[]; insecure_registries?: string[];
+        // debug?: boolean;
         data_root?: string; storage_driver?: string; log_driver?: string;
         iptables?: boolean; live_restore?: boolean;
     }) {
@@ -508,7 +509,7 @@ class SysDockerService {
         }
 
         // 调试开关
-        if (data.debug !== undefined) conf.debug = data.debug;
+        // if (data.debug !== undefined) conf.debug = data.debug;
 
         // 字符串字段：非空写入，空串清除
         const setStr = (key: string, v?: string) => {
