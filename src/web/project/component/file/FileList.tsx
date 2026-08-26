@@ -349,6 +349,7 @@ export default function FileList() {
         <React.Fragment>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                   icon={"search"} value={""}
+                                                  mobile_hidden
                                                   handleInputChange={(v) => {
                                                       setSearch(v)
                                                   }} max_width={"25em"}/>}>

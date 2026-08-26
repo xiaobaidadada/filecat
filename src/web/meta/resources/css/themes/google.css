@@ -68,33 +68,13 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-#search #input {
+.filecat-search-box__inner {
   background: var(--surfaceSecondary);
   border-color: var(--divider);
   border-radius: var(--border-radius);
 }
-#search #input input::placeholder {
+.filecat-search-box__inner input::placeholder {
   color: var(--textSecondary);
-}
-#search.active #input {
-  background: var(--surfacePrimary);
-  box-shadow: var(--shadow-md);
-}
-#search.active input {
-  color: var(--textPrimary);
-}
-#search #result {
-  background: var(--surfacePrimary);
-  color: var(--textPrimary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-}
-#search .boxes {
-  background: var(--surfaceSecondary);
-  border-radius: var(--border-radius-sm);
-}
-#search .boxes h3 {
-  color: var(--textPrimary);
 }
 
 .action {

@@ -14,8 +14,8 @@ export function InputTextIcon(props: {
     icon: MaterialIcon,
     max_width?: string,
     handleEnterPress?: Function,
-    not_mobile?: boolean,
-    type?: input_type
+    type?: input_type,
+    mobile_hidden?: boolean
 }) {
     const inputRef = useRef(null);  // 创建一个 ref 引用
     const [value, setValue] = React.useState("");
@@ -27,10 +27,13 @@ export function InputTextIcon(props: {
         inputRef.current.value = v;
         setValue(props.value || "");
     }, [props.value]);
-    return <div id="search" className=""
-                style={{"maxWidth": props.max_width, display: props.not_mobile ? "block" : undefined}}>
-        {/*display:"block"取消移动样式下的搜索隐藏*/}
-        <div id="input">
+    // 注意：不复用 id="search"（那是 header 专属搜索框，移动端会 display:none，
+    // 且 id 需全局唯一），改用 class 共享视觉样式。
+    // 需要移动端隐藏的调用方（如文件列表"搜索当前目录"）显式传 mobile_hidden，
+    // 由 .filecat-search-box--mobile-hidden 在移动端 display:none。
+    return <div className={"filecat-search-box" + (props. mobile_hidden ? " filecat-search-box--mobile-hidden" : "")}
+                style={{"maxWidth": props.max_width}}>
+        <div className="filecat-search-box__inner">
             <Icon icon={props.icon}/>
             <input
                 type={props.type}

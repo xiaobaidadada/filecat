@@ -125,7 +125,6 @@
     height: 12px;
   }
 
-  header .search-button,
   header .menu-button {
     display: inherit;
   }
@@ -169,11 +168,8 @@
   main.nav-collapsed {
     width: calc(100% - 2em);
   }
-  #search {
+  .filecat-search-box--mobile-hidden {
     display: none;
-  }
-  #search.active {
-    display: block;
   }
   .chat-input-area {
     padding: 0 16px;
