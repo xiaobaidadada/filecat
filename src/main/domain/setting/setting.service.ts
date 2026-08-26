@@ -59,6 +59,7 @@ const customer_api_router_key = data_common_key.customer_api_router_key;
 
 const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 
+let process_copy_env:any;
 
 const sandbox = {
     fs: fs,
@@ -606,6 +607,8 @@ export class SettingService {
         if (!!data && !!data['mode']) {
             this.saveToken(data['mode'], data["length"],data['persist']);
         }
+        // 加载用户持久化的进程环境变量覆盖（重启后生效）
+        this.init_process_env_override();
         // 高版本的 npm 也需要用pty环境了
         const shell_list = ['bash', 'sh', 'cmd.exe', 'pwsh.exe', 'powershell.exe', 'vim', 'nano', 'cat', 'tail']; // 一些必须用 node_pty 执行的 powershell 不行 必须得 powershell.exe
         if (!DataUtil.get(data_common_key.cmd_use_pty_key)) {
@@ -994,6 +997,57 @@ export class SettingService {
         DataUtil.set(data_common_key.extra_env_path_list_key, paths);
         shellServiceImpl.path_init();
         return Sucess("1");
+    }
+
+    /**
+     * 启动时加载用户持久化的环境变量覆盖，合并到当前进程 process.env。
+     * 语义：同名 key 覆盖、新增 key 追加，未在覆盖文本里出现的 key 保留原值。
+     */
+    public init_process_env_override() {
+        process_copy_env = {...process.env};
+        const text = DataUtil.get<string>(data_common_key.process_env_override_key);
+        if (!text) return;
+        this.apply_process_env_text(text);
+    }
+
+    // 解析 key=value 文本（每行一条，忽略空行和 # 注释），返回合并后的 env 对象
+    private parse_process_env_text(text: string): { [key: string]: string } {
+        const result: { [key: string]: string } = {};
+        Env.load(text,result)
+        return result;
+    }
+
+    // 将 key=value 文本合并进 process.env（同名覆盖，新增追加，不删除未出现的 key）
+    private apply_process_env_text(text: string) {
+        const env_map = this.parse_process_env_text(text);
+        process.env = {...process_copy_env} // 恢复原本的值
+        for (const key of Object.keys(env_map)) {
+            process.env[key] = env_map[key];
+        }
+    }
+
+    // 获取当前进程完整环境变量，格式化为 key=value 逐行文本（供「查看」展示真实运行时环境）
+    public get_process_env_text(): string {
+        return Object.keys(process.env)
+            .sort()
+            .map((key) => `${key}=${process.env[key]}`)
+            .join("\n");
+    }
+
+    // 获取用户持久化的进程环境变量覆盖原文（供「编辑」使用，默认空字符串）
+    public get_process_env_override_text(): string {
+        return DataUtil.get<string>(data_common_key.process_env_override_key) ?? "";
+    }
+
+    /**
+     * 保存进程环境变量覆盖：持久化原文 + 立即合并到当前 process.env（重启后 init 重新加载）。
+     * 返回保存后的实际 process.env 文本。
+     */
+    public save_process_env(text: string) {
+        const trimmed = (text ?? "").replace(/\r\n/g, "\n");
+        DataUtil.set(data_common_key.process_env_override_key, trimmed);
+        this.apply_process_env_text(trimmed);
+        shellServiceImpl.path_init(); // PATH 可能被修改，重新扫描命令补全
     }
 
     // protection_directory = data_common_key.protection_directory

@@ -46,6 +46,7 @@
   "文件": "Archivo",
   "自定义路由": "Rutas personalizadas",
   "编辑": "Editar",
+  "查看": "Ver",
   "默认配置": "Configuración predeterminada",
   "设置": "Configuración",
   "退出登录": "Cerrar sesión",
@@ -647,5 +648,7 @@
   "请填写端口号": "Introduzca un puerto",
   "方向": "Dirección",
   "协议": "Protocolo",
-  "来源地址": "Dirección de origen"
+  "来源地址": "Dirección de origen",
+  "获取失败": "Error al obtener",
+  "进程环境变量": "Variables de entorno del proceso"
 }

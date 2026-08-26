@@ -15,7 +15,7 @@ import {
     TokenSettingReq
 } from "../../../../common/req/setting.req";
 import {GlobalContext} from "../../GlobalProvider";
-import { useAtom } from 'jotai'; 
+import {useAtom} from 'jotai';
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
@@ -24,6 +24,7 @@ import {env_item, workflow_setting_item} from "../../../../common/req/common.poj
 import {using_env_prompt} from "./util";
 import {plug_item} from "../../../../plugin";
 import {use_select_config} from "../../util/react.config";
+import {editor_data} from "../../util/store.util";
 
 export function Env() {
     const {t, i18n} = useTranslation();
@@ -31,6 +32,7 @@ export function Env() {
     const [rows, setRows] = useState([]);
     const [rows_outside_software, setRows_outside_software] = useState([]);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [, setEditorSetting] = useAtom($stroe.editorSetting);
     const [protection_sys_dir_rows, set_protection_sys_dir_rows] = useState([]);
     const [dir_upload_rows, set_dir_upload_rows] = useState<dir_upload_max_num_item[]>([]);
     const [env_path_dir_rows, set_env_path_dir_rows] = useState([] as env_item[]);
@@ -42,9 +44,9 @@ export function Env() {
     const headers_outside_software = [t("软件"), t("是否安装"), t("路径")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
-    const workflow_setting_headers = [t("编号"), t("文件路径"),t("是否开启"), t("系统启动执行"), t("corn表达式"),t("用户id"),t("备注")];
+    const workflow_setting_headers = [t("编号"), t("文件路径"), t("是否开启"), t("系统启动执行"), t("corn表达式"), t("用户id"), t("备注")];
     const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("是否开启大文件断点"), t("大文件判断大小MB"), t("大文件并发数量"), t("大文件分块大小MB"), t("备注")];
-    const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"),t("params"),  t("备注")];
+    const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"), t("params"), t("备注")];
     const {check_user_auth} = use_auth_check();
 
     const get_env = async () => {
@@ -150,7 +152,15 @@ export function Env() {
     }
 
     const dir_upload_rows_add = () => {
-        set_dir_upload_rows([...dir_upload_rows, {path: "", note: "",user_upload_num:2,sys_upload_num:6,ws_file_standard_size:50*1024*1024,ws_file_parallel_num:2,ws_file_block_mb_size:0.5*1024*1024}]);
+        set_dir_upload_rows([...dir_upload_rows, {
+            path: "",
+            note: "",
+            user_upload_num: 2,
+            sys_upload_num: 6,
+            ws_file_standard_size: 50 * 1024 * 1024,
+            ws_file_parallel_num: 2,
+            ws_file_block_mb_size: 0.5 * 1024 * 1024
+        }]);
     }
 
     const protection_sys_dir_del = (index) => {
@@ -191,8 +201,58 @@ export function Env() {
         }
     }
 
-    const workflow_setting_rows_save = async ()=>{
-        const result2 = await settingHttp.post("workflow_setting_save",workflow_setting_rows);
+    // 查看当前进程环境变量（key=value 文本弹窗）
+    const view_process_env = async () => {
+        const result = await settingHttp.get("env/process/view");
+        if (result.code !== RCode.Success) {
+            NotyFail(t("获取失败"));
+            return;
+        }
+        set_prompt_card({
+            open: true,
+            title: t("进程环境变量"),
+            context_div: (
+                <pre style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    maxHeight: '60vh',
+                    overflow: 'auto',
+                    margin: 0,
+                    fontSize: '0.85rem',
+                    lineHeight: '1.5'
+                }}>
+                    {result.data}
+                </pre>
+            )
+        });
+    }
+
+    // 编辑进程环境变量覆盖：先拉取已保存的覆盖原文（默认空），再用 Ace 编辑器编辑，保存后覆盖 process.env（重启也生效）
+    const edit_process_env = async () => {
+        const result = await settingHttp.get("env/process/get");
+        if (result.code !== RCode.Success) {
+            NotyFail(t("获取失败"));
+            return;
+        }
+        editor_data.set_value_temp(result.data ?? '');
+        setEditorSetting({
+            model: "ace/mode/ini",
+            open: true,
+            fileName: "",
+            save: async (context) => {
+                const save_result = await settingHttp.post("env/process/save", {text: context});
+                if (save_result.code === RCode.Success) {
+                    NotySuccess(t("保存成功"));
+                } else {
+                    NotyFail(t("保存失败"));
+                }
+                editor_data.set_value_temp('');
+            }
+        });
+    }
+
+    const workflow_setting_rows_save = async () => {
+        const result2 = await settingHttp.post("workflow_setting_save", workflow_setting_rows);
         if (result2.code === RCode.Success) {
             NotySuccess("ok")
             get_workflow_setting_rows()
@@ -279,8 +339,13 @@ export function Env() {
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("环境路径")
                     }} title={"信息"}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={env_path_dir_add}/>
-                                  <ActionButton icon={"save"} title={t("保存")} onClick={update_env_path}/></div>}>
+                              titleCom={
+                                  <div>
+                                      <ActionButton icon={"list"} title={t("查看")} onClick={view_process_env}/>
+                                      <ActionButton icon={"edit"} title={t("编辑")} onClick={edit_process_env}/>
+                                      <ActionButton icon={"add"} title={t("添加")} onClick={env_path_dir_add}/>
+                                      <ActionButton icon={"save"} title={t("保存")} onClick={update_env_path}/>
+                                  </div>}>
                         <Table headers={env_path_dir_headers} rows={env_path_dir_rows.map((item, index) => {
                             const new_list = [
                                 <div>{index}</div>,
@@ -316,10 +381,11 @@ export function Env() {
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("Workflow")
                     }} title={"信息"}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>{
-                                  set_workflow_setting_rows([...workflow_setting_rows,{open:false}])
+                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                                  set_workflow_setting_rows([...workflow_setting_rows, {open: false}])
                               }}/>
-                                  <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/></div>}>
+                                  <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/>
+                              </div>}>
                         <Table headers={workflow_setting_headers} rows={workflow_setting_rows.map((item, index) => {
                             const new_list = [
                                 <div>{index}</div>,
@@ -364,8 +430,8 @@ export function Env() {
                         <ActionButton icon={"info"} onClick={() => {
                             soft_ware_info_click("插件配置")
                         }} title={"信息"}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>{
-                                  set_plugin_rows([...plugin_rows,{name:"",path:"",note:"",open:false}])
+                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                                  set_plugin_rows([...plugin_rows, {name: "", path: "", note: "", open: false}])
                               }}/>
                                   <ActionButton icon={"save"} title={t("保存")} onClick={save_plugin_list}/></div>}>
                         <Table headers={plugin_headers} rows={plugin_rows.map((item, index) => {
@@ -382,10 +448,10 @@ export function Env() {
                                     set_plugin_rows([...plugin_rows])
                                 }} options={select_list}
                                         no_border={true}/>,
-                                <AceButton icon={"edit"} save={ async (value: string)=>  {
+                                <AceButton icon={"edit"} save={async (value: string) => {
                                     item.params = value
                                     await save_plugin_list()
-                                }} title={""} />,
+                                }} title={""}/>,
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,

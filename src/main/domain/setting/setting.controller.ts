@@ -403,6 +403,28 @@ export class SettingController {
         return Sucess("1");
     }
 
+    // 获取用户持久化的进程环境变量覆盖原文（供「编辑」使用，默认空字符串）
+    @Get("/env/process/get")
+    getProcessEnv(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        return Sucess(settingService.get_process_env_override_text());
+    }
+
+    // 获取当前进程真实环境变量 key=value 文本（供「查看」展示）
+    @Get("/env/process/view")
+    viewProcessEnv(@Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        return Sucess(settingService.get_process_env_text());
+    }
+
+    // 保存进程环境变量覆盖（persist + 立即合并进 process.env，重启后 init 重新加载）
+    @Post('/env/process/save')
+    saveProcessEnv(@Body() req: { text: string }, @Req() ctx) {
+        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        settingService.save_process_env(req.text);
+        return Sucess("");
+    }
+
 
     // 获取保护目录
     @Get("/protection_dir")

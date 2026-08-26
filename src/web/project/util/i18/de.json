@@ -46,6 +46,7 @@
   "文件": "Datei",
   "自定义路由": "Benutzerdefinierte Routen",
   "编辑": "Bearbeiten",
+  "查看": "Anzeigen",
   "默认配置": "Standardkonfiguration",
   "设置": "Einstellungen",
   "退出登录": "Ausloggen",
@@ -646,5 +647,7 @@
   "请填写端口号": "Bitte Port angeben",
   "方向": "Richtung",
   "协议": "Protokoll",
-  "来源地址": "Quelladresse"
+  "来源地址": "Quelladresse",
+  "获取失败": "Abrufen fehlgeschlagen",
+  "进程环境变量": "Prozess-Umgebungsvariablen"
 }

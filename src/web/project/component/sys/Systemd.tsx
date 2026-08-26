@@ -265,7 +265,7 @@ export function Systemd(props) {
             </div>}
             {/*ystemd管理的选项*/}
             {optRow.length > 0 && <div>
-                {check_user_auth(UserAuth.systemd)&& <ActionButton icon={"delete"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
+                {check_user_auth(UserAuth.systemd)&& <ActionButton icon={"remove"} title={"从实时监控删除"} onClick={()=>{del(optRow[1].props.context)}}/>}
                 {check_user_auth(UserAuth.systemd) && <ActionButton icon={"edit"} title={"可视化编辑"} onClick={()=>{
                     openEditor('edit', optRow[1].props.context);
                 }}/>}
