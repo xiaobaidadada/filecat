@@ -7,7 +7,7 @@ import {PromptEnum} from "../prompts/Prompt";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
-import {useContext, useEffect, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
@@ -407,6 +407,33 @@ export function use_share_preview() {
         }
         return false;
     }
+}
+
+
+export function use_click_double(interval: number = 500) {
+    const lastClickRef = useRef<{ index: number, time: number } | null>(null);
+
+    // 每次调用记录本次点击；interval 内同一 index 再次点击时执行 onDouble 并返回 true
+    const clickDouble = (index: number, onDouble?: () => void): boolean => {
+        const now = Date.now();
+        const last = lastClickRef.current;
+
+        // 判断双击：同一个 index 且间隔 ≤ interval
+        const isDoubleClick = last !== null && last.index === index && now - last.time <= interval;
+
+        // 用 ref 实时写入本次记录，无闭包问题
+        lastClickRef.current = { index, time: now };
+
+        if (isDoubleClick) {
+            // 双击后清空记录，防止进入新目录后残留误判
+            lastClickRef.current = null;
+            onDouble?.();
+            return true;
+        }
+        return false;
+    };
+
+    return { clickDouble };
 }
 
 export function use_click_folder() {

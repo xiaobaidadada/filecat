@@ -11,13 +11,12 @@ import {useTranslation} from "react-i18next";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {getRouterPath} from "../../../../util/WebPath";
 import {PromptEnum} from "../../../prompts/Prompt";
-import {use_share_preview, useUpdateUrlParams} from "../../FileUtil";
+import {use_click_double, use_share_preview, useUpdateUrlParams} from "../../FileUtil";
 
 
 
 export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], index?: number, itemWidth?: string,share:{share_id:string,share_token:string} }) {
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
-    const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const {click_file} = user_click_file();
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
@@ -27,7 +26,26 @@ export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], i
     const updateParams = useUpdateUrlParams();
     const share_review = use_share_preview()
 
-    const clickHandler = async (index, name) => {
+    // 双击判断：同一 index 在 300ms 内连点两次视为双击（复用通用 hook，消除闭包/竞态问题）
+    const {clickDouble} = use_click_double();
+    const clickHandler = (index, name) => {
+        const isDouble = clickDouble(index, () => {
+            if (props.type === FileTypeEnum.folder) {
+                // 分享目录不会有文件夹进入动作，直接 return
+                return;
+            }
+            if (share_review(name)) return;
+            click_file({file_path: props.item_list[index].path, file_url: fileHttp.getDownloadUrlV2(props.item_list[index].path, "share_download", {
+                    share_id: props.share.share_id,
+                    share_token: props.share.share_token
+                }),
+                name, size: props.origin_size, opt_shell: true, mtime: props.mtime,
+                not_type_tip: t("未知类型，请下载查看")
+            });
+        });
+        if (isDouble) return;
+
+        // 单击：选中逻辑
         const select = getByList(selectList, index);
         if (select !== null) {
             setSelectList(getNewDeleteByList(selectList, index))
@@ -49,30 +67,6 @@ export function ShareFileItem(props: FileItemData & {item_list:FileItemData[], i
                 setSelectList(list);
             } else {
                 setSelectList([index])
-            }
-        }
-
-        setClickList([...clickList, index])
-        setTimeout(() => {
-            setClickList(getNewDeleteByList(clickList, index))
-        }, 300)
-        if (props.type === FileTypeEnum.folder) {
-            // 不会有文件夹 分享目录 只会分享目录中的文件
-            return;
-        } else {
-            // 文件
-            const item = clickList.find(v => v === index)
-            if (item !== undefined) {
-                if(share_review(name)) return
-                // console.log(props.item_list[item])
-                // return
-                click_file({file_path: props.item_list[item].path, file_url: fileHttp.getDownloadUrlV2(props.item_list[item].path,"share_download", {
-                        share_id: props.share.share_id,
-                        share_token: props.share.share_token
-                    }),
-                    name, size: props.origin_size, opt_shell: true, mtime: props.mtime,
-                    not_type_tip:t("未知类型，请下载查看")
-                });
             }
         }
     }

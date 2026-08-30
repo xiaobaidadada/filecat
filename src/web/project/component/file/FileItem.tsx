@@ -12,12 +12,11 @@ import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
 import {user_click_file} from "../../util/store.util";
-import {getFileNameByLocation, getFilesByIndexs, use_click_folder} from "./FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, use_click_double, use_click_folder} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
-    const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
     const [confirm, set_confirm] = useAtom($stroe.confirm);
     const [file_page, set_file_page] = useAtom($stroe.file_page);
@@ -30,12 +29,25 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     let location = useLocation();
     const click_folder = use_click_folder()
     // const match = useMatch('/:pre/file/*');
-    const clickHandler = async (index, name) => {
+    // 双击判断：同一 index 在 700ms 内连点两次视为双击（复用通用 hook，消除闭包/竞态问题）
+    const {clickDouble} = use_click_double();
+    const clickHandler = (index, name) => {
+        const isDouble = clickDouble(index, () => {
+            if (props.type === FileTypeEnum.folder) {
+                // 双击文件夹进入
+                click_folder(name);
+            } else {
+                // 双击文件打开
+                click_file({name, size: props.origin_size, opt_shell: true, mtime: props.mtime});
+            }
+        });
+        if (isDouble) return;
+
+        // 单击：选中逻辑
         const select = getByList(selectList, index);
         if (select !== null) {
             // @ts-ignore 取消选择
             setSelectList(getNewDeleteByList(selectList, index))
-            // console.log('取消')
         } else {
             if (enterKey === "ctrl") {
                 // @ts-ignore 选中
@@ -55,29 +67,6 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                 setSelectList(list);
             } else {
                 setSelectList([index])
-            }
-        }
-
-        // @ts-ignore 点击
-        setClickList([...clickList, index])
-        setTimeout(() => {
-            // @ts-ignore 取消点击，也就是双击
-            setClickList(getNewDeleteByList(clickList, index))
-        }, 700)
-        if (props.type === FileTypeEnum.folder) {
-            // 文件夹
-            const item = clickList.find(v => v === index)
-            if (item !== undefined) {
-                // 双击文件夹
-                // debugger;
-                click_folder(name)
-                return;
-            }
-        } else {
-            // 文件
-            const item = clickList.find(v => v === index)
-            if (item !== undefined) {
-                click_file({name, size: props.origin_size, opt_shell: true,mtime:props.mtime});
             }
         }
     }

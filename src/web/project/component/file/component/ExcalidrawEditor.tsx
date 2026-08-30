@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Excalidraw, MainMenu, serializeAsJSON} from "@excalidraw/excalidraw";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
@@ -45,6 +45,13 @@ export default function ExcalidrawEditor() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const {t} = useTranslation();
+
+    // 用 ref 保存最新的 save 函数，供 keydown 监听稳定调用（避免闭包拿到旧 save）
+    const saveRef = useRef<() => void>(() => {
+    });
+    useEffect(() => {
+        saveRef.current = save;
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -120,6 +127,19 @@ export default function ExcalidrawEditor() {
             NotySuccess("保存成功");
         }
     };
+
+    // Ctrl+S / Cmd+S 一键保存。用 capture 阶段在 window 上监听，
+    // 避免 Excalidraw 内部画布自身对键盘事件的拦截；兼容 macOS(metaKey) 与 Win/Linux(ctrlKey)。
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+                e.preventDefault();
+                saveRef.current();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown, true);
+        return () => window.removeEventListener("keydown", onKeyDown, true);
+    }, []);
 
     return (
         <div id={"excalidraw-container"}>

@@ -452,6 +452,7 @@ const workMessages: ai_agent_message_list = [
         // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
         const onAbort = () => {
             _interrupted = true;
+            SystemUtil.kill_command(session_id)
             // endOnce();
         };
         controller.signal.addEventListener('abort', onAbort);
@@ -659,7 +660,7 @@ const workMessages: ai_agent_message_list = [
                             loopEnv.max_call_num = args.max_call_num??1
                         }
                     } catch (e) {
-                        const msg = `${e?.message??JSON.stringify(e)} ${e?.stack??""}`
+                        const msg = get_error_str(e)
                         callItem.success = false;
                         callItem.error = msg;
 

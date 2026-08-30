@@ -12,13 +12,12 @@ import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {editor_data} from "../../../util/store.util";
 import { formatFileSize, MAX_SIZE_TXT } from '../../../../../common/ValueUtil';
-import {getFileNameByLocation, getFilesByIndexs} from "../../file/FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, use_click_double} from "../../file/FileUtil";
 import {useTranslation} from "react-i18next";
 
 
 export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemWidth?:string,fileHandler:()=>any }) {
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
-    const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
     const [shellNowDir, setShellNowDir] = useAtom($stroe.shellNowDir);
     const [sshInfo,setSSHInfo] = useAtom<any>($stroe.sshInfo);
@@ -28,111 +27,88 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // const match = useMatch('/:pre/file/*');
-    const clickHandler = async (index, name) => {
+    // 双击判断：同一 index 在 300ms 内连点两次视为双击（复用通用 hook，消除闭包/竞态问题）
+    const {clickDouble} = use_click_double();
+    const clickHandler = (index, name) => {
+        const isDouble = clickDouble(index, () => {
+            if (props.type === FileTypeEnum.folder) {
+                // 双击文件夹进入
+                const req = new SshPojo();
+                req.key = sshInfo.key;
+                req.dir = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+                navigate(webPathJoin(getRouterPath(), name))
+                setSelectList([])
+                setNowFileList({files: [], folders: []});
+                return;
+            }
+            // 双击文件打开
+            const open_file = async () => {
+                const req = new SshPojo();
+                req.key = sshInfo.key;
+                req.file = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
+                const rsq = await sshHttp.post("get/file/text", req);
+                let m = undefined;
+                if (name.endsWith(FileTypeEnum.workflow_act)) {
+                    m = "ace/mode/yaml"
+                } else if (name.endsWith(FileTypeEnum.draw) || name.endsWith(FileTypeEnum.excalidraw)) {
+                    m = "ace/mode/json"
+                }
+                setEditorSetting({
+                    model: m,
+                    open: true,
+                    fileName: props.name,
+                    save: async (context) => {
+                        req.context = context;
+                        const rsq = await sshHttp.post("update/file/text", req);
+                        if (rsq.code === 0) {
+                            editor_data.set_value_temp('')
+                            NotySuccess("success");
+                        }
+                    }
+                })
+                editor_data.set_value_temp(rsq.data)
+            }
+            if (typeof props.origin_size === "number" && props.origin_size > MAX_SIZE_TXT) {
+                setShowPrompt({
+                    open: true,
+                    title: t("提示"),
+                    sub_title: `文件超过20MB了确定要打开吗?`,
+                    handle: async () => {
+                        setShowPrompt({open: false, handle: null});
+                        await open_file();
+                    }
+                })
+                return;
+            }
+            open_file();
+        });
+        if (isDouble) return;
+
+        // 单击：选中逻辑
         const select = getByList(selectList, index);
         if (select !== null) {
             // @ts-ignore 取消选择
             setSelectList(getNewDeleteByList(selectList, index))
             // console.log('取消')
         } else {
-            if (enterKey ==="ctrl") {
+            if (enterKey === "ctrl") {
                 // @ts-ignore 选中
                 setSelectList([...selectList, index])
-            } else if(enterKey ==="shift") {
-                const {max,min} = getMaxByList(selectList);
-                const list:number[] = [];
-                if(index >= max) {
-                    for(let i=max; i<=index; i++) {
+            } else if (enterKey === "shift") {
+                const {max, min} = getMaxByList(selectList);
+                const list: number[] = [];
+                if (index >= max) {
+                    for (let i = max; i <= index; i++) {
                         list.push(i);
                     }
                 } else {
-                    for(let i=min; i >= index; i--) {
+                    for (let i = min; i >= index; i--) {
                         list.push(i);
                     }
                 }
                 setSelectList(list);
             } else {
                 setSelectList([index])
-            }
-        }
-
-        // @ts-ignore 点击
-        setClickList([...clickList, index])
-        setTimeout(() => {
-            // @ts-ignore 取消点击，也就是双击
-            setClickList(getNewDeleteByList(clickList, index))
-        }, 300)
-        if (props.type === FileTypeEnum.folder) {
-            // 文件夹
-            const item = clickList.find(v => v === index)
-            if (item !== undefined) {
-                // 双击文件夹
-                const req = new SshPojo();
-                req.key = sshInfo.key;
-                req.dir = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
-                // Object.assign(req,sshInfo);
-                // req.dir = joinPaths(...shellNowDir,name);
-                navigate(webPathJoin(getRouterPath(), name))
-                setSelectList([])
-                setClickList([])
-                setNowFileList({files: [], folders: []});
-                return;
-            }
-        } else {
-            // 文件
-            const item = clickList.find(v => v === index)
-            if (item !== undefined) {
-                // let model = getEditModelType(name);
-                // if (!model) {
-                //     model = "txt"
-                // }
-                // if (model) {
-                    // 双击文件
-                    const open_file = async ()=>{
-                        const req = new SshPojo();
-                        req.key = sshInfo.key;
-                        req.file = `/${getRouterAfter('remoteShell', getRouterPath())}${name}`
-                        // Object.assign(req,sshInfo);
-                        // req.file = joinPaths(...shellNowDir,name);
-                        const rsq = await sshHttp.post("get/file/text",req);
-                        let m = undefined;
-                        if(name.endsWith(FileTypeEnum.workflow_act)){
-                            m = "ace/mode/yaml"
-                        } else if(name.endsWith(FileTypeEnum.draw)  || name.endsWith(FileTypeEnum.excalidraw)){
-                            m = "ace/mode/json"
-                        }
-                        setEditorSetting({
-                            model:m,
-                            open: true,
-                            fileName: props.name,
-                            save: async (context) => {
-                                req.context = context;
-                                const rsq = await sshHttp.post("update/file/text",req);
-                                if (rsq.code === 0) {
-                                    editor_data.set_value_temp('')
-                                    NotySuccess("success");
-                                    // setEditorSetting({open: false,  fileName: '', save: null})
-                                }
-                            }
-                        })
-                        editor_data.set_value_temp(rsq.data)
-                    }
-                    if (typeof props.origin_size === "number" && props.origin_size > MAX_SIZE_TXT) {
-                        setShowPrompt({
-                            open: true,
-                            title: t("提示"),
-                            sub_title: `文件超过20MB了确定要打开吗?`,
-                            handle: async () => {
-                                setShowPrompt({open:false,handle:null});
-                                await open_file();
-                            }
-                        })
-                        return;
-                    }
-                    await open_file();
-                    return;
-                // }
             }
         }
     }
