@@ -1,11 +1,13 @@
+下面是完整英文版，保持原有 Markdown 结构、图片路径、命令和链接不变，不额外添加图标：
+
 <p align="center">
-  <img src="../src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
+  <img src="./src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
 </p>
 
 <h1 align="center">FileCat</h1>
 
 <p align="center">
-  <i>A self-hosted web file server and lightweight server management tool</i>
+  <i>A self-hosted Web file server and lightweight server management tool</i>
 </p>
 
 <p align="center">
@@ -29,41 +31,40 @@
 <p align="center">
   <a href="#features">Features</a> •
   <a href="#screenshots">Screenshots</a> •
-  <a href="#demo">Demo</a> •
   <a href="#installation">Installation</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#upgrade">Upgrade</a>
+  <a href="#quick-start">Quick Start</a>
 </p>
 
 <p align="center">
-  <a href="../README.md">中文文档</a>
+  <a href="./CH_README.md">中文</a>
 </p>
 
 ---
 
-FileCat is a **self-hosted web file server** and a **lightweight server management tool**. Once deployed on your server, you can browse, manage, and preview files from any browser, while also enjoying a rich set of server administration features.
+FileCat is a self-hosted Web file server and a **lightweight server management tool**. Once deployed, you can manage files on your server anytime and anywhere through a browser, while also enjoying a wide range of server management and operations features.
 
-> **Core Philosophy**: File management at the core, enhanced with AI Agent, remote desktop, intranet penetration, system monitoring, and more - making server management simpler than ever.
+FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser).
+
+> **Core philosophy**: Centered around file management, FileCat integrates AI Agent, remote desktop, intranet tunneling, system monitoring, and other capabilities to make server management simpler.
 
 ---
 
 ## Features
 
-| Category | Capabilities |
-|----------|-------------|
-| File Management | Browse, upload, download, edit, and preview files (images, videos, Markdown, drawings, etc.) |
-| AI Agent | Integrated LLM-powered assistant for intelligent operations (BYO API key) |
-| Intranet Penetration | Expose internal services to the internet without a public IP |
-| SSH Terminal | Built-in web terminal for direct server access |
-| Windows Remote Desktop | Access Windows remote desktops directly in your browser (RDP) |
-| System Dashboard | Real-time CPU, memory, disk, and network monitoring |
-| CI/CD Workflow | Custom command pipelines for continuous integration and deployment |
-| Large Log Viewer | Instantly open text log files of any size |
-| Excalidraw Drawing | Built-in collaborative whiteboard |
-| Image Editor | Online crop, annotate, and adjust images |
-| Multi-user Management | Granular permission control |
-| Shareable Links | Generate share links for easy file sharing |
-| Multi-path Mounting | Mount multiple file system paths |
+| Category                     | Features                                                                                                                                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File Management              | Browse, upload, download, edit, and preview files online (images, videos, Markdown, drawings, etc.)                                                                                           |
+| AI Agent                     | Integrates large language models to assist with server management and file processing (API configuration required). Supports QQ, WeCom, Feishu, DingTalk, and other third-party platform bots |
+| Intranet Tunneling           | Expose services on an internal network to the public internet, or enable communication between multiple internal networks                                                                     |
+| SSH Terminal                 | Built-in Web terminal for connecting to servers anytime through a browser                                                                                                                     |
+| Windows Remote Desktop       | Directly operate remote Windows desktops (RDP) through a browser                                                                                                                              |
+| System Information Dashboard | Real-time monitoring of CPU, memory, disk, network, and other system information                                                                                                              |
+| CI/CD Workflow               | Create custom command pipelines for continuous integration and deployment                                                                                                                     |
+| Large Log Viewer             | Instantly open text log files of any size and efficiently locate problems                                                                                                                     |
+| Excalidraw Drawing           | Built-in whiteboard drawing tool                                                                                                                                                              |
+| Multi-user Management        | Comprehensive permission management system                                                                                                                                                    |
+| Shareable Links              | Generate file sharing links for convenient downloads                                                                                                                                          |
+| Multiple Path Mounts         | Support mounting multiple filesystem paths                                                                                                                                                    |
 
 ---
 
@@ -75,16 +76,16 @@ FileCat is a **self-hosted web file server** and a **lightweight server manageme
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./文件列表.png" alt="File List"/></td>
-    <td><img src="./AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./doc/文件列表.png" alt="File List"/></td>
+    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
-    <td align="center"><b>Intranet Penetration</b></td>
-    <td align="center"><b>System Dashboard</b></td>
+    <td align="center"><b>Intranet Tunneling</b></td>
+    <td align="center"><b>System Information Dashboard</b></td>
   </tr>
   <tr>
-    <td><img src="./内网穿透.png" alt="Intranet Penetration"/></td>
-    <td><img src="./系统信息看板.png" alt="System Dashboard"/></td>
+    <td><img src="./doc/内网穿透.png" alt="Intranet Tunneling"/></td>
+    <td><img src="./doc/系统信息看板.png" alt="System Information Dashboard"/></td>
   </tr>
 </table>
 
@@ -92,40 +93,37 @@ FileCat is a **self-hosted web file server** and a **lightweight server manageme
 
 ## Demo
 
-Try it online: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)**
+Online demo: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)**
 
-| Account Type | Username | Password |
-|-------------|----------|----------|
-| English     | `demo`   | `demo`   |
-| Chinese     | `demo-zh`| `demo`   |
+Username and password: `demo`/`demo` or `test`/`test`
 
-> Demo server is sponsored by [Yecao Cloud](https://my.yecaoyun.com/aff.php?aff=7185)
+> The demo server is sponsored by [Yecaoyun](https://my.yecaoyun.com/aff.php?aff=7185).
 
 ---
 
 ## Installation
 
-> Minor bug fixes and feature updates are published to npm in real time.
+> Minor bug fixes and feature updates are released and synchronized on npm in real time.
 
-### 1. NPM (Recommended)
+### 1. NPM Installation (Recommended)
 
 ```bash
 npm install -g filecat
 ```
 
-For Linux systems, use `pm2` to keep it alive, or run `filecat --install` to register it with systemd.
+On Linux, after installation, you can use `pm2` to keep the process running, or register FileCat as a systemd service for process management.
 
-### 2. Linux One-Click Script
+### 2. One-click Linux Installation Script
 
 ```bash
 curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh
 ```
 
-Automatically downloads the binary and runs the installer. Follow the prompts to configure.
+The script automatically downloads the binary package and performs the installation. Simply follow the prompts to enter the required parameters.
 
 ### 3. Binary Package
 
-Download the latest version from [Releases](https://github.com/xiaobaidadada/filecat/releases).
+Download the latest version for your operating system from [Releases](https://github.com/xiaobaidadada/filecat/releases).
 
 ### 4. Docker
 
@@ -151,62 +149,33 @@ npm run build && node build/main.js  # Production mode
 
 ## Quick Start
 
-**Option 1** - After NPM installation:
+**Method 1**: After installing via NPM:
+
 ```bash
 filecat --port 5567
 ```
 
-**Option 2** - Extract the binary package and run the script inside:
-- Linux/Mac: `filecat-run.sh`
-- Windows: `filecat-run.cmd`
+**Method 2**: After extracting the binary package, run the `filecat-run.sh` script (Linux/Mac) or `filecat-run.cmd` script (Windows) included in the directory.
 
-**Default credentials**: `admin` / `admin`
+**Default username/password**: `admin` / `admin`
 
-> Use `filecat --help` to see all available options.
+> For more options, run `filecat --help`.
 
-> **Important**: After installation, the default accessible directory is the installation directory. Please configure user access permissions in the settings.
+> **Permission Notice**: By default, FileCat can only access the installation directory after installation. Configure the directories and execution permissions accessible to each user in the settings.
 
 ---
 
-## Upgrade
+## Upgrade Guide
 
-1. **Regular Upgrade**: Based on your installation method
-   - NPM: `npm -g i filecat`
-   - Docker: Pull the latest image
-   - Binary: Download the latest package and replace
-2. **Auto Upgrade** (v5.33.0+): Run `filecat-upgrade` to automatically upgrade based on your installation environment. Docker and binary installations also support custom download URL parameters.
+1. **Regular Upgrade**: Upgrade according to your installation method:
+
+   * NPM: `npm -g i filecat`
+   * Docker: Pull the latest image again
+   * Binary: Download and replace the latest package
+2. **Automatic Upgrade** (v5.33.0+): Run the `filecat-upgrade` command to automatically upgrade according to the installation environment. Docker and binary installations also support custom download URL parameters.
 
 ---
 
 ## Community
 
-Join our QQ Group: **824838674**
-
----
-
-## Contributing
-
-1. Submit PRs to the `dev` branch
-2. For feature contributions, please discuss in the QQ group first
-
----
-
-## Credits
-
-FileCat is inspired by or built upon these great projects:
-
-- [filebrowser](https://github.com/filebrowser/filebrowser) - Excellent file browsing implementation
-- [MeshCentral](https://github.com/Ylianst/MeshCentral) - Remote management insights
-- [mstsc](https://github.com/citronneur/mstsc.js) - Web RDP foundation
-
----
-
-<p align="center">
-  <a href="https://github.com/xiaobaidadada/filecat">
-    <img src="https://img.shields.io/github/stars/xiaobaidadada/filecat?style=social" alt="Star on GitHub">
-  </a>
-</p>
-
-<p align="center">
-  Made with love by <a href="https://github.com/xiaobaidadada">xiaobaidadada</a>
-</p>
+Join the QQ group **824838674** for discussion, feedback, and support.
