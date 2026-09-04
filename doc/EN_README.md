@@ -1,4 +1,3 @@
-下面是完整英文版，保持原有 Markdown 结构、图片路径、命令和链接不变，不额外添加图标：
 
 <p align="center">
   <img src="./src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
