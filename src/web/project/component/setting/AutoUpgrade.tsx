@@ -85,12 +85,12 @@ export function AutoUpgrade() {
                              {t("自动升级")}
                          </h2>
                          <ActionButton icon={"info"} onClick={()=>{
-                             set_prompt_card({open:true,title:"信息",context_div : (
+                             set_prompt_card({open:true,title:t("信息"),context_div : (
                                      <div >
                                          {t(`自动升级在 windows 下目前可能不稳定`)}
                                      </div>
                                  )})
-                         }} title={"信息"}/>
+                         }} title={t("信息")}/>
                      </span>
         }
                  rightBottomCom={<ButtonText text={t('保存')} clickFun={saveSetting}/>}>

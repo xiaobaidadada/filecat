@@ -22,7 +22,7 @@ export function NetServer(props) {
     const [isOpen, setIsOpen] = useState(false);
 
     const [key, setKey] = useState("");
-    const [headers, setHeaders] = useState([t(`${t("名称")}`), t(`${t("虚拟")}ip`), `${t("物理")}信息`, t("在线状态"), t("选择")]);
+    const [headers, setHeaders] = useState([t(`${t("名称")}`), t(`${t("虚拟")}ip`), `${t("物理")}`, t("在线状态"), t("选择")]);
     const [rows, setRows] = useState([]);
     const [opt_row, set_opt_row] = useState({});
     const [opt_server_async, set_opt_server_async] = useState(false);

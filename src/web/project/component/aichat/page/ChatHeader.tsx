@@ -96,7 +96,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                         setSelectedSysPromptId(value);
                     }}
                     no_border={true}
-                    width={"10rem"}
+                    width={"auto"}
                 />
             )}
             {/* 当前模型下拉选择器 */}
@@ -132,12 +132,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             />
             {check_user_auth(UserAuth.ai_agent_setting) && (
                 <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={() => {
-                    navigate(`/${routerConfig.ai_rebot_setting_page}`);
+                    navigate(routerConfig.ai_rebot_setting_page);
                 }} />
             )}
             {check_user_auth(UserAuth.ai_agent_setting) && (
                 <ActionButton icon={"settings"} title={"ai setting"} onClick={() => {
-                    navigate(`/${routerConfig.ai_agent_setting_page}`);
+                    navigate(routerConfig.ai_agent_setting_page);
                 }} />
             )}
         </Header>

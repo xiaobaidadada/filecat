@@ -282,7 +282,7 @@ export function Env() {
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton
                 icon={"info"} onClick={() => {
                 soft_ware_info_click("文件上传")
-            }} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
+            }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
                                                                      onClick={dir_upload_rows_add}/><ActionButton
                 icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
                 <Table headers={dir_upload_headers}
@@ -338,7 +338,7 @@ export function Env() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("PATH")}</h2>
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("环境路径")
-                    }} title={"信息"}/></span>}
+                    }} title={t("信息")}/></span>}
                               titleCom={
                                   <div>
                                       <ActionButton icon={"list"} title={t("查看")} onClick={view_process_env}/>
@@ -370,7 +370,7 @@ export function Env() {
                     <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("pty")
-                    }} title={"信息"}/></span>}
+                    }} title={t("信息")}/></span>}
                           rightBottomCom={<ButtonText text={t('更新')} clickFun={save_pty_cmd}/>}>
                         <InputText placeholder={t('cmd need pty env')} value={pty_cmd} handleInputChange={(value) => {
                             set_pty_cmd(value)
@@ -380,7 +380,7 @@ export function Env() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("Workflow Job")}</h2>
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("Workflow")
-                    }} title={"信息"}/></span>}
+                    }} title={t("信息")}/></span>}
                               titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
                                   set_workflow_setting_rows([...workflow_setting_rows, {open: false}])
                               }}/>
@@ -429,7 +429,7 @@ export function Env() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("插件配置")}</h2>
                         <ActionButton icon={"info"} onClick={() => {
                             soft_ware_info_click("插件配置")
-                        }} title={"信息"}/></span>}
+                        }} title={t("信息")}/></span>}
                               titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
                                   set_plugin_rows([...plugin_rows, {name: "", path: "", note: "", open: false}])
                               }}/>
@@ -471,7 +471,7 @@ export function Env() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton
                         icon={"info"} onClick={() => {
                         soft_ware_info_click("保护目录")
-                    }} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
+                    }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
                                                                              onClick={protection_sys_dir_add}/><ActionButton
                         icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
                         <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
@@ -502,7 +502,7 @@ export function Env() {
                                 }} no_border={true} placeholder={t("默认使用环境变量")}/>,
                                 <ActionButton icon={"info"} onClick={() => {
                                     soft_ware_info_click(item.id)
-                                }} title={"信息"}/>
+                                }} title={t("信息")}/>
                             ];
                             return new_list;
                         })} width={"10rem"}/>

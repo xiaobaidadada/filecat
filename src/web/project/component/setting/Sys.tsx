@@ -246,12 +246,12 @@ export function  Sys() {
             <Dashboard>
                 <Card
                       self_title={<span className={" div-row "}><h2>{t("文件回收站")}</h2> <ActionButton icon={"info"} onClick={()=>{
-                          set_prompt_card({open:true,title:"信息",context_div : (
+                          set_prompt_card({open:true,title:t("信息"),context_div : (
                                   <div >
                                       {t(`格式：[被删除的文件所在父目录] 回收站目录 [; ...]`)}
                                   </div>
                               )})
-                      }} title={"信息"}/></span>}
+                      }} title={t("信息")}/></span>}
                       rightBottomCom={<ButtonText text={t('确定修改')} clickFun={set_recycle_save}/>}>
                     <InputText placeholder={t('目录')}  value={recycle_dir} handleInputChange={(value)=>{set_recycle_dir(value)}} />
                     <Select value={recycle_open} onChange={(value)=>{set_recycle_open(value)}} options={[{title:t("开启"),value:true},{title:t("关闭"),value:false}]}/>
@@ -282,12 +282,12 @@ export function  Sys() {
             <Dashboard>
                 <Card
                     self_title={<span className={"\u0020div-row\u0020"}><h2>{t("通用设置")}</h2> <ActionButton icon={"info"} onClick={()=>{
-                        set_prompt_card({open:true,title:"信息",context_div : (
+                        set_prompt_card({open:true,title:t("信息"),context_div : (
                                 <div >
                                     {t(`HTTP 代理说明`)}
                                 </div>
                             )})
-                    }} title={"信息"}/></span>}
+                    }} title={t("信息")}/></span>}
                     rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
 
                     {t("网站标题")}

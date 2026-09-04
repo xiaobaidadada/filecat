@@ -661,5 +661,8 @@
   "协议": "Protocol",
   "来源地址": "Source address",
   "获取失败": "Failed to get",
-  "进程环境变量": "Process Environment Variables"
+  "进程环境变量": "Process Environment Variables",
+  "端口实例": "Port Instance",
+  "以空白搜索模式打开目录": "Open directory in blank search mode",
+  "搜索会话": "Search sessions"
 }

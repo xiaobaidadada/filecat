@@ -217,7 +217,7 @@ export function PrivateEnv() {
                                                                                                            onClick={() => {
                                                                                                                soft_ware_info_click("文件夹路径")
                                                                                                            }}
-                                                                                                           title={"信息"}/></span>}
+                                                                                                           title={t("信息")}/></span>}
                         titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton
                             icon={"save"} title={t("保存")} onClick={save}/></div>}>
                         <Table headers={headers} rows={rows.map((item, index) => {
@@ -243,7 +243,7 @@ export function PrivateEnv() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("个人保护路径")}</h2> <ActionButton
                         icon={"info"} onClick={() => {
                         soft_ware_info_click("保护目录")
-                    }} title={"信息"}/></span>}
+                    }} title={t("信息")}/></span>}
                               titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton
                                   icon={"save"} title={t("保存")} onClick={protection_dir_save}/></div>}>
                         <Table headers={protection_dir_headers} rows={protection_dir_rows.map((item, index) => {

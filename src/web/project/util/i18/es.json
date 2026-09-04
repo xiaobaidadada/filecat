@@ -650,5 +650,8 @@
   "协议": "Protocolo",
   "来源地址": "Dirección de origen",
   "获取失败": "Error al obtener",
-  "进程环境变量": "Variables de entorno del proceso"
+  "进程环境变量": "Variables de entorno del proceso",
+  "端口实例": "Instancia de puerto",
+  "以空白搜索模式打开目录": "Abrir directorio en modo de búsqueda en blanco",
+  "搜索会话": "Buscar sesiones"
 }
