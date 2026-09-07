@@ -331,7 +331,7 @@ export function FileMenu() {
             case    common_menu_type.sutdio : {
                 // set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
                 close();
-                navigate(`/${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
+                navigate(`${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
             }
             break;
             case common_menu_type.blank_search_mode : {
@@ -358,7 +358,7 @@ export function FileMenu() {
                     if (result.code === RCode.Success) {
                         NotySuccess("添加成功")
                         set_prompt_card({open:false})
-                        navigate(`/${routerConfig.share_list_setting_page}`);
+                        navigate(`${routerConfig.share_list_setting_page}`);
                     }
                 }
                 set_prompt_card({

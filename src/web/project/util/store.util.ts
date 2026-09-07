@@ -87,7 +87,7 @@ export const user_click_file = () => {
                 path: absolute_file_path,
                 name
             });
-            navigate(`/${routerConfig.sqlite_query_page}/`);
+            navigate(routerConfig.sqlite_query_page);
             return;
         }
         if (param.model === "text") {

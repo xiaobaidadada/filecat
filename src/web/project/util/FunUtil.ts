@@ -76,3 +76,11 @@ export async function hashString(input, salt = '') {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
+
+
+export const get_select_style = (select:boolean)=> {
+   return {
+       color: select?"var(--blue)":undefined,
+       fontWeight: select?"bold":undefined,
+   }
+}

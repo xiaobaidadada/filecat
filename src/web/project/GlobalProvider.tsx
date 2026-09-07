@@ -7,7 +7,7 @@ import {fileHttp, settingHttp, userHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {auth_key_map} from "./util/store.util";
-import {setTheme} from "./util/FunUtil";
+import {get_select_style, setTheme} from "./util/FunUtil";
 import {is_share} from "./util/WebPath";
 import {Icon} from "../meta/component/Button";
 
@@ -32,7 +32,9 @@ export const GlobalProvider = ({ children }) => {
         if (result.code === RCode.Success) {
             for (let i=0; i<result.data.dirs.length; i++) {
                 list.push({
-                    r:(<div>{result.data.dirs[i].note}</div>),
+                    r:(<div style={{
+                        ...get_select_style(i===switch_result.data)
+                    }}>{result.data.dirs[i].note}</div>),
                     v:i
                 })
             }

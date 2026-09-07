@@ -29,6 +29,7 @@ import {removeLastDir} from "../../../project/util/ListUitl";
 import {TextLine} from "../../../meta/component/Dashboard";
 import {TextTip} from "../../../meta/component/Card";
 import {routerConfig} from "../../../../common/RouterConfig";
+import {get_select_style} from "../../util/FunUtil";
 
 let dir_info = {} as any;
 
@@ -273,7 +274,7 @@ export function FileMenu() {
         update_dir_info(dir_info);
     }
     const file_share = ()=>{
-        navigate(`/${routerConfig.share_list_setting_page}`);
+        navigate(`${routerConfig.share_list_setting_page}`);
     }
     return  <React.Fragment>
         {selectedFile.length > 0 && <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
@@ -308,7 +309,7 @@ export function FileMenu() {
             pojo.textClick = async (v:number) => {
                 if(v===-1) {
                     // 添加
-                    navigate(`/${routerConfig.setting_private_env_setting}`);
+                    navigate(`${routerConfig.setting_private_env_setting}`);
                     setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                     NotyWaring(t('请配置 文件夹路径'))
                     return;
@@ -346,48 +347,64 @@ export function use_handleContextMenu() {
         const time_sort = [
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max ? "green" : undefined}}>{t("时间逆序")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max)
+                }>{t("时间逆序")}</span>),
                 v: DirListShowTypeEmum.time_minx_max
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}>{t("时间顺序")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min)
+                   }>{t("时间顺序")}</span>),
                 v: DirListShowTypeEmum.time_max_min
             }
         ]
         const size_sort = [
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max ? "green" : undefined}}>{t("大小顺序")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max)
+                }>{t("大小顺序")}</span>),
                 v: DirListShowTypeEmum.size_min_max
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}>{t("大小逆序")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min)
+                }>{t("大小逆序")}</span>),
                 v: DirListShowTypeEmum.size_max_min
             }
         ]
         const pagination_mode = [
             {
                 r: (<span
-                    style={{color: (!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all) ? "green" : undefined}}>{t("全部加载文件")}</span>),
+                    style={
+                        get_select_style((!user_base_info.user_data.file_list_pagination_mode || user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.all))
+                }>{t("全部加载文件")}</span>),
                 v: FileListPaginationModeEmum.all
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ? "green" : undefined}}>{t("分页滚动加载文件")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination )
+                 }>{t("分页滚动加载文件")}</span>),
                 v: FileListPaginationModeEmum.pagination
             }
         ];
         const time_show_mode = [
             {
                 r: (<span
-                    style={{color: (!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current) ? "green" : undefined}}>{t("最近时间")}</span>),
+                    style={
+                        get_select_style((!user_base_info.user_data.file_time_show_type || user_base_info.user_data.file_time_show_type === user_file_time_show_type.current))
+                  }>{t("最近时间")}</span>),
                 v: user_file_time_show_type.current
             },
             {
                 r: (<span
-                    style={{color: user_base_info.user_data.file_time_show_type === user_file_time_show_type.time ? "green" : undefined}}>{t("准确时间")}</span>),
+                    style={
+                        get_select_style(user_base_info.user_data.file_time_show_type === user_file_time_show_type.time)
+                    }>{t("准确时间")}</span>),
                 v: user_file_time_show_type.time
             }
         ];
@@ -400,22 +417,24 @@ export function use_handleContextMenu() {
                     items: [
                         {
                             r: (<span
-                                style={{color: !user_base_info.user_data.dir_show_type ? "green" : undefined}}>{t("系统默认")}</span>),
+                                style={get_select_style(!user_base_info.user_data.dir_show_type)}>{t("系统默认")}</span>),
                             v: DirListShowTypeEmum.defualt
                         },
                         {
                             r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name ? "green" : undefined}}>{t("名字")}</span>),
+                                style={get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.name)}>{t("名字")}</span>),
                             v: DirListShowTypeEmum.name
                         },
                         {
                             r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min ? "green" : undefined}}
+                                style={get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_minx_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.time_max_min)}
                             >{t("修改时间")}</span>), v: false, items: time_sort
                         },
                         {
                             r: (<span
-                                style={{color: user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min ? "green" : undefined}}
+                                style={
+                                    get_select_style(user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_min_max || user_base_info.user_data.dir_show_type === DirListShowTypeEmum.size_max_min)
+                                }
                             >{t("文件大小")}</span>), v: false, items: size_sort
                         },
                     ]
@@ -436,7 +455,9 @@ export function use_handleContextMenu() {
                 },
                 {
                     r: (<span
-                        style={{color: blankSearchMode ? "green" : undefined}}>{t("以空白搜索模式打开目录")}</span>),
+                        style={
+                            get_select_style(blankSearchMode)
+                        }>{t("以空白搜索模式打开目录")}</span>),
                     v: "blank_search_mode"
                 },
             ]
@@ -472,13 +493,13 @@ export function use_handleContextMenu() {
                 // 以配置表方式打开当前目录
                 const dirPath = getRouterAfter('file', getRouterPath());
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate(`/${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
+                navigate(`${routerConfig.gcfg_page}/${encodeURIComponent(dirPath)}`);
                 return;
             } else if (v === "git_page") {
                 // 打开Git管理页面
                 const dirPath = getRouterAfter('file', getRouterPath());
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate(`/${routerConfig.git_page}/${encodeURIComponent(dirPath)}`);
+                navigate(`${routerConfig.git_page}/${encodeURIComponent(dirPath)}`);
                 return;
             } else if (v === "code_resource") {
                 const result = await ws.sendData(CmdType.file_info, {
