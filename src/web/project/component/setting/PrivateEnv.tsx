@@ -210,6 +210,52 @@ export function PrivateEnv() {
     return (<React.Fragment>
         <Row>
 
+
+            <Column widthPer={33}>
+                <Dashboard>
+                    <Card title={t("修改密码")}
+                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>
+                        <InputText placeholder={t('新账号')} value={username} handleInputChange={(value) => {
+                            setUsername(value)
+                        }}/>
+                        <InputPassword placeholder={t('新密码')} handleInputChange={(value) => {
+                            setPassword(value)
+                        }}/>
+                        <InputPassword placeholder={t('确认密码')} handleInputChange={(value) => {
+                            set_confirm_password(value)
+                        }}/>
+                    </Card>
+                </Dashboard>
+
+                <Dashboard>
+                    <Card title={t("个性化设置")}
+                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                        {t("语言")}
+                        <Select value={language} onChange={(value) => {
+                            set_language(value);
+                        }} options={[{title: t('跟随系统'), value: 'sys'}, {
+                            title: "English",
+                            value: "en"
+                        }, {title: "中文", value: "zh"}, {title: "Deutsch", value: "de"}, {
+                            title: "ドイツ語",
+                            value: "ja"
+                        }, {title: "독일어", value: "ko"}, {title: "Немецкий язык", value: "ru"}, {
+                            title: "Allemand",
+                            value: "fr"
+                        }, {title: "Alemán", value: "es"}]}/>
+                        {t("主题")}
+                        <Select value={theme} onChange={(value) => {
+                            set_theme(value);
+                        }} options={themes_list}/>
+                        <InputText value={upload_file_ignore} handleInputChange={(value) => {
+                            set_upload_file_ignore(value)
+                        }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"}
+                                   no_border={true}/>
+                    </Card>
+                </Dashboard>
+
+            </Column>
+
             <Column>
                 <Dashboard>
                     <CardFull
@@ -324,49 +370,5 @@ export function PrivateEnv() {
 
             </Column>
 
-            <Column widthPer={33}>
-                <Dashboard>
-                    <Card title={t("修改密码")}
-                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>
-                        <InputText placeholder={t('新账号')} value={username} handleInputChange={(value) => {
-                            setUsername(value)
-                        }}/>
-                        <InputPassword placeholder={t('新密码')} handleInputChange={(value) => {
-                            setPassword(value)
-                        }}/>
-                        <InputPassword placeholder={t('确认密码')} handleInputChange={(value) => {
-                            set_confirm_password(value)
-                        }}/>
-                    </Card>
-                </Dashboard>
-
-                <Dashboard>
-                    <Card title={t("个性化设置")}
-                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
-                        {t("语言")}
-                        <Select value={language} onChange={(value) => {
-                            set_language(value);
-                        }} options={[{title: t('跟随系统'), value: 'sys'}, {
-                            title: "English",
-                            value: "en"
-                        }, {title: "中文", value: "zh"}, {title: "Deutsch", value: "de"}, {
-                            title: "ドイツ語",
-                            value: "ja"
-                        }, {title: "독일어", value: "ko"}, {title: "Немецкий язык", value: "ru"}, {
-                            title: "Allemand",
-                            value: "fr"
-                        }, {title: "Alemán", value: "es"}]}/>
-                        {t("主题")}
-                        <Select value={theme} onChange={(value) => {
-                            set_theme(value);
-                        }} options={themes_list}/>
-                        <InputText value={upload_file_ignore} handleInputChange={(value) => {
-                            set_upload_file_ignore(value)
-                        }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"}
-                                   no_border={true}/>
-                    </Card>
-                </Dashboard>
-
-            </Column>
         </Row></React.Fragment>)
 }

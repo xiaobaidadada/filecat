@@ -194,8 +194,6 @@
   "part": "Partition",
   "lvm": "Volume logique",
   "网址": "URL",
-  "自定义登录auth": "Authentification de connexion personnalisée",
-  "自定义shell命令校验": "Vérification de commande shell personnalisée",
   "环境": "Environnement",
   "外部软件": "Logiciel externe",
   "保护路径": "Chemin protégé",
@@ -655,5 +653,6 @@
   "以空白搜索模式打开目录": "Ouvrir le répertoire en mode de recherche vide",
   "搜索会话": "Rechercher des sessions",
   "允许切换 AI 模型": "Autoriser le changement de modèle IA",
-  "选择模型": "Sélectionner un modèle"
+  "选择模型": "Sélectionner un modèle",
+  "不能将文件夹移动到自己里面": "Impossible de déplacer un dossier dans lui-même"
 }

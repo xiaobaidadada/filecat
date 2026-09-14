@@ -111,6 +111,26 @@ export interface Plugin {
      * 功能等同于系统的「自定义 API 路由」，handler 直接拿到 Request/Response
      */
     routes?: PluginRoute[];
+
+    /**
+     * 【登录鉴权回调】替代旧版的「自定义登录 auth」功能。
+     * 用户登录时（密码校验之前）被调用：
+     *   - 返回 true  ：放行登录，并为该用户签发 token（拥有用户全部权限）
+     *   - 返回 false 或抛错：继续走系统默认的密码登录
+     * 注意：多个插件同时注册时，任一插件返回 true 即视为通过。
+     */
+    login_auth?: (headers: any, req: import('express').Request) => Promise<boolean> | boolean;
+
+    /**
+     * 【shell 命令校验回调】替代旧版的「自定义 shell 命令校验」功能。
+     * 用户执行 shell 命令前被调用，返回值语义（与 exec_type 一致）：
+     *   -1  拒绝执行（reject）
+     *    0  使用 child_process 执行
+     *    1  使用 node-pty 执行
+     *    2  不拦截，继续交给系统默认判断
+     * 注意：多个插件同时注册时，按注册顺序依次调用，第一个不是「继续(2)」的返回值即生效。
+     */
+    shell_cmd_check?: (token: string, cmd: string, params: any[]) => Promise<number> | number;
 }
 
 

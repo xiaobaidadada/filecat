@@ -6,11 +6,12 @@ import {$stroe} from "../../../util/store";
 import {fileHttp, userHttp} from "../../../util/config";
 import {FileListPaginationModeEmum, UserData} from "../../../../../common/req/user.req";
 import {RCode} from "../../../../../common/Result.pojo";
-import {NotySuccess} from "../../../util/noty";
+import {NotyFail, NotySuccess} from "../../../util/noty";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useNavigate} from "react-router-dom";
 import {getFileNameByLocation, getFilesByIndexs} from "../FileUtil";
 import {Icon} from "../../../../meta/component/Button";
+import {useTranslation} from "react-i18next";
 
 
 export function BaseFileItem(props: FileItemData & {
@@ -26,6 +27,7 @@ export function BaseFileItem(props: FileItemData & {
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
+    const {t} = useTranslation();
 
     async function click(index: number) {
         if (props.click) {
@@ -60,6 +62,14 @@ export function BaseFileItem(props: FileItemData & {
             if (nowFileList.folders.length <= index) {
                 return;
             }
+        }
+
+        // 禁止把文件夹移动到自己里面：拖拽源中包含目标文件夹本身时直接拒绝
+        // （同一目录下父子层级不可能同级显示，因此只需判断"目标是否为拖拽源之一"即可）
+        const dragItems = getFilesByIndexs(nowFileList, selectList);
+        if (dragItems.some(v => v?.name === file_item?.name)) {
+            NotyFail(t("不能将文件夹移动到自己里面"))
+            return;
         }
 
         setShowPrompt({

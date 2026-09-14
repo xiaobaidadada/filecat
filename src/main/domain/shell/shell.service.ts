@@ -12,8 +12,6 @@ import {settingService} from "../setting/setting.service";
 import {SysEnum, UserAuth} from "../../../common/req/user.req";
 import {CharUtil, exec_cmd_type, exec_type, PtyShell} from "pty-shell";
 import {userService} from "../user/user.service";
-import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {word_detection_js} from "../../../common/word_detection_js";
 import fs from "fs";
 import {get_best_cmd} from "../../../common/path_util";
@@ -310,17 +308,15 @@ export class ShellService {
                     return exec_type.auto_child_process
 
             }
-            // 自定义命令检测
-            if (settingService.get_shell_cmd_check()) {
-                const selfHandler = settingService.getHandlerClass(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
-                // 开启了自定义的处理
-                if (selfHandler) {
-                    const ok = selfHandler.handler( exe_cmd, params);
-                    if (ok !== exec_type.continue) {
-                        return ok;
-                    }
-                    // 继续接下来的判断
+            // 插件注册的 shell 命令校验回调（替代旧版「自定义 shell 命令校验」）
+            // 按注册顺序依次调用，第一个不返回「继续(exec_type.continue)」的结果即生效
+            const cmd_check_list = settingService.get_plugin_shell_cmd_check();
+            for (const item of cmd_check_list) {
+                const ok = await item.handler(token, exe_cmd, params);
+                if (ok !== exec_type.continue) {
+                    return ok;
                 }
+                // 继续接下来的判断
             }
 
             // 命令通用权限检测

@@ -1,7 +1,7 @@
 import {DataUtil} from "../data/DataUtil";
 import path from "path";
 import fs from "fs";
-import {CustomerApiRouterPojo, self_auth_jscode} from "../../../common/req/customerRouter.pojo";
+import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
 import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
@@ -309,20 +309,20 @@ export class SettingService {
         return keys.join("");
     }
 
-    public get_shell_cmd_check() {
-        return DataUtil.get(data_common_key.self_shell_cmd_check_open_status) ?? false;
+    /**
+     * 获取已注册的「登录鉴权」插件回调列表（替代旧版自定义登录 auth）
+     * 返回 {id, handler} 数组；登录时任一 handler 返回 true 即放行。
+     */
+    public get_plugin_login_auth(): { id: string; handler: (headers: any, req: any) => any }[] {
+        return this.plugin_login_auth_list;
     }
 
-    public save_shell_cmd_check(status) {
-        return DataUtil.set(data_common_key.self_shell_cmd_check_open_status, status);
-    }
-
-    public getSelfAuthOpen() {
-        return DataUtil.get(self_auth_jscode) ?? false;
-    }
-
-    public setSelfAuthOpen(req) {
-        return DataUtil.set(self_auth_jscode, req.open);
+    /**
+     * 获取已注册的「shell 命令校验」插件回调列表（替代旧版自定义 shell 命令校验）
+     * 返回 {id, handler} 数组；按注册顺序依次调用。
+     */
+    public get_plugin_shell_cmd_check(): { id: string; handler: (token: string, cmd: string, params: any[]) => any }[] {
+        return this.plugin_shell_cmd_check_list;
     }
 
     public get_recycle_bin_status() {
@@ -1244,6 +1244,12 @@ export class SettingService {
     /** 插件注册的自定义路由：{路由路径: PluginRoute} */
     plugin_routes: Map<string, PluginRoute> = new Map();
 
+    /** 插件注册的「登录鉴权」回调列表（替代旧版自定义登录 auth） */
+    plugin_login_auth_list: { id: string; handler: (headers: any, req: any) => any }[] = [];
+
+    /** 插件注册的「shell 命令校验」回调列表（替代旧版自定义 shell 命令校验） */
+    plugin_shell_cmd_check_list: { id: string; handler: (token: string, cmd: string, params: any[]) => any }[] = [];
+
     running_plugin_list:Plugin[] = []
 
     get_plugin_list(): plug_item[] {
@@ -1271,6 +1277,8 @@ export class SettingService {
         this.running_plugin_list = [];
         this.plugin_themes.clear();
         this.plugin_routes.clear();
+        this.plugin_login_auth_list = [];
+        this.plugin_shell_cmd_check_list = [];
         const list = this.get_plugin_list();
 
         const results = await Promise.allSettled(
@@ -1342,6 +1350,38 @@ export class SettingService {
         }
     }
 
+    /**
+     * 注册插件的「登录鉴权」回调（替代旧版自定义登录 auth）
+     */
+    private _register_plugin_login_auth(plugin: Plugin) {
+        if (!plugin.login_auth) return;
+        this.plugin_login_auth_list.push({id: plugin.meta.id, handler: plugin.login_auth});
+        console.log(`[Plugin] "${plugin.meta.name}" 已注册登录鉴权回调`);
+    }
+
+    /**
+     * 注销插件的「登录鉴权」回调
+     */
+    private _unregister_plugin_login_auth(plugin: Plugin) {
+        this.plugin_login_auth_list = this.plugin_login_auth_list.filter(it => it.id !== plugin.meta.id);
+    }
+
+    /**
+     * 注册插件的「shell 命令校验」回调（替代旧版自定义 shell 命令校验）
+     */
+    private _register_plugin_shell_cmd_check(plugin: Plugin) {
+        if (!plugin.shell_cmd_check) return;
+        this.plugin_shell_cmd_check_list.push({id: plugin.meta.id, handler: plugin.shell_cmd_check});
+        console.log(`[Plugin] "${plugin.meta.name}" 已注册 shell 命令校验回调`);
+    }
+
+    /**
+     * 注销插件的「shell 命令校验」回调
+     */
+    private _unregister_plugin_shell_cmd_check(plugin: Plugin) {
+        this.plugin_shell_cmd_check_list = this.plugin_shell_cmd_check_list.filter(it => it.id !== plugin.meta.id);
+    }
+
     private _resolve_plugin(item: plug_item): Plugin {
         this._evict_require_cache(item.path);
 
@@ -1381,6 +1421,9 @@ export class SettingService {
         this._register_ai_tools(plugin);
         this._register_css_theme_plugin(plugin);
         this._register_plugin_routes(plugin);
+        // 注册登录鉴权 / shell 命令校验回调（替代旧版内置功能）
+        this._register_plugin_login_auth(plugin);
+        this._register_plugin_shell_cmd_check(plugin);
 
         // 保存 path 供卸载时清缓存
         (plugin as any).__plugin_path__ = item.path;
@@ -1406,6 +1449,8 @@ export class SettingService {
         this.running_plugin_list = [];
         this.plugin_themes.clear();
         this.plugin_routes.clear();
+        this.plugin_login_auth_list = [];
+        this.plugin_shell_cmd_check_list = [];
     }
 
     private async _unload_single_plugin(plugin: Plugin): Promise<void> {
@@ -1416,6 +1461,9 @@ export class SettingService {
             if (plugin.routes?.length) {
                 this._unregister_plugin_routes(plugin);
             }
+            // 注销登录鉴权 / shell 命令校验回调
+            this._unregister_plugin_login_auth(plugin);
+            this._unregister_plugin_shell_cmd_check(plugin);
             await plugin.deactivate?.();
         } finally {
             // 无论 deactivate 是否报错，都清除缓存

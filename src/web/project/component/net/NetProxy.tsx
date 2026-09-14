@@ -12,7 +12,6 @@ import {useTranslation} from "react-i18next";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {SysEnum} from "../../../../common/req/user.req";
-import {self_auth_jscode} from "../../../../common/req/customerRouter.pojo";
 import {editor_data} from "../../util/store.util";
 import {generateRandomHash} from "../../../../common/StringUtil";
 import {use_select_config} from "../../util/react.config";

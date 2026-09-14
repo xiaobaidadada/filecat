@@ -194,8 +194,6 @@
   "part": "Partition",
   "lvm": "Logisches Volume Management",
   "网址": "Webadresse",
-  "自定义登录auth": "Benutzerdefiniertes Anmelde-Auth",
-  "自定义shell命令校验": "Benutzerdefinierte Shell-Befehlsüberprüfung",
   "环境": "Umgebung",
   "外部软件": "Externe Software",
   "保护路径": "Geschützter Pfad",
@@ -654,5 +652,6 @@
   "以空白搜索模式打开目录": "Verzeichnis im leeren Suchmodus öffnen",
   "搜索会话": "Sitzungen durchsuchen",
   "允许切换 AI 模型": "Wechsel des KI-Modells erlauben",
-  "选择模型": "Modell auswählen"
+  "选择模型": "Modell auswählen",
+  "不能将文件夹移动到自己里面": "Ein Ordner kann nicht in sich selbst verschoben werden"
 }

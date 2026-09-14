@@ -192,8 +192,6 @@
   "part": "Partition",
   "lvm": "Logical Volume",
   "网址": "Website",
-  "自定义登录auth": "Custom Login Auth",
-  "自定义shell命令校验": "Custom Shell Command Validation",
   "环境": "Environment",
   "外部软件": "External Software",
   "保护路径": "Protected Path",
@@ -666,5 +664,6 @@
   "以空白搜索模式打开目录": "Open directory in blank search mode",
   "搜索会话": "Search sessions",
   "允许切换 AI 模型": "Allow switching AI models",
-  "选择模型": "Select model"
+  "选择模型": "Select model",
+  "不能将文件夹移动到自己里面": "Cannot move a folder into itself"
 }

@@ -57,7 +57,6 @@ export enum data_common_key {
     // extra_env_path = "extra_env_path",
     protection_directory = "sys_protection_directory", // 系统保护路路径
     dir_upload_max_num = "dir_upload_max_num", // 上传并发数量限制
-    self_auth_jscode = "self_auth_jscode",
     navindex_video_key = "navindex_video_tag_key",
     systemd_key = "systemd_key",
     vir_server_data_key = "vir_server_net_data_key",
@@ -69,9 +68,6 @@ export enum data_common_key {
     // 独立文件部分
     navindex_key = "navindex_key_list",
     http_tag_key = "http_tag_key",
-    // 自定义shell cmd 检测
-    self_shell_cmd_check_open_status = "self_shell_cmd_check_open_status",
-    self_shell_cmd_jscode = "self_shell_cmd_jscode", // js code 文件名字
     extra_env_path_list_key = "extra_env_path_list_key", // 额外环境变量 List
     process_env_override_key = "process_env_override_key", // 覆盖进程环境变量的 key=value 文本（重启时加载到 process.env）
     cmd_use_pty_key = "cmd_use_pty_key", // 使用node pty 的变量

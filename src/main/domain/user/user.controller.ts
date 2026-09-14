@@ -4,13 +4,11 @@ import {SqlPresetItem} from "../../../common/req/setting.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {generateSaltyUUID} from "../../../common/StringUtil";
-import {data_dir_tem_name} from "../data/data_type";
 import {hash_string} from "./user.hash";
 import {userService} from "./user.service";
 import {getSys} from "../shell/shell.service";
 import {settingService} from "../setting/setting.service";
 import {Request} from "express";
-import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {Http_controller_router} from "../../../common/req/http_controller_router";
 import {Env} from "../../../common/node/Env";
 import {HttpRequest} from "../../../common/node/http";
@@ -35,27 +33,22 @@ export class UserController {
             // const username = DataUtil.get(data_common_key.username) as string;
             // 只用于第一次登录 或者token 过期了
             const user_data = userService.get_user_info_by_username(user.username);
-            if (settingService.getSelfAuthOpen()) {
-                // 开启了自定义处理鉴权功能
-                const selfHandler = settingService.getHandlerClass(self_auth_jscode, data_dir_tem_name.sys_file_dir);
-                if (!selfHandler) {
-                    await CommonUtil.sleep_lock_key(user.username,1000)
-                    return AuthFail("self hand error");
-                }
-                // 开启了自定义处理
+            // 插件注册的登录鉴权回调（替代旧版「自定义登录 auth」）：任一插件返回 true 即放行
+            const login_auth_list = settingService.get_plugin_login_auth();
+            for (const item of login_auth_list) {
                 try {
-                    const result = await selfHandler.handler(req.headers, req);
+                    const result = await item.handler(req.headers, req);
                     if (result) {
                         const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
                         const cache: UserLoginData = {username: user.username, id: user_data.id};
                         Cache.setValue(`${uuid}`, cache);
-                        await CommonUtil.sleep_lock_key(user.username,1000*CommonUtil.random01())
+                        await CommonUtil.sleep_lock_key(user.username, 1000 * CommonUtil.random01())
                         return Sucess(uuid)
                     }
                 } catch (e) {
                     console.log(e)
                 }
-                // 失败了继续尝试正常的密码登录
+                // 返回 false 或出错则继续尝试正常的密码登录
             }
 
             // const password_hash = DataUtil.get(data_common_key.password_hash) as string;

@@ -14,8 +14,6 @@ import {userService} from "../user/user.service";
 import {NetMsgType, tcp_server_msg} from "./util/NetUtil";
 import {tcp_stream_util} from "./util/tcp_stream_util";
 import {virtualClientService} from "./virtual/virtual.client.service";
-import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
-import {self_auth_open_js_code_file} from "../setting/setting.prefile";
 
 const navindex_net_key_list = data_common_key.navindex_net_key_list;
 

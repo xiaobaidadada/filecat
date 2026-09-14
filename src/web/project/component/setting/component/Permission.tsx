@@ -71,11 +71,9 @@ export function Permission(props:{
                 { title: t("系统页面"), permission: UserAuth.sys_setting_page },
                 { title: t("htts"), permission: UserAuth.https_file },
                 { title: t("token时间修改"), permission: UserAuth.token_update },
-                { title: t("自定义auth"), permission: UserAuth.code_auth },
                 { title: t("修改密码"), permission: UserAuth.update_password },
                 { title: t("磁盘挂载"), permission: UserAuth.sys_disk_mount },
                 { title: t("通用设置"), permission: UserAuth.sys_env_setting_key },
-                { title: t("shell命令检测"), permission: UserAuth.shell_cmd_check },
             ]
         },
         {

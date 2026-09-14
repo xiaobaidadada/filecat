@@ -4,10 +4,9 @@ import {Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
-import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
-import {router_pre_file, self_auth_open_js_code_file, self_shell_cmd_check_js_code_file} from "./setting.prefile";
+import {router_pre_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
 import fs from "fs"
 import path from "path"
@@ -74,64 +73,8 @@ export class SettingController {
     // 获取api路由  修改路由后js代码也没了
     @Get("/self_auth_open")
     getSelfAuth() {
-        const result = settingService.getSelfAuthOpen();
-        return Sucess(result);
-    }
-
-    // 设置 auth 开启状态
-    @Post('/self_auth_open/save')
-    saveSelfAuth(@Body() req: any, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.code_auth);
-        settingService.setSelfAuthOpen(req);
-        return Sucess("1");
-    }
-
-    // auth js 代码获取
-    @Get("/self_auth_open/jscode")
-    getSelfAuthJscode(@Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.code_auth);
-        const context = DataUtil.getFile(self_auth_jscode, data_dir_tem_name.sys_file_dir);
-        const pre = self_auth_open_js_code_file;
-        if (!context) {
-            DataUtil.setFile(self_auth_jscode, pre, data_dir_tem_name.sys_file_dir);
-        }
-        return Sucess(context || pre);
-    }
-
-    // 获取自定义 shell cmd 开启状态
-    @Get("/shell_cmd_check_open")
-    get_shell_cmd_check() {
-        const result = settingService.get_shell_cmd_check();
-        return Sucess(result);
-    }
-
-    // 保存 自定义 shell cmd 开启状态
-    @Post('/shell_cmd_check_open/save')
-    save_shell_cmd_check(@Body() req: any, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.shell_cmd_check);
-        settingService.save_shell_cmd_check(req.open);
-        return Sucess("1");
-    }
-
-    // 自定义 shell cmd js 代码获取
-    @Get("/shell_cmd_check_open/jscode")
-    get_shell_cmd_Jscode(@Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.shell_cmd_check);
-        const context = DataUtil.getFile(data_common_key.self_shell_cmd_jscode, data_dir_tem_name.sys_file_dir);
-        const pre = self_shell_cmd_check_js_code_file;
-        if (!context) {
-            DataUtil.setFile(data_common_key.self_shell_cmd_jscode, pre, data_dir_tem_name.sys_file_dir);
-        }
-        return Sucess(context || pre);
-
-    }
-
-    // 保存 shell cmd js 代码获取
-    @Post("/shell_cmd_check_open/jscode/save")
-    save_shell_cmd_Jscode(@Req() req, @Body() body: { context: string }) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.shell_cmd_check);
-        DataUtil.setFile(data_common_key.self_shell_cmd_jscode, body.context, data_dir_tem_name.sys_file_dir);
-        return Sucess("1");
+        // 该功能已迁移到插件系统（插件注册 login_auth 回调），接口保留仅用于兼容调用方返回关闭状态
+        return Sucess(false);
     }
 
     // 获取js代码
@@ -150,16 +93,9 @@ export class SettingController {
     // 设置js代码(用于任意的js代码文件保存)
     @Post('/jscode/save')
     async saveJscode(@Body() req: { router: string, context: string }, @Req() r) {
-        let dir;
-        if (req.router === self_auth_jscode) {
-            dir = data_dir_tem_name.sys_file_dir;
-            userService.check_user_auth(r.headers.authorization, UserAuth.code_auth);
-        } else {
-            // 这里不再用于通用的 只用于这两个
-            userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
-            dir = data_dir_tem_name.all_user_api_file_dir;
-        }
-
+        // 通用 js 代码保存（原「自定义登录auth」代码已迁移到插件系统，不再走此接口）
+        userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
+        const dir = data_dir_tem_name.all_user_api_file_dir;
         DataUtil.setFile(settingService.routerHandler(req.router), req.context, dir);
         return Sucess("1");
     }
@@ -475,8 +411,6 @@ export class SettingController {
         userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         // 获取系统所有功能的状态
         const r = {
-            self_auth_open: settingService.getSelfAuthOpen(), // 自定义登录鉴权
-            shell_cmd_check_open: settingService.get_shell_cmd_check(), // 自定义cmd判断
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
             recycle_dir: settingService.get_recycle_dir_str(), // 垃圾回收站 目录也返回
             sys_env: settingService.get_sys_env(),
