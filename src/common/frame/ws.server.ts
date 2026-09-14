@@ -148,6 +148,13 @@ export class WsServer {
                             wss.sendData(new WsData(data.cmdType, {},undefined,data.random_id).encode());
                             return;
                         }
+                        // token 可能在使用期间失效（过期/被清空），每条业务消息前重新校验
+                        // 失效则关闭连接，避免后续 handler 拿到无效 token 处理出错
+                        if (!await check(wss.token)) {
+                            console.log('ws token 已失效，关闭连接')
+                            close()
+                            return;
+                        }
                         const handle = routerHandlerMap.get(data.cmdType);
                         if (handle) {
                             try {

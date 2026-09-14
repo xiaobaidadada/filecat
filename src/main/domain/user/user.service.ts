@@ -102,7 +102,12 @@ export class UserService {
     }
 
     public get_user_info_by_token(token: string) {
-        return this.get_user_info_by_username(Cache.getValue(token).username)
+        // token 可能已过期/被清空（例如长连接建立后 token 失效），此时 Cache 取不到数据
+        const cache = Cache.getValue(token);
+        if (!cache || !cache.username) {
+            throw "token is invalid";
+        }
+        return this.get_user_info_by_username(cache.username)
     }
 
     public get_user_info_by_user_id(id: string): UserData {
