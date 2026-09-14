@@ -654,5 +654,6 @@
   "端口实例": "Instancia de puerto",
   "以空白搜索模式打开目录": "Abrir directorio en modo de búsqueda en blanco",
   "搜索会话": "Buscar sesiones",
-  "允许切换 AI 模型": "Permitir cambiar de modelo de IA"
+  "允许切换 AI 模型": "Permitir cambiar de modelo de IA",
+  "选择模型": "Seleccionar modelo"
 }

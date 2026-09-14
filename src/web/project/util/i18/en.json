@@ -665,5 +665,6 @@
   "端口实例": "Port Instance",
   "以空白搜索模式打开目录": "Open directory in blank search mode",
   "搜索会话": "Search sessions",
-  "允许切换 AI 模型": "Allow switching AI models"
+  "允许切换 AI 模型": "Allow switching AI models",
+  "选择模型": "Select model"
 }

@@ -304,7 +304,12 @@ export interface SelectProps {
     value?: any,
     tip?: any,
     width?: string, // 自动扩容可以写 auto
-    disabled?: boolean
+    disabled?: boolean,
+    /**
+     * 额外外边距，用于在 Header 等「多个组件并排」的布局中与相邻元素拉开间隔。
+     * 例如 "0 0 0 1em"（左侧留 1em）或 "0 1em 0 0"（右侧留 1em）。
+     */
+    margin?: string
 }
 
 // export function Select(props: SelectProps) {
@@ -434,6 +439,8 @@ export function Select(props: SelectProps) {
     return (
         <div className="select_wrapper" style={{
             width: props.width || '100%',
+            // 支持调用方通过 margin 在并排布局中拉开间隔
+            margin: props.margin,
         }}>
             {props.tip && <span className="select_tip">{props.tip}</span>}
             <div className="select_container">

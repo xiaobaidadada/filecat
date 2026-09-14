@@ -137,11 +137,16 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             {can_switch_model && modelOptions.length > 0 && (
                 <Select
                     value={selectedModelValue}
-                    options={modelOptions}
+                    // 顶部占位项：当前没有任何激活模型时显示「选择模型」提示
+                    options={[{ title: t("选择模型"), value: "" }, ...modelOptions]}
+                    margin={"0 0 0 1em"}
                     onChange={(value) => {
-                        // value 形如 `${供应商index}::${模型值}`
-                        const [idxStr, ...rest] = String(value).split("::");
+                        // value 形如 `${供应商index}::${模型值}`；空值（占位项「选择模型」）不处理
+                        const valStr = String(value ?? "");
+                        if (!valStr.includes("::")) return;
+                        const [idxStr, ...rest] = valStr.split("::");
                         const modelName = rest.join("::");
+                        if (!modelName) return;
                         setCurrentModelName(modelName);
                         ai_agentHttp.post("set_active_model", { index: Number(idxStr), model_name: modelName }).then((res: any) => {
                             if (res?.code === RCode.Success) {

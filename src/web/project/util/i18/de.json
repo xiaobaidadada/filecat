@@ -653,5 +653,6 @@
   "端口实例": "Port-Instanz",
   "以空白搜索模式打开目录": "Verzeichnis im leeren Suchmodus öffnen",
   "搜索会话": "Sitzungen durchsuchen",
-  "允许切换 AI 模型": "Wechsel des KI-Modells erlauben"
+  "允许切换 AI 模型": "Wechsel des KI-Modells erlauben",
+  "选择模型": "Modell auswählen"
 }

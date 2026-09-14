@@ -34,17 +34,13 @@ import {
 
 const tip_text = `
 1. Only OpenAI-style AI APIs are supported. Fill in the FULL endpoint path (not just the domain), e.g. https://ark.cn-beijing.volces.com/api/v3/chat/completions
-2. 对话的历史越长，消耗的大模型token费用越贵，目前不具备长期记忆简化能力，可以在系统prompt中设置一下让AI回答的简洁一点，节省tokens
-3. model请求参数json编写，里面只能编写json,来用于编写openai风格ai支持的属性，比如 temperature thinking（豆包的深度思考开关）等
-4. 可以在model请求参数中开启 "stream":true 提高响应速度
-5. 深度思考现在会影响输出速度，建议设置\`{
-    "thinking" : { 
-                "type":"disabled"
-    }
-}\`关闭(豆包例子)
-6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
-7. model 类型 与 成为tool 现在都在「更多属性 → 额外参数设置」里用 request_type / tool_mode 配置（已在该编辑器内附有注释说明）。
-8. 成为tool 后，该模型将会作为一个工具被加载，可以实现不同模型作为不同角色的能力；请勿与「是否开启」同时为 true。
+2. The longer the conversation history, the more expensive the LLM token cost. Currently, there is no long-term memory simplification capability. You can set the system prompt to make the AI answer more concisely to save tokens
+3. When writing the model request parameter JSON, you can only write JSON in it, to configure the attributes supported by OpenAI-style AI, such as temperature, thinking (Doubao's deep thinking toggle), etc.
+4. You can enable "stream": true in the model request parameters to improve response speed.
+5. Deep thinking currently affects output speed. It is recommended to set { "thinking" : { "type":"disabled" } } to disable it (Doubao example).
+6. To use the AI feature to query server information, the AI needs to be able to know some commands. You need to first set command permissions for the user in user settings. It is recommended to set * to allow all commands, and then set the dangerous commands that are not allowed to be executed in the settings
+7. The model type and Become Tool are now both configured in "More Attributes → Extra Parameter Settings" using request_type / tool_mode (comments are already provided in the editor).
+8. After becoming a tool, the model will be loaded as a tool, enabling different models to serve as different roles; please do not set both it and "Enabled" to true at the same time.
 `
 const docs_tip = `
 1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据（需要有模型开启才能使用)
