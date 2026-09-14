@@ -41,7 +41,7 @@ import { toUiMessages } from "./messageUtils";
 import { buildAttachments } from "./attachmentUtils";
 import { useChatStream } from "./useChatStream";
 import { handleNonCompletionsRequest } from "./RequestTypeRenderers";
-import ChatHeader from "./ChatHeader";
+import ChatHeader, { ModelGroup } from "./ChatHeader";
 import SessionList from "./SessionList";
 import ChatMessageList from "./ChatMessageList";
 import ChatInput, { ChatInputHandle } from "./ChatInput";
@@ -110,9 +110,37 @@ export default function AiAgentChatPage() {
     const sendingSessionIdRef = useRef<string | null>(sendingSessionId);
     useEffect(() => { activeSessionIdRef.current = activeSessionId; }, [activeSessionId]);
     useEffect(() => { sendingSessionIdRef.current = sendingSessionId; }, [sendingSessionId]);
-    const env_config = useRef(new ai_agent_item_dotenv());
+    // /ai_agent_setting/env 返回结构：{ ai_config: 当前激活的供应商配置, ai_config_env: 其 dotenv 配置 }
+    const env_config = useRef<{ ai_config?: ai_agent_Item; ai_config_env?: ai_agent_item_dotenv }>({});
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
     const [currentModelName, setCurrentModelName] = useState('');
+    // 所有供应商聚合的模型分组（聊天头部模型选择器使用，来源于后端 public_models）
+    const [modelGroups, setModelGroups] = useState<ModelGroup[]>([]);
+
+    /**
+     * 拉取所有供应商聚合的模型分组（仅返回已开启且配置了模型的供应商）。
+     * 失败时静默（例如用户无「切换模型/AI配置」权限，接口会返回错误）。
+     */
+    const loadPublicModels = async () => {
+        try {
+            const result = await ai_agentHttp.get("public_models");
+            if (result.code === RCode.Success) {
+                setModelGroups(result.data?.groups ?? []);
+            }
+        } catch {
+            setModelGroups([]);
+        }
+    };
+
+    /**
+     * 从 env 配置（当前激活供应商）同步 currentModelName 的展示值。
+     * 注意：/ai_agent_setting/env 返回的是 { ai_config_env, ai_config }，
+     * 其中 ai_config 才是当前激活的 ai_agent_Item（含 model 字段）。
+     */
+    const syncCurrentModelFromEnv = (envData: { ai_config?: ai_agent_Item; ai_config_env?: ai_agent_item_dotenv }) => {
+        const modelName = envData?.ai_config?.model ?? '';
+        setCurrentModelName(modelName);
+    };
     const [bgProcessCount, setBgProcessCount] = useState(0); // 所有会话的后台进程总数
 
     /** 从 env_config 中读取当前模型的 request_type */
@@ -554,14 +582,24 @@ export default function AiAgentChatPage() {
         const envResult = await settingHttp.get("ai_agent_setting/env");
         if (envResult.code === RCode.Success) {
             env_config.current = envResult.data;
-            const note = envResult.data.ai_config?.model || '';
-            const found = (envResult.data.ai_config_env?.options_agent_model_list ?? []).find((m: any) => m.label === note);
-            setCurrentModelName(found ? found.value : note);
+            syncCurrentModelFromEnv(envResult.data);
         }
+        // 拉取聚合的所有供应商模型（用于模型选择器）
+        await loadPublicModels();
         await loadSessions();
         const sysPromptResult = await ai_agentHttp.get("system_prompts");
         if (sysPromptResult.code === RCode.Success) {
             setSysPromptList(sysPromptResult.data ?? []);
+        }
+    };
+
+    /** 切换模型成功后：刷新聚合列表 + env 配置，并同步当前模型展示值 */
+    const handleModelChanged = async () => {
+        await loadPublicModels();
+        const envResult = await settingHttp.get("ai_agent_setting/env");
+        if (envResult.code === RCode.Success) {
+            env_config.current = envResult.data;
+            syncCurrentModelFromEnv(envResult.data);
         }
     };
 
@@ -719,7 +757,8 @@ export default function AiAgentChatPage() {
             <ChatHeader
                 currentModelName={currentModelName}
                 setCurrentModelName={setCurrentModelName}
-                envConfigRef={env_config}
+                modelGroups={modelGroups}
+                onModelChanged={handleModelChanged}
                 sysPromptList={sysPromptList}
                 batchMode={batchMode}
                 selectedMsgCount={selectedMsgIds.size}
@@ -792,7 +831,6 @@ export default function AiAgentChatPage() {
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                         fileInputRef={fileInputRef}
-                        requestType={getRequestType()}
                     />
                 </section>
             </div>

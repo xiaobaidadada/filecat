@@ -11,7 +11,7 @@ import {Card, CardFull} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotyFail, NotySuccess} from "../../util/noty";
+import {NotySuccess} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
@@ -29,13 +29,11 @@ import {
     ai_mcp_server_item,
     ai_mcp_server_tool_group,
     ai_system_prompt_item,
-    json_params_default,
-    LLMRequestType
+    json_params_default
 } from "../../../../common/req/filecat.ai.pojo";
-import {use_llm_request_type} from "./type";
 
 const tip_text = `
-1. 只能使用符合openai风格的ai接口，接口不能只填域名，而是类似 https://ark.cn-beijing.volces.com/api/v3/chat/completions 这样的全路径链接聊天url
+1. Only OpenAI-style AI APIs are supported. Fill in the FULL endpoint path (not just the domain), e.g. https://ark.cn-beijing.volces.com/api/v3/chat/completions
 2. 对话的历史越长，消耗的大模型token费用越贵，目前不具备长期记忆简化能力，可以在系统prompt中设置一下让AI回答的简洁一点，节省tokens
 3. model请求参数json编写，里面只能编写json,来用于编写openai风格ai支持的属性，比如 temperature thinking（豆包的深度思考开关）等
 4. 可以在model请求参数中开启 "stream":true 提高响应速度
@@ -45,8 +43,8 @@ const tip_text = `
     }
 }\`关闭(豆包例子)
 6. 使用AI功能来查询服务器信息，那么AI就需要能够之一些命令，需要先在用户设置中，给用户设置命令权限，建议设置 \`*\` 允许全部命令，在设置禁止不能执行的危险命令。
-7. 成为tool 后，该模型将会作为一个工具被加载，可以实现不同模型作为不能角色的能力。
-8. model 类型是必须要设置的，因为不同类型的 model 接口格式不同。
+7. model 类型 与 成为tool 现在都在「更多属性 → 额外参数设置」里用 request_type / tool_mode 配置（已在该编辑器内附有注释说明）。
+8. 成为tool 后，该模型将会作为一个工具被加载，可以实现不同模型作为不同角色的能力；请勿与「是否开启」同时为 true。
 `
 const docs_tip = `
 1. 本地知识库用于为AI增强理解能力，或者分析本地文件，原理读取本地的文件，对文件在内存中建立全文索引，为AI提供额外数据（需要有模型开启才能使用)
@@ -70,8 +68,8 @@ export default function AIAgentChatSetting() {
 
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
-    const headers = [t("编号"),t("url"), t("model类型"), t("是否开启"), t("key"),"model",t("成为tool"),t("更多属性"),t("备注") ];
-    const request_type = use_llm_request_type()
+    // 表格列：去掉了「model类型」「成为tool」两列（改为在「更多属性 → 额外参数设置」里用 request_type / tool_mode 配置）
+    const headers = [t("编号"),t("url"), t("是否开启"), t("key"),"model",t("更多属性"),t("备注") ];
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item[]>([]);
     const [docs_list,set_docs_list] = useState<ai_docs_item[]>([]);
@@ -429,10 +427,6 @@ export default function AIAgentChatSetting() {
                                         <InputText value={ai_agent_Item.get_label_by_v(item.url,item.show_options?.options_agent_url_list)} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
                                             item.url = value;
                                         }} no_border={true}/>,
-                                        <Select value={item.request_type ?? 'completions'} onChange={(value) => {
-                                            item.request_type = value;
-                                            setRows([...rows]);
-                                        }} options={request_type} no_border={true}/>,
                                         <Select value={item.open} onChange={(value) => {
                                             onChange(item,value,index);
                                         }}  options={select_list} no_border={true}/>,
@@ -442,14 +436,6 @@ export default function AIAgentChatSetting() {
                                         <InputText value={ai_agent_Item.get_label_by_v(item.model,item.show_options?.options_agent_model_list)} options={item.show_options?.options_agent_model_list} handleInputChange={(value) => {
                                             item.model = value;
                                         }} no_border={true}/>,
-                                        <Select value={item.tool_mode} onChange={(value) => {
-                                            if(item.open && value === true) {
-                                                NotyFail(t("开启状态不能成为tool"))
-                                                return
-                                            }
-                                            item.tool_mode = value;
-                                            setRows([...rows]);
-                                        }}  options={select_list} no_border={true}/>,
                                         <div>
                                             <ActionButton icon={"short_text"} title={"prompt"} onClick={() => {
                                                 editor_data.set_value_temp(rows[index].sys_prompt??'')

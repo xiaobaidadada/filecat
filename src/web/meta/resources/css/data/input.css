@@ -228,6 +228,31 @@
     text-overflow: ellipsis;
 }
 
+/* 分组标题：用于 Select 按 group 分组展示（同一供应商的模型聚合），效果类似左侧菜单分组 */
+.select_group {
+    /* 顶部一条分割线，区分不同分组 */
+    border-top: 1px solid var(--borderColor, #e5e7eb);
+    margin-top: 4px;
+    padding: 6px 14px 2px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--textSecondary, #6b7280);
+    background: transparent;
+    text-transform: none;
+    /* 单行不换行，避免分组名换行 */
+    white-space: nowrap;
+}
+
+/* 第一个分组不需要顶部空格与分割线（避免列表顶部多出一条线） */
+.select_group:first-child {
+    border-top: none;
+    margin-top: 0;
+}
+
+.select_group__title {
+    opacity: 0.85;
+}
+
 .select_option--selected {
     background: #f3f4f6;
 }

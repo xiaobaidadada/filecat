@@ -1,11 +1,9 @@
 import React from 'react';
-import { getDefaultStore } from 'jotai';
 import {ai_agentHttp} from "../../../util/config";
 import {Icon} from "../../../../meta/component/Button";
 import Md from "../../file/component/markdown/Md";
 import {copyToClipboard} from "../../../util/FunUtil";
 import {ai_agent_tool_call_item, getContentAsString} from "../../../../../common/req/filecat.ai.pojo";
-import { $stroe } from "../../../util/store";
 
 /**
  * 根据消息自身携带的多模态属性渲染不同的消息展示
@@ -355,42 +353,19 @@ function EmbeddingsResultRenderer({embeddings: propEmbeddings, text}: { embeddin
 // ============================================================
 
 /**
- * 从 jotai store 读取图片生成的自定义参数
- */
-function getImagesExtraParams(): Record<string, any> {
-    try {
-        const store = getDefaultStore();
-        return store.get($stroe.ai_images_extra_params) || {};
-    } catch {
-        return {};
-    }
-}
-
-/**
  * 发送图片生成请求（后端自动保存到会话）
  * 返回 { session_id, images, text } 结构化数据
+ * 注意：图片生成参数（size/n/quality 等）不再由前端单独配置，
+ * 请直接在「模型设置 → 更多属性 → model请求参数json」中编写（会合并到请求体）。
  */
 export async function sendImagesRequest(
     prompt: string,
     sessionId: string,
 ): Promise<{ session_id: string; images: any[]; text: string } | null> {
-    const extraParams = getImagesExtraParams();
     const body: Record<string, any> = {
         prompt,
-        n: extraParams.n ?? 1,
-        size: extraParams.size ?? "1024x1024",
         session_id: sessionId,
     };
-    if (extraParams.quality) body.quality = extraParams.quality;
-    if (extraParams.style) body.style = extraParams.style;
-    if (extraParams.extra_json) {
-        try {
-            const parsed = JSON.parse(extraParams.extra_json);
-            Object.assign(body, parsed);
-        } catch (e) {
-            console.warn("图片额外参数 JSON 解析失败:", e);
-        }
-    }
 
     const result = await ai_agentHttp.post("images/generations", body);
     if (result.code !== 0) {

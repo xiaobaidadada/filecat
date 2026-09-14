@@ -149,8 +149,8 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
     compress_message_count = 16; // 当单个会话累计消息条数超过该值时，触发历史消息裁剪
     max_tool_content_chars = 200; // 历史消息中 tool 输出的最大字符数
 }
-
 export const ai_agent_item_dotenv_default = `
+
 
 
 # 聊天循环最大次数
@@ -182,6 +182,22 @@ max_recent_messages=12
 compress_message_count=16
 # 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
 max_tool_content_chars=200
+
+# ===== 模型类型（request_type）=====
+# 必填项，不同类型的 model 接口格式不同，默认 completions。
+# 可选值：
+#   completions         标准对话/聊天补全 (chat/completions)
+#   images              图片生成 (images/generations)
+#   audio_speech        文本转语音 (audio/speech)
+#   audio_transcription 语音转文字 (audio/transcriptions)
+#   audio_translation   语音翻译 (audio/translations)
+#   embeddings          向量嵌入 (embeddings)
+#request_type=completions
+
+# ===== 成为 tool（tool_mode）=====
+# 开启后该模型会作为一个工具被加载，可实现不同模型担任不同角色/能力，供 AI agent 在对话中动态调用。
+# 注意：不能与「是否开启」(open) 同时为 true。
+#tool_mode=false
 `
 
 export class ai_mcp_server_item {

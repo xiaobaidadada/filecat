@@ -653,5 +653,6 @@
   "进程环境变量": "Variables d'environnement du processus",
   "端口实例": "Instance de port",
   "以空白搜索模式打开目录": "Ouvrir le répertoire en mode de recherche vide",
-  "搜索会话": "Rechercher des sessions"
+  "搜索会话": "Rechercher des sessions",
+  "允许切换 AI 模型": "Autoriser le changement de modèle IA"
 }

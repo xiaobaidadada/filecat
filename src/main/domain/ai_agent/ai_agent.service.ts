@@ -545,18 +545,72 @@ export class Ai_agentService {
     }
 
     /**
-     * 设置指定模型为当前激活模型（将其 open 设为 true，其他设为 false）
-     * @param modelName 模型的 note 或 model 字段值，用于查找
+     * 聚合所有供应商的模型列表（供聊天主页模型选择器使用）。
+     * 只收集：配置了 show_options.options_agent_model_list 的供应商（即"只要不是空的"都展示），
+     * **不要求供应商已开启(open)** —— 因为选择某个模型后会自动把它切为开启、其余关闭。
+     * 返回按供应商分组的结构，**不含 token/key 等敏感信息**（仅 note/url/index/active/models）。
      */
-    public set_active_model(modelName: string) {
-        const body =  settingService.ai_agent_setting()
+    public get_public_models(): {
+        groups: {
+            index: number;
+            note: string;
+            url: string;
+            /** 当前该供应商是否为激活(open)状态 */
+            active: boolean;
+            models: { value: string; label: string }[];
+        }[];
+    } {
+        const body = settingService.ai_agent_setting();
+        const groups: {
+            index: number;
+            note: string;
+            url: string;
+            active: boolean;
+            models: { value: string; label: string }[];
+        }[] = [];
+        for (const m of body?.models ?? []) {
+            const modelList = m.show_options?.options_agent_model_list;
+            // 只要配置了可选模型就展示（跳过空选项）
+            if (!modelList?.length) {
+                groups.push({
+                    index: m.index,
+                    // 供应商标识优先用备注，其次用 url
+                    note: m.note || m.url || `供应商 ${m.index}`,
+                    url: m.url,
+                    active: !!m.open,
+                    models: [{ value: m.model, label: m.model }],
+                });
+                continue;
+            }
+            groups.push({
+                index: m.index,
+                // 供应商标识优先用备注，其次用 url
+                note: m.note || m.url || `供应商 ${m.index}`,
+                url: m.url,
+                active: !!m.open,
+                models: modelList.map(it => ({ value: it.value, label: it.label })),
+            });
+        }
+        return { groups };
+    }
+
+    /**
+     * 切换当前激活的供应商与模型：
+     * 把指定 index 的供应商设为 open=true 并设置其 model 字段，其余供应商全部 open=false。
+     * @param index     供应商标识（ai_agent_Item.index）
+     * @param modelName 该供应商下要激活的模型名
+     */
+    public set_active_model(index: number, modelName: string) {
+        const body = settingService.ai_agent_setting();
         if (!body?.models?.length) return;
         let found = false;
         for (const m of body.models) {
-            if(m.open) {
-                found = true;
+            if (m.index === index) {
+                m.open = true;
                 m.model = modelName;
-                break
+                found = true;
+            } else {
+                m.open = false;
             }
         }
         if (!found) return;

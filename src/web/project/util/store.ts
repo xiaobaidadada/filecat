@@ -200,11 +200,6 @@ export const $stroe = {
     blank_search_mode_for_temp: atom<boolean>(false),
     // AI 聊天请求类型选择
     ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions'),
-    // AI 图片生成额外参数
-    ai_images_extra_params: sync_atomWithStorage<Record<string, any>>("ai_images_extra_params", {
-        size: "1024x1024",
-        n: 1,
-    }),
     // AI 聊天输入框高度（行数）
     ai_chat_input_height: sync_atomWithStorage<number>("ai_chat_input_height", 5),
 };

@@ -12,20 +12,31 @@ import { ActionButton } from "../../../../meta/component/Button";
 import { Select } from "../../../../meta/component/Input";
 import { use_auth_check } from "../../../util/store.util";
 import { UserAuth } from "../../../../../common/req/user.req";
-import { NotySuccess } from "../../../util/noty";
+import { NotySuccess, NotyFail } from "../../../util/noty";
 import { RCode } from "../../../../../common/Result.pojo";
 import { routerConfig } from "../../../../../common/RouterConfig";
-import { settingHttp, ai_agentHttp } from "../../../util/config";
+import { ai_agentHttp } from "../../../util/config";
 import { $stroe } from "../../../util/store";
-import { ai_system_prompt_item, ai_agent_item_dotenv } from "../../../../../common/req/filecat.ai.pojo";
+import { ai_system_prompt_item } from "../../../../../common/req/filecat.ai.pojo";
+
+/** 一个供应商分组的模型信息（与后端 get_public_models 返回结构一致） */
+export interface ModelGroup {
+    index: number;
+    note: string;
+    url: string;
+    active: boolean;
+    models: { value: string; label: string }[];
+}
 
 interface ChatHeaderProps {
-    /** 当前模型名称 */
+    /** 当前模型名称（展示用，值形如 "供应商index::模型值" 或模型名） */
     currentModelName: string;
     /** 设置当前模型名称 */
     setCurrentModelName: (v: string) => void;
-    /** 环境配置引用 */
-    envConfigRef: React.MutableRefObject<ai_agent_item_dotenv>;
+    /** 所有供应商聚合的模型分组列表（前端自己构造，来源于后端 public_models） */
+    modelGroups: ModelGroup[];
+    /** 切换模型成功后回调（用于父组件刷新分组与当前模型） */
+    onModelChanged: () => void;
     /** 系统提示词列表 */
     sysPromptList: ai_system_prompt_item[];
     /** 批量模式 */
@@ -55,7 +66,8 @@ interface ChatHeaderProps {
 const ChatHeader: React.FC<ChatHeaderProps> = ({
     currentModelName,
     setCurrentModelName,
-    envConfigRef,
+    modelGroups,
+    onModelChanged,
     sysPromptList,
     batchMode,
     selectedMsgCount,
@@ -73,6 +85,28 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     const navigate = useNavigate();
     const { check_user_auth } = use_auth_check();
     const [, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
+
+    // 是否允许切换 AI 模型：拥有「允许切换 AI 模型」或「AI 配置」任一权限
+    const can_switch_model = check_user_auth(UserAuth.ai_model_switch) || check_user_auth(UserAuth.ai_agent_setting);
+
+    // 把聚合的分组拍平为 Select 的 options，并带上 group 字段以实现分组展示。
+    // value 采用 `${供应商index}::${模型值}` 复合键，避免不同供应商存在同名模型时选中态串台。
+    const modelOptions: { title: string; value: string; group: string }[] = [];
+    for (const g of modelGroups) {
+        for (const m of g.models) {
+            modelOptions.push({
+                title: m.label || m.value,
+                value: `${g.index}::${m.value}`,
+                group: g.note,
+            });
+        }
+    }
+
+    // 当前选中的复合值：从分组的 active 供应商里找到与 currentModelName 匹配的模型
+    const activeGroup = modelGroups.find(g => g.active);
+    const selectedModelValue = activeGroup
+        ? `${activeGroup.index}::${currentModelName}`
+        : "";
 
     return (
         <Header>
@@ -99,20 +133,23 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                     width={"auto"}
                 />
             )}
-            {/* 当前模型下拉选择器 */}
-            {(envConfigRef.current?.ai_config_env?.options_agent_model_list?.length ?? 0) > 0 && (
+            {/* 当前模型下拉选择器（聚合所有供应商的模型，按供应商分组） */}
+            {can_switch_model && modelOptions.length > 0 && (
                 <Select
-                    value={currentModelName}
-                    options={envConfigRef.current.ai_config_env.options_agent_model_list?.map(m => ({ title: m.label, value: m.value })) ?? []}
+                    value={selectedModelValue}
+                    options={modelOptions}
                     onChange={(value) => {
-                        setCurrentModelName(value);
-                        ai_agentHttp.post("set_active_model", { model_name: value }).then(() => {
-                            NotySuccess('success');
-                            settingHttp.get("ai_agent_setting/env").then(res => {
-                                if (res.code === RCode.Success) {
-                                    envConfigRef.current = res.data;
-                                }
-                            });
+                        // value 形如 `${供应商index}::${模型值}`
+                        const [idxStr, ...rest] = String(value).split("::");
+                        const modelName = rest.join("::");
+                        setCurrentModelName(modelName);
+                        ai_agentHttp.post("set_active_model", { index: Number(idxStr), model_name: modelName }).then((res: any) => {
+                            if (res?.code === RCode.Success) {
+                                NotySuccess('success');
+                                onModelChanged();
+                            } else {
+                                NotyFail(res?.message || 'fail');
+                            }
                         }).catch(console.error);
                     }}
                     no_border={true}

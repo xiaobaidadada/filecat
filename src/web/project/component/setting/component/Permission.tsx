@@ -50,7 +50,9 @@ export function Permission(props:{
             title: t("Ai 设置权限"),
             list: [
                 { title: t("Ai 配置"), permission: UserAuth.ai_agent_setting },
-                { title: t("Ai Chat Page"), permission: UserAuth.ai_agent_page }
+                { title: t("Ai Chat Page"), permission: UserAuth.ai_agent_page },
+                // 允许在 AI 聊天主页切换模型（聚合所有供应商模型的选择）
+                { title: t("允许切换 AI 模型"), permission: UserAuth.ai_model_switch }
             ]
         },
         {

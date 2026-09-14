@@ -1,7 +1,6 @@
 import React, {useRef, useImperativeHandle, forwardRef, useState, useEffect, useCallback} from 'react';
 import {useTranslation} from "react-i18next";
 import {Icon, ActionButton, ButtonLittle} from "../../../../meta/component/Button";
-import ModelParamsButton from "./ModelParamsDialog";
 import RichTextarea, {RichTextareaHandle} from "../../RichTextarea";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
@@ -53,8 +52,7 @@ const ChatInput = forwardRef<ChatInputHandle, {
     onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
-    requestType: string;
-}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef, requestType }, ref) => {
+}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef }, ref) => {
     const {t} = useTranslation();
     const rtRef = useRef<RichTextareaHandle>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -142,7 +140,6 @@ const ChatInput = forwardRef<ChatInputHandle, {
                 />
             </div>
             <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>
-            <ModelParamsButton requestType={requestType} />
             {/* 发送中 → 暂停按钮；空闲 → 发送按钮 */}
             {sending ? (
                 <ButtonLittle color={"var( --icon-red)"} text={t("暂停")} clickFun={onAbort} />

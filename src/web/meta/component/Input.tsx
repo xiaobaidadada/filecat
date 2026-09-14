@@ -292,7 +292,12 @@ export function InputPassword(props: {
 }
 
 export interface SelectProps {
-    options: { title?: string, label?: string, value: any, color?: string }[];
+    /**
+     * 选项列表。
+     * 可选 group 字段：相同 group 的选项会被归为同一组，组之间渲染分组标题与分割线
+     * （用于「同一供应商的模型聚合」这类需要分组展示的场景，效果类似左侧菜单的分组）。
+     */
+    options: { title?: string, label?: string, value: any, color?: string, group?: string }[];
     onChange: (value: any) => void;
     defaultValue?: any,
     no_border?: boolean,
@@ -452,19 +457,30 @@ export function Select(props: SelectProps) {
 
                 {open && createPortal(
                     <div ref={dropdownRef} className="select_dropdown" style={dropdownStyle}>
-                        {props.options.map((item, index) => (
-                            <div
-                                key={index}
-                                className={["select_option", item.value === (props.value ?? props.defaultValue) ? "select_option--selected" : ""].join(" ")}
-                                style={{color: item.color}}
-                                onClick={() => {
-                                    props.onChange(item.value);
-                                    setOpen(false);
-                                }}
-                            >
-                                {item.title ?? item.label ?? item.value}
-                            </div>
-                        ))}
+                        {props.options.map((item, index) => {
+                            // 与上一个选项的 group 不同时，先渲染一条分组标题（含分割线）
+                            const prev = index > 0 ? props.options[index - 1] : undefined;
+                            const showGroup = !!item.group && item.group !== prev?.group;
+                            return (
+                                <React.Fragment key={index}>
+                                    {showGroup && (
+                                        <div className="select_group">
+                                            <span className="select_group__title">{item.group}</span>
+                                        </div>
+                                    )}
+                                    <div
+                                        className={["select_option", item.value === (props.value ?? props.defaultValue) ? "select_option--selected" : ""].join(" ")}
+                                        style={{color: item.color}}
+                                        onClick={() => {
+                                            props.onChange(item.value);
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        {item.title ?? item.label ?? item.value}
+                                    </div>
+                                </React.Fragment>
+                            );
+                        })}
                     </div>,
                     document.body
                 )}

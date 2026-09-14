@@ -518,13 +518,36 @@ export class Ai_AgentController {
     }
 
     /**
-     * 切换当前激活的模型（前端模型选择器调用）
-     * 直接将对应模型的 open 设为 true，其他设为 false，并重新加载配置
+     * 校验用户是否有「AI 模型管理」能力：
+     * 拥有「允许切换 AI 模型」(ai_model_switch) 或「AI 配置」(ai_agent_setting) 任一权限即可。
+     */
+    private check_ai_model_manage(token: string) {
+        if (userService.check_user_auth(token, UserAuth.ai_model_switch, false)) return;
+        // 没有切换权限时，再要求 AI 配置权限（不通过则抛错）
+        userService.check_user_auth(token, UserAuth.ai_agent_setting, true);
+    }
+
+    /**
+     * 获取所有供应商及其可选模型（聊天主页模型选择器使用）。
+     * 仅返回已开启且配置了模型列表的供应商，且**不含 token/key 等敏感字段**。
+     * 权限：拥有「允许切换 AI 模型」或「AI 配置」任一即可。
+     */
+    @Get("/public_models")
+    async publicModels(@Req() ctx) {
+        this.check_ai_model_manage(ctx.headers.authorization);
+        return Sucess(ai_agentService.get_public_models());
+    }
+
+    /**
+     * 切换当前激活的供应商与模型（前端模型选择器调用）
+     * body: { index: number, model_name: string }
+     * 语义：将指定供应商 open=true 并设置其 model，其余供应商 open=false。
+     * 权限：拥有「允许切换 AI 模型」或「AI 配置」任一即可。
      */
     @Post("/set_active_model")
-    async setActiveModel(@Req() ctx, @Body() data: { model_name: string }) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
-        ai_agentService.set_active_model(data.model_name);
+    async setActiveModel(@Req() ctx, @Body() data: { index: number; model_name: string }) {
+        this.check_ai_model_manage(ctx.headers.authorization);
+        ai_agentService.set_active_model(Number(data.index), data.model_name);
         return Sucess("ok");
     }
 
