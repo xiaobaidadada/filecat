@@ -221,7 +221,7 @@ export function NetProxy(props) {
         <Row>
 
             {
-                user_base_info.sys === SysEnum.win && <Column>
+                user_base_info.sys === SysEnum.win && <Column widthPer={33}>
                     <Card title={"Http Proxy"}
                           rightBottomCom={<ButtonText text={t('保存')} clickFun={save_http_proxy_win}/>}>
                         <InputText placeholder={"ip (default localhost) "} value={ip} handleInputChange={(d) => {

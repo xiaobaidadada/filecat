@@ -383,9 +383,13 @@ export function Select(props: SelectProps) {
         if (open && triggerRef.current && dropdownRef.current) {
             const triggerRect = triggerRef.current.getBoundingClientRect();
             const dropdownHeight = dropdownRef.current.offsetHeight;
+            // 下拉列表宽度随「最宽选项」自适应（由 CSS width:max-content 撑开），
+            // 但为了量出这个宽度以便做水平边界修正，先取 offsetWidth
+            const dropdownWidth = dropdownRef.current.offsetWidth;
             const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
 
-            // 计算空间
+            // 计算垂直空间
             const spaceBelow = viewportHeight - triggerRect.bottom;
             const spaceAbove = triggerRect.top;
 
@@ -397,11 +401,21 @@ export function Select(props: SelectProps) {
                 top = triggerRect.bottom + 4; // 默认在下方
             }
 
+            // 水平方向：默认与触发框左对齐；若列表比触发框宽并超出视口右缘，则左移到不超边界的位置
+            const MARGIN = 8; // 视口边缘安全间距
+            let left = triggerRect.left;
+            if (left + dropdownWidth > viewportWidth - MARGIN) {
+                left = Math.max(MARGIN, viewportWidth - MARGIN - dropdownWidth);
+            }
+
             setDropdownStyle({
                 position: "fixed",
                 top: top,
-                left: triggerRect.left,
-                width: triggerRect.width,
+                left: left,
+                // 不设 width（交给 CSS width:max-content 由最宽选项决定）；
+                // 仅设 minWidth 保证列表不窄于触发框（选中态宽度与列表宽度解耦）
+                minWidth: triggerRect.width,
+                maxWidth: `calc(100vw - ${MARGIN * 2}px)`,
                 zIndex: 9999,
             });
         }

@@ -179,6 +179,11 @@
 
 .select_trigger__label {
     color: inherit;
+    /* 触发框（选中态）宽度由外层容器决定，与下拉列表宽度解耦；
+       文字过长时省略，避免把触发框撑宽 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .select_trigger__icon {
@@ -206,6 +211,9 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     margin-top: 0;  /* 间距已在 JS 里加了 +4px */
     overflow: hidden;
+    /* 宽度随「最宽选项」自适应，与触发框（选中态）宽度解耦；
+       minWidth / maxWidth 由 JS 依据触发框宽度和视口动态注入 */
+    width: max-content;
 }
 
 .select_option {
@@ -213,6 +221,11 @@
     color: var( --textSecondary);
     background: transparent;
     cursor: pointer;
+    /* 单行不换行，保证 max-content 能按最长选项撑开宽度 */
+    white-space: nowrap;
+    /* 当整列表受 maxWidth 限制时，超长选项以省略号收尾 */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .select_option--selected {

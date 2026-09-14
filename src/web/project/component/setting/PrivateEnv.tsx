@@ -324,7 +324,7 @@ export function PrivateEnv() {
 
             </Column>
 
-            <Column>
+            <Column widthPer={33}>
                 <Dashboard>
                     <Card title={t("修改密码")}
                           rightBottomCom={<ButtonText text={t('确定修改')} clickFun={update_password}/>}>

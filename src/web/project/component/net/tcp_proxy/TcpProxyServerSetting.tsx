@@ -105,7 +105,7 @@ export function TcpProxyServerSetting() {
     }
 
     return (<Row>
-        <Column widthPer={50}>
+        <Column widthPer={33}>
             <Dashboard>
                 <Card title={t("服务器配置")} rightBottomCom={<div>
                     <ButtonText text={t('保存并通知客户端第一个key和port')} clickFun={()=>{

@@ -55,6 +55,9 @@ export function User() {
 
     const [roles,set_roles] = useState([]);
 
+    // 用户列表过滤关键字（参照内网穿透客户端搜索：输入后回车触发前端过滤）
+    const [user_filter_key,set_user_filter_key] = useState<string>(undefined)
+
     const headers = [t("用户id"),t("用户名"),t("目录范围"), t("备注") ];
 
 
@@ -62,7 +65,19 @@ export function User() {
         // 文件夹根路径
         const result = await userHttp.get("all_users");
         if (result.code === RCode.Success) {
-            setRows(result.data);
+            const list = result.data ?? [];
+            // 有关键字时按 用户id/用户名/目录范围/备注 做前端过滤
+            if (user_filter_key) {
+                const new_list = [];
+                for (const item of list) {
+                    if (`${item.id}${item.username}${item.cwd}${item.note}`.includes(user_filter_key)) {
+                        new_list.push(item);
+                    }
+                }
+                setRows(new_list);
+            } else {
+                setRows(list);
+            }
         }
 
         const result2 = await userHttp.get("all_roles");
@@ -278,7 +293,15 @@ export function User() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("用户")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_user}/></div>}>
+                          titleCom={<div className={"div-row"} style={{gap: '0.5rem'}}>
+                              {/* 搜索框：参照内网穿透客户端搜索，输入后回车触发过滤 */}
+                              <InputText placeholder={t("过滤")} value={user_filter_key} handleInputChange={(value) => {
+                                  set_user_filter_key(value);
+                              }} handlerEnter={()=>{
+                                  getItems()
+                              }}/>
+                              <ActionButton icon={"add"} title={t("添加")} onClick={create_user}/>
+                          </div>}>
                     <Table headers={headers} rows={rows.map((item, index) => {
                         const new_list = [
                             <p>{item.id}</p>,
