@@ -6,6 +6,7 @@ import {data_common_key, data_dir_tem_name, data_version_type, file_key, is_data
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
 import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
 import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
+import {UserData} from "../../../common/req/user.req";
 
 
 export class DataUtil {
@@ -132,6 +133,26 @@ export class DataUtil {
                     write_list(list, cache_path);
                 }
                 version = data_version_type.remove_sys_level_tag
+            }
+            if (version < data_version_type.user_notify_tag_delete) {
+                // 标记所有用户「网址导航 tag 删除」的提示为待提示（true），
+                // 用户前端看到提示并确认后会被置回 false，避免重复提示
+                const user_mapping:{[keys:string]:UserData} = this.get<any>(data_common_key.user_id_info_data_mapping) ?? {};
+                let user_changed = false;
+                for (const user_id of Object.keys(user_mapping)) {
+                    const user_data = user_mapping[user_id];
+                    if (!user_data) {
+                        continue;
+                    }
+                    if (!user_data.sys_done_prompt?.tag_delete) {
+                        user_data.sys_done_prompt = {...(user_data.sys_done_prompt ?? {}), tag_delete: true};
+                    }
+                    user_changed = true;
+                }
+                if (user_changed) {
+                    this.set(data_common_key.user_id_info_data_mapping, user_mapping);
+                }
+                version = data_version_type.user_notify_tag_delete
             }
             fs.writeFileSync(p_v, `${version}`);
         } catch (e) {
