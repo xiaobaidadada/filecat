@@ -5,28 +5,34 @@ import {UserLanguage} from "../req/user.req";
 
 const {execSync} = require('child_process');
 const help = `
-命令参数都需要加 --
-1. update 升级(npm方式升级)
-2. remove 移除(从npm)
-3. version 版本
-4. help 帮助信息
-5. install 安装到systemd（只支持linux)
-6. uninstall 从systemd卸载（只支持linux)
-7  restart 重启systemd服务（只支持linux)
-8. stop 停止运行systemd服务(支持linux)
-// 以下参数都需要额外的参数输入 例如"filecat --port 8080 "端口参数 用于控制程序运行。
-9. port 需要端口参数 
-10. env 输入环境配置文件
-11. work_dir 工作目录，软件执行需要生成一些数据，会放到这个目录下，默认是启动软件所在的目录下的data文件夹
-12. base_folder 软件管理的文件夹默认根路径，默认是启动软件所在的目录
-13. username 登录账号 默认是admin (截止到1.0.5目前没有权限功能)
-14. password 登录密码 默认是admin
-15. reset_root_username 重新生成管理员的账号 (启动完请删除这个参数下次要再使用，下面的密码也是)
-16. reset_root_password
-17. base_url 路由前缀
-18. lan 语言，只在第一次创建账号的时候生效 目前支持  zh(简体) en
-19. watch 内置参数
-对于shell支持filecat-restart 重启命令
+All command-line options must be prefixed with --.
+
+1. update — Update FileCat (via npm)
+2. remove — Remove FileCat (from npm)
+3. version — Display the current version
+4. help — Display help information
+5. install — Install FileCat as a systemd service (Linux only)
+6. uninstall — Uninstall FileCat from systemd (Linux only)
+7. restart — Restart the systemd service (Linux only)
+8. stop — Stop the systemd service (Linux only)
+
+The following options require an additional argument. For example:
+filecat --port 8080
+
+9. port — Port used by FileCat
+10. env — Environment configuration file
+11. work_dir — Working directory. FileCat stores generated data in this directory. Defaults to the data folder in the directory where FileCat is started.
+12. base_folder — Root directory managed by FileCat. Defaults to the directory where FileCat is started.
+13. username — Login username. Defaults to admin. Permission management is not supported as of version 1.0.5.
+14. password — Login password. Defaults to admin.
+15. reset_root_username — Generate a new administrator username. Remove this option after starting FileCat; otherwise it will be executed again on the next startup.
+16. reset_root_password — Generate a new administrator password. Remove this option after starting FileCat; otherwise it will be executed again on the next startup.
+17. base_url — URL path prefix.
+18. lan — Language. Only takes effect when the account is created for the first time. Currently supported languages: zh (Simplified Chinese) and en (English).
+19. watch — Internal option.
+
+For the shell, FileCat supports the filecat-restart command to restart FileCat.
+
 `;
 
 export class Env {

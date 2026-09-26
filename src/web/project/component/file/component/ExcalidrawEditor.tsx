@@ -128,17 +128,24 @@ export default function ExcalidrawEditor() {
         }
     };
 
-    // Ctrl+S / Cmd+S 一键保存。用 capture 阶段在 window 上监听，
-    // 避免 Excalidraw 内部画布自身对键盘事件的拦截；兼容 macOS(metaKey) 与 Win/Linux(ctrlKey)。
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
-                e.preventDefault();
-                saveRef.current();
+            const isSaveKey = (e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S" || e.keyCode === 83);
+            if (!isSaveKey) {
+                return;
             }
+            // 彻底阻断事件继续传播，避免 Excalidraw 自身的 Ctrl+S 触发文件下载
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            saveRef.current();
         };
         window.addEventListener("keydown", onKeyDown, true);
-        return () => window.removeEventListener("keydown", onKeyDown, true);
+        document.addEventListener("keydown", onKeyDown, true);
+        return () => {
+            window.removeEventListener("keydown", onKeyDown, true);
+            document.removeEventListener("keydown", onKeyDown, true);
+        };
     }, []);
 
     return (
@@ -151,6 +158,14 @@ export default function ExcalidrawEditor() {
                         langCode="zh-CN"
                         initialData={initialData}
                         excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                        onKeyDown={(event) => {
+                            if ((event.ctrlKey || event.metaKey) && (event.key === "s" || event.key === "S" || event.keyCode === 83)) {
+                                event.preventDefault();
+                                saveRef.current();
+                                return true;
+                            }
+                            return false;
+                        }}
                         UIOptions={{
                             dockedSidebarBreakpoint: 0,
                         }}

@@ -4,7 +4,8 @@ import fse from 'fs-extra'
 import {Env} from "../../../common/node/Env";
 import {data_common_key, data_dir_tem_name, data_version_type, file_key, is_data_version_type} from "./data_type";
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
-import {HttpProxyServerInstance, HttpServerProxy, HttpServerProxyItem} from "../../../common/req/net.pojo";
+import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
+import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
 
 
 export class DataUtil {
@@ -37,7 +38,7 @@ export class DataUtil {
     public static handle_history_data() {
         try {
             const  p_v = path.join(Env.work_dir, file_key.data_version)
-            const version = this.get_data_version();
+            let version = this.get_data_version();
             if(version < data_version_type.filecat_1 && version === data_version_type.filecat_not) {
                 // 升级到 data_version_type.filecat_1
                 const navindex_key = this.get(data_common_key.navindex_key);
@@ -52,8 +53,7 @@ export class DataUtil {
                     this.set(data_common_key.http_tag_key, http_tag_key,file_key.http_tag);
                     this.set(data_common_key.http_tag_key,null );
                 }
-
-                fs.writeFileSync(p_v, `${data_version_type.filecat_1}`);
+                version = data_version_type.filecat_1
             }
 
             if(version < data_version_type.handle_tcp_proxy_server_key) {
@@ -65,7 +65,7 @@ export class DataUtil {
                     }
                     DataUtil.set(data_common_key.tcp_proxy_server_base,v,file_key.tcp_proxy_server_client)
                 }
-                fs.writeFileSync(p_v, `${data_version_type.handle_tcp_proxy_server_key}`);
+                version = data_version_type.handle_tcp_proxy_server_key
             }
 
             if(version < data_version_type.tcp_proxy_client_all_fig) {
@@ -75,10 +75,10 @@ export class DataUtil {
                     fig.list.push(v)
                     DataUtil.set(data_common_key.tcp_proxy_client_all_fig,fig,file_key.tcp_proxy_server_client)
                 }
-                fs.writeFileSync(p_v, `${data_version_type.tcp_proxy_client_all_fig}`);
+                version = data_version_type.tcp_proxy_client_all_fig
             }
 
-            // 🌟 数据迁移：Http Proxy Server 从单端口升级为多端口列表
+            //  数据迁移：Http Proxy Server 从单端口升级为多端口列表
             if(version < data_version_type.http_proxy_server_multi_port) {
                 const old_data: any = DataUtil.get(data_common_key.http_server_key);
                 if(old_data) {
@@ -103,8 +103,37 @@ export class DataUtil {
 
                     DataUtil.set(data_common_key.http_server_key, new_data);
                 }
-                fs.writeFileSync(p_v, `${data_version_type.http_proxy_server_multi_port}`);
+                version = data_version_type.http_proxy_server_multi_port
             }
+            if (version < data_version_type.remove_sys_level_tag) {
+                const list: navindex_pojo_type[] = DataUtil.get(data_common_key.navindex_key, file_key.navindex_key);
+                if (list != null && Array.isArray(list)) {
+                    const cache_path = DataUtil.get_dir_path(data_dir_tem_name.tempfile, temp_delete_sys_tag_name);
+                    // 递归的遍历所有的 list ，将里面的 name 作为文件名 (后缀都是.url) 文件内容都是url值，生成按照父子关系的 在 cache_path 下的递归目录文件
+                    const write_list = (nodes: navindex_pojo_type[], dir: string) => {
+                        if (!Array.isArray(nodes) || nodes.length === 0) {
+                            return;
+                        }
+                        for (const item of nodes) {
+                            if (!item || !item.name) {
+                                continue;
+                            }
+                            if(item._type !== "dir") {
+                                fs.writeFileSync(path.join(dir, `${item.name}.url`), item.url??"");
+                            }
+                            // 有子节点的节点：创建同名子目录，并递归
+                            if (Array.isArray(item._children) && item._children.length > 0) {
+                                const children_dir = path.join(dir, item.name);
+                                fse.ensureDirSync(children_dir);
+                                write_list(item._children, children_dir);
+                            }
+                        }
+                    };
+                    write_list(list, cache_path);
+                }
+                version = data_version_type.remove_sys_level_tag
+            }
+            fs.writeFileSync(p_v, `${version}`);
         } catch (e) {
             console.log('历史数据处理失败',e);
         }
@@ -140,9 +169,19 @@ export class DataUtil {
     }
 
     public static get_file_path(dir:data_dir_tem_name,file:file_key|`tcp_proxy_file_sync_${string}.json` ): string {
-        const p = path.join(Env.work_dir, dir);
-        fse.ensureDirSync( p);
+        // const p = path.join(Env.work_dir, dir);
+        // fse.ensureDirSync( p);
+        const p = this.get_dir_path(dir)
         return path.join(p,file);
+    }
+
+    public static get_dir_path(dir:data_dir_tem_name,tempname?:string ): string {
+        let p = path.join(Env.work_dir, dir);
+        if(tempname) {
+            p = path.join(p, tempname);
+        }
+        fse.ensureDirSync( p);
+        return p;
     }
 
     public static set(k:data_common_key, v, file:file_key = file_key.data) {

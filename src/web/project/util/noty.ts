@@ -56,3 +56,35 @@ export function NotyInfo(text) {
         layout: "topRight"
     }).show();
 }
+
+/**
+ * 需要用户手动确认才关闭的提示。
+ * 不会自动消失，必须点击「确认」按钮才会关闭，关闭后执行回调 onClose。
+ * @param text     提示内容
+ * @param onClose  用户点击确认后的回调（可拿到用户确认的时机，用于触发后续逻辑）
+ * @param type     提示类型，默认 warning
+ * @param confirm_t 确认按钮文案，默认「确认」
+ */
+export function NotyConfirm(text, onClose?: () => void, type: 'alert' | 'success' | 'warning' | 'error' | 'info' = 'warning', confirm_t: string = '确认') {
+    const noty = new Noty({
+        type: type,
+        text: text,
+        timeout: false, // 不自动消失，必须用户手动确认
+        layout: "topRight",
+        // 只允许通过「确认」按钮关闭，避免点击空白处/其它方式误关闭
+        closeWith: ['button'],
+        buttons: [
+            Noty.button(confirm_t, 'button button--flat', () => {
+                // 关闭提示，关闭后会触发下面的 onClose 回调
+                noty.close();
+            })
+        ],
+        callbacks: {
+            onClose: () => {
+                onClose && onClose();
+            }
+        }
+    });
+    noty.show();
+    return noty;
+}

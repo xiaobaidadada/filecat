@@ -54,11 +54,11 @@ export enum UserAuth {
     systemd = 4,
     vir_net = 5, // 和虚拟网络有关系的所有功能
     token_update = 6, // token 过期时间
-    code_auth = 7, // 自定义 auth
+    code_auth = 7, // 自定义 auth 废弃
     code_resource = 8, // 自定义 code 资源
     code_api = 9, // 自定义 api 功能
     update_password = 10, // 修改密码
-    net_site_tag_update = 11, // 网址收藏修改
+    net_site_tag_update = 11, // 网址收藏修改 废弃
     ssh_proxy_tag_update = 12, // ssh 代理标签修改
     http_proxy_tag_update = 13, // http 代理标签修改
     browser_proxy_tag_update = 14, // 浏览器代理标签修改
@@ -95,7 +95,7 @@ export enum UserAuth {
     http_proxy_download_cancel, // 关闭下载
     // customer_api_pre_key, // 自定义api前缀修改 todo 放弃了 下次用 46开始
     sys_env_setting_key, // 全局变量设置 通用设置
-    nav_net_tag   , // 网址导航页面
+    // nav_net_tag   , // 网址导航页面
     all_sys = 47, // 系统页面
     shell_cmd_filecat_restart, // shell 重启命令
     ai_agent_setting, // ai 模型设置

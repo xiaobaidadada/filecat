@@ -106,7 +106,7 @@ export function Permission(props:{
         {
             title: t("标签编辑权限"),
             list: [
-                { title: t("网址导航"), permission: UserAuth.net_site_tag_update },
+                // { title: t("网址导航"), permission: UserAuth.net_site_tag_update },
                 { title: t("ssh代理"), permission: UserAuth.ssh_proxy_tag_update },
                 { title: t("http代理"), permission: UserAuth.http_proxy_tag_update },
                 { title: t("浏览器代理"), permission: UserAuth.browser_proxy_tag_update },
@@ -134,7 +134,7 @@ export function Permission(props:{
                 { title: t("端口扫描"), permission: UserAuth.port_scan },
                 { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy },
                 { title: t("ssh密钥保存到磁盘"), permission: UserAuth.crypto_ssh_file },
-                { title: t("网址导航"), permission: UserAuth.nav_net_tag },
+                // { title: t("网址导航"), permission: UserAuth.nav_net_tag },
                 { title: t("filecat-restart重启命令"), permission: UserAuth.shell_cmd_filecat_restart },
                 { title: t("filecat-upgrade升级命令"), permission: UserAuth.shell_cmd_filecat_upgrade },
                 { title: t("filecat-down关闭主进程命令"), permission: UserAuth.shell_cmd_filecat_kill_self },

@@ -15,7 +15,7 @@ import fs from "fs";
 import {DdnsController} from "./domain/ddns/ddns.controller";
 import {NetController} from "./domain/net/net.controller";
 // import proxy from 'koa-proxies';
-import {NavindexController} from "./domain/navindex/navindex.controller";
+// import {NavindexController} from "./domain/navindex/navindex.controller";
 import {Env} from "../common/node/Env";
 import {SettingController} from "./domain/setting/setting.controller";
 import {SSHController} from "./domain/ssh/ssh.controller";
@@ -95,7 +95,7 @@ export async function start_main() {
         controllers: [
             UserController, SysController, ShellController,
             FileController, DdnsController, NetController,
-            VirtualController,NavindexController, SettingController,
+            VirtualController, SettingController,
             SSHController, RdpController, VideoController,
             CryptoController,Ai_AgentController,TcpForwardController,GitController,FirewallController
         ],

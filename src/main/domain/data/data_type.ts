@@ -11,20 +11,22 @@ export enum file_key {
     statics_tag = "statics_tag_json", // 统计用的
     // flexsearch_index_db = "flexsearch_index_db.db",
     // flexsearch_name_index_db = "flexsearch_name_index_db.db",
-    fts5_rag_db ="fts5_rag_db.db",
+    fts5_rag_db = "fts5_rag_db.db",
     tcp_proxy_server_client = "tcp_proxy_server_client"
 }
+
 // 数据目录
 export enum data_dir_tem_name {
     tempfile = "tempfile", // 临时文件
     http_tempfile = "http_tempfile", // http 请求的临时文件
-    all_user_api_file_dir = "datafile" , // 用户的 自定义 api 临时目录 datafile 之前用过了 兼容一下
+    all_user_api_file_dir = "datafile", // 用户的 自定义 api 临时目录 datafile 之前用过了 兼容一下
     sys_file_dir = "sys_file_dir", // 系统目录 和用户的临时分开 不让用户自定义的文件重复了
     http_proxy_server_dir = "http_proxy_server_dir",
     sys_database_dir = "sys_database_dir", // 存放一些数据库
     filecat_upgrade_dir = "filecat_upgrade_dir",
     ai_agent_chat_session_dir = "ai_agent_chat_session_dir",
 }
+
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择
 // key
 export enum data_common_key {
@@ -93,7 +95,7 @@ export enum data_common_key {
     tcp_proxy_sync_task_list = "tcp_proxy_sync_task_list",
     workflow_setting_item_list = "workflow_setting_item_list",
     server_bridge_config_list = "server_bridge_config_list",
-    ai_agent_status  = "ai_agent_status",
+    ai_agent_status = "ai_agent_status",
     ai_system_prompts = "ai_system_prompts",
     // https_tunnel_server_fig = "https_tunnel_server_fig",
     filecat_plugin_list = "filecat_plugin_list", // 插件配置列表
@@ -106,14 +108,14 @@ export enum data_common_key {
 
 
 // data_version 数据库 版本
-export enum data_version_type{
+export enum data_version_type {
     undefine = 0,
     filecat_not = 1, // 没有使用版本的阶段
-    filecat_1 = 2 , // 这个版本会 将navindex_key http_tag_key 独立文件检测独立拷贝出来
+    filecat_1 = 2, // 这个版本会 将navindex_key http_tag_key 独立文件检测独立拷贝出来
     handle_tcp_proxy_server_key = 3,
     tcp_proxy_client_all_fig = 4,
     http_proxy_server_multi_port = 5, // http代理服务器从单端口升级为多端口列表
-
+    remove_sys_level_tag = 6, // 移除系统级别的tag功能
 }
 
 export function is_data_version_type(value) {

@@ -26,7 +26,7 @@ const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy")
 const Net = React.lazy(() => import("./net/Net"))
 const TcpProxy = React.lazy(() => import("./net/tcp_proxy/TcpProxy"))
 const Settings = React.lazy(() => import("./setting/Setting"))
-const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
+// const NavIndex = React.lazy(() => import("./navindex/NavIndex"))
 const FileLog = React.lazy(() => import("./file/component/LogViewer"))
 const ChatPage =   React.lazy(()=> import('./aichat/page/AiAgentChatPage'))
 const Share = React.lazy(()=> import('./file/component/share/Share'))
@@ -56,9 +56,9 @@ function Layout() {
     }
 
     const seconds: NavItem[] = []
-    if (check_user_auth(UserAuth.nav_net_tag)) {
-        seconds.push({icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}`, component: <NavIndex/>})
-    }
+    // if (check_user_auth(UserAuth.nav_net_tag)) {
+    //     seconds.push({icon: "favorite", name: t("网址导航"), rto: `${routerConfig.navindex}`, component: <NavIndex/>})
+    // }
     if (check_user_auth(UserAuth.all_sys)) {
         seconds.push({icon: "computer", name: t("系统"), rto: `${routerConfig.info}`, component: <SysInfo/>})
     }
