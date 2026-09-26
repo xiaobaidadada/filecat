@@ -180,41 +180,8 @@ export function TcpProxyClient(props) {
 
 
             </Column>
-            <Column widthPer={40}>
-                {
-                    bridge_list?.length ?
-                    <Card title={t("桥接服务端口列表")} >
-                        <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
-                            const new_list = [
-                                <p>{index}</p>,
-                                <TextTip>{item.server_port}</TextTip>,
-                                <TextTip>{item.client_name}</TextTip>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"}/>
-                    </Card>:
-                        <></>
-                }
-                {
-                    client_sync_task_list?.length ?
-                    <Card title={t("文件同步列表")} >
-                        <Table headers={client_sync_task_headers} rows={client_sync_task_list.map((item, index) => {
-                            const new_list = [
-                                <p>{index}</p>,
-                                <TextTip>{item.source_client_name}</TextTip>,
-                                <TextTip>{item.target_client_name}</TextTip>,
-                                <TextTip>{item.running_num}</TextTip>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"}/>
-                    </Card>:
-                        <></>
-                }
-            </Column>
 
-        </Row>
-        <Row>
-            <Column>
+            <Column widthPer={40}>
                 <Card self_title={<span
                     className={" div-row "}><h2>{t(`更多服务器`)}</h2> </span>}>
 
@@ -287,6 +254,42 @@ export function TcpProxyClient(props) {
                     })} width={"10rem"}/>
                 </Card>
             </Column>
+        </Row>
+        <Row>
+            <Column widthPer={40}>
+                {
+                    bridge_list?.length ?
+                        <Card title={t("桥接服务端口列表")} >
+                            <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
+                                const new_list = [
+                                    <p>{index}</p>,
+                                    <TextTip>{item.server_port}</TextTip>,
+                                    <TextTip>{item.client_name}</TextTip>,
+                                ];
+                                return new_list;
+                            })} width={"10rem"}/>
+                        </Card>:
+                        <></>
+                }
+
+            </Column>
+           <Column widthPer={40}>
+               {
+                   client_sync_task_list?.length ?
+                       <Card title={t("文件同步列表")} >
+                           <Table headers={client_sync_task_headers} rows={client_sync_task_list.map((item, index) => {
+                               const new_list = [
+                                   <p>{index}</p>,
+                                   <TextTip>{item.source_client_name}</TextTip>,
+                                   <TextTip>{item.target_client_name}</TextTip>,
+                                   <TextTip>{item.running_num}</TextTip>,
+                               ];
+                               return new_list;
+                           })} width={"10rem"}/>
+                       </Card>:
+                       <></>
+               }
+           </Column>
         </Row>
     </div>
 }
