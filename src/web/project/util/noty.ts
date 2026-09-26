@@ -70,7 +70,7 @@ export function NotyConfirm(text, onClose?: () => void, type: 'alert' | 'success
         type: type,
         text: text,
         timeout: false, // 不自动消失，必须用户手动确认
-        layout: "topRight",
+        layout: "topLeft",
         // 只允许通过「确认」按钮关闭，避免点击空白处/其它方式误关闭
         closeWith: ['button'],
         buttons: [

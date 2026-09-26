@@ -194,4 +194,8 @@ export class UserData extends UserLogin {
 
     upload_file_ignore?:string
     upload_file_ignore_list?:string[]
+
+    sys_done_prompt?:{
+        tag_delete?: boolean;
+    }
 }

@@ -654,5 +654,7 @@
   "搜索会话": "Buscar sesiones",
   "允许切换 AI 模型": "Permitir cambiar de modelo de IA",
   "选择模型": "Seleccionar modelo",
-  "不能将文件夹移动到自己里面": "No se puede mover una carpeta dentro de sí misma"
+  "不能将文件夹移动到自己里面": "No se puede mover una carpeta dentro de sí misma",
+  "网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。": "La función de marcadores de navegación de sitios se ha eliminado. Los datos originales se han convertido en archivos .url. Abra un archivo .url con filecat para lograr el mismo acceso rápido.",
+  "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "Ubicación de los archivos: el directorio tempfile/temp_delete_sys_tag_name_260926 dentro del directorio de base de datos de filecat."
 }

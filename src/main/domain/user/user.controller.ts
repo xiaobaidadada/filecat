@@ -190,12 +190,17 @@ export class UserController {
         is_file_list_zoom?: boolean,
         is_sql_preset?: boolean,
         sql_preset_list?: SqlPresetItem[],
+        is_sys_done_prompt?: boolean, // 是否更新系统已完成提示（如网址导航 tag 删除提示）
+        sys_done_prompt?: { tag_delete?: boolean },
         value?:any,
     }, @Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
         const user_id = userService.get_user_id(user_data.username);
         if (body.is_dir_list_type) {
             userService.only_update_user_data(user_id, {dir_show_type: body.type} as UserData);
+        } else if (body.is_sys_done_prompt) {
+            // 合并写入，避免覆盖 sys_done_prompt 中其它已完成标记
+            userService.only_update_user_data(user_id, {sys_done_prompt: {...(user_data.sys_done_prompt ?? {}), ...(body.sys_done_prompt ?? {})}} as UserData);
         } else if (body.not_pre_show_image !== undefined) {
             userService.only_update_user_data(user_id, {not_pre_show_image: body.not_pre_show_image} as UserData);
         } else if (body.is_pagination_mode) {

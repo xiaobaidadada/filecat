@@ -9,7 +9,7 @@ import {DirNew} from "./DirNew";
 import {FileNew} from "./FileNew";
 import {FileRename} from "./FileRename";
 import {DockerDel} from "./DockerDel";
-import {NavIndexAdd} from "./NavIndexAdd";
+// import {NavIndexAdd} from "./NavIndexAdd";
 import {SshDelete} from "./ssh/SshDelete";
 import {SshNewDir} from "./ssh/SshNewDir";
 import {SshNewFile} from "./ssh/SshNewFile";
@@ -34,7 +34,7 @@ export enum PromptEnum {
     FileNew = "FileNew",
     FileRename = "FileRename",
     DockerDel = "DockerDel",
-    NavIndexAdd = "NavIndexAdd",
+    // NavIndexAdd = "NavIndexAdd",
     SshDelete = "SshDelete",
     SshNewDir = "SshNewDir",
     SshNewFile = "SshNewFile",
@@ -88,9 +88,9 @@ export default function Prompt() {
         case PromptEnum.DockerDel:
             div = <DockerDel/>
             break;
-        case PromptEnum.NavIndexAdd:
-            div = <NavIndexAdd/>
-            break;
+        // case PromptEnum.NavIndexAdd:
+        //     div = <NavIndexAdd/>
+        //     break;
         case PromptEnum.SshDelete:
             div = <SshDelete/>
             break;

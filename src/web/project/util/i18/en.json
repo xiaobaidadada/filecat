@@ -665,5 +665,7 @@
   "搜索会话": "Search sessions",
   "允许切换 AI 模型": "Allow switching AI models",
   "选择模型": "Select model",
-  "不能将文件夹移动到自己里面": "Cannot move a folder into itself"
+  "不能将文件夹移动到自己里面": "Cannot move a folder into itself",
+  "网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。": "The site navigation bookmark feature has been removed. The original data has been converted to .url files. Open a .url file with filecat to achieve the same quick access.",
+  "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "File location: the tempfile/temp_delete_sys_tag_name_260926 directory under the filecat database directory."
 }
