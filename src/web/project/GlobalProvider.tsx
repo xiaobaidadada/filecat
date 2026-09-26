@@ -97,7 +97,8 @@ export const GlobalProvider = ({ children }) => {
                                 tag_delete: false
                             }
                         });
-                    }
+                    },
+                    "warning",
                 );
             }
         }

@@ -65,7 +65,7 @@ export function NotyInfo(text) {
  * @param type     提示类型，默认 warning
  * @param confirm_t 确认按钮文案，默认「确认」
  */
-export function NotyConfirm(text, onClose?: () => void, type: 'alert' | 'success' | 'warning' | 'error' | 'info' = 'warning', confirm_t: string = '确认') {
+export function NotyConfirm(text, onClose?: () => void, type: 'alert' | 'success' | 'warning' | 'error' | 'info' = 'warning') {
     const noty = new Noty({
         type: type,
         text: text,
@@ -73,12 +73,12 @@ export function NotyConfirm(text, onClose?: () => void, type: 'alert' | 'success
         layout: "topLeft",
         // 只允许通过「确认」按钮关闭，避免点击空白处/其它方式误关闭
         closeWith: ['button'],
-        buttons: [
-            Noty.button(confirm_t, 'button button--flat', () => {
-                // 关闭提示，关闭后会触发下面的 onClose 回调
-                noty.close();
-            })
-        ],
+        // buttons: [
+        //     Noty.button(confirm_t, 'button button--flat', () => {
+        //         // 关闭提示，关闭后会触发下面的 onClose 回调
+        //         noty.close();
+        //     })
+        // ],
         callbacks: {
             onClose: () => {
                 onClose && onClose();

@@ -116,9 +116,15 @@ export enum data_version_type {
     tcp_proxy_client_all_fig = 4,
     http_proxy_server_multi_port = 5, // http代理服务器从单端口升级为多端口列表
     remove_sys_level_tag = 6, // 移除系统级别的tag功能
-    user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除（数据已导出为 .url 文件）
+    user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
 }
 
 export function is_data_version_type(value) {
     return Object.values(data_version_type).includes(value);
+}
+
+export function getMaxDataVersionType(): number {
+    const values = Object.values(data_version_type)
+        .filter((v): v is number => typeof v === 'number');
+    return Math.max(...values);
 }

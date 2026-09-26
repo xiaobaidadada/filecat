@@ -27,6 +27,7 @@ import {getWebFirstKey} from "../common/StringUtil";
 import {CryptoController} from "./domain/crypto/crypto.controller";
 import {Request, Response} from 'express';
 import {DataUtil} from "./domain/data/DataUtil";
+import {DataMigration} from "./domain/data/DataMigration";
 import {userService} from "./domain/user/user.service";
 import {shellServiceImpl} from "./domain/shell/shell.service";
 import {Cache} from "./other/cache";
@@ -63,7 +64,7 @@ export async function start_main() {
     }
 
     await init_pre()
-    DataUtil.handle_history_data();
+    DataMigration.run();
     Cache.restore();
     await userService.root_init();
     await shellServiceImpl.path_init();
