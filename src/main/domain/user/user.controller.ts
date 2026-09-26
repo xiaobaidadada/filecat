@@ -105,6 +105,8 @@ export class UserController {
         pojo.latest_version = process.env.version !== this.latest_version?this.latest_version: process.env.version;
         pojo.process_env_run_env = process.env.run_env as string
         pojo.sys_env = settingService.get_sys_env()
+        // 解析后的 logo 地址，前端 Header 直接使用（避免前端重复判断前缀）
+        pojo.logo_url = await settingService.get_logo_url();
         if(Date.now() - this.latest_count_time > 3000) {
             const registryUrl = settingService.get_version_check_url();
             HttpRequest.get(`${registryUrl}/filecat`,{},5000).then((res) => {

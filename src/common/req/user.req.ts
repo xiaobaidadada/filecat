@@ -33,7 +33,9 @@ export class UserBaseInfo {
 
     process_env_run_env:string | "exe"|"npm"
 
-    sys_env:{ web_site_title: string, show_login_user_info:boolean}
+    sys_env:{ web_site_title: string, show_login_user_info:boolean, logo?: string}
+    // 解析后的网站 logo 可访问地址（http 远程地址或后端 logo 接口地址），为空表示使用内置默认 logo
+    logo_url?: string
 
     public static get_now_dir(user_base_info:UserBaseInfo) {
         let path = user_base_info.user_data.cwd

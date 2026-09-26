@@ -656,5 +656,7 @@
   "选择模型": "Sélectionner un modèle",
   "不能将文件夹移动到自己里面": "Impossible de déplacer un dossier dans lui-même",
   "网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。": "La fonction de favoris de navigation de sites a été supprimée. Les données d'origine ont été converties en fichiers .url. Ouvrez un fichier .url avec filecat pour obtenir le même accès rapide.",
-  "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "Emplacement des fichiers : le répertoire tempfile/temp_delete_sys_tag_name_260926 dans le répertoire de base de données de filecat."
+  "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "Emplacement des fichiers : le répertoire tempfile/temp_delete_sys_tag_name_260926 dans le répertoire de base de données de filecat.",
+  "网站 Logo": "Logo du site",
+  "本地文件路径或 http(s) 图片地址": "Chemin de fichier local ou URL d'image http(s)"
 }

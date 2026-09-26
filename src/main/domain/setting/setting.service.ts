@@ -356,18 +356,66 @@ export class SettingService {
         const index_path = path.join(__dirname, 'dist', "index.html");
         let index_text = await FileUtil.readFileSync(index_path);
         const web_site_title = this.get_sys_env().web_site_title;
+        const logo_url = await this.get_logo_url();
         index_text = Mustache.render(index_text.toString(),{
             Windows_FileCat: JSON.stringify({
                 base_url:await get_base(),
-                web_site_title
+                web_site_title,
+                logo_url
             }), // 给前端
-            web_site_title
+            web_site_title,
+            // 浏览器标签页图标：配置了自定义 logo 就用它，否则回退到内置的 favicon 文件
+            logo_favicon: logo_url || "favicon-32x32.png"
         });
         return index_text;
     }
 
+    /**
+     * 解析「网站 logo」的最终可访问地址，供前端 <img src> 与 favicon 使用。
+     * 规则：配置值为 http(s):// 开头时直接返回该远程地址；
+     *       其它情况（服务器本地文件路径）返回公开的 logo 读取接口地址；
+     *       未配置时返回空字符串，由调用方回退到内置默认 logo。
+     */
+    public async get_logo_url(): Promise<string> {
+        const logo = (this.get_sys_env()?.logo ?? "").trim();
+        if (!logo) {
+            return "";
+        }
+        if (/^https?:\/\//i.test(logo)) {
+            return logo;
+        }
+        // 本地文件路径：走后端接口读取（带上 filecat 的前缀，兼容自定义 base_url）
+        return `${await get_sys_base_url_pre()}/setting/logo`;
+    }
+
+    /**
+     * 读取配置中「本地 logo 文件」的二进制内容，供 /setting/logo 接口输出。
+     * 只读取配置里写的那一个路径，不接收任何外部传入路径，避免任意文件读取。
+     * 返回 null 表示未配置或文件不可用。
+     */
+    public async read_logo_file(): Promise<Buffer | null> {
+        const logo = (this.get_sys_env()?.logo ?? "").trim();
+        // http 地址无需读取本地文件
+        if (!logo || /^http\/\//i.test(logo)) {
+            return null;
+        }
+        const abs_path = path.isAbsolute(logo) ? logo : path.join(Env.work_dir, logo);
+        try {
+            if (!fs.existsSync(abs_path)) {
+                return null;
+            }
+            const stats = fs.statSync(abs_path);
+            if (!stats.isFile()) {
+                return null;
+            }
+            return fs.readFileSync(abs_path);
+        } catch (e) {
+            return null;
+        }
+    }
+
     public get_sys_env(): sys_env_pojo {
-        const p:sys_env_pojo =  DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true, http_proxy: null}
+        const p:sys_env_pojo =  DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true, http_proxy: null, logo: ""}
         if (p.http_proxy == null) {
             p.http_proxy = process.env.http_proxy
                 || process.env.https_proxy

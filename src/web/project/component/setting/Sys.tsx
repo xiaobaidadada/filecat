@@ -28,6 +28,7 @@ import {AutoUpgrade} from "./AutoUpgrade";
 
 export function Sys() {
     const [web_site_title, set_web_site_title] = useState("");
+    const [site_logo, set_site_logo] = useState("");
     const [show_login_user_info, set_show_login_user_info] = useState(false);
     const [http_proxy, set_http_proxy] = useState("");
     const [recycle_open, set_recycle_open] = useState(false);
@@ -74,6 +75,7 @@ export function Sys() {
                 set_recycle_dir(all_open_result.data.recycle_dir);
                 const sys_env = all_open_result.data.sys_env;
                 set_web_site_title(sys_env?.web_site_title);
+                set_site_logo(sys_env?.logo || '');
                 set_show_login_user_info(sys_env?.show_login_user_info);
                 set_http_proxy(sys_env?.http_proxy || '');
                 // HTTPS 设置
@@ -167,7 +169,8 @@ export function Sys() {
             type: sys_setting_type.sys_env, value: {
                 web_site_title,
                 show_login_user_info,
-                http_proxy
+                http_proxy,
+                logo: site_logo
             }
         });
         if (result.code === RCode.Success) {
@@ -213,6 +216,12 @@ export function Sys() {
                         <InputText value={web_site_title} handleInputChange={(value) => {
                             set_web_site_title(value)
                         }}/>
+
+                        {t("网站 Logo")}
+                        <InputText placeholder={t('本地文件路径或 http(s) 图片地址')} value={site_logo}
+                                   handleInputChange={(value) => {
+                                       set_site_logo(value)
+                                   }}/>
 
                         <div>{t("HTTP 代理地址")}</div>
                         <InputText placeholder={'http://127.0.0.1:7890'} value={http_proxy}

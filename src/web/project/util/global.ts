@@ -3,6 +3,7 @@ export class Global {
     private static _init:boolean = false;
     private static _base_url:string = "";
     private static _web_site_title ;
+    private static _logo_url:string = "";
 
     public static init() {
         // const log = console.log.bind(console);
@@ -18,6 +19,7 @@ export class Global {
                 const obj = new Function(code)();
                 this._base_url = obj.base_url;
                 this._web_site_title = obj.web_site_title;
+                this._logo_url = obj.logo_url ?? "";
             } catch (e) {
                 console.debug(e);
                 this._base_url = process.env.base_url;
@@ -34,6 +36,11 @@ export class Global {
     public static get web_site_title() {
         this.init()
         return this._web_site_title;
+    }
+    // 自定义网站 logo 的最终可访问地址（http 远程地址或后端 logo 接口地址），为空表示使用内置默认 logo
+    public static get logo_url() {
+        this.init()
+        return this._logo_url;
     }
 
 }

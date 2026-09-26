@@ -17,6 +17,7 @@ import {aiAgentMemoryService} from "../ai_agent/ai_agent.memory";
 import {aiAgentLongTermMemoryService} from "../ai_agent/ai_agent.long_term_memory";
 import {ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 import {Public} from "../../other/middleware/decorator";
+import mime from "mime-types";
 
 @JsonController("/setting")
 export class SettingController {
@@ -466,7 +467,8 @@ export class SettingController {
             settingService.set_sys_env({
                 web_site_title: body.value.web_site_title,
                 show_login_user_info: body.value.show_login_user_info,
-                http_proxy: body.value.http_proxy
+                http_proxy: body.value.http_proxy,
+                logo: body.value.logo
             });
             ServerEvent.emit("sys_env_update");
         } else if (body.type === sys_setting_type.private_sys_env) {
@@ -544,6 +546,27 @@ export class SettingController {
     @Get("/themes")
     async get_themes(@Req() ctx) {
         return Sucess(settingService.get_all_themes());
+    }
+
+    /**
+     * 读取自定义网站 logo（本地文件）的公开接口。
+     * 仅供 favicon / 页面 logo 引用，不接收任何路径参数，只读取系统设置里配置的那一个文件，
+     * 因此即使公开也不会造成任意文件读取。
+     */
+    @Public('/setting/logo')
+    @Get("/logo")
+    async get_logo(@Res() res: any) {
+        const buffer = await settingService.read_logo_file();
+        if (!buffer) {
+            res.status(404).send('logo not found');
+            return;
+        }
+        const logo = (settingService.get_sys_env()?.logo ?? "").trim();
+        const type = mime.lookup(logo) || 'application/octet-stream';
+        res.header('Content-Type', type);
+        // logo 变动频率低，缓存一小段时间，避免每次页面加载都回源读取
+        res.header('Cache-Control', 'public, max-age=300');
+        res.send(buffer);
     }
 
     /**

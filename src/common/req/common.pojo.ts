@@ -202,4 +202,6 @@ export interface sys_env_pojo {
     web_site_title: string,
     show_login_user_info: boolean,
     http_proxy?: string
+    // 网站 logo：http(s):// 开头视为远程 URL，其它视为服务器本地文件路径；为空使用内置默认 logo
+    logo?: string
 }
