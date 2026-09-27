@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from "react";
-import {EditorState} from "prosemirror-state";
+import {EditorState, TextSelection} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
 import {history} from "prosemirror-history";
 import {keymap} from "prosemirror-keymap";
@@ -17,6 +17,7 @@ import {gapCursor} from "prosemirror-gapcursor";
 import {tableEditing, columnResizing, goToNextCell, tableNodeTypes} from "prosemirror-tables";
 import {md_schema} from "./schema";
 import {markdown_to_doc, doc_to_markdown} from "./markdown";
+import {OutlineItem} from "./MdOutline";
 import {
     build_input_rules,
     list_commands,
@@ -59,6 +60,10 @@ export interface MdWysiwygHandle {
     active_block: () => {name: string, level?: number};
     /** 在光标处插入一张空表格（默认 3 列 3 行） */
     insert_table: (cols?: number, rows?: number) => void;
+    /** 提取文档内所有标题（供左侧大纲面板使用） */
+    get_headings: () => OutlineItem[];
+    /** 把光标移动到指定文档位置并滚动到视野内（大纲点击跳转） */
+    scroll_to_pos: (pos: number) => void;
 }
 
 interface Props {
@@ -243,6 +248,24 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                     // 定位失败不影响插入结果
                 }
             },
+            get_headings: () => collect_headings(view.state),
+            scroll_to_pos: (pos: number) => {
+                // 越界保护：文档可能在两次事件之间被改短
+                const max = view.state.doc.content.size;
+                const target = Math.max(0, Math.min(pos, max));
+                const node = view.state.doc.nodeAt(target);
+                let selection;
+                try {
+                    // 定位到该标题内部（+1 进入节点内容），光标落在标题文字里
+                    selection = node
+                        ? TextSelection.near(view.state.doc.resolve(target + 1), 1)
+                        : TextSelection.near(view.state.doc.resolve(target), 1);
+                } catch {
+                    selection = TextSelection.near(view.state.doc.resolve(0), 1);
+                }
+                view.dispatch(view.state.tr.setSelection(selection).scrollIntoView());
+                view.focus();
+            },
         };
         if (typeof ref === "function") {
             ref(handle);
@@ -272,6 +295,29 @@ function is_in_table(state: EditorState): boolean {
         }
     }
     return false;
+}
+
+/**
+ * 遍历文档，按出现顺序收集全部 heading 节点。
+ * 用 descendants 而不是逐层递归：ProseMirror 的 descendants 已经按文档顺序访问，
+ * 且能自动覆盖 blockquote / list_item 等嵌套在块级容器里的标题。
+ * pos 为标题节点的起始位置，供大纲点击时定位使用。
+ */
+function collect_headings(state: EditorState): OutlineItem[] {
+    const items: OutlineItem[] = [];
+    state.doc.descendants((node, pos) => {
+        if (node.type.name !== "heading") {
+            return true;
+        }
+        items.push({
+            level: node.attrs.level as number,
+            // textContent 已展开所有行内节点的文本，无需手动拼接
+            text: node.textContent,
+            pos,
+        });
+        return true;
+    });
+    return items;
 }
 
 /**

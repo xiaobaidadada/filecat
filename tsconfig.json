@@ -31,12 +31,17 @@
 //    "libs",
 //    "src"
     "src/common",
-    "src/main"
+    "src/main",
+    // 前端目录一并纳入：项目大量使用 `import X from "cjs包"` 的默认导入，
+    // 需要 esModuleInterop 才不报 TS1259；webpack 走 babel 不读 tsconfig，
+    // 纳入后不影响打包，只是让编辑器的类型检查拿到正确配置。
+    "src/web"
   ],
   "exclude": [
     "build",
     "node_modules",
-    "src/web/project/component/toolbox/rdp/client/js/rle.js"
+    // 第三方 RDP 客户端库（老式八进制字面量等），不参与检查
+    "src/web/project/component/proxy/rdp/client/js"
   ]
 }
 

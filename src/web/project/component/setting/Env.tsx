@@ -138,7 +138,8 @@ export function Env() {
                 }
             }
         }
-        sort(dir_upload_rows, v => v.index);
+        // index 是可选的，显式标注泛型并做 undefined 兜底，避免推断退化成 unknown
+        sort<dir_upload_max_num_item>(dir_upload_rows, (v) => v.index ?? 0);
         const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
         if (result.code === RCode.Success) {
             NotySuccess("保存成功")

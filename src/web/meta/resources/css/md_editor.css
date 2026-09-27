@@ -19,14 +19,25 @@
     flex-shrink: 0;
 }
 
-/* 内容区：滚动 + 居中限宽，形成文档纸张般的观感 */
+/* 内容区：横向排布「大纲 | 分隔条 | 编辑区」。
+   滚动交给内部的 .md-editor-scroll，外层不再滚动，否则大纲会跟着正文一起滚走。 */
 #md-editor-container .md-editor-context {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+/* 右侧编辑区：唯一的滚动容器，正文在其中居中限宽 */
+.md-editor-scroll {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
     overflow: auto;
     display: flex;
     justify-content: center;
-    position: relative;
 }
 
 /* 纸张：正文的限宽容器 */
@@ -37,6 +48,130 @@
     flex-direction: column;
     position: relative;
     padding: 0 2.5em;
+}
+
+/* ============ 左侧大纲 ============ */
+
+.md-outline-panel {
+    flex-shrink: 0;
+    height: 100%;
+    overflow: auto;
+    background: var(--surfaceSecondary, #f6f6f6);
+    border-right: 1px solid var(--divider, #e8eaed);
+    user-select: none;
+}
+
+.md-outline {
+    padding: 0.75em 0 2em;
+    font-size: 0.9em;
+}
+
+.md-outline-header {
+    padding: 0 0.75em 0.6em;
+    font-weight: 500;
+    color: var(--textSecondary, #5f6368);
+    font-size: 0.92em;
+    letter-spacing: 0.02em;
+}
+
+.md-outline-tip {
+    padding: 0.5em 0.75em;
+    color: var(--textTertiary, #9aa0a6);
+    font-size: 0.9em;
+}
+
+/* 大纲条目：整行可点，hover 有明显的背景反馈 */
+.md-outline-item {
+    display: flex;
+    align-items: center;
+    padding: 0.25em 0.6em 0.25em 0;
+    cursor: pointer;
+    color: var(--textPrimary, #202124);
+    border-radius: 0.3em;
+    margin: 0 0.35em;
+}
+
+.md-outline-item:hover {
+    background: rgba(127, 127, 127, 0.14);
+}
+
+/* 当前光标所在标题：用主色标识，与工具栏选中态一致 */
+.md-outline-item--active {
+    color: var(--primary, #1a73e8);
+    background: rgba(26, 115, 232, 0.1);
+}
+
+.md-outline-item--active .md-outline-text {
+    font-weight: 500;
+}
+
+/* 折叠箭头：只在 hover 或已折叠时可见，平时保持干净 —— 与 md 编辑器折叠 gutter 的设计一致 */
+.md-outline-arrow {
+    width: 1.2em;
+    font-size: 1.1em;
+    flex-shrink: 0;
+    text-align: center;
+    visibility: hidden;
+    color: var(--textTertiary, #9aa0a6);
+    cursor: pointer;
+}
+
+.md-outline-item:hover .md-outline-arrow {
+    visibility: visible;
+}
+
+/* 没有子节点的条目，箭头位置留空以保证同级文字左对齐 */
+.md-outline-arrow--empty {
+    cursor: default;
+    visibility: hidden;
+}
+
+.md-outline-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 不同级别用字号区分，h1 最大 —— 让层级一眼可辨，不依赖缩进 */
+.md-outline-item--h1 .md-outline-text { font-size: 1.05em; }
+.md-outline-item--h2 .md-outline-text { font-size: 1em; }
+.md-outline-item--h3 .md-outline-text { font-size: 0.96em; }
+.md-outline-item--h4 .md-outline-text,
+.md-outline-item--h5 .md-outline-text,
+.md-outline-item--h6 .md-outline-text {
+    font-size: 0.92em;
+    color: var(--textSecondary, #5f6368);
+}
+
+/* 分隔条：拖动调整大纲宽度，样式与 studio 编辑器保持一致 */
+.md-editor-divider {
+    position: relative;
+    height: 100%;
+    width: 8px;
+    flex-shrink: 0;
+    z-index: 10;
+    background: rgba(127, 127, 127, 0.1);
+    transition: 0.2s ease background;
+    cursor: ew-resize;
+    touch-action: none;
+    user-select: none;
+}
+
+.md-editor-divider:hover {
+    background: rgba(127, 127, 127, 0.25);
+}
+
+/* 拖动期间的透明遮罩：铺满编辑区，防止指针进入 ProseMirror 后事件被抢走 */
+.md-editor-drag-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    cursor: ew-resize;
 }
 
 /* ============ 正文排版 ============ */

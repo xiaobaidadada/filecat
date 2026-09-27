@@ -150,10 +150,10 @@ export function getByIndexs(list, indexs) {
 /**
  * 冒泡排序，默认是升序
  * @param data_list
- * @param getKey
+ * @param getKey 取排序键；键可以是数字或字符串（字符串按字典序比较）
  * @param asc
  */
-export function sort<T>(data_list:T[], getKey:(v:T)=>number, asc = true) {
+export function sort<T>(data_list:T[], getKey:(v:T)=>string|number, asc = true) {
     if (!data_list || data_list.length === 0) {
         return data_list;
     }

@@ -1,3 +1,7 @@
+// markdown-it 是 CommonJS 包（module.exports = 构造函数），@types 用 `export =` 声明，
+// 所以要用默认导入（依赖 esModuleInterop / allowSyntheticDefaultImports）。
+// 注意：不能用 `import MarkdownIt = require("markdown-it")` —— 该语法是 TS 专有，
+// 要求模块编译为 CommonJS；前端走 babel（webpack），没有模块转换插件，会直接报错。
 import MarkdownIt from "markdown-it";
 import {DOMParser as PMDOMParser, Node as PMNode} from "prosemirror-model";
 import {md_schema} from "./schema";
