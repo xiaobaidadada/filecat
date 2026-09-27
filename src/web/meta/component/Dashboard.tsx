@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link, NavLink, Route, Routes, useLocation, useMatch, useNavigate} from "react-router-dom";
 import SimpleRoutes from "./SimpleRoutes";
 import {ActionButton, Button} from "./Button";
@@ -239,7 +239,11 @@ export function DropdownItem(props: {
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [alignLeft, setAlignLeft] = useState(false); // 决定子菜单是向左还是向右弹出
+    // 子菜单相对父项的垂直偏移：默认 -0.5rem（对齐父项顶部），
+    // 若子菜单会超出视口底部，则上移，保证整块子菜单都在屏幕内
+    const [childTop, setChildTop] = useState<number | null>(null);
     const itemRef = useRef<HTMLDivElement>(null);
+    const childRef = useRef<HTMLDivElement>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // 关键逻辑：检测屏幕剩余空间
@@ -255,6 +259,30 @@ export function DropdownItem(props: {
             }
         }
     };
+
+    // 子菜单渲染后测量其高度，若底部超出视口则整体上移（对齐父项底边再兜底夹取）。
+    // 用 useLayoutEffect 在绘制前算好，避免出现"先闪到屏幕外再跳回来"。
+    useLayoutEffect(() => {
+        if (!isOpen || !childRef.current || !itemRef.current) {
+            setChildTop(null);
+            return;
+        }
+        const child = childRef.current.getBoundingClientRect();
+        const parent = itemRef.current.getBoundingClientRect();
+        // 默认偏移 -0.5rem（与 CSS 一致），即子菜单顶部与父项顶部基本对齐
+        const default_offset = -8;
+        const default_top = parent.top + default_offset;
+        const overflow_bottom = default_top + child.height - window.innerHeight;
+        if (overflow_bottom > 0) {
+            // 上移量：优先让子菜单底部与视口底部留 8px 间隙
+            setChildTop(default_offset - overflow_bottom - 8);
+        } else if (default_top < 0) {
+            // 顶部超出则往下贴
+            setChildTop(default_offset - default_top + 8);
+        } else {
+            setChildTop(null);
+        }
+    }, [isOpen, props.c]);
 
     const handleMouseEnter = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
@@ -285,11 +313,14 @@ export function DropdownItem(props: {
 
             {isOpen && props.c && (
                 <div
+                    ref={childRef}
                     className="dropdown_item_children"
                     style={{
                         // 根据空间动态调整左右偏移
                         left: alignLeft ? 'auto' : '100%',
                         right: alignLeft ? '100%' : 'auto',
+                        // 垂直位置：null 时沿用 CSS 默认值
+                        ...(childTop !== null ? {top: `${childTop}px`} : {}),
                     }}
                 >
                     {props.c}

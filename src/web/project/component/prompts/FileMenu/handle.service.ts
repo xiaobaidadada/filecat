@@ -63,4 +63,6 @@ export enum common_menu_type {
 
     image_open = "image_open",
     image_preview = "image_preview",
+    // 以所见即所得编辑器打开 md（双击仍是预览，这里提供专门的编辑入口）
+    md_editor_open = "md_editor_open",
 }

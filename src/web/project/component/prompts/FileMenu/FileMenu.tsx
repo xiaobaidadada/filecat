@@ -135,6 +135,13 @@ export function FileMenu() {
             v: common_menu_type.sqlite_query
         });
     }
+    // md 文件：提供专门的 MD 编辑器入口（双击仍是预览）
+    if (showPrompt.data?.type === FileTypeEnum.md || /\.md$/i.test(showPrompt.data?.filename ?? "")) {
+        show_items.unshift({
+            r: t("MD编辑器"),
+            v: common_menu_type.md_editor_open
+        });
+    }
     if (user_base_info.user_data?.file_quick_cmd) {
         for (const it of user_base_info.user_data.file_quick_cmd) {
             for (const key of (it.file_suffix ?? "").split(" ")) {
@@ -154,6 +161,7 @@ export function FileMenu() {
     // const [studio, set_studio] = useAtom($stroe.studio);
     const {click_file} = user_click_file();
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
+    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
     const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_realtime_show);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
@@ -332,6 +340,19 @@ export function FileMenu() {
                 click_file({
                     name: showPrompt.data.filename,
                     file_path: get_ab_path(),
+                });
+            }
+                break;
+            case common_menu_type.md_editor_open: {
+                // 以所见即所得编辑器打开 md：给出可读取内容的地址与保存用的相对路径
+                // 编码规则与 Excalidraw 等保持一致：目录部分编码，文件名原样
+                const dir = getRouterAfter('file', getRouterPath());
+                const name = showPrompt.data.filename;
+                const file_path = `${dir}${name}`;
+                set_md_editor({
+                    url: fileHttp.getDownloadUrl(`${encodeURIComponent(dir)}${name}`),
+                    path: file_path,
+                    name,
                 });
             }
                 break;

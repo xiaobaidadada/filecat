@@ -21,6 +21,7 @@ const SysInfo = React.lazy(() => import("./sys/SysInfo"))
 const FileEditor = React.lazy(() => import("./file/component/FileEditor"))
 const Preview = React.lazy(() => import("./file/component/Preview"))
 const MarkDown = React.lazy(() => import("./file/component/MarkDown"))
+const MdEditor = React.lazy(() => import("./file/component/md_editor/MdEditor"))
 const ExcalidrawEditor = React.lazy(() => import("./file/component/ExcalidrawEditor"))
 const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
@@ -44,6 +45,7 @@ function Layout() {
     const [headerMin, setHeaderMin] = useAtom($stroe.header_min);
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
+    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [custom_fun_opt, set_custom_fun_opt] = useAtom($stroe.custom_fun_opt);
     // const [nav_style, set_nav_style] = useAtom($stroe.nav_style);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
@@ -150,6 +152,9 @@ function Layout() {
             {image_editor.path !== undefined && <Suspense fallback={<div></div>}><ImageEditor/></Suspense>}
             {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <ExcalidrawEditor/>
+            </Suspense>}
+            {md_editor.url !== undefined && <Suspense fallback={<div></div>}>
+                <MdEditor/>
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
             {/* permanent_logo：Layout 是常驻组件，全站唯一的 logo <img> 由这里的 Header 渲染，

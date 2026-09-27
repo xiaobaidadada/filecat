@@ -1,0 +1,361 @@
+/* md 所见即所得编辑器（ProseMirror，Typora 风格）
+   布局与 excalidraw.css 一致：全屏 fixed 覆盖层 + Header + 内容区 */
+#md-editor-container {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background, #fafafa);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+/* 让 Header 参与 flex 布局（全局样式里它是 fixed，会盖住正文首行） */
+#md-editor-container > .header {
+    position: static;
+    flex-shrink: 0;
+}
+
+/* 内容区：滚动 + 居中限宽，形成文档纸张般的观感 */
+#md-editor-container .md-editor-context {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+/* 纸张：正文的限宽容器 */
+.md-editor-sheet {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 0 2.5em;
+}
+
+/* ============ 正文排版 ============ */
+
+.md-wysiwyg {
+    flex: 1;
+    min-height: 0;
+}
+
+.md-wysiwyg .ProseMirror {
+    outline: none;
+    padding: 1em 0 6em;
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--textPrimary, #202124);
+    caret-color: var(--primary, #1a73e8);
+    /* 注意：这里不能用 white-space: pre-wrap。
+       它会让空白与换行按原样参与排版，干扰浏览器「坐标 → 文本位置」的映射，
+       表现为鼠标拖动选字时起点被算到上一个块，一滑就选中整行。
+       代码块的换行由 pre 自己控制（见下方 pre 规则）。 */
+    overflow-wrap: break-word;
+}
+
+/* 块之间的间距：
+   必须用 padding 而不是 margin —— margin 会在块之间留出「不属于任何块」的空白，
+   鼠标点在这条缝隙里时浏览器会把位置归给上一个块，
+   于是拖动选字会突然跨过整行（Typora 也是用 padding 处理间距的）。 */
+.md-wysiwyg .ProseMirror > * {
+    padding-top: 0.42em;
+    padding-bottom: 0.42em;
+    margin: 0;
+}
+.md-wysiwyg .ProseMirror > *:first-child {
+    padding-top: 0;
+}
+.md-wysiwyg .ProseMirror > *:last-child {
+    padding-bottom: 0;
+}
+
+/* 标题：与 Typora 一致的层级节奏（同样用 padding 而非 margin） */
+.md-wysiwyg .ProseMirror h1,
+.md-wysiwyg .ProseMirror h2,
+.md-wysiwyg .ProseMirror h3,
+.md-wysiwyg .ProseMirror h4,
+.md-wysiwyg .ProseMirror h5,
+.md-wysiwyg .ProseMirror h6 {
+    font-weight: 700;
+    line-height: 1.35;
+    padding-top: 0.9em;
+    padding-bottom: 0.4em;
+    margin: 0;
+}
+.md-wysiwyg .ProseMirror h1 {
+    font-size: 1.9em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--divider, #eaecef);
+}
+.md-wysiwyg .ProseMirror h2 {
+    font-size: 1.55em;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid var(--divider, #eaecef);
+}
+.md-wysiwyg .ProseMirror h3 { font-size: 1.3em; }
+.md-wysiwyg .ProseMirror h4 { font-size: 1.13em; }
+.md-wysiwyg .ProseMirror h5 { font-size: 1em; }
+.md-wysiwyg .ProseMirror h6 {
+    font-size: 0.95em;
+    color: var(--textSecondary, #6a737d);
+}
+/* 正文首元素不留过多上边距 */
+.md-wysiwyg .ProseMirror > *:first-child {
+    margin-top: 0;
+}
+
+.md-wysiwyg .ProseMirror strong { font-weight: 700; }
+.md-wysiwyg .ProseMirror em { font-style: italic; }
+.md-wysiwyg .ProseMirror s { text-decoration: line-through; color: var(--textSecondary, #6a737d); }
+
+/* 链接：Typora 的柔和蓝 */
+.md-wysiwyg .ProseMirror a {
+    color: var(--primary, #1a73e8);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(26, 115, 232, 0.35);
+}
+.md-wysiwyg .ProseMirror a:hover {
+    border-bottom-color: var(--primary, #1a73e8);
+}
+
+/* 行内代码：淡底色小圆角 */
+.md-wysiwyg .ProseMirror code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    background: var(--surfaceSecondary, #f0f1f3);
+    color: #c7254e;
+}
+
+/* 代码块：整块深一点的底 + 圆角 + 横向滚动 */
+.md-wysiwyg .ProseMirror pre {
+    background: var(--surfaceSecondary, #f6f8fa);
+    border-radius: 6px;
+    padding: 1em 1.1em;
+    overflow-x: auto;
+    line-height: 1.6;
+}
+.md-wysiwyg .ProseMirror pre code {
+    background: transparent;
+    color: var(--textPrimary, #24292e);
+    padding: 0;
+    font-size: 0.88em;
+    white-space: pre;
+}
+
+/* 引用块：左侧粗竖线 + 灰字（Typora 的经典样式） */
+.md-wysiwyg .ProseMirror blockquote {
+    padding: 0.65em 0 0.65em 1em;
+    border-left: 4px solid var(--divider, #dfe2e5);
+    color: var(--textSecondary, #6a737d);
+}
+
+/* 列表：缩进与标记 */
+.md-wysiwyg .ProseMirror ul,
+.md-wysiwyg .ProseMirror ol {
+    padding: 0.55em 0 0.55em 1.6em;
+}
+.md-wysiwyg .ProseMirror li {
+    padding: 0.18em 0;
+}
+.md-wysiwyg .ProseMirror li > p {
+    margin: 0;
+}
+.md-wysiwyg .ProseMirror ul li::marker {
+    color: var(--primary, #1a73e8);
+}
+/* 任务列表 */
+.md-wysiwyg .ProseMirror li[data-checked] {
+    list-style: none;
+    position: relative;
+    padding-left: 1.6em;
+    margin-left: -1.2em;
+}
+.md-wysiwyg .ProseMirror li[data-checked]::before {
+    content: "☐";
+    position: absolute;
+    left: 0;
+    color: var(--textSecondary, #6a737d);
+    font-size: 1.05em;
+}
+.md-wysiwyg .ProseMirror li[data-checked="true"]::before {
+    content: "☑";
+    color: var(--primary, #1a73e8);
+}
+.md-wysiwyg .ProseMirror li[data-checked="true"] > p {
+    color: var(--textSecondary, #6a737d);
+    text-decoration: line-through;
+}
+
+/* 分割线 */
+.md-wysiwyg .ProseMirror hr {
+    border: 0;
+    border-top: 1px solid var(--divider, #e1e4e8);
+    padding: 0;
+    margin: 1.5em 0;
+}
+
+/* 图片 */
+.md-wysiwyg .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* 选中内容的背景（ProseMirror 用 .ProseMirror-selectednode 标记原子节点） */
+.md-wysiwyg .ProseMirror-selectednode {
+    outline: 2px solid var(--primary, #1a73e8);
+    outline-offset: 1px;
+    border-radius: 3px;
+}
+.md-wysiwyg .ProseMirror-gapcursor:after {
+    border-top-color: var(--textPrimary, #202124);
+}
+
+/* ============ 表格：真 <table>，Typora 观感 ============ */
+
+.md-wysiwyg .ProseMirror table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.6em 0;
+    overflow: hidden;
+    table-layout: fixed;
+    font-size: 0.95em;
+}
+.md-wysiwyg .ProseMirror table td,
+.md-wysiwyg .ProseMirror table th {
+    border: 1px solid var(--divider, #dfe2e5);
+    padding: 0.5em 0.8em;
+    vertical-align: top;
+    position: relative;
+    min-width: 2em;
+}
+/* 表头：浅灰底 + 加粗，与 Typora 一致 */
+.md-wysiwyg .ProseMirror table th {
+    background: var(--surfaceSecondary, #f6f8fa);
+    font-weight: 600;
+    text-align: left;
+}
+/* 选中单元格：整格淡蓝底 */
+.md-wysiwyg .ProseMirror table .selectedCell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(26, 115, 232, 0.14);
+    pointer-events: none;
+}
+/* 单元格内段落不留外边距，否则格子会被撑高 */
+.md-wysiwyg .ProseMirror table td > p,
+.md-wysiwyg .ProseMirror table th > p {
+    margin: 0;
+}
+/* 鼠标悬停列宽拖拽把手 */
+.md-wysiwyg .ProseMirror table .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary, #1a73e8);
+    pointer-events: none;
+}
+.md-wysiwyg .ProseMirror.resize-cursor {
+    cursor: col-resize;
+}
+
+/* ============ 工具栏 ============ */
+
+/* 浮动格式工具栏：只在选中文字时出现，贴在选区上方居中。
+   两条硬约束（都踩过坑）：
+   1) 永远不能占正文高度 —— 否则选中/取消选中时文档高度变化，文字位移，
+      鼠标拖动选字会选错一片。用 position: fixed 天然脱离文档流。
+   2) 必须用 fixed 而不是 absolute/sticky —— 滚动容器是 .md-editor-context 而非 window，
+      长文档里 absolute/sticky 会跟着纸张滚出屏幕（曾出现 top: -567 完全看不见）。
+   fixed 的参照物是视口，所以 JS 传的 top/left 都是视口坐标。
+   z-index 需高于 .header（999），否则工具栏会被顶部导航栏盖住。 */
+.mdtb {
+    display: flex;
+    align-items: center;
+    gap: 0.15em;
+    padding: 0.3em 0.5em;
+    background: var(--background, #fff);
+    border: 1px solid var(--divider, #e1e4e8);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    position: fixed;
+    z-index: 1000;
+    /* left 传的是选区中心点，靠 transform 真正居中 */
+    transform: translateX(-50%);
+}
+
+.mdtb--floating {
+    /* top / left 由 JS 按选区位置传入（inline style），这里只负责视觉 */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+    animation: mdtb-in 0.12s ease-out;
+}
+
+/* 浮动条下方的小三角，指向选区 */
+.mdtb--floating::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    background: var(--background, #fff);
+    border-right: 1px solid var(--divider, #e1e4e8);
+    border-bottom: 1px solid var(--divider, #e1e4e8);
+    transform: rotate(45deg);
+}
+
+/* 上方空间不足、翻到选区下方时，三角改到顶部并朝上 */
+.mdtb--below::after {
+    bottom: auto;
+    top: -5px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 1px solid var(--divider, #e1e4e8);
+    border-top: 1px solid var(--divider, #e1e4e8);
+}
+
+@keyframes mdtb-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(2px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.mdtb__btn {
+    border: 0;
+    background: transparent;
+    color: var(--textPrimary, #202124);
+    font-size: 0.86em;
+    line-height: 1.2;
+    padding: 0.35em 0.5em;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 1.9em;
+    transition: background 0.12s, color 0.12s;
+}
+.mdtb__btn:hover {
+    background: var(--surfaceSecondary, #f1f3f4);
+}
+/* 已激活的标记/块类型：高亮 */
+.mdtb__btn--on {
+    background: rgba(26, 115, 232, 0.12);
+    color: var(--primary, #1a73e8);
+}
+
+.mdtb__sep {
+    width: 1px;
+    height: 1.1em;
+    background: var(--divider, #e1e4e8);
+    margin: 0 0.3em;
+}
