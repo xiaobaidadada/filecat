@@ -177,6 +177,45 @@
     cursor: not-allowed;
 }
 
+/* 精简外观（bare）：表头筛选把「列名」本身当触发器，去掉输入框式的内边距与背景，
+   避免在表头里出现一个灰色输入框方块。
+   用双类选择器提高特异度，覆盖主题文件里 `.input { background: var(--surfaceSecondary) }` 等规则。
+   color 继承外层（如表格 th 的表头色），保证与其他表头文字颜色一致、不显得更重。
+   min-width: 0 让触发框及其内部容器能收缩到列宽以内（flex 子项默认 min-width:auto 会撑破列宽） */
+.select_trigger.select_trigger--bare,
+.select_trigger.select_trigger--bare .select_trigger__label,
+.select_wrapper--bare > .select_container {
+    min-width: 0;
+}
+
+.select_trigger.select_trigger--bare {
+    padding: 0;
+    background: transparent;
+    /* 去掉边框：主题文件里只有 `td .input` 会去掉输入框外观，
+       而表头是 th 匹配不到该规则，需要在这里显式去掉，否则表头里会出现输入框边框 */
+    border: 0;
+    color: inherit;
+}
+
+/* 表头文字（如「在线状态 (在线)」）可能比列宽长（列宽随内容浮动，不能为它单独加宽），
+   此时折行显示保证完整可见，而不是被省略号截断；
+   行高收紧，尽量减少对表头高度的抬升 */
+.select_trigger--bare .select_trigger__label {
+    white-space: normal;
+    word-break: break-word;
+    text-overflow: clip;
+    overflow: visible;
+    line-height: 1.1;
+}
+
+/* 表头里的触发框在 hover / 聚焦时也不要出现输入框式的边框与光晕
+   （主题文件的 `.input:hover, .input:focus` 会给边框和高亮外圈） */
+.select_trigger.select_trigger--bare:hover,
+.select_trigger.select_trigger--bare:focus {
+    border: 0;
+    box-shadow: none;
+}
+
 .select_trigger__label {
     color: inherit;
     /* 触发框（选中态）宽度由外层容器决定，与下拉列表宽度解耦；

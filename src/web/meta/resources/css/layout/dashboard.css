@@ -263,12 +263,11 @@ table tr[draggable="true"] {
     cursor: grab;
 }
 
-/* 表头过滤控件：标题与下拉同一行，整体不撑高表头 */
-.table-th-filter {
-    display: flex;
-    align-items: center;
-    gap: .3rem;
-    white-space: nowrap;
+/* 过滤列（表头里放了下拉触发框的列）：
+   兜底裁掉超出列宽的内容，避免窄屏下列名/触发框溢出、盖住右侧相邻列；
+   宽屏列宽足够时内容完整显示，不受影响 */
+.dashboard table th.table-filter-col {
+    overflow: hidden;
 }
 
 /* 正在悬停的目标行：整行背景变暗，提示插入位置（--hover 在明暗主题下都有定义） */

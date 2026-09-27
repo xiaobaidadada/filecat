@@ -65,23 +65,33 @@ export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: R
     return <table>
         <thead>
         <tr>
-            {props.headers?.map((header: string, index) => (
-                <th key={index}>
-                    {/* 过滤控件挂在 props.filter.column 指定的列上（默认第 0 列） */}
-                    {props.filter && (props.filter.column ?? 0) === index
-                        ? <div className="table-th-filter">
-                            <span>{header}</span>
-                            <Select
-                                value={props.filter.value}
-                                options={props.filter.options}
-                                onChange={props.filter.onChange}
-                                width={"auto"}
-                                no_border={true}
-                            />
-                        </div>
+            {props.headers?.map((header: string, index: number) => {
+                const is_filter_col = !!props.filter && (props.filter.column ?? 0) === index;
+                // 表头文字：未筛选（值为 null）时只显示列名；
+                // 已筛选时把当前选中项以括号形式附在列名后，如「在线状态 (在线)」
+                let header_text = header;
+                if (is_filter_col) {
+                    const filter = props.filter!;
+                    const selected = filter.options.find(o => o.value === filter.value);
+                    if (filter.value != null && selected) {
+                        header_text = `${header} (${selected.label})`;
+                    }
+                }
+                return <th key={index} className={is_filter_col ? "table-filter-col" : ""}>
+                    {/* 过滤控件挂在 props.filter.column 指定的列上（默认第 0 列）。
+                        直接把「列名」渲染成一个下拉控件（固定显示列名 + 当前选中项），点击弹出选项浮层；
+                        浮层用 portal 挂到 body 不占空间，不会撑破列宽、遮挡右侧列 */}
+                    {is_filter_col
+                        ? <Select
+                            value={props.filter!.value}
+                            options={props.filter!.options}
+                            onChange={props.filter!.onChange}
+                            bare={true}
+                            trigger_label={header_text}
+                        />
                         : header}
                 </th>
-            ))}
+            })}
         </tr>
         </thead>
 

@@ -309,7 +309,18 @@ export interface SelectProps {
      * 额外外边距，用于在 Header 等「多个组件并排」的布局中与相邻元素拉开间隔。
      * 例如 "0 0 0 1em"（左侧留 1em）或 "0 1em 0 0"（右侧留 1em）。
      */
-    margin?: string
+    margin?: string,
+    /**
+     * 精简外观：去掉触发框的内边距与背景，视觉上就是「一段可点击的文字 + 展开箭头」。
+     * 用于表头筛选这类需要把「列名」本身当作触发器的场景，避免在表头里出现输入框式的外观。
+     */
+    bare?: boolean,
+    /**
+     * 触发框固定显示的文字（不随选中值变化）。
+     * 典型用于表头筛选：触发框始终显示列名，选中值只影响下拉里的选中态。
+     * 不传时按原逻辑显示当前选中项。
+     */
+    trigger_label?: string
 }
 
 // export function Select(props: SelectProps) {
@@ -451,7 +462,7 @@ export function Select(props: SelectProps) {
     };
 
     return (
-        <div className="select_wrapper" style={{
+        <div className={"select_wrapper" + (props.bare ? " select_wrapper--bare" : "")} style={{
             width: props.width || '100%',
             // 支持调用方通过 margin 在并排布局中拉开间隔
             margin: props.margin,
@@ -462,14 +473,16 @@ export function Select(props: SelectProps) {
                     ref={triggerRef}
                     className={[
                         "input input--block",
-                        props.no_border ? "input--no_border" : "",
+                        (props.no_border || props.bare) ? "input--no_border" : "",
                         "select_trigger",
+                        props.bare ? "select_trigger--bare" : "",
                         props.disabled ? "select_trigger--disabled" : "",
                     ].join(" ")}
                     onClick={handleOpen}
                 >
                     <span className="select_trigger__label" style={{color: selected?.color || "inherit"}}>
-                        {selected?.title ?? selected?.label ?? selected?.value ?? ""}
+                        {/* 传了 trigger_label 时触发框固定显示该文字（如表头筛选始终显示列名），否则显示选中项 */}
+                        {props.trigger_label ?? (selected?.title ?? selected?.label ?? selected?.value ?? "")}
                     </span>
                     <i className={["material-icons", "select_trigger__icon", open ? "select_trigger__icon--open" : ""].join(" ")}>
                         expand_more
