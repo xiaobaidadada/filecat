@@ -309,8 +309,10 @@ export function getPathLastname(path: string, includeExt: boolean = true): strin
 }
 
 
-export function move_element <T>(list:T[],from: number, to: number) {
-    const [moved] = list.splice(from, 1);
-    list.splice(to, 0, moved);
-    return list;
+// 把 list 中 from 位置的元素移动到 to 位置，返回新数组（不修改原数组）
+export function move_element<T>(list: T[], from: number, to: number) {
+    const result = [...list];
+    const [moved] = result.splice(from, 1);
+    result.splice(to, 0, moved);
+    return result;
 }

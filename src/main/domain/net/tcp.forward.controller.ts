@@ -31,39 +31,39 @@ export class TcpForwardController {
 
     @Post('/server_save')
     async server_save(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcpForwardService.server_fig_save(data)
         return Sucess({})
     }
 
     @Get('/server_get')
     async server_get(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpForwardService.server_fig_get())
     }
 
     @Get('/get_all_open_server_client_proxy_fig')
     async get_all_open_server_client_proxy_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpForwardService.get_all_open_server_client_proxy_fig())
     }
 
     @Get('/server_client_get')
     async server_client_get(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpForwardService.server_client_get())
     }
 
     @Post('/server_client_save')
     async server_client_save(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         await tcpForwardService.server_client_save(data)
         return Sucess({})
     }
 
     @Post('/server_client_del')
     async server_client_del(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         await tcpForwardService.server_client_del(data)
         return Sucess({})
     }
@@ -71,33 +71,33 @@ export class TcpForwardController {
     // 文件同步相关
     @Get('/sync_task_get')
     async sync_task_get(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpSyncService.get_all_sync_task_list())
     }
 
     @Post('/sync_task_save')
     async sync_task_save(@Body() data: tcp_proxy_sync_task_item, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         const saved = tcpSyncService.save_sync_task(data)
         return Sucess(saved)
     }
 
     @Post('/sync_task_del')
     async sync_task_del(@Body() data: {id:string}, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcpSyncService.delete_sync_task(data.id)
         return Sucess({})
     }
 
     @Get('/client_sync_task_get')
     async client_sync_task_get(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(await tcpSyncClientService.client_sync_task_get())
     }
 
     @Post('/client_del')
     async client_del(@Body() data: {index:number}, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcp_forward_client_service.close_client()
         const fig = tcp_forward_client_service.client_fig_get()
         fig.list = fig.list.filter((_, i) => i !== data.index);
@@ -108,13 +108,13 @@ export class TcpForwardController {
 
     @msg(CmdType.tcp_proxy_client_status)
     async vir_net_client_get(data: WsData<any>) {
-        userService.check_user_auth(data.wss.token, UserAuth.tcp_proxy);
+        userService.have_user_auth(data.wss.token, UserAuth.tcp_proxy);
         return tcp_forward_client_service.tcp_proxy_client_status(data);
     }
 
     @Post('/client_save')
     async client_save(@Body() data: tcp_proxy_client_fig, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcp_forward_client_service.close_client()
         tcp_forward_client_service.client_fig_save(data)
         tcp_forward_client_service.client_init_to_server().catch(console.error)
@@ -123,46 +123,46 @@ export class TcpForwardController {
 
     @Get('/client_get')
     async client_get(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcp_forward_client_service.client_fig_get())
     }
 
     // 桥接控制 接口 todo 暂时不用
     @Get('/server_bridge_get_all_fig')
     async server_bridge_get_all_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpForwardService.get_all_bridge_config())
     }
 
     @Get('/client_bridge_get_all_fig')
     async client_bridge_get_all_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcp_forward_client_service.client_bridge_get_all_fig())
     }
 
     @Post('/server_bridge_get_one_fig')
     async server_bridge_get_one_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         return Sucess(tcpForwardService.get_bridge_fig_by_server_id(data.server_client_num_id))
     }
 
     @Post('/server_bridge_add_fig')
     async server_bridge_add_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcpForwardService.add_bridge_config(data)
         return Sucess({})
     }
 
     @Post('/server_bridge_edit_fig')
     async server_bridge_edit_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcpForwardService.edit_bridge_config(data)
         return Sucess({})
     }
 
     @Post('/server_bridge_del_fig')
     async server_bridge_del_fig(@Body() data: any, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
         tcpForwardService.del_bridge_config(data.id)
         return Sucess({})
     }

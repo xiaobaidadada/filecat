@@ -134,14 +134,14 @@ export class UserController {
     // 获取所有用户
     @Get('/all_users')
     all_users(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.user_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.user_manage);
         return Sucess(userService.get_user_list());
     }
 
     // 创建用户
     @Post('/create_user')
     async create_user(@Body() user: UserData, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.user_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.user_manage);
         if (!user.cwd) throw "cwd not found";
         await userService.create_user(user)
         return Sucess("");
@@ -150,7 +150,7 @@ export class UserController {
     // 修改保存用户
     @Post('/save_user')
     async save_user(@Body() user: UserData, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.user_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.user_manage);
         if (user.password) {
             user.hash_password = hash_string(user.password);
             delete user.password;
@@ -164,7 +164,7 @@ export class UserController {
 
     @Post('/updatePassword')
     async updatePassword(@Body() user: UserLogin, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.update_password);
+        userService.have_user_auth(req.headers.authorization, UserAuth.update_password);
         const user_data = userService.get_user_info_by_user_id(user.user_id);
         if (!user_data) {
             throw "user data not found";
@@ -223,7 +223,7 @@ export class UserController {
     // 删除用户
     @Post('/delete_user')
     delete_user(@Body() user: UserData, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.user_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.user_manage);
         userService.delete_user(user.username)
         return Sucess("");
     }
@@ -238,21 +238,21 @@ export class UserController {
     // 已经绑定用户不允许删除
     @Post('/create_role')
     async create_role(@Body() user: UserData, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.role_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.role_manage);
         await userService.create_role(user);
         return Sucess("1");
     }
 
     @Post('/delete_role')
     delete_role(@Body() body: { role_id: string }, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.role_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.role_manage);
         userService.delete_role(body.role_id)
         return Sucess("1");
     }
 
     @Post('/save_role')
     async save_role(@Body() user: UserData, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.role_manage);
+        userService.have_user_auth(req.headers.authorization, UserAuth.role_manage);
         await userService.update_role(user)
         return Sucess("");
     }

@@ -17,7 +17,7 @@ export class FirewallController {
 
     // 校验用户是否拥有防火墙权限
     private auth(req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.firewall);
+        userService.have_user_auth(req.headers.authorization, UserAuth.firewall);
     }
 
     // ufw 状态（是否安装、是否启用）

@@ -34,7 +34,7 @@ export class Ai_AgentController {
         const ctx = data.context || {};
         const wss = data.wss as Wss;
         // 权限校验
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const { messages, session_id, sys_prompt_id } = ctx;
         if (!messages?.length) {
             return ''; // 没有消息，不处理
@@ -55,7 +55,7 @@ export class Ai_AgentController {
 
     @Get("/sessions")
     async sessions(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         const list = aiAgentMemoryService.list(userId);
@@ -68,7 +68,7 @@ export class Ai_AgentController {
 
     @Post("/sessions/update/meta")
     async sessions_update_meta(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.sessions_update_meta(user?.id ,data)
         return Sucess("ok")
@@ -76,7 +76,7 @@ export class Ai_AgentController {
 
     @Post("/session")
     async session_create(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         return Sucess(aiAgentMemoryService.create_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.title, undefined, data?.sys_prompt_id))
     }
@@ -87,7 +87,7 @@ export class Ai_AgentController {
      */
     @Post("/session/sys_prompt")
     async session_sys_prompt(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.update_sys_prompt(
             user?.id ?? user?.user_id ?? user?.username ?? "default",
@@ -103,7 +103,7 @@ export class Ai_AgentController {
      */
     @Post("/session/cmd_auto_allow")
     async session_cmd_auto_allow(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.sessions_update_cmd_auto_allow(
             user?.id ?? user?.user_id ?? user?.username ?? "default",
@@ -115,7 +115,7 @@ export class Ai_AgentController {
 
     @Post("/session/get")
     async session_get(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         const session = aiAgentMemoryService.get_session(userId, data?.session_id);
@@ -142,7 +142,7 @@ export class Ai_AgentController {
 
     @Post("/session/delete")
     async session_delete(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.delete(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id)
         return Sucess("")
@@ -150,7 +150,7 @@ export class Ai_AgentController {
 
     @Post("/session/messages")
     async session_messages(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.update_messages_to_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id, data?.messages)
         return Sucess("")
@@ -162,7 +162,7 @@ export class Ai_AgentController {
      */
     @Post("/session/message/delete")
     async session_message_delete(@Req() ctx, @Body() data: { session_id: string; indices: number[] }) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.delete_messages_from_session(
             user?.id ?? user?.user_id ?? user?.username ?? "default",
@@ -174,7 +174,7 @@ export class Ai_AgentController {
 
     @Post("/session/usage_stats")
     async session_usage_stats(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const stats = aiAgentMemoryService.get_usage_stats(
             user?.id ?? user?.user_id ?? user?.username ?? "default",
@@ -185,7 +185,7 @@ export class Ai_AgentController {
 
     @Post("/sessions/clear")
     async sessions_clear(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.clear(user?.id ?? user?.user_id ?? user?.username ?? "default")
         return Sucess("")
@@ -229,7 +229,7 @@ export class Ai_AgentController {
         style?: string;
         session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
@@ -283,7 +283,7 @@ export class Ai_AgentController {
         response_format?: string;
         session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
@@ -327,7 +327,7 @@ export class Ai_AgentController {
         dimensions?: number;
         session_id?: string;
     }, @Res() res: Response, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
         try {
@@ -363,7 +363,7 @@ export class Ai_AgentController {
     async aiChatAbort(data: WsData<any>) {
         const ctx = data.context || {};
         const wss = data.wss as Wss;
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const { session_id } = ctx;
         if (session_id) {
             const controller = ai_agentService.activeChatControllers.get(session_id);
@@ -385,7 +385,7 @@ export class Ai_AgentController {
     async aiChatSubscribe(data: WsData<any>) {
         const ctx = data.context || {};
         const wss = data.wss as Wss;
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const { session_id, subscribe } = ctx;
         if (!session_id) return '';
         const user = userService.get_user_info_by_token(wss.token);
@@ -458,7 +458,7 @@ export class Ai_AgentController {
     @msg(CmdType.ai_load_info)
     async get_info(data: WsData<any>) {
         const wss = (data.wss as Wss)
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_setting);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_setting);
         ai_agentService.all_wss_set.add(wss)
         wss.setClose(()=>{
             ai_agentService.all_wss_set.delete(wss)
@@ -468,7 +468,7 @@ export class Ai_AgentController {
 
     @Post("/ai_load_one_file")
     async ai_load_one_file(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         await ai_agentService.load_one_file(ctx.headers.authorization, data.param_path)
         return  Sucess("")
     }
@@ -494,12 +494,12 @@ export class Ai_AgentController {
     // 知识库是否开启
     @Get("/docs_on_get")
     async docs_on_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(ai_agentService.docs_switch_get())
     }
     @Post("/docs_on_set")
     async docs_on_set(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         DataUtil.set(data_common_key.ai_agent_status,data.status)
         if(ai_agentService.docs_switch_get()) {
             await ai_agentService.init()
@@ -512,7 +512,7 @@ export class Ai_AgentController {
 
     @Post("/ai_del")
     async ai_del(@Req() ctx, @Body() data: any) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         ai_agentService.delete_index_with_progress(data.param_path).catch(console.error);
         return  Sucess("")
     }
@@ -522,9 +522,9 @@ export class Ai_AgentController {
      * 拥有「允许切换 AI 模型」(ai_model_switch) 或「AI 配置」(ai_agent_setting) 任一权限即可。
      */
     private check_ai_model_manage(token: string) {
-        if (userService.check_user_auth(token, UserAuth.ai_model_switch, false)) return;
+        if (userService.have_user_auth(token, UserAuth.ai_model_switch, false)) return;
         // 没有切换权限时，再要求 AI 配置权限（不通过则抛错）
-        userService.check_user_auth(token, UserAuth.ai_agent_setting, true);
+        userService.have_user_auth(token, UserAuth.ai_agent_setting, true);
     }
 
     /**
@@ -554,7 +554,7 @@ export class Ai_AgentController {
     // 获取系统会话提示词列表（聊天页面使用，不需要setting权限）
     @Get("/system_prompts")
     async system_prompts(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         return Sucess(settingService.ai_system_prompts_get());
     }
 
@@ -564,7 +564,7 @@ export class Ai_AgentController {
     @msg(CmdType.ai_bg_process_list_req)
     async aiBgProcessList(data: WsData<any>) {
         const wss = data.wss as Wss;
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const ctx = data.context || {};
         const processes = backgroundProcessManager.listProcesses(ctx.session_id || undefined);
         return { processes };
@@ -574,7 +574,7 @@ export class Ai_AgentController {
     @msg(CmdType.ai_bg_process_output_req)
     async aiBgProcessOutput(data: WsData<any>) {
         const wss = data.wss as Wss;
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const ctx = data.context || {};
         const { pid } = ctx;
         const result = backgroundProcessManager.getProcessOutput(pid);
@@ -602,7 +602,7 @@ export class Ai_AgentController {
     @msg(CmdType.ai_bg_process_kill_req)
     async aiBgProcessKill(data: WsData<any>) {
         const wss = data.wss as Wss;
-        userService.check_user_auth(wss.token, UserAuth.ai_agent_page);
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const ctx = data.context || {};
         const { pid } = ctx;
         const killed = backgroundProcessManager.killProcess(pid);

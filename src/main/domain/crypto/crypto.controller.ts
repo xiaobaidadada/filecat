@@ -18,7 +18,7 @@ export class CryptoController {
 
     @Post("/save_openssh")
     async save_openssh(@Body() data:{context:string,name:string},@Req() req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.crypto_ssh_file);
+        userService.have_user_auth(req.headers.authorization,UserAuth.crypto_ssh_file);
         await crypto_service.save_openssh(data.name,data.context);
         return Sucess("1");
     }

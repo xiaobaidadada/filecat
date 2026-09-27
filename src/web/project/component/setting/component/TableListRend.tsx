@@ -12,6 +12,7 @@ import {copyToClipboard} from "../../../util/FunUtil";
 import {NotySuccess} from "../../../util/noty";
 import {join_url} from "../../../../../common/StringUtil";
 import {Global} from "../../../util/global";
+import {move_element} from "../../../../../common/ListUtil";
 
 
 
@@ -53,6 +54,10 @@ export function TableListRender(props: {
         rows.splice(index, 1);
         setRows([...rows]);
     }
+    // 表格行上下拖动：把源行移动到目标位置，保存时按数组顺序提交
+    const row_drag = (from: number, to: number) => {
+        setRows(move_element(rows, from, to));
+    }
 
     return <Dashboard>
             <CardFull  self_title={<span className={" div-row "}><h2>{props.title}</h2>
@@ -85,7 +90,7 @@ export function TableListRender(props: {
                         }
                     </div>)
                     return list;
-                })} width={"10rem"}/>
+                })} width={"10rem"} onRowDrag={row_drag}/>
             </CardFull>
         </Dashboard>
 

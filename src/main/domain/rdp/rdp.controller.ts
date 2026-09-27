@@ -16,7 +16,7 @@ export class RdpController {
 
     @msg(CmdType.infos)
     async infos(data:WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token,UserAuth.rdp_proxy);
+        userService.have_user_auth((data.wss as Wss).token,UserAuth.rdp_proxy);
         rdpService.infos(data);
         return ""
     }

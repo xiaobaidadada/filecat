@@ -87,7 +87,7 @@ export class FileController {
 
     @Put('/:path([^"]{0,})')
     async uploadFile(@Req() req: Request, @Res() res: Response, @Param("path") path?: string) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(req.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.uploadFile(decodeURIComponent(path), req, res, req.headers.authorization);
         return Sucess("1");
     }
@@ -106,14 +106,14 @@ export class FileController {
 
     @Delete('/:path([^"]{0,})')
     async deletes(@Req() ctx, @Param("path") path?: string) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         return await FileServiceImpl.deletes(ctx.headers.authorization, path);
     }
 
     @Post('/save/:path([^"]{0,})') // 保存的是文本 最大50MB
     async save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 6250000}}) data?: saveTxtReq) {
-        if (userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
+        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
             await FileServiceImpl.save(ctx.headers.authorization, data?.context, path);
             return Sucess("1");
         }
@@ -132,8 +132,8 @@ export class FileController {
         type: base64UploadType
     }) {
         path = decodeURIComponent(path);
-        if (userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
+        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
             await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
             return Sucess("1");
         }
@@ -150,35 +150,35 @@ export class FileController {
 
     @Post('/cut')
     async cut(@Req() ctx, @Body() data?: cutCopyReq) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.cut(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/copy')
     async copy(@Req() ctx, @Body() data?: cutCopyReq) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.copy(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/file')
     async newFile(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newFile(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/new/dir')
     async newDir(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         await FileServiceImpl.newDir(ctx.headers.authorization, data);
         return Sucess("1");
     }
 
     @Post('/rename')
     async rename(@Req() ctx, @Body() data?: fileInfoReq) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_delete_cut_rename);
         await FileServiceImpl.rename(ctx.headers.authorization, data);
         return Sucess("1");
     }
@@ -281,7 +281,7 @@ export class FileController {
     // workflow 执行
     @msg(CmdType.workflow_exec)
     async workflow_exec(data: WsData<WorkflowReq>) {
-        userService.check_user_auth((data.wss as Wss).token, UserAuth.workflow_exe);
+        userService.have_user_auth((data.wss as Wss).token, UserAuth.workflow_exe);
         await workflowService.workflow_exec(data);
         return "";
     }

@@ -16,20 +16,20 @@ export class VideoController {
 
     @otherMsg(CmdType.rtsp_get)
     getRtsp(ws: WebSocket,query:{[key: string]: string}) {
-        userService.check_user_auth(query['token'], UserAuth.rtsp_proxy);
+        userService.have_user_auth(query['token'], UserAuth.rtsp_proxy);
         videoService.getRtsp(decodeURIComponent(query["url"]),ws);
     }
 
     @Post('/tag/save')
     save(@Body() items: NavIndexItem[],@Req()req) {
-        userService.check_user_auth(req.headers.authorization,UserAuth.rtsp_proxy_tag_update);
+        userService.have_user_auth(req.headers.authorization,UserAuth.rtsp_proxy_tag_update);
         DataUtil.set(navindex_video_key, items);
         return Sucess('ok');
     }
 
     @Get("/tag")
     get(@Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.rtsp_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.rtsp_proxy);
         let list = DataUtil.get(navindex_video_key);
         return Sucess(list || []);
     }

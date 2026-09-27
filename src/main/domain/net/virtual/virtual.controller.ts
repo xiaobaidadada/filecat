@@ -24,8 +24,8 @@ export class VirtualController {
 
     @Post("/vir/server/delete/client")
     async vir_server_delete_client(@Body() data: { ips: string[] }, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
         for (const ip of data.ips ?? []) {
             const client = clientMap.get(ip);
             if (client) {
@@ -40,14 +40,14 @@ export class VirtualController {
     // 虚拟网络
     @Get("/vir/server/get")
     virServerGet(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
         return Sucess(virtualServerService.virServerGet());
     }
 
     @Post("/vir/server/save")
     async virServerSave(@Body() data: VirServerPojo, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
         if (data.async_ips?.length) {
             for (const ip of data.async_ips) {
                 try {
@@ -82,13 +82,13 @@ export class VirtualController {
 
     @Get("/vir/client/get")
     virClientGet(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
         return Sucess(virtualClientService.virClientGet());
     }
 
     @Post("/vir/client/save")
     async virClientSave(@Body() data: VirClientPojo, @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.vir_net);
+        userService.have_user_auth(req.headers.authorization, UserAuth.vir_net);
         await virtualClientService.virClientSave(data);
         return Sucess("1");
     }

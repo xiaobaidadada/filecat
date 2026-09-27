@@ -169,9 +169,22 @@ export function PrivateEnv() {
 
     // 表格行上下拖动：把源行移动到目标位置，保存时会按数组顺序重新写入 index
     const dir_row_drag = (from: number, to: number) => {
-        let list = [...rows];
-        list = move_element(list,from, to);
-        setRows(list);
+        if (from === 0 || to === 0) {
+            return;
+        }
+        setRows(move_element(rows, from, to));
+    }
+    // 个人保护路径拖动
+    const protection_dir_row_drag = (from: number, to: number) => {
+        set_protection_dir_rows(move_element(protection_dir_rows, from, to));
+    }
+    // 目录快捷命令拖动
+    const quick_cmd_row_drag = (from: number, to: number) => {
+        set_quick_cmd_rows(move_element(quick_cmd_rows, from, to));
+    }
+    // 文件快捷命令拖动
+    const file_quick_cmd_row_drag = (from: number, to: number) => {
+        set_file_quick_cmd_rows(move_element(file_quick_cmd_rows, from, to));
     }
 
 
@@ -313,7 +326,7 @@ export function PrivateEnv() {
                                               onClick={() => protection_dir_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={protection_dir_row_drag}/>
                     </CardFull>
                 </Dashboard>
 
@@ -343,7 +356,7 @@ export function PrivateEnv() {
                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => quick_cmd_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={quick_cmd_row_drag}/>
                     </CardFull>
 
                     <CardFull self_title={<span className={" div-row "}><h2>{t("文件快捷命令")}</h2>
@@ -372,7 +385,7 @@ export function PrivateEnv() {
                                               onClick={() => file_quick_cmd_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={file_quick_cmd_row_drag}/>
                     </CardFull>
                 </Dashboard>
 

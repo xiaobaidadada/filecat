@@ -26,30 +26,30 @@ export class SettingController {
     // 获取页面路由
     @Get(`/${Http_controller_router.setting_customer_router}`)
     getRouter(@Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.getCustomerRouter());
     }
 
     // 设置页面路由
     @Post(`/${Http_controller_router.setting_customer_router_save}`)
     saveRouter(@Body() req: any, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.check_user_auth(r.headers.authorization, UserAuth.code_resource);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.code_resource);
         settingService.setCustomerRouter(req);
         return Sucess("1");
     }
 
     @Get(`/${Http_controller_router.setting_customer_workflow_router}`)
     get_workflow_router(@Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.get_workflow_router());
     }
 
     // 设置workflow路由
     @Post(`/${Http_controller_router.setting_customer_workflow_router_save}`)
     save_workflow_router(@Body() req: any, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.check_user_auth(r.headers.authorization, UserAuth.workflow_api);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.workflow_api);
         settingService.save_workflow_router(req);
         return Sucess("1");
     }
@@ -57,15 +57,15 @@ export class SettingController {
     // 获取api路由
     @Get("/api/customer_router")
     getApiRouter( @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
         return Sucess(settingService.getCustomerApiRouter());
     }
 
     // 设置api路由
     @Post('/api/customer_router/save')
     saveApiRouter(@Body() req: any, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
+        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
+        userService.have_user_auth(r.headers.authorization, UserAuth.code_api);
         // todo 之前设置的js代码文件是否一直保留
         settingService.setCustomerApiRouter(req);
         return Sucess("1");
@@ -81,7 +81,7 @@ export class SettingController {
     // 获取js代码
     @Get('/jscode/:router*')
     async getJscode(@Req() req, @Param("router") router?: string) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.code_api);
+        userService.have_user_auth(req.headers.authorization, UserAuth.code_api);
         router = settingService.routerHandler(router);
         const context = DataUtil.getFile(router, data_dir_tem_name.all_user_api_file_dir);
         const pre = router_pre_file;
@@ -95,7 +95,7 @@ export class SettingController {
     @Post('/jscode/save')
     async saveJscode(@Body() req: { router: string, context: string }, @Req() r) {
         // 通用 js 代码保存（原「自定义登录auth」代码已迁移到插件系统，不再走此接口）
-        userService.check_user_auth(r.headers.authorization, UserAuth.code_api);
+        userService.have_user_auth(r.headers.authorization, UserAuth.code_api);
         const dir = data_dir_tem_name.all_user_api_file_dir;
         DataUtil.setFile(settingService.routerHandler(req.router), req.context, dir);
         return Sucess("1");
@@ -104,13 +104,13 @@ export class SettingController {
 
     @Get('/token')
     async getToken(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         return Sucess(settingService.getToken());
     }
 
     @Post('/token/save')
     async saveToken(@Body() req: TokenSettingReq, @Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.token_update);
+        userService.have_user_auth(r.headers.authorization, UserAuth.token_update);
         if (req.mode === TokenTimeMode.length && req.length < 10) {
             return Fail("时间过短小于10秒");
         }
@@ -120,7 +120,7 @@ export class SettingController {
 
     @Get('/token/clear')
     async clearToken(@Req() r) {
-        userService.check_user_auth(r.headers.authorization, UserAuth.token_update);
+        userService.have_user_auth(r.headers.authorization, UserAuth.token_update);
         Cache.clear();
         return Sucess("1");
     }
@@ -143,7 +143,7 @@ export class SettingController {
 
     @Post('/ai_agent_setting/save')
     async ai_agent_settingsave(@Body() req: {models:ai_agent_Item[]}, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         DataUtil.set(data_common_key.ai_agent_model_setting,req)
         ai_agentService.ai_agent_setting_save(req)
         return Sucess("1");
@@ -153,33 +153,33 @@ export class SettingController {
     @Get("/ai_agent_setting")
     ai_agent_setting_get(@Req() ctx) {
         // 全部数据配置，需要编辑权限才能看到
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_agent_setting());
     }
 
     // mcp 相关
     @Get("/ai_mcp_setting")
     ai_mcp_setting_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_mcp_setting());
     }
 
     @Post('/ai_mcp_setting/save')
     async ai_mcp_settingsave(@Body() req: {list: ai_mcp_server_item[]}, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         await settingService.ai_mcp_setting_save(ctx.headers.authorization, req);
         return Sucess("1");
     }
 
     @Get("/ai_mcp_tools")
     async ai_mcp_tools_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(await ai_agentService.getMcpServerTools());
     }
 
     @Post("/ai_mcp_tools/reload")
     async ai_mcp_tools_reload(@Req() ctx, @Body() req: { index: number }) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(await ai_agentService.reloadMcpServer(Number(req?.index)));
     }
 
@@ -187,13 +187,13 @@ export class SettingController {
 
     @Get("/ai_long_term_memory_setting")
     ai_long_term_memory_setting_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(aiAgentLongTermMemoryService.get_setting());
     }
 
     @Post("/ai_long_term_memory_setting/save")
     ai_long_term_memory_setting_save(@Body() req: { open: boolean }, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         aiAgentLongTermMemoryService.save_setting({ open: req.open });
         return Sucess("1");
     }
@@ -201,7 +201,7 @@ export class SettingController {
     /** 获取指定时间桶类型的长期记忆内容 */
     @Get("/ai_long_term_memory_bucket/:type")
     ai_long_term_memory_bucket_get(@Param("type") type: string, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         if (!['week', 'month', 'year', 'forever'].includes(type)) {
             return Fail("type must be week/month/year/forever");
         }
@@ -211,7 +211,7 @@ export class SettingController {
     /** 保存指定时间桶类型的长期记忆内容（编辑器直接写入纯文本） */
     @Post("/ai_long_term_memory_bucket/:type/save")
     ai_long_term_memory_bucket_save(@Param("type") type: string, @Body() req: { data: string }, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         if (!['week', 'month', 'year', 'forever'].includes(type)) {
             return Fail("type must be week/month/year/forever");
         }
@@ -222,13 +222,13 @@ export class SettingController {
     // 系统会话提示词
     @Get("/ai_system_prompts")
     ai_system_prompts_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_system_prompts_get());
     }
 
     @Post("/ai_system_prompts/save")
     ai_system_prompts_save(@Body() req: { list: ai_system_prompt_item[] }, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         settingService.ai_system_prompts_save(req.list);
         return Sucess("1");
     }
@@ -237,13 +237,13 @@ export class SettingController {
 
     @Get("/ai_rebot_setting")
     ai_rebot_setting_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_rebot_setting());
     }
 
     @Post("/ai_rebot_setting/save")
     async ai_rebot_setting_save(@Body() req: ai_rebot_setting, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         settingService.ai_rebot_setting_save(req);
         // 通知机器人服务重新加载配置
         await ai_agentService.reloadRobots().catch(console.error);
@@ -259,13 +259,13 @@ export class SettingController {
 
     @Get("/ai_docs_setting")
     ai_docs_setting(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_docs_setting());
     }
 
     @Post("/ai_docs_setting_save")
     async ai_docs_setting_save(@Req() ctx,@Body() data) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         await settingService.ai_docs_setting_save(ctx.headers.authorization,data)
         return Sucess("");
     }
@@ -278,14 +278,14 @@ export class SettingController {
     @Get("/get_share_file_list")
     get_share_file_list(@Req() ctx) {
         // 全部数据配置，需要编辑权限才能看到
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.share_file);
         return Sucess(settingService.get_share_file_list());
     }
 
     @Post("/add_share_file_list")
     add_share_file_list(@Body() req: any, @Req() ctx) {
         // 全部数据配置，需要编辑权限才能看到
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.share_file);
         settingService.add_share_file(req,ctx.headers.authorization)
         return Sucess("");
     }
@@ -293,7 +293,7 @@ export class SettingController {
     @Post("/set_share_file_list")
     set_share_file_list(@Body() req: any, @Req() ctx) {
         // 全部数据配置，需要编辑权限才能看到
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.share_file);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.share_file);
         settingService.set_share_file_list(req,ctx.headers.authorization)
         return Sucess("");
     }
@@ -307,7 +307,7 @@ export class SettingController {
 
     @Post('/outside/software/save')
     setSoftware(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.outside_software_path);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.outside_software_path);
         settingService.setSoftware(req, ctx.headers.authorization);
         return Sucess("");
     }
@@ -315,13 +315,13 @@ export class SettingController {
     @Get("/pty_cmd")
     get_pty_cmd( @Req() ctx) {
         const list = settingService.get_pty_cmd();
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(list.join(" "));
     }
 
     @Post("/pty_cmd/save")
     save_pty_cmd(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.pty_cmd_update);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.pty_cmd_update);
         settingService.save_pty_cmd(req.str);
         return Sucess("");
     }
@@ -329,13 +329,13 @@ export class SettingController {
     // path路径
     @Get("/env/path/get")
     getEnvPath(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_en_path_list());
     }
 
     @Post('/env/path/save')
     setEnvPath(@Body() req: { paths: any[] }, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
         settingService.setEnvPath(req.paths);
         return Sucess("1");
     }
@@ -343,21 +343,21 @@ export class SettingController {
     // 获取用户持久化的进程环境变量覆盖原文（供「编辑」使用，默认空字符串）
     @Get("/env/process/get")
     getProcessEnv(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
         return Sucess(settingService.get_process_env_override_text());
     }
 
     // 获取当前进程真实环境变量 key=value 文本（供「查看」展示）
     @Get("/env/process/view")
     viewProcessEnv(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
         return Sucess(settingService.get_process_env_text());
     }
 
     // 保存进程环境变量覆盖（persist + 立即合并进 process.env，重启后 init 重新加载）
     @Post('/env/process/save')
     saveProcessEnv(@Body() req: { text: string }, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.env_path_update);
         settingService.save_process_env(req.text);
         return Sucess("");
     }
@@ -387,7 +387,7 @@ export class SettingController {
     // 保存保护目录
     @Post('/protection_dir/sys/save')
     protectionSysDirSave(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_protection_dir);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_protection_dir);
         settingService.protectionSysDirSave(req);
         return Sucess("1");
     }
@@ -401,7 +401,7 @@ export class SettingController {
 
     @Post("/dir_upload_max_num/save")
     save_dir_upload_max_num(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.dir_upload_max_num);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.dir_upload_max_num);
         settingService.save_dir_upload_max_num(req);
         return Sucess("1");
     }
@@ -409,7 +409,7 @@ export class SettingController {
     // 获取系统所有的配置
     @Get("/sys_option/status")
     get_sys_option_status(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         // 获取系统所有功能的状态
         const r = {
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
@@ -438,7 +438,7 @@ export class SettingController {
         // 获取系统所有功能的状态
         if (body.type === sys_setting_type.cyc) {
             // 文件回收站
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.recycle_file_save);
             DataUtil.set(data_common_key.recycle_bin_status, body.open)
             if (!body.value) {
                 return Fail("empty value")
@@ -463,7 +463,7 @@ export class SettingController {
             }
             DataUtil.set(data_common_key.recycle_bin_key, key_map_list);
         } else if (body.type === sys_setting_type.sys_env) {
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
             settingService.set_sys_env({
                 web_site_title: body.value.web_site_title,
                 show_login_user_info: body.value.show_login_user_info,
@@ -473,7 +473,7 @@ export class SettingController {
             ServerEvent.emit("sys_env_update");
         } else if (body.type === sys_setting_type.private_sys_env) {
             // 个性化
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.private_sys_env);
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.private_sys_env);
             // 语言
             const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
             user_data.language = body.value.language;
@@ -481,7 +481,7 @@ export class SettingController {
             user_data.upload_file_ignore = body.value.upload_file_ignore
             await userService.save_user_info(user_data.id, user_data);
         } else if (body.type === sys_setting_type.https) {
-            userService.check_user_auth(ctx.headers.authorization, UserAuth.https_file);
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.https_file);
             const httpsReq: HttpsSettingReq = body.value;
             settingService.set_https_setting(httpsReq);
             // ServerEvent.emit("https_setting_update");
@@ -491,13 +491,13 @@ export class SettingController {
 
     @Get("/workflow_setting_get")
     workflow_setting_get(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_workflow_setting());
     }
 
     @Post("/workflow_setting_save")
     workflow_setting_save(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.workflow_job);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.workflow_job);
         settingService.save_workflow_setting(req);
         return Sucess("1");
     }
@@ -506,20 +506,20 @@ export class SettingController {
 
     @Get("/auto_upgrade_setting")
     get_auto_upgrade_setting(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         return Sucess(settingService.get_auto_upgrade_setting());
     }
 
     @Post("/auto_upgrade_setting/save")
     auto_upgrade_setting_save(@Body() req: AutoUpgradeSettingReq, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         settingService.set_auto_upgrade_setting(req);
         return Sucess("1");
     }
 
     @Post("/auto_upgrade_setting/upgrade_now")
     async upgrade_now(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
         settingService.upgrade_now().catch(console.error);
         return Sucess("1");
     }
@@ -528,13 +528,13 @@ export class SettingController {
 
     @Get("/plugin/list")
     async get_plugin_list(@Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return Sucess(settingService.get_plugin_list());
     }
 
     @Post("/plugin/list/save")
     async save_plugin_list(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_page);
         return settingService.save_plugin_list(req);
     }
 

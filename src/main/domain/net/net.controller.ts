@@ -27,48 +27,48 @@ export class NetController {
 
     @Post('/start')
     async start(@Body() data: NetPojo, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         return netService.start(data);
     }
 
     @Post('/close')
     async close(@Body() data: NetPojo, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         await netService.close(data);
         return Sucess("1");
     }
 
     @Post('/tag/save')
     save(@Body() items: NavIndexItem[], @Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy_tag_update);
+        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy_tag_update);
         DataUtil.set(navindex_net_key_list, items);
         return Sucess('ok');
     }
 
     @Get("/tag")
     get(@Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.browser_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy);
         let list = DataUtil.get(navindex_net_key_list);
         return Sucess(list || []);
     }
 
     @Post('/wol/tag/save')
     saveWolTag(@Body() items: NavIndexItem[], @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy_tag_update);
+        userService.have_user_auth(req.headers.authorization, UserAuth.wol_proxy_tag_update);
         DataUtil.set(navindex_wol_key, items);
         return Sucess('ok');
     }
 
     @Get("/wol/tag")
     getWolTag(@Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         let list = DataUtil.get(navindex_wol_key);
         return Sucess(list || []);
     }
 
     @Post("/wol/exec")
     wol(@Body() data: { mac: string }, @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.wol_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.wol_proxy);
         netService.wol(data.mac);
         return Sucess("");
     }
@@ -77,39 +77,39 @@ export class NetController {
     // http 的tag
     @Get("/http/tag")
     get_http_tag(@Req() req: Request) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.http_proxy);
         let list = DataUtil.get(http_tag_key, file_key.http_tag);
         return Sucess(list || []);
     }
 
     @Post('/http/tag/save')
     save_http_tag(@Body() items: NavIndexItem[], @Req() req) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy_tag_update);
+        userService.have_user_auth(req.headers.authorization, UserAuth.http_proxy_tag_update);
         DataUtil.set(http_tag_key, items, file_key.http_tag);
         return Sucess('ok');
     }
 
     @Post('/http/send')
     async httpSend(@Req() req: Request, @Res() res: Response, @QueryParam("local_download_path", {required: false}) local_download_path?: string) {
-        userService.check_user_auth(req.headers.authorization, UserAuth.http_proxy);
+        userService.have_user_auth(req.headers.authorization, UserAuth.http_proxy);
         return netService.httpSend(req, res, local_download_path);
     }
 
     @msg(CmdType.http_download_water)
     async http_download_water(data: WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy);
+        userService.have_user_auth((data.wss as Wss).token, UserAuth.http_proxy);
         return netService.http_download_water(data);
     }
 
     @msg(CmdType.http_download_cancel)
     async http_download_cancel(data: WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token, UserAuth.http_proxy_download_cancel);
+        userService.have_user_auth((data.wss as Wss).token, UserAuth.http_proxy_download_cancel);
         return netService.http_download_cancel(data);
     }
 
     @Post('/vir/client/tcp_proxy/save')
     tcp_proxy_save(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         DataUtil.set(data_common_key.tcp_proxy_key, req);
         setTimeout(()=>{
             // 避免当前使用的端口被占用，先回复函数成功
@@ -123,32 +123,32 @@ export class NetController {
 
     @Post('/vir/client/tcp_proxy/get')
     tcp_proxy_get(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         return Sucess(virtualClientService.get_tcp_proxy());
     }
 
     @Post('/http/proxy/get/win')
     proxyGetWin(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         return Sucess(netService.getWindowsProxy());
     }
 
     @Post('/http/proxy/set/win')
     proxySetMac(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         netService.setWindowsProxy(req)
         return Sucess("");
     }
 
     @Post('/http/proxy/get/mac')
     proxyGetMac(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         return Sucess(netService.getMacProxy());
     }
 
     @Post('/http/proxy/set/mac')
     proxySetWin(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         netService.setMacProxy(req)
         return Sucess("");
     }
@@ -156,13 +156,13 @@ export class NetController {
 
     @Post('/http/proxy/server/get')
     httpProxyGet(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         return Sucess(netService.getHttpServerProxy());
     }
 
     @Post('/http/proxy/server/save')
     async httpProxySave(@Body() req: any, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         setTimeout(()=>{
             netService.saveHttpServer(req).catch(console.error);
         },1000)
@@ -171,7 +171,7 @@ export class NetController {
 
     @Post("/http/proxy/server/code/get")
     httpProxyCodeGet(@Body() req, @Req() ctx) {
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         const key = req.key;
         const context = DataUtil.getFile(`data_common_key.proxy_server_code_prefix_${key}`, data_dir_tem_name.http_proxy_server_dir);
         const pre = `(() => { return ${JSON.stringify([http_proxy_item_sample])} })()`
@@ -185,7 +185,7 @@ export class NetController {
     httpProxyCodeSave(@Body() req, @Req() ctx) {
         const key = req.key;
         const context = req.context;
-        userService.check_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.vir_net); // 虚拟网络权限
         DataUtil.setFile(`data_common_key.proxy_server_code_prefix_${key}`, context, data_dir_tem_name.http_proxy_server_dir);
         netService.load_server_proxy()
         return Sucess("");
@@ -193,14 +193,14 @@ export class NetController {
 
     @msg(CmdType.port_scan_req)
     async startScan(data: WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token, UserAuth.port_scan);
+        userService.have_user_auth((data.wss as Wss).token, UserAuth.port_scan);
         netService.portScan(data); // 不 await，后台异步执行，立即返回
         return "";
     }
 
     @msg(CmdType.port_scan_cancel)
     async cancelScan(data: WsData<any>) {
-        userService.check_user_auth((data.wss as Wss).token, UserAuth.port_scan);
+        userService.have_user_auth((data.wss as Wss).token, UserAuth.port_scan);
         netService.portScanCancel(data);
         return "";
     }

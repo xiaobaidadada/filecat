@@ -506,8 +506,12 @@ export class UserService {
         return true;
     }
 
-    public check_user_auth(token, auth: UserAuth, auto_throw = true) {
+    public have_user_auth(token, auth: UserAuth, auto_throw = true) {
         const user_data = this.get_user_info_by_token(token);
+        return this.have_user_auth_by_data(user_data,auth,auto_throw)
+    }
+
+    public have_user_auth_by_data(user_data:UserData, auth: UserAuth, auto_throw = true) {
         if(user_data.is_root) return true;
         const v = user_data?.auth_list.find(v => v === auth);
         if (auto_throw && !v) throw "no permission";

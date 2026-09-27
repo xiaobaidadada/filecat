@@ -15,6 +15,7 @@ import {use_select_config} from "../../util/react.config";
 import {join_url} from "../../../../common/StringUtil";
 import {copyToClipboard} from "../../util/FunUtil";
 import {Global} from "../../util/global";
+import {move_element} from "../../../../common/ListUtil";
 
 
 export function CustomerApiRouter() {
@@ -46,6 +47,10 @@ export function CustomerApiRouter() {
     const del = (index) => {
         rows.splice(index, 1);
         setRows([...rows]);
+    }
+    // 表格行上下拖动：把源行移动到目标位置，保存时按数组顺序提交
+    const row_drag = (from: number, to: number) => {
+        setRows(move_element(rows, from, to));
     }
     const edit = async (item)=>{
         if (!item.router) {
@@ -108,7 +113,7 @@ export function CustomerApiRouter() {
                     </div>,
                 ];
                 return new_list;
-            })} width={"10rem"}/>
+            })} width={"10rem"} onRowDrag={row_drag}/>
         </CardFull>
     </Dashboard>
 

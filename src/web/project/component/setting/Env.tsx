@@ -19,7 +19,7 @@ import {useAtom} from 'jotai';
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
-import {sort} from "../../../../common/ListUtil";
+import {move_element, sort} from "../../../../common/ListUtil";
 import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
 import {using_env_prompt} from "./util";
 import {plug_item} from "../../../../plugin";
@@ -277,6 +277,28 @@ export function Env() {
         set_plugin_rows([...plugin_rows]);
     }
 
+    // 表格行上下拖动：把源行移动到目标位置（保存时会按数组顺序重写编号）
+    // 文件上传最大并发限制拖动
+    const dir_upload_row_drag = (from: number, to: number) => {
+        set_dir_upload_rows(move_element(dir_upload_rows, from, to));
+    }
+    // PATH 拖动
+    const env_path_row_drag = (from: number, to: number) => {
+        set_env_path_dir_rows(move_element(env_path_dir_rows, from, to));
+    }
+    // Workflow Job 拖动
+    const workflow_setting_row_drag = (from: number, to: number) => {
+        set_workflow_setting_rows(move_element(workflow_setting_rows, from, to));
+    }
+    // 插件配置拖动
+    const plugin_row_drag = (from: number, to: number) => {
+        set_plugin_rows(move_element(plugin_rows, from, to));
+    }
+    // 系统保护路径拖动
+    const protection_sys_dir_row_drag = (from: number, to: number) => {
+        set_protection_sys_dir_rows(move_element(protection_sys_dir_rows, from, to));
+    }
+
     return (<React.Fragment>
         <RowColumn widthPer={100}>
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton
@@ -327,7 +349,7 @@ export function Env() {
                                              onClick={() => dir_upload_rows_del(index)}/>,
                            ];
                            return new_list;
-                       })} width={"10rem"}/>
+                       })} width={"10rem"} onRowDrag={dir_upload_row_drag}/>
             </CardFull>
         </RowColumn>
         <Row>
@@ -364,7 +386,7 @@ export function Env() {
                                               onClick={() => env_path_dir_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={env_path_row_drag}/>
                     </CardFull>
 
                     <Card self_title={<span className={" div-row "}><h2>{t("PTY CMD")}</h2>
@@ -421,7 +443,7 @@ export function Env() {
                                               onClick={() => workflow_setting_row_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={workflow_setting_row_drag}/>
                     </CardFull>
 
 
@@ -459,7 +481,7 @@ export function Env() {
                                               onClick={() => plugin_rows_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={plugin_row_drag}/>
                     </CardFull>
 
                 </Dashboard>
@@ -487,7 +509,7 @@ export function Env() {
                                               onClick={() => protection_sys_dir_del(index)}/>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={protection_sys_dir_row_drag}/>
                     </CardFull>
 
 

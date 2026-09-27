@@ -159,7 +159,7 @@ export class ShellService {
 
     check_permission(params: { token?: string, user_id?: string, permission: UserAuth }, auto_throw = false) {
         if (params.token != null) {
-            return userService.check_user_auth(params.token, params.permission, auto_throw)
+            return userService.have_user_auth(params.token, params.permission, auto_throw)
         }
         if (params.user_id != null) {
             return userService.check_user_auth_by_user_id(params.user_id, params.permission, {

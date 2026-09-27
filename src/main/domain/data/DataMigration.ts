@@ -11,9 +11,10 @@ import {
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
 import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
 import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
-import {UserData} from "../../../common/req/user.req";
+import {UserAuth, UserData} from "../../../common/req/user.req";
 import {DataUtil} from "./DataUtil";
 import {sort} from "../../../common/ListUtil";
+import {userService} from "../user/user.service";
 
 
 /**
@@ -155,6 +156,9 @@ export class DataMigration {
                 for (const user_id of Object.keys(user_mapping)) {
                     const user_data = user_mapping[user_id];
                     if (!user_data) {
+                        continue;
+                    }
+                    if (!userService.have_user_auth_by_data(user_data,UserAuth.nav_net_tag)) {
                         continue;
                     }
                     let v = true

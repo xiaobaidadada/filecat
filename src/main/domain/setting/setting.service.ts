@@ -858,7 +858,7 @@ export class SettingService {
         const user_data = userService.get_user_info_by_token(token);
         const base = new FileSettingItem();
         base.path = user_data.cwd;
-        base.note = "default path";
+        base.note = "default";
         let ok = true;
         for (const item of user_data?.folder_items ?? []) {
             if (item.default) {

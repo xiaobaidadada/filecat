@@ -47,7 +47,7 @@ export class ShellController {
     // 进入exec执行
     @msg(CmdType.docker_shell_exec_open)
     async dockerShellExecOpen(data:WsData<ShellInitPojo>) {
-        userService.check_user_auth((data.wss as Wss).token,UserAuth.docker_container_update);
+        userService.have_user_auth((data.wss as Wss).token,UserAuth.docker_container_update);
         await shellServiceImpl.dockerShellExecOpen(data);
         return "";
     }

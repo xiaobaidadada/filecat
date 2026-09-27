@@ -1029,7 +1029,7 @@ export class FileService  {
 
     async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
         const pojo = data.context as FileVideoFormatTransPojo;
-        userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
         const wss = data.wss as Wss;
         const root_path = settingService.getFileRootPath(pojo.token);
         const sysPath = path.join(root_path, decodeURIComponent(pojo.source_filename));
@@ -1063,7 +1063,7 @@ export class FileService  {
 
     async uncompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
-        userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
 
         const source_file = decodeURIComponent(pojo.source_file);
         const tar_dir = decodeURIComponent(pojo.tar_dir ?? "");
@@ -1094,7 +1094,7 @@ export class FileService  {
 
     async FileCompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;
-        userService.check_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+        userService.have_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
 
         const files = pojo.filePaths;
         const root_path = settingService.getFileRootPath(pojo.token);
