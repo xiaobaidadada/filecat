@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {fileHttp, sshHttp} from "../../../util/config";
 import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {RCode} from "../../../../../common/Result.pojo";
 import {SshPojo} from "../../../../../common/req/ssh.pojo";
 import {RemoteShell} from "../../shell/RemoteShell";
@@ -147,14 +147,16 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     }
     return (
         <React.Fragment>
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
-                                                  icon={"search"} value={""} handleInputChange={(v) => {
-                setSearch(v)
-            }} max_width={"25em"}/>}>
-
-                {/*<ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>*/}
-                <RemoteMenu close={props.close}/>
-            </Header>
+            <HeaderPortal>
+                                <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
+                                                                  icon={"search"} value={""} handleInputChange={(v) => {
+                                setSearch(v)
+                            }} max_width={"25em"}/>
+            </HeaderPortal>
+            <HeaderPortal position={"right"}>
+                                {/*<ActionButton icon={"arrow_back"} title={t("返回")} onClick={backDir}/>*/}
+                                <RemoteMenu close={props.close}/>
+            </HeaderPortal>
             <RouteBreadcrumbs baseRoute={"remoteShell"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             <FileListLoad_file_folder_for_linux

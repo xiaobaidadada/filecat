@@ -28,7 +28,7 @@ import { getShortTime } from "../../../util/common_util";
 import {Global} from "../../../util/global";
 import {routerConfig} from "../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../util/FunUtil";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {use_select_config} from "../../../util/react.config";
 
 let client_num_id_map:{[key:number]:tcp_proxy_server_client} = {}
@@ -178,9 +178,9 @@ export function TcpProxyServerClient() {
 
 
     return (<React.Fragment>
-        <Header>
-            { edit_client && <span>{`${edit_client.client_name}${edit_client.note?`(${edit_client.note})`:''}`}</span>}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                { edit_client && <span>{`${edit_client.client_name}${edit_client.note?`(${edit_client.note})`:''}`}</span>}
+            </HeaderPortal>
         <Row>
         <Column widthPer={50}>
             <Dashboard>

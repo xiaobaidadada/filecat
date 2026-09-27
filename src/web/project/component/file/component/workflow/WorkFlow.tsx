@@ -11,7 +11,7 @@ import {SysSoftware} from "../../../../../../common/req/setting.req";
 import {Card, CardFull, StatusCircle, TextTip} from "../../../../../meta/component/Card";
 import {ActionButton, ButtonLittle, ButtonLittleStatus} from "../../../../../meta/component/Button";
 import {NotyFail} from "../../../../util/noty";
-import Header from "../../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../../meta/component/HeaderPortal";
 import {Column, Dashboard, FullScreenContext, Row, TextLine} from "../../../../../meta/component/Dashboard";
 import CircleChart from "../../../../../meta/component/CircleChart";
 import {Table} from "../../../../../meta/component/Table";
@@ -199,14 +199,14 @@ export default function WorkFlow(props) {
     }
 
     return <div>
-        <Header>
-            {terminalState && <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{
-                setShellShow(!shellShow);
-            }}/>}
-            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                set_workflow_show(false);
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {terminalState && <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{
+                                setShellShow(!shellShow);
+                            }}/>}
+                            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
+                                set_workflow_show(false);
+                            }}/>
+            </HeaderPortal>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Dashboard>

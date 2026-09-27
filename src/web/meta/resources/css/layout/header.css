@@ -52,6 +52,13 @@
   font-size: 1.2em;
 }
 
+/* 页面工具栏注入槽位（页面通过 <HeaderPortal> 把内容渲染到这里）
+   用 display: contents 让槽位自身不生成盒子，
+   里面的内容在布局上等同 Header 的直接子元素，和页面自己渲染 Header 时表现一致 */
+.header .header-slot {
+  display: contents;
+}
+
 .header .header-menu {
   display: none;
 }

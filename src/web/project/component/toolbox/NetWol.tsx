@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import {InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {netHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
@@ -48,10 +48,10 @@ export function NetWol(props) {
     }
 
     return <div>
-        <Header>
-            <ActionButton icon={"play_arrow"} title={t("发送")} onClick={()=>{go();}}/>
-            <InputTextIcon placeholder={t("目标设备mac地址")} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"play_arrow"} title={t("发送")} onClick={()=>{go();}}/>
+                            <InputTextIcon placeholder={t("目标设备mac地址")} icon={"laptop_mac"} value={mac} handleInputChange={(v) => setMac(v)}/>
+            </HeaderPortal>
 
         <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.wol_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "mac", preName: "mac"+t("地址")},{key:"color",preName:"color"}]}/>
     </div>

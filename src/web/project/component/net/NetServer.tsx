@@ -11,7 +11,7 @@ import {VirServerEnum, VirServerPojo} from "../../../../common/req/net.pojo";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {useTranslation} from "react-i18next";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 
 
 export function NetServer(props) {
@@ -89,10 +89,10 @@ export function NetServer(props) {
         set_opt_row({})
     }
     return <div>
-        <Header>
-            {!!Object.keys(opt_row).length && opt_row[0]}
-            {!!Object.keys(opt_row).length && <ActionButton icon={"delete"} title={'删除'} onClick={delete_h}/>}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {!!Object.keys(opt_row).length && opt_row[0]}
+                            {!!Object.keys(opt_row).length && <ActionButton icon={"delete"} title={'删除'} onClick={delete_h}/>}
+            </HeaderPortal>
         <Row>
             <Column>
                 <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>}>

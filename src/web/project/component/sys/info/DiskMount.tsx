@@ -8,7 +8,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {Card, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
 import {NotySuccess} from "../../../util/noty";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {Column, FlexContainer, FullScreenContext, FullScreenDiv, Row} from "../../../../meta/component/Dashboard";
 import {Table} from "../../../../meta/component/Table";
 import TreeView from "../../../../meta/component/TreeView";
@@ -187,11 +187,11 @@ export function DiskMount() {
         })
     }
     return <div>
-        <Header>
-            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                set_disk_check({});
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
+                                set_disk_check({});
+                            }}/>
+            </HeaderPortal>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Row>

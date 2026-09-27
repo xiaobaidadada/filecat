@@ -152,7 +152,10 @@ function Layout() {
                 <ExcalidrawEditor/>
             </Suspense>}
             {/*网页顶部菜单栏 | 不管什么位置都是位于顶部*/}
-            {!headerMin && <Header/>}
+            {/* permanent_logo：Layout 是常驻组件，全站唯一的 logo <img> 由这里的 Header 渲染，
+                页面内的 Header 不渲染 logo（它们改用 <HeaderPortal> 注入工具栏内容），
+                因此切换页面时 img 不会被重建 */}
+            {!headerMin && <Header permanent_logo={true}/>}
             <CommonBody
                 navList={MainNavList}
                 hidden_navList={hidden_navList}

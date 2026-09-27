@@ -8,7 +8,7 @@ import {ddnsHttp,} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {DdnsConnection, DdnsIPPojo, DdnsType, DnsPod, ip_source_type} from "../../../../../common/req/ddns.pojo";
 import {useTranslation} from "react-i18next";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {PromptEnum} from "../../prompts/Prompt";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
@@ -91,9 +91,9 @@ export function Dnspod(props: any) {
 
     }
     return <div>
-        <Header>
-            <ActionButton icon={"add"} title={t("添加http获取ip")} onClick={add_ipv}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"add"} title={t("添加http获取ip")} onClick={add_ipv}/>
+            </HeaderPortal>
         <Row>
             <Column>
                 <Card title={"ipv4"}>

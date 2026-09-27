@@ -9,7 +9,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
 import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
-import Header from '../../../meta/component/Header';
+import {HeaderPortal} from '../../../meta/component/HeaderPortal';
 import "video.js/dist/video-js.min.css";
 import videojs from "video.js";
 // import "videojs-mobile-ui/dist/videojs-mobile-ui.css";
@@ -113,12 +113,12 @@ export default function Rtsp() {
         go(item);
     }
     return <div>
-        <Header>
-            <InputTextIcon max_width={"40rem"} placeholder={t("  rtsp://username:password@ip:port/path")} icon={"link"} value={address}
-                           handleInputChange={(v) => setAddress(v)}/>
-            {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
-            {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <InputTextIcon max_width={"40rem"} placeholder={t("  rtsp://username:password@ip:port/path")} icon={"link"} value={address}
+                                           handleInputChange={(v) => setAddress(v)}/>
+                            {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
+                            {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
+            </HeaderPortal>
             {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rtsp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[{key: "name", preName: t("名字")}, {key: "address", preName: t("地址")},{key:"color",preName:"color"}]}/>}
             <canvas id="rdpwebview" style={{"display": "none"}}/>
         <div style={{

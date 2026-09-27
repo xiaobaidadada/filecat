@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate} from "react-router-dom";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
@@ -347,17 +347,20 @@ export default function FileList() {
 
     return (
         <React.Fragment>
-            <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
-                                                  icon={"search"} value={""}
-                                                  mobile_hidden
-                                                  handleInputChange={(v) => {
-                                                      setSearch(v)
-                                                  }} max_width={"25em"}/>}>
-                <div className="mobile-context-btn">
-                    <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>
-                </div>
-                <FileMenu/>
-            </Header>
+            <HeaderPortal>
+                                <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
+                                                                  icon={"search"} value={""}
+                                                                  mobile_hidden
+                                                                  handleInputChange={(v) => {
+                                                                      setSearch(v)
+                                                                  }} max_width={"25em"}/>
+            </HeaderPortal>
+            <HeaderPortal position={"right"}>
+                                <div className="mobile-context-btn">
+                                    <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>
+                                </div>
+                                <FileMenu/>
+            </HeaderPortal>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             {

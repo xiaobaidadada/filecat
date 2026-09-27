@@ -11,7 +11,7 @@ import {SysSoftware} from "../../../../../common/req/setting.req";
 import {Card, CardFull, StatusCircle, TextTip} from "../../../../meta/component/Card";
 import {ActionButton, ButtonLittle, ButtonLittleStatus} from "../../../../meta/component/Button";
 import {NotyFail} from "../../../util/noty";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {Column, Dashboard, FullScreenContext, Row, TextLine} from "../../../../meta/component/Dashboard";
 import CircleChart from "../../../../meta/component/CircleChart";
 import {Table} from "../../../../meta/component/Table";
@@ -55,11 +55,11 @@ export function DiskCheck(props: DiskDevicePojo) {
         init();
     }, []);
     return <div>
-        <Header>
-            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                set_disk_check({});
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
+                                set_disk_check({});
+                            }}/>
+            </HeaderPortal>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Row>

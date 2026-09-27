@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {ActionButton} from "../../../../meta/component/Button";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row} from "../../../../meta/component/Dashboard";
 import {Table} from "../../../../meta/component/Table";
@@ -88,9 +88,9 @@ export default function SqlPresetSetting() {
 
     return (
         <div>
-            <Header>
-                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={() => navigate(-1)} />
-            </Header>
+            <HeaderPortal position={"right"}>
+                                <ActionButton icon={"arrow_back"} title={t("返回")} onClick={() => navigate(-1)} />
+            </HeaderPortal>
             <FullScreenDiv isFull={true} more={true}>
                 <FullScreenContext>
                     <Dashboard>

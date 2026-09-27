@@ -1,7 +1,7 @@
 import {useTranslation} from "react-i18next";
 import React, {useEffect, useState} from "react";
 import Switch, {ActionButton} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {InputText, Select} from "../../../meta/component/Input";
 import {Card, StatusCircle} from "../../../meta/component/Card";
@@ -341,11 +341,11 @@ export default function AIRobotSetting() {
 
     return (
         <div className="airebot-setting">
-            <Header>
-                {check_user_auth(UserAuth.ai_agent_setting) &&
-                    <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => navigate(-1)} />
-                }
-            </Header>
+            <HeaderPortal position={"right"}>
+                                {check_user_auth(UserAuth.ai_agent_setting) &&
+                                    <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => navigate(-1)} />
+                                }
+            </HeaderPortal>
 
             <Row>
                 <Column widthPer={100}>

@@ -7,7 +7,7 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {InputText} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {formatFileSize} from "../../../../common/ValueUtil";
 import {sort} from "../../../../common/ListUtil";
 import {useTranslation} from "react-i18next";
@@ -98,15 +98,14 @@ export function Process(props) {
         ws.send(obj);
     }
     return <div>
-        <Header>
-            {optRow.length > 0 && <div>
-                {optRow[1].props.context}
-            </div>}
-            {(optRow.length > 0 && check_user_auth(UserAuth.sys_process_close)) && <div>
-                <ActionButton icon={"stop"} title={t("停止")} onClick={close}/>
-            </div>}
-
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {optRow.length > 0 && <div>
+                                {optRow[1].props.context}
+                            </div>}
+                            {(optRow.length > 0 && check_user_auth(UserAuth.sys_process_close)) && <div>
+                                <ActionButton icon={"stop"} title={t("停止")} onClick={close}/>
+                            </div>}
+            </HeaderPortal>
         <Dashboard>
             {rows.length === 0 && !filter ? (<Blank context={t("加载中请等待...")}/>) : (
                 <Row>

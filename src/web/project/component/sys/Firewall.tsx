@@ -5,7 +5,7 @@ import {InputRow, InputText, Select} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Blank} from "../../../meta/component/Blank";
 import {Table} from "../../../meta/component/Table";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {useTranslation} from "react-i18next";
 import {firewallHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -160,15 +160,15 @@ export function Firewall() {
     const active = status?.active === true;
 
     return <div>
-        <Header>
-            <div>{t("已安装")}: {installed ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'red'}}>✗</span>}</div>
-            <div>{t("已启用")}: {active ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'gray'}}>✗</span>}</div>
-
-            {/* 启停 + 刷新规则 */}
-            {installed && <ActionButton icon={"power_settings_new"} title={active ? t("停用") : t("启用")}
-                                        onClick={() => setEnabled(!active)}/>}
-            <ActionButton icon={"refresh"} title={t("刷新规则")} onClick={getRules}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <div>{t("已安装")}: {installed ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'red'}}>✗</span>}</div>
+                            <div>{t("已启用")}: {active ? <span style={{color: 'green'}}>✓</span> : <span style={{color: 'gray'}}>✗</span>}</div>
+                
+                            {/* 启停 + 刷新规则 */}
+                            {installed && <ActionButton icon={"power_settings_new"} title={active ? t("停用") : t("启用")}
+                                                        onClick={() => setEnabled(!active)}/>}
+                            <ActionButton icon={"refresh"} title={t("刷新规则")} onClick={getRules}/>
+            </HeaderPortal>
 
         <Dashboard>
             <Row>

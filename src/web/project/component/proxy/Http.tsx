@@ -3,7 +3,7 @@ import { NavIndexContainer } from "../navindex/component/NavIndexContainer";
 import { Column, Dashboard, Row } from "../../../meta/component/Dashboard";
 import { ActionButton } from "../../../meta/component/Button";
 import { InputRadio, InputText, InputTextIcon, Select } from "../../../meta/component/Input";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import { useTranslation } from "react-i18next";
 import { Rows, Table } from "../../../meta/component/Table";
 import { Card, TextTip } from "../../../meta/component/Card";
@@ -337,7 +337,7 @@ export function Http() {
 
     return (<div>
         <Dashboard>
-            <Header />
+            
             <Row>
                 <Column>
                     {/* 下载列表保持原样... */}

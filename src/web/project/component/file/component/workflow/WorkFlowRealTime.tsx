@@ -6,7 +6,7 @@ import {CmdType} from "../../../../../../common/frame/WsData";
 import {ws} from "../../../../util/ws";
 import {StatusCircle} from "../../../../../meta/component/Card";
 import {ActionButton} from "../../../../../meta/component/Button";
-import Header from "../../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../../meta/component/HeaderPortal";
 import {FullScreenContext, FullScreenDiv} from "../../../../../meta/component/Dashboard";
 import {job_item, running_type, step_item, WorkFlowRealTimeOneReq} from "../../../../../../common/req/file.req";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
@@ -163,14 +163,14 @@ export default function WorkFlowRealTime(props) {
         }
     }
     return <div>
-        <Header>
-            {terminalState && <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{
-                setShellShow(!shellShow);
-            }}/>}
-            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
-                set_workflow_show({open:false});
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {terminalState && <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{
+                                setShellShow(!shellShow);
+                            }}/>}
+                            <ActionButton icon={"close"} title={t("关闭")} onClick={() => {
+                                set_workflow_show({open:false});
+                            }}/>
+            </HeaderPortal>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <TreeView list={step_tree_list} click={(item) => {

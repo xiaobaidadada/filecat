@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {ActionButton} from "../../../../meta/component/Button";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 
 
 import {Mstsc} from './client/js/mstsc.js';
@@ -125,23 +125,23 @@ export function Rdp() {
         go(item);
     }
     return <div>
-        <Header>
-            <InputTextIcon placeholder={t("地址")} icon={"network_ping"} value={address} max_width={"15rem"}
-                           handleInputChange={(v) => setAddress(v)}/>
-            <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} max_width={"10rem"}
-                           handleInputChange={(v) => {
-                               if(v) {
-                                   set_port(parseInt(v));
-                               }
-                           }}/>
-            <InputTextIcon placeholder={t("账号")} icon={"manage_accounts"} value={username} max_width={"15rem"}
-                           handleInputChange={(v) => setUsername(v)}/>
-            <InputTextIcon placeholder={t("密码")} icon={"password"} value={password} max_width={"15rem"}
-                           handleInputChange={(v) => setPassword(v)}/>
-            {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
-            {/*<ActionButton icon={"fullscreen"} title={t("全屏")} onClick={() => setFullScreen(!fullScreen)}/>*/}
-            {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <InputTextIcon placeholder={t("地址")} icon={"network_ping"} value={address} max_width={"15rem"}
+                                           handleInputChange={(v) => setAddress(v)}/>
+                            <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} max_width={"10rem"}
+                                           handleInputChange={(v) => {
+                                               if(v) {
+                                                   set_port(parseInt(v));
+                                               }
+                                           }}/>
+                            <InputTextIcon placeholder={t("账号")} icon={"manage_accounts"} value={username} max_width={"15rem"}
+                                           handleInputChange={(v) => setUsername(v)}/>
+                            <InputTextIcon placeholder={t("密码")} icon={"password"} value={password} max_width={"15rem"}
+                                           handleInputChange={(v) => setPassword(v)}/>
+                            {!status && <ActionButton icon={"play_arrow"} title={t("连接")} onClick={go}/>}
+                            {/*<ActionButton icon={"fullscreen"} title={t("全屏")} onClick={() => setFullScreen(!fullScreen)}/>*/}
+                            {status && <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>}
+            </HeaderPortal>
         <FullScreenDiv isFull={fullScreen}>
             {!status && <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.rdp_proxy_tag_update)} getItems={getItems} save={saveItems} clickItem={clickItem} items={[
                 {key: "name", preName: t("名字")},

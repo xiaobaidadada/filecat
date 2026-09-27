@@ -12,7 +12,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {PromptEnum} from "../../prompts/Prompt";
 import {NotyFail, NotySuccess} from "../../../util/noty";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 
 export function TengXun(props: any) {
     const { t } = useTranslation();
@@ -91,9 +91,9 @@ export function TengXun(props: any) {
 
     }
     return <div>
-        <Header>
-            <ActionButton icon={"add"} title={t("添加http获取ip")} onClick={add_ipv}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"add"} title={t("添加http获取ip")} onClick={add_ipv}/>
+            </HeaderPortal>
         <Row>
             <Column >
                 <Card title={"ipv4"} >

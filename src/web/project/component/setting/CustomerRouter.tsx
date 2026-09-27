@@ -14,7 +14,7 @@ import {Http_controller_router} from "../../../../common/req/http_controller_rou
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 
 
 export function CustomerRouter() {
@@ -99,9 +99,9 @@ export function CustomerRouter() {
     //     })
     // }
     return <React.Fragment>
-        <Header>
-            {/*<ActionButton icon={"http"} title={t("pre路由")} onClick={pre_api} />*/}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {/*<ActionButton icon={"http"} title={t("pre路由")} onClick={pre_api} />*/}
+            </HeaderPortal>
         <Row>
             <Column>
                 <TableListRender title={t("页面资源路由")} headers={headers} getItems={getItems} save={save} info_click={soft_ware_info_click} need_copy={true}/>

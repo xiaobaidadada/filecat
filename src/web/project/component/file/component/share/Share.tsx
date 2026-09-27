@@ -17,7 +17,7 @@ import {InputText} from "../../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {FileItemData} from "../../../../../../common/file.pojo";
-import Header from "../../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../../meta/component/HeaderPortal";
 import {
     getFileNameByLocation,
     getFilesByIndexs,
@@ -196,15 +196,18 @@ export default function Share() {
 
     return (
         <React.Fragment>
-            <Header left_children={<>
-                <h2>
-                    Share {data.is_dir?"Folder":"File"}
-                </h2>
-            </>}>
-                {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
-                {data.is_dir && <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>}
-                {data.is_dir && <ActionButton icon={"schedule"} title={share_sort_type === DirListShowTypeEmum.time_minx_max ? t("时间逆序") : t("时间顺序")} onClick={switchTimeSort}/>}
-            </Header>
+            <HeaderPortal>
+                                <>
+                                <h2>
+                                    Share {data.is_dir?"Folder":"File"}
+                                </h2>
+                            </>
+            </HeaderPortal>
+            <HeaderPortal position={"right"}>
+                                {selectList.length > 0 && <ActionButton icon={"download"} title={t("下载")} onClick={downloadFile}/>}
+                                {data.is_dir && <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>}
+                                {data.is_dir && <ActionButton icon={"schedule"} title={share_sort_type === DirListShowTypeEmum.time_minx_max ? t("时间逆序") : t("时间顺序")} onClick={switchTimeSort}/>}
+            </HeaderPortal>
             <Dashboard>
                 <FullScreenDiv isFull>
                     <div className="common-box ">

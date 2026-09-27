@@ -6,7 +6,7 @@ import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {ws} from "../../util/ws";
 import {DiskDevicePojo, DiskFilePojo, node_memory_usage, staticSysPojo, SysPojo} from "../../../../common/req/sys.pojo";
 import {sysHttp} from "../../util/config";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {ActionButton, ButtonLittleStatus} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
 import {RCode} from "../../../../common/Result.pojo";
@@ -129,34 +129,34 @@ export function Sys(props) {
     }, []);
     return <div>
 
-        <Header >
-            {userInfo.sys === SysEnum.linux && (<ActionButton icon={"sd_card"} title={"硬盘挂载"} onClick={()=>{
-                set_disk_check({type:"mount"});
-            }}/>)}
-            <ButtonLittleStatus defaultStatus={false} text={t("基本信息")} clickFun={(v) => {
-                setBase(v)
-                if (v) {
-                    getBase();
-                }
-            }}/>
-            <ButtonLittleStatus defaultStatus={false} text={t("物理硬盘")} clickFun={(v) => {
-                setDisk(v);
-                if (v) {
-                    getDisk();
-                }
-            }}/>
-            <ButtonLittleStatus defaultStatus={false} text={t("文件硬盘")} clickFun={(v) => {
-                setFileDisk(v)
-                if (v) {
-                    getFileDisk();
-                }
-            }}/>
-            <ButtonLittleStatus defaultStatus={real_time} text={t("实时信息")} clickFun={(v) => {
-                set_real_time(v)
-                real_time_p = v;
-                get_real_time_info();
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {userInfo.sys === SysEnum.linux && (<ActionButton icon={"sd_card"} title={"硬盘挂载"} onClick={()=>{
+                                set_disk_check({type:"mount"});
+                            }}/>)}
+                            <ButtonLittleStatus defaultStatus={false} text={t("基本信息")} clickFun={(v) => {
+                                setBase(v)
+                                if (v) {
+                                    getBase();
+                                }
+                            }}/>
+                            <ButtonLittleStatus defaultStatus={false} text={t("物理硬盘")} clickFun={(v) => {
+                                setDisk(v);
+                                if (v) {
+                                    getDisk();
+                                }
+                            }}/>
+                            <ButtonLittleStatus defaultStatus={false} text={t("文件硬盘")} clickFun={(v) => {
+                                setFileDisk(v)
+                                if (v) {
+                                    getFileDisk();
+                                }
+                            }}/>
+                            <ButtonLittleStatus defaultStatus={real_time} text={t("实时信息")} clickFun={(v) => {
+                                set_real_time(v)
+                                real_time_p = v;
+                                get_real_time_info();
+                            }}/>
+            </HeaderPortal>
         <Dashboard>
             {real_time &&
                 <Row>

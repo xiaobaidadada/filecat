@@ -1,7 +1,7 @@
 ﻿import {useTranslation} from "react-i18next";
 import React, {useContext, useEffect, useRef, useState} from "react";
 import Switch, {ActionButton} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row, TextLine} from "../../../meta/component/Dashboard";
@@ -402,13 +402,13 @@ export default function AIAgentChatSetting() {
         }
     }
     return <div>
-        <Header>
-            {check_user_auth(UserAuth.ai_agent_setting) &&
-                <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => {
-                    navigate(-1)
-                }}/>
-            }
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {check_user_auth(UserAuth.ai_agent_setting) &&
+                                <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={() => {
+                                    navigate(-1)
+                                }}/>
+                            }
+            </HeaderPortal>
         <FullScreenDiv isFull={true} more={true}>
             <FullScreenContext>
                 <Dashboard>

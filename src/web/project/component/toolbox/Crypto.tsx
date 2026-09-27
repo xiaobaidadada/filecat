@@ -5,7 +5,7 @@ import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {TimeConverTer} from "./TimeConverTer";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {InputTextIcon, Select} from "../../../meta/component/Input";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {useTranslation} from "react-i18next";
 import {Rows} from "../../../meta/component/Table";
 import {Card} from "../../../meta/component/Card";
@@ -61,19 +61,19 @@ export function Crypto() {
         })
     }
     return (<React.Fragment>
-        <Header>
-            <Rows isFlex={true} columns={[
-                <Select tip={t('加密算法')} value={method} width={"auto"} onChange={(value) => {
-                    set_method(value)
-                }} options={[{title: t("RSA"), value: 'rsa'}, {title: t("DSA"), value: 'dsa'},{title: t("ECDSA"), value: 'ecdsa'}]}/>
-                , <Select tip={t('输出格式')} value={form} width={"auto"} onChange={(value) => {
-                    set_form(value)
-                }} options={[{title: t("普通PEM"), value: 'pem'}, {title: t("opensshPEM"), value: 'openssh_pem'}]}/>
-                , <ActionButton icon={"play_arrow"} title={t("生成")} onClick={() => {
-                    generate();
-                }}/>
-            ]}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <Rows isFlex={true} columns={[
+                                <Select tip={t('加密算法')} value={method} width={"auto"} onChange={(value) => {
+                                    set_method(value)
+                                }} options={[{title: t("RSA"), value: 'rsa'}, {title: t("DSA"), value: 'dsa'},{title: t("ECDSA"), value: 'ecdsa'}]}/>
+                                , <Select tip={t('输出格式')} value={form} width={"auto"} onChange={(value) => {
+                                    set_form(value)
+                                }} options={[{title: t("普通PEM"), value: 'pem'}, {title: t("opensshPEM"), value: 'openssh_pem'}]}/>
+                                , <ActionButton icon={"play_arrow"} title={t("生成")} onClick={() => {
+                                    generate();
+                                }}/>
+                            ]}/>
+            </HeaderPortal>
         <Dashboard>
             <Row>
                 <Column>

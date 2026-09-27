@@ -11,7 +11,7 @@ import {RCode} from "../../../../../../common/Result.pojo";
 import {NotySuccess} from "../../../../util/noty";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {copyToClipboard} from "../../../../util/FunUtil";
-import Header from "../../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../../meta/component/HeaderPortal";
 import {useNavigate} from "react-router-dom";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../../util/store";
@@ -76,11 +76,11 @@ export default function ShareListSetting() {
             )})
     }
     return <div className="common-box " style={{ overflowY: "auto" }}>
-        <Header>
-            <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={()=>{
-                navigate(-1);
-            }}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton icon={"arrow_back"} title={t("上一页")} onClick={()=>{
+                                navigate(-1);
+                            }}/>
+            </HeaderPortal>
         <RowColumn  widthPer={100}  >
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件分享列表")}</h2>
             <ActionButton icon={"info"} title={t("提示")} onClick={info_click}/>

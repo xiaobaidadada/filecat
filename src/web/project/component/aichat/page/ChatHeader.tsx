@@ -7,7 +7,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
-import Header from "../../../../meta/component/Header";
+import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import { ActionButton } from "../../../../meta/component/Button";
 import { Select } from "../../../../meta/component/Input";
 import { use_auth_check } from "../../../util/store.util";
@@ -109,80 +109,80 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         : "";
 
     return (
-        <Header>
-            <ActionButton
-                icon={"menu"}
-                title={t("会话")}
-                onClick={onToggleSessionPanel}
-            />
-            <ActionButton icon={"add"} title={t("新会话")} onClick={() => onCreateSession()} />
-            {sysPromptList.length > 0 && (
-                <Select
-                    value={selectedSysPromptId}
-                    options={[
-                        { title: t("选择系统提示词"), value: "" },
-                        ...sysPromptList.map((item) => ({
-                            title: item.note || item.prompt.slice(0, 30),
-                            value: String(item.index)
-                        }))
-                    ]}
-                    onChange={(value) => {
-                        setSelectedSysPromptId(value);
-                    }}
-                    no_border={true}
-                    width={"auto"}
-                />
-            )}
-            {/* 当前模型下拉选择器（聚合所有供应商的模型，按供应商分组） */}
-            {can_switch_model && modelOptions.length > 0 && (
-                <Select
-                    value={selectedModelValue}
-                    // 顶部占位项：当前没有任何激活模型时显示「选择模型」提示
-                    options={[{ title: t("选择模型"), value: "" }, ...modelOptions]}
-                    margin={"0 0 0 1em"}
-                    onChange={(value) => {
-                        // value 形如 `${供应商index}::${模型值}`；空值（占位项「选择模型」）不处理
-                        const valStr = String(value ?? "");
-                        if (!valStr.includes("::")) return;
-                        const [idxStr, ...rest] = valStr.split("::");
-                        const modelName = rest.join("::");
-                        if (!modelName) return;
-                        setCurrentModelName(modelName);
-                        ai_agentHttp.post("set_active_model", { index: Number(idxStr), model_name: modelName }).then((res: any) => {
-                            if (res?.code === RCode.Success) {
-                                NotySuccess('success');
-                                onModelChanged();
-                            } else {
-                                NotyFail(res?.message || 'fail');
-                            }
-                        }).catch(console.error);
-                    }}
-                    no_border={true}
-                    width={"auto"}
-                />
-            )}
-            {/* 消息批量操作：只在 batchMode 且已选消息时显示删除按钮 */}
-            {batchMode && selectedMsgCount > 0 && (
-                <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={onBatchDeleteMessages} />
-            )}
-            <ActionButton
-                icon={"terminal"}
-                title={t("后台进程")}
-                onClick={onToggleBgProcess}
-                selected={bgProcessVisible}
-                tip={bgProcessCount?bgProcessCount:null}
-            />
-            {check_user_auth(UserAuth.ai_agent_setting) && (
-                <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={() => {
-                    navigate(routerConfig.ai_rebot_setting_page);
-                }} />
-            )}
-            {check_user_auth(UserAuth.ai_agent_setting) && (
-                <ActionButton icon={"settings"} title={"ai setting"} onClick={() => {
-                    navigate(routerConfig.ai_agent_setting_page);
-                }} />
-            )}
-        </Header>
+        <HeaderPortal position={"right"}>
+                                <ActionButton
+                                icon={"menu"}
+                                title={t("会话")}
+                                onClick={onToggleSessionPanel}
+                            />
+                            <ActionButton icon={"add"} title={t("新会话")} onClick={() => onCreateSession()} />
+                            {sysPromptList.length > 0 && (
+                                <Select
+                                    value={selectedSysPromptId}
+                                    options={[
+                                        { title: t("选择系统提示词"), value: "" },
+                                        ...sysPromptList.map((item) => ({
+                                            title: item.note || item.prompt.slice(0, 30),
+                                            value: String(item.index)
+                                        }))
+                                    ]}
+                                    onChange={(value) => {
+                                        setSelectedSysPromptId(value);
+                                    }}
+                                    no_border={true}
+                                    width={"auto"}
+                                />
+                            )}
+                            {/* 当前模型下拉选择器（聚合所有供应商的模型，按供应商分组） */}
+                            {can_switch_model && modelOptions.length > 0 && (
+                                <Select
+                                    value={selectedModelValue}
+                                    // 顶部占位项：当前没有任何激活模型时显示「选择模型」提示
+                                    options={[{ title: t("选择模型"), value: "" }, ...modelOptions]}
+                                    margin={"0 0 0 1em"}
+                                    onChange={(value) => {
+                                        // value 形如 `${供应商index}::${模型值}`；空值（占位项「选择模型」）不处理
+                                        const valStr = String(value ?? "");
+                                        if (!valStr.includes("::")) return;
+                                        const [idxStr, ...rest] = valStr.split("::");
+                                        const modelName = rest.join("::");
+                                        if (!modelName) return;
+                                        setCurrentModelName(modelName);
+                                        ai_agentHttp.post("set_active_model", { index: Number(idxStr), model_name: modelName }).then((res: any) => {
+                                            if (res?.code === RCode.Success) {
+                                                NotySuccess('success');
+                                                onModelChanged();
+                                            } else {
+                                                NotyFail(res?.message || 'fail');
+                                            }
+                                        }).catch(console.error);
+                                    }}
+                                    no_border={true}
+                                    width={"auto"}
+                                />
+                            )}
+                            {/* 消息批量操作：只在 batchMode 且已选消息时显示删除按钮 */}
+                            {batchMode && selectedMsgCount > 0 && (
+                                <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={onBatchDeleteMessages} />
+                            )}
+                            <ActionButton
+                                icon={"terminal"}
+                                title={t("后台进程")}
+                                onClick={onToggleBgProcess}
+                                selected={bgProcessVisible}
+                                tip={bgProcessCount?bgProcessCount:null}
+                            />
+                            {check_user_auth(UserAuth.ai_agent_setting) && (
+                                <ActionButton icon={"smart_toy"} title={"机器人配置"} onClick={() => {
+                                    navigate(routerConfig.ai_rebot_setting_page);
+                                }} />
+                            )}
+                            {check_user_auth(UserAuth.ai_agent_setting) && (
+                                <ActionButton icon={"settings"} title={"ai setting"} onClick={() => {
+                                    navigate(routerConfig.ai_agent_setting_page);
+                                }} />
+                            )}
+            </HeaderPortal>
     );
 };
 

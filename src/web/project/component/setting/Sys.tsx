@@ -17,7 +17,7 @@ import {
     TokenTimeMode
 } from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
@@ -187,13 +187,15 @@ export function Sys() {
 
     return <div>
         {/* 顶部状态栏（全宽，独立于内容，与项目其它页面保持一致：Header 在内容之上） */}
-        <Header left_children={<>
-            <span className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span>
-            <span className={"credits"}><a href="https://github.com/xiaobaidadada/filecat"
-                                           target="_blank">{`version:${process.env.version}`}{userInfo.latest_version != null && userInfo.latest_version !== process.env.version ? ` -> ${userInfo.latest_version}` : ''}</a></span>
-            <span className={"credits"}><a href={t("官网地址")} target="_blank">{`filecat ${t("功能文档")}`}</a></span>
-            <span className={"credits"}>{t("安装方式")} :{userInfo.process_env_run_env}</span>
-        </>}/>
+        <HeaderPortal>
+                                <>
+                            <span className={"credits"}>{t('系统运行于')}: {getShortTime(userInfo.runing_time_length)}</span>
+                            <span className={"credits"}><a href="https://github.com/xiaobaidadada/filecat"
+                                                           target="_blank">{`version:${process.env.version}`}{userInfo.latest_version != null && userInfo.latest_version !== process.env.version ? ` -> ${userInfo.latest_version}` : ''}</a></span>
+                            <span className={"credits"}><a href={t("官网地址")} target="_blank">{`filecat ${t("功能文档")}`}</a></span>
+                            <span className={"credits"}>{t("安装方式")} :{userInfo.process_env_run_env}</span>
+                        </>
+            </HeaderPortal>
         <Dashboard>
             <Row>
 

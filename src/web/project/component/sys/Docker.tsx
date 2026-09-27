@@ -8,7 +8,7 @@ import {ws} from "../../util/ws";
 import {staticSysPojo, SysPojo} from "../../../../common/req/sys.pojo";
 import {InputCheckbox, InputRadio, InputText} from "../../../meta/component/Input";
 import {ActionButton, Button, ButtonLittleStatus, ButtonText} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {DockerShell} from "../shell/DockerShell";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
@@ -217,40 +217,43 @@ export function Docker(props) {
         await ws.send(data)
     }
     return <div>
-        <Header left_children={<ButtonLittleStatus defaultStatus={false} text={t("docker镜像")} clickFun={(v) => {
-            set_show_iamges(v);
-            if (v) {
-                // ws.unConnect();
-                load_images();
-                setOptRow([]);
-            } else {
-                init();
-                set_rows_images([]);
-                set_images_selected({});
-            }
-        }}/>}>
-            {/* Docker daemon 配置修改依赖 /etc/docker/daemon.json 与 systemctl restart，仅 Linux 可用 */}
-            {user_base_info.sys === SysEnum.linux && <ActionButton icon={"settings"} title={t("Docker 配置")} onClick={() => navigate(routerConfig.docker_setting_page)} />}
-            {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={t("删除镜像")} onClick={delete_image}/>}
-            {optRow.length > 0 && <div>
-                {optRow[1].props.context}
-            </div>}
-            {optRow.length > 0 && <div>
-                {check_user_auth(UserAuth.docker_container_update) && <ActionButton  icon={"delete"} title={t("删除容器")} onClick={del}/>}
-
-                <ActionButton icon={"print"} title={t("打印日志")} onClick={logs}/>
-                {check_user_auth(UserAuth.docker_container_update) && <ActionButton icon={"personal_video"} title={t("执行命令")} onClick={exec}/>}
-                {(check_user_auth(UserAuth.docker_container_update) && optRow[4].props.context.includes("Up") ) && <ActionButton icon={"stop"} title={t("停止")} onClick={() => dswitch("stop")}/>}
-                {(check_user_auth(UserAuth.docker_container_update) && !optRow[4].props.context.includes("Up") ) &&  <ActionButton icon={"play_arrow"} title={t("开启")} onClick={() => {
-                    dswitch("start")
-                }}
-                />}
-
-            </div>}
-            {(rows.length !== 0 || filterKey) && !show_iamges && (
-                <ActionButton icon={"refresh"} title={t("列表更新")} onClick={updat_list}/>
-            )}
-        </Header>
+        <HeaderPortal>
+                                <ButtonLittleStatus defaultStatus={false} text={t("docker镜像")} clickFun={(v) => {
+                            set_show_iamges(v);
+                            if (v) {
+                                // ws.unConnect();
+                                load_images();
+                                setOptRow([]);
+                            } else {
+                                init();
+                                set_rows_images([]);
+                                set_images_selected({});
+                            }
+                        }}/>
+            </HeaderPortal>
+            <HeaderPortal position={"right"}>
+                                {/* Docker daemon 配置修改依赖 /etc/docker/daemon.json 与 systemctl restart，仅 Linux 可用 */}
+                            {user_base_info.sys === SysEnum.linux && <ActionButton icon={"settings"} title={t("Docker 配置")} onClick={() => navigate(routerConfig.docker_setting_page)} />}
+                            {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={t("删除镜像")} onClick={delete_image}/>}
+                            {optRow.length > 0 && <div>
+                                {optRow[1].props.context}
+                            </div>}
+                            {optRow.length > 0 && <div>
+                                {check_user_auth(UserAuth.docker_container_update) && <ActionButton  icon={"delete"} title={t("删除容器")} onClick={del}/>}
+                
+                                <ActionButton icon={"print"} title={t("打印日志")} onClick={logs}/>
+                                {check_user_auth(UserAuth.docker_container_update) && <ActionButton icon={"personal_video"} title={t("执行命令")} onClick={exec}/>}
+                                {(check_user_auth(UserAuth.docker_container_update) && optRow[4].props.context.includes("Up") ) && <ActionButton icon={"stop"} title={t("停止")} onClick={() => dswitch("stop")}/>}
+                                {(check_user_auth(UserAuth.docker_container_update) && !optRow[4].props.context.includes("Up") ) &&  <ActionButton icon={"play_arrow"} title={t("开启")} onClick={() => {
+                                    dswitch("start")
+                                }}
+                                />}
+                
+                            </div>}
+                            {(rows.length !== 0 || filterKey) && !show_iamges && (
+                                <ActionButton icon={"refresh"} title={t("列表更新")} onClick={updat_list}/>
+                            )}
+            </HeaderPortal>
         <Dashboard>
             {show_iamges &&
                 <Row>

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import Header from "../../../meta/component/Header";
+import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {FullScreenDiv} from "../../../meta/component/Dashboard";
 import {netHttp} from "../../util/config";
 import {NetPojo} from "../../../../common/req/net.pojo";
@@ -93,15 +93,15 @@ export function BrowserProxy(props) {
         setHeaderMin(!fullScreen);
     }
     return <div>
-        <Header>
-            {/*<InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>*/}
-            <InputTextIcon placeholder={t("要代理的url")} icon={"link"} value={showUrl} handleInputChange={(v) => {
-                setshowUrl(v);
-            }}/>
-            <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={go}/>
-            <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={fullscreen}/>
-            <ActionButton icon={"close"} title={t(t("关闭"))} onClick={() => {close(); setFullScreen(false);setshowUrl("")}}/>
-        </Header>
+        <HeaderPortal position={"right"}>
+                                {/*<InputTextIcon placeholder={t("系统代理端口")} icon={"outlet"} value={sysPort} handleInputChange={handlerSysPort} max_width={"10rem"}/>*/}
+                            <InputTextIcon placeholder={t("要代理的url")} icon={"link"} value={showUrl} handleInputChange={(v) => {
+                                setshowUrl(v);
+                            }}/>
+                            <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={go}/>
+                            <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={fullscreen}/>
+                            <ActionButton icon={"close"} title={t(t("关闭"))} onClick={() => {close(); setFullScreen(false);setshowUrl("")}}/>
+            </HeaderPortal>
 
         <FullScreenDiv isFull={fullScreen}>
             <div id="browser">
