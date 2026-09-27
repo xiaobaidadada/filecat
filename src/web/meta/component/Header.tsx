@@ -44,7 +44,11 @@ function Header(props: { ignore_tags?: boolean, children?: any, left_children?: 
                 </React.Fragment>
             }
             {props.ignore_tags !== true &&
-                <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank"><img src={custom_logo} alt="FileCat"/></a></h3>
+                <h3>
+                    <a href="https://github.com/xiaobaidadada/filecat" target="_blank">
+                        <img src={custom_logo} alt="FileCat"/>
+                    </a>
+                </h3>
                 // <h3><a href="https://github.com/xiaobaidadada/filecat" target="_blank">{t("title")}</a></h3>
             }
             {

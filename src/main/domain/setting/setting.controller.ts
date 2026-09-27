@@ -556,16 +556,27 @@ export class SettingController {
     @Public('/setting/logo')
     @Get("/logo")
     async get_logo(@Res() res: any) {
-        const buffer = await settingService.read_logo_file();
-        if (!buffer) {
-            res.status(404).send('logo not found');
-            return;
+        // 注意：此接口手动操作 res，响应一旦发出就不能再抛错给全局错误中间件，
+        // 否则错误处理器会二次响应并触发 ERR_HTTP_HEADERS_SENT（客户端中途断开时常见）。
+        // 因此这里自行捕获异常，仅在响应未发出时向上抛。
+        try {
+            const buffer = await settingService.read_logo_file();
+            if (!buffer) {
+                res.status(404).send('logo not found');
+                return;
+            }
+            const logo = (settingService.get_sys_env()?.logo ?? "").trim();
+            const type = mime.lookup(logo) || 'application/octet-stream';
+            res.header('Content-Type', type);
+            res.header('Cache-Control', 'public, max-age=31536000, immutable');
+            res.send(buffer);
+        } catch (e) {
+            // 响应已发出说明是写 socket 失败（如客户端断开），属正常情况，仅记录日志
+            if (!res.headersSent) {
+                throw e;
+            }
+            console.error("返回 logo 失败（响应已发出）", e);
         }
-        const logo = (settingService.get_sys_env()?.logo ?? "").trim();
-        const type = mime.lookup(logo) || 'application/octet-stream';
-        res.header('Content-Type', type);
-        res.header('Cache-Control', 'public, max-age=31536000, immutable');
-        res.send(buffer);
     }
 
     /**
@@ -574,14 +585,22 @@ export class SettingController {
     @Public('/setting/plugin/theme')
     @Get("/plugin/theme")
     async get_plugin_theme_css(@QueryParam("theme_id") theme_id: string,  @Res() res: any) {
-        const cssPath = settingService.get_plugin_theme_path(decodeURIComponent(theme_id));
-        if (!cssPath) {
-            res.status(404).send('Theme not found');
-            return;
+        // 同 get_logo：手动操作 res 的接口，响应发出后不能再抛错，否则会触发 ERR_HTTP_HEADERS_SENT
+        try {
+            const cssPath = settingService.get_plugin_theme_path(decodeURIComponent(theme_id));
+            if (!cssPath) {
+                res.status(404).send('Theme not found');
+                return;
+            }
+            const cssContent = await require('fs').promises.readFile(cssPath, 'utf-8');
+            res.header('Content-Type', 'text/css');
+            res.header('Cache-Control', 'public, max-age=3600');
+            return res.send(cssContent);
+        } catch (e) {
+            if (!res.headersSent) {
+                throw e;
+            }
+            console.error("返回插件主题 css 失败（响应已发出）", e);
         }
-        const cssContent = await require('fs').promises.readFile(cssPath, 'utf-8');
-        res.header('Content-Type', 'text/css');
-        res.header('Cache-Control', 'public, max-age=3600');
-        return res.send(cssContent);
     }
 }
