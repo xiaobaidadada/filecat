@@ -257,6 +257,22 @@ body.rtl table tr>* {
 table tr>*:last-child {
     padding-right: .5rem;
 }
+
+/* 表格行上下拖动：仅当 Table 传入 onRowDrag 时生效 */
+table tr[draggable="true"] {
+    cursor: grab;
+}
+
+/* 正在悬停的目标行：整行背景变暗，提示插入位置（--hover 在明暗主题下都有定义） */
+table tr.row-drop-target > td {
+    background-color: var(--hover);
+}
+
+/* 拖动源行淡出，给用户明确的视觉反馈 */
+table tr.row-dragging {
+    opacity: .5;
+}
+
 .card-text {
     position: relative;
 }

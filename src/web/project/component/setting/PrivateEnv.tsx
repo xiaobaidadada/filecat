@@ -22,6 +22,7 @@ import {use_themes_list, using_env_prompt} from "./util";
 import {themes, UserLogin} from "../../../../common/req/user.req";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {use_select_config} from "../../util/react.config";
+import {move_element} from "../../../../common/ListUtil";
 
 export function PrivateEnv() {
     const {t, i18n} = useTranslation();
@@ -166,6 +167,13 @@ export function PrivateEnv() {
         setRows(list);
     }
 
+    // 表格行上下拖动：把源行移动到目标位置，保存时会按数组顺序重新写入 index
+    const dir_row_drag = (from: number, to: number) => {
+        let list = [...rows];
+        list = move_element(list,from, to);
+        setRows(list);
+    }
+
 
     // 外部软件信息解释
     const soft_ware_info_click = using_env_prompt();
@@ -284,7 +292,7 @@ export function PrivateEnv() {
                                 </div>,
                             ];
                             return new_list;
-                        })} width={"10rem"}/>
+                        })} width={"10rem"} onRowDrag={dir_row_drag}/>
                     </CardFull>
                     <CardFull self_title={<span className={" div-row "}><h2>{t("个人保护路径")}</h2> <ActionButton
                         icon={"info"} onClick={() => {

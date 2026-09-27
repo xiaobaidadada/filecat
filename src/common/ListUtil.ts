@@ -307,3 +307,10 @@ export function getPathLastname(path: string, includeExt: boolean = true): strin
 
     return decodeURIComponent(lastname??'');
 }
+
+
+export function move_element <T>(list:T[],from: number, to: number) {
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+    return list;
+}
