@@ -119,12 +119,6 @@ export enum data_version_type {
     user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
 }
 
-export function is_data_version_type(value) {
-    return Object.values(data_version_type).includes(value);
-}
 
-export function getMaxDataVersionType(): number {
-    const values = Object.values(data_version_type)
-        .filter((v): v is number => typeof v === 'number');
-    return Math.max(...values);
-}
+
+

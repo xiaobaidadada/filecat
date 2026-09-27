@@ -153,7 +153,7 @@ export function getByIndexs(list, indexs) {
  * @param getKey
  * @param asc
  */
-export function sort(data_list, getKey, asc = true) {
+export function sort<T>(data_list:T[], getKey:(v:T)=>number, asc = true) {
     if (!data_list || data_list.length === 0) {
         return data_list;
     }

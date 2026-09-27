@@ -7,14 +7,13 @@ import {
     data_dir_tem_name,
     data_version_type,
     file_key,
-    getMaxDataVersionType,
-    is_data_version_type
 } from "./data_type";
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
 import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
 import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
 import {UserData} from "../../../common/req/user.req";
 import {DataUtil} from "./DataUtil";
+import {sort} from "../../../common/ListUtil";
 
 
 /**
@@ -174,6 +173,25 @@ export class DataMigration {
         },
     ];
 
+    private static is_data_version_type(value) {
+        for (const it of this.migrations) {
+            if (it.version === value) {
+                return true;
+            }
+        }
+        return false
+    }
+
+    private static getMaxDataVersionType(): number {
+       let max = 0;
+        for (const it of this.migrations) {
+            if (it.version > max) {
+                max = it.version;
+            }
+        }
+       return max;
+    }
+
     // 读取当前数据版本号（无版本文件时返回 filecat_not 表示从未迁移）
     private static get_current_version(): data_version_type {
         if (!fs.existsSync(this.version_file)) {
@@ -183,7 +201,7 @@ export class DataMigration {
             return data_version_type.undefine;
         }
         const value = parseInt(fs.readFileSync(this.version_file).toString());
-        if (is_data_version_type(value)) {
+        if (this.is_data_version_type(value)) {
             return value as data_version_type;
         }
         return data_version_type.undefine;
@@ -193,10 +211,11 @@ export class DataMigration {
     public static run(): void {
         const current = this.get_current_version();
         if (current === data_version_type.undefine) {
-            this.write_version(getMaxDataVersionType())
+            this.write_version(this.getMaxDataVersionType())
             return;
         }
-        for (const step of this.migrations) {
+        const migrations = sort(this.migrations,(v)=>v.version)
+        for (const step of migrations) {
             if (step.version <= current) {
                 continue; // 已迁移过，跳过
             }
