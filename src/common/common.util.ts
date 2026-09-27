@@ -1,14 +1,40 @@
-
 const lockQueue = new Map<string, Promise<any>>();
 
+const sleep_map: {
+    [key: string]: {
+        timeout: any,
+        resolve: any
+    }
+} = {};
 
 export class CommonUtil {
 
-    public static sleep(ms:number) {
+    public static sleep(ms: number) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    public static sleep_lock_has(key:string) {
+    public static sleep_by_id(id: string, {sleep_length}: { sleep_length: number }) {
+        return new Promise(resolve => {
+            sleep_map[id] = {
+                timeout: setTimeout(() => {
+                    resolve(true)
+                    delete sleep_map[id];
+                }, sleep_length),
+                resolve: resolve
+            }
+        });
+    }
+
+    public static sleep_delete_by_id(id: string) {
+        if (sleep_map[id]) {
+            const p = sleep_map[id];
+            clearTimeout(p.timeout);
+            p.resolve(true)
+            delete sleep_map[id];
+        }
+    }
+
+    public static sleep_lock_has(key: string) {
         return lockQueue.has(key);
     }
 
@@ -44,7 +70,7 @@ export class CommonUtil {
         }
     }
 
-     public static random01() {
+    public static random01() {
         return Math.random();
     }
 

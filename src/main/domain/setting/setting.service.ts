@@ -9,7 +9,9 @@ import {
     AutoUpgradeSettingReq,
     dir_upload_max_num_item,
     FileQuickCmdItem,
-    FileSettingItem, HttpsSettingReq, QuickCmdItem,
+    FileSettingItem,
+    HttpsSettingReq,
+    QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
     TokenTimeMode
@@ -31,19 +33,22 @@ import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
 import {env_item, sys_env_pojo, workflow_setting_item} from "../../../common/req/common.pojo";
-import {plug_item, Plugin, PluginMeta, AiToolItem, PluginRoute} from "../../../plugin";
+import {plug_item, Plugin, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
     ai_agent_Item,
-    ai_agent_item_dotenv_default, ai_docs_item, ai_docs_setting, ai_docs_setting_param_default,
+    ai_agent_item_dotenv_default,
+    ai_docs_setting,
+    ai_docs_setting_param_default,
     ai_mcp_server_item,
-    ai_rebot_item, ai_rebot_setting,
+    ai_rebot_setting,
     ai_system_prompt_item,
     json_params_default
 } from "../../../common/req/filecat.ai.pojo";
 import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
+
 const ffmpeg = require('fluent-ffmpeg');
 
 const Mustache = require('mustache');
@@ -59,21 +64,21 @@ const customer_api_router_key = data_common_key.customer_api_router_key;
 
 const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
 
-let process_copy_env:any;
+let process_copy_env: any;
 
 const sandbox = {
     fs: fs,
     path: path,
     cache_map: customer_cache_map,
-    axios:axios,
+    axios: axios,
 };
 const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
 export class SettingService {
 
 
-    getCustomerRouter():[string,string,number,string][] {
-        const list:any[] = DataUtil.get(customer_router_key);
+    getCustomerRouter(): [string, string, number, string][] {
+        const list: any[] = DataUtil.get(customer_router_key);
         return list ?? [];
     }
 
@@ -82,8 +87,8 @@ export class SettingService {
     }
 
     // 1. 路由 2. 文件路径 3 token 4 用户Id 5 备注
-    get_workflow_router():[string,string,string,string,string][] {
-        const list:any[] = DataUtil.get(data_common_key.customer_workflow_router_key);
+    get_workflow_router(): [string, string, string, string, string][] {
+        const list: any[] = DataUtil.get(data_common_key.customer_workflow_router_key);
         return list ?? [];
     }
 
@@ -139,7 +144,7 @@ export class SettingService {
                     }
                 }
             }
-            const list_router= this.getCustomerRouter()
+            const list_router = this.getCustomerRouter()
             if (!!list_router && list_router.length > 0) {
                 for (let item of list_router) {
                     const router = item[0]
@@ -357,9 +362,9 @@ export class SettingService {
         let index_text = await FileUtil.readFileSync(index_path);
         const web_site_title = this.get_sys_env().web_site_title;
         const logo_url = await this.get_logo_url();
-        index_text = Mustache.render(index_text.toString(),{
+        index_text = Mustache.render(index_text.toString(), {
             Windows_FileCat: JSON.stringify({
-                base_url:await get_base(),
+                base_url: await get_base(),
                 web_site_title,
                 logo_url
             }), // 给前端
@@ -370,52 +375,79 @@ export class SettingService {
         return index_text;
     }
 
-    /**
-     * 解析「网站 logo」的最终可访问地址，供前端 <img src> 与 favicon 使用。
-     * 规则：配置值为 http(s):// 开头时直接返回该远程地址；
-     *       其它情况（服务器本地文件路径）返回公开的 logo 读取接口地址；
-     *       未配置时返回空字符串，由调用方回退到内置默认 logo。
-     */
+
     public async get_logo_url(): Promise<string> {
         const logo = (this.get_sys_env()?.logo ?? "").trim();
         if (!logo) {
             return "";
         }
-        if (/^https?:\/\//i.test(logo)) {
+        if (logo.startsWith("http")) {
             return logo;
         }
         // 本地文件路径：走后端接口读取（带上 filecat 的前缀，兼容自定义 base_url）
-        return `${await get_sys_base_url_pre()}/setting/logo`;
+        // 拼文件修改时间作为版本号，文件不变则地址不变（永久缓存），文件一改立即生效
+        const version = await this.get_logo_mtime();
+        const query = version > 0 ? `?v=${version}` : "";
+        return `${await get_sys_base_url_pre()}/setting/logo${query}`;
     }
 
-    /**
-     * 读取配置中「本地 logo 文件」的二进制内容，供 /setting/logo 接口输出。
-     * 只读取配置里写的那一个路径，不接收任何外部传入路径，避免任意文件读取。
-     * 返回 null 表示未配置或文件不可用。
-     */
+    /** logo 文件 mtime 的缓存：键为文件绝对路径，值为 {mtime, stamp} */
+    private logo_mtime_cache: { path: string; mtime: number } | null = null;
+
+
+    private async get_logo_mtime() {
+        const logo = (this.get_sys_env()?.logo ?? "").trim();
+        if (!logo || logo.startsWith("http")) {
+            this.logo_mtime_cache = null;
+            return 0;
+        }
+        // 路径没变则命中缓存，避免每次都同步读盘
+        if (this.logo_mtime_cache && this.logo_mtime_cache.path === logo) {
+            return this.logo_mtime_cache.mtime;
+        }
+        const abs_path = this.get_log_abs_path(logo);
+        let mtime = 0;
+        try {
+            const stats = await FileUtil.statSync(abs_path);
+            if (stats.isFile()) {
+                mtime = Math.floor(stats.mtimeMs);
+            }
+        } catch (e) {
+            mtime = 0;
+        }
+        this.logo_mtime_cache = {path: logo, mtime};
+        return mtime;
+    }
+
+    private get_log_abs_path(logo: string): string {
+        return path.isAbsolute(logo) ? logo : path.join(Env.work_dir, logo);
+    }
+
     public async read_logo_file(): Promise<Buffer | null> {
         const logo = (this.get_sys_env()?.logo ?? "").trim();
         // http 地址无需读取本地文件
-        if (!logo || /^http\/\//i.test(logo)) {
+        if (!logo || logo.startsWith("http")) {
             return null;
         }
-        const abs_path = path.isAbsolute(logo) ? logo : path.join(Env.work_dir, logo);
+        const abs_path = this.get_log_abs_path(logo);
         try {
-            if (!fs.existsSync(abs_path)) {
-                return null;
-            }
-            const stats = fs.statSync(abs_path);
+            const stats = await FileUtil.statSync(abs_path);
             if (!stats.isFile()) {
                 return null;
             }
-            return fs.readFileSync(abs_path);
+            return await FileUtil.readFileSync(abs_path);
         } catch (e) {
             return null;
         }
     }
 
     public get_sys_env(): sys_env_pojo {
-        const p:sys_env_pojo =  DataUtil.get(data_common_key.sys_env_key) ?? {web_site_title: 'FileCat',show_login_user_info: true, http_proxy: null, logo: ""}
+        const p: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
+            web_site_title: 'FileCat',
+            show_login_user_info: true,
+            http_proxy: null,
+            logo: ""
+        }
         if (p.http_proxy == null) {
             p.http_proxy = process.env.http_proxy
                 || process.env.https_proxy
@@ -425,7 +457,9 @@ export class SettingService {
         return p;
     }
 
-    public set_sys_env(req:sys_env_pojo) {
+    public set_sys_env(req: sys_env_pojo) {
+        // logo 可能被替换，清掉 mtime 缓存，保证下次取到新的版本号
+        this.logo_mtime_cache = null;
         return DataUtil.set(data_common_key.sys_env_key, req);
     }
 
@@ -530,7 +564,7 @@ export class SettingService {
                 console.log(`[AutoUpgrade] 开始下载: ${downloadUrl}`);
                 // 先下载到临时目录
                 const tempDir = path.join(Env.work_dir, data_dir_tem_name.filecat_upgrade_dir);
-                await FileUtil.mkdirSync(tempDir, { recursive: true });
+                await FileUtil.mkdirSync(tempDir, {recursive: true});
                 const localPath = await ChildProcessUtil.down_load_file(downloadUrl, tempDir, (progress) => {
                     if (progress % 20 === 0 || progress === 100) {
                         console.log(`[AutoUpgrade] 下载进度: ${progress}%`);
@@ -613,7 +647,7 @@ export class SettingService {
         DataUtil.set(data_common_key.token_setting, {mode, length, persist});
     }
 
-    share_timer :NodeJS.Timeout[] = []
+    share_timer: NodeJS.Timeout[] = []
 
     public init_share() {
 
@@ -653,7 +687,7 @@ export class SettingService {
     public init() {
         const data = DataUtil.get(data_common_key.token_setting);
         if (!!data && !!data['mode']) {
-            this.saveToken(data['mode'], data["length"],data['persist']);
+            this.saveToken(data['mode'], data["length"], data['persist']);
         }
         // 加载用户持久化的进程环境变量覆盖（重启后生效）
         this.init_process_env_override();
@@ -671,9 +705,9 @@ export class SettingService {
     }
 
     // update_files_setting: FileSettingItem[];
-    ai_agent_setting():{models:ai_agent_Item[]} {
-        const r = DataUtil.get(data_common_key.ai_agent_model_setting)as  any;
-        if(!r) {
+    ai_agent_setting(): { models: ai_agent_Item[] } {
+        const r = DataUtil.get(data_common_key.ai_agent_model_setting) as any;
+        if (!r) {
             const doubao_pojo = new ai_agent_Item()
             // 默认添加豆包的 api
             doubao_pojo.url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
@@ -719,8 +753,8 @@ export class SettingService {
             deepseek_pojo.json_params = json_params_default
             deepseek_pojo.request_type = 'completions'
             return {
-                models:[
-                    doubao_pojo,longcat_pojo,zhipu_pojo,openai_pojo,xiaomi_pojo,deepseek_pojo
+                models: [
+                    doubao_pojo, longcat_pojo, zhipu_pojo, openai_pojo, xiaomi_pojo, deepseek_pojo
                 ]
             }
         } else {
@@ -746,7 +780,7 @@ export class SettingService {
     // ============ 机器人配置 ============
 
     ai_rebot_setting(): ai_rebot_setting {
-        return DataUtil.get(data_common_key.ai_rebot_setting) ?? { list: [] };
+        return DataUtil.get(data_common_key.ai_rebot_setting) ?? {list: []};
     }
 
     ai_rebot_setting_save(data: ai_rebot_setting) {
@@ -775,16 +809,16 @@ export class SettingService {
         await ai_agentService.reloadMcp().catch(console.error);
     }
 
-    ai_docs_setting():ai_docs_setting{
-        return DataUtil.get(data_common_key.ai_agent_docs_setting) ??{
-            list:[],
-            param:ai_docs_setting_param_default
+    ai_docs_setting(): ai_docs_setting {
+        return DataUtil.get(data_common_key.ai_agent_docs_setting) ?? {
+            list: [],
+            param: ai_docs_setting_param_default
         }
     }
 
-    async ai_docs_setting_save(token,data:ai_docs_setting) {
+    async ai_docs_setting_save(token, data: ai_docs_setting) {
         const source_item = this.ai_docs_setting()
-        if(data.list != null) {
+        if (data.list != null) {
             for (const it of data.list) {
                 userService.check_user_path(token, it.dir)
             }
@@ -794,50 +828,50 @@ export class SettingService {
             source_item.param = data.param
         }
         DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
-        if(data.docs_update_tag) {
+        if (data.docs_update_tag) {
             ai_agentService.init().catch(console.error);
         }
     }
 
     // 获取文件分享列表
-    get_share_file_list():file_share_item[] {
-        const list:file_share_item[] = DataUtil.get(data_common_key.share_file_list_key) ?? []
-        const statics:any = DataUtil.get(data_common_key.share_file_list_key_download_statics,file_key.statics_tag) ?? {}
+    get_share_file_list(): file_share_item[] {
+        const list: file_share_item[] = DataUtil.get(data_common_key.share_file_list_key) ?? []
+        const statics: any = DataUtil.get(data_common_key.share_file_list_key_download_statics, file_key.statics_tag) ?? {}
         for (const item of list) {
             item.download_num = statics[item.id]
         }
         return list;
     }
 
-    add_share_file(item:file_share_item,token) {
+    add_share_file(item: file_share_item, token) {
         const list = this.get_share_file_list()
         list.push(item)
-        this.set_share_file_list(list,token)
+        this.set_share_file_list(list, token)
     }
 
-    set_share_file_list(list:file_share_item[],token) {
+    set_share_file_list(list: file_share_item[], token) {
         const time = Date.now()
         const keys = new Set()
         for (const item of list) {
             userService.check_user_path(token, item.path)
-            if(!item.id) {
+            if (!item.id) {
                 item.id = generateRandomHash(15)
             }
-            if(!item.time_stamp) {
+            if (!item.time_stamp) {
                 item.time_stamp = time
             }
             keys.add(item.id)
         }
         DataUtil.set(data_common_key.share_file_list_key, list);
         // 清理一下统计
-        const statics :any = DataUtil.get(data_common_key.share_file_list_key_download_statics,file_key.statics_tag);
-        if(statics) {
+        const statics: any = DataUtil.get(data_common_key.share_file_list_key_download_statics, file_key.statics_tag);
+        if (statics) {
             for (const key of Object.keys(statics)) {
-                if(!keys.has(key)) {
+                if (!keys.has(key)) {
                     delete statics[key]
                 }
             }
-            DataUtil.set(data_common_key.share_file_list_key_download_statics,statics,file_key.statics_tag);
+            DataUtil.set(data_common_key.share_file_list_key_download_statics, statics, file_key.statics_tag);
         }
         // 最后重置一下过期时间设置
         this.init_share()
@@ -868,15 +902,19 @@ export class SettingService {
         }
         if (ok) base.default = true;
         return {
-            dirs:[base, ...user_data?.folder_items ?? []],
-            quick_cmd:[...user_data?.quick_cmd ?? []],
-            file_quick_cmd:[...user_data?.file_quick_cmd ?? []]
+            dirs: [base, ...user_data?.folder_items ?? []],
+            quick_cmd: [...user_data?.quick_cmd ?? []],
+            file_quick_cmd: [...user_data?.file_quick_cmd ?? []]
         };
     }
 
-    public async saveFilesSetting(data:{dirs: FileSettingItem[],quick_cmd:QuickCmdItem[],file_quick_cmd:FileQuickCmdItem[]}, token: string) {
+    public async saveFilesSetting(data: {
+        dirs: FileSettingItem[],
+        quick_cmd: QuickCmdItem[],
+        file_quick_cmd: FileQuickCmdItem[]
+    }, token: string) {
         const user_data = userService.get_user_info_by_token(token);
-        if(data.dirs) {
+        if (data.dirs) {
             const items = data.dirs;
             if (!Array.isArray(items) || items.length === 0) {
                 return;
@@ -898,9 +936,9 @@ export class SettingService {
                 user_data.folder_item_now = 0; // 回到默认
             }
 
-        } else if(data.quick_cmd) {
+        } else if (data.quick_cmd) {
             user_data.quick_cmd = data.quick_cmd;
-        } else if(data.file_quick_cmd) {
+        } else if (data.file_quick_cmd) {
             user_data.file_quick_cmd = data.file_quick_cmd;
         }
         await userService.save_user_info(user_data.id, user_data);
@@ -945,7 +983,7 @@ export class SettingService {
         return ffmpeg;
     }
 
-    smartctl:string
+    smartctl: string
 
     async getSmartctl() {
         const list = await settingService.getSoftware();
@@ -999,12 +1037,12 @@ export class SettingService {
             pojo.id = SysSoftware[key];
             const item = map.get(pojo.id);
             pojo.path = item?.path
-            if(pojo.path) {
+            if (pojo.path) {
                 pojo.installed = SystemUtil.commandIsExist(`${pojo.path}`);
             } else {
                 for (const p of env_list) {
-                    const v = await FileUtil.get_exe_path_by_env_dir(p,pojo.id)
-                    if(v) {
+                    const v = await FileUtil.get_exe_path_by_env_dir(p, pojo.id)
+                    if (v) {
                         pojo.path = v;
                         pojo.installed = true;
                     }
@@ -1027,18 +1065,18 @@ export class SettingService {
 
     // extra_env_path = data_common_key.extra_env_path
 
-    public get_en_path_list():env_item[] {
+    public get_en_path_list(): env_item[] {
         return DataUtil.get(data_common_key.extra_env_path_list_key) ?? [];
     }
 
     public get_env_path() {
-        const list= this.get_en_path_list()
+        const list = this.get_en_path_list()
         const s = sysType === SysEnum.win ? ";" : ":";
-        const filter_path_list = list.filter(v=>v.open).map(v => v.path)
+        const filter_path_list = list.filter(v => v.open).map(v => v.path)
         // 添加当前的node环境 添加到后面 前面有的话会覆盖
         filter_path_list.push(path.dirname(process.execPath))
         const r_list = filter_path_list.join(s);
-        return process.env.PATH + s+ r_list;
+        return process.env.PATH + s + r_list;
     }
 
     setEnvPath(paths: env_item[]) {
@@ -1061,7 +1099,7 @@ export class SettingService {
     // 解析 key=value 文本（每行一条，忽略空行和 # 注释），返回合并后的 env 对象
     private parse_process_env_text(text: string): { [key: string]: string } {
         const result: { [key: string]: string } = {};
-        Env.load(text,result)
+        Env.load(text, result)
         return result;
     }
 
@@ -1235,18 +1273,18 @@ export class SettingService {
         return true;
     }
 
-    get_workflow_setting():workflow_setting_item[] {
-        let list:workflow_setting_item[] = DataUtil.get(data_common_key.workflow_setting_item_list)
-        if(!list) {
+    get_workflow_setting(): workflow_setting_item[] {
+        let list: workflow_setting_item[] = DataUtil.get(data_common_key.workflow_setting_item_list)
+        if (!list) {
             list = []
             DataUtil.set(data_common_key.workflow_setting_item_list, list);
         }
         return list;
     }
 
-    save_workflow_setting(list:workflow_setting_item[]) {
+    save_workflow_setting(list: workflow_setting_item[]) {
         for (let item of list) {
-            if(item.cron_str != null && !this.isValidCron(item.cron_str)) {
+            if (item.cron_str != null && !this.isValidCron(item.cron_str)) {
                 throw ` ${item.cron_str} is wrong `;
             }
         }
@@ -1254,7 +1292,7 @@ export class SettingService {
         this.init_corn()
     }
 
-    corn_job_running_list:any[] =[]
+    corn_job_running_list: any[] = []
 
     init_corn() {
         for (const job of this.corn_job_running_list) {
@@ -1262,11 +1300,11 @@ export class SettingService {
         }
         this.corn_job_running_list = []
         for (const item of this.get_workflow_setting()) {
-            if(!item.open)continue;
-            if(item.cron_str && this.isValidCron(item.cron_str)) {
-                const job = cron.schedule(item.cron_str,()=>{
+            if (!item.open) continue;
+            if (item.cron_str && this.isValidCron(item.cron_str)) {
+                const job = cron.schedule(item.cron_str, () => {
                     const user_info = userService.get_user_info_by_user_id(item.user_id);
-                    workflowService.exec_file(item.file_path,user_info).catch(console.error);
+                    workflowService.exec_file(item.file_path, user_info).catch(console.error);
                 });
                 this.corn_job_running_list.push(job);
             }
@@ -1277,10 +1315,10 @@ export class SettingService {
     power_on_corn() {
         const list = this.get_workflow_setting()
         for (const item of list) {
-            if(!item.open)continue;
-            if(!item.sys_power_on)continue;
+            if (!item.open) continue;
+            if (!item.sys_power_on) continue;
             const user_info = userService.get_user_info_by_user_id(item.user_id);
-            workflowService.exec_file(item.file_path,user_info).catch(console.error);
+            workflowService.exec_file(item.file_path, user_info).catch(console.error);
         }
     }
 
@@ -1298,7 +1336,7 @@ export class SettingService {
     /** 插件注册的「shell 命令校验」回调列表（替代旧版自定义 shell 命令校验） */
     plugin_shell_cmd_check_list: { id: string; handler: (token: string, cmd: string, params: any[]) => any }[] = [];
 
-    running_plugin_list:Plugin[] = []
+    running_plugin_list: Plugin[] = []
 
     get_plugin_list(): plug_item[] {
         return DataUtil.get(data_common_key.filecat_plugin_list) ?? [];
@@ -1343,12 +1381,12 @@ export class SettingService {
     /**
      * 获取所有可用主题列表（内置 + 插件注册的）
      */
-    get_all_themes(): {label:string,value:string}[] {
-        const pluginEntries:  {label:string,value:string}[] = [];
+    get_all_themes(): { label: string, value: string }[] {
+        const pluginEntries: { label: string, value: string }[] = [];
         for (const [themeId, cssPath] of this.plugin_themes) {
             pluginEntries.push({
-                label:themeId,
-                value:themeId
+                label: themeId,
+                value: themeId
             });
         }
         return pluginEntries;
@@ -1364,8 +1402,8 @@ export class SettingService {
     /**
      * 将 .css 文件注册为主题插件
      */
-    private  _register_css_theme_plugin(plugin: Plugin) {
-        if(!plugin.css_list?.length) return
+    private _register_css_theme_plugin(plugin: Plugin) {
+        if (!plugin.css_list?.length) return
         for (const item of plugin.css_list) {
             this.plugin_themes.set(item.label, item.path);
         }
@@ -1383,7 +1421,7 @@ export class SettingService {
             this.plugin_routes.set(route.router, route);
         }
         console.log(
-            `[Plugin] "${plugin.meta.name}" 已注册路由:` ,
+            `[Plugin] "${plugin.meta.name}" 已注册路由:`,
             plugin.routes.map(r => r.router).join(', ')
         );
     }
@@ -1446,9 +1484,9 @@ export class SettingService {
     }
 
     private async _load_single_plugin(item: plug_item): Promise<void> {
-        if(!item.open) {
+        if (!item.open) {
             // 没有开启
-            return ;
+            return;
         }
         const plugin = this._resolve_plugin(item);
 
@@ -1480,7 +1518,7 @@ export class SettingService {
 
     private _register_ai_tools(plugin: Plugin): void {
         // if (plugin.meta?.type !== 'ai_tool') return;
-        if(!plugin.tools?.length) return;
+        if (!plugin.tools?.length) return;
         for (const tool of plugin.tools) {
             ai_agentService.registerPluginTool(plugin.meta.id, tool);
         }
@@ -1556,7 +1594,8 @@ export class SettingService {
         evict(mod);
     }
 
-    _require_fn:any
+    _require_fn: any
+
     private get _native_require(): NodeRequire {
         // 缓存起来，避免每次都 eval
         if (!this._require_fn) {

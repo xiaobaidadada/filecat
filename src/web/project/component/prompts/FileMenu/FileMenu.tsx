@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import { useAtom } from 'jotai'; 
+import {useAtom} from 'jotai';
 import {$stroe} from "../../../util/store";
 import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
@@ -54,8 +54,7 @@ export function FileMenu() {
         },
         {
             r: t("详细信息"), v: common_menu_type.file_base_info,
-            items:[
-            ]
+            items: []
         },
         {r: t("重命名"), v: common_menu_type.file_rename},
         {r: t("下载"), v: common_menu_type.file_download},
@@ -63,18 +62,18 @@ export function FileMenu() {
     ]
 
     //权限判断
-    if(check_user_auth(UserAuth.share_file)) {
+    if (check_user_auth(UserAuth.share_file)) {
         // @ts-ignore
         must_needs.push({
             // 所有文件和目录都有的选项
             r: t("分享"), v: common_menu_type.share_file
         })
     }
-    if(user_base_info.docs_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
+    if (user_base_info.docs_ai_is_open && check_user_auth(UserAuth.ai_agent_setting)) {
         must_needs.push({
             r: t("更新AI知识库"), v: common_menu_type.ai_load_one_file,
-            items:[
-                {r:t("删除"), v: common_menu_type.ai_del_one_file},
+            items: [
+                {r: t("删除"), v: common_menu_type.ai_del_one_file},
             ]
         })
     }
@@ -92,7 +91,7 @@ export function FileMenu() {
         // {code: "big5", v: common_menu_type.logviwer_big5},
         // {code: "ios-8859-1", v: common_menu_type.logviwer_ios_8859_1},
     ];
-    const show_items:any[] = [
+    const show_items: any[] = [
         {r: t("以文本打开"), v: common_menu_type.open_text},
         {
             r: t("以日志打开"), v: common_menu_type.logviwer_text, items:
@@ -172,15 +171,18 @@ export function FileMenu() {
             v: common_menu_type.blank_search_mode
         },
         {
-        r: t("统计信息"),
-        v: common_menu_type.folder_size_info
+            r: t("统计信息"),
+            v: common_menu_type.folder_size_info
         },
-    ...must_needs];
+        ...must_needs];
     const items_images = [{
         r: t("以图片编辑器打开"),
-        v: "open"
+        v: common_menu_type.image_open
     },
-        {r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`), v: "pre"},
+        {
+            r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`),
+            v: common_menu_type.image_preview
+        },
         ...must_needs];
     const {file_is_running} = use_file_to_running();
 
@@ -189,15 +191,15 @@ export function FileMenu() {
     }
 
 
-    const get_ab_path = ()=>{
+    const get_ab_path = () => {
         const path = UserBaseInfo.get_now_dir(user_base_info)
-        let fp = path_join(path,decodeURIComponent(getRouterAfter('file', getRouterPath())))
-        if(user_base_info.sys === SysEnum.win) {
+        let fp = path_join(path, decodeURIComponent(getRouterAfter('file', getRouterPath())))
+        if (user_base_info.sys === SysEnum.win) {
             fp = fp.replaceAll("/", '\\')
-        } else if(fp.includes("\\")) {
+        } else if (fp.includes("\\")) {
             fp = fp.replaceAll("\\", '/')
         }
-        return path_join(fp,showPrompt.data.filename)
+        return path_join(fp, showPrompt.data.filename)
     }
 
     const get_menu_file_path = () => {
@@ -231,11 +233,15 @@ export function FileMenu() {
             }
                 break;
             case common_menu_type.logviwer_wrap:
-            case common_menu_type.logviwer_nowrap:
-            {
+            case common_menu_type.logviwer_nowrap: {
                 // 从叶子菜单项读取所选编码，默认 utf8
                 const enc = item?.encoding ?? 'utf8';
-                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: enc, wrap: v === common_menu_type.logviwer_wrap ? 'wrap' : 'nowrap'})
+                set_file_log({
+                    show: true,
+                    fileName: showPrompt.data.filename,
+                    encoding: enc,
+                    wrap: v === common_menu_type.logviwer_wrap ? 'wrap' : 'nowrap'
+                })
             }
                 break;
             case common_menu_type.run_workflow:
@@ -271,7 +277,8 @@ export function FileMenu() {
                             <div className="card-content">
                                 {list.map((item, index) => {
                                     // @ts-ignore
-                                    return <InputText key={index} placeholderOut={item.description} value={item.default} options={item.options}
+                                    return <InputText key={index} placeholderOut={item.description} value={item.default}
+                                                      options={item.options}
                                                       handleInputChange={(value) => {
                                                           item.default = value
                                                       }}/>
@@ -309,14 +316,14 @@ export function FileMenu() {
                 setShellShow({
                     show: true,
                     path: getRouterAfter('file', getRouterPath()),
-                    cmd: `${item.extra_value.cmd} ${showPrompt.data.filename} ${item.extra_value.params??""}\r`,
+                    cmd: `${item.extra_value.cmd} ${showPrompt.data.filename} ${item.extra_value.params ?? ""}\r`,
                 })
                 break;
             case common_menu_type.file_copy_name:
                 copyToClipboard(showPrompt.data.filename)
                 break;
             case common_menu_type.file_copy_now_path:
-                copyToClipboard(path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())),showPrompt.data.filename))
+                copyToClipboard(path_join(decodeURIComponent(getRouterAfter('file', getRouterPath())), showPrompt.data.filename))
                 break;
             case common_menu_type.file_copy_ab_path:
                 copyToClipboard(get_ab_path())
@@ -333,12 +340,12 @@ export function FileMenu() {
                 close();
                 navigate(`${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
             }
-            break;
+                break;
             case common_menu_type.blank_search_mode : {
                 set_blank_search_mode_for_temp(true)
                 click_folder(showPrompt.data.filename)
             }
-            break;
+                break;
             case common_menu_type.folder_size_info: {
                 ws.addMsg(CmdType.folder_size_info, (data) => {
                     set_folder_info_list_data([data.context[0], data.context[1]]);
@@ -347,8 +354,8 @@ export function FileMenu() {
                 ws.sendData(CmdType.folder_size_info, {path: p})
                 setShowPrompt({show: true, type: PromptEnum.FolderInfo, overlay: true, data: {}});
             }
-            break;
-            case common_menu_type.share_file:{
+                break;
+            case common_menu_type.share_file: {
                 const item = new file_share_item()
                 item.path = get_ab_path()
                 // item.left_hour = 0
@@ -357,14 +364,14 @@ export function FileMenu() {
                     const result = await settingHttp.post("add_share_file_list", item);
                     if (result.code === RCode.Success) {
                         NotySuccess("添加成功")
-                        set_prompt_card({open:false})
+                        set_prompt_card({open: false})
                         navigate(`${routerConfig.share_list_setting_page}`);
                     }
                 }
                 set_prompt_card({
                     open: true,
                     title: "share file",
-                    confirm:save_item,
+                    confirm: save_item,
                     context_div: (
                         <div className="card-content">
                             <InputText placeholderOut={t("路径")} value={item.path}
@@ -380,7 +387,7 @@ export function FileMenu() {
 
                 })
             }
-            break;
+                break;
             case common_menu_type.share_file_download:
                 const u = fileHttp.getDownloadUrlV2(showPrompt.data.path, "share_download", {
                     share_id: showPrompt.data.share_id,
@@ -401,10 +408,10 @@ export function FileMenu() {
                 set_prompt_card({
                     open: true,
                     title: "确认",
-                    confirm:async () => {
-                        set_prompt_card({open:false})
+                    confirm: async () => {
+                        set_prompt_card({open: false})
                         const result = await ai_agentHttp.post("ai_load_one_file", {
-                            param_path:get_ab_path()
+                            param_path: get_ab_path()
                         });
                         if (result.code === RCode.Success) {
                             NotySuccess("更新到AI知识库成功")
@@ -423,10 +430,10 @@ export function FileMenu() {
                 set_prompt_card({
                     open: true,
                     title: "确认",
-                    confirm:async () => {
-                        set_prompt_card({open:false})
+                    confirm: async () => {
+                        set_prompt_card({open: false})
                         const result = await ai_agentHttp.post("ai_del", {
-                            param_path:get_ab_path()
+                            param_path: get_ab_path()
                         });
                         if (result.code === RCode.Success) {
                             NotySuccess("ok")
@@ -437,16 +444,16 @@ export function FileMenu() {
             }
             case common_menu_type.file_base_info: {
                 const result = await fileHttp.post("file_base_info", {
-                    param_path:get_ab_path()
+                    param_path: get_ab_path()
                 });
-                if(result.code !== RCode.Success) {
+                if (result.code !== RCode.Success) {
                     return
                 }
-                const data:FileInfo = result.data
+                const data: FileInfo = result.data
                 set_prompt_card({
                     open: true,
                     title: "确认",
-                    context_div:<>
+                    context_div: <>
                         <TextLine left={`${t("名称")}`} right={data.name}/>
                         {/*<TextLine left={`${t("路径")}`} right={data.path}/>*/}
                         <TextLine left={`${t("大小")}`} right={formatFileSize(data.size)}/>
@@ -460,8 +467,7 @@ export function FileMenu() {
                 })
                 break;
             }
-            case    common_menu_type.file_delete:
-            {
+            case    common_menu_type.file_delete: {
                 // 如果右键的文件在选中列表中，则删除所有选中的文件（不传 path，FilesDelete 会走选中列表逻辑）
                 if (showPrompt.data.useSelectedList) {
                     setShowPrompt({
@@ -482,9 +488,8 @@ export function FileMenu() {
                     });
                 }
             }
-            break
-            case    common_menu_type.file_rename:
-            {
+                break
+            case    common_menu_type.file_rename: {
                 setShowPrompt({
                     show: true,
                     type: PromptEnum.FileRename,
@@ -496,7 +501,7 @@ export function FileMenu() {
                     }
                 });
             }
-            break;
+                break;
             case common_menu_type.file_download: {
                 if (showPrompt.data.useSelectedList) {
                     // 多选下载：与文件列表菜单栏的下载逻辑一致
@@ -511,28 +516,34 @@ export function FileMenu() {
                     window.open(url);
                 }
             }
-            break;
+                break;
 
         }
     }
 
     // 开始展示右键选项
-    if(showPrompt.data?.is_share)  {
+    if (showPrompt.data?.is_share) {
         // 拦截
         div = <div onWheel={() => {
             close();
         }}>
             <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
                                                                       items={[
-                                                                          {r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'download'} not_use_icon_style={true}/>
+                                                                          {
+                                                                              r: <div className={"common-tag-center"}>
+                                                                                  <Icon icon={'download'}
+                                                                                        not_use_icon_style={true}/>
                                                                                   <span>{"download"}</span>
-                                                                          </div>, v: common_menu_type.share_file_download
+                                                                              </div>,
+                                                                              v: common_menu_type.share_file_download
                                                                           },
-                                                                          {r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'link'} not_use_icon_style={true}/>
+                                                                          {
+                                                                              r: <div className={"common-tag-center"}>
+                                                                                  <Icon icon={'link'}
+                                                                                        not_use_icon_style={true}/>
                                                                                   <span>{"copy curl"}</span>
-                                                                              </div>, v: common_menu_type.share_file_copy_url
+                                                                              </div>,
+                                                                              v: common_menu_type.share_file_copy_url
                                                                           }
                                                                       ]} click={right_click}/>}/>
         </div>
@@ -575,18 +586,27 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_images} click={async (v) => {
-                    if (v == "open") {
-                        set_image_editor({path: showPrompt.data.path, name: showPrompt.data.filename});
-                    } else if (v == "pre") {
-                        await userHttp.post(Http_controller_router.user_save_private_attr, {
-                            not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
-                        });
-                        await initUserInfo();
-                        navigate(getRouterPath());
-                    }
-                    close();
-                }}/>}/>
+                                                                          items={items_images}
+                                                                          click={async (v, item) => {
+                                                                              // 图片专属项：编辑器打开 / 切换预览开关
+                                                                              if (v == common_menu_type.image_open) {
+                                                                                  set_image_editor({
+                                                                                      path: showPrompt.data.path,
+                                                                                      name: showPrompt.data.filename
+                                                                                  });
+                                                                                  close();
+                                                                              } else if (v == common_menu_type.image_preview) {
+                                                                                  await userHttp.post(Http_controller_router.user_save_private_attr, {
+                                                                                      not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
+                                                                                  });
+                                                                                  await initUserInfo();
+                                                                                  navigate(getRouterPath());
+                                                                                  close();
+                                                                              } else {
+                                                                                  // 其余通用项（复制名字/详细信息/重命名/下载/删除/分享等）交回通用处理，它内部会关闭菜单
+                                                                                  right_click(v, item);
+                                                                              }
+                                                                          }}/>}/>
             </div>
             break;
         case FileTypeEnum.folder:

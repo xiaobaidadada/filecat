@@ -93,7 +93,7 @@ module.exports = {
                 publicPath: "/fonts" // 重点：将 URL 中的 /fonts 映射到上述物理文件夹 多个路径可以一样 按优先级查找
             },
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", './'),},// web index.js
-            // {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
+            {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "file", "component", "image", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "project", 'component', "proxy", "rdp", "client", "js")},
             {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "img", "./",)},
             {directory: path.join(__dirname, "..", "..", "src", "web", "meta", 'resources', "css", "themes",)}

@@ -564,8 +564,7 @@ export class SettingController {
         const logo = (settingService.get_sys_env()?.logo ?? "").trim();
         const type = mime.lookup(logo) || 'application/octet-stream';
         res.header('Content-Type', type);
-        // logo 变动频率低，缓存一小段时间，避免每次页面加载都回源读取
-        res.header('Cache-Control', 'public, max-age=300');
+        res.header('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(buffer);
     }
 

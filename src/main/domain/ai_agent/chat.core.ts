@@ -30,6 +30,7 @@ import {pick_model_schema} from "./tools/pick_next_model";
 import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {SystemUtil} from "../sys/sys.utl";
+import {CommonUtil} from "../../../common/common.util";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -448,12 +449,14 @@ const workMessages: ai_agent_message_list = [
             controller.signal.removeEventListener('abort', onAbort);
             on_end({ once_messages_list, _interrupted: interrupted });
             SystemUtil.kill_command(session_id)
+            CommonUtil.sleep_delete_by_id(session_id)
         };
         // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
         const onAbort = () => {
             _interrupted = true;
-            SystemUtil.kill_command(session_id)
-            // endOnce();
+            // SystemUtil.kill_command(session_id)
+            // CommonUtil.sleep_delete_by_id(session_id)
+            endOnce();
         };
         controller.signal.addEventListener('abort', onAbort);
 

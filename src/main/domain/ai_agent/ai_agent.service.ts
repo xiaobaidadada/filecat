@@ -1269,6 +1269,9 @@ export class Ai_agentService {
         if(toolName === "exec_cmd") {
             return  SystemUtil.command(session_id,args);
         }
+        if(toolName === "sleep") {
+            return CommonUtil.sleep_by_id(session_id,args);
+        }
         // 其他内置
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
             return Ai_agentTools[toolName as Ai_agentTools_type](args);

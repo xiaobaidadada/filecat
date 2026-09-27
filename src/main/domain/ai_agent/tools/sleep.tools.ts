@@ -16,7 +16,7 @@ export const sleep_schema:ai_agent_params_type = {
             type: "object",
             properties: {
                  sleep_length: {
-                    type: "string",
+                    type: "number",
                     description: "要堵塞的时间长度，单位是毫秒"
                 }
             },
