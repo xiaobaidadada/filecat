@@ -210,7 +210,13 @@
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     margin-top: 0;  /* 间距已在 JS 里加了 +4px */
-    overflow: hidden;
+    /* 选项超出可用高度时可纵向滚动（maxHeight 由 JS 依据视口空间动态注入），
+       避免屏幕较小时下拉底部选项溢出视口看不到 */
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    /* 兜底：极端情况下也限制不超过视口高度 */
+    max-height: 80vh;
     /* 宽度随「最宽选项」自适应，与触发框（选中态）宽度解耦；
        minWidth / maxWidth 由 JS 依据触发框宽度和视口动态注入 */
     width: max-content;

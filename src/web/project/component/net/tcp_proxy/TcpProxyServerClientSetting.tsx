@@ -203,7 +203,6 @@ export function TcpProxyServerClientSetting() {
                                             // sub_title: ``,
                                             handle: async () => {
                                                 await del_sync_task(item.id)
-                                                NotySuccess("删除完成");
                                                 set_confirm({open:false,handle:null});
                                             }
                                         })
