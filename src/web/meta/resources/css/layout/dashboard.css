@@ -263,6 +263,14 @@ table tr[draggable="true"] {
     cursor: grab;
 }
 
+/* 表头过滤控件：标题与下拉同一行，整体不撑高表头 */
+.table-th-filter {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    white-space: nowrap;
+}
+
 /* 正在悬停的目标行：整行背景变暗，提示插入位置（--hover 在明暗主题下都有定义） */
 table tr.row-drop-target > td {
     background-color: var(--hover);

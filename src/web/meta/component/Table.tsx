@@ -1,4 +1,23 @@
 import React, {ReactNode, useEffect, useRef, useState} from 'react';
+import {Select} from "./Input";
+
+/**
+ * 表头过滤条件（注入式）。
+ * Table 只负责在对应列的 th 上渲染一个下拉控件，
+ * 过滤逻辑（拿 value 去筛选数据）完全由调用者自己处理。
+ */
+export interface TableFilter {
+    /** 显示在表头的过滤名，如「在线状态」 */
+    title: string,
+    /** 可选值列表，value 传 null 表示「全部」 */
+    options: { label: string, value: any }[],
+    /** 当前选中的值 */
+    value: any,
+    /** 选中变化回调，调用者在这里重新筛选数据 */
+    onChange: (value: any) => void,
+    /** 该过滤控件挂在第几列（对应 headers 的下标），默认 0 */
+    column?: number,
+}
 
 export interface TableProps {
     headers?: string[],
@@ -9,7 +28,9 @@ export interface TableProps {
 // 当引用table的页面有任何状态更新的时候，所有元素都会更新，也会包括这个列表，特别是对于实时渲染的页面会出现这个问题。要注意停止ws请求
 export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: ReactNode[], width?: string,handleContextMenu?: (row:any) => void,
     // 提供该函数时才开启行的上下拖动；数据顺序由调用者自行处理（from / to 为原始索引）
-    onRowDrag?: (from: number, to: number) => void }) {
+    onRowDrag?: (from: number, to: number) => void,
+    // 注入式表头过滤：不传则表头不渲染任何过滤控件
+    filter?: TableFilter }) {
     const [rows, setRows] = React.useState([]);
     // 当前正在拖动的行索引；-1 表示没有在拖动（ref 供事件里即时读取，state 供渲染使用）
     const drag_index = useRef(-1);
@@ -44,7 +65,23 @@ export function Table(props: { children?: ReactNode[]; headers?: any[], rows?: R
     return <table>
         <thead>
         <tr>
-            {props.headers?.map((header: string, index) => (<th key={index}>{header}</th>))}
+            {props.headers?.map((header: string, index) => (
+                <th key={index}>
+                    {/* 过滤控件挂在 props.filter.column 指定的列上（默认第 0 列） */}
+                    {props.filter && (props.filter.column ?? 0) === index
+                        ? <div className="table-th-filter">
+                            <span>{header}</span>
+                            <Select
+                                value={props.filter.value}
+                                options={props.filter.options}
+                                onChange={props.filter.onChange}
+                                width={"auto"}
+                                no_border={true}
+                            />
+                        </div>
+                        : header}
+                </th>
+            ))}
         </tr>
         </thead>
 

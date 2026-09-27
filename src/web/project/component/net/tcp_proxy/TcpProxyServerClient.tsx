@@ -44,6 +44,8 @@ export function TcpProxyServerClient() {
 
     const [edit_client,set_edit_client] = useState<tcp_proxy_server_client>();
     const [client_filter_Key,set_client_filter_Key] = useState<string>(undefined)
+    // 在线状态过滤：null 表示全部（'' 以外的任何值都按 truthy 判断在线）
+    const [client_status_filter,set_client_status_filter] = useState<boolean | null>(null)
 
     const [all_client_options,set_all_client_options] = useState<{label:string,value:string}[]>([])
 
@@ -79,7 +81,10 @@ export function TcpProxyServerClient() {
         return all_client_options.find((item) => String(item.value) === String(value));
     }
 
-    const getItems = async () => {
+    // status_override：点击表头过滤时会「先 setState 再立即取数据」，
+    // 此时闭包里的 client_status_filter 还是旧值，所以支持外部传入本次要用的过滤值
+    const getItems = async (status_override?: boolean | null) => {
+        const status_filter = status_override === undefined ? client_status_filter : status_override;
 
 
         const r2 = await tcpProxy.get("server_client_get")
@@ -89,6 +94,10 @@ export function TcpProxyServerClient() {
             const options = []
             client_num_id_map = {}
             for (const item of list) {
+                // 在线状态过滤：null 表示不过滤
+                if (status_filter !== null && !!item.status !== status_filter) {
+                    continue;
+                }
                 if(client_filter_Key) {
                     if(`${item.index}${item.client_name}${item.note}`.includes(client_filter_Key)) {
                         new_list.push(item)
@@ -187,7 +196,21 @@ export function TcpProxyServerClient() {
                   getItems()
               }}/>}
                           >
-                    <Table headers={headers} rows={client_list.map((item:tcp_proxy_server_client, index) => {
+                    <Table headers={headers} filter={{
+                        title: t("在线状态"),
+                        column: 2,
+                        value: client_status_filter,
+                        options: [
+                            {label: t("全部"), value: null},
+                            {label: t("在线"), value: true},
+                            {label: t("离线"), value: false},
+                        ],
+                        onChange: (value) => {
+                            set_client_status_filter(value)
+                            // 传入本次要用的值，避免闭包里读到旧 state
+                            getItems(value)
+                        }
+                    }} rows={client_list.map((item:tcp_proxy_server_client, index) => {
                         const new_list = [
                             <p>{index}</p>,
                             <TextTip>{item.client_name}</TextTip>,

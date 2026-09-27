@@ -658,5 +658,6 @@
   "网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。": "La función de marcadores de navegación de sitios se ha eliminado. Los datos originales se han convertido en archivos .url. Abra un archivo .url con filecat para lograr el mismo acceso rápido.",
   "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "Ubicación de los archivos: el directorio tempfile/temp_delete_sys_tag_name_260926 dentro del directorio de base de datos de filecat.",
   "网站 Logo": "Logotipo del sitio",
-  "本地文件路径或 http(s) 图片地址": "Ruta de archivo local o URL de imagen http(s)"
+  "本地文件路径或 http(s) 图片地址": "Ruta de archivo local o URL de imagen http(s)",
+  "全部": "Todo"
 }
