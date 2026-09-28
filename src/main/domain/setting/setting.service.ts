@@ -32,7 +32,13 @@ import {withLock} from "../../../common/fun.util";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
-import {env_item, sys_env_pojo, workflow_setting_item} from "../../../common/req/common.pojo";
+import {
+    env_item,
+    MD_EDITOR_SETTING_DEFAULT,
+    md_editor_setting_pojo,
+    sys_env_pojo,
+    workflow_setting_item
+} from "../../../common/req/common.pojo";
 import {plug_item, Plugin, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
@@ -466,6 +472,81 @@ export class SettingService {
     // 获取 filecat 系统全局 http 代理地址（空表示未设置）
     public get_http_proxy(): string {
         return this.get_sys_env()?.http_proxy;
+    }
+
+    // 合法 CSS 尺寸值：数字 + 可选单位（+ 可选的无单位模式）
+    // 只允许数字和这几个单位，杜绝把任意字符串写进 CSS（避免样式注入）
+    private static is_valid_size(v: any, allow_unitless = false): boolean {
+        if (typeof v !== "string") {
+            return false;
+        }
+        const s = v.trim();
+        if (!s) {
+            return false;
+        }
+        if (allow_unitless && /^\d+(\.\d+)?$/.test(s)) {
+            return true;
+        }
+        const m = /^(\d+(?:\.\d+)?)(px|%|rem|em|vw|vh|ch)$/.exec(s);
+        if (!m) {
+            return false;
+        }
+        const num = Number(m[1]);
+        // 上限只是防呆，避免极端值把界面撑坏
+        return Number.isFinite(num) && num > 0 && num <= 10000;
+    }
+
+    // md 编辑器设置的字段规则，get/set 共用一份，避免字段名散落在多处。
+    // allow_unitless 为 true 的字段（行高）允许纯数字，如 "1.8"。
+    private static readonly MD_EDITOR_FIELDS: { key: keyof md_editor_setting_pojo, allow_unitless?: boolean }[] = [
+        {key: "content_max_width"},
+        {key: "content_padding"},
+        {key: "font_size"},
+        {key: "line_height", allow_unitless: true},
+    ];
+
+    /**
+     * 归一化一个 md 编辑器设置字段的值。
+     * 老数据里可能存的是纯数字（当时的 px），这里补上单位；非法值一律回落到 fallback。
+     * @param key 字段名
+     * @param raw 原始值（可能来自存档，也可能来自请求体）
+     * @param fallback 校验失败时的兜底值
+     */
+    private static normalize_md_editor_value(
+        key: keyof md_editor_setting_pojo, raw: any, fallback: string
+    ): string {
+        const allow_unitless = SettingService.MD_EDITOR_FIELDS.some(f => f.key === key && f.allow_unitless);
+        // 兼容旧格式：以前存的是纯数字，按 px 处理（行高本身就是无单位倍数，不加单位）
+        let v = raw;
+        if (typeof v === "number" && Number.isFinite(v)) {
+            v = `${v}${allow_unitless ? "" : "px"}`;
+        }
+        return SettingService.is_valid_size(v, allow_unitless) ? String(v).trim() : fallback;
+    }
+
+    // 获取 md 编辑器全局设置。保证返回的每个字段都是能直接用的合法 CSS 值。
+    public get_md_editor_setting(): md_editor_setting_pojo {
+        const saved: any = DataUtil.get(data_common_key.md_editor_setting_key) ?? {};
+        const result: any = {};
+        for (const {key} of SettingService.MD_EDITOR_FIELDS) {
+            result[key] = SettingService.normalize_md_editor_value(key, saved[key], MD_EDITOR_SETTING_DEFAULT[key]);
+        }
+        return result as md_editor_setting_pojo;
+    }
+
+    // 保存 md 编辑器全局设置。只接受白名单字段并逐个校验，非法值回落到当前值。
+    public set_md_editor_setting(req: Partial<md_editor_setting_pojo>): md_editor_setting_pojo {
+        const cur = this.get_md_editor_setting();
+        const result: any = {};
+        for (const {key} of SettingService.MD_EDITOR_FIELDS) {
+            // 请求里没带这个字段就沿用当前值；带了则校验，非法同样回落当前值
+            const raw = (req as any)?.[key];
+            result[key] = raw === undefined
+                ? cur[key]
+                : SettingService.normalize_md_editor_value(key, raw, cur[key]);
+        }
+        DataUtil.set(data_common_key.md_editor_setting_key, result);
+        return result as md_editor_setting_pojo;
     }
 
     public get_https_setting(): HttpsSettingReq {

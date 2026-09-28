@@ -678,5 +678,17 @@
   "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。": "Dateispeicherort: das Verzeichnis tempfile/temp_delete_sys_tag_name_260926 im filecat-Datenbankverzeichnis.",
   "网站 Logo": "Website-Logo",
   "本地文件路径或 http(s) 图片地址": "Lokaler Dateipfad oder http(s)-Bild-URL",
-  "全部": "Alle"
+  "全部": "Alle",
+  "源码模式": "Quelltextmodus",
+  "实时编辑模式": "Live-Bearbeitungsmodus",
+  "编辑器设置": "Editor-Einstellungen",
+  "正文最大宽度": "Maximale Inhaltsbreite",
+  "正文左右边距": "Seitlicher Inhaltsabstand",
+  "正文字号": "Schriftgröße des Inhalts",
+  "行高": "Zeilenhöhe",
+  "恢复默认": "Standard wiederherstellen",
+  "保存中": "Wird gespeichert",
+  "预览": "Vorschau",
+  "你没有修改该设置的权限，以下为当前配置。": "Sie sind nicht berechtigt, diese Einstellung zu ändern. Unten wird die aktuelle Konfiguration angezeigt.",
+  "MD 编辑器设置": "MD-Editor-Einstellungen"
 }

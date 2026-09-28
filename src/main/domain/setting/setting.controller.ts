@@ -18,6 +18,7 @@ import {aiAgentLongTermMemoryService} from "../ai_agent/ai_agent.long_term_memor
 import {ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 import {Public} from "../../other/middleware/decorator";
 import mime from "mime-types";
+import {md_editor_setting_pojo} from "../../../common/req/common.pojo";
 
 @JsonController("/setting")
 export class SettingController {
@@ -602,5 +603,20 @@ export class SettingController {
             }
             console.error("返回插件主题 css 失败（响应已发出）", e);
         }
+    }
+
+    // 获取 md 编辑器全局设置。
+    // 不做权限校验：编辑器要给所有能打开 md 文件的用户读这份全局配置（只读，不含敏感信息）；
+    // 修改才需要 UserAuth.md_editor_setting。
+    @Get("/md_editor_setting/get")
+    md_editor_setting_get() {
+        return Sucess(settingService.get_md_editor_setting());
+    }
+
+    // 保存 md 编辑器全局设置（全局生效，影响所有用户）
+    @Post("/md_editor_setting/save")
+    md_editor_setting_save(@Req() ctx, @Body() body: md_editor_setting_pojo) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.md_editor_setting);
+        return Sucess(settingService.set_md_editor_setting(body));
     }
 }

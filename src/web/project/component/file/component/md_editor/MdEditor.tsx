@@ -1,6 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../../util/store";
+import {use_auth_check} from "../../../../util/store.util";
+import {UserAuth} from "../../../../../../common/req/user.req";
 import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
@@ -12,7 +14,15 @@ import MdWysiwygEditor, {MdWysiwygHandle} from "./MdWysiwygEditor";
 import MdToolbar from "./MdToolbar";
 import MdContextMenu from "./MdContextMenu";
 import MdOutline, {OutlineItem} from "./MdOutline";
+import {find_active_heading, parse_markdown_headings} from "./md_outline_parse";
+import {
+    apply_md_editor_setting,
+    load_md_editor_setting,
+    MD_EDITOR_SETTING_DEFAULT,
+} from "./MdEditorSetting";
 import * as lodash from "lodash";
+import {useNavigate} from "react-router-dom";
+import {routerConfig} from "../../../../../../common/RouterConfig";
 
 // 所见即所得 Markdown 编辑器容器。
 //
@@ -20,11 +30,17 @@ import * as lodash from "lodash";
 // 编辑器内核是 ProseMirror（自写 schema + 官方表格模块），因此表格在正文里
 // 就是真正的 <table>，可以直接点击单元格编辑、拖动列宽 —— 与 Typora 的观感一致。
 
-// 大纲显示状态的本地存储键（纯前端偏好，不落远端配置）
-const OUTLINE_STORAGE_KEY = "md_editor_show_outline";
+// 编辑模式：
+//   wysiwyg —— 所见即所得（ProseMirror）
+//   source  —— 源码模式（直接编辑 Markdown 原文，快捷键 Ctrl+/ 切换）
+type MdEditMode = "wysiwyg" | "source";
 
 export default function MdEditor() {
     const {t} = useTranslation();
+    const navigate = useNavigate();
+    // 是否拥有「MD 编辑器设置」权限：没权限就不显示设置按钮，避免点进去是个无权访问的空页
+    const {check_user_auth} = use_auth_check();
+    const can_setting = check_user_auth(UserAuth.md_editor_setting);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     // 编辑器初始内容：加载完成后才挂载编辑器，避免用空内容初始化
     const [init_value, set_init_value] = useState<string | null>(null);
@@ -41,45 +57,98 @@ export default function MdEditor() {
     const [dragging, set_dragging] = useState(false);
     const nav_ref = useRef<HTMLDivElement>(null);
     const divider_ref = useRef<HTMLDivElement>(null);
-    // 大纲面板是否显示。默认关闭，让正文占满整个宽度；
-    // 用户手动切换后记到 localStorage，下次打开沿用（不写远端配置，纯前端偏好）。
-    const [show_outline, set_show_outline] = useState<boolean>(() => {
-        try {
-            return localStorage.getItem(OUTLINE_STORAGE_KEY) === "1";
-        } catch (e) {
-            return false;
-        }
-    });
-    const toggle_outline = () => {
-        set_show_outline(prev => {
-            const next = !prev;
-            try {
-                localStorage.setItem(OUTLINE_STORAGE_KEY, next ? "1" : "0");
-            } catch (e) {
-                // 存储不可用（隐私模式等）时忽略，不影响面板切换
-            }
-            return next;
-        });
-    };
+    // 大纲面板是否显示。默认关闭，让正文占满整个宽度。
+    // 存在 atom + localStorage 里（sync_atomWithStorage），属于用户偏好，刷新/切页面都保持。
+    const [show_outline, set_show_outline] = useAtom($stroe.md_editor_show_outline);
+    const toggle_outline = () => set_show_outline(prev => !prev);
 
-    // 从编辑器重新读取大纲。文档每次变更都会调用，
-    // 因此标题的新增/删除/改名都能实时反映到面板上。
+    // 当前编辑模式。默认所见即所得。
+    // 存在 atom + localStorage 里（sync_atomWithStorage），属于用户偏好，刷新/切页面都保持。
+    const [mode, set_mode] = useAtom($stroe.md_editor_mode);
+    // 源码模式下的 Markdown 文本。仅在 source 模式下有值（wysiwyg 模式以编辑器文档为准）。
+    const [source_text, set_source_text] = useState("");
+    // 源码模式的 textarea 引用：用来读光标位置，驱动大纲高亮
+    const source_ref = useRef<HTMLTextAreaElement | null>(null);
+
+    // 在「所见即所得」与「源码」之间切换。
+    // 切换的关键是先把当前模式的改动取出来，再以它为初始内容进入另一种模式，保证不丢编辑。
+    const toggle_mode = useCallback(() => {
+        // 注意：不要在 set_mode 的 updater 里做其他 setState —— updater 应当是纯函数，
+        // 在它里面改别的 state 会被 React 的严格模式重复执行。先算出下一个值，再依次应用。
+        const next: MdEditMode = mode === "wysiwyg" ? "source" : "wysiwyg";
+        if (next === "source") {
+            // 进入源码模式：把编辑器里的文档序列化成 Markdown 填进 textarea
+            const md = handle_ref.current?.get_markdown();
+            if (md !== undefined) {
+                set_source_text(md);
+            }
+        } else {
+            // 回到所见即所得：用 textarea 里的文本重建编辑器
+            // 通过换 key 强制重挂载编辑器，避免在原实例上替换内容导致撤销栈与光标状态错乱
+            set_init_value(source_text);
+            set_editor_revision(n => n + 1);
+        }
+        set_mode(next);
+    }, [mode, source_text]);
+    // 编辑器实例版本号：模式切换/外部替换内容时自增，用于重建 ProseMirror 实例
+    const [editor_revision, set_editor_revision] = useState(0);
+
+    // md 编辑器全局设置（服务端保存，所有用户共用）。
+    // 它控制正文宽度/边距/字号等外观，改动通过 CSS 变量即时生效。
+    const [editor_setting, set_editor_setting] = useState(MD_EDITOR_SETTING_DEFAULT);
+    const container_ref = useRef<HTMLDivElement>(null);
+
+    // 拉取全局设置。放在这里而不是 App 层：只有打开编辑器才需要，避免每次加载页面都多一个请求。
+    useEffect(() => {
+        let cancelled = false;
+        load_md_editor_setting().then(s => {
+            if (!cancelled) {
+                set_editor_setting(s);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // 设置变化时写入 CSS 变量（放在 container 上，只影响这个编辑器，不污染全局样式）
+    useEffect(() => {
+        apply_md_editor_setting(container_ref.current, editor_setting);
+    }, [editor_setting]);
+
+    // 大纲数据源的统一入口，两种模式各取所需：
+    //   wysiwyg —— 问 ProseMirror 要（有真实文档位置）
+    //   source  —— 从 textarea 的 Markdown 原文里扫（没有文档模型）
     // 结果同时写入 ref 缓存：selectionchange 触发非常频繁，
     // 高亮计算若每次都遍历整篇文档会造成明显卡顿。
     const headings_cache = useRef<OutlineItem[]>([]);
     const refresh_headings = useCallback(() => {
-        const handle = handle_ref.current;
-        if (!handle) {
-            return;
+        let list: OutlineItem[];
+        if (mode === "source") {
+            list = parse_markdown_headings(source_text);
+        } else {
+            const handle = handle_ref.current;
+            if (!handle) {
+                return;
+            }
+            list = handle.get_headings();
         }
-        const list = handle.get_headings();
         headings_cache.current = list;
         set_headings(list);
-    }, []);
+    }, [mode, source_text]);
 
-    // 计算光标当前所在的标题：取文档位置在光标之前、且最近的那个标题。
-    // 直接读缓存，不做文档遍历（见上面 refresh_headings 的说明）。
+    // 计算光标当前所在的标题：取位置在光标之前、且最近的那个标题。
+    // 直接读缓存，不做全文遍历（见上面 refresh_headings 的说明）。
     const update_active = useCallback(() => {
+        if (mode === "source") {
+            // 源码模式：光标是 textarea 里的字符偏移，pos 也是字符偏移，可以直接比
+            const el = source_ref.current;
+            if (!el) {
+                return;
+            }
+            set_active_pos(find_active_heading(headings_cache.current, el.selectionStart));
+            return;
+        }
         const view = handle_ref.current?.get_view();
         if (!view) {
             return;
@@ -94,7 +163,7 @@ export default function MdEditor() {
             }
         }
         set_active_pos(current);
-    }, []);
+    }, [mode]);
 
     useEffect(() => {
         let cancelled = false;
@@ -109,13 +178,17 @@ export default function MdEditor() {
             if (cancelled) {
                 return;
             }
-            set_init_value(context ?? "");
+            const text = context ?? "";
+            set_init_value(text);
+            // 源码模式默认显示原文，这里同步一份，避免刚打开时 textarea 空白
+            set_source_text(text);
         }).catch(() => {
             if (cancelled) {
                 return;
             }
             NotyFail(t("打开失败"));
             set_init_value("");
+            set_source_text("");
         }).finally(() => {
             if (!cancelled) {
                 set_loading(false);
@@ -133,7 +206,27 @@ export default function MdEditor() {
         return () => document.removeEventListener("selectionchange", bump);
     }, []);
 
-    // 文档或选区变化时同步大纲：tick 由 MdWysiwygEditor 的 dispatchTransaction 驱动
+    // Ctrl/Cmd + / 切换编辑模式（Typora 的同款快捷键）。
+    // 用捕获阶段监听，保证在 textarea 里按下时也能被拦到（虽然 textarea 不会消费这个组合键，
+    // 但捕获阶段能避免被其他容器的 keymap 抢先处理）。
+    const toggle_mode_ref = useRef(toggle_mode);
+    toggle_mode_ref.current = toggle_mode;
+    useEffect(() => {
+        const on_key = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+                e.preventDefault();
+                e.stopPropagation();
+                toggle_mode_ref.current();
+            }
+        };
+        document.addEventListener("keydown", on_key, true);
+        return () => document.removeEventListener("keydown", on_key, true);
+    }, []);
+
+    // 文档或选区变化时同步大纲。
+    // tick 由 MdWysiwygEditor 的 dispatchTransaction 驱动；
+    // 源码模式下 refresh_headings 依赖里带了 mode/source_text，所以切模式、改文本都会重算，
+    // 这里不需要再重复列出这两个依赖（它们已包含在 refresh_headings / update_active 里）。
     useEffect(() => {
         refresh_headings();
         update_active();
@@ -163,16 +256,38 @@ export default function MdEditor() {
         nav_ref.current?.removeEventListener("pointermove", handle_drag);
     };
 
-    // 点击大纲条目：跳转到对应标题
+    // 点击大纲条目：跳转到对应标题。
+    // 两种模式的「位置」语义不同 —— 所见即所得是 ProseMirror 文档位置，
+    // 源码模式是 textarea 的字符偏移，所以分别处理。
     const goto_heading = (item: OutlineItem) => {
+        if (mode === "source") {
+            const el = source_ref.current;
+            if (!el) {
+                return;
+            }
+            // 定位到该标题行的开头，并按行高估算滚动位置
+            el.focus();
+            el.setSelectionRange(item.pos, item.pos);
+            const line = source_text.slice(0, item.pos).split(/\r?\n/).length - 1;
+            const line_height = parseFloat(getComputedStyle(el).lineHeight) || 20;
+            el.scrollTop = Math.max(0, line * line_height - line_height * 2);
+            set_active_pos(item.pos);
+            return;
+        }
         handle_ref.current?.scroll_to_pos(item.pos);
         set_active_pos(item.pos);
     };
     const save = async () => {
-        if (!md_editor?.name || !md_editor?.path || !handle_ref.current) {
+        if (!md_editor?.name || !md_editor?.path) {
             return;
         }
-        const context = handle_ref.current.get_markdown();
+        // 源码模式直接取 textarea 内容；所见即所得模式从编辑器序列化
+        const context = mode === "source"
+            ? source_text
+            : handle_ref.current?.get_markdown();
+        if (context === undefined) {
+            return;
+        }
         // path 形如 "sub/a.md"：目录部分编码，文件名原样（与项目其他编辑器的保存规则一致）
         const dir = md_editor.path.slice(0, md_editor.path.length - md_editor.name.length);
         const save_path = `${encodeURIComponent(dir)}${md_editor.name}`;
@@ -203,7 +318,7 @@ export default function MdEditor() {
     }
 
     return (
-        <div id={"md-editor-container"}>
+        <div id={"md-editor-container"} ref={container_ref}>
             <Header ignore_tags={true}
                     left_children={[
                         <ActionButton key={1} title={t("关闭")} icon={"close"} onClick={close}/>,
@@ -212,6 +327,19 @@ export default function MdEditor() {
                         // 大纲开关：默认关闭，点一下临时控制显示/隐藏
                         <ActionButton key={4} title={t("大纲")} icon={"list"}
                                       onClick={toggle_outline} selected={show_outline}/>,
+                        // 编辑模式切换：所见即所得 <-> 源码。快捷键 Ctrl/Cmd + /
+                        <ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
+                                      icon={mode === "wysiwyg" ? "code" : "edit"}
+                                      onClick={toggle_mode}/>,
+                        // 全局编辑器设置（正文宽度/边距/字号等，对所有用户生效）。
+                        // 需要 UserAuth.md_editor_setting 权限，没有就不显示这个入口。
+                        // 跳到独立设置页。编辑器是全屏 fixed 覆盖层（z-index 1000），
+                        // 不关掉会把设置页整个盖住，所以先 close 再跳。
+                        ...(can_setting ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
+                                                        onClick={() => {
+                                                            close();
+                                                            navigate(routerConfig.md_editor_setting_page);
+                                                        }}/>] : []),
                         <title key={3}>{md_editor.name}</title>,
                     ]}>
             </Header>
@@ -235,37 +363,83 @@ export default function MdEditor() {
                         {dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
                         <div className={"md-editor-scroll"}>
                             <div className={"md-editor-sheet"}>
-                                {/* 工具栏只在选中文字时出现（跟随选区浮动），平时不占屏幕也不挡正文。
-                                    块级操作（插入表格等）走右键菜单。详见 MdToolbar 与 md_editor.css 的说明。 */}
-                                <MdToolbar get_view={() => handle_ref.current?.get_view() ?? null}
-                                           refresh_key={tick}/>
-                                <MdWysiwygEditor
-                                    key={editor_key}
-                                    value={init_value}
-                                    ref={handle_ref}
-                                    // 编辑器就绪时立即同步大纲：
-                                    // 按 tick 刷新的 effect 在挂载时 ref 尚未赋值（handle 在子组件
-                                    // 自己的 useEffect 里才写入），拿不到句柄会让大纲空白，
-                                    // 必须等用户点一下编辑器触发 selectionchange 才显示。
-                                    on_ready={(handle) => {
-                                        const list = handle.get_headings();
-                                        headings_cache.current = list;
-                                        set_headings(list);
-                                        set_active_pos(-1);
-                                    }}
-                                    on_change={() => {
-                                        if (!dirty) {
-                                            set_dirty(true);
-                                        }
-                                    }}
-                                    on_save={() => save_ref.current()}
-                                    on_selection_change={() => set_tick(n => n + 1)}
-                                />
-                                <MdContextMenu get_view={() => handle_ref.current?.get_view() ?? null}
-                                               on_insert_table={() => {
-                                                   handle_ref.current?.insert_table(3, 3);
-                                                   set_dirty(true);
-                                               }}/>
+                                {mode === "wysiwyg" ? (
+                                    <React.Fragment>
+                                        {/* 工具栏只在选中文字时出现（跟随选区浮动），平时不占屏幕也不挡正文。
+                                            块级操作（插入表格等）走右键菜单。详见 MdToolbar 与 md_editor.css 的说明。 */}
+                                        <MdToolbar get_view={() => handle_ref.current?.get_view() ?? null}
+                                                   refresh_key={tick}/>
+                                        <MdWysiwygEditor
+                                            key={`${editor_key}#${editor_revision}`}
+                                            value={init_value}
+                                            ref={handle_ref}
+                                            // 编辑器就绪时立即同步大纲：
+                                            // 按 tick 刷新的 effect 在挂载时 ref 尚未赋值（handle 在子组件
+                                            // 自己的 useEffect 里才写入），拿不到句柄会让大纲空白，
+                                            // 必须等用户点一下编辑器触发 selectionchange 才显示。
+                                            on_ready={(handle) => {
+                                                const list = handle.get_headings();
+                                                headings_cache.current = list;
+                                                set_headings(list);
+                                                set_active_pos(-1);
+                                            }}
+                                            on_change={() => {
+                                                if (!dirty) {
+                                                    set_dirty(true);
+                                                }
+                                            }}
+                                            on_save={() => save_ref.current()}
+                                            on_selection_change={() => set_tick(n => n + 1)}
+                                        />
+                                        <MdContextMenu get_view={() => handle_ref.current?.get_view() ?? null}
+                                                       on_insert_table={() => {
+                                                           handle_ref.current?.insert_table(3, 3);
+                                                           set_dirty(true);
+                                                       }}/>
+                                    </React.Fragment>
+                                ) : (
+                                    /* 源码模式：直接编辑 Markdown 原文。
+                                       textarea 用等宽字体与整块铺满，保持与所见即所得一致的阅读宽度。 */
+                                    <textarea className={"md-source-editor"}
+                                              ref={source_ref}
+                                              value={source_text}
+                                              spellCheck={false}
+                                              wrap={"off"}
+                                              onChange={(e) => {
+                                                  set_source_text(e.target.value);
+                                                  if (!dirty) {
+                                                      set_dirty(true);
+                                                  }
+                                              }}
+                                              // 光标移动（点选、方向键）时同步大纲高亮
+                                              onSelect={() => update_active()}
+                                              onClick={() => update_active()}
+                                              onKeyUp={(e) => {
+                                                  // 只关心会移动光标的键，避免输入字母时无谓重算
+                                                  if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End"
+                                                      || e.key === "PageUp" || e.key === "PageDown") {
+                                                      update_active();
+                                                  }
+                                              }}
+                                              onKeyDown={(e) => {
+                                                  // Tab 插入两个空格而不是切换焦点，写 Markdown 列表时会用到
+                                                  if (e.key === "Tab") {
+                                                      e.preventDefault();
+                                                      const el = e.currentTarget;
+                                                      const start = el.selectionStart;
+                                                      const end = el.selectionEnd;
+                                                      const next = `${source_text.slice(0, start)}  ${source_text.slice(end)}`;
+                                                      set_source_text(next);
+                                                      // 光标顺移到插入内容之后
+                                                      requestAnimationFrame(() => {
+                                                          el.selectionStart = el.selectionEnd = start + 2;
+                                                      });
+                                                      if (!dirty) {
+                                                          set_dirty(true);
+                                                      }
+                                                  }
+                                              }}/>
+                                )}
                             </div>
                         </div>
                     </React.Fragment>

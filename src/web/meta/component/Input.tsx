@@ -533,7 +533,10 @@ export function InputRow(props: {
     label_width?: string,
     required?: boolean,
     input_max_width?: string,
-    children?:any
+    children?: any
+    // React 内置属性：显式声明才能让调用方直接在 <InputRow key={...}> 上使用。
+    // 内联字面量类型不会自动带上 key，不写会报 TS2322。
+    key?: React.Key
 }) {
     const css: any = {
         whiteSpace: 'nowrap',

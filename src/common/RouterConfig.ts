@@ -25,6 +25,7 @@ export const routerConfig = {
     gcfg_page:"/gcfg_page",
     git_page:"/git_page",
     docker_setting_page:"/docker_setting_page",
+    md_editor_setting_page:"/md_editor_setting_page", // md 编辑器全局设置页
     "/":"/",
     "":""
 }

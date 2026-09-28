@@ -1,5 +1,12 @@
 /* md 所见即所得编辑器（ProseMirror，Typora 风格）
    布局与 excalidraw.css 一致：全屏 fixed 覆盖层 + Header + 内容区 */
+
+/* 编辑器外观变量：在这里声明默认值。
+   两个作用：1) VS Code 的 CSS 校验器能在本文件里找到定义，不再报
+   "无法解析自定义属性"；2) 一眼看清有哪些可调项。
+   注意：这里的值只是 JS 注入前的占位，运行期一定会被 apply_md_editor_setting()
+   覆盖，所以不需要和 TS 里的默认值逐字同步。真正的唯一来源是
+   common/req/common.pojo.ts 的 MD_EDITOR_SETTING_DEFAULT。 */
 #md-editor-container {
     display: flex;
     flex-direction: column;
@@ -11,6 +18,11 @@
     width: 100%;
     z-index: 1000;
     overflow: hidden;
+    /* 编辑器外观的默认值，运行期由 MdEditor 拉取全局设置后覆盖 */
+    --md-editor-max-width: 90%;
+    --md-editor-padding: 4%;
+    --md-editor-font-size: 16px;
+    --md-editor-line-height: 1.8;
 }
 
 /* 让 Header 参与 flex 布局（全局样式里它是 fixed，会盖住正文首行） */
@@ -40,14 +52,16 @@
     justify-content: center;
 }
 
-/* 纸张：正文的限宽容器 */
+/* 纸张：正文的限宽容器。
+   宽度/字号这些可在运行期调整的量统一走 CSS 变量，
+   由 MdEditor 拉取全局设置后写在 #md-editor-container 的 style 上覆盖默认值。 */
 .md-editor-sheet {
     width: 100%;
-    max-width: 860px;
+    max-width: var(--md-editor-max-width);
     display: flex;
     flex-direction: column;
     position: relative;
-    padding: 0 2.5em;
+    padding: 0 var(--md-editor-padding);
 }
 
 /* ============ 左侧大纲 ============ */
@@ -184,8 +198,8 @@
 .md-wysiwyg .ProseMirror {
     outline: none;
     padding: 1em 0 6em;
-    font-size: 16px;
-    line-height: 1.8;
+    font-size: var(--md-editor-font-size);
+    line-height: var(--md-editor-line-height);
     color: var(--textPrimary, #202124);
     caret-color: var(--primary, #1a73e8);
     /* 注意：这里不能用 white-space: pre-wrap。
@@ -516,4 +530,67 @@
     height: 1.1em;
     background: var(--divider, #e1e4e8);
     margin: 0 0.3em;
+}
+
+/* ---------- 源码模式（直接编辑 Markdown 原文） ---------- */
+/* textarea 铺满编辑区：与所见即所得保持相同的阅读宽度与字体度量 */
+.md-source-editor {
+    display: block;
+    width: 100%;
+    /* 与 .md-editor-sheet 的限宽保持一致，两种模式切换时行首不会跳动 */
+    max-width: var(--md-editor-max-width);
+    margin: 0 auto;
+    /* 编辑器区域内边距交给 sheet，这里只管文本自身的留白 */
+    padding: 0;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: var(--textPrimary, #202124);
+    /* 等宽字体：Markdown 原文对齐才好看 */
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.9em;
+    line-height: 1.75;
+    /* 撑满可视高度，避免下方露出一大片空白背景 */
+    min-height: calc(100vh - 12em);
+    /* 横向不换行，长行靠横向滚动（配合 wrap="off"），保持表格/代码行的原始排版 */
+    white-space: pre;
+    overflow: auto;
+    tab-size: 4;
+    caret-color: var(--primary, #1a73e8);
+}
+
+/* ---------- 编辑器设置页（独立路由 /md_editor_setting_page） ---------- */
+
+.md-editor-setting-page__desc {
+    margin: 0 0 0.6em;
+    color: var(--textSecondary, #5f6368);
+    font-size: 0.9em;
+}
+
+/* 预览区：直接复用编辑器那套 CSS 变量，所以所见即所得。
+   这里的声明同样只是 JS 注入前的占位（为了让 VS Code 能解析变量名）。 */
+.md-editor-setting-page__preview {
+    --md-editor-max-width: 90%;
+    --md-editor-padding: 4%;
+    --md-editor-font-size: 16px;
+    --md-editor-line-height: 1.8;
+    border: 1px dashed var(--divider, #e1e4e8);
+    border-radius: 4px;
+    overflow: auto;
+    max-height: 60vh;
+}
+
+.md-editor-setting-page__preview-sheet {
+    /* 与 .md-editor-sheet 使用完全相同的变量与限宽规则 */
+    max-width: var(--md-editor-max-width);
+    margin: 0 auto;
+    padding: 0 var(--md-editor-padding);
+    font-size: var(--md-editor-font-size);
+    line-height: var(--md-editor-line-height);
+    color: var(--textPrimary, #202124);
+}
+
+.md-editor-setting-page__preview-sheet p {
+    margin: 0.6em 0;
 }

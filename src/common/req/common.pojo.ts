@@ -205,3 +205,28 @@ export interface sys_env_pojo {
     // 网站 logo：http(s):// 开头视为远程 URL，其它视为服务器本地文件路径；为空使用内置默认 logo
     logo?: string
 }
+
+// md 编辑器全局设置（所有用户共用，由管理员在设置页调整）
+// 尺寸类字段存成「数值+单位」的 CSS 字符串，单位由用户自己选（px/%/rem/em/vw），
+// 例如 "1400px"、"80%"、"40rem"。直接塞进 CSS 变量用，不做二次换算。
+export interface md_editor_setting_pojo {
+    // 正文最大宽度
+    content_max_width: string
+    // 正文左右内边距
+    content_padding: string
+    // 正文字号
+    font_size: string
+    // 行高（无单位倍数，如 "1.8"）
+    line_height: string
+}
+
+// md 编辑器设置的默认值 —— 唯一定义处，前后端都从这里取，禁止各写一份。
+// 后端用它给缺失字段兜底，前端的初值、placeholder、恢复默认按钮也都用它。
+export const MD_EDITOR_SETTING_DEFAULT: md_editor_setting_pojo = {
+    // 用百分比：跟随编辑区宽度自适应，窄屏不会有横向滚动，宽屏也不会撑太开
+    content_max_width: "70%",
+    // 边距也用百分比，随宽度缩放，避免窄屏上留白占比过大
+    content_padding: "4%",
+    font_size: "16px",
+    line_height: "1.8",
+};

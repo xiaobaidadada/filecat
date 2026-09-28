@@ -79,6 +79,7 @@ export enum data_common_key {
     guid_key = "guid_key",
     tcp_proxy_key = "tcp_proxy_key",
     sys_env_key = "sys_env_key", // 系统全局变量
+    md_editor_setting_key = "md_editor_setting_key", // md 编辑器全局设置（正文宽度/字号等，所有用户共用）
     http_server_key = "http_server_key",
     proxy_server_code_prefix = "proxy_server_code_prefix",
     ai_agent_model_setting = "ai_agent_model_setting", // ai模型的设置
