@@ -20,6 +20,7 @@ import {markdown_to_doc, doc_to_markdown} from "./markdown";
 import {OutlineItem} from "./MdOutline";
 import {
     build_input_rules,
+    convert_on_enter,
     list_commands,
     toggle_mark,
     toggle_blockquote,
@@ -153,6 +154,9 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 // 基础键位：Enter 优先在代码块内换行、列表内拆项，其次正常分段
                 keymap({
                     "Enter": chainCommands(
+                        // 先尝试 Markdown 语法转换（```、#1、> 等 + 回车即时成型），
+                        // 命中就消费掉这次 Enter；否则继续走后面的常规换行逻辑
+                        convert_on_enter,
                         newlineInCode,
                         list_commands.split,
                         createParagraphNear,

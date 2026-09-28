@@ -331,11 +331,42 @@
     white-space: pre;
 }
 
-/* 引用块：左侧粗竖线 + 灰字（Typora 的经典样式） */
+/* 引用块：整块淡底 + 左侧粗竖线 + 灰字（Typora 的经典样式）
+   底色用 --hover 而不是 --surfaceSecondary：
+     --surfaceSecondary 在浅色主题下是 rgb(230,230,230)，铺满整块显得很重，
+     而且代码块已经用了它，两者会撞色、层次分不开；
+     --hover（浅色 rgba(0,0,0,.1) / 深色 rgba(255,255,255,.1)）本身就是
+     「相对当前背景深浅各偏一点」的叠加色，两种主题下都能得到柔和且可见的底，
+     不需要为深色主题单独写一份。
+   圆角 + 右侧留白，让底色块与正文有明显边界，但不像代码块那样成块。 */
 .md-wysiwyg .ProseMirror blockquote {
-    padding: 0.65em 0 0.65em 1em;
+    padding: 0.65em 1em 0.65em 1em;
     border-left: 4px solid var(--divider, #dfe2e5);
+    border-radius: 0 4px 4px 0;
+    background: var(--hover, rgba(0, 0, 0, 0.06));
+    /* 引用文字用次要色。深浅对比交给底色和竖线表达，
+       颜色只用来和正文做区分即可：深色主题下 --textSecondary 反而比
+       --textPrimary 更亮，若强行统一成「更暗」会引入 color-mix 等新特性，
+       对两种主题都不稳定的旧浏览器不友好，收益也有限。 */
     color: var(--textSecondary, #6a737d);
+}
+
+/* 引用块内的段落：清掉浏览器默认 margin，改为只在段与段之间留一点间距。
+   上下间距交给 .ProseMirror > * 的 padding，这里只管首尾（见下两条）。 */
+.md-wysiwyg .ProseMirror blockquote p {
+    margin: 0.35em 0;
+}
+.md-wysiwyg .ProseMirror blockquote > *:first-child {
+    margin-top: 0;
+}
+.md-wysiwyg .ProseMirror blockquote > *:last-child {
+    margin-bottom: 0;
+}
+
+/* 嵌套引用：底色会在内层再叠一层，自然变深，层次一眼可辨；
+   竖线收细一点，避免多层引用时左侧一团粗线。 */
+.md-wysiwyg .ProseMirror blockquote blockquote {
+    border-left-width: 3px;
 }
 
 /* 列表：缩进与标记 */

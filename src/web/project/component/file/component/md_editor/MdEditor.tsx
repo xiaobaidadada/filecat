@@ -330,7 +330,7 @@ export default function MdEditor() {
                         /* 当前文件名：紧跟在关闭按钮之后，与普通文本编辑器（FileEditor）保持一致。
                            注意必须用 <div> 而不是 <title> —— <title> 在 body 内的 UA 样式是
                            display:none，放进 Header 也不会显示出来。 */
-                        <div key={2} className={"md-editor-title"}>{md_editor.name}</div>,
+                        <div key={3} className={"md-editor-title"}>{md_editor.name}</div>,
                         // 保存按钮只在内容有改动时出现，与普通文本编辑器一致
                         ...(dirty ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
                         // 大纲开关：默认关闭，点一下临时控制显示/隐藏
