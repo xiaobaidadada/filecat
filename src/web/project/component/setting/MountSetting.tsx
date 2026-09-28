@@ -76,17 +76,19 @@ export function MountSetting() {
                           onClick={toggle_mount}/>
         </HeaderPortal>
         <Dashboard>
+
             <Row>
-                <Column widthPer={50}>
+                <Column widthPer={40} maxWidth={"40rem"}>
+                    <BaiduPanel on_credential_change={() => window.location.reload()}/>
+                </Column>
+                <Column widthPer={33} maxWidth={"30rem"} >
                     <CredentialPanel/>
                 </Column>
-                <Column widthPer={50}>
-                    <MountPanel/>
-                </Column>
+
             </Row>
             <Row>
-                <Column>
-                    <BaiduPanel on_credential_change={() => window.location.reload()}/>
+                <Column widthPer={40} maxWidth={"40rem"}>
+                    <MountPanel/>
                 </Column>
             </Row>
         </Dashboard>
