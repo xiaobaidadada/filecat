@@ -45,7 +45,21 @@ export class SshService extends SshSsh2 {
                 console.log('触发', e)
             }
         })
+        // 标记永不过期：SSH 连接的释放只走「用户主动断开」或「连接真的断了」两条路径
         this.forEveryLifeHeart(key);
+        // 连接真的断了就清理记录；否则 dataMap 里会留下失效的 client，
+        // 用户再次连接时拿到僵尸对象，表现为连不上。
+        let cleaned = false;
+        const onDead = () => {
+            if (cleaned) {
+                return;
+            }
+            cleaned = true;
+            this.lifeClose(key);
+        };
+        client.on("close", onDead);
+        client.on("end", onDead);
+        client.on("error", onDead);
         // this.map.set(key, req);
         return {key};
     }
@@ -172,8 +186,7 @@ export class SshService extends SshSsh2 {
                     stream.write(data);
                 });
                 wss.setClose(()=>{
-                    this.endForEveryLifeHeart(pojo.key);
-                    // 发送命令以关闭shell会话
+                    // 只结束终端会话，不解除连接的永不过期标记
                     stream.end('exit\r');
                 })
                 // wss.ws.on('close', function close() {
