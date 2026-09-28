@@ -1,27 +1,8 @@
 import React, {ReactNode, useEffect, useRef, useState,useImperativeHandle} from 'react';
-import {Ace as AceItem, version as ace_version} from "ace-builds";
-import * as ace from "ace-builds";
-import "ace-builds/src-noconflict/mode-json"; // 几个常用的不需要网络
-import "ace-builds/src-noconflict/mode-javascript";
-import "ace-builds/src-noconflict/mode-typescript";
-import "ace-builds/src-noconflict/mode-markdown";
-import "ace-builds/src-noconflict/mode-tsx";
-import "ace-builds/src-noconflict/mode-python";
-import "ace-builds/src-noconflict/mode-sh";
-import "ace-builds/src-noconflict/mode-yaml";
-import "ace-builds/src-noconflict/mode-sql";
-import "ace-builds/src-noconflict/mode-ini";
-import "ace-builds/src-noconflict/theme-cloud9_day";
-import "ace-builds/src-noconflict/theme-cloud_editor_dark";
-import 'ace-builds/src-noconflict/ext-beautify'
-
-ace.config.set("basePath", `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
-ace.config.set('modePath', `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
-ace.config.set('themePath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
-ace.config.set('workerPath',`https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`);
-ace.config.set("basePath", `https://gcore.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`)
-
-import * as modest from "ace-builds/src-noconflict/ext-modelist";
+import {Ace as AceItem} from "ace-builds";
+// 静态 mode/theme 引入 + CDN 兜底配置统一放在 ace_setup，
+// 与 AceCodeEditor 共用同一份，避免两处各写一套导致行为不一致（见该文件的说明）。
+import {ace, modest} from "../../../../meta/component/ace_setup";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";

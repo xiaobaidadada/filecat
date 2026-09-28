@@ -31,6 +31,20 @@
     flex-shrink: 0;
 }
 
+/* Header 里的当前文件名：紧跟在关闭按钮之后。
+   长文件名用省略号截断，避免把右侧按钮挤出 Header；
+   限制最大宽度后仍留出足够空间显示按钮。 */
+.md-editor-title {
+    align-self: center;
+    margin: 0 0.4em;
+    max-width: 32em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textPrimary, #202124);
+    font-size: 0.95em;
+}
+
 /* 内容区：横向排布「大纲 | 分隔条 | 编辑区」。
    滚动交给内部的 .md-editor-scroll，外层不再滚动，否则大纲会跟着正文一起滚走。 */
 #md-editor-container .md-editor-context {
@@ -543,31 +557,38 @@
 }
 
 /* ---------- 源码模式（直接编辑 Markdown 原文） ---------- */
-/* textarea 铺满编辑区：与所见即所得保持相同的阅读宽度与字体度量 */
+/* Ace 编辑器容器：与所见即所得保持相同的阅读宽度，两种模式切换时行首不会跳动 */
 .md-source-editor {
     display: block;
     width: 100%;
-    /* 与 .md-editor-sheet 的限宽保持一致，两种模式切换时行首不会跳动 */
+    /* 与 .md-editor-sheet 的限宽保持一致 */
     max-width: var(--md-editor-max-width);
     margin: 0 auto;
-    /* 编辑器区域内边距交给 sheet，这里只管文本自身的留白 */
-    padding: 0;
-    border: none;
-    outline: none;
-    resize: none;
+    /* 撑满可视高度，避免下方露出一大片空白背景 */
+    height: calc(100vh - 12em);
+    /* Ace 内部会自己滚动，容器不能再滚动，否则出现双滚动条 */
+    overflow: hidden;
     background: transparent;
-    color: var(--textPrimary, #202124);
-    /* 等宽字体：Markdown 原文对齐才好看 */
+    /* 等宽字体：Markdown 原文对齐才好看。
+       注意 Ace 默认会用自己的字号，这里用 CSS 变量同步，保证与正文行高观感一致。 */
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     font-size: 0.9em;
     line-height: 1.75;
-    /* 撑满可视高度，避免下方露出一大片空白背景 */
-    min-height: calc(100vh - 12em);
-    /* 横向不换行，长行靠横向滚动（配合 wrap="off"），保持表格/代码行的原始排版 */
-    white-space: pre;
-    overflow: auto;
-    tab-size: 4;
-    caret-color: var(--primary, #1a73e8);
+}
+
+/* Ace 默认的背景/前景色取自主题，这里把它透明化，让编辑器外观与页面背景融合 */
+.md-source-editor .ace_gutter {
+    background: transparent;
+    color: var(--textSecondary, #6a737d);
+}
+
+.md-source-editor .ace_scroller {
+    background: transparent;
+}
+
+/* 选中行/选区颜色跟随主题变量，避免浅色主题下选区看不清 */
+.md-source-editor .ace_marker-layer .ace_selection {
+    background: var(--hover, rgba(0, 0, 0, 0.1));
 }
 
 /* ---------- 编辑器设置页（独立路由 /md_editor_setting_page） ---------- */

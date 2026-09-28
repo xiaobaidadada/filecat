@@ -14,6 +14,7 @@ import MdWysiwygEditor, {MdWysiwygHandle} from "./MdWysiwygEditor";
 import MdToolbar from "./MdToolbar";
 import MdContextMenu from "./MdContextMenu";
 import MdOutline, {OutlineItem} from "./MdOutline";
+import AceCodeEditor, {AceCodeEditorHandle} from "../../../../../meta/component/AceCodeEditor";
 import {find_active_heading, parse_markdown_headings} from "./md_outline_parse";
 import {
     apply_md_editor_setting,
@@ -65,10 +66,12 @@ export default function MdEditor() {
     // 当前编辑模式。默认所见即所得。
     // 存在 atom + localStorage 里（sync_atomWithStorage），属于用户偏好，刷新/切页面都保持。
     const [mode, set_mode] = useAtom($stroe.md_editor_mode);
-    // 源码模式下的 Markdown 文本。仅在 source 模式下有值（wysiwyg 模式以编辑器文档为准）。
+    // 源码模式下的 Markdown 文本。仅在 source 模式下有意义（wysiwyg 模式以编辑器文档为准）。
+    // 说明：Ace 自己维护文档与撤销栈，这里保存的是「最近一次全文」，
+    // 用于大纲解析、保存、以及切回所见即所得时取内容。
     const [source_text, set_source_text] = useState("");
-    // 源码模式的 textarea 引用：用来读光标位置，驱动大纲高亮
-    const source_ref = useRef<HTMLTextAreaElement | null>(null);
+    // 源码模式的 Ace 编辑器句柄：读写内容、光标偏移（驱动大纲高亮）
+    const source_ref = useRef<AceCodeEditorHandle | null>(null);
 
     // 在「所见即所得」与「源码」之间切换。
     // 切换的关键是先把当前模式的改动取出来，再以它为初始内容进入另一种模式，保证不丢编辑。
@@ -77,13 +80,16 @@ export default function MdEditor() {
         // 在它里面改别的 state 会被 React 的严格模式重复执行。先算出下一个值，再依次应用。
         const next: MdEditMode = mode === "wysiwyg" ? "source" : "wysiwyg";
         if (next === "source") {
-            // 进入源码模式：把编辑器里的文档序列化成 Markdown 填进 textarea
+            // 进入源码模式：把编辑器里的文档序列化成 Markdown 写进 Ace。
+            // Ace 是「初始值 + 命令式替换」的用法（见 AceCodeEditor 的说明），
+            // 所以这里必须显式 setValue，不能靠 props.value 更新。
             const md = handle_ref.current?.get_markdown();
             if (md !== undefined) {
                 set_source_text(md);
+                source_ref.current?.setValue(md);
             }
         } else {
-            // 回到所见即所得：用 textarea 里的文本重建编辑器
+            // 回到所见即所得：用 Ace 里的文本重建编辑器
             // 通过换 key 强制重挂载编辑器，避免在原实例上替换内容导致撤销栈与光标状态错乱
             set_init_value(source_text);
             set_editor_revision(n => n + 1);
@@ -118,8 +124,8 @@ export default function MdEditor() {
 
     // 大纲数据源的统一入口，两种模式各取所需：
     //   wysiwyg —— 问 ProseMirror 要（有真实文档位置）
-    //   source  —— 从 textarea 的 Markdown 原文里扫（没有文档模型）
-    // 结果同时写入 ref 缓存：selectionchange 触发非常频繁，
+    //   source  —— 从 Markdown 原文里扫（Ace 没有语义化的文档模型）
+    // 结果同时写入 ref 缓存：selectionchange / Ace 光标事件触发非常频繁，
     // 高亮计算若每次都遍历整篇文档会造成明显卡顿。
     const headings_cache = useRef<OutlineItem[]>([]);
     const refresh_headings = useCallback(() => {
@@ -141,12 +147,12 @@ export default function MdEditor() {
     // 直接读缓存，不做全文遍历（见上面 refresh_headings 的说明）。
     const update_active = useCallback(() => {
         if (mode === "source") {
-            // 源码模式：光标是 textarea 里的字符偏移，pos 也是字符偏移，可以直接比
-            const el = source_ref.current;
-            if (!el) {
+            // 源码模式：Ace 的光标是行列，转成字符偏移后与标题 pos 直接比较
+            const handle = source_ref.current;
+            if (!handle) {
                 return;
             }
-            set_active_pos(find_active_heading(headings_cache.current, el.selectionStart));
+            set_active_pos(find_active_heading(headings_cache.current, handle.getCursorOffset()));
             return;
         }
         const view = handle_ref.current?.get_view();
@@ -258,19 +264,17 @@ export default function MdEditor() {
 
     // 点击大纲条目：跳转到对应标题。
     // 两种模式的「位置」语义不同 —— 所见即所得是 ProseMirror 文档位置，
-    // 源码模式是 textarea 的字符偏移，所以分别处理。
+    // 源码模式是 Ace 的字符偏移，所以分别处理。
     const goto_heading = (item: OutlineItem) => {
         if (mode === "source") {
-            const el = source_ref.current;
-            if (!el) {
+            const handle = source_ref.current;
+            if (!handle) {
                 return;
             }
-            // 定位到该标题行的开头，并按行高估算滚动位置
-            el.focus();
-            el.setSelectionRange(item.pos, item.pos);
-            const line = source_text.slice(0, item.pos).split(/\r?\n/).length - 1;
-            const line_height = parseFloat(getComputedStyle(el).lineHeight) || 20;
-            el.scrollTop = Math.max(0, line * line_height - line_height * 2);
+            // Ace 的 setCursorOffset 已经包含「滚动到该行可见」的处理，
+            // 并且会按 Ace 自己的行高算法定位，不需要像 textarea 那样手工估算行号。
+            handle.focus();
+            handle.setCursorOffset(item.pos);
             set_active_pos(item.pos);
             return;
         }
@@ -281,9 +285,10 @@ export default function MdEditor() {
         if (!md_editor?.name || !md_editor?.path) {
             return;
         }
-        // 源码模式直接取 textarea 内容；所见即所得模式从编辑器序列化
+        // 源码模式取 Ace 里的实时内容（不经 state，避免输入后立刻保存时拿到旧值）；
+        // 所见即所得模式从编辑器序列化
         const context = mode === "source"
-            ? source_text
+            ? (source_ref.current?.getValue() ?? source_text)
             : handle_ref.current?.get_markdown();
         if (context === undefined) {
             return;
@@ -322,6 +327,10 @@ export default function MdEditor() {
             <Header ignore_tags={true}
                     left_children={[
                         <ActionButton key={1} title={t("关闭")} icon={"close"} onClick={close}/>,
+                        /* 当前文件名：紧跟在关闭按钮之后，与普通文本编辑器（FileEditor）保持一致。
+                           注意必须用 <div> 而不是 <title> —— <title> 在 body 内的 UA 样式是
+                           display:none，放进 Header 也不会显示出来。 */
+                        <div key={2} className={"md-editor-title"}>{md_editor.name}</div>,
                         // 保存按钮只在内容有改动时出现，与普通文本编辑器一致
                         ...(dirty ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
                         // 大纲开关：默认关闭，点一下临时控制显示/隐藏
@@ -340,7 +349,6 @@ export default function MdEditor() {
                                                             close();
                                                             navigate(routerConfig.md_editor_setting_page);
                                                         }}/>] : []),
-                        <title key={3}>{md_editor.name}</title>,
                     ]}>
             </Header>
             <div className={"md-editor-context"} ref={nav_ref}>
@@ -399,46 +407,29 @@ export default function MdEditor() {
                                     </React.Fragment>
                                 ) : (
                                     /* 源码模式：直接编辑 Markdown 原文。
-                                       textarea 用等宽字体与整块铺满，保持与所见即所得一致的阅读宽度。 */
-                                    <textarea className={"md-source-editor"}
-                                              ref={source_ref}
-                                              value={source_text}
-                                              spellCheck={false}
-                                              wrap={"off"}
-                                              onChange={(e) => {
-                                                  set_source_text(e.target.value);
-                                                  if (!dirty) {
-                                                      set_dirty(true);
-                                                  }
-                                              }}
-                                              // 光标移动（点选、方向键）时同步大纲高亮
-                                              onSelect={() => update_active()}
-                                              onClick={() => update_active()}
-                                              onKeyUp={(e) => {
-                                                  // 只关心会移动光标的键，避免输入字母时无谓重算
-                                                  if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End"
-                                                      || e.key === "PageUp" || e.key === "PageDown") {
-                                                      update_active();
-                                                  }
-                                              }}
-                                              onKeyDown={(e) => {
-                                                  // Tab 插入两个空格而不是切换焦点，写 Markdown 列表时会用到
-                                                  if (e.key === "Tab") {
-                                                      e.preventDefault();
-                                                      const el = e.currentTarget;
-                                                      const start = el.selectionStart;
-                                                      const end = el.selectionEnd;
-                                                      const next = `${source_text.slice(0, start)}  ${source_text.slice(end)}`;
-                                                      set_source_text(next);
-                                                      // 光标顺移到插入内容之后
-                                                      requestAnimationFrame(() => {
-                                                          el.selectionStart = el.selectionEnd = start + 2;
-                                                      });
-                                                      if (!dirty) {
-                                                          set_dirty(true);
-                                                      }
-                                                  }
-                                              }}/>
+                                       用项目通用的 Ace 组件（行号、语法高亮、
+                                       原生撤销栈 Ctrl+Z / Ctrl+Y，无需自己实现历史记录）。
+                                       key 里带上 editor_key 与 revision：
+                                       - editor_key 变化（切换文件）时重建，填入新文件内容；
+                                       - revision 用于切回本模式时重建，确保拿到最新的 markdown 初始值。 */
+                                    <AceCodeEditor
+                                        key={`source#${editor_key}#${editor_revision}`}
+                                        ref={source_ref}
+                                        value={source_text}
+                                        mode={"markdown"}
+                                        wrap={true}
+                                        className={"md-source-editor"}
+                                        onChange={(val) => {
+                                            set_source_text(val);
+                                            if (!dirty) {
+                                                set_dirty(true);
+                                            }
+                                        }}
+                                        // Ctrl/Cmd + S 保存（Ace 内部命令绑定，避免浏览器弹出「另存网页」）
+                                        onSave={() => save_ref.current()}
+                                        // 光标移动（点选、方向键）时同步大纲高亮
+                                        onCursorChange={() => update_active()}
+                                    />
                                 )}
                             </div>
                         </div>
