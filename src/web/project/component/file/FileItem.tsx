@@ -108,6 +108,8 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
         }
     }} draggable_handle={draggable_handle} name={props.name} index={props.index} mtime={props.mtime} size={props.size} type={props.type}
                          isLink={props.isLink} path={props.path} icon={props.icon} show_mtime={props.show_mtime}
+                         mount={props.mount} mount_driver={props.mount_driver} mount_color={props.mount_color}
+                         mount_readonly={props.mount_readonly}
                          click={clickHandler} itemWidth={props.itemWidth}>
     </BaseFileItem>
 }

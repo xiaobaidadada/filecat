@@ -1,0 +1,42 @@
+/* 目录挂载：挂载目录在文件列表里的特殊标识 */
+
+/*
+ * 挂载目录通过云朵图标区分（见 listing-icons.css），不再使用背景色，
+ * 双击进入等交互与普通目录完全一致。
+ */
+
+/* 只读挂载的小标签 */
+#listing .item .mount-readonly-tag,
+.mount-tip-bar .mount-readonly-tag,
+.mount-tip-bar .mount-driver-tag {
+  display: inline-block;
+  margin-left: 0.35em;
+  padding: 0 0.3em;
+  font-size: 0.75em;
+  line-height: 1.5;
+  border-radius: 0.2em;
+  background-color: var(--hover);
+  color: var(--textSecondary);
+  vertical-align: middle;
+}
+
+/*
+ * 进入挂载目录后，列表顶部的提示条（面包屑下方）。
+ * 左侧竖线用挂载标识色，与列表项的底色呼应。
+ */
+.mount-tip-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.3em 0;
+  padding: 0.3em 0.6em;
+  border-left: 3px solid var(--blue);
+  border-radius: 0.2em;
+  background-color: var(--hover);
+  color: var(--textSecondary);
+  font-size: 0.9em;
+}
+
+.mount-tip-bar .material-icons {
+  font-size: 1.1em;
+}

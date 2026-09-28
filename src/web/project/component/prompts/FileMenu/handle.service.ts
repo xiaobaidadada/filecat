@@ -65,4 +65,10 @@ export enum common_menu_type {
     image_preview = "image_preview",
     // 以所见即所得编辑器打开 md（双击仍是预览，这里提供专门的编辑入口）
     md_editor_open = "md_editor_open",
+    // 挂载：把该目录挂载到网盘/远程协议
+    mount_dir = "mount_dir",
+    // 取消挂载：把该目录恢复成本地目录
+    unmount_dir = "unmount_dir",
+    // 查看/编辑该目录的挂载配置
+    mount_config = "mount_config",
 }

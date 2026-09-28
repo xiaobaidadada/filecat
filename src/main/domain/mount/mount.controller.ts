@@ -1,0 +1,361 @@
+import {Body, Get, JsonController, Post, QueryParam, Req, Res} from "routing-controllers";
+import {Response} from "express";
+import {Sucess} from "../../other/Result";
+import {userService} from "../user/user.service";
+import {get_sys_base_url_pre} from "../bin/bin";
+import {UserAuth} from "../../../common/req/user.req";
+import {mountService} from "./mount.service";
+import {FileMountItem} from "./mount.pojo";
+import {CredentialItem, CredentialType} from "./credential.pojo";
+import {MountDriverType} from "./driver/file_driver";
+import {BaiduAppConfig} from "./baidu/baidu_token";
+
+/** 挂载保存请求体 */
+export interface MountSaveReq {
+    id?: string;
+    driver?: MountDriverType;
+    mount_path?: string;
+    credential_id?: string;
+    name?: string;
+    root_dir?: string;
+    readonly?: boolean;
+    color?: string;
+    enabled?: boolean;
+}
+
+/** 凭据保存请求体 */
+export interface CredentialSaveReq {
+    id?: string;
+    type?: CredentialType;
+    name?: string;
+    config?: Record<string, any>;
+    enabled?: boolean;
+}
+
+/** 取当前请求的用户 id（用于归属） */
+function current_user_id(r: any): string | undefined {
+    try {
+        return userService.get_user_info_by_token(r.headers.authorization)?.user_id;
+    } catch (e) {
+        return undefined;
+    }
+}
+
+/** 判断当前请求是否 root 账号 */
+function is_root_user(r: any): boolean {
+    try {
+        return Boolean(userService.get_user_info_by_token(r.headers.authorization)?.is_root);
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * 目录挂载管理接口。
+ *
+ * 分两大类：
+ *  · 凭据（credential）—— 账号/身份信息，在设置页统一管理，可被多个挂载复用
+ *  · 挂载（mount）—— 把本地目录接到某份凭据上
+ *
+ * 权限说明：这里的接口只管「挂载的配置」，统一用 file_mount 权限；
+ * 挂载目录内部的文件读写走 file.controller，用的是原有的文件权限，
+ * 所以普通用户只要能访问那个目录就能正常使用挂载，不需要额外授权。
+ */
+@JsonController("/mount")
+export class MountController {
+
+    // ==================== 凭据 ====================
+
+    /** 取凭据列表（密码等敏感字段不返回）；百度账号凭据不在普通凭据管理中展示 */
+    @Post("/credential/list")
+    async credential_list(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const list = mountService.list_credentials_for_user(current_user_id(r), is_root_user(r))
+            // 百度账号凭据为内部派生数据，不在普通凭据管理中展示
+            .filter(m => m.type !== "baidu_account");
+        return Sucess(list.map(mask_credential));
+    }
+
+    /** 取凭据类型元信息（供设置页渲染动态表单） */
+    @Post("/credential/meta")
+    async credential_meta(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(mountService.credential_metas());
+    }
+
+    /** 新增凭据 */
+    @Post("/credential/add")
+    async credential_add(@Body() body: CredentialSaveReq, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const item = mountService.add_credential({
+            type: body.type as CredentialType,
+            name: body.name ?? "",
+            config: body.config ?? {},
+            enabled: body.enabled !== false,
+            user_id: current_user_id(r),
+        });
+        return Sucess(mask_credential(item));
+    }
+
+    /** 修改凭据（config 里留空的字段表示不修改，避免把密码清空） */
+    @Post("/credential/update")
+    async credential_update(@Body() body: CredentialSaveReq, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        if (!body.id) {
+            throw new Error("缺少凭据 id");
+        }
+        const patch: Partial<CredentialItem> = {};
+        if (body.name !== undefined) {
+            patch.name = body.name;
+        }
+        if (body.config !== undefined) {
+            patch.config = body.config;
+        }
+        if (body.enabled !== undefined) {
+            patch.enabled = body.enabled;
+        }
+        return Sucess(mask_credential(mountService.update_credential(body.id, patch)));
+    }
+
+    /** 删除凭据（仍被挂载引用时会报错） */
+    @Post("/credential/delete")
+    async credential_delete(@Body() body: {id: string}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.remove_credential(body.id);
+        return Sucess(true);
+    }
+
+    /** 测试凭据可用性（不保存，直接用传入的配置试连一次） */
+    @Post("/credential/test")
+    async credential_test(@Body() body: CredentialSaveReq & {driver?: MountDriverType}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        // 凭据测试需要知道用哪个驱动，前端会带上
+        return Sucess(await mountService.test_credential(body));
+    }
+
+    // ==================== 挂载 ====================
+
+    /** 取挂载功能总开关状态（Header 开关用，登录即可读） */
+    @Post("/enabled/get")
+    async enabled_get(@Req() r) {
+        userService.get_user_info_by_token(r.headers.authorization);
+        return Sucess(mountService.is_enabled());
+    }
+
+    /** 设置挂载功能总开关；关闭后所有挂载立即失效，目录全部按本地处理 */
+    @Post("/enabled/set")
+    async enabled_set(@Body() body: {enabled: boolean}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.set_enabled(body.enabled !== false);
+        return Sucess(mountService.is_enabled());
+    }
+
+    /** 取挂载列表（设置页管理用，不受总开关影响） */
+    @Post("/list")
+    async list(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(mountService.list_for_user(current_user_id(r), is_root_user(r), true));
+    }
+
+    /** 取所有可用驱动类型（前端「挂载类型」下拉用） */
+    @Post("/driver/list")
+    async driver_list(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(mountService.driver_metas());
+    }
+
+    /** 新增挂载 */
+    @Post("/add")
+    async add(@Body() body: MountSaveReq, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const item = mountService.add({
+            driver: body.driver as MountDriverType,
+            mount_path: body.mount_path ?? "",
+            credential_id: body.credential_id ?? "",
+            name: body.name,
+            root_dir: body.root_dir,
+            readonly: body.readonly,
+            color: body.color,
+            enabled: body.enabled !== false,
+            user_id: current_user_id(r),
+        });
+        return Sucess(item);
+    }
+
+    /** 修改挂载 */
+    @Post("/update")
+    async update(@Body() body: MountSaveReq, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        if (!body.id) {
+            throw new Error("缺少挂载 id");
+        }
+        const patch: Partial<FileMountItem> = {};
+        const keys: (keyof MountSaveReq)[] = [
+            "driver", "mount_path", "credential_id", "name",
+            "root_dir", "readonly", "color", "enabled",
+        ];
+        for (const k of keys) {
+            if (body[k] !== undefined) {
+                (patch as any)[k] = body[k];
+            }
+        }
+        return Sucess(mountService.update(body.id, patch));
+    }
+
+    /** 删除挂载 */
+    @Post("/delete")
+    async delete(@Body() body: {id: string}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.remove(body.id);
+        return Sucess(true);
+    }
+
+    /** 测试挂载连接（用挂载表单 + 它引用的凭据试列一次目录） */
+    @Post("/test")
+    async test(@Body() body: MountSaveReq, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(await mountService.test_connection({
+            id: body.id,
+            driver: body.driver,
+            credential_id: body.credential_id,
+            root_dir: body.root_dir,
+        }));
+    }
+
+    // ==================== 百度网盘应用授权 ====================
+
+    /** 取百度应用配置（脱敏）+ 全部已授权账号 */
+    @Post("/baidu/app/get")
+    async baidu_app_get(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(mountService.get_baidu_app());
+    }
+
+    /** 保存百度应用配置（secret_key/app_key 为空表示不修改） */
+    @Post("/baidu/app/save")
+    async baidu_app_save(@Body() body: BaiduAppConfig, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.save_baidu_app(body);
+        return Sucess(true);
+    }
+
+    /**
+     * 取授权链接。
+     * @param mode 不传则用应用配置里的授权方式；one_click=回调到 FileCat；oob=手动粘贴授权码
+     */
+    @Post("/baidu/authorize_url")
+    async baidu_authorize_url(@Body() body: {mode?: "one_click" | "oob"}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const mode = body.mode ?? mountService.get_baidu_app().app?.auth_mode ?? "oob";
+        return Sucess(mountService.baidu_authorize_url(mode, await this.baidu_callback_url(r)));
+    }
+
+    /**
+     * 百度 OAuth 回调（一键授权用）。
+     * 百度授权后会跳到这里并带上 code，服务端换 token 后重定向回挂载设置页。
+     * 注意：这个接口必须能被百度访问到，且地址要与百度控制台登记的回调地址一致。
+     */
+    @Get("/baidu/callback")
+    async baidu_callback(@QueryParam("code") code: string, @QueryParam("error") error: string,
+                         @QueryParam("error_description") error_description: string,
+                         @Res() res: Response) {
+        // 回调无法带 token，所以这里不做权限校验（OAuth 的标准做法）
+        const base = await this.mount_setting_redirect();
+        if (error) {
+            return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent(error_description || error)}`);
+        }
+        if (!code) {
+            return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent("缺少授权码")}`);
+        }
+        try {
+            const r = await mountService.baidu_exchange_code(code, await this.baidu_callback_url(null));
+            return res.redirect(`${base}?baidu_auth=success&name=${encodeURIComponent(r.baidu_name)}`);
+        } catch (e) {
+            return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent(e?.message ?? "授权失败")}`);
+        }
+    }
+
+    /**
+     * 手动提交授权码（oob）。
+     * @param mode 不传则用应用配置里的授权方式；决定换 token 时用的回调地址
+     */
+    @Post("/baidu/exchange")
+    async baidu_exchange(@Body() body: {code: string; mode?: "one_click" | "oob"}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const mode = body.mode ?? mountService.get_baidu_app().app?.auth_mode ?? "oob";
+        const uri = mode === "oob" ? "oob" : await this.baidu_callback_url(r);
+        return Sucess(await mountService.baidu_exchange_code(body.code, uri));
+    }
+
+    /** 编辑账号（展示名 / 备注 / 启用状态） */
+    @Post("/baidu/account/update")
+    async baidu_account_update(@Body() body: {uk: number; name?: string; remark?: string; enabled?: boolean}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.baidu_update_account(body.uk, body);
+        return Sucess(true);
+    }
+
+    /** 校验单个账号 */
+    @Post("/baidu/verify")
+    async baidu_verify(@Body() body: {uk: number}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(await mountService.baidu_verify(body.uk));
+    }
+
+    /** 批量校验/刷新全部账号 */
+    @Post("/baidu/verify/all")
+    async baidu_verify_all(@Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(await mountService.baidu_verify_all());
+    }
+
+    /** 取消授权（清 token，保留账号记录，可重新授权） */
+    @Post("/baidu/deauthorize")
+    async baidu_deauthorize(@Body() body: {uk: number}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.baidu_deauthorize(body.uk);
+        return Sucess(true);
+    }
+
+    /** 删除账号 */
+    @Post("/baidu/delete")
+    async baidu_delete(@Body() body: {uk: number}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        mountService.baidu_delete(body.uk);
+        return Sucess(true);
+    }
+
+    /** 拼出 FileCat 自己的百度回调地址（用于一键授权，需在百度控制台登记） */
+    private async baidu_callback_url(r: any): Promise<string> {
+        // 优先用请求头里的 host，这样反向代理下也能拿到外部可访问的地址
+        const proto = r.headers?.["x-forwarded-proto"] ?? r.protocol ?? "http";
+        const host = r.headers?.["x-forwarded-host"] ?? r.headers?.host;
+        const base = await get_sys_base_url_pre();
+        return `${proto}://${host}${base}/mount/baidu/callback`;
+    }
+
+    /** 授权完成后要跳回的页面路径 */
+    private async mount_setting_redirect(): Promise<string> {
+        const base = await get_sys_base_url_pre();
+        // 前端的挂载设置页路由
+        return `${base}/setting/mount_setting/`;
+    }
+}
+
+/** 凭据脱敏：去掉所有密码类字段，避免返回给前端 */
+function mask_credential(item: CredentialItem): CredentialItem & {has_password?: boolean} {
+    const SECRET_KEYS = ["password", "private_key", "secret_key"];
+    const config: Record<string, any> = {};
+    let has_password = false;
+    for (const [k, v] of Object.entries(item.config ?? {})) {
+        if (SECRET_KEYS.includes(k)) {
+            // 只告诉前端「已设置」，不回传实际值（编辑时留空即表示不修改）
+            if (v) {
+                has_password = true;
+            }
+            continue;
+        }
+        config[k] = v;
+    }
+    return {...item, config, has_password};
+}

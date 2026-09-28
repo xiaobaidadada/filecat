@@ -3,7 +3,7 @@ import React, { createContext, useState } from 'react';
 import {UserBaseInfo} from "../../common/req/user.req";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "./util/store";
-import {fileHttp, settingHttp, userHttp} from "./util/config";
+import {fileHttp, settingHttp, userHttp, mountHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {auth_key_map} from "./util/store.util";
@@ -22,6 +22,7 @@ export const GlobalProvider = ({ children }) => {
     const [file_root_path,setFile_root_path] = useAtom($stroe.file_root_index);
     const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
     const [zoomPercent, setZoomPercent] = useAtom($stroe.zoom_style_by_percent);
+    const [, set_mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
     const { t, i18n } = useTranslation();
 
     const getItems = async () => {
@@ -57,6 +58,13 @@ export const GlobalProvider = ({ children }) => {
     const initUserInfo = async ()=> {
         if(is_share()) return
         await reloadFileRoot();
+        // 网盘挂载总开关：全站感知用（关闭时不再请求挂载相关信息）；读取失败按关闭处理
+        try {
+            const mnt = await mountHttp.post("enabled/get", {});
+            set_mount_enabled(mnt?.data === true);
+        } catch (e) {
+            set_mount_enabled(false);
+        }
         const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Success) {
             const p :UserBaseInfo = result.data;

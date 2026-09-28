@@ -228,6 +228,9 @@
 
 .file-icons [data-dir=true] i { color: var(--icon-blue) }
 .file-icons [data-dir=true] i::before { content: 'folder' }
+/* 挂载目录：把文件夹图案换成云朵，颜色与顶部挂载开关选中态一致（--blue: #2196f3） */
+.file-icons [data-mount="true"] i { color: var(--blue) }
+.file-icons [data-mount="true"] i::before { content: 'cloud' }
 .file-icons [aria-selected=true] i { color: var(--item-selected) }
 
 /*特殊的 filecat work flow*/

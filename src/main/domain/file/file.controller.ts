@@ -79,6 +79,12 @@ export class FileController {
         return Sucess(await FileServiceImpl.get_file_base_info( ctx.headers.authorization,data.param_path));
     }
 
+    /** 取当前目录所在挂载的展示信息（用于列表顶部提示），未挂载返回 null */
+    @Post('/file/mount_info')
+    async mount_info(@Req() ctx, @Body() data: { param_path: string }) {
+        return FileServiceImpl.mount_info(ctx.headers.authorization, data.param_path);
+    }
+
     // @Put('/:path([^"]{0,})')
     // async uploadFile(@Req() ctx, @Param("path") path?: string, @UploadedFile('file', {options: FileServiceImpl.fileUploadOptions}) file?: any) {
     //     // await FileServiceImpl.uploadFile(path, file,ctx.headers.authorization);

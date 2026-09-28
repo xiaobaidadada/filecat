@@ -116,6 +116,7 @@ export enum UserAuth {
     port_scan, // TCP端口扫描
     ai_model_switch = 91, // 允许切换 AI 模型（AI 聊天主页的模型选择）
     md_editor_setting = 92, // md 编辑器全局设置（正文宽度/字号等）的修改
+    file_mount = 93, // 目录挂载（把本地目录挂载到网盘/远程协议，含管理挂载与百度网盘授权）
 }
 
 

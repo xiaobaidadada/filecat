@@ -38,4 +38,5 @@ export const tcpProxy = new Http(`${front_config.baseUrl}tcp_forward/`);
 export const gitHttp = new Http(`${front_config.baseUrl}git/`);
 
 export const firewallHttp = new Http(`${front_config.baseUrl}firewall/`);
+export const mountHttp = new Http(`${front_config.baseUrl}mount/`);
 

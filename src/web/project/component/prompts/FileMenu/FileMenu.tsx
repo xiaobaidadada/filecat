@@ -32,6 +32,9 @@ import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
 import {use_click_folder} from "../../file/FileUtil";
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
+import {mountHttp} from "../../../util/config";
+import {NotyConfirm} from "../../../util/noty";
+import MountEditor from "../../setting/mount/MountEditor";
 
 
 export function FileMenu() {
@@ -171,8 +174,59 @@ export function FileMenu() {
     const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
     const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [, set_file_list_refresh] = useAtom($stroe.file_list_refresh);
+    /** 挂载列表：用于判断当前右键目录是否已被挂载 */
+    const [mount_list, setMountList] = useState<any[]>([]);
+
+    /** 拉取挂载列表（失败时静默，不影响右键菜单其它功能） */
+    const load_mount_list = async () => {
+        if (!check_user_auth(UserAuth.file_mount)) {
+            return;
+        }
+        try {
+            const rsq = await mountHttp.post("list", {});
+            setMountList(Array.isArray(rsq?.data) ? rsq.data : []);
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    /**
+     * 比较两个路径是否指向同一目录。
+     * Windows 大小写不敏感、分隔符不统一，直接 === 会漏判。
+     */
+    const norm_compare = (a?: string, b?: string) => {
+        if (!a || !b) {
+            return false;
+        }
+        const n = (p: string) => {
+            let s = p.replace(/\\/g, "/").replace(/\/+$/, "");
+            if (/^[a-zA-Z]:/.test(s)) {
+                s = s[0].toUpperCase() + s.slice(1);
+            }
+            return s;
+        };
+        return n(a).toLowerCase() === n(b).toLowerCase();
+    }
+
+    // 右键菜单打开时刷新一次挂载列表（挂载可能在别处被改过）
+    React.useEffect(() => {
+        if (showPrompt.show) {
+            load_mount_list();
+        }
+    }, [showPrompt.show]);
 
     const items_folder = [
+        // 目录挂载：仅在有 file_mount 权限时显示
+        ...(check_user_auth(UserAuth.file_mount) ? [{
+            r: t("挂载"),
+            v: common_menu_type.mount_dir,
+            items: [
+                {r: t("挂载到网盘"), v: common_menu_type.mount_dir},
+                {r: t("编辑挂载配置"), v: common_menu_type.mount_config},
+                {r: t("取消挂载"), v: common_menu_type.unmount_dir},
+            ]
+        }] : []),
         {r: t("以studio打开"), v: common_menu_type.sutdio},
         {
             r: t("以空白搜索模式打开目录"),
@@ -488,6 +542,71 @@ export function FileMenu() {
                 })
                 break;
             }
+            case common_menu_type.mount_dir: {
+                // 新建挂载：用右键的目录作为挂载点
+                const ab_path = get_ab_path();
+                set_prompt_card({
+                    open: true,
+                    title: t("挂载目录"),
+                    context_div: <MountEditor
+                        mount_path={ab_path}
+                        onClose={() => set_prompt_card({open: false})}
+                        onDone={() => {
+                            set_prompt_card({open: false});
+                            // 通知文件列表刷新，让挂载标识立刻生效
+                            set_file_list_refresh(v => v + 1);
+                        }}
+                    />
+                });
+            }
+                break;
+            case common_menu_type.mount_config: {
+                // 编辑已有挂载：按当前目录的绝对路径找挂载记录
+                const ab_path = get_ab_path();
+                const found = mount_list.find(m => norm_compare(m.mount_path, ab_path));
+                if (!found) {
+                    NotyFail(t("该目录尚未挂载"));
+                    break;
+                }
+                set_prompt_card({
+                    open: true,
+                    title: t("编辑挂载配置"),
+                    context_div: <MountEditor
+                        mount_id={found.id}
+                        mount_path={found.mount_path}
+                        onClose={() => set_prompt_card({open: false})}
+                        onDone={() => {
+                            set_prompt_card({open: false});
+                            load_mount_list();
+                            set_file_list_refresh(v => v + 1);
+                        }}
+                    />
+                });
+            }
+                break;
+            case common_menu_type.unmount_dir: {
+                const ab_path = get_ab_path();
+                const found = mount_list.find(m => norm_compare(m.mount_path, ab_path));
+                if (!found) {
+                    NotyFail(t("该目录尚未挂载"));
+                    break;
+                }
+                NotyConfirm(
+                    t("取消挂载后，该目录将恢复为本地目录，网盘内容不再显示"),
+                    async () => {
+                        try {
+                            await mountHttp.post("delete", {id: found.id});
+                            NotySuccess(t("已取消挂载"));
+                            load_mount_list();
+                            set_file_list_refresh(v => v + 1);
+                        } catch (e) {
+                            // Http 层已提示
+                        }
+                    },
+                    "warning"
+                );
+            }
+                break;
             case    common_menu_type.file_delete: {
                 // 如果右键的文件在选中列表中，则删除所有选中的文件（不传 path，FilesDelete 会走选中列表逻辑）
                 if (showPrompt.data.useSelectedList) {

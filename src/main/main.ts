@@ -41,6 +41,7 @@ import os from "os";
 import {TcpForwardController} from "./domain/net/tcp.forward.controller";
 import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
+import {MountController} from "./domain/mount/mount.controller";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
 import { tcpForwardService } from "./domain/net/tcp.forward.server.service";
 import { NetMsgType, NetUtil } from "./domain/net/util/NetUtil";
@@ -98,7 +99,7 @@ export async function start_main() {
             FileController, DdnsController, NetController,
             VirtualController, SettingController,
             SSHController, RdpController, VideoController,
-            CryptoController,Ai_AgentController,TcpForwardController,GitController,FirewallController
+            CryptoController,Ai_AgentController,TcpForwardController,GitController,FirewallController,MountController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理

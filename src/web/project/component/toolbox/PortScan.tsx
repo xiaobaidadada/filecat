@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react'
-import {InputTextIcon} from "../../../meta/component/Input";
+import {InputText} from "../../../meta/component/Input";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {Card, ProgressCard} from "../../../meta/component/Card";
@@ -124,42 +124,40 @@ export function PortScan() {
                 <Column>
                     <Card title={t("TCP ")+t('端口扫描')}
                           titleCom={
-                              <div style={{display: "flex", gap: "1rem", fontSize: "0.85em", color: "var(--textSecondary)"}}>
+                              <span>
                                   {progress && (
                                       <span>{t('已发现')}: {progress.openCount}</span>
                                   )}
                                   {endInfo && (
                                       <span>{t('总计扫描')}: {endInfo.totalScanned} | {t('开放')}: {endInfo.totalOpen}</span>
                                   )}
-                              </div>
+                              </span>
                           }
+                          rightBottomCom={!scanning ? (
+                              <ButtonText  text={t("扫描")} clickFun={() => doScan()}/>
+                          ) : (
+                              <ButtonText text={t("取消")} clickFun={() => doCancel()}/>
+                          )}
                     >
                         {/* 参数输入区 */}
-                        <div style={{display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1rem"}}>
-                            <InputTextIcon placeholder={t("目标主机")} icon={"dns"} value={host}
-                                           handleInputChange={(v) => setHost(v)}/>
-                            <InputTextIcon placeholder={t("起始端口")} icon={"login"} value={startPort}
-                                           handleInputChange={(v) => setStartPort(v)} type="number"/>
-                            <InputTextIcon placeholder={t("结束端口")} icon={"logout"} value={endPort}
-                                           handleInputChange={(v) => setEndPort(v)} type="number"/>
-                            <InputTextIcon placeholder={t("并发数")} icon={"shuffle"} value={concurrency}
-                                           handleInputChange={(v) => setConcurrency(v)} type="number"/>
-                            <InputTextIcon placeholder={t("超时(ms)")} icon={"timer"} value={timeoutVal}
-                                           handleInputChange={(v) => setTimeoutVal(v)} type="number"/>
-                            {!scanning ? (
-                                <ButtonText  text={t("扫描")} clickFun={() => doScan()}/>
-                            ) : (
-                                <ButtonText text={t("取消")} clickFun={() => doCancel()}/>
-                            )}
-                        </div>
+                        <InputText placeholder={t("目标主机")} value={host}
+                                   handleInputChange={(v) => setHost(v)}/>
+                        <InputText placeholder={t("起始端口")} value={startPort}
+                                   handleInputChange={(v) => setStartPort(v)}/>
+                        <InputText placeholder={t("结束端口")} value={endPort}
+                                   handleInputChange={(v) => setEndPort(v)}/>
+                        <InputText placeholder={t("并发数")} value={concurrency}
+                                   handleInputChange={(v) => setConcurrency(v)}/>
+                        <InputText placeholder={t("超时(ms)")} value={timeoutVal}
+                                   handleInputChange={(v) => setTimeoutVal(v)}/>
 
                         {/* 进度条 */}
                         {scanning && progress && (
-                            <div style={{marginBottom: "1rem"}}>
-                                <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.8em", color: "var(--textSecondary)", marginBottom: "0.3rem"}}>
-                                    <span>{t('当前')}: {progress.currentPort}</span>
-                                    <span>{progress.scanned} / {progress.total}</span>
-                                </div>
+                            <div>
+                                <p>
+                                    {/*{t('当前端口')}: {progress.currentPort}　*/}
+                                    {t('已扫描')}: {progress.scanned} / {progress.total}
+                                </p>
                                 <ProgressCard progress={progress.percent}/>
                             </div>
                         )}
@@ -170,30 +168,24 @@ export function PortScan() {
                                 headers={[t("端口"), t("状态")]}
                                 rows={openPorts.map((p) => [
                                     p.port,
-                                    <span style={{color: "var(--icon-green)"}}>{t("开放")}</span>
+                                    <span>{t("开放")}</span>
                                 ])}
                             />
                         )}
 
                         {/* 扫描中且没有开放端口 */}
                         {scanning && openPorts.length === 0 && (
-                            <div style={{padding: "1rem", textAlign: "center", color: "var(--textSecondary)"}}>
-                                {t('正在扫描...')}
-                            </div>
+                            <p>{t('正在扫描...')}</p>
                         )}
 
                         {/* 扫描结束，无开放端口 */}
                         {!scanning && endInfo && openPorts.length === 0 && (
-                            <div style={{padding: "1rem", textAlign: "center", color: "var(--textSecondary)"}}>
-                                {t('未发现开放端口')}
-                            </div>
+                            <p>{t('未发现开放端口')}</p>
                         )}
 
                         {/* 初始状态 */}
                         {!scanning && !endInfo && openPorts.length === 0 && (
-                            <div style={{padding: "1rem", textAlign: "center", color: "var(--textSecondary)"}}>
-                                {t('请输入参数后点击扫描')}
-                            </div>
+                            <p>{t('请输入参数后点击扫描')}</p>
                         )}
                     </Card>
                 </Column>

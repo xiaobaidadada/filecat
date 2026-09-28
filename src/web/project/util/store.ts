@@ -59,6 +59,13 @@ export const $stroe = {
     }),
     // 当前因为各种原因正在运行的文件
     to_running_files: atom<Set<string>>(new Set<string>()),
+    // 文件列表刷新信号：自增即触发列表重新拉取（用于挂载变更后立即刷新目录）
+    file_list_refresh: atom<number>(0),
+    // 挂载功能总开关状态（Header 上的开关显示用）；null 表示尚未从后端加载
+    mount_enabled: atom<boolean | null>(null as boolean | null),
+    // 当前所在目录所属的挂载信息（null 表示不在挂载目录里）；
+    // 列表顶部提示条与工具栏按钮显隐都依赖它，故放在 store 里共享
+    current_mount: atom<any>(null as any),
     // 按下的键盘按键
     enterKey: atom<string>(""),
     // 选中的文件 下标

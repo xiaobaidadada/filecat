@@ -36,6 +36,14 @@ export interface FileItemData {
     isLink?: boolean,
     path?: string,
     icon?: MaterialIcon,
+    /** 该目录是网盘/远程协议的挂载点（前端据此加特殊样式） */
+    mount?: boolean,
+    /** 挂载驱动类型 */
+    mount_driver?: string,
+    /** 挂载标识色 */
+    mount_color?: string,
+    /** 该挂载是否只读 */
+    mount_readonly?: boolean,
 }
 
 export interface FileInfoItemData {
@@ -47,6 +55,12 @@ export interface FileInfoItemData {
     fs_type?: string;
     now_absolute_path?: string; // 当前决定路径
     dir_upload_max_num_value?: dir_upload_max_num_item;
+    /** 当前目录是网盘/远程协议的挂载点 */
+    mount?: boolean;
+    /** 挂载驱动类型 */
+    mount_driver?: string;
+    /** 挂载标识色 */
+    mount_color?: string;
 }
 
 export interface GetFilePojo {

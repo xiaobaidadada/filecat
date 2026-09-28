@@ -39,6 +39,23 @@ import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {getSys} from "../shell/shell.service";
 import {sqliteQueryReq, sqliteQueryResult} from "../../../common/req/file.req";
+import {
+    PathResolution,
+    resolve_local_path,
+    require_driver,
+    assert_cap,
+    to_frontend_item,
+    join_frontend_path,
+    stream_to_buffer,
+    as_readable,
+    current_mount_info,
+    mounts_under,
+    is_mounted,
+    is_dir_item,
+    assert_not_mount_root,
+} from "./mount_adapter";
+import {FileItemData} from "../../../common/file.pojo";
+import {pipeline} from "stream/promises";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -119,6 +136,15 @@ export class FileService  {
         }
         userService.check_user_path(token, sysPath);
         return sysPath;
+    }
+
+    /**
+     * 取当前目录所在挂载的信息（用于文件列表顶部提示）。
+     * 未挂载时返回 null，前端不显示提示条。
+     */
+    public async mount_info(token: string, param_path: string) {
+        const sysPath = this.resolveFilePath(token, param_path ?? "");
+        return Sucess(current_mount_info(sysPath));
     }
 
     private normalizeSqliteValue(value: any): any {
@@ -216,6 +242,14 @@ export class FileService  {
         }
         // const sysPath = is_sys_path === 1 ? `${decodeURIComponent(param_path)}` : path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
+
+        // 挂载接管：该路径落在某个挂载点内时，全部读写转发给对应驱动，
+        // 本地物理目录下的真实文件不再被读取
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            return this.getFile_from_mount(mount_res, param_path);
+        }
+
         if (!await FileUtil.access(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
@@ -233,6 +267,8 @@ export class FileService  {
         }
 
         const items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+        // 该目录下直接的挂载点（用于给这些文件夹打特殊标记）
+        const mount_points = mounts_under(sysPath);
         for (const item of items) {
             const filePath = path.join(sysPath, item);
             // 获取文件或文件夹的元信息
@@ -244,6 +280,14 @@ export class FileService  {
                 // console.log("读取错误", e);
             }
             const mtime = stats ? new Date(stats.mtime).getTime() : 0;
+            // 这个文件夹自身是挂载点：打上挂载标记，前端会用它显示特殊底色
+            const mp = mount_points.get(path.resolve(filePath));
+            const mount_fields = mp ? {
+                mount: true,
+                mount_driver: mp.driver,
+                mount_color: mp.color,
+                mount_readonly: mp.readonly,
+            } : {};
             // const formattedCreationTime = stats ? getShortTime(new Date(stats.mtime).getTime()) : "";
             // const size = stats ? formatFileSize(stats.size) : "";
             if (stats && stats.isFile()) {
@@ -262,7 +306,8 @@ export class FileService  {
                     name: item,
                     mtime: mtime,
                     isLink: stats?.isSymbolicLink(),
-                    path: param_path
+                    path: param_path,
+                    ...mount_fields
                 })
             } else {
                 result.files?.push({
@@ -277,14 +322,64 @@ export class FileService  {
         return Sucess(result);
     }
 
+    /**
+     * 挂载目录的「读目录 / 读文件」。
+     * 与本地分支返回同样的结构，前端无需区分。
+     */
+    private async getFile_from_mount(res: PathResolution, param_path: string): Promise<Result<GetFilePojo | string>> {
+        const {driver, inner_path, match} = require_driver(res.real_path);
+        // 先判断是文件还是目录
+        const info = await driver.stat(inner_path);
+        if (!info) {
+            return Fail("路径不存在", RCode.Fail);
+        }
+        if (info.type !== FileTypeEnum.folder) {
+            // 单个文件：读内容返回（与本地分支一致，走 PreFile）
+            const stream = await driver.read(inner_path);
+            const buffer = await stream_to_buffer(stream);
+            const pojo = Sucess(buffer.toString("utf8"), RCode.PreFile);
+            pojo.message = info.name;
+            return pojo;
+        }
+
+        // 目录：列子项
+        // 注意：这里的子项本身不是「挂载点」，不能被标记为 mount，
+        // 否则进入挂载目录后里面的每一项都会带挂载底色。
+        const result: GetFilePojo = {files: [], folders: []};
+        const items = await driver.list(inner_path);
+        for (const item of items) {
+            const full_path = join_frontend_path(param_path, item.name);
+            const base: FileItemData = {
+                ...item,
+                path: full_path,
+            };
+            if (item.type === FileTypeEnum.folder) {
+                result.folders?.push(base);
+            } else {
+                result.files?.push(base);
+            }
+        }
+        return Sucess(result);
+    }
+
     public async get_list(token: string, param_path:string, page_num:number, page_size:number, search?:string) {
         const result: GetFilePojo = {
+            folders: [],
             files: []
         };
         const root_path = settingService.getFileRootPath(token);
         const sysPath = path.join(root_path, param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
+
+        // 挂载接管
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            return this.get_list_from_mount(mount_res, param_path, page_num, page_size, search);
+        }
+
         let items = await FileUtil.readdirSync(sysPath);// 读取目录内容
+        // 该目录下直接的挂载点（用于给这些文件夹打特殊标记）
+        const mount_points = mounts_under(sysPath);
         // 如果传入了 search 参数，先按照名称过滤
         if (search && search.trim()) {
             const keyword = search.trim().toLowerCase();
@@ -318,7 +413,7 @@ export class FileService  {
             }
             const mtime = stats ? new Date(stats.mtime).getTime() : 0;
 
-            const pojo = {
+            const pojo: FileItemData = {
                 type,
                 name: item,
                 mtime: mtime,
@@ -326,7 +421,51 @@ export class FileService  {
                 isLink: stats?.isSymbolicLink(),
                 path: p
             }
+            // 这个文件夹自身是挂载点：打上挂载标记，前端会用它显示特殊底色
+            const mp = mount_points.get(path.resolve(filePath));
+            if (mp) {
+                pojo.mount = true;
+                pojo.mount_driver = mp.driver;
+                pojo.mount_color = mp.color;
+                pojo.mount_readonly = mp.readonly;
+            }
             result.files.push(pojo)
+        }
+        return Sucess(result);
+    }
+
+    /**
+     * 挂载目录的分页列表。
+     * 网盘一般没有服务端分页，统一在本地做（拉回列表后切片），并对 search 做前端过滤。
+     */
+    private async get_list_from_mount(
+        res: PathResolution,
+        param_path: string,
+        page_num: number,
+        page_size: number,
+        search?: string
+    ): Promise<Result<GetFilePojo>> {
+        const {driver, inner_path, match} = require_driver(res.real_path);
+        const result: GetFilePojo = {folders: [], files: []};
+        let items = await driver.list(inner_path);
+        // 搜索过滤
+        if (search && search.trim()) {
+            const keyword = search.trim().toLowerCase();
+            items = items.filter(item => item.name.toLowerCase().includes(keyword));
+        }
+        // 统一按名称排序，保证分页结果稳定
+        items = items.slice().sort((a, b) => a.name.localeCompare(b.name));
+        items = list_paginate(items, page_num, page_size).list;
+        for (const item of items) {
+            const pojo: FileItemData = {
+                ...item,
+                path: join_frontend_path(param_path, item.name),
+                mount: true,
+                mount_driver: match.mount.driver,
+                mount_color: match.mount.color,
+                mount_readonly: match.mount.readonly,
+            };
+            result.files.push(pojo);
         }
         return Sucess(result);
     }
@@ -355,6 +494,22 @@ export class FileService  {
         userService.check_user_path(token, sysPath)
         switch (type) {
             case FileTypeEnum.folder:
+                // 挂载目录：显示网盘容量（如果驱动能查），而不是本地磁盘容量
+                const mount_res = resolve_local_path(sysPath);
+                if (mount_res.match) {
+                    const q = await require_driver(mount_res.real_path).driver.quota().catch(() => null);
+                    if (q) {
+                        info.total_size = q.total;
+                        info.used_size = q.used;
+                        info.left_size = q.total - q.used;
+                    }
+                    // 无论能不能查容量，都标记为挂载，让前端展示挂载标识
+                    info.mount = true;
+                    info.mount_driver = mount_res.match.mount.driver;
+                    info.mount_color = mount_res.match.mount.color;
+                    info.now_absolute_path = sysPath;
+                    return info;
+                }
                 if (wss) {
                     this.getDiskSizeForPath(sysPath).then(data => {
                         const result = new WsData<SysPojo>(CmdType.file_info);
@@ -405,11 +560,30 @@ export class FileService  {
 
     upload_num_set = {} as any;
 
+    /**
+     * 挂载场景专用的上传中间件。
+     * 本地上传用的是 diskStorage（先落盘再搬），但挂载目标是网盘，
+     * 必须先落盘再上传就违背了「不落服务器磁盘」的原则，
+     * 所以这里用内存存储：文件只在内存里过一遍就直接流转给网盘。
+     */
+    upload_mount = multer({
+        storage: multer.memoryStorage(),
+        // 内存方式对大文件不友好，限制单个文件 512MB
+        limits: {fileSize: 512 * 1024 * 1024},
+    }).single('file');
+
     public async uploadFile(filePath, req: Request, res: Response, token) {
 
         const sysPath = path.join(settingService.getFileRootPath(token), filePath ? decodeURIComponent(filePath) : "");
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
+
+        // 挂载接管：目标落在挂载点内时，走内存上传 + 流转给驱动
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            return this.upload_to_mount(mount_res, req, res);
+        }
+
         // if (!file) {
         //     // 目录
         if ((req.query.dir === "1")) {
@@ -475,6 +649,43 @@ export class FileService  {
         //multer 默认使用 return new Multer({}) 默认memoryStorage 这种方式 buffer 不属于v8内存管理  所以内存释放的比较慢
     }
 
+    /**
+     * 上传到挂载目录。
+     * 用内存存储接收整个文件，再以流的形式写给驱动（不落服务器磁盘）。
+     */
+    private upload_to_mount(mount_diff: PathResolution, req: Request, res: Response): Promise<any> {
+        const mnt_r = require_driver(mount_diff.real_path);
+        assert_cap(mnt_r.driver, "write", "上传文件", mount_diff.match);
+        return new Promise((resolve) => {
+            this.upload_mount(req, res, async (err: any) => {
+                if (err) {
+                    console.log("挂载上传失败：", err);
+                    resolve(Fail(err?.message ?? "上传失败"));
+                    return;
+                }
+                try {
+                    const file = (req as any).file;
+                    if (!file) {
+                        // 仅创建目录（前端 dir=1）
+                        if (req.query.dir === "1") {
+                            await mnt_r.driver.mkdir(mnt_r.inner_path);
+                            resolve(Sucess(true));
+                            return;
+                        }
+                        resolve(Fail("未接收到文件"));
+                        return;
+                    }
+                    const {Readable} = require("stream");
+                    await mnt_r.driver.write(mnt_r.inner_path, Readable.from([file.buffer]), file.size);
+                    resolve(Sucess(true));
+                } catch (e) {
+                    console.log("挂载写入失败：", e);
+                    resolve(Fail(e?.message ?? "写入失败"));
+                }
+            });
+        });
+    }
+
     file_upload_count_map = new Map<string, {
         // part_size: number,
         upload_data_size: number,
@@ -496,6 +707,29 @@ export class FileService  {
         const sysPath = path.join(settingService.getFileRootPath(token), param.file_path ? decodeURIComponent(param.file_path) : "");
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
+
+        // 挂载接管：分片在内存里累积，最后一片完成时一次性写给驱动
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const r = require_driver(mount_res.real_path);
+            if (param.is_dir) {
+                assert_cap(r.driver, "mkdir", "新建目录", mount_res.match);
+                await r.driver.mkdir(r.inner_path);
+                return;
+            }
+            assert_cap(r.driver, "write", "上传文件", mount_res.match);
+            this.mount_upload_map.set(sysPath, {
+                driver: r.driver,
+                inner_path: r.inner_path,
+                buffer_list: new Array(param.parallel_done_num).fill(undefined),
+                parallel_done_num: 0,
+                total_size: 0,
+                lastModified: param.lastModified,
+                chunks: [],
+            });
+            return;
+        }
+
         if (param.is_dir) {
             // 目录不存在，创建目录
             if (!await FileUtil.access(sysPath))
@@ -584,6 +818,13 @@ export class FileService  {
         userService.check_user_only_path(token, sysPath);
         fileCompress.lifeHeart(sysPath);
 
+        // 挂载接管：分片累积在内存，最后一片完成时一次写给驱动
+        const mount_upload = this.mount_upload_map.get(sysPath);
+        if (mount_upload) {
+            await this.mount_file_upload(sysPath, mount_upload, param, data);
+            return;
+        }
+
         const num_value = this.file_upload_count_map.get(sysPath);
         try {
             num_value.buffer_list[param.part_count] = data.bin_context; // Buffer.concat([num_value.buffer,chunkData]);
@@ -627,6 +868,72 @@ export class FileService  {
         }
     }
 
+    /**
+     * 挂载场景的分片上传状态（按目标路径索引）。
+     * 与 file_upload_count_map 分开维护：那里绑定的是本地写流，
+     * 挂载场景只需要攒分片、最后一次写出去。
+     */
+    mount_upload_map = new Map<string, {
+        driver: any,
+        inner_path: string,
+        buffer_list: Uint8Array[],
+        parallel_done_num: number,
+        total_size: number,
+        lastModified: number,
+        /** 已累积的分片（整包用完即释放） */
+        chunks: Buffer[],
+    }>();
+
+    /**
+     * 处理挂载目标的一个上传分片。
+     * 同一批并行分片（parallel_done_num 个）都到齐后才累积一次，
+     * 全部分片收完后一次性作为流写给驱动 —— 数据全程在内存，不落服务器磁盘。
+     */
+    private async mount_file_upload(
+        sysPath: string,
+        state: {
+            driver: any;
+            inner_path: string;
+            buffer_list: Uint8Array[];
+            parallel_done_num: number;
+            total_size: number;
+            chunks: Buffer[];
+        },
+        param: ws_file_upload_req,
+        data: WsData<ws_file_upload_req>
+    ): Promise<void> {
+        try {
+            state.buffer_list[param.part_count] = data.bin_context;
+            delete data.bin_context;
+            state.parallel_done_num++;
+            if (state.parallel_done_num !== param.parallel_done_num) {
+                return;
+            }
+            state.parallel_done_num = 0;
+            // 累积这批分片
+            for (const chunk of state.buffer_list) {
+                if (chunk) {
+                    state.total_size += chunk.length;
+                    state.chunks.push(Buffer.from(chunk));
+                }
+            }
+            state.buffer_list = new Array(param.parallel_done_num).fill(undefined);
+
+            // 最后一片：一次性写给驱动
+            if (param.chunk_index === param.total_chunk_index - 1) {
+                this.mount_upload_map.delete(sysPath);
+                const full = Buffer.concat(state.chunks);
+                state.chunks.length = 0;
+                const {Readable} = require("stream");
+                await state.driver.write(state.inner_path, Readable.from([full]), full.length);
+            }
+        } catch (e) {
+            this.mount_upload_map.delete(sysPath);
+            state.chunks.length = 0;
+            console.log("挂载分片上传失败：", e);
+        }
+    }
+
     public async deletes(token, filePath?: string) {
         if (!filePath) {
             return Sucess("1");
@@ -636,6 +943,18 @@ export class FileService  {
         if (userService.protectionCheck(sysPath, token) || settingService.protectionCheck(sysPath)) {
             return Fail("1", RCode.PROTECT_FILE);
         }
+
+        // 挂载接管：网盘没有回收站概念，直接调驱动的删除
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            // 删挂载点本身等于清空整个网盘，先拦截
+            assert_not_mount_root(mount_res.match, "删除");
+            const r = require_driver(mount_res.real_path);
+            assert_cap(r.driver, "remove", "删除", mount_res.match);
+            await r.driver.remove(r.inner_path);
+            return Sucess("1");
+        }
+
         // 回收站判断
         if (settingService.get_recycle_bin_status()) {
             sysPath = removeTrailingPath(sysPath);
@@ -712,6 +1031,18 @@ export class FileService  {
         }
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
+
+        // 挂载接管：流式写回网盘（不落服务器磁盘）
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const r = require_driver(mount_res.real_path);
+            assert_cap(r.driver, "write", "保存文件", mount_res.match);
+            const {Readable} = require("stream");
+            const buf = Buffer.from(context, "utf8");
+            await r.driver.write(r.inner_path, Readable.from([buf]), buf.length);
+            return;
+        }
+
         // const sysPath = path.join(settingService.getFileRootPath(token),filePath?decodeURIComponent(filePath):"");
         // 写入文件
         await FileUtil.writeFileSync(sysPath, context, {
@@ -745,7 +1076,102 @@ export class FileService  {
         userService.check_user_path(token, sysPath)
         userService.check_user_path(token, toSysPath)
         for (const file of data.files) {
-            await this.cut_exec(decodeURIComponent(path.join(sysPath, file)), decodeURIComponent(path.join(toSysPath, path.basename(file))))
+            const src = decodeURIComponent(path.join(sysPath, file));
+            const dst = decodeURIComponent(path.join(toSysPath, path.basename(file)));
+            // 挂载接管：源在挂载内，或目标在挂载内，都用驱动处理
+            const src_mount = resolve_local_path(src);
+            const dst_mount = resolve_local_path(dst);
+            if (src_mount.match || dst_mount.match) {
+                await this.mount_move_copy(src, dst, "move");
+                continue;
+            }
+            await this.cut_exec(src, dst)
+        }
+    }
+
+    /**
+     * 挂载场景下的移动/复制。
+     * 支持三种组合：同挂载内、本地→挂载、挂载→本地。
+     * 跨「挂载」的移动用「读 + 写」流转（不落服务器磁盘）。
+     */
+    private async mount_move_copy(src: string, dst: string, mode: "move" | "copy"): Promise<void> {
+        const src_mount = resolve_local_path(src);
+        const dst_mount = resolve_local_path(dst);
+        const {Readable} = require("stream");
+
+        // 同挂载内：交给驱动自己的 move/copy
+        if (src_mount.match && dst_mount.match
+            && src_mount.match.mount.id === dst_mount.match.mount.id) {
+            // 移动挂载点本身相当于搬走网盘根目录，先拦截（复制不破坏源，允许）
+            if (mode === "move") {
+                assert_not_mount_root(src_mount.match, "移动");
+            }
+            const r = require_driver(src);
+            const action = mode === "move" ? "移动" : "复制";
+            assert_cap(r.driver, mode, action, src_mount.match);
+            if (mode === "move") {
+                await r.driver.move(src_mount.inner_path, dst_mount.inner_path);
+            } else {
+                await r.driver.copy(src_mount.inner_path, dst_mount.inner_path);
+            }
+            return;
+        }
+
+        // 跨挂载/跨本地：用「读源 + 写目标」流转
+        if (src_mount.match) {
+            if (mode === "move") {
+                assert_not_mount_root(src_mount.match, "移动");
+            }
+            if (src_mount.match.mount.readonly) {
+                throw new Error("源挂载为只读模式，无法移出文件");
+            }
+        }
+        if (dst_mount.match) {
+            const target_driver = require_driver(dst).driver;
+            assert_cap(target_driver, "write", mode === "move" ? "移动" : "复制", dst_mount.match);
+        }
+
+        // 取出源信息，判断是文件还是目录
+        const src_info = src_mount.match
+            ? await require_driver(src).driver.stat(src_mount.inner_path)
+            : await FileUtil.statSync(src).then(s => ({type: s.isDirectory() ? FileTypeEnum.folder : FileTypeEnum.blob, size: s.size}) as any);
+        if (!src_info) {
+            throw new Error("源路径不存在");
+        }
+
+        if (src_info.type === FileTypeEnum.folder) {
+            // 目录：递归
+            if (dst_mount.match) {
+                await require_driver(dst).driver.mkdir(dst_mount.inner_path);
+            } else {
+                await fse.mkdirs(dst);
+            }
+            const children = src_mount.match
+                ? await require_driver(src).driver.list(src_mount.inner_path)
+                : await FileUtil.readdirSync(src).then(names => names.map(n => ({name: n})) as any[]);
+            for (const c of children) {
+                await this.mount_move_copy(path.posix.join(src, c.name), path.posix.join(dst, c.name), mode);
+            }
+        } else {
+            // 文件：读源 → 写目标
+            const rs = src_mount.match
+                ? await require_driver(src).driver.read(src_mount.inner_path)
+                : fs.createReadStream(src);
+            if (dst_mount.match) {
+                await require_driver(dst).driver.write(dst_mount.inner_path, as_readable(rs), src_info.size);
+            } else {
+                await fse.ensureDir(path.dirname(dst));
+                // 本地目标：直接写入
+                await pipeline(as_readable(rs), fs.createWriteStream(dst));            }
+        }
+
+        // 移动语义：最后删掉源
+        if (mode === "move") {
+            if (src_mount.match) {
+                await require_driver(src).driver.remove(src_mount.inner_path);
+            } else {
+                await rimraf(src);
+            }
         }
     }
 
@@ -792,8 +1218,14 @@ export class FileService  {
         userService.check_user_only_path(token, toSysPath);
         for (const file of data.files) {
             const filePath = decodeURIComponent(path.join(sysPath, file));
+            const target = decodeURIComponent(path.join(toSysPath, path.basename(file)));
+            // 挂载接管
+            if (resolve_local_path(filePath).match || resolve_local_path(target).match) {
+                await this.mount_move_copy(filePath, target, "copy");
+                continue;
+            }
             // 覆盖
-            await fse.copy(filePath, decodeURIComponent(path.join(toSysPath, path.basename(file))), {overwrite: true});
+            await fse.copy(filePath, target, {overwrite: true});
         }
 
 
@@ -815,6 +1247,23 @@ export class FileService  {
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.name));
         userService.check_user_path(token, sysPath);
         userService.check_user_only_path(token, sysPath);
+
+        // 挂载接管
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const r = require_driver(mount_res.real_path);
+            if (type === 1) {
+                assert_cap(r.driver, "mkdir", "新建目录", mount_res.match);
+                await r.driver.mkdir(r.inner_path);
+            } else {
+                assert_cap(r.driver, "write", "新建文件", mount_res.match);
+                const {Readable} = require("stream");
+                const buf = Buffer.from(data.context ?? "", "utf8");
+                await r.driver.write(r.inner_path, Readable.from([buf]), buf.length);
+            }
+            return;
+        }
+
         if (await FileUtil.access(sysPath)) {
             return;
         }
@@ -835,6 +1284,23 @@ export class FileService  {
         const sysPath = path.join(root_path, decodeURIComponent(data.name));
         userService.check_user_path(token, sysPath)
         const sysPathNew = path.join(root_path, decodeURIComponent(data.newName));
+
+        // 挂载接管
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            // 重命名挂载点本身等于给网盘根目录改名，会影响所有挂载使用，先拦截
+            assert_not_mount_root(mount_res.match, "重命名");
+            const r = require_driver(mount_res.real_path);
+            assert_cap(r.driver, "move", "重命名", mount_res.match);
+            // 目标也在同一个挂载内（前端只改名字，不跨挂载）
+            const target = resolve_local_path(sysPathNew);
+            if (!target.match) {
+                throw new Error("不能把挂载内的文件移动到挂载目录之外");
+            }
+            await r.driver.move(r.inner_path, target.inner_path);
+            return;
+        }
+
         await fse.rename(sysPath, sysPathNew);
     }
 
@@ -867,6 +1333,78 @@ export class FileService  {
         // 发送文件
         const readStream = fs.createReadStream(file_path);
         readStream.pipe(res);
+    }
+
+    /**
+     * 挂载文件的下载。
+     * 优先用驱动给的直链做 302 跳转（浏览器直连网盘，完全不占服务器带宽）；
+     * 拿不到直链的（WebDAV/百度等）走服务器中转，用流边读边发。
+     */
+    private async download_from_mount(
+        mount_diff: PathResolution,
+        sysPath: string,
+        range: string | undefined,
+        res: Response,
+        opts: {cache: boolean; show: boolean}
+    ): Promise<void> {
+        const mnt_r = require_driver(mount_diff.real_path);
+        const info = await mnt_r.driver.stat(mnt_r.inner_path);
+        if (!info) {
+            res.status(404).send("File not found");
+            return;
+        }
+        if (info.type === FileTypeEnum.folder) {
+            // 网盘目录无法打包下载（需要全部拉到服务器再压缩，违背不落盘原则）
+            res.status(400).send("挂载目录不支持打包下载，请进入目录后选择文件下载");
+            return;
+        }
+        const file_name = info.name;
+        const encodedFileName = encodeURIComponent(file_name).replace(/%20/g, "+");
+        const handle_type = opts.show ? "inline" : "attachment";
+
+        // 只有不带 Range 时才用直链（带 Range 的播放器请求交给中转流更可靠）
+        if (!range) {
+            const direct = await mnt_r.driver.getDirectUrl(mnt_r.inner_path);
+            if (direct) {
+                // 直链有效期短，不让浏览器缓存跳转结果
+                res.setHeader("Cache-Control", "no-store");
+                res.redirect(302, direct);
+                return;
+            }
+        }
+
+        // 服务器中转
+        const total = info.size ?? 0;
+        const headers: Record<string, string | number> = {
+            "Content-Type": mime.lookup(file_name) || "application/octet-stream",
+            "Accept-Ranges": "bytes",
+            "Content-Disposition": `${handle_type}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`,
+        };
+        if (opts.cache) {
+            headers["Cache-Control"] = "public, max-age=86400";
+        }
+
+        let stream;
+        if (range && total > 0) {
+            const [start_s, end_s] = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(start_s, 10);
+            const end = end_s ? parseInt(end_s, 10) : total - 1;
+            if (Number.isNaN(start) || start >= total) {
+                res.status(416).send("Requested range not satisfiable");
+                return;
+            }
+            stream = await mnt_r.driver.read(mnt_r.inner_path, [start, end]);
+            res.status(206);
+            headers["Content-Range"] = `bytes ${start}-${end}/${total}`;
+            headers["Content-Length"] = end - start + 1;
+        } else {
+            stream = await mnt_r.driver.read(mnt_r.inner_path);
+            if (total > 0) {
+                headers["Content-Length"] = total;
+            }
+        }
+        res.set(headers);
+        as_readable(stream).pipe(res);
     }
 
     async download_for_private(ctx) {
@@ -959,6 +1497,16 @@ export class FileService  {
             // 单个文件
             // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
             const sysPath = decodeURIComponent(file);
+
+            // 挂载接管
+            const mount_res = resolve_local_path(sysPath);
+            if (mount_res.match) {
+                return this.download_from_mount(mount_res, sysPath, range, res, {
+                    cache: cache === "1",
+                    show: show === "1",
+                });
+            }
+
             const fileName = path.basename(sysPath)
             const stats = await FileUtil.statSync(sysPath);
             // const range = ctx.header("Range");
@@ -1015,6 +1563,13 @@ export class FileService  {
             for (const file of files) {
                 // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
                 const sysPath = decodeURIComponent(file);
+                // 挂载内的文件无法直接用 archiver 打包（archiver 只认本地路径），
+                // 需要先下到服务器再压，违背「不落盘」原则，因此直接拒绝
+                if (resolve_local_path(sysPath).match) {
+                    archive.abort();
+                    res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
+                    return;
+                }
                 const stats = await FileUtil.statSync(sysPath);
                 if (stats.isFile()) {
                     archive.file(sysPath, {name: path.basename(sysPath)});
@@ -1073,6 +1628,12 @@ export class FileService  {
         userService.check_user_path(pojo.token, targetFolder);
         userService.check_user_only_path(pojo.token, targetFolder);
 
+        // 挂载接管：解压必须先把文件拉到服务器磁盘才能解，违背「不落盘」原则，直接拒绝
+        const sysSourcePathCheck = path.join(root_path, source_file);
+        if (resolve_local_path(sysSourcePathCheck).match || resolve_local_path(targetFolder).match) {
+            throw new Error("挂载目录不支持解压，请先将文件下载到本地目录");
+        }
+
         const wss = data.wss as Wss;
         if (tar_dir) {
             await FileUtil.mkdirSync(path.join(targetFolder), {recursive: true})
@@ -1104,6 +1665,10 @@ export class FileService  {
             const name = path.join(root_path, decodeURIComponent(file));
             userService.check_user_path(pojo.token, name);
             userService.check_user_only_path(pojo.token, name);
+            // 挂载内的内容无法直接压缩（要先拉到服务器磁盘），直接拒绝
+            if (resolve_local_path(name).match) {
+                throw new Error("挂载目录不支持压缩，请先将文件下载到本地目录");
+            }
             try {
                 const stats = await FileUtil.statSync(name);
                 if (stats.isFile()) {
@@ -1171,6 +1736,29 @@ export class FileService  {
         };
         const sysPath = path.join(settingService.getFileRootPath(token), param_path ? decodeURIComponent(param_path) : "");
         userService.check_user_path(token, sysPath)
+
+        // 挂载接管
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const mnt_r = require_driver(mount_res.real_path);
+            const info = await mnt_r.driver.stat(mnt_r.inner_path);
+            if (!info) {
+                return Fail("路径不存在", RCode.Fail);
+            }
+            if (info.type !== FileTypeEnum.folder) {
+                return Fail("是文件", RCode.Fail);
+            }
+            const items = await mnt_r.driver.list(mnt_r.inner_path);
+            for (const item of items) {
+                result.list.push({
+                    type: item.type === FileTypeEnum.folder ? "folder" : "file",
+                    name: item.name,
+                    size: item.size,
+                });
+            }
+            return result;
+        }
+
         if (!await FileUtil.access(sysPath)) {
             return Fail("路径不存在", RCode.Fail);
         }
@@ -1624,6 +2212,39 @@ export class FileService  {
             files: []
         }
         const sysPath = decodeURIComponent(item.path)
+        // 分享路径可能位于网盘挂载目录里，统一交给适配层判断走本地还是走驱动
+        if (is_mounted(sysPath)) {
+            const {driver, inner_path, match} = require_driver(sysPath)
+            const st = await driver.stat(inner_path)
+            if (!st) throw "分享的文件不存在"
+            // 挂载项统一打上挂载标记，前端据此识别（分享页与文件页表现一致）
+            const mount_mark = {
+                mount: true,
+                mount_driver: match.mount.driver,
+                mount_color: match.mount.color,
+                mount_readonly: match.mount.readonly,
+            }
+            if (is_dir_item(st)) {
+                // 目录：只列出文件，子目录不参与分享下载
+                const items = await driver.list(inner_path)
+                for (const it of items) {
+                    if (is_dir_item(it)) continue
+                    result.files.push({
+                        ...it,
+                        path: join_frontend_path(item.path, it.name),
+                        ...mount_mark,
+                    })
+                }
+            } else {
+                result.is_dir = false
+                result.files.push({
+                    ...st,
+                    path: item.path,
+                    ...mount_mark,
+                })
+            }
+            return Sucess(result)
+        }
         const stats = await FileUtil.statSync(item.path)
         if(stats.isFile()) {
             result.is_dir = false

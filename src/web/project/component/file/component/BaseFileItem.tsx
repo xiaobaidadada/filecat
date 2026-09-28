@@ -87,14 +87,13 @@ export function BaseFileItem(props: FileItemData & {
     };
     return (<div {...props.extraAttr} onClick={() => {
         click(props.index)
-    }} className={"item"} role="button"
+    }} className={props.mount ? "item mount-item" : "item"} role="button"
                  data-type={props.isLink?"invalid_link":props.type}
                  data-dir={!props.type || props.type === FileTypeEnum.folder}
+                 data-mount={props.mount ? "true" : undefined}
                  aria-selected={getByList(selectList, props.index) !== null}
                  aria-label={props.name}
-                 style={{
-                     "--filewidth": props.itemWidth ?? "33%"
-                 }}
+                 style={{"--filewidth": props.itemWidth ?? "33%"}}
                  onDragStart={(event) => handleDragStart(event, props.index)}
                  onDrop={(event) => handleronDrop(event, props.index)}
                  draggable = {props.draggable_handle !== undefined}
@@ -114,7 +113,10 @@ export function BaseFileItem(props: FileItemData & {
         }
 
         <div>
-            <p className="name">{props.name}</p>
+            <p className="name">
+                <span>{props.name}</span>
+                {props.mount_readonly && <span className="mount-readonly-tag">{t("只读")}</span>}
+            </p>
             {props.size ? <p>{props.size}</p> : <p>&mdash;</p>}
             {/*<p>34MB</p>*/}
             <p>{props.show_mtime}</p>

@@ -36,6 +36,7 @@ import {cloneDeep} from "lodash";
 import {formatDate} from "../../../../common/StringUtil";
 import {webPathJoin} from "../../../../common/ListUtil";
 import {ActionButton} from "../../../meta/component/Button";
+import {DRIVER_OPTIONS} from "../setting/mount/mount_common";
 
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
@@ -56,6 +57,12 @@ export default function FileList() {
     const navigate = useNavigate();
 
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    /** 挂载变更信号：变化时重新拉取当前目录列表 */
+    const [file_list_refresh] = useAtom($stroe.file_list_refresh);
+    /** 网盘挂载总开关：关闭时不请求任何挂载相关信息 */
+    const [mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
+    /** 当前目录所在挂载的提示信息；null 表示不在挂载目录里（放 store 里与 FileMenu 共享） */
+    const [mount_info, setMountInfo] = useAtom($stroe.current_mount);
     const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
     const [clickList, setClickList] = useAtom($stroe.clickFileList);
@@ -126,12 +133,36 @@ export default function FileList() {
         }
         set_workflow_show_click(have_workflow_water)
     }
+    /** 拉取当前目录所在挂载的信息，用于列表顶部提示；未挂载时清空 */
+    const mount_info_path_ref = React.useRef<string | null>(null);
+    const fetchMountInfo = async (param_path: string) => {
+        // 开关未加载或已关闭时，挂载全部按本地处理，无需请求
+        if (mount_enabled !== true) {
+            setMountInfo(null);
+            return;
+        }
+        // 同一目录并发去重：开关加载完成后 effect 会判断 mount_info 是否为空来补拉，
+        // 此时 fileHandler 的请求可能还没回来，用路径标记避免重复请求
+        if (mount_info_path_ref.current === param_path) {
+            return;
+        }
+        mount_info_path_ref.current = param_path;
+        try {
+            const rsp = await fileHttp.post("file/mount_info", {param_path});
+            setMountInfo(rsp?.data ?? null);
+        } catch (e) {
+            setMountInfo(null);
+        }
+    }
+
     const fileHandler = async () => {
         const path  = getRouterAfter('file', getRouterPath())
         // 空白搜索模式下，进入目录时不请求文件列表，直接显示空白
         if (blankSearchMode || blank_search_mode_for_temp) {
             return;
         }
+        // 同步当前目录的挂载信息（用于列表顶部提示条），未挂载则为 null
+        fetchMountInfo(path);
         // 文件列表初始化界面
         let rsp
         if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
@@ -213,6 +244,34 @@ export default function FileList() {
         // init_page()
         init()
     }, [location,file_page]);
+
+    // 挂载变更后触发列表重新拉取（挂载/取消挂载后立即生效，不用手动刷新页面）
+    useEffect(() => {
+        if (file_list_refresh > 0) {
+            fileHandler();
+        }
+    }, [file_list_refresh]);
+
+    // 总开关被切换时同步当前目录的挂载提示（关闭清空，开启重新拉取）
+    const mount_toggled_ref = React.useRef(false);
+    useEffect(() => {
+        if (mount_enabled === null) {
+            return;
+        }
+        // 首次拿到状态：不算切换，但要确保首屏提示拉取到了（fileHandler 可能早于开关加载执行）
+        if (!mount_toggled_ref.current) {
+            mount_toggled_ref.current = true;
+            if (mount_enabled === true && mount_info === null) {
+                fetchMountInfo(getRouterAfter('file', getRouterPath()));
+            }
+            return;
+        }
+        if (mount_enabled === true) {
+            fetchMountInfo(getRouterAfter('file', getRouterPath()));
+        } else {
+            setMountInfo(null);
+        }
+    }, [mount_enabled]);
     // useEffect(() => {
     //     init()
     // }, [file_page]);
@@ -363,6 +422,17 @@ export default function FileList() {
             </HeaderPortal>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
+            {/* 当前目录在挂载下：顶部提示当前挂载名称与类型，方便辨认数据来自哪个网盘 */}
+            {mount_info && (
+                <div className="mount-tip-bar" style={{borderLeftColor: mount_info.color}}>
+                    <span className="material-icons" style={{color: mount_info.color}}>cloud</span>
+                    <span>{t("当前为挂载目录")}：{mount_info.name}</span>
+                    <span className="mount-driver-tag">
+                        {DRIVER_OPTIONS.find(d => d.value === mount_info.driver)?.title ?? mount_info.driver}
+                    </span>
+                    {mount_info.readonly && <span className="mount-readonly-tag">{t("只读")}</span>}
+                </div>
+            )}
             {
                 user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination ?
                     <FileListLoad_file_folder_for_local_by_page handleContextMenu={handleContextMenu} clickBlank={clickBlank} list={nowFileList.files}/>
