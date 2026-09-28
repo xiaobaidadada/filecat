@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from "react";
 import {EditorState, TextSelection} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
-import {history} from "prosemirror-history";
+import {history, redo, undo} from "prosemirror-history";
 import {keymap} from "prosemirror-keymap";
 import {
     baseKeymap,
@@ -111,8 +111,15 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         const state = EditorState.create({
             doc: markdown_to_doc(props.value ?? ""),
             plugins: [
+                // history 放最前：撤销/重做属于最基础的编辑能力，先注册便于阅读
+                history(),
                 build_input_rules(),
                 keymap({
+                    // 撤销 / 重做：history 插件只负责记录，命令必须显式绑定键位才生效。
+                    // Mod 在 Windows/Linux 上是 Ctrl、macOS 上是 Cmd，两种情况都覆盖到。
+                    "Mod-z": undo,
+                    "Mod-y": redo,          // Windows 习惯
+                    "Mod-Shift-z": redo,    // macOS 习惯（同时也是 Windows Chrome 的重做键）
                     // 行内标记
                     "Mod-b": toggle_mark("strong"),
                     "Mod-i": toggle_mark("em"),
@@ -143,7 +150,6 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 // 光标装饰
                 dropCursor({color: "var(--primary, #1a73e8)", width: 2}),
                 gapCursor(),
-                history(),
                 // 基础键位：Enter 优先在代码块内换行、列表内拆项，其次正常分段
                 keymap({
                     "Enter": chainCommands(
