@@ -853,5 +853,12 @@
   "保存应用配置": "Save App Config",
   "一键授权：授权成功后会自动跳回本页，账号自动加入列表": "One-click: you will be redirected back here after authorization and the account is added automatically",
   "一键授权需要在百度控制台把回调地址登记为本服务的 /mount/baidu/callback": "One-click requires registering this service's /mount/baidu/callback as the redirect URI in Baidu's console",
-  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manual: no redirect URI needed. After authorizing, copy the code on Baidu's page, paste it below and click Complete"
+  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manual: no redirect URI needed. After authorizing, copy the code on Baidu's page, paste it below and click Complete",
+  "凭据是连接网盘/远程主机的账号信息，可被多个挂载点复用，修改一次全部生效": "A credential is the account info used to connect to a cloud drive / remote host. It can be shared by multiple mounts, and editing it takes effect everywhere at once.",
+  "百度网盘账号不在这里维护，请到下方「百度网盘」面板授权，授权后自动生成对应账号": "Baidu Netdisk accounts are not managed here. Authorize them in the \"Baidu Netdisk\" panel below; the corresponding account is created automatically after authorization.",
+  "编辑时密码类字段留空表示不修改原值": "When editing, leaving a password-type field empty means the original value is kept.",
+  "保存前可以点「测试连接」验证账号是否可用": "Before saving, you can click \"Test connection\" to verify the account works.",
+  "通用文件协议，坚果云、群晖 NAS、Nextcloud、Alist 等都支持。需要一个服务地址和账号即可访问对方目录。": "A general-purpose file protocol supported by Jianguoyun, Synology NAS, Nextcloud, Alist and more. One service URL plus an account is enough to browse the remote directory.",
+  "通过 SSH 协议访问远程服务器的目录，走 SFTP 子系统传文件。适合把另一台 Linux 机器的目录挂到本机。": "Access a directory on a remote server over SSH, transferring files via the SFTP subsystem. Ideal for mounting a directory from another Linux machine.",
+  "用 S3 协议连接的对象存储服务，例如 MinIO、阿里云 OSS、腾讯云 COS、七牛、Cloudflare R2。需要服务地址、存储桶和一对密钥。": "Object storage services reachable over the S3 protocol, such as MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu and Cloudflare R2. Requires a service endpoint, a bucket and a key pair."
 }

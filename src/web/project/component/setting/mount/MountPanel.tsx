@@ -182,7 +182,7 @@ export default function MountPanel() {
             <InputText placeholder={t("显示名称，留空则使用目录名")} value={name}
                        handleInputChange={set_name}/>
 
-            <Table headers={[t("本地目录"), t("挂载类型"), t("凭据"), t("操作")]}
+            <Table headers={[t("名称"), t("挂载类型"), t("凭据"), t("操作")]}
                    rows={list.map(item => {
                        const cred = creds.find(c => c.id === item.credential_id);
                        // 百度账号：凭据名从授权账号列表里取
@@ -190,7 +190,7 @@ export default function MountPanel() {
                            ? baidu_accounts.find(a => String(a.uk) === String(item.credential_id))
                            : undefined;
                        return [
-                           <p>{item.name || item.mount_path}</p>,
+                           <p>{item.name }</p>,
                            <p>{driver_name(item.driver)}</p>,
                            <p>{baidu
                                ? (baidu.name || baidu.baidu_name || String(baidu.uk))

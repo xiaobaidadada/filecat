@@ -842,5 +842,12 @@
   "保存应用配置": "Guardar configuración",
   "一键授权：授权成功后会自动跳回本页，账号自动加入列表": "Un clic: volverá aquí tras la autorización y la cuenta se añadirá automáticamente",
   "一键授权需要在百度控制台把回调地址登记为本服务的 /mount/baidu/callback": "El modo de un clic requiere registrar /mount/baidu/callback de este servicio como URI de redirección en la consola de Baidu",
-  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manual: no requiere URI de redirección. Tras autorizar, copie el código de la página de Baidu, péguelo abajo y pulse Completar"
+  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manual: no requiere URI de redirección. Tras autorizar, copie el código de la página de Baidu, péguelo abajo y pulse Completar",
+  "凭据是连接网盘/远程主机的账号信息，可被多个挂载点复用，修改一次全部生效": "Una credencial es la información de la cuenta para conectarse a un disco en la nube o a un host remoto. Puede ser compartida por varios puntos de montaje; al editarla se aplica en todos a la vez.",
+  "百度网盘账号不在这里维护，请到下方「百度网盘」面板授权，授权后自动生成对应账号": "Las cuentas de Baidu Netdisk no se gestionan aquí. Autorícelas en el panel \"Baidu Netdisk\" de abajo; la cuenta correspondiente se crea automáticamente tras la autorización.",
+  "编辑时密码类字段留空表示不修改原值": "Al editar, dejar vacío un campo de tipo contraseña mantiene el valor original.",
+  "保存前可以点「测试连接」验证账号是否可用": "Antes de guardar, puede pulsar \"Probar conexión\" para verificar que la cuenta funciona.",
+  "通用文件协议，坚果云、群晖 NAS、Nextcloud、Alist 等都支持。需要一个服务地址和账号即可访问对方目录。": "Un protocolo de archivos genérico compatible con Jianguoyun, Synology NAS, Nextcloud, Alist, etc. Basta una URL de servicio y una cuenta para acceder al directorio remoto.",
+  "通过 SSH 协议访问远程服务器的目录，走 SFTP 子系统传文件。适合把另一台 Linux 机器的目录挂到本机。": "Accede a un directorio de un servidor remoto por SSH, transfiriendo archivos mediante el subsistema SFTP. Ideal para montar un directorio de otra máquina Linux.",
+  "用 S3 协议连接的对象存储服务，例如 MinIO、阿里云 OSS、腾讯云 COS、七牛、Cloudflare R2。需要服务地址、存储桶和一对密钥。": "Servicios de almacenamiento de objetos accesibles por el protocolo S3, como MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu y Cloudflare R2. Requiere URL de servicio, bucket y un par de claves."
 }

@@ -842,5 +842,12 @@
   "保存应用配置": "Enregistrer la config",
   "一键授权：授权成功后会自动跳回本页，账号自动加入列表": "En un clic : vous serez redirigé ici après l'autorisation et le compte sera ajouté automatiquement",
   "一键授权需要在百度控制台把回调地址登记为本服务的 /mount/baidu/callback": "L'autorisation en un clic nécessite d'enregistrer /mount/baidu/callback de ce service comme URI de redirection dans la console Baidu",
-  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manuel : aucune URI de redirection requise. Après autorisation, copiez le code sur la page Baidu, collez-le ci-dessous et cliquez sur Terminer"
+  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manuel : aucune URI de redirection requise. Après autorisation, copiez le code sur la page Baidu, collez-le ci-dessous et cliquez sur Terminer",
+  "凭据是连接网盘/远程主机的账号信息，可被多个挂载点复用，修改一次全部生效": "Un identifiant est l'information de compte permettant de se connecter à un cloud ou à un hôte distant. Il peut être partagé par plusieurs points de montage ; une modification s'applique partout immédiatement.",
+  "百度网盘账号不在这里维护，请到下方「百度网盘」面板授权，授权后自动生成对应账号": "Les comptes Baidu Netdisk ne sont pas gérés ici. Autorisez-les dans le panneau \"Baidu Netdisk\" ci-dessous ; le compte correspondant est créé automatiquement après l'autorisation.",
+  "编辑时密码类字段留空表示不修改原值": "Lors de l'édition, laisser vide un champ de type mot de passe conserve la valeur d'origine.",
+  "保存前可以点「测试连接」验证账号是否可用": "Avant d'enregistrer, vous pouvez cliquer sur \"Tester la connexion\" pour vérifier le compte.",
+  "通用文件协议，坚果云、群晖 NAS、Nextcloud、Alist 等都支持。需要一个服务地址和账号即可访问对方目录。": "Un protocole de fichiers universel pris en charge par Jianguoyun, Synology NAS, Nextcloud, Alist, etc. Une URL de service et un compte suffisent pour parcourir le dossier distant.",
+  "通过 SSH 协议访问远程服务器的目录，走 SFTP 子系统传文件。适合把另一台 Linux 机器的目录挂到本机。": "Accédez à un dossier d'un serveur distant via SSH, avec transfert de fichiers par le sous-système SFTP. Idéal pour monter un dossier d'une autre machine Linux.",
+  "用 S3 协议连接的对象存储服务，例如 MinIO、阿里云 OSS、腾讯云 COS、七牛、Cloudflare R2。需要服务地址、存储桶和一对密钥。": "Services de stockage objet accessibles via le protocole S3, comme MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu et Cloudflare R2. Nécessite une URL de service, un bucket et une paire de clés."
 }

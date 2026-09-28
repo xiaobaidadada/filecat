@@ -841,5 +841,12 @@
   "保存应用配置": "App-Konfiguration speichern",
   "一键授权：授权成功后会自动跳回本页，账号自动加入列表": "Ein-Klick: Nach der Autorisierung kehren Sie automatisch hierher zurück und das Konto wird hinzugefügt",
   "一键授权需要在百度控制台把回调地址登记为本服务的 /mount/baidu/callback": "Ein-Klick erfordert, dass /mount/baidu/callback dieses Dienstes als Weiterleitungs-URI in der Baidu-Konsole registriert wird",
-  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manuell: keine Weiterleitungs-URI nötig. Kopieren Sie nach der Autorisierung den Code von Baidus Seite, fügen Sie ihn unten ein und klicken Sie auf Abschließen"
+  "手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权": "Manuell: keine Weiterleitungs-URI nötig. Kopieren Sie nach der Autorisierung den Code von Baidus Seite, fügen Sie ihn unten ein und klicken Sie auf Abschließen",
+  "凭据是连接网盘/远程主机的账号信息，可被多个挂载点复用，修改一次全部生效": "Ein Zugangsdatum ist die Kontoinformation zum Verbinden mit einem Cloud-Speicher / Remote-Host. Es kann von mehreren Einhängepunkten gemeinsam genutzt werden; eine Änderung wirkt sofort überall.",
+  "百度网盘账号不在这里维护，请到下方「百度网盘」面板授权，授权后自动生成对应账号": "Baidu-Netdisk-Konten werden hier nicht verwaltet. Autorisieren Sie sie im untenstehenden Bereich \"Baidu Netdisk\"; das zugehörige Konto wird nach der Autorisierung automatisch erstellt.",
+  "编辑时密码类字段留空表示不修改原值": "Beim Bearbeiten bedeutet ein leeres Passwortfeld, dass der ursprüngliche Wert beibehalten wird.",
+  "保存前可以点「测试连接」验证账号是否可用": "Vor dem Speichern können Sie auf \"Verbindung testen\" klicken, um das Konto zu prüfen.",
+  "通用文件协议，坚果云、群晖 NAS、Nextcloud、Alist 等都支持。需要一个服务地址和账号即可访问对方目录。": "Ein universelles Dateiprotokoll, das von Jianguoyun, Synology NAS, Nextcloud, Alist und weiteren unterstützt wird. Eine Dienstadresse plus ein Konto genügen, um das entfernte Verzeichnis zu durchsuchen.",
+  "通过 SSH 协议访问远程服务器的目录，走 SFTP 子系统传文件。适合把另一台 Linux 机器的目录挂到本机。": "Greift über SSH auf ein Verzeichnis eines entfernten Servers zu und überträgt Dateien über das SFTP-Subsystem. Ideal, um ein Verzeichnis einer anderen Linux-Maschine einzuhängen.",
+  "用 S3 协议连接的对象存储服务，例如 MinIO、阿里云 OSS、腾讯云 COS、七牛、Cloudflare R2。需要服务地址、存储桶和一对密钥。": "Objektspeicher-Dienste, die über das S3-Protokoll erreichbar sind, z. B. MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu und Cloudflare R2. Erfordert Endpunkt, Bucket und ein Schlüsselpaar."
 }
