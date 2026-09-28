@@ -17,6 +17,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../../util/store";
 import {Global} from "../../../../util/global";
 import {join_url} from "../../../../../../common/StringUtil";
+import {move_element} from "../../../../../../common/ListUtil";
 
 
 // 分享列表设置
@@ -86,7 +87,9 @@ export default function ShareListSetting() {
             <ActionButton icon={"info"} title={t("提示")} onClick={info_click}/>
             </span>}
                       titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
-                <Table headers={headers} rows={rows.map((item:file_share_item, index) => {
+                <Table headers={headers} onRowDrag={(from, to) => {
+                    set_rows(move_element(rows, from, to));
+                }} rows={rows.map((item:file_share_item, index) => {
                     const new_list = [
                         <div>
                             {index}

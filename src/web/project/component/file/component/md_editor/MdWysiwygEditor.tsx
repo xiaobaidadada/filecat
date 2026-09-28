@@ -38,6 +38,11 @@ function set_heading(level: number) {
         : set_block_type("heading", {level});
 }
 
+// 判断是否按下了「跳转修饰键」（Mac 用 Cmd，其他平台用 Ctrl）
+function is_jump_modifier(e: {ctrlKey?: boolean, metaKey?: boolean}): boolean {
+    return !!(e.ctrlKey || e.metaKey);
+}
+
 // ProseMirror 编辑器的 React 封装。
 //
 // ProseMirror 自己管理自身的 DOM，因此这里只负责：
@@ -169,6 +174,45 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         const view = new EditorView(host_ref.current, {
             state,
             editable: () => props.editable !== false,
+            // Ctrl/Cmd + 点击链接 → 新窗口打开。
+            // 普通点击不拦截，交给 ProseMirror 正常放置光标，保证链接文字能像普通文字一样选中/编辑。
+            // node 只有点在 link mark 覆盖的文本上时才是它所在的父节点，
+            // 所以这里要自己从 mark 里取 href，而不是读 node.attrs。
+            handleClickOn(view, pos, _node, _node_pos, event) {
+                if (!is_jump_modifier(event)) {
+                    return false;
+                }
+                // 优先从被点的 DOM 元素上取 href：ProseMirror 渲染出来的链接就是真 <a href="...">，
+                // 比用文档位置反查 link mark 可靠得多（点击落在链接首尾时 marks() 可能取到空集）。
+                const href = find_link_href_from_dom(event.target)
+                    ?? find_link_href(view.state, pos);
+                if (!href) {
+                    return false;
+                }
+                window.open(href, "_blank", "noopener,noreferrer");
+                return true;
+            },
+            // 按住 Ctrl/Cmd 时给编辑器根节点打标记，CSS 据此把链接切成「可点击」样式（小手 + 实线下划线）
+            handleDOMEvents: {
+                keydown: (v, event) => {
+                    if (is_jump_modifier(event)) {
+                        v.dom.classList.add("md-ctrl-down");
+                    }
+                    return false;
+                },
+                keyup: (v, event) => {
+                    // 松开任意一个修饰键都会回到非跳转状态，所以这里无条件移除
+                    if (!is_jump_modifier(event)) {
+                        v.dom.classList.remove("md-ctrl-down");
+                    }
+                    return false;
+                },
+                // 窗口失焦时（如 Alt+Tab 切走）按键状态不再准确，清掉标记避免样式残留
+                blur: (v) => {
+                    v.dom.classList.remove("md-ctrl-down");
+                    return false;
+                },
+            },
             dispatchTransaction(tr) {
                 const next = view.state.apply(tr);
                 view.updateState(next);
@@ -284,6 +328,59 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
 
     return <div className={"md-wysiwyg"} ref={host_ref}/>;
 });
+
+// 从被点击的 DOM 元素向上找最近的 <a>，取出 href。
+// ProseMirror 把链接 mark 渲染成真正的 <a href>，所以 DOM 是最直接、最可靠的来源。
+function find_link_href_from_dom(target: EventTarget | null): string | null {
+    if (!(target instanceof Element)) {
+        return null;
+    }
+    const anchor = target.closest("a[href]");
+    const href = anchor?.getAttribute("href");
+    return href ? href : null;
+}
+
+// 取出指定文档位置上的 link mark 的 href。
+// 链接在 schema 里是 mark（不是 node），所以不能用 node.attrs 拿地址；
+// 这里先看 storedMarks/光标处的 mark，再从该位置所在节点上找 link mark 兜底。
+function find_link_href(state: EditorState, pos: number): string | null {
+    // 位置可能落在节点的边界上，夹到合法范围内再解析
+    const max = state.doc.content.size;
+    const safe_pos = Math.max(0, Math.min(pos, max));
+    let $pos;
+    try {
+        $pos = state.doc.resolve(safe_pos);
+    } catch {
+        return null;
+    }
+    // 优先看光标右侧（点击位置之后）的 mark，其次看左侧，覆盖点在文字首尾的情况
+    for (const dir of [1, -1]) {
+        const start = dir === 1 ? safe_pos : safe_pos - 1;
+        if (start < 0 || start >= max) {
+            continue;
+        }
+        try {
+            const marks = state.doc.resolve(start).marks();
+            const link = marks.find(m => m.type.name === "link");
+            if (link?.attrs?.href) {
+                return link.attrs.href as string;
+            }
+        } catch {
+            // 解析失败继续尝试下一个方向
+        }
+    }
+    // 兜底：直接取该位置所在父节点的 marks
+    try {
+        const parent = $pos.parent;
+        const link = parent.marks.find(m => m.type.name === "link");
+        if (link?.attrs?.href) {
+            return link.attrs.href as string;
+        }
+    } catch {
+        // 忽略
+    }
+    return null;
+}
 
 // 判断选区是否在表格内
 function is_in_table(state: EditorState): boolean {

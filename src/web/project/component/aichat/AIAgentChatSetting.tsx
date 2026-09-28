@@ -19,6 +19,7 @@ import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {formatDuration, formatFileSize} from "../../../../common/ValueUtil";
+import {move_element} from "../../../../common/ListUtil";
 import {using_confirm} from "../prompts/prompt.util";
 
 import {PromptPageItem, SwitchPagePrompt} from "../prompts/PromptCard";
@@ -417,7 +418,9 @@ export default function AIAgentChatSetting() {
                             <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={async ()=>{
                                 await save()
                             }}/></div>}>
-                                <Table headers={headers} rows={rows.map((item, index) => {
+                                <Table headers={headers} onRowDrag={(from, to) => {
+                                    setRows(move_element(rows, from, to));
+                                }} rows={rows.map((item, index) => {
                                     const new_list = [
                                         <div>{index}</div>,
                                         <InputText value={ai_agent_Item.get_label_by_v(item.url,item.show_options?.options_agent_url_list)} options={item.show_options?.options_agent_url_list} handleInputChange={(value) => {
@@ -501,7 +504,12 @@ export default function AIAgentChatSetting() {
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
-                                <Table headers={headers_mcp_stdio} rows={mcp_stdio_list.map((item, index) => {
+                                <Table headers={headers_mcp_stdio} onRowDrag={(from, to) => {
+                                    // 表格渲染的是 mcp_stdio_list（mcp_list 的子集），
+                                    // 需要把子集索引换算成 mcp_list 的原始索引后再移动，避免拖动到即丢弃 http 项
+                                    set_mcp_list(move_element(mcp_list, mcp_list.indexOf(mcp_stdio_list[from]), mcp_list.indexOf(mcp_stdio_list[to])));
+                                    mcp_update_tag.current = true;
+                                }} rows={mcp_stdio_list.map((item, index) => {
                                     const sourceIndex = mcp_list.indexOf(item);
                                     const new_list = [
                                         <div>{index}</div>,
@@ -570,7 +578,11 @@ export default function AIAgentChatSetting() {
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
-                                <Table headers={headers_mcp_http} rows={mcp_http_list.map((item, index) => {
+                                <Table headers={headers_mcp_http} onRowDrag={(from, to) => {
+                                    // 同上：mcp_http_list 是 mcp_list 的子集，需换算回原始索引
+                                    set_mcp_list(move_element(mcp_list, mcp_list.indexOf(mcp_http_list[from]), mcp_list.indexOf(mcp_http_list[to])));
+                                    mcp_update_tag.current = true;
+                                }} rows={mcp_http_list.map((item, index) => {
                                     const sourceIndex = mcp_list.indexOf(item);
                                     const new_list = [
                                         <div>{index}</div>,
@@ -629,7 +641,9 @@ export default function AIAgentChatSetting() {
                                           <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                               save_sys_prompts()
                                           }}/></div>}>
-                                <Table headers={headers_sys_prompt} rows={sys_prompt_list.map((item, index) => {
+                                <Table headers={headers_sys_prompt} onRowDrag={(from, to) => {
+                                    set_sys_prompt_list(move_element(sys_prompt_list, from, to));
+                                }} rows={sys_prompt_list.map((item, index) => {
                                     const new_list = [
                                         <div>{index}</div>,
                                         <div>
@@ -789,7 +803,10 @@ export default function AIAgentChatSetting() {
                                               }}
                                               />
                                           </div>}>
-                                    <Table headers={headers_docs} rows={docs_list.map((item, index) => {
+                                    <Table headers={headers_docs} onRowDrag={(from, to) => {
+                                        set_docs_list(move_element(docs_list, from, to));
+                                        docs_update_tag.current = true;
+                                    }} rows={docs_list.map((item, index) => {
                                         const new_list = [
                                             <div>{index}</div>,
                                             <InputText value={item.dir} handleInputChange={(value) => {

@@ -97,7 +97,7 @@ export class UserController {
         }
         pojo.sysSoftWare = map;
         pojo.runing_time_length = this.start_server_time;
-        pojo.user_data = userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username);
+        pojo.user_data = userService.get_safe_user_data(userService.get_user_info_by_username(Cache.getValue(req.headers.authorization).username));
         pojo.dir_user_upload_max_num = settingService.get_dir_upload_max_num();
         // pojo.watch = Env.watch
         pojo.sys_ai_is_open = ai_agentService.have_ai_open()

@@ -255,9 +255,26 @@
     color: var(--primary, #1a73e8);
     text-decoration: none;
     border-bottom: 1px solid rgba(26, 115, 232, 0.35);
+    /* 编辑器内链接默认按「可编辑文本」处理：
+       普通点击只是把光标落进文字里，光标保持 text，
+       避免从链接上开始拖动选字时手感与普通文字不一致。
+       跳转走 Ctrl/Cmd + 点击，此时才切换成小手（见下方 .md-ctrl-down 规则）。 */
+    cursor: text;
 }
 .md-wysiwyg .ProseMirror a:hover {
     border-bottom-color: var(--primary, #1a73e8);
+    /* 悬停保持文本光标：全局有 a:hover{cursor:pointer}，这里显式压掉，
+       否则鼠标划过链接就会变成小手。 */
+    cursor: text;
+}
+/* 按住 Ctrl/Cmd 时，ProseMirror 会被加上 .md-ctrl-down：
+   此刻链接才恢复「可点击」的视觉 —— 小手 + 实线下划线，提示用户点下去会跳转。 */
+.md-wysiwyg .ProseMirror.md-ctrl-down a {
+    cursor: pointer;
+    border-bottom-color: var(--primary, #1a73e8);
+}
+.md-wysiwyg .ProseMirror.md-ctrl-down a img {
+    cursor: pointer;
 }
 
 /* 行内代码：淡底色小圆角 */
@@ -343,6 +360,12 @@
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+    /* 图片同样按文本对待：双击选中、拖动选字与普通文字一致 */
+    cursor: text;
+}
+/* 链接里的图片（常见于 README 徽章）：保持文本光标，避免出现小手 */
+.md-wysiwyg .ProseMirror a img {
+    cursor: text;
 }
 
 /* 选中内容的背景（ProseMirror 用 .ProseMirror-selectednode 标记原子节点） */

@@ -20,6 +20,9 @@ import * as lodash from "lodash";
 // 编辑器内核是 ProseMirror（自写 schema + 官方表格模块），因此表格在正文里
 // 就是真正的 <table>，可以直接点击单元格编辑、拖动列宽 —— 与 Typora 的观感一致。
 
+// 大纲显示状态的本地存储键（纯前端偏好，不落远端配置）
+const OUTLINE_STORAGE_KEY = "md_editor_show_outline";
+
 export default function MdEditor() {
     const {t} = useTranslation();
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
@@ -38,6 +41,26 @@ export default function MdEditor() {
     const [dragging, set_dragging] = useState(false);
     const nav_ref = useRef<HTMLDivElement>(null);
     const divider_ref = useRef<HTMLDivElement>(null);
+    // 大纲面板是否显示。默认关闭，让正文占满整个宽度；
+    // 用户手动切换后记到 localStorage，下次打开沿用（不写远端配置，纯前端偏好）。
+    const [show_outline, set_show_outline] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(OUTLINE_STORAGE_KEY) === "1";
+        } catch (e) {
+            return false;
+        }
+    });
+    const toggle_outline = () => {
+        set_show_outline(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem(OUTLINE_STORAGE_KEY, next ? "1" : "0");
+            } catch (e) {
+                // 存储不可用（隐私模式等）时忽略，不影响面板切换
+            }
+            return next;
+        });
+    };
 
     // 从编辑器重新读取大纲。文档每次变更都会调用，
     // 因此标题的新增/删除/改名都能实时反映到面板上。
@@ -79,6 +102,8 @@ export default function MdEditor() {
             set_init_value(null);
             return;
         }
+        // 切换文件时重置脏标记：否则上一个文件的未保存状态会误显示在新文件上
+        set_dirty(false);
         set_loading(true);
         Http.get(md_editor.url).then(context => {
             if (cancelled) {
@@ -182,7 +207,11 @@ export default function MdEditor() {
             <Header ignore_tags={true}
                     left_children={[
                         <ActionButton key={1} title={t("关闭")} icon={"close"} onClick={close}/>,
-                        <ActionButton key={2} title={t("保存")} icon={"save"} onClick={save} selected={dirty}/>,
+                        // 保存按钮只在内容有改动时出现，与普通文本编辑器一致
+                        ...(dirty ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
+                        // 大纲开关：默认关闭，点一下临时控制显示/隐藏
+                        <ActionButton key={4} title={t("大纲")} icon={"list"}
+                                      onClick={toggle_outline} selected={show_outline}/>,
                         <title key={3}>{md_editor.name}</title>,
                     ]}>
             </Header>
@@ -190,13 +219,18 @@ export default function MdEditor() {
                 {loading && <div className="common-box common-box-center">{t("加载中")}...</div>}
                 {!loading && init_value !== null && (
                     <React.Fragment>
-                        {/* 左侧大纲：标题树 + 当前标题高亮，点击跳转；宽度可拖动 */}
-                        <div className={"md-outline-panel"} style={{width: `${nav_width}em`}}>
-                            <MdOutline items={headings} active_pos={active_pos} on_click={goto_heading}/>
-                        </div>
-                        <div className={"md-editor-divider"} ref={divider_ref}
-                             onPointerDown={handle_pointer_down}
-                             onPointerUp={handle_pointer_up}/>
+                        {/* 左侧大纲：标题树 + 当前标题高亮，点击跳转；宽度可拖动。
+                            默认隐藏，由 Header 的「大纲」按钮切换。 */}
+                        {show_outline && (
+                            <div className={"md-outline-panel"} style={{width: `${nav_width}em`}}>
+                                <MdOutline items={headings} active_pos={active_pos} on_click={goto_heading}/>
+                            </div>
+                        )}
+                        {show_outline && (
+                            <div className={"md-editor-divider"} ref={divider_ref}
+                                 onPointerDown={handle_pointer_down}
+                                 onPointerUp={handle_pointer_up}/>
+                        )}
                         {/* 拖动时铺一层透明遮罩：避免指针进入编辑器后被 ProseMirror 抢走事件 */}
                         {dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
                         <div className={"md-editor-scroll"}>

@@ -1,4 +1,4 @@
-import {UserAuth, UserData} from "../../../common/req/user.req";
+import {SafeUserData, UserAuth, UserData} from "../../../common/req/user.req";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
 import {Env} from "../../../common/node/Env";
@@ -41,6 +41,51 @@ export class UserService {
         }
         DataUtil.set(data_common_key.role_unique_id_num, `${v}`);
         return `${v}`;
+    }
+
+    // 组装返回给前端的用户数据：逐个字段取值，类型上就禁止携带 password / hash_password 等敏感字段
+    public get_safe_user_data(user?: UserData): SafeUserData {
+        if (!user) return undefined as any;
+        return {
+            username: user.username,
+            user_id: user.user_id,
+            id: user.id,
+            note: user.note,
+            cwd: user.cwd,
+            access_dirs: user.access_dirs,
+            not_access_dirs: user.not_access_dirs,
+            only_read_dirs: user.only_read_dirs,
+            language: user.language,
+            access_cmd: user.access_cmd,
+            not_access_cmd: user.not_access_cmd,
+            theme: user.theme,
+            auth_list: user.auth_list,
+            is_root: user.is_root,
+            folder_items: user.folder_items,
+            folder_item_now: user.folder_item_now,
+            protection_directory: user.protection_directory,
+            bind_role_id: user.bind_role_id,
+            quick_cmd: user.quick_cmd,
+            file_quick_cmd: user.file_quick_cmd,
+            role_id: user.role_id,
+            role_name: user.role_name,
+            role_note: user.role_note,
+            file_list_show_type: user.file_list_show_type,
+            dir_show_type: user.dir_show_type,
+            not_pre_show_image: user.not_pre_show_image,
+            file_list_pagination_mode: user.file_list_pagination_mode,
+            file_time_show_type: user.file_time_show_type,
+            file_list_zoom: user.file_list_zoom,
+            sql_preset_list: user.sql_preset_list,
+            upload_file_ignore: user.upload_file_ignore,
+            upload_file_ignore_list: user.upload_file_ignore_list,
+            sys_done_prompt: user.sys_done_prompt,
+        };
+    }
+
+    // 批量组装安全的用户数据
+    public get_safe_user_list(list: UserData[]): SafeUserData[] {
+        return (list ?? []).map(v => this.get_safe_user_data(v));
     }
 
     public get_user_id(username: string): string {
@@ -287,7 +332,8 @@ export class UserService {
                 list.push(mapping[key]);
             }
         }
-        return list;
+        // 返回给前端前逐个字段组装，不返回密码等敏感字段
+        return this.get_safe_user_list(list);
     }
 
     // root 用户初始化
@@ -573,9 +619,10 @@ export class UserService {
     }
 
     // 获取所有角色
-    public get_role_list():UserData[] {
+    public get_role_list(): SafeUserData[] {
         // 被删除的用户 历史数据依然存在
-        return DataUtil.get(data_common_key.sys_all_roles) ?? [];
+        // 返回给前端前逐个字段组装，不返回密码等敏感字段（角色对象结构与用户一致）
+        return this.get_safe_user_list(DataUtil.get(data_common_key.sys_all_roles) ?? []);
     }
 
     // 创建角色

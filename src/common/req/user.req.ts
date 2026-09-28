@@ -24,7 +24,7 @@ export class UserBaseInfo {
     sys: SysEnum; // 系统
     sysSoftWare: { [key in SysSoftware]: SysSoftwareItem } | {};
     runing_time_length: any; // 系统运行的时间
-    user_data: UserData; // 用户数据
+    user_data: SafeUserData; // 用户数据（后端返回时已脱敏，逐个字段组装，不含密码字段）
     dir_user_upload_max_num: { path: string, user_upload_num?: number, sys_upload_num?: number }[];
     // watch:boolean
     latest_version?:string;
@@ -201,3 +201,7 @@ export class UserData extends UserLogin {
         tag_delete?: boolean;
     }
 }
+
+// 返回给前端的用户数据（不含密码等敏感字段）
+// 用 Omit 从 UserData 里排除密码字段，任何试图把密码塞进去的代码都会在类型检查阶段报错
+export type SafeUserData = Omit<UserData, "password" | "hash_password" | "confirm_password">;
