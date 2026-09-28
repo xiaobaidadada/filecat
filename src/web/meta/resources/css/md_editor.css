@@ -587,39 +587,171 @@
     margin: 0 0.3em;
 }
 
-/* ---------- 源码模式（直接编辑 Markdown 原文） ---------- */
-/* Ace 编辑器容器：与所见即所得保持相同的阅读宽度，两种模式切换时行首不会跳动 */
-.md-source-editor {
-    display: block;
-    width: 100%;
-    /* 与 .md-editor-sheet 的限宽保持一致 */
-    max-width: var(--md-editor-max-width);
-    margin: 0 auto;
-    /* 撑满可视高度，避免下方露出一大片空白背景 */
-    height: calc(100vh - 12em);
-    /* Ace 内部会自己滚动，容器不能再滚动，否则出现双滚动条 */
-    overflow: hidden;
-    background: transparent;
-    /* 等宽字体：Markdown 原文对齐才好看。
-       注意 Ace 默认会用自己的字号，这里用 CSS 变量同步，保证与正文行高观感一致。 */
+/* ---------- 源码模式（直接编辑 Markdown 原文） ----------
+   源码模式与所见即所得共用同一个 ProseMirror 实例（见 MdWysiwygEditor 的说明），
+   此时整篇文档就是一个 language="markdown" 的 code_block。
+   下面用 .md-source-mode 这个类切换成「纯文本编辑器」的排版。 */
+
+/* 源码模式下的正文容器：不再居中限宽，改为铺满，更像代码编辑器 */
+.md-wysiwyg .ProseMirror.md-source-mode {
+    padding: 1em var(--md-editor-padding) 6em;
+    /* 覆盖正文的字号/行高：源码要看对齐，行高比正文紧凑一些 */
+    font-size: calc(var(--md-editor-font-size) * 0.92);
+    line-height: 1.7;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 0.9em;
-    line-height: 1.75;
 }
 
-/* Ace 默认的背景/前景色取自主题，这里把它透明化，让编辑器外观与页面背景融合 */
-.md-source-editor .ace_gutter {
+/* 源码模式下唯一的那个代码块：铺满、无内边距偏色，让整体像一块编辑画布 */
+.md-wysiwyg .ProseMirror.md-source-mode pre {
     background: transparent;
-    color: var(--textSecondary, #6a737d);
+    border-radius: 0;
+    padding: 0;
+    /* 长行不折行，超出时在代码块内部横向滚动（与代码编辑器一致）。
+       注意这里必须是 auto 而不是 hidden，否则长行会被裁掉看不见。 */
+    overflow-x: auto;
+    line-height: inherit;
 }
 
-.md-source-editor .ace_scroller {
-    background: transparent;
+.md-wysiwyg .ProseMirror.md-source-mode pre code {
+    font-family: inherit;
+    font-size: 1em;
+    /* 必须用 pre：ProseMirror 渲染 code_block 时的「坐标 → 文本位置」映射
+       依赖每个字符的实际排版位置。改成 pre-wrap 虽然能自动换行，
+       但软换行会让浏览器把换行符前后的位置算偏，表现为点一行却落到别处、
+       打字时把多行文本并成一行。
+       长行不折行，靠外层横向滚动查看（与代码编辑器一致）。 */
+    white-space: pre;
+    overflow-wrap: normal;
+    /* 主题适配的正文色；着色交给下面的 hljs-* 类 */
+    color: var(--textPrimary, #24292e);
 }
 
-/* 选中行/选区颜色跟随主题变量，避免浅色主题下选区看不清 */
-.md-source-editor .ace_marker-layer .ace_selection {
-    background: var(--hover, rgba(0, 0, 0, 0.1));
+/* 源码模式的底色块：正文区域铺一层极淡的底，与页面背景区分开，
+   让用户一眼看出「现在是源码视图」。用 --hover 以自动适配明暗主题。 */
+.md-editor-sheet:has(.ProseMirror.md-source-mode) {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+/* ---------- 源码模式的 Markdown 语法高亮 ----------
+   颜色值取自 highlight.js 官方的 github / github-dark 两个主题，
+   但直接写在这里而不是引整个 CSS 文件：
+   项目预览页（Md.tsx）引的是暗色版，若这里再引一份浅色版会互相覆盖。
+   明暗两套用 .dark 前缀区分（与项目主题切换方式一致）。 */
+
+/* 标题行（# ～ ######）：加粗并放大一点，一眼可辨层级 */
+.hljs-section {
+    font-weight: 700;
+    color: #005cc5;
+}
+.dark .hljs-section {
+    color: #79b8ff;
+}
+
+/* 强调类：粗体、斜体、删除线 */
+.hljs-strong {
+    font-weight: 700;
+    color: #24292e;
+}
+.dark .hljs-strong {
+    color: #e1e4e8;
+}
+
+.hljs-emphasis {
+    font-style: italic;
+    color: #24292e;
+}
+.dark .hljs-emphasis {
+    color: #e1e4e8;
+}
+
+/* 行内代码与围栏代码块 */
+.hljs-code {
+    color: #032f62;
+    background: rgba(27, 31, 35, 0.06);
+    border-radius: 3px;
+    padding: 0.1em 0.3em;
+}
+.dark .hljs-code {
+    color: #9ecbff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* 引用块 */
+.hljs-quote {
+    color: #6a737d;
+}
+.dark .hljs-quote {
+    color: #8b949e;
+}
+
+/* 链接与图片地址 */
+.hljs-link,
+.hljs-symbol {
+    color: #005cc5;
+}
+.dark .hljs-link,
+.dark .hljs-symbol {
+    color: #79b8ff;
+}
+
+/* 列表标记 */
+.hljs-bullet {
+    color: #e36209;
+}
+.dark .hljs-bullet {
+    color: #ffab70;
+}
+
+/* 围栏代码块的语言标记、注释 */
+.hljs-meta,
+.hljs-comment {
+    color: #6a737d;
+}
+.dark .hljs-meta,
+.dark .hljs-comment {
+    color: #8b949e;
+}
+
+/* 代码块内的关键字/字符串/数字等，由 highlight.js 按语言给出 */
+.hljs-keyword,
+.hljs-built_in,
+.hljs-type {
+    color: #d73a49;
+}
+.dark .hljs-keyword,
+.dark .hljs-built_in,
+.dark .hljs-type {
+    color: #f97583;
+}
+
+.hljs-string,
+.hljs-attr,
+.hljs-attribute {
+    color: #032f62;
+}
+.dark .hljs-string,
+.dark .hljs-attr,
+.dark .hljs-attribute {
+    color: #9ecbff;
+}
+
+.hljs-number,
+.hljs-literal {
+    color: #005cc5;
+}
+.dark .hljs-number,
+.dark .hljs-literal {
+    color: #79b8ff;
+}
+
+.hljs-title,
+.hljs-function {
+    color: #6f42c1;
+}
+.dark .hljs-title,
+.dark .hljs-function {
+    color: #b392f0;
 }
 
 /* ---------- 编辑器设置页（独立路由 /md_editor_setting_page） ---------- */

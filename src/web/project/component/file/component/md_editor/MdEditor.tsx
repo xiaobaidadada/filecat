@@ -14,8 +14,7 @@ import MdWysiwygEditor, {MdWysiwygHandle} from "./MdWysiwygEditor";
 import MdToolbar from "./MdToolbar";
 import MdContextMenu from "./MdContextMenu";
 import MdOutline, {OutlineItem} from "./MdOutline";
-import AceCodeEditor, {AceCodeEditorHandle} from "../../../../../meta/component/AceCodeEditor";
-import {find_active_heading, parse_markdown_headings} from "./md_outline_parse";
+import {parse_markdown_headings} from "./md_outline_parse";
 import {
     apply_md_editor_setting,
     load_md_editor_setting,
@@ -66,38 +65,26 @@ export default function MdEditor() {
     // 当前编辑模式。默认所见即所得。
     // 存在 atom + localStorage 里（sync_atomWithStorage），属于用户偏好，刷新/切页面都保持。
     const [mode, set_mode] = useAtom($stroe.md_editor_mode);
-    // 源码模式下的 Markdown 文本。仅在 source 模式下有意义（wysiwyg 模式以编辑器文档为准）。
-    // 说明：Ace 自己维护文档与撤销栈，这里保存的是「最近一次全文」，
-    // 用于大纲解析、保存、以及切回所见即所得时取内容。
-    const [source_text, set_source_text] = useState("");
-    // 源码模式的 Ace 编辑器句柄：读写内容、光标偏移（驱动大纲高亮）
-    const source_ref = useRef<AceCodeEditorHandle | null>(null);
 
     // 在「所见即所得」与「源码」之间切换。
-    // 切换的关键是先把当前模式的改动取出来，再以它为初始内容进入另一种模式，保证不丢编辑。
+    // 两种模式共用同一个 ProseMirror 实例，切换只是替换文档形态：
+    // 因此撤销栈（history 插件）是连续的 —— 一边改了几笔，切到另一边后
+    // Ctrl+Z 依然能按时间顺序退回去，这正是「两个模式复用撤销」要的效果。
     const toggle_mode = useCallback(() => {
         // 注意：不要在 set_mode 的 updater 里做其他 setState —— updater 应当是纯函数，
         // 在它里面改别的 state 会被 React 的严格模式重复执行。先算出下一个值，再依次应用。
         const next: MdEditMode = mode === "wysiwyg" ? "source" : "wysiwyg";
+        const handle = handle_ref.current;
+        if (!handle) {
+            return;
+        }
         if (next === "source") {
-            // 进入源码模式：把编辑器里的文档序列化成 Markdown 写进 Ace。
-            // Ace 是「初始值 + 命令式替换」的用法（见 AceCodeEditor 的说明），
-            // 所以这里必须显式 setValue，不能靠 props.value 更新。
-            const md = handle_ref.current?.get_markdown();
-            if (md !== undefined) {
-                set_source_text(md);
-                source_ref.current?.setValue(md);
-            }
+            handle.enter_source_mode();
         } else {
-            // 回到所见即所得：用 Ace 里的文本重建编辑器
-            // 通过换 key 强制重挂载编辑器，避免在原实例上替换内容导致撤销栈与光标状态错乱
-            set_init_value(source_text);
-            set_editor_revision(n => n + 1);
+            handle.exit_source_mode();
         }
         set_mode(next);
-    }, [mode, source_text]);
-    // 编辑器实例版本号：模式切换/外部替换内容时自增，用于重建 ProseMirror 实例
-    const [editor_revision, set_editor_revision] = useState(0);
+    }, [mode]);
 
     // md 编辑器全局设置（服务端保存，所有用户共用）。
     // 它控制正文宽度/边距/字号等外观，改动通过 CSS 变量即时生效。
@@ -124,42 +111,40 @@ export default function MdEditor() {
 
     // 大纲数据源的统一入口，两种模式各取所需：
     //   wysiwyg —— 问 ProseMirror 要（有真实文档位置）
-    //   source  —— 从 Markdown 原文里扫（Ace 没有语义化的文档模型）
-    // 结果同时写入 ref 缓存：selectionchange / Ace 光标事件触发非常频繁，
+    //   source  —— 从 Markdown 原文里扫（此时文档模型里只有一个代码块，
+    //              没有语义化的标题节点，所以解析文本更直接）
+    //  注意两种模式下 pos 的含义不同：
+    //   wysiwyg 是文档位置；source 是【代码块内文本】的字符偏移，
+    //   因此 source 下用 item.pos 时需要 +1（进入代码块内容），见 goto_heading。
+    // 结果同时写入 ref 缓存：selectionchange 触发非常频繁，
     // 高亮计算若每次都遍历整篇文档会造成明显卡顿。
     const headings_cache = useRef<OutlineItem[]>([]);
     const refresh_headings = useCallback(() => {
-        let list: OutlineItem[];
-        if (mode === "source") {
-            list = parse_markdown_headings(source_text);
-        } else {
-            const handle = handle_ref.current;
-            if (!handle) {
-                return;
-            }
-            list = handle.get_headings();
+        const handle = handle_ref.current;
+        if (!handle) {
+            return;
         }
+        const list = handle.is_source_mode()
+            ? parse_markdown_headings(handle.get_markdown())
+            : handle.get_headings();
         headings_cache.current = list;
         set_headings(list);
-    }, [mode, source_text]);
+    }, []);
 
     // 计算光标当前所在的标题：取位置在光标之前、且最近的那个标题。
     // 直接读缓存，不做全文遍历（见上面 refresh_headings 的说明）。
+    // 位置换算：源码模式下 headings 里的 pos 是「代码块内文本」的字符偏移，
+    // 而编辑器光标是文档位置（代码块内容从文档位置 1 开始），两者差 1。
     const update_active = useCallback(() => {
-        if (mode === "source") {
-            // 源码模式：Ace 的光标是行列，转成字符偏移后与标题 pos 直接比较
-            const handle = source_ref.current;
-            if (!handle) {
-                return;
-            }
-            set_active_pos(find_active_heading(headings_cache.current, handle.getCursorOffset()));
+        const handle = handle_ref.current;
+        const view = handle?.get_view();
+        if (!handle || !view) {
             return;
         }
-        const view = handle_ref.current?.get_view();
-        if (!view) {
-            return;
-        }
-        const cursor = view.state.selection.from;
+        const source_mode = handle.is_source_mode();
+        const cursor = source_mode
+            ? view.state.selection.from - 1
+            : view.state.selection.from;
         let current = -1;
         for (const item of headings_cache.current) {
             if (item.pos <= cursor) {
@@ -168,8 +153,9 @@ export default function MdEditor() {
                 break;
             }
         }
+        // active_pos 与 headings 里的 pos 保持同一套坐标系（源码模式下即字符偏移）
         set_active_pos(current);
-    }, [mode]);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -186,15 +172,13 @@ export default function MdEditor() {
             }
             const text = context ?? "";
             set_init_value(text);
-            // 源码模式默认显示原文，这里同步一份，避免刚打开时 textarea 空白
-            set_source_text(text);
+
         }).catch(() => {
             if (cancelled) {
                 return;
             }
             NotyFail(t("打开失败"));
             set_init_value("");
-            set_source_text("");
         }).finally(() => {
             if (!cancelled) {
                 set_loading(false);
@@ -229,14 +213,12 @@ export default function MdEditor() {
         return () => document.removeEventListener("keydown", on_key, true);
     }, []);
 
-    // 文档或选区变化时同步大纲。
-    // tick 由 MdWysiwygEditor 的 dispatchTransaction 驱动；
-    // 源码模式下 refresh_headings 依赖里带了 mode/source_text，所以切模式、改文本都会重算，
-    // 这里不需要再重复列出这两个依赖（它们已包含在 refresh_headings / update_active 里）。
+    // 文档或选区变化时同步大纲，切换模式时也要重算（两种模式的数据来源不同）。
+    // tick 由 MdWysiwygEditor 的 dispatchTransaction 驱动。
     useEffect(() => {
         refresh_headings();
         update_active();
-    }, [tick, refresh_headings, update_active]);
+    }, [tick, mode, refresh_headings, update_active]);
 
     // 分隔条拖动：按根字号换算成 em，保证在不同缩放/字号下拖动距离与视觉一致
     const handle_drag = useCallback(lodash.throttle((event: PointerEvent) => {
@@ -263,33 +245,22 @@ export default function MdEditor() {
     };
 
     // 点击大纲条目：跳转到对应标题。
-    // 两种模式的「位置」语义不同 —— 所见即所得是 ProseMirror 文档位置，
-    // 源码模式是 Ace 的字符偏移，所以分别处理。
+    // 源码模式下 headings 的 pos 是文本字符偏移，而编辑器文档位置比它大 1
+    // （代码块内容从文档位置 1 开始），所以这里要 +1 才能落到正确的字符上。
     const goto_heading = (item: OutlineItem) => {
-        if (mode === "source") {
-            const handle = source_ref.current;
-            if (!handle) {
-                return;
-            }
-            // Ace 的 setCursorOffset 已经包含「滚动到该行可见」的处理，
-            // 并且会按 Ace 自己的行高算法定位，不需要像 textarea 那样手工估算行号。
-            handle.focus();
-            handle.setCursorOffset(item.pos);
-            set_active_pos(item.pos);
+        const handle = handle_ref.current;
+        if (!handle) {
             return;
         }
-        handle_ref.current?.scroll_to_pos(item.pos);
+        handle.scroll_to_pos(handle.is_source_mode() ? item.pos + 1 : item.pos);
         set_active_pos(item.pos);
     };
     const save = async () => {
         if (!md_editor?.name || !md_editor?.path) {
             return;
         }
-        // 源码模式取 Ace 里的实时内容（不经 state，避免输入后立刻保存时拿到旧值）；
-        // 所见即所得模式从编辑器序列化
-        const context = mode === "source"
-            ? (source_ref.current?.getValue() ?? source_text)
-            : handle_ref.current?.get_markdown();
+        // 两种模式共用同一个编辑器实例，get_markdown 已按当前形态返回正确的原文
+        const context = handle_ref.current?.get_markdown();
         if (context === undefined) {
             return;
         }
@@ -371,65 +342,54 @@ export default function MdEditor() {
                         {dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
                         <div className={"md-editor-scroll"}>
                             <div className={"md-editor-sheet"}>
-                                {mode === "wysiwyg" ? (
-                                    <React.Fragment>
-                                        {/* 工具栏只在选中文字时出现（跟随选区浮动），平时不占屏幕也不挡正文。
-                                            块级操作（插入表格等）走右键菜单。详见 MdToolbar 与 md_editor.css 的说明。 */}
-                                        <MdToolbar get_view={() => handle_ref.current?.get_view() ?? null}
-                                                   refresh_key={tick}/>
-                                        <MdWysiwygEditor
-                                            key={`${editor_key}#${editor_revision}`}
-                                            value={init_value}
-                                            ref={handle_ref}
-                                            // 编辑器就绪时立即同步大纲：
-                                            // 按 tick 刷新的 effect 在挂载时 ref 尚未赋值（handle 在子组件
-                                            // 自己的 useEffect 里才写入），拿不到句柄会让大纲空白，
-                                            // 必须等用户点一下编辑器触发 selectionchange 才显示。
-                                            on_ready={(handle) => {
-                                                const list = handle.get_headings();
-                                                headings_cache.current = list;
-                                                set_headings(list);
-                                                set_active_pos(-1);
-                                            }}
-                                            on_change={() => {
-                                                if (!dirty) {
-                                                    set_dirty(true);
-                                                }
-                                            }}
-                                            on_save={() => save_ref.current()}
-                                            on_selection_change={() => set_tick(n => n + 1)}
-                                        />
-                                        <MdContextMenu get_view={() => handle_ref.current?.get_view() ?? null}
-                                                       on_insert_table={() => {
-                                                           handle_ref.current?.insert_table(3, 3);
-                                                           set_dirty(true);
-                                                       }}/>
-                                    </React.Fragment>
-                                ) : (
-                                    /* 源码模式：直接编辑 Markdown 原文。
-                                       用项目通用的 Ace 组件（行号、语法高亮、
-                                       原生撤销栈 Ctrl+Z / Ctrl+Y，无需自己实现历史记录）。
-                                       key 里带上 editor_key 与 revision：
-                                       - editor_key 变化（切换文件）时重建，填入新文件内容；
-                                       - revision 用于切回本模式时重建，确保拿到最新的 markdown 初始值。 */
-                                    <AceCodeEditor
-                                        key={`source#${editor_key}#${editor_revision}`}
-                                        ref={source_ref}
-                                        value={source_text}
-                                        mode={"markdown"}
-                                        wrap={true}
-                                        className={"md-source-editor"}
-                                        onChange={(val) => {
-                                            set_source_text(val);
-                                            if (!dirty) {
-                                                set_dirty(true);
-                                            }
-                                        }}
-                                        // Ctrl/Cmd + S 保存（Ace 内部命令绑定，避免浏览器弹出「另存网页」）
-                                        onSave={() => save_ref.current()}
-                                        // 光标移动（点选、方向键）时同步大纲高亮
-                                        onCursorChange={() => update_active()}
-                                    />
+                                {/* 工具栏与右键菜单只在所见即所得模式下有意义：
+                                    源码模式里文档就是一个纯文本代码块，没有可格式化的语义。
+                                    这里用条件挂载（而不是隐藏），避免它们在源码模式下误操作文档结构。 */}
+                                {mode === "wysiwyg" && (
+                                    <MdToolbar get_view={() => handle_ref.current?.get_view() ?? null}
+                                               refresh_key={tick}/>
+                                )}
+                                {/* 两种模式共用这一个 ProseMirror 实例 —— 这是撤销栈能跨模式连续的关键：
+                                    切换模式只替换文档内容（wysiwyg 用文档树，source 用一个 markdown 代码块），
+                                    不重建 EditorView，因此 history 插件记录的历史一直有效。
+                                    下面没有任何按 mode 分叉的 JSX，模式差异全部由 ref 方法驱动。 */}
+                                <MdWysiwygEditor
+                                    key={editor_key}
+                                    value={init_value}
+                                    ref={handle_ref}
+                                    initial_source_mode={mode === "source"}
+                                    // 编辑器就绪时立即同步大纲：
+                                    // 按 tick 刷新的 effect 在挂载时 ref 尚未赋值（handle 在子组件
+                                    // 自己的 useEffect 里才写入），拿不到句柄会让大纲空白，
+                                    // 必须等用户点一下编辑器触发 selectionchange 才显示。
+                                    on_ready={(handle) => {
+                                        const list = handle.is_source_mode()
+                                            ? parse_markdown_headings(handle.get_markdown())
+                                            : handle.get_headings();
+                                        headings_cache.current = list;
+                                        set_headings(list);
+                                        set_active_pos(-1);
+                                    }}
+                                    on_change={() => {
+                                        if (!dirty) {
+                                            set_dirty(true);
+                                        }
+                                    }}
+                                    on_save={() => save_ref.current()}
+                                    on_selection_change={() => set_tick(n => n + 1)}
+                                    // 撤销/重做会让文档在两种形态间来回切换，
+                                    // 这里据实同步 mode，保证按钮图标与工具栏显隐和文档一致
+                                    on_source_mode_change={(is_source) => {
+                                        set_mode(is_source ? "source" : "wysiwyg");
+                                        set_tick(n => n + 1);
+                                    }}
+                                />
+                                {mode === "wysiwyg" && (
+                                    <MdContextMenu get_view={() => handle_ref.current?.get_view() ?? null}
+                                                   on_insert_table={() => {
+                                                       handle_ref.current?.insert_table(3, 3);
+                                                       set_dirty(true);
+                                                   }}/>
                                 )}
                             </div>
                         </div>

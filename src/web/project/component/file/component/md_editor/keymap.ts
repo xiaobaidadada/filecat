@@ -58,6 +58,10 @@ export function build_input_rules() {
         rules: [
             // # ～ ###### → 标题
             textblockTypeInputRule(/^(#{1,6})\s$/, s.nodes.heading, match => ({level: match[1].length})),
+            // #1 ～ #6 → 标题（数字即级别）。与回车路径（convert_on_enter）保持同一套语义，
+            // 让「敲 #3 再按空格」和「敲 #3 再按回车」得到完全相同的结果。
+            // 注意必须放在上面那条后面：'#1 ' 与 '# ' 的分支互斥，顺序上先匹配更具体的形式更直观。
+            textblockTypeInputRule(/^#([1-6])\s$/, s.nodes.heading, match => ({level: Number(match[1])})),
             // ``` 或 ```lang → 代码块
             textblockTypeInputRule(/^```([\w-]*)\s$/, s.nodes.code_block, match => ({language: match[1] ?? ""})),
             // > → 引用

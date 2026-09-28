@@ -1,6 +1,7 @@
 import React, {useEffect, useRef} from "react";
 import {EditorState, TextSelection} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
+import {Node as PmNode} from "prosemirror-model";
 import {history, redo, undo} from "prosemirror-history";
 import {keymap} from "prosemirror-keymap";
 import {
@@ -18,6 +19,10 @@ import {tableEditing, columnResizing, goToNextCell, tableNodeTypes} from "prosem
 import {md_schema} from "./schema";
 import {markdown_to_doc, doc_to_markdown} from "./markdown";
 import {OutlineItem} from "./MdOutline";
+import {
+    build_source_highlight_plugin,
+    set_source_highlight_enabled,
+} from "./md_source_highlight";
 import {
     build_input_rules,
     convert_on_enter,
@@ -70,6 +75,13 @@ export interface MdWysiwygHandle {
     get_headings: () => OutlineItem[];
     /** 把光标移动到指定文档位置并滚动到视野内（大纲点击跳转） */
     scroll_to_pos: (pos: number) => void;
+    // ---- 源码模式（同一实例内切换文档形态，因此撤销栈连续） ----
+    /** 切换为源码模式：整篇文档变成一个 markdown 代码块 */
+    enter_source_mode: () => void;
+    /** 切回所见即所得：把代码块里的文本重新解析成文档 */
+    exit_source_mode: () => void;
+    /** 当前是否处于源码模式 */
+    is_source_mode: () => boolean;
 }
 
 interface Props {
@@ -80,8 +92,19 @@ interface Props {
      * 选区/文档变化时通知外层（用于刷新工具栏的位置与按钮状态）。
      */
     on_selection_change?: () => void;
+    /**
+     * 文档形态变化时通知外层（源码模式 <-> 所见即所得）。
+     * 撤销/重做会让形态来回变化，外层据此同步模式按钮与工具栏显隐。
+     */
+    on_source_mode_change?: (is_source: boolean) => void;
     /** 是否可编辑 */
     editable?: boolean;
+    /**
+     * 初始是否处于源码模式。
+     * 用户上次停在源码模式时（该偏好被持久化），重新打开文件应当直接以源码形态呈现。
+     * 只在挂载时生效，之后的切换走 ref 上的 enter_source_mode / exit_source_mode。
+     */
+    initial_source_mode?: boolean;
     on_ready?: (handle: MdWysiwygHandle) => void;
 }
 
@@ -98,10 +121,12 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
     const on_change_ref = useRef(props.on_change);
     const on_save_ref = useRef(props.on_save);
     const on_selection_ref = useRef(props.on_selection_change);
+    const on_source_mode_ref = useRef(props.on_source_mode_change);
     useEffect(() => {
         on_change_ref.current = props.on_change;
         on_save_ref.current = props.on_save;
         on_selection_ref.current = props.on_selection_change;
+        on_source_mode_ref.current = props.on_source_mode_change;
     });
 
     useEffect(() => {
@@ -112,8 +137,12 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         const state = EditorState.create({
             doc: markdown_to_doc(props.value ?? ""),
             plugins: [
-                // history 放最前：撤销/重做属于最基础的编辑能力，先注册便于阅读
+                // history 放最前：撤销/重做属于最基础的编辑能力，先注册便于阅读。
+                // 这个插件在两种模式间共用 —— 切换模式只是替换文档内容，
+                // 不重建 EditorView，所以源码模式与所见即所得共享同一个撤销栈。
                 history(),
+                // 源码模式的语法高亮（用 Decoration，不写进文档）
+                build_source_highlight_plugin(),
                 build_input_rules(),
                 keymap({
                     // 撤销 / 重做：history 插件只负责记录，命令必须显式绑定键位才生效。
@@ -202,11 +231,26 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 window.open(href, "_blank", "noopener,noreferrer");
                 return true;
             },
-            // 按住 Ctrl/Cmd 时给编辑器根节点打标记，CSS 据此把链接切成「可点击」样式（小手 + 实线下划线）
+            // 按住 Ctrl/Cmd 时给编辑器根节点打标记，CSS 据此把链接切成「可点击」样式（小手 + 实线下划线）；
+            // 同时承载源码模式下的输入接管（见下方 beforeinput / Enter 的说明）。
             handleDOMEvents: {
                 keydown: (v, event) => {
                     if (is_jump_modifier(event)) {
                         v.dom.classList.add("md-ctrl-down");
+                    }
+                    // 源码模式下接管回车：必须只在块内插入换行符 \n。
+                    // 不能交给默认的命令链 —— 那条链在代码块末尾会落到 splitBlock，
+                    // 把文档拆成「代码块 + 段落」两块，源码模式的形态（单个代码块）随之被破坏，
+                    // 后面的接管逻辑就全部失效了。
+                    if (
+                        is_source_doc(v.state.doc) &&
+                        event.key === "Enter" &&
+                        !event.ctrlKey && !event.metaKey && !event.altKey
+                    ) {
+                        event.preventDefault();
+                        const {from, to} = v.state.selection;
+                        v.dispatch(v.state.tr.insertText("\n", from, to).scrollIntoView());
+                        return true;
                     }
                     return false;
                 },
@@ -222,12 +266,70 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                     v.dom.classList.remove("md-ctrl-down");
                     return false;
                 },
+                // 源码模式下自己接管文本输入。
+                // 为什么必须接管：ProseMirror 默认靠「读取浏览器产生的 DOM 变化，再反推文档位置」
+                // 来处理输入。而源码模式的文档是一个内容为 text* 的代码块，
+                // 里面的换行是普通字符 \n；浏览器在 contenteditable 里对换行的 DOM 表示
+                // （另起一行 / <br> / 真实 \n 字符）与文档里的 \n 并不一一对应，
+                // 反推过程会把已有的 \n 规范化成空格 —— 表现就是「一打字就把整篇 Markdown
+                // 的段落结构吃掉」。
+                // 这里在源码模式下直接由 JS 构造插入事务，完全绕开 DOM 反推，换行得以原样保留。
+                //
+                // 为什么选 beforeinput 而不是 handleTextInput / handleKeyDown：
+                //   · handleTextInput 实测拦不住这类输入（浏览器走的是 DOM mutation 路线）；
+                //   · handleKeyDown 收不到中文等非 ASCII 字符的按键（它们不产生 keydown，
+                //     直接以 insertText 的形式出现），会漏掉中文输入；
+                //   · beforeinput 对英文、中文、粘贴等所有文本插入都会触发，且带 data，
+                //     是最完整、最可靠的接管点。preventDefault 之后浏览器不再改 DOM，
+                //     我们再自己 dispatch 事务，ProseMirror 的 DOM 同步由它内部完成。
+                // 所见即所得模式完全不接管，保持 ProseMirror 的原生行为。
+                beforeinput: (view, event) => {
+                    if (!is_source_doc(view.state.doc)) {
+                        return false;
+                    }
+                    const e = event as InputEvent;
+                    const type = e.inputType;
+                    // 只接管「插入文本」这一类；删除、历史撤销等仍交回 ProseMirror 原生处理
+                    if (type !== "insertText") {
+                        return false;
+                    }
+                    const text = e.data;
+                    if (text == null) {
+                        return false;
+                    }
+                    e.preventDefault();
+                    const {from, to} = view.state.selection;
+                    // 换行统一以 \n 写入（浏览器有时会给 \r\n，先归一）
+                    view.dispatch(
+                        view.state.tr.insertText(text.replace(/\r\n?/g, "\n"), from, to).scrollIntoView()
+                    );
+                    return true;
+                },
             },
             dispatchTransaction(tr) {
                 const next = view.state.apply(tr);
                 view.updateState(next);
+                // 样式类必须跟着「文档形态」走，而不是只在切换时手工加/删：
+                // 撤销/重做会把文档在两种形态之间来回切换，class 若不同步，
+                // 就会出现「已经是代码块了但还按所见即所得排版」的错乱。
+                const now_source = is_source_doc(next.doc);
+                set_source_highlight_enabled(now_source);
+                if (now_source) {
+                    view.dom.classList.add("md-source-mode");
+                } else {
+                    view.dom.classList.remove("md-source-mode");
+                }
+                // 形态真的变了才通知外层，避免每次输入都触发一次 React 更新
+                if (now_source !== is_source_doc(tr.before)) {
+                    on_source_mode_ref.current?.(now_source);
+                }
                 if (tr.docChanged) {
-                    on_change_ref.current?.(doc_to_markdown(next.doc));
+                    // 源码模式下文档是一个 markdown 代码块，直接取块内文本；
+                    // 若在这里走 doc_to_markdown，会被序列化成
+                    // "```markdown ... ```" 这种带围栏的形式，与用户编辑的原文不符。
+                    on_change_ref.current?.(
+                        now_source ? next.doc.textContent : doc_to_markdown(next.doc)
+                    );
                 }
                 // 选区/文档变化时通知外层刷新工具栏（位置与按钮状态）。
                 // 不能靠 React 渲染时读 view.state —— 那时 ProseMirror 尚未应用新事务。
@@ -242,8 +344,29 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         });
         view_ref.current = view;
 
+        // 若初始就要求源码模式，这里补一次形态切换。
+        // 这次切换不进历史：它是「打开文件时的初始呈现」，不是用户的操作，
+        // 否则用户一进来按 Ctrl+Z 就会莫名变回所见即所得形态。
+        // 之后由用户点击模式按钮触发的切换才进历史（见 enter_source_mode 的说明）。
+        // 注意不需要手工加 md-source-mode 类，也不需要设高亮开关 ——
+        // dispatch 会走 dispatchTransaction，那里统一按文档形态同步这些状态。
+        if (props.initial_source_mode && !is_source_doc(view.state.doc)) {
+            const text = doc_to_markdown(view.state.doc);
+            const block = view.state.schema.nodes.code_block.create(
+                {language: "markdown"},
+                text ? view.state.schema.text(text) : null,
+            );
+            const tr = view.state.tr;
+            tr.replaceWith(0, view.state.doc.content.size, block);
+            tr.setMeta("addToHistory", false);
+            view.dispatch(tr);
+        }
+
         const handle: MdWysiwygHandle = {
-            get_markdown: () => doc_to_markdown(view.state.doc),
+            // 源码模式下文档就是一个 markdown 代码块，取块内文本即为用户编辑的原文
+            get_markdown: () => is_source_doc(view.state.doc)
+                ? view.state.doc.textContent
+                : doc_to_markdown(view.state.doc),
             set_markdown: (value) => {
                 const doc = markdown_to_doc(value);
                 view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, doc.content));
@@ -320,6 +443,48 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 view.dispatch(view.state.tr.setSelection(selection).scrollIntoView());
                 view.focus();
             },
+            // ---- 源码模式 ----
+            // 切换模式的实现要点：不重建 EditorView，只替换文档内容。
+            // 同一个 view（同一个 history 插件实例）意味着撤销栈跨越两种模式连续。
+            //
+            // 关于「切换事务要不要进历史」：
+            // 一开始用 addToHistory: false 把它排除，结果是 —— 撤销在跨模式处直接失效。
+            // 原因是 history 里存的是带位置的 Step，而 code_block 与 heading/paragraph
+            // 是结构完全不同的文档，源码模式里记录的 Step 无法 rebase 到另一种结构上，
+            // ProseMirror 会静默丢弃这些 Step，表现就是「按 Ctrl+Z 没反应」。
+            //
+            // 所以切换事务必须进历史：它作为一次「整篇替换」的断点存在，
+            // 撤销时先撤销「切回所见即所得」这一步（视觉上就是又变回源码形态），
+            // 再继续往回退到源码里的每一次输入 —— 每一步都能真实回退，符合直觉。
+            is_source_mode: () => is_source_doc(view.state.doc),
+            enter_source_mode: () => {
+                if (is_source_doc(view.state.doc)) {
+                    return;
+                }
+                const text = doc_to_markdown(view.state.doc);
+                const block = view.state.schema.nodes.code_block.create(
+                    {language: "markdown"},
+                    text ? view.state.schema.text(text) : null,
+                );
+                const tr = view.state.tr;
+                tr.replaceWith(0, view.state.doc.content.size, block);
+                set_source_highlight_enabled(true);
+                view.dispatch(tr);
+                // 样式类打在编辑器根节点上，CSS 据此切换成等宽的源码排版
+                view.dom.classList.add("md-source-mode");
+            },
+            exit_source_mode: () => {
+                if (!is_source_doc(view.state.doc)) {
+                    return;
+                }
+                const text = view.state.doc.textContent;
+                const doc = markdown_to_doc(text);
+                const tr = view.state.tr;
+                tr.replaceWith(0, view.state.doc.content.size, doc.content);
+                set_source_highlight_enabled(false);
+                view.dispatch(tr);
+                view.dom.classList.remove("md-source-mode");
+            },
         };
         if (typeof ref === "function") {
             ref(handle);
@@ -390,6 +555,17 @@ function find_link_href(state: EditorState, pos: number): string | null {
         // 忽略
     }
     return null;
+}
+
+// 判断当前文档是否处于「源码模式」形态。
+// 源码模式把整篇内容装进唯一的一个 markdown 代码块，用这个特征来识别，
+// 不需要额外维护一份模式状态（避免状态与实际文档不一致）。
+function is_source_doc(doc: PmNode): boolean {
+    if (doc.childCount !== 1) {
+        return false;
+    }
+    const only = doc.firstChild;
+    return !!only && only.type.name === "code_block" && only.attrs.language === "markdown";
 }
 
 // 判断选区是否在表格内
