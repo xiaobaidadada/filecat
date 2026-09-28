@@ -15,6 +15,7 @@ import {SysEnum} from "../../../../common/req/user.req";
 import {editor_data} from "../../util/store.util";
 import {generateRandomHash} from "../../../../common/StringUtil";
 import {use_select_config} from "../../util/react.config";
+import {move_element} from "../../../../common/ListUtil";
 
 export function NetProxy(props) {
     const {t} = useTranslation();
@@ -152,6 +153,11 @@ export function NetProxy(props) {
     const tcp_del = (index) => {
         tcp_proxy_list.splice(index, 1);
         set_tcp_proxy_list([...tcp_proxy_list]);
+    }
+    // Tcp Proxy 列表拖动排序：只调整本地显示顺序，不落盘。
+    // 是否保存由用户自己决定 —— 点「保存」时 save_outside_software 会按数组顺序重写 index 并落盘。
+    const tcp_row_drag = (from: number, to: number) => {
+        set_tcp_proxy_list(move_element(tcp_proxy_list, from, to));
     }
     const tcp_add = () => {
         set_tcp_proxy_list([...tcp_proxy_list, {
@@ -323,7 +329,7 @@ export function NetProxy(props) {
                             </div>,
                         ];
                         return new_list;
-                    })} width={"10rem"}/>
+                    })} width={"10rem"} onRowDrag={tcp_row_drag}/>
                 </CardFull>
 
 
