@@ -64,6 +64,11 @@
     overflow: auto;
     display: flex;
     justify-content: center;
+    /* 正文底色（含纸张）统一由这里承载，而不是 .md-editor-sheet：
+       纸张高度被 .md-filecat 的 flex:1 限制成一屏，长文档滚出去就露底（一半白一半灰）。
+       滚动容器永远铺满可视区，是唯一能承载整页底色的地方。
+       主题改变正文底色请写 .md-editor-scroll { background: ... }。
+       默认不设值，沿用 #md-editor-container 的背景（无主题时全屏同色）。 */
 }
 
 /* 纸张：正文的限宽容器。
@@ -204,12 +209,12 @@
 
 /* ============ 正文排版 ============ */
 
-.md-wysiwyg {
+.md-filecat {
     flex: 1;
     min-height: 0;
 }
 
-.md-wysiwyg .ProseMirror {
+.md-filecat .md-filecat-content {
     outline: none;
     padding: 1em 0 6em;
     font-size: var(--md-editor-font-size);
@@ -227,59 +232,59 @@
    必须用 padding 而不是 margin —— margin 会在块之间留出「不属于任何块」的空白，
    鼠标点在这条缝隙里时浏览器会把位置归给上一个块，
    于是拖动选字会突然跨过整行（Typora 也是用 padding 处理间距的）。 */
-.md-wysiwyg .ProseMirror > * {
+.md-filecat .md-filecat-content > * {
     padding-top: 0.42em;
     padding-bottom: 0.42em;
     margin: 0;
 }
-.md-wysiwyg .ProseMirror > *:first-child {
+.md-filecat .md-filecat-content > *:first-child {
     padding-top: 0;
 }
-.md-wysiwyg .ProseMirror > *:last-child {
+.md-filecat .md-filecat-content > *:last-child {
     padding-bottom: 0;
 }
 
 /* 标题：与 Typora 一致的层级节奏（同样用 padding 而非 margin） */
-.md-wysiwyg .ProseMirror h1,
-.md-wysiwyg .ProseMirror h2,
-.md-wysiwyg .ProseMirror h3,
-.md-wysiwyg .ProseMirror h4,
-.md-wysiwyg .ProseMirror h5,
-.md-wysiwyg .ProseMirror h6 {
+.md-filecat h1,
+.md-filecat h2,
+.md-filecat h3,
+.md-filecat h4,
+.md-filecat h5,
+.md-filecat h6 {
     font-weight: 700;
     line-height: 1.35;
     padding-top: 0.9em;
     padding-bottom: 0.4em;
     margin: 0;
 }
-.md-wysiwyg .ProseMirror h1 {
+.md-filecat h1 {
     font-size: 1.9em;
     padding-bottom: 0.3em;
     border-bottom: 1px solid var(--divider, #eaecef);
 }
-.md-wysiwyg .ProseMirror h2 {
+.md-filecat h2 {
     font-size: 1.55em;
     padding-bottom: 0.25em;
     border-bottom: 1px solid var(--divider, #eaecef);
 }
-.md-wysiwyg .ProseMirror h3 { font-size: 1.3em; }
-.md-wysiwyg .ProseMirror h4 { font-size: 1.13em; }
-.md-wysiwyg .ProseMirror h5 { font-size: 1em; }
-.md-wysiwyg .ProseMirror h6 {
+.md-filecat h3 { font-size: 1.3em; }
+.md-filecat h4 { font-size: 1.13em; }
+.md-filecat h5 { font-size: 1em; }
+.md-filecat h6 {
     font-size: 0.95em;
     color: var(--textSecondary, #6a737d);
 }
 /* 正文首元素不留过多上边距 */
-.md-wysiwyg .ProseMirror > *:first-child {
+.md-filecat .md-filecat-content > *:first-child {
     margin-top: 0;
 }
 
-.md-wysiwyg .ProseMirror strong { font-weight: 700; }
-.md-wysiwyg .ProseMirror em { font-style: italic; }
-.md-wysiwyg .ProseMirror s { text-decoration: line-through; color: var(--textSecondary, #6a737d); }
+.md-filecat strong { font-weight: 700; }
+.md-filecat em { font-style: italic; }
+.md-filecat s { text-decoration: line-through; color: var(--textSecondary, #6a737d); }
 
 /* 链接：Typora 的柔和蓝 */
-.md-wysiwyg .ProseMirror a {
+.md-filecat a {
     color: var(--primary, #1a73e8);
     text-decoration: none;
     border-bottom: 1px solid rgba(26, 115, 232, 0.35);
@@ -289,7 +294,7 @@
        跳转走 Ctrl/Cmd + 点击，此时才切换成小手（见下方 .md-ctrl-down 规则）。 */
     cursor: text;
 }
-.md-wysiwyg .ProseMirror a:hover {
+.md-filecat a:hover {
     border-bottom-color: var(--primary, #1a73e8);
     /* 悬停保持文本光标：全局有 a:hover{cursor:pointer}，这里显式压掉，
        否则鼠标划过链接就会变成小手。 */
@@ -297,16 +302,16 @@
 }
 /* 按住 Ctrl/Cmd 时，ProseMirror 会被加上 .md-ctrl-down：
    此刻链接才恢复「可点击」的视觉 —— 小手 + 实线下划线，提示用户点下去会跳转。 */
-.md-wysiwyg .ProseMirror.md-ctrl-down a {
+.md-filecat .md-filecat-content.md-ctrl-down a {
     cursor: pointer;
     border-bottom-color: var(--primary, #1a73e8);
 }
-.md-wysiwyg .ProseMirror.md-ctrl-down a img {
+.md-filecat .md-filecat-content.md-ctrl-down a img {
     cursor: pointer;
 }
 
 /* 行内代码：淡底色小圆角 */
-.md-wysiwyg .ProseMirror code {
+.md-filecat code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.88em;
     padding: 0.15em 0.4em;
@@ -316,14 +321,14 @@
 }
 
 /* 代码块：整块深一点的底 + 圆角 + 横向滚动 */
-.md-wysiwyg .ProseMirror pre {
+.md-filecat pre {
     background: var(--surfaceSecondary, #f6f8fa);
     border-radius: 6px;
     padding: 1em 1.1em;
     overflow-x: auto;
     line-height: 1.6;
 }
-.md-wysiwyg .ProseMirror pre code {
+.md-filecat pre code {
     background: transparent;
     color: var(--textPrimary, #24292e);
     padding: 0;
@@ -339,11 +344,11 @@
      「相对当前背景深浅各偏一点」的叠加色，两种主题下都能得到柔和且可见的底，
      不需要为深色主题单独写一份。
    圆角 + 右侧留白，让底色块与正文有明显边界，但不像代码块那样成块。 */
-.md-wysiwyg .ProseMirror blockquote {
+.md-filecat blockquote {
     padding: 0.65em 1em 0.65em 1em;
     border-left: 4px solid var(--divider, #dfe2e5);
     border-radius: 0 4px 4px 0;
-    background: var(--moon-grey);
+    background: var(--divider);
     /* 引用文字用次要色。深浅对比交给底色和竖线表达，
        颜色只用来和正文做区分即可：深色主题下 --textSecondary 反而比
        --textPrimary 更亮，若强行统一成「更暗」会引入 color-mix 等新特性，
@@ -353,71 +358,71 @@
 
 /* 引用块内的段落：清掉浏览器默认 margin，改为只在段与段之间留一点间距。
    上下间距交给 .ProseMirror > * 的 padding，这里只管首尾（见下两条）。 */
-.md-wysiwyg .ProseMirror blockquote p {
+.md-filecat blockquote p {
     margin: 0.35em 0;
 }
-.md-wysiwyg .ProseMirror blockquote > *:first-child {
+.md-filecat blockquote > *:first-child {
     margin-top: 0;
 }
-.md-wysiwyg .ProseMirror blockquote > *:last-child {
+.md-filecat blockquote > *:last-child {
     margin-bottom: 0;
 }
 
 /* 嵌套引用：底色会在内层再叠一层，自然变深，层次一眼可辨；
    竖线收细一点，避免多层引用时左侧一团粗线。 */
-.md-wysiwyg .ProseMirror blockquote blockquote {
+.md-filecat blockquote blockquote {
     border-left-width: 3px;
 }
 
 /* 列表：缩进与标记 */
-.md-wysiwyg .ProseMirror ul,
-.md-wysiwyg .ProseMirror ol {
+.md-filecat ul,
+.md-filecat ol {
     padding: 0.55em 0 0.55em 1.6em;
 }
-.md-wysiwyg .ProseMirror li {
+.md-filecat li {
     padding: 0.18em 0;
     /* 列表项默认按「可编辑文本」处理：全局有 li:hover{cursor:pointer}，
        这里显式压掉，否则鼠标划过列表标记（ul 的 • / ol 的 1. 2.）就会变成小手。
        手感应与正文一致，保持文本光标。 */
     cursor: text;
 }
-.md-wysiwyg .ProseMirror li > p {
+.md-filecat li > p {
     margin: 0;
 }
-.md-wysiwyg .ProseMirror ul li::marker {
+.md-filecat ul li::marker {
     color: var(--primary, #1a73e8);
 }
 /* 列表标记（• / 1. 2. / ☐）本身也要保持文本光标。
    ::marker 不继承父元素 cursor，必须单独声明，否则部分浏览器
    悬停在数字/圆点上仍会显示默认（或受 li 影响的）光标。 */
-.md-wysiwyg .ProseMirror li::marker {
+.md-filecat li::marker {
     cursor: text;
 }
 /* 任务列表 */
-.md-wysiwyg .ProseMirror li[data-checked] {
+.md-filecat li[data-checked] {
     list-style: none;
     position: relative;
     padding-left: 1.6em;
     margin-left: -1.2em;
 }
-.md-wysiwyg .ProseMirror li[data-checked]::before {
+.md-filecat li[data-checked]::before {
     content: "☐";
     position: absolute;
     left: 0;
     color: var(--textSecondary, #6a737d);
     font-size: 1.05em;
 }
-.md-wysiwyg .ProseMirror li[data-checked="true"]::before {
+.md-filecat li[data-checked="true"]::before {
     content: "☑";
     color: var(--primary, #1a73e8);
 }
-.md-wysiwyg .ProseMirror li[data-checked="true"] > p {
+.md-filecat li[data-checked="true"] > p {
     color: var(--textSecondary, #6a737d);
     text-decoration: line-through;
 }
 
 /* 分割线 */
-.md-wysiwyg .ProseMirror hr {
+.md-filecat hr {
     border: 0;
     border-top: 1px solid var(--divider, #e1e4e8);
     padding: 0;
@@ -425,7 +430,7 @@
 }
 
 /* 图片 */
-.md-wysiwyg .ProseMirror img {
+.md-filecat img {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
@@ -433,23 +438,23 @@
     cursor: text;
 }
 /* 链接里的图片（常见于 README 徽章）：保持文本光标，避免出现小手 */
-.md-wysiwyg .ProseMirror a img {
+.md-filecat a img {
     cursor: text;
 }
 
 /* 选中内容的背景（ProseMirror 用 .ProseMirror-selectednode 标记原子节点） */
-.md-wysiwyg .ProseMirror-selectednode {
+.md-filecat .ProseMirror-selectednode {
     outline: 2px solid var(--primary, #1a73e8);
     outline-offset: 1px;
     border-radius: 3px;
 }
-.md-wysiwyg .ProseMirror-gapcursor:after {
+.md-filecat .ProseMirror-gapcursor:after {
     border-top-color: var(--textPrimary, #202124);
 }
 
 /* ============ 表格：真 <table>，Typora 观感 ============ */
 
-.md-wysiwyg .ProseMirror table {
+.md-filecat table {
     border-collapse: collapse;
     width: 100%;
     margin: 0.6em 0;
@@ -457,8 +462,8 @@
     table-layout: fixed;
     font-size: 0.95em;
 }
-.md-wysiwyg .ProseMirror table td,
-.md-wysiwyg .ProseMirror table th {
+.md-filecat table td,
+.md-filecat table th {
     border: 1px solid var(--divider, #dfe2e5);
     padding: 0.5em 0.8em;
     vertical-align: top;
@@ -466,13 +471,13 @@
     min-width: 2em;
 }
 /* 表头：浅灰底 + 加粗，与 Typora 一致 */
-.md-wysiwyg .ProseMirror table th {
+.md-filecat table th {
     background: var(--surfaceSecondary, #f6f8fa);
     font-weight: 600;
     text-align: left;
 }
 /* 选中单元格：整格淡蓝底 */
-.md-wysiwyg .ProseMirror table .selectedCell::after {
+.md-filecat table .selectedCell::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -480,12 +485,12 @@
     pointer-events: none;
 }
 /* 单元格内段落不留外边距，否则格子会被撑高 */
-.md-wysiwyg .ProseMirror table td > p,
-.md-wysiwyg .ProseMirror table th > p {
+.md-filecat table td > p,
+.md-filecat table th > p {
     margin: 0;
 }
 /* 鼠标悬停列宽拖拽把手 */
-.md-wysiwyg .ProseMirror table .column-resize-handle {
+.md-filecat table .column-resize-handle {
     position: absolute;
     right: -2px;
     top: 0;
@@ -494,7 +499,7 @@
     background: var(--primary, #1a73e8);
     pointer-events: none;
 }
-.md-wysiwyg .ProseMirror.resize-cursor {
+.md-filecat .md-filecat-content.resize-cursor {
     cursor: col-resize;
 }
 
@@ -593,7 +598,7 @@
    下面用 .md-source-mode 这个类切换成「纯文本编辑器」的排版。 */
 
 /* 源码模式下的正文容器：不再居中限宽，改为铺满，更像代码编辑器 */
-.md-wysiwyg .ProseMirror.md-source-mode {
+.md-filecat .md-filecat-content.md-source-mode {
     padding: 1em var(--md-editor-padding) 6em;
     /* 覆盖正文的字号/行高：源码要看对齐，行高比正文紧凑一些 */
     font-size: calc(var(--md-editor-font-size) * 0.92);
@@ -602,7 +607,7 @@
 }
 
 /* 源码模式下唯一的那个代码块：铺满、无内边距偏色，让整体像一块编辑画布 */
-.md-wysiwyg .ProseMirror.md-source-mode pre {
+.md-filecat .md-filecat-content.md-source-mode pre {
     background: transparent;
     border-radius: 0;
     padding: 0;
@@ -612,7 +617,7 @@
     line-height: inherit;
 }
 
-.md-wysiwyg .ProseMirror.md-source-mode pre code {
+.md-filecat .md-filecat-content.md-source-mode pre code {
     font-family: inherit;
     font-size: 1em;
     /* 必须用 pre：ProseMirror 渲染 code_block 时的「坐标 → 文本位置」映射
@@ -628,7 +633,7 @@
 
 /* 源码模式的底色块：正文区域铺一层极淡的底，与页面背景区分开，
    让用户一眼看出「现在是源码视图」。用 --hover 以自动适配明暗主题。 */
-.md-editor-sheet:has(.ProseMirror.md-source-mode) {
+.md-editor-sheet:has(.md-source-mode) {
     padding-top: 0.5em;
     padding-bottom: 0.5em;
 }
@@ -840,12 +845,23 @@
 }
 
 .md-theme-preview .md-editor-sheet {
-    background: #fff;
+    /* 底色由主题写在 .md-editor-scroll 上，这里只管预览纸张的圆角与阴影 */
     border-radius: 4px;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
 }
 
-.md-theme-preview .md-wysiwyg-content {
+/* 预览里也放了一层 .md-editor-scroll（为了让主题的整页底色规则同样生效），
+   但它不是编辑器的滚动容器，要去掉编辑器那套 flex 撑满行为，改为随内容自然增高 */
+.md-theme-preview .md-editor-scroll,
+.md-editor-setting-page__preview .md-editor-scroll {
+    flex: none;
+    height: auto;
+    display: block;
+    overflow: visible;
+    padding: 1em 0;
+}
+
+.md-theme-preview .md-filecat-content {
     padding: 1.5em 2em;
 }
 

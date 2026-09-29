@@ -6,27 +6,37 @@
 
 /**
  * 新建主题的 css 模板。
- * 选择器按 Typora 约定写 #write，保存后由 apply_theme_css 改写到实际容器上，
- * 所以这里可以放心用 #write，不需要关心 filecat 的容器类名。
+ * 选择器直接写 .md-editor-sheet —— 编辑器和主题预览共用的正文容器类名。
+ * css 原样注入，不做任何改写：写什么就生效什么（写 body 这类全局选择器会真的全局生效，慎用）。
  */
 export const MD_THEME_TEMPLATE = `/* ===== md 主题 =====
-   选择器请用 #write 作为正文容器（与 Typora 主题一致），
-   保存时会自动改写到编辑器的正文容器上，不会影响后台其他界面。
+   选择器请从 .md-editor-sheet 开始写 —— 它是正文容器的类名，
+   编辑器与右侧预览用的是同一个类名，一处书写、两处生效。
+
+   注意：css 原样注入页面，不做任何改写。
+   写成 body、h1 这种全局选择器会真的作用到整个后台界面，不要这么写。
 
    下面每一组都可以直接改，不需要的整段删掉即可。
    ============================================ */
 
 /* ---------- 正文 ---------- */
-#write {
+.md-editor-sheet {
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; /* 字体 */
     font-size: 16px;        /* 字号 */
     line-height: 1.7;       /* 行高：1.7 约为字号的 1.7 倍 */
     color: #333333;         /* 文字颜色 */
-    background: #ffffff;    /* 正文底色 */
+}
+
+/* ---------- 整页底色 ----------
+   底色必须写在 .md-editor-scroll（滚动容器）上，不要写在 .md-editor-sheet。
+   纸张高度只有一屏，写在纸张上的底色长文档一滚就露底（上半截有色、下半截变回灰）。
+   深色主题尤其要注意：这一条不写，滚动时就会白一半黑一半。 */
+.md-editor-scroll {
+    background: #ffffff;
 }
 
 /* ---------- 标题 h1 ~ h6 ---------- */
-#write h1 {
+.md-editor-sheet h1 {
     font-size: 2em;                       /* 相对正文字号的倍数 */
     font-weight: 600;                     /* 字重：400 常规 / 600 半粗 / 700 粗 */
     color: #1a1a1a;
@@ -35,24 +45,24 @@ export const MD_THEME_TEMPLATE = `/* ===== md 主题 =====
     padding-bottom: 0.3em;
     border-bottom: 1px solid #eaecef;     /* 标题下划线，不需要就删掉这行 */
 }
-#write h2 { font-size: 1.5em; font-weight: 600; margin-top: 1.3em; margin-bottom: 0.6em; }
-#write h3 { font-size: 1.25em; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.5em; }
-#write h4 { font-size: 1em;    font-weight: 600; margin-top: 1.1em; margin-bottom: 0.5em; }
-#write h5 { font-size: 0.9em;  font-weight: 600; margin-top: 1em;   margin-bottom: 0.5em; }
-#write h6 { font-size: 0.85em; font-weight: 600; color: #6a737d;    margin-top: 1em; margin-bottom: 0.5em; }
+.md-editor-sheet h2 { font-size: 1.5em; font-weight: 600; margin-top: 1.3em; margin-bottom: 0.6em; }
+.md-editor-sheet h3 { font-size: 1.25em; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.5em; }
+.md-editor-sheet h4 { font-size: 1em;    font-weight: 600; margin-top: 1.1em; margin-bottom: 0.5em; }
+.md-editor-sheet h5 { font-size: 0.9em;  font-weight: 600; margin-top: 1em;   margin-bottom: 0.5em; }
+.md-editor-sheet h6 { font-size: 0.85em; font-weight: 600; color: #6a737d;    margin-top: 1em; margin-bottom: 0.5em; }
 
 /* ---------- 段落与行内元素 ---------- */
-#write p {
+.md-editor-sheet p {
     margin: 0 0 1em;        /* 段落间距：上 右 下 左，下边距控制段与段的距离 */
 }
-#write strong { font-weight: 600; }                  /* 加粗文字 */
-#write em { font-style: italic; }                    /* 斜体文字 */
-#write a { color: #0366d6; text-decoration: none; }  /* 链接颜色；加下划线写 underline */
-#write a:hover { text-decoration: underline; }       /* 鼠标悬停时的链接样式 */
-#write del { color: #999999; }                       /* 删除线文字 */
+.md-editor-sheet strong { font-weight: 600; }                  /* 加粗文字 */
+.md-editor-sheet em { font-style: italic; }                    /* 斜体文字 */
+.md-editor-sheet a { color: #0366d6; text-decoration: none; }  /* 链接颜色；加下划线写 underline */
+.md-editor-sheet a:hover { text-decoration: underline; }       /* 鼠标悬停时的链接样式 */
+.md-editor-sheet del { color: #999999; }                       /* 删除线文字 */
 
 /* ---------- 引用 ---------- */
-#write blockquote {
+.md-editor-sheet blockquote {
     margin: 0 0 1em;
     padding: 0.4em 1em;
     color: #6a737d;                     /* 引用文字颜色 */
@@ -61,7 +71,7 @@ export const MD_THEME_TEMPLATE = `/* ===== md 主题 =====
 }
 
 /* ---------- 代码 ---------- */
-#write code {
+.md-editor-sheet code {
     font-family: Consolas, Monaco, "Courier New", monospace; /* 等宽字体 */
     font-size: 0.88em;
     color: #476582;                     /* 行内代码文字色 */
@@ -69,42 +79,42 @@ export const MD_THEME_TEMPLATE = `/* ===== md 主题 =====
     padding: 0.2em 0.4em;
     border-radius: 3px;                 /* 圆角 */
 }
-#write pre {
+.md-editor-sheet pre {
     padding: 1em;
     overflow: auto;                     /* 内容太宽时出现横向滚动条 */
     background: #f6f8fa;                /* 代码块底色 */
     border-radius: 6px;
     margin: 0 0 1em;
 }
-#write pre code {
+.md-editor-sheet pre code {
     background: transparent;            /* 代码块里的 code 不要再叠一层底色 */
     padding: 0;
 }
 
 /* ---------- 列表 ---------- */
-#write ul, #write ol {
+.md-editor-sheet ul, .md-editor-sheet ol {
     padding-left: 2em;      /* 缩进 */
     margin: 0 0 1em;
 }
-#write li { margin: 0.25em 0; }       /* 列表项之间的间距 */
+.md-editor-sheet li { margin: 0.25em 0; }       /* 列表项之间的间距 */
 
 /* ---------- 表格 ---------- */
-#write table {
+.md-editor-sheet table {
     width: 100%;
     border-collapse: collapse;   /* 相邻边框合并成一条线 */
     margin: 0 0 1em;
 }
-#write table th, #write table td {
+.md-editor-sheet table th, .md-editor-sheet table td {
     padding: 6px 13px;
     border: 1px solid #dfe2e5;   /* 单元格边框 */
 }
-#write table th {
+.md-editor-sheet table th {
     font-weight: 600;
     background: #f6f8fa;         /* 表头底色 */
 }
 
 /* ---------- 分割线 ---------- */
-#write hr {
+.md-editor-sheet hr {
     height: 1px;                 /* 线的粗细 */
     border: 0;
     background: #e1e4e8;         /* 线的颜色 */
@@ -112,7 +122,7 @@ export const MD_THEME_TEMPLATE = `/* ===== md 主题 =====
 }
 
 /* ---------- 图片 ---------- */
-#write img {
+.md-editor-sheet img {
     max-width: 100%;             /* 防止大图撑破版面 */
     border-radius: 4px;
 }

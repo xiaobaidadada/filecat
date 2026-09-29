@@ -338,7 +338,7 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 }
             },
             attributes: {
-                class: "md-wysiwyg-content",
+                class: "md-filecat-content",
                 spellcheck: "false",
             },
         });
@@ -501,7 +501,7 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return <div className={"md-wysiwyg"} ref={host_ref}/>;
+    return <div className={"md-filecat"} ref={host_ref}/>;
 });
 
 // 从被点击的 DOM 元素向上找最近的 <a>，取出 href。

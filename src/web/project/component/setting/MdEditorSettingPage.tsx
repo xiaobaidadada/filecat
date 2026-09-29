@@ -13,11 +13,11 @@ import {UserAuth} from "../../../../common/req/user.req";
 import {md_editor_setting_pojo, md_theme_item} from "../../../../common/req/common.pojo";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {
-    apply_md_editor_setting,
     load_md_editor_setting,
     MD_EDITOR_SETTING_DEFAULT,
     save_md_editor_setting,
 } from "../file/component/md_editor/MdEditorSetting";
+import MdPreview from "../file/component/md_editor/MdPreview";
 import {del_md_theme, load_active_theme_css, load_md_theme_list} from "../file/component/md_editor/md_theme";
 import {using_confirm} from "../prompts/prompt.util";
 import {useAtom} from "jotai";
@@ -199,20 +199,14 @@ export default function MdEditorSettingPage() {
                         </Column>
                         <Column widthPer={50} maxWidth={"60rem"}>
                             <Card title={t("预览")}>
-                                {/* 预览区：直接把当前输入值写进 CSS 变量，与实际编辑器用的是同一套变量 */}
-                                <div className="md-editor-setting-page__preview"
-                                     ref={(el) => apply_md_editor_setting(el, {
-                                         content_max_width: preview_value("content_max_width"),
-                                         content_padding: preview_value("content_padding"),
-                                         font_size: preview_value("font_size"),
-                                         line_height: preview_value("line_height"),
-                                     })}>
-                                    <div className="md-editor-setting-page__preview-sheet">
-                                        <h3>{t("标题")}</h3>
-                                        <p>{t("这是一段用于预览正文宽度、边距、字号和行高的示例文字。调整左侧数值即可看到这里的变化，与实际编辑器使用的是同一套样式变量。")}</p>
-                                        <p>{t("第二段文字，用来更清楚地看出行高。")}</p>
-                                    </div>
-                                </div>
+                                {/* 预览区：把当前输入值写进 CSS 变量，与实际编辑器用的是同一套变量 */}
+                                <MdPreview className={"md-editor-setting-page__preview"}
+                                           setting={{
+                                               content_max_width: preview_value("content_max_width"),
+                                               content_padding: preview_value("content_padding"),
+                                               font_size: preview_value("font_size"),
+                                               line_height: preview_value("line_height"),
+                                           }}/>
                             </Card>
                         </Column>
                     </Row>

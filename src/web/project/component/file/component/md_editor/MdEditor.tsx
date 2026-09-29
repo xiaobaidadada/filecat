@@ -139,11 +139,9 @@ export default function MdEditor() {
         NotySuccess(t("保存成功"));
     };
 
-    // 应用主题：把 atom 里的主题 css 注入编辑器正文容器。
-    // 主题是 Typora 风格（#write），由 apply_theme_css 改写作用域后再注入，
-    // 因此不会影响后台其他界面。没内容就不注入，并清掉旧的样式。
+    // 应用主题：把 atom 里的主题 css 原样注入。没内容就不注入，并清掉旧的样式。
     useEffect(() => {
-        apply_theme_css("editor", md_theme_css, "#md-editor-container .md-editor-sheet");
+        apply_theme_css("editor", md_theme_css);
     }, [md_theme_css]);
 
     // 主题内容被编辑/删除后，重拉一次生效主题（atom 变化会触发上面的注入）

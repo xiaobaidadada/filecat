@@ -79,7 +79,7 @@ export default function MdContextMenu(props: Props) {
             }
             const target = e.target as HTMLElement | null;
             // 只处理编辑器正文内的右键，其它区域交给浏览器默认行为
-            if (!target || !target.closest(".md-wysiwyg-content")) {
+            if (!target || !target.closest(".md-filecat-content")) {
                 return;
             }
             e.preventDefault();
