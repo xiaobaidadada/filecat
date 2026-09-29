@@ -1,0 +1,96 @@
+/* 全局递归搜索弹窗（FileDeepSearch） */
+
+.file-deep-search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    /* 弹窗主体固定高度，结果列表在内部滚动，避免内容多少导致弹窗忽大忽小 */
+    width: 46em;
+    max-width: 85vw;
+}
+
+.file-deep-search__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-deep-search__bar .filecat-search-box {
+    flex: 1;
+    padding-left: 0;
+    max-width: none;
+    height: 2.4em;
+}
+
+.file-deep-search__hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.85em;
+    color: var(--textSecondary, #757575);
+}
+
+/* 命中数量，跟在「范围」右侧 */
+.file-deep-search__count {
+    flex-shrink: 0;
+}
+
+.file-deep-search__body {
+    height: 24em;
+    /* 结果多时纵向滚动；表格宽度限制在弹窗内，不出现横向滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 表格铺满弹窗宽度，列宽由内容按比例分配。
+   项目全局的 .dashboard table td{max-width:2rem} 是给文件列表页用的均分规则，
+   这里每列内容（文件名、完整路径）长度差异很大，套用均分会被压到装不下而横向溢出 */
+.file-deep-search__body table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* 名称列给固定一档，路径列吃掉剩余宽度并在过长时缩略（TextTip 内部自带省略号 + hover 看全） */
+.file-deep-search__body table th:first-child,
+.file-deep-search__body table td:first-child {
+    width: 34%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-deep-search__body table td:nth-child(2) {
+    overflow: hidden;
+}
+
+/* 操作列只放一个图标按钮，收紧到刚好容下 */
+.file-deep-search__body table th:last-child,
+.file-deep-search__body table td:last-child {
+    width: 2.6rem;
+    text-align: center;
+}
+
+/* 结果列表为空（未搜索 / 搜索中还没结果 / 无匹配）时的占位提示。
+   有结果时不显示，所以不用 height:100%，避免把已渲染的表格挤下去 */
+.file-deep-search__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 12em;
+    color: var(--textSecondary, #757575);
+    font-size: 0.9em;
+}
+
+/* 结果超出渲染上限时的提示条，跟在列表末尾 */
+.file-deep-search__more {
+    padding: 0.6em 0;
+    text-align: center;
+    font-size: 0.85em;
+    color: var(--textSecondary, #757575);
+}
+
+.file-deep-search__dir {
+    color: var(--blue, #2196f3);
+}

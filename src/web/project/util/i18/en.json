@@ -475,6 +475,8 @@
   "缩放调整": "Zoom Adjustment",
   "缩放百分比": "Zoom Percentage",
   "范围": "Range",
+  "结果过多": "Too many results, refine your keyword",
+  "已显示": "Shown",
   "时间展示": "Time Display",
   "最近时间": "Recent Time",
   "准确时间": "Exact Time",
@@ -823,5 +825,14 @@
   "tstbfrs": "Before saving, you can click \"Test connection\" to verify the account works.",
   "prtwbdv": "A general-purpose file protocol supported by Jianguoyun, Synology NAS, Nextcloud, Alist and more. One service URL plus an account is enough to browse the remote directory.",
   "prtsftp": "Access a directory on a remote server over SSH, transferring files via the SFTP subsystem. Ideal for mounting a directory from another Linux machine.",
-  "prt_s3": "Object storage services reachable over the S3 protocol, such as MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu and Cloudflare R2. Requires a service endpoint, a bucket and a key pair."
+  "prt_s3": "Object storage services reachable over the S3 protocol, such as MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu and Cloudflare R2. Requires a service endpoint, a bucket and a key pair.",
+  "深搜": "Deep Search",
+  "搜索": "Search",
+  "搜索中": "Searching",
+  "搜文件名": "Search file name recursively",
+  "搜到该处": "Go to its folder",
+  "打开所在目录": "Open containing folder",
+  "输入后搜": "Type a file name and press Enter",
+  "无匹配": "No matching files found",
+  "结果截断": "Too many results, showing first 500"
 }

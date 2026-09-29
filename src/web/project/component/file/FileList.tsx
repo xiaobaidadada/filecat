@@ -15,8 +15,7 @@ import {
     title_workflow_file_success,
     user_click_file
 } from "./FileUtil";
-import {InputTextIcon} from "../../../meta/component/Input";
-import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
+import {InputTextIcon} from "../../../meta/component/Input";import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
@@ -36,6 +35,7 @@ import {isAbsolutePath, path_join} from '../../../../common/path_util';
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_by_page} from "./FileListLoad";
+import {FileDeepSearch} from "../prompts/FileDeepSearch";
 import {FileMenu, use_handleContextMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
 import {cloneDeep} from "lodash";
@@ -85,6 +85,7 @@ export default function FileList() {
 
     const [file_page, set_file_page] = useAtom($stroe.file_page);
     const [blankSearchMode] = useAtom($stroe.blank_search_mode);
+    const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const [blank_search_mode_for_temp,set_blank_search_mode_for_temp ] = useAtom($stroe.blank_search_mode_for_temp);
 
     const handleContextMenu = use_handleContextMenu()
@@ -300,6 +301,18 @@ export default function FileList() {
         }
     }
 
+    // 打开全局递归搜索弹窗（点搜索框左侧放大镜触发）。
+    // 和回车触发的「当前目录搜索」是两个入口：回车只过滤当前目录已加载的列表，
+    // 这里会真的到磁盘上递归查找。
+    const open_deep_search = () => {
+        const base_path = getRouterAfter('file', getRouterPath());
+        set_prompt_card({
+            open: true,
+            title: t("深搜"),
+            context_div: <FileDeepSearch base_path={base_path}/>,
+        });
+    };
+
     // 搜索
     const searchHanle = async () => {
         if (blankSearchMode || blank_search_mode_for_temp) {
@@ -416,6 +429,7 @@ export default function FileList() {
                                 <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                                   icon={"search"} value={""}
                                                                   mobile_hidden
+                                                                  handleIconClick={open_deep_search}
                                                                   handleInputChange={(v) => {
                                                                       setSearch(v)
                                                                   }} max_width={"25em"}/>

@@ -136,6 +136,25 @@
   user-select: none;
 }
 
+/* 可点击的图标入口（如文件列表的「全局搜索」）。
+   用 span 包一层是因为 Icon 组件不支持事件与自定义 class，这里只补交互样式。 */
+.filecat-search-box__icon-btn {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 0.3em;
+  transition: color .15s ease;
+}
+
+.filecat-search-box__icon-btn>i {
+  margin-right: 0.3em;
+  user-select: none;
+}
+
+.filecat-search-box__icon-btn:hover {
+  color: var(--blue, #2196f3);
+}
+
 .filecat-search-box input {
   width: 100%;
   border: 0;

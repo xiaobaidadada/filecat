@@ -815,5 +815,17 @@
   "tstbfrs": "Avant d'enregistrer, vous pouvez cliquer sur \"Tester la connexion\" pour vérifier le compte.",
   "prtwbdv": "Un protocole de fichiers universel pris en charge par Jianguoyun, Synology NAS, Nextcloud, Alist, etc. Une URL de service et un compte suffisent pour parcourir le dossier distant.",
   "prtsftp": "Accédez à un dossier d'un serveur distant via SSH, avec transfert de fichiers par le sous-système SFTP. Idéal pour monter un dossier d'une autre machine Linux.",
-  "prt_s3": "Services de stockage objet accessibles via le protocole S3, comme MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu et Cloudflare R2. Nécessite une URL de service, un bucket et une paire de clés."
+  "prt_s3": "Services de stockage objet accessibles via le protocole S3, comme MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu et Cloudflare R2. Nécessite une URL de service, un bucket et une paire de clés.",
+  "深搜": "Rech. prof.",
+  "搜索": "Rechercher",
+  "搜索中": "Recherche",
+  "范围": "Portée",
+  "结果过多": "Trop de résultats, affinez le mot-clé",
+  "已显示": "Affichés",
+  "搜文件名": "Rechercher le nom de fichier",
+  "搜到该处": "Aller au dossier",
+  "打开所在目录": "Ouvrir le dossier",
+  "输入后搜": "Saisissez un nom puis Entrée",
+  "无匹配": "Aucun fichier correspondant",
+  "结果截断": "Trop de résultats, 500 premiers"
 }

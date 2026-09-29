@@ -105,6 +105,10 @@ export enum CmdType {
     search_file_progress,
     search_file_index, // 结果输出
     search_file_cancel ,
+    file_deep_search,
+    file_deep_search_data, // 流式搜索结果
+    file_deep_search_end,
+    file_deep_search_cancel,
     http_download_water,
     http_download_cancel,
     folder_size_info,
@@ -231,6 +235,11 @@ export type ws_cmd_type_map = {
     [CmdType.search_file_progress]: [any, any]
     [CmdType.search_file_index]: [any, any]
     [CmdType.search_file_cancel]: [any, any]
+
+    [CmdType.file_deep_search]: [any, any]
+    [CmdType.file_deep_search_data]: [any, any]
+    [CmdType.file_deep_search_end]: [any, any]
+    [CmdType.file_deep_search_cancel]: [any, any]
 
     [CmdType.http_download_water]: [any, any]
     [CmdType.http_download_cancel]: [any, any]

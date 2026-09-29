@@ -815,5 +815,17 @@
   "tstbfrs": "Antes de guardar, puede pulsar \"Probar conexión\" para verificar que la cuenta funciona.",
   "prtwbdv": "Un protocolo de archivos genérico compatible con Jianguoyun, Synology NAS, Nextcloud, Alist, etc. Basta una URL de servicio y una cuenta para acceder al directorio remoto.",
   "prtsftp": "Accede a un directorio de un servidor remoto por SSH, transfiriendo archivos mediante el subsistema SFTP. Ideal para montar un directorio de otra máquina Linux.",
-  "prt_s3": "Servicios de almacenamiento de objetos accesibles por el protocolo S3, como MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu y Cloudflare R2. Requiere URL de servicio, bucket y un par de claves."
+  "prt_s3": "Servicios de almacenamiento de objetos accesibles por el protocolo S3, como MinIO, Alibaba Cloud OSS, Tencent COS, Qiniu y Cloudflare R2. Requiere URL de servicio, bucket y un par de claves.",
+  "深搜": "Búsqueda prof.",
+  "搜索": "Buscar",
+  "搜索中": "Buscando",
+  "范围": "Ámbito",
+  "结果过多": "Demasiados resultados, refine la palabra clave",
+  "已显示": "Mostrado",
+  "搜文件名": "Buscar nombre de archivo recursivamente",
+  "搜到该处": "Ir a su carpeta",
+  "打开所在目录": "Abrir carpeta contenedora",
+  "输入后搜": "Escribe un nombre y pulsa Enter",
+  "无匹配": "No se encontraron archivos",
+  "结果截断": "Demasiados resultados, mostrando 500"
 }

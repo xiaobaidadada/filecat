@@ -14,6 +14,9 @@ export function InputTextIcon(props: {
     icon: MaterialIcon,
     max_width?: string,
     handleEnterPress?: Function,
+    // 点击左侧图标时的回调。传入后图标变成可点的「入口」，
+    // 例如文件列表用它触发「全局递归搜索」。
+    handleIconClick?: Function,
     type?: input_type,
     mobile_hidden?: boolean
 }) {
@@ -34,7 +37,11 @@ export function InputTextIcon(props: {
     return <div className={"filecat-search-box" + (props. mobile_hidden ? " filecat-search-box--mobile-hidden" : "")}
                 style={{"maxWidth": props.max_width}}>
         <div className="filecat-search-box__inner">
-            <Icon icon={props.icon}/>
+            {props.handleIconClick
+                ? <span className="filecat-search-box__icon-btn" onClick={() => props.handleIconClick()}>
+                    <Icon icon={props.icon}/>
+                  </span>
+                : <Icon icon={props.icon}/>}
             <input
                 type={props.type}
                 ref={inputRef}  // 使用 ref 关联到 input 元素

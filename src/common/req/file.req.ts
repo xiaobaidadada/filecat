@@ -185,6 +185,23 @@ export class ws_file_upload_req {
     parallel_done_num: number; // 总并发数量
 }
 
+// 递归搜索文件名的请求参数
+export class file_deep_search_req {
+    // 搜索的起始目录（相对系统根目录的 web 路径）
+    param_path: string;
+    // 文件名关键词
+    keyword: string;
+}
+
+// 递归搜索命中的单条结果
+export class file_deep_search_item {
+    name: string;
+    // 完整的 web 路径（以 / 开头，相对系统根目录），前端拼到文件路由后面即可
+    path: string;
+    // 是否目录（由 fast-glob 的 markDirectories 判定，不做 stat）
+    is_dir: boolean;
+}
+
 export class file_share_item {
     path:string; // 文件的绝对路径
     note:string;

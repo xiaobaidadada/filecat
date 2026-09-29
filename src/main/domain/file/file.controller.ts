@@ -11,6 +11,7 @@ import {FileServiceImpl} from "./file.service";
 import {Fail, Result, Sucess} from "../../other/Result";
 import {
     cutCopyReq,
+    file_deep_search_req,
     file_share_item,
     fileInfoReq,
     saveTxtReq,
@@ -250,6 +251,21 @@ export class FileController {
     @msg(CmdType.search_file_cancel)
     async search_file_cancel(data: WsData<LogViewerPojo>) {
         search_file_cancel(data);
+        return "";
+    }
+
+    // 按文件名递归搜索：结果通过 file_deep_search_data 分包下发。
+    // 这里不能 await，否则 handler 会阻塞到整轮搜索结束才回包，前端等到超时
+    // （ws.client 的请求超时是 6 秒，搜大目录必然超），所以丢到后台跑，立即返回。
+    @msg(CmdType.file_deep_search)
+    async file_deep_search(data: WsData<file_deep_search_req>) {
+        FileServiceImpl.file_deep_search(data).catch(console.error);
+        return "";
+    }
+
+    @msg(CmdType.file_deep_search_cancel)
+    async file_deep_search_cancel(data: WsData<any>) {
+        FileServiceImpl.file_deep_search_cancel(data);
         return "";
     }
 

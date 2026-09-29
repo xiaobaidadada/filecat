@@ -37,7 +37,11 @@ import {isAbsolutePath} from "../../../common/path_util";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {getSys} from "../shell/shell.service";
-import {sqliteQueryReq, sqliteQueryResult} from "../../../common/req/file.req";
+import {sqliteQueryReq, sqliteQueryResult, file_deep_search_req, file_deep_search_item} from "../../../common/req/file.req";
+import fg from "fast-glob";
+
+// 递归搜索的流句柄存在 wss.dataMap 里的 key，取消/断连时用它中止遍历
+const SEARCH_STREAM_KEY = "file_deep_search";
 import {
     PathResolution,
     resolve_local_path,
@@ -359,6 +363,94 @@ export class FileService  {
             }
         }
         return Sucess(result);
+    }
+
+    /**
+     * 按文件名递归搜索（WS 流式）。
+     * 用 fast-glob 的流式接口边遍历边把命中推给前端，用户可以随时取消；
+     * 连接断开时也会自动停止遍历，不会在后台泄漏一个跑不完的扫描任务。
+     */
+    public async file_deep_search(data: WsData<file_deep_search_req>) {
+        const wss = data.wss as Wss;
+        const param = data.context as file_deep_search_req;
+        const token = wss.token;
+        const k = (param.keyword ?? "").trim();
+        if (!k) {
+            return;
+        }
+        const root_path = settingService.getFileRootPath(token);
+        // 项目惯例：前端传原始路径，后端统一解码后再用
+        const web_path = param.param_path ? decodeURIComponent(param.param_path) : "";
+        const sysPath = path.join(root_path, web_path);
+        userService.check_user_path(token, sysPath);
+
+        // 关键词里的 glob 元字符要转义，否则用户输入 * 会被当作通配符
+        const pattern = "**/*" + k.replace(/[*?[\]{}()!+@]/g, "\\$&") + "*";
+        const stream = fg.stream(pattern, {
+            cwd: sysPath,
+            onlyFiles: false,
+            dot: true,
+            followSymbolicLinks: false,
+            suppressErrors: true,
+            // 让目录结果自带尾斜杠，前端据此区分文件和目录，无需再 stat
+            markDirectories: true,
+        });
+
+        // 攒一批再发，避免命中很多时每条都发一个 WS 包
+        const BATCH = 50;
+        let buffer: file_deep_search_item[] = [];
+        const flush = () => {
+            if (!buffer.length) return;
+            wss.send(CmdType.file_deep_search_data, buffer);
+            buffer = [];
+        };
+
+        // 取消：客户端主动取消或连接断开都会走到这里，abort 后流会停止遍历
+        let aborted = false;
+        const abort = () => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            (stream as any).destroy?.();
+        };
+        wss.setClose(abort);
+        wss.dataMap.set(SEARCH_STREAM_KEY, abort);
+
+        stream.on("data", (entry: string) => {
+            if (aborted) return;
+            const rel = entry.replace(/\\/g, "/");
+            // markDirectories 会给目录加尾斜杠，去掉后再拼，目录标记单独用 is_dir 表示
+            const is_dir = rel.endsWith("/");
+            const pure_rel = is_dir ? rel.slice(0, -1) : rel;
+            buffer.push({
+                name: path.basename(pure_rel),
+                path: ("/" + [web_path, pure_rel].join("/")).replace(/\/+/g, "/"),
+                is_dir,
+            });
+            if (buffer.length >= BATCH) flush();
+        });
+        stream.on("end", () => {
+            if (aborted) return;
+            flush();
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            wss.send(CmdType.file_deep_search_end, true);
+        });
+        // 这里是异步事件回调，throw 不会冒泡到 handler 的 catch，会变成 uncaught exception 把进程打挂。
+        // 搜索失败只影响这一次搜索，收尾并记日志即可，不能影响服务
+        stream.on("error", (e: any) => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            console.error("递归搜索失败：", e);
+            wss.send(CmdType.file_deep_search_end, true);
+        });
+    }
+
+    /** 取消正在进行的递归搜索 */
+    public file_deep_search_cancel(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        const abort = wss.dataMap.get(SEARCH_STREAM_KEY);
+        if (abort) abort();
     }
 
     public async get_list(token: string, param_path:string, page_num:number, page_size:number, search?:string) {
