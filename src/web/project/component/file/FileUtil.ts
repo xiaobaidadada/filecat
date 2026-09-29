@@ -1,22 +1,30 @@
 import {getByIndexs, getNextByLoop, sort, webPathJoin} from "../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
-import {DirListShowTypeEmum, fileTypes} from "../../../../common/req/user.req";
+import {DirListShowTypeEmum, fileTypes, UserBaseInfo} from "../../../../common/req/user.req";
 import {QuickCmdItem} from "../../../../common/req/setting.req";
 import {PromptEnum} from "../prompts/Prompt";
-import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {scanFiles} from "../../util/file";
 import {useContext, useEffect, useRef, useState} from "react";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
-import {userHttp} from "../../util/config";
+import {fileHttp, userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {browser_file_pojo} from "../../../../common/req/common.pojo";
+import {useAtom} from "jotai/index";
+import {useTranslation} from "react-i18next";
+import {MAX_SIZE_TXT} from "../../../../common/ValueUtil";
+import {getEditModelType} from "../../../../common/StringUtil";
+import {path_join} from "pty-shell/dist/path_util";
+import {routerConfig} from "../../../../common/RouterConfig";
+import {Http} from "../../util/http";
+import {saveTxtReq} from "../../../../common/req/file.req";
+import {editor_data} from "../../util/store.util";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -450,4 +458,172 @@ export function use_click_folder() {
         // 不在此手动重置分页：分页由 FileList 里的 pre_file_path 目录切换检测统一重置为第一页，
         // 避免 navigate(改 location) 与 set_file_page(改 file_page) 分别触发两次加载请求
     }
+}
+
+export const user_click_file = () => {
+    // 四个预览
+    const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
+    const [file_preview, setFilePreview] = useAtom($stroe.file_preview)
+    // const [markdown, set_markdown] = useAtom($stroe.markdown)
+    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
+
+    const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
+    const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
+
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
+    const navigate = useNavigate();
+    const {t} = useTranslation();
+
+    const click_file = async (param: {
+        name,
+        size?: number,
+        ignore_size?: boolean,
+        model?: string,
+        menu_list?: any[],
+        opt_shell?: boolean,
+        mtime?: any,
+        not_type_tip?: string,
+        // 提供自定义的编辑来源 只用于txt文本编辑
+        file_path?: string,
+        file_url?: string,
+        context?: string,
+        get_file_fun?: () => Promise<string>,
+        save_file_fun?: (text: string) => Promise<void>,
+        close?: () => any
+    }) => {
+        const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
+
+        if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
+            setShowPrompt({
+                open: true,
+                title: "提示",
+                sub_title: `文件超过20MB了确定要打开吗?`,
+                handle: async () => {
+                    setShowPrompt({open: false, handle: null});
+                    param.ignore_size = true;
+                    click_file(param);
+                }
+            })
+            return;
+        }
+        const {name, context} = param;
+        let model = getEditModelType(name);
+        const type = getFileFormat(name);
+        const absolute_file_path = param.file_path ?? path_join(ab_dir_path, `${getRouterAfter('file', getRouterPath())}${name}`)
+        const file_path_ = param.file_path ?? path_join(ab_dir_path, `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`)
+        const url = param.file_url ?? fileHttp.getDownloadUrl(file_path_);
+        if (type === FileTypeEnum.database) {
+            set_sqlite_query_context({
+                open: true,
+                path: absolute_file_path,
+                name
+            });
+            navigate(routerConfig.sqlite_query_page);
+            return;
+        }
+        if (param.model === "text") {
+            // 双击文件
+            let value;
+            if (context) {
+                value = context;
+            } else if (param.get_file_fun) {
+                value = await param.get_file_fun()
+            } else {
+                value = await Http.get(url);
+                // console.log(value)
+                // console.log(url)
+                // value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, !!param.sys_path);
+                // if (!value) {
+                //     return;
+                // }
+            }
+            // if (!model) {
+            //     model = "text";
+            // }
+            let m = undefined;
+            if (type === FileTypeEnum.workflow_act) {
+                m = "ace/mode/yaml"
+            } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw) {
+                m = "ace/mode/json"
+            }
+            setEditorSetting({
+                menu_list: param.menu_list,
+                model: m,
+                open: true,
+                fileName: name,
+                save: async (context) => {
+                    if (param.save_file_fun) {
+                        await param.save_file_fun(context);
+                        return;
+                    }
+                    const data: saveTxtReq = {
+                        context
+                    }
+                    // const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
+                    const rsq = await fileHttp.post(`save/${file_path_}`, data)
+                    if (rsq.code === 0) {
+                        editor_data.set_value_temp('')
+                        // setEditorSetting({open: false, model: '', fileName: '', save: null})
+                    }
+                },
+                opt_shell: param.opt_shell,
+                close: param.close
+            })
+            editor_data.set_value_temp(value)
+            return;
+        } else {
+            // let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
+            switch (type) {
+                case FileTypeEnum.draw:
+                case FileTypeEnum.excalidraw:
+                    set_excalidraw_editor({url, name, close: param.close});
+                    break;
+                case FileTypeEnum.md:
+                    // set_markdown({
+                    //     context: await Http.get(url),
+                    //     filename: name,
+                    //     close: param.close
+                    // })
+                    set_md_editor({
+                        url: url,
+                        path: absolute_file_path,
+                        name,
+                    });
+                    break;
+                case FileTypeEnum.video:
+                case FileTypeEnum.pdf:
+                    setFilePreview({open: true, type: type, name, url})
+                    break;
+                case FileTypeEnum.image:
+                    setFilePreview({
+                        open: true,
+                        type: type,
+                        name,
+                        url: fileHttp.add_params(url, {mtime: param.mtime, cache: 1})
+                    })
+                    break;
+                case FileTypeEnum.workflow_act:
+                    param.model = "text";
+                    click_file(param);
+                    break;
+                case FileTypeEnum.url:
+                    window.open(await Http.get(url), '_blank');
+                    break;
+                case FileTypeEnum.unknow:
+                default:
+                    if (model) {
+                        param.model = "text";
+                        click_file(param);
+                        break;
+                    }
+                    NotyFail(param.not_type_tip ?? t("未知类型、请右键点击文件"))
+                    break;
+            }
+
+        }
+
+    }
+
+    return {click_file};
 }

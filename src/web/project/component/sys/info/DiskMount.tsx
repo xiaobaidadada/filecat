@@ -13,8 +13,9 @@ import {Column, FlexContainer, FullScreenContext, FullScreenDiv, Row} from "../.
 import {Table} from "../../../../meta/component/Table";
 import TreeView from "../../../../meta/component/TreeView";
 import {vg_item} from "../../../../../common/req/common.pojo";
-import {use_auth_check, user_click_file} from "../../../util/store.util";
+import {use_auth_check} from "../../../util/store.util";
 import {UserAuth} from "../../../../../common/req/user.req";
+import {user_click_file} from "../../file/FileUtil";
 
 // todo 需要优化做成通用组件
 const Lvm = (props: { name: string, lvms: { name: string }[] }) => {

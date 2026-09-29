@@ -22,13 +22,12 @@ import {
     getFileNameByLocation,
     getFilesByIndexs,
     unsing_switch_grid_view,
-    use_share_preview,
+    use_share_preview, user_click_file,
     useUpdateUrlParams
 } from "../../FileUtil";
 import {workflow_dir_name} from "../../../../../../common/req/file.req";
 import { getShortTime } from "../../../../util/common_util";
 import { formatFileSize } from "../../../../../../common/ValueUtil";
-import {user_click_file} from "../../../../util/store.util";
 import {copyToClipboard} from "../../../../util/FunUtil";
 import {DirListShowTypeEmum} from "../../../../../../common/req/user.req";
 import {getNextByLoop} from "../../../../../../common/ListUtil";

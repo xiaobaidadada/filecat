@@ -11,8 +11,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
-import {user_click_file} from "../../util/store.util";
-import {getFileNameByLocation, getFilesByIndexs, use_click_double, use_click_folder} from "./FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, use_click_double, use_click_folder, user_click_file} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {

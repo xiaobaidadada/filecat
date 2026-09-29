@@ -7,11 +7,17 @@ import {useTranslation} from "react-i18next";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {useLocation, useNavigate} from "react-router-dom";
-import {use_auth_check, user_click_file} from "../../util/store.util";
+import {use_auth_check} from "../../util/store.util";
 import {GlobalContext} from "../../GlobalProvider";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {NotyFail, NotySuccess, NotyWaring} from "../../util/noty";
-import {create_quick_cmd_items, getFileNameByLocation, getFilesByIndexs, unsing_switch_grid_view} from "./FileUtil";
+import {
+    create_quick_cmd_items,
+    getFileNameByLocation,
+    getFilesByIndexs,
+    unsing_switch_grid_view,
+    user_click_file
+} from "./FileUtil";
 import {fileHttp, gitHttp, userHttp} from "../../util/config";
 import {getNextByLoop} from "../../../../common/ListUtil";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";

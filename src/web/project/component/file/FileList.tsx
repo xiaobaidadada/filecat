@@ -8,13 +8,19 @@ import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {RCode} from "../../../../common/Result.pojo";
-import {create_quick_cmd_items, file_sort, title_workflow_file_fail, title_workflow_file_success} from "./FileUtil";
+import {
+    create_quick_cmd_items,
+    file_sort,
+    title_workflow_file_fail,
+    title_workflow_file_success,
+    user_click_file
+} from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
-import {use_auth_check, user_click_file} from "../../util/store.util";
+import {use_auth_check} from "../../util/store.util";
 import {formatFileSize} from '../../../../common/ValueUtil';
 import {getShortTime} from "../../../project/util/common_util";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";

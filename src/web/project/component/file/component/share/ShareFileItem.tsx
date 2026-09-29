@@ -5,13 +5,13 @@ import {$stroe} from "../../../../util/store";
 import {useNavigate} from "react-router-dom";
 import {getByList, getMaxByList, getNewDeleteByList, webPathJoin} from "../../../../../../common/ListUtil";
 import {BaseFileItem} from "../BaseFileItem";
-import {editor_data, user_click_file} from "../../../../util/store.util";
+import {editor_data} from "../../../../util/store.util";
 import {fileHttp} from "../../../../util/config";
 import {useTranslation} from "react-i18next";
 import {FileMenuData, getFileFormat} from "../../../../../../common/FileMenuType";
 import {getRouterPath} from "../../../../util/WebPath";
 import {PromptEnum} from "../../../prompts/Prompt";
-import {use_click_double, use_share_preview, useUpdateUrlParams} from "../../FileUtil";
+import {use_click_double, use_share_preview, user_click_file, useUpdateUrlParams} from "../../FileUtil";
 
 
 
