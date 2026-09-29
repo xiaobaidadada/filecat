@@ -278,6 +278,13 @@ export default function MdEditor() {
     const save_ref = useRef(save);
     save_ref.current = save;
 
+    // 导出 PDF：交给浏览器打印对话框，
+    // 用户可在其中预览、选页码范围、并「另存为 PDF」。
+    // 打印时的版面由 md_editor.css 的 @media print 接管（只留正文纸张）。
+    const export_pdf = () => {
+        window.print();
+    };
+
     const close = () => {
         set_md_editor({});
         set_dirty(false);
@@ -311,6 +318,8 @@ export default function MdEditor() {
                         <ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
                                       icon={mode === "wysiwyg" ? "code" : "edit"}
                                       onClick={toggle_mode}/>,
+                        // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
+                        <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,
                         // 全局编辑器设置（正文宽度/边距/字号等，对所有用户生效）。
                         // 需要 UserAuth.md_editor_setting 权限，没有就不显示这个入口。
                         // 跳到独立设置页。编辑器是全屏 fixed 覆盖层（z-index 1000），

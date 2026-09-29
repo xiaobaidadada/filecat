@@ -788,3 +788,76 @@
 .md-editor-setting-page__preview-sheet p {
     margin: 0.6em 0;
 }
+
+/* ============ 打印 / 导出 PDF ============
+   编辑器是全屏 fixed 覆盖层，且正文装在 overflow:auto 的滚动容器里。
+   打印时必须把这两层限制全部拆掉，否则只能打出当前可见的一屏。
+   只保留正文纸张，UI（Header、工具栏、大纲、滚动条）一律隐藏。 */
+@media print {
+    /* 页面背景与边距交给纸张设置，去掉屏幕上的底色 */
+    html, body {
+        background: #fff !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* 编辑器外壳：拆掉 fixed 全屏与 overflow 限制，让内容自然撑开参与分页 */
+    #md-editor-container {
+        position: static !important;
+        height: auto !important;
+        width: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        z-index: auto !important;
+    }
+
+    /* 内容区与滚动容器同样恢复为常规文档流 */
+    #md-editor-container .md-editor-context,
+    .md-editor-scroll,
+    .md-editor-sheet {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        max-width: none !important;
+        width: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 编辑器 UI 一律不打印：
+       Header、左侧大纲、拖拽分隔条与遮罩、悬浮格式工具栏等。
+       注意：编辑器浮层挂在 #root 下，与文件管理器页面的 header / nav / main 是兄弟关系，
+       它们同样会被打印进去，必须一并隐藏，只留编辑器自身。
+       整段用 body:has(#md-editor-container) 限定，只在编辑器打开时生效，
+       避免用户直接 Ctrl+P 打印文件列表时被误伤成白页。 */
+    body:has(#md-editor-container) #root > :not(#md-editor-container),
+    #md-editor-container > .header,
+    #md-editor-container .md-outline-panel,
+    #md-editor-container .md-editor-divider,
+    #md-editor-container .md-editor-drag-overlay,
+    #md-editor-container .mdtb {
+        display: none !important;
+    }
+
+    /* 标题后面不跟着换页，避免出现孤立标题 */
+    .md-editor-sheet h1, .md-editor-sheet h2,
+    .md-editor-sheet h3, .md-editor-sheet h4,
+    .md-editor-sheet h5, .md-editor-sheet h6 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    /* 代码块、表格、图片、引用整块不跨页断开 */
+    .md-editor-sheet pre,
+    .md-editor-sheet table,
+    .md-editor-sheet img,
+    .md-editor-sheet blockquote {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* 表格可能很宽，允许内部换行自适应纸张宽度 */
+    .md-editor-sheet table {
+        width: 100% !important;
+    }
+}
