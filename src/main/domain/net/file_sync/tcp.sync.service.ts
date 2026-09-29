@@ -149,9 +149,9 @@ export class TcpSyncService {
         }
 
         const targets = current.targets ?? [];
-        if (!targets.length) {
-            throw new Error("at least one target is required");
-        }
+        // if (!targets.length) {
+        //     throw new Error("at least one target is required");
+        // }
         const dup = new Set<number>();
         for (const target of targets) {
             if (!target.client_num_id) {

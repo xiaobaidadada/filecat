@@ -101,3 +101,27 @@
 .material-icons.icon  {
     color: var(--action);
 }
+/* ============================================
+   多实例列表项（InstanceItem 组件）
+   一个列表里可添加多个实例，每个实例有标题栏 + 字段/按钮 + 子内容
+   ============================================ */
+
+/* 单个实例容器 */
+.instance-item {
+    margin-bottom: 16px;
+}
+
+/* 实例标题栏：标题 + 各字段控件 + 操作按钮平铺 */
+.instance-item__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+/* 实例标题加粗 */
+.instance-item__label {
+    font-weight: bold;
+    min-width: fit-content;
+}

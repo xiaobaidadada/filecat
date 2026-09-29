@@ -3,13 +3,14 @@ import {Column, Dashboard, Row, TextLine} from "../../../../meta/component/Dashb
 import {Card, CardFull, StatusCircle, TextTip} from "../../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../../meta/component/Button";
 import {Rows, Table} from "../../../../meta/component/Table";
-import {InputCheckbox, InputRow, InputText, Select} from "../../../../meta/component/Input";
+import {InputCheckbox, InputRow, InputText} from "../../../../meta/component/Input";
+import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {useTranslation} from "react-i18next";
 import {cryptoHttp, settingHttp, tcpProxy, userHttp} from "../../../util/config";
 import {RCode} from "../../../../../common/Result.pojo";
 import {SysSoftware, TokenSettingReq} from "../../../../../common/req/setting.req";
 import {GlobalContext} from "../../../GlobalProvider";
-import { useAtom } from 'jotai';
+import {useAtom} from 'jotai';
 import {$stroe} from "../../../util/store";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {UserAuth, UserData} from "../../../../../common/req/user.req";
@@ -28,30 +29,30 @@ import {editor_data} from "../../../util/store.util";
 
 
 export function TcpProxyServerClientSetting() {
-    const { t, i18n } = useTranslation();
-    const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
-    const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
+    const {t, i18n} = useTranslation();
+    const {initUserInfo, reloadUserInfo} = useContext(GlobalContext);
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [, set_confirm] = useAtom($stroe.confirm);
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
 
-    const [sync_task_list,set_sync_task_list] = useState<tcp_proxy_sync_task_item[]>([])
-    const [all_client_options,set_all_client_options] = useState<{title:string,value:string}[]>([])
+    const [sync_task_list, set_sync_task_list] = useState<tcp_proxy_sync_task_item[]>([])
+    const [all_client_options, set_all_client_options] = useState<{ label: string, value: string }[]>([])
 
     // 左侧列表只展示这几个字段
     const list_headers = [t("编号"), t("原客户端"), t("开启"), t("备注"), t("操作")];
 
     // 右侧详情：当前编辑的任务（未保存的草稿也放这里）
-    const [edit_task,set_edit_task] = useState<(tcp_proxy_sync_task_item & {is_new?:boolean}) | null>(null)
+    const [edit_task, set_edit_task] = useState<(tcp_proxy_sync_task_item & { is_new?: boolean }) | null>(null)
 
-    const get_all_client = async ()=>{
+    const get_all_client = async () => {
         const r2 = await tcpProxy.get("server_client_get")
-        if(r2.code === RCode.Success) {
-            const list:tcp_proxy_server_client[] = r2.data
+        if (r2.code === RCode.Success) {
+            const list: tcp_proxy_server_client[] = r2.data
             const options = []
             for (const item of list) {
                 options.push({
-                    title: item.client_name,
+                    label: item.client_name,
                     value: item.client_num_id,
                 })
             }
@@ -72,7 +73,11 @@ export function TcpProxyServerClientSetting() {
     }
 
     const client_name = (value: string | number) => {
-        return all_client_options.find((item) => String(item.value) === String(value))?.title ?? "";
+        return all_client_options.find((item) => String(item.value) === String(value))?.label ?? "";
+    }
+
+    const resolveClientOption = (value: string | number) => {
+        return all_client_options.find((item) => String(item.value) === String(value));
     }
 
     /** 打开右侧详情：编辑已有任务 */
@@ -86,7 +91,7 @@ export function TcpProxyServerClientSetting() {
             open: false,
             source_client_num_id: undefined as any,
             source_dir: "",
-            targets: [{client_num_id: undefined as any, dir: "", full_sync: false}],
+            targets: [],
             delete_missing: true,
             is_new: true,
         } as any)
@@ -182,41 +187,44 @@ export function TcpProxyServerClientSetting() {
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}>
                     <h2>{t(`客户端文件同步`)}</h2>
-                    <ActionButton icon={"info"} onClick={()=>{
-                        set_prompt_card({open:true,title:"信息",context_div : (
+                    <ActionButton icon={"info"} onClick={() => {
+                        set_prompt_card({
+                            open: true, title: "信息", context_div: (
                                 <div>
-                                   <ul>
-                                       <li>
-                                           {t(`sy_tp1`)}
-                                       </li>
-                                       <li>
-                                           {t(`sy_tp2`)}
-                                       </li>
-                                       <li>
-                                           {t(`sy_tp3`)}
-                                       </li>
-                                   </ul>
+                                    <ul>
+                                        <li>
+                                            {t(`sy_tp1`)}
+                                        </li>
+                                        <li>
+                                            {t(`sy_tp2`)}
+                                        </li>
+                                        <li>
+                                            {t(`sy_tp3`)}
+                                        </li>
+                                    </ul>
                                 </div>
-                            )})
+                            )
+                        })
                     }} title={t("信息")}/>
                 </span>}
                           titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_task}/></div>}>
                     <Table headers={list_headers} rows={sync_task_list.map((item, index) => {
                         return [
-                            <p>{item.id?.slice(0, 8) ?? index}</p>,
+                            <p>{index}</p>,
                             <TextTip>{item.source_client_name}</TextTip>,
                             <>{<StatusCircle ok={!!item.open}/>}{item.open ? t("开启") : t("关闭")}</>,
                             <TextTip>{item.note}</TextTip>,
                             <div>
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
-                                <ActionButton icon={"sync"} title={t("立即同步")} onClick={() => rescan_sync_task(item)}/>
+                                <ActionButton icon={"sync"} title={t("立即同步")}
+                                              onClick={() => rescan_sync_task(item)}/>
                                 <ActionButton icon={"delete"} title={t("删除")} onClick={() => {
                                     set_confirm({
                                         open: true,
                                         title: t('确定删除吗'),
                                         handle: async () => {
                                             await del_sync_task(item.id!)
-                                            set_confirm({open:false,handle:null});
+                                            set_confirm({open: false, handle: null});
                                         }
                                     })
                                 }}/>
@@ -229,13 +237,14 @@ export function TcpProxyServerClientSetting() {
         <Column widthPer={50}>
             {edit_task &&
                 <Dashboard>
-                    <Card self_title={<span className={" div-row "}><h2>{t(`${edit_task.is_new ? "添加" : "编辑"}`)}</h2></span>}
-                          rightBottomCom={<div>
-                              <ActionButton icon={"cancel"} title={t("取消")} onClick={close_edit}/>
-                              <ActionButton icon={"save"} title={t("保存")} onClick={save_sync_task}/>
-                          </div>}>
+                    <Card
+                        self_title={<span className={" div-row "}><h2>{t(`${edit_task.is_new ? "添加" : "编辑"}`)}</h2></span>}
+                        rightBottomCom={<div>
+                            <ActionButton icon={"cancel"} title={t("取消")} onClick={close_edit}/>
+                            <ActionButton icon={"save"} title={t("保存")} onClick={save_sync_task}/>
+                        </div>}>
                         <InputRow label={t("开启")} label_width={"6rem"}>
-                            <InputCheckbox selected={!!edit_task.open} onchange={()=>{
+                            <InputCheckbox selected={!!edit_task.open} onchange={() => {
                                 set_edit_task({...edit_task, open: !edit_task.open})
                             }}/>
                         </InputRow>
@@ -245,11 +254,15 @@ export function TcpProxyServerClientSetting() {
                             }}/>
                         </InputRow>
                         <InputRow label={t("原客户端")} label_width={"6rem"} required>
-                            <Select value={edit_task.source_client_num_id} options={all_client_options}
-                                    onChange={(value) => {
-                                        const id = parseInt(String(value));
-                                        set_edit_task({...edit_task, source_client_num_id: id})
-                                    }}/>
+                            <InputText value={client_name(edit_task.source_client_num_id)} options={all_client_options}
+                                       handleInputChange={(value) => {
+                                           const selected = resolveClientOption(value);
+                                           if (!selected) return;
+                                           set_edit_task({
+                                               ...edit_task,
+                                               source_client_num_id: parseInt(String(selected.value))
+                                           })
+                                       }}/>
                         </InputRow>
                         <InputRow label={t("原目录")} label_width={"6rem"} required>
                             <InputText value={edit_task.source_dir} placeholder={t("被同步的源目录")}
@@ -259,23 +272,32 @@ export function TcpProxyServerClientSetting() {
                         </InputRow>
 
                         <label>{t("目标列表")}</label>
+
                         {(edit_task.targets ?? []).map((target, index) => {
-                            return <div key={index} className={"div-row"}>
-                                <div style={{width: "10rem"}}>
-                                    <Select value={target.client_num_id} options={all_client_options}
-                                            onChange={(value) => set_target_field(index, "client_num_id", parseInt(String(value)))}/>
-                                </div>
-                                <div style={{flex: 1}}>
-                                    <InputText value={target.dir} placeholder={t("目标目录")}
+                            return <InstanceItem key={index} title={`${t("目标")}${index + 1}`}
+                                                 toolbar={<>
+                                                     <InputRow label={t("全量同步")} label_width={"6rem"}>
+                                                         <InputCheckbox selected={!!target.full_sync}
+                                                                        onchange={() => set_target_field(index, "full_sync", !target.full_sync)}/>
+                                                     </InputRow>
+
+                                                     <ActionButton icon={"delete"} title={t("删除")}
+                                                                   onClick={() => del_target(index)}/>
+                                                 </>}>
+                                <InputRow label={t("客户端")} label_width={"6rem"} required>
+                                    <InputText value={client_name(target.client_num_id)}
+                                               options={all_client_options}
+                                               handleInputChange={(value) => {
+                                                   const selected = resolveClientOption(value);
+                                                   if (!selected) return;
+                                                   set_target_field(index, "client_num_id", parseInt(String(selected.value)));
+                                               }}/>
+                                </InputRow>
+                                <InputRow label={t("目标目录")} label_width={"6rem"} required>
+                                    <InputText value={target.dir}
                                                handleInputChange={(value) => set_target_field(index, "dir", value)}/>
-                                </div>
-                                <div className={"div-row"}>
-                                    <span>{t("全量同步")}</span>
-                                    <InputCheckbox selected={!!target.full_sync}
-                                                   onchange={() => set_target_field(index, "full_sync", !target.full_sync)}/>
-                                </div>
-                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del_target(index)}/>
-                            </div>
+                                </InputRow>
+                            </InstanceItem>
                         })}
                         <div className={"div-row"}>
                             <ActionButton icon={"add"} title={t("添加")} onClick={add_target}/>

@@ -343,7 +343,7 @@
     padding: 0.65em 1em 0.65em 1em;
     border-left: 4px solid var(--divider, #dfe2e5);
     border-radius: 0 4px 4px 0;
-    background: var(--hover, rgba(0, 0, 0, 0.06));
+    background: var(--moon-grey);
     /* 引用文字用次要色。深浅对比交给底色和竖线表达，
        颜色只用来和正文做区分即可：深色主题下 --textSecondary 反而比
        --textPrimary 更亮，若强行统一成「更暗」会引入 color-mix 等新特性，
