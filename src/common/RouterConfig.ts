@@ -26,6 +26,6 @@ export const routerConfig = {
     git_page:"/git_page",
     docker_setting_page:"/docker_setting_page",
     md_editor_setting_page:"/md_editor_setting_page", // md 编辑器全局设置页
-    "/":"/",
+    md_theme_editor_page:"/md_theme_editor_page", // md 主题编辑页（左侧 css 编辑，右侧实时预览）    "/":"/",
     "":""
 }

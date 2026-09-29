@@ -47,8 +47,10 @@ export async function save_md_editor_setting(body: Partial<md_editor_setting_poj
 /**
  * 把设置写进 CSS 变量，挂到容器元素上。CSS 里所有相关尺寸都读这些变量，
  * 所以这里改完立即生效，不需要重渲染编辑器。
+ *
+ * 只处理尺寸类字段；主题（theme）由 md_theme.ts 的 apply_theme_css 单独注入。
  */
-export function apply_md_editor_setting(el: HTMLElement | null, s: md_editor_setting_pojo) {
+export function apply_md_editor_setting(el: HTMLElement | null, s: Partial<md_editor_setting_pojo>) {
     if (!el) {
         return;
     }

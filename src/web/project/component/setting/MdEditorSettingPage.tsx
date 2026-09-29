@@ -5,18 +5,21 @@ import {ActionButton} from "../../../meta/component/Button";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row} from "../../../meta/component/Dashboard";
 import {Card} from "../../../meta/component/Card";
-import {InputRow} from "../../../meta/component/Input";
+import {InputRow, Select} from "../../../meta/component/Input";
 import {Button, ButtonText} from "../../../meta/component/Button";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
-import {md_editor_setting_pojo} from "../../../../common/req/common.pojo";
+import {md_editor_setting_pojo, md_theme_item} from "../../../../common/req/common.pojo";
+import {routerConfig} from "../../../../common/RouterConfig";
 import {
     apply_md_editor_setting,
     load_md_editor_setting,
     MD_EDITOR_SETTING_DEFAULT,
     save_md_editor_setting,
 } from "../file/component/md_editor/MdEditorSetting";
+import {del_md_theme, load_md_theme_list} from "../file/component/md_editor/md_theme";
+import {using_confirm} from "../prompts/prompt.util";
 
 /**
  * md 编辑器全局设置页（独立路由 /md_editor_setting_page）。
@@ -40,6 +43,7 @@ export default function MdEditorSettingPage() {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
+    const confirm_dell_all = using_confirm();
     // 无权限时页面降级为只读：能看当前配置，但不能改也不能保存
     const can_edit = check_user_auth(UserAuth.md_editor_setting);
 
@@ -47,12 +51,17 @@ export default function MdEditorSettingPage() {
     const [values, set_values] = useState<Record<string, string>>({});
     const [loading, set_loading] = useState(true);
     const [saving, set_saving] = useState(false);
+    // 主题列表与当前选中的主题 id（全局设置，所有用户共用）
+    const [themes, set_themes] = useState<md_theme_item[]>([]);
+    const [theme, set_theme] = useState<string>(MD_EDITOR_SETTING_DEFAULT.theme);
 
     useEffect(() => {
-        load_md_editor_setting().then(s => {
+        Promise.all([load_md_editor_setting(), load_md_theme_list()]).then(([s, list]) => {
             const next: Record<string, string> = {};
             FIELDS.forEach(f => next[f.key] = s[f.key] ?? "");
             set_values(next);
+            set_theme(s.theme ?? MD_EDITOR_SETTING_DEFAULT.theme);
+            set_themes(list);
         }).finally(() => set_loading(false));
     }, []);
 
@@ -67,6 +76,7 @@ export default function MdEditorSettingPage() {
         }
         const body: any = {};
         FIELDS.forEach(f => body[f.key] = values[f.key].trim());
+        body.theme = theme;
         set_saving(true);
         try {
             const saved = await save_md_editor_setting(body);
@@ -75,6 +85,7 @@ export default function MdEditorSettingPage() {
                 const next: Record<string, string> = {};
                 FIELDS.forEach(f => next[f.key] = saved[f.key] ?? "");
                 set_values(next);
+                set_theme(saved.theme ?? MD_EDITOR_SETTING_DEFAULT.theme);
             } else {
                 NotyFail(t("保存失败"));
             }
@@ -82,6 +93,27 @@ export default function MdEditorSettingPage() {
             set_saving(false);
         }
     };
+
+    // 删除主题
+    const remove_theme = (item: md_theme_item) => {
+        confirm_dell_all({
+            sub_title: t("确认删除这个主题吗?"),
+            confirm_fun: async () => {
+                if (await del_md_theme(item.id)) {
+                    NotySuccess(t("删除成功"));
+                    set_themes(await load_md_theme_list());
+                    // 删掉的正是当前启用主题时，回落到默认主题
+                    if (theme === item.id) {
+                        set_theme(MD_EDITOR_SETTING_DEFAULT.theme);
+                    }
+                } else {
+                    NotyFail(t("删除失败"));
+                }
+            }
+        });
+    };
+
+    const cur_theme = themes.find(i => i.id === theme);
 
     const reset_default = () => {
         const next: Record<string, string> = {};
@@ -116,9 +148,30 @@ export default function MdEditorSettingPage() {
                             </>}>
                                 {loading
                                     ? <div className="common-box common-box-center">{t("加载中")}...</div>
-                                    : <React.Fragment>
-                                        {FIELDS.map(f => <InputRow key={f.key} label={t(f.label)}
-                                                                   label_width={"8rem"}>
+                                    : <div className="md-setting-form">
+                                        {/* 主题：选择当前启用的主题，右侧按钮进入编辑 / 删除 / 新建 */}
+                                        <InputRow vertical label={t("主题")}>
+                                            {/* 这里不用 .div-row：它带 -0.5em 负边距，会把这一行撑出容器导致左边缘与其它字段对不齐 */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+                                                <Select
+                                                    value={theme}
+                                                    onChange={(v) => set_theme(v)}
+                                                    disabled={!can_edit}
+                                                    options={[
+                                                        {title: t("不使用主题"), value: ""},
+                                                        ...themes.map(i => ({title: i.id, value: i.id})),
+                                                    ]}
+                                                />
+                                                <ActionButton icon={"add"} title={t("新建主题")}
+                                                              onClick={() => navigate(routerConfig.md_theme_editor_page)}/>
+                                                <ActionButton icon={"edit"} title={t("编辑主题")}
+                                                              onClick={() => navigate(`${routerConfig.md_theme_editor_page}?id=${encodeURIComponent(theme)}`)}/>
+                                                {cur_theme &&
+                                                    <ActionButton icon={"delete"} title={t("删除主题")}
+                                                                  onClick={() => remove_theme(cur_theme)}/>}
+                                            </div>
+                                        </InputRow>
+                                        {FIELDS.map(f => <InputRow key={f.key} vertical label={t(f.label)}>
                                             <input className="input input--block"
                                                    type="text"
                                                    spellCheck={false}
@@ -133,7 +186,7 @@ export default function MdEditorSettingPage() {
                                         {!can_edit && <p className="md-editor-setting-page__desc">
                                             {t("nprmtp")}
                                         </p>}
-                                    </React.Fragment>}
+                                    </div>}
                             </Card>
                         </Column>
                         <Column widthPer={50} maxWidth={"60rem"}>

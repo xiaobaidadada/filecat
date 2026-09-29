@@ -138,7 +138,6 @@ export class MountController {
     /** 取挂载功能总开关状态（Header 开关用，登录即可读） */
     @Post("/enabled/get")
     async enabled_get(@Req() r) {
-        userService.get_user_info_by_token(r.headers.authorization);
         return Sucess(mountService.is_enabled());
     }
 

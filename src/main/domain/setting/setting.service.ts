@@ -18,6 +18,7 @@ import {
 } from "../../../common/req/setting.req";
 import {SystemUtil} from "../sys/sys.utl";
 import {Request} from "express";
+import {mdThemeService, check_theme_name} from "./md_theme.service";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import * as vm from "node:vm";
 import {UserService, userService} from "../user/user.service";
@@ -498,12 +499,32 @@ export class SettingService {
 
     // md 编辑器设置的字段规则，get/set 共用一份，避免字段名散落在多处。
     // allow_unitless 为 true 的字段（行高）允许纯数字，如 "1.8"。
-    private static readonly MD_EDITOR_FIELDS: { key: keyof md_editor_setting_pojo, allow_unitless?: boolean }[] = [
+    // is_theme 为 true 的字段是主题名，不走尺寸校验，只校验名称合法性。
+    private static readonly MD_EDITOR_FIELDS: {
+        key: keyof md_editor_setting_pojo,
+        allow_unitless?: boolean,
+        is_theme?: boolean
+    }[] = [
         {key: "content_max_width"},
         {key: "content_padding"},
         {key: "font_size"},
         {key: "line_height", allow_unitless: true},
+        {key: "theme", is_theme: true},
     ];
+
+    private static is_valid_theme_id(v: any): boolean {
+        const s = String(v ?? "").trim();
+        // 空串表示不使用主题，是合法值
+        if (s === "") {
+            return true;
+        }
+        try {
+            check_theme_name(s);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
     /**
      * 归一化一个 md 编辑器设置字段的值。
@@ -515,7 +536,12 @@ export class SettingService {
     private static normalize_md_editor_value(
         key: keyof md_editor_setting_pojo, raw: any, fallback: string
     ): string {
-        const allow_unitless = SettingService.MD_EDITOR_FIELDS.some(f => f.key === key && f.allow_unitless);
+        const field = SettingService.MD_EDITOR_FIELDS.find(f => f.key === key);
+        // 主题 id 不是尺寸，单独校验字符集
+        if (field?.is_theme) {
+            return SettingService.is_valid_theme_id(raw) ? String(raw ?? "").trim() : fallback;
+        }
+        const allow_unitless = field?.allow_unitless;
         // 兼容旧格式：以前存的是纯数字，按 px 处理（行高本身就是无单位倍数，不加单位）
         let v = raw;
         if (typeof v === "number" && Number.isFinite(v)) {
@@ -1692,6 +1718,7 @@ export const settingService: SettingService = new SettingService();
 HttpRequest.set_proxy_getter(() => settingService.get_http_proxy());
 ServerEvent.on("start", (data) => {
     settingService.init();
+    mdThemeService.init().catch(console.error);
     settingService.power_on_corn();
     settingService.init_corn();
     settingService.load_all_plugin().catch(console.error);

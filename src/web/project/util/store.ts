@@ -168,7 +168,9 @@ export const $stroe = {
     md_editor_mode: sync_atomWithStorage<"wysiwyg" | "source">("md_editor_mode", "wysiwyg"),
     // md 编辑器：是否展开大纲，用户偏好，持久化
     md_editor_show_outline: sync_atomWithStorage<boolean>("md_editor_show_outline", false),
-    // sqlite 查询页上下文
+    // 最近一次打开的 md 编辑器正文。主题编辑页用它做实时预览的样例内容
+    // （调主题需要看到各种元素，只有几行的短文档看不出效果）。
+    md_editor_last_context: atom<string>(""),    // sqlite 查询页上下文
     sqlite_query_context: sync_atomWithStorage<any>("sqlite_query_context", new SqliteQueryContext()),
     // 编辑器
     studio: atom<{folder_path?: string, name?: string}>({}),

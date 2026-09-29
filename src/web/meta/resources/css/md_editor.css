@@ -756,6 +756,13 @@
 
 /* ---------- 编辑器设置页（独立路由 /md_editor_setting_page） ---------- */
 
+/* 设置表单：字段纵向排列，每个字段 label 在上、控件在下 */
+.md-setting-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9em;
+}
+
 .md-editor-setting-page__desc {
     margin: 0 0 0.6em;
     color: var(--textSecondary, #5f6368);
@@ -787,6 +794,59 @@
 
 .md-editor-setting-page__preview-sheet p {
     margin: 0.6em 0;
+}
+
+/* ---------- 主题编辑页（独立路由 /md_theme_editor_page） ---------- */
+
+/* 左右分栏：左侧 css 编辑，右侧实时预览 */
+.md-theme-editor {
+    display: flex;
+    gap: 1em;
+    padding: 1em;
+    box-sizing: border-box;
+    align-items: flex-start;
+}
+
+.md-theme-editor__left,
+.md-theme-editor__right {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Ace 挂载点：容器必须有确定高度，Ace 内部用的是 height:100%，
+   父级高度为 auto 时会算成 0，表现为编辑区一片空白无法输入 */
+.md-theme-editor__ace {
+    height: calc(100vh - 18em);
+    min-height: 20em;
+    margin-top: 0.6em;
+    border: 1px solid var(--divider, #e1e4e8);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.md-theme-editor__tip {
+    color: var(--textSecondary, #5f6368);
+    font-size: 0.9em;
+}
+
+/* 预览区：容器类名与编辑器一致，主题在这里的表现与编辑器里相同 */
+.md-theme-preview {
+    background: var(--surfaceSecondary, #f6f6f6);
+    border-radius: 4px;
+    /*padding: 1em 0;*/
+    /* 内容比左侧 Ace 高时自己滚动，避免把整页撑得很长 */
+    max-height: calc(100vh - 14em);
+    overflow: auto;
+}
+
+.md-theme-preview .md-editor-sheet {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+}
+
+.md-theme-preview .md-wysiwyg-content {
+    padding: 1.5em 2em;
 }
 
 /* ============ 打印 / 导出 PDF ============

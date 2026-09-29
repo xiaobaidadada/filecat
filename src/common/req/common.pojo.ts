@@ -233,6 +233,8 @@ export interface md_editor_setting_pojo {
     font_size: string
     // 行高（无单位倍数，如 "1.8"）
     line_height: string
+    // 当前启用的主题 id，空字符串表示不使用主题（走编辑器自带外观）
+    theme: string
 }
 
 // md 编辑器设置的默认值 —— 唯一定义处，前后端都从这里取，禁止各写一份。
@@ -244,4 +246,12 @@ export const MD_EDITOR_SETTING_DEFAULT: md_editor_setting_pojo = {
     content_padding: "4%",
     font_size: "16px",
     line_height: "1.8",
+    // 默认不启用主题：空字符串保持编辑器原本外观，也不会去请求主题内容
+    theme: "",
 };
+
+// md 编辑器主题。
+// 主题就是一个 css 文件（<主题名>.css），列表接口只返回主题名，不返回 css 正文。
+export interface md_theme_item {
+    id: string;      // 主题名，同时是主题目录下 css 文件名（不含扩展名）
+}

@@ -15,6 +15,7 @@ import {HttpRequest} from "../../../common/node/http";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {withLock} from "../../../common/fun.util";
 import {CommonUtil} from "../../../common/common.util";
+import {mdThemeService} from "../setting/md_theme.service";
 
 interface UserLoginData {
     username: string;
@@ -192,6 +193,8 @@ export class UserController {
         is_file_list_zoom?: boolean,
         is_sql_preset?: boolean,
         sql_preset_list?: SqlPresetItem[],
+        is_md_theme?: boolean, // 是否更新 md 编辑器个人主题
+        md_editor_theme?: string,
         is_sys_done_prompt?: boolean, // 是否更新系统已完成提示（如网址导航 tag 删除提示）
         sys_done_prompt?: { tag_delete?: boolean },
         value?:any,
@@ -213,6 +216,14 @@ export class UserController {
             userService.only_update_user_data(user_id, {file_list_zoom: body.value} as UserData);
         } else if(body.is_sql_preset) {
             userService.only_update_user_data(user_id, {sql_preset_list: body.sql_preset_list} as UserData);
+        } else if(body.is_md_theme) {
+            // 空串表示跟随系统设置里的主题；非空必须是真实存在的主题，
+            // 否则会存进一个不存在的主题名，之后切主题既没样式、菜单里也高亮不出来。
+            const theme = body.md_editor_theme ?? "";
+            if (theme && !mdThemeService.list().some(i => i.id === theme)) {
+                return Fail("主题不存在");
+            }
+            userService.only_update_user_data(user_id, {md_editor_theme: theme} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

@@ -25,6 +25,7 @@ export enum data_dir_tem_name {
     sys_database_dir = "sys_database_dir", // 存放一些数据库
     filecat_upgrade_dir = "filecat_upgrade_dir",
     ai_agent_chat_session_dir = "ai_agent_chat_session_dir",
+    md_theme_dir = "md_theme_dir", // md 编辑器主题（一个主题一个 css 文件）
 }
 
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择

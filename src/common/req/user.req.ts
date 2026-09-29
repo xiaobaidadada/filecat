@@ -117,6 +117,7 @@ export enum UserAuth {
     ai_model_switch = 91, // 允许切换 AI 模型（AI 聊天主页的模型选择）
     md_editor_setting = 92, // md 编辑器全局设置（正文宽度/字号等）的修改
     file_mount = 93, // 目录挂载（把本地目录挂载到网盘/远程协议，含管理挂载与百度网盘授权）
+    md_theme = 94, // md 编辑器主题的新建/修改/删除
 }
 
 
@@ -195,6 +196,7 @@ export class UserData extends UserLogin {
     file_list_zoom?:number;
 
     sql_preset_list?: SqlPresetItem[]; // SQL 查询预设列表（个人保存）
+    md_editor_theme?: string; // md 编辑器主题 id（个人保存；空表示跟随系统设置里的默认主题）
 
     upload_file_ignore?:string
     upload_file_ignore_list?:string[]

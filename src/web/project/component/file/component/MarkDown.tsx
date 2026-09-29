@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../../util/store";
 import {ActionButton} from "../../../../meta/component/Button";

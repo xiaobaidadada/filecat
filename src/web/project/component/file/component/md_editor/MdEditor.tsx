@@ -1,4 +1,5 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {GlobalContext} from "../../../../GlobalProvider";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../../util/store";
 import {use_auth_check} from "../../../../util/store.util";
@@ -7,8 +8,9 @@ import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {RCode} from "../../../../../../common/Result.pojo";
-import {fileHttp} from "../../../../util/config";
+import {fileHttp, userHttp} from "../../../../util/config";
 import {Http} from "../../../../util/http";
+import {Http_controller_router} from "../../../../../../common/req/http_controller_router";
 import {useTranslation} from "react-i18next";
 import MdWysiwygEditor, {MdWysiwygHandle} from "./MdWysiwygEditor";
 import MdToolbar from "./MdToolbar";
@@ -20,6 +22,8 @@ import {
     load_md_editor_setting,
     MD_EDITOR_SETTING_DEFAULT,
 } from "./MdEditorSetting";
+import {apply_active_theme, invalidate_md_theme_css, MD_THEME_CHANGE_EVENT} from "./md_theme";
+import {MdThemeMenu} from "./MdThemeMenu";
 import * as lodash from "lodash";
 import {useNavigate} from "react-router-dom";
 import {routerConfig} from "../../../../../../common/RouterConfig";
@@ -42,6 +46,9 @@ export default function MdEditor() {
     const {check_user_auth} = use_auth_check();
     const can_setting = check_user_auth(UserAuth.md_editor_setting);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
+    const set_last_context = useAtom($stroe.md_editor_last_context)[1];
+    // 正文同步到全局 atom 的防抖计时器
+    const last_context_timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 编辑器初始内容：加载完成后才挂载编辑器，避免用空内容初始化
     const [init_value, set_init_value] = useState<string | null>(null);
     const [loading, set_loading] = useState(false);
@@ -89,7 +96,25 @@ export default function MdEditor() {
     // md 编辑器全局设置（服务端保存，所有用户共用）。
     // 它控制正文宽度/边距/字号等外观，改动通过 CSS 变量即时生效。
     const [editor_setting, set_editor_setting] = useState(MD_EDITOR_SETTING_DEFAULT);
+    // 当前用户选中的主题（存在个人数据 user_data.md_editor_theme 里）。
+    // 这里只保留「用户选了什么」用于菜单高亮；实际生效的主题 css 由后端综合
+    // 个人选择与系统设置算出来，前端不关心主题名。
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    const {initUserInfo} = useContext(GlobalContext);
+    // 「没设置过」和「选了跟随系统」是同一件事，统一成空串：
+    // 菜单里空值那一项就是「跟随系统设置」，这样高亮和保存都只有一种表示。
+    const [user_theme, set_user_theme] = useState<string>(user_base_info.md_editor_theme ?? "");
     const container_ref = useRef<HTMLDivElement>(null);
+    // 用户刚主动选过的主题。个人数据是异步拉回来的，拉回来时可能还没有这次改动
+    // （服务端内存里的用户信息刷新有先后），直接用它会把手选的项打回去、高亮跟着跳。
+    // 所以本地选择优先，只在没有本地选择时才用拉回来的值。
+    const local_choice = useRef<string | null>(null);
+    useEffect(() => {
+        if (local_choice.current !== null) {
+            return;
+        }
+        set_user_theme(user_base_info.md_editor_theme ?? "");
+    }, [user_base_info]);
 
     // 拉取全局设置。放在这里而不是 App 层：只有打开编辑器才需要，避免每次加载页面都多一个请求。
     useEffect(() => {
@@ -108,6 +133,48 @@ export default function MdEditor() {
     useEffect(() => {
         apply_md_editor_setting(container_ref.current, editor_setting);
     }, [editor_setting]);
+
+    // 切换主题：存进当前用户的个人数据（不是全局设置），并立即生效。
+    // 个人数据变了就触发下面那个 effect 重新拉取注入，不用手动调 apply。
+    const switch_theme = async (id: string) => {
+        if (id === user_theme) {
+            return;
+        }
+        const rsp = await userHttp.post(Http_controller_router.user_save_private_attr, {
+            is_md_theme: true,
+            md_editor_theme: id,
+        });
+        if (rsp?.code !== RCode.Success) {
+            NotyFail(t("保存失败"));
+            return;
+        }
+        set_user_theme(id);
+        // 记下这次选择：initUserInfo 拉回来的数据可能还没包含它，避免高亮被打回去
+        local_choice.current = id;
+        // 主题缓存的是「当前该用哪个主题」，选择变了必须清掉，
+        // 否则下面那个 effect 重新拉取时拿到的还是上一个主题。
+        invalidate_md_theme_css();
+        // 同步全局个人数据
+        await initUserInfo();
+        NotySuccess(t("保存成功"));
+    };
+
+    // 应用主题：拉取当前用户该用的主题 css 注入编辑器正文容器。
+    // 主题是 Typora 风格（#write），由 apply_theme_css 改写作用域后再注入，
+    // 因此不会影响后台其他界面。拉到空内容就什么都不注入。
+    useEffect(() => {
+        apply_active_theme("editor", "#md-editor-container .md-editor-sheet");
+    }, [user_theme, editor_setting.theme]);
+
+    // 主题内容被编辑/删除后缓存要失效，重新应用一次
+    useEffect(() => {
+        const on_theme_change = () => {
+            invalidate_md_theme_css();
+            apply_active_theme("editor", "#md-editor-container .md-editor-sheet");
+        };
+        window.addEventListener(MD_THEME_CHANGE_EVENT, on_theme_change);
+        return () => window.removeEventListener(MD_THEME_CHANGE_EVENT, on_theme_change);
+    }, []);
 
     // 大纲数据源的统一入口，两种模式各取所需：
     //   wysiwyg —— 问 ProseMirror 要（有真实文档位置）
@@ -318,12 +385,11 @@ export default function MdEditor() {
                         <ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
                                       icon={mode === "wysiwyg" ? "code" : "edit"}
                                       onClick={toggle_mode}/>,
+                        <MdThemeMenu key={8}
+                                     value={user_theme}
+                                     on_change={switch_theme}/>,
                         // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
                         <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,
-                        // 全局编辑器设置（正文宽度/边距/字号等，对所有用户生效）。
-                        // 需要 UserAuth.md_editor_setting 权限，没有就不显示这个入口。
-                        // 跳到独立设置页。编辑器是全屏 fixed 覆盖层（z-index 1000），
-                        // 不关掉会把设置页整个盖住，所以先 close 再跳。
                         ...(can_setting ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
                                                         onClick={() => {
                                                             close();
@@ -383,6 +449,16 @@ export default function MdEditor() {
                                         if (!dirty) {
                                             set_dirty(true);
                                         }
+                                        // 同步正文到全局 atom，供主题编辑页做实时预览（防抖，避免每次按键都取全文）
+                                        if (last_context_timer.current) {
+                                            clearTimeout(last_context_timer.current);
+                                        }
+                                        last_context_timer.current = setTimeout(() => {
+                                            const text = handle_ref.current?.get_markdown() ?? "";
+                                            if (text) {
+                                                set_last_context(text);
+                                            }
+                                        }, 800);
                                     }}
                                     on_save={() => save_ref.current()}
                                     on_selection_change={() => set_tick(n => n + 1)}

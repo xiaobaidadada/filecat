@@ -524,8 +524,11 @@ export function Select(props: SelectProps) {
 }
 
 /**
- * 通用「标签 + 控件」行组件：左侧固定宽度的 label，右侧自适应控件。
- * 用于表单里"某个字段"的一行式布局，供各编辑器/表单面板复用。
+ * 通用「标签 + 控件」行组件。
+ *
+ * 横向（默认）：左侧固定宽度的 label，右侧自适应控件，用于"字段一行"的紧凑布局。
+ * 纵向（vertical）：label 在上、控件在下并占满宽度，各字段之间左边缘天然对齐，
+ * 适合控件本身就是块级内容（下拉、按钮组）或字段较多时逐条阅读的表单。
  * @param props
  */
 export function InputRow(props: {
@@ -533,11 +536,25 @@ export function InputRow(props: {
     label_width?: string,
     required?: boolean,
     input_max_width?: string,
+    vertical?: boolean,
     children?: any
     // React 内置属性：显式声明才能让调用方直接在 <InputRow key={...}> 上使用。
     // 内联字面量类型不会自动带上 key，不写会报 TS2322。
     key?: React.Key
 }) {
+    const input_css: any = {flex: 1, minWidth: 0}
+    if(props.input_max_width) {
+        input_css['maxWidth'] = props.input_max_width;
+    }
+    const star = props.required && <span style={{color: 'red', marginRight: '0.15rem'}}>*</span>;
+
+    if (props.vertical) {
+        return <div style={{display: 'flex', flexDirection: 'column', gap: '0.3rem'}}>
+            <label style={{whiteSpace: 'nowrap'}}>{star}{props.label}</label>
+            <div style={input_css}>{props.children}</div>
+        </div>
+    }
+
     const css: any = {
         whiteSpace: 'nowrap',
         flex: '0 0 auto',
@@ -547,16 +564,8 @@ export function InputRow(props: {
     if(props.label_width) {
         css['width'] = props.label_width;
     }
-    const input_css = {flex: 1, minWidth: 0}
-    if(props.input_max_width) {
-        input_css['maxWidth'] = props.input_max_width;
-    }
     return <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
-        <label style={css}
-        >
-            {props.required && <span style={{color: 'red', marginRight: '0.15rem'}}>*</span>}
-            {props.label}
-        </label>
+        <label style={css}>{star}{props.label}</label>
         <div style={input_css}>{props.children}</div>
     </div>
 }

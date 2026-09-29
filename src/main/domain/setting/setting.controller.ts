@@ -4,6 +4,7 @@ import {Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
+import {mdThemeService} from "./md_theme.service";
 import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name} from "../data/data_type";
 import {router_pre_file} from "./setting.prefile";
@@ -618,5 +619,50 @@ export class SettingController {
     md_editor_setting_save(@Req() ctx, @Body() body: md_editor_setting_pojo) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.md_editor_setting);
         return Sucess(settingService.set_md_editor_setting(body));
+    }
+
+    // ---- md 编辑器主题 ----
+    // 主题全局共用一套（需 UserAuth.md_theme 才能改）。用户选哪个主题是个人数据，
+    // 存在 user_data.md_editor_theme，为空白时表示跟随系统设置里的默认主题。
+
+    // 主题列表（只有元信息，不含 css 正文）
+    @Get("/md_theme/list")
+    md_theme_list() {
+        return Sucess(mdThemeService.list());
+    }
+
+    // 单个主题的 css 正文（主题编辑页用）
+    @Get("/md_theme/get")
+    async md_theme_get(@QueryParam("id") id: string) {
+        const css = await mdThemeService.get_css(id ?? "");
+        if (css === null) {
+            return Fail("主题不存在");
+        }
+        return Sucess(css);
+    }
+
+    // 当前用户实际该用的主题 css。
+    // 主题名由后端根据「个人选择 + 系统设置」算出来，前端不传也不关心主题名。
+    // 没有可用主题时返回空串，前端不注入样式。
+    @Get("/md_theme/active")
+    async md_theme_active(@Req() ctx) {
+        const user_data = userService.get_user_info_by_token(ctx.headers.authorization);
+        const sys_theme = settingService.get_md_editor_setting().theme;
+        return Sucess(await mdThemeService.get_active_css(user_data.md_editor_theme, sys_theme));
+    }
+
+    // 新建或更新主题：带 id 为更新，不带为新建
+    @Post("/md_theme/save")
+    async md_theme_save(@Req() ctx, @Body() body: { id?: string, name: string, css: string }) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.md_theme);
+        return Sucess(await mdThemeService.save(body?.name, body?.css, body?.id));
+    }
+
+    // 删除主题（内置主题不允许删）
+    @Post("/md_theme/del")
+    async md_theme_del(@Req() ctx, @Body() body: { id: string }) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.md_theme);
+        await mdThemeService.del(body?.id);
+        return Sucess("1");
     }
 }
