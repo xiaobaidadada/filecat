@@ -383,37 +383,92 @@ export function unsing_switch_grid_view (is_local = false) {
 export function useUpdateUrlParams() {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    return (key: string, value: string|undefined|null) => {
+    return (key: string|string[]|Record<string, string|undefined|null>, value?: string|undefined|null) => {
         const newParams = new URLSearchParams(searchParams);
-
-        if (value === undefined || value === null) {
-            newParams.delete(key);
+        if (typeof key === "string") {
+            if (value === undefined || value === null) {
+                newParams.delete(key);
+            } else {
+                newParams.set(key, value);
+            }
+        } else if (Array.isArray(key)) {
+            // 批量删除
+            for (const k of key) {
+                newParams.delete(k);
+            }
         } else {
-            newParams.set(key, value);
+            // 批量设置（值为 undefined/null 表示删除）
+            for (const [k, v] of Object.entries(key)) {
+                if (v === undefined || v === null) {
+                    newParams.delete(k);
+                } else {
+                    newParams.set(k, v);
+                }
+            }
         }
-
         setSearchParams(newParams);
     };
+}
+
+// 可以直接预览的文件类型，分享与文件页共用
+const preview_file_type_list = ["text",
+    FileTypeEnum.md,
+    FileTypeEnum.excalidraw,
+    FileTypeEnum.draw,
+    FileTypeEnum.pdf,
+    FileTypeEnum.image,
+    FileTypeEnum.video
+]
+// 判断该文件名是否可预览
+export function is_preview_file(name: string) {
+    return preview_file_type_list.includes(getFileFormat(name) as string);
+}
+
+// 按文件类型推断双击时的打开方式，写入 url 与 url 恢复共用同一套映射
+export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode {
+    if (type === FileTypeEnum.md) return "md";
+    if (type === FileTypeEnum.excalidraw || type === FileTypeEnum.draw) return "excalidraw";
+    if (type === FileTypeEnum.pdf || type === FileTypeEnum.image || type === FileTypeEnum.video) return "preview";
+    return "text";
 }
 
 // 检测 并执行 能不能预览
 export function use_share_preview() {
     const updateParams = useUpdateUrlParams();
-    const list = ["text",
-        FileTypeEnum.md,
-        FileTypeEnum.excalidraw,
-        FileTypeEnum.draw,
-        FileTypeEnum.pdf,
-        FileTypeEnum.image,
-        FileTypeEnum.video
-    ]
     return (name:string)=>{
-        const type = getFileFormat(name);
-        if(list.includes(type)) {
+        if(is_preview_file(name)) {
             updateParams('share_preview_file_name',name)
             return true;
         }
         return false;
+    }
+}
+
+// 打开文件的方式（写入 url 参数，刷新后据此恢复）
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw";
+
+export interface file_open_param {
+    name: string;
+    mode: open_mode;
+    // 日志查看器的编码与换行方式
+    log_enc?: string;
+    log_wrap?: 'wrap' | 'nowrap';
+}
+
+// 更新文件页的打开参数（传 null 清除），使刷新页面能恢复打开的文件与打开方式
+export function use_file_open() {
+    const updateParams = useUpdateUrlParams();
+    return (param: file_open_param | null) => {
+        if (!param) {
+            updateParams(['preview_file_name', 'preview_mode', 'preview_log_enc', 'preview_log_wrap']);
+            return;
+        }
+        updateParams({
+            preview_file_name: param.name,
+            preview_mode: param.mode,
+            preview_log_enc: param.log_enc,
+            preview_log_wrap: param.log_wrap,
+        });
     }
 }
 
@@ -589,18 +644,20 @@ export const user_click_file = () => {
                         url: url,
                         path: absolute_file_path,
                         name,
+                        close: param.close,
                     });
                     break;
                 case FileTypeEnum.video:
                 case FileTypeEnum.pdf:
-                    setFilePreview({open: true, type: type, name, url})
+                    setFilePreview({open: true, type: type, name, url, close: param.close})
                     break;
                 case FileTypeEnum.image:
                     setFilePreview({
                         open: true,
                         type: type,
                         name,
-                        url: fileHttp.add_params(url, {mtime: param.mtime, cache: 1})
+                        url: fileHttp.add_params(url, {mtime: param.mtime, cache: 1}),
+                        close: param.close
                     })
                     break;
                 case FileTypeEnum.workflow_act:

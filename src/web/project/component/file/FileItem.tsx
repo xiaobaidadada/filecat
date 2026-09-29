@@ -11,7 +11,7 @@ import {RCode} from "../../../../common/Result.pojo";
 import {PromptEnum} from "../prompts/Prompt";
 import {FileMenuData, getFileFormat} from "../../../../common/FileMenuType";
 import {useTranslation} from "react-i18next";
-import {getFileNameByLocation, getFilesByIndexs, use_click_double, use_click_folder, user_click_file} from "./FileUtil";
+import {getFileNameByLocation, getFilesByIndexs, get_open_mode_by_type, use_click_double, use_click_folder, use_file_open, user_click_file} from "./FileUtil";
 
 
 export function FileItem(props: FileItemData & { index?: number, itemWidth?: string }) {
@@ -22,6 +22,7 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
 
     const [enterKey, setEnterKey] = useAtom($stroe.enterKey);
     const {click_file} = user_click_file();
+    const file_open = use_file_open();
     const {t} = useTranslation();
 
     const navigate = useNavigate();
@@ -36,8 +37,12 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                 // 双击文件夹进入
                 click_folder(name);
             } else {
-                // 双击文件打开
-                click_file({name, size: props.origin_size, opt_shell: true, mtime: props.mtime});
+                // 双击文件打开，同时把文件名与打开方式写入 url，刷新时能恢复打开状态
+                file_open({name, mode: get_open_mode_by_type(props.type)});
+                click_file({
+                    name, size: props.origin_size, opt_shell: true, mtime: props.mtime,
+                    close: () => file_open(null),
+                });
             }
         });
         if (isDouble) return;

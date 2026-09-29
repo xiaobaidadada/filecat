@@ -30,7 +30,7 @@ import {routerConfig} from "../../../../../common/RouterConfig";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
-import {use_click_folder, user_click_file} from "../../file/FileUtil";
+import {use_click_folder, use_file_open, user_click_file} from "../../file/FileUtil";
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 import {mountHttp} from "../../../util/config";
 import {NotyConfirm} from "../../../util/noty";
@@ -163,6 +163,7 @@ export function FileMenu() {
     // const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
     // const [studio, set_studio] = useAtom($stroe.studio);
     const {click_file} = user_click_file();
+    const file_open = use_file_open();
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
@@ -280,7 +281,9 @@ export function FileMenu() {
         switch (v) {
             case common_menu_type.open_text: {
                 const name = showPrompt.data.filename;
-                click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true});
+                file_open({name, mode: "text"});
+                click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true,
+                    close: () => file_open(null)});
             }
                 break;
             case common_menu_type.logviwer_text:
@@ -295,18 +298,23 @@ export function FileMenu() {
                 // case common_menu_type.logviwer_big5:
                 // case common_menu_type.logviwer_ios_8859_1:
             {
-                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v, wrap: 'wrap'})
+                file_open({name: showPrompt.data.filename, mode: "log", log_enc: v, log_wrap: "wrap"});
+                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v, wrap: 'wrap',
+                    close: () => file_open(null)})
             }
                 break;
             case common_menu_type.logviwer_wrap:
             case common_menu_type.logviwer_nowrap: {
                 // 从叶子菜单项读取所选编码，默认 utf8
                 const enc = item?.encoding ?? 'utf8';
+                const wrap = v === common_menu_type.logviwer_wrap ? 'wrap' : 'nowrap';
+                file_open({name: showPrompt.data.filename, mode: "log", log_enc: enc, log_wrap: wrap});
                 set_file_log({
                     show: true,
                     fileName: showPrompt.data.filename,
                     encoding: enc,
-                    wrap: v === common_menu_type.logviwer_wrap ? 'wrap' : 'nowrap'
+                    wrap,
+                    close: () => file_open(null)
                 })
             }
                 break;
@@ -407,10 +415,12 @@ export function FileMenu() {
                 const dir = getRouterAfter('file', getRouterPath());
                 const name = showPrompt.data.filename;
                 const file_path = `${dir}${name}`;
+                file_open({name, mode: "md"});
                 set_md_editor({
                     url: fileHttp.getDownloadUrl(`${encodeURIComponent(dir)}${name}`),
                     path: file_path,
                     name,
+                    close: () => file_open(null),
                 });
             }
                 break;
@@ -734,9 +744,11 @@ export function FileMenu() {
                                                                           click={async (v, item) => {
                                                                               // 图片专属项：编辑器打开 / 切换预览开关
                                                                               if (v == common_menu_type.image_open) {
+                                                                                  file_open({name: showPrompt.data.filename, mode: "image_edit"});
                                                                                   set_image_editor({
                                                                                       path: showPrompt.data.path,
-                                                                                      name: showPrompt.data.filename
+                                                                                      name: showPrompt.data.filename,
+                                                                                      close: () => file_open(null),
                                                                                   });
                                                                                   close();
                                                                               } else if (v == common_menu_type.image_preview) {

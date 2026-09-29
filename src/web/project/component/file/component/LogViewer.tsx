@@ -436,7 +436,9 @@ export default function LogViewer(props) {
         <Header ignore_tags={true}
                 left_children={[
                     <ActionButton key={1} title={t("取消")} icon={"close"} onClick={() => {
+                        const close_cb = shellShow.close;
                         setShellShow({show: false})
+                        close_cb?.();
                     }}/>,
                     <div key={2} style={{
                         width: '4rem'

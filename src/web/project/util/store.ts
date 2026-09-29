@@ -140,7 +140,7 @@ export const $stroe = {
         unit_name: ""
     }),
     // 日志 文件
-    log_viewer: atom<{show: boolean, fileName?: string, encoding?: string, wrap?: 'wrap' | 'nowrap'}>({
+    log_viewer: atom<{show: boolean, fileName?: string, encoding?: string, wrap?: 'wrap' | 'nowrap', close?: () => any}>({
         show: false
     }),
     // ssh工具连接信息
@@ -180,7 +180,7 @@ export const $stroe = {
     // 编辑器
     studio: atom<{folder_path?: string, name?: string}>({}),
     // 图片编辑器
-    image_editor: atom<{path?: string, name?: string}>({}),
+    image_editor: atom<{path?: string, name?: string, close?: () => any}>({}),
     // excalidraw编辑器
     excalidraw_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
     // 磁盘

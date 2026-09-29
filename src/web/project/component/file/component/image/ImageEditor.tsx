@@ -65,7 +65,9 @@ export default function ImageEditor() {
         filerobotImageEditor.render({
             onClose: (closingReason) => {
                 filerobotImageEditor.terminate();
+                const close_cb = image_editor.close;
                 set_image_editor({});
+                close_cb?.();
                 navigate(getRouterPath());
             },
         });

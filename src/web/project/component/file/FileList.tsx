@@ -3,7 +3,7 @@ import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
 import { useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {fileHttp, userHttp} from "../../util/config";
-import {useLocation, useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
@@ -11,8 +11,10 @@ import {RCode} from "../../../../common/Result.pojo";
 import {
     create_quick_cmd_items,
     file_sort,
+    open_mode,
     title_workflow_file_fail,
     title_workflow_file_success,
+    use_file_open,
     user_click_file
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -55,6 +57,9 @@ let pre_file_path = '';
 
 export default function FileList() {
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
+    const [, set_md_editor] = useAtom($stroe.md_editor);
+    const [, set_file_log] = useAtom($stroe.log_viewer);
+    const [, set_image_editor] = useAtom($stroe.image_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -81,6 +86,10 @@ export default function FileList() {
     const {initUserInfo} = useContext(GlobalContext);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {click_file} = user_click_file();
+    const [searchParams] = useSearchParams();
+    const file_open = use_file_open();
+    // 已自动打开过的 url 参数（目录+文件名），避免同一目录重复打开
+    const auto_preview_ref = React.useRef<string | null>(null);
     const [to_running_files_set, set_to_running_files_set] = useAtom($stroe.to_running_files);
 
     const [file_page, set_file_page] = useAtom($stroe.file_page);
@@ -162,6 +171,54 @@ export default function FileList() {
         }
     }
 
+    /** 列表加载完成后，按 url 参数恢复上次打开的文件与打开方式；找不到或已完成则不处理 */
+    const auto_open_preview = (data: GetFilePojo) => {
+        const name = searchParams.get("preview_file_name");
+        const mode = searchParams.get("preview_mode") as open_mode | null;
+        if (!name || !mode) return;
+        const path = getRouterAfter('file', getRouterPath());
+        // 同一目录下只自动打开一次，避免分页追加/列表刷新时反复弹出
+        if (auto_preview_ref.current === path + name) return;
+        const one = (data.files ?? []).find(v => v.name === name);
+        if (!one) return;
+        auto_preview_ref.current = path + name;
+        const close = () => file_open(null);
+        // md 与日志走各自的 atom，其余交给 click_file 按类型分派
+        if (mode === "md") {
+            set_md_editor({
+                url: fileHttp.getDownloadUrl(`${encodeURIComponent(path)}${name}`),
+                path: `${path}${name}`,
+                name,
+                close,
+            });
+            return;
+        }
+        if (mode === "log") {
+            set_file_log({
+                show: true,
+                fileName: name,
+                encoding: searchParams.get("preview_log_enc") ?? 'utf8',
+                wrap: (searchParams.get("preview_log_wrap") as 'wrap' | 'nowrap') ?? 'wrap',
+                close,
+            });
+            return;
+        }
+        if (mode === "image_edit") {
+            set_image_editor({
+                path: webPathJoin(getRouterPath(), name),
+                name,
+                close,
+            });
+            return;
+        }
+        // text 需显式指定 model，其余由 click_file 依据文件类型判断
+        click_file({
+            name: one.name, size: one.origin_size, opt_shell: true, mtime: one.mtime,
+            ...(mode === "text" ? {model: "text"} : {}),
+            close,
+        });
+    };
+
     const fileHandler = async () => {
         const path  = getRouterAfter('file', getRouterPath())
         // 空白搜索模式下，进入目录时不请求文件列表，直接显示空白
@@ -212,6 +269,10 @@ export default function FileList() {
                 return data;
             });
             pre_search = rsp.data;
+            // 仅在进入目录的第一页时恢复 url 中的打开状态
+            if (file_page.page_num === 1) {
+                auto_open_preview(pojo);
+            }
             return;
         } else {
             rsp = await fileHttp.get(path);
@@ -223,6 +284,7 @@ export default function FileList() {
         file_after(rsp.data)
         setNowFileList(rsp.data)
         pre_search = rsp.data;
+        auto_open_preview(rsp.data);
     }
     // const init_page =  () => {
     //     set_file_page({
