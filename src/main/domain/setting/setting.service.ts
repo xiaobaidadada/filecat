@@ -813,7 +813,7 @@ export class SettingService {
 
     // update_files_setting: FileSettingItem[];
     ai_agent_setting(): { models: ai_agent_Item[] } {
-        const r = DataUtil.get(data_common_key.ai_agent_model_setting) as any;
+        const r = DataUtil.get(data_common_key.ai_agent_model_setting, file_key.ai_setting_data) as any;
         if (!r) {
             const doubao_pojo = new ai_agent_Item()
             // 默认添加豆包的 api
@@ -870,28 +870,28 @@ export class SettingService {
     }
 
     ai_mcp_setting(): { list: ai_mcp_server_item[] } {
-        return DataUtil.get(data_common_key.ai_agent_mcp_setting) ?? {
+        return DataUtil.get(data_common_key.ai_agent_mcp_setting, file_key.ai_setting_data) ?? {
             list: []
         };
     }
 
     // 系统会话提示词
     ai_system_prompts_get(): ai_system_prompt_item[] {
-        return DataUtil.get(data_common_key.ai_system_prompts) ?? [];
+        return DataUtil.get(data_common_key.ai_system_prompts, file_key.ai_setting_data) ?? [];
     }
 
     ai_system_prompts_save(list: ai_system_prompt_item[]) {
-        DataUtil.set(data_common_key.ai_system_prompts, list);
+        DataUtil.set(data_common_key.ai_system_prompts, list, file_key.ai_setting_data);
     }
 
     // ============ 机器人配置 ============
 
     ai_rebot_setting(): ai_rebot_setting {
-        return DataUtil.get(data_common_key.ai_rebot_setting) ?? {list: []};
+        return DataUtil.get(data_common_key.ai_rebot_setting, file_key.ai_setting_data) ?? {list: []};
     }
 
     ai_rebot_setting_save(data: ai_rebot_setting) {
-        DataUtil.set(data_common_key.ai_rebot_setting, data);
+        DataUtil.set(data_common_key.ai_rebot_setting, data, file_key.ai_setting_data);
     }
 
     async ai_mcp_setting_save(token: string, data: { list: ai_mcp_server_item[] }) {
@@ -912,12 +912,12 @@ export class SettingService {
             }
             source_item.list = data.list;
         }
-        DataUtil.set(data_common_key.ai_agent_mcp_setting, source_item);
+        DataUtil.set(data_common_key.ai_agent_mcp_setting, source_item, file_key.ai_setting_data);
         await ai_agentService.reloadMcp().catch(console.error);
     }
 
     ai_docs_setting(): ai_docs_setting {
-        return DataUtil.get(data_common_key.ai_agent_docs_setting) ?? {
+        return DataUtil.get(data_common_key.ai_agent_docs_setting, file_key.ai_setting_data) ?? {
             list: [],
             param: ai_docs_setting_param_default
         }
@@ -934,7 +934,7 @@ export class SettingService {
         if (data.param != null) {
             source_item.param = data.param
         }
-        DataUtil.set(data_common_key.ai_agent_docs_setting, source_item);
+        DataUtil.set(data_common_key.ai_agent_docs_setting, source_item, file_key.ai_setting_data);
         if (data.docs_update_tag) {
             ai_agentService.init().catch(console.error);
         }

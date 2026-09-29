@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import fse from "fs-extra";
 import {DataUtil} from "../data/DataUtil";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
 import {ai_agentService} from "./ai_agent.service";
 import {llmPost, readLlmResponse} from "./llm_request";
@@ -195,7 +195,7 @@ export class AiAgentMemoryService {
 
     // index of session
     private read_index_of_session():SessionIndexStore {
-        const store = DataUtil.get<SessionIndexStore>(data_common_key.ai_agent_chat_session_store) ?? {
+        const store = DataUtil.get<SessionIndexStore>(data_common_key.ai_agent_chat_session_store, file_key.ai_setting_data) ?? {
             version: 2,
             users: {}
         };
@@ -205,7 +205,7 @@ export class AiAgentMemoryService {
     }
 
     private saveIndex(store: SessionIndexStore) {
-        DataUtil.set(data_common_key.ai_agent_chat_session_store, store);
+        DataUtil.set(data_common_key.ai_agent_chat_session_store, store, file_key.ai_setting_data);
     }
 
     private user_meta_index_by_store(store: SessionIndexStore, userId: string) {

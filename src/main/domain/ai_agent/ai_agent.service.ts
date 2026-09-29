@@ -527,7 +527,7 @@ export class Ai_agentService {
     // public have_ai_is_open = false
 
     docs_switch_get( ) {
-        let status:boolean =  DataUtil.get(data_common_key.ai_agent_status)
+        let status:boolean =  DataUtil.get(data_common_key.ai_agent_status, file_key.ai_setting_data)
         if(status == null) {
             status = false
         }
@@ -614,12 +614,12 @@ export class Ai_agentService {
             }
         }
         if (!found) return;
-        DataUtil.set(data_common_key.ai_agent_model_setting, body);
+        DataUtil.set(data_common_key.ai_agent_model_setting, body, file_key.ai_setting_data);
         this.load_key();
     }
 
     public ai_agent_setting_save(body:any) {
-        DataUtil.set(data_common_key.ai_agent_model_setting,body)
+        DataUtil.set(data_common_key.ai_agent_model_setting,body, file_key.ai_setting_data)
         const list = settingService.ai_agent_setting()
         for (const p of list.models) {
             const pojo:ai_agent_option_item_extra = {}

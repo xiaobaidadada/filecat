@@ -6,7 +6,7 @@ import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {mdThemeService} from "./md_theme.service";
 import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {router_pre_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
 import fs from "fs"
@@ -146,7 +146,7 @@ export class SettingController {
     @Post('/ai_agent_setting/save')
     async ai_agent_settingsave(@Body() req: {models:ai_agent_Item[]}, @Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
-        DataUtil.set(data_common_key.ai_agent_model_setting,req)
+        DataUtil.set(data_common_key.ai_agent_model_setting,req, file_key.ai_setting_data)
         ai_agentService.ai_agent_setting_save(req)
         return Sucess("1");
     }

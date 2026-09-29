@@ -1,5 +1,5 @@
 import {DataUtil} from "../data/DataUtil";
-import {data_common_key, data_dir_tem_name} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {ai_agentService} from "./ai_agent.service";
 import {llmPost, readLlmResponse} from "./llm_request";
 import {
@@ -42,12 +42,12 @@ export class AiAgentLongTermMemoryService {
 
     public get_setting(): ai_long_term_memory_setting {
         return DataUtil.get<ai_long_term_memory_setting>(
-            data_common_key.ai_long_term_memory_setting
+            data_common_key.ai_long_term_memory_setting, file_key.ai_setting_data
         ) ?? { open: false };
     }
 
     public save_setting(setting: ai_long_term_memory_setting) {
-        DataUtil.set(data_common_key.ai_long_term_memory_setting, setting);
+        DataUtil.set(data_common_key.ai_long_term_memory_setting, setting, file_key.ai_setting_data);
     }
 
     // ---- 底层文件读写 ----

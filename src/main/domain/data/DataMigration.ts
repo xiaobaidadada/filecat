@@ -175,6 +175,41 @@ export class DataMigration {
                 }
             },
         },
+        {
+            // AI 相关字段搬到 ai_setting_data.json，并从 data.json 里移除。
+            version: data_version_type.ai_setting_data,
+            name: "ai 字段抽离 ai_setting_data.json",
+            run: () => {
+                // 直接读原始 data.json：迁移后 DataUtil.get 都会带 file_key.ai_setting_data，读不到旧值
+                const data_file = path.join(Env.work_dir, file_key.data);
+                if (!fs.existsSync(data_file)) {
+                    return;
+                }
+                const raw = JSON.parse(fs.readFileSync(data_file).toString());
+                DataUtil.init(file_key.ai_setting_data);
+                // 手动列出要搬的字段，不要用 data_common_key 做前缀匹配：
+                // 枚举里还有 ai_setting_data(file_key) / ai_agent_chat_session_dir(data_dir_tem_name)，
+                // 前缀匹配会把它们也扫进来。
+                const ai_keys: data_common_key[] = [
+                    data_common_key.ai_agent_model_setting,
+                    data_common_key.ai_agent_mcp_setting,
+                    data_common_key.ai_agent_docs_setting,
+                    data_common_key.ai_agent_chat_session_store,
+                    data_common_key.ai_agent_status,
+                    data_common_key.ai_system_prompts,
+                    data_common_key.ai_rebot_setting,
+                    data_common_key.ai_long_term_memory_setting,
+                ];
+                for (const key of ai_keys) {
+                    if (raw[key] === undefined) {
+                        continue;
+                    }
+                    // 先写进新文件，再删掉 data.json 里的原字段
+                    DataUtil.set(key, raw[key], file_key.ai_setting_data);
+                    DataUtil.del(key, file_key.data);
+                }
+            },
+        },
     ];
 
     private static is_data_version_type(value) {

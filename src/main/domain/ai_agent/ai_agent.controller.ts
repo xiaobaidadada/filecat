@@ -9,7 +9,7 @@ import {Wss, WsUtil} from "../../../common/frame/ws.server";
 import {Sucess} from "../../other/Result";
 import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {DataUtil} from "../data/DataUtil";
-import {data_common_key} from "../data/data_type";
+import {data_common_key, file_key} from "../data/data_type";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
@@ -500,7 +500,7 @@ export class Ai_AgentController {
     @Post("/docs_on_set")
     async docs_on_set(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
-        DataUtil.set(data_common_key.ai_agent_status,data.status)
+        DataUtil.set(data_common_key.ai_agent_status,data.status, file_key.ai_setting_data)
         if(ai_agentService.docs_switch_get()) {
             await ai_agentService.init()
             Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)

@@ -12,7 +12,8 @@ export enum file_key {
     // flexsearch_index_db = "flexsearch_index_db.db",
     // flexsearch_name_index_db = "flexsearch_name_index_db.db",
     fts5_rag_db = "fts5_rag_db.db",
-    tcp_proxy_server_client = "tcp_proxy_server_client"
+    tcp_proxy_server_client = "tcp_proxy_server_client",
+    ai_setting_data = "ai_setting_data.json" // 和ai相关的设置
 }
 
 // 数据目录
@@ -124,6 +125,7 @@ export enum data_version_type {
     http_proxy_server_multi_port = 5, // http代理服务器从单端口升级为多端口列表
     remove_sys_level_tag = 6, // 移除系统级别的tag功能
     user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
+    ai_setting_data = 8, // ai 相关字段从 data.json 抽离到 ai_setting_data.json
 }
 
 
