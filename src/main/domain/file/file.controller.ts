@@ -1,7 +1,6 @@
 // 定义一个控制器
 import {Body, Delete, Get, JsonController, Param, Post, Put, QueryParam, Req, Res} from "routing-controllers";
 import {
-    base64UploadType,
     FileCompressPojo,
     FileTypeEnum,
     FileVideoFormatTransPojo,
@@ -38,7 +37,6 @@ import {Stats} from "fs";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {Public} from "../../other/middleware/decorator";
 import {sqliteQueryReq} from "../../../common/req/file.req";
-import {max_req_size} from "../../../common/req/common.pojo";
 
 
 @JsonController("/file")
@@ -129,21 +127,6 @@ export class FileController {
     @Post('/sqlite/query')
     async sqlite_query(@Req() ctx, @Body() data?: sqliteQueryReq) {
         return await FileServiceImpl.sqlite_query(ctx.headers.authorization, data);
-    }
-
-    // base保存支持分片
-    @Post('/base64/save/:path([^"]{0,})')
-    async common_base64_save(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: max_req_size}}) data?: {
-        base64_context: string,
-        type: base64UploadType
-    }) {
-        path = decodeURIComponent(path);
-        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
-            userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
-            await FileServiceImpl.common_base64_save(ctx.headers.authorization, path, data.base64_context, data.type);
-            return Sucess("1");
-        }
-        return Fail("no permission")
     }
 
     // // 这里的路径不是相对的而是系统绝对路径

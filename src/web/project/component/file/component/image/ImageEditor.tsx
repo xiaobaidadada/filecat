@@ -6,14 +6,10 @@ import {fileHttp} from "../../../../util/config";
 import {loadJsFileOnce} from "../../../../util/file";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {RCode} from "../../../../../../common/Result.pojo";
-import {base64UploadType} from "../../../../../../common/file.pojo";
-import {createChunks} from "../../../../util/store.util";
 import {useLocation, useNavigate} from "react-router-dom";
 
 let loadfile_done = false;
 let filerobotImageEditor;
-// 不一定是1 Mb
-const max_length = 1024 * 1000 ;
 
 export default function ImageEditor() {
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
@@ -39,34 +35,14 @@ export default function ImageEditor() {
             source: fileHttp.getDownloadUrl(path),
             onSave: async (editedImageObject, designState) =>
             {
-                const base64Data  = editedImageObject.imageBase64.split(',')[1]; // 提取 Base64 编码部分
-                const mimeType = editedImageObject.mimeType;
                 const extension = editedImageObject.extension;
                 const name = editedImageObject.name ?? image_editor.name;
-                const router_path = `base64/save/${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`;
-                if (base64Data.length <= max_length) {
-                    const data = {
-                        base64_context:base64Data,
-                        type:base64UploadType.all
-                    }
-                    await fileHttp.post(router_path, data);
-                } else {
-                    // // 创建分片
-                    const chunks = createChunks(base64Data, max_length);
-                    const data = {
-                        base64_context:chunks[0],
-                        type:base64UploadType.start
-                    }
-                    data.type = base64UploadType.part;
-                    await fileHttp.post(router_path+`?type${base64UploadType.start}`, data);
-                    for (let i=1; i< chunks.length; i++) {
-                        data.base64_context = chunks[i];
-                        await fileHttp.post(router_path, data);
-                    }
-
-                }
+                // 二进制直传：PUT /file/:path 内部直接流过 req 流写盘，
+                // 不再走 base64（体积放大 33%）与分片拼接。
+                const blob = await new Promise<Blob>(resolve =>
+                    editedImageObject.imageCanvas.toBlob(resolve, editedImageObject.mimeType));
+                await fileHttp.put(`${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`, blob, undefined);
                 NotySuccess('保存成功')
-
             },
             annotationsCommon: {
                 fill: '#151717', // text颜色

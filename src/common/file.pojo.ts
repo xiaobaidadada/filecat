@@ -111,13 +111,6 @@ export interface FileTree {
 
 export type FileTreeList = FileTree[];
 
-export enum base64UploadType {
-    all, // 全部上传
-    start, // 开始部分
-    part, // 部分
-}
-
-
 export class LogViewerPojo {
     path: string;
     token: string;

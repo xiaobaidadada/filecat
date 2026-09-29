@@ -1,5 +1,4 @@
 import {
-    base64UploadType,
     FileCompressPojo,
     FileCompressType, FileInfo,
     FileInfoItemData,
@@ -1058,18 +1057,6 @@ export class FileService  {
     // public common_save(path:string,context:string) {
     //     fs.writeFileSync(path, context);
     // }
-
-    public async common_base64_save(token: string, filepath: string, base64_context: string, type: base64UploadType) {
-        const sysPath = path.join(settingService.getFileRootPath(token), filepath);
-        userService.check_user_path(token, sysPath);
-        userService.check_user_only_path(token, sysPath);
-        const binaryData = Buffer.from(base64_context, 'base64');
-        if (type === base64UploadType.all || type === base64UploadType.start) {
-            await FileUtil.writeFileSync(sysPath, binaryData);
-        } else if (type === base64UploadType.part) {
-            await FileUtil.appendFileSync(sysPath, binaryData);
-        }
-    }
 
     public async cut(token, data?: cutCopyReq) {
         if (!data) {
