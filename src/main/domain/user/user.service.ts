@@ -59,6 +59,7 @@ export class UserService {
             access_cmd: user.access_cmd,
             not_access_cmd: user.not_access_cmd,
             theme: user.theme,
+            md_editor_theme: user.md_editor_theme,
             auth_list: user.auth_list,
             is_root: user.is_root,
             folder_items: user.folder_items,

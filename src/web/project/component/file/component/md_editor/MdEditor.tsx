@@ -17,12 +17,8 @@ import MdToolbar from "./MdToolbar";
 import MdContextMenu from "./MdContextMenu";
 import MdOutline, {OutlineItem} from "./MdOutline";
 import {parse_markdown_headings} from "./md_outline_parse";
-import {
-    apply_md_editor_setting,
-    load_md_editor_setting,
-    MD_EDITOR_SETTING_DEFAULT,
-} from "./MdEditorSetting";
-import {apply_active_theme, invalidate_md_theme_css, MD_THEME_CHANGE_EVENT} from "./md_theme";
+import {apply_md_editor_setting} from "./MdEditorSetting";
+import {apply_theme_css, load_active_theme_css, MD_THEME_CHANGE_EVENT} from "./md_theme";
 import {MdThemeMenu} from "./MdThemeMenu";
 import * as lodash from "lodash";
 import {useNavigate} from "react-router-dom";
@@ -95,15 +91,16 @@ export default function MdEditor() {
 
     // md 编辑器全局设置（服务端保存，所有用户共用）。
     // 它控制正文宽度/边距/字号等外观，改动通过 CSS 变量即时生效。
-    const [editor_setting, set_editor_setting] = useState(MD_EDITOR_SETTING_DEFAULT);
+    // 数据在 initUserInfo 里统一拉取后存 atom，编辑器直接读，不再自己请求。
+    const [editor_setting] = useAtom($stroe.md_editor_setting);
+    // 当前生效的主题 css，同样来自 initUserInfo 的拉取结果
+    const [md_theme_css, set_md_theme_css] = useAtom($stroe.md_theme_css);
     // 当前用户选中的主题（存在个人数据 user_data.md_editor_theme 里）。
     // 这里只保留「用户选了什么」用于菜单高亮；实际生效的主题 css 由后端综合
     // 个人选择与系统设置算出来，前端不关心主题名。
     const [user_base_info] = useAtom($stroe.user_base_info);
     const {initUserInfo} = useContext(GlobalContext);
-    // 「没设置过」和「选了跟随系统」是同一件事，统一成空串：
-    // 菜单里空值那一项就是「跟随系统设置」，这样高亮和保存都只有一种表示。
-    const [user_theme, set_user_theme] = useState<string>(user_base_info.md_editor_theme ?? "");
+
     const container_ref = useRef<HTMLDivElement>(null);
     // 用户刚主动选过的主题。个人数据是异步拉回来的，拉回来时可能还没有这次改动
     // （服务端内存里的用户信息刷新有先后），直接用它会把手选的项打回去、高亮跟着跳。
@@ -113,21 +110,10 @@ export default function MdEditor() {
         if (local_choice.current !== null) {
             return;
         }
-        set_user_theme(user_base_info.md_editor_theme ?? "");
     }, [user_base_info]);
 
-    // 拉取全局设置。放在这里而不是 App 层：只有打开编辑器才需要，避免每次加载页面都多一个请求。
-    useEffect(() => {
-        let cancelled = false;
-        load_md_editor_setting().then(s => {
-            if (!cancelled) {
-                set_editor_setting(s);
-            }
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    // 全局设置存在 atom 里（initUserInfo 拉取），这里不需要再请求。
+    // 主题 css 同理：编辑器只负责把 atom 里的 css 注入自己的正文容器。
 
     // 设置变化时写入 CSS 变量（放在 container 上，只影响这个编辑器，不污染全局样式）
     useEffect(() => {
@@ -135,11 +121,9 @@ export default function MdEditor() {
     }, [editor_setting]);
 
     // 切换主题：存进当前用户的个人数据（不是全局设置），并立即生效。
-    // 个人数据变了就触发下面那个 effect 重新拉取注入，不用手动调 apply。
+    // 存完调 initUserInfo 重拉生效主题，atom 变了下面的 effect 会自己重新注入。
     const switch_theme = async (id: string) => {
-        if (id === user_theme) {
-            return;
-        }
+
         const rsp = await userHttp.post(Http_controller_router.user_save_private_attr, {
             is_md_theme: true,
             md_editor_theme: id,
@@ -148,29 +132,24 @@ export default function MdEditor() {
             NotyFail(t("保存失败"));
             return;
         }
-        set_user_theme(id);
         // 记下这次选择：initUserInfo 拉回来的数据可能还没包含它，避免高亮被打回去
         local_choice.current = id;
-        // 主题缓存的是「当前该用哪个主题」，选择变了必须清掉，
-        // 否则下面那个 effect 重新拉取时拿到的还是上一个主题。
-        invalidate_md_theme_css();
-        // 同步全局个人数据
+        // 同步全局个人数据，顺便把生效主题 css 重新拉到 atom
         await initUserInfo();
         NotySuccess(t("保存成功"));
     };
 
-    // 应用主题：拉取当前用户该用的主题 css 注入编辑器正文容器。
+    // 应用主题：把 atom 里的主题 css 注入编辑器正文容器。
     // 主题是 Typora 风格（#write），由 apply_theme_css 改写作用域后再注入，
-    // 因此不会影响后台其他界面。拉到空内容就什么都不注入。
+    // 因此不会影响后台其他界面。没内容就不注入，并清掉旧的样式。
     useEffect(() => {
-        apply_active_theme("editor", "#md-editor-container .md-editor-sheet");
-    }, [user_theme, editor_setting.theme]);
+        apply_theme_css("editor", md_theme_css, "#md-editor-container .md-editor-sheet");
+    }, [md_theme_css]);
 
-    // 主题内容被编辑/删除后缓存要失效，重新应用一次
+    // 主题内容被编辑/删除后，重拉一次生效主题（atom 变化会触发上面的注入）
     useEffect(() => {
         const on_theme_change = () => {
-            invalidate_md_theme_css();
-            apply_active_theme("editor", "#md-editor-container .md-editor-sheet");
+            load_active_theme_css().then(set_md_theme_css);
         };
         window.addEventListener(MD_THEME_CHANGE_EVENT, on_theme_change);
         return () => window.removeEventListener(MD_THEME_CHANGE_EVENT, on_theme_change);
@@ -386,7 +365,6 @@ export default function MdEditor() {
                                       icon={mode === "wysiwyg" ? "code" : "edit"}
                                       onClick={toggle_mode}/>,
                         <MdThemeMenu key={8}
-                                     value={user_theme}
                                      on_change={switch_theme}/>,
                         // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
                         <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,

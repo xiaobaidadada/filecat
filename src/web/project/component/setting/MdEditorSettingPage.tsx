@@ -18,8 +18,10 @@ import {
     MD_EDITOR_SETTING_DEFAULT,
     save_md_editor_setting,
 } from "../file/component/md_editor/MdEditorSetting";
-import {del_md_theme, load_md_theme_list} from "../file/component/md_editor/md_theme";
+import {del_md_theme, load_active_theme_css, load_md_theme_list} from "../file/component/md_editor/md_theme";
 import {using_confirm} from "../prompts/prompt.util";
+import {useAtom} from "jotai";
+import {$stroe} from "../../util/store";
 
 /**
  * md 编辑器全局设置页（独立路由 /md_editor_setting_page）。
@@ -46,6 +48,8 @@ export default function MdEditorSettingPage() {
     const confirm_dell_all = using_confirm();
     // 无权限时页面降级为只读：能看当前配置，但不能改也不能保存
     const can_edit = check_user_auth(UserAuth.md_editor_setting);
+    const [, set_md_editor_setting] = useAtom($stroe.md_editor_setting);
+    const [, set_md_theme_css] = useAtom($stroe.md_theme_css);
 
     // 直接存用户输入的原始字符串，提交时再校验
     const [values, set_values] = useState<Record<string, string>>({});
@@ -86,6 +90,10 @@ export default function MdEditorSettingPage() {
                 FIELDS.forEach(f => next[f.key] = saved[f.key] ?? "");
                 set_values(next);
                 set_theme(saved.theme ?? MD_EDITOR_SETTING_DEFAULT.theme);
+                // 同步到全局 atom，让已打开/之后打开的编辑器直接用上新设置，不用再请求一次
+                set_md_editor_setting({...saved});
+                // 全局里的默认主题可能变了，重新拉一次生效主题
+                load_active_theme_css().then(set_md_theme_css);
             } else {
                 NotyFail(t("保存失败"));
             }

@@ -2,6 +2,7 @@
 import { atom } from 'jotai';
 import {FileTypeEnum, GetFilePojo} from "../../../common/file.pojo";
 import {DirListShowTypeEmum, UserBaseInfo, UserData} from "../../../common/req/user.req";
+import {md_editor_setting_pojo, MD_EDITOR_SETTING_DEFAULT} from "../../../common/req/common.pojo";
 import {FileMenuData} from "../../../common/FileMenuType";
 import {DiskDevicePojo} from "../../../common/req/sys.pojo";
 import {http_download_map} from "../../../common/req/net.pojo";
@@ -63,6 +64,10 @@ export const $stroe = {
     file_list_refresh: atom<number>(0),
     // 挂载功能总开关状态（Header 上的开关显示用）；null 表示尚未从后端加载
     mount_enabled: atom<boolean | null>(null as boolean | null),
+    // 避免每开一个 md 文件就请求一次。初值是内置默认配置，未加载完也能正常渲染
+    md_editor_setting: atom<md_editor_setting_pojo>({...MD_EDITOR_SETTING_DEFAULT}),
+    // 主题内容被编辑后由编辑器重拉并写回这里
+    md_theme_css: atom<string>(""),
     // 当前所在目录所属的挂载信息（null 表示不在挂载目录里）；
     // 列表顶部提示条与工具栏按钮显隐都依赖它，故放在 store 里共享
     current_mount: atom<any>(null as any),

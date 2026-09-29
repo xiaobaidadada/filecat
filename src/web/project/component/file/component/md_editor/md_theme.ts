@@ -88,15 +88,6 @@ export function apply_theme_css(key: string, css: string, scope: string) {
     el.textContent = scope_theme_css(css, scope);
 }
 
-/**
- * 拉取当前用户该用的主题并注入到指定容器。
- * 用哪个主题由后端综合个人选择与系统设置决定，这里不传主题名。
- */
-export async function apply_active_theme(key: string, scope: string) {
-    const css = await load_active_theme_css();
-    apply_theme_css(key, css, scope);
-}
-
 // ---- 与后端交互 ----
 
 export async function load_md_theme_list(): Promise<md_theme_item[]> {
@@ -108,27 +99,10 @@ export async function load_md_theme_list(): Promise<md_theme_item[]> {
     }
 }
 
-// 主题 css 的请求缓存。
-// 编辑器与预览器会同时加载同一个主题，缓存 Promise 能让它们共用一次请求，
-// 而不是各发一次（缓存结果的话，并发时两边都还没结果，照样发两次）。
-// 主题内容会变，增删改后必须 invalidate_md_theme_css 清掉。
-let active_theme_task: Promise<string> | null = null;
-
-// 主题内容或选择变化后通知编辑器重新应用
+// 主题内容被增删改后调用：广播通知，已挂载的编辑器收到后重拉主题并重新注入。
 export const MD_THEME_CHANGE_EVENT = "md-theme-change";
 
-// 清掉 active 主题缓存。
-// 缓存的是「当前该用哪个主题的 css」，所以只要用户选择变了、或主题内容本身变了，
-// 都必须先清掉，否则会一直拿到上一个主题的样式。
-export function invalidate_md_theme_css() {
-    active_theme_task = null;
-}
-
-// 主题内容被增删改后调用：清缓存并通知已挂载的编辑器重新注入。
-// 编辑器自己去清缓存的原因（用户切换主题）只调上面的 invalidate 就够了，
-// 因为选中态变化本身会触发它的 effect。
 export function notify_md_theme_changed() {
-    invalidate_md_theme_css();
     window.dispatchEvent(new Event(MD_THEME_CHANGE_EVENT));
 }
 
@@ -144,21 +118,14 @@ export async function load_md_theme_css(id: string): Promise<string> {
 }
 
 // 拉取当前用户实际该用的主题 css：主题名由后端算，前端不传也不关心。
-// 没有可用主题时返回空串，调用方据此不注入样式。
-export function load_active_theme_css(): Promise<string> {
-    if (!active_theme_task) {
-        active_theme_task = settingHttp.get("md_theme/active")
-            .then(rsq => rsq?.code === RCode.Success ? (rsq.data ?? "") : "")
-            .catch(() => "")
-            // 请求失败不留在缓存里，否则失败结果会被一直复用
-            .then(css => {
-                if (!css) {
-                    active_theme_task = null;
-                }
-                return css;
-            });
+// 没有可用主题时返回空串。结果由调用方写进 $stroe.md_theme_css，这里不做缓存。
+export async function load_active_theme_css(): Promise<string> {
+    try {
+        const rsq = await settingHttp.get("md_theme/active");
+        return rsq?.code === RCode.Success ? (rsq.data ?? "") : "";
+    } catch (e) {
+        return "";
     }
-    return active_theme_task;
 }
 
 export async function save_md_theme(body: { id?: string, name: string, css: string }): Promise<md_theme_item | null> {

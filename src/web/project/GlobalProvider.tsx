@@ -12,6 +12,7 @@ import {is_share} from "./util/WebPath";
 import {Icon} from "../meta/component/Button";
 import {NotyConfirm} from "./util/noty";
 import {Http_controller_router} from "../../common/req/http_controller_router";
+import {MD_EDITOR_SETTING_DEFAULT} from "../../common/req/common.pojo";
 
 export const GlobalContext = createContext(undefined);
 
@@ -23,6 +24,8 @@ export const GlobalProvider = ({ children }) => {
     const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
     const [zoomPercent, setZoomPercent] = useAtom($stroe.zoom_style_by_percent);
     const [, set_mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
+    const [, set_md_editor_setting] = useAtom($stroe.md_editor_setting);
+    const [, set_md_theme_css] = useAtom($stroe.md_theme_css);
     const { t, i18n } = useTranslation();
 
     const getItems = async () => {
@@ -65,7 +68,8 @@ export const GlobalProvider = ({ children }) => {
         } catch (e) {
             set_mount_enabled(false);
         }
-        const result = await userHttp.get("userInfo/get");
+
+       const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Success) {
             const p :UserBaseInfo = result.data;
             if(user_base_info?.user_data?.theme  !== p.user_data.theme)
@@ -110,6 +114,12 @@ export const GlobalProvider = ({ children }) => {
                 );
             }
         }
+
+        const md_setting_rsp = await settingHttp.get("md_editor_setting/get");
+        set_md_editor_setting({...MD_EDITOR_SETTING_DEFAULT, ...(md_setting_rsp?.data ?? {})});
+        const md_theme_rsp = await settingHttp.get("md_theme/active");
+        set_md_theme_css(md_theme_rsp?.code === RCode.Success ? (md_theme_rsp.data ?? "") : "");
+
     }
 
     return (
