@@ -227,9 +227,9 @@ export function FileMenu() {
                 {r: t("取消挂载"), v: common_menu_type.unmount_dir},
             ]
         }] : []),
-        {r: t("以studio打开"), v: common_menu_type.sutdio},
+        {r: t("o_stdo"), v: common_menu_type.sutdio},
         {
-            r: t("以空白搜索模式打开目录"),
+            r: t("srchbln"),
             v: common_menu_type.blank_search_mode
         },
         {
@@ -238,7 +238,7 @@ export function FileMenu() {
         },
         ...must_needs];
     const items_images = [{
-        r: t("以图片编辑器打开"),
+        r: t("o_img"),
         v: common_menu_type.image_open
     },
         {
@@ -451,7 +451,7 @@ export function FileMenu() {
                         <div className="card-content">
                             <InputText placeholderOut={t("路径")} value={item.path}
                                        handleInputChange={(value) => item.path = value}/>
-                            <InputText placeholderOut={t("剩余过期时间(小时)")} value={item.left_hour}
+                            <InputText placeholderOut={t("exp_hr")} value={item.left_hour}
                                        handleInputChange={(value) => item.left_hour = parseInt(value)}/>
                             <InputText placeholderOut={t("token(可以为空)")}
                                        handleInputChange={(value) => item.token = value}/>
@@ -592,7 +592,7 @@ export function FileMenu() {
                     break;
                 }
                 NotyConfirm(
-                    t("取消挂载后，该目录将恢复为本地目录，网盘内容不再显示"),
+                    t("unmuntt"),
                     async () => {
                         try {
                             await mountHttp.post("delete", {id: found.id});

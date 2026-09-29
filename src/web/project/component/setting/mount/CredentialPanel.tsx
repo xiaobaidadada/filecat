@@ -35,16 +35,16 @@ export default function CredentialPanel() {
             context_div: (
                 <div>
                     <ul>
-                        <li>{t("凭据是连接网盘/远程主机的账号信息，可被多个挂载点复用，修改一次全部生效")}</li>
-                        <li>{t("百度网盘账号不在这里维护，请到下方「百度网盘」面板授权，授权后自动生成对应账号")}</li>
-                        <li>{t("编辑时密码类字段留空表示不修改原值")}</li>
-                        <li>{t("保存前可以点「测试连接」验证账号是否可用")}</li>
+                        <li>{t("crd_tp")}</li>
+                        <li>{t("bidacct")}</li>
+                        <li>{t("pwdkept")}</li>
+                        <li>{t("tstbfrs")}</li>
                     </ul>
                     {/* 各类型的作用说明 */}
                     <ul>
-                        <li><b>WebDAV</b>：{t("通用文件协议，坚果云、群晖 NAS、Nextcloud、Alist 等都支持。需要一个服务地址和账号即可访问对方目录。")}</li>
-                        <li><b>SSH / SFTP</b>：{t("通过 SSH 协议访问远程服务器的目录，走 SFTP 子系统传文件。适合把另一台 Linux 机器的目录挂到本机。")}</li>
-                        <li><b>S3 兼容对象存储</b>：{t("用 S3 协议连接的对象存储服务，例如 MinIO、阿里云 OSS、腾讯云 COS、七牛、Cloudflare R2。需要服务地址、存储桶和一对密钥。")}</li>
+                        <li><b>WebDAV</b>：{t("prtwbdv")}</li>
+                        <li><b>SSH / SFTP</b>：{t("prtsftp")}</li>
+                        <li><b>S3 兼容对象存储</b>：{t("prt_s3")}</li>
                     </ul>
                 </div>
             ),

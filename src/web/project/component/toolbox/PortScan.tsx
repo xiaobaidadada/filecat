@@ -84,7 +84,7 @@ export function PortScan() {
 
     const doScan = () => {
         if (!host) {
-            NotyFail(t('主机地址不能为空'));
+            NotyFail(t('hostreq'));
             return;
         }
         const sp = parseInt(startPort);
@@ -94,7 +94,7 @@ export function PortScan() {
             return;
         }
         if (sp > ep) {
-            NotyFail(t('起始端口不能大于结束端口'));
+            NotyFail(t('portrng'));
             return;
         }
 
@@ -185,7 +185,7 @@ export function PortScan() {
 
                         {/* 初始状态 */}
                         {!scanning && !endInfo && openPorts.length === 0 && (
-                            <p>{t('请输入参数后点击扫描')}</p>
+                            <p>{t('scan_in')}</p>
                         )}
                     </Card>
                 </Column>

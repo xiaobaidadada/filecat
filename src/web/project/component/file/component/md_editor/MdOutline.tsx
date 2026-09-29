@@ -108,7 +108,7 @@ export default function MdOutline(props: Props) {
         return (
             <div className="md-outline md-outline--empty">
                 <div className="md-outline-header">{t("大纲")}</div>
-                <div className="md-outline-tip">{t("正文里还没有标题")}</div>
+                <div className="md-outline-tip">{t("no_head")}</div>
             </div>
         );
     }

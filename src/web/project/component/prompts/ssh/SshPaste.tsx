@@ -52,7 +52,7 @@ export function SshPaste(props) {
     return <div className="card floating">
         <div className="card-content">
             <p>
-                {cutedFileList.length>0?t("剪切(覆盖)确认"):t("复制(覆盖)确认")}
+                {cutedFileList.length>0?t("cut_ovr"):t("cp_ovr")}
             </p>
         </div>
         <div className="card-action">

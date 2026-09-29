@@ -57,7 +57,7 @@ export function SshDelete(props) {
         <div className="card floating">
             <div className="card-content">
                 <p>
-                    {t("是否删除选中的文件")}
+                    {t("del_f")}
                 </p>
 
             </div>

@@ -115,7 +115,7 @@ export function NetServer(props) {
                     ]}/>
                     </form>
                     {!!Object.keys(opt_row).length &&
-                        <InputCheckbox context={t("同步信息给选中服务器")} selected={opt_server_async}
+                        <InputCheckbox context={t("sync_sv")} selected={opt_server_async}
                                        onchange={() => {
                                            set_opt_server_async(!opt_server_async);
                                        }}/>}

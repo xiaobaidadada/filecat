@@ -76,13 +76,13 @@ export function VideoTrans(props) {
             <div>
                 <CardPrompt title={t("视频格式转换")} cancel={close} confirm={confirm} cancel_t={t("取消")}
                             confirm_t={t("确定")}
-                            context={!progress ? [<InputText placeholderOut={t("ffmpeg支持的目标格式")}
+                            context={!progress ? [<InputText placeholderOut={t("ff_fmt")}
                                                              placeholder={"flv mp4 ..."}
                                                              value={prompt}
                                                              handleInputChange={(value) => setPrompt(value)}/>,
                                     <InputText placeholderOut={t("目标文件名")} value={newFileName}
                                                handleInputChange={(value) => setNewFileName(value)}/>,
-                                    <div>{t("生成文件的目标文件在本目录下")}</div>
+                                    <div>{t("gen_dir")}</div>
                                 ] :
                                 [<div>{t("进度")}:</div>,
                                     <ProgressCard progress={progress}/>]}/>

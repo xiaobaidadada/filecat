@@ -32,8 +32,8 @@ export function Permission(props:{
             list: [
                 { title: t("系统信息"), permission: UserAuth.all_sys },
                 { title: t("系统进程关闭"), permission: UserAuth.sys_process_close },
-                { title: t("docker容器停止、删除"), permission: UserAuth.docker_container_update },
-                { title: t("docker镜像删除"), permission: UserAuth.docker_images_delete },
+                { title: t("dc_ctdl"), permission: UserAuth.docker_container_update },
+                { title: t("dc_idl"), permission: UserAuth.docker_images_delete },
                 { title: t("systemd管理"), permission: UserAuth.systemd },
                 { title: t("防火墙管理"), permission: UserAuth.firewall }
             ]
@@ -50,16 +50,16 @@ export function Permission(props:{
             title: t("Ai 设置权限"),
             list: [
                 { title: t("Ai 配置"), permission: UserAuth.ai_agent_setting },
-                { title: t("Ai Chat Page"), permission: UserAuth.ai_agent_page },
+                { title: t("ai_page"), permission: UserAuth.ai_agent_page },
                 // 允许在 AI 聊天主页切换模型（聚合所有供应商模型的选择）
-                { title: t("允许切换 AI 模型"), permission: UserAuth.ai_model_switch }
+                { title: t("sw_mdl"), permission: UserAuth.ai_model_switch }
             ]
         },
         {
             title: t("文件权限"),
             list: [
-                { title: t("文件删除、剪切、重命名"), permission: UserAuth.filecat_file_delete_cut_rename },
-                { title: t("文件创建、上传、内容更新、解压缩"), permission: UserAuth.filecat_file_context_update_upload_created_copy_decompression },
+                { title: t("log_del"), permission: UserAuth.filecat_file_delete_cut_rename },
+                { title: t("log_wr"), permission: UserAuth.filecat_file_context_update_upload_created_copy_decompression },
                 { title: t("内容更新"), permission: UserAuth.filecat_file_context_update },
                 { title: t("文件回收站修改"), permission: UserAuth.recycle_file_save },
                 { title: t("文件分享"), permission: UserAuth.share_file }
@@ -70,24 +70,24 @@ export function Permission(props:{
             list: [
                 { title: t("系统页面"), permission: UserAuth.sys_setting_page },
                 { title: t("htts"), permission: UserAuth.https_file },
-                { title: t("token时间修改"), permission: UserAuth.token_update },
+                { title: t("tk_time"), permission: UserAuth.token_update },
                 { title: t("修改密码"), permission: UserAuth.update_password },
                 { title: t("磁盘挂载"), permission: UserAuth.sys_disk_mount },
                 { title: t("通用设置"), permission: UserAuth.sys_env_setting_key },
                 // md 编辑器全局设置（正文宽度/字号/行高等），影响所有用户
-                { title: t("MD 编辑器设置"), permission: UserAuth.md_editor_setting },
+                { title: t("md_set"), permission: UserAuth.md_editor_setting },
                 { title: t("目录挂载"), permission: UserAuth.file_mount },
             ]
         },
         {
             title: t("系统环境设置"),
             list: [
-                { title: t("系统环境设置页面"), permission: UserAuth.sys_env_page },
-                { title: t("目录文件上传数量限制修改"), permission: UserAuth.dir_upload_max_num },
-                { title: t("PATH路径修改"), permission: UserAuth.env_path_update },
+                { title: t("sys_env"), permission: UserAuth.sys_env_page },
+                { title: t("up_lim"), permission: UserAuth.dir_upload_max_num },
+                { title: t("path_md"), permission: UserAuth.env_path_update },
                 { title: "pty cmd " + t("更新"), permission: UserAuth.pty_cmd_update },
                 { title: "workflow job", permission: UserAuth.workflow_job },
-                { title: t("系统保护路径更新"), permission: UserAuth.sys_protection_dir },
+                { title: t("path_up"), permission: UserAuth.sys_protection_dir },
                 { title: t("外部软件路径"), permission: UserAuth.outside_software_path }
             ]
         },
@@ -101,9 +101,9 @@ export function Permission(props:{
             title: t("自定义路由"),
             list: [
                 { title: t("自定义路由页面"), permission: UserAuth.auth_router_page },
-                { title: t("workflow触发api 修改"), permission: UserAuth.workflow_api },
+                { title: t("wf_api"), permission: UserAuth.workflow_api },
                 { title: t("自定义资源路由"), permission: UserAuth.code_resource },
-                { title: t("自定义api路由"), permission: UserAuth.code_api }
+                { title: t("api_rt"), permission: UserAuth.code_api }
             ]
         },
         {
@@ -123,7 +123,7 @@ export function Permission(props:{
             list: [
                 { title: t("ssh代理"), permission: UserAuth.ssh_proxy },
                 { title: t("http代理"), permission: UserAuth.http_proxy },
-                { title: t("http代理下载关闭"), permission: UserAuth.http_proxy_download_cancel },
+                { title: t("pxy_off"), permission: UserAuth.http_proxy_download_cancel },
                 { title: t("浏览器代理"), permission: UserAuth.browser_proxy },
                 { title: t("rdp代理"), permission: UserAuth.rdp_proxy }
             ]
@@ -131,17 +131,17 @@ export function Permission(props:{
         {
             title: t("其他功能"),
             list: [
-                { title: t("workflow 执行"), permission: UserAuth.workflow_exe },
-                { title: t("workflow 执行用户"), permission: UserAuth.workflow_exe_user, noDisable: true },
+                { title: t("wf_run"), permission: UserAuth.workflow_exe },
+                { title: t("wf_user"), permission: UserAuth.workflow_exe_user, noDisable: true },
                 { title: t("网络唤醒"), permission: UserAuth.wol_proxy },
                 { title: t("端口扫描"), permission: UserAuth.port_scan },
                 { title: t("rtsp播放器"), permission: UserAuth.rtsp_proxy },
-                { title: t("ssh密钥保存到磁盘"), permission: UserAuth.crypto_ssh_file },
+                { title: t("ssh_sv"), permission: UserAuth.crypto_ssh_file },
                 // { title: t("网址导航"), permission: UserAuth.nav_net_tag },
-                { title: t("filecat-restart重启命令"), permission: UserAuth.shell_cmd_filecat_restart },
-                { title: t("filecat-upgrade升级命令"), permission: UserAuth.shell_cmd_filecat_upgrade },
-                { title: t("filecat-down关闭主进程命令"), permission: UserAuth.shell_cmd_filecat_kill_self },
-                { title: t("ai 命令(Ai 聊天)"), permission: UserAuth.ai_chat_cmd },
+                { title: t("cmd_rst"), permission: UserAuth.shell_cmd_filecat_restart },
+                { title: t("cmd_upg"), permission: UserAuth.shell_cmd_filecat_upgrade },
+                { title: t("cmd_dwn"), permission: UserAuth.shell_cmd_filecat_kill_self },
+                { title: t("cmd_ai"), permission: UserAuth.ai_chat_cmd },
             ]
         }
     ];

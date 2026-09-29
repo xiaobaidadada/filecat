@@ -301,7 +301,7 @@ export function Http() {
     const save_as = () => {
         if (!check_user_auth(UserAuth.http_proxy_tag_update)) { NotyFail("no permission"); return; }
         for (const item of form_data_list) {
-            if (item.is_file) { NotyFail(t('表单中含有文件，浏览器限制不能添加')); return; }
+            if (item.is_file) { NotyFail(t('frm_lm')); return; }
         }
         let name;
         set_prompt_card({

@@ -53,7 +53,7 @@ export function TcpProxyServerClient() {
 
     const headers = [t("序号"),t("名称"),t("在线状态"),t("时间"), t("备注") ];
     const client_headers = [t("序号"),t("服务端口"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
-    const client_bridge_headers = [t("序号"),t("服务端口"),t("转发Client名称"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
+    const client_bridge_headers = [t("序号"),t("服务端口"),t("fwd_nm"),t("转发ip"),t("转发端口"),t("开启"), t("备注") ];
 
     const getRelativeTimeText = (stamp?: number) => {
         if (stamp == null) {
@@ -266,7 +266,7 @@ export function TcpProxyServerClient() {
                         }}/>
 
                         <form>
-                            {t("filecat代理访问")}:<Rows isFlex={true} columns={[
+                            {t("fc_pxy")}:<Rows isFlex={true} columns={[
                             <InputRadio value={1} context={t("开启")} selected={edit_client.open_filecat} onchange={() => {
                                 edit_client.open_filecat = !edit_client.open_filecat;
                                 set_edit_client({...edit_client})
@@ -281,7 +281,7 @@ export function TcpProxyServerClient() {
                             edit_client.open_filecat &&
                             (<React.Fragment>
                                     <form>
-                                        {t("filecat代理访问使用服务器前端")}:<Rows isFlex={true} columns={[
+                                        {t("fc_pxyw")}:<Rows isFlex={true} columns={[
                                         <InputRadio value={1} context={t("开启")} selected={edit_client.filecat_use_local_page} onchange={() => {
                                             edit_client.filecat_use_local_page = !edit_client.filecat_use_local_page;
                                             set_edit_client({...edit_client})
@@ -292,7 +292,7 @@ export function TcpProxyServerClient() {
                                         }}/>
                                     ]}/>
                                     </form>
-                                    <InputText placeholderOut={t("自定义filecat代理地址")} placeholder={"127.0.0.1:5567"} value={edit_client.filecat_proxy_host_port} handleInputChange={(d) => {
+                                    <InputText placeholderOut={t("fc_pxyr")} placeholder={"127.0.0.1:5567"} value={edit_client.filecat_proxy_host_port} handleInputChange={(d) => {
                                         edit_client.filecat_proxy_host_port = d
                                         set_edit_client({...edit_client})
                                     }}/>

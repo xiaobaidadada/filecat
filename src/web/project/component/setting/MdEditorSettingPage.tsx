@@ -131,7 +131,7 @@ export default function MdEditorSettingPage() {
                                                    }))}/>
                                         </InputRow>)}
                                         {!can_edit && <p className="md-editor-setting-page__desc">
-                                            {t("你没有修改该设置的权限，以下为当前配置。")}
+                                            {t("nprmtp")}
                                         </p>}
                                     </React.Fragment>}
                             </Card>

@@ -42,11 +42,11 @@ export function AutoUpgrade() {
     
     const saveSetting = async () => {
         if (!versionCheckUrl) {
-            NotyFail(t("版本检测地址不能为空"));
+            NotyFail(t("ver_req"));
             return;
         }
         if (open && (!checkInterval || checkInterval < 10)) {
-            NotyFail(t("检测间隔不能小于10秒"));
+            NotyFail(t("chk_10s"));
             return;
         }
         const req = new AutoUpgradeSettingReq();
@@ -95,7 +95,7 @@ export function AutoUpgrade() {
         }
                  rightBottomCom={<ButtonText text={t('保存')} clickFun={saveSetting}/>}>
         {/* 版本检测地址：始终显示 */}
-        <div>{t("系统版本检测地址")}</div>
+        <div>{t("ver_url")}</div>
         <InputText 
             placeholder={'https://registry.npmjs.org'} 
             value={versionCheckUrl} 
@@ -111,9 +111,9 @@ export function AutoUpgrade() {
         {open && <>
             {runEnv === 'exe' && (
                 <div>
-                    <div>{t("exe 下载地址模板")}</div>
+                    <div>{t("exe_tpl")}</div>
                     <InputText 
-                        placeholder={t('留空使用官方 GitHub Releases')} 
+                        placeholder={t('offcal')} 
                         value={exeDownloadUrl} 
                         handleInputChange={(value) => { setExeDownloadUrl(value); }} 
                     />
@@ -121,7 +121,7 @@ export function AutoUpgrade() {
             )}
             <div>{t("检测频率（秒）")}</div>
             <InputText 
-                placeholder={t('默认180秒（3分钟）')} 
+                placeholder={t('def_180')} 
                 value={checkInterval} 
                 handleInputChange={(value) => { setCheckInterval(Number(value) || 180); }} 
             />

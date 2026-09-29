@@ -45,7 +45,7 @@ export function Env() {
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
     const workflow_setting_headers = [t("编号"), t("文件路径"), t("是否开启"), t("系统启动执行"), t("corn表达式"), t("用户id"), t("备注")];
-    const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("是否开启大文件断点"), t("大文件判断大小MB"), t("大文件并发数量"), t("大文件分块大小MB"), t("备注")];
+    const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("big_res"), t("big_sz"), t("大文件并发数量"), t("big_ck"), t("备注")];
     const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"), t("params"), t("备注")];
     const {check_user_auth} = use_auth_check();
 
@@ -302,7 +302,7 @@ export function Env() {
 
     return (<React.Fragment>
         <RowColumn widthPer={100}>
-            <CardFull self_title={<span className={" div-row "}><h2>{t("文件上传最大并发限制")}</h2> <ActionButton
+            <CardFull self_title={<span className={" div-row "}><h2>{t("up_conc")}</h2> <ActionButton
                 icon={"info"} onClick={() => {
                 soft_ware_info_click("文件上传")
             }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
@@ -522,7 +522,7 @@ export function Env() {
                                 <StatusCircle ok={item.installed}/>,
                                 <InputText value={item.path} handleInputChange={(value) => {
                                     item.path = value;
-                                }} no_border={true} placeholder={t("默认使用环境变量")}/>,
+                                }} no_border={true} placeholder={t("use_env")}/>,
                                 <ActionButton icon={"info"} onClick={() => {
                                     soft_ware_info_click(item.id)
                                 }} title={t("信息")}/>

@@ -270,7 +270,7 @@ export function Role() {
                         <Select value={theme} onChange={(value) => {
                             set_theme(value);
                         }} options={themes_list}/>
-                        {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
+                        {/*<p className="small">{t("tag_pub")}</p>*/}
 
                         <Permission is_disable={() => {
                             return false

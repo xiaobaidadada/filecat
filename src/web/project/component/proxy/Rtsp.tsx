@@ -35,7 +35,7 @@ export default function Rtsp() {
 
     const connect = async (address)=>{
         if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ffmpeg] || !user_base_info.sysSoftWare[SysSoftware.ffmpeg].installed) {
-            NotyFail(t("找不到ffmpeg"))
+            NotyFail(t("ff_none"))
             return ;
         }
         const videoJsOptions = {

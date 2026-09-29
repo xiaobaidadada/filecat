@@ -151,9 +151,9 @@ export default function MountEditor(props: Props) {
                 onChange={(v) => set_row({...row, driver: v, credential_id: ""})}/>
         <Select value={row.credential_id} options={cred_options()}
                 onChange={(v) => set_row({...row, credential_id: v})}/>
-        <InputText placeholder={t("起始目录，留空表示根目录")} value={row.root_dir}
+        <InputText placeholder={t("strtdrt")} value={row.root_dir}
                    handleInputChange={(v) => set_row({...row, root_dir: v})}/>
-        <InputText placeholder={t("显示名称，留空则使用目录名")} value={row.name}
+        <InputText placeholder={t("dspnmtp")} value={row.name}
                    handleInputChange={(v) => set_row({...row, name: v})}/>
         <InputText placeholder={t("标识色，如 #4a9eff")} value={row.color}
                    handleInputChange={(v) => set_row({...row, color: v})}/>

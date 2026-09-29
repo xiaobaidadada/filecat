@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Card} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
-import {InputText, Select} from "../../../../meta/component/Input";
+import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
@@ -136,7 +136,7 @@ export default function MountPanel() {
             return;
         }
         if (!mount_path.trim()) {
-            NotyFail(t("挂载目录不能为空"));
+            NotyFail(t("munt_rq"));
             return;
         }
         try {
@@ -183,21 +183,32 @@ export default function MountPanel() {
 
             {/* 表单只在新增/编辑时展开 */}
             {editing && <React.Fragment>
-                <Select value={driver}
-                        options={drivers.map(d => ({title: d.name, value: d.type}))}
-                        onChange={(v) => {
-                            set_driver(v);
-                            // 换类型时清掉已选凭据（类型可能不匹配）
-                            set_credential_id("");
-                        }}/>
-                <Select value={credential_id} options={cred_options(driver)}
-                        onChange={set_credential_id}/>
-                <InputText placeholder={t("本地目录")} value={mount_path}
-                           handleInputChange={set_mount_path}/>
-                <InputText placeholder={t("起始目录，留空表示根目录")} value={root_dir}
-                           handleInputChange={set_root_dir}/>
-                <InputText placeholder={t("显示名称，留空则使用目录名")} value={name}
-                           handleInputChange={set_name}/>
+                <InputRow label={t("挂载类型")} label_width={"6rem"}>
+                    <Select value={driver}
+                            options={drivers.map(d => ({title: d.name, value: d.type}))}
+                            onChange={(v) => {
+                                set_driver(v);
+                                // 换类型时清掉已选凭据（类型可能不匹配）
+                                set_credential_id("");
+                            }}/>
+                </InputRow>
+                <InputRow label={t("凭据")} label_width={"6rem"} required>
+                    <Select value={credential_id} options={cred_options(driver)}
+                            onChange={set_credential_id}/>
+                </InputRow>
+                <InputRow label={t("本地目录")} label_width={"6rem"} required>
+                    <InputText placeholder={t("被挂载的本地绝对路径")} value={mount_path}
+                               handleInputChange={set_mount_path}/>
+                </InputRow>
+                {/* 起始目录决定读到远端哪个子目录，属于数据来源；显示名称只是列表上的标签 */}
+                <InputRow label={t("strtdrt")} label_width={"6rem"}>
+                    <InputText placeholder={t("远端目录")} value={root_dir}
+                               handleInputChange={set_root_dir}/>
+                </InputRow>
+                <InputRow label={t("dspnmtp")} label_width={"6rem"}>
+                    <InputText placeholder={t("列表显示的名称")} value={name}
+                               handleInputChange={set_name}/>
+                </InputRow>
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
@@ -209,7 +220,7 @@ export default function MountPanel() {
                            ? baidu_accounts.find(a => String(a.uk) === String(item.credential_id))
                            : undefined;
                        return [
-                           <p>{item.name }</p>,
+                           <p>{item.name}</p>,
                            <p>{driver_name(item.driver)}</p>,
                            <p>{baidu
                                ? (baidu.name || baidu.baidu_name || String(baidu.uk))

@@ -414,7 +414,7 @@ export default function GitStudio() {
                         {/* 提交区域 */}
                         <div className="git-studio-card">
                             <textarea className="git-studio-textarea"
-                                placeholder={t('输入提交信息...')}
+                                placeholder={t('git_msg')}
                                 value={commitMessage}
                                 onChange={e => setCommitMessage(e.target.value)}
                                 rows={2}/>
@@ -544,7 +544,7 @@ export default function GitStudio() {
                                         <input className="git-studio-input" value={editProxyLocalHttps}
                                                onChange={e => setEditProxyLocalHttps(e.target.value)} placeholder="http://127.0.0.1:7890"/>
                                     </div>
-                                    <div style={{fontSize: 11, color: 'var(--textSecondary)'}}>{t('留空清除该代理设置')}</div>
+                                    <div style={{fontSize: 11, color: 'var(--textSecondary)'}}>{t('pxy_clr')}</div>
                                     <div className="git-studio-btn-row">
                                         <button className="git-studio-btn" onClick={handleSaveProxy}>💾 {t('保存')}</button>
                                         <button className="git-studio-btn" onClick={() => { setProxyEditing(false); loadProxy(); }}>✖ {t('取消')}</button>
@@ -561,11 +561,11 @@ export default function GitStudio() {
                         }}>
                             💡 {t('提示：')}
                             <ul style={{margin: '4px 0', paddingLeft: 16}}>
-                                <li>{t('左侧勾选文件后，使用「暂存选中」将其加入暂存区')}</li>
-                                <li>{t('输入提交信息后点击「提交」')}</li>
-                                <li>{t('如有冲突，请自行在shell中解决冲突后再提交')}</li>
-                                <li>{t('「强制推送」会覆盖远程分支，请谨慎使用')}</li>
-                                <li>{t('用户配置和全局代理修改后对所有仓库生效')}</li>
+                                <li>{t('git_stg')}</li>
+                                <li>{t('git_cmt')}</li>
+                                <li>{t('git_cf')}</li>
+                                <li>{t('git_frc')}</li>
+                                <li>{t('pxy_nte')}</li>
                             </ul>
                         </div>
                     </div>

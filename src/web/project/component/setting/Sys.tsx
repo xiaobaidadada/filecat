@@ -207,7 +207,7 @@ export function Sys() {
                             set_prompt_card({
                                 open: true, title: t("信息"), context_div: (
                                     <div>
-                                        {t(`HTTP 代理说明`)}
+                                        {t(`pxy_tip`)}
                                     </div>
                                 )
                             })
@@ -220,18 +220,18 @@ export function Sys() {
                         }}/>
 
                         {t("网站 Logo")}
-                        <InputText placeholder={t('本地文件路径或 http(s) 图片地址')} value={site_logo}
+                        <InputText placeholder={t('lclorur')} value={site_logo}
                                    handleInputChange={(value) => {
                                        set_site_logo(value)
                                    }}/>
 
-                        <div>{t("HTTP 代理地址")}</div>
+                        <div>{t("pxy_url")}</div>
                         <InputText placeholder={'http://127.0.0.1:7890'} value={http_proxy}
                                    handleInputChange={(value) => {
                                        set_http_proxy(value)
                                    }}/>
 
-                        {t("登陆展示用户信息")}
+                        {t("lgn_usr")}
                         <input
                             type="checkbox"
                             checked={show_login_user_info}
@@ -241,19 +241,19 @@ export function Sys() {
                         />
 
                     </Card>
-                    <Card title={t("HTTPS 设置")}
+                    <Card title={t("https_s")}
                           rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_https}/>}>
                         <Select value={https_open} onChange={(value) => {
                             set_https_open(value)
                         }} options={[{title: t("开启"), value: true}, {title: t("关闭"), value: false}]}/>
                         {https_open && <>
-                            <div>{t("SSL 证书路径")}</div>
-                            <InputText placeholder={t('证书文件路径(cert.pem/fullchain.pem)')} value={https_cert_path}
+                            <div>{t("ssl_crt")}</div>
+                            <InputText placeholder={t('crt_pth')} value={https_cert_path}
                                        handleInputChange={(value) => {
                                            set_https_cert_path(value)
                                        }}/>
-                            <div>{t("SSL 私钥路径")}</div>
-                            <InputText placeholder={t('私钥文件路径(privkey.pem)')} value={https_key_path}
+                            <div>{t("ssl_key")}</div>
+                            <InputText placeholder={t('ky_pth')} value={https_key_path}
                                        handleInputChange={(value) => {
                                            set_https_key_path(value)
                                        }}/>
@@ -289,7 +289,7 @@ export function Sys() {
                     {/*<Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>*/}
 
                     {/*</Card>*/}
-                    <Card title={t("token过期时间")} rightBottomCom={<Rows isFlex={true} columns={[
+                    <Card title={t("tk_exp")} rightBottomCom={<Rows isFlex={true} columns={[
                         <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,
                         <ButtonText text={t('保存')} clickFun={tokenUpdate}/>]}/>}>
                         <Rows isFlex={true} columns={[

@@ -391,7 +391,7 @@ export function use_handleContextMenu() {
                 r: (<span
                     style={
                         get_select_style(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination )
-                 }>{t("分页滚动加载文件")}</span>),
+                 }>{t("scrll_l")}</span>),
                 v: FileListPaginationModeEmum.pagination
             }
         ];
@@ -460,7 +460,7 @@ export function use_handleContextMenu() {
                     r: (<span
                         style={
                             get_select_style(blankSearchMode)
-                        }>{t("以空白搜索模式打开目录")}</span>),
+                        }>{t("srchbln")}</span>),
                     v: "blank_search_mode"
                 },
             ]
@@ -473,10 +473,10 @@ export function use_handleContextMenu() {
             list.push({r: t("查看Git提交"), v: "git_page"})
         }
         if (check_user_auth(UserAuth.code_resource)) {
-            list.push({r: t("添加http资源根目录"), v: "code_resource"})
+            list.push({r: t("add_rot"), v: "code_resource"})
         }
         if (check_user_auth(UserAuth.http_proxy)) {
-            list.push({r: t("在此目录下载http资源"), v: "http_resource"})
+            list.push({r: t("dl_here"), v: "http_resource"})
         }
         if (user_base_info?.user_data?.quick_cmd) {
             // const cmd = {

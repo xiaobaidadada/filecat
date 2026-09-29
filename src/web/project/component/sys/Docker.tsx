@@ -189,7 +189,7 @@ export function Docker(props) {
     const delete_image = async ()=>{
         set_show_confirm({
             open: true,
-            title: t("确定删除选中的镜像吗"),
+            title: t("doc_icf"),
             // sub_title: ``,
             handle: async () => {
                 const keys = Object.keys(images_selected);
@@ -218,7 +218,7 @@ export function Docker(props) {
     }
     return <div>
         <HeaderPortal>
-                                <ButtonLittleStatus defaultStatus={false} text={t("docker镜像")} clickFun={(v) => {
+                                <ButtonLittleStatus defaultStatus={false} text={t("doc_img")} clickFun={(v) => {
                             set_show_iamges(v);
                             if (v) {
                                 // ws.unConnect();
@@ -233,7 +233,7 @@ export function Docker(props) {
             </HeaderPortal>
             <HeaderPortal position={"right"}>
                                 {/* Docker daemon 配置修改依赖 /etc/docker/daemon.json 与 systemctl restart，仅 Linux 可用 */}
-                            {user_base_info.sys === SysEnum.linux && <ActionButton icon={"settings"} title={t("Docker 配置")} onClick={() => navigate(routerConfig.docker_setting_page)} />}
+                            {user_base_info.sys === SysEnum.linux && <ActionButton icon={"settings"} title={t("doc_cfg")} onClick={() => navigate(routerConfig.docker_setting_page)} />}
                             {Object.keys(images_selected).length >0  && <ActionButton icon={"delete"} title={t("删除镜像")} onClick={delete_image}/>}
                             {optRow.length > 0 && <div>
                                 {optRow[1].props.context}
@@ -275,7 +275,7 @@ export function Docker(props) {
                     </Column>
                 </Row>
             }
-            {rows.length === 0 && !filterKey && !show_iamges && <Blank context={t("检测不到docker，主机可能没有安装docker or 容器为空")}/>}
+            {rows.length === 0 && !filterKey && !show_iamges && <Blank context={t("dc_nne")}/>}
             {(rows.length !== 0 || filterKey) && !show_iamges && (
                 <Row>
                     <Column widthPer={80}>

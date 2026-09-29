@@ -140,7 +140,7 @@ export default function DbQuery() {
     const handleSavePreset = async () => {
         const query = (editor_data.get_editor_value(editorId) ?? sql).trim();
         if (!query) {
-            setError(t("请输入 SQL 语句"));
+            setError(t("sql_in"));
             return;
         }
         const list = [...sqlPresets];

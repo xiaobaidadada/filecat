@@ -107,11 +107,11 @@ export default function BaiduPanel({on_credential_change}: Props) {
 
     const save_app = async () => {
         if (!app_key.trim()) {
-            NotyFail(t("请填写 AppKey"));
+            NotyFail(t("rqappky"));
             return;
         }
         if (!app?.configured && !secret_key.trim()) {
-            NotyFail(t("请填写 SecretKey"));
+            NotyFail(t("rq_scrt"));
             return;
         }
         try {
@@ -132,7 +132,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
     /** 取授权链接并打开 */
     const open_authorize = async () => {
         if (!app?.configured) {
-            NotyFail(t("请先保存应用配置"));
+            NotyFail(t("svappfr"));
             return;
         }
         try {
@@ -173,9 +173,9 @@ export default function BaiduPanel({on_credential_change}: Props) {
             title: t("信息"),
             context_div: (
                 <ul>
-                    <li>{t("一键授权：授权成功后会自动跳回本页，账号自动加入列表")}</li>
-                    <li>{t("一键授权需要在百度控制台把回调地址登记为本服务的 /mount/baidu/callback")}</li>
-                    <li>{t("手动授权：不依赖回调地址，授权后在百度页面复制授权码，粘贴到下方并点击完成授权")}</li>
+                    <li>{t("atathtp")}</li>
+                    <li>{t("atathnt")}</li>
+                    <li>{t("pstatht")}</li>
                 </ul>
             ),
         });
@@ -274,7 +274,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
             <InputText placeholder={"AppID"} value={app_id} handleInputChange={set_app_id}/>
             <InputText placeholder={"AppKey"} value={app_key} handleInputChange={set_app_key}/>
             <InputText type={"password"}
-                       placeholder={app?.configured ? t("SecretKey 留空表示不修改") : "SecretKey"}
+                       placeholder={app?.configured ? t("scrtkep") : "SecretKey"}
                        value={secret_key} handleInputChange={set_secret_key}/>
             <InputRow label={t("授权方式")} label_width={"6rem"}>
                 <Select value={auth_mode} options={baidu_auth_mode_options(t)}
@@ -283,7 +283,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
             <InputRow label={t("网盘使用")} label_width={"6rem"}>
                 <Select value={enabled} options={mount_enable_options(t)} onChange={set_enabled}/>
             </InputRow>
-            <InputRow label={t("自动刷新 token")} label_width={"6rem"}>
+            <InputRow label={t("atrfrsh")} label_width={"6rem"}>
                 <Select value={auto_refresh} options={mount_enable_options(t)} onChange={set_auto_refresh}/>
             </InputRow>
             </React.Fragment>}
@@ -296,7 +296,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
                                     name={"baidu_auth_mode"}
                                     selected={auth_mode === "one_click"}
                                     onchange={() => set_auth_mode("one_click")}/>
-                        <InputRadio value={"oob"} context={t("手动授权（oob）")}
+                        <InputRadio value={"oob"} context={t("outh_ob")}
                                     name={"baidu_auth_mode"}
                                     selected={auth_mode === "oob"}
                                     onchange={() => set_auth_mode("oob")}/>
@@ -304,7 +304,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
                 </InputRow>
 
                 {/* 手动授权需要把百度页面拿到的 code 贴回来换 token */}
-                {is_oob && <InputText placeholder={t("粘贴授权码 code")} value={code}
+                {is_oob && <InputText placeholder={t("pst_cd")} value={code}
                                       handleInputChange={set_code}/>}
 
                 {/* 操作按钮横排居中 */}

@@ -108,7 +108,7 @@ export default function DockerSetting() {
                             <Column widthPer={35}>
                                 <CardFull
                                     self_title={<span className={"div-row"}>
-                                        <h2>{t("Docker 代理配置")}</h2>
+                                        <h2>{t("doc_pxy")}</h2>
                                 <ActionButton icon={"info"} title={t("信息")} onClick={() => {
                                     set_prompt_card({
                                         open: true, title: t("信息"), context_div: (
@@ -128,12 +128,12 @@ export default function DockerSetting() {
                                                    value={http_proxy}
                                                    handleInputChange={(v) => set_http_proxy(v)}/>
                                     </InputRow>
-                                    <InputRow label={t("HTTPS 代理")} label_width={"4rem"}>
+                                    <InputRow label={t("pxy_htt")} label_width={"4rem"}>
                                         <InputText maxWidth={"24rem"} placeholder={"https://127.0.0.1:3067"}
                                                    value={https_proxy}
                                                    handleInputChange={(v) => set_https_proxy(v)}/>
                                     </InputRow>
-                                    <InputRow label={t("No Proxy")} label_width={"4rem"}>
+                                    <InputRow label={t("pxy_nne")} label_width={"4rem"}>
                                         <InputText maxWidth={"24rem"} placeholder={"localhost,127.0.0.1"}
                                                    value={no_proxy}
                                                    handleInputChange={(v) => set_no_proxy(v)}/>
@@ -170,7 +170,7 @@ export default function DockerSetting() {
                                         <InputText maxWidth={"24rem"} placeholder={"json-file"} value={log_driver}
                                                    handleInputChange={(v) => set_log_driver(v)}/>
                                     </InputRow>
-                                    <InputRow label={t("启用 iptables")} label_width={"4rem"} input_max_width={"8rem"}>
+                                    <InputRow label={t("fw_iptb")} label_width={"4rem"} input_max_width={"8rem"}>
                                         <Select options={[{title: t("是"), value: true}, {
                                             title: t("否"),
                                             value: false
@@ -178,7 +178,7 @@ export default function DockerSetting() {
                                                 value={iptables}
                                                 onChange={(v) => set_iptables(!!v)}/>
                                     </InputRow>
-                                    <InputRow label={t("Live Restore")} label_width={"4rem"} input_max_width={"8rem"}>
+                                    <InputRow label={t("lve_rst")} label_width={"4rem"} input_max_width={"8rem"}>
                                         <Select options={[{title: t("是"), value: true}, {
                                             title: t("否"),
                                             value: false

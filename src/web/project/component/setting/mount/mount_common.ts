@@ -92,8 +92,8 @@ export function mount_enable_options(t: (s: string) => string) {
  */
 export function baidu_auth_mode_options(t: (s: string) => string) {
     return [
-        {title: t("一键授权（自动跳回）"), value: "one_click"},
-        {title: t("手动授权（粘贴授权码）"), value: "oob"},
+        {title: t("outh_at"), value: "one_click"},
+        {title: t("outhpst"), value: "oob"},
     ];
 }
 

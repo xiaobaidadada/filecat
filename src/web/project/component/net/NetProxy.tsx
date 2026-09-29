@@ -240,7 +240,7 @@ export function NetProxy(props) {
                         }}/>
 
                         <form>
-                            {t("请勿将代理服务器用于本地(Intranet)地址")}
+                            {t("pxy_nln")}
                             <Rows isFlex={true} columns={[
                                 <InputRadio value={1} context={t("开启")} selected={useForLocal} onchange={() => {
                                     setUseForLocal(!useForLocal)

@@ -84,7 +84,7 @@ export function Crypto() {
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&
-                              <ButtonText text={t('保存到.ssh目录')} clickFun={() => {
+                              <ButtonText text={t('ssh_dir')} clickFun={() => {
                                   save_openssh('pub')
                               }}/>}
                     >
@@ -108,7 +108,7 @@ export function Crypto() {
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&
-                              <ButtonText text={t('保存到.ssh目录')} clickFun={() => {
+                              <ButtonText text={t('ssh_dir')} clickFun={() => {
                                   save_openssh('pri')
                               }}/>}>
                         <textarea className={"input--textarea input--no_border"}

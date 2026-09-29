@@ -68,7 +68,7 @@ export function BaseFileItem(props: FileItemData & {
         // （同一目录下父子层级不可能同级显示，因此只需判断"目标是否为拖拽源之一"即可）
         const dragItems = getFilesByIndexs(nowFileList, selectList);
         if (dragItems.some(v => v?.name === file_item?.name)) {
-            NotyFail(t("不能将文件夹移动到自己里面"))
+            NotyFail(t("mv_self"))
             return;
         }
 

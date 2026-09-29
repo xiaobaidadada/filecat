@@ -107,7 +107,7 @@ export function Process(props) {
                             </div>}
             </HeaderPortal>
         <Dashboard>
-            {rows.length === 0 && !filter ? (<Blank context={t("加载中请等待...")}/>) : (
+            {rows.length === 0 && !filter ? (<Blank context={t("ld_wait")}/>) : (
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`${t('进程')} (${count})`}

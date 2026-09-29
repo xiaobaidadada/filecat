@@ -108,7 +108,7 @@ export function TcpProxyServerSetting() {
         <Column widthPer={33}>
             <Dashboard>
                 <Card title={t("服务器配置")} rightBottomCom={<div>
-                    <ButtonText text={t('保存并通知客户端第一个key和port')} clickFun={()=>{
+                    <ButtonText text={t('sv_ntf')} clickFun={()=>{
                         save_server_info(true)
                     }}/>
                     <ButtonText text={t('保存')} clickFun={()=>{

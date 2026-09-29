@@ -262,7 +262,7 @@ export function TcpProxyClient(props) {
             {
                 !!bridge_list?.length &&
                 <Column widthPer={40}>
-                    <Card title={t("桥接服务端口列表")}>
+                    <Card title={t("br_port")}>
                         <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
                             const new_list = [
                                 <p>{index}</p>,

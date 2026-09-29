@@ -426,7 +426,7 @@ export default function AiAgentChatPage() {
     // ===== 消息操作 =====
     const handleDelete = (id: number) => {
         confirm_dell_all({
-            sub_title: t("确认删除这条消息吗?"),
+            sub_title: t("cf_one"),
             confirm_fun: async () => {
                 const targetIndex = messages.findIndex(m => m.id === id);
                 if (targetIndex < 0) return;
@@ -472,7 +472,7 @@ export default function AiAgentChatPage() {
     const batchDeleteMessages = () => {
         if (selectedMsgIds.size === 0) return;
         confirm_dell_all({
-            sub_title: t("确认删除选中的聊天消息吗?"),
+            sub_title: t("cf_msgs"),
             confirm_fun: async () => {
                 const indicesToDelete: number[] = [];
                 messages.forEach((m, idx) => { if (selectedMsgIds.has(m.id)) indicesToDelete.push(idx); });
@@ -492,7 +492,7 @@ export default function AiAgentChatPage() {
     const batchDeleteSessions = () => {
         if (selectedSessionIds.size === 0) return;
         confirm_dell_all({
-            sub_title: t("确认删除选中的会话吗?"),
+            sub_title: t("cf_ses"),
             confirm_fun: async () => {
                 for (const sid of selectedSessionIds) {
                     await ai_agentHttp.post("session/delete", { session_id: sid });
@@ -511,7 +511,7 @@ export default function AiAgentChatPage() {
 
     const clearAllSessions = () => {
         confirm_dell_all({
-            sub_title: t("确认删除全部聊天会话吗?"),
+            sub_title: t("cf_all"),
             confirm_fun: async () => {
                 await ai_agentHttp.post("sessions/clear", {});
                 setActiveSessionId("");
@@ -798,7 +798,7 @@ export default function AiAgentChatPage() {
                 <section className="chat-main">
                     {messages?.length === 0 && (
                         <div className="chat-header">
-                            <div>{t('询问服务器的一切')}</div>
+                            <div>{t('ai_ask')}</div>
                         </div>
                     )}
 

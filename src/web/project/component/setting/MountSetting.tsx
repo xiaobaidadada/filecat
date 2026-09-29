@@ -60,7 +60,7 @@ export function MountSetting() {
         return (<Row>
             <Column>
                 <Card self_title={<h2>{t("网盘挂载")}</h2>}>
-                    <p>{t("当前账号没有目录挂载权限")}</p>
+                    <p>{t("nmuntpr")}</p>
                 </Card>
             </Column>
         </Row>);
@@ -74,7 +74,7 @@ export function MountSetting() {
             <span className={"header-label"}>{t("总开关")}</span>
             {/* 默认关闭，状态未加载完（null）时按「已停用」展示 */}
             <ActionButton icon={mount_enabled === true ? "cloud_done" : "cloud_off"}
-                          title={mount_enabled === true ? t("挂载已启用，点击停用") : t("挂载已停用，点击启用")}
+                          title={mount_enabled === true ? t("muntont") : t("muntoff")}
                           selected={mount_enabled === true}
                           onClick={toggle_mount}/>
         </HeaderPortal>

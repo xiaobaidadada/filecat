@@ -94,8 +94,8 @@ export const GlobalProvider = ({ children }) => {
             // 这里只在它严格等于 true 时弹出，用户确认后置回 false，避免重复提示
             if (p.user_data?.sys_done_prompt?.tag_delete === true) {
                 NotyConfirm(
-                    t("网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。") +
-                    t("文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。"),
+                    t("nvdltp") +
+                    t("tmplctp"),
                     () => {
                         // 用户确认后记录已完成，下次加载不再提示
                         userHttp.post(Http_controller_router.user_save_private_attr, {

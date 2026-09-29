@@ -458,7 +458,7 @@ export function User() {
                             set_theme(value);
                         }} options={themes_list}/>
 
-                        {/*<p className="small">{t("标签编辑是所有人都可见的的数据")}</p>*/}
+                        {/*<p className="small">{t("tag_pub")}</p>*/}
 
                         <Permission is_disable={is_disable} is_selected={is_selected} select_auth={select_auth}/>
                         <label>{t("备注")}</label>

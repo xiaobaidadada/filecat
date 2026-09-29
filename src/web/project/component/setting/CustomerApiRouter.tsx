@@ -88,7 +88,7 @@ export function CustomerApiRouter() {
             )})
     }
     return <Dashboard>
-        <CardFull  self_title={<span className={" div-row "}><h2>{t("自定义api路由")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+        <CardFull  self_title={<span className={" div-row "}><h2>{t("api_rt")}</h2> <ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
             <Table headers={headers} rows={rows.map((item, index) => {
                 const new_list = [
                     <InputText value={item.router} handleInputChange={(value) => {

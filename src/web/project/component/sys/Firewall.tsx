@@ -217,7 +217,7 @@ export function Firewall() {
                             ufwRules.length === 0
                                 ? <Blank context={t("暂无规则")}/>
                                 : <Table
-                                    headers={[t("编号"), t("目标(To)"), t("动作"), t("来源(From)"), t("备注"), t("操作")]}
+                                    headers={[t("编号"), t("目标(To)"), t("动作"), t("fw_from"), t("备注"), t("操作")]}
                                     rows={ufwRules.map(r => [
                                         r.number,
                                         <TextTip context={r.to} tip_context={r.to}/>,

@@ -105,7 +105,7 @@ export function CustomerRouter() {
         <Row>
             <Column>
                 <TableListRender title={t("页面资源路由")} headers={headers} getItems={getItems} save={save} info_click={soft_ware_info_click} need_copy={true}/>
-                <TableListRender title={t("workflow触发路由")} headers={headers_workflow} getItems={async ()=>{
+                <TableListRender title={t("wf_rt")} headers={headers_workflow} getItems={async ()=>{
                     const result = await settingHttp.get(Http_controller_router.setting_customer_workflow_router);
                     if (result.code === RCode.Success) {
                         return result.data;

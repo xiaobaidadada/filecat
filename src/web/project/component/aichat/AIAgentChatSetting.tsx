@@ -84,7 +84,7 @@ export default function AIAgentChatSetting() {
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
     const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
     const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
-    const headers_sys_prompt = [t("编号"), t("提示词"), t("LLM编辑开关"), t("LLM编辑提示词"), t("编辑规则"), t("备注")];
+    const headers_sys_prompt = [t("编号"), t("提示词"), t("LLM编辑开关"), t("llm_pmt"), t("编辑规则"), t("备注")];
 
     // 系统会话提示词
     const [sys_prompt_list, set_sys_prompt_list] = useState<ai_system_prompt_item[]>([]);
@@ -669,7 +669,7 @@ export default function AIAgentChatSetting() {
                                         }} title={t("LLM编辑开关")}/>,
                                         // ===== LLM 可编辑提示词（llm_prompt） =====
                                         <div>
-                                            <ActionButton icon={"edit_note"} title={t("LLM编辑提示词")} onClick={() => {
+                                            <ActionButton icon={"edit_note"} title={t("llm_pmt")} onClick={() => {
                                                 editor_data.set_value_temp(item.llm_prompt ?? '')
                                                 setEditorSetting({
                                                     model: "ace/mode/text",
