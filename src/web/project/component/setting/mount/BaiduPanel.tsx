@@ -2,9 +2,9 @@ import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
-import {Card} from "../../../../meta/component/Card";
-import {ActionButton} from "../../../../meta/component/Button";
-import {InputRow, InputText, Select} from "../../../../meta/component/Input";
+import {Card, TextTip} from "../../../../meta/component/Card";
+import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import {InputRadio, InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
@@ -64,6 +64,11 @@ export default function BaiduPanel({on_credential_change}: Props) {
     /** 是否手动授权（决定授权区显示哪种操作） */
     const is_oob = auth_mode === "oob";
 
+    /** 应用配置表单是否展开（未展开时只展示账号列表） */
+    const [editing_app, set_editing_app] = useState(false);
+    /** 授权流程面板是否展开（与「应用配置」独立，互不干扰） */
+    const [authorizing, set_authorizing] = useState(false);
+
     /** 授权码（手动授权时粘贴用） */
     const [code, set_code] = useState("");
 
@@ -117,6 +122,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
             });
             NotySuccess(t("保存成功"));
             set_secret_key("");
+            set_editing_app(false);
             await load();
         } catch (e) {
             // Http 层已提示
@@ -152,6 +158,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
             });
             NotySuccess(`${t("授权成功")}：${rsq?.data?.baidu_name ?? ""}`);
             set_code("");
+            set_authorizing(false);
             await load();
             on_credential_change();
         } catch (e) {
@@ -252,10 +259,17 @@ export default function BaiduPanel({on_credential_change}: Props) {
             <ActionButton icon={"info"} title={t("信息")} onClick={show_auth_tip}/>
         </span>}
               rightBottomCom={<div>
+                  {!editing_app && <ActionButton icon={"apps"} title={t("应用配置")}
+                                                onClick={() => set_editing_app(true)}/>}
+                  {editing_app && <ActionButton icon={"save"} title={t("保存应用配置")} onClick={save_app}/>}
+                  {editing_app && <ActionButton icon={"cancel"} title={t("取消")}
+                                                onClick={() => set_editing_app(false)}/>}
+                  {!editing_app && <ActionButton icon={"key"} title={t("授权")}
+                                                onClick={() => set_authorizing(true)}/>}
                   <ActionButton icon={"refresh"} title={t("授权检测/刷新")} onClick={verify_all}/>
               </div>}>
 
-            {/* 应用配置 */}
+            {editing_app && <React.Fragment>
             <InputText placeholder={t("名称")} value={name} handleInputChange={set_name}/>
             <InputText placeholder={"AppID"} value={app_id} handleInputChange={set_app_id}/>
             <InputText placeholder={"AppKey"} value={app_key} handleInputChange={set_app_key}/>
@@ -272,31 +286,43 @@ export default function BaiduPanel({on_credential_change}: Props) {
             <InputRow label={t("自动刷新 token")} label_width={"6rem"}>
                 <Select value={auto_refresh} options={mount_enable_options(t)} onChange={set_auto_refresh}/>
             </InputRow>
-            <ActionButton icon={"save"} title={t("保存应用配置")} onClick={save_app}/>
+            </React.Fragment>}
 
-            {/* 授权：按授权方式显示对应操作，两种方式互斥 */}
-            <div>
-                {is_oob ? (
-                    <React.Fragment>
-                        {/* 手动授权：不依赖回调页，授权后在百度页面复制 code 回来粘贴 */}
-                        <ActionButton icon={"link"} title={t("去授权（手动）")} onClick={open_authorize}/>
-                        <InputText placeholder={t("粘贴授权码 code")} value={code}
-                                   handleInputChange={set_code}/>
-                        <ActionButton icon={"save"} title={t("完成授权")} onClick={exchange}/>
-                    </React.Fragment>
-                ) : (
-                    /* 一键授权：授权后自动跳回本页，无需粘贴 code */
-                    <ActionButton icon={"link"} title={t("去授权（一键）")} onClick={open_authorize}/>
-                )}
-            </div>
+            {/* 授权流程：独立面板，由标题栏的「授权」按钮打开 */}
+            {authorizing && <React.Fragment>
+                <InputRow label={t("授权方式")} label_width={"6rem"}>
+                    <div className={"div-row"}>
+                        <InputRadio value={"one_click"} context={t("一键授权")}
+                                    name={"baidu_auth_mode"}
+                                    selected={auth_mode === "one_click"}
+                                    onchange={() => set_auth_mode("one_click")}/>
+                        <InputRadio value={"oob"} context={t("手动授权（oob）")}
+                                    name={"baidu_auth_mode"}
+                                    selected={auth_mode === "oob"}
+                                    onchange={() => set_auth_mode("oob")}/>
+                    </div>
+                </InputRow>
 
-            {/* 账号列表 */}
-            <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
+                {/* 手动授权需要把百度页面拿到的 code 贴回来换 token */}
+                {is_oob && <InputText placeholder={t("粘贴授权码 code")} value={code}
+                                      handleInputChange={set_code}/>}
+
+                {/* 操作按钮横排居中 */}
+                <div className={"div-row mount-actions"}>
+                    <ButtonText text={is_oob ? t("去授权（手动）") : t("去授权（一键）")}
+                                clickFun={open_authorize}/>
+                    {is_oob && <ButtonText text={t("完成授权")} clickFun={exchange}/>}
+                    <ButtonText text={t("取消")} clickFun={() => set_authorizing(false)}/>
+                </div>
+            </React.Fragment>}
+
+            {/* 账号列表只在两个面板都收起时显示 */}
+            {!editing_app && !authorizing && <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
                    rows={list.map(item => [
                        <InputText value={item.name} no_border={true}
                                   handleInputChange={(v) => rename(item, v)}/>,
-                       <p>{item.baidu_name || "-"}</p>,
-                       <p>{status_text(item)}</p>,
+                       <TextTip  context={item.baidu_name || "-"}/>,
+                       <TextTip  context={status_text(item)}/>,
                        <Select value={item.enabled} no_border={true} options={mount_enable_options(t)}
                                onChange={() => toggle(item)}/>,
                        <p>{fmt_time(item.created_at)}</p>,
@@ -307,7 +333,7 @@ export default function BaiduPanel({on_credential_change}: Props) {
                                          onClick={() => deauthorize(item)}/>
                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
                        </div>,
-                   ])}/>
+                   ])}/>}
         </Card>
     );
 }

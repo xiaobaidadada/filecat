@@ -40,3 +40,9 @@
 .mount-tip-bar .material-icons {
   font-size: 1.1em;
 }
+
+/* 挂载设置里的操作按钮排：横排居中，与项目其它页面按钮风格一致 */
+.mount-actions {
+  justify-content: center;
+  gap: 0.4rem;
+}

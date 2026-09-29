@@ -32,6 +32,12 @@ export default function MountPanel() {
     /** 百度已授权账号（选百度驱动时作为凭据来源） */
     const [baidu_accounts, set_baidu_accounts] = useState<BaiduAccountRow[]>([]);
 
+    /**
+     * 表单是否展开（新建或编辑中）。
+     * 未展开时只展示列表，输入框和操作按钮都隐藏，
+     * 避免用户看到常驻的「保存」却不知道在保存什么。
+     */
+    const [editing, set_editing] = useState(false);
     /** 表单：id 为空表示新增 */
     const [id, set_id] = useState("");
     const [driver, set_driver] = useState("webdav");
@@ -74,7 +80,9 @@ export default function MountPanel() {
         return creds.filter(c => !need || c.type === need).map(c => ({title: c.name, value: c.id}));
     };
 
-    const reset = () => {
+    /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
+    const close_form = () => {
+        set_editing(false);
         set_id("");
         set_driver("webdav");
         set_mount_path("");
@@ -83,7 +91,14 @@ export default function MountPanel() {
         set_name("");
     };
 
+    /** 点标题栏的「+」开始新增 */
+    const start_add = () => {
+        close_form();
+        set_editing(true);
+    };
+
     const edit = (item: MountRow) => {
+        set_editing(true);
         set_id(item.id);
         set_driver(item.driver);
         set_mount_path(item.mount_path ?? "");
@@ -137,7 +152,7 @@ export default function MountPanel() {
                 enabled: true,
             });
             NotySuccess(t("保存成功"));
-            reset();
+            close_form();
             await load();
         } catch (e) {
             // Http 层已提示
@@ -159,30 +174,34 @@ export default function MountPanel() {
     return (
         <Card self_title={<span className={" div-row "}><h2>{t("挂载列表")}</h2></span>}
               rightBottomCom={<div>
-                  <ActionButton icon={"cancel"} title={t("取消")} onClick={reset}/>
-                  <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>
-                  <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
+                  {/* 未展开表单时只显示「+」开始新增；展开后显示测试、保存与取消 */}
+                  {!editing && <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>}
+                  {editing && <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>}
+                  {editing && <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
+                  {editing && <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>}
               </div>}>
 
-            {/* 挂载总开关在顶部 Header 上，这里不再重复放置 */}
+            {/* 表单只在新增/编辑时展开 */}
+            {editing && <React.Fragment>
+                <Select value={driver}
+                        options={drivers.map(d => ({title: d.name, value: d.type}))}
+                        onChange={(v) => {
+                            set_driver(v);
+                            // 换类型时清掉已选凭据（类型可能不匹配）
+                            set_credential_id("");
+                        }}/>
+                <Select value={credential_id} options={cred_options(driver)}
+                        onChange={set_credential_id}/>
+                <InputText placeholder={t("本地目录")} value={mount_path}
+                           handleInputChange={set_mount_path}/>
+                <InputText placeholder={t("起始目录，留空表示根目录")} value={root_dir}
+                           handleInputChange={set_root_dir}/>
+                <InputText placeholder={t("显示名称，留空则使用目录名")} value={name}
+                           handleInputChange={set_name}/>
+            </React.Fragment>}
 
-            <Select value={driver}
-                    options={drivers.map(d => ({title: d.name, value: d.type}))}
-                    onChange={(v) => {
-                        set_driver(v);
-                        // 换类型时清掉已选凭据（类型可能不匹配）
-                        set_credential_id("");
-                    }}/>
-            <Select value={credential_id} options={cred_options(driver)}
-                    onChange={set_credential_id}/>
-            <InputText placeholder={t("本地目录")} value={mount_path}
-                       handleInputChange={set_mount_path}/>
-            <InputText placeholder={t("起始目录，留空表示根目录")} value={root_dir}
-                       handleInputChange={set_root_dir}/>
-            <InputText placeholder={t("显示名称，留空则使用目录名")} value={name}
-                       handleInputChange={set_name}/>
-
-            <Table headers={[t("名称"), t("挂载类型"), t("凭据"), t("操作")]}
+            {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
+            {!editing && <Table headers={[t("名称"), t("挂载类型"), t("凭据"), t("操作")]}
                    rows={list.map(item => {
                        const cred = creds.find(c => c.id === item.credential_id);
                        // 百度账号：凭据名从授权账号列表里取
@@ -200,7 +219,7 @@ export default function MountPanel() {
                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
                            </div>,
                        ];
-                   })}/>
+                   })}/>}
         </Card>
     );
 }

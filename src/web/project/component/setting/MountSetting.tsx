@@ -69,6 +69,9 @@ export function MountSetting() {
     return (<React.Fragment>
         {/* 挂载总开关：注入到顶部工具栏，只在本页显示 */}
         <HeaderPortal position={"right"}>
+            {/* 开关左边的文字标签：Header 里的 ActionButton 只显示图标（title 仅在 hover 时作为
+                tooltip），不写文字用户不知道这个图标是干什么的 */}
+            <span className={"header-label"}>{t("总开关")}</span>
             {/* 默认关闭，状态未加载完（null）时按「已停用」展示 */}
             <ActionButton icon={mount_enabled === true ? "cloud_done" : "cloud_off"}
                           title={mount_enabled === true ? t("挂载已启用，点击停用") : t("挂载已停用，点击启用")}
@@ -78,7 +81,7 @@ export function MountSetting() {
         <Dashboard>
 
             <Row>
-                <Column widthPer={40} maxWidth={"40rem"}>
+                <Column widthPer={50} maxWidth={"60rem"}>
                     <BaiduPanel on_credential_change={() => window.location.reload()}/>
                 </Column>
                 <Column widthPer={33} maxWidth={"30rem"} >
@@ -87,7 +90,7 @@ export function MountSetting() {
 
             </Row>
             <Row>
-                <Column widthPer={40} maxWidth={"40rem"}>
+                <Column widthPer={50} maxWidth={"60rem"}>
                     <MountPanel/>
                 </Column>
             </Row>

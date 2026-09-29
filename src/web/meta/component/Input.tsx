@@ -568,7 +568,7 @@ export function InputRadio(props: {
     selected?: boolean,
     name?: string
 }) {
-    return <div className="input_radio_row">
+    return <label className="input_radio_row">
         {/* ⭐ 使用 props.selected ?? false 确保绝对不为 undefined */}
         <input type="radio" checked={props.selected ?? false} name={props.name ?? "common_name"} value={props.value}
                className={"input_radio"}
@@ -576,7 +576,7 @@ export function InputRadio(props: {
                    if (props.onchange) props.onchange(props.value)
                }}/>
         {props.context}
-    </div>
+    </label>
 }
 
 export function InputCheckbox(props: {
@@ -586,7 +586,7 @@ export function InputCheckbox(props: {
     is_disable?: boolean,
 }) {
     // 💡 优化掉不必要的内部 useState 与 useEffect，直接成为标准受控组件，避免不必要的渲染和警告
-    return <div className="input_radio_row">
+    return <label className="input_radio_row">
         {/* ⭐ 使用 !!props.selected 强转为布尔值，防止 undefined 潜入 */}
         <input type="checkbox" disabled={!!props.is_disable} checked={!!props.selected}
                onChange={() => {
@@ -595,6 +595,6 @@ export function InputCheckbox(props: {
                    }
                }}/>
         {props.context && props.context}
-    </div>
+    </label>
 }
 

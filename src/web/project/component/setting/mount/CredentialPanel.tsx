@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
-import {Card} from "../../../../meta/component/Card";
+import {Card, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
@@ -51,6 +51,12 @@ export default function CredentialPanel() {
         });
     };
 
+    /**
+     * 表单是否展开（新增或编辑中）。
+     * 未展开时只展示列表，输入框和操作按钮都隐藏，
+     * 避免用户看到常驻的「保存」却不知道在保存什么。
+     */
+    const [editing, set_editing] = useState(false);
     /** 表单：新增或编辑都复用（id 为空表示新增） */
     const [id, set_id] = useState("");
     const [type, set_type] = useState(DEFAULT_TYPE);
@@ -78,7 +84,9 @@ export default function CredentialPanel() {
     /** 当前类型需要的字段 */
     const fields = metas.find(m => m.type === type)?.fields ?? [];
 
-    const reset = () => {
+    /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
+    const close_form = () => {
+        set_editing(false);
         set_id("");
         set_type(DEFAULT_TYPE);
         set_name("");
@@ -86,7 +94,14 @@ export default function CredentialPanel() {
         set_has_password(false);
     };
 
+    /** 点标题栏的「+」开始新增 */
+    const start_add = () => {
+        close_form();
+        set_editing(true);
+    };
+
     const edit = (item: CredentialRow) => {
+        set_editing(true);
         set_id(item.id);
         set_type(item.type);
         set_name(item.name ?? "");
@@ -131,7 +146,7 @@ export default function CredentialPanel() {
                 enabled: true,
             });
             NotySuccess(t("保存成功"));
-            reset();
+            close_form();
             await load();
         } catch (e) {
             // Http 层已提示
@@ -154,39 +169,45 @@ export default function CredentialPanel() {
         <Card self_title={<span className={" div-row "}><h2>{t("普通凭据管理")}</h2>
             <ActionButton icon={"info"} title={t("信息")} onClick={mount_info_click}/></span>}
               rightBottomCom={<div>
-                  <ActionButton icon={"cancel"} title={t("取消")} onClick={reset}/>
-                  <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>
-                  <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
+                  {/* 未展开表单时只显示「+」开始新增；展开后显示测试、保存与取消 */}
+                  {!editing && <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>}
+                  {editing && <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>}
+                  {editing && <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
+                  {editing && <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>}
               </div>}>
 
-            <InputText placeholder={t("名称")} value={name} handleInputChange={set_name}/>
-            <Select value={type} options={metas.map(m => ({title: m.name, value: m.type}))}
-                    onChange={(v) => {
-                        set_type(v);
-                        // 换类型时清掉旧字段，避免串类型
-                        set_config({});
-                    }}/>
-            {fields.map(f => (
-                <React.Fragment key={f.key}>
-                    <InputText
-                        type={SECRET_KEYS.includes(f.key) ? "password" : "text"}
-                        placeholder={SECRET_KEYS.includes(f.key) && has_password
-                            ? t("留空表示不修改")
-                            : f.label}
-                        value={config[f.key] ?? ""}
-                        handleInputChange={(v) => set_config({...config, [f.key]: v})}/>
-                </React.Fragment>
-            ))}
+            {/* 表单只在新增/编辑时展开 */}
+            {editing && <React.Fragment>
+                <InputText placeholder={t("名称")} value={name} handleInputChange={set_name}/>
+                <Select value={type} options={metas.map(m => ({title: m.name, value: m.type}))}
+                        onChange={(v) => {
+                            set_type(v);
+                            // 换类型时清掉旧字段，避免串类型
+                            set_config({});
+                        }}/>
+                {fields.map(f => (
+                    <React.Fragment key={f.key}>
+                        <InputText
+                            type={SECRET_KEYS.includes(f.key) ? "password" : "text"}
+                            placeholder={SECRET_KEYS.includes(f.key) && has_password
+                                ? t("留空表示不修改")
+                                : f.label}
+                            value={config[f.key] ?? ""}
+                            handleInputChange={(v) => set_config({...config, [f.key]: v})}/>
+                    </React.Fragment>
+                ))}
+            </React.Fragment>}
 
-            <Table headers={[t("名称"), t("类型"), t("操作")]}
+            {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
+            {!editing && <Table headers={[t("名称"), t("类型"), t("操作")]}
                    rows={list.map(item => [
-                       <p>{item.name}</p>,
-                       <p>{type_name(item.type)}</p>,
+                       <TextTip  context={item.name}/>,
+                       <TextTip  context={type_name(item.type)}/>,
                        <div>
                            <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
                        </div>,
-                   ])}/>
+                   ])}/>}
         </Card>
     );
 }

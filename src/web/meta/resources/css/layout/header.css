@@ -91,6 +91,14 @@
   display: none;
 }
 
+/* 注入到 Header 工具栏的文字标签（配合 ActionButton 使用，说明图标含义）。
+   槽位是 display:contents，所以这里直接参与 Header 的 flex 布局、自动垂直居中 */
+.header .header-label {
+  color: var(--textSecondary, #5f6368);
+  white-space: nowrap;
+  margin-right: 0.4em;
+}
+
 .header>div div {
   vertical-align: middle;
   /*position: relative;*/

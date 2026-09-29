@@ -3,7 +3,7 @@ import {Readable} from "stream";
 import {FileDriver, DriverCaps, MountDriverType} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
-import {driver_item_to_file_item, norm_mount_path, mount_join, mount_basename} from "./file_driver_type";
+import {driver_item_to_file_item, norm_mount_path, mount_join, mount_basename, mount_parent} from "./file_driver_type";
 import {BaiduTokenStore} from "../baidu/baidu_token";
 
 /** 百度网盘开放平台接口地址 */
@@ -126,45 +126,60 @@ export class BaiduDriver implements FileDriver {
     }
 
     async list(dir: string): Promise<FileItemData[]> {
-        const data = await this.api(BAIDU_API.list, {
-            method: "list",
-            dir: this.abs(dir),
-            order: "name",
-            limit: 1000,
-        });
-        if (data.errno) {
-            throw new Error(`百度网盘列目录失败：${data.errmsg || data.errno}`);
-        }
+        const abs = this.abs(dir);
         const items: FileItemData[] = [];
-        for (const f of data.list ?? []) {
-            // 百度把「应用生成的目录」也返回了，过滤掉
-            if (f.isdir === 2) {
-                continue;
+        // 百度单次最多返回 1000 条，用 start 游标翻页取完整个目录。
+        // 不传 start 时服务端按默认值返回第一页，所以这里显式从 0 开始。
+        const page_size = 1000;
+        let start = 0;
+        while (true) {
+            const data = await this.api(BAIDU_API.list, {
+                method: "list",
+                dir: abs,
+                order: "name",
+                start,
+                limit: page_size,
+            });
+            if (data.errno) {
+                throw new Error(`百度网盘列目录失败：${data.errmsg || data.errno}`);
             }
-            items.push(driver_item_to_file_item({
-                name: f.server_filename,
-                path: mount_join(dir, f.server_filename),
-                is_dir: f.isdir === 1,
-                size: f.isdir === 1 ? undefined : f.size,
-                // 百度的时间字段单位是秒
-                mtime: f.server_mtime ? f.server_mtime * 1000 : 0,
-            }, getFileFormat));
+            const batch = data.list ?? [];
+            for (const f of batch) {
+                // isdir=2 是「应用生成的目录」，用户看不到，过滤掉
+                if (f.isdir === 2) {
+                    continue;
+                }
+                items.push(driver_item_to_file_item({
+                    name: f.server_filename,
+                    path: mount_join(dir, f.server_filename),
+                    is_dir: f.isdir === 1,
+                    size: f.isdir === 1 ? undefined : f.size,
+                    // 百度的时间字段单位是秒
+                    mtime: f.server_mtime ? f.server_mtime * 1000 : 0,
+                }, getFileFormat));
+            }
+            // 不足一页说明已经取完
+            if (batch.length < page_size) {
+                break;
+            }
+            start += page_size;
         }
         return items;
     }
 
     async stat(path: string): Promise<FileItemData | null> {
-        // 取文件信息用 filemetas（要传 fsids，所以先 search）
-        const data = await this.api(BAIDU_API.list, {
-            method: "search",
-            dir: this.abs(path).replace(/\/[^/]*$/, "") || "/",
-            key: mount_basename(path),
-            recursion: 0,
-        });
-        if (data.errno) {
-            return null;
+        // 根目录直接构造：它是挂载点的起点，一定存在且一定是目录，
+        // 而且没有父目录可以列，只能特判。
+        if (norm_mount_path(path) === "/") {
+            return driver_item_to_file_item({
+                name: "",
+                path: "/",
+                is_dir: true,
+                size: undefined,
+                mtime: 0,
+            }, getFileFormat);
         }
-        const hit = (data.list ?? []).find((v: any) => v.path === this.abs(path));
+        const hit = await this.find_entry(this.abs(path));
         if (!hit) {
             return null;
         }
@@ -175,6 +190,28 @@ export class BaiduDriver implements FileDriver {
             size: hit.isdir === 1 ? undefined : hit.size,
             mtime: hit.server_mtime ? hit.server_mtime * 1000 : 0,
         }, getFileFormat);
+    }
+
+    /**
+     * 按绝对路径查一个条目（返回百度原始对象，含 fs_id / isdir / size 等）。
+     *
+     * 百度没有「按路径 stat」的接口，可用的办法是用 list 列「父目录」，
+     * 再在返回结果里按 path 精确匹配。
+     *
+     * 注意不要用 method=search：它要求必须给 key（文件名关键词），
+     * 拿不到根目录、且同名文件在不同层级时会匹配错。
+     */
+    private async find_entry(abs_path: string): Promise<any | null> {
+        const parent = mount_parent(abs_path);
+        const data = await this.api(BAIDU_API.list, {
+            method: "list",
+            dir: parent,
+            limit: 1000,
+        });
+        if (data.errno) {
+            return null;
+        }
+        return (data.list ?? []).find((v: any) => v.path === abs_path) ?? null;
     }
 
     /**
@@ -213,16 +250,10 @@ export class BaiduDriver implements FileDriver {
         return res.data as Readable;
     }
 
-    /** 通过路径拿 fsid（百度很多接口都要 fsid 而不是路径） */
+    /** 通过路径拿 fsid（百度很多接口要 fsid 而不是路径） */
     private async fsid(path: string): Promise<number> {
         const abs = this.abs(path);
-        const data = await this.api(BAIDU_API.list, {
-            method: "search",
-            dir: abs.replace(/\/[^/]*$/, "") || "/",
-            key: mount_basename(path),
-            recursion: 0,
-        });
-        const hit = (data.list ?? []).find((v: any) => v.path === abs);
+        const hit = await this.find_entry(abs);
         if (!hit) {
             throw new Error(`百度网盘找不到路径：${abs}`);
         }
