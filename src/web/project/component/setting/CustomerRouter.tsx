@@ -103,7 +103,7 @@ export function CustomerRouter() {
                                 {/*<ActionButton icon={"http"} title={t("pre路由")} onClick={pre_api} />*/}
             </HeaderPortal>
         <Row>
-            <Column>
+            <Column maxWidth={"50rem"}>
                 <TableListRender title={t("页面资源路由")} headers={headers} getItems={getItems} save={save} info_click={soft_ware_info_click} need_copy={true}/>
                 <TableListRender title={t("wf_rt")} headers={headers_workflow} getItems={async ()=>{
                     const result = await settingHttp.get(Http_controller_router.setting_customer_workflow_router);
@@ -118,7 +118,7 @@ export function CustomerRouter() {
                     }
                 }} info_click={worlfow_api_info_click}/>
             </Column>
-            <Column>
+            <Column maxWidth={"50rem"}>
                 <CustomerApiRouter />
             </Column>
         </Row>

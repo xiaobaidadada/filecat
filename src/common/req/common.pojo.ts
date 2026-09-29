@@ -82,6 +82,15 @@ export class tcp_proxy_bridge_fig_item {
 
 }
 
+/** 同步目标：一条任务可以配多个目标（客户端 + 目录 + 是否全量） */
+export class tcp_proxy_sync_target {
+    client_num_id: number;
+    client_name?: string;
+    dir: string;
+    /** 该目标上线时是否递归全量同步一遍 */
+    full_sync?: boolean;
+}
+
 export class tcp_proxy_sync_task_item {
     id?: string;
 
@@ -89,6 +98,10 @@ export class tcp_proxy_sync_task_item {
     source_client_name?: string;
     source_dir: string;
 
+    /** 多目标同步配置 */
+    targets?: tcp_proxy_sync_target[];
+
+    /** 以下为旧单目标字段，保留兼容但不再使用 */
     target_client_num_id: number;
     target_client_name?: string;
     target_dir: string;
@@ -101,11 +114,13 @@ export class tcp_proxy_sync_task_item {
 
     delete_missing?: boolean = true;
 
-    two_way_sync?: boolean; // 双向同步
+    /** 旧字段：双向同步已移除 */
+    two_way_sync?: boolean;
 
     running_num?: number; // 正在进行同步的文件数量
 
-    full_sync?: boolean; // 初始化的时候就全量同步
+    /** 旧字段：全量同步已下沉到每个 target */
+    full_sync?: boolean;
 }
 
 export const fault_ignore_text = `

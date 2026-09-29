@@ -72,6 +72,28 @@ export class TcpSyncWorkerService {
         return !!key && runtime.suppress_set.has(key);
     }
 
+    /**
+     * 目录被删除时，按相对路径前缀清掉该目录下所有文件的缓存条目。
+     * 缓存 key 是路径 hash 无法反解，所以依赖缓存值里记录的 relative_path。
+     * 兼容没有 relative_path 的旧缓存：匹配不上就跳过（由 mtime 判断兜底）。
+     */
+    private clearCacheUnder(runtime: SyncRuntimeState, dir_full_path: string) {
+        const prefix = normalizeSyncRelativePath(path.relative(runtime.local_dir, dir_full_path));
+        if (!prefix) return;
+        const cache = runtime.cache_file_map;
+        let changed = false;
+        for (const key of Object.keys(cache)) {
+            const rel = cache[key]?.relative_path;
+            if (rel && (rel === prefix || rel.startsWith(`${prefix}/`))) {
+                delete cache[key];
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.saveCache(runtime.task.id, runtime.cache_path, cache);
+        }
+    }
+
     private saveCache(task_id: string, cache_path: string, cache_data: cache_file_type) {
         if (this.cache_timers.has(task_id)) {
             clearTimeout(this.cache_timers.get(task_id)!);
@@ -104,6 +126,10 @@ export class TcpSyncWorkerService {
         const localPath = safeResolveSyncPath(runtime.local_dir, relative);
         this.scheduleSuppress(runtime, relative);
 
+        // 事件处理是异步的，中途任务可能被 stopRuntime 停掉；
+        // 每次 await 之后都确认 runtime 仍在运行，避免任务停止后继续写磁盘
+        const alive = () => this.runtime_map.get(task.id) === runtime;
+
         switch (header.event) {
             case "addDir":
                 await fse.ensureDir(localPath);
@@ -114,14 +140,16 @@ export class TcpSyncWorkerService {
                 }
                 break;
             case "unlink":
-                if (task.delete_missing !== false) {
+                if (task.delete_missing !== false && alive()) {
                     await fse.remove(localPath);
                 }
                 break;
             case "add":
             case "change":
                 await fse.ensureDir(path.dirname(localPath));
-                await fs.promises.writeFile(localPath, payload);
+                if (alive()) {
+                    await fs.promises.writeFile(localPath, payload);
+                }
                 break;
             default:
                 break;
@@ -137,7 +165,8 @@ export class TcpSyncWorkerService {
 
         try {
             const isDir = event === "addDir" || event === "unlinkDir";
-            let mtime = Date.now();
+            // 目录/删除事件没有 mtime，留 undefined 而不是塞 Date.now()，避免脏数据
+            let mtime: number | undefined = undefined;
             let size: number | undefined = undefined;
             let payload = Buffer.alloc(0);
             let transferList: ArrayBuffer[] = []; // 👈 新增：转移列表
@@ -197,7 +226,7 @@ export class TcpSyncWorkerService {
 
             if (event === "add" || event === "change") {
                 const pathHash = getFilePathHash(runtime.local_dir, fullPath);
-                runtime.cache_file_map[pathHash] = { mtime };
+                runtime.cache_file_map[pathHash] = { mtime, relative_path: relative };
                 this.saveCache(runtime.task.id, runtime.cache_path, runtime.cache_file_map);
             }
         } catch (err) {
@@ -271,7 +300,12 @@ export class TcpSyncWorkerService {
         });
 
         watcher.on("addDir", (fullPath) => { sendEvent("addDir", fullPath); });
-        watcher.on("unlinkDir", (fullPath) => { sendEvent("unlinkDir", fullPath); });
+        watcher.on("unlinkDir", (fullPath) => {
+            // 目录被删，其下所有文件的缓存条目要一起抹掉，
+            // 否则目录重建后同名同 mtime 的文件会被增量缓存判定为「未变化」而漏同步
+            this.clearCacheUnder(runtime, fullPath);
+            sendEvent("unlinkDir", fullPath);
+        });
         watcher.on("error", (error) => { console.error("sync watcher error", error); });
         watcher.on("ready", () => { console.log(`[Sync] 文件同步任务 ${task.id} 的初始化本地盘点遍历完成。`); });
     }
@@ -335,6 +369,41 @@ export class TcpSyncWorkerService {
     public reset_tasks(tasks: tcp_proxy_sync_task_item[]) {
         this.clearAll();
     }
+
+    /**
+     * 立即同步：忽略增量缓存，把本地目录下的全部文件/目录重新推一遍。
+     * 只有源端能重扫：目标端没有 watcher，若也走这里会把目标目录当源反向推送。
+     */
+    public async rescan_task(task_id: string) {
+        const runtime = this.runtime_map.get(task_id);
+        if (!runtime || !runtime.queue) return;
+        // 目标端不持有 watcher，用它来区分「只有源端才需要重扫」
+        if (!runtime.watcher) return;
+
+        // 清空缓存，保证同名同 mtime 的文件也会被重新推送
+        runtime.cache_file_map = {};
+        this.saveCache(task_id, runtime.cache_path, runtime.cache_file_map);
+
+        const root = runtime.local_dir;
+        if (!await FileUtil.access(root)) return;
+
+        const walk = async (dir: string) => {
+            const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                const relative = normalizeSyncRelativePath(path.relative(root, fullPath));
+                if (!relative) continue;
+                if (runtime.ignore(relative, entry.isDirectory())) continue;
+                if (entry.isDirectory()) {
+                    runtime.queue.push({ event: "addDir", fullPath });
+                    await walk(fullPath);
+                } else {
+                    runtime.queue.push({ event: "add", fullPath });
+                }
+            }
+        };
+        await walk(root);
+    }
 }
 
 export const workerService = new TcpSyncWorkerService();
@@ -354,5 +423,9 @@ export function tcp_file_sync_work_start() {
     });
     register_threads_worker_handler(threads_msg_type.file_watch_sync_task_get, async (data) => {
         return workerService.client_sync_task_get();
+    });
+    register_threads_worker_handler(threads_msg_type.file_watch_rescan, async (data) => {
+        const {task_id} = data.data;
+        await workerService.rescan_task(task_id);
     });
 }

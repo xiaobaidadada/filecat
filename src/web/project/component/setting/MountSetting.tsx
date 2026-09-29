@@ -81,11 +81,11 @@ export function MountSetting() {
         <Dashboard>
 
             <Row>
-                <Column widthPer={50} maxWidth={"60rem"}>
-                    <BaiduPanel on_credential_change={() => window.location.reload()}/>
-                </Column>
                 <Column widthPer={33} maxWidth={"30rem"} >
                     <CredentialPanel/>
+                </Column>
+                <Column widthPer={60} maxWidth={"60rem"}>
+                    <BaiduPanel on_credential_change={() => window.location.reload()}/>
                 </Column>
 
             </Row>

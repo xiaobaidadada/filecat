@@ -89,6 +89,14 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    // 立即同步：让任务两端重新扫描目录，忽略增量缓存强制推一遍
+    @Post('/sync_task_rescan')
+    async sync_task_rescan(@Body() data: {id:string}, @Req() req) {
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        const task = tcpSyncService.rescan_sync_task(data.id)
+        return Sucess(task)
+    }
+
     @Get('/client_sync_task_get')
     async client_sync_task_get(@Body() data: any, @Req() req) {
         userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
@@ -368,6 +376,19 @@ export class TcpForwardController {
     tcp_sync_task_config_delete(data: Buffer, util: tcp_raw_socket, tag_id:number) {
         const info = JSON.parse(data.toString()) as { task_id: string };
         tcpSyncClientService.tcp_sync_task_config_delete(info.task_id)
+    }
+
+    @tcp_client_msg(NetMsgType.tcp_sync_task_rescan)
+    tcp_sync_task_rescan(data: Buffer, util: tcp_raw_socket, tag_id:number) {
+        const fig = tcp_forward_client_service.client_fig_get()
+        const serverIp = util.data_map.server_ip
+        const serverPort = util.data_map.server_port
+        const client = fig.list.find((item) => item.serverIp === serverIp && item.serverPort === serverPort)
+        if (!client?.client_num_id) {
+            return;
+        }
+        const task = JSON.parse(data.toString()) as tcp_proxy_sync_task_item;
+        tcpSyncClientService.rescan_task(task, client.client_num_id).catch(console.error)
     }
 
     @tcp_server_msg(NetMsgType.get_global_socket_id,tcp_server_type.tcp_forward)

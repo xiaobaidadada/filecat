@@ -161,7 +161,7 @@ export function Role() {
 
     }
     return (<Row>
-        <Column widthPer={50}>
+        <Column widthPer={50} maxWidth={"40rem"}>
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("角色")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
@@ -183,7 +183,7 @@ export function Role() {
             </Dashboard>
 
         </Column>
-        <Column widthPer={50}>
+        <Column widthPer={50} maxWidth={"40rem"}>
             {
                 (is_create || is_save) &&
                 <Dashboard>

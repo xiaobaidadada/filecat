@@ -217,6 +217,17 @@ export function FileMenu() {
     }, [showPrompt.show]);
 
     const items_folder = [
+        {r: t("o_stdo"), v: common_menu_type.sutdio},
+        {
+            r: t("srchbln"),
+            v: common_menu_type.blank_search_mode
+        },
+        {
+            r: t("统计信息"),
+            v: common_menu_type.folder_size_info
+        },
+        ...must_needs,
+
         // 目录挂载：仅在有 file_mount 权限时显示
         ...(check_user_auth(UserAuth.file_mount) ? [{
             r: t("挂载"),
@@ -227,16 +238,7 @@ export function FileMenu() {
                 {r: t("取消挂载"), v: common_menu_type.unmount_dir},
             ]
         }] : []),
-        {r: t("o_stdo"), v: common_menu_type.sutdio},
-        {
-            r: t("srchbln"),
-            v: common_menu_type.blank_search_mode
-        },
-        {
-            r: t("统计信息"),
-            v: common_menu_type.folder_size_info
-        },
-        ...must_needs];
+    ];
     const items_images = [{
         r: t("o_img"),
         v: common_menu_type.image_open

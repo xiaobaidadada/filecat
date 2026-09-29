@@ -95,7 +95,8 @@ export function createSyncIgnoreMatcher(ignore_list: string[] = []) {
 
 
 export type ChokidarWatcher = ReturnType<any>;
-export type cache_file_type = { [key: number]: { mtime: number } }
+/** 缓存值带上 relative_path，便于目录删除时按前缀批量清理 */
+export type cache_file_type = { [key: number]: { mtime: number; relative_path?: string } }
 
 // 定义队列任务项的数据结构
 export interface QueueTaskItem {
@@ -107,6 +108,8 @@ export interface QueueTaskItem {
 export class AsyncQueue {
     private queue: QueueTaskItem[] = [];
     private activeCount = 0;
+    /** 已关闭：clear() 后不再接受新任务，正在执行的那一项结束后彻底停下 */
+    private closed = false;
 
     constructor(
         private concurrency: number = 1,
@@ -115,6 +118,7 @@ export class AsyncQueue {
     ) {}
 
     public push(task: QueueTaskItem) {
+        if (this.closed) return;
         this.queue.push(task);
         this.next();
     }
@@ -124,8 +128,8 @@ export class AsyncQueue {
     }
 
     private next() {
-        // 如果当前执行中的任务数达到了最大并发限制，或者队列空了，就直接返回
-        if (this.activeCount >= this.concurrency || this.queue.length === 0) {
+        // 已经关闭，或者当前执行中的任务数达到了最大并发限制，或者队列空了，就直接返回
+        if (this.closed || this.activeCount >= this.concurrency || this.queue.length === 0) {
             return;
         }
 
@@ -146,9 +150,14 @@ export class AsyncQueue {
         }
     }
 
+    /**
+     * 关闭队列：只清空待执行队列并置关闭标记，不重置 activeCount。
+     * 正在执行的那一项跑完后 activeCount 自然归零，closed 保证不再启动新任务，
+     * 否则把 activeCount 清零会让新队列与旧队列的进行中任务并发写同一批文件。
+     */
     public clear() {
         this.queue = [];
-        this.activeCount = 0;
+        this.closed = true;
     }
 }
 

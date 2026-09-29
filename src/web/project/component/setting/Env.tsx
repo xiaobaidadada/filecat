@@ -301,12 +301,12 @@ export function Env() {
     }
 
     return (<React.Fragment>
-        <RowColumn widthPer={100}>
+        <RowColumn widthPer={100} maxWidth={"100rem"}>
             <CardFull self_title={<span className={" div-row "}><h2>{t("up_conc")}</h2> <ActionButton
                 icon={"info"} onClick={() => {
                 soft_ware_info_click("文件上传")
             }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
-                                                                     onClick={dir_upload_rows_add}/><ActionButton
+                                                                        onClick={dir_upload_rows_add}/><ActionButton
                 icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
                 <Table headers={dir_upload_headers}
                        rows={dir_upload_rows.map((item: dir_upload_max_num_item, index) => {
@@ -355,7 +355,7 @@ export function Env() {
         </RowColumn>
         <Row>
 
-            <Column widthPer={50}>
+            <Column widthPer={50} maxWidth={"50rem"}>
                 <Dashboard>
 
                     <CardFull self_title={<span className={" div-row "}><h2>{t("PATH")}</h2>
@@ -489,13 +489,13 @@ export function Env() {
 
             </Column>
 
-            <Column>
+            <Column widthPer={50} maxWidth={"50rem"}>
                 <Dashboard>
                     <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton
                         icon={"info"} onClick={() => {
                         soft_ware_info_click("保护目录")
                     }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
-                                                                             onClick={protection_sys_dir_add}/><ActionButton
+                                                                                onClick={protection_sys_dir_add}/><ActionButton
                         icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
                         <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
                             const new_list = [

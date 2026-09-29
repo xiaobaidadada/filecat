@@ -42,6 +42,11 @@ export class TcpSyncClientService {
         return list
     }
 
+    /**
+     * 客户端是否需要处理这条任务。
+     * 注意：服务端下发的是「子任务」（单目标），已经用 target_client_num_id 承载了目标客户端，
+     * 所以这里不能看 targets 数组（数组里是全部目标），要看展开后的单目标字段。
+     */
     private shouldManageTask(task: tcp_proxy_sync_task_item, client_num_id: number) {
         return task.source_client_num_id === client_num_id || task.target_client_num_id === client_num_id;
     }
@@ -84,6 +89,17 @@ export class TcpSyncClientService {
 
     public async sync_task_config(task: tcp_proxy_sync_task_item, client_num_id: number) {
         await this.open_task(task, client_num_id);
+    }
+
+    /** 立即同步：通知 worker 忽略缓存重扫本地目录 */
+    public async rescan_task(task: tcp_proxy_sync_task_item, client_num_id: number) {
+        if (!this.shouldManageTask(task, client_num_id) || !task.open) {
+            return;
+        }
+        if (!ThreadsFilecat.is_running) {
+            return;
+        }
+        await ThreadsFilecat.post(threads_msg_type.file_watch_rescan, {task_id: task.id}, 10_000);
     }
 
     public sync_task_clear(task_id: string) {

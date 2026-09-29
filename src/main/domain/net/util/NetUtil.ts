@@ -99,6 +99,7 @@ export enum NetMsgType {
     tcp_sync_task_event,
     tcp_sync_task_clear,
     tcp_sync_task_config_delete, // todo 待实现 删除缓存文件
+    tcp_sync_task_rescan,        // 立即同步：忽略增量缓存，强制重扫并推送全部文件
 
 }
 
