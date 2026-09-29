@@ -216,6 +216,18 @@ export function FileMenu() {
         }
     }, [showPrompt.show]);
 
+    const get_ab_path = () => {
+        const path = UserBaseInfo.get_now_dir(user_base_info)
+        let fp = path_join(path, decodeURIComponent(getRouterAfter('file', getRouterPath())))
+        if (user_base_info.sys === SysEnum.win) {
+            fp = fp.replaceAll("/", '\\')
+        } else if (fp.includes("\\")) {
+            fp = fp.replaceAll("\\", '/')
+        }
+        // 空白处右键没有文件名，此时对应当前目录本身
+        return showPrompt.data.filename ? path_join(fp, showPrompt.data.filename) : fp
+    }
+
     const items_folder = [
         {r: t("o_stdo"), v: common_menu_type.sutdio},
         {
@@ -228,16 +240,17 @@ export function FileMenu() {
         },
         ...must_needs,
 
-        // 目录挂载：仅在有 file_mount 权限时显示
-        ...(check_user_auth(UserAuth.file_mount) ? [{
-            r: t("挂载"),
-            v: common_menu_type.mount_dir,
-            items: [
-                {r: t("挂载到网盘"), v: common_menu_type.mount_dir},
+        // 目录挂载：仅在有 file_mount 权限时显示；已挂载显示编辑/取消，未挂载显示挂载
+        ...(check_user_auth(UserAuth.file_mount) ? (() => {
+            const ab_path = get_ab_path();
+            const mounted = mount_list.find(m => norm_compare(m.mount_path, ab_path));
+            return mounted ? [
                 {r: t("编辑挂载配置"), v: common_menu_type.mount_config},
                 {r: t("取消挂载"), v: common_menu_type.unmount_dir},
-            ]
-        }] : []),
+            ] : [
+                {r: t("挂载"), v: common_menu_type.mount_dir},
+            ];
+        })() : []),
     ];
     const items_images = [{
         r: t("o_img"),
@@ -254,17 +267,6 @@ export function FileMenu() {
         setShowPrompt({show: false, type: '', overlay: false, data: {}});
     }
 
-
-    const get_ab_path = () => {
-        const path = UserBaseInfo.get_now_dir(user_base_info)
-        let fp = path_join(path, decodeURIComponent(getRouterAfter('file', getRouterPath())))
-        if (user_base_info.sys === SysEnum.win) {
-            fp = fp.replaceAll("/", '\\')
-        } else if (fp.includes("\\")) {
-            fp = fp.replaceAll("\\", '/')
-        }
-        return path_join(fp, showPrompt.data.filename)
-    }
 
     const get_menu_file_path = () => {
         return `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`;

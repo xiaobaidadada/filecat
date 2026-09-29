@@ -445,8 +445,10 @@ export class FileService  {
         page_size: number,
         search?: string
     ): Promise<Result<GetFilePojo>> {
-        const {driver, inner_path, match} = require_driver(res.real_path);
+        const {driver, inner_path} = require_driver(res.real_path);
         const result: GetFilePojo = {folders: [], files: []};
+        // 该目录下直接的挂载点（用于给这些文件夹打特殊标记，而不是标记里面的内容）
+        const mount_points = mounts_under(res.real_path);
         let items = await driver.list(inner_path);
         // 搜索过滤
         if (search && search.trim()) {
@@ -460,11 +462,14 @@ export class FileService  {
             const pojo: FileItemData = {
                 ...item,
                 path: join_frontend_path(param_path, item.name),
-                mount: true,
-                mount_driver: match.mount.driver,
-                mount_color: match.mount.color,
-                mount_readonly: match.mount.readonly,
             };
+            const mp = mount_points.get(path.resolve(res.real_path, item.name));
+            if (mp) {
+                pojo.mount = true;
+                pojo.mount_driver = mp.driver;
+                pojo.mount_color = mp.color;
+                pojo.mount_readonly = mp.readonly;
+            }
             result.files.push(pojo);
         }
         return Sucess(result);
