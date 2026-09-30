@@ -235,6 +235,8 @@ export interface md_editor_setting_pojo {
     line_height: string
     // 当前启用的主题 id，空字符串表示不使用主题（走编辑器自带外观）
     theme: string
+    // 自动保存间隔（秒），0 表示关闭自动保存
+    auto_save_interval: number
 }
 
 // md 编辑器设置的默认值 —— 唯一定义处，前后端都从这里取，禁止各写一份。
@@ -248,6 +250,8 @@ export const MD_EDITOR_SETTING_DEFAULT: md_editor_setting_pojo = {
     line_height: "1.8",
     // 默认不启用主题：空字符串保持编辑器原本外观，也不会去请求主题内容
     theme: "",
+    // 默认每 5 秒检测一次改动并静默保存
+    auto_save_interval: 5,
 };
 
 // md 编辑器主题。

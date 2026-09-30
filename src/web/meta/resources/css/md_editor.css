@@ -877,8 +877,10 @@
         overflow: visible !important;
     }
 
-    /* 编辑器外壳：拆掉 fixed 全屏与 overflow 限制，让内容自然撑开参与分页 */
+    /* 编辑器外壳：拆掉 fixed 全屏、flex 布局与 overflow 限制，
+       让内容自然撑开参与分页（flex 列容器无法分页，会让打印预览卡住或只出一页） */
     #md-editor-container {
+        display: block !important;
         position: static !important;
         height: auto !important;
         width: auto !important;
@@ -890,14 +892,27 @@
     /* 内容区与滚动容器同样恢复为常规文档流 */
     #md-editor-container .md-editor-context,
     .md-editor-scroll,
-    .md-editor-sheet {
+    .md-editor-sheet,
+    /* .md-filecat 上的 flex:1 会把正文压成一屏，必须拆掉才能真正分页 */
+    .md-filecat {
         display: block !important;
+        flex: none !important;
+        min-height: 0 !important;
         height: auto !important;
         overflow: visible !important;
         max-width: none !important;
         width: auto !important;
         padding: 0 !important;
         margin: 0 !important;
+    }
+
+    /* 正文容器保留自身的段落间距，只取消 flex 撑满，让内容随纸张自然增高 */
+    .md-filecat-content {
+        display: block !important;
+        flex: none !important;
+        min-height: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
     /* 编辑器 UI 一律不打印：

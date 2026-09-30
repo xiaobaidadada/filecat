@@ -171,16 +171,18 @@ export default function FileList() {
         }
     }
 
-    /** 列表加载完成后，按 url 参数恢复上次打开的文件与打开方式；找不到或已完成则不处理 */
-    const auto_open_preview = (data: GetFilePojo) => {
+    /**
+     * 按 url 参数恢复上次打开的文件与打开方式。
+     * 返回值表示 url 是否处于「打开文件」状态 —— 是的话调用方不应再请求文件列表。
+     */
+    const auto_open_preview = () => {
         const name = searchParams.get("preview_file_name");
         const mode = searchParams.get("preview_mode") as open_mode | null;
-        if (!name || !mode) return;
+        if (!name || !mode) return false;
         const path = getRouterAfter('file', getRouterPath());
-        // 同一目录下只自动打开一次，避免分页追加/列表刷新时反复弹出
-        if (auto_preview_ref.current === path + name) return;
-        const one = (data.files ?? []).find(v => v.name === name);
-        if (!one) return;
+        // 同一目录下只自动打开一次：双击打开自身会写 url 参数，url 变化又会重新触发，
+        // 但文件已经打开了，不能重复打开，也不能因此去请求列表
+        if (auto_preview_ref.current === path + name) return true;
         auto_preview_ref.current = path + name;
         const close = () => file_open(null);
         // md 与日志走各自的 atom，其余交给 click_file 按类型分派
@@ -191,7 +193,7 @@ export default function FileList() {
                 name,
                 close,
             });
-            return;
+            return true;
         }
         if (mode === "log") {
             set_file_log({
@@ -201,7 +203,7 @@ export default function FileList() {
                 wrap: (searchParams.get("preview_log_wrap") as 'wrap' | 'nowrap') ?? 'wrap',
                 close,
             });
-            return;
+            return true;
         }
         if (mode === "image_edit") {
             set_image_editor({
@@ -209,14 +211,15 @@ export default function FileList() {
                 name,
                 close,
             });
-            return;
+            return true;
         }
         // text 需显式指定 model，其余由 click_file 依据文件类型判断
         click_file({
-            name: one.name, size: one.origin_size, opt_shell: true, mtime: one.mtime,
+            name, opt_shell: true,
             ...(mode === "text" ? {model: "text"} : {}),
             close,
         });
+        return true;
     };
 
     const fileHandler = async () => {
@@ -269,10 +272,6 @@ export default function FileList() {
                 return data;
             });
             pre_search = rsp.data;
-            // 仅在进入目录的第一页时恢复 url 中的打开状态
-            if (file_page.page_num === 1) {
-                auto_open_preview(pojo);
-            }
             return;
         } else {
             rsp = await fileHttp.get(path);
@@ -284,7 +283,6 @@ export default function FileList() {
         file_after(rsp.data)
         setNowFileList(rsp.data)
         pre_search = rsp.data;
-        auto_open_preview(rsp.data);
     }
     // const init_page =  () => {
     //     set_file_page({
@@ -299,10 +297,14 @@ export default function FileList() {
         }
     }, []);
     const init = () =>{
-        fileHandler();
         setEditorSetting({open: false});
         setFilePreview({open: false});
         set_workflow_show_click(false);
+        // url 是「打开文件」的，就只打开文件，不请求文件列表
+        if (auto_open_preview()) {
+            return;
+        }
+        fileHandler();
     }
     // 在组件挂载后执行的逻辑
     useEffect(() => {

@@ -684,6 +684,8 @@
   "正文左右边距": "Marge latérale du contenu",
   "正文字号": "Taille de police du contenu",
   "行高": "Hauteur de ligne",
+  "as_iv": "Intervalle de sauvegarde auto (s)",
+  "as_num": "Saisissez un entier supérieur ou égal à 0",
   "恢复默认": "Rétablir les valeurs par défaut",
   "保存中": "Enregistrement",
   "预览": "Aperçu",

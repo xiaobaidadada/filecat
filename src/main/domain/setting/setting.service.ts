@@ -1,4 +1,5 @@
 import {DataUtil} from "../data/DataUtil";
+import {MD_EDITOR_SETTING_FIELDS} from "../../../common/md_editor_setting.check";
 import path from "path";
 import fs from "fs";
 import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
@@ -18,7 +19,7 @@ import {
 } from "../../../common/req/setting.req";
 import {SystemUtil} from "../sys/sys.utl";
 import {Request} from "express";
-import {mdThemeService, check_theme_name} from "./md_theme.service";
+import {mdThemeService} from "./md_theme.service";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import * as vm from "node:vm";
 import {UserService, userService} from "../user/user.service";
@@ -475,104 +476,29 @@ export class SettingService {
         return this.get_sys_env()?.http_proxy;
     }
 
-    // 合法 CSS 尺寸值：数字 + 可选单位（+ 可选的无单位模式）
-    // 只允许数字和这几个单位，杜绝把任意字符串写进 CSS（避免样式注入）
-    private static is_valid_size(v: any, allow_unitless = false): boolean {
-        if (typeof v !== "string") {
-            return false;
-        }
-        const s = v.trim();
-        if (!s) {
-            return false;
-        }
-        if (allow_unitless && /^\d+(\.\d+)?$/.test(s)) {
-            return true;
-        }
-        const m = /^(\d+(?:\.\d+)?)(px|%|rem|em|vw|vh|ch)$/.exec(s);
-        if (!m) {
-            return false;
-        }
-        const num = Number(m[1]);
-        // 上限只是防呆，避免极端值把界面撑坏
-        return Number.isFinite(num) && num > 0 && num <= 10000;
-    }
-
-    // md 编辑器设置的字段规则，get/set 共用一份，避免字段名散落在多处。
-    // allow_unitless 为 true 的字段（行高）允许纯数字，如 "1.8"。
-    // is_theme 为 true 的字段是主题名，不走尺寸校验，只校验名称合法性。
-    private static readonly MD_EDITOR_FIELDS: {
-        key: keyof md_editor_setting_pojo,
-        allow_unitless?: boolean,
-        is_theme?: boolean
-    }[] = [
-        {key: "content_max_width"},
-        {key: "content_padding"},
-        {key: "font_size"},
-        {key: "line_height", allow_unitless: true},
-        {key: "theme", is_theme: true},
-    ];
-
-    private static is_valid_theme_id(v: any): boolean {
-        const s = String(v ?? "").trim();
-        // 空串表示不使用主题，是合法值
-        if (s === "") {
-            return true;
-        }
-        try {
-            check_theme_name(s);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    /**
-     * 归一化一个 md 编辑器设置字段的值。
-     * 老数据里可能存的是纯数字（当时的 px），这里补上单位；非法值一律回落到 fallback。
-     * @param key 字段名
-     * @param raw 原始值（可能来自存档，也可能来自请求体）
-     * @param fallback 校验失败时的兜底值
-     */
-    private static normalize_md_editor_value(
-        key: keyof md_editor_setting_pojo, raw: any, fallback: string
-    ): string {
-        const field = SettingService.MD_EDITOR_FIELDS.find(f => f.key === key);
-        // 主题 id 不是尺寸，单独校验字符集
-        if (field?.is_theme) {
-            return SettingService.is_valid_theme_id(raw) ? String(raw ?? "").trim() : fallback;
-        }
-        const allow_unitless = field?.allow_unitless;
-        // 兼容旧格式：以前存的是纯数字，按 px 处理（行高本身就是无单位倍数，不加单位）
-        let v = raw;
-        if (typeof v === "number" && Number.isFinite(v)) {
-            v = `${v}${allow_unitless ? "" : "px"}`;
-        }
-        return SettingService.is_valid_size(v, allow_unitless) ? String(v).trim() : fallback;
-    }
-
-    // 获取 md 编辑器全局设置。保证返回的每个字段都是能直接用的合法 CSS 值。
+    // 获取 md 编辑器全局设置。存档即完整快照，无存档（首次）时用默认值。
     public get_md_editor_setting(): md_editor_setting_pojo {
-        const saved: any = DataUtil.get(data_common_key.md_editor_setting_key) ?? {};
-        const result: any = {};
-        for (const {key} of SettingService.MD_EDITOR_FIELDS) {
-            result[key] = SettingService.normalize_md_editor_value(key, saved[key], MD_EDITOR_SETTING_DEFAULT[key]);
-        }
-        return result as md_editor_setting_pojo;
+        const saved = DataUtil.get(data_common_key.md_editor_setting_key);
+        return saved ? saved as md_editor_setting_pojo : {...MD_EDITOR_SETTING_DEFAULT};
     }
 
-    // 保存 md 编辑器全局设置。只接受白名单字段并逐个校验，非法值回落到当前值。
+    // 保存 md 编辑器全局设置。只处理请求里传了的字段：
+    // 配了校验规则的校验后存，校验不通过保留原值；没配规则的原样存。
     public set_md_editor_setting(req: Partial<md_editor_setting_pojo>): md_editor_setting_pojo {
-        const cur = this.get_md_editor_setting();
-        const result: any = {};
-        for (const {key} of SettingService.MD_EDITOR_FIELDS) {
-            // 请求里没带这个字段就沿用当前值；带了则校验，非法同样回落当前值
-            const raw = (req as any)?.[key];
-            result[key] = raw === undefined
-                ? cur[key]
-                : SettingService.normalize_md_editor_value(key, raw, cur[key]);
+        const result = {...this.get_md_editor_setting()};
+        for (const [key, value] of Object.entries(req ?? {})) {
+            const check = MD_EDITOR_SETTING_FIELDS[key];
+            if (!check) {
+                result[key] = value;
+                continue;
+            }
+            const ok = check(value);
+            if (ok !== null) {
+                result[key] = ok;
+            }
         }
         DataUtil.set(data_common_key.md_editor_setting_key, result);
-        return result as md_editor_setting_pojo;
+        return result;
     }
 
     public get_https_setting(): HttpsSettingReq {

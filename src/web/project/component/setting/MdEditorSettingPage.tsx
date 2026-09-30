@@ -5,12 +5,13 @@ import {ActionButton} from "../../../meta/component/Button";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row} from "../../../meta/component/Dashboard";
 import {Card} from "../../../meta/component/Card";
-import {InputRow, Select} from "../../../meta/component/Input";
+import {InputRow, InputText, Select} from "../../../meta/component/Input";
 import {Button, ButtonText} from "../../../meta/component/Button";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {md_editor_setting_pojo, md_theme_item} from "../../../../common/req/common.pojo";
+import {MD_EDITOR_SETTING_FIELDS} from "../../../../common/md_editor_setting.check";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {
     load_md_editor_setting,
@@ -30,16 +31,14 @@ import {$stroe} from "../../util/store";
  * 每个字段直接输入完整的 CSS 值（如 10px、3rem、80%、1.8），单位自己写，不做单位选择。
  */
 
-// 字段定义：key -> 显示名
+// 字段定义：key -> 显示名。用共用的字段校验表做校验，前后端规则一致。
 const FIELDS: { key: keyof md_editor_setting_pojo, label: string }[] = [
     {key: "content_max_width", label: "正文最大宽度"},
     {key: "content_padding", label: "正文左右边距"},
     {key: "font_size", label: "正文字号"},
     {key: "line_height", label: "行高"},
+    {key: "auto_save_interval", label: "as_iv"},
 ];
-
-// 合法 CSS 尺寸值：数字 + 可选单位（与后端 is_valid_size 的规则保持一致）
-const SIZE_RE = /^\d+(\.\d+)?(px|%|rem|em|vw|vh|ch)?$/;
 
 export default function MdEditorSettingPage() {
     const {t} = useTranslation();
@@ -62,7 +61,7 @@ export default function MdEditorSettingPage() {
     useEffect(() => {
         Promise.all([load_md_editor_setting(), load_md_theme_list()]).then(([s, list]) => {
             const next: Record<string, string> = {};
-            FIELDS.forEach(f => next[f.key] = s[f.key] ?? "");
+            FIELDS.forEach(f => next[f.key] = String(s[f.key] ?? ""));
             set_values(next);
             set_theme(s.theme ?? MD_EDITOR_SETTING_DEFAULT.theme);
             set_themes(list);
@@ -70,24 +69,24 @@ export default function MdEditorSettingPage() {
     }, []);
 
     const save = async () => {
-        // 逐项校验格式，非法就提示，不提交
+        // 用前后端共用的字段校验表逐项校验，非法就提示，不提交
+        const body: any = {theme};
         for (const f of FIELDS) {
             const v = (values[f.key] ?? "").trim();
-            if (!SIZE_RE.test(v)) {
-                NotyFail(`${t(f.label)}: ${t("请输入合法的 CSS 值，例如 10px、3rem、80%")}`);
+            const ok = MD_EDITOR_SETTING_FIELDS[f.key](v);
+            if (ok === null) {
+                NotyFail(`${t(f.label)}: ${t(f.key === "auto_save_interval" ? "as_num" : "请输入合法的 CSS 值，例如 10px、3rem、80%")}`);
                 return;
             }
+            body[f.key] = ok;
         }
-        const body: any = {};
-        FIELDS.forEach(f => body[f.key] = values[f.key].trim());
-        body.theme = theme;
         set_saving(true);
         try {
             const saved = await save_md_editor_setting(body);
             if (saved) {
                 NotySuccess(t("保存成功"));
                 const next: Record<string, string> = {};
-                FIELDS.forEach(f => next[f.key] = saved[f.key] ?? "");
+                FIELDS.forEach(f => next[f.key] = String(saved[f.key] ?? ""));
                 set_values(next);
                 set_theme(saved.theme ?? MD_EDITOR_SETTING_DEFAULT.theme);
                 // 同步到全局 atom，让已打开/之后打开的编辑器直接用上新设置，不用再请求一次
@@ -125,14 +124,14 @@ export default function MdEditorSettingPage() {
 
     const reset_default = () => {
         const next: Record<string, string> = {};
-        FIELDS.forEach(f => next[f.key] = MD_EDITOR_SETTING_DEFAULT[f.key]);
+        FIELDS.forEach(f => next[f.key] = String(MD_EDITOR_SETTING_DEFAULT[f.key]));
         set_values(next);
     };
 
     // 预览用：把当前输入值直接套上去，非法值退回默认值，避免预览里出现怪异样式
     const preview_value = (key: keyof md_editor_setting_pojo) => {
-        const v = (values[key] ?? "").trim();
-        return SIZE_RE.test(v) ? v : MD_EDITOR_SETTING_DEFAULT[key];
+        const ok = MD_EDITOR_SETTING_FIELDS[key]((values[key] ?? "").trim());
+        return ok === null ? MD_EDITOR_SETTING_DEFAULT[key] : ok;
     };
 
     return <div>
@@ -180,16 +179,14 @@ export default function MdEditorSettingPage() {
                                             </div>
                                         </InputRow>
                                         {FIELDS.map(f => <InputRow key={f.key} vertical label={t(f.label)}>
-                                            <input className="input input--block"
-                                                   type="text"
-                                                   spellCheck={false}
-                                                   disabled={!can_edit}
-                                                   placeholder={MD_EDITOR_SETTING_DEFAULT[f.key]}
-                                                   value={values[f.key] ?? ""}
-                                                   onChange={(e) => set_values(prev => ({
-                                                       ...prev,
-                                                       [f.key]: e.target.value
-                                                   }))}/>
+                                            <InputText
+                                                disabled={!can_edit}
+                                                placeholder={String(MD_EDITOR_SETTING_DEFAULT[f.key])}
+                                                value={values[f.key] ?? ""}
+                                                handleInputChange={(v) => set_values(prev => ({
+                                                    ...prev,
+                                                    [f.key]: v
+                                                }))}/>
                                         </InputRow>)}
                                         {!can_edit && <p className="md-editor-setting-page__desc">
                                             {t("nprmtp")}

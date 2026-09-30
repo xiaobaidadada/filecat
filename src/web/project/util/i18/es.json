@@ -684,6 +684,8 @@
   "正文左右边距": "Margen lateral del contenido",
   "正文字号": "Tamaño de fuente del contenido",
   "行高": "Altura de línea",
+  "as_iv": "Intervalo de guardado automático (seg)",
+  "as_num": "Introduce un entero mayor o igual que 0",
   "恢复默认": "Restaurar valores predeterminados",
   "保存中": "Guardando",
   "预览": "Vista previa",

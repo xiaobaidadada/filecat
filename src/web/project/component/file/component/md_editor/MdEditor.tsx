@@ -299,7 +299,11 @@ export default function MdEditor() {
         handle.scroll_to_pos(handle.is_source_mode() ? item.pos + 1 : item.pos);
         set_active_pos(item.pos);
     };
-    const save = async () => {
+    /**
+     * 保存到服务端。
+     * @param silent 静默模式（自动保存用）：成功时不弹提示，只在失败时提示，避免每几秒弹一次
+     */
+    const save = async (silent = false) => {
         if (!md_editor?.name || !md_editor?.path) {
             return;
         }
@@ -314,13 +318,33 @@ export default function MdEditor() {
         const rsq = await fileHttp.post(`save/${save_path}`, {context});
         if (rsq.code === RCode.Success) {
             set_dirty(false);
-            NotySuccess(t("保存成功"));
+            if (!silent) {
+                NotySuccess(t("保存成功"));
+            }
         } else {
             NotyFail(t("保存失败"));
         }
     };
     const save_ref = useRef(save);
     save_ref.current = save;
+
+    // 自动保存：每 N 秒检查一次，有未保存的改动就静默保存。
+    // N 取全局设置里的 auto_save_interval（秒），为 0 时不做任何事（相当于关闭）。
+    // 用 dirty_ref 读取最新值，避免把 dirty 放进依赖导致定时器被反复重建。
+    const dirty_ref = useRef(dirty);
+    dirty_ref.current = dirty;
+    const auto_save_interval = editor_setting?.auto_save_interval ?? 0;
+    useEffect(() => {
+        if (auto_save_interval <= 0) {
+            return;
+        }
+        const timer = setInterval(() => {
+            if (dirty_ref.current) {
+                save_ref.current(true);
+            }
+        }, auto_save_interval * 1000);
+        return () => clearInterval(timer);
+    }, [auto_save_interval]);
 
     // 导出 PDF：交给浏览器打印对话框，
     // 用户可在其中预览、选页码范围、并「另存为 PDF」。

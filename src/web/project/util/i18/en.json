@@ -694,6 +694,8 @@
   "正文左右边距": "Content side padding",
   "正文字号": "Content font size",
   "行高": "Line height",
+  "as_iv": "Auto-save interval (sec)",
+  "as_num": "Enter an integer of 0 or greater",
   "恢复默认": "Restore defaults",
   "保存中": "Saving",
   "预览": "Preview",

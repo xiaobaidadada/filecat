@@ -4,6 +4,7 @@ import {data_dir_tem_name} from "../data/data_type";
 import {FileUtil} from "../file/FileUtil";
 import {MD_THEME_BUILTIN_CSS} from "./md_theme_builtin";
 import {md_theme_item} from "../../../common/req/common.pojo";
+import {CheckUtil} from "../../../common/CheckUtil";
 import {Env} from "../../../common/node/Env";
 
 /**
@@ -19,20 +20,13 @@ import {Env} from "../../../common/node/Env";
 
 // 主题文件后缀
 const CSS_EXT = ".css";
-// 主题名不允许出现的字符：路径分隔符、上跳符、windows 非法字符，防止当文件名时穿越目录
-const BAD_NAME_RE = /[\\/:*?"<>|\u0000-\u001f]/;
 
-// 主题名一律走这个校验：非空、无非法字符、不是 . / ..、长度受限
+// 主题名一律走这个校验：空串非法、无非法字符、不是 . / ..、长度受限。
+// 校验规则本体在 common 的 CheckUtil，前后端共用；这里只是把「非法」转成抛异常给调用方提示。
 export function check_theme_name(name: string): string {
-    const theme_name = String(name ?? "").trim();
-    if (!theme_name) {
-        throw "主题名称不能为空";
-    }
-    if (BAD_NAME_RE.test(theme_name) || theme_name === "." || theme_name === "..") {
-        throw "主题名称含有非法字符";
-    }
-    if (theme_name.length > 64) {
-        throw "主题名称过长";
+    const theme_name = CheckUtil.filename(name, false);
+    if (theme_name === null) {
+        throw "主题名称不合法";
     }
     return theme_name;
 }

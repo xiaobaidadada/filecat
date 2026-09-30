@@ -684,6 +684,8 @@
   "正文左右边距": "Seitlicher Inhaltsabstand",
   "正文字号": "Schriftgröße des Inhalts",
   "行高": "Zeilenhöhe",
+  "as_iv": "Auto-Speicher-Intervall (Sek.)",
+  "as_num": "Bitte eine ganze Zahl ab 0 eingeben",
   "恢复默认": "Standard wiederherstellen",
   "保存中": "Wird gespeichert",
   "预览": "Vorschau",
