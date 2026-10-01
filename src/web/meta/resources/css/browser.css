@@ -35,6 +35,7 @@
     background-color: var(--surfaceSecondary);
     color: white;
     cursor: pointer;
+    white-space: nowrap;
 }
 /*.little-button:hover {*/
 /*    background-color: #45a049;*/

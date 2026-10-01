@@ -379,6 +379,7 @@ body.rtl .breadcrumbs .chevron {
   font-size: 0.6em;
   margin: 3em 2.5em;
   color: #a5a5a5;
+  white-space: nowrap;
 }
 
 .credits > span {
