@@ -60,6 +60,8 @@ export default function FileList() {
     const [, set_md_editor] = useAtom($stroe.md_editor);
     const [, set_file_log] = useAtom($stroe.log_viewer);
     const [, set_image_editor] = useAtom($stroe.image_editor);
+    const [, set_markdown] = useAtom($stroe.markdown);
+    const [, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -170,6 +172,17 @@ export default function FileList() {
             setMountInfo(null);
         }
     }
+
+    /** 关闭所有编辑器/预览器：url 切走或后退时，已打开的覆盖层必须收掉，否则会盖住文件列表 */
+    const close_all_editors = () => {
+        setEditorSetting({open: false});
+        setFilePreview({open: false});
+        set_md_editor({});
+        set_file_log({show: false});
+        set_image_editor({});
+        set_markdown({});
+        set_excalidraw_editor({});
+    };
 
     /**
      * 按 url 参数恢复上次打开的文件与打开方式。
@@ -297,13 +310,12 @@ export default function FileList() {
         }
     }, []);
     const init = () =>{
-        setEditorSetting({open: false});
-        setFilePreview({open: false});
         set_workflow_show_click(false);
         // url 是「打开文件」的，就只打开文件，不请求文件列表
         if (auto_open_preview()) {
             return;
         }
+        close_all_editors();
         fileHandler();
     }
     // 在组件挂载后执行的逻辑
