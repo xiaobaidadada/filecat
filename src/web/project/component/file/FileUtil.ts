@@ -545,6 +545,8 @@ export const user_click_file = () => {
         context?: string,
         get_file_fun?: () => Promise<string>,
         save_file_fun?: (text: string) => Promise<void>,
+        // 只读打开（如分享模式）：md 编辑器据此隐藏主题切换、不做自动保存
+        readonly?: boolean,
         close?: () => any
     }) => {
         const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
@@ -644,6 +646,7 @@ export const user_click_file = () => {
                         url: url,
                         path: absolute_file_path,
                         name,
+                        readonly: param.readonly,
                         close: param.close,
                     });
                     break;

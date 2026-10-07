@@ -107,7 +107,7 @@ export default function MdOutline(props: Props) {
     if (props.items.length === 0) {
         return (
             <div className="md-outline md-outline--empty">
-                <div className="md-outline-header">{t("大纲")}</div>
+                {/*<div className="md-outline-header">{t("大纲")}</div>*/}
                 <div className="md-outline-tip">{t("no_head")}</div>
             </div>
         );
@@ -115,7 +115,7 @@ export default function MdOutline(props: Props) {
 
     return (
         <div className="md-outline">
-            <div className="md-outline-header">{t("大纲")}</div>
+            {/*<div className="md-outline-header">{t("大纲")}</div>*/}
             {/* 用 div 承载列表：大纲条目需要自定义缩进和折叠箭头，不适合 ul/li 默认样式 */}
             <div className="md-outline-list">
                 {render_nodes(tree, 0)}

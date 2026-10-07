@@ -168,7 +168,7 @@ export const $stroe = {
     markdown: atom<{filename?: string, context?: string, close?: () => any}>({}),
     // md 所见即所得编辑器（Typora 风格），与 markdown 预览分离：双击仍是预览，右键菜单进入编辑
     // url: 读取内容的地址；path: 保存时使用的服务端相对路径；name: 显示的文件名
-    md_editor: atom<{url?: string, path?: string, name?: string, close?: () => any}>({}),
+    md_editor: atom<{url?: string, path?: string, name?: string, readonly?: boolean, close?: () => any}>({}),
     // md 编辑器：编辑模式（wysiwyg 所见即所得 / source 源码），用户偏好，持久化
     md_editor_mode: sync_atomWithStorage<"wysiwyg" | "source">("md_editor_mode", "wysiwyg"),
     // md 编辑器：是否展开大纲，用户偏好，持久化

@@ -335,7 +335,8 @@ export default function MdEditor() {
     dirty_ref.current = dirty;
     const auto_save_interval = editor_setting?.auto_save_interval ?? 0;
     useEffect(() => {
-        if (auto_save_interval <= 0) {
+        // 只读打开（如分享模式）不自动保存
+        if (md_editor.readonly || auto_save_interval <= 0) {
             return;
         }
         const timer = setInterval(() => {
@@ -344,7 +345,7 @@ export default function MdEditor() {
             }
         }, auto_save_interval * 1000);
         return () => clearInterval(timer);
-    }, [auto_save_interval]);
+    }, [auto_save_interval, md_editor.readonly]);
 
     // 导出 PDF：交给浏览器打印对话框，
     // 用户可在其中预览、选页码范围、并「另存为 PDF」。
@@ -377,20 +378,22 @@ export default function MdEditor() {
                            注意必须用 <div> 而不是 <title> —— <title> 在 body 内的 UA 样式是
                            display:none，放进 Header 也不会显示出来。 */
                         <div key={3} className={"md-editor-title"}>{md_editor.name}</div>,
-                        // 保存按钮只在内容有改动时出现，与普通文本编辑器一致
-                        ...(dirty ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
+                        // 保存按钮只在内容有改动时出现，与普通文本编辑器一致；只读打开时不显示
+                        ...(dirty && !md_editor.readonly ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
                         // 大纲开关：默认关闭，点一下临时控制显示/隐藏
                         <ActionButton key={4} title={t("大纲")} icon={"list"}
                                       onClick={toggle_outline} selected={show_outline}/>,
                         // 编辑模式切换：所见即所得 <-> 源码。快捷键 Ctrl/Cmd + /
-                        <ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
+                        // 只读打开（如分享模式）时两种模式都是编辑态，不显示
+                        ...(md_editor.readonly ? [] : [<ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
                                       icon={mode === "wysiwyg" ? "code" : "edit"}
-                                      onClick={toggle_mode}/>,
-                        <MdThemeMenu key={8}
-                                     on_change={switch_theme}/>,
+                                      onClick={toggle_mode}/>]),
+                        // 主题切换属于个人编辑偏好，只读打开（如分享模式）不显示
+                        ...(md_editor.readonly ? [] : [<MdThemeMenu key={8}
+                                     on_change={switch_theme}/>]),
                         // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
                         <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,
-                        ...(can_setting ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
+                        ...((can_setting && !md_editor.readonly) ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
                                                         onClick={() => {
                                                             close();
                                                             navigate(routerConfig.md_editor_setting_page);

@@ -103,6 +103,8 @@ export default function Share() {
                         }),
                         name:one.name, size: one.origin_size, opt_shell: true, mtime: one.mtime,
                         not_type_tip:t("未知类型，请下载查看"),
+                        // 分享是只读访问，md 编辑器据此隐藏主题切换、不做自动保存
+                        readonly: true,
                         close:()=>{
                             updateParams('share_preview_file_name',null)
                         }
