@@ -77,6 +77,7 @@ export class UserService {
             file_list_pagination_mode: user.file_list_pagination_mode,
             file_time_show_type: user.file_time_show_type,
             file_list_zoom: user.file_list_zoom,
+            ai_chat_zoom: user.ai_chat_zoom,
             sql_preset_list: user.sql_preset_list,
             upload_file_ignore: user.upload_file_ignore,
             upload_file_ignore_list: user.upload_file_ignore_list,

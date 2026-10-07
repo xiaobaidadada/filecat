@@ -829,5 +829,8 @@
   "打开所在目录": "Abrir carpeta contenedora",
   "输入后搜": "Escribe un nombre y pulsa Enter",
   "无匹配": "No se encontraron archivos",
-  "结果截断": "Demasiados resultados, mostrando 500"
+  "结果截断": "Demasiados resultados, mostrando 500",
+  "缩放调整": "Ajustar zoom",
+  "缩放调整成功": "Zoom ajustado correctamente",
+  "缩放百分比": "Porcentaje de zoom"
 }

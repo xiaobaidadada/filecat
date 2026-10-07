@@ -197,6 +197,7 @@ export class UserData extends UserLogin {
 
     sql_preset_list?: SqlPresetItem[]; // SQL 查询预设列表（个人保存）
     md_editor_theme?: string; // md 编辑器主题 id（个人保存；空表示跟随系统设置里的默认主题）
+    ai_chat_zoom?: number; // ai 聊天记录内容缩放百分比（个人保存）
 
     upload_file_ignore?:string
     upload_file_ignore_list?:string[]

@@ -37,6 +37,9 @@
 
   --filewidth: 33%;
 
+  /* ai 聊天记录内容缩放百分比，由用户的 ai_chat_zoom 个人设置覆盖 */
+  --ai-chat-zoom: 100;
+
   --top-length: 4rem;
 }
 

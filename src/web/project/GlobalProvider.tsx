@@ -23,6 +23,7 @@ export const GlobalProvider = ({ children }) => {
     const [file_root_path,setFile_root_path] = useAtom($stroe.file_root_index);
     const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
     const [zoomPercent, setZoomPercent] = useAtom($stroe.zoom_style_by_percent);
+    const [, set_ai_chat_zoom] = useAtom($stroe.ai_chat_zoom);
     const [, set_mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
     const [, set_md_editor_setting] = useAtom($stroe.md_editor_setting);
     const [, set_md_theme_css] = useAtom($stroe.md_theme_css);
@@ -93,6 +94,11 @@ export const GlobalProvider = ({ children }) => {
                 setZoomPercent(p.user_data?.file_list_zoom);
             } else {
                 setZoomPercent(100)
+            }
+            if(p.user_data?.ai_chat_zoom != null) {
+                set_ai_chat_zoom(p.user_data?.ai_chat_zoom);
+            } else {
+                set_ai_chat_zoom(100)
             }
             // 网址导航 tag 功能已删除的提示：后端数据迁移时会把所有用户的 tag_delete 置为 true 表示「待提示」，
             // 这里只在它严格等于 true 时弹出，用户确认后置回 false，避免重复提示

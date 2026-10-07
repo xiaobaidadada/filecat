@@ -74,6 +74,7 @@ export default function AiAgentChatPage() {
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [ai_bg_expanded, set_ai_bg_expanded] = useAtom($stroe.ai_bg_expanded);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [ai_chat_zoom] = useAtom($stroe.ai_chat_zoom);
     const [batchMode, setBatchMode] = useState(false);
     const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
     const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set());
@@ -772,7 +773,8 @@ export default function AiAgentChatPage() {
                 setSelectedSysPromptId={handleSystemPromptChange}
             />
 
-            <div className="chat-page chat-page-with-sessions">
+            <div className="chat-page chat-page-with-sessions"
+                 style={{"--ai-chat-zoom": ai_chat_zoom}}>
                 {ai_session_collapsed && (
                     <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(false)} />
                 )}

@@ -264,6 +264,9 @@
     flex-direction: column;
     gap: 0;
     background: #fff;
+    /* 聊天记录内容缩放：只作用于消息区，不影响左侧会话列表与下方输入框。
+       消息内字号都是相对 em，整体跟随这个基准字号 */
+    font-size: calc(16px * var(--ai-chat-zoom, 100) / 100);
 }
 
 /* 消息气泡 - Codex 风格 */

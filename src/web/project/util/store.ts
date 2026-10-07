@@ -212,6 +212,8 @@ export const $stroe = {
     file_item_width_atom: atom<number>(0),
     // 文件列表缩放
     zoom_style_by_percent: atom<number>(100),
+    // ai 聊天记录内容缩放百分比
+    ai_chat_zoom: atom<number>(100),
     // ai 会话列表
     ai_session_collapsed: sync_atomWithStorage<boolean>("ai_session_collapsed", false),
     // ai 后台进程面板

@@ -829,5 +829,8 @@
   "打开所在目录": "Ouvrir le dossier",
   "输入后搜": "Saisissez un nom puis Entrée",
   "无匹配": "Aucun fichier correspondant",
-  "结果截断": "Trop de résultats, 500 premiers"
+  "结果截断": "Trop de résultats, 500 premiers",
+  "缩放调整": "Ajuster le zoom",
+  "缩放调整成功": "Zoom ajusté avec succès",
+  "缩放百分比": "Pourcentage de zoom"
 }

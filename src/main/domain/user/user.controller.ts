@@ -195,6 +195,8 @@ export class UserController {
         sql_preset_list?: SqlPresetItem[],
         is_md_theme?: boolean, // 是否更新 md 编辑器个人主题
         md_editor_theme?: string,
+        is_ai_chat_zoom?: boolean, // 是否更新 ai 聊天记录缩放比例
+        ai_chat_zoom?: number,
         is_sys_done_prompt?: boolean, // 是否更新系统已完成提示（如网址导航 tag 删除提示）
         sys_done_prompt?: { tag_delete?: boolean },
         value?:any,
@@ -224,6 +226,8 @@ export class UserController {
                 return Fail("主题不存在");
             }
             userService.only_update_user_data(user_id, {md_editor_theme: theme} as UserData);
+        } else if(body.is_ai_chat_zoom) {
+            userService.only_update_user_data(user_id, {ai_chat_zoom: body.ai_chat_zoom} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

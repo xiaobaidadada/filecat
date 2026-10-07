@@ -829,5 +829,8 @@
   "打开所在目录": "Ordner öffnen",
   "输入后搜": "Dateinamen eingeben und Enter drücken",
   "无匹配": "Keine passenden Dateien gefunden",
-  "结果截断": "Zu viele Treffer, nur die ersten 500"
+  "结果截断": "Zu viele Treffer, nur die ersten 500",
+  "缩放调整": "Zoom anpassen",
+  "缩放调整成功": "Zoom erfolgreich angepasst",
+  "缩放百分比": "Zoom-Prozentsatz"
 }

@@ -17,6 +17,7 @@ import { RCode } from "../../../../../common/Result.pojo";
 import { routerConfig } from "../../../../../common/RouterConfig";
 import { ai_agentHttp } from "../../../util/config";
 import { $stroe } from "../../../util/store";
+import { use_ai_chat_zoom } from "../AiChatZoom";
 import { ai_system_prompt_item } from "../../../../../common/req/filecat.ai.pojo";
 
 /** 一个供应商分组的模型信息（与后端 get_public_models 返回结构一致） */
@@ -85,6 +86,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     const navigate = useNavigate();
     const { check_user_auth } = use_auth_check();
     const [, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
+    const { open: open_zoom } = use_ai_chat_zoom();
 
     // 是否允许切换 AI 模型：拥有「允许切换 AI 模型」或「AI 配置」任一权限
     const can_switch_model = check_user_auth(UserAuth.ai_model_switch) || check_user_auth(UserAuth.ai_agent_setting);
@@ -165,6 +167,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                             {batchMode && selectedMsgCount > 0 && (
                                 <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={onBatchDeleteMessages} />
                             )}
+                            {/* 聊天记录内容缩放 */}
+                            <ActionButton icon={"zoom_in"} title={t("缩放调整")} onClick={open_zoom} />
                             <ActionButton
                                 icon={"terminal"}
                                 title={t("后台进程")}
