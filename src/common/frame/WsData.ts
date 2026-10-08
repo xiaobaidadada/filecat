@@ -156,6 +156,10 @@ export enum CmdType {
     port_scan_end,      // 服务端推送扫描结束
     port_scan_cancel,   // 客户端取消扫描
 
+    // ===== MCP 服务加载（WebSocket） =====
+    mcp_reload,         // 客户端发起重新加载 MCP（保存配置后调用），不阻塞 HTTP
+    mcp_status,         // 服务端推送单个 MCP 的加载状态（加载中/成功/失败）
+
 }
 
 
@@ -286,6 +290,10 @@ export type ws_cmd_type_map = {
     [CmdType.port_scan_result]: [any, any],
     [CmdType.port_scan_end]: [any, any],
     [CmdType.port_scan_cancel]: [any, any],
+
+    // ===== MCP 服务加载 WS 类型映射 =====
+    [CmdType.mcp_reload]: [any, any],
+    [CmdType.mcp_status]: [any, any],
 }
 
 export enum WsConnectType {

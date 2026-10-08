@@ -832,5 +832,9 @@
   "结果截断": "Zu viele Treffer, nur die ersten 500",
   "缩放调整": "Zoom anpassen",
   "缩放调整成功": "Zoom erfolgreich angepasst",
-  "缩放百分比": "Zoom-Prozentsatz"
+  "缩放百分比": "Zoom-Prozentsatz",
+  "未加载": "Nicht geladen",
+  "加载成功": "Geladen",
+  "加载失败": "Laden fehlgeschlagen",
+  "个工具": "Tools"
 }

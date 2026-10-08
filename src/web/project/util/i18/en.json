@@ -836,5 +836,9 @@
   "打开所在目录": "Open containing folder",
   "输入后搜": "Type a file name and press Enter",
   "无匹配": "No matching files found",
-  "结果截断": "Too many results, showing first 500"
+  "结果截断": "Too many results, showing first 500",
+  "未加载": "Not loaded",
+  "加载成功": "Loaded",
+  "加载失败": "Load failed",
+  "个工具": "tools"
 }

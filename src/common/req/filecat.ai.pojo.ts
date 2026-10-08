@@ -234,6 +234,8 @@ export class ai_mcp_server_tool_group {
     loaded: boolean = false;
     tool_count: number = 0;
     tools: ai_mcp_server_tool_item[] = [];
+    /** 加载状态：loading=加载中 success=加载成功 failed=加载失败 idle=未加载 */
+    state?: "loading" | "success" | "failed" | "idle";
     error?: string;
 }
 

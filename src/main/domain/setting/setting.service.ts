@@ -839,7 +839,10 @@ export class SettingService {
             source_item.list = data.list;
         }
         DataUtil.set(data_common_key.ai_agent_mcp_setting, source_item, file_key.ai_setting_data);
-        await ai_agentService.reloadMcp().catch(console.error);
+        // 注意：这里不再同步 await reloadMcp()。
+        // MCP server 启动可能很慢，走 HTTP 会阻塞保存接口；
+        // 改为由前端保存成功后通过 WS（CmdType.mcp_reload）触发加载，
+        // 加载状态通过 CmdType.mcp_status 实时推送。
     }
 
     ai_docs_setting(): ai_docs_setting {

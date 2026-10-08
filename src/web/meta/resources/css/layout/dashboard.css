@@ -699,3 +699,32 @@ body.rtl .credits {
     display: flex;
     justify-content: flex-end; /* 让子元素从右边开始排列 */
 }
+
+/* ===== 通用状态指示器 StatusCircle ===== */
+/* 圆点 + 可选文字，颜色由组件按状态注入（通过 style 的 color 传给 currentColor） */
+.status-circle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.status-circle__dot {
+    display: inline-block;
+}
+
+.status-circle__text {
+    /* 颜色继承 .status-circle 的 color（即状态色） */
+    color: inherit;
+}
+
+/* 加载中：环形边框绕着中心旋转 */
+.status-circle__dot--spin {
+    animation: status-circle-spin 0.8s linear infinite;
+}
+
+@keyframes status-circle-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -832,5 +832,9 @@
   "结果截断": "Demasiados resultados, mostrando 500",
   "缩放调整": "Ajustar zoom",
   "缩放调整成功": "Zoom ajustado correctamente",
-  "缩放百分比": "Porcentaje de zoom"
+  "缩放百分比": "Porcentaje de zoom",
+  "未加载": "Sin cargar",
+  "加载成功": "Cargado",
+  "加载失败": "Error al cargar",
+  "个工具": "herramientas"
 }

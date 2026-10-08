@@ -7,7 +7,7 @@ import {$stroe} from "../../util/store";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Table} from "../../../meta/component/Table";
 import {InputText, Select} from "../../../meta/component/Input";
-import {Card, CardFull} from "../../../meta/component/Card";
+import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -77,13 +77,19 @@ export default function AIAgentChatSetting() {
     const docs_update_tag = useRef(false);
     const [mcp_tool_groups, set_mcp_tool_groups] = useState<ai_mcp_server_tool_group[]>([]);
     const [mcp_tool_loading, set_mcp_tool_loading] = useState(false);
+    /** MCP 各服务加载状态：key 为 mcp_list 的下标 */
+    const [mcp_status_map, set_mcp_status_map] = useState<Record<number, {
+        state: "loading" | "success" | "failed" | "idle";
+        error?: string;
+        tool_count?: number;
+    }>>({});
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const [index_switch,set_index_switch] = useState(false);
     const mcp_stdio_list = mcp_list.filter((item) => (item.transport ?? "stdio") !== "http");
     const mcp_http_list = mcp_list.filter((item) => item.transport === "http");
-    const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"),"command", "args", "cwd", t("tools|env"), t("备注")];
-    const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("endpoint"), t("tools|headers"), t("备注")];
+    const headers_mcp_stdio = [t("编号"),t("名称"), t("是否开启"), t("状态"), "command", "args", "cwd", t("tools|env"), t("备注")];
+    const headers_mcp_http = [t("编号"),t("名称"), t("是否开启"), t("状态"), t("endpoint"), t("tools|headers"), t("备注")];
     const headers_sys_prompt = [t("编号"), t("提示词"), t("LLM编辑开关"), t("llm_pmt"), t("编辑规则"), t("备注")];
 
     // 系统会话提示词
@@ -155,6 +161,29 @@ export default function AIAgentChatSetting() {
         getItems()
     },[])
 
+    // 监听 MCP 加载状态推送（ws），实时更新每台的 加载中/成功/失败
+    useEffect(() => {
+        ws.addMsg(CmdType.mcp_status, (data: WsData<{
+            status: {index: number; state: string; error?: string; tool_count?: number}[];
+            done: boolean;
+        }>) => {
+            const ctx = data.context ?? {};
+            const next: Record<number, any> = {};
+            for (const it of (ctx.status ?? [])) {
+                next[it.index] = {
+                    state: it.state,
+                    error: it.error,
+                    tool_count: it.tool_count
+                };
+            }
+            set_mcp_status_map(next);
+            // 整轮加载结束：刷新工具列表，让「查看工具」能拿到最新结果
+            if (ctx.done) {
+                loadMcpTools();
+            }
+        });
+    }, [])
+
     const onChange = (item,value,index)=> {
         const list = [];
         for (let i=0; i<rows.length; i++) {
@@ -221,7 +250,9 @@ export default function AIAgentChatSetting() {
         if (result.code === RCode.Success) {
             NotySuccess("保存成功")
             mcp_update_tag.current = false;
-            await loadMcpTools();
+            // 保存成功后通过 WS 触发 MCP 重新加载（不用 HTTP，避免慢启动阻塞保存接口）
+            // 加载状态由 mcp_status 实时推送回来
+            ws.sendData(CmdType.mcp_reload, {});
         }
     }
     const loadMcpTools = async () => {
@@ -322,6 +353,41 @@ export default function AIAgentChatSetting() {
             cancel: () => set_prompt_card({open: false})
         });
     }
+    /**
+     * 渲染 MCP 加载状态单元格：加载中 / 加载成功 / 加载失败 / 未加载
+     *
+     * 状态来源有两处，优先用 ws 实时推送的（mcp_status_map），
+     * 没有则回退到接口返回的 groups（刷新页面后仍能显示上次的状态）。
+     */
+    const renderMcpStateCell = (index: number) => {
+        const live = mcp_status_map[index];
+        let state: string | undefined = live?.state;
+        let error = live?.error;
+        let tool_count = live?.tool_count;
+
+        if (!state) {
+            // 回退：用 ai_mcp_tools 返回的 groups（刷新后的初始状态）
+            const g = mcp_tool_groups.find((it) => it.index === index);
+            state = g?.state;
+            error = g?.error;
+            tool_count = g?.tool_count;
+        }
+
+        switch (state) {
+            case "loading":
+                return <StatusCircle loading text={t("加载中")}/>;
+            case "success":
+                return <StatusCircle success text={`${tool_count ?? 0} ${t("个工具")}`}/>;
+            case "failed":
+                return <span title={error ?? t("加载失败")}>
+                    <StatusCircle success={false} text={t("加载失败")}/>
+                </span>;
+            default:
+                // idle / 没有记录：未加载（未开启的服务也走这里）
+                return <StatusCircle text={t("未加载")}/>;
+        }
+    }
+
     const renderMcpToolsCell = (item: ai_mcp_server_item) => {
         const index = mcp_list.indexOf(item);
         const group = mcp_tool_groups.find((it) => it.index === index);
@@ -522,6 +588,7 @@ export default function AIAgentChatSetting() {
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
                                         }}  options={select_list} no_border={true}/>,
+                                        renderMcpStateCell(mcp_list.indexOf(item)),
                                         <InputText value={item.command} handleInputChange={(value) => {
                                             item.command = value;
                                             mcp_update_tag.current = true
@@ -595,6 +662,7 @@ export default function AIAgentChatSetting() {
                                             set_mcp_list([...mcp_list]);
                                             mcp_update_tag.current = true
                                         }}  options={select_list} no_border={true}/>,
+                                        renderMcpStateCell(mcp_list.indexOf(item)),
                                         <InputText value={item.endpoint} handleInputChange={(value) => {
                                             item.endpoint = value;
                                             mcp_update_tag.current = true

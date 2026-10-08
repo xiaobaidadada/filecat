@@ -18,6 +18,7 @@ import {ai_agent_message_item, ai_agent_message_list, getContentAsString} from "
 import {backgroundProcessManager} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
 import {ai_agent_item_dotenv} from "../../../common/req/filecat.ai.pojo";
+import {ai_agentMcpService} from "./ai_agent.mcp";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -607,6 +608,44 @@ export class Ai_AgentController {
         const { pid } = ctx;
         const killed = backgroundProcessManager.killProcess(pid);
         return { success: killed, pid, message: killed ? "进程已终止" : "进程不存在或已退出" };
+    }
+
+    // ===== MCP 服务加载 WS 路由 =====
+
+    /**
+     * 客户端请求重新加载 MCP 服务（保存配置后调用）。
+     *
+     * 用 WebSocket 而不是 HTTP 的原因：
+     *   MCP server 启动可能很慢（npx/uvx 冷启动、网络超时），
+     *   走 HTTP 会把保存接口阻塞几十秒甚至超时；
+     *   走 WS 可以立即返回，然后通过 mcp_status 持续推送每台的加载状态。
+     *
+     * 注意：这里不 await 整个加载过程，立即返回，加载进度由 mcp_status 推送。
+     */
+    @msg(CmdType.mcp_reload)
+    async mcpReload(data: WsData<any>) {
+        const wss = data.wss as Wss;
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_setting);
+
+        // 把当前连接登记为「MCP 状态订阅者」，加载状态变化时推给它（可能是多个标签页）。
+        ai_agentMcpService.add_status_subscriber(wss);
+        wss.setClose(() => {
+            ai_agentMcpService.remove_status_subscriber(wss);
+        });
+
+        // 先把当前已有状态回推一次，避免前端在加载很快时错过首批推送
+        wss.send(CmdType.mcp_status, {
+            status: ai_agentMcpService.get_load_status(),
+            done: false
+        });
+
+        // 后台异步执行，立即返回，不阻塞 WS 消息循环。
+        // reload() 内部自带「新一轮取代上一轮」的抢占逻辑，重复保存会自动中止上一次加载。
+        ai_agentMcpService.reload().catch((err) => {
+            console.error("MCP reload 异常:", err);
+        });
+
+        return "";
     }
 
 }
