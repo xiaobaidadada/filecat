@@ -493,9 +493,9 @@ export class MountService {
         return out;
     }
 
-    /** 取消授权（清空 token，保留凭据与凭据 id，可重新授权） */
+    /** 删除已授权账号（清除账号信息与 token，保留启用状态；第 1 步的应用配置保留） */
     baidu_deauthorize(id: string): void {
-        new BaiduTokenStore(id).clear_tokens();
+        new BaiduTokenStore(id).remove_account();
         this.dispose_by_credential(id);
     }
 }

@@ -756,7 +756,6 @@
   "启用": "Activé",
   "已停用": "Désactivé",
   "确认删除": "Confirmer la suppression de",
-  "留空表示不修改": "Laisser vide pour ne pas modifier",
   "nmuntpr": "Le compte actuel n'a pas la permission de montage de répertoire",
   "百度网盘": "Baidu Netdisk",
   "应用配置": "Paramètres de l'app",
@@ -783,8 +782,6 @@
   "授权时间": "Autorisé le",
   "已授权": "Autorisé",
   "已过期": "Expiré",
-  "取消授权": "Annuler l'autorisation",
-  "已取消授权": "Autorisation annulée",
   "停用": "Désactiver",
   "已配置": "Configuré",
   "未配置": "Non configuré",
@@ -841,7 +838,6 @@
   "prt_smb": "Dossier partagé Windows (SMB/CIFS). Renseignez l'hôte et le compte, puis choisissez un partage.",
   "prt_bd": "Baidu Netdisk. Créez une app sur la plateforme ouverte de Baidu, saisissez AppKey / SecretKey, puis autorisez un compte.",
   "没有找到共享": "Aucun partage trouvé",
-  "确认取消授权": "Confirmer la révocation",
   "粘贴授权码 code": "Collez le code d'autorisation",
   "重新授权": "Réautoriser"
 }

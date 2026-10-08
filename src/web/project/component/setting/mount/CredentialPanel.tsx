@@ -87,7 +87,6 @@ export default function CredentialPanel() {
     const [type, set_type] = useState(DEFAULT_TYPE);
     const [name, setName] = useState("");
     const [config, set_config] = useState<Record<string, any>>({});
-    const [has_password, set_has_password] = useState(false);
     const [step, set_step] = useState(1);
     /** 共享目录候选项（SMB 第 2 步的下拉） */
     const [shared_options, set_shared_options] = useState<{ label: string; value: string }[]>([]);
@@ -134,7 +133,6 @@ export default function CredentialPanel() {
         set_type(DEFAULT_TYPE);
         setName("");
         set_config({});
-        set_has_password(false);
         set_step(1);
         set_shared_options([]);
         set_auth_code("");
@@ -257,7 +255,6 @@ export default function CredentialPanel() {
         set_type(item.type);
         setName(item.name ?? "");
         set_config({...(item.config ?? {})});
-        set_has_password(Boolean(item.has_password));
         set_auth_code("");
         // 百度凭据是否已完成授权由后端脱敏字段告知
         set_authorized(Boolean(item.authorized));
@@ -336,19 +333,19 @@ export default function CredentialPanel() {
         }
     };
 
-    /** 取消授权（保留凭据，可重新授权） */
+    /** 删除该账号（清除账号信息与 token，保留第 1 步的应用配置） */
     const deauthorize = async () => {
         confirm_del({
-            title: t("确认取消授权"),
+            title: t("确认删除"),
             sub_title: name,
             confirm_fun: async () => {
                 try {
                     await mountHttp.post("baidu/deauthorize", {id});
-                    NotySuccess(t("已取消授权"));
+                    NotySuccess(t("已删除"));
                     set_authorized(false);
                     set_expired(false);
                     set_obtained_at(0);
-                    await load();
+                    set_baidu_name("");
                 } catch (e) {
                     // Http 层已提示
                 }
@@ -397,18 +394,18 @@ export default function CredentialPanel() {
         return <React.Fragment key={f.key}>
             <InputText
                 type={is_secret ? "password" : "text"}
-                placeholder={is_secret && has_password ? t("留空表示不修改") : f.label}
+                placeholder={f.label}
                 value={config[f.key] ?? ""}
                 handleInputChange={(v) => set_config({...config, [f.key]: v})}/>
         </React.Fragment>;
     };
 
-    /** 第 2 步：授权账号列表（一条凭据就一个账号，所以列表恒为一行） */
+    /** 第 2 步：上方授权表单 + 下方账号列表（一条凭据就一个账号，所以列表恒为一行） */
     const render_authorize = () => {
         const status_text = !authorized ? t("未授权") : (expired ? t("已过期") : t("已授权"));
         return <React.Fragment key={AUTHORIZE_STEP}>
-            {/* 未授权时先让用户选授权方式并去授权 */}
-            {!authorized && <InputRow label={t("授权方式")} label_width={"6rem"}>
+            {/* 授权方式与授权入口常驻，已授权时也可重新授权 */}
+            <InputRow label={t("授权方式")} label_width={"6rem"}>
                 <div className={"div-row"}>
                     <InputRadio name={"baidu_auth_mode"} value={"one_click"} context={t("一键授权")}
                                 selected={auth_mode === "one_click"}
@@ -417,20 +414,20 @@ export default function CredentialPanel() {
                                 selected={auth_mode === "oob"}
                                 onchange={() => set_auth_mode("oob")}/>
                 </div>
-            </InputRow>}
+            </InputRow>
             {/* oob 方式要粘贴授权码 */}
-            {!authorized && auth_mode === "oob" && <InputRow label={t("授权码")} label_width={"6rem"}>
+            {auth_mode === "oob" && <InputRow label={t("授权码")} label_width={"6rem"}>
                 <InputText placeholder={t("粘贴授权码 code")} value={auth_code}
                            handleInputChange={set_auth_code}/>
             </InputRow>}
-            {!authorized && <div className={"div-row"}>
+            <div className={"div-row"}>
                 <ActionButton icon={"open_in_new"} title={t("去授权")} onClick={open_authorize}/>
                 {auth_mode === "oob" &&
                     <ActionButton icon={"check"} title={t("完成授权")} onClick={submit_code}/>}
-            </div>}
+            </div>
 
-            {/* 账号列表：照搬原百度面板的表格 */}
-            <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
+            {/* 账号列表：一条凭据一个账号，未授权时无行可显示 */}
+            {authorized && <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
                    rows={[[
                        <InputText value={name} no_border={true} handleInputChange={setName}/>,
                        <TextTip context={baidu_name || "-"}/>,
@@ -441,11 +438,10 @@ export default function CredentialPanel() {
                        <div>
                            <ActionButton icon={"network_check"} title={t("授权检测")}
                                          onClick={verify}/>
-                           <ActionButton icon={authorized ? "link_off" : "open_in_new"}
-                                         title={authorized ? t("取消授权") : t("去授权")}
-                                         onClick={authorized ? deauthorize : open_authorize}/>
+                           <ActionButton icon={"delete"} title={t("删除")}
+                                         onClick={deauthorize}/>
                        </div>,
-                   ]]}/>
+                   ]]}/>}
         </React.Fragment>;
     };
 

@@ -276,6 +276,20 @@ export class BaiduTokenStore {
         this.patch_config({token: EMPTY_TOKEN});
     }
 
+    /** 删除已授权账号（清除账号信息与 token，保留第 1 步的应用配置） */
+    remove_account(): void {
+        const item = this.get_item();
+        if (!item) {
+            throw new Error("百度网盘凭据不存在");
+        }
+        const list = DataUtil.get<CredentialItem[]>(data_common_key.mount_credential_list) ?? [];
+        const i = list.findIndex(v => v.id === this.cred_id);
+        // 只保留应用配置字段，账号相关信息整体丢弃
+        const {app_id, app_key, secret_key, remark} = item.config;
+        list[i] = {...list[i], config: {app_id, app_key, secret_key, remark}};
+        DataUtil.set(data_common_key.mount_credential_list, [...list]);
+    }
+
     /** 调 OAuth token 端点 */
     private async oauth_request(params: URLSearchParams): Promise<any> {
         const res = await axios.get(`${BAIDU_OAUTH.token}?${params.toString()}`, {
