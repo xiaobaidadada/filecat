@@ -764,7 +764,6 @@
   "授权失败": "Échec de l'autorisation",
   "strtdrt": "Dossier de départ",
   "dspnmtp": "Nom affiché",
-  "atrfrsh": "Rafraîchir le jeton automatiquement",
   "授权检测": "Vérifier l'autorisation",
   "scrtkep": "Laisser SecretKey vide pour ne pas modifier",
   "编辑应用": "Modifier l'app",
@@ -800,10 +799,8 @@
   "挂载已停用": "Montages désactivés",
   "muntont": "Montages activés, cliquez pour désactiver",
   "muntoff": "Montages désactivés, cliquez pour activer",
-  "普通凭据管理": "Identifiants généraux",
+  "凭证管理": "Identifiants",
   "授权方式": "Mode d'autorisation",
-  "outh_at": "En un clic (redirection auto)",
-  "outhpst": "Manuel (coller le code)",
   "去授权（一键）": "Autoriser (un clic)",
   "去授权（手动）": "Autoriser (manuel)",
   "保存应用配置": "Enregistrer la config",
@@ -839,5 +836,12 @@
   "No share found": "Aucun partage trouvé",
   "Enter host first": "Saisissez d'abord l'hôte",
   "下一步": "Suivant",
-  "共享目录": "Dossier partagé"
+  "上一步": "Précédent",
+  "共享目录": "Dossier partagé",
+  "prt_smb": "Dossier partagé Windows (SMB/CIFS). Renseignez l'hôte et le compte, puis choisissez un partage.",
+  "prt_bd": "Baidu Netdisk. Créez une app sur la plateforme ouverte de Baidu, saisissez AppKey / SecretKey, puis autorisez un compte.",
+  "没有找到共享": "Aucun partage trouvé",
+  "确认取消授权": "Confirmer la révocation",
+  "粘贴授权码 code": "Collez le code d'autorisation",
+  "重新授权": "Réautoriser"
 }

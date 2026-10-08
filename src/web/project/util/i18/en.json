@@ -774,7 +774,6 @@
   "授权失败": "Authorization failed",
   "strtdrt": "Start dir",
   "dspnmtp": "Display name",
-  "atrfrsh": "Auto refresh token",
   "授权检测": "Auth check",
   "scrtkep": "Leave SecretKey empty to keep unchanged",
   "编辑应用": "Edit app",
@@ -810,10 +809,8 @@
   "挂载已停用": "Mounts disabled",
   "muntont": "Mounts enabled, click to disable",
   "muntoff": "Mounts disabled, click to enable",
-  "普通凭据管理": "General Credentials",
+  "凭证管理": "Credentials",
   "授权方式": "Authorization Mode",
-  "outh_at": "One-click (auto redirect)",
-  "outhpst": "Manual (paste auth code)",
   "去授权（一键）": "Authorize (one-click)",
   "去授权（手动）": "Authorize (manual)",
   "保存应用配置": "Save App Config",
@@ -843,5 +840,12 @@
   "No share found": "No share found",
   "Enter host first": "Enter host first",
   "下一步": "Next",
-  "共享目录": "Share folder"
+  "上一步": "Back",
+  "共享目录": "Share folder",
+  "prt_smb": "Windows shared folder (SMB/CIFS). Fill in the host and account, then pick a share name from the list.",
+  "prt_bd": "Baidu Netdisk. Create an app on the Baidu Open Platform, fill in AppKey / SecretKey, then authorize an account.",
+  "没有找到共享": "No shares found",
+  "确认取消授权": "Confirm deauthorization",
+  "粘贴授权码 code": "Paste authorization code",
+  "重新授权": "Reauthorize"
 }

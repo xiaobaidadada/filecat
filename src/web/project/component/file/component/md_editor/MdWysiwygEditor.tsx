@@ -231,6 +231,23 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 window.open(href, "_blank", "noopener,noreferrer");
                 return true;
             },
+            // 粘贴到代码块内时，必须把纯文本整段塞进去。
+            // ProseMirror 默认按块解析剪贴板文本，多行内容会被拆成一堆段落节点，
+            // 表现就是「只有第一行留在代码块里，其余全部漏到外面」。
+            handlePaste(view, event) {
+                const text = event.clipboardData?.getData("text/plain");
+                if (!text) {
+                    return false;
+                }
+                const {from, to} = view.state.selection;
+                if (!is_in_code_block(view.state.doc, from) || !is_in_code_block(view.state.doc, to)) {
+                    return false;
+                }
+                view.dispatch(
+                    view.state.tr.insertText(text.replace(/\r\n?/g, "\n"), from, to).scrollIntoView()
+                );
+                return true;
+            },
             // 按住 Ctrl/Cmd 时给编辑器根节点打标记，CSS 据此把链接切成「可点击」样式（小手 + 实线下划线）；
             // 同时承载源码模式下的输入接管（见下方 beforeinput / Enter 的说明）。
             handleDOMEvents: {
@@ -574,6 +591,17 @@ function is_in_table(state: EditorState): boolean {
     for (let d = $from.depth; d > 0; d--) {
         const name = $from.node(d).type.name;
         if (name === "table") {
+            return true;
+        }
+    }
+    return false;
+}
+
+// 判断给定位置是否落在代码块内（用于粘贴时决定是否整段原样插入）
+function is_in_code_block(doc: PmNode, pos: number): boolean {
+    const $pos = doc.resolve(pos);
+    for (let d = $pos.depth; d > 0; d--) {
+        if ($pos.node(d).type.name === "code_block") {
             return true;
         }
     }

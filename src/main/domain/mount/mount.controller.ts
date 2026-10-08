@@ -8,7 +8,6 @@ import {mountService} from "./mount.service";
 import {FileMountItem} from "./mount.pojo";
 import {CredentialItem, CredentialType} from "./credential.pojo";
 import {MountDriverType} from "./driver/file_driver";
-import {BaiduAppConfig} from "./baidu/baidu_token";
 
 /** 挂载保存请求体 */
 export interface MountSaveReq {
@@ -66,13 +65,11 @@ export class MountController {
 
     // ==================== 凭据 ====================
 
-    /** 取凭据列表（密码等敏感字段不返回）；百度账号凭据不在普通凭据管理中展示 */
+    /** 取凭据列表（密码等敏感字段不返回） */
     @Post("/credential/list")
     async credential_list(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const list = mountService.list_credentials_for_user(current_user_id(r), is_root_user(r))
-            // 百度账号凭据为内部派生数据，不在普通凭据管理中展示
-            .filter(m => m.type !== "baidu_account");
+        const list = mountService.list_credentials_for_user(current_user_id(r), is_root_user(r));
         return Sucess(list.map(mask_credential));
     }
 
@@ -228,44 +225,30 @@ export class MountController {
         return Sucess(await mountService.list_shares(body.driver, body.config ?? {}, body.id));
     }
 
-    // ==================== 百度网盘应用授权 ====================
-
-    /** 取百度应用配置（脱敏）+ 全部已授权账号 */
-    @Post("/baidu/app/get")
-    async baidu_app_get(@Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(mountService.get_baidu_app());
-    }
-
-    /** 保存百度应用配置（secret_key/app_key 为空表示不修改） */
-    @Post("/baidu/app/save")
-    async baidu_app_save(@Body() body: BaiduAppConfig, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.save_baidu_app(body);
-        return Sucess(true);
-    }
+    // ==================== 百度网盘授权 ====================
 
     /**
      * 取授权链接。
-     * @param mode 不传则用应用配置里的授权方式；one_click=回调到 FileCat；oob=手动粘贴授权码
+     * @param id 百度凭据 id（应用配置已保存在该凭据里）
+     * @param mode one_click=回调到 FileCat；oob=手动粘贴授权码
      */
     @Post("/baidu/authorize_url")
-    async baidu_authorize_url(@Body() body: {mode?: "one_click" | "oob"}, @Req() r) {
+    async baidu_authorize_url(@Body() body: {id: string; mode: "one_click" | "oob"}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const mode = body.mode ?? mountService.get_baidu_app().app?.auth_mode ?? "oob";
-        return Sucess(mountService.baidu_authorize_url(mode, await this.baidu_callback_url(r)));
+        return Sucess(mountService.baidu_authorize_url(body.id, body.mode, await this.baidu_callback_url(r)));
     }
 
     /**
      * 百度 OAuth 回调（一键授权用）。
      * 百度授权后会跳到这里并带上 code，服务端换 token 后重定向回挂载设置页。
      * 注意：这个接口必须能被百度访问到，且地址要与百度控制台登记的回调地址一致。
+     * 回调无法带 token，所以用 state 参数把凭据 id 带回来。
      */
     @Get("/baidu/callback")
-    async baidu_callback(@QueryParam("code") code: string, @QueryParam("error") error: string,
+    async baidu_callback(@QueryParam("code") code: string, @QueryParam("state") state: string,
+                         @QueryParam("error") error: string,
                          @QueryParam("error_description") error_description: string,
                          @Res() res: Response) {
-        // 回调无法带 token，所以这里不做权限校验（OAuth 的标准做法）
         const base = await this.mount_setting_redirect();
         if (error) {
             return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent(error_description || error)}`);
@@ -273,8 +256,11 @@ export class MountController {
         if (!code) {
             return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent("缺少授权码")}`);
         }
+        if (!state) {
+            return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent("缺少 state，无法定位凭据")}`);
+        }
         try {
-            const r = await mountService.baidu_exchange_code(code, await this.baidu_callback_url(null));
+            const r = await mountService.baidu_exchange_code(state, code, await this.baidu_callback_url(null));
             return res.redirect(`${base}?baidu_auth=success&name=${encodeURIComponent(r.baidu_name)}`);
         } catch (e) {
             return res.redirect(`${base}?baidu_auth=failed&reason=${encodeURIComponent(e?.message ?? "授权失败")}`);
@@ -283,51 +269,35 @@ export class MountController {
 
     /**
      * 手动提交授权码（oob）。
-     * @param mode 不传则用应用配置里的授权方式；决定换 token 时用的回调地址
+     * @param id 百度凭据 id
+     * @param mode 决定换 token 时用的回调地址
      */
     @Post("/baidu/exchange")
-    async baidu_exchange(@Body() body: {code: string; mode?: "one_click" | "oob"}, @Req() r) {
+    async baidu_exchange(@Body() body: {id: string; code: string; mode: "one_click" | "oob"}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const mode = body.mode ?? mountService.get_baidu_app().app?.auth_mode ?? "oob";
-        const uri = mode === "oob" ? "oob" : await this.baidu_callback_url(r);
-        return Sucess(await mountService.baidu_exchange_code(body.code, uri));
+        const uri = body.mode === "oob" ? "oob" : await this.baidu_callback_url(r);
+        return Sucess(await mountService.baidu_exchange_code(body.id, body.code, uri));
     }
 
-    /** 编辑账号（展示名 / 备注 / 启用状态） */
-    @Post("/baidu/account/update")
-    async baidu_account_update(@Body() body: {uk: number; name?: string; remark?: string; enabled?: boolean}, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.baidu_update_account(body.uk, body);
-        return Sucess(true);
-    }
-
-    /** 校验单个账号 */
+    /** 校验单个百度凭据 */
     @Post("/baidu/verify")
-    async baidu_verify(@Body() body: {uk: number}, @Req() r) {
+    async baidu_verify(@Body() body: {id: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(await mountService.baidu_verify(body.uk));
+        return Sucess(await mountService.baidu_verify(body.id));
     }
 
-    /** 批量校验/刷新全部账号 */
+    /** 批量校验/刷新全部百度凭据 */
     @Post("/baidu/verify/all")
     async baidu_verify_all(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         return Sucess(await mountService.baidu_verify_all());
     }
 
-    /** 取消授权（清 token，保留账号记录，可重新授权） */
+    /** 取消授权（清 token，保留凭据，可重新授权） */
     @Post("/baidu/deauthorize")
-    async baidu_deauthorize(@Body() body: {uk: number}, @Req() r) {
+    async baidu_deauthorize(@Body() body: {id: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.baidu_deauthorize(body.uk);
-        return Sucess(true);
-    }
-
-    /** 删除账号 */
-    @Post("/baidu/delete")
-    async baidu_delete(@Body() body: {uk: number}, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.baidu_delete(body.uk);
+        mountService.baidu_deauthorize(body.id);
         return Sucess(true);
     }
 
@@ -349,7 +319,12 @@ export class MountController {
 }
 
 /** 凭据脱敏：去掉所有密码类字段，避免返回给前端 */
-function mask_credential(item: CredentialItem): CredentialItem & {has_password?: boolean} {
+function mask_credential(item: CredentialItem): CredentialItem & {
+    has_password?: boolean;
+    authorized?: boolean;
+    expired?: boolean;
+    obtained_at?: number;
+} {
     const SECRET_KEYS = ["password", "private_key", "secret_key"];
     const config: Record<string, any> = {};
     let has_password = false;
@@ -361,7 +336,19 @@ function mask_credential(item: CredentialItem): CredentialItem & {has_password?:
             }
             continue;
         }
+        // token 属敏感信息，只回传「是否已授权」+ 时间与过期状态
+        if (k === "token") {
+            continue;
+        }
         config[k] = v;
     }
-    return {...item, config, has_password};
+    const token = item.config?.token;
+    return {
+        ...item,
+        config,
+        has_password,
+        authorized: Boolean(token?.access_token),
+        expired: Boolean(token?.access_token && token.expires_at <= Date.now()),
+        obtained_at: token?.obtained_at,
+    };
 }

@@ -764,7 +764,6 @@
   "授权失败": "Autorisierung fehlgeschlagen",
   "strtdrt": "Startverzeichnis",
   "dspnmtp": "Anzeigename",
-  "atrfrsh": "Token automatisch erneuern",
   "授权检测": "Autorisierung prüfen",
   "scrtkep": "SecretKey leer lassen, um unverändert zu lassen",
   "编辑应用": "App bearbeiten",
@@ -800,10 +799,8 @@
   "挂载已停用": "Mounts deaktiviert",
   "muntont": "Mounts aktiviert, zum Deaktivieren klicken",
   "muntoff": "Mounts deaktiviert, zum Aktivieren klicken",
-  "普通凭据管理": "Allgemeine Anmeldedaten",
+  "凭证管理": "Anmeldedaten",
   "授权方式": "Autorisierungsmodus",
-  "outh_at": "Ein-Klick (automatische Weiterleitung)",
-  "outhpst": "Manuell (Auth-Code einfügen)",
   "去授权（一键）": "Autorisieren (Ein-Klick)",
   "去授权（手动）": "Autorisieren (manuell)",
   "保存应用配置": "App-Konfiguration speichern",
@@ -839,5 +836,12 @@
   "No share found": "Keine Freigabe gefunden",
   "Enter host first": "Bitte zuerst Host eingeben",
   "下一步": "Weiter",
-  "共享目录": "Freigabeordner"
+  "上一步": "Zurück",
+  "共享目录": "Freigabeordner",
+  "prt_smb": "Windows-Freigabe (SMB/CIFS). Host und Konto eingeben, dann Freigabenamen aus der Liste wählen.",
+  "prt_bd": "Baidu Netdisk. App auf der Baidu Open Platform anlegen, AppKey / SecretKey eintragen, dann Konto autorisieren.",
+  "没有找到共享": "Keine Freigaben gefunden",
+  "确认取消授权": "Autorisierung wirklich aufheben",
+  "粘贴授权码 code": "Autorisierungscode einfügen",
+  "重新授权": "Erneut autorisieren"
 }

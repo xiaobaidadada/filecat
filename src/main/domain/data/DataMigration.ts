@@ -210,6 +210,66 @@ export class DataMigration {
                 }
             },
         },
+        {
+            // 百度网盘从「全局应用配置 + 账号列表」合并为普通凭据（一条凭据 = 一份应用配置 + 一个授权账号）。
+            // 没人用过时这两个 key 都不存在，迁移直接空跑。
+            version: data_version_type.baidu_credential_merge,
+            name: "百度网盘配置合并为凭据",
+            run: () => {
+                const app = DataUtil.get<any>(data_common_key.mount_baidu_app);
+                const accounts = DataUtil.get<any[]>(data_common_key.mount_baidu_account) ?? [];
+                if (!app && accounts.length === 0) {
+                    return;
+                }
+                const list: any[] = DataUtil.get<any[]>(data_common_key.mount_credential_list) ?? [];
+                // 把老账号的 uk 映射到新凭据 id，供挂载的 credential_id 改写
+                const uk_to_cred: Record<string, string> = {};
+                // 没有账号时也要保留应用配置，建一条未授权的凭据
+                const sources = accounts.length ? accounts : [null];
+                for (const acc of sources) {
+                    const id = `cred_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                    const name = acc?.name || acc?.baidu_name || app?.name || "百度网盘";
+                    list.push({
+                        id,
+                        type: "baidu",
+                        name,
+                        config: {
+                            name_overridden: Boolean(acc?.name),
+                            app_id: app?.app_id,
+                            app_key: app?.app_key,
+                            secret_key: app?.secret_key,
+                            remark: acc?.remark ?? app?.remark ?? "",
+                            uk: acc?.uk,
+                            baidu_name: acc?.baidu_name,
+                            netdisk_name: acc?.netdisk_name,
+                            avatar_url: acc?.avatar_url,
+                            token: acc?.token,
+                        },
+                        enabled: acc?.enabled !== false && app?.enabled !== false,
+                        created_at: acc?.created_at ?? Date.now(),
+                    });
+                    if (acc?.uk) {
+                        uk_to_cred[String(acc.uk)] = id;
+                    }
+                }
+                DataUtil.set(data_common_key.mount_credential_list, list);
+                // 挂载的 credential_id 从「账号 uk」改成「凭据 id」
+                const mounts: any[] = DataUtil.get<any[]>(data_common_key.file_mount_list) ?? [];
+                let changed = false;
+                for (const m of mounts) {
+                    if (m.driver === "baidu" && uk_to_cred[String(m.credential_id)]) {
+                        m.credential_id = uk_to_cred[String(m.credential_id)];
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    DataUtil.set(data_common_key.file_mount_list, mounts);
+                }
+                // 老数据不再使用
+                DataUtil.del(data_common_key.mount_baidu_app, file_key.data);
+                DataUtil.del(data_common_key.mount_baidu_account, file_key.data);
+            },
+        },
     ];
 
     private static is_data_version_type(value) {

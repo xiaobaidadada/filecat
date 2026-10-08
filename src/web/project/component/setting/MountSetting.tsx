@@ -12,12 +12,11 @@ import {useAtom} from "jotai";
 import {$stroe} from "../../util/store";
 import CredentialPanel from "./mount/CredentialPanel";
 import MountPanel from "./mount/MountPanel";
-import BaiduPanel from "./mount/BaiduPanel";
 
 /**
  * 网盘挂载设置页（独立路由：设置 → 网盘挂载）。
  *
- * 三块卡片：普通凭据管理、挂载列表、百度网盘。
+ * 两块卡片：凭证管理（含百度网盘）、挂载列表。
  * 每块卡片上方平铺输入框新增，下方表格列出已有项可编辑/删除。
  */
 export function MountSetting() {
@@ -81,15 +80,9 @@ export function MountSetting() {
         <Dashboard>
 
             <Row>
-                <Column widthPer={33} maxWidth={"30rem"} >
+                <Column widthPer={50} maxWidth={"60rem"}>
                     <CredentialPanel/>
                 </Column>
-                <Column widthPer={60} maxWidth={"60rem"}>
-                    <BaiduPanel on_credential_change={() => window.location.reload()}/>
-                </Column>
-
-            </Row>
-            <Row>
                 <Column widthPer={50} maxWidth={"60rem"}>
                     <MountPanel/>
                 </Column>

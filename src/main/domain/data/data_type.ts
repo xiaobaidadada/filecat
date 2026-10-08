@@ -110,8 +110,8 @@ export enum data_common_key {
     file_mount_list = "file_mount_list", // 文件挂载列表（把本地目录挂载到网盘/远程协议）
     mount_enabled = "mount_enabled", // 挂载功能总开关（关闭时不解析任何挂载，全部按本地目录处理）
     mount_credential_list = "mount_credential_list", // 挂载凭据列表（账号/身份信息，可被多个挂载复用）
-    mount_baidu_app = "mount_baidu_app", // 百度网盘开放平台应用配置（app_key/secret_key 等，全局唯一）
-    mount_baidu_account = "mount_baidu_account", // 百度网盘已授权账号列表（含 token）
+    mount_baidu_app = "mount_baidu_app", // [已废弃，仅迁移用] 百度网盘开放平台应用配置
+    mount_baidu_account = "mount_baidu_account", // [已废弃，仅迁移用] 百度网盘已授权账号列表
 }
 
 
@@ -126,6 +126,7 @@ export enum data_version_type {
     remove_sys_level_tag = 6, // 移除系统级别的tag功能
     user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
     ai_setting_data = 8, // ai 相关字段从 data.json 抽离到 ai_setting_data.json
+    baidu_credential_merge = 9, // 百度网盘应用配置+授权账号合并为普通凭据
 }
 
 

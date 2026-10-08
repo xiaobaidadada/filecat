@@ -31,8 +31,11 @@ export const BAIDU_API = {
 /** 百度网盘单文件上传分片大小（4MB，官方建议） */
 const SLICE_SIZE = 4 * 1024 * 1024;
 
+/** 百度网盘表示 access_token 失效的错误码（-6 无效、110 无效、111 过期） */
+const TOKEN_INVALID_ERRNO = new Set([-6, 110, 111]);
+
 export interface BaiduConfig {
-    /** 已授权账号标识（对应 BaiduTokenStore 里的 key） */
+    /** 百度网盘凭据 id（凭据里含应用配置与 OAuth token） */
     account_key: string;
     root?: string;
 }
@@ -73,19 +76,15 @@ export class BaiduDriver implements FileDriver {
 
     constructor(config: BaiduConfig) {
         if (!config?.account_key) {
-            throw new Error("百度网盘挂载缺少授权账号，请先在设置中完成授权");
+            throw new Error("百度网盘挂载缺少凭据，请先在设置中添加并授权");
         }
         this.config = config;
-        this.store = new BaiduTokenStore();
+        this.store = new BaiduTokenStore(config.account_key);
     }
 
     /** 取可用的 access_token（过期自动刷新） */
     private async token(): Promise<string> {
-        const uk = Number(this.config.account_key);
-        if (!Number.isFinite(uk)) {
-            throw new Error("百度挂载的凭据缺少有效的账号标识（uk）");
-        }
-        return this.store.get_access_token(uk);
+        return this.store.get_access_token();
     }
 
     /** 挂载点内相对路径 → 百度网盘的绝对路径 */
@@ -109,7 +108,16 @@ export class BaiduDriver implements FileDriver {
 
     /** 调百度接口；出错时把百度返回的 errmsg 带上，便于定位 */
     private async api(url: string, params: Record<string, any>, method: "get" | "post" = "get") {
-        const token = await this.token();
+        const data = await this.api_raw(url, params, method, await this.token());
+        // 本地判断过期依赖系统时钟，不准；token 真正失效以接口返回的 errno 为准，
+        // 遇到失效码就强刷一次再重试（只重试一次，避免死循环）
+        if (TOKEN_INVALID_ERRNO.has(Number(data?.errno))) {
+            return this.api_raw(url, params, method, await this.store.force_refresh());
+        }
+        return data;
+    }
+
+    private async api_raw(url: string, params: Record<string, any>, method: "get" | "post", token: string) {
         const common = {
             access_token: token,
             ...params,

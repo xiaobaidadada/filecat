@@ -11,7 +11,7 @@ import {MountDriverType} from "./driver/file_driver";
 export interface CredentialItem {
     /** 唯一 id */
     id: string;
-    /** 凭据类型：与驱动的 type 对应（baidu_account 为内部派生类型，见下） */
+    /** 凭据类型：与驱动的 type 对应 */
     type: CredentialType;
     /** 展示名称（用户自己起的，便于在挂载时辨认） */
     name: string;
@@ -26,16 +26,15 @@ export interface CredentialItem {
 
 /**
  * 凭据类型。
- * 前三个与驱动类型一一对应（普通凭据，在「普通凭据管理」里手动维护）；
- * baidu_account 是内部类型：由百度网盘授权账号派生，不出现在凭据管理里，
- * 仅用于把授权账号包成驱动候选的配置形态。
+ * 与驱动类型一一对应，都在「凭证管理」里维护；
+ * baidu 分两步：先填应用配置（AppKey 等），再完成 OAuth 授权。
  */
 export type CredentialType =
     | "webdav"
     | "ssh"        // SSH / SFTP
     | "smb"        // SMB / Windows 共享
     | "s3"
-    | "baidu_account";
+    | "baidu";     // 百度网盘（应用配置 + OAuth 授权账号，二合一）
 
 /** 凭据字段描述（供设置页动态渲染表单） */
 export interface CredentialField {
@@ -56,7 +55,7 @@ export interface CredentialMeta {
 
 /**
  * 各凭据类型的配置字段定义。
- * 只列「普通凭据」（用户手填）；baidu_account 不在其中，它由 OAuth 授权派生、不可手填。
+ * baidu 的字段只用于第 1 步（应用配置），第 2 步的 OAuth 授权由前端单独渲染。
  */
 export const CREDENTIAL_META_LIST: CredentialMeta[] = [
     {
@@ -108,6 +107,16 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
             {key: "force_path_style", label: "强制路径风格", type: "text", placeholder: "填 1 开启（MinIO 通常需要）"},
         ],
     },
+    {
+        // 百度网盘第 1 步的应用配置表单；第 2 步的 OAuth 授权由前端单独渲染
+        type: "baidu",
+        name: "百度网盘",
+        fields: [
+            {key: "app_id", label: "AppID", type: "text"},
+            {key: "app_key", label: "AppKey", type: "text", required: true},
+            {key: "secret_key", label: "SecretKey", type: "password", required: true},
+        ],
+    },
 ];
 
 /** 按类型取凭据元信息 */
@@ -116,12 +125,13 @@ export function get_credential_meta(type: CredentialType): CredentialMeta | unde
 }
 
 /**
- * 驱动类型 → 需要的凭据类型（仅普通凭据）。
- * 百度网盘不在此列：它直接引用 OAuth 授权账号（uk 存在挂载的 credential_id 里），不查凭据表。
+ * 驱动类型 → 需要的凭据类型。
+ * 所有驱动都走凭据表：挂载只保存 credential_id。
  */
 export const DRIVER_CREDENTIAL_TYPE: Record<string, CredentialType> = {
     [MountDriverType.webdav]: "webdav",
     [MountDriverType.sftp]: "ssh",
     [MountDriverType.smb]: "smb",
     [MountDriverType.s3]: "s3",
+    [MountDriverType.baidu]: "baidu",
 };

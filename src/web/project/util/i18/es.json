@@ -764,7 +764,6 @@
   "授权失败": "Autorización fallida",
   "strtdrt": "Dir inicial",
   "dspnmtp": "Nombre visible",
-  "atrfrsh": "Renovar token automáticamente",
   "授权检测": "Comprobar autorización",
   "scrtkep": "Deja SecretKey vacío para no modificarlo",
   "编辑应用": "Editar app",
@@ -800,10 +799,8 @@
   "挂载已停用": "Montajes deshabilitados",
   "muntont": "Montajes habilitados, clic para deshabilitar",
   "muntoff": "Montajes deshabilitados, clic para habilitar",
-  "普通凭据管理": "Credenciales generales",
+  "凭证管理": "Credenciales",
   "授权方式": "Modo de autorización",
-  "outh_at": "Un clic (redirección automática)",
-  "outhpst": "Manual (pegar código)",
   "去授权（一键）": "Autorizar (un clic)",
   "去授权（手动）": "Autorizar (manual)",
   "保存应用配置": "Guardar configuración",
@@ -839,5 +836,12 @@
   "No share found": "No se encontró ningún recurso compartido",
   "Enter host first": "Introduce el host primero",
   "下一步": "Siguiente",
-  "共享目录": "Carpeta compartida"
+  "上一步": "Atrás",
+  "共享目录": "Carpeta compartida",
+  "prt_smb": "Carpeta compartida de Windows (SMB/CIFS). Rellena el host y la cuenta y elige el nombre del recurso.",
+  "prt_bd": "Baidu Netdisk. Crea una app en la plataforma abierta de Baidu, rellena AppKey / SecretKey y autoriza una cuenta.",
+  "没有找到共享": "No se encontraron recursos compartidos",
+  "确认取消授权": "Confirmar la desautorización",
+  "粘贴授权码 code": "Pega el código de autorización",
+  "重新授权": "Autorizar de nuevo"
 }

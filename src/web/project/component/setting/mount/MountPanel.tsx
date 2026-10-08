@@ -8,8 +8,6 @@ import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
 import {
-    BaiduAccountRow,
-    BAIDU_DRIVER,
     CredentialRow,
     credential_options,
     DEFAULT_COLOR,
@@ -20,10 +18,7 @@ import {
 /**
  * 挂载列表。
  * 卡片上方平铺输入框新增挂载，下方表格列出已有挂载。
- *
- * 凭据来源分两种：
- *  · 百度网盘 → 直接用「百度网盘」面板里已授权的账号（不需要凭据）
- *  · 其他驱动 → 用「普通凭据管理」里对应类型的凭据
+ * 凭据来源统一是「凭证管理」里对应类型的凭据。
  */
 export default function MountPanel() {
     const {t} = useTranslation();
@@ -32,8 +27,6 @@ export default function MountPanel() {
     const [list, set_list] = useState<MountRow[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
     const [drivers, set_drivers] = useState<DriverMeta[]>([]);
-    /** 百度已授权账号（选百度驱动时作为凭据来源） */
-    const [baidu_accounts, set_baidu_accounts] = useState<BaiduAccountRow[]>([]);
 
     /**
      * 表单是否展开（新建或编辑中）。
@@ -51,16 +44,14 @@ export default function MountPanel() {
 
     const load = async () => {
         try {
-            const [m, c, d, b] = await Promise.all([
+            const [m, c, d] = await Promise.all([
                 mountHttp.post("list", {}),
                 mountHttp.post("credential/list", {}),
                 mountHttp.post("driver/list", {}),
-                mountHttp.post("baidu/app/get", {}),
             ]);
             set_list(Array.isArray(m?.data) ? m.data : []);
             set_creds(Array.isArray(c?.data) ? c.data : []);
             set_drivers(Array.isArray(d?.data) ? d.data : []);
-            set_baidu_accounts(Array.isArray(b?.data?.accounts) ? b.data.accounts : []);
         } catch (e) {
             // Http 层已提示
         }
@@ -71,7 +62,7 @@ export default function MountPanel() {
     }, []);
 
     /** 当前驱动类型可选的凭据来源 */
-    const cred_options = (drv: string) => credential_options(drv, creds, baidu_accounts);
+    const cred_options = (drv: string) => credential_options(drv, creds);
 
     /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
     const close_form = () => {
@@ -214,16 +205,10 @@ export default function MountPanel() {
             {!editing && <Table headers={[t("名称"), t("挂载类型"), t("凭据"), t("操作")]}
                    rows={list.map(item => {
                        const cred = creds.find(c => c.id === item.credential_id);
-                       // 百度账号：凭据名从授权账号列表里取
-                       const baidu = item.driver === BAIDU_DRIVER
-                           ? baidu_accounts.find(a => String(a.uk) === String(item.credential_id))
-                           : undefined;
                        return [
                            <p>{item.name}</p>,
                            <p>{driver_name(item.driver)}</p>,
-                           <p>{baidu
-                               ? (baidu.name || baidu.baidu_name || String(baidu.uk))
-                               : (cred ? cred.name : t("凭据已丢失"))}</p>,
+                           <p>{cred ? cred.name : t("凭据已丢失")}</p>,
                            <div>
                                <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>

@@ -5,7 +5,6 @@ import {ActionButton} from "../../../../meta/component/Button";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
-    BaiduAccountRow,
     CredentialRow,
     credential_options,
     DEFAULT_COLOR,
@@ -26,15 +25,12 @@ interface Props {
  * 目录挂载配置弹框（纯内容组件，由全局 set_prompt_card 承载）。
  *
  * 只做「引用」：选驱动类型 + 选一份凭据 + 填起始目录。
- *  · 百度网盘 → 直接从已授权账号里选
- *  · 其他驱动 → 选「设置 → 网盘挂载 → 普通凭据管理」里维护的凭据
+ * 凭据都来自「设置 → 网盘挂载 → 凭证管理」。
  */
 export default function MountEditor(props: Props) {
     const {t} = useTranslation();
     const [drivers, set_drivers] = useState<DriverMeta[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
-    /** 百度已授权账号（选百度驱动时作为凭据来源） */
-    const [baidu_accounts, set_baidu_accounts] = useState<BaiduAccountRow[]>([]);
     const [row, set_row] = useState<any>({
         driver: "webdav",
         credential_id: "",
@@ -48,14 +44,12 @@ export default function MountEditor(props: Props) {
     useEffect(() => {
         (async () => {
             try {
-                const [d, c, b] = await Promise.all([
+                const [d, c] = await Promise.all([
                     mountHttp.post("driver/list", {}),
                     mountHttp.post("credential/list", {}),
-                    mountHttp.post("baidu/app/get", {}),
                 ]);
                 set_drivers(Array.isArray(d?.data) ? d.data : []);
                 set_creds(Array.isArray(c?.data) ? c.data : []);
-                set_baidu_accounts(Array.isArray(b?.data?.accounts) ? b.data.accounts : []);
             } catch (e) {
                 // Http 层已提示
             }
@@ -83,7 +77,7 @@ export default function MountEditor(props: Props) {
     }, []);
 
     /** 当前驱动类型可选的凭据来源 */
-    const cred_options = () => credential_options(row.driver, creds, baidu_accounts);
+    const cred_options = () => credential_options(row.driver, creds);
 
     const do_test = async () => {
         if (!row.credential_id) {
