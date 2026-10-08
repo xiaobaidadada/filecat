@@ -221,6 +221,13 @@ export class MountController {
         }));
     }
 
+    /** 列出远程主机上的共享名（SMB 用，供表单下拉选择） */
+    @Post("/share/list")
+    async share_list(@Body() body: { driver: MountDriverType; config: Record<string, any>; id?: string}, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(await mountService.list_shares(body.driver, body.config ?? {}, body.id));
+    }
+
     // ==================== 百度网盘应用授权 ====================
 
     /** 取百度应用配置（脱敏）+ 全部已授权账号 */

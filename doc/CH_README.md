@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
+  <img src="../src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
 </p>
 
 <h1 align="center">FileCat</h1>
@@ -52,6 +52,7 @@ FileCat是采用[filebrowser](https://github.com/filebrowser/filebrowser)的ui�
 | 类别 | 功能                                                            |
 |------|---------------------------------------------------------------|
 | 文件管理 | 浏览、上传、下载、编辑、在线预览（图片、视频、Markdown、绘图等）                          |
+| 网盘与协议挂载 | 将百度网盘、SSH(SFTP)、S3、WebDAV 、SMB 挂载为本地目录，与本地文件使用同一套操作 |
 | Markdown 所见即所得 | 类 Typora 的 Markdown 编辑体验，所见即所得                                      |
 | AI Agent | 集成大语言模型，智能辅助运维和文件处理（需自行配置 API），支持接入 QQ， 企业微信 ，飞书 ，钉钉 第三方平台机器人 |
 | 内网穿透 | 将内网暴露到公网，或者多个内网之间互相通信                                         |
@@ -75,16 +76,16 @@ FileCat是采用[filebrowser](https://github.com/filebrowser/filebrowser)的ui�
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/文件列表.png" alt="文件列表"/></td>
-    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./文件列表.png" alt="文件列表"/></td>
+    <td><img src="./AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
     <td align="center"><b>内网穿透</b></td>
     <td align="center"><b>系统信息看板</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/内网穿透.png" alt="内网穿透"/></td>
-    <td><img src="./doc/系统信息看板.png" alt="系统信息看板"/></td>
+    <td><img src="./内网穿透.png" alt="内网穿透"/></td>
+    <td><img src="./系统信息看板.png" alt="系统信息看板"/></td>
   </tr>
 </table>
 

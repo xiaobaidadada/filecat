@@ -8,6 +8,7 @@ import {InputRadio, InputRow, InputText, Select} from "../../../../meta/componen
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
+import {using_confirm} from "../../prompts/prompt.util";
 import {baidu_auth_mode_options, fmt_time, mount_enable_options} from "./mount_common";
 
 /** 百度应用配置 */
@@ -47,6 +48,8 @@ interface Props {
  */
 export default function BaiduPanel({on_credential_change}: Props) {
     const {t} = useTranslation();
+    /** 删除前的二次确认 */
+    const confirm_del = using_confirm();
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const [app, set_app] = useState<BaiduApp | null>(null);
     const [list, set_list] = useState<BaiduAccount[]>([]);
@@ -182,14 +185,20 @@ export default function BaiduPanel({on_credential_change}: Props) {
     };
 
     const del = async (item: BaiduAccount) => {
-        try {
-            await mountHttp.post("baidu/delete", {uk: item.uk});
-            NotySuccess(t("已删除"));
-            await load();
-            on_credential_change();
-        } catch (e) {
-            // Http 层已提示
-        }
+        confirm_del({
+            title: t("确认删除"),
+            sub_title: item.name,
+            confirm_fun: async () => {
+                try {
+                    await mountHttp.post("baidu/delete", {uk: item.uk});
+                    NotySuccess(t("已删除"));
+                    await load();
+                    on_credential_change();
+                } catch (e) {
+                    // Http 层已提示
+                }
+            },
+        });
     };
 
     const deauthorize = async (item: BaiduAccount) => {

@@ -56,11 +56,28 @@ export interface DriverMeta {
 export const DRIVER_CREDENTIAL_TYPE: Record<string, string> = {
     webdav: "webdav",
     sftp: "ssh",
+    smb: "smb",
     s3: "s3",
 };
 
 /** 百度驱动标识（挂载时凭据来源切换为授权账号列表） */
 export const BAIDU_DRIVER = "baidu";
+
+/**
+ * 当前驱动类型可选的凭据来源。
+ * 百度：直接用已授权的百度账号（value 用 uk，后端按账号解析）。
+ * 其余：按驱动所要求的凭据类型严格过滤，不匹配的凭据不出现。
+ */
+export function credential_options(driver: string, creds: CredentialRow[], baidu_accounts: BaiduAccountRow[]) {
+    if (driver === BAIDU_DRIVER) {
+        return baidu_accounts.map(a => ({
+            title: a.name || a.baidu_name || String(a.uk),
+            value: String(a.uk),
+        }));
+    }
+    const need = DRIVER_CREDENTIAL_TYPE[driver];
+    return creds.filter(c => c.type === need).map(c => ({title: c.name, value: c.id}));
+}
 
 /** 百度授权账号（/baidu/app/get 返回的 accounts 子集） */
 export interface BaiduAccountRow {

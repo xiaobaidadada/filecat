@@ -708,7 +708,6 @@
   "编辑挂载配置": "Edit mount settings",
   "取消挂载": "Unmount",
   "确认取消挂载": "Confirm unmount",
-  "unmuntt": "After unmounting, this directory returns to a local directory and the cloud content will no longer be shown",
   "已取消挂载": "Unmounted",
   "该目录尚未挂载": "This directory is not mounted",
   "挂载目录": "Mount directory",
@@ -840,5 +839,9 @@
   "未加载": "Not loaded",
   "加载成功": "Loaded",
   "加载失败": "Load failed",
-  "个工具": "tools"
+  "个工具": "tools",
+  "No share found": "No share found",
+  "Enter host first": "Enter host first",
+  "下一步": "Next",
+  "共享目录": "Share folder"
 }

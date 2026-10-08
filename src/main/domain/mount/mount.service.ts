@@ -11,6 +11,7 @@ import {
 } from "./credential.pojo";
 import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
+import {SmbDriver} from "./driver/smb_driver";
 import {DriverMeta, DRIVER_META_LIST} from "./driver/file_driver_type";
 import {
     BaiduTokenStore,
@@ -369,6 +370,29 @@ export class MountService {
         } catch (e) {
             return {ok: false, error: e?.message ?? "连接失败"};
         }
+    }
+
+    /**
+     * 列出远程主机上的共享名（目前只有 SMB 支持），
+     * 让用户在表单里直接挑，而不用自己知道共享叫什么。
+     * 传 id 时用已保存的凭据补齐没填的字段（编辑场景密码是脱敏的）。
+     */
+    async list_shares(driver: MountDriverType, config: Record<string, any>, id?: string): Promise<{name: string; remark: string}[]> {
+        if (driver !== MountDriverType.smb) {
+            throw new Error("该类型不支持列出共享");
+        }
+        let server = config?.server;
+        let username = config?.username;
+        let password = config?.password;
+        if (id) {
+            const old = this.get_credential(id);
+            if (old) {
+                server = server || old.config?.server;
+                username = username || old.config?.username;
+                password = password || old.config?.password;
+            }
+        }
+        return SmbDriver.list_shares({server, username, password});
     }
 
     /**

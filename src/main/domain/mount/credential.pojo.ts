@@ -33,6 +33,7 @@ export interface CredentialItem {
 export type CredentialType =
     | "webdav"
     | "ssh"        // SSH / SFTP
+    | "smb"        // SMB / Windows 共享
     | "s3"
     | "baidu_account";
 
@@ -79,6 +80,16 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         ],
     },
     {
+        type: "smb",
+        name: "SMB / Windows 共享",
+        fields: [
+            {key: "server", label: "主机", type: "text", required: true, placeholder: "192.168.1.10 或 nas.local"},
+            {key: "share", label: "共享目录", type: "text", required: true, placeholder: "如 public"},
+            {key: "username", label: "用户名", type: "text"},
+            {key: "password", label: "密码", type: "password"},
+        ],
+    },
+    {
         type: "s3",
         name: "S3 兼容对象存储",
         fields: [
@@ -111,5 +122,6 @@ export function get_credential_meta(type: CredentialType): CredentialMeta | unde
 export const DRIVER_CREDENTIAL_TYPE: Record<string, CredentialType> = {
     [MountDriverType.webdav]: "webdav",
     [MountDriverType.sftp]: "ssh",
+    [MountDriverType.smb]: "smb",
     [MountDriverType.s3]: "s3",
 };

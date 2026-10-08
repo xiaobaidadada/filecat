@@ -4,10 +4,11 @@ import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import {Card, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
-import {InputText, Select} from "../../../../meta/component/Input";
+import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
+import {using_confirm} from "../../prompts/prompt.util";
 import {CredentialMeta, CredentialRow} from "./mount_common";
 
 /** 密码类字段：编辑时留空表示不修改 */
@@ -23,6 +24,8 @@ const DEFAULT_TYPE = "webdav";
  */
 export default function CredentialPanel() {
     const {t} = useTranslation();
+    /** 删除前的二次确认 */
+    const confirm_del = using_confirm();
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const [list, set_list] = useState<CredentialRow[]>([]);
     const [metas, setMetas] = useState<CredentialMeta[]>([]);
@@ -92,6 +95,8 @@ export default function CredentialPanel() {
         set_name("");
         set_config({});
         set_has_password(false);
+        set_step(1);
+        set_shared_options([]);
     };
 
     /** 点标题栏的「+」开始新增 */
@@ -107,17 +112,79 @@ export default function CredentialPanel() {
         set_name(item.name ?? "");
         set_config({...(item.config ?? {})});
         set_has_password(Boolean(item.has_password));
+        // SMB 已有共享目录（就是要编辑它），直接从第 2 步进，先把目录列表拉出来
+        if (item.type === "smb") {
+            set_step(2);
+            // 编辑时密码是脱敏的，带上 id 让后端用已保存的密码去连
+            mountHttp.post("share/list", {
+                driver: "smb",
+                id: item.id,
+                config: item.config ?? {},
+            }).then(rsq => {
+                const shares = rsq?.data ?? [];
+                set_shared_options(shares.map((s: any) => ({label: s.name, value: s.name})));
+            }).catch(() => {
+                // Http 层已提示
+            });
+        } else {
+            set_step(1);
+        }
     };
 
-    const test = async () => {
-        try {
-            const rsq = await mountHttp.post("credential/test", {id: id || undefined, type, config});
-            const r = rsq?.data;
-            if (r?.ok) {
-                NotySuccess(`${t("连接成功")}（${r.count ?? 0}）`);
-            } else {
-                NotyFail(`${t("连接失败")}：${r?.error ?? ""}`);
+    /**
+     * SMB 分两步填：
+     *  · 1 填基本信息（主机/账号）→ 点「下一步」验证并拉共享目录列表
+     *  · 2 从列表里选共享目录 → 保存
+     * 其他驱动没有这个流程，恒为 1。
+     */
+    const [step, set_step] = useState(1);
+    /** 列表用的行内删除按钮，需要知道删的是哪一行，这里直接复用 */
+    const is_smb = type === "smb";
+
+    /** 共享目录候选项：切到第 2 步时从远程主机拉取，供下拉选择 */
+    const [shared_options, set_shared_options] = useState<{ label: string; value: string }[]>([]);
+
+    /**
+     * 拉取远程主机的共享列表（目前仅 SMB 支持）。
+     * 拿主机/用户名/密码去问，用户不用自己去别处查共享叫什么。
+     */
+    const load_shares = async () => {
+        const rsq = await mountHttp.post("share/list", {
+            driver: type,
+            id: id || undefined,
+            config: {server: config.server, username: config.username, password: config.password},
+        });
+        return rsq?.data ?? [];
+    };
+
+    /**
+     * SMB 第 1 步 → 第 2 步。
+     * 直接用「列共享目录」来验证连接 —— 它只需要主机/用户名/密码，
+     * 正好是这一步收集到的东西，不必等共享目录填了才能测。
+     */
+    const next_step = async () => {
+        // 第 1 步只校验基本信息，共享目录要到第 2 步才选
+        for (const f of fields) {
+            if (f.key === "share") continue;
+            const val = String(config[f.key] ?? "").trim();
+            const filled = val || (id && SECRET_KEYS.includes(f.key));
+            if (f.required && !filled) {
+                NotyFail(`${t("请填写")}${t(f.label)}`);
+                return;
             }
+        }
+        if (!name.trim()) {
+            NotyFail(t("请填写名称"));
+            return;
+        }
+        try {
+            const shares = await load_shares();
+            if (!shares.length) {
+                NotyFail(t("没有找到共享"));
+                return;
+            }
+            set_shared_options(shares.map((s: any) => ({label: s.name, value: s.name})));
+            set_step(2);
         } catch (e) {
             // Http 层已提示
         }
@@ -154,13 +221,19 @@ export default function CredentialPanel() {
     };
 
     const del = async (item: CredentialRow) => {
-        try {
-            await mountHttp.post("credential/delete", {id: item.id});
-            NotySuccess(t("已删除"));
-            await load();
-        } catch (e) {
-            // Http 层已提示（仍被挂载引用时会报错）
-        }
+        confirm_del({
+            title: t("确认删除"),
+            sub_title: item.name,
+            confirm_fun: async () => {
+                try {
+                    await mountHttp.post("credential/delete", {id: item.id});
+                    NotySuccess(t("已删除"));
+                    await load();
+                } catch (e) {
+                    // Http 层已提示（仍被挂载引用时会报错）
+                }
+            },
+        });
     };
 
     const type_name = (v: string) => metas.find(m => m.type === v)?.name ?? v;
@@ -169,10 +242,12 @@ export default function CredentialPanel() {
         <Card self_title={<span className={" div-row "}><h2>{t("普通凭据管理")}</h2>
             <ActionButton icon={"info"} title={t("信息")} onClick={mount_info_click}/></span>}
               rightBottomCom={<div>
-                  {/* 未展开表单时只显示「+」开始新增；展开后显示测试、保存与取消 */}
+                  {/* 未展开表单时只显示「+」开始新增 */}
                   {!editing && <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>}
-                  {editing && <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>}
-                  {editing && <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
+                  {/* 第 1 步：验证并进入下一步（仅 SMB）；其他驱动直接可保存 */}
+                  {editing && is_smb && step === 1 && <ActionButton icon={"arrow_forward"} title={t("下一步")} onClick={next_step}/>}
+                  {/* 第 2 步（或非 SMB）：保存 */}
+                  {editing && (!is_smb || step === 2) && <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
                   {editing && <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>}
               </div>}>
 
@@ -184,9 +259,22 @@ export default function CredentialPanel() {
                             set_type(v);
                             // 换类型时清掉旧字段，避免串类型
                             set_config({});
+                            set_shared_options([]);
+                            set_step(1);
                         }}/>
-                {fields.map(f => (
-                    <React.Fragment key={f.key}>
+                {fields.map(f => {
+                    const is_share = f.key === "share" && is_smb;
+                    // SMB 的共享目录属于第 2 步（要先连上主机才能列出目录供选择）
+                    if (is_share && step === 1) return null;
+                    if (!is_share && is_smb && step === 2) return null;
+                    if (is_share) {
+                        return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
+                            <Select value={config[f.key] ?? ""}
+                                    options={shared_options}
+                                    onChange={(v) => set_config({...config, [f.key]: v})}/>
+                        </InputRow>;
+                    }
+                    return <React.Fragment key={f.key}>
                         <InputText
                             type={SECRET_KEYS.includes(f.key) ? "password" : "text"}
                             placeholder={SECRET_KEYS.includes(f.key) && has_password
@@ -194,8 +282,8 @@ export default function CredentialPanel() {
                                 : f.label}
                             value={config[f.key] ?? ""}
                             handleInputChange={(v) => set_config({...config, [f.key]: v})}/>
-                    </React.Fragment>
-                ))}
+                    </React.Fragment>;
+                })}
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}

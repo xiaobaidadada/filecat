@@ -698,7 +698,6 @@
   "编辑挂载配置": "Mount-Einstellungen bearbeiten",
   "取消挂载": "Aushängen",
   "确认取消挂载": "Aushängen bestätigen",
-  "unmuntt": "Nach dem Aushängen wird dieses Verzeichnis wieder zu einem lokalen Verzeichnis und der Cloud-Inhalt wird nicht mehr angezeigt",
   "已取消挂载": "Ausgehängt",
   "该目录尚未挂载": "Dieses Verzeichnis ist nicht eingebunden",
   "挂载目录": "Mount-Verzeichnis",
@@ -836,5 +835,9 @@
   "未加载": "Nicht geladen",
   "加载成功": "Geladen",
   "加载失败": "Laden fehlgeschlagen",
-  "个工具": "Tools"
+  "个工具": "Tools",
+  "No share found": "Keine Freigabe gefunden",
+  "Enter host first": "Bitte zuerst Host eingeben",
+  "下一步": "Weiter",
+  "共享目录": "Freigabeordner"
 }

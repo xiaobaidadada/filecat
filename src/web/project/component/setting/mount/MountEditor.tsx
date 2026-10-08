@@ -6,10 +6,9 @@ import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
     BaiduAccountRow,
-    BAIDU_DRIVER,
     CredentialRow,
+    credential_options,
     DEFAULT_COLOR,
-    DRIVER_CREDENTIAL_TYPE,
     DriverMeta,
 } from "./mount_common";
 
@@ -84,17 +83,7 @@ export default function MountEditor(props: Props) {
     }, []);
 
     /** 当前驱动类型可选的凭据来源 */
-    const cred_options = () => {
-        // 百度：直接用已授权的百度账号（value 用 uk，后端按账号解析）
-        if (row.driver === BAIDU_DRIVER) {
-            return baidu_accounts.map(a => ({
-                title: a.name || a.baidu_name || String(a.uk),
-                value: String(a.uk),
-            }));
-        }
-        const need = DRIVER_CREDENTIAL_TYPE[row.driver];
-        return creds.filter(c => !need || c.type === need).map(c => ({title: c.name, value: c.id}));
-    };
+    const cred_options = () => credential_options(row.driver, creds, baidu_accounts);
 
     const do_test = async () => {
         if (!row.credential_id) {
@@ -146,8 +135,7 @@ export default function MountEditor(props: Props) {
     return (<>
         <p>{props.mount_path}</p>
         <Select value={row.driver}
-                options={(drivers.length ? drivers.map(d => ({title: d.name, value: d.type}))
-                    : [{title: "WebDAV", value: "webdav"}])}
+                options={drivers.map(d => ({title: d.name, value: d.type}))}
                 onChange={(v) => set_row({...row, driver: v, credential_id: ""})}/>
         <Select value={row.credential_id} options={cred_options()}
                 onChange={(v) => set_row({...row, credential_id: v})}/>

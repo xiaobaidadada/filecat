@@ -157,7 +157,16 @@ function serialize_block(node: PMNode, indent = ""): string {
         }
         case "code_block": {
             const lang = node.attrs.language ?? "";
-            return `${indent}\`\`\`${lang}\n${node.textContent}\n${indent}\`\`\``;
+            const text = node.textContent;
+            // 内容里若含连续反引号，围栏必须比它更长，否则会被误判为围栏结束而截断
+            let fence_len = 3;
+            for (const run of text.match(/`+/g) ?? []) {
+                fence_len = Math.max(fence_len, run.length + 1);
+            }
+            const fence = "`".repeat(fence_len);
+            // 内容每行都要跟着 indent，否则在列表内围栏会被判定提前结束，内容漏到代码块外
+            const body = text.split("\n").map(l => indent + l).join("\n");
+            return `${indent}${fence}${lang}\n${body}\n${indent}${fence}`;
         }
         case "horizontal_rule":
             return `${indent}---`;

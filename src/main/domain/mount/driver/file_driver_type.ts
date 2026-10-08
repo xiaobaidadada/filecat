@@ -93,6 +93,7 @@ export interface DriverMeta {
 export const DRIVER_META_LIST: DriverMeta[] = [
     {type: MountDriverType.webdav, name: "WebDAV", has_root: true},
     {type: MountDriverType.sftp, name: "SSH / SFTP", has_root: true},
+    {type: MountDriverType.smb, name: "SMB / Windows 共享", has_root: true},
     {type: MountDriverType.s3, name: "S3 兼容对象存储", has_root: true},
     {type: MountDriverType.baidu, name: "百度网盘", has_root: true},
 ];

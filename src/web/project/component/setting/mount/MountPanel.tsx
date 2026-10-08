@@ -6,12 +6,13 @@ import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
+import {using_confirm} from "../../prompts/prompt.util";
 import {
     BaiduAccountRow,
     BAIDU_DRIVER,
     CredentialRow,
+    credential_options,
     DEFAULT_COLOR,
-    DRIVER_CREDENTIAL_TYPE,
     DriverMeta,
     MountRow,
 } from "./mount_common";
@@ -26,6 +27,8 @@ import {
  */
 export default function MountPanel() {
     const {t} = useTranslation();
+    /** 删除前的二次确认 */
+    const confirm_del = using_confirm();
     const [list, set_list] = useState<MountRow[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
     const [drivers, set_drivers] = useState<DriverMeta[]>([]);
@@ -68,17 +71,7 @@ export default function MountPanel() {
     }, []);
 
     /** 当前驱动类型可选的凭据来源 */
-    const cred_options = (drv: string) => {
-        // 百度：直接用已授权的百度账号（value 用 uk，后端按账号解析）
-        if (drv === BAIDU_DRIVER) {
-            return baidu_accounts.map(a => ({
-                title: a.name || a.baidu_name || String(a.uk),
-                value: String(a.uk),
-            }));
-        }
-        const need = DRIVER_CREDENTIAL_TYPE[drv];
-        return creds.filter(c => !need || c.type === need).map(c => ({title: c.name, value: c.id}));
-    };
+    const cred_options = (drv: string) => credential_options(drv, creds, baidu_accounts);
 
     /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
     const close_form = () => {
@@ -160,13 +153,19 @@ export default function MountPanel() {
     };
 
     const del = async (item: MountRow) => {
-        try {
-            await mountHttp.post("delete", {id: item.id});
-            NotySuccess(t("已删除"));
-            await load();
-        } catch (e) {
-            // Http 层已提示
-        }
+        confirm_del({
+            title: t("确认删除"),
+            sub_title: item.mount_path,
+            confirm_fun: async () => {
+                try {
+                    await mountHttp.post("delete", {id: item.id});
+                    NotySuccess(t("已删除"));
+                    await load();
+                } catch (e) {
+                    // Http 层已提示
+                }
+            },
+        });
     };
 
     const driver_name = (v: string) => drivers.find(d => d.type === v)?.name ?? v;

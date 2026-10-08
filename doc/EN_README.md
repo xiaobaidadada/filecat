@@ -75,16 +75,16 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/文件列表.png" alt="File List"/></td>
-    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./文件列表.png" alt="File List"/></td>
+    <td><img src="./AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
     <td align="center"><b>Intranet Tunneling</b></td>
     <td align="center"><b>System Information Dashboard</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/内网穿透.png" alt="Intranet Tunneling"/></td>
-    <td><img src="./doc/系统信息看板.png" alt="System Information Dashboard"/></td>
+    <td><img src="./内网穿透.png" alt="Intranet Tunneling"/></td>
+    <td><img src="./系统信息看板.png" alt="System Information Dashboard"/></td>
   </tr>
 </table>
 

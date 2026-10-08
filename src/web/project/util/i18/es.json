@@ -698,7 +698,6 @@
   "编辑挂载配置": "Editar montaje",
   "取消挂载": "Desmontar",
   "确认取消挂载": "Confirmar desmontaje",
-  "unmuntt": "Tras desmontar, este directorio volverá a ser local y el contenido de la nube dejará de mostrarse",
   "已取消挂载": "Desmontado",
   "该目录尚未挂载": "Este directorio no está montado",
   "挂载目录": "Directorio de montaje",
@@ -836,5 +835,9 @@
   "未加载": "Sin cargar",
   "加载成功": "Cargado",
   "加载失败": "Error al cargar",
-  "个工具": "herramientas"
+  "个工具": "herramientas",
+  "No share found": "No se encontró ningún recurso compartido",
+  "Enter host first": "Introduce el host primero",
+  "下一步": "Siguiente",
+  "共享目录": "Carpeta compartida"
 }

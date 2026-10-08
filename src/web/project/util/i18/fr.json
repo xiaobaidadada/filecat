@@ -698,7 +698,6 @@
   "编辑挂载配置": "Modifier le montage",
   "取消挂载": "Démonter",
   "确认取消挂载": "Confirmer le démontage",
-  "unmuntt": "Après le démontage, ce répertoire redeviendra local et le contenu du cloud ne s'affichera plus",
   "已取消挂载": "Démonté",
   "该目录尚未挂载": "Ce répertoire n'est pas monté",
   "挂载目录": "Répertoire de montage",
@@ -836,5 +835,9 @@
   "未加载": "Non chargé",
   "加载成功": "Chargé",
   "加载失败": "Échec du chargement",
-  "个工具": "outils"
+  "个工具": "outils",
+  "No share found": "Aucun partage trouvé",
+  "Enter host first": "Saisissez d'abord l'hôte",
+  "下一步": "Suivant",
+  "共享目录": "Dossier partagé"
 }

@@ -85,8 +85,8 @@ function Input(props: {
     handlerEnter?: (v) => void,
     focus?: boolean,
     no_border?: boolean,
-    left_placeholder?: string,
-    right_placeholder?: string,
+    left_placeholder?: React.ReactNode,
+    right_placeholder?: React.ReactNode,
     disabled?: boolean,
     maxWidth?: string,
     width?: string,
@@ -266,8 +266,8 @@ export function InputText(props: {
     value?: any,
     handlerEnter?: (v) => void,
     no_border?: boolean,
-    left_placeholder?: string,
-    right_placeholder?: string
+    left_placeholder?: React.ReactNode,
+    right_placeholder?: React.ReactNode
     disabled?: boolean,
     maxWidth?: string,
     width?: string,

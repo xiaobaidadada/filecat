@@ -5,6 +5,7 @@ export function get_bin_dependency(module:
                                        | "@xiaobaidadada/node-tuntap2-wintun"
                                        | "@xiaobaidadada/ssh2-prebuilt"
                                        | "node-process-watcher"
+                                       | "node-libsmb2"
                                        | "sqlite3"
                                        | "better-sqlite3",
                                    auto_throw = false
@@ -24,6 +25,8 @@ export function get_bin_dependency(module:
                     return require("@xiaobaidadada/node-pty-prebuilt");
                 case "@xiaobaidadada/ssh2-prebuilt":
                     return require("@xiaobaidadada/ssh2-prebuilt");
+                case "node-libsmb2":
+                    return require("node-libsmb2");
                 case "node-process-watcher":
                     return require("node-process-watcher");
                 case "@xiaobaidadada/node-tuntap2-wintun":

@@ -5,6 +5,7 @@ import {VideoTrans} from "./VideoTrans";
 import {UnCompress} from "./UnCompress";
 import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail, NotySuccess} from "../../../util/noty";
+import {using_confirm} from "../prompt.util";
 import {useTranslation} from "react-i18next";
 import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
 import {FileCompressType, FileInfo, FileTypeEnum} from "../../../../../common/file.pojo";
@@ -33,7 +34,6 @@ import {Icon} from "../../../../meta/component/Button";
 import {use_click_folder, use_file_open, user_click_file} from "../../file/FileUtil";
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 import {mountHttp} from "../../../util/config";
-import {NotyConfirm} from "../../../util/noty";
 import MountEditor from "../../setting/mount/MountEditor";
 
 
@@ -42,6 +42,8 @@ export function FileMenu() {
     const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {t} = useTranslation();
+    /** 二次确认（破坏性操作统一走它） */
+    const confirm_del = using_confirm();
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
 
@@ -605,9 +607,10 @@ export function FileMenu() {
                     NotyFail(t("该目录尚未挂载"));
                     break;
                 }
-                NotyConfirm(
-                    t("unmuntt"),
-                    async () => {
+                confirm_del({
+                    title: t("确认取消挂载"),
+                    sub_title: found.mount_path,
+                    confirm_fun: async () => {
                         try {
                             await mountHttp.post("delete", {id: found.id});
                             NotySuccess(t("已取消挂载"));
@@ -617,8 +620,7 @@ export function FileMenu() {
                             // Http 层已提示
                         }
                     },
-                    "warning"
-                );
+                });
             }
                 break;
             case    common_menu_type.file_delete: {
