@@ -31,18 +31,20 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
     // const match = useMatch('/:pre/file/*');
     // 双击判断：同一 index 在 700ms 内连点两次视为双击（复用通用 hook，消除闭包/竞态问题）
     const {clickDouble} = use_click_double();
-    const clickHandler = (index, name) => {
-        const isDouble = clickDouble(index, () => {
+    const clickHandler =  (index, name) => {
+        const isDouble = clickDouble(index, async () => {
             if (props.type === FileTypeEnum.folder) {
                 // 双击文件夹进入
                 click_folder(name);
             } else {
-                // 双击文件打开，同时把文件名与打开方式写入 url，刷新时能恢复打开状态
-                file_open({name, mode: get_open_mode_by_type(props.type)});
-                click_file({
+               const ok = await click_file({
                     name, size: props.origin_size, opt_shell: true, mtime: props.mtime,
                     close: () => file_open(null),
                 });
+               if (ok) {
+                   // 双击文件打开，同时把文件名与打开方式写入 url，刷新时能恢复打开状态
+                   file_open({name, mode: get_open_mode_by_type(props.type)});
+               }
             }
         });
         if (isDouble) return;

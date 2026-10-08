@@ -548,7 +548,7 @@ export const user_click_file = () => {
         // 只读打开（如分享模式）：md 编辑器据此隐藏主题切换、不做自动保存
         readonly?: boolean,
         close?: () => any
-    }) => {
+    }):Promise<boolean> => {
         const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
 
         if (!param.ignore_size && typeof param.size === "number" && param.size > MAX_SIZE_TXT) {
@@ -562,7 +562,7 @@ export const user_click_file = () => {
                     click_file(param);
                 }
             })
-            return;
+            return true;
         }
         const {name, context} = param;
         let model = getEditModelType(name);
@@ -577,7 +577,7 @@ export const user_click_file = () => {
                 name
             });
             navigate(routerConfig.sqlite_query_page);
-            return;
+            return true;
         }
         if (param.model === "text") {
             // 双击文件
@@ -628,7 +628,7 @@ export const user_click_file = () => {
                 close: param.close
             })
             editor_data.set_value_temp(value)
-            return;
+            return true;
         } else {
             // let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
             switch (type) {
@@ -678,8 +678,9 @@ export const user_click_file = () => {
                         break;
                     }
                     NotyFail(param.not_type_tip ?? t("未知类型、请右键点击文件"))
-                    break;
+                    return false;
             }
+            return true;
 
         }
 

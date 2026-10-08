@@ -37,7 +37,11 @@ export class StringUtil {
 
     public static getFileExtension(fileName) {
         if(!fileName) return "";
-        return fileName.split('.').pop();
+        const list = fileName.split('.')
+        if (list.length < 2) {
+            return "";
+        }
+        return list[list.length - 1];
     }
 
     public static splitBashCommands(input) {
