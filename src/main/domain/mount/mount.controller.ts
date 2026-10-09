@@ -15,7 +15,10 @@ export interface MountSaveReq {
     driver?: MountDriverType;
     mount_path?: string;
     credential_id?: string;
-    name?: string;
+    /** 引用的子账号 id（仅百度等一凭据多账号类型需要） */
+    account_id?: string;
+    /** 挂载备注；为空时用本地目录名 */
+    note?: string;
     root_dir?: string;
     readonly?: boolean;
     color?: string;
@@ -26,7 +29,8 @@ export interface MountSaveReq {
 export interface CredentialSaveReq {
     id?: string;
     type?: CredentialType;
-    name?: string;
+    /** 备注（便于挂载时辨认） */
+    note?: string;
     config?: Record<string, any>;
     enabled?: boolean;
 }
@@ -86,7 +90,7 @@ export class MountController {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         const item = mountService.add_credential({
             type: body.type as CredentialType,
-            name: body.name ?? "",
+            note: body.note ?? "",
             config: body.config ?? {},
             enabled: body.enabled !== false,
             user_id: current_user_id(r),
@@ -102,8 +106,8 @@ export class MountController {
             throw new Error("缺少凭据 id");
         }
         const patch: Partial<CredentialItem> = {};
-        if (body.name !== undefined) {
-            patch.name = body.name;
+        if (body.note !== undefined) {
+            patch.note = body.note;
         }
         if (body.config !== undefined) {
             patch.config = body.config;
@@ -168,7 +172,8 @@ export class MountController {
             driver: body.driver as MountDriverType,
             mount_path: body.mount_path ?? "",
             credential_id: body.credential_id ?? "",
-            name: body.name,
+            account_id: body.account_id,
+            note: body.note,
             root_dir: body.root_dir,
             readonly: body.readonly,
             color: body.color,
@@ -187,7 +192,7 @@ export class MountController {
         }
         const patch: Partial<FileMountItem> = {};
         const keys: (keyof MountSaveReq)[] = [
-            "driver", "mount_path", "credential_id", "name",
+            "driver", "mount_path", "credential_id", "account_id", "note",
             "root_dir", "readonly", "color", "enabled",
         ];
         for (const k of keys) {
@@ -214,6 +219,7 @@ export class MountController {
             id: body.id,
             driver: body.driver,
             credential_id: body.credential_id,
+            account_id: body.account_id,
             root_dir: body.root_dir,
         }));
     }
@@ -279,25 +285,25 @@ export class MountController {
         return Sucess(await mountService.baidu_exchange_code(body.id, body.code, uri));
     }
 
-    /** 校验单个百度凭据 */
+    /** 校验某个百度账号 */
     @Post("/baidu/verify")
-    async baidu_verify(@Body() body: {id: string}, @Req() r) {
+    async baidu_verify(@Body() body: {id: string; account_id: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(await mountService.baidu_verify(body.id));
+        return Sucess(await mountService.baidu_verify(body.id, body.account_id));
     }
 
-    /** 批量校验/刷新全部百度凭据 */
+    /** 批量校验/刷新全部百度账号 */
     @Post("/baidu/verify/all")
     async baidu_verify_all(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         return Sucess(await mountService.baidu_verify_all());
     }
 
-    /** 取消授权（清 token，保留凭据，可重新授权） */
+    /** 取消某个百度账号的授权（清 token，保留应用配置与凭据，可重新授权） */
     @Post("/baidu/deauthorize")
-    async baidu_deauthorize(@Body() body: {id: string}, @Req() r) {
+    async baidu_deauthorize(@Body() body: {id: string; account_id: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.baidu_deauthorize(body.id);
+        mountService.baidu_deauthorize(body.id, body.account_id);
         return Sucess(true);
     }
 
@@ -318,13 +324,8 @@ export class MountController {
     }
 }
 
-/** 凭据脱敏：去掉所有密码类字段，避免返回给前端 */
-function mask_credential(item: CredentialItem): CredentialItem & {
-    has_password?: boolean;
-    authorized?: boolean;
-    expired?: boolean;
-    obtained_at?: number;
-} {
+/** 凭据脱敏：去掉所有密码类字段与账号 token，避免返回给前端 */
+function mask_credential(item: CredentialItem): CredentialItem & {has_password?: boolean} {
     const SECRET_KEYS = ["password", "private_key", "secret_key"];
     const config: Record<string, any> = {};
     let has_password = false;
@@ -336,19 +337,18 @@ function mask_credential(item: CredentialItem): CredentialItem & {
             }
             continue;
         }
-        // token 属敏感信息，只回传「是否已授权」+ 时间与过期状态
-        if (k === "token") {
-            continue;
-        }
         config[k] = v;
     }
-    const token = item.config?.token;
+    // 账号里的 token 属敏感信息，只保留「是否已授权」等展示字段
+    const accounts = (item.accounts ?? []).map(({token, ...rest}) => ({
+        ...rest,
+        authorized: Boolean(token?.access_token),
+        obtained_at: token?.obtained_at,
+    }));
     return {
         ...item,
         config,
+        accounts,
         has_password,
-        authorized: Boolean(token?.access_token),
-        expired: Boolean(token?.access_token && token.expires_at <= Date.now()),
-        obtained_at: token?.obtained_at,
     };
 }

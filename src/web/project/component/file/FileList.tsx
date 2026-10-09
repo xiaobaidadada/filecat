@@ -518,14 +518,11 @@ export default function FileList() {
             </HeaderPortal>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
-            {/* 当前目录在挂载下：顶部提示当前挂载名称与类型，方便辨认数据来自哪个网盘 */}
+            {/* 当前目录在挂载下：顶部提示挂载信息（凭据备注 - 驱动/账号 - 挂载备注），方便辨认数据来源 */}
             {mount_info && (
                 <div className="mount-tip-bar" style={{borderLeftColor: mount_info.color}}>
                     <span className="material-icons" style={{color: mount_info.color}}>cloud</span>
-                    <span>{t("当前为挂载目录")}：{mount_info.name}</span>
-                    <span className="mount-driver-tag">
-                        {DRIVER_OPTIONS.find(d => d.value === mount_info.driver)?.title ?? mount_info.driver}
-                    </span>
+                    <span>{[mount_info.credential_note, mount_info.account_note || (DRIVER_OPTIONS.find(d => d.value === mount_info.driver)?.title ?? mount_info.driver), mount_info.name].filter(Boolean).join(" - ")}</span>
                     {mount_info.readonly && <span className="mount-readonly-tag">{t("只读")}</span>}
                 </div>
             )}

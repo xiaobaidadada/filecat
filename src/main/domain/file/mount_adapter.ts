@@ -74,7 +74,7 @@ export function mounts_under(abs_dir: string): Map<string, {
             continue;
         }
         map.set(mp, {
-            name: m.name || rest,
+            name: m.note || rest,
             driver: m.driver,
             color: m.color || "#4a9eff",
             readonly: Boolean(m.readonly),
@@ -85,26 +85,37 @@ export function mounts_under(abs_dir: string): Map<string, {
 
 /**
  * 取某个路径「所在挂载」的展示信息。
- * 命中挂载（含挂载点自身及其子目录）时返回挂载点名称与标识色，用于前端顶部提示。
+ * 命中挂载（含挂载点自身及其子目录）时返回挂载的展示信息，用于前端顶部提示。
+ * 提示条展示：凭据备注 - 驱动名/账号备注 - 挂载备注。
  */
 export function current_mount_info(abs_path: string): {
+    /** 挂载备注；为空时用本地目录名 */
     name: string;
     driver: string;
     color: string;
     mount_path: string;
     readonly: boolean;
+    /** 凭据备注（展示用） */
+    credential_note: string;
+    /** 账号备注（仅百度等一凭据多账号的类型有；展示用，为空时回退账号名） */
+    account_note: string;
 } | null {
     const match = mountService.resolve(abs_path);
     if (!match) {
         return null;
     }
     const m = match.mount;
+    // 凭据与账号备注属于展示信息，取不到时降级为空字符串，不影响挂载本身
+    const cred = mountService.get_credential(m.credential_id);
+    const acc = m.account_id ? (cred?.accounts ?? []).find(v => v.id === m.account_id) : undefined;
     return {
-        name: m.name || base_name(m.mount_path),
+        name: m.note || base_name(m.mount_path),
         driver: m.driver,
         color: m.color || "#4a9eff",
         mount_path: m.mount_path,
         readonly: Boolean(m.readonly),
+        credential_note: cred?.note || "",
+        account_note: acc ? (acc.note || acc.account_name || acc.nickname || "") : "",
     };
 }
 

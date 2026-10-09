@@ -35,8 +35,10 @@ const SLICE_SIZE = 4 * 1024 * 1024;
 const TOKEN_INVALID_ERRNO = new Set([-6, 110, 111]);
 
 export interface BaiduConfig {
-    /** 百度网盘凭据 id（凭据里含应用配置与 OAuth token） */
+    /** 百度网盘凭据 id（= 应用，含 app_key/secret_key） */
     account_key: string;
+    /** 账号 id（= 百度 uk）；凭据下可挂多个账号，必须指定 */
+    account_id: string;
     root?: string;
 }
 
@@ -78,8 +80,11 @@ export class BaiduDriver implements FileDriver {
         if (!config?.account_key) {
             throw new Error("百度网盘挂载缺少凭据，请先在设置中添加并授权");
         }
+        if (!config?.account_id) {
+            throw new Error("百度网盘挂载缺少账号，请先选择要挂载的账号");
+        }
         this.config = config;
-        this.store = new BaiduTokenStore(config.account_key);
+        this.store = new BaiduTokenStore(config.account_key, config.account_id);
     }
 
     /** 取可用的 access_token（过期自动刷新） */

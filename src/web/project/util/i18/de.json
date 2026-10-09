@@ -752,7 +752,6 @@
   "munt_rq": "Mount-Verzeichnis darf nicht leer sein",
   "请选择凭据": "Bitte Anmeldedaten auswählen",
   "请选择类型": "Bitte einen Typ auswählen",
-  "请填写名称": "Bitte einen Namen eingeben",
   "启用": "Aktiviert",
   "已停用": "Deaktiviert",
   "确认删除": "Löschen bestätigen:",
@@ -762,7 +761,6 @@
   "授权": "Autorisieren",
   "授权失败": "Autorisierung fehlgeschlagen",
   "strtdrt": "Startverzeichnis",
-  "dspnmtp": "Anzeigename",
   "授权检测": "Autorisierung prüfen",
   "scrtkep": "SecretKey leer lassen, um unverändert zu lassen",
   "编辑应用": "App bearbeiten",
@@ -839,5 +837,8 @@
   "prt_bd": "Baidu Netdisk. App auf der Baidu Open Platform anlegen, AppKey / SecretKey eintragen, dann Konto autorisieren.",
   "没有找到共享": "Keine Freigaben gefunden",
   "粘贴授权码 code": "Autorisierungscode einfügen",
-  "重新授权": "Erneut autorisieren"
+  "重新授权": "Erneut autorisieren",
+  "请选择账号": "Bitte ein Konto auswählen",
+  "请填写备注": "Bitte eine Notiz eingeben",
+  "账号已丢失": "Konto fehlt"
 }

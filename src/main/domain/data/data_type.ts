@@ -127,6 +127,7 @@ export enum data_version_type {
     user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
     ai_setting_data = 8, // ai 相关字段从 data.json 抽离到 ai_setting_data.json
     baidu_credential_merge = 9, // 百度网盘应用配置+授权账号合并为普通凭据
+    mount_credential_note = 10, // 挂载/凭据的 name 改名为 note；凭据=应用、账号拆到 accounts；挂载加 account_id
 }
 
 

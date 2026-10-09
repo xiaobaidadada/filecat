@@ -762,7 +762,6 @@
   "munt_rq": "Mount directory cannot be empty",
   "请选择凭据": "Please select a credential",
   "请选择类型": "Please select a type",
-  "请填写名称": "Please enter a name",
   "启用": "Enabled",
   "已停用": "Disabled",
   "确认删除": "Confirm deletion of",
@@ -772,7 +771,6 @@
   "授权": "Authorize",
   "授权失败": "Authorization failed",
   "strtdrt": "Start dir",
-  "dspnmtp": "Display name",
   "授权检测": "Auth check",
   "scrtkep": "Leave SecretKey empty to keep unchanged",
   "编辑应用": "Edit app",
@@ -843,5 +841,8 @@
   "prt_bd": "Baidu Netdisk. Create an app on the Baidu Open Platform, fill in AppKey / SecretKey, then authorize an account.",
   "没有找到共享": "No shares found",
   "粘贴授权码 code": "Paste authorization code",
-  "重新授权": "Reauthorize"
+  "重新授权": "Reauthorize",
+  "请选择账号": "Please select an account",
+  "请填写备注": "Please enter a note",
+  "账号已丢失": "Account missing"
 }

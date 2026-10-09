@@ -8,6 +8,7 @@ import {
     CREDENTIAL_META_LIST,
     DRIVER_CREDENTIAL_TYPE,
     get_credential_meta,
+    MountAccount,
 } from "./credential.pojo";
 import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
@@ -82,7 +83,7 @@ export class MountService {
         }
         list[i] = {
             ...old,
-            name: patch.name ?? old.name,
+            note: patch.note ?? old.note,
             enabled: patch.enabled ?? old.enabled,
             config,
         };
@@ -96,7 +97,7 @@ export class MountService {
     remove_credential(id: string): void {
         const used = this.list_raw().filter(m => m.credential_id === id);
         if (used.length) {
-            const names = used.map(m => m.name || m.mount_path).join("、");
+            const names = used.map(m => m.note || m.mount_path).join("、");
             throw new Error(`该凭据正被以下挂载使用，请先删除对应挂载：${names}`);
         }
         this.set_credentials(this.list_credentials().filter(v => v.id !== id));
@@ -189,9 +190,9 @@ export class MountService {
         // 同一个本地目录不允许重复挂载
         const dup = list.find(v => v.mount_path === item.mount_path);
         if (dup) {
-            throw new Error(`该目录已被挂载（${dup.name || dup.mount_path}），请先取消原有挂载`);
+            throw new Error(`该目录已被挂载（${dup.note || dup.mount_path}），请先取消原有挂载`);
         }
-        const err = this.validate_mount_credential(item.credential_id);
+        const err = this.validate_mount_credential(item.credential_id, item.account_id);
         if (err) {
             throw new Error(err);
         }
@@ -219,8 +220,11 @@ export class MountService {
                 throw new Error("目标目录已被其它挂载占用");
             }
         }
-        if (patch.credential_id || patch.driver) {
-            const err = this.validate_mount_credential(patch.credential_id ?? list[i].credential_id);
+        if (patch.credential_id || patch.account_id || patch.driver) {
+            const err = this.validate_mount_credential(
+                patch.credential_id ?? list[i].credential_id,
+                patch.account_id ?? list[i].account_id,
+            );
             if (err) {
                 throw new Error(err);
             }
@@ -261,40 +265,64 @@ export class MountService {
     driver_of(mount: FileMountItem): FileDriver {
         const cred = this.credential_of(mount);
         if (!cred) {
-            throw new Error(`挂载「${mount.name || mount.mount_path}」引用的凭据已不存在，请重新配置`);
+            throw new Error(`挂载「${mount.note || mount.mount_path}」引用的凭据已不存在，请重新配置`);
         }
         if (cred.enabled === false) {
-            throw new Error(`挂载「${mount.name || mount.mount_path}」的凭据已停用`);
+            throw new Error(`挂载「${mount.note || mount.mount_path}」的凭据已停用`);
         }
         return get_driver(mount, cred);
     }
 
     /**
      * 取挂载实际使用的「凭据形态」——就是凭据表里那一条，并把配置转成驱动需要的形态。
+     *
+     * 百度是「一个应用多账号」：凭据存应用配置，账号在 accounts 里，
+     * 驱动只认 account_key（= 应用凭据 id）+ account_id（= 账号 uk）。
      */
     private credential_of(mount: FileMountItem): CredentialItem | undefined {
         const cred = this.get_credential(mount.credential_id);
         if (!cred) {
             return undefined;
         }
-        // 百度网盘：凭据里含应用配置 + token，驱动只认 account_key（凭据 id）
         if (cred.type === "baidu") {
-            return {...cred, config: {account_key: cred.id}};
+            return {...cred, config: {account_key: cred.id, account_id: mount.account_id}};
         }
         return cred;
     }
 
-    /** 校验挂载引用的凭据是否存在，返回错误信息；合法返回 undefined */
-    private validate_mount_credential(credential_id: string): string | undefined {
+    /** 校验挂载引用的凭据（及账号）是否存在，返回错误信息；合法返回 undefined */
+    private validate_mount_credential(credential_id: string, account_id?: string): string | undefined {
         const cred = this.get_credential(credential_id);
         if (!cred) {
             return credential_id ? "所选凭据不存在" : "请选择凭据";
         }
-        // 百度凭据必须完成授权才能挂载
-        if (cred.type === "baidu" && !cred.config?.token?.access_token) {
-            return "所选百度网盘凭据尚未完成授权";
+        // 需要子账号的凭据（百度）必须指定账号，且账号已完成授权
+        const accounts = cred.accounts ?? [];
+        if (cred.type === "baidu") {
+            if (!account_id) {
+                return "请选择要挂载的账号";
+            }
+            const acc = accounts.find(v => v.id === account_id);
+            if (!acc) {
+                return "所选账号不存在";
+            }
+            if (!acc.token?.access_token) {
+                return "所选账号尚未完成授权";
+            }
         }
         return undefined;
+    }
+
+    /** 取某个凭据下的账号列表（不含 token 等敏感信息，给前端用） */
+    list_accounts(credential_id: string): Array<Omit<MountAccount, "token"> & { authorized: boolean }> {
+        const cred = this.get_credential(credential_id);
+        if (!cred) {
+            return [];
+        }
+        return (cred.accounts ?? []).map(({token, ...rest}) => ({
+            ...rest,
+            authorized: Boolean(token?.access_token),
+        }));
     }
 
     /** 驱动元信息（挂载类型下拉用） */
@@ -314,6 +342,7 @@ export class MountService {
     async test_connection(req: {
         driver?: MountDriverType;
         credential_id?: string;
+        account_id?: string;
         root_dir?: string;
         id?: string;
     }): Promise<{ok: boolean; error?: string; count?: number}> {
@@ -328,6 +357,7 @@ export class MountService {
                     ...old,
                     driver: req.driver ?? old.driver,
                     credential_id: req.credential_id ?? old.credential_id,
+                    account_id: req.account_id ?? old.account_id,
                     root_dir: req.root_dir ?? old.root_dir,
                 };
             } else {
@@ -339,6 +369,7 @@ export class MountService {
                     driver: req.driver,
                     mount_path: "",
                     credential_id: req.credential_id ?? "",
+                    account_id: req.account_id,
                     root_dir: req.root_dir,
                 };
             }
@@ -429,7 +460,7 @@ export class MountService {
             const cred: CredentialItem = {
                 id: "test_credential",
                 type,
-                name: "test",
+                note: "test",
                 config,
             };
             const driver = create_test_driver(mount, cred);
@@ -444,61 +475,61 @@ export class MountService {
             return {ok: false, error: e?.message ?? "连接失败"};
         }
     }
-
     // ==================== 百度网盘授权 ====================
 
     /**
      * 生成授权链接。
-     * @param id 百度凭据 id
+     * @param id 百度凭据 id（= 应用）
      * @param mode one_click=回调到 FileCat（需在百度控制台登记回调地址）；oob=手动粘贴授权码
      */
     baidu_authorize_url(id: string, mode: "one_click" | "oob", callback_url: string): string {
         const store = new BaiduTokenStore(id);
-        // state 带回凭据 id，回调时用它定位是哪个凭据在授权
+        // state 带回凭据 id，回调时用它定位是哪个应用在授权
         return mode === "oob"
             ? store.build_oob_authorize_url()
             : store.build_authorize_url(id, callback_url);
     }
 
     /**
-     * 用授权码完成授权。
-     * @param id 百度凭据 id
+     * 用授权码完成授权（授权成功后账号自动加入该应用的 accounts）。
+     * @param id 百度凭据 id（= 应用）
      * @param redirect_uri 与生成链接时保持一致：一键授权传实际回调 URL，oob 传 "oob"
      */
-    async baidu_exchange_code(id: string, code: string, redirect_uri: string): Promise<{uk: number; baidu_name: string}> {
+    async baidu_exchange_code(id: string, code: string, redirect_uri: string): Promise<{uk: string; baidu_name: string}> {
         const store = new BaiduTokenStore(id);
         const r = await store.exchange_code(code, redirect_uri);
-        // 授权成功后同步凭据展示名（用户没自定义过时用百度账号名）
-        const cred = this.get_credential(id);
-        if (cred && !cred.config?.name_overridden) {
-            this.update_credential(id, {name: r.baidu_name});
-        }
         this.dispose_by_credential(id);
         return r;
     }
 
-    /** 校验单个百度凭据（顺带同步百度侧信息） */
-    async baidu_verify(id: string): Promise<{valid: boolean; error?: string; baidu_name?: string}> {
-        return new BaiduTokenStore(id).verify();
+    /**
+     * 校验某个百度账号（顺带同步百度侧信息）。
+     * @param account_id 账号 id（= 百度 uk）
+     */
+    async baidu_verify(id: string, account_id: string): Promise<{valid: boolean; error?: string; account_name?: string}> {
+        return new BaiduTokenStore(id, account_id).verify();
     }
 
-    /** 批量校验全部百度凭据 */
-    async baidu_verify_all(): Promise<Array<{id: string; valid: boolean; error?: string}>> {
-        const out: Array<{id: string; valid: boolean; error?: string}> = [];
+    /** 批量校验全部百度账号（每个应用的每个账号） */
+    async baidu_verify_all(): Promise<Array<{id: string; account_id: string; valid: boolean; error?: string}>> {
+        const out: Array<{id: string; account_id: string; valid: boolean; error?: string}> = [];
         // 串行执行，避免并发触发百度限流
-        for (const c of this.list_credentials().filter(v => v.type === "baidu")) {
-            const r = await new BaiduTokenStore(c.id).verify();
-            out.push({id: c.id, valid: r.valid, error: r.error});
+        for (const cred of this.list_credentials().filter(v => v.type === "baidu")) {
+            for (const acc of cred.accounts ?? []) {
+                const r = await new BaiduTokenStore(cred.id, acc.id).verify();
+                out.push({id: cred.id, account_id: acc.id, valid: r.valid, error: r.error});
+            }
         }
         return out;
     }
 
-    /** 删除已授权账号（清除账号信息与 token，保留启用状态；第 1 步的应用配置保留） */
-    baidu_deauthorize(id: string): void {
-        new BaiduTokenStore(id).remove_account();
+    /** 删除某个已授权账号（保留应用配置与凭据本体） */
+    baidu_deauthorize(id: string, account_id: string): void {
+        new BaiduTokenStore(id).remove_account(account_id);
         this.dispose_by_credential(id);
     }
 }
+
 
 /** 挂载服务单例 */
 export const mountService = new MountService();

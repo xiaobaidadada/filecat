@@ -16,7 +16,8 @@ const driver_cache = new Map<string, {driver: FileDriver; fingerprint: string}>(
 
 /** 简单稳定的字符串指纹，用于判断挂载或凭据是否变化 */
 function fingerprint(item: FileMountItem, cred: CredentialItem): string {
-    return `${item.driver}|${item.root_dir ?? ""}|${JSON.stringify(cred.config ?? {})}`;
+    // account_id 也要参与指纹：只切换账号时驱动必须重建
+    return `${item.driver}|${item.account_id ?? ""}|${item.root_dir ?? ""}|${JSON.stringify(cred.config ?? {})}`;
 }
 
 /**

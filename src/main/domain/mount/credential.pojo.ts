@@ -1,22 +1,61 @@
 import {MountDriverType} from "./driver/file_driver";
 
+/** OAuth token 结构（目前百度使用） */
+export interface OAuthTokens {
+    access_token: string;
+    refresh_token: string;
+    /** access_token 过期时间（毫秒时间戳，已提前 5 分钟算过期） */
+    expires_at: number;
+    /** 获取时间（毫秒时间戳） */
+    obtained_at: number;
+}
+
+/**
+ * 凭据下的子账号。
+ *
+ * 只有「一个应用可授权多个账号」的类型才有（目前仅百度网盘）：
+ * 凭据本体存应用配置（AppKey/SecretKey），账号独立存在 accounts 数组里。
+ * 挂载时先选凭据，选中这类凭据后再选具体账号（FileMountItem.account_id）。
+ */
+export interface MountAccount {
+    /** 账号唯一 id（百度用 uk） */
+    id: string;
+    /** 账号备注（用户自己起，展示用；为空时回退到账号名） */
+    note?: string;
+    /** OAuth token（refresh_token 一次性，刷新后必须保存新的） */
+    token?: OAuthTokens;
+    /** 账号名（如百度账号名） */
+    account_name?: string;
+    /** 昵称（如百度网盘昵称） */
+    nickname?: string;
+    avatar_url?: string;
+    /** 是否启用；停用后引用它的挂载不可用 */
+    enabled?: boolean;
+}
+
 /**
  * 凭据（Credential）—— 可被多个挂载复用的「账号/身份信息」。
  *
  * 设计意图：把「怎么连」和「挂载到哪」拆开。
- *  · 凭据在「设置 → 网盘挂载」里统一管理（比如一个 WebDAV 账号、一个百度账号）
+ *  · 凭据在「设置 → 网盘挂载」里统一管理（比如一个 WebDAV 账号、一个百度应用）
  *  · 挂载时只需要选择一个已保存的凭据，不用重复填写
  *  · 同一个凭据可以被挂载到多个本地目录
+ *  · 一个应用能授权多个账号的类型（百度），账号放在 accounts 里
  */
 export interface CredentialItem {
     /** 唯一 id */
     id: string;
     /** 凭据类型：与驱动的 type 对应 */
     type: CredentialType;
-    /** 展示名称（用户自己起的，便于在挂载时辨认） */
-    name: string;
-    /** 连接配置（含密码等敏感信息，明文存储） */
+    /** 备注（用户自己起的，便于在挂载时辨认） */
+    note: string;
+    /**
+     * 连接配置（含密码等敏感信息，明文存储）。
+     * 百度这里只放应用配置（app_id/app_key/secret_key），账号信息在 accounts 里。
+     */
     config: Record<string, any>;
+    /** 子账号列表；只有「一个应用多账号」的类型才有（百度） */
+    accounts?: MountAccount[];
     /** 是否启用；停用后引用它的挂载不可用 */
     enabled?: boolean;
     /** 创建者用户 id */
@@ -27,14 +66,14 @@ export interface CredentialItem {
 /**
  * 凭据类型。
  * 与驱动类型一一对应，都在「凭证管理」里维护；
- * baidu 分两步：先填应用配置（AppKey 等），再完成 OAuth 授权。
+ * baidu 分两步：先填应用配置（AppKey 等），再 OAuth 授权账号（可授权多个）。
  */
 export type CredentialType =
     | "webdav"
     | "ssh"        // SSH / SFTP
     | "smb"        // SMB / Windows 共享
     | "s3"
-    | "baidu";     // 百度网盘（应用配置 + OAuth 授权账号，二合一）
+    | "baidu";     // 百度网盘（凭据=应用配置，账号在 accounts 里）
 
 /** 凭据字段描述（供设置页动态渲染表单） */
 export interface CredentialField {

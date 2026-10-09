@@ -1,7 +1,7 @@
 import axios from "axios";
 import {DataUtil} from "../../data/DataUtil";
 import {data_common_key} from "../../data/data_type";
-import {CredentialItem} from "../credential.pojo";
+import {CredentialItem, MountAccount, OAuthTokens} from "../credential.pojo";
 
 /** 百度网盘 OAuth 端点 */
 export const BAIDU_OAUTH = {
@@ -14,19 +14,9 @@ export const BAIDU_OAUTH = {
 /** 百度要求所有网盘接口的 User-Agent 固定为这个值 */
 const BAIDU_UA = "pan.baidu.com";
 
-/** 持久化的 token 结构 */
-export interface BaiduTokens {
-    access_token: string;
-    refresh_token: string;
-    /** access_token 过期时间（毫秒时间戳，已提前 5 分钟算过期） */
-    expires_at: number;
-    /** 获取时间（毫秒时间戳） */
-    obtained_at: number;
-}
-
 /**
- * 百度网盘凭据的 config 结构。
- * 一条 baidu 凭据 = 一份应用配置 + 一个已授权账号。
+ * 百度网盘凭据的 config 结构 —— 只放「应用配置」。
+ * 账号信息（uk/token 等）不在这里，而是存在 CredentialItem.accounts 数组中。
  */
 export interface BaiduCredConfig {
     /** 百度开放平台的 AppID（仅展示用，OAuth 实际用 app_key） */
@@ -35,39 +25,35 @@ export interface BaiduCredConfig {
     app_key?: string;
     /** OAuth client_secret */
     secret_key?: string;
-    /** 备注 */
-    remark?: string;
-    /** 百度账号唯一标识（授权成功后写入） */
-    uk?: number;
-    /** 百度账号名（uinfo 返回） */
-    baidu_name?: string;
-    /** 网盘昵称 */
-    netdisk_name?: string;
-    avatar_url?: string;
-    token?: BaiduTokens;
 }
 
-const EMPTY_TOKEN: BaiduTokens = {access_token: "", refresh_token: "", expires_at: 0, obtained_at: 0};
+const EMPTY_TOKEN: OAuthTokens = {access_token: "", refresh_token: "", expires_at: 0, obtained_at: 0};
 
 /**
- * 百度网盘凭据管理。
+ * 百度网盘账号管理。
  *
- * 一条 baidu 凭据存在 data_common_key.mount_credential_list 里，config 即 BaiduCredConfig：
- *  · 第 1 步填 app_id / app_key / secret_key
- *  · 第 2 步 OAuth 授权后写入 uk / baidu_name / token
+ * 层级：凭据（= 百度应用，存 app_id/app_key/secret_key）
+ *         └── accounts[]（= 已授权账号，每个含 uk / token / 昵称）
+ *
+ * 因此本类需要 (cred_id, account_id) 两个标识：
+ *  · 只操作应用配置（authorize_url / exchange_code 的应用部分）时只需 cred_id
+ *  · 读写 token、续期、校验时必须有 account_id
  *
  * 注意：refresh_token 是一次性的，刷新后必须保存响应里返回的新 refresh_token。
  */
 export class BaiduTokenStore {
 
-    /** 凭据 id；为空表示「尚未落库的新凭据」，此时配置只存在于内存里 */
+    /** 凭据 id（= 百度应用） */
     private readonly cred_id: string;
+    /** 账号 id（= 百度 uk）；为空表示"尚未确定账号"（如刚完成授权前） */
+    private readonly account_id: string;
 
-    constructor(cred_id?: string) {
+    constructor(cred_id?: string, account_id?: string) {
         this.cred_id = cred_id ?? "";
+        this.account_id = account_id ?? "";
     }
 
-    // ==================== 凭据读写 ====================
+    // ==================== 凭据 / 账号读写 ====================
 
     /** 读取本条凭据（含 secret_key，仅后端用） */
     private get_item(): CredentialItem | undefined {
@@ -82,28 +68,55 @@ export class BaiduTokenStore {
         return item;
     }
 
-    /** 取 config */
+    /** 取应用配置 */
     get_config(): BaiduCredConfig {
         return (this.get_item()?.config ?? {}) as BaiduCredConfig;
     }
 
-    /** 局部更新 config；config 里传空字符串的字段保留旧值（避免编辑时误清空密码） */
-    private patch_config(patch: Partial<BaiduCredConfig>): void {
+    /** 取当前账号（未指定 account_id 或账号不存在时返回 undefined） */
+    get_account(): MountAccount | undefined {
+        if (!this.account_id) {
+            return undefined;
+        }
+        return (this.get_item()?.accounts ?? []).find(v => v.id === this.account_id);
+    }
+
+    /** 局部更新凭据本身（目前只用于写 accounts 数组） */
+    private patch_credential(patch: Partial<CredentialItem>): void {
         const item = this.get_item();
         if (!item) {
             throw new Error("百度网盘凭据不存在");
         }
         const list = DataUtil.get<CredentialItem[]>(data_common_key.mount_credential_list) ?? [];
         const i = list.findIndex(v => v.id === this.cred_id);
-        const config = {...item.config};
-        for (const [k, v] of Object.entries(patch)) {
-            if (v === "" || v === undefined) {
-                continue;
-            }
-            config[k] = v;
-        }
-        list[i] = {...item, config};
+        list[i] = {...item, ...patch};
         DataUtil.set(data_common_key.mount_credential_list, list);
+    }
+
+    /** 新增或更新某个账号（按 account_id 定位，不存在则追加） */
+    private upsert_account(account_id: string, patch: Partial<MountAccount>): void {
+        const item = this.get_item();
+        if (!item) {
+            throw new Error("百度网盘凭据不存在");
+        }
+        const accounts = [...(item.accounts ?? [])];
+        const i = accounts.findIndex(v => v.id === account_id);
+        if (i >= 0) {
+            accounts[i] = {...accounts[i], ...patch};
+        } else {
+            accounts.push({id: account_id, ...patch});
+        }
+        this.patch_credential({accounts});
+    }
+
+    /** 删除某个账号（保留凭据本体=应用配置） */
+    remove_account(account_id: string): void {
+        const item = this.get_item();
+        if (!item) {
+            throw new Error("百度网盘凭据不存在");
+        }
+        const accounts = (item.accounts ?? []).filter(v => v.id !== account_id);
+        this.patch_credential({accounts});
     }
 
     /** 应用配置是否完整（有 app_key 与 secret_key） */
@@ -112,9 +125,9 @@ export class BaiduTokenStore {
         return Boolean(c.app_key && c.secret_key);
     }
 
-    /** 是否已完成授权 */
+    /** 当前账号是否已授权（有 token 即视为已授权） */
     is_authorized(): boolean {
-        return Boolean(this.get_config().token?.access_token);
+        return Boolean(this.get_account()?.token?.access_token);
     }
 
     // ==================== OAuth 流程 ====================
@@ -157,13 +170,12 @@ export class BaiduTokenStore {
         });
         return `${BAIDU_OAUTH.authorize}?${params.toString()}`;
     }
-
     /**
-     * 用授权码换取 token 并写入本条凭据。
+     * 用授权码换取 token，并把账号写入凭据的 accounts 数组。
      * @param code 授权码（10 分钟有效，仅能用一次）
      * @param redirect_uri 换 token 时用的回调地址，必须与生成授权链接时一致；oob 授权传 "oob"
      */
-    async exchange_code(code: string, redirect_uri: string): Promise<{uk: number; baidu_name: string}> {
+    async exchange_code(code: string, redirect_uri: string): Promise<{uk: string; baidu_name: string}> {
         const c = this.get_config();
         if (!c.app_key || !c.secret_key) {
             throw new Error("请先配置百度网盘应用");
@@ -183,22 +195,23 @@ export class BaiduTokenStore {
         if (!info.uk) {
             throw new Error("无法识别授权账号（uinfo 未返回 uk），请重新授权");
         }
-        this.patch_config({
-            uk: info.uk,
-            baidu_name: info.baidu_name,
-            netdisk_name: info.netdisk_name,
-            avatar_url: info.avatar_url,
+        // uk 即账号 id；同一账号重复授权会覆盖旧 token
+        const uk = String(info.uk);
+        this.upsert_account(uk, {
             token: tokens,
+            account_name: info.baidu_name,
+            nickname: info.netdisk_name,
+            avatar_url: info.avatar_url,
         });
-        return {uk: info.uk, baidu_name: info.baidu_name ?? String(info.uk)};
+        return {uk, baidu_name: info.baidu_name ?? uk};
     }
 
     /**
-     * 取本条凭据可用的 access_token。
+     * 取当前账号可用的 access_token。
      * 过期时用 refresh_token 续期；没有 refresh_token 说明从未授权，报错让用户去授权。
      */
     async get_access_token(): Promise<string> {
-        const t = this.get_config().token;
+        const t = this.get_account()?.token;
         if (t?.access_token && t.expires_at > Date.now()) {
             return t.access_token;
         }
@@ -209,12 +222,11 @@ export class BaiduTokenStore {
         throw new Error("未完成百度授权，请先授权");
     }
 
-    /** 用 refresh_token 刷新（refresh_token 一次性，必须保存新的） */
     /**
      * 强制刷新：本地判断可能因时钟偏差失效，接口报 token 无效时用这个重试。
      */
     async force_refresh(): Promise<string> {
-        const t = this.get_config().token;
+        const t = this.get_account()?.token;
         if (!t?.refresh_token) {
             throw new Error("未完成百度授权，请先授权");
         }
@@ -222,7 +234,8 @@ export class BaiduTokenStore {
         return refreshed.access_token;
     }
 
-    private async refresh(refresh_token: string): Promise<BaiduTokens> {
+    /** 用 refresh_token 刷新（refresh_token 一次性，必须保存新的） */
+    private async refresh(refresh_token: string): Promise<OAuthTokens> {
         const c = this.get_config();
         if (!c.app_key || !c.secret_key) {
             throw new Error("百度网盘应用配置已丢失，请重新配置");
@@ -236,7 +249,7 @@ export class BaiduTokenStore {
         try {
             const data = await this.oauth_request(params);
             const tokens = this.to_tokens(data);
-            this.patch_config({token: tokens});
+            this.upsert_account(this.account_id, {token: tokens});
             return tokens;
         } catch (e) {
             // 刷新失败：清空 token，提示重新授权
@@ -247,20 +260,20 @@ export class BaiduTokenStore {
 
     /**
      * 校验授权是否真实有效（调 uinfo 做活性检测）。
-     * 失效时：清空 token 标记为未授权（但保留凭据）。
+     * 失效时：清空 token 标记为未授权（但保留凭据与账号条目）。
      */
-    async verify(): Promise<{valid: boolean; error?: string; baidu_name?: string}> {
+    async verify(): Promise<{valid: boolean; error?: string; account_name?: string}> {
         try {
             // get_access_token 会顺带在过期时刷新；无效会抛错
             const token = await this.get_access_token();
             const info = await this.get_uinfo(token);
             // 顺便同步一下百度侧的信息（昵称可能变过）
-            this.patch_config({
-                baidu_name: info.baidu_name,
-                netdisk_name: info.netdisk_name,
+            this.upsert_account(this.account_id, {
+                account_name: info.baidu_name,
+                nickname: info.netdisk_name,
                 avatar_url: info.avatar_url,
             });
-            return {valid: true, baidu_name: info.baidu_name};
+            return {valid: true, account_name: info.baidu_name};
         } catch (e) {
             const msg = e?.message ?? "校验失败";
             // 百度明确返回的错误才清 token；网络异常保留，避免误清
@@ -271,23 +284,12 @@ export class BaiduTokenStore {
         }
     }
 
-    /** 清空 token（标记为未授权，但保留应用配置） */
+    /** 清空当前账号的 token（标记为未授权，但保留应用配置与账号条目） */
     clear_tokens(): void {
-        this.patch_config({token: EMPTY_TOKEN});
-    }
-
-    /** 删除已授权账号（清除账号信息与 token，保留第 1 步的应用配置） */
-    remove_account(): void {
-        const item = this.get_item();
-        if (!item) {
-            throw new Error("百度网盘凭据不存在");
+        if (!this.account_id) {
+            return;
         }
-        const list = DataUtil.get<CredentialItem[]>(data_common_key.mount_credential_list) ?? [];
-        const i = list.findIndex(v => v.id === this.cred_id);
-        // 只保留应用配置字段，账号相关信息整体丢弃
-        const {app_id, app_key, secret_key, remark} = item.config;
-        list[i] = {...list[i], config: {app_id, app_key, secret_key, remark}};
-        DataUtil.set(data_common_key.mount_credential_list, [...list]);
+        this.upsert_account(this.account_id, {token: EMPTY_TOKEN});
     }
 
     /** 调 OAuth token 端点 */
@@ -332,7 +334,7 @@ export class BaiduTokenStore {
     }
 
     /** OAuth 响应 → 持久化 token 结构（提前 5 分钟视为过期，留出刷新窗口） */
-    private to_tokens(data: any): BaiduTokens {
+    private to_tokens(data: any): OAuthTokens {
         const now = Date.now();
         const expires_in = Number(data.expires_in ?? 0) * 1000;
         return {

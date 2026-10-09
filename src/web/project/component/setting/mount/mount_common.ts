@@ -1,20 +1,35 @@
 /** 挂载相关组件共用的类型与常量 */
 
+/** 凭据下的子账号（目前仅百度网盘使用「一凭据多账号」） */
+export interface MountAccountRow {
+    /** 账号唯一 id（百度用 uk） */
+    id: string;
+    /** 账号备注（用户自己起；为空时展示账号名） */
+    note?: string;
+    /** 账号名（如百度账号名） */
+    account_name?: string;
+    /** 昵称（如百度网盘昵称） */
+    nickname?: string;
+    avatar_url?: string;
+    /** 是否已授权（token 不下发前端，只回传这个标记） */
+    authorized?: boolean;
+    /** 授权时间戳 */
+    obtained_at?: number;
+    enabled?: boolean;
+}
+
 /** 凭据（脱敏：不含密码明文与 token） */
 export interface CredentialRow {
     id: string;
     type: string;
-    name: string;
+    /** 备注（便于挂载时辨认） */
+    note: string;
     config: Record<string, any>;
+    /** 子账号列表；只有「一个应用多账号」的类型才有（百度） */
+    accounts?: MountAccountRow[];
     enabled?: boolean;
     /** 是否已设置过密码类字段（编辑时留空表示不修改） */
     has_password?: boolean;
-    /** 百度凭据：是否已完成 OAuth 授权（token 不返回前端，只回传这两个标记） */
-    authorized?: boolean;
-    /** 百度凭据：access_token 是否已过期 */
-    expired?: boolean;
-    /** 百度凭据：授权时间戳 */
-    obtained_at?: number;
     /** 前端标记：新加的行，尚未保存 */
     is_new?: boolean;
 }
@@ -44,7 +59,10 @@ export interface MountRow {
     driver: string;
     mount_path: string;
     credential_id: string;
-    name?: string;
+    /** 引用的子账号 id（仅百度等一凭据多账号类型需要） */
+    account_id?: string;
+    /** 挂载备注；为空时展示本地目录名 */
+    note?: string;
     root_dir?: string;
     readonly?: boolean;
     color?: string;
@@ -76,7 +94,19 @@ export const DRIVER_CREDENTIAL_TYPE: Record<string, string> = {
  */
 export function credential_options(driver: string, creds: CredentialRow[]) {
     const need = DRIVER_CREDENTIAL_TYPE[driver];
-    return creds.filter(c => c.type === need).map(c => ({title: c.name, value: c.id}));
+    return creds.filter(c => c.type === need).map(c => ({title: c.note, value: c.id}));
+}
+
+/**
+ * 某个凭据可选的具体账号：只有「一凭据多账号」的凭据（百度）才有，
+ * 其余凭据本身就是一份连接信息，返回空数组表示不需要再选账号。
+ */
+export function account_options(credential_id: string, creds: CredentialRow[]) {
+    const cred = creds.find(c => c.id === credential_id);
+    return (cred?.accounts ?? []).map(a => ({
+        title: a.note || a.account_name || a.nickname || a.id,
+        value: a.id,
+    }));
 }
 
 /** 挂载目录默认标识色 */

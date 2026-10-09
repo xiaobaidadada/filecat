@@ -17,8 +17,14 @@ export interface FileMountItem {
     mount_path: string;
     /** 引用的凭据 id */
     credential_id: string;
-    /** 展示名称；为空时用本地目录名 */
-    name?: string;
+    /**
+     * 引用的子账号 id。
+     * 仅「一个应用多账号」的凭据需要（目前是百度：account_id 即百度 uk）；
+     * 其他驱动凭据本身就是一份连接信息，留空。
+     */
+    account_id?: string;
+    /** 挂载备注；为空时用本地目录名 */
+    note?: string;
     /** 起始目录（挂载本身的概念，不属于凭据） */
     root_dir?: string;
     /** 只读：为 true 时禁止一切写操作 */

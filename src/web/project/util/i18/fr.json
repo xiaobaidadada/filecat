@@ -752,7 +752,6 @@
   "munt_rq": "Le répertoire de montage ne peut pas être vide",
   "请选择凭据": "Veuillez sélectionner un identifiant",
   "请选择类型": "Veuillez sélectionner un type",
-  "请填写名称": "Veuillez saisir un nom",
   "启用": "Activé",
   "已停用": "Désactivé",
   "确认删除": "Confirmer la suppression de",
@@ -762,7 +761,6 @@
   "授权": "Autoriser",
   "授权失败": "Échec de l'autorisation",
   "strtdrt": "Dossier de départ",
-  "dspnmtp": "Nom affiché",
   "授权检测": "Vérifier l'autorisation",
   "scrtkep": "Laisser SecretKey vide pour ne pas modifier",
   "编辑应用": "Modifier l'app",
@@ -839,5 +837,8 @@
   "prt_bd": "Baidu Netdisk. Créez une app sur la plateforme ouverte de Baidu, saisissez AppKey / SecretKey, puis autorisez un compte.",
   "没有找到共享": "Aucun partage trouvé",
   "粘贴授权码 code": "Collez le code d'autorisation",
-  "重新授权": "Réautoriser"
+  "重新授权": "Réautoriser",
+  "请选择账号": "Veuillez sélectionner un compte",
+  "请填写备注": "Veuillez saisir une note",
+  "账号已丢失": "Compte introuvable"
 }

@@ -270,6 +270,76 @@ export class DataMigration {
                 DataUtil.del(data_common_key.mount_baidu_account, file_key.data);
             },
         },
+        {
+            /*
+             * 结构化改造：凭据/挂载的 name → note；百度「一凭据一账号」→「凭据=应用 + accounts[] 多账号」。
+             *
+             * 迁移内容：
+             *  1. 所有凭据：name → note
+             *  2. 百度凭据：把 config 里的账号字段（uk/token/baidu_name...）拆成 accounts[0]，
+             *     config 只留应用配置（app_id/app_key/secret_key），并把挂载的 account_id 指过去
+             *  3. 所有挂载：name → note
+             */
+            version: data_version_type.mount_credential_note,
+            name: "挂载凭据 name 改名 note、百度账号拆分为 accounts",
+            run: () => {
+                const creds: any[] = DataUtil.get<any[]>(data_common_key.mount_credential_list) ?? [];
+                // 旧百度凭据 id → 拆分出的账号 id，供挂载改写 account_id
+                const cred_to_account: Record<string, string> = {};
+                for (const c of creds) {
+                    // 1. name → note（note 已存在时以 note 为准）
+                    if (c.note === undefined) {
+                        c.note = c.name ?? "";
+                        delete c.name;
+                    }
+                    if (c.type !== "baidu") {
+                        continue;
+                    }
+                    const cfg = c.config ?? {};
+                    // 已经有 accounts 说明迁过了，跳过
+                    if (Array.isArray(c.accounts)) {
+                        continue;
+                    }
+                    const accounts: any[] = [];
+                    if (cfg.uk && cfg.token) {
+                        accounts.push({
+                            id: String(cfg.uk),
+                            note: c.note ?? "",
+                            token: cfg.token,
+                            account_name: cfg.baidu_name,
+                            nickname: cfg.netdisk_name,
+                            avatar_url: cfg.avatar_url,
+                        });
+                        cred_to_account[c.id] = String(cfg.uk);
+                    }
+                    // config 只保留应用配置
+                    c.config = {
+                        app_id: cfg.app_id,
+                        app_key: cfg.app_key,
+                        secret_key: cfg.secret_key,
+                    };
+                    c.accounts = accounts;
+                }
+                DataUtil.set(data_common_key.mount_credential_list, creds);
+
+                const mounts: any[] = DataUtil.get<any[]>(data_common_key.file_mount_list) ?? [];
+                for (const m of mounts) {
+                    // name → note
+                    if (m.note === undefined) {
+                        m.note = m.name ?? "";
+                        delete m.name;
+                    }
+                    // 百度挂载补上 account_id（单账号场景直接指向刚拆出的那个账号）
+                    if (m.driver === "baidu" && !m.account_id) {
+                        const acc_id = cred_to_account[m.credential_id];
+                        if (acc_id) {
+                            m.account_id = acc_id;
+                        }
+                    }
+                }
+                DataUtil.set(data_common_key.file_mount_list, mounts);
+            },
+        },
     ];
 
     private static is_data_version_type(value) {

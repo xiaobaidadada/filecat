@@ -10,6 +10,7 @@ import {using_confirm} from "../../prompts/prompt.util";
 import {
     CredentialRow,
     credential_options,
+    account_options,
     DEFAULT_COLOR,
     DriverMeta,
     MountRow,
@@ -39,8 +40,9 @@ export default function MountPanel() {
     const [driver, set_driver] = useState("webdav");
     const [mount_path, set_mount_path] = useState("");
     const [credential_id, set_credential_id] = useState("");
+    const [account_id, set_account_id] = useState("");
     const [root_dir, set_root_dir] = useState("");
-    const [name, set_name] = useState("");
+    const [note, set_note] = useState("");
 
     const load = async () => {
         try {
@@ -64,6 +66,13 @@ export default function MountPanel() {
     /** 当前驱动类型可选的凭据来源 */
     const cred_options = (drv: string) => credential_options(drv, creds);
 
+    /**
+     * 当前凭据是否需要再选账号。
+     * 只有「一个应用多账号」的凭据（百度）才有 accounts，其余凭据不需要。
+     */
+    const cur_account_options = account_options(credential_id, creds);
+    const need_account = cur_account_options.length > 0;
+
     /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
     const close_form = () => {
         set_editing(false);
@@ -71,8 +80,9 @@ export default function MountPanel() {
         set_driver("webdav");
         set_mount_path("");
         set_credential_id("");
+        set_account_id("");
         set_root_dir("");
-        set_name("");
+        set_note("");
     };
 
     /** 点标题栏的「+」开始新增 */
@@ -87,8 +97,9 @@ export default function MountPanel() {
         set_driver(item.driver);
         set_mount_path(item.mount_path ?? "");
         set_credential_id(item.credential_id ?? "");
+        set_account_id(item.account_id ?? "");
         set_root_dir(item.root_dir ?? "");
-        set_name(item.name ?? "");
+        set_note(item.note ?? "");
     };
 
     const test = async () => {
@@ -101,6 +112,7 @@ export default function MountPanel() {
                 id: id || undefined,
                 driver,
                 credential_id,
+                account_id,
                 root_dir,
             });
             const r = rsq?.data;
@@ -119,6 +131,10 @@ export default function MountPanel() {
             NotyFail(t("请选择凭据"));
             return;
         }
+        if (need_account && !account_id) {
+            NotyFail(t("请选择账号"));
+            return;
+        }
         if (!mount_path.trim()) {
             NotyFail(t("munt_rq"));
             return;
@@ -129,8 +145,9 @@ export default function MountPanel() {
                 driver,
                 mount_path,
                 credential_id,
+                account_id: need_account ? account_id : undefined,
                 root_dir,
-                name,
+                note,
                 color: DEFAULT_COLOR,
                 readonly: false,
                 enabled: true,
@@ -180,35 +197,47 @@ export default function MountPanel() {
                                 set_driver(v);
                                 // 换类型时清掉已选凭据（类型可能不匹配）
                                 set_credential_id("");
+                                set_account_id("");
                             }}/>
                 </InputRow>
                 <InputRow label={t("凭据")} label_width={"6rem"} required>
                     <Select value={credential_id} options={cred_options(driver)}
-                            onChange={set_credential_id}/>
+                            onChange={(v) => {
+                                set_credential_id(v);
+                                // 换凭据时清掉已选账号（账号属于原凭据）
+                                set_account_id("");
+                            }}/>
                 </InputRow>
+                {/* 只有「一个应用多账号」的凭据（百度）才需要再选具体账号 */}
+                {need_account && <InputRow label={t("账号")} label_width={"6rem"} required>
+                    <Select value={account_id} options={cur_account_options}
+                            onChange={set_account_id}/>
+                </InputRow>}
                 <InputRow label={t("本地目录")} label_width={"6rem"} required>
                     <InputText placeholder={t("被挂载的本地绝对路径")} value={mount_path}
                                handleInputChange={set_mount_path}/>
                 </InputRow>
-                {/* 起始目录决定读到远端哪个子目录，属于数据来源；显示名称只是列表上的标签 */}
+                {/* 起始目录决定读到远端哪个子目录，属于数据来源；备注只是列表上的标签 */}
                 <InputRow label={t("strtdrt")} label_width={"6rem"}>
                     <InputText placeholder={t("远端目录")} value={root_dir}
                                handleInputChange={set_root_dir}/>
                 </InputRow>
-                <InputRow label={t("dspnmtp")} label_width={"6rem"}>
-                    <InputText placeholder={t("列表显示的名称")} value={name}
-                               handleInputChange={set_name}/>
+                <InputRow label={t("备注")} label_width={"6rem"}>
+                    <InputText placeholder={t("列表显示的名称")} value={note}
+                               handleInputChange={set_note}/>
                 </InputRow>
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
-            {!editing && <Table headers={[t("名称"), t("挂载类型"), t("凭据"), t("操作")]}
+            {!editing && <Table headers={[t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}
                    rows={list.map(item => {
                        const cred = creds.find(c => c.id === item.credential_id);
+                       const acc = (cred?.accounts ?? []).find(a => a.id === item.account_id);
                        return [
-                           <p>{item.name}</p>,
+                           <p>{item.note}</p>,
                            <p>{driver_name(item.driver)}</p>,
-                           <p>{cred ? cred.name : t("凭据已丢失")}</p>,
+                           <p>{cred ? cred.note : t("凭据已丢失")}</p>,
+                           <p>{item.account_id ? (acc ? (acc.note || acc.account_name || acc.nickname || acc.id) : t("账号已丢失")) : "-"}</p>,
                            <div>
                                <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                                <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>

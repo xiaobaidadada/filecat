@@ -7,6 +7,7 @@ import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
     CredentialRow,
     credential_options,
+    account_options,
     DEFAULT_COLOR,
     DriverMeta,
 } from "./mount_common";
@@ -34,8 +35,9 @@ export default function MountEditor(props: Props) {
     const [row, set_row] = useState<any>({
         driver: "webdav",
         credential_id: "",
+        account_id: "",
         root_dir: "",
-        name: "",
+        note: "",
         color: DEFAULT_COLOR,
         readonly: false,
         enabled: true,
@@ -62,8 +64,9 @@ export default function MountEditor(props: Props) {
                         set_row({
                             driver: item.driver ?? "webdav",
                             credential_id: item.credential_id ?? "",
+                            account_id: item.account_id ?? "",
                             root_dir: item.root_dir ?? "",
-                            name: item.name ?? "",
+                            note: item.note ?? "",
                             color: item.color ?? DEFAULT_COLOR,
                             readonly: Boolean(item.readonly),
                             enabled: item.enabled !== false,
@@ -79,6 +82,10 @@ export default function MountEditor(props: Props) {
     /** 当前驱动类型可选的凭据来源 */
     const cred_options = () => credential_options(row.driver, creds);
 
+    /** 当前凭据是否需要再选账号（只有「一个应用多账号」的凭据才有 accounts） */
+    const cur_account_options = account_options(row.credential_id, creds);
+    const need_account = cur_account_options.length > 0;
+
     const do_test = async () => {
         if (!row.credential_id) {
             NotyFail(t("请选择凭据"));
@@ -89,6 +96,7 @@ export default function MountEditor(props: Props) {
                 id: props.mount_id,
                 driver: row.driver,
                 credential_id: row.credential_id,
+                account_id: row.account_id,
                 root_dir: row.root_dir,
             });
             const r = rsq?.data;
@@ -107,14 +115,19 @@ export default function MountEditor(props: Props) {
             NotyFail(t("请选择凭据"));
             return;
         }
+        if (need_account && !row.account_id) {
+            NotyFail(t("请选择账号"));
+            return;
+        }
         try {
             await mountHttp.post(props.mount_id ? "update" : "add", {
                 id: props.mount_id,
                 driver: row.driver,
                 mount_path: props.mount_path,
                 credential_id: row.credential_id,
+                account_id: need_account ? row.account_id : undefined,
                 root_dir: row.root_dir,
-                name: row.name,
+                note: row.note,
                 color: row.color,
                 readonly: row.readonly,
                 enabled: row.enabled,
@@ -130,13 +143,16 @@ export default function MountEditor(props: Props) {
         <p>{props.mount_path}</p>
         <Select value={row.driver}
                 options={drivers.map(d => ({title: d.name, value: d.type}))}
-                onChange={(v) => set_row({...row, driver: v, credential_id: ""})}/>
+                onChange={(v) => set_row({...row, driver: v, credential_id: "", account_id: ""})}/>
         <Select value={row.credential_id} options={cred_options()}
-                onChange={(v) => set_row({...row, credential_id: v})}/>
+                onChange={(v) => set_row({...row, credential_id: v, account_id: ""})}/>
+        {/* 只有「一个应用多账号」的凭据（百度）才需要再选具体账号 */}
+        {need_account && <Select value={row.account_id} options={cur_account_options}
+                onChange={(v) => set_row({...row, account_id: v})}/>}
         <InputText placeholder={t("strtdrt")} value={row.root_dir}
                    handleInputChange={(v) => set_row({...row, root_dir: v})}/>
-        <InputText placeholder={t("dspnmtp")} value={row.name}
-                   handleInputChange={(v) => set_row({...row, name: v})}/>
+        <InputText placeholder={t("备注")} value={row.note}
+                   handleInputChange={(v) => set_row({...row, note: v})}/>
         <InputText placeholder={t("标识色，如 #4a9eff")} value={row.color}
                    handleInputChange={(v) => set_row({...row, color: v})}/>
         <Select value={row.readonly}

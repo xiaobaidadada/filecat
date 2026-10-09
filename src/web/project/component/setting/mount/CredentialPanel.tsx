@@ -9,7 +9,7 @@ import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
-import {CredentialField, CredentialMeta, CredentialRow, fmt_time, mount_enable_options} from "./mount_common";
+import {CredentialField, CredentialMeta, CredentialRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
 
 /** 密码类字段：编辑时留空表示不修改 */
 const SECRET_KEYS = ["password", "private_key", "secret_key"];
@@ -85,7 +85,7 @@ export default function CredentialPanel() {
     /** 表单：新增或编辑都复用（id 为空表示新增） */
     const [id, set_id] = useState("");
     const [type, set_type] = useState(DEFAULT_TYPE);
-    const [name, setName] = useState("");
+    const [note, set_note] = useState("");
     const [config, set_config] = useState<Record<string, any>>({});
     const [step, set_step] = useState(1);
     /** 共享目录候选项（SMB 第 2 步的下拉） */
@@ -93,12 +93,6 @@ export default function CredentialPanel() {
     /** 百度授权相关状态 */
     const [auth_mode, set_auth_mode] = useState<"one_click" | "oob">("oob");
     const [auth_code, set_auth_code] = useState("");
-    const [authorized, set_authorized] = useState(false);
-    /** token 是否已过期、授权时间（后端脱敏时一并回传） */
-    const [expired, set_expired] = useState(false);
-    const [obtained_at, set_obtained_at] = useState<number>(0);
-    /** 百度账号昵称（授权后由百度返回） */
-    const [baidu_name, set_baidu_name] = useState("");
     /** 凭据是否启用（列表行内的「使用」下拉） */
     const [enabled, set_enabled] = useState(true);
 
@@ -131,15 +125,11 @@ export default function CredentialPanel() {
         set_editing(false);
         set_id("");
         set_type(DEFAULT_TYPE);
-        setName("");
+        set_note("");
         set_config({});
         set_step(1);
         set_shared_options([]);
         set_auth_code("");
-        set_authorized(false);
-        set_expired(false);
-        set_obtained_at(0);
-        set_baidu_name("");
         set_enabled(true);
     };
 
@@ -171,7 +161,7 @@ export default function CredentialPanel() {
             const rsq = await mountHttp.post(id ? "credential/update" : "credential/add", {
                 id: id || undefined,
                 type,
-                name,
+                note,
                 config,
                 enabled,
             });
@@ -188,8 +178,8 @@ export default function CredentialPanel() {
 
     /** 校验必填字段（跳过本步不显示的字段） */
     const check_required = (keys: string[]): string | undefined => {
-        if (!name.trim()) {
-            return t("请填写名称");
+        if (!note.trim()) {
+            return t("请填写备注");
         }
         for (const f of fields) {
             if (keys.includes(f.key) === false) {
@@ -237,7 +227,7 @@ export default function CredentialPanel() {
             await mountHttp.post(id ? "credential/update" : "credential/add", {
                 id: id || undefined,
                 type,
-                name,
+                note,
                 config,
                 enabled,
             });
@@ -253,14 +243,9 @@ export default function CredentialPanel() {
         set_editing(true);
         set_id(item.id);
         set_type(item.type);
-        setName(item.name ?? "");
+        set_note(item.note ?? "");
         set_config({...(item.config ?? {})});
         set_auth_code("");
-        // 百度凭据是否已完成授权由后端脱敏字段告知
-        set_authorized(Boolean(item.authorized));
-        set_expired(Boolean(item.expired));
-        set_obtained_at(item.obtained_at ?? 0);
-        set_baidu_name(String(item.config?.baidu_name ?? ""));
         set_enabled(item.enabled !== false);
         // 分步类型的编辑直接进最后一步：前面的字段已填过，点「上一步」可回去改。
         // 这里用 item.type 自己算步数，不能读 type —— set_type 是异步的，此时还是上一个类型的值
@@ -300,10 +285,6 @@ export default function CredentialPanel() {
         try {
             const rsq = await mountHttp.post("baidu/exchange", {id, code: auth_code.trim(), mode: auth_mode});
             NotySuccess(`${t("授权成功")}：${rsq?.data?.baidu_name ?? ""}`);
-            set_authorized(true);
-            set_expired(false);
-            set_obtained_at(Date.now());
-            set_baidu_name(rsq?.data?.baidu_name ?? "");
             set_auth_code("");
             await load();
         } catch (e) {
@@ -311,52 +292,10 @@ export default function CredentialPanel() {
         }
     };
 
-    /** 授权检测：调百度 uinfo 验活，顺带同步账号昵称 */
-    const verify = async () => {
-        try {
-            const rsq = await mountHttp.post("baidu/verify", {id});
-            const d = rsq?.data ?? {};
-            if (d.valid) {
-                NotySuccess(t("账号可用"));
-                set_authorized(true);
-                set_expired(false);
-                if (d.baidu_name) {
-                    set_baidu_name(d.baidu_name);
-                }
-            } else {
-                NotyFail(`${t("账号不可用")}：${d.error ?? ""}`);
-                set_authorized(false);
-            }
-            await load();
-        } catch (e) {
-            // Http 层已提示
-        }
-    };
-
-    /** 删除该账号（清除账号信息与 token，保留第 1 步的应用配置） */
-    const deauthorize = async () => {
-        confirm_del({
-            title: t("确认删除"),
-            sub_title: name,
-            confirm_fun: async () => {
-                try {
-                    await mountHttp.post("baidu/deauthorize", {id});
-                    NotySuccess(t("已删除"));
-                    set_authorized(false);
-                    set_expired(false);
-                    set_obtained_at(0);
-                    set_baidu_name("");
-                } catch (e) {
-                    // Http 层已提示
-                }
-            },
-        });
-    };
-
     const del = async (item: CredentialRow) => {
         confirm_del({
             title: t("确认删除"),
-            sub_title: item.name,
+            sub_title: item.note,
             confirm_fun: async () => {
                 try {
                     await mountHttp.post("credential/delete", {id: item.id});
@@ -364,6 +303,39 @@ export default function CredentialPanel() {
                     await load();
                 } catch (e) {
                     // Http 层已提示（仍被挂载引用时会报错）
+                }
+            },
+        });
+    };
+
+    /** 授权检测：调百度 uinfo 验活某个账号 */
+    const verify_account = async (cred_id: string, account_id: string) => {
+        try {
+            const rsq = await mountHttp.post("baidu/verify", {id: cred_id, account_id});
+            const d = rsq?.data ?? {};
+            if (d.valid) {
+                NotySuccess(t("账号可用"));
+            } else {
+                NotyFail(`${t("账号不可用")}：${d.error ?? ""}`);
+            }
+            await load();
+        } catch (e) {
+            // Http 层已提示
+        }
+    };
+
+    /** 取消某个百度账号的授权（保留应用配置与凭据） */
+    const deauthorize_account = (cred_id: string, acc: MountAccountRow) => {
+        confirm_del({
+            title: t("确认删除"),
+            sub_title: acc.note || acc.account_name || acc.id,
+            confirm_fun: async () => {
+                try {
+                    await mountHttp.post("baidu/deauthorize", {id: cred_id, account_id: acc.id});
+                    NotySuccess(t("已删除"));
+                    await load();
+                } catch (e) {
+                    // Http 层已提示
                 }
             },
         });
@@ -400,11 +372,16 @@ export default function CredentialPanel() {
         </React.Fragment>;
     };
 
-    /** 第 2 步：上方授权表单 + 下方账号列表（一条凭据就一个账号，所以列表恒为一行） */
+    /** 百度账号列表：读当前凭据的 accounts 数组（一个应用可授权多个账号） */
+    const baidu_accounts = (): MountAccountRow[] => {
+        return list.find(c => c.id === id)?.accounts ?? [];
+    };
+
+    /** 第 2 步：上方授权表单 + 下方账号列表（一个应用可挂多个账号） */
     const render_authorize = () => {
-        const status_text = !authorized ? t("未授权") : (expired ? t("已过期") : t("已授权"));
+        const accounts = baidu_accounts();
         return <React.Fragment key={AUTHORIZE_STEP}>
-            {/* 授权方式与授权入口常驻，已授权时也可重新授权 */}
+            {/* 授权方式与授权入口常驻，已授权时也可继续授权新账号 */}
             <InputRow label={t("授权方式")} label_width={"6rem"}>
                 <div className={"div-row"}>
                     <InputRadio name={"baidu_auth_mode"} value={"one_click"} context={t("一键授权")}
@@ -426,22 +403,21 @@ export default function CredentialPanel() {
                     <ActionButton icon={"check"} title={t("完成授权")} onClick={submit_code}/>}
             </div>
 
-            {/* 账号列表：一条凭据一个账号，未授权时无行可显示 */}
-            {authorized && <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
-                   rows={[[
-                       <InputText value={name} no_border={true} handleInputChange={setName}/>,
-                       <TextTip context={baidu_name || "-"}/>,
-                       <TextTip context={status_text}/>,
-                       <Select value={enabled} no_border={true} options={mount_enable_options(t)}
-                               onChange={(v) => set_enabled(Boolean(v))}/>,
-                       <p>{obtained_at ? fmt_time(obtained_at) : "-"}</p>,
+            {/* 账号列表：每个已授权账号一行，可备注、检测、删除 */}
+            {accounts.length > 0 && <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
+                   rows={accounts.map(acc => [
+                       <TextTip context={acc.note || acc.account_name || acc.id}/>,
+                       <TextTip context={acc.account_name || acc.id}/>,
+                       <TextTip context={acc.authorized ? t("已授权") : t("未授权")}/>,
+                       <TextTip context={acc.enabled === false ? t("停用") : t("启用")}/>,
+                       <p>{acc.obtained_at ? fmt_time(acc.obtained_at) : "-"}</p>,
                        <div>
                            <ActionButton icon={"network_check"} title={t("授权检测")}
-                                         onClick={verify}/>
+                                         onClick={() => verify_account(id, acc.id)}/>
                            <ActionButton icon={"delete"} title={t("删除")}
-                                         onClick={deauthorize}/>
+                                         onClick={() => deauthorize_account(id, acc)}/>
                        </div>,
-                   ]]}/>}
+                   ])}/>}
         </React.Fragment>;
     };
 
@@ -466,7 +442,7 @@ export default function CredentialPanel() {
 
             {/* 表单只在新增/编辑时展开 */}
             {editing && <React.Fragment>
-                <InputText placeholder={t("名称")} value={name} handleInputChange={setName}/>
+                <InputText placeholder={t("备注")} value={note} handleInputChange={set_note}/>
                 <Select value={type} options={metas.map(m => ({title: m.name, value: m.type}))}
                         onChange={(v) => {
                             set_type(v);
@@ -475,7 +451,6 @@ export default function CredentialPanel() {
                             set_shared_options([]);
                             set_step(1);
                             set_auth_code("");
-                            set_authorized(false);
                         }}/>
                 {/* 按当前步骤渲染字段；授权是特殊步骤，单独渲染 */}
                 {show_authorize
@@ -484,10 +459,11 @@ export default function CredentialPanel() {
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
-            {!editing && <Table headers={[t("名称"), t("类型"), t("操作")]}
+            {!editing && <Table headers={[t("备注"), t("类型"), t("账号"), t("操作")]}
                    rows={list.map(item => [
-                       <TextTip context={item.name}/>,
+                       <TextTip context={item.note}/>,
                        <TextTip context={type_name(item.type)}/>,
+                       <TextTip context={String((item.accounts ?? []).length || "-")}/>,
                        <div>
                            <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>

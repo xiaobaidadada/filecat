@@ -7,8 +7,7 @@
 
 /* 只读挂载的小标签 */
 #listing .item .mount-readonly-tag,
-.mount-tip-bar .mount-readonly-tag,
-.mount-tip-bar .mount-driver-tag {
+.mount-tip-bar .mount-readonly-tag {
   display: inline-block;
   margin-left: 0.35em;
   padding: 0 0.3em;
