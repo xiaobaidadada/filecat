@@ -75,6 +75,19 @@ export class Ai_AgentController {
         return Sucess("ok")
     }
 
+    /**
+     * 保存会话列表的自定义排序（前端拖动排序后调用）
+     * body: { session_ids: string[] } —— 按新顺序排列的会话 id
+     */
+    @Post("/sessions/update/sort")
+    async sessions_update_sort(@Req() ctx, @Body() data: any) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        aiAgentMemoryService.sessions_update_sort(userId, data?.session_ids ?? []);
+        return Sucess("ok");
+    }
+
     @Post("/session")
     async session_create(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
@@ -367,11 +380,9 @@ export class Ai_AgentController {
         userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const { session_id } = ctx;
         if (session_id) {
-            const controller = ai_agentService.activeChatControllers.get(session_id);
-            if (controller) {
-                controller.abort();
-                ai_agentService.activeChatControllers.delete(session_id);
-            }
+            // 统一走 abortChat：它除了 abort controller，还会立刻销掉 running 登记，
+            // 避免 chat_core 吞掉 AbortError 时列表一直转圈。
+            ai_agentService.abortChat(session_id);
         }
         return '';
     }

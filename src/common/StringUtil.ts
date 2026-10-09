@@ -358,6 +358,31 @@ export function fastHash(str: string): string {
 }
 
 
+/**
+ * 把毫秒数格式化成紧凑的可读时长，用于展示 AI 回复耗时等场景。
+ * 规则（无空格）：
+ *  - < 1s   → 350ms
+ *  - < 60s  → 1.2s
+ *  - >=60s  → 1min 30s / 1h 2min 5s
+ */
+export function format_duration_ms(ms?: number): string {
+    if (!ms || ms < 0 || !isFinite(ms)) return "";
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    const total_sec = ms / 1000;
+    // 先按一位小数取整，避免 59.999s 被显示成 60s 却不进位到 min
+    const rounded_sec = parseFloat(total_sec.toFixed(1));
+    if (rounded_sec < 60) return `${rounded_sec}s`;
+    // 超过 1 分钟：拆成 时/分/秒
+    const h = Math.floor(total_sec / 3600);
+    const m = Math.floor((total_sec % 3600) / 60);
+    const s = Math.floor(total_sec % 60);
+    return [
+        h > 0 ? `${h}h` : "",
+        m > 0 ? `${m}min` : "",
+        s > 0 ? `${s}s` : "",
+    ].filter(Boolean).join(" ");
+}
+
 export function get_error_str(e:any) {
     let m :string = "";
     if (typeof e === 'string') {

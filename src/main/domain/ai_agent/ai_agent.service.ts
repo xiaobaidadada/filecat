@@ -694,8 +694,41 @@ export class Ai_agentService {
     /**
      * 判断某个会话是否正在执行 AI 聊天（用于会话列表展示“执行中”旋转动画）
      */
+    /**
+     * 把本轮耗时挂到消息列表里最后一条 assistant 消息上，返回新的数组与消息对象（不修改入参）。
+     * once_messages_list 是共享引用，直接改会污染后端内部状态，因此这里做浅拷贝。
+     */
+    private attach_elapsed_ms(
+        messages: ai_agent_message_item[],
+        elapsed_ms: number,
+    ): ai_agent_message_item[] {
+        // 从后往前找最后一条 assistant（工具消息可能排在末尾）
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role !== "assistant") continue;
+            const next = messages.slice();
+            next[i] = {...messages[i], elapsed_ms};
+            return next;
+        }
+        return messages;
+    }
+
     public isChatRunning(sessionId: string): boolean {
         return this.runningChats.has(sessionId);
+    }
+
+    /**
+     * 主动中断某个会话的聊天。
+     * 注意：必须同时清理 runningChats，否则若 chat_core.chat 内部吞掉了 AbortError
+     * （既不触发 on_end 也不抛错），列表会一直显示“执行中”转圈。
+     */
+    public abortChat(sessionId: string): boolean {
+        const controller = this.activeChatControllers.get(sessionId);
+        if (!controller) return false;
+        controller.abort();
+        // 立刻销掉运行登记，前端刷新列表时不再显示 running
+        this.activeChatControllers.delete(sessionId);
+        this.runningChats.delete(sessionId);
+        return true;
     }
 
     /**
@@ -891,25 +924,25 @@ export class Ai_agentService {
                 on_end: (stats) => {
                     // chatFinished = true;
                     cleanupRunning();
-                    // 推结束事件给【订阅了本会话的连接】。
-                    // 关键：把本轮最终的 once_messages_list 一起带上，
-                    // 前端据此把“实时预览气泡”替换为最终内容，而不必依赖后端已落盘文件，
-                    // 避免 appendTurn(异步写盘) 尚未完成时前端去读文件拿到旧内容的竞态。
+                    // 本轮耗时：用户发送 → AI 完全结束（含工具调用）的毫秒差
+                    const elapsed_ms = Date.now() - (run_pojo.started_at??Date.now());
+                    const once_messages_list = this.attach_elapsed_ms(stats?.once_messages_list ?? [], elapsed_ms);
                     this.sendToSubscribers(token, run_pojo.subscribers, CmdType.ai_chat_end, {
                         session_id: finalSessionId,
-                        once_messages_list: stats?.once_messages_list ?? [],
+                        once_messages_list,
                         _interrupted: stats?._interrupted,
                     });
                     // 保存会话记录
-                    const assistantText = (stats?.once_messages_list ?? [])
+                    const assistantText = once_messages_list
                         .map(it => getContentAsString(it.content))
                         .filter(Boolean)
                         .join("\n\n");
                     const assistantMessage: ai_agent_message_item = {
                         role: "assistant",
                         content: assistantText,
-                        content_list: stats?.once_messages_list ?? [],
+                        content_list: once_messages_list,
                         _interrupted: stats?._interrupted,
+                        elapsed_ms,
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
                     aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.ai_config_env).catch(console.error);
@@ -938,6 +971,11 @@ export class Ai_agentService {
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }
+        } finally {
+            // 兜底：无论正常结束、中断还是异常退出，都确保“运行中”登记被清掉。
+            // 否则 chat_core 若中途静默返回（既不触发 on_end 也不抛错），
+            // runningChats 会残留脏记录，前端会话列表会一直显示“执行中”转圈。
+            cleanupRunning();
         }
     }
 

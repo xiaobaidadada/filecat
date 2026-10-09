@@ -37,6 +37,8 @@ export function toUiMessages(messages: ai_agent_message_item[] = []): Message[] 
             images: it.images,
             audio: it.audio,
             embeddings: it.embeddings,
+            // 透传本轮耗时（仅 assistant 有），供气泡底部显示
+            elapsed_ms: it.elapsed_ms,
         }));
 }
 

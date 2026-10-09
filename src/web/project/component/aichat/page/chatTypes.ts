@@ -21,4 +21,6 @@ export interface Message {
     chunk_index?: number;
     /** 消息块类型（工具调用开始/结束/普通文本） */
     msg_type?: 'text' | 'tool_start' | 'tool_end';
+    /** 本轮 AI 回复耗时（毫秒），仅 bot 消息有值；用于气泡底部显示耗时 */
+    elapsed_ms?: number;
 }

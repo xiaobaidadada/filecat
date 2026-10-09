@@ -5,7 +5,6 @@ import {server_type, tcp_forward_client_type} from "./type";
 import {client_num_id_key, server_key, tcpForwardService} from "./tcp.forward.server.service";
 import {NetServerUtil} from "./util/NetServerUtil";
 import net from "net";
-import {NetPojo} from "../../../common/req/net.pojo";
 import {tcp_proxy_client_fig, tcp_proxy_server_config, tcp_proxy_sync_task_item} from "../../../common/req/common.pojo";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";

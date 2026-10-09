@@ -18,6 +18,7 @@ export default function SessionList({
                                         sessions,
                                         activeSessionId,
                                         onSelectSession,
+                                        onReorderSessions,
                                         onRenameSession,
                                         onDeleteSession,
                                         onToggleCmdAuto,
@@ -32,6 +33,8 @@ export default function SessionList({
     sessions: ai_agent_chat_session_meta[];
     activeSessionId: string;
     onSelectSession: (id: string) => void;
+    /** 拖动排序回调：传入被拖项与落点项的会话 id */
+    onReorderSessions?: (from_id: string, to_id: string) => void;
     onRenameSession: (id: string, title: string) => void;
     onDeleteSession: (id: string) => void;
     onToggleCmdAuto?: (id: string, allow: boolean) => void;
@@ -46,12 +49,27 @@ export default function SessionList({
     const {t} = useTranslation();
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [searchText, setSearchText] = useState('');
+    // 拖动排序状态：拖动源下标 / 当前悬停的目标下标
+    const [drag_index, set_drag_index] = useState<number | null>(null);
+    const [over_index, set_over_index] = useState<number | null>(null);
 
     const filteredSessions = searchText.trim()
         ? sessions.filter(s => (s.title || '').toLowerCase().includes(searchText.toLowerCase())
             || (s.summary || '').toLowerCase().includes(searchText.toLowerCase())
             || (s.long_term_memory || '').toLowerCase().includes(searchText.toLowerCase()))
         : sessions;
+
+    // 拖动结束：回调被拖项与落点项的具体 id，由上层按 id 重排（避免过滤时下标错位）
+    const handle_drop = (to: number) => {
+        const from = drag_index;
+        set_drag_index(null);
+        set_over_index(null);
+        if (from === null || from === to || !onReorderSessions) return;
+        const from_id = filteredSessions[from]?.id;
+        const to_id = filteredSessions[to]?.id;
+        if (!from_id || !to_id) return;
+        onReorderSessions(from_id, to_id);
+    };
 
     return (
         <aside
@@ -66,10 +84,20 @@ export default function SessionList({
                 />
             </div>
             <div className="chat-session-items-wrap">
-                {filteredSessions.map(session => (
+                {filteredSessions.map((session, index) => (
                     <div key={session.id}>
                         <button
-                            className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''} ${session.running ? 'is-running' : ''}`}
+                            className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''} ${session.running ? 'is-running' : ''} ${drag_index === index ? 'row-dragging' : ''} ${over_index === index && drag_index !== null && drag_index !== index ? 'row-drop-target' : ''}`}
+                            // ===== 拖动排序：仅开启排序回调时生效（批量模式/搜索状态下仍可用）=====
+                            draggable={!!onReorderSessions}
+                            onDragStart={() => set_drag_index(index)}
+                            onDragOver={(e) => {
+                                if (drag_index === null) return;
+                                e.preventDefault();
+                                if (over_index !== index) set_over_index(index);
+                            }}
+                            onDragEnd={() => { set_drag_index(null); set_over_index(null); }}
+                            onDrop={(e) => { e.preventDefault(); handle_drop(index); }}
                             onClick={() => {
                                 if (batchMode && onToggleSessionSelect) {
                                     onToggleSessionSelect(session.id);

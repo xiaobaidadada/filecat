@@ -112,6 +112,10 @@ const nodes: Record<string, NodeSpec> = {
         group: "block",
         marks: "",
         defining: true,
+        // code: true 是 ProseMirror 识别「代码块」的标准标记，
+        // 缺失会导致 newlineInCode / exitCode 等命令失效：
+        // 表现为在代码块里按 Enter 不是换行，而是把代码块拆成两个段落。
+        code: true,
         attrs: {language: {default: ""}},
         parseDOM: [{
             tag: "pre",

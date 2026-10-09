@@ -381,6 +381,12 @@ export class ai_agent_message_item {
     token_count?: number;
     /** 网络中断标记（持久化到 session，恢复时该条 tool 结果不截断） */
     _interrupted?: boolean;
+    /**
+     * 本轮 AI 回复耗时（毫秒），仅 assistant 消息有值。
+     * 计算方式：用户发送时刻 → AI 完全结束（含工具调用）时刻的差值。
+     * 属前端展示字段，不应参与发给模型的上下文。
+     */
+    elapsed_ms?: number;
 }
 
 /** 获取消息内容的字符串表示（用于标题、存储、统计等场景） */
@@ -433,6 +439,9 @@ export class ai_agent_chat_session_item {
 
     /** 命令检测是否开启：开启后该会话执行命令不再弹确认框（自动允许） */
     cmd_auto_allow?: boolean;
+
+    /** 列表中的排序权重（越小越靠前），由用户拖动排序时写入 */
+    sort_index?: number;
 }
 
 /** AI Agent token 消耗统计 */
@@ -462,6 +471,11 @@ export class ai_agent_chat_session_meta {
     usage_stats?: ai_agent_usage_stats;
     /** 命令检测是否开启（免确认） */
     cmd_auto_allow?: boolean;
+    /**
+     * 会话在列表中的排序权重（越小越靠前）。
+     * 用户手动拖动排序时写入；未设置过的会话按 updated_at 兜底排序。
+     */
+    sort_index?: number;
 
     /** 会话是否正在执行 AI 聊天（动态标记，不持久化；用于前端显示“执行中”旋转动画） */
     running?: boolean;

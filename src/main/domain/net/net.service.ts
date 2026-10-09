@@ -7,10 +7,8 @@ import {
     HttpProxyITem,
     HttpProxyServerInstance,
     HttpServerProxy,
-    MacProxy,
-    NetPojo
+    MacProxy
 } from "../../../common/req/net.pojo";
-import {find_available_port} from "../../../common/node/findPort";
 import {Fail, Sucess} from "../../other/Result";
 import express from "express";
 
@@ -37,7 +35,6 @@ import {NetClientUtil} from "./util/NetClientUtil";
 import {tcp_client, tcp_raw_socket} from "./util/tcp.client";
 import {Env} from "../../../common/node/Env";
 import * as util from "node:util";
-import { createProxyMiddleware } from "http-proxy-middleware";
 import { Duplex } from "node:stream";
 import { pipeWithBackpressure, back_pressure } from "./util/tcp_stream_util";
 
@@ -61,14 +58,6 @@ let proxy_server_list_data: (HttpProxyITem & { _source_port?: number })[] = []
 
 const dgram = require('dgram');
 
-let interval = null;
-
-interface proxyInterface {
-    server;
-    beforPort: number;
-    heartbeat: boolean;
-}
-
 // 创建安全的沙盒环境
 const sandbox = {
     setTimeout,
@@ -77,99 +66,8 @@ const sandbox = {
     clearInterval
 };
 
-const proxyTargetUrlMap: Map<string, proxyInterface> = new Map();
-const checkTimeLength = 1000 * 60 * 10;// 十分钟没有触发，就关闭
 export class NetService {
     private https_tunnel_traffic_save_timer?: NodeJS.Timeout;
-    public async start(data: NetPojo) {
-        const map = proxyTargetUrlMap.get(data.targetProxyUrl);
-        if (map) {
-            return Sucess(map.beforPort);
-        }
-        const pojo: proxyInterface | any = {};
-        proxyTargetUrlMap.set(data.targetProxyUrl, pojo);
-        const port = await find_available_port(49152, 65535);
-        pojo.beforPort = port;
-
-        const app = express();
-        app.use((req, res, next) => {
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Access-Control-Allow-Methods", "*");
-            res.setHeader("Access-Control-Allow-Headers", "*");
-            next();
-        });
-        const proxy = createProxyMiddleware({
-            target: data.targetProxyUrl,
-            changeOrigin: true,
-            ws: true, // 支持 websocket
-            pathRewrite: function (path) {
-                pojo.heartbeat = true;
-                return path;
-            },
-        });
-        app.use("/", proxy);
-
-        pojo.server = app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        });
-        // if (data.sysProxyPort) {
-        //     options['agent'] = new httpsProxyAgent(`http://127.0.0.1:${data.sysProxyPort}`);
-        // }
-        // app.use(proxy(/^.*$/, options));
-        const result = new NetPojo();
-        result.proxyPort = port;
-        if (!interval) {
-            interval = setInterval(() => {
-                const keys = proxyTargetUrlMap.keys();
-                for (const key of keys) {
-                    const value = proxyTargetUrlMap.get(key);
-                    if (!value.heartbeat) {
-                        if (value.server) {
-                            value.server.close();
-                        }
-                        proxyTargetUrlMap.delete(key);
-                        console.log('超时关闭代理', key)
-                    } else {
-                        value.heartbeat = false;
-                    }
-                }
-                if (proxyTargetUrlMap.size === 0) {
-                    // 没有了
-                    clearInterval(interval);
-                    interval = null;
-                }
-            }, checkTimeLength);
-        }
-        return Sucess(port);
-    }
-
-    // todo 确保不会出现没有关闭的代理，工具本身有没有超时断开这样的功能等
-    public close(data: NetPojo) {
-        if (!data.targetProxyUrl) {
-            // 关闭所有
-            const keys = proxyTargetUrlMap.keys();
-            for (const key of keys) {
-                const value = proxyTargetUrlMap.get(key);
-                if (value.server) {
-                    value.server.close();
-                }
-                proxyTargetUrlMap.delete(key);
-                value.heartbeat = false;
-            }
-            if (interval) {
-                clearInterval(interval);
-            }
-            return;
-        }
-        const value = proxyTargetUrlMap.get(data.targetProxyUrl);
-        if (value) {
-            if (value.server) {
-                value.server.close();
-            }
-            proxyTargetUrlMap.delete(data.targetProxyUrl);
-        }
-        console.log('主动关闭代理', data.targetProxyUrl)
-    }
 
     wol(macAddress: string) {
         // 创建UDP套接字

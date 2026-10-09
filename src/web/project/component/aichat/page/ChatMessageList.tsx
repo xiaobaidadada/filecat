@@ -8,6 +8,7 @@
 import React, { useMemo, useState } from "react";
 import { Message } from "./chatTypes";
 import { renderMessageByType } from "./RequestTypeRenderers";
+import { format_duration_ms } from "../../../../../common/StringUtil";
 
 interface ChatMessageListProps {
     messages: Message[];
@@ -114,14 +115,18 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                                         {renderMessageByType(msg)}
                                     </div>
                                 )}
-
-                                {/* 消息底部操作条：鼠标悬浮才显示 */}
+                                {/* 消息底部操作条：鼠标悬浮才显示；耗时靠右同排显示 */}
                                 <div className="message-collapse-bar">
                                     <button onClick={() => toggleCollapse(msg.id)}>
                                         {t(collapsed ? "展开" : "折叠")}
                                     </button>
                                     <button onClick={collapseAll}>{t("全部折叠")}</button>
+                                    {/* 本轮回复耗时：仅 bot 消息且有耗时数据时显示 */}
+                                    {msg.sender === 'bot' && msg.elapsed_ms != null && (
+                                        <span className="message-elapsed">{format_duration_ms(msg.elapsed_ms)}</span>
+                                    )}
                                 </div>
+
 
                                 {/* 右上角操作按钮 */}
                                 <div className="message-actions">

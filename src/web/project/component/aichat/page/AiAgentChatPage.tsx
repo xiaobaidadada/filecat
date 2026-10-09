@@ -9,11 +9,12 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { CmdType } from "../../../../../common/frame/WsData";
 
 import { ai_agentHttp, settingHttp } from "../../../util/config";
 import { debounce } from "../../../../../common/fun.util";
+import { move_element } from "../../../../../common/ListUtil";
 import { use_auth_check } from "../../../util/store.util";
 import { copyToClipboard } from "../../../util/FunUtil";
 import { NotySuccess } from "../../../util/noty";
@@ -52,7 +53,10 @@ import { ws } from "../../../util/ws";
 
 export default function AiAgentChatPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate();
+    // 当前会话同步到 URL（?session=xxx），刷新/分享链接可恢复到同一会话。
+    // 用 replace 而非 push，避免每次点会话都往浏览器历史里塞一条记录。
+    const [search_params, set_search_params] = useSearchParams();
+    const url_session_id = search_params.get("session") || "";
     const confirm_dell_all = using_confirm();
     const { check_user_auth } = use_auth_check();
     useCmdConfirm();
@@ -211,27 +215,42 @@ export default function AiAgentChatPage() {
     });
 
     // ===== 会话操作 =====
-    const loadSessions = async (selectId?: string | null) => {
+    const loadSessions = async (selectId?: string | null): Promise<boolean> => {
         const result = await ai_agentHttp.get("sessions");
-        if (result.code !== RCode.Success) return;
+        if (result.code !== RCode.Success) return false;
         const list = result.data ?? [];
         setSessions(list);
         const nextId = selectId === null
             ? (list[0]?.id ?? "")
             : (selectId || activeSessionId || list[0]?.id || "");
         if (nextId) {
-            await loadSession(nextId);
+            return await loadSession(nextId);
         } else {
             setMessages([]);
             setActiveSessionId("");
+            // 没有可显示的会话时清掉 URL 里的 session，避免刷新后再次尝试加载已删除的会话
+            set_search_params(prev => {
+                const next = new URLSearchParams(prev);
+                next.delete("session");
+                return next;
+            }, { replace: true });
+            return false;
         }
     };
 
-    const loadSession = async (sessionId: string, switch_menu = false) => {
+    const loadSession = async (sessionId: string, switch_menu = false): Promise<boolean> => {
         const result = await ai_agentHttp.post("session/get", { session_id: sessionId });
-        if (result.code !== RCode.Success || !result.data) return;
+        if (result.code !== RCode.Success || !result.data) return false;
         const session = result.data as ai_agent_chat_session_item & { running?: boolean; live_messages?: ai_agent_message_item[] };
         setActiveSessionId(session.id);
+        // 同步到 URL（仅当与当前 URL 不一致时才写，避免多余的 history 操作）
+        if (url_session_id !== session.id) {
+            set_search_params(prev => {
+                const next = new URLSearchParams(prev);
+                next.set("session", session.id);
+                return next;
+            }, { replace: true });
+        }
         // 该会话是否正在执行中（其它标签页 / 发起后切走）
         setActiveSessionRunning(!!session.running);
         // ===== 订阅绑定：把当前 ws 连接与该会话绑定（仅当该会话正在执行时） =====
@@ -260,6 +279,7 @@ export default function AiAgentChatPage() {
         // 后台进程面板打开时，切换会话后刷新进程列表
         bgPanelRef.refresh?.();
         requestAnimationFrame(() => scrollToBottom(false));
+        return true;
     };
 
     const createSession = async (sysPromptId?: string) => {
@@ -283,6 +303,21 @@ export default function AiAgentChatPage() {
                 el.style.height = Math.min(el.scrollHeight, 200) + 'px';
             }
         });
+    };
+
+    /**
+     * 会话列表拖动排序：按“被拖项 id → 落点项 id”重排，再持久化到后端。
+     * 用 id 而非下标，避免搜索过滤时展示顺序与全量数组下标错位。
+     */
+    const reorderSessions = (from_id: string, to_id: string) => {
+        const from = sessions.findIndex(it => it.id === from_id);
+        const to = sessions.findIndex(it => it.id === to_id);
+        if (from < 0 || to < 0 || from === to) return;
+        const next = move_element<ai_agent_chat_session_meta>(sessions, from, to);
+        setSessions(next);
+        ai_agentHttp.post("sessions/update/sort", {
+            session_ids: next.map(it => it.id),
+        }).catch(() => {});
     };
 
     const deleteSession = (sessionId: string) => {
@@ -587,7 +622,14 @@ export default function AiAgentChatPage() {
         }
         // 拉取聚合的所有供应商模型（用于模型选择器）
         await loadPublicModels();
-        await loadSessions();
+        // 优先恢复 URL 指定的会话（支持刷新/分享链接）；
+        // 该会话可能已被删除，加载失败时退回默认逻辑（当前会话或列表首个）。
+        if (url_session_id) {
+            const ok = await loadSessions(url_session_id);
+            if (!ok) await loadSessions();
+        } else {
+            await loadSessions();
+        }
         const sysPromptResult = await ai_agentHttp.get("system_prompts");
         if (sysPromptResult.code === RCode.Success) {
             setSysPromptList(sysPromptResult.data ?? []);
@@ -782,6 +824,7 @@ export default function AiAgentChatPage() {
                     sessions={sessions}
                     activeSessionId={activeSessionId}
                     onSelectSession={(id) => loadSession(id, false)}
+                    onReorderSessions={reorderSessions}
                     onRenameSession={renameSession}
                     onDeleteSession={deleteSession}
                     onToggleCmdAuto={toggleCmdAuto}

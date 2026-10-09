@@ -5,7 +5,7 @@
 /filecat-win.exe
 /filecat.exe
 /.idea/
-/dist/
+
 package-lock.json
 /data/
 /data2/
@@ -27,3 +27,4 @@ filecat-win-x64
 filecat-win-x64.zip
 test
 /tsc_check.log
+dist

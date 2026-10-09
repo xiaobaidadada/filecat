@@ -6,7 +6,6 @@ import {getRouterPath, isNumeric} from "../../../util/WebPath";
 import {HeaderPortal} from "../../../../meta/component/HeaderPortal";
 import {FullScreenDiv} from "../../../../meta/component/Dashboard";
 import {netHttp, sshHttp} from "../../../util/config";
-import {NetPojo} from "../../../../../common/req/net.pojo";
 import {RCode} from "../../../../../common/Result.pojo";
 import {Blank} from "../../../../meta/component/Blank";
 import {NavIndexContainer} from "../../navindex/component/NavIndexContainer";
@@ -117,15 +116,16 @@ export function RemoteLinux(props) {
         setPort(parseInt(v));
     }
     return <React.Fragment>
-        <HeaderPortal position={"right"}>
-                                <InputTextIcon placeholder={t("目录")} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
+        {/* 连接表单只在未连接时显示；已连接后由 RemoteLinuxFileList 提供操作，不再需要重复输入连接信息 */}
+        {!sshInfo.key && <HeaderPortal position={"right"}>
+                            <InputTextIcon placeholder={t("目录")} icon={"home"} value={dir} handleInputChange={(v)=>setDir(v)} max_width={"15rem"}/>
                             <InputTextIcon placeholder={t("账号")} icon={"verified_user"} value={username} handleInputChange={(v)=>setUsername(v)} max_width={"15rem"}/>
                             <InputTextIcon type={"password"} placeholder={t("密码")} icon={"password"} value={password} handleInputChange={(v)=>setPassword(v)} max_width={"15rem"}/>
                             <InputTextIcon placeholder={t("私钥路径")} icon={"private_connectivity"} value={private_path} handleInputChange={(v)=>setPrivatePath(v)} max_width={"15rem"}/>
                             <InputTextIcon placeholder={t("连接地址")} icon={"location_on"} value={domain} handleInputChange={(v) => {setDomain(v);}} max_width={"15rem"}/>
                             <InputTextIcon placeholder={t("端口")} icon={"outlet"} value={port} handleInputChange={handlerSysPort} max_width={"7rem"}/>
                             <ActionButton icon={"play_arrow"} title={t("连接")} onClick={()=>{go()}}/>
-            </HeaderPortal>
+            </HeaderPortal>}
         {!sshInfo.key ?
 
             <NavIndexContainer have_auth_edit={check_user_auth(UserAuth.ssh_proxy_tag_update)} getItems={getItems}  save={saveItems} clickItem={clickItem} items={[{key:"name",preName:t("名字")},{key:"domain",preName:t("地址")},{key:"port",preName:t("端口")},{key:"username",preName:t("账号")},{key:"password",preName:t("密码")},{key:"private_path",preName:t("私钥路径")},{key:"dir",preName:t("访问目录")},{key:"color",preName:"color"}]}/>

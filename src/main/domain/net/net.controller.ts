@@ -3,7 +3,7 @@ import {UserAuth} from "../../../common/req/user.req";
 import {Sucess} from "../../other/Result";
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
-import {http_proxy_item_sample, NetPojo} from "../../../common/req/net.pojo";
+import {http_proxy_item_sample} from "../../../common/req/net.pojo";
 import {netService} from "./net.service";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
@@ -24,19 +24,6 @@ const http_tag_key = data_common_key.http_tag_key;
 
 @JsonController("/net")
 export class NetController {
-
-    @Post('/start')
-    async start(@Body() data: NetPojo, @Req() req) {
-        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy);
-        return netService.start(data);
-    }
-
-    @Post('/close')
-    async close(@Body() data: NetPojo, @Req() req) {
-        userService.have_user_auth(req.headers.authorization, UserAuth.browser_proxy);
-        await netService.close(data);
-        return Sucess("1");
-    }
 
     @Post('/tag/save')
     save(@Body() items: NavIndexItem[], @Req() req: Request) {

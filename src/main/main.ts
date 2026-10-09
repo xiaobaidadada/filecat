@@ -43,6 +43,7 @@ import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
+import {use_browser_proxy_middleware} from "./other/middleware/BrowserProxy";
 import { tcpForwardService } from "./domain/net/tcp.forward.server.service";
 import { NetMsgType, NetUtil } from "./domain/net/util/NetUtil";
 
@@ -50,7 +51,6 @@ import { NetMsgType, NetUtil } from "./domain/net/util/NetUtil";
 const http = require('http');
 const https = require('https');
 const Mustache = require('mustache');
-const {createProxyMiddleware} = require('http-proxy-middleware');
 
 const WebSocket = require('ws');
 const compression = require('compression'); // webpack-dev-server 包含的有
@@ -106,6 +106,10 @@ export async function start_main() {
         // authorizationChecker
     });
     app.use(compression());
+
+    // 网页代理：复用自身端口，路径 {base_url}/browser_proxy/{proto}/{host}/...
+    // 必须在静态资源/SPA 兜底与 dev 代理之前挂载，否则请求会被当成前端路由吞掉
+    app.use(use_browser_proxy_middleware(await get_base()));
 
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start(settingService.check.bind(settingService));
@@ -179,6 +183,7 @@ export async function start_main() {
             }
         });
     } else {
+        const {createProxyMiddleware} = require('http-proxy-middleware');
 
         // 使用正则表达式匹配路径并代理
         // const self_pre = settingService.get_customer_api_pre_key();

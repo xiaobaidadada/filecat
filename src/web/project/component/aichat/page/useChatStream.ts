@@ -16,6 +16,7 @@ import {
     ai_agent_content_part
 } from "../../../../../common/req/filecat.ai.pojo";
 import {Message} from "./chatTypes";
+import {toUiMessages} from "./messageUtils";
 import React, {useState} from 'react';
 
 /** 排队消息的结构 */
@@ -106,6 +107,9 @@ export function useChatStream(opts: UseChatStreamOptions) {
         // ===== ai_chat_msg：处理流式文本 =====
         const handleChatMsg = (data: WsData<any>) => {
             const ctx = data.context || {};
+            // 多会话可并行执行，广播会推给同一连接上的所有监听器；
+            // 这里必须按 session_id 过滤，否则会把别的会话的流式文本混进本会话气泡。
+            if (ctx.session_id !== sessionId) return;
             const chunkText: string = ctx.text || '';
             const tool_call_ends = ctx.tool_call_ends
             const chunkIndex: number = ctx.chunk_index ?? 0;
@@ -165,12 +169,34 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
         // ===== ai_chat_end：清理并收尾 =====
         const handleChatEnd = (data: WsData<any>) => {
+            const ctx = data.context || {};
+            // 只处理自己发起的那个会话的结束事件（多会话并行时广播会串到所有监听器）
+            if (ctx.session_id !== sessionId) return;
             cleanup();
             abortRef.current = null;
             // 只清理自己发起的会话标记（避免误清并行运行的其它会话）
             setSending(prev => prev === sessionId ? null : prev);
             // 清理未完成的加载气泡
             currentLoading.is_loading = false;
+            // 本地发起时最终渲染由本 hook 负责（全局 handleEnd 会因 sendingSessionId 命中而提前返回）。
+            // 若后端带回了本轮最终消息列表，直接用它重建成最终气泡（含耗时等元信息），
+            // 与全局 handleEnd 的处理方式保持一致，避免两条路径渲染结果不同。
+            if (getActiveSessionId() === sessionId) {
+                if (ctx.once_messages_list?.length) {
+                    // once_messages_list 只含 assistant（不含用户消息）。
+                    // 用与全局 handleEnd 一致的策略：末尾是本轮临时 bot 气泡就替换它，否则追加，
+                    // 这样不会误删用户消息，也不会残留“AI思考中”占位气泡。
+                    const finalMsgs = toUiMessages(ctx.once_messages_list);
+                    setMessages(prev => {
+                        const last = prev[prev.length - 1];
+                        return last?.sender === 'bot'
+                            ? [...prev.slice(0, -1), ...finalMsgs]
+                            : [...prev, ...finalMsgs];
+                    });
+                } else {
+                    setMessages([...newMessages]);
+                }
+            }
             refreshSessions();
             scrollToBottom(true);
             onDone();
@@ -178,11 +204,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
         // ===== ai_chat_error：清理并显示错误 =====
         const handleChatError = (data: WsData<any>) => {
+            const ctx = data.context || {};
+            // 同上：只处理自己会话的错误，避免别的会话报错把本会话气泡改坏
+            if (ctx.session_id !== sessionId) return;
             cleanup();
             abortRef.current = null;
             // 只清理自己发起的会话标记
             setSending(prev => prev === sessionId ? null : prev);
-            const ctx = data.context || {};
             currentLoading.text = "AI请求出错: " + (ctx.message || '未知错误');
             currentLoading.is_loading = false;
             // 若用户已切换会话，则不覆盖当前显示的 messages

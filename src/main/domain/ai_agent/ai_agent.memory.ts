@@ -226,6 +226,7 @@ export class AiAgentMemoryService {
             source: session.source,
             created_at: session.created_at,
             updated_at: session.updated_at,
+            sort_index: session.sort_index,
             file_name: fileName,
             usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
             cmd_auto_allow: session.cmd_auto_allow ?? false,
@@ -277,7 +278,15 @@ export class AiAgentMemoryService {
         const store = this.read_index_of_session();
         return this.user_meta_index_by_store(store, userId).sessions
             .slice()
-            .sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0))
+            // 排序规则：用户手动拖动过(sort_index 有值)的排在前面，按 sort_index 升序；
+            // 其余未排序的按 updated_at 倒序（新会话/新活动靠前）
+            .sort((a, b) => {
+                const ai = a.sort_index, bi = b.sort_index;
+                if (ai !== undefined && bi !== undefined) return ai - bi;
+                if (ai !== undefined) return -1;
+                if (bi !== undefined) return 1;
+                return (b.updated_at ?? 0) - (a.updated_at ?? 0);
+            })
             .map(it => ({
                 id: it.id,
                 title: it.title,
@@ -287,6 +296,7 @@ export class AiAgentMemoryService {
                 source: it.source,
                 created_at: it.created_at,
                 updated_at: it.updated_at,
+                sort_index: it.sort_index,
                 usage_stats: it.usage_stats ? {...it.usage_stats} : undefined,
                 cmd_auto_allow: it.cmd_auto_allow ?? false,
             }));
@@ -402,6 +412,36 @@ export class AiAgentMemoryService {
         session.updated_at = Date.now();
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
+    }
+
+    /**
+     * 保存会话列表的自定义排序（用户拖动排序后调用）。
+     * 按传入的 id 顺序写入 sort_index（0,1,2...），未出现在列表中的会话保持原值。
+     * @param sessionIds 排序后的会话 id 数组（索引即顺序）
+     */
+    public sessions_update_sort(userId: string, sessionIds: string[]) {
+        if (!Array.isArray(sessionIds) || sessionIds.length === 0) return;
+        const store = this.read_index_of_session();
+        const user = this.user_meta_index_by_store(store, userId);
+        // id → 新顺序 的映射，便于 O(1) 查找
+        const order_map = new Map<string, number>();
+        sessionIds.forEach((id, index) => order_map.set(id, index));
+        user.sessions.forEach(meta => {
+            const next = order_map.get(meta.id);
+            if (next === undefined) return;
+            meta.sort_index = next;
+            // 同步写入 session 文件，避免 appendTurn 时 toMeta 回写覆盖掉排序值
+            try {
+                const session = this.read_session(userId, meta);
+                if (session) {
+                    session.sort_index = next;
+                    this.writeSession(userId, session, meta.file_name);
+                }
+            } catch (e) {
+                console.error("sessions_update_sort: 同步 session 文件失败", e);
+            }
+        });
+        this.saveIndex(store);
     }
 
     public sessions_update_meta(userId: string, session:ai_agent_chat_session_meta ) {

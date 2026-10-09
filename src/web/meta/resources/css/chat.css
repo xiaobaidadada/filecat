@@ -92,12 +92,27 @@
     color: #222;
 }
 
-
 .chat-session-item > *:last-child {
     position: absolute;
     top: 6px;
     right: 6px;
 }
+
+/* ===== 会话列表拖动排序 ===== */
+.chat-session-item[draggable="true"] {
+    cursor: grab;
+}
+
+/* 拖动源：半透明表示“正在被拖走” */
+.chat-session-item.row-dragging {
+    opacity: 0.5;
+}
+
+/* 拖动落点：整行高亮提示插入位置 */
+.chat-session-item.row-drop-target {
+    background: var(--hover);
+}
+
 
 .chat-session-list.collapsed .chat-session-item {
     min-height: 42px;
@@ -499,7 +514,6 @@
 .chat-message.collapsed .chat-message-body {
     display: none;
 }
-
 /* 消息底部操作条：默认隐藏，鼠标悬浮消息时才显示 */
 .message-collapse-bar {
     display: flex;
@@ -509,6 +523,17 @@
     transition: opacity 0.15s ease;
     z-index: 4;
 }
+
+/* 本轮 AI 回复耗时：与「折叠/全部折叠」同排紧挨，跟随操作条一起显隐 */
+.message-elapsed {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--textSecondary);
+    opacity: 0.75;
+    user-select: none;
+    white-space: nowrap;
+}
+
 
 .chat-message:hover .message-collapse-bar {
     opacity: 1;
