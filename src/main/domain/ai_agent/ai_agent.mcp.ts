@@ -128,7 +128,7 @@ export class AiMcpRuntimeService {
                 endpoint: item.endpoint,
                 headers: parseHeaderText(item.headers),
                 // 超时从配置透传
-                timeout_ms: item.timeout_ms
+                // timeout_ms: item.timeout_ms
             });
         }
         if (!item.command) {

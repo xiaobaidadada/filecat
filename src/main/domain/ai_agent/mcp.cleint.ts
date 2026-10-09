@@ -397,7 +397,7 @@ export class StdioMcpServerClient  implements IMcpTransport{
 
     // 最关键的，向mcp服务发送数据
     // customId：协议探测时需要指定字符串 id；不传则用自增数字 id
-    public request(method: string, params?: any, timeoutMs = this.config.timeout_ms ?? 1_000_000, customId?: string) {
+    public request(method: string, params?: any, timeoutMs =  1_000_000, customId?: string) {
         const child = this.child;
         if (!child || child.killed) {
             return Promise.reject(new Error(`MCP ${this.configName} not started`));
