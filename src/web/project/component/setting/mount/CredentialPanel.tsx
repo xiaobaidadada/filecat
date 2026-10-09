@@ -459,11 +459,10 @@ export default function CredentialPanel() {
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
-            {!editing && <Table headers={[t("备注"), t("类型"), t("账号"), t("操作")]}
+            {!editing && <Table headers={[t("备注"), t("类型"), t("操作")]}
                    rows={list.map(item => [
                        <TextTip context={item.note}/>,
                        <TextTip context={type_name(item.type)}/>,
-                       <TextTip context={String((item.accounts ?? []).length || "-")}/>,
                        <div>
                            <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
                            <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
