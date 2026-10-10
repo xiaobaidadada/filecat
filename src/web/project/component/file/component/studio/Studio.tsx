@@ -306,7 +306,7 @@ export default function Studio(props) {
     /** 左侧面板是否显示大纲（仅 md 文件、且面板已展开、且切到大纲视图时） */
     const outline_on = is_md && show_nav && nav_content === "outline";
 
-    return <div className={"studio"}>
+    return <div className={"studio studio--file"}>
         <Header ignore_tags={true}
                 left_children={[
                     <ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,
