@@ -956,5 +956,7 @@
   "该分支会从远程仓库删除": "This branch will be deleted from the remote repository",
   "删除远程分支": "Delete remote branch",
   "将": "Merge",
-  "合并到": "into"
+  "合并到": "into",
+  "未推送": "Not pushed",
+  "已到底部": "No more"
 }

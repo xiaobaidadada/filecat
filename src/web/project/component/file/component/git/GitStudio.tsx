@@ -40,6 +40,9 @@ type DiffTarget =
 /** 左侧面板页签 */
 type Tab = 'status' | 'log';
 
+/** 提交记录分页大小，滚动到底部时按此数量继续加载 */
+const LOG_PAGE_SIZE = 100;
+
 export default function GitStudio() {
     const {t} = useTranslation();
     const navigate = useNavigate();
@@ -50,6 +53,10 @@ export default function GitStudio() {
     // ===== 仓库数据 =====
     const [statusFiles, setStatusFiles] = useState<GitStatusFile[]>([]);
     const [logEntries, setLogEntries] = useState<GitLogEntry[]>([]);
+    const [logHasMore, setLogHasMore] = useState(false);
+    const [log_loading_more, setLog_loading_more] = useState(false);
+    // 分页互斥锁用 ref：scroll 事件可能在同一 tick 连续触发，state 更新来不及充当守卫
+    const log_loading_ref = useRef(false);
     const [branchInfo, setBranchInfo] = useState<GitBranchInfo>({current: '', branches: []});
     const [commitMessage, setCommitMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -129,10 +136,42 @@ export default function GitStudio() {
 
     const loadLog = async () => {
         try {
-            const rsq = await gitHttp.post('log', {path: dirPath, maxCount: 100});
-            if (rsq.code === 0) setLogEntries(rsq.data || []);
+            const rsq = await gitHttp.post('log', {path: dirPath, maxCount: LOG_PAGE_SIZE, skip: 0});
+            if (rsq.code === 0) {
+                const list = rsq.data || [];
+                setLogEntries(list);
+                setLogHasMore(list.length >= LOG_PAGE_SIZE);
+            }
         } catch (e) {
         }
+    };
+
+    /** 滚动到底时追加下一页提交记录 */
+    const load_more_log = async () => {
+        // 用 ref 做同步守卫：React 状态更新是异步的，连续 scroll 事件会在同一 tick 重复进入
+        if (log_loading_ref.current || !logHasMore) return;
+        log_loading_ref.current = true;
+        setLog_loading_more(true);
+        try {
+            const rsq = await gitHttp.post('log', {path: dirPath, maxCount: LOG_PAGE_SIZE, skip: logEntries.length});
+            if (rsq.code === 0) {
+                const list = rsq.data || [];
+                // 用函数式更新基于最新列表累积，避免闭包拿到旧值
+                setLogEntries(prev => [...prev, ...list]);
+                setLogHasMore(list.length >= LOG_PAGE_SIZE);
+            }
+        } catch (e) {
+        } finally {
+            log_loading_ref.current = false;
+            setLog_loading_more(false);
+        }
+    };
+
+    /** 提交记录滚动到底部附近时加载下一页 */
+    const on_log_scroll = (e: React.UIEvent<HTMLDivElement>) => {
+        if (searchEntries !== null) return;   // 搜索结果不支持分页
+        const el = e.currentTarget;
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) load_more_log();
     };
 
     const loadBranches = async () => {
@@ -518,8 +557,12 @@ export default function GitStudio() {
                                 <GitLogList
                                     dir_path={dirPath}
                                     entries={searchEntries ?? logEntries}
+                                    is_search={searchEntries !== null}
+                                    has_more={logHasMore}
+                                    loading_more={log_loading_more}
                                     active_hash={diffTarget?.kind === 'commit' ? diffTarget.hash : null}
                                     on_select={view_commit}
+                                    on_scroll_bottom={on_log_scroll}
                                     on_search_result={(list) => {
                                         setSearchEntries(list);
                                         if (list === null) loadLog();

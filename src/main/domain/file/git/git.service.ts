@@ -23,6 +23,12 @@ export interface GitLogEntry {
     message: string;
     author: string;
     date: string;
+    /** 提交所指向的引用名（分支、tag、HEAD 等），来自 %D */
+    refs?: string[];
+    /** 父提交短 hash，用于绘制树形血缘 */
+    parents?: string[];
+    /** 是否尚未推送到上游分支 */
+    unpushed?: boolean;
 }
 
 export interface GitBranchInfo {
@@ -147,28 +153,47 @@ export class GitServiceImpl {
         }
     }
 
-    async gitLog(token: string, relativePath: string, maxCount = 50): Promise<Result<any>> {
+    async gitLog(token: string, relativePath: string, maxCount = 50, skip = 0): Promise<Result<any>> {
         try {
             const cwd = this.resolvePath(token, relativePath);
             await this.ensureGitRepo(cwd);
-            const output = await this.execGit(cwd, `log --oneline --max-count=${maxCount} --format="%h|%s|%an|%ad" --date=format:"%Y-%m-%d %H:%M"`);
+            // %D 是 ref 名称列表，%p 是父提交（短 hash，与 %h 同长度，前端据此画树形血缘）
+            const output = await this.execGit(cwd, `log --max-count=${maxCount} --skip=${skip} --format="%h%x1f%s%x1f%an%x1f%ad%x1f%D%x1f%p" --date=format:"%Y-%m-%d %H:%M"`);
+            // 未推送到上游的提交集合；无上游分支时视为全部已推送
+            const unpushed = await this.get_unpushed_set(cwd);
             const entries: GitLogEntry[] = [];
             if (output) {
                 for (const line of output.split("\n")) {
-                    const parts = line.split("|");
-                    if (parts.length >= 4) {
-                        entries.push({
-                            hash: parts[0],
-                            message: parts[1],
-                            author: parts[2],
-                            date: parts.slice(3).join("|"),
-                        });
-                    }
+                    const parts = line.split("\x1f");
+                    if (parts.length < 6) continue;
+                    entries.push({
+                        hash: parts[0],
+                        message: parts[1],
+                        author: parts[2],
+                        date: parts[3],
+                        refs: parts[4] ? parts[4].split(",").map(s => s.trim()).filter(Boolean) : [],
+                        parents: parts[5] ? parts[5].split(" ").filter(Boolean) : [],
+                        unpushed: unpushed.has(parts[0]),
+                    });
                 }
             }
             return Sucess(entries);
         } catch (e: any) {
             return Fail(this.err_msg(e));
+        }
+    }
+
+    /**
+     * 取「未推送到上游分支」的提交短 hash 集合（等价于 WebStorm 在提交记录里的斜体/箭头标记）。
+     * 没有上游分支时返回空集合。
+     */
+    private async get_unpushed_set(cwd: string): Promise<Set<string>> {
+        try {
+            const output = await this.execGit(cwd, 'log --format="%h" @{u}..HEAD');
+            return new Set(output ? output.split("\n").map(s => s.trim()).filter(Boolean) : []);
+        } catch (e) {
+            // 无上游分支（如本地新建分支）时不标记
+            return new Set();
         }
     }
 
@@ -427,13 +452,13 @@ export class GitServiceImpl {
         try {
             const cwd = this.resolvePath(token, relativePath);
             await this.ensureGitRepo(cwd);
-            // %D 是 ref 名称列表，%P 是父提交（用于前端画连线）
+            // %D 是 ref 名称列表，%p 是父提交（短 hash，用于前端画连线）
             const output = await this.execGit(cwd,
-                `log --max-count=${maxCount} --format="%h|%s|%an|%ad|%D|%P" --date=format:"%Y-%m-%d %H:%M"`);
+                `log --max-count=${maxCount} --format="%h%x1f%s%x1f%an%x1f%ad%x1f%D%x1f%p" --date=format:"%Y-%m-%d %H:%M"`);
             const entries = [];
             for (const line of output.split("\n")) {
                 if (!line.trim()) continue;
-                const parts = line.split("|");
+                const parts = line.split("\x1f");
                 if (parts.length < 6) continue;
                 entries.push({
                     hash: parts[0],
@@ -911,15 +936,25 @@ export class GitServiceImpl {
         try {
             const cwd = this.resolvePath(token, relativePath);
             await this.ensureGitRepo(cwd);
-            let args = `log --max-count=${maxCount} --format="%h|%s|%an|%ad" --date=format:"%Y-%m-%d %H:%M"`;
+            let args = `log --max-count=${maxCount} --format="%h%x1f%s%x1f%an%x1f%ad%x1f%D%x1f%p" --date=format:"%Y-%m-%d %H:%M"`;
             if (keyword && keyword.trim()) args += ` --grep="${keyword.trim().replace(/"/g, '\\"')}" -i`;
             if (author && author.trim()) args += ` --author="${author.trim().replace(/"/g, '\\"')}" -i`;
             const output = await this.execGit(cwd, args);
+            const unpushed = await this.get_unpushed_set(cwd);
             const entries = [];
             for (const line of output.split("\n")) {
                 if (!line.trim()) continue;
-                const p = line.split("|");
-                if (p.length >= 4) entries.push({hash: p[0], message: p[1], author: p[2], date: p[3]});
+                const p = line.split("\x1f");
+                if (p.length < 6) continue;
+                entries.push({
+                    hash: p[0],
+                    message: p[1],
+                    author: p[2],
+                    date: p[3],
+                    refs: p[4] ? p[4].split(",").map(s => s.trim()).filter(Boolean) : [],
+                    parents: p[5] ? p[5].split(" ").filter(Boolean) : [],
+                    unpushed: unpushed.has(p[0]),
+                });
             }
             return Sucess(entries);
         } catch (e: any) {

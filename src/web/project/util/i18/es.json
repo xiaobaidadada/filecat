@@ -952,5 +952,7 @@
   "该分支会从远程仓库删除": "Esta rama se eliminará del repositorio remoto",
   "删除远程分支": "Eliminar rama remota",
   "将": "Fusionar",
-  "合并到": "en"
+  "合并到": "en",
+  "未推送": "Sin enviar",
+  "已到底部": "No hay más"
 }

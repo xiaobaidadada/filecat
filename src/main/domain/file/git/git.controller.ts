@@ -16,8 +16,8 @@ export class GitController {
     }
 
     @Post("/log")
-    async log(@Req() ctx, @Body() data: { path: string; maxCount?: number }): Promise<Result<any>> {
-        return gitService.gitLog(ctx.headers.authorization, data.path, data.maxCount);
+    async log(@Req() ctx, @Body() data: { path: string; maxCount?: number; skip?: number }): Promise<Result<any>> {
+        return gitService.gitLog(ctx.headers.authorization, data.path, data.maxCount, data.skip);
     }
 
     @Post("/branches")

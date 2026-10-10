@@ -952,5 +952,7 @@
   "该分支会从远程仓库删除": "Cette branche sera supprimée du dépôt distant",
   "删除远程分支": "Supprimer la branche distante",
   "将": "Fusionner",
-  "合并到": "dans"
+  "合并到": "dans",
+  "未推送": "Non poussé",
+  "已到底部": "Plus rien"
 }

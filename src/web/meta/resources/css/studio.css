@@ -763,8 +763,96 @@
 }
 
 /* ===== 提交记录行 ===== */
-.git-log__entry--active {
-    background: var(--hover);
+.git-log__entry {
+    display: flex;
+    align-items: stretch;
+    gap: .3rem;
+    /* 左内边距取整数像素，保证图形列落在整数栅格上，避免竖线压在半像素上出现抗锯齿细缝 */
+    padding: 0 .5rem 0 4px;
+    cursor: pointer;
+}
+/* 行内上下留白交给 .git-log__main 自己撑，图形列整行贯穿不留缝，保证上下行连线接续 */
+.git-log__main {
+    padding: .25rem 0;
+}
+/* 主题文件有 `.studio-nav div { background: var(--surfacePrimary) !important; border-radius: var(--border-radius) }`，
+   会把行内每一层 div 都刷成不透明白底加 12px 圆角，导致 hover 底色只在子元素边缘露出、树形连线四角被切掉。
+   此处把提交记录行整棵子树的背景与圆角复位，让 hover 由最外层 .git-log__entry 统一承担。 */
+.studio-nav .git-log__entry,
+.studio-nav .git-log__entry div {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+.studio-nav .git-log__entry:hover,
+.studio-nav .git-log__entry--active {
+    background: var(--hover) !important;
+}
+/* 提交列表底部的加载中 / 已到底部提示 */
+.git-log__more {
+    padding: .6rem 0;
+    text-align: center;
+    font-size: .8rem;
+    color: var(--textSecondary);
+}
+
+/* 树形血缘列（SVG 绘制）：占据固定宽度，竖线贯穿整行 */
+.git-log__graph {
+    flex-shrink: 0;
+    align-self: stretch;
+    display: flex;
+}
+/* SVG 宽高由行内属性给定，overflow 可见使连线画出行的 padding 区，保证上下行接续 */
+.git-log__graph > svg {
+    display: block;
+    overflow: visible;
+}
+/* 竖线强制按像素栅格渲染，避免落在半像素上出现抗锯齿细缝；曲线保持默认平滑，不参与栅格化 */
+.git-log__graph-edge {
+    stroke: var(--icon-blue);
+    stroke-width: 2;
+    stroke-linecap: butt;
+    fill: none;
+    opacity: .55;
+}
+line.git-log__graph-edge {
+    shape-rendering: crispEdges;
+}
+.git-log__graph-dot {
+    fill: var(--icon-blue);
+    stroke: var(--surfacePrimary);
+    stroke-width: 1.5;
+}
+.git-log__graph-dot--unpushed {
+    fill: var(--icon-orange);
+}
+.git-log__main {
+    flex: 1;
+    min-width: 0;
+}
+/* 未推送到上游的提交：圆点橙色、提交信息加粗 */
+.git-log__entry--unpushed .git-log__msg {
+    font-weight: 600;
+}
+.git-log__unpushed {
+    flex-shrink: 0;
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: var(--icon-orange);
+}
+/* 引用标签（分支名 / tag / HEAD） */
+.git-log__ref {
+    flex-shrink: 0;
+    padding: 0 .3rem;
+    border-radius: 2px;
+    font-size: .7rem;
+    line-height: 1.3;
+    color: var(--icon-green);
+    background: rgba(46, 204, 113, .12);
+}
+.git-log__ref--head {
+    color: #fff;
+    background: var(--blue);
 }
 .git-log__hash {
     flex-shrink: 0;
