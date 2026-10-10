@@ -5,6 +5,13 @@ import {userService} from "../../user/user.service";
 import {FileUtil} from "../FileUtil";
 import path from "path";
 
+/**
+ * 所有 git 命令统一携带的选项。
+ * core.quotepath=false：关闭路径转义，否则非 ASCII（中文等）文件名会被输出成
+ * \346\210\230\346\226\227 这种八进制串，前端拿到就是乱码。
+ */
+const GIT_COMMON_OPTS = "-c core.quotepath=false";
+
 export interface GitStatusFile {
     path: string;
     // 暂存区状态 X，取值：M(修改) A(新增) D(删除) R(重命名) C(复制) ?(未跟踪) U(冲突) 空格(无)
@@ -95,7 +102,7 @@ export class GitServiceImpl {
      */
     private execGitBuffer(cwd: string, args: string, timeout = 30000): Promise<Buffer> {
         return new Promise((resolve, reject) => {
-            exec(`git ${args}`, {cwd, timeout, maxBuffer: 20 * 1024 * 1024, encoding: "buffer"}, (err, stdout) => {
+            exec(`git ${GIT_COMMON_OPTS} ${args}`, {cwd, timeout, maxBuffer: 20 * 1024 * 1024, encoding: "buffer"}, (err, stdout) => {
                 if (err) reject(err);
                 else resolve(stdout as unknown as Buffer);
             });
@@ -161,7 +168,7 @@ export class GitServiceImpl {
      */
     private execGit(cwd: string, args: string, timeout = 30000, keep_raw = false): Promise<string> {
         return new Promise((resolve, reject) => {
-            exec(`git ${args}`, {cwd, timeout, maxBuffer: 10 * 1024 * 1024}, (err, stdout, stderr) => {
+            exec(`git ${GIT_COMMON_OPTS} ${args}`, {cwd, timeout, maxBuffer: 10 * 1024 * 1024}, (err, stdout, stderr) => {
                 if (err) {
                     // Git 经常将正常信息输出到 stderr，所以合并两者提供完整上下文
                     const errorMsg = [stderr, stdout, err.message]
