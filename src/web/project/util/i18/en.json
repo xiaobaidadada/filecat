@@ -960,5 +960,7 @@
   "未推送": "Not pushed",
   "已到底部": "No more",
   "没有可提交的更改": "Nothing to commit",
-  "存在未暂存的改动，是否一并暂存并提交？": "There are unstaged changes. Stage and commit them together?"
+  "存在未暂存的改动，是否一并暂存并提交？": "There are unstaged changes. Stage and commit them together?",
+  "二进制文件无法比较": "Binary file cannot be compared",
+  "请选择文件查看改动": "Select a file to view changes"
 }

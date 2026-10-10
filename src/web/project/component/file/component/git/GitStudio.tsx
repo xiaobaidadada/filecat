@@ -73,9 +73,7 @@ export default function GitStudio() {
 
     // ===== diff 面板 =====
     const [diffTarget, setDiffTarget] = useState<DiffTarget | null>(null);
-    const [diffText, setDiffText] = useState('');
     const [diffMode, setDiffMode] = useState<'unified' | 'split'>('unified');
-    const [diffLoading, setDiffLoading] = useState(false);
 
     // ===== 配置 =====
     const [userConfig, setUserConfig] = useState<GitUserConfig>({name: '', email: ''});
@@ -203,23 +201,13 @@ export default function GitStudio() {
     // ===== diff 查看 =====
     /** 查看工作区某文件的改动 */
     const view_file_diff = async (file: GitStatusFile, staged: boolean) => {
-        // 未跟踪文件没有 diff（git diff 不输出未跟踪内容）
+        // 未跟踪文件没有可对比的历史版本（.git 里不存在），无需请求内容接口
         if (file.untracked) {
             NotyFail(t('未跟踪文件无差异'));
             return;
         }
+        // 两版内容由 GitDiffView 自行按 ref 拉取，这里只确定对比目标
         setDiffTarget({kind: 'working', path: file.path, staged});
-        setDiffLoading(true);
-        try {
-            const rsq = await gitHttp.post('diff', {path: dirPath, file: file.path, staged});
-            if (rsq.code === 0) setDiffText(rsq.data || '');
-            else { NotyFail(rsq.message); setDiffText(''); }
-        } catch (e: any) {
-            NotyFail(e?.message);
-            setDiffText('');
-        } finally {
-            setDiffLoading(false);
-        }
     };
 
     /** 点击提交记录 → 显示提交详情 */
@@ -511,9 +499,9 @@ export default function GitStudio() {
                                       onClick={() => setDiffTarget(null)}/>
                     </div>
                 </div>
-                {diffLoading
-                    ? <div className="git-change-empty">{t('加载中')}</div>
-                    : <GitDiffView diff_text={diffText} mode={diffMode}/>}
+                {diffTarget.staged
+                    ? <GitDiffView dir_path={dirPath} file={diffTarget.path} left_ref="HEAD" right_ref="staged" mode={diffMode}/>
+                    : <GitDiffView dir_path={dirPath} file={diffTarget.path} left_ref="HEAD" right_ref="worktree" mode={diffMode}/>}
             </div>
         );
     };

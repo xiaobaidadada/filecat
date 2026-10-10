@@ -84,6 +84,69 @@ export class GitServiceImpl {
     }
 
     /**
+     * 清洗 git ref（分支名 / commit hash / HEAD~n 等），只允许安全字符，防命令注入。
+     */
+    private clean_ref(ref: string): string {
+        return ref.replace(/[^0-9a-zA-Z_.\-/~^:@{}]/g, "");
+    }
+
+    /**
+     * 执行 git 命令并返回原始 Buffer（用于读取文件内容，避免 shell 编码转换破坏字节）。
+     */
+    private execGitBuffer(cwd: string, args: string, timeout = 30000): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            exec(`git ${args}`, {cwd, timeout, maxBuffer: 20 * 1024 * 1024, encoding: "buffer"}, (err, stdout) => {
+                if (err) reject(err);
+                else resolve(stdout as unknown as Buffer);
+            });
+        });
+    }
+
+    /**
+     * 取文件在指定版本的内容，供前端 Ace diff 视图做左右两版对比。
+     * ref 取值：worktree(工作区文件) / staged(暂存区) / HEAD / <commit hash> / <分支名> 等任意 git revision。
+     * 二进制文件与超大文件一律返回 binary=true、text=null，由前端提示无法比较（与 JetBrains 行为一致）。
+     */
+    async gitFileContent(token: string, relativePath: string, file: string, ref: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            await this.ensureGitRepo(cwd);
+            // file 是仓库内相对路径，规范化后禁止越出仓库
+            const rel_file = path.normalize(file).replace(/^(\.\.[\/\\])+/, "").replace(/\\/g, "/");
+            if (!rel_file || rel_file.startsWith("..")) return Fail("file is invalid");
+
+            let buf: Buffer | null = null;
+            if (ref === "worktree") {
+                const abs = path.join(cwd, rel_file);
+                // 文件可能已被删除，视为空内容（旧版本有内容时表现为整篇删除）
+                if (await FileUtil.access(abs)) buf = await FileUtil.readFileSync(abs);
+            } else {
+                const args = ref === "staged" ? `show :"${rel_file}"` : `show ${this.clean_ref(ref)}:"${rel_file}"`;
+                try {
+                    buf = await this.execGitBuffer(cwd, args);
+                } catch (e) {
+                    // 该版本下文件不存在（新增文件查历史、删除文件查状态）属正常情况，返回空内容而非报错
+                    if (this.is_missing_ref_file(e)) buf = null;
+                    else throw e;
+                }
+            }
+            if (!buf) return Sucess({text: "", binary: false, exists: false});
+            const max_bytes = 1024 * 1024;
+            // 二进制判定：含 NUL 字节；超大文件也按不可比较处理，避免 Ace 渲染卡死
+            if (buf.length > max_bytes || buf.includes(0)) return Sucess({text: null, binary: true, exists: true});
+            return Sucess({text: buf.toString("utf8"), binary: false, exists: true});
+        } catch (e) {
+            return Fail(this.err_msg(e));
+        }
+    }
+
+    /** 判断 git show 失败是否属于「该版本下无此文件」 */
+    private is_missing_ref_file(e: any): boolean {
+        const msg = this.err_msg(e);
+        return /does not exist|exists on disk, but not in|unknown revision|bad revision|Path .* does not exist|invalid object name/i.test(msg);
+    }
+
+    /**
      * 判断是否为冲突状态，git 冲突组合包括 DD/AU/UD/UA/DU/AA/UU
      */
     private isConflict(index: string, worktree: string): boolean {
@@ -251,6 +314,33 @@ export class GitServiceImpl {
                 parents: parents ? parents.split(" ").filter(Boolean) : [],
                 files,
             });
+        } catch (e: any) {
+            return Fail(this.err_msg(e));
+        }
+    }
+
+    /**
+     * 两个 revision 之间改动的文件列表（含增删行数），供分支比较等场景先列文件再看单个文件的 diff。
+     */
+    async gitDiffFiles(token: string, relativePath: string, from: string, to: string): Promise<Result<any>> {
+        try {
+            const cwd = this.resolvePath(token, relativePath);
+            await this.ensureGitRepo(cwd);
+            const range = `${this.clean_ref(from)}..${this.clean_ref(to)}`;
+            // --numstat 输出：新增行\t删除行\t文件路径；二进制文件用 "-" 表示行数
+            const output = await this.execGit(cwd, `diff --numstat ${range}`, 30000, true);
+            const files = [];
+            for (const line of output.split("\n")) {
+                if (!line.trim()) continue;
+                const parts = line.split("\t");
+                if (parts.length < 3) continue;
+                files.push({
+                    path: parts[2],
+                    additions: parts[0] === "-" ? null : parseInt(parts[0], 10),
+                    deletions: parts[1] === "-" ? null : parseInt(parts[1], 10),
+                });
+            }
+            return Sucess(files);
         } catch (e: any) {
             return Fail(this.err_msg(e));
         }

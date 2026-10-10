@@ -152,6 +152,12 @@ export class GitController {
         return gitService.gitDiffCommits(ctx.headers.authorization, data.path, data.from, data.to, data.file);
     }
 
+    /** 两个 revision 之间改动的文件列表 */
+    @Post("/diff_files")
+    async diffFiles(@Req() ctx, @Body() data: { path: string; from: string; to: string }): Promise<Result<any>> {
+        return gitService.gitDiffFiles(ctx.headers.authorization, data.path, data.from, data.to);
+    }
+
     @Post("/revert")
     async revert(@Req() ctx, @Body() data: { path: string; hash: string }): Promise<Result<any>> {
         return gitService.gitRevert(ctx.headers.authorization, data.path, data.hash);
@@ -277,6 +283,12 @@ export class GitController {
     @Post("/diff")
     async diff(@Req() ctx, @Body() data: { path: string; file?: string; staged?: boolean }): Promise<Result<any>> {
         return gitService.gitDiff(ctx.headers.authorization, data.path, data.file, data.staged);
+    }
+
+    /** 取文件在指定版本的内容，供 diff 视图做左右两版对比 */
+    @Post("/file_content")
+    async fileContent(@Req() ctx, @Body() data: { path: string; file: string; ref: string }): Promise<Result<any>> {
+        return gitService.gitFileContent(ctx.headers.authorization, data.path, data.file, data.ref);
     }
 
     @Post("/diff_staged")

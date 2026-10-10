@@ -396,7 +396,7 @@
 /* diff 卡片需要撑开剩余高度，且自身内部滚动 */
 .git-card--diff {
     flex: 1;
-    min-height: 20rem;
+    min-height: 50rem;
     overflow: hidden;
 }
 .git-card--placeholder {
@@ -528,74 +528,6 @@
     gap: .2rem;
 }
 
-.git-diff {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-    font-family: monospace;
-    font-size: .82rem;
-    line-height: 1.5;
-}
-.git-diff__hunk + .git-diff__hunk {
-    margin-top: .6rem;
-}
-.git-diff__hunk-header {
-    position: sticky;
-    top: 0;
-    padding: .1rem .5rem;
-    font-size: .8rem;
-    color: var(--textSecondary);
-    background: var(--moon-grey);
-}
-.git-diff__line {
-    display: flex;
-    white-space: pre;
-}
-.git-diff__line--add {
-    background: #e6ffed;
-}
-.git-diff__line--del {
-    background: #ffeef0;
-}
-.git-diff__num {
-    width: 3rem;
-    flex-shrink: 0;
-    padding-right: .5rem;
-    text-align: right;
-    color: var(--textSecondary);
-    user-select: none;
-}
-.git-diff__sign {
-    width: 1rem;
-    flex-shrink: 0;
-    text-align: center;
-    user-select: none;
-}
-.git-diff__code {
-    flex: 1;
-    padding-right: .5rem;
-}
-
-/* 左右并排视图 */
-.git-diff__row {
-    display: flex;
-}
-.git-diff__cell {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-    white-space: pre;
-    border-right: 1px solid var(--divider);
-}
-.git-diff__cell--add {
-    background: #e6ffed;
-}
-.git-diff__cell--del {
-    background: #ffeef0;
-}
-.git-diff__cell--empty {
-    background: var(--moon-grey);
-}
 .git-diff-empty {
     display: flex;
     flex: 1;
@@ -657,6 +589,34 @@
     padding: .2rem .4rem;
     font-size: .82rem;
     cursor: pointer;
+    /* 文件名过长时保持单行，由列表容器横向滚动查看，避免换行挤压行高 */
+    white-space: nowrap;
+    min-width: max-content;
+}
+.git-commit-file__name {
+    flex: 1;
+}
+/* 树形目录行 */
+.git-commit-tree__dir {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    padding: .2rem .4rem;
+    font-size: .82rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.git-commit-tree__dir:hover {
+    background: var(--hover);
+}
+.git-commit-tree__dir-name {
+    color: var(--textPrimary);
+}
+.git-commit-tree__children {
+    padding-left: .9rem;
+}
+.git-commit-file--leaf {
+    padding-left: .4rem;
 }
 .git-commit-file:hover {
     background: var(--hover);
@@ -1223,4 +1183,38 @@ line.git-log__graph-edge {
 }
 .git-tree__children {
     padding-left: 1rem;
+}
+
+/* ==================== Ace diff 视图 ==================== */
+/* ext-diff 会创建若干只读 Ace Editor 挂在容器上。
+   注意 Ace 的 .ace_editor 是绝对定位（top/bottom/left/right:0），
+   因此容器不能用 flex 去布局它们（会把宽度压成 0），只能自己用绝对定位排布。 */
+.ace-diff {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
+    font-size: .82rem;
+    overflow: hidden;
+}
+/* 并排模式：两个编辑器各占一半，中间一条分隔线 */
+.ace-diff > .ace_editor {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: calc(50% - .5px);
+}
+.ace-diff > .ace_editor:first-child {
+    left: 0;
+    border-right: 1px solid var(--divider);
+}
+.ace-diff > .ace_editor:last-child {
+    left: calc(50% + .5px);
+}
+/* 单栏模式只有一个 DOM 编辑器，占满容器 */
+.ace-diff > .ace_editor:only-child {
+    left: 0;
+    width: 100%;
+    border-right: 0;
 }

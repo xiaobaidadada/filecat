@@ -956,5 +956,7 @@
   "未推送": "Sin enviar",
   "已到底部": "No hay más",
   "没有可提交的更改": "Nada que confirmar",
-  "存在未暂存的改动，是否一并暂存并提交？": "Hay cambios sin preparar. ¿Prepararlos y confirmarlos juntos?"
+  "存在未暂存的改动，是否一并暂存并提交？": "Hay cambios sin preparar. ¿Prepararlos y confirmarlos juntos?",
+  "二进制文件无法比较": "No se puede comparar un archivo binario",
+  "请选择文件查看改动": "Selecciona un archivo para ver los cambios"
 }

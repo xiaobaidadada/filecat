@@ -34,6 +34,8 @@ import "ace-builds/src-noconflict/theme-cloud9_day";
 import "ace-builds/src-noconflict/theme-cloud_editor_dark";
 // 代码格式化（ext-beautify）供文件编辑器使用
 import "ace-builds/src-noconflict/ext-beautify";
+// 官方 diff 视图（Git 面板做左右两版对比用）：自带同步滚动、行号对齐、行级与字符级高亮
+import "ace-builds/src-noconflict/ext-diff";
 // 按文件名推断 mode（文件编辑器用它决定打开什么语法高亮）
 import * as modest from "ace-builds/src-noconflict/ext-modelist";
 

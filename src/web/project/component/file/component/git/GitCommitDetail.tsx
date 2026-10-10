@@ -1,10 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useTranslation} from "react-i18next";
 import {gitHttp} from "../../../../util/config";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
-import {ActionButton} from "../../../../../meta/component/Button";
+import {ActionButton, Icon} from "../../../../../meta/component/Button";
 import {using_confirm} from "../../../prompts/prompt.util";
+import {getFileFormat} from "../../../../../../common/FileMenuType";
+import {FileTypeEnum} from "../../../../../../common/file.pojo";
+import {build_path_tree, PathTreeNode} from "./GitChangeList";
 import GitDiffView from "./GitDiffView";
+import CommitFileTree from "./CommitFileTree";
 
 /** 提交中单个文件的改动统计 */
 interface CommitFile {
@@ -40,19 +44,23 @@ export default function GitCommitDetail({dir_path, hash, on_close, on_changed}: 
     const confirm_del = using_confirm();
     const [meta, setMeta] = useState<CommitMeta | null>(null);
     const [selected_file, setSelectedFile] = useState<string | null>(null);
-    const [diff_text, setDiffText] = useState('');
     const [diff_mode, setDiffMode] = useState<'unified' | 'split'>('unified');
     const [loading, setLoading] = useState(false);
-    /** 当前 diff 的来源标签，如「与工作区对比」 */
-    const [diff_target_label, setDiffTargetLabel] = useState('');
+    /** 右端对比目标：提交版本 / 工作区内容，决定 diff 用哪两个 ref */
+    const [compare_worktree, setCompareWorktree] = useState(false);
 
     useEffect(() => {
         if (!hash) return;
         setSelectedFile(null);
-        setDiffText('');
-        setDiffTargetLabel('');
+        setCompareWorktree(false);
         load_detail();
     }, [hash, dir_path]);
+
+    /** 提交内文件列表的目录树 */
+    const commit_tree = useMemo(
+        () => build_path_tree((meta?.files ?? []).map(f => ({path: f.path, data: f}))),
+        [meta]
+    );
 
     const load_detail = async () => {
         try {
@@ -64,38 +72,16 @@ export default function GitCommitDetail({dir_path, hash, on_close, on_changed}: 
         }
     };
 
-    /** 查看某文件在此提交中的改动 */
-    const view_file_diff = async (file_path: string) => {
+    /** 选中某文件查看它在此提交中的改动；两版内容由 GitDiffView 按 ref 自行拉取 */
+    const view_file_diff = (file_path: string) => {
         setSelectedFile(file_path);
-        setDiffTargetLabel('');
-        setLoading(true);
-        try {
-            const rsq = await gitHttp.post('commit_diff', {path: dir_path, hash, file: file_path});
-            if (rsq.code === 0) setDiffText(rsq.data || '');
-            else { NotyFail(rsq.message); setDiffText(''); }
-        } catch (e: any) {
-            NotyFail(e?.message);
-            setDiffText('');
-        } finally {
-            setLoading(false);
-        }
+        setCompareWorktree(false);
     };
 
-    /** 查看整次提交的完整 diff */
-    const view_all_diff = async () => {
-        setSelectedFile(null);
-        setDiffTargetLabel('');
-        setLoading(true);
-        try {
-            const rsq = await gitHttp.post('commit_diff', {path: dir_path, hash});
-            if (rsq.code === 0) setDiffText(rsq.data || '');
-            else { NotyFail(rsq.message); setDiffText(''); }
-        } catch (e: any) {
-            NotyFail(e?.message);
-            setDiffText('');
-        } finally {
-            setLoading(false);
-        }
+    /** 选中该文件在当前工作区的内容作为对比右侧 */
+    const diff_with_worktree = () => {
+        if (!selected_file) { NotyFail(t('请先选择文件')); return; }
+        setCompareWorktree(true);
     };
 
     if (!meta) {
@@ -140,25 +126,6 @@ export default function GitCommitDetail({dir_path, hash, on_close, on_changed}: 
         });
     };
 
-    /** 当前选中的文件在该提交中的版本 与 工作区内容 对比 */
-    const diff_with_worktree = async () => {
-        if (!selected_file) { NotyFail(t('请先选择文件')); return; }
-        setLoading(true);
-        try {
-            const rsq = await gitHttp.post('diff_with_worktree', {
-                path: dir_path, hash, file: selected_file
-            });
-            if (rsq.code === 0) {
-                setDiffText(rsq.data || '');
-                setDiffTargetLabel(t('与工作区对比'));
-            } else NotyFail(rsq.message);
-        } catch (e: any) {
-            NotyFail(e?.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
         <div className="git-card git-card--diff">
             {/* 提交元信息 */}
@@ -180,37 +147,20 @@ export default function GitCommitDetail({dir_path, hash, on_close, on_changed}: 
             </div>
 
             <div className="git-commit-body">
-                {/* 改动文件列表 */}
+                {/* 改动文件列表：按目录树展示，与「更改」列表保持一致的层级结构 */}
                 <div className="git-commit-files">
-                    <div
-                        className={`git-commit-file${selected_file === null ? " git-commit-file--active" : ""}`}
-                        onClick={view_all_diff}
-                    >
-                        <span className="git-commit-file__name">{t('全部文件')} ({meta.files.length})</span>
+                    <div className="git-commit-file__count">
+                        {t('全部文件')} ({meta.files.length})
                     </div>
-                    {meta.files.map(f => (
-                        <div
-                            key={f.path}
-                            className={`git-commit-file${selected_file === f.path ? " git-commit-file--active" : ""}`}
-                            onClick={() => view_file_diff(f.path)}
-                            title={f.path}
-                        >
-                            <span className="git-commit-file__name">{f.path}</span>
-                            {f.additions !== null && (
-                                <span className="git-commit-file__stat">
-                                    <span className="git-stat--add">+{f.additions}</span>
-                                    <span className="git-stat--del">-{f.deletions}</span>
-                                </span>
-                            )}
-                        </div>
-                    ))}
+                    <CommitFileTree nodes={commit_tree} selected={selected_file}
+                                    on_select={view_file_diff}/>
                 </div>
 
                 {/* diff 区 */}
                 <div className="git-commit-diff">
                     <div className="git-diff-header">
                         <span className="git-diff-header__badge">
-                            {diff_target_label || `${t('提交')} ${meta.short_hash}`}
+                            {compare_worktree ? t('与工作区对比') : `${t('提交')} ${meta.short_hash}`}
                         </span>
                         <span className="git-diff-header__path" title={selected_file ?? ''}>
                             {selected_file ?? `${t('全部文件')} (${meta.files.length})`}
@@ -224,9 +174,13 @@ export default function GitCommitDetail({dir_path, hash, on_close, on_changed}: 
                                           onClick={() => setDiffMode('split')}/>
                         </div>
                     </div>
-                    {loading
-                        ? <div className="git-change-empty">{t('加载中')}</div>
-                        : <GitDiffView diff_text={diff_text} mode={diff_mode}/>}
+                    {!selected_file
+                        ? <div className="git-diff-empty"><span>{t('请选择文件查看改动')}</span></div>
+                        : compare_worktree
+                            ? <GitDiffView dir_path={dir_path} file={selected_file} left_ref={hash}
+                                           right_ref="worktree" mode={diff_mode}/>
+                            : <GitDiffView dir_path={dir_path} file={selected_file} left_ref={`${hash}^`}
+                                           right_ref={hash} mode={diff_mode}/>}
                 </div>
             </div>
         </div>

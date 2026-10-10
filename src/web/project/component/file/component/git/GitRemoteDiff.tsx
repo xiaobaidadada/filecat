@@ -1,9 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useTranslation} from "react-i18next";
 import {gitHttp} from "../../../../util/config";
 import {NotyFail} from "../../../../util/noty";
 import {ActionButton} from "../../../../../meta/component/Button";
+import {build_path_tree, PathTreeNode} from "./GitChangeList";
 import GitDiffView from "./GitDiffView";
+import CommitFileTree from "./CommitFileTree";
 
 interface Props {
     dir_path: string;
@@ -14,28 +16,34 @@ interface Props {
     on_close: () => void;
 }
 
+/** 分支间改动的文件条目 */
+export interface DiffFileItem {
+    path: string;
+    additions: number | null;
+    deletions: number | null;
+}
+
 /**
- * 远程分支与当前分支的差异（WebStorm 的 Compare with Current）。
- * 用 diff_commits 拉 当前分支 → 远程分支 的两点 diff，交给 GitDiffView 渲染。
+ * 远程分支与当前分支的差异（对标 WebStorm 的 Compare with Current）。
+ * 左侧列出两分支间改动的文件（目录树），选中后在右侧看该文件的两版对比。
  */
 export default function GitRemoteDiff({dir_path, branch, current_branch, on_close}: Props) {
     const {t} = useTranslation();
-    const [diff_text, setDiffText] = useState('');
+    const [files, setFiles] = useState<DiffFileItem[]>([]);
+    const [selected_file, setSelectedFile] = useState<string | null>(null);
+    const [diff_mode, setDiffMode] = useState<'unified' | 'split'>('unified');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        load();
+        setSelectedFile(null);
+        load_files();
     }, [dir_path, branch, current_branch]);
 
-    const load = async () => {
+    const load_files = async () => {
         setLoading(true);
         try {
-            const rsq = await gitHttp.post('diff_commits', {
-                path: dir_path,
-                from: current_branch,
-                to: branch,
-            });
-            if (rsq.code === 0) setDiffText(rsq.data || '');
+            const rsq = await gitHttp.post('diff_files', {path: dir_path, from: current_branch, to: branch});
+            if (rsq.code === 0) setFiles(rsq.data || []);
             else NotyFail(rsq.message);
         } catch (e: any) {
             NotyFail(e?.message);
@@ -44,6 +52,8 @@ export default function GitRemoteDiff({dir_path, branch, current_branch, on_clos
         }
     };
 
+    const tree = useMemo(() => build_path_tree(files.map(f => ({path: f.path, data: f}))), [files]);
+
     return (
         <div className="git-card git-card--diff">
             <div className="git-diff-header">
@@ -51,15 +61,33 @@ export default function GitRemoteDiff({dir_path, branch, current_branch, on_clos
                 <span className="git-diff-header__path" title={`${current_branch} ↔ ${branch}`}>
                     {current_branch} ↔ {branch}
                 </span>
+                {selected_file && (
+                    <div className="git-diff-header__modes">
+                        <ActionButton icon={"view_agenda"} title={t('单栏')}
+                                      selected={diff_mode === 'unified'}
+                                      onClick={() => setDiffMode('unified')}/>
+                        <ActionButton icon={"view_column"} title={t('并排')}
+                                      selected={diff_mode === 'split'}
+                                      onClick={() => setDiffMode('split')}/>
+                    </div>
+                )}
                 <ActionButton icon={"close"} title={t('关闭')} onClick={on_close}/>
             </div>
-            {loading ? (
-                <div className="git-card--placeholder">{t('加载中')}</div>
-            ) : diff_text ? (
-                <GitDiffView diff_text={diff_text}/>
-            ) : (
-                <div className="git-card--placeholder">{t('两个分支没有差异')}</div>
-            )}
+            <div className="git-commit-body">
+                <div className="git-commit-files">
+                    <div className="git-commit-file__count">{t('全部文件')} ({files.length})</div>
+                    <CommitFileTree<DiffFileItem> nodes={tree} selected={selected_file}
+                                                  on_select={setSelectedFile}/>
+                </div>
+                <div className="git-commit-diff">
+                    {loading
+                        ? <div className="git-diff-empty"><span>{t('加载中')}</span></div>
+                        : !selected_file
+                            ? <div className="git-diff-empty"><span>{t('请选择文件查看改动')}</span></div>
+                            : <GitDiffView dir_path={dir_path} file={selected_file}
+                                           left_ref={current_branch} right_ref={branch} mode={diff_mode}/>}
+                </div>
+            </div>
         </div>
     );
 }

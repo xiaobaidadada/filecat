@@ -52,38 +52,70 @@ interface Props {
 }
 
 /** 取文件用于显示的短名（去掉目录前缀） */
-function base_name(p: string): string {
+export function base_name(p: string): string {
     const idx = p.lastIndexOf("/");
     return idx === -1 ? p : p.substring(idx + 1);
 }
 
-/** 将文件路径列表构造成目录树，用于树形展示 */
-function build_tree(files: GitStatusFile[]): FileTree[] {
-    const root: FileTree = {type: "folder", name: "", size: 0, children: []};
-    for (const f of files) {
-        const parts = f.path.split("/").filter(Boolean);
+/**
+ * 把路径列表构造成目录树，供变更列表与提交详情等场景复用树形展示。
+ * entries 的 key 为文件相对路径，value 为需要挂在叶子节点上的原始数据。
+ */
+export function build_path_tree<T>(entries: { path: string, data: T }[]): PathTreeNode<T>[] {
+    const root: PathTreeNode<T> = {type: "folder", name: "", full_path: "", children: []};
+    for (const e of entries) {
+        const parts = e.path.split("/").filter(Boolean);
         let node = root;
         for (let i = 0; i < parts.length; i++) {
             const name = parts[i];
             const is_file = i === parts.length - 1;
-            let child = node.children!.find(c => c.name === name);
+            let child = node.children.find(c => c.name === name);
             if (!child) {
-                child = {type: is_file ? "file" : "folder", name, size: 0, children: is_file ? undefined : []};
-                node.children!.push(child);
+                child = {
+                    type: is_file ? "file" : "folder",
+                    name,
+                    full_path: node.full_path ? `${node.full_path}/${name}` : name,
+                    children: [],
+                };
+                node.children.push(child);
             }
+            if (is_file) child.data = e.data;
             node = child;
         }
     }
     // 目录在前、文件在后，同级按名称排序
-    const sort = (nodes: FileTree[]) => {
+    const sort = (nodes: PathTreeNode<T>[]) => {
         nodes.sort((a, b) => {
             if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
             return a.name.localeCompare(b.name);
         });
-        for (const n of nodes) if (n.children?.length) sort(n.children);
+        for (const n of nodes) if (n.children.length) sort(n.children);
     };
-    sort(root.children!);
-    return root.children!;
+    sort(root.children);
+    return root.children;
+}
+
+/** 目录树节点（泛型挂在叶子的 data 上） */
+export interface PathTreeNode<T> {
+    type: "file" | "folder";
+    name: string;
+    /** 相对仓库根的全路径，目录也带 */
+    full_path: string;
+    children: PathTreeNode<T>[];
+    /** 仅文件节点有 */
+    data?: T;
+}
+
+/** 将文件路径列表构造成目录树，用于树形展示 */
+function build_tree(files: GitStatusFile[]): FileTree[] {
+    const nodes = build_path_tree(files.map(f => ({path: f.path, data: f})));
+    const to_file_tree = (n: PathTreeNode<GitStatusFile>): FileTree => ({
+        type: n.type,
+        name: n.name,
+        size: 0,
+        children: n.children.length ? n.children.map(to_file_tree) : undefined,
+    });
+    return nodes.map(to_file_tree);
 }
 
 /** 单一文件行（平铺与树形共用） */
