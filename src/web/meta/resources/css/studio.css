@@ -45,6 +45,17 @@
     overflow:auto;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* 纵向布局：内容区滚动，底部的「大纲/目录」切换按钮固定 */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;         /* 宽度由内联样式给定，不允许被右侧编辑器压缩 */
+}
+
+/* 面板内容区（目录树 / 大纲）撑满剩余高度并自己滚动 */
+.studio .studio-nav > *:not(.studio-nav-switch) {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
 .studio-nav .studio-item{
@@ -88,8 +99,24 @@
     min-width: 0;
     margin: 0 1em 1em auto;
     flex-grow: 1;           /* 占据剩余的所有宽度 */
+    flex-shrink: 1;
     overflow: hidden;
     height:100%
+}
+
+/* md 编辑器的容器：md 自己带内边距与纸张，这里只负责撑满，不要再加外边距 */
+.studio-editor--md {
+    margin: 0;
+    display: flex;
+}
+
+/* 左侧面板底部的「大纲 ⇄ 目录」切换按钮，与 md 编辑器内的大纲面板保持一致的观感 */
+.studio-nav-switch {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-start;
+    padding: 0.25em 0.5em;
+    border-top: 1px solid var(--divider, #e8eaed);
 }
 
 /* ===== GitStudio 专用样式 ===== */

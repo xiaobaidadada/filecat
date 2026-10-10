@@ -22,6 +22,18 @@ import {useLocation, useNavigate} from "react-router-dom";
 
 
 const Ace = React.lazy(() => import("../Ace"));
+const MdEditor = React.lazy(() => import("../md_editor/MdEditor"));
+const MdOutline = React.lazy(() => import("../md_editor/MdOutline"));
+import type {MdEditorPaneApi, MdEditorPaneProps} from "../md_editor/MdEditor";
+import type {OutlineItem} from "../md_editor/MdOutline";
+
+/** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
+function is_markdown_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.md;
+}
+
+/** 左侧面板显示的内容 */
+type NavContent = "folder" | "outline";
 
 
 export default function Studio(props) {
@@ -44,6 +56,20 @@ export default function Studio(props) {
     const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
     const {t} = useTranslation();
     const navigate = useNavigate();
+
+    // 当前文件是否用 md 编辑器打开
+    const is_md = is_markdown_file(edit_filename.name);
+    // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
+    const md_api = useRef<MdEditorPaneApi | null>(null);
+    // md 编辑器上报的大纲数据与当前高亮项
+    const [outline_items, set_outline_items] = useState<OutlineItem[]>([]);
+    const [outline_active, set_outline_active] = useState(-1);
+    // 左侧面板内容：目录 / 大纲（大纲只对 md 文件可用）
+    const [nav_content, set_nav_content] = useState<NavContent>("folder");
+    // 左侧面板开关。切到非 md 文件时自动回到目录视图
+    const [show_nav, set_show_nav] = useState(true);
+    // md 编辑器的脏标记（由它上报，用于 Header 显示保存按钮）
+    const [md_dirty, set_md_dirty] = useState(false);
 
 
     const location = useLocation();
@@ -115,6 +141,9 @@ export default function Studio(props) {
         editor_data.set_value_temp(rsq.data);
         set_edit_filename({path: pre_path, name});
         set_edit_file_path(pre_path);
+        // 换成别的文件时左侧面板回到目录视图：大纲是上一个 md 文件的，留着会对不上
+        set_nav_content("folder");
+        set_md_dirty(false);
     }
     const open_file = (pojo: FileTree,pre_path)=>{
         if(pojo.size > MAX_SIZE_TXT) {
@@ -274,6 +303,9 @@ export default function Studio(props) {
         editor_data.get_editor()?.['formatCode']()
     }
 
+    /** 左侧面板是否显示大纲（仅 md 文件、且面板已展开、且切到大纲视图时） */
+    const outline_on = is_md && show_nav && nav_content === "outline";
+
     return <div className={"studio"}>
         <Header ignore_tags={true}
                 left_children={[
@@ -281,30 +313,79 @@ export default function Studio(props) {
                     <div key={2}>{edit_filename.name}</div>
                 ]}>
             <title>{edit_filename.name}</title>
-            { ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
+            {/* 左侧面板开关：任何编辑器下都能收起/展开，md 文件时里面是大纲+目录 */}
+            <ActionButton title={"侧边栏"} icon={"list"} onClick={() => set_show_nav(v => !v)}
+                          selected={show_nav}/>
+            {/* md 文件专属能力：与全屏 md 编辑器的 Header 保持一致 */}
+            {is_md && [
+                md_dirty ? <ActionButton key={"save"} title={t("保存")} icon={"save"}
+                                         onClick={() => md_api.current?.save()}/> : null,
+                <ActionButton key={"mode"} icon={md_api.current?.mode() === "source" ? "edit" : "code"}
+                              title={md_api.current?.mode() === "source" ? t("实时编辑模式") : t("源码模式")}
+                              onClick={() => md_api.current?.toggle_mode()}/>,
+                <ActionButton key={"pdf"} title={t("导出PDF")} icon={"print"}
+                              onClick={() => md_api.current?.export_pdf()}/>,
+            ]}
+            { !is_md && ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
-            {have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
+            {!is_md && have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
-            <div className={"studio-nav"} style={{
-                width: `${nav_width - 1}em`,
-            }}
-                 onContextMenu={(event) => {
+            {show_nav && (
+                <div className={"studio-nav"} style={{width: `${nav_width - 1}em`}}
+                     onContextMenu={(event) => {
                          handleContextMenu(event, edit_filename.name, getRouterAfter('file', folder_path), true, get_item)
-                 }}
-            >
-                <FolderTree pre_path={pre_path} list={list} click={click} handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
-            </div>
-            <div className={"studio__divider"} ref={studioDividerRef} onPointerDown={handlePointerDown}
-                 onPointerUp={handlePointerup}/>
+                     }}
+                >
+                    {outline_on
+                        ? <MdOutline items={outline_items} active_pos={outline_active}
+                                     on_click={(item) => md_api.current?.goto_heading(item)}/>
+                        : <FolderTree pre_path={pre_path} list={list} click={click}
+                                      handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>}
+                    {/* 底部切换：md 文件可以在大纲与目录之间切，其他文件没有大纲，不显示 */}
+                    {is_md && (
+                        <div className={"studio-nav-switch"}>
+                            <ActionButton
+                                icon={outline_on ? "folder" : "list"}
+                                title={outline_on ? t("文件目录") : t("大纲")}
+                                onClick={() => set_nav_content(outline_on ? "folder" : "outline")}/>
+                        </div>
+                    )}
+                </div>
+            )}
+            {show_nav && <div className={"studio__divider"} ref={studioDividerRef} onPointerDown={handlePointerDown}
+                 onPointerUp={handlePointerup}/>}
             {drag &&
                 <div
                     className="shell__overlay" onPointerUp={handlePointerup}
                 />
             }
-            <div className={"studio-editor"} key={edit_filename.path}>
-                {edit_filename.name && <Ace name={edit_filename.name}  on_change={change} />}
-            </div>
+            {/* md 文件走 md 编辑器（含工具栏、右键菜单、大纲、主题、源码模式），
+                其他文件走 Ace 文本编辑器。
+                md 编辑器嵌进来自带 md-editor-context 外壳，因此这里不再包 studio-editor 的内边距。 */}
+            {is_md
+                ? <div className={"studio-editor studio-editor--md"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <MdEditor pane={{
+                            path: edit_file_path,
+                            url: fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path)),
+                            name: edit_filename.name,
+                            on_dirty: set_md_dirty,
+                            on_outline: (items, active) => {
+                                set_outline_items(items);
+                                set_outline_active(active);
+                            },
+                            register: (api) => {
+                                md_api.current = api;
+                            },
+                        }}/>
+                    </React.Suspense>
+                </div>
+                : <div className={"studio-editor"} key={edit_file_path}>
+                    {edit_filename.name && <React.Suspense fallback={null}>
+                        <Ace name={edit_filename.name} on_change={change}/>
+                    </React.Suspense>}
+                </div>}
         </div>
     </div>
 }

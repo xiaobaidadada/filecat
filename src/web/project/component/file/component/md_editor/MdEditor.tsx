@@ -35,13 +35,56 @@ import {routerConfig} from "../../../../../../common/RouterConfig";
 //   source  —— 源码模式（直接编辑 Markdown 原文，快捷键 Ctrl+/ 切换）
 type MdEditMode = "wysiwyg" | "source";
 
-export default function MdEditor() {
+/**
+ * 嵌入模式（pane）的参数。
+ *
+ * 全屏打开时编辑器自己管一切（数据从 md_editor atom 来、Header 自己渲染）；
+ * 嵌进别的页面（如 Studio）时由外部接管外壳：外部给数据源、外部渲染 Header 与左侧面板，
+ * 这里只负责正文编辑区，并把保存/模式切换/大纲等能力通过 register 交出去。
+ */
+export interface MdEditorPaneProps {
+    /** 文件相对路径，保存接口用 */
+    path: string;
+    /** 正文下载地址 */
+    url: string;
+    /** 文件名 */
+    name: string;
+    /** 只读（分享模式） */
+    readonly?: boolean;
+    /** 脏标记变化时通知外部（外部据此显示/隐藏保存按钮） */
+    on_dirty?: (dirty: boolean) => void;
+    /** 大纲数据变化时通知外部（外部在左侧面板渲染） */
+    on_outline?: (items: OutlineItem[], active_pos: number) => void;
+    /** 编辑器就绪后把能力交给外部 */
+    register?: (api: MdEditorPaneApi) => void;
+}
+
+/** 嵌入模式下交给外部调用的能力 */
+export interface MdEditorPaneApi {
+    /** 保存（silent 为自动保存，成功不弹提示） */
+    save: (silent?: boolean) => Promise<void>;
+    /** 导出 PDF */
+    export_pdf: () => void;
+    /** 切换源码/所见即所得 */
+    toggle_mode: () => void;
+    /** 当前模式 */
+    mode: () => MdEditMode;
+    /** 跳到某个标题 */
+    goto_heading: (item: OutlineItem) => void;
+    /** 当前是否有未保存改动 */
+    dirty: () => boolean;
+}
+
+export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
+    const pane = props.pane;
     const {t} = useTranslation();
     const navigate = useNavigate();
     // 是否拥有「MD 编辑器设置」权限：没权限就不显示设置按钮，避免点进去是个无权访问的空页
     const {check_user_auth} = use_auth_check();
     const can_setting = check_user_auth(UserAuth.md_editor_setting);
-    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
+    const [atom_md_editor, set_md_editor] = useAtom($stroe.md_editor);
+    // 嵌入模式用外部传入的数据源，全屏模式用 atom
+    const md_editor = pane ?? atom_md_editor;
     const set_last_context = useAtom($stroe.md_editor_last_context)[1];
     // 正文同步到全局 atom 的防抖计时器
     const last_context_timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -117,7 +160,7 @@ export default function MdEditor() {
 
     // 设置变化时写入 CSS 变量（放在 container 上，只影响这个编辑器，不污染全局样式）
     useEffect(() => {
-        apply_md_editor_setting(container_ref.current, editor_setting);
+        apply_md_editor_setting(nav_ref.current, editor_setting);
     }, [editor_setting]);
 
     // 切换主题：存进当前用户的个人数据（不是全局设置），并立即生效。
@@ -174,6 +217,11 @@ export default function MdEditor() {
         headings_cache.current = list;
         set_headings(list);
     }, []);
+
+    // 把大纲数据同步给嵌入方（全屏模式没有 pane，什么也不做）
+    useEffect(() => {
+        pane?.on_outline?.(headings, active_pos);
+    }, [headings, active_pos]);
 
     // 计算光标当前所在的标题：取位置在光标之前、且最近的那个标题。
     // 直接读缓存，不做全文遍历（见上面 refresh_headings 的说明）。
@@ -354,12 +402,39 @@ export default function MdEditor() {
         window.print();
     };
 
+    // ---- 嵌入模式（Studio）的能力出口 ----
+    // 统一走 ref，保证外部拿到的方法始终指向最新闭包（mode / dirty 会随操作变化）
+    const mode_ref = useRef(mode);
+    mode_ref.current = mode;
+    const goto_heading_ref = useRef(goto_heading);
+    goto_heading_ref.current = goto_heading;
+    const export_pdf_ref = useRef(export_pdf);
+    export_pdf_ref.current = export_pdf;
+
+    // 脏标记同步给嵌入方（全屏模式不需要，Header 自己读 dirty）
+    useEffect(() => {
+        pane?.on_dirty?.(dirty);
+    }, [dirty]);
+
+    // 把能力交给嵌入方，供外层 Header 的按钮调用
+    useEffect(() => {
+        pane?.register?.({
+            save: (silent) => save_ref.current(silent),
+            export_pdf: () => export_pdf_ref.current(),
+            toggle_mode: () => toggle_mode_ref.current(),
+            mode: () => mode_ref.current,
+            goto_heading: (item) => goto_heading_ref.current(item),
+            dirty: () => dirty_ref.current,
+        });
+    }, []);
+
     const close = () => {
         set_md_editor({});
         set_dirty(false);
         set_init_value(null);
         handle_ref.current = null;
-        md_editor?.close?.();
+        // 嵌入模式没有 atom，关闭由外层负责（Studio 自己切文件/离开页面）
+        atom_md_editor?.close?.();
     };
 
     // 切换文件时重建编辑器实例
@@ -369,55 +444,29 @@ export default function MdEditor() {
         return null;
     }
 
-    return (
-        <div id={"md-editor-container"} ref={container_ref}>
-            <Header ignore_tags={true}
-                    left_children={[
-                        <ActionButton key={1} title={t("关闭")} icon={"close"} onClick={close}/>,
-                        /* 当前文件名：紧跟在关闭按钮之后，与普通文本编辑器（FileEditor）保持一致。
-                           注意必须用 <div> 而不是 <title> —— <title> 在 body 内的 UA 样式是
-                           display:none，放进 Header 也不会显示出来。 */
-                        <div key={3} className={"md-editor-title"}>{md_editor.name}</div>,
-                        // 保存按钮只在内容有改动时出现，与普通文本编辑器一致；只读打开时不显示
-                        ...(dirty && !md_editor.readonly ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
-                        // 大纲开关：默认关闭，点一下临时控制显示/隐藏
-                        <ActionButton key={4} title={t("大纲")} icon={"list"}
-                                      onClick={toggle_outline} selected={show_outline}/>,
-                        // 编辑模式切换：所见即所得 <-> 源码。快捷键 Ctrl/Cmd + /
-                        // 只读打开（如分享模式）时两种模式都是编辑态，不显示
-                        ...(md_editor.readonly ? [] : [<ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
-                                      icon={mode === "wysiwyg" ? "code" : "edit"}
-                                      onClick={toggle_mode}/>]),
-                        // 主题切换属于个人编辑偏好，只读打开（如分享模式）不显示
-                        ...(md_editor.readonly ? [] : [<MdThemeMenu key={8}
-                                     on_change={switch_theme}/>]),
-                        // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
-                        <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,
-                        ...((can_setting && !md_editor.readonly) ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
-                                                        onClick={() => {
-                                                            close();
-                                                            navigate(routerConfig.md_editor_setting_page);
-                                                        }}/>] : []),
-                    ]}>
-            </Header>
+    // 嵌入模式下只渲染正文编辑区，容器与左侧面板都由外层（Studio）提供；
+    // 全屏模式保持原来的整体结构。
+    const pane_mode = !!pane;
+    const body = (
             <div className={"md-editor-context"} ref={nav_ref}>
                 {loading && <div className="common-box common-box-center">{t("加载中")}...</div>}
                 {!loading && init_value !== null && (
                     <React.Fragment>
                         {/* 左侧大纲：标题树 + 当前标题高亮，点击跳转；宽度可拖动。
-                            默认隐藏，由 Header 的「大纲」按钮切换。 */}
-                        {show_outline && (
+                            默认隐藏，由 Header 的「大纲」按钮切换。
+                            嵌入模式下面板由外层管（Studio 的左侧面板要能在大纲与目录间切换）。 */}
+                        {!pane_mode && show_outline && (
                             <div className={"md-outline-panel"} style={{width: `${nav_width}em`}}>
                                 <MdOutline items={headings} active_pos={active_pos} on_click={goto_heading}/>
                             </div>
                         )}
-                        {show_outline && (
+                        {!pane_mode && show_outline && (
                             <div className={"md-editor-divider"} ref={divider_ref}
                                  onPointerDown={handle_pointer_down}
                                  onPointerUp={handle_pointer_up}/>
                         )}
                         {/* 拖动时铺一层透明遮罩：避免指针进入编辑器后被 ProseMirror 抢走事件 */}
-                        {dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
+                        {!pane_mode && dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
                         <div className={"md-editor-scroll"}>
                             <div className={"md-editor-sheet"}>
                                 {/* 工具栏与右键菜单只在所见即所得模式下有意义：
@@ -484,6 +533,43 @@ export default function MdEditor() {
                     </React.Fragment>
                 )}
             </div>
+    );
+
+    if (pane_mode) {
+        return body;
+    }
+    return (
+        <div id={"md-editor-container"} ref={container_ref}>
+            <Header ignore_tags={true}
+                    left_children={[
+                        <ActionButton key={1} title={t("关闭")} icon={"close"} onClick={close}/>,
+                        /* 当前文件名：紧跟在关闭按钮之后，与普通文本编辑器（FileEditor）保持一致。
+                           注意必须用 <div> 而不是 <title> —— <title> 在 body 内的 UA 样式是
+                           display:none，放进 Header 也不会显示出来。 */
+                        <div key={3} className={"md-editor-title"}>{md_editor.name}</div>,
+                        // 保存按钮只在内容有改动时出现，与普通文本编辑器一致；只读打开时不显示
+                        ...(dirty && !md_editor.readonly ? [<ActionButton key={2} title={t("保存")} icon={"save"} onClick={save}/>] : []),
+                        // 大纲开关：默认关闭，点一下临时控制显示/隐藏
+                        <ActionButton key={4} title={t("大纲")} icon={"list"}
+                                      onClick={toggle_outline} selected={show_outline}/>,
+                        // 编辑模式切换：所见即所得 <-> 源码。快捷键 Ctrl/Cmd + /
+                        // 只读打开（如分享模式）时两种模式都是编辑态，不显示
+                        ...(md_editor.readonly ? [] : [<ActionButton key={5} title={mode === "wysiwyg" ? t("源码模式") : t("实时编辑模式")}
+                                      icon={mode === "wysiwyg" ? "code" : "edit"}
+                                      onClick={toggle_mode}/>]),
+                        // 主题切换属于个人编辑偏好，只读打开（如分享模式）不显示
+                        ...(md_editor.readonly ? [] : [<MdThemeMenu key={8}
+                                     on_change={switch_theme}/>]),
+                        // 导出 PDF：走浏览器打印，可在打印对话框里预览、选页并另存为 PDF
+                        <ActionButton key={7} title={t("导出PDF")} icon={"print"} onClick={export_pdf}/>,
+                        ...((can_setting && !md_editor.readonly) ? [<ActionButton key={6} title={t("编辑器设置")} icon={"settings"}
+                                                        onClick={() => {
+                                                            close();
+                                                            navigate(routerConfig.md_editor_setting_page);
+                                                        }}/>] : []),
+                    ]}>
+            </Header>
+            {body}
         </div>
     );
 }

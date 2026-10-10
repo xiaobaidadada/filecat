@@ -46,14 +46,27 @@
 }
 
 /* 内容区：横向排布「大纲 | 分隔条 | 编辑区」。
-   滚动交给内部的 .md-editor-scroll，外层不再滚动，否则大纲会跟着正文一起滚走。 */
-#md-editor-container .md-editor-context {
+   滚动交给内部的 .md-editor-scroll，外层不再滚动，否则大纲会跟着正文一起滚走。
+   选择器同时覆盖两种使用方式：
+     · 全屏模式挂在 #md-editor-container 下
+     · 嵌进 Studio 等页面时没有该 id，只有 .md-editor-context 本身 */
+.md-editor-context {
     flex: 1;
     min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: row;
     position: relative;
+    /* 外观变量的兜底默认值：全屏模式由 #md-editor-container 声明、运行期由 JS 覆盖，
+       嵌入模式下这个容器就是变量的挂载点，必须有默认值，否则 --md-editor-max-width /
+       --md-editor-padding 取不到值，纸张限宽与左右边距会全部塌成 0。 */
+    --md-editor-max-width: 90%;
+    --md-editor-padding: 4%;
+    --md-editor-font-size: 16px;
+    --md-editor-line-height: 1.8;
+    /* 正文底色：全屏模式由 #md-editor-container 提供，嵌入到其他页面时（如 Studio）
+       没有那层容器，这里补上，保证两种用法观感一致 */
+    background-color: var(--background);
 }
 
 /* 右侧编辑区：唯一的滚动容器，正文在其中居中限宽 */
