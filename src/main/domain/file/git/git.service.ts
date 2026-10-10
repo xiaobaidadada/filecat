@@ -521,11 +521,7 @@ export class GitServiceImpl {
                 return Sucess(output || "ok");
             }
 
-            // 普通模式：先检查是否有暂存内容，避免提交空内容时报错信息不友好
-            const staged = await this.execGit(cwd, "diff --cached --name-only");
-            if (!staged) {
-                return Fail("没有暂存的更改可以提交。请先暂存要提交的文件。");
-            }
+            // 普通模式：提交已暂存内容（暂存区为空时 git 自身会给出提示，不做前置拦截）
             const output = await this.execGit(cwd, `commit -m "${msg}"`);
             return Sucess(output || "ok");
         } catch (e: any) {

@@ -958,5 +958,7 @@
   "将": "Merge",
   "合并到": "into",
   "未推送": "Not pushed",
-  "已到底部": "No more"
+  "已到底部": "No more",
+  "没有可提交的更改": "Nothing to commit",
+  "存在未暂存的改动，是否一并暂存并提交？": "There are unstaged changes. Stage and commit them together?"
 }

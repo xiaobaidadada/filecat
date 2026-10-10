@@ -954,5 +954,7 @@
   "将": "Fusionar",
   "合并到": "en",
   "未推送": "Sin enviar",
-  "已到底部": "No hay más"
+  "已到底部": "No hay más",
+  "没有可提交的更改": "Nada que confirmar",
+  "存在未暂存的改动，是否一并暂存并提交？": "Hay cambios sin preparar. ¿Prepararlos y confirmarlos juntos?"
 }

@@ -954,5 +954,7 @@
   "将": "Merge",
   "合并到": "in",
   "未推送": "Nicht gepusht",
-  "已到底部": "Keine weiteren"
+  "已到底部": "Keine weiteren",
+  "没有可提交的更改": "Keine Änderungen",
+  "存在未暂存的改动，是否一并暂存并提交？": "Es gibt nicht bereitgestellte Änderungen. Zusammen bereitstellen und committen?"
 }

@@ -954,5 +954,7 @@
   "将": "Fusionner",
   "合并到": "dans",
   "未推送": "Non poussé",
-  "已到底部": "Plus rien"
+  "已到底部": "Plus rien",
+  "没有可提交的更改": "Rien à valider",
+  "存在未暂存的改动，是否一并暂存并提交？": "Des modifications ne sont pas indexées. Les indexer et valider ensemble ?"
 }

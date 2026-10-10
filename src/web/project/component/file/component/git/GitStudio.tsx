@@ -24,6 +24,7 @@ import GitReflogPanel from "./GitReflogPanel";
 import GitHookPanel from "./GitHookPanel";
 import GitRepoPanel, {RepoInfo} from "./GitRepoPanel";
 import GitRepoManager from "./GitRepoManager";
+import {using_confirm} from "../../../prompts/prompt.util";
 
 interface GitBranchInfo {
     current: string;
@@ -45,6 +46,7 @@ const LOG_PAGE_SIZE = 100;
 
 export default function GitStudio() {
     const {t} = useTranslation();
+    const confirm_commit_all = using_confirm();
     const navigate = useNavigate();
 
     let dirPath = decodeURIComponent(getRouterAfter(routerConfig.git_page, getRouterPath()));
@@ -287,15 +289,42 @@ export default function GitStudio() {
     // ===== 提交与远程 =====
     const handleCommit = async () => {
         if (!commitMessage.trim()) { NotyFail(t('请输入提交信息')); return; }
-        if (statusFiles.filter(f => f.staged).length === 0) {
-            NotyFail(t('请先暂存要提交的文件'));
+        const staged = statusFiles.filter(f => f.staged);
+        if (staged.length === 0) {
+            // 仿 JetBrains：暂存区为空但工作区有改动时，询问是否一并提交，而不是直接拒绝
+            const unstaged = statusFiles.filter(f => !f.staged);
+            if (unstaged.length === 0) {
+                NotyFail(t('没有可提交的更改'));
+                return;
+            }
+            confirm_commit_all({
+                title: t('提交'),
+                sub_title: t('存在未暂存的改动，是否一并暂存并提交？'),
+                confirm_fun: commit_all,
+            });
             return;
         }
+        await do_commit(false);
+    };
+
+    /** 暂存全部改动后提交（用户确认「一并提交未暂存的改动」时使用） */
+    const commit_all = async () => {
+        const unstaged = statusFiles.filter(f => !f.staged);
+        try {
+            setLoading(true);
+            const rsq = await gitHttp.post('add', {path: dirPath, files: unstaged.map(f => f.path)});
+            if (rsq.code !== 0) { NotyFail(rsq.message); return; }
+        } catch (e: any) { NotyFail(e?.message); return; }
+        finally { setLoading(false); }
+        await do_commit(false);
+    };
+
+    const do_commit = async (allChanged: boolean) => {
         try {
             setLoading(true);
             // allChanged=false：只提交已暂存内容，未暂存的改动保持原样
             const rsq = await gitHttp.post('commit', {
-                path: dirPath, message: commitMessage.trim(), allChanged: false
+                path: dirPath, message: commitMessage.trim(), allChanged
             });
             if (rsq.code === 0) {
                 NotySuccess(t('提交成功'));
