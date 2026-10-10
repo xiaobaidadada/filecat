@@ -85,36 +85,14 @@
 
 .studio-editor {
     min-height: 1em;
+    min-width: 0;
     margin: 0 1em 1em auto;
-    /*width: auto;*/
     flex-grow: 1;           /* 占据剩余的所有宽度 */
-
+    overflow: hidden;
     height:100%
 }
 
 /* ===== GitStudio 专用样式 ===== */
-.git-studio-tab-bar {
-    display: flex;
-    border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
-}
-.git-studio-tab {
-    flex: 1;
-    padding: 10px 8px;
-    border: none;
-    background: transparent;
-    color: var(--textSecondary, #5f6368);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 400;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-}
-.git-studio-tab--active {
-    background: var(--primary-light, #d2e3fc);
-    color: var(--primary, #1a73e8);
-    font-weight: 600;
-    border-bottom: 2px solid var(--primary, #1a73e8);
-}
 .git-studio-select-all {
     padding: 6px 12px;
     border-bottom: 1px solid var(--divider, rgba(0,0,0,0.08));
@@ -261,4 +239,900 @@
     width: 100px;
     flex-shrink: 0;
     color: var(--textSecondary, #5f6368);
+}
+
+/* ===== Git 变更面板 ===== */
+.git-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* 分组标题：仿项目 list 分组风格，浅灰底 + 次要文字色 */
+.git-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .3rem .6rem;
+    font-size: .8rem;
+    color: var(--textSecondary);
+    border-bottom: 1px solid var(--divider);
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+    z-index: 1;
+}
+.git-section__title {
+    font-weight: 500;
+}
+.git-section__action {
+    cursor: pointer;
+}
+.git-section__action:hover {
+    color: var(--blue);
+}
+
+/* 变更文件行 */
+.git-file {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .6rem;
+    cursor: pointer;
+    font-size: .85rem;
+}
+.git-file:hover {
+    background: var(--hover);
+}
+.git-file--active {
+    background: var(--hover);
+}
+.git-file__badge {
+    width: 1rem;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+    font-family: monospace;
+}
+.git-file__badge--add { color: var(--icon-green); }
+.git-file__badge--mod { color: var(--icon-blue); }
+.git-file__badge--del { color: var(--icon-red); }
+.git-file__badge--ren { color: var(--icon-violet); }
+/* 变更列表行内图标压缩到 1rem，与行高匹配（全局 material-icons 为 1.5rem 偏高） */
+.git-file .file-icons i,
+.git-tree__dir .file-icons i {
+    font-size: 1rem;
+    line-height: 1;
+}
+.git-file__badge--conf { color: var(--icon-orange); }
+.git-file__badge--untracked { color: var(--textSecondary); }
+.git-file__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textPrimary);
+}
+.git-file__dir {
+    max-width: 40%;
+    font-size: .8rem;
+    color: var(--textSecondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-file__op {
+    width: 1rem;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+    color: var(--textSecondary);
+    opacity: 0;
+}
+.git-file:hover .git-file__op {
+    opacity: 1;
+}
+.git-file__op:hover {
+    color: var(--blue);
+}
+.git-change-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--textSecondary);
+    font-size: .85rem;
+}
+
+/* 提交记录行 */
+.git-studio-log-entry {
+    padding: .3rem .6rem;
+    cursor: default;
+}
+.git-studio-log-entry:hover {
+    background: var(--hover);
+}
+.git-log__row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.git-log__msg {
+    flex: 1;
+    font-size: .85rem;
+    color: var(--textPrimary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-log__meta {
+    padding-left: .2rem;
+    font-size: .75rem;
+    color: var(--textSecondary);
+}
+
+/* ===== Git 主内容区 ===== */
+.git-main {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    height: 100%;
+    min-width: 0;
+    overflow: auto;
+}
+
+/* 内容卡片：沿用项目 .card 的白底 + 圆角 + 阴影 */
+.git-card {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 1px 2px rgba(0, 0, 0, .08);
+    min-width: 0;
+    flex-shrink: 0;
+}
+/* diff 卡片需要撑开剩余高度，且自身内部滚动 */
+.git-card--diff {
+    flex: 1;
+    min-height: 20rem;
+    overflow: hidden;
+}
+.git-card--placeholder {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: var(--textSecondary);
+    font-size: .85rem;
+}
+
+/* 分支行 */
+.git-branch-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+.git-branch__name {
+    flex-shrink: 0;
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--textPrimary);
+}
+.git-branch__list {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+.git-branch-chip {
+    padding: .1rem .5rem;
+    font-size: .8rem;
+    color: var(--textSecondary);
+    border: 1px solid var(--borderPrimary);
+    border-radius: 2px;
+    cursor: pointer;
+}
+.git-branch-chip:hover {
+    color: var(--blue);
+    border-color: var(--blue);
+}
+.git-branch-chip--current {
+    color: var(--icon-green);
+    border-color: var(--icon-green);
+    cursor: default;
+}
+
+/* 提交输入框 */
+.git-commit-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: .4rem .5rem;
+    font-family: inherit;
+    font-size: .85rem;
+    color: var(--textPrimary);
+    background: #fff;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 2px;
+    resize: vertical;
+}
+.git-commit-input:focus {
+    outline: none;
+    border-color: var(--blue);
+}
+
+/* 操作按钮行 */
+.git-btn-row {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+}
+.git-btn-gap {
+    flex: 1;
+}
+
+/* 配置行 */
+.git-config-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.git-config__label {
+    width: 5rem;
+    flex-shrink: 0;
+    font-size: .85rem;
+    color: var(--textSecondary);
+}
+.git-config__value {
+    flex: 1;
+    font-size: .85rem;
+    color: var(--textPrimary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-config__input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ===== Diff 查看器 ===== */
+.git-diff-header {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-shrink: 0;
+    padding-bottom: .4rem;
+    border-bottom: 1px solid var(--divider);
+}
+.git-diff-header__badge {
+    flex-shrink: 0;
+    padding: .1rem .4rem;
+    font-size: .75rem;
+    color: var(--textSecondary);
+    background: var(--moon-grey);
+    border-radius: 2px;
+}
+.git-diff-header__path {
+    flex: 1;
+    font-size: .85rem;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-diff-header__modes {
+    display: flex;
+    flex-shrink: 0;
+    gap: .2rem;
+}
+
+.git-diff {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    font-family: monospace;
+    font-size: .82rem;
+    line-height: 1.5;
+}
+.git-diff__hunk + .git-diff__hunk {
+    margin-top: .6rem;
+}
+.git-diff__hunk-header {
+    position: sticky;
+    top: 0;
+    padding: .1rem .5rem;
+    font-size: .8rem;
+    color: var(--textSecondary);
+    background: var(--moon-grey);
+}
+.git-diff__line {
+    display: flex;
+    white-space: pre;
+}
+.git-diff__line--add {
+    background: #e6ffed;
+}
+.git-diff__line--del {
+    background: #ffeef0;
+}
+.git-diff__num {
+    width: 3rem;
+    flex-shrink: 0;
+    padding-right: .5rem;
+    text-align: right;
+    color: var(--textSecondary);
+    user-select: none;
+}
+.git-diff__sign {
+    width: 1rem;
+    flex-shrink: 0;
+    text-align: center;
+    user-select: none;
+}
+.git-diff__code {
+    flex: 1;
+    padding-right: .5rem;
+}
+
+/* 左右并排视图 */
+.git-diff__row {
+    display: flex;
+}
+.git-diff__cell {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    white-space: pre;
+    border-right: 1px solid var(--divider);
+}
+.git-diff__cell--add {
+    background: #e6ffed;
+}
+.git-diff__cell--del {
+    background: #ffeef0;
+}
+.git-diff__cell--empty {
+    background: var(--moon-grey);
+}
+.git-diff-empty {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: var(--textSecondary);
+    font-size: .85rem;
+}
+
+/* ===== 提交详情面板 ===== */
+.git-commit-meta {
+    flex-shrink: 0;
+    padding-bottom: .4rem;
+    border-bottom: 1px solid var(--divider);
+}
+.git-commit-meta__row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.git-commit-meta__hash {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: .85rem;
+    color: var(--icon-blue);
+}
+.git-commit-meta__subject {
+    flex: 1;
+    font-size: .9rem;
+    color: var(--textPrimary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-commit-meta__sub {
+    padding-top: .2rem;
+    font-size: .75rem;
+    color: var(--textSecondary);
+}
+.git-commit-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    gap: .6rem;
+}
+/* 改动文件列表 */
+.git-commit-files {
+    width: 14rem;
+    flex-shrink: 0;
+    overflow: auto;
+    border-right: 1px solid var(--divider);
+    padding-right: .4rem;
+}
+.git-commit-file {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .2rem .4rem;
+    font-size: .82rem;
+    cursor: pointer;
+}
+.git-commit-file:hover {
+    background: var(--hover);
+}
+.git-commit-file--active {
+    background: var(--hover);
+}
+.git-commit-file__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-commit-file__stat {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: .75rem;
+}
+.git-stat--add { color: var(--icon-green); }
+.git-stat--del { color: var(--icon-red); }
+/* diff 区 */
+.git-commit-diff {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ===== 逐行归属 ===== */
+.git-blame {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    font-family: monospace;
+    font-size: .8rem;
+    line-height: 1.5;
+}
+.git-blame__row {
+    display: flex;
+    white-space: pre;
+}
+.git-blame__row:hover {
+    background: var(--hover);
+}
+.git-blame__hash {
+    width: 4.5rem;
+    flex-shrink: 0;
+    padding-right: .4rem;
+    color: var(--textSecondary);
+    user-select: none;
+}
+.git-blame__author {
+    width: 7rem;
+    flex-shrink: 0;
+    padding-right: .4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+.git-blame__date {
+    width: 7rem;
+    flex-shrink: 0;
+    padding-right: .4rem;
+    color: var(--textSecondary);
+    user-select: none;
+}
+.git-blame__num {
+    width: 2.5rem;
+    flex-shrink: 0;
+    padding-right: .5rem;
+    text-align: right;
+    color: var(--textSecondary);
+    user-select: none;
+}
+.git-blame__code {
+    flex: 1;
+    padding-right: .5rem;
+}
+
+/* ===== 分支操作 ===== */
+.git-branch-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+}
+.git-branch-chip__ops {
+    display: none;
+    gap: .2rem;
+}
+.git-branch-chip:hover .git-branch-chip__ops {
+    display: inline-flex;
+}
+.git-branch-chip__op:hover {
+    color: var(--blue);
+}
+.git-branch-new {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+}
+.git-branch-new .input {
+    width: 8rem;
+}
+
+/* ===== 提交记录行 ===== */
+.git-log__entry--active {
+    background: var(--hover);
+}
+.git-log__hash {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: .8rem;
+    color: var(--icon-blue);
+}
+
+/* ===== 文件操作按钮组 ===== */
+.git-file__ops {
+    position: absolute;
+    top: 50%;
+    right: .5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity .1s;
+}
+.git-file:hover .git-file__ops,
+.git-file--active .git-file__ops {
+    opacity: 1;
+}
+/* 悬停时文件名右侧让出按钮空间，避免被盖住 */
+
+/* ===== 左栏二级菜单适配 =====
+   完整沿用项目标准 .menu 样式（layout/menu.css），
+   仅让 tab 均分宽度以适配窄侧栏，不改动字号、内边距、配色 */
+.git-menu {
+    flex-shrink: 0;
+    padding-bottom: 0;
+}
+.git-menu .wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+.git-menu ul {
+    width: 100%;
+}
+.git-menu ul li {
+    flex: 1;
+    padding: 1em .3em;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Git 左栏：菜单固定在顶部，下方列表独立滚动 */
+.studio-nav--git {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ===== 第三期：子面板（stash / 远程 / 标签 / 冲突） ===== */
+.git-sub-panel__header {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .2rem 0;
+}
+.git-sub-panel__title {
+    flex: 1;
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--textPrimary);
+}
+/* 可折叠的子面板标题（如「钩子」） */
+.git-hook .git-sub-panel__title {
+    cursor: pointer;
+    user-select: none;
+}
+.git-sub-panel__form {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    padding: .4rem 0 .6rem;
+}
+.git-sub-panel__form-actions {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+.git-sub-panel__hint {
+    flex: 1;
+    font-size: .78rem;
+    color: var(--textSecondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-sub-panel__list {
+    max-height: 14rem;
+    overflow: auto;
+}
+
+/* 通用子项行（标签 / stash / 远程分支 / 冲突文件） */
+.git-sub-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .25rem 5rem .25rem .2rem;
+    font-size: .82rem;
+    border-bottom: 1px solid var(--divider);
+}
+.git-sub-item:hover {
+    background: var(--hover);
+}
+.git-sub-item__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textPrimary);
+}
+.git-sub-item__desc {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textSecondary);
+}
+.git-sub-item__meta {
+    flex-shrink: 0;
+    font-size: .75rem;
+    color: var(--textSecondary);
+}
+.git-sub-item__ops {
+    position: absolute;
+    top: 50%;
+    right: .5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity .1s;
+}
+.git-sub-item:hover .git-sub-item__ops {
+    opacity: 1;
+}
+/* 行内重命名输入行 */
+.git-remote__rename {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .2rem .5rem .3rem 1.4rem;
+    border-bottom: 1px solid var(--divider);
+}
+
+/* 冲突面板 */
+.git-conflict {
+    border-left: 3px solid var(--icon-orange);
+}
+.git-conflict__state {
+    margin-left: .5rem;
+    padding: .05rem .35rem;
+    font-size: .72rem;
+    font-weight: 400;
+    color: var(--icon-orange);
+    background: var(--moon-grey);
+    border-radius: 2px;
+}
+
+/* 提交搜索 */
+.git-log-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+.git-log-search {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-shrink: 0;
+    padding: .3rem .4rem;
+    border-bottom: 1px solid var(--divider);
+}
+.git-log-search .input {
+    min-width: 0;
+    font-size: .8rem;
+}
+.git-log-wrap .git-log {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* ===== 第四期：reflog / 仓库信息 / 子模块 / Hook ===== */
+.git-branch__counts {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: .3rem;
+    font-size: .78rem;
+    font-family: monospace;
+}
+.git-ahead { color: var(--icon-green); }
+.git-behind { color: var(--icon-orange); }
+
+.git-repo-panel__counts {
+    margin-left: .4rem;
+    display: inline-flex;
+    gap: .3rem;
+}
+
+/* 子模块状态 */
+.git-sub-status--ok { color: var(--icon-green); }
+.git-sub-status--uninitialized { color: var(--textSecondary); }
+.git-sub-status--modified { color: var(--icon-orange); }
+
+/* ===== 第五期：仓库管理 ===== */
+.git-repo-manager__header {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .2rem 0;
+}
+.git-repo-manager__dirs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+.git-repo-manager__dir {
+    padding: .1rem .5rem;
+    font-size: .78rem;
+    color: var(--textSecondary);
+    background: var(--moon-grey);
+    border-radius: 2px;
+    cursor: pointer;
+}
+.git-repo-manager__dir:hover {
+    color: var(--blue);
+}
+
+/* ===== 通用勾子编辑器（HookEditor） ===== */
+.hook-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .25rem 3.4rem .25rem .2rem;
+    font-size: .82rem;
+    border-bottom: 1px solid var(--divider);
+}
+.hook-item:hover {
+    background: var(--hover);
+}
+.hook-item--editing {
+    background: var(--hover);
+}
+.hook-item__dot {
+    width: .5rem;
+    height: .5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--borderPrimary);
+}
+.hook-item__dot--on {
+    background: var(--icon-green);
+}
+.hook-item__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textPrimary);
+}
+.hook-item__ops {
+    position: absolute;
+    top: 50%;
+    right: .2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity .1s;
+}
+.hook-item:hover .hook-item__ops,
+.hook-item--editing .hook-item__ops {
+    opacity: 1;
+}
+.hook-item__editor {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    padding: .4rem .2rem .6rem;
+    border-bottom: 1px solid var(--divider);
+}
+.hook-item__editor-bar {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+.hook-item__editor-name {
+    flex: 1;
+    font-size: .78rem;
+    font-family: monospace;
+    color: var(--textSecondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.hook-item__text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 12rem;
+    padding: .4rem .5rem;
+    font-family: monospace;
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--textPrimary);
+    background: #fff;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 2px;
+    resize: vertical;
+}
+.hook-item__text:focus {
+    outline: none;
+    border-color: var(--blue);
+}
+
+/* ===== 变更列表：工具栏 / 全选 / 树形 ===== */
+.git-change-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .2rem;
+    padding: .15rem .4rem;
+    border-bottom: 1px solid var(--divider);
+}
+.git-section__header input[type="checkbox"] {
+    flex-shrink: 0;
+    margin: 0 .1rem 0 0;
+}
+.git-file input[type="checkbox"] {
+    flex-shrink: 0;
+    margin: 0;
+}
+.git-tree__folder {
+    font-size: .85rem;
+}
+.git-tree__dir {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    padding: .2rem .6rem;
+    cursor: pointer;
+    color: var(--textSecondary);
+}
+.git-tree__dir:hover {
+    background: var(--hover);
+}
+.git-tree__arrow {
+    width: 1.2rem;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+.git-tree__dir-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.git-tree__children {
+    padding-left: 1rem;
 }
