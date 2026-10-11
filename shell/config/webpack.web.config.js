@@ -24,7 +24,7 @@ function render_index() {
             web_site_title: "FileCat",
             logo_url: ""
         }),
-        web_site_title: "FileCat",
+        web_site_title: "Dev FileCat",
         logo_favicon: "favicon-32x32.png"
     });
 }
