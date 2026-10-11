@@ -1840,7 +1840,7 @@ export class FileService  {
                     size: item.size,
                 });
             }
-            return result;
+            return Sucess(result);
         }
 
         if (!await FileUtil.access(sysPath)) {
@@ -1866,7 +1866,7 @@ export class FileService  {
                 size: stats.size
             })
         }
-        return result;
+        return Sucess(result);
     }
 
     public async getDiskSizeForPath(fpath) {

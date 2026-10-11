@@ -49,7 +49,9 @@ module.exports = {
         ],
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js', '.jsx'],
+        // .mjs 不能省：mermaid 等包的 exports 直接指向 .mjs 产物，
+        // webpack 按这份扩展名列表去找入口，缺了就会报 Can't resolve
+        extensions: ['.tsx', '.ts', '.js', '.jsx', '.mjs'],
     },
     plugins: [
         new HtmlWebpackPlugin({

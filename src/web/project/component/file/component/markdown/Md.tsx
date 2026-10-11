@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useRef} from "react";
 import markdownit from 'markdown-it'
 // 导入插件
 import {light as emoji} from 'markdown-it-emoji';
@@ -9,6 +9,8 @@ import taskLists from 'markdown-it-task-lists';
 import 'github-markdown-css/github-markdown.css';
 import {join_url} from "../../../../../../common/StringUtil";
 import {using_add_md__copy_button} from "../../FileUtil";
+import {is_graph_lang, render_graph} from "../md_editor/graph_render";
+import i18n from "../../../../util/in18resource";
 
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css' // 使用GitHub暗色主题
@@ -101,7 +103,56 @@ md.use(emoji)       // 支持 Emoji
     .use(markdownItCopyButton) // 使用自定义插件
     .use(markdownItAddPrefixToLinks); // 使用自定义插件
 
-export default function Md(props:{context:string}) {
-    using_add_md__copy_button()
-    return <div dangerouslySetInnerHTML={{__html: md.render(props.context)}}/>
+/**
+ * 把 ```mermaid / ```svg 代码块换成渲染后的图。
+ * markdown-it 的 fence 渲染器统一把代码块包成
+ *   <div class="code-block-with-copy"><div class="code-header">…</div><pre><code class="hljs language-xxx">
+ * 因此要替换的是最外层容器，否则会留下「语言标签 + 复制按钮」的空壳。
+ */
+async function render_graph_blocks(root: HTMLElement) {
+    const codes = root.querySelectorAll<HTMLElement>("pre > code[class*='language-']");
+    for (const code of Array.from(codes)) {
+        const lang = language_of(code);
+        if (!is_graph_lang(lang)) {
+            continue;
+        }
+        const target = code.closest(".code-block-with-copy") ?? code.parentElement;
+        if (!target) {
+            continue;
+        }
+        const source = code.textContent ?? "";
+        const holder = document.createElement("div");
+        holder.className = "md-graph md-graph--loading";
+        holder.textContent = i18n.t("rendering");
+        target.replaceWith(holder);
+        const res = await render_graph(lang, source);
+        // 组件可能已卸载，或这段内容已被重新渲染
+        if (!holder.isConnected) {
+            continue;
+        }
+        if (res.error) {
+            holder.className = "md-graph md-graph--error";
+            holder.textContent = res.error;
+        } else {
+            holder.className = "md-graph";
+            holder.innerHTML = res.svg;
+        }
+    }
+}
+
+/** 从 code 元素的 class 里取出语言名（hljs language-mermaid → mermaid） */
+function language_of(code: HTMLElement): string {
+    const hit = code.className.match(/language-([\w-]+)/);
+    return hit ? hit[1] : "";
+}
+
+export default function Md(props: {context: string}) {
+    const ref = useRef<HTMLDivElement>(null);
+    using_add_md__copy_button();
+    useEffect(() => {
+        if (ref.current) {
+            render_graph_blocks(ref.current);
+        }
+    }, [props.context]);
+    return <div ref={ref} dangerouslySetInnerHTML={{__html: md.render(props.context)}}/>;
 }

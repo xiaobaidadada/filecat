@@ -272,7 +272,7 @@ export class FileController {
     // 获取studio路径
     @Post("/studio/get/item")
     async studio_get_item(@Body() data: { path: string }, @Req() ctx) {
-        return Sucess(await FileServiceImpl.studio_get_item(data.path, ctx.headers.authorization));
+        return await FileServiceImpl.studio_get_item(data.path, ctx.headers.authorization);
     }
 
     // 获取 workflow 的输入值

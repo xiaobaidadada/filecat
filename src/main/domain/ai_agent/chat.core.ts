@@ -71,6 +71,8 @@ export interface ChatOptions {
     once_messages_list?: ai_agent_message_item[];
 }
 
+const t1 = "支持输出 ```mermaid  和 ```svg  两种方案画图显示，mermaid优先使用，因为输出的文字描述体积比较小，画泳道图什么的比较方便。"
+
 export class ChatCore {
 
     /**
@@ -383,7 +385,9 @@ filecat 当前软件用户当前所在的根目录是 ${rootPath}，
 除非用户需要你直接操作本地文件，否则选择文字输出的形式给用户。
 当用户没有任何问题的时候，你只需要向用户表达你可以帮助用户就可以了。
 如果用户需要有结构的画图，生成画图文件，可以询问用户是否要生成Excalidraw json格式的文件，Excalidraw 的格式要求 appState 里必须有 scrollToContent 字段、zoom 等,以 .draw 后缀结尾。
+
 如果没有特殊要求，以markdown格式回答用户。
+如果你需要画图给用户，${t1}
 
 ${ai_agentService.docs_switch_get() ? ` 当你不了解某些知识的时候，直接使用search_docs工具函数来搜素本地知识库搜索相关资料，如果用到了知识库,需要给用户引用的知识库文件路径。` : ''}
 

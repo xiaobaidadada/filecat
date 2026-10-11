@@ -965,3 +965,70 @@
         width: 100% !important;
     }
 }
+
+/* 光标不在图形代码块内时，源码块整体隐藏，只留渲染出来的图 */
+.md-graph-hidden {
+    display: none;
+}
+
+/* ---- ```mermaid / ```svg 代码块的图形预览 ---- */
+/* 光标移出代码块后，整块替换成渲染出来的图；点图可回到源码编辑 */
+.md-graph {
+    position: relative;
+    margin: 0.5em 0 1em;
+    padding: 0.5em;
+    border: 1px solid var(--divider);
+    border-radius: 4px;
+    background: var(--surfacePrimary);
+    text-align: center;
+    /* 整块可点：点一下就进代码块编辑 */
+    cursor: pointer;
+    user-select: none;
+}
+
+/* 渲染中：虚边框提示还没好 */
+.md-graph--loading {
+    border-style: dashed;
+}
+
+.md-graph--loading .md-graph__body {
+    color: var(--textSecondary);
+    font-size: 0.85em;
+}
+
+/* 悬停时才出现的「点击编辑」提示，不与正文抢占视觉 */
+.md-graph__hint {
+    position: absolute;
+    top: 0.35em;
+    right: 0.6em;
+    font-size: 0.75em;
+    color: var(--textSecondary);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+.md-graph:hover .md-graph__hint {
+    opacity: 1;
+}
+
+/* 语法错误：红色提示，不打断编辑 */
+.md-graph--error {
+    color: #d93025;
+    font-size: 0.85em;
+    text-align: left;
+    white-space: pre-wrap;
+}
+
+.md-graph--error .md-graph__body {
+    border: 1px solid rgba(217, 48, 37, 0.35);
+    border-radius: 4px;
+    background: rgba(217, 48, 37, 0.04);
+    padding: 0.5em;
+}
+
+/* 生成或手写的 SVG 都自适应宽度 */
+.md-graph svg {
+    max-width: 100%;
+    height: auto;
+}

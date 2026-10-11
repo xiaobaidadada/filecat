@@ -21,8 +21,8 @@ import {markdown_to_doc, doc_to_markdown} from "./markdown";
 import {OutlineItem} from "./MdOutline";
 import {
     build_source_highlight_plugin,
-    set_source_highlight_enabled,
 } from "./md_source_highlight";
+import {build_graph_plugin} from "./md_graph";
 import {
     build_input_rules,
     convert_on_enter,
@@ -32,6 +32,7 @@ import {
     toggle_bullet_list,
     toggle_ordered_list,
     set_block_type,
+    select_all_in_code,
 } from "./keymap";
 import "prosemirror-view/style/prosemirror.css";
 import "prosemirror-gapcursor/style/gapcursor.css";
@@ -143,8 +144,12 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 history(),
                 // 源码模式的语法高亮（用 Decoration，不写进文档）
                 build_source_highlight_plugin(),
+                // ```mermaid / ```svg 代码块：光标移出时整块替换成渲染好的图
+                build_graph_plugin(),
                 build_input_rules(),
                 keymap({
+                    // 全选：光标在代码块内时只选该代码块，其余情况走默认全选（见命令内的说明）
+                    "Mod-a": select_all_in_code,
                     // 撤销 / 重做：history 插件只负责记录，命令必须显式绑定键位才生效。
                     // Mod 在 Windows/Linux 上是 Ctrl、macOS 上是 Cmd，两种情况都覆盖到。
                     "Mod-z": undo,
@@ -330,7 +335,6 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 // 撤销/重做会把文档在两种形态之间来回切换，class 若不同步，
                 // 就会出现「已经是代码块了但还按所见即所得排版」的错乱。
                 const now_source = is_source_doc(next.doc);
-                set_source_highlight_enabled(now_source);
                 if (now_source) {
                     view.dom.classList.add("md-source-mode");
                 } else {
@@ -485,7 +489,6 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 );
                 const tr = view.state.tr;
                 tr.replaceWith(0, view.state.doc.content.size, block);
-                set_source_highlight_enabled(true);
                 view.dispatch(tr);
                 // 样式类打在编辑器根节点上，CSS 据此切换成等宽的源码排版
                 view.dom.classList.add("md-source-mode");
@@ -498,7 +501,6 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 const doc = markdown_to_doc(text);
                 const tr = view.state.tr;
                 tr.replaceWith(0, view.state.doc.content.size, doc.content);
-                set_source_highlight_enabled(false);
                 view.dispatch(tr);
                 view.dom.classList.remove("md-source-mode");
             },

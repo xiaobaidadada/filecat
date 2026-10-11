@@ -958,5 +958,7 @@
   "没有可提交的更改": "Keine Änderungen",
   "存在未暂存的改动，是否一并暂存并提交？": "Es gibt nicht bereitgestellte Änderungen. Zusammen bereitstellen und committen?",
   "二进制文件无法比较": "Binärdatei kann nicht verglichen werden",
-  "请选择文件查看改动": "Datei auswählen, um Änderungen zu sehen"
+  "请选择文件查看改动": "Datei auswählen, um Änderungen zu sehen",
+  "clk_edt": "Zum Bearbeiten klicken",
+  "rendering": "Wird gerendert…"
 }

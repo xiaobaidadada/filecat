@@ -1,6 +1,6 @@
 import {InputRule, inputRules, wrappingInputRule, textblockTypeInputRule, smartQuotes, ellipsis} from "prosemirror-inputrules";
 import {md_schema} from "./schema";
-import {Command} from "prosemirror-state";
+import {Command, TextSelection} from "prosemirror-state";
 import {toggleMark} from "prosemirror-commands";
 import {liftListItem, sinkListItem, splitListItem, wrapInList} from "prosemirror-schema-list";
 
@@ -301,4 +301,29 @@ export const list_commands = {
     split: splitListItem(md_schema.nodes.list_item),
     wrap_bullet: toggle_bullet_list,
     wrap_ordered: toggle_ordered_list,
+};
+
+/**
+ * Ctrl/Cmd + A 的全选行为。
+ *
+ * 光标在代码块内时只选中这个代码块的内容，而不是整篇文档 ——
+ * 在代码块里全选的意图几乎都是「复制/替换这一段代码」，选中整篇没有意义。
+ * 光标在代码块外时返回 false，交回给 ProseMirror 默认的全选。
+ *
+ * 注意放在 keymap 的最前面：默认全选由 baseKeymap 提供（注册在后面），
+ * 这里命中就直接消费掉，不会再落到默认行为。
+ */
+export const select_all_in_code: Command = (state, dispatch) => {
+    const {$from} = state.selection;
+    // 只看光标所在的最内层节点：$from.parent 就是光标直接所处的块
+    if ($from.parent.type.name !== "code_block") {
+        return false;
+    }
+    if (dispatch) {
+        // 选中代码块的整个文本范围：$from.start() 是块内内容起点，$from.end() 是终点
+        dispatch(state.tr.setSelection(TextSelection.create(
+            state.doc, $from.start(), $from.end(),
+        )).scrollIntoView());
+    }
+    return true;
 };

@@ -204,5 +204,8 @@
     "assets": [
       "build/**/**"
     ]
+  },
+  "dependencies": {
+    "mermaid": "^12.1.0"
   }
 }

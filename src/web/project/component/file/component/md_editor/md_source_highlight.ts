@@ -6,27 +6,20 @@ import {Node as PmNode} from "prosemirror-model";
 import hljs from "highlight.js";
 
 /**
- * 源码模式的语法高亮插件。
+ * 代码块的语法高亮插件。
  *
- * 源码模式下，整篇文档被表示为一个 code_block（language="markdown"），
- * 里面的纯文本就是 Markdown 原文。这里把 highlight.js 的着色结果转换成
- * ProseMirror 的 Decoration，让文本在保持「可编辑的纯文本」的同时带上颜色。
+ * 文档里的每个 code_block 都按自身 language 属性着色，用 highlight.js 算好 token 后
+ * 转成 ProseMirror 的 Decoration，文本保持「可编辑的纯文本」形态，只是渲染层上了色。
+ *
+ * 覆盖两种场景：
+ *   1) 源码模式 —— 整篇文档就是一个 code_block（language="markdown"），等于整篇 Markdown 高亮
+ *   2) 所见即所得 —— 文档里的 ```js / ```go 等代码块各自上色
  *
  * 为什么用 Decoration 而不是 mark：
  *   code_block 的 schema 定义了 marks: ""，块内不允许任何 mark；
  *   而 Decoration 只是渲染层的内联样式覆盖，不写入文档、不参与保存，正好合适。
- *
- * 只在源码模式下生效：它取决于一个由外部写入的 module 级开关，
- * 因为该插件随 EditorView 一起创建，无法通过 props 直接传入。
  */
 export const md_source_highlight_key = new PluginKey("md_source_highlight");
-
-// 是否处于源码模式。由 MdWysiwygEditor 在切换时同步。
-let source_mode = false;
-
-export function set_source_highlight_enabled(enabled: boolean) {
-    source_mode = enabled;
-}
 
 /**
  * 遍历 highlight.js 的 token 树，把带 scope 的节点拍平成 [from, to, class] 区间。
@@ -65,9 +58,14 @@ function build_decorations(node: PmNode, pos: number): Decoration[] {
     if (!text) {
         return [];
     }
+    // 用节点自己的语言；没写语言（``` 后面空的）时按纯文本处理，不做任何着色
+    const lang = node.attrs.language ?? "";
+    if (!lang || !hljs.getLanguage(lang)) {
+        return [];
+    }
     let result;
     try {
-        result = hljs.highlight(text, {language: "markdown", ignoreIllegals: true});
+        result = hljs.highlight(text, {language: lang, ignoreIllegals: true});
     } catch {
         // 高亮失败（版本差异、非法内容等）不影响编辑，直接不着色
         return [];
@@ -93,37 +91,19 @@ function build_decorations(node: PmNode, pos: number): Decoration[] {
 }
 
 /**
- * 创建源码模式高亮插件。
- * 装饰在文档变化时按需重建 —— 这里用 state 保存并配合 apply 做增量，
- * 但源码模式被整体替换的场景较多，直接全量重建更简单可靠（单块文本，开销很小）。
+ * 创建代码块高亮插件。
+ *
+ * 装饰不走 plugin state，而是在 props.decorations 里实时计算：
+ * 只有文档变化才需要重算，交给 ProseMirror 自己控制重绘时机即可。
+ * （plugin state 里的 DecorationSet 不会自动作用于渲染层，必须从这里返回。）
  */
 export function build_source_highlight_plugin(): Plugin {
     return new Plugin({
         key: md_source_highlight_key,
-        state: {
-            init: (_, state) => DecorationSet.empty,
-            apply: (tr, _old, _old_state, new_state) => {
-                if (!source_mode) {
-                    return DecorationSet.empty;
-                }
-                // 文档没变就沿用旧装饰，省掉一次高亮计算
-                if (!tr.docChanged) {
-                    return md_source_highlight_key.getState(new_state) ?? DecorationSet.empty;
-                }
-                return build_decoration_set(new_state.doc);
-            },
-        },
         props: {
             decorations(state) {
-                if (!source_mode) {
-                    return null;
-                }
-                // init/apply 之外（例如首次挂载）兜底计算一次
-                const set = md_source_highlight_key.getState(state);
-                if (!set || !set.find().length) {
-                    return build_decoration_set(state.doc);
-                }
-                return set;
+                const set = build_decoration_set(state.doc);
+                return set.find().length ? set : null;
             },
         },
     });
