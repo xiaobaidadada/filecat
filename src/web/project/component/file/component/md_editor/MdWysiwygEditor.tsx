@@ -235,17 +235,23 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         const fail = (el: Element) => el.setAttribute("data-img-error", "");
         const ok = (el: Element) => el.removeAttribute("data-img-error");
 
+        // ProseMirror 会在图片这类原子节点旁插一个空的 separator <img>，
+        // 用来给光标留位置（class 为 ProseMirror-separator，没有 src）。
+        // 它是个布局占位符，不是内容图片，不能给它画问号。
+        const is_content_img = (el: Element): el is HTMLImageElement =>
+            el.tagName === "IMG" && !el.classList.contains("ProseMirror-separator");
+
         // 图片随时可能被重新创建（ProseMirror 会重建 DOM），
         // 监听挂在宿主容器的捕获阶段，能覆盖容器内所有后代。
         const on_img_error = (e: Event) => {
             const el = e.target as HTMLElement;
-            if (el?.tagName === "IMG") {
+            if (el?.tagName === "IMG" && is_content_img(el)) {
                 fail(el);
             }
         };
         const on_img_load = (e: Event) => {
             const el = e.target as HTMLElement;
-            if (el?.tagName === "IMG") {
+            if (el?.tagName === "IMG" && is_content_img(el)) {
                 ok(el);
             }
         };
@@ -257,6 +263,9 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         // 已经加载完的（比如 DOM 复用）直接按结果定型，不用等事件。
         const scan = () => {
             host.querySelectorAll("img").forEach(img => {
+                if (!is_content_img(img)) {
+                    return;
+                }
                 const el = img as HTMLImageElement;
                 if (el.dataset.imgSeen) {
                     return;
