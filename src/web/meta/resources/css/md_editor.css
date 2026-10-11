@@ -96,6 +96,13 @@
     padding: 0 var(--md-editor-padding);
 }
 
+/* 大纲跳转时给标题留一点上边距，别让文字紧贴滚动容器的顶边。
+   scrollIntoView({block:"start"}) 会把元素顶边对齐容器顶边，
+   这里让浏览器在计算「顶边」时把它算进去。 */
+.md-filecat .md-filecat-content > * {
+    scroll-margin-top: 1.2em;
+}
+
 /* ============ 左侧大纲 ============ */
 
 .md-outline-panel {
@@ -249,6 +256,10 @@
     padding-top: 0.42em;
     padding-bottom: 0.42em;
     margin: 0;
+    /* 大纲跳转时给标题留点上边距，别让文字紧贴滚动容器顶边。
+       scrollIntoView({block:"start"}) 把元素顶边对齐容器顶边，
+       浏览器会把这里算进「顶边」里。 */
+    scroll-margin-top: 1.2em;
 }
 .md-filecat .md-filecat-content > *:first-child {
     padding-top: 0;

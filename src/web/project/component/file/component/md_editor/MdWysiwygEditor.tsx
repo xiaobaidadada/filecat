@@ -51,6 +51,65 @@ function is_jump_modifier(e: {ctrlKey?: boolean, metaKey?: boolean}): boolean {
     return !!(e.ctrlKey || e.metaKey);
 }
 
+/**
+ * 把指定文档位置对应的元素滚到视口顶部（带缓动）。
+ *
+ * 为什么不用 ProseMirror 的 scrollIntoView()：
+ * 它只保证「可见」—— 目标已在视口内就完全不滚，
+ * 在视口下方则把元素的底边对齐到视口底。
+ * 点大纲时标题落在屏幕哪个位置全看运气，体验很飘。
+ *
+ * 为什么不用浏览器原生的 behavior:"smooth"：
+ * 它的时长由浏览器决定，没有任何参数可调，Chrome 里大概 300ms 上下，
+ * 长文档跳转时显得很急。这里自己写缓动，时长可控。
+ */
+const SCROLL_DURATION = 500;
+
+function scroll_dom_to_top(view: EditorView, pos: number) {
+    let line: Element | null = null;
+    try {
+        const dom = view.domAtPos(pos).node;
+        const el = dom.nodeType === 1 ? (dom as HTMLElement) : dom.parentElement;
+        // 位置落在行内时拿到的可能是文本节点，往上找到所在块再滚
+        line = el ? (el.closest(".md-filecat-content > *") ?? el) : null;
+    } catch {
+        // 定位失败不影响光标设置，忽略
+    }
+    if (!line) {
+        return;
+    }
+    // 滚动容器是 .md-editor-scroll（外层窗口不参与），
+    // 所以自己算目标位置，别用 window.scrollTo。
+    const scroller = line.closest(".md-editor-scroll") as HTMLElement | null;
+    if (!scroller) {
+        return;
+    }
+    const margin = parseFloat(getComputedStyle(line).scrollMarginTop) || 0;
+    const target = scroller.scrollTop + line.getBoundingClientRect().top
+        - scroller.getBoundingClientRect().top - margin;
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    smooth_scroll_to(scroller, Math.max(0, Math.min(target, max)));
+}
+
+/** 缓动滚动：ease-out 曲线，先快后慢，比浏览器默认的舒服 */
+function smooth_scroll_to(el: HTMLElement, to: number) {
+    const from = el.scrollTop;
+    const delta = to - from;
+    if (Math.abs(delta) < 1) {
+        return;
+    }
+    const start = performance.now();
+    const step = (now: number) => {
+        const t = Math.min(1, (now - start) / SCROLL_DURATION);
+        // ease-out cubic
+        el.scrollTop = from + delta * (1 - Math.pow(1 - t, 3));
+        if (t < 1) {
+            requestAnimationFrame(step);
+        }
+    };
+    requestAnimationFrame(step);
+}
+
 // ProseMirror 编辑器的 React 封装。
 //
 // ProseMirror 自己管理自身的 DOM，因此这里只负责：
@@ -536,7 +595,12 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 } catch {
                     selection = TextSelection.near(view.state.doc.resolve(0), 1);
                 }
-                view.dispatch(view.state.tr.setSelection(selection).scrollIntoView());
+                // 不加 scrollIntoView()：ProseMirror 那个只保证「可见」——
+                // 已经在视口内就不动，在下方则把元素底边对到视口底，
+                // 点大纲时看到的标题位置飘忽不定。
+                // 这里拿 DOM 自己做，统一把标题顶到视口顶部。
+                view.dispatch(view.state.tr.setSelection(selection));
+                scroll_dom_to_top(view, selection.from);
                 view.focus();
             },
             // ---- 源码模式 ----
