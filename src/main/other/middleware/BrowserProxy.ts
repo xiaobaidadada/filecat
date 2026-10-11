@@ -40,6 +40,8 @@ import https from 'https';
 import iconv from 'iconv-lite';
 import zlib from 'zlib';
 import {URL} from 'url';
+import {HttpsProxyAgent} from 'https-proxy-agent';
+import {HttpRequest} from '../../../common/node/http';
 import {UserAuth} from '../../../common/req/user.req';
 import {userService} from '../../domain/user/user.service';
 
@@ -1071,6 +1073,13 @@ function forward(req: Request, res: Response, target_url: URL, prefix: string): 
         headers,
         timeout: REQUEST_TIMEOUT,
     };
+
+    // 本地网路不通的站点（google / openai 等）需要经代理出去。
+    // 系统设置页配了 http_proxy 就用它，没配则回退进程环境变量（HTTP_PROXY/http_proxy）。
+    const proxy = HttpRequest.get_proxy();
+    if (proxy) {
+        options.agent = new HttpsProxyAgent(proxy);
+    }
 
     const proxy_req = agent.request(options, (proxy_res) => {
         const content_type = String(proxy_res.headers['content-type'] ?? '');

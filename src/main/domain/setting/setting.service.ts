@@ -64,6 +64,9 @@ const cron = require("node-cron");
 
 const customer_router_key = data_common_key.customer_router_key;
 
+// 全局默认主题：服务端渲染 index.html 时写进 <head>，个人主题由前端 setTheme() 覆盖
+const DEFAULT_THEME: string = "google";
+
 const customer_api_router_key = data_common_key.customer_api_router_key;
 
 // const token_setting = data_common_key.token_setting;
@@ -378,7 +381,10 @@ export class SettingService {
             }), // 给前端
             web_site_title,
             // 浏览器标签页图标：配置了自定义 logo 就用它，否则回退到内置的 favicon 文件
-            logo_favicon: logo_url || "favicon-32x32.png"
+            logo_favicon: logo_url || "favicon-32x32.png",
+            // 全局默认主题：首屏直接渲染 link，避免等 JS 跑完才插导致闪一下。
+            // light 是 base.css 里的默认样式，没有独立文件，所以不加 link。
+            default_theme_css: `<link id="theme-css" rel="stylesheet" href="${DEFAULT_THEME}.css">`
         });
         return index_text;
     }

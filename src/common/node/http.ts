@@ -15,7 +15,7 @@ export class HttpRequest {
     proxy_getter = fn;
   }
 
-  /** 获取当前代理地址，空表示不启用 */
+  /** 获取当前代理地址，空表示不启用。系统设置优先，为空时回退环境变量。 */
   public static get_proxy(): string | undefined {
     try {
       const p = proxy_getter();
@@ -23,7 +23,10 @@ export class HttpRequest {
     } catch (e) {
       console.log(e?.message??e);
     }
-    return undefined;
+    // 系统设置没配时，用进程环境变量兜底（大小写两种都认，与代理工具惯例一致）
+    return process.env.http_proxy || process.env.HTTP_PROXY
+        || process.env.https_proxy || process.env.HTTPS_PROXY
+        || undefined;
   }
 
   /** 构建 axios 配置，自动注入代理 agent */

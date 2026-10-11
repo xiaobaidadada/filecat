@@ -37,12 +37,11 @@ export function setTheme(theme: themes) {
 
     const id = 'theme-css';
 
-    // 检查是否已存在 link 标签
-    const existing = document.getElementById(id);
-    if (existing) {
-        existing.remove(); // ✅ 移除旧的 link（移除样式）
-    }
+    const existing = document.getElementById(id) as HTMLLinkElement | null;
+
+    // light 是 base.css 里的默认样式，没有独立文件：移除 link 即回落到默认外观
     if (theme === "light" || !theme) {
+        existing?.remove();
         return;
     }
 
@@ -54,6 +53,13 @@ export function setTheme(theme: themes) {
         // 插件主题：通过 API 代理获取 CSS
         href = `${Global.base_url}/api/setting/plugin/theme?theme_id=${encodeURIComponent(theme)}`;
     }
+
+    // 服务端已渲染了相同主题的 link 时直接复用，
+    // 换成「移除再新建」会让样式重新应用一次，表现为闪一下。
+    if (existing && existing.getAttribute('href') === href) {
+        return;
+    }
+    existing?.remove();
 
     // 创建新的 link
     const link = document.createElement('link');
