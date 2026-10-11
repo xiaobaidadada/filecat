@@ -1053,9 +1053,11 @@ function forward(req: Request, res: Response, target_url: URL, prefix: string): 
     // 和部分反爬站点会把它当异常客户端特征，实测同一账号直连正常、经代理就被判
     // 「登录次数超限」。
     //
-    // 但 Node 的 http 模块只自动解压 gzip/deflate/br，遇上 zstd 会给你一堆乱码，
-    // 所以声明成浏览器会说实话、Node 也认得的最小集合。
-    headers['accept-encoding'] = 'gzip, deflate, br';
+    // 不要声明 br：本代理是「原样透传 content-encoding」的，而前面若有 CDN
+    // （Cloudflare 等）它会无视客户端的 Accept-Encoding 一律按 br 重压上游响应，
+    // 重压后的流解不开 —— 浏览器报 net::ERR_CONTENT_DECODING_FAILED（实测 demo
+    // 站点所有 css/js/svg 全挂，本地直连却是好的）。gzip/deflate 无此问题。
+    headers['accept-encoding'] = 'gzip, deflate';
 
     // Referer / Origin 还原成目标站自身：很多站点（尤其路由器管理页）
     // 会校验它们，带代理地址会被判为跨站请求直接 403。
