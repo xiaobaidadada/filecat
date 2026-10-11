@@ -1,5 +1,6 @@
 import {Schema, NodeSpec, MarkSpec} from "prosemirror-model";
 import {tableNodes} from "prosemirror-tables";
+import {decode_html, resolve_src} from "./md_html";
 
 // 所见即所得编辑器的文档模型。
 //
@@ -142,6 +143,50 @@ const nodes: Record<string, NodeSpec> = {
         },
     },
 
+    // HTML 块（Markdown 里直接写的 <div>、<p align="center"> 这类整段 HTML）
+    //
+    // 为什么需要它：markdown-it 默认把 HTML 原样输出，如果按普通标签解析，
+    // 标签本身会被拆成 PM 节点、原文就永久丢了 —— 保存时会把用户写的
+    // <p align="center"> 改写成别的形态，甚至直接消失。
+    // 把它当成一个原子块、原文存进 attrs，才能做到「存的就是你写的」。
+    //
+    // atom: true + content 为空 = 整体不可拆分，编辑在 NodeView 内部进行（见 md_html.ts）。
+    html_block: {
+        group: "block",
+        atom: true,
+        code: true,
+        attrs: {value: {default: ""}},
+        parseDOM: [{
+            tag: "div[data-html-block]",
+            // 属性值里是 base64（原文含引号、尖括号，直接放属性会破坏 HTML 结构），
+            // 这里解回原文。
+            getAttrs: (dom: HTMLElement | string) => ({
+                value: decode_html((dom as HTMLElement).getAttribute("data-html-block") ?? ""),
+            }),
+        }],
+        toDOM(node) {
+            return ["div", {"data-html-block": node.attrs.value}];
+        },
+    },
+
+    // 行内 HTML（<br>、<span style="...">、<img ...> 这类夹在文字里的）
+    html_inline: {
+        inline: true,
+        group: "inline",
+        atom: true,
+        code: true,
+        attrs: {value: {default: ""}},
+        parseDOM: [{
+            tag: "span[data-html-inline]",
+            getAttrs: (dom: HTMLElement | string) => ({
+                value: decode_html((dom as HTMLElement).getAttribute("data-html-inline") ?? ""),
+            }),
+        }],
+        toDOM(node) {
+            return ["span", {"data-html-inline": node.attrs.value}];
+        },
+    },
+
     // 硬换行
     hard_break: {
         inline: true,
@@ -168,7 +213,9 @@ const nodes: Record<string, NodeSpec> = {
         }],
         toDOM(node) {
             const {src, alt, title} = node.attrs;
-            const a: Record<string, string> = {src};
+            // 相对路径按文档所在目录解析（与 HTML 块里的图片同一套规则），
+            // 否则浏览器会拿页面 URL 去拼，必然 404
+            const a: Record<string, string> = {src: resolve_src(src)};
             if (alt) a.alt = alt;
             if (title) a.title = title;
             return ["img", a];

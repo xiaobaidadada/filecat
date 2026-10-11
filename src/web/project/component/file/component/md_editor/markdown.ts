@@ -5,10 +5,12 @@
 import MarkdownIt from "markdown-it";
 import {DOMParser as PMDOMParser, Node as PMNode} from "prosemirror-model";
 import {md_schema} from "./schema";
+import {encode_html} from "./md_html";
 
 // Markdown ⇄ ProseMirror 文档 的双向转换。
 //
-// 解析方向：markdown-it 渲染成 HTML → ProseMirror 依据 schema 的 parseDOM 规则建文档。
+// 解析方向：markdown-it 先渲染成 HTML，再由 ProseMirror 按 schema 的 parseDOM 建文档。
+// 但 HTML 块是例外 —— 见 parse_html_block。
 // 序列化方向：自己实现，输出干净稳定的 Markdown。
 //
 // 之所以不复用 prosemirror-markdown：它的 schema 无法直接吃我们这份带表格的 schema，
@@ -22,6 +24,23 @@ const md = new MarkdownIt({
     typographer: false,
 });
 
+/**
+ * 把 HTML 块包进一个带标记的容器，让它在渲染成 HTML 后仍能被认出来。
+ *
+ * 默认行为是 `<p align="center">...</p>` 原样输出，DOMParser 会把它当普通
+ * 段落拆掉、原文永久丢失 —— 保存时用户写的 HTML 就被改写没了。
+ * 包一层 `<div data-html-block="原文">` 后，schema 里同名规则就能接住整段原文。
+ * 原文用 base64 承载（见 md_html 的 encode_html），避免破坏属性结构。
+ */
+md.renderer.rules.html_block = (tokens, idx) => {
+    return `<div data-html-block="${encode_html(tokens[idx].content)}"></div>`;
+};
+
+/** 行内 HTML 同理，换成 span 承载原文 */
+md.renderer.rules.html_inline = (tokens, idx) => {
+    return `<span data-html-inline="${encode_html(tokens[idx].content)}"></span>`;
+};
+
 /** Markdown 文本 → ProseMirror 文档 */
 export function markdown_to_doc(markdown: string): PMNode {
     const html = md.render(markdown ?? "");
@@ -29,6 +48,7 @@ export function markdown_to_doc(markdown: string): PMNode {
     container.innerHTML = html;
     return PMDOMParser.fromSchema(md_schema).parse(container);
 }
+
 
 // ---------------------------------------------------------------------------
 // 序列化
@@ -77,6 +97,9 @@ function serialize_inline(node: PMNode): string {
             out += `![${alt ?? ""}](${src}${title ? ` "${title}"` : ""})`;
         } else if (child.type.name === "hard_break") {
             out += "  \n";
+        } else if (child.type.name === "html_inline") {
+            // 行内 HTML 原样输出，不做转义
+            out += child.attrs.value;
         }
     });
     return out;
@@ -170,6 +193,13 @@ function serialize_block(node: PMNode, indent = ""): string {
         }
         case "horizontal_rule":
             return `${indent}---`;
+        case "html_block": {
+            // HTML 块原样输出（含多行）。
+            // 末尾的换行必须去掉：块之间由 serialize_children 用空行连接，
+            // 原文自带的收尾 \n 会在连接处多顶出一个空行。
+            const text = (node.attrs.value as string).replace(/\n+$/, "");
+            return text.split("\n").map((l: string) => indent + l).join("\n");
+        }
         case "bullet_list": {
             const lines: string[] = [];
             node.forEach((li, _off, index) => {

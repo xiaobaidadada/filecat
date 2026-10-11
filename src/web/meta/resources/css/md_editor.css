@@ -1032,3 +1032,228 @@
     max-width: 100%;
     height: auto;
 }
+
+/* 图片默认画成问号占位，加载成功后再摘掉标记、露出真图。
+   为什么用「默认失败」而不是「默认正常、失败才换」：
+   文件不存在时后端返回的不是 404 而是 200 + JSON 错误体，
+   请求还可能挂着不回 —— 浏览器既不触发 error 也不结束，没有可靠的失败信号。
+   反过来做就没这个问题：占位先摆上，load 事件一到立刻换成真图，
+   中间最多是一瞬间的问号，不存在「等半天啥也没有」。 */
+.md-filecat img[data-img-error] {
+    display: inline-block;
+    box-sizing: border-box;
+    /* 尺寸用 px：这个规则里把 font-size 归零了（为了藏掉 alt 文字），
+       再用 em 会算出 0 —— 之前就是这么把占位框压成了一条缝。 */
+    width: 48px !important;
+    height: 48px !important;
+    border: 1px dashed var(--divider);
+    border-radius: 4px;
+    background-color: var(--surfaceSecondary);
+    /* 用背景图放问号：不污染 DOM、不会被 ProseMirror 重建冲掉 */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path fill='%239aa0a6' d='M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 24px;
+    /* 吃掉 alt 文字：alt 会渲染成一行小字，和问号叠在一起很乱 */
+    color: transparent;
+    font-size: 0;
+    vertical-align: middle;
+}
+
+/* ---- Markdown 里内嵌的 HTML ---- */
+/* Markdown 允许直接写 HTML（README 那种 <p align="center"> 包徽章）。
+   这里默认渲染成真 HTML，右上角有个 HTML 标签，点一下原地展开成源码可编辑。 */
+.md-html-block {
+    position: relative;
+    /* 垂直间距不用这里操心：NodeView 的根元素就是文档的直接子块，
+       已经吃到 `.md-filecat-content > *` 的上下 padding 了。 */
+}
+
+/* 标签：常态完全隐藏，鼠标移到这个 HTML 块上才出现 */
+.md-html-block__toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 0.7em;
+    line-height: 1.6;
+    padding: 0 0.4em;
+    border-radius: 3px;
+    color: var(--textSecondary);
+    background: var(--hover);
+    opacity: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.15s ease;
+    z-index: 1;
+}
+
+.md-html-block:hover .md-html-block__toggle {
+    opacity: 1;
+}
+
+/* 源码态的标签用主题色并常驻显示（对应 Typora 的 HTML ✓）——
+   此时块内容已经是源码，标签是收起的唯一入口，不能藏起来 */
+.md-html-block[data-mode="source"] .md-html-block__toggle {
+    opacity: 1;
+    color: var(--blue);
+}
+
+/* 预览态：渲染出的 HTML 原样展示 */
+.md-html-block__render {
+    display: block;
+    /* 复位空白处理方式。
+       编辑器为了保留 Markdown 的空白，在容器上设了 white-space: break-spaces，
+       它会继承进来 —— 结果 HTML 源码里标签之间的换行、缩进被当成真实的换行与空格，
+       一块只有一张 70px 图片的 <p> 会被撑到 84px（多出一整行）。
+       HTML 有它自己的空白折叠规则，这里必须复位成正常模式。 */
+    white-space: normal;
+}
+
+/* HTML 块内部的元素不接受编辑器正文的块间距。
+   原因：作者写的 HTML 往往自己控制版式（居中、并排、贴边），
+   编辑器给 p/h* 的 padding、margin、字号会把它们撑开、破坏原本紧凑的排版。
+   清零后用作者自己的样式（如 align/center、inline style）说了算。
+
+   注意：这里同时清 padding 和 margin —— 编辑器的块间距是 padding，
+   而 HTML 里没被覆盖到的元素会用浏览器默认的 margin，两者都会撑高。 */
+.md-html-block__render > *:first-child {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.md-html-block__render > *:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.md-html-block__render p,
+.md-html-block__render h1,
+.md-html-block__render h2,
+.md-html-block__render h3,
+.md-html-block__render h4,
+.md-html-block__render h5,
+.md-html-block__render h6,
+.md-html-block__render ul,
+.md-html-block__render ol,
+.md-html-block__render pre,
+.md-html-block__render table,
+.md-html-block__render blockquote {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    line-height: 1.5;
+}
+
+/* 标题在 HTML 块里不套用正文的层级字号 —— 作者写 <h1 align="center"> 时
+   期望的是「一个居中标题」，不该被放大到 1.9em 再压一条底边线。 */
+.md-html-block__render h1,
+.md-html-block__render h2,
+.md-html-block__render h3 {
+    font-size: 1.35em;
+}
+
+.md-html-block__render h4,
+.md-html-block__render h5,
+.md-html-block__render h6 {
+    font-size: 1.05em;
+}
+
+/* HTML 里的图片按块级处理，避免行内图片底部的基线空隙把行高撑大 */
+.md-html-block__render img {
+    vertical-align: middle;
+}
+
+/* 源码态：整块换成等宽源码，灰底、可编辑。
+   内部是两层叠放 —— 下层高亮 <pre>，上层透明文字的 <textarea>。
+   两层的字体、字号、行高、内边距必须完全一致，否则文字会和光标错位。
+   高度不固定：内容多高就多高，横向溢出才出现滚动（代码不折行）。 */
+.md-html-block__source {
+    display: none;
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--surfaceSecondary);
+}
+
+/* 两层共用的排版参数。写在同一个规则里，避免只改一处导致错位。
+   内边距用 px 而不是 em：em 跟着元素自身的 font-size 走，
+   两层一旦 font-size 的计算来源不同（textarea 有浏览器默认样式），
+   算出来的内边距就不一样，文字会和光标错位。
+   选择器带 .md-filecat 前缀是为了压过正文的 `.md-filecat pre` 规则
+   （那条会给 pre 加 padding 和 line-height，会把高亮层撑歪）。 */
+.md-filecat .md-html-block__highlight,
+.md-filecat .md-html-block__input {
+    margin: 0;
+    padding: 8px 11px;
+    border: 0;
+    font-family: "Roboto Mono", Consolas, Monaco, monospace;
+    font-size: 13.6px;
+    line-height: 20.4px;
+    tab-size: 4;
+    white-space: pre;
+}
+
+/* 高亮层：负责撑开整块高度（它随内容自然增长），同时作为可见的文字层。
+   横向溢出时由它滚动，纵向不滚 —— 高度已经跟着内容走了。 */
+.md-filecat .md-html-block__highlight {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    pointer-events: none;
+    color: var(--textPrimary);
+}
+
+/* 高亮层里的 code 沿用父级排版：正文给 `pre code` 的样式会干扰对齐 */
+.md-filecat .md-html-block__highlight code {
+    font: inherit;
+    line-height: inherit;
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+/* 输入层：文字透明，光标和选区看得见 ——
+   真正在编辑的是它，但看到的字来自下面的高亮层。
+   绝对定位铺满父容器，所以自身不参与高度计算。 */
+.md-filecat .md-html-block__input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    resize: none;
+    overflow: hidden;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--textPrimary);
+    outline: none;
+}
+
+/* 选区要能在透明文字上看见 */
+.md-filecat .md-html-block__input::selection {
+    background: var(--blue);
+    color: transparent;
+}
+
+.md-html-block[data-mode="source"] .md-html-block__render {
+    display: none;
+}
+
+.md-html-block[data-mode="source"] .md-html-block__source {
+    display: block;
+}
+
+/* HTML 里显式写的 text-align: -webkit-center（浏览器对 align="center" 的内部映射）
+   在部分场景下不可靠，这里显式补一条 */
+.md-html-block [align="center"] {
+    text-align: center;
+}
+
+/* 行内 HTML：原文可编辑，用淡色区分出「这是标签不是正文」 */
+.md-html-inline {
+    font-family: "Roboto Mono", Consolas, Monaco, monospace;
+    font-size: 0.9em;
+    color: var(--textSecondary);
+    outline: none;
+}

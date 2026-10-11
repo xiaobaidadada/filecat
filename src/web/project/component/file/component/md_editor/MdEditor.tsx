@@ -485,6 +485,7 @@ export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
                                     value={init_value}
                                     ref={handle_ref}
                                     initial_source_mode={mode === "source"}
+                                    doc_path={md_editor?.path}
                                     // 编辑器就绪时立即同步大纲：
                                     // 按 tick 刷新的 effect 在挂载时 ref 尚未赋值（handle 在子组件
                                     // 自己的 useEffect 里才写入），拿不到句柄会让大纲空白，

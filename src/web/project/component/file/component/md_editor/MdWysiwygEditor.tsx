@@ -23,6 +23,7 @@ import {
     build_source_highlight_plugin,
 } from "./md_source_highlight";
 import {build_graph_plugin} from "./md_graph";
+import {md_node_views, set_html_doc_dir} from "./md_html";
 import {
     build_input_rules,
     convert_on_enter,
@@ -107,6 +108,12 @@ interface Props {
      */
     initial_source_mode?: boolean;
     on_ready?: (handle: MdWysiwygHandle) => void;
+    /**
+     * 当前文档的路径（web 路径，形如 `/测试/README.md`）。
+     * HTML 块里写的相对图片地址（`./xx.png`）要按它所在目录解析 ——
+     * 否则浏览器会按页面 URL 去解析，在 filecat 里必然 404。
+     */
+    doc_path?: string;
 }
 
 // 表格内 Enter 与 Tab 的行为：
@@ -215,9 +222,68 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
             ],
         });
 
-        const view = new EditorView(host_ref.current, {
+        // HTML 块渲染相对图片时要知道文档在哪，先把这个上下文交给 md_html
+        set_html_doc_dir(props.doc_path ? props.doc_path.replace(/[^/]*$/, "") : "");
+        // 图片占位：上来就先标成失败（CSS 画成问号），load 到了立刻摘掉露出真图。
+        //
+        // 为什么反过来做（默认失败而不是默认正常）：
+        // 文件不存在时后端返回的不是 404，而是 200 + JSON 错误体，
+        // 请求还可能一直挂着不回 —— 浏览器既不触发 error 也不结束请求。
+        // 也就是说「失败」根本没有可靠信号，等是等不出来的。
+        // 而「成功」有明确信号（load 事件），所以让成功来摘掉占位最靠谱，
+        // 中间最多闪一下问号，绝不会出现「等半天一片空白」。
+        const fail = (el: Element) => el.setAttribute("data-img-error", "");
+        const ok = (el: Element) => el.removeAttribute("data-img-error");
+
+        // 图片随时可能被重新创建（ProseMirror 会重建 DOM），
+        // 监听挂在宿主容器的捕获阶段，能覆盖容器内所有后代。
+        const on_img_error = (e: Event) => {
+            const el = e.target as HTMLElement;
+            if (el?.tagName === "IMG") {
+                fail(el);
+            }
+        };
+        const on_img_load = (e: Event) => {
+            const el = e.target as HTMLElement;
+            if (el?.tagName === "IMG") {
+                ok(el);
+            }
+        };
+        const host = host_ref.current;
+        host.addEventListener("error", on_img_error, true);
+        host.addEventListener("load", on_img_load, true);
+
+        // 新出现的图片：立即标上占位。
+        // 已经加载完的（比如 DOM 复用）直接按结果定型，不用等事件。
+        const scan = () => {
+            host.querySelectorAll("img").forEach(img => {
+                const el = img as HTMLImageElement;
+                if (el.dataset.imgSeen) {
+                    return;
+                }
+                el.dataset.imgSeen = "1";
+                if (el.complete) {
+                    if (el.naturalWidth === 0) {
+                        fail(el);
+                    }
+                    return;
+                }
+                fail(el);
+            });
+        };
+        // 文档变化后补扫：图片是随内容渲染出来的，变化后再扫才能覆盖新插入的图
+        const observer = new MutationObserver(() => {
+            requestAnimationFrame(scan);
+        });
+        observer.observe(host, {childList: true, subtree: true});
+        scan();
+
+        let view: EditorView | null = null;
+        view = new EditorView(host_ref.current, {
             state,
             editable: () => props.editable !== false,
+            // HTML 块 / 行内 HTML 的展示：渲染成真 HTML，右上角标签点开可编辑源码
+            nodeViews: md_node_views(),
             // Ctrl/Cmd + 点击链接 → 新窗口打开。
             // 普通点击不拦截，交给 ProseMirror 正常放置光标，保证链接文字能像普通文字一样选中/编辑。
             // node 只有点在 link mark 覆盖的文本上时才是它所在的父节点，
@@ -513,6 +579,9 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
         props.on_ready?.(handle);
 
         return () => {
+            observer.disconnect();
+            host.removeEventListener("error", on_img_error, true);
+            host.removeEventListener("load", on_img_load, true);
             view.destroy();
             view_ref.current = null;
         };
