@@ -44,8 +44,8 @@ import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
 import {use_browser_proxy_middleware} from "./other/middleware/BrowserProxy";
-import { tcpForwardService } from "./domain/net/tcp.forward.server.service";
-import { NetMsgType, NetUtil } from "./domain/net/util/NetUtil";
+import {tcpForwardService} from "./domain/net/tcp.forward.server.service";
+import {NetMsgType, NetUtil} from "./domain/net/util/NetUtil";
 
 // import {authorizationChecker} from "./other/middleware/decorator";
 const http = require('http');
@@ -54,6 +54,17 @@ const Mustache = require('mustache');
 
 const WebSocket = require('ws');
 const compression = require('compression'); // webpack-dev-server 包含的有
+
+function is_pro() {
+    try {
+        if (!process.env.NODE_ENV) {
+            return false;
+        }
+        return process.env.NODE_ENV === "production" || process.env.NODE_ENV.startsWith("pro") || process.env.NODE_ENV.startsWith("PRO");
+    } catch  {
+        return false;
+    }
+}
 
 export async function start_main() {
 
@@ -90,7 +101,7 @@ export async function start_main() {
     expressApp.use(filecat_middleware);
 
     // 创建 应用并注册控制器
-    const app = useExpressServer(expressApp,{
+    const app = useExpressServer(expressApp, {
         cors: false,
         routePrefix: await get_sys_base_url_pre(),
         classTransformer: true,
@@ -99,7 +110,7 @@ export async function start_main() {
             FileController, DdnsController, NetController,
             VirtualController, SettingController,
             SSHController, RdpController, VideoController,
-            CryptoController,Ai_AgentController,TcpForwardController,GitController,FirewallController,MountController
+            CryptoController, Ai_AgentController, TcpForwardController, GitController, FirewallController, MountController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
@@ -114,7 +125,7 @@ export async function start_main() {
     const wss = new WebSocket.Server({noServer: true});
     (new WsServer(wss)).start(settingService.check.bind(settingService));
 
-    if (process.env.NODE_ENV === "production") {
+    if (is_pro()) {
         const router = new Set();
         for (const item of Object.values(routerConfig)) {
             router.add(`/${item}`)
@@ -171,10 +182,10 @@ export async function start_main() {
                 readStream.pipe(res);
             } catch (e) {
                 // 静态资源匹配不到或读取失败，直接抛 500，不再兜底返回 index.html
-                let txt:string;
-                if(typeof e === 'string') {
+                let txt: string;
+                if (typeof e === 'string') {
                     txt = e as string;
-                } else if(e?.message) {
+                } else if (e?.message) {
                     txt = e.message;
                 } else {
                     txt = "file not found "
@@ -199,9 +210,9 @@ export async function start_main() {
                 const dot_index = path.indexOf('.')
                 if (dot_index !== -1 && dot_index > 0 && path[dot_index - 1] !== '/') {
                     const paths = path.split('/') // 带后缀的静态文件
-                    if(paths[paths.length - 1].includes('.woff2')) {
+                    if (paths[paths.length - 1].includes('.woff2')) {
                         // excalidraw 字体文件映射到 /fonts 目录
-                        if(path.startsWith('/fonts/')) {
+                        if (path.startsWith('/fonts/')) {
                             return path;
                         }
                         // CSS 中引用的字体（如 roboto）由 webpack 处理为 hash 文件名，直接取文件名
@@ -255,7 +266,9 @@ export async function start_main() {
                     }
                 }
             }
-        } catch (error) {console.error(error?.message);}
+        } catch (error) {
+            console.error(error?.message);
+        }
         // 打印
         console.log(`服务器正在运行 version: ${version},node version:${process.version}`);
         console.log(`node工作目录: ${process.cwd()}, filecat数据目录: ${Env.work_dir}`)
@@ -270,7 +283,7 @@ export async function start_main() {
     // ====================================================================
     const ws_filecat_middleware = use_ws_filecat_middleware(sys_pre)
     server.on('upgrade', async (request, socket, head) => {
-        if(await ws_filecat_middleware(request, socket, head) === 'contiue') {
+        if (await ws_filecat_middleware(request, socket, head) === 'contiue') {
             // 【回源】若非穿透连接，继续流转原系统的 WebSocket（保持你原有的逻辑不变）
             wss.handleUpgrade(request, socket, head, (ws) => {
                 wss.emit('connection', ws, request);

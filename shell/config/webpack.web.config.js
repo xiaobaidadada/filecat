@@ -12,8 +12,9 @@ const {common_plugins} = require("./base.webpack.config");
 
 /**
  * dev 下 index.html 由 webpack-dev-server 直接吐给浏览器，不经过后端 Mustache.render，
- * 模板里的 {{{web_site_title}}} 这类占位符会原样显示。这里用同一个模板引擎渲染，
- * 让 dev 与 production 的 index.html 产出一致。
+ * 模板里的 {{{web_site_title}}} 这类占位符会原样显示成 "dev 占位符"。
+ * 这里只在 dev 用同一个模板引擎渲染；production 保持原模板输出，
+ * 交给后端 get_index_html() 用真实环境配置渲染。
  */
 const INDEX_TEMPLATE = path.join(__dirname, "..", "..", "src", "web", "project", 'index.html');
 function render_index() {
@@ -24,10 +25,12 @@ function render_index() {
             web_site_title: "FileCat",
             logo_url: ""
         }),
-        web_site_title: "Dev FileCat",
+        web_site_title: "FileCat",
         logo_favicon: "favicon-32x32.png"
     });
 }
+
+const is_dev = process.env.NODE_ENV !== 'production';
 module.exports = {
     mode: process.env.NODE_ENV === 'development' ? 'development' : 'production',
     entry: path.join(__dirname, "..", "..", "src", "web", "project", 'index.js'),
@@ -77,7 +80,8 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: INDEX_TEMPLATE,
-            templateContent: render_index(),
+            // dev 才预先渲染占位符；production 保持原样，交给后端 Mustache.render
+            ...(is_dev ? { templateContent: render_index() } : {}),
             inject: true,
         }),
         new webpack.DefinePlugin(common_plugins),
