@@ -960,5 +960,6 @@
   "二进制文件无法比较": "Binärdatei kann nicht verglichen werden",
   "请选择文件查看改动": "Datei auswählen, um Änderungen zu sehen",
   "clk_edt": "Zum Bearbeiten klicken",
-  "rendering": "Wird gerendert…"
+  "rendering": "Wird gerendert…",
+  "新窗口打开": "In neuem Tab öffnen"
 }

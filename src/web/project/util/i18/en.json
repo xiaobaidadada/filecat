@@ -964,5 +964,6 @@
   "二进制文件无法比较": "Binary file cannot be compared",
   "请选择文件查看改动": "Select a file to view changes",
   "clk_edt": "Click to edit",
-  "rendering": "Rendering…"
+  "rendering": "Rendering…",
+  "新窗口打开": "Open in new tab"
 }

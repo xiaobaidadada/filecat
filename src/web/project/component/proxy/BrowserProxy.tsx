@@ -175,6 +175,20 @@ export function BrowserProxy(props) {
     }
 
     /**
+     * 在新标签页打开当前代理地址。
+     *
+     * 走的是同一个代理地址（不是目标站原始地址），所以：
+     *   · 不会跨域，注入脚本照样生效，站内跳转仍在代理下
+     *   · 页面尺寸不受 iframe 限制，适合那些会检测 iframe 或布局错乱的站点
+     */
+    const open_new_tab = () => {
+        if (!gourl) {
+            return;
+        }
+        window.open(gourl, "_blank");
+    }
+
+    /**
      * iframe 加载完成后同步地址栏显示。
      * 因为 iframe 与外层同源，可以直接读到它当前的真实地址。
      */
@@ -225,6 +239,7 @@ export function BrowserProxy(props) {
             <ActionButton icon={"play_arrow"} title={t("开始代理")} onClick={() => go()}/>
             {gourl && <ActionButton icon={"home"} title={t("首页")} onClick={go_home}/>}
             {gourl && <ActionButton icon={"refresh"} title={t("刷新")} onClick={refresh_iframe}/>}
+            {gourl && <ActionButton icon={"open_in_new"} title={t("新窗口打开")} onClick={open_new_tab}/>}
             <ActionButton icon={"fullscreen"} title={t("全屏")} onClick={fullscreen}/>
             <ActionButton icon={"close"} title={t(t("关闭"))} onClick={close}/>
         </HeaderPortal>
