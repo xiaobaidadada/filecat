@@ -148,6 +148,11 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
     max_recent_messages = 12; // 压缩后仍然完整保留的最近消息数
     compress_message_count = 16; // 当单个会话累计消息条数超过该值时，触发历史消息裁剪
     max_tool_content_chars = 200; // 历史消息中 tool 输出的最大字符数
+
+    /** 当前模型是否支持图片输入（OpenAI 的 image_url 多模态格式）。
+     *  开启后 read_image 工具才可用，且工具返回的图片会以 image_url 形式带进消息。
+     *  默认开启（目前主流模型基本都支持）。 */
+    support_image = true;
 }
 export const ai_agent_item_dotenv_default = `
 
@@ -198,6 +203,13 @@ max_tool_content_chars=200
 # 开启后该模型会作为一个工具被加载，可实现不同模型担任不同角色/能力，供 AI agent 在对话中动态调用。
 # 注意：不能与「是否开启」(open) 同时为 true。
 #tool_mode=false
+
+# ===== 是否支持图片（support_image）=====
+# 开启后：1) 注册 read_image 工具，让 AI 能读取本地图片；
+#         2) 工具读到的图片会以 OpenAI 多模态格式 image_url 随消息发给模型，模型就能真正"看图"。
+# 关闭后：AI 看不到图片，read_image 只会返回一句文字说明。
+# 主流模型（gpt-4o、豆包、qwen-vl、deepseek-vl 等）都支持，默认开启。
+support_image=true
 `
 
 export class ai_mcp_server_item {

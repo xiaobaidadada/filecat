@@ -19,6 +19,7 @@ import {
     ai_agent_item_dotenv,
     ai_agent_message_item,
     ai_agent_message_list,
+    ai_agent_content,
     getContentAsString,
     ai_docs_setting_param,
     ai_agent_tool_call_item,
@@ -28,6 +29,7 @@ import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/pick_next_model";
 import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
+import {is_image_tool_result, read_image_schema} from "./tools/read_image";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {SystemUtil} from "../sys/sys.utl";
 import {CommonUtil} from "../../../common/common.util";
@@ -194,11 +196,15 @@ export class ChatCore {
 
             case "list_files":
             case "read_file":
+            case "read_image":
             case "search_in_files":
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }
-                userService.check_user_path_by_user_id(user_id, args.path);
+                // read_image 支持直接传 data url 文本，那种情况不是路径，无需校验
+                if (toolName !== "read_image" || !String(args.path ?? "").startsWith("data:")) {
+                    userService.check_user_path_by_user_id(user_id, args.path);
+                }
                 break;
 
             case "edit_file":
@@ -642,6 +648,8 @@ const workMessages: ai_agent_message_list = [
 
                         let result;
                         let resultStr;
+                        /** tool 消息的 content：字符串，或含图片的多模态数组 */
+                        let tool_content: ai_agent_content = "";
                         if (enableLlmEditPrompt && matchedPromptIndex >= 0 && toolName === "update_llm_prompt") {
                             // 由 chat.core 内部处理：LLM 总结会话内容，通过下标写回系统提示词列表项的 llm_prompt
                             // 更新后已全局保存，下一次对话会通过 resolveSystemPromptConfig 读取到最新内容，
@@ -649,15 +657,30 @@ const workMessages: ai_agent_message_list = [
                             const updateResult = this.handleUpdateLlmPrompt(matchedPromptIndex, args);
                             resultStr = updateResult.message;
                         } else {
-                            result = await ai_agentService.callTool(toolName, args,user_id, session_id, options.wss, controller);
-                            resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+                            result = await ai_agentService.callTool(toolName, args, user_id, session_id, options.wss, controller);
+                            // 图片类结果：模型支持图片时以 OpenAI 多模态格式（image_url）带给模型，
+                            // 让模型真正"看到"图；不支持时退化为纯文本说明。
+                            if (is_image_tool_result(result)) {
+                                if (env.support_image === false) {
+                                    resultStr = `${result.text}\n（当前模型未开启 support_image，无法查看图片内容，图片数据已忽略。）`;
+                                } else {
+                                    tool_content = [
+                                        {type: "text", text: result.text},
+                                        {type: "image_url", image_url: {url: result.data_url}},
+                                    ];
+                                    // 落盘/前端展示用的仍是文字摘要，避免把 base64 存进会话文件
+                                    resultStr = result.text;
+                                }
+                            } else {
+                                resultStr = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+                            }
                         }
                         callItem.success = true;
                         callItem.tool_result = resultStr;
                         workMessages.push({
                             role: "tool",
                             tool_call_id: call.id,
-                            content: resultStr
+                            content: tool_content || resultStr
                         });
 
                         // 其他 tool额外处理
@@ -731,6 +754,11 @@ const workMessages: ai_agent_message_list = [
         const tools: ai_agent_params_type[] = [...ai_tools];
         if(props.env.open_pick_model) {
             tools.push(pick_model_schema)
+        }
+        // 模型支持图片时才注册 read_image：不支持图片的模型看到这个工具会瞎调用，
+        // 调用后又拿不到图片（只会得到一句文字说明），反而浪费一轮对话。
+        if (props.env.support_image !== false) {
+            tools.push(read_image_schema);
         }
         if (ai_agentService.docs_switch_get()) {
             tools.push(ai_tools_search_docs);

@@ -12,6 +12,7 @@ import {get_background_process_output_tool} from "./get_background_process_outpu
 import {sleep_tool} from "./sleep.tools";
 import {rename_file_tool} from "./rename_file";
 import {pick_model_tool} from "./pick_next_model";
+import {read_image_tool} from "./read_image";
 
 
 export const Ai_agentTools = {
@@ -37,7 +38,9 @@ export const Ai_agentTools = {
     create_fs_entry: create_fs_entry_tool,
     sleep:sleep_tool,
     rename_file:rename_file_tool,
-    pick_model:pick_model_tool
+    pick_model:pick_model_tool,
+    // 读取本地图片（转成 base64 交给模型看图）
+    read_image: read_image_tool
     // apply_patch: apply_patch_tool
 }
 
@@ -127,6 +130,12 @@ export const tools_des_map: Record<Ai_agentTools_type, {
         get_name: () => "pick model",
         get_params: (args) => {
             return `pick model： ${args.model}`
+        }
+    },
+    read_image: {
+        get_name: () => "read image",
+        get_params: (args) => {
+            return ` ${String(args.path ?? "").slice(0, 60)}`
         }
     }
     // apply_patch: {

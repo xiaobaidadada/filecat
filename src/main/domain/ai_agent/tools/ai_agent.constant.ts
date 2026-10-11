@@ -14,6 +14,7 @@ import {getProcessAddon} from "../../bin/bin";
 import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
 import {kill_background_processes_schema, kill_background_processes_tool} from "./kill_background_processes";
 import {pick_model_schema} from "./pick_next_model";
+import {read_image_schema} from "./read_image";
 
 export type ai_agent_params_type = {
     type: string,
@@ -29,6 +30,8 @@ export type ai_agent_params_type = {
 }
 
 // 为ai提供有限的系统信息
+// 注意：read_image 与「当前模型是否支持图片」（support_image）有关，
+// 不放在这里，由 chat.core 按开关动态加进 tools。
 export const ai_tools = [
     read_file_schema,
     list_files_schema,
