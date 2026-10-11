@@ -1,5 +1,7 @@
 const path = require('path');
+const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const Mustache = require('mustache');
 const webpack = require('webpack');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require("terser-webpack-plugin");
@@ -7,6 +9,25 @@ const TerserPlugin = require("terser-webpack-plugin");
 const package_data = require("../../package.json")
 const {base_url} = require("./env");
 const {common_plugins} = require("./base.webpack.config");
+
+/**
+ * dev 下 index.html 由 webpack-dev-server 直接吐给浏览器，不经过后端 Mustache.render，
+ * 模板里的 {{{web_site_title}}} 这类占位符会原样显示。这里用同一个模板引擎渲染，
+ * 让 dev 与 production 的 index.html 产出一致。
+ */
+const INDEX_TEMPLATE = path.join(__dirname, "..", "..", "src", "web", "project", 'index.html');
+function render_index() {
+    const tpl = fs.readFileSync(INDEX_TEMPLATE, 'utf8');
+    return Mustache.render(tpl, {
+        Windows_FileCat: JSON.stringify({
+            base_url,
+            web_site_title: "FileCat",
+            logo_url: ""
+        }),
+        web_site_title: "FileCat",
+        logo_favicon: "favicon-32x32.png"
+    });
+}
 module.exports = {
     mode: process.env.NODE_ENV === 'development' ? 'development' : 'production',
     entry: path.join(__dirname, "..", "..", "src", "web", "project", 'index.js'),
@@ -55,7 +76,9 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: path.join(__dirname, "..", "..", "src", "web", "project", 'index.html'),
+            template: INDEX_TEMPLATE,
+            templateContent: render_index(),
+            inject: true,
         }),
         new webpack.DefinePlugin(common_plugins),
         // new BundleAnalyzerPlugin({

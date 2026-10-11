@@ -73,8 +73,7 @@ export const GlobalProvider = ({ children }) => {
        const result = await userHttp.get("userInfo/get");
         if (result.code === RCode.Success) {
             const p :UserBaseInfo = result.data;
-            if(user_base_info?.user_data?.theme  !== p.user_data.theme)
-                setTheme(p.user_data.theme);
+            setTheme(p.user_data.theme);
             if(p.user_data.upload_file_ignore) {
                 try {
                     p.user_data.upload_file_ignore_list =  p.user_data.upload_file_ignore.split(/[; ]/);

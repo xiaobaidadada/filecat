@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{{web_site_title}}}</title>
-    <!-- 全局默认主题：服务端渲染时直接输出，首屏即生效；个人主题由 setTheme() 覆盖 -->
-    <link id="theme-css" rel="stylesheet" href="{{{default_theme_css}}}">
+    <!-- 主题由 JS 的 setTheme() 动态插入到 head 末尾（在 all.css 注入的 style 之后），
+         静态写在这里会排在 all.css 之前，导致 google.css 的 .card 圆角等被 dashboard.css 覆盖 -->
 <!--    <script src="filerobot-image-editor.min.js"></script>-->
 <!--    <script type="text/javascript" src="rle.js"></script>-->
     <!-- 浏览器标签页图标：默认内置图标，配置了网站 logo 时由服务端替换为自定义地址 -->

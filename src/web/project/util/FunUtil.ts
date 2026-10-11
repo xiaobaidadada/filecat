@@ -33,6 +33,9 @@ export function copyToClipboard(text) {
 // 内置主题列表的 value 集合，用于判断是否为内置主题
 const builtin_theme_values = new Set(themes_list.map(t => t.value));
 
+// 全局默认主题：用户未设置主题时的回落值，需与后端 setting.service 的 DEFAULT_THEME 保持一致
+const DEFAULT_THEME = 'google';
+
 export function setTheme(theme: themes) {
 
     const id = 'theme-css';
@@ -40,13 +43,16 @@ export function setTheme(theme: themes) {
     const existing = document.getElementById(id) as HTMLLinkElement | null;
 
     // light 是 base.css 里的默认样式，没有独立文件：移除 link 即回落到默认外观
-    if (theme === "light" || !theme) {
+    if (theme === "light") {
         existing?.remove();
         return;
     }
 
     let href: string;
-    if (builtin_theme_values.has(theme)) {
+    if (!theme) {
+        // 用户未设置主题：回落到全局默认主题
+        href = `${DEFAULT_THEME}.css`;
+    } else if (builtin_theme_values.has(theme)) {
         // 内置主题：CSS 文件在 dist 目录下
         href = `${theme}.css`;
     } else {
