@@ -10,6 +10,8 @@ import 'github-markdown-css/github-markdown.css';
 import {join_url} from "../../../../../../common/StringUtil";
 import {using_add_md__copy_button} from "../../FileUtil";
 import {is_graph_lang, render_graph} from "../md_editor/graph_render";
+import {install_math, render_math_blocks} from "../md_editor/md_math";
+import {encode_html} from "../md_editor/md_html";
 import i18n from "../../../../util/in18resource";
 
 import hljs from 'highlight.js'
@@ -103,6 +105,10 @@ md.use(emoji)       // 支持 Emoji
     .use(markdownItCopyButton) // 使用自定义插件
     .use(markdownItAddPrefixToLinks); // 使用自定义插件
 
+// 数学公式：$...$ / \(...\) 行内，$$...$$ / \[...\] 块级，```math 代码块
+// 识别规则与编辑器共用（见 md_editor/md_math.ts），两边行为保持一致
+install_math(md, encode_html);
+
 /**
  * 把 ```mermaid / ```svg 代码块换成渲染后的图。
  * markdown-it 的 fence 渲染器统一把代码块包成
@@ -152,6 +158,7 @@ export default function Md(props: {context: string}) {
     useEffect(() => {
         if (ref.current) {
             render_graph_blocks(ref.current);
+            render_math_blocks(ref.current);
         }
     }, [props.context]);
     return <div ref={ref} dangerouslySetInnerHTML={{__html: md.render(props.context)}}/>;

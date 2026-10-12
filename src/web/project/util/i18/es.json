@@ -961,5 +961,10 @@
   "请选择文件查看改动": "Selecciona un archivo para ver los cambios",
   "clk_edt": "Clic para editar",
   "rendering": "Renderizando…",
-  "新窗口打开": "Abrir en nueva pestaña"
+  "新窗口打开": "Abrir en nueva pestaña",
+  "已选": "Seleccionados",
+  "复制所选": "Copiar selección",
+  "删除所选": "Eliminar selección",
+  "全部复制": "Copiar todo",
+  "多选": "Seleccionar"
 }

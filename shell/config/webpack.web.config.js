@@ -61,6 +61,17 @@ module.exports = {
                 type: 'asset/inline'
             },
             {
+                // 数学公式（KaTeX）用的字体。webpack 5 默认不认识字体文件，
+                // 不加这条规则 import katex 的样式会直接报 Module parse failed。
+                // 输出到 dist 根目录（不带子目录）：后端静态资源是按 basename 找文件的
+                // （见 main.ts 的 path.basename），放子目录里反而取不到。
+                test: /\.(woff2?|ttf|otf|eot)$/,
+                type: 'asset/resource',
+                generator: {
+                    filename: '[name].[contenthash][ext]',
+                },
+            },
+            {
                 test: /workflow.yml/,
                 type: 'asset/source', // 直接把文件内容导出为字符串
             },

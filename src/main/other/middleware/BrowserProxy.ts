@@ -821,7 +821,9 @@ function forward(req: Request, res: Response, target_url: URL, prefix: string): 
         headers[k] = v;
     }
 
-    headers['accept-encoding'] = 'gzip, deflate, br';
+    // 去掉 br：部分反代/CDN（如 Cloudflare）会无视客户端 Accept-Encoding，一律按 br 重压上游响应，
+    // 甚至返回明文却保留 content-encoding: br 头，导致浏览器 ERR_CONTENT_DECODING_FAILED、页面样式脚本全废。
+    headers['accept-encoding'] = 'gzip, deflate';
 
 
     const raw_referer = req.headers.referer;

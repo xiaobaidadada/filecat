@@ -961,5 +961,10 @@
   "请选择文件查看改动": "Datei auswählen, um Änderungen zu sehen",
   "clk_edt": "Zum Bearbeiten klicken",
   "rendering": "Wird gerendert…",
-  "新窗口打开": "In neuem Tab öffnen"
+  "新窗口打开": "In neuem Tab öffnen",
+  "已选": "Ausgewählt",
+  "复制所选": "Auswahl kopieren",
+  "删除所选": "Auswahl löschen",
+  "全部复制": "Alles kopieren",
+  "多选": "Auswählen"
 }

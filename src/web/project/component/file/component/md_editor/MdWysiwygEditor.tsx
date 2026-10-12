@@ -23,6 +23,7 @@ import {
     build_source_highlight_plugin,
 } from "./md_source_highlight";
 import {build_graph_plugin} from "./md_graph";
+import {build_math_plugin, MathView} from "./md_math_view";
 import {md_node_views, set_html_doc_dir} from "./md_html";
 import {
     build_input_rules,
@@ -212,6 +213,8 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 build_source_highlight_plugin(),
                 // ```mermaid / ```svg 代码块：光标移出时整块替换成渲染好的图
                 build_graph_plugin(),
+                // 数学公式：光标移出时排版，光标进入时变回 LaTeX 源码
+                build_math_plugin(),
                 build_input_rules(),
                 keymap({
                     // 全选：光标在代码块内时只选该代码块，其余情况走默认全选（见命令内的说明）
@@ -351,7 +354,14 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
             state,
             editable: () => props.editable !== false,
             // HTML 块 / 行内 HTML 的展示：渲染成真 HTML，右上角标签点开可编辑源码
-            nodeViews: md_node_views(),
+            nodeViews: {
+                ...md_node_views(),
+                // 公式的 NodeView 在这里拼上而不是放 md_node_views 里：
+                // md_math_view 依赖 md_math，md_math 又依赖 md_html 的编解码，
+                // 三者在 md_html 里互相引用会绕成循环。
+                math_block: (node, view, get_pos) => new MathView(node, view, get_pos),
+                math_inline: (node, view, get_pos) => new MathView(node, view, get_pos),
+            },
             // Ctrl/Cmd + 点击链接 → 新窗口打开。
             // 普通点击不拦截，交给 ProseMirror 正常放置光标，保证链接文字能像普通文字一样选中/编辑。
             // node 只有点在 link mark 覆盖的文本上时才是它所在的父节点，

@@ -376,6 +376,18 @@ class HtmlInlineView implements NodeView {
  * 第三参 getPos 就是「当前这个节点在文档里的位置」—— 直接用它写回属性，
  * 不要自己缓存位置（节点前面的内容一变，位置就失效了）。
  */
+/**
+ * NodeView 工厂集合，挂到 EditorProps.nodeViews 上。
+ *
+ * ProseMirror 的 NodeViewConstructor 签名是
+ * (node, view, getPos, decorations, innerDecorations)，
+ * 第三参 getPos 就是「当前这个节点在文档里的位置」—— 直接用它写回属性，
+ * 不要自己缓存位置（节点前面的内容一变，位置就失效了）。
+ *
+ * 公式（math_block / math_inline）的 NodeView 由调用方另行拼上 ——
+ * 它要用到 md_math，而 md_math 又要用本模块的 encode/decode，
+ * 在这里直接引用会绕成环。见 MdWysiwygEditor 里的 nodeViews 组装。
+ */
 export function md_node_views() {
     return {
         html_block: (node: PmNode, view: EditorView, get_pos: () => number) =>

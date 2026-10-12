@@ -1,6 +1,7 @@
 import {Schema, NodeSpec, MarkSpec} from "prosemirror-model";
 import {tableNodes} from "prosemirror-tables";
 import {decode_html, resolve_src} from "./md_html";
+import {unwrap_math} from "./md_math";
 
 // 所见即所得编辑器的文档模型。
 //
@@ -187,9 +188,53 @@ const nodes: Record<string, NodeSpec> = {
         },
     },
 
-    // 硬换行
-    hard_break: {
+    // 行内公式（$...$ / \(...\)）
+    //
+    // raw 存「含定界符的原始写法」而不是剥好的 tex —— 保存时要原样写回，
+    // 用户写 \[ \] 就不能变成 $$ $$，否则每次保存文件内容都在变。
+    // tex 只是排版的输入，单独存一份省得每次重新剥。
+    math_inline: {
         inline: true,
+        group: "inline",
+        atom: true,
+        attrs: {raw: {default: ""}, tex: {default: ""}},
+        parseDOM: [{
+            tag: "span[data-math-inline]",
+            getAttrs: (dom: HTMLElement | string) => {
+                const el = dom as HTMLElement;
+                const raw = decode_html(el.getAttribute("data-math-inline") ?? "");
+                return {raw, tex: unwrap_math(raw)?.tex ?? ""};
+            },
+        }],
+        toDOM(node) {
+            return ["span", {"data-math-inline": node.attrs.raw}];
+        },
+    },
+
+    // 块级公式（$$...$$ / \[...\]）
+    //
+    // atom + 无 content：整体不可拆分，编辑在 NodeView 内部进行，
+    // 与 html_block 同一套路 —— 见 md_math_node_view。
+    math_block: {
+        group: "block",
+        atom: true,
+        code: true,
+        attrs: {raw: {default: ""}, tex: {default: ""}},
+        parseDOM: [{
+            tag: "div[data-math-block]",
+            getAttrs: (dom: HTMLElement | string) => {
+                const el = dom as HTMLElement;
+                const raw = decode_html(el.getAttribute("data-math-block") ?? "");
+                return {raw, tex: unwrap_math(raw)?.tex ?? ""};
+            },
+        }],
+        toDOM(node) {
+            return ["div", {"data-math-block": node.attrs.raw}];
+        },
+    },
+
+    // 硬换行
+    hard_break: {        inline: true,
         group: "inline",
         selectable: false,
         parseDOM: [{tag: "br"}],

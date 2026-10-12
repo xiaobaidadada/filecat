@@ -1268,3 +1268,94 @@
     color: var(--textSecondary);
     outline: none;
 }
+
+/* ---- 数学公式 ---- */
+/* 编辑器与预览页共用同一套 DOM 结构（见 md_math.ts / md_math_view.ts），
+   所以这里只需要写一份样式，两处观感自动一致 */
+
+/* 块级公式：独立成行，居中（LaTeX 的标准排布） */
+.md-math--block {
+    display: block;
+    margin: 1em 0;
+    text-align: center;
+    /* 公式可能很宽，横向溢出时允许滚动而不是撑破纸张 */
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* 行内公式：跟着文字走，不改变行高 */
+.md-math--inline {
+    display: inline-block;
+    vertical-align: baseline;
+    max-width: 100%;
+}
+
+.md-math__render {
+    display: inline-block;
+    max-width: 100%;
+}
+
+/* 渲染中：先原样显示 LaTeX 源码，用户至少能看到自己写的东西 */
+.md-math--loading .md-math__render {
+    color: var(--textSecondary);
+    font-family: "Roboto Mono", Consolas, Monaco, monospace;
+    font-size: 0.9em;
+}
+
+/* 语法错误：保留源码 + 红色提示，方便对照着改。
+   公式在编辑过程中天然会有一段时间不合法，绝不能因为写错就变成空白 */
+.md-math--error .md-math__render {
+    color: #d93025;
+    font-family: "Roboto Mono", Consolas, Monaco, monospace;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    text-align: left;
+    display: block;
+    border: 1px solid rgba(217, 48, 37, 0.35);
+    border-radius: 4px;
+    background: rgba(217, 48, 37, 0.04);
+    padding: 0.4em 0.6em;
+}
+
+/* 光标进入公式时的源码编辑框：等宽字体、无边框融进正文，
+   高度跟着内容走（在 JS 里算），不出现纵向滚动条 */
+.md-math__source {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--textPrimary);
+    font-family: "Roboto Mono", Consolas, Monaco, monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    padding: 0.2em 0;
+    /* 横向溢出不换行，让用户看清自己写的一整行 LaTeX */
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* 预览态下源码框不占位；编辑态下渲染结果不占位 ——
+   两者二选一显示，避免同一块地方出现两遍内容 */
+.md-math[data-mode="preview"] .md-math__source {
+    display: none;
+}
+
+.md-math[data-mode="source"] .md-math__render {
+    display: none;
+}
+
+/* 编辑态的行内公式要左对齐，否则光标在居中块里不好定位 */
+.md-math--block[data-mode="source"] {
+    text-align: left;
+}
+
+/* 公式在打印时按矢量渲染，不要被截断 */
+@media print {
+    .md-math--block {
+        overflow: visible;
+    }
+}

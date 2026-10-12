@@ -19,8 +19,17 @@ interface ChatMessageListProps {
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onToggleMsgSelect: (id: number) => void;
     onDelete: (id: number) => void;
-    onCopy: (text: string) => void;
+    /** 复制单条：传整条消息，由上层用统一的 message_to_text 提取（保证与气泡显示一致） */
+    onCopy: (msg: Message) => void;
+    /** 全部复制：当前会话的全部气泡按顺序拼接 */
+    onCopyAll: () => void;
     onToggleBatchMode: () => void;
+    /** 批量复制选中的气泡（按消息原始顺序） */
+    onBatchCopy: () => void;
+    /** 批量删除选中的气泡 */
+    onBatchDelete: () => void;
+    /** 顶部批量操作条是否显示（选中的都是聊天气泡、没选会话时） */
+    showBatchBar: boolean;
     t: (key: string) => string;
 }
 
@@ -42,7 +51,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     onToggleMsgSelect,
     onDelete,
     onCopy,
+    onCopyAll,
     onToggleBatchMode,
+    onBatchCopy,
+    onBatchDelete,
+    showBatchBar,
     t,
 }) => {
     // 记录当前处于折叠状态的消息 id 集合
@@ -75,6 +88,16 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
     return (
         <div className="chat-messages" ref={chatContainerRef} data-sending={sending ? "true" : "false"}>
+            {/* 批量操作条：只在「选中的都是聊天气泡、没勾会话」时出现，
+                避免与会话列表那套批量选择混淆 */}
+            {showBatchBar && (
+                <div className="chat-message-batch-bar">
+                    <span className="batch-bar-count">{t("已选")} {selectedMsgIds.size}</span>
+                    <button onClick={onBatchCopy}>{t("复制所选")}</button>
+                    <button onClick={onBatchDelete} className="danger">{t("删除所选")}</button>
+                    <button onClick={onToggleBatchMode}>{t("取消")}</button>
+                </div>
+            )}
             {messages.map(msg => {
                 const collapsed = collapsedIds.has(msg.id);
                 return (
@@ -137,7 +160,8 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                                     ) : (
                                         <>
                                             <button onClick={() => onDelete(msg.id)}>{t("删除")}</button>
-                                            <button onClick={() => onCopy(msg.text)}>{t("复制")}</button>
+                                            <button onClick={() => onCopy(msg)}>{t("复制")}</button>
+                                            <button onClick={onCopyAll}>{t("全部复制")}</button>
                                             <button onClick={onToggleBatchMode}>{t("多选")}</button>
                                         </>
                                     )}

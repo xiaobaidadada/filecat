@@ -965,5 +965,10 @@
   "请选择文件查看改动": "Select a file to view changes",
   "clk_edt": "Click to edit",
   "rendering": "Rendering…",
-  "新窗口打开": "Open in new tab"
+  "新窗口打开": "Open in new tab",
+  "已选": "Selected",
+  "复制所选": "Copy selected",
+  "删除所选": "Delete selected",
+  "全部复制": "Copy all",
+  "多选": "Select"
 }

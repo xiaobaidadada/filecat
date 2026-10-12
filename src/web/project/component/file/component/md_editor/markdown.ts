@@ -6,6 +6,7 @@ import MarkdownIt from "markdown-it";
 import {DOMParser as PMDOMParser, Node as PMNode} from "prosemirror-model";
 import {md_schema} from "./schema";
 import {encode_html} from "./md_html";
+import {is_math_lang} from "./md_math";
 
 // Markdown ⇄ ProseMirror 文档 的双向转换。
 //
@@ -39,6 +40,148 @@ md.renderer.rules.html_block = (tokens, idx) => {
 /** 行内 HTML 同理，换成 span 承载原文 */
 md.renderer.rules.html_inline = (tokens, idx) => {
     return `<span data-html-inline="${encode_html(tokens[idx].content)}"></span>`;
+};
+
+// ---------------------------------------------------------------------------
+// 数学公式
+// ---------------------------------------------------------------------------
+//
+// 两种入口：
+//   · 行内 $...$ / \(...\)
+//   · 块级 $$...$$ / \[...\]
+//
+// 块级公式在 Markdown 里通常是独立成段的一行，交给 md.block 规则处理；
+// 行内公式交给 md.inline 规则，插在普通文本流里。
+//
+// 都走「渲染成带标记的 HTML 容器 + 原文用 base64 承载」这条路，
+// 与 HTML 块同一个原理：schema 里同名规则接住整段原文，不改写用户写的东西。
+
+/** 判断某个内联 token 序列是不是一整段公式（用于行内公式的判定） */
+function parse_inline_math(state: any, silent: boolean): boolean {
+    const start = state.pos;
+    const src = state.src;
+    const delims = [
+        {open: "\\(", close: "\\)"},
+        {open: "$", close: "$"},
+    ];
+    // $$ 开头是块级公式的领地，行内规则不碰，否则会把 $$ 拆成两个 $
+    if (src.startsWith("$$", start)) {
+        return false;
+    }
+    for (const d of delims) {
+        if (!src.startsWith(d.open, start)) {
+            continue;
+        }
+        const from = start + d.open.length;
+        const end = src.indexOf(d.close, from);
+        if (end < 0) {
+            continue;
+        }
+        const tex = src.slice(from, end);
+        if (!tex.trim()) {
+            continue;
+        }
+        // $ 行内公式遵循 CommonMark 社区惯例：结尾的 $ 后面不能紧挨数字，
+        // 避免把「价格 $5 到 $10」这种文本误判成公式
+        if (d.open === "$") {
+            const after = src[end + 1];
+            if (after !== undefined && /\d/.test(after)) {
+                continue;
+            }
+        }
+        if (!silent) {
+            const token = state.push("math_inline", "span", 0);
+            token.content = tex;
+            token.markup = d.open;
+            // 含定界符的原文：schema 靠它还原 raw/tex，保存时原样写回
+            token.meta = {raw: src.slice(start, end + d.close.length)};
+        }
+        state.pos = end + d.close.length;
+        return true;
+    }
+    return false;
+}
+
+/** 块级公式：$$...$$ 或 \[...\] 独占一段 */
+function parse_block_math(state: any, startLine: number, endLine: number, silent: boolean): boolean {
+    const start = state.bMarks[startLine] + state.tShift[startLine];
+    const max = state.eMarks[startLine];
+    const first = state.src.slice(start, max).trim();
+    const pairs = [
+        {open: "\\[", close: "\\]"},
+        {open: "$$", close: "$$"},
+    ];
+    for (const p of pairs) {
+        if (!first.startsWith(p.open)) {
+            continue;
+        }
+        // 同一行就闭合：$$\frac{a}{b}$$
+        if (first.endsWith(p.close) && first.length > p.open.length + p.close.length) {
+            if (silent) {
+                return true;
+            }
+            const tex = first.slice(p.open.length, first.length - p.close.length);
+            const token = state.push("math_block", "div", 0);
+            token.content = tex;
+            token.markup = p.open;
+            token.meta = {raw: first};
+            token.map = [startLine, startLine + 1];
+            state.line = startLine + 1;
+            return true;
+        }
+        // 跨行：往后找闭合行
+        const open_body = first.slice(p.open.length);
+        for (let line = startLine + 1; line < endLine; line++) {
+            const ls = state.bMarks[line] + state.tShift[line];
+            const le = state.eMarks[line];
+            const text = state.src.slice(ls, le);
+            if (!text.trimEnd().endsWith(p.close)) {
+                continue;
+            }
+            if (silent) {
+                return true;
+            }
+            const body = [open_body, ...state.getLines(startLine + 1, line, state.tShift[startLine], false).split("\n")]
+                .filter((l, i) => !(i === 0 && !l.trim()));
+            const last_line = text.trimEnd().slice(0, -p.close.length);
+            body.push(last_line);
+            const token = state.push("math_block", "div", 0);
+            token.content = body.join("\n").trim();
+            token.markup = p.open;
+            token.map = [startLine, line + 1];
+            // 含定界符的完整原文（按源码原样切，不重新拼装，避免多行时丢换行）
+            token.meta = {raw: state.src.slice(start, state.eMarks[line]).trimEnd()};
+            state.line = line + 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+// 行内规则插在「转义符」之后、"emphasis" 之前，保证 $ 优先于其它行内语法
+md.inline.ruler.before("escape", "math_inline", parse_inline_math);
+// 块级规则插在 "fence" 之前，让 $$ / \[ 先于普通段落被识别
+md.block.ruler.before("fence", "math_block", parse_block_math, {alt: ["paragraph", "reference", "blockquote", "list"]});
+
+md.renderer.rules.math_inline = (tokens, idx) => {
+    return `<span data-math-inline="${encode_html(tokens[idx].meta.raw as string)}"></span>`;
+};
+
+md.renderer.rules.math_block = (tokens, idx) => {
+    return `<div data-math-block="${encode_html(tokens[idx].meta.raw as string)}"></div>`;
+};
+
+// ```math / ```latex / ```katex 代码块也当公式处理：同样渲染成公式容器，
+// 原文包在容器里。用代码块写公式是网上 md 的常见写法，不接管就会漏。
+// 代码块本身没有定界符，补上 $$ 让它成为合法公式（与预览页同一处理）。
+const default_fence = md.renderer.rules.fence!;
+md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const lang = token.info.trim().toLowerCase();
+    if (is_math_lang(lang)) {
+        return `<div data-math-block="${encode_html(`$$\n${token.content.trim()}\n$$`)}"></div>`;
+    }
+    return default_fence(tokens, idx, options, env, self);
 };
 
 /** Markdown 文本 → ProseMirror 文档 */
@@ -100,6 +243,9 @@ function serialize_inline(node: PMNode): string {
         } else if (child.type.name === "html_inline") {
             // 行内 HTML 原样输出，不做转义
             out += child.attrs.value;
+        } else if (child.type.name === "math_inline") {
+            // 行内公式原样输出（含用户写的定界符），保证保存内容零变化
+            out += child.attrs.raw;
         }
     });
     return out;
@@ -198,6 +344,12 @@ function serialize_block(node: PMNode, indent = ""): string {
             // 末尾的换行必须去掉：块之间由 serialize_children 用空行连接，
             // 原文自带的收尾 \n 会在连接处多顶出一个空行。
             const text = (node.attrs.value as string).replace(/\n+$/, "");
+            return text.split("\n").map((l: string) => indent + l).join("\n");
+        }
+        case "math_block": {
+            // 块级公式原样输出。多行公式每行都要跟着 indent，
+            // 否则在列表/引用里会漏到块外。
+            const text = (node.attrs.raw as string).replace(/\n+$/, "");
             return text.split("\n").map((l: string) => indent + l).join("\n");
         }
         case "bullet_list": {

@@ -37,7 +37,7 @@ import {
 import {formatTokenCount} from "../../../../../common/token_counter";
 
 // ===== 拆分的子模块 =====
-import { Message } from "./chatTypes";
+import { Message, message_to_text } from "./chatTypes";
 import { toUiMessages } from "./messageUtils";
 import { buildAttachments } from "./attachmentUtils";
 import { useChatStream } from "./useChatStream";
@@ -478,7 +478,60 @@ export default function AiAgentChatPage() {
         });
     };
 
-    const handleCopy = async (text: string) => {
+    const handleCopy = async (msg: Message) => {
+        copyToClipboard(message_to_text(msg));
+        NotySuccess('复制成功');
+    };
+
+    /**
+     * 全部复制：把「AI 聊天记录」下所有会话的消息按会话顺序、消息顺序拼接。
+     *
+     * 气泡上的按钮没法知道其它会话的内容，所以这里逐个会话调 session/get 取回。
+     * 顺序按会话列表（sessions）本身的顺序来，与侧边栏看到的排列一致。
+     */
+    const handleCopyAll = async () => {
+        if (!sessions.length) {
+            NotySuccess('暂无聊天记录');
+            return;
+        }
+        const chunks: string[] = [];
+        for (const s of sessions) {
+            const result = await ai_agentHttp.post("session/get", { session_id: s.id });
+            if (result.code !== RCode.Success || !result.data) {
+                continue;
+            }
+            const session = result.data as ai_agent_chat_session_item & { live_messages?: ai_agent_message_item[] };
+            const msgs = [...(session.messages ?? []), ...(session.live_messages ?? [])];
+            const body = toUiMessages(msgs)
+                .map(message_to_text)
+                .filter(Boolean)
+                .join("\n\n\n");
+            if (body) {
+                chunks.push(body);
+            }
+        }
+        if (!chunks.length) {
+            NotySuccess('暂无聊天记录');
+            return;
+        }
+        copyToClipboard(chunks.join("\n\n\n"));
+        NotySuccess('复制成功');
+    };
+
+    /**
+     * 复制所选：按消息在会话里的原始顺序拼接（不是勾选顺序）。
+     * messages 本身就是按时间排列的，直接顺序过滤即可。
+     */
+    const handleBatchCopy = () => {
+        const text = messages
+            .filter(m => selectedMsgIds.has(m.id))
+            .map(message_to_text)
+            .filter(Boolean)
+            .join("\n\n\n");
+        if (!text) {
+            NotySuccess('暂无内容');
+            return;
+        }
         copyToClipboard(text);
         NotySuccess('复制成功');
     };
@@ -858,7 +911,13 @@ export default function AiAgentChatPage() {
                         onToggleMsgSelect={toggleMsgSelect}
                         onDelete={handleDelete}
                         onCopy={handleCopy}
+                        onCopyAll={handleCopyAll}
                         onToggleBatchMode={toggleBatchMode}
+                        onBatchCopy={handleBatchCopy}
+                        onBatchDelete={batchDeleteMessages}
+                        // 只有「选了气泡、没选会话」时才显示气泡批量条，
+                        // 否则会话列表的批量删除会被这条覆盖语义
+                        showBatchBar={batchMode && selectedMsgIds.size > 0 && selectedSessionIds.size === 0}
                         t={t}
                     />
 

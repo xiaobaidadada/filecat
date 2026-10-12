@@ -967,6 +967,54 @@
     padding-left: 2.5rem;
 }
 
+/*
+ * 气泡批量操作条：选中的都是聊天气泡（没勾会话项）时，浮在消息区顶部。
+ * sticky 保证滚动聊天记录时它一直在视野里，不跟着划走。
+ */
+.chat-message-batch-bar {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0 0 8px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.chat-message-batch-bar .batch-bar-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-right: auto;
+}
+
+.chat-message-batch-bar button {
+    padding: 3px 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.chat-message-batch-bar button:hover {
+    border-color: var(--primary, #4f46e5);
+    color: var(--primary, #4f46e5);
+}
+
+.chat-message-batch-bar button.danger:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
 .chat-message-checkbox {
     position: absolute;
     left: 8px;
