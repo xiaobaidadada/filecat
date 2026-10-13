@@ -470,7 +470,8 @@ export class SettingController {
                 web_site_title: body.value.web_site_title,
                 show_login_user_info: body.value.show_login_user_info,
                 http_proxy: body.value.http_proxy,
-                logo: body.value.logo
+                logo: body.value.logo,
+                browser_proxy_allow: body.value.browser_proxy_allow
             });
             ServerEvent.emit("sys_env_update");
         } else if (body.type === sys_setting_type.private_sys_env) {

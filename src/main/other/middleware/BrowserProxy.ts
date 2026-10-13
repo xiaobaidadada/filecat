@@ -44,9 +44,23 @@ import {HttpsProxyAgent} from 'https-proxy-agent';
 import {HttpRequest} from '../../../common/node/http';
 import {UserAuth} from '../../../common/req/user.req';
 import {userService} from '../../domain/user/user.service';
+import {settingService} from '../../domain/setting/setting.service';
+import {check_target_allowed} from './browser_proxy_policy';
 
 /** 代理路径前缀（相对 base_url） */
 export const PROXY_PATH = '/browser_proxy';
+
+/**
+ * 安全解码：恶意构造的百分号编码（如 "%zz"）会让 decodeURIComponent 抛异常，
+ * 统一兜住，失败时返回原串，避免整个请求 500。
+ */
+function safe_decode(s: string): string {
+    try {
+        return decodeURIComponent(s);
+    } catch {
+        return s;
+    }
+}
 
 
 const REQUEST_TIMEOUT = 30000;
@@ -63,7 +77,7 @@ const ASSET_EXT_RE = /\.(js|mjs|css|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|js
 const ASSET_SCRIPT_RE = /\.(js|mjs|asp|aspx|cgi|php|do)(\?|$)/i;
 
 
-function try_fallback_by_referer(req: Request, res: Response, sys_pre: string): boolean {
+async function try_fallback_by_referer(req: Request, res: Response, sys_pre: string): Promise<boolean> {
     const method = String(req.method || '').toUpperCase();
     if (method !== 'GET' && method !== 'HEAD') {
         return false;
@@ -96,6 +110,11 @@ function try_fallback_by_referer(req: Request, res: Response, sys_pre: string): 
     } catch {
         return false;
     }
+    // 与主流程一致：兜底转发前同样要做目标地址校验，不能绕过策略
+    const ok = await assert_target_allowed(res, target_url.hostname);
+    if (!ok) {
+        return true; // 已拒绝并回写响应，视为已处理
+    }
     const prefix = make_proxy_prefix(sys_pre, parsed.token, parsed.proto, parsed.host);
     forward(req, res, target_url, prefix);
     return true;
@@ -124,15 +143,15 @@ function parse_proxy_url(url: string): {token: string, proto: string, host: stri
 
     if (parts[3] === PROXY_PATH.slice(1) && parts.length >= 7 && parts[6]) {
         return {
-            token: decodeURIComponent(parts[4]),
+            token: safe_decode(parts[4]),
             proto: parts[5],
-            host: decodeURIComponent(parts[6]),
+            host: safe_decode(parts[6]),
         };
     }
     return {
-        token: decodeURIComponent(parts[0]),
+        token: safe_decode(parts[0]),
         proto: parts[1],
-        host: decodeURIComponent(parts[2]),
+        host: safe_decode(parts[2]),
     };
 }
 
@@ -291,18 +310,46 @@ function to_proxy_path(raw: string, prefix: string, target: URL): string | null 
     return `${head}${abs.host}${abs.pathname}${abs.search}${abs.hash}`;
 }
 
-function is_same_site_host(a: string, b: string): boolean {
+/**
+ * 常见多级公共后缀（PSL 的简化子集）。
+ * 只取末两段会把 a.co.uk 与 b.co.uk 误判成同站，这里覆盖最容易踩的几类：
+ * 国家二级后缀（co.uk / com.cn）、常见托管域（github.io 等）。
+ */
+const MULTI_SUFFIX = new Set([
+    'co.uk', 'org.uk', 'me.uk', 'ac.uk', 'gov.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'sch.uk',
+    'com.cn', 'net.cn', 'org.cn', 'gov.cn', 'edu.cn', 'ac.cn',
+    'com.hk', 'org.hk', 'edu.hk', 'gov.hk', 'com.tw', 'org.tw', 'edu.tw',
+    'com.au', 'net.au', 'org.au', 'edu.au', 'gov.au',
+    'com.br', 'com.mx', 'com.ar', 'co.jp', 'co.kr', 'co.in', 'co.nz', 'co.za',
+    'com.sg', 'com.my', 'com.tr', 'com.vn', 'com.sa', 'com.eg', 'com.ua',
+]);
+
+/**
+ * 取域名对应的「可注册主域」(eTLD+1)。
+ * 例如 www.a.co.uk → a.co.uk，a.example.com → example.com。
+ */
+export function get_registrable_domain(host: string): string {
+    const h = host.toLowerCase().replace(/\.$/, '');
+    const parts = h.split('.');
+    if (parts.length <= 2) {
+        return h;
+    }
+    const last2 = parts.slice(-2).join('.');
+    // 末两段是公共后缀时，主域需要再往前取一段
+    if (MULTI_SUFFIX.has(last2) && parts.length >= 3) {
+        return parts.slice(-3).join('.');
+    }
+    return last2;
+}
+
+export function is_same_site_host(a: string, b: string): boolean {
     const norm = (h: string) => h.replace(/^www\./, '').toLowerCase();
     const ha = norm(a);
     const hb = norm(b);
     if (ha === hb) {
         return true;
     }
-    const root = (h: string) => {
-        const parts = h.split('.');
-        return parts.length <= 2 ? h : parts.slice(-2).join('.');
-    };
-    return root(ha) === root(hb);
+    return get_registrable_domain(ha) === get_registrable_domain(hb);
 }
 
 
@@ -353,10 +400,18 @@ function build_inject_script(prefix: string, page_url: URL): string {
     return pathname.indexOf(PREFIX_HEAD) === 0 && pathname.length > PREFIX_HEAD.length;
   }
 
-  /** 取注册主域（末两段），用于判断是否同站 */
+  /** 常见多级公共后缀（与后端 MULTI_SUFFIX 保持一致） */
+  var MULTI_SUFFIX = ${JSON.stringify(Array.from(MULTI_SUFFIX))};
+
+  /** 取注册主域（eTLD+1），处理 co.uk / com.cn 等多级后缀，用于判断是否同站 */
   function root_domain(h) {
-    var parts = String(h).replace(/^www\\./, '').toLowerCase().split('.');
-    return parts.length <= 2 ? parts.join('.') : parts.slice(-2).join('.');
+    var parts = String(h).replace(/^www\\./, '').toLowerCase().replace(/\\.$/, '').split('.');
+    if (parts.length <= 2) return parts.join('.');
+    var last2 = parts.slice(-2).join('.');
+    if (MULTI_SUFFIX.indexOf(last2) !== -1 && parts.length >= 3) {
+      return parts.slice(-3).join('.');
+    }
+    return last2;
   }
 
  
@@ -442,7 +497,33 @@ function build_inject_script(prefix: string, page_url: URL): string {
           } else if (input instanceof URL) {
             input = wrap(input.href);
           } else if (input && input.url) {
-            input = new Request(wrap(input.url), input);
+            // input 是 Request 对象：不能直接 new Request(url, input)（Request 不是 init，
+            // 会丢失 method/body/credentials 等语义），改为显式提取后重建。
+            var new_url = wrap(input.url);
+            if (new_url !== input.url) {
+              var req_init = {
+                method: input.method,
+                headers: input.headers,
+                mode: input.mode,
+                credentials: input.credentials,
+                cache: input.cache,
+                redirect: input.redirect,
+                referrer: input.referrer,
+                referrerPolicy: input.referrerPolicy,
+                integrity: input.integrity,
+                keepalive: input.keepalive,
+                signal: input.signal
+              };
+              // body 只能被消费一次且流不可复用：未消费时透传，已消费时不带 body
+              if (!input.bodyUsed && input.method !== 'GET' && input.method !== 'HEAD') {
+                try {
+                  // 用 clone 的 body 拿到一份可复用的流
+                  req_init.body = input.clone().body;
+                  req_init.duplex = 'half';
+                } catch(e) {}
+              }
+              input = new Request(new_url, req_init);
+            }
           }
         } catch(e) {}
         return rawFetch.call(this, input, init);
@@ -657,18 +738,48 @@ function make_proxy_prefix(sys_pre: string, token: string, proto: string, host: 
 }
 
 /**
+ * 取当前系统设置里的网页代理目标白名单（读失败时返回空数组 = 更严策略）。
+ */
+function get_proxy_allow_list(): string[] {
+    try {
+        const list = settingService.get_sys_env()?.browser_proxy_allow;
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * 校验目标主机是否允许访问；不允许时直接回写 403。
+ * 返回 true 表示放行（调用方继续转发），false 表示已拒绝。
+ */
+async function assert_target_allowed(res: Response, hostname: string): Promise<boolean> {
+    const r = await check_target_allowed(hostname, {allow_list: get_proxy_allow_list()});
+    if (!r.allowed) {
+        res.status(403).send(`browser proxy: target not allowed (${r.reason ?? 'denied'})`);
+        return false;
+    }
+    return true;
+}
+
+/**
  * 把「重定向地址」改写成代理地址。
  *
- * 同 to_proxy_path：需要用 abs.host 而不是当前请求的 host，
- * 因为服务端可能把我们重定向到同主域的另一个子域（如 CDN 域）。
+ * 与 to_proxy_path 保持一致的策略：只有目标站自身 + 同主域子域才包装成代理地址；
+ * 真正跨主域的地址保持原样（否则会把任意域名的跳转都塞进代理，绕过目标访问策略，
+ * 也与静态链接的改写策略不一致）。
  */
-function rewrite_location(loc: string, base: URL, prefix: string): string {
+export function rewrite_location(loc: string, base: URL, prefix: string): string {
     if (!loc || /^(data:|blob:|javascript:)/i.test(loc)) {
         return loc;
     }
     try {
         const u = new URL(loc, base);
         if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+            return loc;
+        }
+        // 跨主域：保持原样，不包进代理（与静态链接策略统一）
+        if (!is_same_site_host(u.host, base.host)) {
             return loc;
         }
         const head = prefix.slice(0, prefix.lastIndexOf('/') + 1);
@@ -679,12 +790,31 @@ function rewrite_location(loc: string, base: URL, prefix: string): string {
 }
 
 
-function fix_set_cookie(raw: string, prefix: string): string {
-    const segs = raw.split(';').filter(seg => !/^\s*domain\s*=/i.test(seg));
-    // cookie 的 Path 前缀必须以 '/' 结尾，否则 /a 会匹配到 /abc
+export function fix_set_cookie(raw: string, prefix: string): string {
+    const segs = raw.split(';');
+    // 首个片段是 cookie 名值对，其余是属性
+    let name_value = segs[0];
+    const attrs = segs.slice(1);
+
+    // __Host- / __Secure- 前缀约束：这类 cookie 要求 Secure、__Host- 还要求 Path=/ 且无 Domain。
+    // 代理运行在本机（可能是 http），且路径收敛到代理前缀后不满足 Path=/ —— 浏览器会直接丢弃，
+    // 导致登录态丢失。这里去掉前缀与 Secure，保证 cookie 能落到本站代理路径下（其余属性保留）。
+    let secure_required = false;
+    const nv_match = /^(\s*)(__Host-|__Secure-)(.*)$/i.exec(name_value);
+    if (nv_match) {
+        name_value = `${nv_match[1]}${nv_match[3]}`;
+        secure_required = true;
+    }
+
+    // 过滤 Domain（隔离到本站；__Host- 本身就要求无 Domain）
+    const kept = attrs.filter(seg => !/^\s*domain\s*=/i.test(seg));
+
     const scope = prefix.endsWith('/') ? prefix : `${prefix}/`;
     let has_path = false;
-    const out = segs.map(seg => {
+    const out_attrs = kept.map(seg => {
+        if (/^\s*secure\s*$/i.test(seg)) {
+            return secure_required ? '' : seg;   // 去掉前缀的 cookie 不再强制 Secure
+        }
         const m = /^\s*path\s*=\s*(.*)$/i.exec(seg);
         if (!m) {
             return seg;
@@ -694,11 +824,13 @@ function fix_set_cookie(raw: string, prefix: string): string {
         // 上游根路径或空 → 直接用代理前缀；更深的路径 → 前缀 + 原路径
         const deeper = raw_path && raw_path !== '/';
         return deeper ? ` Path=${scope}${raw_path.replace(/^\//, '')}` : ` Path=${scope}`;
-    });
+    }).filter(seg => seg !== '');
+
     if (!has_path) {
-        out.push(` Path=${scope}`);
+        out_attrs.push(` Path=${scope}`);
     }
-    return out.join(';');
+
+    return [name_value, ...out_attrs].join(';');
 }
 
 
@@ -710,7 +842,7 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
         const raw_url = req.originalUrl || req.url || '';
         if (!raw_url.startsWith(marker)) {
 
-            if (try_fallback_by_referer(req, res, sys_pre)) {
+            if (await try_fallback_by_referer(req, res, sys_pre)) {
                 return;
             }
             return next();
@@ -730,7 +862,7 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
         const after_token = seg0 === -1 ? '' : rest.slice(seg0 + 1);
 
         // 权限校验：代理能访问任意外部站点，必须限定给有权限的账号
-        const token = decodeURIComponent(token_from_path).trim();
+        const token = safe_decode(token_from_path).trim();
         // get_user_info_by_token 对非法 token 会抛异常，这里兜住统一按无权限处理
         let allowed = false;
         if (token) {
@@ -745,6 +877,7 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
             return;
         }
 
+        // 前两段固定是协议和域名，其余才是路径：
         // 前两段固定是协议和域名，其余才是路径：
         //   https/example.com/a/b  →  proto=https, host=example.com, path=/a/b
         //   https/example.com      →  proto=https, host=example.com, path=/
@@ -762,7 +895,7 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
             const segs = rest_path.slice(di + PROXY_PATH.length + 1).split('/');
             if (segs.length >= 4 && segs[1] && segs[2]) {
                 proto = segs[1];
-                host = decodeURIComponent(segs[2]);
+                host = safe_decode(segs[2]);
                 rest_path = '/' + segs.slice(3).join('/');
             }
         }
@@ -781,6 +914,13 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
             target_url = new URL(`${proto}://${host}${rest_path}${suffix}`);
         } catch {
             res.status(400).send('browser proxy: invalid target url');
+            return;
+        }
+
+        // 目标地址访问策略：默认禁止环回/内网/链路本地/元数据等受限地址，
+        // 只有管理员白名单放行的目标才允许（含 DNS 解析后再校验，防 rebinding）。
+        const target_ok = await assert_target_allowed(res, target_url.hostname);
+        if (!target_ok) {
             return;
         }
 

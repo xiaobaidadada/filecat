@@ -219,6 +219,10 @@ export interface sys_env_pojo {
     http_proxy?: string
     // 网站 logo：http(s):// 开头视为远程 URL，其它视为服务器本地文件路径；为空使用内置默认 logo
     logo?: string
+    // 网页代理（WebVPN）目标访问白名单。
+    // 每项可为 CIDR 网段（192.168.1.0/24）、精确 IP（192.168.1.1）或精确域名（router.local）。
+    // 未配置时：普通公网地址仍可访问，私网/环回/链路本地/元数据等受限地址一律禁止。
+    browser_proxy_allow?: string[]
 }
 
 // md 编辑器全局设置（所有用户共用，由管理员在设置页调整）

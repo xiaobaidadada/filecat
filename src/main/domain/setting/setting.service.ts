@@ -56,6 +56,7 @@ import {
 import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
+import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
 
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -460,7 +461,8 @@ export class SettingService {
             web_site_title: 'FileCat',
             show_login_user_info: true,
             http_proxy: null,
-            logo: ""
+            logo: "",
+            browser_proxy_allow: []
         }
         if (p.http_proxy == null) {
             p.http_proxy = process.env.http_proxy
@@ -468,12 +470,24 @@ export class SettingService {
                 || process.env.HTTP_PROXY
                 || process.env.HTTPS_PROXY
         }
+        // 白名单兜底为空数组：读取失败/缺失时不能意外放开受限地址（策略侧仍按「白名单为空=更严」处理）
+        if (!Array.isArray(p.browser_proxy_allow)) {
+            p.browser_proxy_allow = [];
+        }
         return p;
     }
 
     public set_sys_env(req: sys_env_pojo) {
         // logo 可能被替换，清掉 mtime 缓存，保证下次取到新的版本号
         this.logo_mtime_cache = null;
+        // 白名单条目做格式校验：非法条目直接丢弃（宁可少放行，不可误放行）
+        if (Array.isArray(req.browser_proxy_allow)) {
+            req.browser_proxy_allow = req.browser_proxy_allow
+                .map(v => String(v ?? '').trim())
+                .filter(v => !!v && parse_allow_entry(v) !== null);
+        } else {
+            req.browser_proxy_allow = [];
+        }
         return DataUtil.set(data_common_key.sys_env_key, req);
     }
 

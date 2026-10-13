@@ -31,6 +31,8 @@ export function Sys() {
     const [site_logo, set_site_logo] = useState("");
     const [show_login_user_info, set_show_login_user_info] = useState(false);
     const [http_proxy, set_http_proxy] = useState("");
+    // 网页代理（WebVPN）目标访问白名单，多行文本：每行一条（CIDR / 精确 IP / 精确域名）
+    const [browser_proxy_allow_text, set_browser_proxy_allow_text] = useState("");
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
@@ -78,6 +80,7 @@ export function Sys() {
                 set_site_logo(sys_env?.logo || '');
                 set_show_login_user_info(sys_env?.show_login_user_info);
                 set_http_proxy(sys_env?.http_proxy || '');
+                set_browser_proxy_allow_text((sys_env?.browser_proxy_allow || []).join('\n'));
                 // HTTPS 设置
                 const https_setting = all_open_result.data.https_setting;
                 if (https_setting) {
@@ -165,12 +168,19 @@ export function Sys() {
 
     const save_sys_env = async () => {
 
+        // 白名单按行解析，去掉空行与首尾空白
+        const browser_proxy_allow = browser_proxy_allow_text
+            .split('\n')
+            .map(v => v.trim())
+            .filter(v => !!v);
+
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
             type: sys_setting_type.sys_env, value: {
                 web_site_title,
                 show_login_user_info,
                 http_proxy,
-                logo: site_logo
+                logo: site_logo,
+                browser_proxy_allow
             }
         });
         if (result.code === RCode.Success) {
@@ -207,7 +217,8 @@ export function Sys() {
                             set_prompt_card({
                                 open: true, title: t("信息"), context_div: (
                                     <div>
-                                        {t(`pxy_tip`)}
+                                        <div>{t(`pxy_tip`)}</div>
+                                        <div style={{marginTop: '0.5rem'}}>{t(`wbvpn_tip`)}</div>
                                     </div>
                                 )
                             })
@@ -230,6 +241,17 @@ export function Sys() {
                                    handleInputChange={(value) => {
                                        set_http_proxy(value)
                                    }}/>
+
+                        <div>{t("wbvpn_allow")}</div>
+                        <textarea
+                            className={"input input--block"}
+                            style={{minHeight: '5rem', resize: 'vertical'}}
+                            placeholder={t('wbvpn_allow_ph')}
+                            value={browser_proxy_allow_text}
+                            onChange={(e) => {
+                                set_browser_proxy_allow_text(e.target.value)
+                            }}
+                        />
 
                         {t("lgn_usr")}
                         <input

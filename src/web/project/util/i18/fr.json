@@ -966,5 +966,7 @@
   "复制所选": "Copier la sélection",
   "删除所选": "Supprimer la sélection",
   "全部复制": "Tout copier",
-  "多选": "Sélectionner"
-}
+  "多选": "Sélectionner",
+  "wbvpn_allow": "Liste blanche des cibles WebVPN",
+  "wbvpn_allow_ph": "Une entrée par ligne : 192.168.1.0/24 (CIDR) / 192.168.1.1 (IP) / router.local (domaine, correspondance exacte, sans sous-domaines)",
+  "wbvpn_tip": "Liste blanche des cibles WebVPN. Une entrée par ligne, trois formats :\n  · Plage CIDR : 192.168.1.0/24\n  · IP exacte : 192.168.1.1 (aussi 10.0.0.5, fd00::/8, ::1)\n  · Domaine exact : router.local, nas.example.com (correspondance exacte, sous-domaines NON inclus)\nLes adresses publiques sont autorisées par défaut. Les adresses privées, loopback, link-local, métadonnées cloud (169.254.169.254) et réservées sont interdites. Les lignes mal formées sont ignorées."}
