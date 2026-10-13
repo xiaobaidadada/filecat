@@ -973,6 +973,7 @@
   "wbvpn_port_range": "Proxy-Portbereich",
   "wbvpn_port_tip": "Jedes Ziel belegt einen eigenen Port. Öffnen Sie die Zugriffs-URL, um die Seite zu öffnen; der Pfad bleibt sauber, SPA-Routing funktioniert und die Seiten sind per Origin getrennt.",
   "wbvpn_port_tip2": "Zugriff erfordert Anmeldung: das Öffnen von hier überträgt einmalig ein Token, danach hält ein Cookie die Sitzung. Ziele unterliegen weiterhin der Whitelist/Adressrichtlinie.",
+  "wbvpn_port_tip3": "Links auf der Seite, die auf ein aktives Ziel zeigen, werden automatisch auf den Port des Ziels umgeschrieben, sodass Klicks im Proxy bleiben; Domains, die nicht als Ziel konfiguriert sind, bleiben unverändert.",
   "网页代理目标": "Proxy-Ziele",
   "访问地址": "Zugriffs-URL",
   "打开": "Öffnen",

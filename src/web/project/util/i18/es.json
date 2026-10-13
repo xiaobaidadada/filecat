@@ -973,6 +973,7 @@
   "wbvpn_port_range": "Rango de puertos proxy",
   "wbvpn_port_tip": "Cada destino ocupa un puerto independiente. Abra la URL de acceso para navegar; la ruta se mantiene limpia, el enrutado SPA funciona y los sitios quedan aislados por origen.",
   "wbvpn_port_tip2": "El acceso requiere iniciar sesión: abrir desde aquí envía un token una vez y luego una cookie mantiene la sesión. Los destinos siguen sujetos a la lista blanca / política de direcciones.",
+  "wbvpn_port_tip3": "Los enlaces de la página que apuntan a un destino activo se reescriben automáticamente al puerto de ese destino, de modo que el clic permanece dentro del proxy; los dominios no configurados como destino no se modifican.",
   "网页代理目标": "Destinos proxy",
   "访问地址": "URL de acceso",
   "打开": "Abrir",

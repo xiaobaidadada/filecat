@@ -82,6 +82,7 @@ export default function BrowserProxyTargets() {
                     <ul>
                         <li>{t("wbvpn_port_tip")}</li>
                         <li>{t("wbvpn_port_tip2")}</li>
+                        <li>{t("wbvpn_port_tip3")}</li>
                     </ul>
                 </div>
             ),

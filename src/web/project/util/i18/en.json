@@ -977,6 +977,7 @@
   "wbvpn_port_range": "Proxy Port Range",
   "wbvpn_port_tip": "Each target occupies an independent port. Open the access URL to browse that site; the page path stays clean so SPA routing works and sites are isolated by origin.",
   "wbvpn_port_tip2": "Access requires login: opening from here carries a token once, then a cookie keeps the session. Targets are still subject to the allowlist / address policy.",
+  "wbvpn_port_tip3": "Links in the page that point to an enabled target are automatically rewritten to that target's port, so clicks stay inside the proxy; domains that are not configured as targets are left untouched.",
   "网页代理目标": "Proxy Targets",
   "访问地址": "Access URL",
   "打开": "Open",

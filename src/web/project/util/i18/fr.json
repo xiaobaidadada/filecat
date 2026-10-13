@@ -973,6 +973,7 @@
   "wbvpn_port_range": "Plage de ports proxy",
   "wbvpn_port_tip": "Chaque cible occupe un port indépendant. Ouvrez l'URL d'accès pour naviguer ; le chemin reste propre, le routage SPA fonctionne et les sites sont isolés par origine.",
   "wbvpn_port_tip2": "L'accès nécessite une connexion : l'ouverture d'ici transmet un jeton une fois, ensuite un cookie maintient la session. Les cibles restent soumises à la liste blanche / politique d'adresses.",
+  "wbvpn_port_tip3": "Les liens de la page pointant vers une cible active sont automatiquement réécrits vers le port de cette cible, de sorte que le clic reste dans le proxy ; les domaines non configurés comme cibles ne sont pas modifiés.",
   "网页代理目标": "Cibles proxy",
   "访问地址": "URL d'accès",
   "打开": "Ouvrir",
