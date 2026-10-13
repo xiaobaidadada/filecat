@@ -96,6 +96,7 @@ export const DRIVER_META_LIST: DriverMeta[] = [
     {type: MountDriverType.smb, name: "SMB / Windows 共享", has_root: true},
     {type: MountDriverType.s3, name: "S3 兼容对象存储", has_root: true},
     {type: MountDriverType.baidu, name: "百度网盘", has_root: true},
+    {type: MountDriverType.local, name: "本地目录", has_root: true},
 ];
 
 /** 按类型取驱动元信息 */

@@ -202,7 +202,7 @@ export default function BrowserProxyTargets() {
     };
 
     return (<Row>
-        <Column widthPer={can_edit ? 55 : 100} maxWidth={can_edit ? "60rem" : undefined}>
+        <Column widthPer={can_edit ? 55 : 100} maxWidth={can_edit ? "90rem" : undefined}>
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("网页代理目标")}</h2>
                     <ActionButton icon={"info"} title={t("信息")} onClick={info_click}/></span>}

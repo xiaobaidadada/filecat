@@ -8,6 +8,11 @@ export class FileUtil {
         return fs.promises.stat(path)
     }
 
+    // 不跟随符号链接的 stat（返回链接本身的信息）
+    static async lstatSync (path: string) {
+        return fs.promises.lstat(path)
+    }
+
     static async readdirSync (path: string) {
         return fs.promises.readdir(path);
     }

@@ -67,12 +67,14 @@ export interface CredentialItem {
  * 凭据类型。
  * 与驱动类型一一对应，都在「凭证管理」里维护；
  * baidu 分两步：先填应用配置（AppKey 等），再 OAuth 授权账号（可授权多个）。
+ * local 是本地目录映射：凭据只保存一个本地绝对路径，挂载后可被多处复用。
  */
 export type CredentialType =
     | "webdav"
     | "ssh"        // SSH / SFTP
     | "smb"        // SMB / Windows 共享
     | "s3"
+    | "local"      // 本地目录（用于 filecat 内部的目录链接）
     | "baidu";     // 百度网盘（凭据=应用配置，账号在 accounts 里）
 
 /** 凭据字段描述（供设置页动态渲染表单） */
@@ -156,6 +158,21 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
             {key: "secret_key", label: "SecretKey", type: "password", required: true},
         ],
     },
+    {
+        // 本地目录：凭据只保存源目录的绝对路径，挂载后可在 filecat 内部形成目录链接
+        type: "local",
+        name: "本地目录",
+        fields: [
+            {
+                key: "path",
+                label: "源目录",
+                type: "text",
+                required: true,
+                placeholder: "如 D:\\photos 或 /home/user/photos",
+                tip: "本地已存在的绝对目录；挂载后访问挂载点即访问该目录",
+            },
+        ],
+    },
 ];
 
 /** 按类型取凭据元信息 */
@@ -173,4 +190,5 @@ export const DRIVER_CREDENTIAL_TYPE: Record<string, CredentialType> = {
     [MountDriverType.smb]: "smb",
     [MountDriverType.s3]: "s3",
     [MountDriverType.baidu]: "baidu",
+    [MountDriverType.local]: "local",
 };

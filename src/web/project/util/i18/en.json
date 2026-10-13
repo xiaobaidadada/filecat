@@ -988,5 +988,6 @@
   "当前窗口打开": "Open in current tab",
   "修改成功": "Updated",
   "浏览器代理编辑": "Browser Proxy Editing",
-  "已禁用": "Disabled"
+  "已禁用": "Disabled",
+  "prt_local": "Local directory. Enter an existing absolute path on this machine as the source; after mounting you can access it as a directory link inside filecat."
 }

@@ -87,6 +87,7 @@ export const DRIVER_CREDENTIAL_TYPE: Record<string, string> = {
     smb: "smb",
     s3: "s3",
     baidu: "baidu",
+    local: "local",
 };
 
 /**

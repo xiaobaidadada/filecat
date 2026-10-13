@@ -1199,10 +1199,27 @@ export class SettingService {
         return result;
     }
 
-    // 将 key=value 文本合并进 process.env（同名覆盖，新增追加，不删除未出现的 key）
+    /**
+     * 将 key=value 文本合并进 process.env。
+     * 语义：先把上次覆盖新增的 key 移除、被改过的 key 还原成启动快照，
+     * 再应用本次覆盖（同名覆盖、新增追加），因此支持通过删行来移除变量。
+     *
+     * 注意：不能整体赋值 process.env = {...}。Windows 上给 process.env 赋值会重写
+     * 整个环境块，可能丢失系统默认变量（如各盘符的当前目录 =C:），导致子进程
+     * 找不到 cmd.exe 之类的系统程序。因此这里逐 key 比对、逐个增删改。
+     */
     private apply_process_env_text(text: string) {
         const env_map = this.parse_process_env_text(text);
-        process.env = {...process_copy_env} // 恢复原本的值
+        const snapshot = process_copy_env ?? {};
+        // 1. 恢复快照：移除覆盖新增的 key，把被覆盖过的 key 改回快照值
+        for (const key of Object.keys(process.env)) {
+            if (!(key in snapshot)) {
+                delete process.env[key];
+            } else if (process.env[key] !== snapshot[key]) {
+                process.env[key] = snapshot[key];
+            }
+        }
+        // 2. 应用本次覆盖
         for (const key of Object.keys(env_map)) {
             process.env[key] = env_map[key];
         }

@@ -984,5 +984,6 @@
   "当前窗口打开": "Im aktuellen Tab öffnen",
   "修改成功": "Geändert",
   "浏览器代理编辑": "Browser-Proxy-Bearbeitung",
-  "已禁用": "Deaktiviert"
+  "已禁用": "Deaktiviert",
+  "prt_local": "Lokales Verzeichnis. Geben Sie einen vorhandenen absoluten Pfad auf diesem Rechner als Quelle an; nach dem Einbinden können Sie ihn in filecat als Verzeichnislink nutzen."
 }

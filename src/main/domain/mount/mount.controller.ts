@@ -168,7 +168,7 @@ export class MountController {
     @Post("/add")
     async add(@Body() body: MountSaveReq, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const item = mountService.add({
+        const item = await mountService.add({
             driver: body.driver as MountDriverType,
             mount_path: body.mount_path ?? "",
             credential_id: body.credential_id ?? "",
@@ -200,7 +200,7 @@ export class MountController {
                 (patch as any)[k] = body[k];
             }
         }
-        return Sucess(mountService.update(body.id, patch));
+        return Sucess(await mountService.update(body.id, patch));
     }
 
     /** 删除挂载 */

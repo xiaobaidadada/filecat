@@ -70,6 +70,7 @@ export default function CredentialPanel() {
                         <li><b>S3 兼容对象存储</b>：{t("prt_s3")}</li>
                         <li><b>SMB</b>：{t("prt_smb")}</li>
                         <li><b>百度网盘</b>：{t("prt_bd")}</li>
+                        <li><b>{t("本地目录")}</b>：{t("prt_local")}</li>
                     </ul>
                 </div>
             ),

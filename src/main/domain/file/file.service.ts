@@ -59,6 +59,7 @@ import {
 } from "./mount_adapter";
 import {FileItemData} from "../../../common/file.pojo";
 import {pipeline} from "stream/promises";
+import {MountDriverType} from "../mount/driver/file_driver";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -586,7 +587,11 @@ export class FileService  {
 
     public async getFileInfo(type: FileTypeEnum, fpath: string, token, wss?: Wss) {
         let info: FileInfoItemData = {};
-        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(fpath));
+        // 与 getFile 保持一致：传入绝对路径时直接使用，否则拼到用户根目录下
+        let sysPath = decodeURIComponent(fpath)
+        if (!isAbsolutePath(sysPath)) {
+            sysPath = path.join(settingService.getFileRootPath(token), sysPath);
+        }
         userService.check_user_path(token, sysPath)
         switch (type) {
             case FileTypeEnum.folder:
@@ -1174,6 +1179,18 @@ export class FileService  {
     }
 
     /**
+     * 把「挂载路径」还原成真实本地路径。
+     * 只有本地目录驱动（local）能还原；其它驱动返回 null（表示无法直接当本地路径用）。
+     */
+    private mount_real_local_path(abs_path: string): string | null {
+        const r = resolve_local_path(abs_path);
+        if (!r.match || r.match.mount.driver !== MountDriverType.local) {
+            return null;
+        }
+        return (require_driver(abs_path).driver as any).local_real_path?.(r.match.inner_path) ?? null;
+    }
+
+    /**
      * 挂载场景下的移动/复制。
      * 支持三种组合：同挂载内、本地→挂载、挂载→本地。
      * 跨「挂载」的移动用「读 + 写」流转（不落服务器磁盘）。
@@ -1228,13 +1245,15 @@ export class FileService  {
             if (dst_mount.match) {
                 await require_driver(dst).driver.mkdir(dst_mount.inner_path);
             } else {
-                await fse.mkdirs(dst);
+                await FileUtil.ensure_dir(dst);
             }
             const children = src_mount.match
                 ? await require_driver(src).driver.list(src_mount.inner_path)
                 : await FileUtil.readdirSync(src).then(names => names.map(n => ({name: n})) as any[]);
             for (const c of children) {
-                await this.mount_move_copy(path.posix.join(src, c.name), path.posix.join(dst, c.name), mode);
+                // 用 path.join 做平台自适应拼接；src / dst 都是本地绝对路径（Windows 用 \），
+                // 不能用 posix.join，否则在 Windows 上会把反斜杠当普通字符拼错
+                await this.mount_move_copy(path.join(src, c.name), path.join(dst, c.name), mode);
             }
         } else {
             // 文件：读源 → 写目标
@@ -1244,7 +1263,7 @@ export class FileService  {
             if (dst_mount.match) {
                 await require_driver(dst).driver.write(dst_mount.inner_path, as_readable(rs), src_info.size);
             } else {
-                await fse.ensureDir(path.dirname(dst));
+                await FileUtil.ensure_dir(path.dirname(dst));
                 // 本地目标：直接写入
                 await pipeline(as_readable(rs), fs.createWriteStream(dst));            }
         }
@@ -1648,17 +1667,26 @@ export class FileService  {
                 // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
                 const sysPath = decodeURIComponent(file);
                 // 挂载内的文件无法直接用 archiver 打包（archiver 只认本地路径），
-                // 需要先下到服务器再压，违背「不落盘」原则，因此直接拒绝
-                if (resolve_local_path(sysPath).match) {
+                // 需要先下到服务器再压，违背「不落盘」原则，因此直接拒绝；
+                // 但本地目录驱动（local）本质就是本地文件，可以正常打包
+                const m_res = resolve_local_path(sysPath);
+                if (m_res.match && m_res.match.mount.driver !== MountDriverType.local) {
                     archive.abort();
                     res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
                     return;
                 }
-                const stats = await FileUtil.statSync(sysPath);
+                const real_pack_path = m_res.match ? (require_driver(sysPath).driver as any).local_real_path?.(m_res.match.inner_path) : null;
+                // 非本地驱动拿不到真实路径时，直接拒绝打包（网盘文件需先落盘）
+                if (m_res.match && !real_pack_path) {
+                    archive.abort();
+                    res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
+                    return;
+                }
+                const stats = await FileUtil.statSync(real_pack_path ?? sysPath);
                 if (stats.isFile()) {
-                    archive.file(sysPath, {name: path.basename(sysPath)});
+                    archive.file(real_pack_path ?? sysPath, {name: path.basename(sysPath)});
                 } else {
-                    archive.directory(sysPath, path.basename(sysPath));
+                    archive.directory(real_pack_path ?? sysPath, path.basename(sysPath));
                 }
             }
             archive.finalize();
@@ -1712,19 +1740,25 @@ export class FileService  {
         userService.check_user_path(pojo.token, targetFolder);
         userService.check_user_only_path(pojo.token, targetFolder);
 
-        // 挂载接管：解压必须先把文件拉到服务器磁盘才能解，违背「不落盘」原则，直接拒绝
+        // 挂载接管：解压必须先把文件拉到服务器磁盘才能解，违背「不落盘」原则，直接拒绝；
+        // 但本地目录驱动（local）本质就是本地文件，可以正常解压
         const sysSourcePathCheck = path.join(root_path, source_file);
-        if (resolve_local_path(sysSourcePathCheck).match || resolve_local_path(targetFolder).match) {
+        const src_check = resolve_local_path(sysSourcePathCheck);
+        const tgt_check = resolve_local_path(targetFolder);
+        if ((src_check.match && src_check.match.mount.driver !== MountDriverType.local)
+            || (tgt_check.match && tgt_check.match.mount.driver !== MountDriverType.local)) {
             throw new Error("挂载目录不支持解压，请先将文件下载到本地目录");
         }
+        // local 挂载：挂载点路径用于权限校验，真实本地路径仅用于实际文件操作
+        const real_source = this.mount_real_local_path(sysSourcePathCheck) ?? sysSourcePathCheck;
+        const real_target = this.mount_real_local_path(targetFolder) ?? targetFolder;
 
         const wss = data.wss as Wss;
         if (tar_dir) {
-            await FileUtil.mkdirSync(path.join(targetFolder), {recursive: true})
-            // fs.mkdirSync(path.join(targetFolder), {recursive: true});
+            await FileUtil.mkdirSync(path.join(real_target), {recursive: true})
         }
-        const sysSourcePath = path.join(root_path, source_file);
-        userService.check_user_path(pojo.token, sysSourcePath)
+        // 权限校验始终基于「挂载点形成的 filecat 路径」，不校验源目录，保证与网盘挂载逻辑一致
+        userService.check_user_path(pojo.token, sysSourcePathCheck)
         const outHanle = (value) => {
             if (value === -1) {
                 wss.ws.close();
@@ -1734,7 +1768,8 @@ export class FileService  {
             result.context = value;
             wss.sendData(result.encode());
         };
-        await fileCompress.handle_un(pojo.format,sysSourcePath,targetFolder,outHanle)
+        // 实际解压使用真实物理路径
+        await fileCompress.handle_un(pojo.format, real_source, real_target, outHanle)
     }
 
     async FileCompress(data: WsData<FileCompressPojo>) {
@@ -1749,16 +1784,20 @@ export class FileService  {
             const name = path.join(root_path, decodeURIComponent(file));
             userService.check_user_path(pojo.token, name);
             userService.check_user_only_path(pojo.token, name);
-            // 挂载内的内容无法直接压缩（要先拉到服务器磁盘），直接拒绝
-            if (resolve_local_path(name).match) {
+            // 挂载内的内容无法直接压缩（要先拉到服务器磁盘），直接拒绝；
+            // 但本地目录驱动（local）本质就是本地文件，可以正常压缩
+            const m_res = resolve_local_path(name);
+            if (m_res.match && m_res.match.mount.driver !== MountDriverType.local) {
                 throw new Error("挂载目录不支持压缩，请先将文件下载到本地目录");
             }
+            // local 挂载：还原成真实本地路径
+            const real_name = this.mount_real_local_path(name) ?? name;
             try {
-                const stats = await FileUtil.statSync(name);
+                const stats = await FileUtil.statSync(real_name);
                 if (stats.isFile()) {
-                    filePaths.push(name);
+                    filePaths.push(real_name);
                 } else {
-                    directorys.push(name);
+                    directorys.push(real_name);
                 }
             } catch (e) {
             }

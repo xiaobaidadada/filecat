@@ -984,5 +984,6 @@
   "当前窗口打开": "Ouvrir dans l'onglet actuel",
   "修改成功": "Modifié",
   "浏览器代理编辑": "Édition du proxy de navigateur",
-  "已禁用": "Désactivé"
+  "已禁用": "Désactivé",
+  "prt_local": "Répertoire local. Indiquez un chemin absolu existant sur cette machine comme source ; après le montage, vous pourrez y accéder comme un lien de répertoire dans filecat."
 }

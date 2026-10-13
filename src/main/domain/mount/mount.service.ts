@@ -1,6 +1,6 @@
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
-import {FileMountItem, find_mount, MountMatch} from "./mount.pojo";
+import {FileMountItem, find_mount, MountMatch, relative_path} from "./mount.pojo";
 import {
     CredentialItem,
     CredentialMeta,
@@ -13,6 +13,7 @@ import {
 import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
 import {SmbDriver} from "./driver/smb_driver";
+import {LocalDriver, validate_local_mount} from "./driver/local_driver";
 import {DriverMeta, DRIVER_META_LIST} from "./driver/file_driver_type";
 import {
     BaiduTokenStore,
@@ -185,7 +186,7 @@ export class MountService {
     }
 
     /** 新增挂载 */
-    add(item: Omit<FileMountItem, "id" | "created_at">): FileMountItem {
+    async add(item: Omit<FileMountItem, "id" | "created_at">): Promise<FileMountItem> {
         const list = this.list_raw();
         // 同一个本地目录不允许重复挂载
         const dup = list.find(v => v.mount_path === item.mount_path);
@@ -196,6 +197,8 @@ export class MountService {
         if (err) {
             throw new Error(err);
         }
+        // 本地目录驱动：校验源目录与挂载点，禁止同路径 / 祖孙嵌套（避免无限递归）
+        await this.check_local_mount_conflict(item.driver, item.credential_id, item.mount_path, item.root_dir);
         const full: FileMountItem = {
             ...item,
             id: `mnt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -207,7 +210,7 @@ export class MountService {
     }
 
     /** 修改挂载 */
-    update(id: string, patch: Partial<FileMountItem>): FileMountItem {
+    async update(id: string, patch: Partial<FileMountItem>): Promise<FileMountItem> {
         const list = this.list_raw();
         const i = list.findIndex(v => v.id === id);
         if (i < 0) {
@@ -228,6 +231,16 @@ export class MountService {
             if (err) {
                 throw new Error(err);
             }
+        }
+        // 本地目录驱动：任意相关字段变化都要重新做冲突校验
+        if (patch.credential_id || patch.mount_path || patch.root_dir || patch.driver) {
+            await this.check_local_mount_conflict(
+                patch.driver ?? list[i].driver,
+                patch.credential_id ?? list[i].credential_id,
+                patch.mount_path ?? list[i].mount_path,
+                patch.root_dir ?? list[i].root_dir,
+                id,
+            );
         }
         list[i] = {...list[i], ...patch, id, created_at: list[i].created_at};
         this.set_list(list);
@@ -311,6 +324,48 @@ export class MountService {
             }
         }
         return undefined;
+    }
+
+    /**
+     * 本地目录挂载的冲突校验。
+     * 仅对 local 驱动生效：取凭据里的源目录，校验它与挂载点的关系。
+     * 额外检查：源目录不能落在「其它已存在的挂载点内」，否则会形成挂载链环。
+     */
+    private async check_local_mount_conflict(
+        driver: MountDriverType,
+        credential_id: string,
+        mount_path: string,
+        root_dir?: string,
+        exclude_id?: string,
+    ): Promise<void> {
+        if (driver !== MountDriverType.local) {
+            return;
+        }
+        const cred = this.get_credential(credential_id);
+        const source_path = cred?.config?.path;
+        if (!source_path) {
+            throw new Error("该本地目录凭据缺少源目录");
+        }
+        // 若配置了起始目录，真实源 = 源目录 + 起始目录
+        const inner_root = String(root_dir ?? "").trim().replace(/^[/\\]+|[/\\]+$/g, "");
+        const real_source = inner_root ? `${source_path.replace(/[/\\]+$/, "")}/${inner_root}` : source_path;
+        const err = await validate_local_mount(real_source, mount_path);
+        if (err) {
+            throw new Error(err);
+        }
+        // 源目录不能落在其它挂载点内（避免 A 挂 B、B 又挂 A 的环）
+        for (const m of this.list_raw()) {
+            if (m.id === exclude_id) {
+                continue;
+            }
+            if (m.enabled === false) {
+                continue;
+            }
+            const rel = relative_path(real_source, m.mount_path);
+            if (rel !== null) {
+                throw new Error(`源目录位于挂载点「${m.note || m.mount_path}」内，会造成挂载循环`);
+            }
+        }
     }
 
     /** 取某个凭据下的账号列表（不含 token 等敏感信息，给前端用） */
