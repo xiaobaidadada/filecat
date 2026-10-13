@@ -312,6 +312,14 @@ export class AiAgentMemoryService {
 
     public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string) {
         const store = this.read_index_of_session();
+        // 新会话要显示在列表最顶部：取所有已有会话最小的 sort_index - 1，
+        // 这样它一定排在所有已排序会话之前，又不影响已有会话之间的相对顺序。
+        // 若已有会话都没有 sort_index（从未拖动过），则留空，由 list() 按 updated_at 倒序自然置顶。
+        const existing = this.user_meta_index_by_store(store, userId).sessions;
+        const min_sort = existing.reduce<number | undefined>((min, it) => {
+            if (it.sort_index === undefined) return min;
+            return min === undefined || it.sort_index < min ? it.sort_index : min;
+        }, undefined);
         const session: ai_agent_chat_session_item = {
             id: sessionId??nowId(),
             title,
@@ -322,6 +330,7 @@ export class AiAgentMemoryService {
             created_at: Date.now(),
             updated_at: Date.now(),
             sys_prompt_id: sys_prompt_id,
+            sort_index: min_sort === undefined ? undefined : min_sort - 1,
         };
         const fileName = this.writeSession(userId, session);
         this.upsertMeta(store, userId, session, fileName);

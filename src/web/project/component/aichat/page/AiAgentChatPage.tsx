@@ -283,8 +283,9 @@ export default function AiAgentChatPage() {
     };
 
     const createSession = async (sysPromptId?: string) => {
-        // 未显式传提示词时，沿用当前选中的（保证新会话继承当前提示词）
-        const targetPromptId = sysPromptId !== undefined ? sysPromptId : selectedSysPromptId;
+        // 新建会话默认不继承当前选中的系统提示词（置空）；
+        // 仅当调用方显式传入了提示词 id 时才使用它。
+        const targetPromptId = sysPromptId ?? "";
         const result = await ai_agentHttp.post("session", {
             title: "新会话",
             sys_prompt_id: targetPromptId || undefined
@@ -383,7 +384,8 @@ export default function AiAgentChatPage() {
         if (!sessionId) {
             const result = await ai_agentHttp.post("session", {
                 title: (text || pendingAttachments[0]?.name || "新会话").slice(0, 28),
-                sys_prompt_id: selectedSysPromptId || undefined
+                // 与「新建会话」保持一致：默认不继承当前选中的系统提示词
+                sys_prompt_id: undefined
             });
             if (result.code !== RCode.Success) return;
             const session = result.data as ai_agent_chat_session_item;
