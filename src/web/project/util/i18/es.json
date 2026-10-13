@@ -969,4 +969,20 @@
   "多选": "Seleccionar",
   "wbvpn_allow": "Lista blanca de destinos WebVPN",
   "wbvpn_allow_ph": "Una entrada por línea: 192.168.1.0/24 (CIDR) / 192.168.1.1 (IP) / router.local (dominio, coincidencia exacta, sin subdominios)",
-  "wbvpn_tip": "Lista blanca de destinos WebVPN. Una entrada por línea, tres formatos:\n  · Rango CIDR: 192.168.1.0/24\n  · IP exacta: 192.168.1.1 (también 10.0.0.5, fd00::/8, ::1)\n  · Dominio exacto: router.local, nas.example.com (coincidencia exacta, NO incluye subdominios)\nLas direcciones públicas se permiten por defecto. Las privadas, loopback, link-local, metadatos en la nube (169.254.169.254) y reservadas se deniegan. Las líneas mal formadas se ignoran."}
+  "wbvpn_tip": "Lista blanca de destinos WebVPN. Una entrada por línea, tres formatos:\n  · Rango CIDR: 192.168.1.0/24\n  · IP exacta: 192.168.1.1 (también 10.0.0.5, fd00::/8, ::1)\n  · Dominio exacto: router.local, nas.example.com (coincidencia exacta, NO incluye subdominios)\nLas direcciones públicas se permiten por defecto. Las privadas, loopback, link-local, metadatos en la nube (169.254.169.254) y reservadas se deniegan. Las líneas mal formadas se ignoran.",
+  "wbvpn_port_range": "Rango de puertos proxy",
+  "wbvpn_port_tip": "Cada destino ocupa un puerto independiente. Abra la URL de acceso para navegar; la ruta se mantiene limpia, el enrutado SPA funciona y los sitios quedan aislados por origen.",
+  "wbvpn_port_tip2": "El acceso requiere iniciar sesión: abrir desde aquí envía un token una vez y luego una cookie mantiene la sesión. Los destinos siguen sujetos a la lista blanca / política de direcciones.",
+  "网页代理目标": "Destinos proxy",
+  "访问地址": "URL de acceso",
+  "打开": "Abrir",
+  "已复制": "Copiado",
+  "添加成功": "Añadido",
+  "目标地址不能为空": "La dirección de destino no puede estar vacía",
+  "目标地址例如": "Dirección de destino, ej. 192.168.1.1:8080",
+  "网页代理": "Proxy web",
+  "当前窗口打开": "Abrir en pestaña actual",
+  "修改成功": "Modificado",
+  "浏览器代理编辑": "Edición del proxy de navegador",
+  "已禁用": "Deshabilitado"
+}

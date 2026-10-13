@@ -112,6 +112,7 @@ export enum data_common_key {
     mount_credential_list = "mount_credential_list", // 挂载凭据列表（账号/身份信息，可被多个挂载复用）
     mount_baidu_app = "mount_baidu_app", // [已废弃，仅迁移用] 百度网盘开放平台应用配置
     mount_baidu_account = "mount_baidu_account", // [已废弃，仅迁移用] 百度网盘已授权账号列表
+    browser_proxy_port_list = "browser_proxy_port_list", // 网页代理端口映射列表（每个代理目标占用一个独立端口）
 }
 
 

@@ -125,6 +125,8 @@ export function Permission(props:{
                 { title: t("http代理"), permission: UserAuth.http_proxy },
                 { title: t("pxy_off"), permission: UserAuth.http_proxy_download_cancel },
                 { title: t("浏览器代理"), permission: UserAuth.browser_proxy },
+                // 浏览器代理目标的编辑权限（新增/修改/删除目标）
+                { title: t("浏览器代理编辑"), permission: UserAuth.browser_proxy_edit },
                 { title: t("rdp代理"), permission: UserAuth.rdp_proxy }
             ]
         },

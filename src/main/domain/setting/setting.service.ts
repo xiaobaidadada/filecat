@@ -462,7 +462,9 @@ export class SettingService {
             show_login_user_info: true,
             http_proxy: null,
             logo: "",
-            browser_proxy_allow: []
+            browser_proxy_allow: [],
+            browser_proxy_port_start: 5610,
+            browser_proxy_port_end: 5710
         }
         if (p.http_proxy == null) {
             p.http_proxy = process.env.http_proxy
@@ -474,21 +476,59 @@ export class SettingService {
         if (!Array.isArray(p.browser_proxy_allow)) {
             p.browser_proxy_allow = [];
         }
+        // 端口范围兜底（防止读取失败导致端口功能不可用）
+        if (!(p.browser_proxy_port_start > 0)) {
+            p.browser_proxy_port_start = 5610;
+        }
+        if (!(p.browser_proxy_port_end > 0)) {
+            p.browser_proxy_port_end = 5710;
+        }
         return p;
     }
 
-    public set_sys_env(req: sys_env_pojo) {
+    /**
+     * 保存系统环境设置。
+     * 合并语义：只处理请求里传了的字段，未传的字段保留原值。
+     * 这样「通用设置」和「网页代理」等多个 card 可以各自只提交自己负责的字段，互不覆盖。
+     */
+    public set_sys_env(req: Partial<sys_env_pojo>) {
+        // 用数据库原始值做基线（避免 get_sys_env 的环境变量兜底被固化写回）
+        const base: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
+            web_site_title: 'FileCat',
+            show_login_user_info: true,
+            http_proxy: null,
+            logo: "",
+            browser_proxy_allow: [],
+            browser_proxy_port_start: 5610,
+            browser_proxy_port_end: 5710
+        };
+        const result: sys_env_pojo = {...base};
+        for (const [key, value] of Object.entries(req ?? {})) {
+            if (value === undefined) {
+                continue;
+            }
+            (result as any)[key] = value;
+        }
         // logo 可能被替换，清掉 mtime 缓存，保证下次取到新的版本号
         this.logo_mtime_cache = null;
         // 白名单条目做格式校验：非法条目直接丢弃（宁可少放行，不可误放行）
-        if (Array.isArray(req.browser_proxy_allow)) {
-            req.browser_proxy_allow = req.browser_proxy_allow
+        if (Array.isArray(result.browser_proxy_allow)) {
+            result.browser_proxy_allow = result.browser_proxy_allow
                 .map(v => String(v ?? '').trim())
                 .filter(v => !!v && parse_allow_entry(v) !== null);
         } else {
-            req.browser_proxy_allow = [];
+            result.browser_proxy_allow = [];
         }
-        return DataUtil.set(data_common_key.sys_env_key, req);
+        // 端口范围兜底校验（保证 start <= end，且在合法端口区间内）
+        result.browser_proxy_port_start = Number(result.browser_proxy_port_start);
+        result.browser_proxy_port_end = Number(result.browser_proxy_port_end);
+        if (!(result.browser_proxy_port_start >= 1 && result.browser_proxy_port_start <= 65535)) {
+            result.browser_proxy_port_start = 5610;
+        }
+        if (!(result.browser_proxy_port_end >= result.browser_proxy_port_start && result.browser_proxy_port_end <= 65535)) {
+            result.browser_proxy_port_end = result.browser_proxy_port_start;
+        }
+        return DataUtil.set(data_common_key.sys_env_key, result);
     }
 
     // 获取 filecat 系统全局 http 代理地址（空表示未设置）

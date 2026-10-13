@@ -40,3 +40,5 @@ export const gitHttp = new Http(`${front_config.baseUrl}git/`);
 export const firewallHttp = new Http(`${front_config.baseUrl}firewall/`);
 export const mountHttp = new Http(`${front_config.baseUrl}mount/`);
 
+export const browserProxyPortHttp = new Http(`${front_config.baseUrl}browser_proxy_port/`);
+

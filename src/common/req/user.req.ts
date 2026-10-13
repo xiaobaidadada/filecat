@@ -118,6 +118,7 @@ export enum UserAuth {
     md_editor_setting = 92, // md 编辑器全局设置（正文宽度/字号等）的修改
     file_mount = 93, // 目录挂载（把本地目录挂载到网盘/远程协议，含管理挂载与百度网盘授权）
     md_theme = 94, // md 编辑器主题的新建/修改/删除
+    browser_proxy_edit = 95, // 浏览器代理目标的编辑权限（新增/修改/删除代理目标）
 }
 
 

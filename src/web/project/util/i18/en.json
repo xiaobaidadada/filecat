@@ -973,4 +973,20 @@
   "多选": "Select",
   "wbvpn_allow": "WebVPN Target Allowlist",
   "wbvpn_allow_ph": "One entry per line: 192.168.1.0/24 (CIDR) / 192.168.1.1 (IP) / router.local (domain, exact match, no subdomains)",
-  "wbvpn_tip": "WebVPN target allowlist. One entry per line. Three formats are supported:\n  · CIDR range: 192.168.1.0/24\n  · Exact IP: 192.168.1.1 (also 10.0.0.5, fd00::/8, ::1)\n  · Exact domain: router.local, nas.example.com (exact match, subdomains are NOT included)\nPublic addresses are allowed by default. Private, loopback, link-local, cloud metadata (169.254.169.254) and other reserved addresses are denied unless listed here. Malformed lines are ignored."}
+  "wbvpn_tip": "WebVPN target allowlist. One entry per line. Three formats are supported:\n  · CIDR range: 192.168.1.0/24\n  · Exact IP: 192.168.1.1 (also 10.0.0.5, fd00::/8, ::1)\n  · Exact domain: router.local, nas.example.com (exact match, subdomains are NOT included)\nPublic addresses are allowed by default. Private, loopback, link-local, cloud metadata (169.254.169.254) and other reserved addresses are denied unless listed here. Malformed lines are ignored.",
+  "wbvpn_port_range": "Proxy Port Range",
+  "wbvpn_port_tip": "Each target occupies an independent port. Open the access URL to browse that site; the page path stays clean so SPA routing works and sites are isolated by origin.",
+  "wbvpn_port_tip2": "Access requires login: opening from here carries a token once, then a cookie keeps the session. Targets are still subject to the allowlist / address policy.",
+  "网页代理目标": "Proxy Targets",
+  "访问地址": "Access URL",
+  "打开": "Open",
+  "已复制": "Copied",
+  "添加成功": "Added",
+  "目标地址不能为空": "Target address cannot be empty",
+  "目标地址例如": "Target address, e.g. 192.168.1.1:8080",
+  "网页代理": "Web Proxy",
+  "当前窗口打开": "Open in current tab",
+  "修改成功": "Updated",
+  "浏览器代理编辑": "Browser Proxy Editing",
+  "已禁用": "Disabled"
+}

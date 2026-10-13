@@ -42,6 +42,8 @@ import {TcpForwardController} from "./domain/net/tcp.forward.controller";
 import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
+import {BrowserProxyPortController} from "./domain/setting/browser_proxy_port.controller";
+import {browserProxyPortService} from "./domain/setting/browser_proxy_port.service";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
 import {use_browser_proxy_middleware} from "./other/middleware/BrowserProxy";
 import {tcpForwardService} from "./domain/net/tcp.forward.server.service";
@@ -110,7 +112,8 @@ export async function start_main() {
             FileController, DdnsController, NetController,
             VirtualController, SettingController,
             SSHController, RdpController, VideoController,
-            CryptoController, Ai_AgentController, TcpForwardController, GitController, FirewallController, MountController
+            CryptoController, Ai_AgentController, TcpForwardController, GitController, FirewallController, MountController,
+            BrowserProxyPortController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],
         defaultErrorHandler: false, // 有自己的错误处理程序再禁用默认错误处理
@@ -290,8 +293,15 @@ export async function start_main() {
             });
         }
     });
-
     ServerEvent.emit("start");
+
+    // 恢复网页代理端口模式：为每个已保存的目标重新启动独立端口服务
+    try {
+        browserProxyPortService.start_all();
+    } catch (e) {
+        console.error('启动网页代理端口服务失败', e);
+    }
+
 
     process.on('uncaughtException', (err) => {
         console.error('未捕获的异常:', err);

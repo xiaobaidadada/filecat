@@ -156,7 +156,7 @@ function parse_proxy_url(url: string): {token: string, proto: string, host: stri
 }
 
 /** 不向上游转发的请求头（影响响应形态或会造成回环） */
-const STRIP_REQ_HEADERS = new Set([
+export const STRIP_REQ_HEADERS = new Set([
     'host', 'connection', 'keep-alive', 'proxy-connection',
 
     'transfer-encoding',
@@ -164,7 +164,7 @@ const STRIP_REQ_HEADERS = new Set([
 ]);
 
 /** 不向浏览器回传的响应头（安全策略类会拦住 iframe，编码/长度类由我们自己控制） */
-const STRIP_RES_HEADERS = new Set([
+export const STRIP_RES_HEADERS = new Set([
     'content-security-policy', 'content-security-policy-report-only',
     'x-frame-options', 'content-encoding', 'content-length',
     'strict-transport-security', 'clear-site-data',
@@ -670,7 +670,7 @@ function build_inject_script(prefix: string, page_url: URL): string {
 </script>`;
 }
 
-function decode_body(buf: Buffer, encoding: string): Buffer {
+export function decode_body(buf: Buffer, encoding: string): Buffer {
     if (!buf.length) {
         return buf;
     }
@@ -687,11 +687,11 @@ function decode_body(buf: Buffer, encoding: string): Buffer {
 }
 
 /** MIME 是否为 HTML */
-function is_html(content_type: string): boolean {
+export function is_html(content_type: string): boolean {
     return /text\/html|application\/xhtml\+xml/i.test(content_type);
 }
 
-function is_document_request(req: Request): boolean {
+export function is_document_request(req: Request): boolean {
     const dest = String(req.headers['sec-fetch-dest'] || '').toLowerCase();
     if (dest) {
         return dest === 'document' || dest === 'iframe';
@@ -705,7 +705,7 @@ function is_document_request(req: Request): boolean {
 }
 
 
-function inject_script_before_first_script(html: string, inject: string): string {
+export function inject_script_before_first_script(html: string, inject: string): string {
     // 只认真正的 script 开标签：前一个字符不能是字母（排除 <noscript> 之类误匹配），
     // 同时跳过 HTML 注释里的 <script>（注释里插脚本会破坏注释结构）
     const re = /<!--[\s\S]*?-->|<script[\s>]/gi;
@@ -723,7 +723,7 @@ function inject_script_before_first_script(html: string, inject: string): string
 }
 
 /** 从 Content-Type 取 charset，取不到默认 utf-8 */
-function get_charset(content_type: string): string {
+export function get_charset(content_type: string): string {
     const m = /charset\s*=\s*"?([\w-]+)"?/i.exec(content_type);
     if (!m) {
         return 'utf-8';
@@ -930,7 +930,7 @@ export const use_browser_proxy_middleware = (sys_pre: string) => {
     };
 };
 
-function restore_target_url(proxy_url: string, target: URL): string {
+export function restore_target_url(proxy_url: string, target: URL): string {
     const marker = `${PROXY_PATH}/`;
     const i = proxy_url.indexOf(marker);
     if (i === -1) {
@@ -1109,4 +1109,377 @@ function forward(req: Request, res: Response, target_url: URL, prefix: string): 
     } else {
         req.pipe(proxy_req);
     }
+}
+
+// ============================================================================
+// 端口模式（WebVPN 每目标一个独立端口）
+//
+// 与路径模式的区别：同一个端口只对应一个目标，路径就是「干净的真实路径」。
+// 因此：
+//   · SPA 读 location.pathname 天然正确（不会匹配不到路由）
+//   · Origin 天然按端口隔离（localStorage / Cookie 互不可见）
+//   · 同目标地址天然正确，无需改写；仅需把「绝对形式的同目标 URL」收敛为相对路径
+//   · 跨主域地址保持原样（跨域本就无法共用同一端口代理）
+// ============================================================================
+
+/** 端口模式下，把同目标绝对地址收敛为相对路径；跨域/特殊协议保持原样 */
+export function port_wrap_url(raw: string, page_url: URL, target_host: string): string {
+    if (raw == null) {
+        return raw;
+    }
+    const u = String(raw);
+    if (!u) {
+        return u;
+    }
+    if (/^(data:|blob:|javascript:|mailto:|tel:|about:|#)/i.test(u)) {
+        return u;
+    }
+    let abs: URL;
+    try {
+        abs = new URL(u, page_url);
+    } catch {
+        return u;
+    }
+    if (abs.protocol !== 'http:' && abs.protocol !== 'https:') {
+        return u;
+    }
+    // 已是相对路径（不指向其它 host）→ 原样
+    // 同目标（含同主域子域）→ 收敛为相对路径（去掉 host，靠当前端口回源）
+    if (is_same_site_host(abs.host, target_host)) {
+        return abs.pathname + abs.search + abs.hash;
+    }
+    // 跨域 → 保持原样
+    return u;
+}
+
+/** 端口模式：重写 HTML 里指向同目标的绝对地址为相对路径 */
+function port_rewrite_html(html: string, page_url: URL, target_host: string): string {
+    const tag_re = /<([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+    const ATTR_RE = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*)("([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/g;
+
+    return html.replace(tag_re, (whole, tag_name, attrs) => {
+        const new_attrs = attrs.replace(ATTR_RE, (m, name, eq, _all, dq, sq, uq) => {
+            const lname = String(name).toLowerCase();
+            if (!PORT_URL_ATTRS.has(lname)) {
+                return m;
+            }
+            const raw = dq !== undefined ? dq : (sq !== undefined ? sq : uq);
+            if (raw == null || raw === '') {
+                return m;
+            }
+            const wrapped = port_rewrite_value(raw, page_url, target_host);
+            if (wrapped === null) {
+                return m;
+            }
+            const quote = dq !== undefined ? '"' : (sq !== undefined ? "'" : '');
+            return `${name}${eq}${quote}${wrapped}${quote}`;
+        });
+        return `<${tag_name}${new_attrs}>`;
+    });
+}
+
+/** 端口模式：单个属性值改写；无需改写返回 null */
+function port_rewrite_value(raw: string, page_url: URL, target_host: string): string | null {
+    if (/^(data:|blob:|javascript:|mailto:|tel:|about:|#)/i.test(raw)) {
+        return null;
+    }
+    // srcset 候选列表
+    if (/,/.test(raw) && !/^https?:\/\//i.test(raw)) {
+        let changed = false;
+        const rebuilt = raw.split(',').map(seg => {
+            const s = seg.trim();
+            if (!s) {
+                return seg;
+            }
+            const sp = s.split(/\s+/);
+            const one = port_rewrite_single(sp[0], page_url, target_host);
+            if (one === null) {
+                return seg;
+            }
+            changed = true;
+            return ` ${[one, ...sp.slice(1)].join(' ')}`;
+        }).join(',');
+        return changed ? rebuilt.replace(/^ /, '') : null;
+    }
+    return port_rewrite_single(raw, page_url, target_host);
+}
+
+function port_rewrite_single(raw: string, page_url: URL, target_host: string): string | null {
+    if (raw.startsWith('#')) {
+        return null;
+    }
+    const candidate = raw.startsWith('//') ? `${page_url.protocol}${raw}` : raw;
+    let abs: URL;
+    try {
+        abs = new URL(candidate, page_url);
+    } catch {
+        return null;
+    }
+    if (abs.protocol !== 'http:' && abs.protocol !== 'https:') {
+        return null;
+    }
+    if (!is_same_site_host(abs.host, target_host)) {
+        return null;
+    }
+    // 本来就是相对路径 → 不改
+    if (!/^https?:\/\//i.test(raw) && !raw.startsWith('//')) {
+        return null;
+    }
+    return abs.pathname + abs.search + abs.hash;
+}
+
+/** 端口模式需要改写的 URL 属性白名单 */
+const PORT_URL_ATTRS = new Set([
+    'src', 'href', 'action', 'poster', 'formaction', 'data-src', 'cite', 'background', 'srcset',
+]);
+
+/** 端口模式的注入脚本：仅处理运行时动态拼出的同目标绝对 URL */
+function build_port_inject_script(page_url: URL, target_host: string): string {
+    return `<script id="${INJECT_ID}">
+(function(){
+  if (window.${INJECT_FLAG}) return;
+  window.${INJECT_FLAG} = true;
+  var PAGE = ${JSON.stringify(page_url.href)};
+  var TARGET_HOST = ${JSON.stringify(target_host)};
+  var MULTI_SUFFIX = ${JSON.stringify(Array.from(MULTI_SUFFIX))};
+
+  function root_domain(h) {
+    var parts = String(h).replace(/^www\\./, '').toLowerCase().replace(/\\.$/, '').split('.');
+    if (parts.length <= 2) return parts.join('.');
+    var last2 = parts.slice(-2).join('.');
+    if (MULTI_SUFFIX.indexOf(last2) !== -1 && parts.length >= 3) {
+      return parts.slice(-3).join('.');
+    }
+    return last2;
+  }
+  function is_target_host(host) {
+    var clean = function(h) { return String(h).replace(/^www\\./, '').toLowerCase(); };
+    if (clean(host) === clean(TARGET_HOST)) return true;
+    return root_domain(host) === root_domain(TARGET_HOST);
+  }
+
+  function wrap(u) {
+    if (u == null) return u;
+    u = String(u);
+    if (!u) return u;
+    if (/^(data:|blob:|javascript:|mailto:|tel:|about:|#)/i.test(u)) return u;
+    var abs;
+    try { abs = new URL(u, PAGE); } catch(e) { return u; }
+    if (abs.protocol !== 'http:' && abs.protocol !== 'https:') return u;
+    if (is_target_host(abs.host)) {
+      return abs.pathname + abs.search + abs.hash;
+    }
+    return u;
+  }
+  window.__filecat_wrap__ = wrap;
+
+  // fetch / XHR / WebSocket：把同目标绝对 URL 收敛为相对路径
+  try {
+    var rawFetch = window.fetch;
+    if (rawFetch) {
+      window.fetch = function(input, init) {
+        try {
+          if (typeof input === 'string') input = wrap(input);
+          else if (input instanceof URL) input = wrap(input.href);
+          else if (input && input.url) {
+            var new_url = wrap(input.url);
+            if (new_url !== input.url) {
+              var req_init = {
+                method: input.method, headers: input.headers, mode: input.mode,
+                credentials: input.credentials, cache: input.cache, redirect: input.redirect,
+                referrer: input.referrer, referrerPolicy: input.referrerPolicy,
+                integrity: input.integrity, keepalive: input.keepalive, signal: input.signal
+              };
+              if (!input.bodyUsed && input.method !== 'GET' && input.method !== 'HEAD') {
+                try { req_init.body = input.clone().body; req_init.duplex = 'half'; } catch(e) {}
+              }
+              input = new Request(new_url, req_init);
+            }
+          }
+        } catch(e) {}
+        return rawFetch.call(this, input, init);
+      };
+    }
+  } catch(e) {}
+
+  try {
+    var rawOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      var args = Array.prototype.slice.call(arguments);
+      args[1] = wrap(url);
+      return rawOpen.apply(this, args);
+    };
+  } catch(e) {}
+
+  try {
+    var rawWS = window.WebSocket;
+    if (rawWS) {
+      window.WebSocket = function(url, protocols) {
+        try { url = wrap(url).replace(/^http/, 'ws'); } catch(e) {}
+        return protocols === undefined ? new rawWS(url) : new rawWS(url, protocols);
+      };
+      window.WebSocket.prototype = rawWS.prototype;
+    }
+  } catch(e) {}
+
+})();
+</script>`;
+}
+
+/**
+ * 端口模式的请求处理入口。
+ * 调用方（端口服务）已经根据端口定位到唯一目标，这里负责：
+ *   请求头透传 → 上游请求 → 响应头/Cookie/Location 处理 → HTML 改写与脚本注入
+ *
+ * @param req        客户端请求
+ * @param res        客户端响应
+ * @param target_url 上游目标 URL（proto + host + path）
+ * @param target_host 目标站 host（用于同站判断）
+ */
+export function handle_browser_proxy_port_request(req: Request, res: Response, target_url: URL, target_host: string): void {
+    const is_https = target_url.protocol === 'https:';
+    const agent = is_https ? https : http;
+
+    const headers: Record<string, any> = {};
+    for (const [k, v] of Object.entries(req.headers)) {
+        if (STRIP_REQ_HEADERS.has(k.toLowerCase())) {
+            continue;
+        }
+        headers[k] = v;
+    }
+    headers['accept-encoding'] = 'gzip, deflate';
+
+    const raw_referer = req.headers.referer;
+    headers['referer'] = raw_referer ? String(raw_referer) : `${target_url.origin}/`;
+    headers['origin'] = target_url.origin;
+
+    const options: http.RequestOptions = {
+        method: req.method,
+        hostname: target_url.hostname,
+        port: target_url.port || (is_https ? 443 : 80),
+        path: target_url.pathname + target_url.search,
+        headers,
+        timeout: REQUEST_TIMEOUT,
+    };
+
+    const proxy = HttpRequest.get_proxy();
+    if (proxy) {
+        options.agent = new HttpsProxyAgent(proxy);
+    }
+
+    // 端口模式下的「页面绝对地址」（用于相对 URL 解析）：由调用方把原始端口回填到 req 上
+    const page_url: URL = (req as any).__page_url ?? target_url;
+
+    const proxy_req = agent.request(options, (proxy_res) => {
+        const content_type = String(proxy_res.headers['content-type'] ?? '');
+        const status = proxy_res.statusCode ?? 502;
+        const up_encoding = String(proxy_res.headers['content-encoding'] ?? '').toLowerCase();
+
+        for (const [k, v] of Object.entries(proxy_res.headers)) {
+            const lk = k.toLowerCase();
+            if (STRIP_RES_HEADERS.has(lk) || lk === 'set-cookie') {
+                continue;
+            }
+            if (lk === 'location') {
+                const loc = Array.isArray(v) ? v[0] : String(v);
+                // 端口模式：同目标跳转收敛为相对路径；跨域保持原样
+                res.setHeader('location', port_wrap_location(loc, target_url, target_host));
+                continue;
+            }
+            if (v !== undefined) {
+                res.setHeader(k, v);
+            }
+        }
+
+        // Cookie：端口模式天然按 Origin 隔离，这里只需去掉 Domain（避免被上游域限制）
+        const set_cookie = proxy_res.headers['set-cookie'];
+        if (set_cookie) {
+            const arr = Array.isArray(set_cookie) ? set_cookie : [set_cookie];
+            res.setHeader('set-cookie', arr.map(c => strip_cookie_domain(c)));
+        }
+
+        if (!is_document_request(req) || !is_html(content_type)) {
+            res.statusCode = status;
+            if (!res.getHeader('content-type') && content_type) {
+                res.setHeader('content-type', content_type);
+            }
+            if (up_encoding && up_encoding !== 'identity') {
+                res.setHeader('content-encoding', up_encoding);
+            }
+            const up_len = proxy_res.headers['content-length'];
+            if (up_len !== undefined) {
+                res.setHeader('content-length', Array.isArray(up_len) ? up_len[0] : up_len);
+            }
+            proxy_res.pipe(res);
+            return;
+        }
+
+        const chunks: Buffer[] = [];
+        proxy_res.on('data', (c: Buffer) => chunks.push(c));
+        proxy_res.on('end', () => {
+            try {
+                const charset = get_charset(content_type);
+                let html = iconv.decode(decode_body(Buffer.concat(chunks), up_encoding), charset);
+                html = port_rewrite_html(html, page_url, target_host);
+                html = inject_script_before_first_script(html, build_port_inject_script(page_url, target_host));
+                const buf = iconv.encode(html, charset);
+                res.statusCode = status;
+                res.setHeader('content-type', content_type || 'text/html; charset=utf-8');
+                res.setHeader('content-length', String(buf.length));
+                res.end(buf);
+            } catch (e: any) {
+                send_plain(res, 500, `browser proxy: rewrite failed: ${e?.message ?? e}`);
+            }
+        });
+        proxy_res.on('error', () => {
+            send_plain(res, 502, 'browser proxy: upstream stream error');
+        });
+    });
+
+    proxy_req.on('timeout', () => proxy_req.destroy(new Error('browser proxy: request timeout')));
+    proxy_req.on('error', (e: any) => {
+        send_plain(res, 502, `browser proxy: ${e?.message ?? e}`);
+    });
+
+    const m = (req.method || 'GET').toUpperCase();
+    if (m === 'GET' || m === 'HEAD' || m === 'OPTIONS') {
+        proxy_req.end();
+    } else {
+        req.pipe(proxy_req);
+    }
+}
+
+/** 端口模式：重定向地址处理（同目标→相对路径，跨域→原样） */
+function port_wrap_location(loc: string, base: URL, target_host: string): string {
+    if (!loc || /^(data:|blob:|javascript:)/i.test(loc)) {
+        return loc;
+    }
+    try {
+        const u = new URL(loc, base);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+            return loc;
+        }
+        if (is_same_site_host(u.host, target_host)) {
+            return u.pathname + u.search + u.hash;
+        }
+        return loc;
+    } catch {
+        return loc;
+    }
+}
+
+/** 端口模式：Cookie 只去掉 Domain，其余属性保留（Origin 隔离由端口天然保证） */
+function strip_cookie_domain(raw: string): string {
+    return raw.split(';').filter(seg => !/^\s*domain\s*=/i.test(seg)).join(';');
+}
+
+/** 端口模式的 res 是原生 ServerResponse（无 Express 的 status/send），这里统一回写文本 */
+function send_plain(res: Response, status: number, text: string) {
+    if (res.headersSent) {
+        res.end();
+        return;
+    }
+    res.statusCode = status;
+    res.setHeader('content-type', 'text/plain; charset=utf-8');
+    res.end(text);
 }

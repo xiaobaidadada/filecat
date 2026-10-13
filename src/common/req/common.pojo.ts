@@ -223,6 +223,9 @@ export interface sys_env_pojo {
     // 每项可为 CIDR 网段（192.168.1.0/24）、精确 IP（192.168.1.1）或精确域名（router.local）。
     // 未配置时：普通公网地址仍可访问，私网/环回/链路本地/元数据等受限地址一律禁止。
     browser_proxy_allow?: string[]
+    // 网页代理端口模式使用的端口范围 [起始, 结束]（在范围内自动分配空闲端口）
+    browser_proxy_port_start?: number
+    browser_proxy_port_end?: number
 }
 
 // md 编辑器全局设置（所有用户共用，由管理员在设置页调整）

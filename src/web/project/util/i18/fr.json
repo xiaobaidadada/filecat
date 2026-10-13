@@ -969,4 +969,20 @@
   "多选": "Sélectionner",
   "wbvpn_allow": "Liste blanche des cibles WebVPN",
   "wbvpn_allow_ph": "Une entrée par ligne : 192.168.1.0/24 (CIDR) / 192.168.1.1 (IP) / router.local (domaine, correspondance exacte, sans sous-domaines)",
-  "wbvpn_tip": "Liste blanche des cibles WebVPN. Une entrée par ligne, trois formats :\n  · Plage CIDR : 192.168.1.0/24\n  · IP exacte : 192.168.1.1 (aussi 10.0.0.5, fd00::/8, ::1)\n  · Domaine exact : router.local, nas.example.com (correspondance exacte, sous-domaines NON inclus)\nLes adresses publiques sont autorisées par défaut. Les adresses privées, loopback, link-local, métadonnées cloud (169.254.169.254) et réservées sont interdites. Les lignes mal formées sont ignorées."}
+  "wbvpn_tip": "Liste blanche des cibles WebVPN. Une entrée par ligne, trois formats :\n  · Plage CIDR : 192.168.1.0/24\n  · IP exacte : 192.168.1.1 (aussi 10.0.0.5, fd00::/8, ::1)\n  · Domaine exact : router.local, nas.example.com (correspondance exacte, sous-domaines NON inclus)\nLes adresses publiques sont autorisées par défaut. Les adresses privées, loopback, link-local, métadonnées cloud (169.254.169.254) et réservées sont interdites. Les lignes mal formées sont ignorées.",
+  "wbvpn_port_range": "Plage de ports proxy",
+  "wbvpn_port_tip": "Chaque cible occupe un port indépendant. Ouvrez l'URL d'accès pour naviguer ; le chemin reste propre, le routage SPA fonctionne et les sites sont isolés par origine.",
+  "wbvpn_port_tip2": "L'accès nécessite une connexion : l'ouverture d'ici transmet un jeton une fois, ensuite un cookie maintient la session. Les cibles restent soumises à la liste blanche / politique d'adresses.",
+  "网页代理目标": "Cibles proxy",
+  "访问地址": "URL d'accès",
+  "打开": "Ouvrir",
+  "已复制": "Copié",
+  "添加成功": "Ajouté",
+  "目标地址不能为空": "L'adresse cible ne peut pas être vide",
+  "目标地址例如": "Adresse cible, ex. 192.168.1.1:8080",
+  "网页代理": "Proxy Web",
+  "当前窗口打开": "Ouvrir dans l'onglet actuel",
+  "修改成功": "Modifié",
+  "浏览器代理编辑": "Édition du proxy de navigateur",
+  "已禁用": "Désactivé"
+}

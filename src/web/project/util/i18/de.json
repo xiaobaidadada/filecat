@@ -969,4 +969,20 @@
   "多选": "Auswählen",
   "wbvpn_allow": "WebVPN-Ziel-Whitelist",
   "wbvpn_allow_ph": "Ein Eintrag pro Zeile: 192.168.1.0/24 (CIDR) / 192.168.1.1 (IP) / router.local (Domain, exakt, keine Subdomains)",
-  "wbvpn_tip": "WebVPN-Ziel-Whitelist. Ein Eintrag pro Zeile, drei Formate:\n  · CIDR-Bereich: 192.168.1.0/24\n  · Exakte IP: 192.168.1.1 (auch 10.0.0.5, fd00::/8, ::1)\n  · Exakte Domain: router.local, nas.example.com (exakt, Subdomains NICHT enthalten)\nÖffentliche Adressen sind standardmäßig erlaubt. Private, Loopback-, Link-Local-, Cloud-Metadaten- (169.254.169.254) und reservierte Adressen sind standardmäßig verboten. Fehlerhafte Zeilen werden ignoriert."}
+  "wbvpn_tip": "WebVPN-Ziel-Whitelist. Ein Eintrag pro Zeile, drei Formate:\n  · CIDR-Bereich: 192.168.1.0/24\n  · Exakte IP: 192.168.1.1 (auch 10.0.0.5, fd00::/8, ::1)\n  · Exakte Domain: router.local, nas.example.com (exakt, Subdomains NICHT enthalten)\nÖffentliche Adressen sind standardmäßig erlaubt. Private, Loopback-, Link-Local-, Cloud-Metadaten- (169.254.169.254) und reservierte Adressen sind standardmäßig verboten. Fehlerhafte Zeilen werden ignoriert.",
+  "wbvpn_port_range": "Proxy-Portbereich",
+  "wbvpn_port_tip": "Jedes Ziel belegt einen eigenen Port. Öffnen Sie die Zugriffs-URL, um die Seite zu öffnen; der Pfad bleibt sauber, SPA-Routing funktioniert und die Seiten sind per Origin getrennt.",
+  "wbvpn_port_tip2": "Zugriff erfordert Anmeldung: das Öffnen von hier überträgt einmalig ein Token, danach hält ein Cookie die Sitzung. Ziele unterliegen weiterhin der Whitelist/Adressrichtlinie.",
+  "网页代理目标": "Proxy-Ziele",
+  "访问地址": "Zugriffs-URL",
+  "打开": "Öffnen",
+  "已复制": "Kopiert",
+  "添加成功": "Hinzugefügt",
+  "目标地址不能为空": "Zieladresse darf nicht leer sein",
+  "目标地址例如": "Zieladresse, z. B. 192.168.1.1:8080",
+  "网页代理": "Web-Proxy",
+  "当前窗口打开": "Im aktuellen Tab öffnen",
+  "修改成功": "Geändert",
+  "浏览器代理编辑": "Browser-Proxy-Bearbeitung",
+  "已禁用": "Deaktiviert"
+}
