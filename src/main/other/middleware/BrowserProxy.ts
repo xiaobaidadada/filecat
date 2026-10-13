@@ -30,6 +30,16 @@ import {Request, Response} from 'express';
 
 const REQUEST_TIMEOUT = 30000;
 
+/** 代理自身的鉴权 cookie 名（不向上游透传，避免上游回写删除指令） */
+const BP_TOKEN_COOKIE = 'filecat_bp_token';
+
+/** 从 Cookie 串里剔除代理鉴权 cookie，返回剩余部分（可能为空串） */
+function strip_bp_token_cookie(cookie: string): string {
+    return cookie.split(';')
+        .filter(seg => !new RegExp(`^\\s*${BP_TOKEN_COOKIE}\\s*=`).test(seg))
+        .join(';').trim();
+}
+
 const INJECT_ID = '__filecat_webvpn_script__';
 
 /** 脚本执行标记（挂在 window 上，避免重复注入时重复 hook） */
@@ -718,6 +728,15 @@ export function handle_browser_proxy_port_request(req: Request, res: Response, t
         if (STRIP_REQ_HEADERS.has(k.toLowerCase())) {
             continue;
         }
+        // Cookie：剔除代理自身的鉴权 cookie，避免上游（如 Google）看到陌生 cookie 后回写删除指令
+        if (k.toLowerCase() === 'cookie') {
+            const cleaned = strip_bp_token_cookie(String(v));
+            if (!cleaned) {
+                continue;
+            }
+            headers[k] = cleaned;
+            continue;
+        }
         headers[k] = v;
     }
     headers['accept-encoding'] = 'gzip, deflate';
@@ -985,9 +1004,6 @@ export function handle_browser_proxy_port_upgrade(proto: string, host: string, r
     socket.on('close', () => upstream.destroy());
 }
 
-/** 代理自身的鉴权 cookie 名（不向上游透传） */
-const BP_TOKEN_COOKIE = 'filecat_bp_token';
-
 /**
  * 用浏览器发来的升级请求重建握手报文（保证请求行/头部不变，仅替换 Host 为本机收到的原样）。
  * 由于 Host 已被上游认可（多数 ws 服务端不校验），这里保持浏览器原始 Host，
@@ -1009,9 +1025,7 @@ function build_upgrade_request(req: IncomingMessage, host: string): string {
         }
         // 代理鉴权 cookie 混着目标站 cookie，只剔除代理自己那条
         if (lname === 'cookie') {
-            const cleaned = String(value).split(';')
-                .filter(seg => !new RegExp(`^\\s*${BP_TOKEN_COOKIE}\\s*=`).test(seg))
-                .join(';').trim();
+            const cleaned = strip_bp_token_cookie(String(value));
             if (cleaned) {
                 lines.push(`${name}: ${cleaned}`);
             }

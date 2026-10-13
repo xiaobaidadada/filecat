@@ -354,7 +354,7 @@ export class BrowserProxyPortService {
             params.delete('_t');
             const qs = params.toString();
             const clean_url = path + (qs ? `?${qs}` : '');
-            res.setHeader('Set-Cookie', `${TOKEN_COOKIE}=${encodeURIComponent(auth.query_token)}; Path=/; HttpOnly; SameSite=Lax`);
+            res.setHeader('Set-Cookie', `${TOKEN_COOKIE}=${encodeURIComponent(auth.query_token)}; Path=/; HttpOnly`);
             res.statusCode = 302;
             res.setHeader('Location', clean_url);
             res.end();
