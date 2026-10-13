@@ -22,10 +22,10 @@ function render_index() {
     return Mustache.render(tpl, {
         Windows_FileCat: JSON.stringify({
             base_url,
-            web_site_title: "FileCat",
+            web_site_title: "Local FileCat",
             logo_url: ""
         }),
-        web_site_title: "FileCat",
+        web_site_title: "Local FileCat",
         logo_favicon: "favicon-32x32.png"
     });
 }

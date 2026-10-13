@@ -463,8 +463,8 @@ export class SettingService {
             http_proxy: null,
             logo: "",
             browser_proxy_allow: [],
-            browser_proxy_port_start: 5610,
-            browser_proxy_port_end: 5710
+            browser_proxy_port_start: 7000,
+            browser_proxy_port_end: 8000
         }
         if (p.http_proxy == null) {
             p.http_proxy = process.env.http_proxy

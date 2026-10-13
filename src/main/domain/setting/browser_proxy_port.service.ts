@@ -22,7 +22,7 @@ import {userService} from '../user/user.service';
 import {UserAuth} from '../../../common/req/user.req';
 import {settingService} from '../setting/setting.service';
 import {check_target_allowed} from '../../other/middleware/browser_proxy_policy';
-import {handle_browser_proxy_port_request} from '../../other/middleware/BrowserProxy';
+import {handle_browser_proxy_port_request, ProxyTargetRoute} from '../../other/middleware/BrowserProxy';
 
 /** 一条端口映射记录 */
 export interface BrowserProxyPortItem {
@@ -315,6 +315,23 @@ export class BrowserProxyPortService {
         }
     }
 
+    /** 把已启用目标转成跨目标路由列表（供端口改写时匹配「其它已配置目标」） */
+    private get_target_routes(): ProxyTargetRoute[] {
+        const routes: ProxyTargetRoute[] = [];
+        for (const it of this.list()) {
+            // 禁用目标不监听端口，不应被改写指向（否则点过去打不开）
+            if (it.enabled === false) {
+                continue;
+            }
+            routes.push({
+                host: String(it.host || '').toLowerCase(),
+                port: it.port,
+                proto: it.proto,
+            });
+        }
+        return routes;
+    }
+
     /** 端口 server 的请求入口 */
     private async handle_request(item: BrowserProxyPortItem, req: IncomingMessage, res: ServerResponse) {
         const raw_url = req.url || '/';
@@ -363,7 +380,7 @@ export class BrowserProxyPortService {
         // ---------- 构造上游 URL 并转发 ----------
         let target_url: URL;
         try {
-            target_url = new URL(`${item.proto}://${item.host}${path}`);
+            target_url = new URL(`${item.proto}://${item.host}${path}${query ? `?${query}` : ''}`);
         } catch {
             res.statusCode = 400;
             res.end('网页代理：非法的目标地址');
@@ -374,9 +391,13 @@ export class BrowserProxyPortService {
         const host_header = String(req.headers.host || `localhost:${item.port}`);
         const page_url = new URL(`http://${host_header}${raw_url}`);
 
+        // 跨目标路由：把页面里指向「其它已配置目标」的地址改写到对应端口
+        const cross_routes = this.get_target_routes();
+
         // 转成 express 风格对象，复用 handle_browser_proxy_port_request
         (req as any).__page_url = page_url;
-        handle_browser_proxy_port_request(req as unknown as Request, res as unknown as Response, target_url, item.host);
+        (req as any).__port = item.port;
+        handle_browser_proxy_port_request(req as unknown as Request, res as unknown as Response, target_url, item.host, cross_routes);
     }
 
     /** 从请求的 Cookie 头里取出 token */
