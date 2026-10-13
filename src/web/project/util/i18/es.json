@@ -985,5 +985,7 @@
   "修改成功": "Modificado",
   "浏览器代理编辑": "Edición del proxy de navegador",
   "已禁用": "Deshabilitado",
-  "prt_local": "Directorio local. Indica una ruta absoluta existente en esta máquina como origen; tras montarlo podrás acceder a él como un enlace de directorio dentro de filecat."
+  "prt_local": "Directorio local. Indica una ruta absoluta existente en esta máquina como origen; tras montarlo podrás acceder a él como un enlace de directorio dentro de filecat.",
+  "移动到最上": "Mover arriba",
+  "移动到最下": "Mover abajo"
 }

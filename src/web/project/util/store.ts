@@ -223,6 +223,6 @@ export const $stroe = {
     blank_search_mode_for_temp: atom<boolean>(false),
     // AI 聊天请求类型选择
     ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions'),
-    // AI 聊天输入框高度（行数）
+    // AI 聊天输入框高度（行数 em）
     ai_chat_input_height: sync_atomWithStorage<number>("ai_chat_input_height", 5),
 };

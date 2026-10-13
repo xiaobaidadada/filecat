@@ -1,10 +1,11 @@
-import React, {useRef, useImperativeHandle, forwardRef, useState, useEffect, useCallback} from 'react';
+import React, {useRef, useImperativeHandle, forwardRef} from 'react';
 import {useTranslation} from "react-i18next";
 import {Icon, ActionButton, ButtonLittle} from "../../../../meta/component/Button";
 import RichTextarea, {RichTextareaHandle} from "../../RichTextarea";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import {debounce} from "../../../../../common/fun.util";
+import {use_drag_resize} from "../../../util/useDragResize";
 
 /**
  * 待发送附件条（文件标签展示）
@@ -55,7 +56,6 @@ const ChatInput = forwardRef<ChatInputHandle, {
 }>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef }, ref) => {
     const {t} = useTranslation();
     const rtRef = useRef<RichTextareaHandle>(null);
-    const [isDragging, setIsDragging] = useState(false);
     const areaRef = useRef<HTMLDivElement>(null);
     const [inputHeight, setInputHeight] = useAtom($stroe.ai_chat_input_height);
 
@@ -65,34 +65,28 @@ const ChatInput = forwardRef<ChatInputHandle, {
         clear: () => rtRef.current?.clear(),
     }));
 
-    // 拖动处理：根据鼠标 Y 位置计算输入框高度
-    const handleDrag = useCallback((event: PointerEvent) => {
+    // 输入框最小高度（em，约两行）；无最大值
+    const MIN_INPUT_HEIGHT = 2;
+
+    // 取当前 em 对应的像素值（与 heightStyle 的 em 单位保持一致，自适应字号）
+    const get_em_px = () => {
         const el = areaRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const newHeightPx = rect.bottom - event.clientY;
-        // 0.95em font-size * 1.5 line-height ≈ 每行像素
-        const lineHeightPx = 14.25 * 1.5;
-        let rows = Math.round(newHeightPx / lineHeightPx);
-        rows = Math.max(2, Math.min(20, rows));
-        setInputHeight(rows);
-    }, [setInputHeight]);
+        if (!el) return 16;
+        return parseFloat(getComputedStyle(el).fontSize) || 16;
+    };
 
-    const handlePointerDown = useCallback(() => setIsDragging(true), []);
-    const handlePointerUp = useCallback(() => setIsDragging(false), []);
+    // 通用拖拽调高（垂直方向，绑 window，保持原有行为）
+    const {dragging: isDragging, on_pointer_down, on_pointer_up} = use_drag_resize({
+        direction: "vertical",
+        // 起始高度直接取当前 em 数值（heightStyle 就是按它渲染的，二者一致）
+        get_start_size: () => inputHeight,
+        // 鼠标位移（px）换算成 em：1em = 当前字号像素
+        px_to_unit: (delta_px) => delta_px / get_em_px(),
+        min: MIN_INPUT_HEIGHT,
+        on_change: (size) => setInputHeight(size),
+    });
 
-    useEffect(() => {
-        if (!isDragging) return;
-        // const throttled = debounce(handleDrag, 10);
-        const throttled = handleDrag
-        window.addEventListener('pointermove', throttled);
-        window.addEventListener('pointerup', handlePointerUp);
-        return () => {
-            window.removeEventListener('pointermove', throttled);
-            window.removeEventListener('pointerup', handlePointerUp);
-        };
-    }, [isDragging, handleDrag, handlePointerUp]);
-
+    // 高度以 em 固定（minHeight 与 maxHeight 相等，锁定高度）
     const heightStyle = { minHeight: `${inputHeight}em`, maxHeight: `${inputHeight}em` };
 
     return (
@@ -105,7 +99,7 @@ const ChatInput = forwardRef<ChatInputHandle, {
             {/* 顶部拖动条 */}
             <div
                 className={`chat-input-resize-handle${isDragging ? ' dragging' : ''}`}
-                onPointerDown={handlePointerDown}
+                onPointerDown={on_pointer_down}
             />
             <input
                 ref={fileInputRef}
@@ -119,7 +113,7 @@ const ChatInput = forwardRef<ChatInputHandle, {
                     }
                 }}
             />
-            <div className="chat-input-shell" style={heightStyle}>
+            <div className="chat-input-shell">
                 <AttachmentStrip
                     pendingAttachments={pendingAttachments}
                     onRemove={onRemoveAttachment}
@@ -147,7 +141,7 @@ const ChatInput = forwardRef<ChatInputHandle, {
                 <ButtonLittle  text={t("发送")} clickFun={onSend} />
             )}
             {/* 拖动时全屏遮罩，防止鼠标跑出元素丢失事件 */}
-            {isDragging && <div className="chat-input-overlay" onPointerUp={handlePointerUp} />}
+            {isDragging && <div className="chat-input-overlay" onPointerUp={on_pointer_up} />}
         </div>
     );
 });

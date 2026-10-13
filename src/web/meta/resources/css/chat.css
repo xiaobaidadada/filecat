@@ -416,7 +416,8 @@
 .chat-input-area .ace-input-container.chat-input,
 .chat-input-area .rich-textarea.chat-input {
     width: 100%;
-    min-height: 3em;
+    /* 高度由 JS 的 heightStyle（em）统一控制，这里不设 min-height，避免与拖拽冲突 */
+    min-height: 0;
     max-height: none;
     padding: 10px 14px;
     font-size: 0.95em;
@@ -434,7 +435,7 @@
 .chat-input-area textarea.chat-input:focus,
 .chat-input-area .ace-input-container.chat-input:focus-within,
 .chat-input-area .rich-textarea.chat-input:focus {
-    border-color: #6366f1;
+    border-color: var(--primary);
     background: #fff;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
 }

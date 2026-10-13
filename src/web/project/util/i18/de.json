@@ -985,5 +985,7 @@
   "修改成功": "Geändert",
   "浏览器代理编辑": "Browser-Proxy-Bearbeitung",
   "已禁用": "Deaktiviert",
-  "prt_local": "Lokales Verzeichnis. Geben Sie einen vorhandenen absoluten Pfad auf diesem Rechner als Quelle an; nach dem Einbinden können Sie ihn in filecat als Verzeichnislink nutzen."
+  "prt_local": "Lokales Verzeichnis. Geben Sie einen vorhandenen absoluten Pfad auf diesem Rechner als Quelle an; nach dem Einbinden können Sie ihn in filecat als Verzeichnislink nutzen.",
+  "移动到最上": "Nach oben",
+  "移动到最下": "Nach unten"
 }

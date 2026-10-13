@@ -128,6 +128,21 @@ export default function SessionList({
                                             name: t('重命名'),
                                             click: () => onRenameSession(session.id, session.title)
                                         },
+                                        // 移动到最上/最下：复用拖动排序回调，目标取（过滤后）列表的首尾项
+                                        {
+                                            name: t('移动到最上'),
+                                            click: () => {
+                                                const first = filteredSessions[0];
+                                                if (first && first.id !== session.id) onReorderSessions?.(session.id, first.id);
+                                            }
+                                        },
+                                        {
+                                            name: t('移动到最下'),
+                                            click: () => {
+                                                const last = filteredSessions[filteredSessions.length - 1];
+                                                if (last && last.id !== session.id) onReorderSessions?.(session.id, last.id);
+                                            }
+                                        },
                                         {
                                             name: session.cmd_auto_allow ? t('命令检测关闭') : t('命令检测开启'),
                                             click: () => onToggleCmdAuto?.(session.id, !session.cmd_auto_allow)

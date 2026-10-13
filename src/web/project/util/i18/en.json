@@ -989,5 +989,7 @@
   "修改成功": "Updated",
   "浏览器代理编辑": "Browser Proxy Editing",
   "已禁用": "Disabled",
-  "prt_local": "Local directory. Enter an existing absolute path on this machine as the source; after mounting you can access it as a directory link inside filecat."
+  "prt_local": "Local directory. Enter an existing absolute path on this machine as the source; after mounting you can access it as a directory link inside filecat.",
+  "移动到最上": "Move to Top",
+  "移动到最下": "Move to Bottom"
 }

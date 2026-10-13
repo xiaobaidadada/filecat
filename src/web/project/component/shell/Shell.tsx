@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import * as lodash from "lodash";
 import {FitAddon} from "@xterm/addon-fit";
 import {Terminal} from "@xterm/xterm";
 import '@xterm/xterm/css/xterm.css'
 import {copyToClipboard} from "../../util/FunUtil";
 import {NotySuccess} from "../../util/noty";
+import {use_drag_resize} from "../../util/useDragResize";
 
 export interface ShellProps {
     show:boolean,
@@ -23,20 +23,37 @@ export default function Shell(props:ShellProps) {
     const shellRef = useRef(null);
     // pty 终端
     const terminalRef = useRef(null);
-    const [shellDrag,setShellDrag] = useState(false);
 
-    const handleDrag = useCallback(lodash.throttle( (event)=> {
+    // 通用拖拽调高：绑 shellRef，32ms 节流，动态上下限（依赖终端字号与分隔条高度）
+    const {dragging: shellDrag, on_pointer_down, on_pointer_up} = use_drag_resize({
+        direction: "vertical",
         // @ts-ignore
-        fitAddon.fit();
-        const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
-        const top = window.innerHeight / size - 4;
-        const userPos = (window.innerHeight - event.clientY) / size;
-        // @ts-ignore
-        const bottom =2.25 +shellDividerRef.current.offsetHeight / size;
-        if (userPos <= top && userPos >= bottom) {
-            setShellHeight(parseFloat(userPos.toFixed(2)))
-        }
-    }, 32),[])
+        target_ref: shellRef,
+        get_start_size: () => shellHeight,
+        px_to_unit: (delta_px) => {
+            // @ts-ignore
+            const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
+            return delta_px / size;
+        },
+        min: () => {
+            // @ts-ignore
+            const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
+            // @ts-ignore
+            return 2.25 + shellDividerRef.current.offsetHeight / size;
+        },
+        max: () => {
+            // @ts-ignore
+            const size = parseFloat(getComputedStyle(shellRef.current).fontSize);
+            return window.innerHeight / size - 4;
+        },
+        throttle: 32,
+        on_change: (size) => {
+            // 每次尺寸变化都刷新终端尺寸
+            // @ts-ignore
+            fitAddon.fit();
+            setShellHeight(parseFloat(size.toFixed(2)));
+        },
+    });
     useEffect(() => {
         if (props.terminal) {
             props.terminal.options.convertEol = true; // 把 \n 自动作为 \n\r 换行
@@ -77,17 +94,6 @@ export default function Shell(props:ShellProps) {
             }
         }
     }, []);
-    const handlePointerDown = () => {
-        // 按下
-        setShellDrag(true)
-        shellRef.current.addEventListener("pointermove", handleDrag);
-    };
-    const handlePointerup= () => {
-        // 抬起
-        setShellDrag(false)
-        shellRef.current.removeEventListener("pointermove", handleDrag);
-
-    };
     if (!props.show) {
         return ;
     }
@@ -95,14 +101,14 @@ export default function Shell(props:ShellProps) {
         height: `${shellHeight}em`,
         display: `${props.file_shell_hidden ? 'none' : 'block'}`
     }} ref={shellRef}>
-        <div className={"shell__divider"} ref={shellDividerRef} onPointerDown={handlePointerDown}
-             onPointerUp={handlePointerup}/>
+        <div className={"shell__divider"} ref={shellDividerRef} onPointerDown={on_pointer_down}
+             onPointerUp={on_pointer_up}/>
         <div className={"pty"} style={{
             height: `${shellHeight - 1}em`,
         }} ref={terminalRef}/>
         {shellDrag &&
             <div
-                className="shell__overlay" onPointerUp={handlePointerup}
+                className="shell__overlay" onPointerUp={on_pointer_up}
             />
         }
     </div>

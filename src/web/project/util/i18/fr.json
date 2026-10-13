@@ -985,5 +985,7 @@
   "修改成功": "Modifié",
   "浏览器代理编辑": "Édition du proxy de navigateur",
   "已禁用": "Désactivé",
-  "prt_local": "Répertoire local. Indiquez un chemin absolu existant sur cette machine comme source ; après le montage, vous pourrez y accéder comme un lien de répertoire dans filecat."
+  "prt_local": "Répertoire local. Indiquez un chemin absolu existant sur cette machine comme source ; après le montage, vous pourrez y accéder comme un lien de répertoire dans filecat.",
+  "移动到最上": "Déplacer en haut",
+  "移动到最下": "Déplacer en bas"
 }
