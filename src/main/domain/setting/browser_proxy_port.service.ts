@@ -22,7 +22,11 @@ import {userService} from '../user/user.service';
 import {UserAuth} from '../../../common/req/user.req';
 import {settingService} from '../setting/setting.service';
 import {check_target_allowed} from '../../other/middleware/browser_proxy_policy';
-import {handle_browser_proxy_port_request, ProxyTargetRoute} from '../../other/middleware/BrowserProxy';
+import {
+    handle_browser_proxy_port_request,
+    handle_browser_proxy_port_upgrade,
+    ProxyTargetRoute
+} from '../../other/middleware/BrowserProxy';
 
 /** 一条端口映射记录 */
 export interface BrowserProxyPortItem {
@@ -269,6 +273,10 @@ export class BrowserProxyPortService {
         const server = http.createServer((req, res) => {
             this.handle_request(item, req, res);
         });
+        // WebSocket 升级请求不会走 request 回调，必须单独处理，否则 socket 会被直接销毁
+        server.on('upgrade', (req: IncomingMessage, socket: net.Socket, head: Buffer) => {
+            this.handle_upgrade(item, req, socket, head);
+        });
         server.on('connection', (socket: net.Socket) => {
             sockets.add(socket);
             socket.on('close', () => sockets.delete(socket));
@@ -335,34 +343,24 @@ export class BrowserProxyPortService {
     /** 端口 server 的请求入口 */
     private async handle_request(item: BrowserProxyPortItem, req: IncomingMessage, res: ServerResponse) {
         const raw_url = req.url || '/';
-        const q_index = raw_url.indexOf('?');
-        const query = q_index === -1 ? '' : raw_url.slice(q_index + 1);
-        const path = q_index === -1 ? raw_url : raw_url.slice(0, q_index);
 
         // ---------- 鉴权 ----------
-        const params = new URLSearchParams(query);
-        const query_token = params.get('_t') || '';
-        const cookie_token = this.get_cookie_token(req);
-
-        let allowed = false;
-        if (query_token) {
-            allowed = this.check_token(query_token);
-        }
-        if (!allowed && cookie_token) {
-            allowed = this.check_token(cookie_token);
-        }
+        const auth = this.check_auth(req);
         // 带 query token 首次访问：校验通过后种 cookie 并重定向去掉 _t
-        if (query_token && allowed) {
+        if (auth.query_token && auth.allowed) {
+            const q_index = raw_url.indexOf('?');
+            const path = q_index === -1 ? raw_url : raw_url.slice(0, q_index);
+            const params = new URLSearchParams(q_index === -1 ? '' : raw_url.slice(q_index + 1));
             params.delete('_t');
             const qs = params.toString();
             const clean_url = path + (qs ? `?${qs}` : '');
-            res.setHeader('Set-Cookie', `${TOKEN_COOKIE}=${encodeURIComponent(query_token)}; Path=/; HttpOnly; SameSite=Lax`);
+            res.setHeader('Set-Cookie', `${TOKEN_COOKIE}=${encodeURIComponent(auth.query_token)}; Path=/; HttpOnly; SameSite=Lax`);
             res.statusCode = 302;
             res.setHeader('Location', clean_url);
             res.end();
             return;
         }
-        if (!allowed) {
+        if (!auth.allowed) {
             res.statusCode = 403;
             res.setHeader('content-type', 'text/html; charset=utf-8');
             res.end('<h1>403</h1><p>网页代理：无权限或未登录（请从 FileCat 网页代理入口进入）</p>');
@@ -378,6 +376,10 @@ export class BrowserProxyPortService {
         }
 
         // ---------- 构造上游 URL 并转发 ----------
+        const q_index = raw_url.indexOf('?');
+        const query = q_index === -1 ? '' : raw_url.slice(q_index + 1);
+        const path = q_index === -1 ? raw_url : raw_url.slice(0, q_index);
+
         let target_url: URL;
         try {
             target_url = new URL(`${item.proto}://${item.host}${path}${query ? `?${query}` : ''}`);
@@ -398,6 +400,47 @@ export class BrowserProxyPortService {
         (req as any).__page_url = page_url;
         (req as any).__port = item.port;
         handle_browser_proxy_port_request(req as unknown as Request, res as unknown as Response, target_url, item.host, cross_routes);
+    }
+
+    /** 端口 server 的 WebSocket 升级入口（裸 TCP/TLS 隧道直连上游） */
+    private async handle_upgrade(item: BrowserProxyPortItem, req: IncomingMessage, socket: net.Socket, head: Buffer) {
+        /** 升级失败时回写最简 HTTP 响应后断开 */
+        const refuse = (status: number, text: string) => {
+            socket.write(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+            socket.destroy();
+        };
+
+        const auth = this.check_auth(req);
+        if (!auth.allowed) {
+            refuse(403, 'Forbidden');
+            return;
+        }
+        const check = await check_target_allowed(item.host, {allow_list: this.get_allow_list()});
+        if (!check.allowed) {
+            refuse(403, 'Forbidden');
+            return;
+        }
+        if (!socket.writable) {
+            socket.destroy();
+            return;
+        }
+        handle_browser_proxy_port_upgrade(item.proto, item.host, req, socket, head);
+    }
+
+    /**
+     * 端口鉴权：从 query 的 _t 或 cookie 取 token 并校验权限。
+     * query_token 会一并返回，供 HTTP 首访种 cookie 使用。
+     */
+    private check_auth(req: IncomingMessage): { allowed: boolean; query_token: string } {
+        const raw_url = req.url || '/';
+        const q_index = raw_url.indexOf('?');
+        const query = q_index === -1 ? '' : raw_url.slice(q_index + 1);
+        const query_token = new URLSearchParams(query).get('_t') || '';
+        if (query_token && this.check_token(query_token)) {
+            return {allowed: true, query_token};
+        }
+        const cookie_token = this.get_cookie_token(req);
+        return {allowed: !!cookie_token && this.check_token(cookie_token), query_token};
     }
 
     /** 从请求的 Cookie 头里取出 token */
