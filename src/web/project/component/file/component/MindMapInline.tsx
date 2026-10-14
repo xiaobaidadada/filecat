@@ -7,7 +7,7 @@ import {useTranslation} from "react-i18next";
 import MindMap from "simple-mind-map";
 // 库的样式，必须引入，否则连线/节点都不可见
 import "simple-mind-map/dist/simpleMindMap.esm.css";
-import {to_simple_mind_data} from "./md_editor/mind_graph";
+import {MIND_ZOOM_OPTIONS, to_simple_mind_data} from "./md_editor/mind_graph";
 
 /**
  * 基于 simple-mind-map 的思维导图编辑器（.mind）。
@@ -129,8 +129,7 @@ export default function MindMapEditor(props: Props) {
                 data: data ?? {data: {text: t("中心主题")}},
                 // 首次加载自适应画布
                 fit: true,
-                // 节点拖动会直接连线；这里保留库默认的拖拽调整结构的能力
-                enableFreeDrag: false,
+                ...MIND_ZOOM_OPTIONS,
             });
             mindRef.current = mm;
             setLoading(false);

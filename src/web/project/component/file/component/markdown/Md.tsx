@@ -133,7 +133,14 @@ async function render_graph_blocks(root: HTMLElement) {
         const holder = document.createElement("div");
         target.replaceWith(holder);
         if (is_mind) {
-            await mount_mind_block(holder, source);
+            // 导图初始化失败不应影响后续代码块的渲染
+            try {
+                await mount_mind_block(holder, source);
+            } catch (e) {
+                console.error("[mind] render failed", e);
+                holder.className = "md-graph md-graph--mind";
+                holder.textContent = String(e);
+            }
             continue;
         }
         holder.className = "md-graph md-graph--loading";
@@ -164,7 +171,7 @@ async function mount_mind_block(holder: HTMLElement, source: string) {
     }
     holder.className = "md-graph md-graph--mind";
     holder.textContent = "";
-    task.mount(holder);
+    await task.mount(holder);
 }
 
 /** 从 code 元素的 class 里取出语言名（hljs language-mermaid → mermaid） */

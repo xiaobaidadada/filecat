@@ -38,6 +38,22 @@ export default function MindEditor() {
     const save = async () => {
         await apiRef.current?.save();
     };
+
+    // Esc 关闭：与项目其它全屏浮层（md 编辑器等）保持一致
+    useEffect(() => {
+        if (mind_editor.url === undefined && mind_editor.code_source === undefined) {
+            return;
+        }
+        const on_key = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.stopPropagation();
+                close();
+            }
+        };
+        document.addEventListener("keydown", on_key);
+        return () => document.removeEventListener("keydown", on_key);
+    }, [mind_editor.url, mind_editor.code_source, dirty]);
+
     // 页面卸载时若有未保存内容，提示用户（与 md 编辑器保持一致的行为，不加额外提示）
 
 

@@ -11,19 +11,35 @@
  * simple-mind-map 体积较大，全程动态 import，只有文档里真的出现该代码块时才加载。
  */
 
-import "simple-mind-map/dist/simpleMindMap.esm.css";
-
-/** 该语言是否走思维导图渲染 */
+/**
+ * 该语言是否走思维导图渲染
+ */
 export function is_mind_lang(lang: string): boolean {
     return lang === "smm-mind";
 }
+
+/**
+ * 缩放手势相关的交互参数，widget（只读）和编辑器（可编辑）共用。
+ * 库的默认值偏「冲」：鼠标滚一格平移 100px、Ctrl+滚轮一次缩放 20%。
+ * 这里统一调小，手感更平滑；触控板不受 mousewheelMoveStep 影响（库直接用滑动距离）。
+ */
+export const MIND_ZOOM_OPTIONS = {
+    // 鼠标滚轮一格平移的像素（默认 100）
+    mousewheelMoveStep: 35,
+    // Ctrl/⌘ + 滚轮每次缩放的幅度（默认 0.2，即 20%）
+    scaleRatio: 0.08,
+} as const;
 
 /** simple-mind-map 的加载缓存：并发调用只加载一次 */
 let mind_task: Promise<any> | null = null;
 
 function load_mind_map(): Promise<any> {
     if (!mind_task) {
-        mind_task = import("simple-mind-map").then(mod => mod.default);
+        // JS 和样式一起动态加载，没有思维导图的文档不会下载它们
+        mind_task = Promise.all([
+            import("simple-mind-map"),
+            import("simple-mind-map/dist/simpleMindMap.esm.css"),
+        ]).then(([mod]) => mod.default);
     }
     return mind_task;
 }
@@ -101,6 +117,12 @@ function convert_legacy_node(n: any): any {
 export interface MindMountOptions {
     /** 是否可编辑；默认只读（只能缩放/平移查看）。放大编辑时传 true */
     editable?: boolean;
+    /**
+     * 是否把滚轮交还给页面（默认 true）。
+     * 内嵌在文档流里的只读缩略图必须让滚轮滚页面，否则鼠标停在图上就滚不动了。
+     * 全屏编辑器里要保留导图的滚轮缩放，传 false。
+     */
+    release_wheel?: boolean;
 }
 
 /** 挂载后的实例句柄 */
@@ -136,6 +158,11 @@ function wait_visible(el: HTMLElement, cancelled: () => boolean): Promise<boolea
     });
 }
 
+/** 捕获阶段拦掉滚轮，阻止事件传到 simple-mind-map 的容器监听（让页面正常滚动） */
+function stop_wheel(e: WheelEvent) {
+    e.stopPropagation();
+}
+
 /**
  * 准备一个思维导图的挂载任务。
  * 内容非法（JSON 解析失败）时 data 为 null，此时视为一个空导图（只有中心主题），
@@ -155,17 +182,28 @@ export async function prepare_mind(code: string): Promise<MindMount> {
             if (!ok) {
                 return {destroy: () => {}, get_data: () => null};
             }
+            // 库在容器上无条件 preventDefault + stopPropagation 处理 wheel，
+            // 内嵌缩略图会把页面的滚轮「吃掉」（鼠标停在图上滚不动）。
+            // 这里再套一层：外层在捕获阶段把 wheel 拦下，事件到不了库的监听。
+            const host = document.createElement("div");
+            host.className = "md-graph__mind-host";
+            if (options?.release_wheel !== false) {
+                el.addEventListener("wheel", stop_wheel, {capture: true, passive: true});
+            }
+            el.append(host);
             const mm = new MindMap({
-                el,
+                el: host,
                 data: data ?? {data: {text: ""}},
                 // 默认只读：不能编辑节点，但可以缩放/平移查看；放大编辑时放开
                 readonly: !options?.editable,
                 // 构造期容器尺寸已就绪，可以直接自适应
                 fit: true,
+                ...MIND_ZOOM_OPTIONS,
             });
             return {
                 destroy: () => {
                     destroyed = true;
+                    el.removeEventListener("wheel", stop_wheel, {capture: true});
                     mm?.destroy?.();
                 },
                 // getData(false) 只取节点树，不带上 layout/theme/view，

@@ -1,4 +1,5 @@
 import React, {useEffect, useRef} from "react";
+import {useTranslation} from "react-i18next";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../../util/store";
 import {EditorState, TextSelection} from "prosemirror-state";
@@ -186,6 +187,7 @@ function table_enter(state: EditorState, dispatch?: (tr: any) => void): boolean 
 }
 
 const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysiwygEditor(props, ref) {
+    const {t} = useTranslation();
     const host_ref = useRef<HTMLDivElement>(null);
     const view_ref = useRef<EditorView | null>(null);
     const [, set_mind_editor] = useAtom($stroe.mind_editor);
@@ -198,7 +200,7 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
     const open_mind_ref = useRef<OpenMindHandler>();
     open_mind_ref.current = (code, write_back) => {
         set_mind_editor({
-            name: "思维导图",
+            name: t("思维导图"),
             // 直接把代码块内容当数据源，不落文件
             code_source: code,
             // 保存时把编辑后的数据写回代码块

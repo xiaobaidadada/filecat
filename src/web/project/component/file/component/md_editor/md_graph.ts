@@ -44,46 +44,36 @@ const pending = new Map<string, Promise<GraphResult>>();
 const mind_cache = new Map<string, MindMount>();
 const mind_pending = new Map<string, Promise<MindMount>>();
 
-function cache_key(lang: GraphLang, code: string): string {
+function cache_key(lang: string, code: string): string {
     return `${lang}\u0000${code}`;
 }
 
-function render_cached(lang: GraphLang, code: string): Promise<GraphResult> {
-    const key = cache_key(lang, code);
-    const hit = cache.get(key);
-    if (hit) {
-        return Promise.resolve(hit);
-    }
-    let task = pending.get(key);
-    if (!task) {
-        task = render_graph(lang, code).then(res => {
-            cache.set(key, res);
-            pending.delete(key);
-            return res;
-        });
-        pending.set(key, task);
-    }
-    return task;
+/**
+ * 带缓存的异步渲染：同一「语言 + 源码」只算一次，进行中的请求去重。
+ * 图形（mermaid/svg）与思维导图结果类型不同，各自用一份 Map 存储。
+ */
+function make_cached<T>(store: Map<string, T>, running: Map<string, Promise<T>>, build: (lang: string, code: string) => Promise<T>) {
+    return (lang: string, code: string): Promise<T> => {
+        const key = cache_key(lang, code);
+        const hit = store.get(key);
+        if (hit) {
+            return Promise.resolve(hit);
+        }
+        let task = running.get(key);
+        if (!task) {
+            task = build(lang, code).then(res => {
+                store.set(key, res);
+                running.delete(key);
+                return res;
+            });
+            running.set(key, task);
+        }
+        return task;
+    };
 }
 
-/** 思维导图的缓存，逻辑同上（结果类型不同，单独放） */
-function mind_cached(lang: string, code: string): Promise<MindMount> {
-    const key = `${lang}\u0000${code}`;
-    const hit = mind_cache.get(key);
-    if (hit) {
-        return Promise.resolve(hit);
-    }
-    let task = mind_pending.get(key);
-    if (!task) {
-        task = prepare_mind(code).then(res => {
-            mind_cache.set(key, res);
-            mind_pending.delete(key);
-            return res;
-        });
-        mind_pending.set(key, task);
-    }
-    return task;
-}
+const render_cached = make_cached(cache, pending, (lang, code) => render_graph(lang as GraphLang, code));
+const mind_cached = make_cached(mind_cache, mind_pending, (lang, code) => prepare_mind(code));
 
 /**
  * 把光标送进对应的代码块，让图消失、露出源码供编辑。
@@ -100,7 +90,7 @@ function enter_code(view: EditorView | null, start: number) {
 }
 
 /**
- * 全屏放大预览（只读查看）。
+ * 全屏放大预览（只读查看）。仅用于 mermaid / svg 图形，思维导图走项目编辑器。
  *
  * 为什么自己画一层遮罩，而不是复用全局的 `$stroe.file_preview`：
  *   1) 编辑器本身就是一个 z-index:1000 的全屏浮层，file_preview 也是 1000，
@@ -116,7 +106,7 @@ function open_zoom(mount: (el: HTMLElement) => (() => void) | void) {
 
     const body = document.createElement("div");
     body.className = "md-graph-zoom__body";
-    // 销毁挂载内容（思维导图需要显式 destroy）
+    // 挂载内容返回的卸载函数（目前 svg/mermaid 无需卸载，保留扩展位）
     let unmount: (() => void) | void;
 
     const close = document.createElement("button");
@@ -189,6 +179,23 @@ function set_code_data(view: EditorView | null, start: number, old_code: string,
 }
 
 /**
+ * 「点击编辑」按钮：悬停时出现在图形右上角，点了把光标送回源码。
+ * 图形与思维导图的 widget 共用。
+ */
+function make_edit_button(get_view: () => EditorView | null, start: number): HTMLButtonElement {
+    const edit = document.createElement("button");
+    edit.className = "md-graph__edit";
+    edit.type = "button";
+    edit.textContent = i18n.t("clk_edt");
+    // 按钮点击不能冒泡到容器，否则会同时触发容器的点击（放大 / 打开导图编辑器）
+    edit.addEventListener("click", (e) => {
+        e.stopPropagation();
+        enter_code(get_view(), start);
+    });
+    return edit;
+}
+
+/**
  * 图的容器结构：
  *   <div class="md-graph">            ← 外层，管边框与悬停
  *     <div class="md-graph__body">…</div>  ← 图/错误/渲染中，内容可整体替换
@@ -216,26 +223,16 @@ function make_widget(code: string, lang: GraphLang, start: number, get_view: () 
     body.className = "md-graph__body";
     // 点图 = 放大查看。进入编辑要专门点右上角的「点击编辑」按钮，
     // 避免查看图形时误触发编辑。
-        body.addEventListener("click", () => {
-            const hit = cache.get(cache_key(lang, code));
-            if (hit && !hit.error && hit.svg) {
-                open_zoom(el => {
-                    el.innerHTML = hit.svg;
-                });
-            }
-        });
-
-    const edit = document.createElement("button");
-    edit.className = "md-graph__edit";
-    edit.type = "button";
-    edit.textContent = i18n.t("clk_edt");
-    // 按钮点击不能冒泡到 body，否则会同时触发放大
-    edit.addEventListener("click", (e) => {
-        e.stopPropagation();
-        enter_code(get_view(), start);
+    body.addEventListener("click", () => {
+        const hit = cache.get(cache_key(lang, code));
+        if (hit && !hit.error && hit.svg) {
+            open_zoom(el => {
+                el.innerHTML = hit.svg;
+            });
+        }
     });
 
-    dom.append(body, edit);
+    dom.append(body, make_edit_button(get_view, start));
 
     const hit = cache.get(cache_key(lang, code));
     if (hit) {
@@ -280,6 +277,8 @@ function make_mind_widget(
     dom.setAttribute("contenteditable", "false");
     dom.textContent = i18n.t("rendering");
 
+    const edit = make_edit_button(get_view, start);
+
     // 当前挂载的实例销毁函数；widget 被 ProseMirror 移除时需销毁，避免实例残留
     let instance: {destroy: () => void} | null = null;
     // 由 build_decorations 的 widget destroy 回调调用
@@ -288,33 +287,26 @@ function make_mind_widget(
         instance = null;
     };
 
-    const edit = document.createElement("button");
-    edit.className = "md-graph__edit";
-    edit.type = "button";
-    edit.textContent = i18n.t("clk_edt");
-    edit.addEventListener("click", (e) => {
-        e.stopPropagation();
-        enter_code(get_view(), start);
-    });
-
-    dom.append(edit);
-
     // 数据/库准备好后再初始化导图实例；节点已被回收则跳过。
     // 直接挂在 dom 上（simple-mind-map 要求容器有确定的宽高，见 .md-graph--mind 的样式）。
     mind_cached(lang, code).then(mount => {
         if (!dom.isConnected) {
             return;
         }
+        // 清掉「渲染中」占位文案，再放编辑按钮
         dom.textContent = "";
         dom.append(edit);
         // mount 内部会等容器进入文档且有尺寸后再构造导图
         mount.mount(dom).then(inst => {
-            // 期间widget可能已被移除，避免实例泄漏
+            // 期间 widget 可能已被移除，避免实例泄漏
             if (!dom.isConnected) {
                 inst.destroy();
                 return;
             }
             instance = inst;
+        }).catch(err => {
+            // 构造失败（如容器被回收）不影响编辑器，仅记录
+            console.error("[mind] mount failed", err);
         });
     });
     // 点导图 = 打开全屏思维导图编辑器（复用项目的 .mind 编辑器）。
