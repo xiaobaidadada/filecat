@@ -122,7 +122,8 @@ export default function FileList() {
         }
     }, [chat_open, chat_open_auth, user_base_info]);
     // 面板宽度（em），默认约占右侧可用空间 1/3；最小 320px、最大 70% 由拖拽逻辑约束
-    const [chat_width, set_chat_width] = useState(33);
+    // 宽度持久化通过 $stroe.studio_chat_width（atomWithStorage → localStorage）
+    const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = React.useRef<HTMLDivElement | null>(null);
     const [chat_drag, set_chat_drag] = useState(false);
     /** 已定位好的会话 id（由 ChatPanel 回调写入，用于 sessionStorage 记录） */

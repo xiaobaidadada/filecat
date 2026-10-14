@@ -105,7 +105,8 @@ export default function Studio(props) {
     const chat_open = searchParams.get("chat_open") === "1";
     const set_chat_open = (open: boolean) => updateParams("chat_open", open ? "1" : null);
     // 右侧面板宽度（em）；默认占右侧可用空间约 40%，最小 320px，最大 70%
-    const [chat_width, set_chat_width] = useState(33);
+    // 宽度持久化通过 $stroe.studio_chat_width（atomWithStorage → localStorage）
+    const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = useRef(null);
     const [chat_drag, set_chat_drag] = useState(false);
     /** 已定位好的会话 id（由 ChatPanel 定位后回调写入，用于 sessionStorage 记录） */

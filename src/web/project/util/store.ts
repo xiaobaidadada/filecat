@@ -227,4 +227,6 @@ export const $stroe = {
     ai_request_type: sync_atomWithStorage<string>("ai_request_type", 'completions'),
     // AI 聊天输入框高度（行数 em）
     ai_chat_input_height: sync_atomWithStorage<number>("ai_chat_input_height", 5),
+    // Studio 右侧 AI 聊天面板宽度（em）
+    studio_chat_width: sync_atomWithStorage<number>("studio_chat_width", 33),
 };
