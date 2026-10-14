@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {useTranslation} from "react-i18next";
-import { useAtom } from 'jotai';
-import {$stroe} from "../../../util/store";
+
 import {MenuSelect} from "../../prompts/Prompt";
 import {Icon, ActionButton} from "../../../../meta/component/Button";
 import {ai_agent_chat_session_meta} from "../../../../../common/req/filecat.ai.pojo";
@@ -50,7 +49,6 @@ export default function SessionList({
     onClearAllSessions?: () => void;
 }) {
     const {t} = useTranslation();
-    const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [searchText, setSearchText] = useState('');
     // 拖动排序状态：拖动源下标 / 当前悬停的目标下标
     const [drag_index, set_drag_index] = useState<number | null>(null);
@@ -75,8 +73,7 @@ export default function SessionList({
     };
 
     return (
-        <aside
-            className={`chat-session-list ${!ai_session_collapsed ? "" : "active"} ${ai_session_collapsed ? "collapsed" : ""}`}>
+        <aside className="chat-session-list">
             <div className="chat-session-search">
                 <input
                     type="text"

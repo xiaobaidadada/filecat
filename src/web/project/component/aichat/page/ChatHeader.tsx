@@ -46,6 +46,8 @@ interface ChatHeaderProps {
     selectedMsgCount: number;
     /** 切换会话面板 */
     onToggleSessionPanel: () => void;
+    /** 会话列表是否可见（用于按钮选中态，与后台进程按钮一致） */
+    sessionVisible?: boolean;
     /** 创建新会话 */
     onCreateSession: (sysPromptId?: string) => void;
     /** 切换批量模式（消息气泡多选入口） */
@@ -62,6 +64,13 @@ interface ChatHeaderProps {
     selectedSysPromptId: string;
     /** 设置当前选中的系统提示词 ID */
     setSelectedSysPromptId: (id: string) => void;
+    /**
+     * 内嵌模式：不用 HeaderPortal 渲染到全站顶部 Header，
+     * 而是在当前位置渲染成一条独立的自带 Header。
+     * 用于「聊天面板被嵌入到别的页面右侧」的场景（例如 Studio 右侧），
+     * 避免与宿主页面的 Header 抢同一个 portal 槽位。
+     */
+    inline?: boolean;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -72,6 +81,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     sysPromptList,
     batchMode,
     selectedMsgCount,
+    sessionVisible,
     onToggleSessionPanel,
     onCreateSession,
     onToggleBatchMode,
@@ -81,6 +91,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     onToggleBgProcess,
     selectedSysPromptId,
     setSelectedSysPromptId,
+    inline,
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -110,12 +121,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         ? `${activeGroup.index}::${currentModelName}`
         : "";
 
-    return (
-        <HeaderPortal position={"right"}>
+    /** 头部按钮内容（两种渲染方式共用同一份，避免两边不一致） */
+    const header_buttons = (
+        <React.Fragment>
                                 <ActionButton
                                 icon={"menu"}
                                 title={t("会话")}
                                 onClick={onToggleSessionPanel}
+                                selected={sessionVisible}
                             />
                             <ActionButton icon={"add"} title={t("新会话")} onClick={() => onCreateSession()} />
                             {sysPromptList.length > 0 && (
@@ -186,7 +199,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     navigate(routerConfig.ai_agent_setting_page);
                                 }} />
                             )}
-            </HeaderPortal>
+        </React.Fragment>
+    );
+
+    // 内嵌模式：就地渲染一条独立 header，不与宿主页面共用 portal 槽位
+    if (inline) {
+        return <div className="chat-inline-header">{header_buttons}</div>;
+    }
+    return (
+        <HeaderPortal position={"right"}>
+            {header_buttons}
+        </HeaderPortal>
     );
 };
 

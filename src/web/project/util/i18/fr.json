@@ -991,5 +991,6 @@
   "移动到最下": "Déplacer en bas",
     "会话设置": "Paramètres de session",
     "服务器工作目录": "Répertoire de travail du serveur",
-    "服务器工作目录提示": "ex. : D:\\projects\\myapp"
+    "服务器工作目录提示": "ex. : D:\\projects\\myapp",
+    "AI 聊天": "Chat IA"
 }

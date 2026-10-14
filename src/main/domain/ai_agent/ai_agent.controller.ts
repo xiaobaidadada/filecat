@@ -92,7 +92,19 @@ export class Ai_AgentController {
     async session_create(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        return Sucess(aiAgentMemoryService.create_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.title, undefined, data?.sys_prompt_id))
+        // 可选工作目录：非空时需要校验是否在当前用户可访问范围内（与 session/setting 一致）
+        const cwd = String(data?.file_cwd_path ?? "").trim();
+        if (cwd) {
+            userService.check_user_path(ctx.headers.authorization, cwd);
+        }
+        return Sucess(aiAgentMemoryService.create_session(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.title,
+            undefined,
+            data?.sys_prompt_id,
+            undefined,
+            cwd || undefined
+        ))
     }
 
     /**

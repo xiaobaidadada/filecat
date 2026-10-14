@@ -991,5 +991,6 @@
   "移动到最下": "Mover abajo",
     "会话设置": "Configuración de sesión",
     "服务器工作目录": "Directorio de trabajo del servidor",
-    "服务器工作目录提示": "p. ej.: D:\\projects\\myapp"
+    "服务器工作目录提示": "p. ej.: D:\\projects\\myapp",
+    "AI 聊天": "Chat IA"
 }

@@ -12,6 +12,41 @@
     min-height: 0;
 }
 
+/* 被嵌入到宿主页面（如 Studio 右侧面板）时的聊天页：
+   内容布局与整页模式完全一致（会话列表 + 聊天主体，横向排列），
+   只是没有全站 Header（Header 由面板自己渲染在上面）。
+   注意必须保持 flex-direction: row —— 若改成 column，.chat-main 会在
+   flex column 里被内容撑高，超出面板高度。 */
+.chat-page--embedded {
+    flex-direction: row;
+    height: 100%;
+    min-height: 0;
+    background: var(--surfacePrimary);
+}
+
+/* 内嵌模式的面板自带 Header（不使用 HeaderPortal，避免与宿主页面抢槽位） */
+.chat-inline-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 2px;
+    flex-shrink: 0;
+    height: 2.6em;
+    padding: 0 0.4em;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--divider);
+    background: var(--surfacePrimary);
+    /* 面板比整页窄时按钮会放不下：允许横向滚动，避免按钮溢出到面板外 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+.chat-inline-header::-webkit-scrollbar {
+    display: none;
+}
+
 .chat-main {
     min-width: 0;
     flex: 1;
@@ -64,21 +99,6 @@
     color: #9ca3af;
 }
 
-.chat-session-list.collapsed {
-    width: 4.5em;
-    min-width: 4.5em;
-    padding: 10px 6px;
-    overflow-x: hidden;
-}
-
-/* 桌面端 collapsed 窄栏时隐藏搜索框和操作栏 */
-@media (min-width: 737px) {
-    .chat-session-list.collapsed .chat-session-search,
-    .chat-session-list.collapsed .chat-session-actions {
-        display: none;
-    }
-}
-
 .chat-session-item {
     width: 100%;
     min-height: 44px;
@@ -111,24 +131,6 @@
 /* 拖动落点：整行高亮提示插入位置 */
 .chat-session-item.row-drop-target {
     background: var(--hover);
-}
-
-
-.chat-session-list.collapsed .chat-session-item {
-    min-height: 42px;
-    padding: 7px 4px;
-    text-align: center;
-}
-
-.chat-session-list.collapsed .chat-session-item span {
-    width: 100%;
-    font-size: 12px;
-}
-
-.chat-session-list.collapsed .chat-session-item small,
-.chat-session-list.collapsed .chat-session-item i,
-.chat-session-list.collapsed .chat-session-item .chat-session-source {
-    display: none;
 }
 
 .chat-session-item.active,
@@ -184,7 +186,7 @@
     .chat-session-list {
         position: fixed;
         top: 0;
-        left: -17em;
+        left: 0;
         z-index: 1002;
         width: 16em;
         min-width: 16em;
@@ -192,53 +194,12 @@
         padding-top: var(--top-length);
         /*border-right: 1px solid #e5e7eb;*/
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        /*transition: .1s ease left;*/
         overflow: hidden;
         display: flex;
         flex-direction: column;
-    }
-
-    .chat-session-list.collapsed {
-        width: 16em;
-        min-width: 16em;
-        padding: 10px;
-        padding-top: var(--top-length);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .chat-session-list.collapsed .chat-session-item {
-        min-height: 44px;
-        padding: 7px 26px 7px 9px;
-        text-align: left;
-    }
-
-    .chat-session-list.collapsed .chat-session-item span {
-        font-size: inherit;
-    }
-
-    .chat-session-list.collapsed .chat-session-item small,
-    .chat-session-list.collapsed .chat-session-item i,
-    .chat-session-list.collapsed .chat-session-item .chat-session-source {
-        display: initial;
-    }
-
-    .chat-session-list.collapsed .chat-session-item small {
-        display: block;
-    }
-
-    .chat-session-list.active {
-        left: 0;
     }
 
     body.rtl .chat-session-list {
-        left: unset;
-        right: -17em;
-        transition: .1s ease right;
-    }
-
-    body.rtl .chat-session-list.active {
         left: unset;
         right: 0;
     }

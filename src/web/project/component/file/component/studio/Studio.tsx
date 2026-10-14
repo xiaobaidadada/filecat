@@ -8,7 +8,7 @@ import {fileHttp} from "../../../../util/config";
 import {get_last_name, getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
-import {editor_data} from "../../../../util/store.util";
+import {editor_data, use_auth_check} from "../../../../util/store.util";
 // import {getEditModelType} from "../../../../../../common/StringUtil";
 import {NotyFail, NotySuccess, NotyWaring} from "../../../../util/noty";
 import {saveTxtReq} from "../../../../../../common/req/file.req";
@@ -18,6 +18,7 @@ import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
 import {useLocation, useNavigate} from "react-router-dom";
+import {UserAuth} from "../../../../../../common/req/user.req";
 // import Ace from "../Ace";
 
 
@@ -26,6 +27,8 @@ const MdEditor = React.lazy(() => import("../md_editor/MdEditor"));
 const MdOutline = React.lazy(() => import("../md_editor/MdOutline"));
 import type {MdEditorPaneApi, MdEditorPaneProps} from "../md_editor/MdEditor";
 import type {OutlineItem} from "../md_editor/MdOutline";
+// 通用聊天面板：这里以「内嵌模式」放到右侧，Header 由面板自己渲染
+const ChatPanel = React.lazy(() => import("../../../aichat/page/ChatPanel"));
 
 /** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
 function is_markdown_file(name: string): boolean {
@@ -71,10 +74,52 @@ export default function Studio(props) {
     // md 编辑器的脏标记（由它上报，用于 Header 显示保存按钮）
     const [md_dirty, set_md_dirty] = useState(false);
 
+    // ===== 右侧 AI 聊天面板 =====
+    // 是否展开右侧聊天面板；聊天面板绑定「当前 Studio 工作目录」，
+    // 打开时按工作目录定位会话（找不到就新建），并记住会话 id 到 sessionStorage。
+    const [chat_open, set_chat_open] = useState(false);
+    // 右侧面板宽度（em）；默认占右侧可用空间约 40%，最小 320px，最大 70%
+    const [chat_width, set_chat_width] = useState(33);
+    const chatDividerRef = useRef(null);
+    const [chat_drag, set_chat_drag] = useState(false);
+    /** 已定位好的会话 id（由 ChatPanel 定位后回调写入，用于 sessionStorage 记录） */
+    const [chat_session_id, set_chat_session_id] = useState<string | undefined>(undefined);
+    /** 工作目录对应的 sessionStorage key：每个目录各自记住自己的会话 */
+    const chat_storage_key = "studio_chat_session";
+    /** 读取该工作目录上次的会话 id（仅作为初始提示，仍以工作目录匹配结果为准） */
+    const read_chat_session = (cwd: string): string | undefined => {
+        try {
+            const raw = sessionStorage.getItem(chat_storage_key);
+            if (!raw) return undefined;
+            const map = JSON.parse(raw);
+            return map?.[cwd] || undefined;
+        } catch {
+            return undefined;
+        }
+    };
+
+    /** 记录该工作目录当前会话 id */
+    const write_chat_session = (cwd: string, sessionId: string) => {
+        try {
+            const raw = sessionStorage.getItem(chat_storage_key);
+            const map = raw ? JSON.parse(raw) : {};
+            map[cwd] = sessionId;
+            sessionStorage.setItem(chat_storage_key, JSON.stringify(map));
+        } catch {
+            // sessionStorage 不可用（隐私模式等）时静默忽略，不影响功能
+        }
+    };
+
 
     const location = useLocation();
     let folder_path = location.pathname.split("/").filter(Boolean).pop();
     folder_path = decodeURIComponent(folder_path);
+
+    /** 权限校验：AI 聊天页与右侧面板使用同一权限 */
+    const {check_user_auth} = use_auth_check();
+
+    /** Studio 当前工作目录：URL 上的目录路径（已解码），供右侧 AI 聊天面板按目录定位会话 */
+    const chat_cwd = folder_path || "";
 
     function shellClick() {
         if (file_shell_hidden === true || file_shell_hidden === false) {
@@ -248,6 +293,34 @@ export default function Studio(props) {
 
     };
 
+    // ===== 右侧聊天面板拖拽（与左侧相反方向：往左拖变宽） =====
+    const handleChatDrag = useCallback(lodash.throttle((event: PointerEvent) => {
+        const el = chatDividerRef.current as HTMLElement;
+        if (!el) return;
+        const size = parseFloat(getComputedStyle(el).fontSize);
+        // 面板宽度 = 容器右边界到鼠标的距离
+        const right = el.parentElement.getBoundingClientRect().right;
+        const width_px = right - event.clientX;
+        // 约束：最小 320px，最大不超过容器的 70%
+        const min_px = 320;
+        const max_px = el.parentElement.getBoundingClientRect().width * 0.7;
+        const clamped = Math.min(Math.max(width_px, min_px), max_px);
+        set_chat_width(parseFloat((clamped / size).toFixed(2)));
+    }, 32), []);
+
+    const handleChatPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault();
+        set_chat_drag(true);
+        // 用 document 监听：拖动时鼠标可能移出分隔线窄条
+        document.addEventListener("pointermove", handleChatDrag);
+        document.addEventListener("pointerup", handleChatPointerUp, { once: true });
+    };
+
+    const handleChatPointerUp = () => {
+        set_chat_drag(false);
+        document.removeEventListener("pointermove", handleChatDrag);
+    };
+
 
     const items_folder = [{r: t("创建文件"), v: "创建文件"},{r: t("创建目录"), v: "创建目录"},{r: t("重命名"), v: "重命名"},{r: t("删除"), v: "删除"}];
     const items_file = [{r: t("重命名"), v: "重命名"}, {r: t("删除"), v: "删除"}];
@@ -330,6 +403,12 @@ export default function Studio(props) {
             ]}
             { !is_md && ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
             <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
+            {/* 右侧 AI 聊天面板开关：打开后按「当前工作目录」定位该目录的 AI 会话。
+                需与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示该按钮 */}
+            {check_user_auth(UserAuth.ai_agent_page) && (
+                <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
+                              onClick={() => set_chat_open(v => !v)}/>
+            )}
             {!is_md && have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
@@ -396,6 +475,30 @@ export default function Studio(props) {
                         <Ace name={edit_filename.name} on_change={change}/>
                     </React.Suspense>}
                 </div>}
+
+            {/* 右侧 AI 聊天面板：与 Studio 内容并排，Header 由面板自己渲染（内嵌模式）。
+                工作目录 = Studio URL 上的目录路径（folder_path）；
+                面板据此定位会话并把结果回传记录。 */}
+            {chat_open && (
+                <React.Fragment>
+                    <div className={"studio__divider studio__divider--chat"} ref={chatDividerRef}
+                         onPointerDown={handleChatPointerDown}/>
+                    <div className={"studio-chat-panel"} style={{width: `${chat_width}em`}}>
+                        <React.Suspense fallback={null}>
+                            <ChatPanel
+                                inline_header={true}
+                                sync_url={false}
+                                file_cwd_path={chat_cwd}
+                                session_id={chat_session_id ?? read_chat_session(chat_cwd)}
+                                on_session_change={(id) => {
+                                    set_chat_session_id(id);
+                                    write_chat_session(chat_cwd, id);
+                                }}
+                            />
+                        </React.Suspense>
+                    </div>
+                </React.Fragment>
+            )}
         </div>
     </div>
 }

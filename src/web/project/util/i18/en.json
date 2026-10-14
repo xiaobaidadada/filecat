@@ -995,5 +995,6 @@
   "移动到最下": "Move to Bottom",
     "会话设置": "Session Settings",
     "服务器工作目录": "Server Working Directory",
-    "服务器工作目录提示": "e.g. D:\\projects\\myapp"
+    "服务器工作目录提示": "e.g. D:\\projects\\myapp",
+    "AI 聊天": "AI Chat"
 }

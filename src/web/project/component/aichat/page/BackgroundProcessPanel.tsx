@@ -32,11 +32,18 @@ interface BgProcessOutput {
     output: string;
     message?: string;
 }
+// 暴露给外部的 refresh 方法与计数回调，由父组件按实例传入（支持多实例并存）
+export interface BgPanelRef {
+    refresh?: () => void;
+    onCountChange?: (count: number) => void;
+}
 
-// 暴露给外部的 refresh 方法引用
-const bgPanelRef: { refresh?: () => void; onCountChange?: (count: number) => void } = {};
+interface BackgroundProcessPanelProps {
+    /** 实例级引用：父组件用它调用 refresh / 接收进程数变化 */
+    panelRef?: React.MutableRefObject<BgPanelRef>;
+}
 
-const BackgroundProcessPanel: React.FC<{}> = function BackgroundProcessPanel() {
+const BackgroundProcessPanel: React.FC<BackgroundProcessPanelProps> = function BackgroundProcessPanel(props) {
     const { t } = useTranslation();
     const [processes, setProcesses] = useState<BgProcessInfo[]>([]);
     const [loading, setLoading] = useState(false);
@@ -59,7 +66,7 @@ const BackgroundProcessPanel: React.FC<{}> = function BackgroundProcessPanel() {
             const result = await ws.send(wsd);
             if (result?.context?.processes) {
                 setProcesses(result.context.processes);
-                bgPanelRef.onCountChange?.(result.context.processes.length);
+                props.panelRef?.current?.onCountChange?.(result.context.processes.length);
             }
         } catch (e) {
             console.error("获取后台进程列表失败", e);
@@ -68,8 +75,11 @@ const BackgroundProcessPanel: React.FC<{}> = function BackgroundProcessPanel() {
         }
     }, []);
 
-    // 把 refresh 挂到外部可访问的引用上
-    bgPanelRef.refresh = fetchProcessList;
+    // 把 refresh 挂到实例引用上（父组件调用）
+    if (props.panelRef) {
+        props.panelRef.current.refresh = fetchProcessList;
+    }
+
 
     const fetchOutput = useCallback(async (pid: number) => {
         setOutputLoading(true);
@@ -209,5 +219,5 @@ const BackgroundProcessPanel: React.FC<{}> = function BackgroundProcessPanel() {
     );
 };
 
-export { bgPanelRef };
+export type { BgProcessInfo, BgProcessOutput };
 export default BackgroundProcessPanel;

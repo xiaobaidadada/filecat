@@ -312,7 +312,7 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string) {
+    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
         const store = this.read_index_of_session();
         // 新会话要显示在列表最顶部：取所有已有会话最小的 sort_index - 1，
         // 这样它一定排在所有已排序会话之前，又不影响已有会话之间的相对顺序。
@@ -332,6 +332,8 @@ export class AiAgentMemoryService {
             created_at: Date.now(),
             updated_at: Date.now(),
             sys_prompt_id: sys_prompt_id,
+            // 会话工作目录（可选）：按目录定位会话时由调用方传入
+            file_cwd_path: file_cwd_path || undefined,
             sort_index: min_sort === undefined ? undefined : min_sort - 1,
         };
         const fileName = this.writeSession(userId, session);

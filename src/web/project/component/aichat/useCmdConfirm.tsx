@@ -174,7 +174,7 @@ export function useCmdConfirm() {
 
     // 监听 WS 消息
     useEffect(() => {
-        ws.addMsg(CmdType.ai_confirm_cmd, (data: WsData<any>) => {
+        const handle_confirm = (data: WsData<any>) => {
             const ctx = data.context || {};
             // 如果收到 dismiss（已被其他标签页处理），从队列中移除
             if (ctx.dismiss && ctx.askId) {
@@ -197,10 +197,13 @@ export function useCmdConfirm() {
                     session_id: ctx.session_id,
                 });
             }
-        });
+        };
+        ws.addMsg(CmdType.ai_confirm_cmd, handle_confirm);
 
         return () => {
-            ws.removeMsg(CmdType.ai_confirm_cmd);
+            // 只移除自己的 handler。不能用 removeMsg（它按 cmdType 清空全部监听），
+            // 否则多实例（整页 + 嵌入面板）场景下一个实例卸载会误删另一个实例的监听。
+            ws.off_message(`message_${CmdType.ai_confirm_cmd}`, handle_confirm);
         };
     }, [addToQueue]);
 

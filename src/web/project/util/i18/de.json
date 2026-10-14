@@ -991,5 +991,6 @@
   "移动到最下": "Nach unten",
     "会话设置": "Sitzungseinstellungen",
     "服务器工作目录": "Arbeitsverzeichnis auf dem Server",
-    "服务器工作目录提示": "z. B. D:\\projects\\myapp"
+    "服务器工作目录提示": "z. B. D:\\projects\\myapp",
+    "AI 聊天": "KI-Chat"
 }
