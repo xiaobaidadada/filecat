@@ -20,7 +20,7 @@ export const exec_cmd_schema:ai_agent_params_type = {
                 },
                 cwd: {
                     type: "string",
-                    description: "命令执行的工作目录，默认是当前目录"
+                    description: "命令执行的工作目录，不支持相对路径，如果没有设置当前工作目录，你也没有指定绝对目录，这个值就是当前filecat的process.cwd()值"
                 },
             },
             required: ["cmd"]

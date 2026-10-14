@@ -1287,8 +1287,8 @@ line.git-log__graph-edge {
 
 /* 面板较窄，会话列表按比例收窄，给聊天主体留出空间 */
 .studio-chat-panel .chat-session-list {
-    width: 9.5em;
-    min-width: 9.5em;
+    /*width: 9.5em;*/
+    /*min-width: 9.5em;*/
     padding: 0.4em;
     font-size: 0.9em;
 }

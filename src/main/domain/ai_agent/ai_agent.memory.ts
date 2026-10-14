@@ -5,6 +5,7 @@ import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
 import {ai_agentService} from "./ai_agent.service";
+import {userService} from "../user/user.service";
 import {llmPost, readLlmResponse} from "./llm_request";
 import {
     ai_agent_chat_session_item,

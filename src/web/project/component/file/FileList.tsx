@@ -16,6 +16,7 @@ import {
     title_workflow_file_fail,
     title_workflow_file_success,
     use_file_open,
+    useUpdateUrlParams,
     user_click_file
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
@@ -107,8 +108,19 @@ export default function FileList() {
     const [blank_search_mode_for_temp,set_blank_search_mode_for_temp ] = useAtom($stroe.blank_search_mode_for_temp);
 
     // ===== 右侧 AI 聊天面板（与 Studio 一致：左边文件目录、右边 AI 聊天）=====
-    // 开关按钮在 Header 右侧；面板打开后按「当前所在目录」定位该目录的 AI 会话
-    const [chat_open, set_chat_open] = useState(false);
+    // 开关按钮在 Header 右侧；面板打开状态同步到 url 参数 chat_open，刷新后仍保持
+    const updateParams = useUpdateUrlParams();
+    const chat_open = searchParams.get("chat_open") === "1";
+    const set_chat_open = (open: boolean) => updateParams("chat_open", open ? "1" : null);
+    // 无 AI 聊天页权限时，自动清掉 url 参数并关闭面板（含直接访问带该参数的链接）。
+    // 必须等 user_base_info 加载完成再判断，否则首屏会把已授权用户的参数误删。
+    const chat_open_auth = check_user_auth(UserAuth.ai_agent_page);
+    useEffect(() => {
+        if (!user_base_info?.user_data) return;
+        if (chat_open && !chat_open_auth) {
+            updateParams("chat_open", null);
+        }
+    }, [chat_open, chat_open_auth, user_base_info]);
     // 面板宽度（em），默认约占右侧可用空间 1/3；最小 320px、最大 70% 由拖拽逻辑约束
     const [chat_width, set_chat_width] = useState(33);
     const chatDividerRef = React.useRef<HTMLDivElement | null>(null);
@@ -608,7 +620,7 @@ export default function FileList() {
                                     与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示 */}
                                 {check_user_auth(UserAuth.ai_agent_page) && (
                                     <ActionButton icon={"smart_toy"} title={t("AI 聊天")} selected={chat_open}
-                                                  onClick={() => set_chat_open(v => !v)}/>
+                                                  onClick={() => set_chat_open(!chat_open)}/>
                                 )}
                                 <div className="mobile-context-btn">
                                     <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>

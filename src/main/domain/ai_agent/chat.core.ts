@@ -170,7 +170,7 @@ export class ChatCore {
         switch (toolName) {
             case "exec_cmd_background":
             case "exec_cmd": {
-                args.cwd = args.cwd ?? cwd ?? process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
+                args.cwd = args.cwd || cwd || process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
                 const cmds = StringUtil.splitBashCommands(args.cmd)
                 for (const cmd of cmds) {
                     const argv = cmd.split(" ");

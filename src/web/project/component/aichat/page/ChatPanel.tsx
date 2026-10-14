@@ -1004,6 +1004,11 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
             <div className={"chat-page" + (inline_header ? " chat-page--embedded" : " chat-page-with-sessions")}
                  style={{"--ai-chat-zoom": ai_chat_zoom}}>
+                {/* 移动端遮罩：会话列表弹出时铺满屏幕，点击空白处收起 */}
+                {!ai_session_collapsed && (
+                    <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(true)} />
+                )}
+
                 {!ai_session_collapsed && (
                     <SessionList
                         sessions={sessions}

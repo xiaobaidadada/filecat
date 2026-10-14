@@ -33,19 +33,16 @@
     flex-wrap: nowrap;
     gap: 2px;
     flex-shrink: 0;
-    height: 3em;
+    height: 4em;
     padding: 0 0.4em;
     box-sizing: border-box;
     border-bottom: 1px solid var(--divider);
     background: var(--surfacePrimary);
-    /* 面板比整页窄时按钮会放不下：允许横向滚动，避免按钮溢出到面板外 */
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none;
+    /*cursor: grab;*/
 }
-.chat-inline-header::-webkit-scrollbar {
-    display: none;
-}
+
 
 .chat-main {
     min-width: 0;

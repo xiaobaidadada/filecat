@@ -19,6 +19,8 @@ import {backgroundProcessManager} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
 import {ai_agent_item_dotenv} from "../../../common/req/filecat.ai.pojo";
 import {ai_agentMcpService} from "./ai_agent.mcp";
+import {isAbsolutePath} from "../../../common/path_util";
+import path from "path";
 
 @JsonController("/ai_agent")
 export class Ai_AgentController {
@@ -58,8 +60,7 @@ export class Ai_AgentController {
     async sessions(@Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
-        const list = aiAgentMemoryService.list(userId);
+        const list = aiAgentMemoryService.list(user?.id);
         // 标记正在执行中的会话（前端据此显示“执行中”旋转动画）
         return Sucess(list.map(it => ({
             ...it,
@@ -78,13 +79,13 @@ export class Ai_AgentController {
     /**
      * 保存会话列表的自定义排序（前端拖动排序后调用）
      * body: { session_ids: string[] } —— 按新顺序排列的会话 id
+     * 超级管理员写 root_sort_index（全局排序），普通用户写 sort_index（各自用户排序）
      */
     @Post("/sessions/update/sort")
     async sessions_update_sort(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
-        aiAgentMemoryService.sessions_update_sort(userId, data?.session_ids ?? []);
+        aiAgentMemoryService.sessions_update_sort(user?.id, data?.session_ids ?? []);
         return Sucess("ok");
     }
 
@@ -93,9 +94,17 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         // 可选工作目录：非空时需要校验是否在当前用户可访问范围内（与 session/setting 一致）
-        const cwd = String(data?.file_cwd_path ?? "").trim();
-        if (cwd) {
-            userService.check_user_path(ctx.headers.authorization, cwd);
+        let cwd:string;
+        if (data?.file_cwd_path) {
+            let sysPath = decodeURIComponent(data.file_cwd_path.trim())
+            if(isAbsolutePath(sysPath)) {
+
+            } else {
+                const root_path = settingService.getFileRootPath(ctx.headers.authorization);
+                sysPath = path.join(root_path, sysPath);
+            }
+            userService.check_user_path(ctx.headers.authorization, sysPath);
+            cwd = sysPath
         }
         return Sucess(aiAgentMemoryService.create_session(
             user?.id ?? user?.user_id ?? user?.username ?? "default",
@@ -103,7 +112,7 @@ export class Ai_AgentController {
             undefined,
             data?.sys_prompt_id,
             undefined,
-            cwd || undefined
+            cwd
         ))
     }
 
@@ -116,7 +125,7 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.update_sys_prompt(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id ,
             data?.session_id,
             data?.sys_prompt_id
         );
@@ -132,7 +141,7 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.sessions_update_cmd_auto_allow(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id ,
             data?.session_id,
             data?.allow === true
         );
@@ -163,7 +172,7 @@ export class Ai_AgentController {
             setting.file_cwd_path = cwd;
         }
         aiAgentMemoryService.sessions_update_setting(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id ,
             data?.session_id,
             setting
         );
@@ -174,7 +183,7 @@ export class Ai_AgentController {
     async session_get(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const userId = user?.id ;
         const session = aiAgentMemoryService.get_session(userId, data?.session_id);
         if (!session) return Sucess(null);
         // 若该会话正在执行中，把未落盘的实时内容并入返回结果：
@@ -201,7 +210,7 @@ export class Ai_AgentController {
     async session_delete(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.delete(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id)
+        aiAgentMemoryService.delete(user?.id , data?.session_id)
         return Sucess("")
     }
 
@@ -209,7 +218,7 @@ export class Ai_AgentController {
     async session_messages(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.update_messages_to_session(user?.id ?? user?.user_id ?? user?.username ?? "default", data?.session_id, data?.messages)
+        aiAgentMemoryService.update_messages_to_session(user?.id , data?.session_id, data?.messages)
         return Sucess("")
     }
 
@@ -222,7 +231,7 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.delete_messages_from_session(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id,
             data?.session_id,
             data?.indices ?? []
         );
@@ -234,7 +243,7 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const stats = aiAgentMemoryService.get_usage_stats(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id ,
             data?.session_id
         );
         return Sucess(stats);
@@ -585,11 +594,12 @@ export class Ai_AgentController {
     /**
      * 获取所有供应商及其可选模型（聊天主页模型选择器使用）。
      * 仅返回已开启且配置了模型列表的供应商，且**不含 token/key 等敏感字段**。
-     * 权限：拥有「允许切换 AI 模型」或「AI 配置」任一即可。
      */
     @Get("/public_models")
     async publicModels(@Req() ctx) {
-        this.check_ai_model_manage(ctx.headers.authorization);
+        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_model_switch, false)) {
+            return Sucess([]);
+        }
         return Sucess(ai_agentService.get_public_models());
     }
 
