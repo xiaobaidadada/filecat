@@ -981,9 +981,8 @@
 .md-graph-hidden {
     display: none;
 }
-
 /* ---- ```mermaid / ```svg 代码块的图形预览 ---- */
-/* 光标移出代码块后，整块替换成渲染出来的图；点图可回到源码编辑 */
+/* 光标移出代码块后，整块替换成渲染出来的图；点图放大，点右上角按钮回到源码编辑 */
 .md-graph {
     position: relative;
     margin: 0.5em 0 1em;
@@ -992,9 +991,85 @@
     border-radius: 4px;
     background: var(--surfacePrimary);
     text-align: center;
-    /* 整块可点：点一下就进代码块编辑 */
-    cursor: pointer;
     user-select: none;
+}
+
+/* 图区域：点一下全屏放大看细节 */
+.md-graph__body {
+    cursor: zoom-in;
+}
+
+/* 悬停时才出现的「点击编辑」按钮，不与正文抢占视觉。
+   必须 pointer-events:auto —— 它是进入编辑的唯一入口，不能被穿透掉。 */
+.md-graph__edit {
+    position: absolute;
+    top: 0.35em;
+    right: 0.6em;
+    font-size: 0.75em;
+    font-family: inherit;
+    line-height: 1.6;
+    padding: 0 0.45em;
+    border: 0;
+    border-radius: 3px;
+    color: var(--textSecondary);
+    background: var(--hover);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+}
+
+.md-graph:hover .md-graph__edit {
+    opacity: 1;
+}
+
+.md-graph__edit:hover {
+    color: var(--textPrimary);
+}
+
+/* 语法错误时没有图可放大，也不该给出编辑入口以外的暗示 */
+.md-graph--error .md-graph__body {
+    cursor: default;
+}
+
+/* ---- 图形全屏放大 ---- */
+/* z-index 高于 md 编辑器（1000），保证在编辑器之上打开；
+   深浅主题都用近黑底，突出图形本身 */
+.md-graph-zoom {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3em;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: zoom-out;
+}
+
+.md-graph-zoom__body {
+    max-width: 100%;
+    max-height: 100%;
+    overflow: auto;
+    cursor: default;
+}
+
+/* 放大的图形铺满可用空间，长宽都自适应 */
+.md-graph-zoom__body svg {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+}
+
+.md-graph-zoom__close {
+    position: absolute;
+    top: 0.6em;
+    right: 0.8em;
+    border: 0;
+    padding: 0.2em;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
 }
 
 /* 渲染中：虚边框提示还没好 */
@@ -1005,22 +1080,6 @@
 .md-graph--loading .md-graph__body {
     color: var(--textSecondary);
     font-size: 0.85em;
-}
-
-/* 悬停时才出现的「点击编辑」提示，不与正文抢占视觉 */
-.md-graph__hint {
-    position: absolute;
-    top: 0.35em;
-    right: 0.6em;
-    font-size: 0.75em;
-    color: var(--textSecondary);
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    pointer-events: none;
-}
-
-.md-graph:hover .md-graph__hint {
-    opacity: 1;
 }
 
 /* 语法错误：红色提示，不打断编辑 */
