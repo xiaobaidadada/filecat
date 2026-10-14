@@ -1284,3 +1284,27 @@ line.git-log__graph-edge {
     padding: 0.4em;
     font-size: 0.9em;
 }
+
+/* ===== 文件页（FileList）的左右分栏 =====
+   左侧是文件目录主体，右侧是 AI 聊天面板（面板关闭时左侧独占整宽）。
+   结构与 Studio 一致，聊天面板直接复用 .studio-chat-panel / .studio__divider--chat */
+.file-list-split {
+    display: flex;
+    /* main 是 height:100% 且 box-sizing:border-box，其 content 高度即除 Header 外的可用高度，
+       这里取满即可，不产生溢出 */
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
+}
+
+/* 左侧文件主体：占据剩余宽度。
+   注意不要在这里加 overflow:auto —— 列表自身的滚动容器（#listing 等）已经负责滚动，
+   多一层滚动会让分页模式的“滚到底加载下一页”检测失效。 */
+.file-list-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}

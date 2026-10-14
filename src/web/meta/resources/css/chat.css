@@ -33,7 +33,7 @@
     flex-wrap: nowrap;
     gap: 2px;
     flex-shrink: 0;
-    height: 2.6em;
+    height: 3em;
     padding: 0 0.4em;
     box-sizing: border-box;
     border-bottom: 1px solid var(--divider);

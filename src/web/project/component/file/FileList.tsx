@@ -41,7 +41,7 @@ import {FileListLoad_file_folder_for_local, FileListLoad_file_folder_for_local_b
 import {FileDeepSearch} from "../prompts/FileDeepSearch";
 import {FileMenu, use_handleContextMenu} from "./FileMenu";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
-import {cloneDeep} from "lodash";
+import {cloneDeep, throttle} from "lodash";
 import {formatDate} from "../../../../common/StringUtil";
 import {webPathJoin} from "../../../../common/ListUtil";
 import {ActionButton} from "../../../meta/component/Button";
@@ -50,6 +50,8 @@ import {DRIVER_OPTIONS} from "../setting/mount/mount_common";
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
 const WorkFlowRealTime = React.lazy(() => import("./component/workflow/WorkFlowRealTime"));
+// 通用聊天面板：内嵌模式放到右侧（Header 由面板自己渲染），与 Studio 用法一致
+const ChatPanel = React.lazy(() => import("../aichat/page/ChatPanel"));
 
 
 let pre_search: GetFilePojo;
@@ -88,6 +90,8 @@ export default function FileList() {
 
     const {initUserInfo} = useContext(GlobalContext);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
+    // AI 聊天面板按钮的权限判断（与 AI 聊天页同一权限）
+    const {check_user_auth} = use_auth_check();
     const {click_file} = user_click_file();
     const [searchParams] = useSearchParams();
     const file_open = use_file_open();
@@ -99,6 +103,41 @@ export default function FileList() {
     const [blankSearchMode] = useAtom($stroe.blank_search_mode);
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const [blank_search_mode_for_temp,set_blank_search_mode_for_temp ] = useAtom($stroe.blank_search_mode_for_temp);
+
+    // ===== 右侧 AI 聊天面板（与 Studio 一致：左边文件目录、右边 AI 聊天）=====
+    // 开关按钮在 Header 右侧；面板打开后按「当前所在目录」定位该目录的 AI 会话
+    const [chat_open, set_chat_open] = useState(false);
+    // 面板宽度（em），默认约占右侧可用空间 1/3；最小 320px、最大 70% 由拖拽逻辑约束
+    const [chat_width, set_chat_width] = useState(33);
+    const chatDividerRef = React.useRef<HTMLDivElement | null>(null);
+    const [chat_drag, set_chat_drag] = useState(false);
+    /** 已定位好的会话 id（由 ChatPanel 回调写入，用于 sessionStorage 记录） */
+    const [chat_session_id, set_chat_session_id] = useState<string | undefined>(undefined);
+    /** 当前目录路径（用于按目录定位/记忆会话） */
+    const chat_cwd = getRouterAfter('file', getRouterPath());
+    /** 目录 → 会话 id 的映射，存在 sessionStorage，保证同一目录切回来还是同一个会话 */
+    const chat_storage_key = "file_list_chat_session";
+    /** 读取该目录上次的会话 id（仅作初始提示，最终仍以工作目录匹配结果为准） */
+    const read_chat_session = (cwd: string): string | undefined => {
+        try {
+            const raw = sessionStorage.getItem(chat_storage_key);
+            if (!raw) return undefined;
+            return JSON.parse(raw)?.[cwd] || undefined;
+        } catch {
+            return undefined;
+        }
+    };
+    /** 记录该目录当前会话 id */
+    const write_chat_session = (cwd: string, sessionId: string) => {
+        try {
+            const raw = sessionStorage.getItem(chat_storage_key);
+            const map = raw ? JSON.parse(raw) : {};
+            map[cwd] = sessionId;
+            sessionStorage.setItem(chat_storage_key, JSON.stringify(map));
+        } catch {
+            // sessionStorage 不可用（隐私模式等）时静默忽略，不影响功能
+        }
+    };
 
     const handleContextMenu = use_handleContextMenu()
 
@@ -458,6 +497,32 @@ export default function FileList() {
         }
     }
 
+    // ===== 右侧 AI 面板拖拽（往左拖变宽，与 Studio 行为一致）=====
+    const handleChatDrag = React.useCallback(throttle((event: PointerEvent) => {
+        const el = chatDividerRef.current;
+        if (!el || !el.parentElement) return;
+        const size = parseFloat(getComputedStyle(el).fontSize);
+        const parentRect = el.parentElement.getBoundingClientRect();
+        // 面板宽度 = 容器右边界到鼠标的距离
+        const width_px = parentRect.right - event.clientX;
+        // 约束：最小 320px，最大不超过容器的 70%
+        const clamped = Math.min(Math.max(width_px, 320), parentRect.width * 0.7);
+        set_chat_width(parseFloat((clamped / size).toFixed(2)));
+    }, 32), []);
+
+    const handleChatPointerUp = () => {
+        set_chat_drag(false);
+        document.removeEventListener("pointermove", handleChatDrag);
+    };
+
+    const handleChatPointerDown = (e: React.PointerEvent) => {
+        e.preventDefault();
+        set_chat_drag(true);
+        // 用 document 监听：拖动时鼠标可能移出分隔线窄条
+        document.addEventListener("pointermove", handleChatDrag);
+        document.addEventListener("pointerup", handleChatPointerUp, { once: true });
+    };
+
     // FileList.tsx
     const handleMobileMenu = () => {
         const selected = selectList[selectList.length - 1]; // 取最后一个选中的
@@ -500,23 +565,9 @@ export default function FileList() {
         }
     };
 
-    return (
-        <React.Fragment>
-            <HeaderPortal>
-                                <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
-                                                                  icon={"search"} value={""}
-                                                                  mobile_hidden
-                                                                  handleIconClick={open_deep_search}
-                                                                  handleInputChange={(v) => {
-                                                                      setSearch(v)
-                                                                  }} max_width={"25em"}/>
-            </HeaderPortal>
-            <HeaderPortal position={"right"}>
-                                <div className="mobile-context-btn">
-                                    <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>
-                                </div>
-                                <FileMenu/>
-            </HeaderPortal>
+    // 文件列表主体（面包屑 + 挂载提示 + 列表），左右分栏时位于左侧
+    const file_main = (
+        <div className={"file-list-main"}>
             <RouteBreadcrumbs baseRoute={"file"} clickFun={routerClick}
                               input_path_enter={routeBreadcrumbsEnter}></RouteBreadcrumbs>
             {/* 当前目录在挂载下：顶部提示挂载信息（凭据备注 - 驱动/账号 - 挂载备注），方便辨认数据来源 */}
@@ -533,6 +584,61 @@ export default function FileList() {
                     :
                     <FileListLoad_file_folder_for_local handleContextMenu={handleContextMenu} file_list={nowFileList.files}
                                                         folder_list={nowFileList.folders} clickBlank={clickBlank}/>
+            }
+        </div>
+    );
+
+    return (
+        <React.Fragment>
+            <HeaderPortal>
+                                <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
+                                                                  icon={"search"} value={""}
+                                                                  mobile_hidden
+                                                                  handleIconClick={open_deep_search}
+                                                                  handleInputChange={(v) => {
+                                                                      setSearch(v)
+                                                                  }} max_width={"25em"}/>
+            </HeaderPortal>
+            <HeaderPortal position={"right"}>
+                                {/* AI 聊天面板开关：打开后按「当前目录」定位该目录的 AI 会话。
+                                    与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示 */}
+                                {check_user_auth(UserAuth.ai_agent_page) && (
+                                    <ActionButton icon={"smart_toy"} title={t("AI 聊天")} selected={chat_open}
+                                                  onClick={() => set_chat_open(v => !v)}/>
+                                )}
+                                <div className="mobile-context-btn">
+                                    <ActionButton icon={"more_horiz"} title={t("右键")} onClick={handleMobileMenu}/>
+                                </div>
+                                <FileMenu/>
+            </HeaderPortal>
+            {/* 左右分栏：左侧文件目录 + 右侧 AI 聊天面板（面板关闭时左侧独占） */}
+            <div className={"file-list-split" + (chat_open ? " file-list-split--chat" : "")}>
+                {file_main}
+                {chat_open && (
+                    <React.Fragment>
+                        <div className={"studio__divider studio__divider--chat"} ref={chatDividerRef}
+                             onPointerDown={handleChatPointerDown}/>
+                        <div className={"studio-chat-panel"} style={{width: `${chat_width}em`}}>
+                            <React.Suspense fallback={null}>
+                                <ChatPanel
+                                    inline_header={true}
+                                    sync_url={false}
+                                    file_cwd_path={chat_cwd}
+                                    session_id={chat_session_id ?? read_chat_session(chat_cwd)}
+                                    on_session_change={(id) => {
+                                        set_chat_session_id(id);
+                                        write_chat_session(chat_cwd, id);
+                                    }}
+                                />
+                            </React.Suspense>
+                        </div>
+                    </React.Fragment>
+                )}
+            </div>
+            {chat_drag &&
+                <div
+                    className="shell__overlay" onPointerUp={handleChatPointerUp}
+                />
             }
             {workflow_show && <WorkFlow/>}
             {workflow_realtime_show.open && <WorkFlowRealTime/>}

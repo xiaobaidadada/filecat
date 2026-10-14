@@ -297,8 +297,11 @@ export function using_file_page_handle_width_auto() {
     const handleResize = () => {
         const scale = Math.max(30, Math.min(200, zoomPercent??100)) / 100;// 最大缩放 200 最小缩放30
         const scaledColumnWidth = columnWidth * scale;
+        // 用实际承载文件列表的容器宽度来算列数：文件页打开右侧 AI 面板后，
+        // main 总宽不变、只是被左右分栏切开，所以必须看列表容器本身的宽度。
+        const listEl = document.getElementById("listing") || document.querySelector("main");
         let columns = Math.floor(
-            document.querySelector("main").offsetWidth / scaledColumnWidth
+            (listEl?.offsetWidth ?? 0) / scaledColumnWidth
         );
         if (columns === 0) columns = 1;
         setItemWidth(`calc(${100 / columns}% - 1em)`)
@@ -307,8 +310,16 @@ export function using_file_page_handle_width_auto() {
     useEffect(() => {
         handleResize();
         window.addEventListener('resize', handleResize);
+        // 宽度变化不止来自窗口缩放：打开/拖动右侧 AI 面板也会改变列表容器宽度，
+        // 这时必须重新计算列数，否则文件项会跟着容器按比例变窄而不是重新排列。
+        const listEl = document.getElementById("listing") || document.querySelector("main");
+        const observer = listEl ? new ResizeObserver(handleResize) : null;
+        if (listEl && observer) {
+            observer.observe(listEl);
+        }
         return () => {
             window.removeEventListener('resize', handleResize);
+            observer?.disconnect();
         }
     }, [nav_style, zoomPercent]);
     return itemWidth
