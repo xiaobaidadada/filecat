@@ -177,6 +177,23 @@
     color: #7c3aed;
 }
 
+/* 超管「所有用户会话」模式下会话项右侧的属主名 */
+.chat-session-owner {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 0 6px;
+    font-style: normal;
+    font-size: 11px;
+    line-height: 16px;
+    border-radius: 8px;
+    color: var(--textSecondary, #6b7280);
+    background: var(--hover, rgba(0, 0, 0, 0.05));
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 
 
 @media (max-width: 736px) {
@@ -401,6 +418,15 @@
 /* ace 编辑器内部去掉默认背景，继承外层 */
 .chat-input-area .ace-input-container.chat-input .ace_editor {
     background: transparent !important;
+}
+
+/* 只读输入区：查看全部会话时禁止发送，整体置灰 */
+.chat-input-area.readonly {
+    opacity: 0.65;
+}
+.chat-input-area.readonly .little-button.button[disabled] {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 

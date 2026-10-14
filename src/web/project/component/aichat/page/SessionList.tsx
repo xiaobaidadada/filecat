@@ -29,8 +29,13 @@ export default function SessionList({
                                         onToggleBatchMode,
                                         onBatchDeleteSessions,
                                         onClearAllSessions,
+                                        /** 是否处于「查看所有用户会话」模式（仅超级管理员可见该入口） */
+                                        allUsersMode,
+                                        onToggleAllUsersMode,
+                                        /** 是否显示「所有用户会话」入口（root） */
+                                        showAllUsersEntry,
                                     }: {
-    sessions: ai_agent_chat_session_meta[];
+    sessions: (ai_agent_chat_session_meta & { user_id?: string; owner_name?: string })[];
     activeSessionId: string;
     onSelectSession: (id: string) => void;
     /** 拖动排序回调：传入被拖项与落点项的会话 id */
@@ -47,6 +52,9 @@ export default function SessionList({
     onToggleBatchMode?: () => void;
     onBatchDeleteSessions?: () => void;
     onClearAllSessions?: () => void;
+    allUsersMode?: boolean;
+    onToggleAllUsersMode?: () => void;
+    showAllUsersEntry?: boolean;
 }) {
     const {t} = useTranslation();
     const [searchText, setSearchText] = useState('');
@@ -54,10 +62,15 @@ export default function SessionList({
     const [drag_index, set_drag_index] = useState<number | null>(null);
     const [over_index, set_over_index] = useState<number | null>(null);
 
+    // 「所有用户会话」模式下跨用户排序无意义，禁用拖动排序
+    const can_reorder = !!onReorderSessions && !allUsersMode;
+
     const filteredSessions = searchText.trim()
         ? sessions.filter(s => (s.title || '').toLowerCase().includes(searchText.toLowerCase())
             || (s.summary || '').toLowerCase().includes(searchText.toLowerCase())
-            || (s.long_term_memory || '').toLowerCase().includes(searchText.toLowerCase()))
+            || (s.long_term_memory || '').toLowerCase().includes(searchText.toLowerCase())
+            // 「所有用户会话」模式下支持按属主名搜索
+            || (allUsersMode && (s.owner_name || '').toLowerCase().includes(searchText.toLowerCase())))
         : sessions;
 
     // 拖动结束：回调被拖项与落点项的具体 id，由上层按 id 重排（避免过滤时下标错位）
@@ -88,8 +101,8 @@ export default function SessionList({
                     <div key={session.id}>
                         <button
                             className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''} ${session.running ? 'is-running' : ''} ${drag_index === index ? 'row-dragging' : ''} ${over_index === index && drag_index !== null && drag_index !== index ? 'row-drop-target' : ''}`}
-                            // ===== 拖动排序：仅开启排序回调时生效（批量模式/搜索状态下仍可用）=====
-                            draggable={!!onReorderSessions}
+                            // ===== 拖动排序：仅开启排序回调且非「所有用户会话」模式时生效 =====
+                            draggable={can_reorder}
                             onDragStart={() => set_drag_index(index)}
                             onDragOver={(e) => {
                                 if (drag_index === null) return;
@@ -117,6 +130,10 @@ export default function SessionList({
                                 />
                             )}
                             <span>{toSessionTitle(session.title)}</span>
+                            {/* 所有用户会话模式：显示会话属主 */}
+                            {allUsersMode && session.owner_name && (
+                                <em className="chat-session-owner" title={session.owner_name}>{session.owner_name}</em>
+                            )}
                             {/* 会话正在执行中：显示旋转 loading 动画 */}
                             {session.running && <span className="chat-session-running" title={t('正在执行中')} />}
                             <small>{session.message_count}</small>
@@ -129,20 +146,23 @@ export default function SessionList({
                                             click: () => onRenameSession(session.id, session.title)
                                         },
                                         // 移动到最上/最下：复用拖动排序回调，目标取（过滤后）列表的首尾项
-                                        {
-                                            name: t('移动到最上'),
-                                            click: () => {
-                                                const first = filteredSessions[0];
-                                                if (first && first.id !== session.id) onReorderSessions?.(session.id, first.id);
-                                            }
-                                        },
-                                        {
-                                            name: t('移动到最下'),
-                                            click: () => {
-                                                const last = filteredSessions[filteredSessions.length - 1];
-                                                if (last && last.id !== session.id) onReorderSessions?.(session.id, last.id);
-                                            }
-                                        },
+                                        // 「所有用户会话」模式下跨用户排序无意义，隐藏这两项
+                                        ...(allUsersMode ? [] : [
+                                            {
+                                                name: t('移动到最上'),
+                                                click: () => {
+                                                    const first = filteredSessions[0];
+                                                    if (first && first.id !== session.id) onReorderSessions?.(session.id, first.id);
+                                                }
+                                            },
+                                            {
+                                                name: t('移动到最下'),
+                                                click: () => {
+                                                    const last = filteredSessions[filteredSessions.length - 1];
+                                                    if (last && last.id !== session.id) onReorderSessions?.(session.id, last.id);
+                                                }
+                                            },
+                                        ]),
                                         {
                                             name: session.cmd_auto_allow ? t('命令检测关闭') : t('命令检测开启'),
                                             click: () => onToggleCmdAuto?.(session.id, !session.cmd_auto_allow)
@@ -174,6 +194,13 @@ export default function SessionList({
                     title={batchMode ? t("取消批量选择") : t("批量选择")}
                     onClick={onToggleBatchMode}
                 />
+                {showAllUsersEntry && !batchMode && (
+                    <ActionButton
+                        icon={allUsersMode ? "person" : "groups"}
+                        title={allUsersMode ? t("仅看我的会话") : t("查看所有用户会话")}
+                        onClick={onToggleAllUsersMode}
+                    />
+                )}
                 {batchMode && (selectedSessionIds?.size ?? 0) > 0 && (
                     <ActionButton
                         icon={"delete"}
@@ -181,7 +208,7 @@ export default function SessionList({
                         onClick={onBatchDeleteSessions}
                     />
                 )}
-                {!batchMode && (
+                {!batchMode && onClearAllSessions && (
                     <ActionButton
                         icon={"delete_sweep"}
                         title={t("删除全部会话")}

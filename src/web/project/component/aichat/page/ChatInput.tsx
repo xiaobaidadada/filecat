@@ -53,7 +53,9 @@ const ChatInput = forwardRef<ChatInputHandle, {
     onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
-}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef }, ref) => {
+    /** 只读：查看全部会话时禁止发送（输入框置灰、按钮禁用） */
+    readonly?: boolean;
+}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef, readonly = false }, ref) => {
     const {t} = useTranslation();
     const rtRef = useRef<RichTextareaHandle>(null);
     const areaRef = useRef<HTMLDivElement>(null);
@@ -92,15 +94,17 @@ const ChatInput = forwardRef<ChatInputHandle, {
     return (
         <div
             ref={areaRef}
-            className="chat-input-area"
-            onDrop={onDrop}
-            onDragOver={onDragOver}
+            className={`chat-input-area${readonly ? ' readonly' : ''}`}
+            onDrop={readonly ? undefined : onDrop}
+            onDragOver={readonly ? undefined : onDragOver}
         >
-            {/* 顶部拖动条 */}
-            <div
-                className={`chat-input-resize-handle${isDragging ? ' dragging' : ''}`}
-                onPointerDown={on_pointer_down}
-            />
+            {/* 顶部拖动条（只读时不显示） */}
+            {!readonly && (
+                <div
+                    className={`chat-input-resize-handle${isDragging ? ' dragging' : ''}`}
+                    onPointerDown={on_pointer_down}
+                />
+            )}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -120,7 +124,8 @@ const ChatInput = forwardRef<ChatInputHandle, {
                 />
                 <RichTextarea
                     ref={rtRef}
-                    placeholder={t("输入消息")}
+                    placeholder={readonly ? t("查看全部会话时不可发送消息") : t("输入消息")}
+                    disabled={readonly}
                     onEnter={() => onSend()}
                     onPaste={(e) => {
                         const files = e.clipboardData?.files;
@@ -133,9 +138,11 @@ const ChatInput = forwardRef<ChatInputHandle, {
                     style={heightStyle}
                 />
             </div>
-            <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>
-            {/* 发送中 → 暂停按钮；空闲 → 发送按钮 */}
-            {sending ? (
+            {!readonly && <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>}
+            {/* 发送中 → 暂停按钮；空闲 → 发送按钮；只读 → 禁用发送 */}
+            {readonly ? (
+                <button className="little-button button" disabled={true}>{t("发送")}</button>
+            ) : sending ? (
                 <ButtonLittle color={"var( --icon-red)"} text={t("暂停")} clickFun={onAbort} />
             ) : (
                 <ButtonLittle  text={t("发送")} clickFun={onSend} />

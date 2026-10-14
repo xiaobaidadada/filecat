@@ -305,6 +305,34 @@ export class AiAgentMemoryService {
             }));
     }
 
+    /** 遍历索引，找到某个会话当前的属主 userId（root 超级管理用） */
+    public find_owner_by_session_id(sessionId: string): string | undefined {
+        const store = this.read_index_of_session();
+        for (const userId of Object.keys(store.users ?? {})) {
+            if ((store.users[userId].sessions ?? []).some(it => it.id === sessionId)) {
+                return userId;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * 超级管理视角：列出所有用户的会话（含属主信息）。
+     * 不做用户自定义排序（sort_index），统一按 updated_at 倒序，
+     * 否则跨用户排序没有可比性。
+     */
+    public admin_list() {
+        const store = this.read_index_of_session();
+        const list: (ai_agent_chat_session_meta & { user_id: string; owner_name: string })[] = [];
+        for (const userId of Object.keys(store.users ?? {})) {
+            const owner_name = userService.get_user_info_by_user_id(userId)?.username ;
+            for (const meta of store.users[userId].sessions ?? []) {
+                list.push({ ...meta, user_id: userId, owner_name });
+            }
+        }
+        return list.sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0));
+    }
+
     public get_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);

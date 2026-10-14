@@ -14,7 +14,7 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
-import {ai_agent_message_item, ai_agent_message_list, getContentAsString} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item, ai_agent_message_list, getContentAsString, ai_agent_chat_session_meta} from "../../../common/req/filecat.ai.pojo";
 import {backgroundProcessManager} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
 import {ai_agent_item_dotenv} from "../../../common/req/filecat.ai.pojo";
@@ -255,6 +255,119 @@ export class Ai_AgentController {
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         aiAgentMemoryService.clear(user?.id ?? user?.user_id ?? user?.username ?? "default")
         return Sucess("")
+    }
+
+    // ===== 超级管理：跨用户操作会话（仅 root）=====
+
+    /**
+     * 超级管理员的会话管理接口（统一入口，仅 root 可用）。
+     * 通过 action 分发对任意用户会话的读取与操作，不复用/不污染用户自助接口。
+     *
+     * body: {
+     *   action: 'list_all_sessions' | 'get' | 'rename' | 'delete' | 'batch_delete'
+     *         | 'cmd_auto' | 'setting' | 'sys_prompt' | 'usage_stats' | 'message_delete',
+     *   user_id?: string,     // 会话属主；不传时会按 session_id 自动定位
+     *   session_id?: string,
+     *   title?: string,
+     *   allow?: boolean,
+     *   sys_prompt_id?: string,
+     *   file_cwd_path?: string,
+     *   session_ids?: string[],
+     *   indices?: number[],
+     * }
+     */
+    @Post("/admin/session")
+    async admin_session_action(@Req() ctx, @Body() data: any) {
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        // 仅超级管理员可用
+        if (!user?.is_root) throw "no permission";
+        const action = `${data?.action ?? ""}`;
+        const mem = aiAgentMemoryService;
+        // 定位会话属主：显式传了 user_id 就用它，否则按 session_id 反查
+        const owner_of = (sessionId?: string) => {
+            if (data?.user_id) return `${data.user_id}`;
+            if (!sessionId) throw "session_id is required";
+            const owner = mem.find_owner_by_session_id(sessionId);
+            if (!owner) throw "session not found";
+            return owner;
+        };
+
+        switch (action) {
+            case 'list_all_sessions': {
+                // 所有用户的会话（含属主信息）
+                return Sucess(mem.admin_list().map(it => ({...it, running: ai_agentService.isChatRunning(it.id)})));
+            }
+            case 'get': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                const session = mem.get_session(ownerId, sessionId);
+                if (!session) return Sucess(null);
+                if (ai_agentService.isChatRunning(session.id)) {
+                    let msgs = session.messages ?? [];
+                    const lastUser = ai_agentService.getRunningLastUserMessage(ownerId, session.id);
+                    if (lastUser) msgs = [...msgs, lastUser];
+                    return Sucess({
+                        ...session,
+                        messages: msgs,
+                        running: true,
+                        live_messages: ai_agentService.getRunningChatLive(ownerId, session.id) ?? [],
+                    });
+                }
+                return Sucess(session);
+            }
+            case 'rename': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.sessions_update_meta(ownerId, {id: sessionId, title: data?.title} as ai_agent_chat_session_meta);
+                return Sucess("ok");
+            }
+            case 'delete': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.delete(ownerId, sessionId);
+                return Sucess("ok");
+            }
+            case 'batch_delete': {
+                for (const sid of (data?.session_ids ?? [])) {
+                    const ownerId = mem.find_owner_by_session_id(sid);
+                    if (ownerId) mem.delete(ownerId, sid);
+                }
+                return Sucess("ok");
+            }
+            case 'cmd_auto': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.sessions_update_cmd_auto_allow(ownerId, sessionId, data?.allow === true);
+                return Sucess("ok");
+            }
+            case 'setting': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.sessions_update_setting(ownerId, sessionId, {
+                    file_cwd_path: data?.file_cwd_path ?? "",
+                });
+                return Sucess("ok");
+            }
+            case 'sys_prompt': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.update_sys_prompt(ownerId, sessionId, data?.sys_prompt_id);
+                return Sucess("ok");
+            }
+            case 'usage_stats': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                return Sucess(mem.get_usage_stats(ownerId, sessionId));
+            }
+            case 'message_delete': {
+                const sessionId = `${data?.session_id ?? ""}`;
+                const ownerId = owner_of(sessionId);
+                mem.delete_messages_from_session(ownerId, sessionId, data?.indices ?? []);
+                return Sucess("ok");
+            }
+            default:
+                throw "unknown action";
+        }
     }
 
     // ============================================================

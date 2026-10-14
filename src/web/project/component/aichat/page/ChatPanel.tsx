@@ -52,6 +52,12 @@ import ChatInput, { ChatInputHandle } from "./ChatInput";
 import BackgroundProcessPanel from "./BackgroundProcessPanel";
 import { ws } from "../../../util/ws";
 
+/**
+ * 会话列表项：普通模式下即会话 meta；
+ * 超级管理员「所有用户会话」模式下额外带属主信息（user_id / owner_name）。
+ */
+type SessionListItem = ai_agent_chat_session_meta & { user_id?: string; owner_name?: string };
+
 /** ChatPanel 对外参数 */
 export interface ChatPanelProps {
     /**
@@ -116,7 +122,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     // ===== 核心状态 =====
     const [messages, setMessages] = useState<Message[]>([]);
-    const [sessions, setSessions] = useState<ai_agent_chat_session_meta[]>([]);
+    const [sessions, setSessions] = useState<SessionListItem[]>([]);
+    /** 超管：是否处于「查看所有用户会话」模式（跨用户排序无意义，禁用拖动排序） */
+    const [admin_all_mode, set_admin_all_mode] = useState(false);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
     // 当前“本地正在发送”的会话 id；null 表示本地没有在发送。
     // 用会话 id 而非布尔，是为了区分“本地发起”与“其它标签页/刷新后在跑”，
@@ -128,6 +136,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
     // ===== 全局/持久化状态 =====
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    /** 超级管理员：可查看/操作所有用户的会话 */
+    const is_root = !!user_base_info?.user_data?.is_root;
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [ai_bg_expanded, set_ai_bg_expanded] = useAtom($stroe.ai_bg_expanded);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
@@ -145,10 +156,19 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         setSelectedSysPromptId(id);
         // 只有在已有活动会话时才需要持久化
         if (activeSessionId) {
-            ai_agentHttp.post("session/sys_prompt", {
-                session_id: activeSessionId,
-                sys_prompt_id: id || undefined
-            }).catch(console.error);
+            const ownerId = owner_of_session(activeSessionId);
+            if (ownerId) {
+                admin_call("sys_prompt", {
+                    session_id: activeSessionId,
+                    user_id: ownerId,
+                    sys_prompt_id: id || undefined
+                }).catch(console.error);
+            } else {
+                ai_agentHttp.post("session/sys_prompt", {
+                    session_id: activeSessionId,
+                    sys_prompt_id: id || undefined
+                }).catch(console.error);
+            }
         }
     };
 
@@ -233,8 +253,19 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     };
 
     // ===== 会话操作函数（refreshSessions 需要提前声明，供 useChatStream 使用） =====
+    /**
+     * 超级管理员的统一接口：对任意用户会话做增删改查。
+     * 用 ref 读取最新的 admin_all_mode，供全局闭包/回调使用。
+     */
+    const admin_mode_ref = useRef(false);
+    useEffect(() => { admin_mode_ref.current = admin_all_mode; }, [admin_all_mode]);
+    const admin_call = (action: string, payload: Record<string, any> = {}) =>
+        ai_agentHttp.post("admin/session", { action, ...payload });
+
     const refreshSessions = async () => {
-        const result = await ai_agentHttp.get("sessions");
+        const result = admin_mode_ref.current
+            ? await admin_call("list_all_sessions")
+            : await ai_agentHttp.get("sessions");
         if (result.code === RCode.Success) {
             setSessions(result.data ?? []);
         }
@@ -275,15 +306,18 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     // ===== 会话操作 =====
     const loadSessions = async (selectId?: string | null): Promise<boolean> => {
-        const result = await ai_agentHttp.get("sessions");
+        const result = admin_mode_ref.current
+            ? await admin_call("list_all_sessions")
+            : await ai_agentHttp.get("sessions");
         if (result.code !== RCode.Success) return false;
-        const list = result.data ?? [];
+        const list: SessionListItem[] = result.data ?? [];
         setSessions(list);
         const nextId = selectId === null
             ? (list[0]?.id ?? "")
             : (selectId || activeSessionId || list[0]?.id || "");
         if (nextId) {
-            return await loadSession(nextId);
+            const ownerId = list.find(s => s.id === nextId)?.user_id;
+            return await loadSession(nextId, false, ownerId);
         } else {
             setMessages([]);
             setActiveSessionId("");
@@ -293,8 +327,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         }
     };
 
-    const loadSession = async (sessionId: string, switch_menu = false): Promise<boolean> => {
-        const result = await ai_agentHttp.post("session/get", { session_id: sessionId });
+    const loadSession = async (sessionId: string, switch_menu = false, ownerId_override?: string): Promise<boolean> => {
+        // 超管在所有用户会话模式下：按该会话的属主(user_id)读取
+        const ownerId = ownerId_override ?? sessions.find(s => s.id === sessionId)?.user_id;
+        const result = admin_mode_ref.current && ownerId
+            ? await admin_call("get", { session_id: sessionId, user_id: ownerId })
+            : await ai_agentHttp.post("session/get", { session_id: sessionId });
         if (result.code !== RCode.Success || !result.data) return false;
         const session = result.data as ai_agent_chat_session_item & { running?: boolean; live_messages?: ai_agent_message_item[] };
         setActiveSessionId(session.id);
@@ -392,8 +430,10 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     /**
      * 会话列表拖动排序：按“被拖项 id → 落点项 id”重排，再持久化到后端。
      * 用 id 而非下标，避免搜索过滤时展示顺序与全量数组下标错位。
+     * 超管「所有用户会话」模式下跨用户排序无意义，直接不处理。
      */
     const reorderSessions = (from_id: string, to_id: string) => {
+        if (admin_mode_ref.current) return;
         const from = sessions.findIndex(it => it.id === from_id);
         const to = sessions.findIndex(it => it.id === to_id);
         if (from < 0 || to < 0 || from === to) return;
@@ -404,11 +444,22 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         }).catch(() => {});
     };
 
+    /** 在超管所有用户模式下，取出某会话的属主 user_id（否则返回 undefined，走普通用户接口） */
+    const owner_of_session = (sessionId: string): string | undefined => {
+        if (!admin_mode_ref.current) return undefined;
+        return sessions.find(s => s.id === sessionId)?.user_id;
+    };
+
     const deleteSession = (sessionId: string) => {
         confirm_dell_all({
             sub_title: "确认删除这个会话吗?",
             confirm_fun: async () => {
-                await ai_agentHttp.post("session/delete", { session_id: sessionId });
+                const ownerId = owner_of_session(sessionId);
+                if (ownerId) {
+                    await admin_call("delete", { session_id: sessionId, user_id: ownerId });
+                } else {
+                    await ai_agentHttp.post("session/delete", { session_id: sessionId });
+                }
                 if (activeSessionId === sessionId) {
                     setActiveSessionId("");
                     await loadSessions(null);
@@ -423,7 +474,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         let new_name = title;
         confirm_dell_all({
             confirm_fun: async () => {
-                await ai_agentHttp.post("sessions/update/meta", { id: sessionId, title: new_name });
+                const ownerId = owner_of_session(sessionId);
+                if (ownerId) {
+                    await admin_call("rename", { session_id: sessionId, user_id: ownerId, title: new_name });
+                } else {
+                    await ai_agentHttp.post("sessions/update/meta", { id: sessionId, title: new_name });
+                }
                 await loadSessions(activeSessionId);
             },
             context_div: (
@@ -436,13 +492,20 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     // 切换会话的命令检测开关（开启后该会话执行命令不再弹确认框）
     const toggleCmdAuto = async (sessionId: string, allow: boolean) => {
-        await ai_agentHttp.post("session/cmd_auto_allow", { session_id: sessionId, allow });
+        const ownerId = owner_of_session(sessionId);
+        if (ownerId) {
+            await admin_call("cmd_auto", { session_id: sessionId, user_id: ownerId, allow });
+        } else {
+            await ai_agentHttp.post("session/cmd_auto_allow", { session_id: sessionId, allow });
+        }
         NotySuccess(allow ? t('命令检测已开启') : t('命令检测已关闭'));
         await loadSessions(activeSessionId);
     };
 
     // ===== 发送消息 =====
     const handleSend = async () => {
+        // 超管「所有用户会话」模式下禁止发送，避免消息被写入当前登录用户的会话
+        if (admin_mode_ref.current) return;
         const text = (chatInputRef.current?.getValue() ?? '').trim();
         if (!text && pendingAttachments.length === 0) return;
 
@@ -557,10 +620,15 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 const newMessages = messages.filter(m => m.id !== id);
                 setMessages(newMessages);
                 if (activeSessionId) {
-                    ai_agentHttp.post("session/message/delete", {
-                        session_id: activeSessionId,
-                        indices: [targetIndex]
-                    }).catch(console.error);
+                    const ownerId = owner_of_session(activeSessionId);
+                    if (ownerId) {
+                        admin_call("message_delete", { session_id: activeSessionId, user_id: ownerId, indices: [targetIndex] }).catch(console.error);
+                    } else {
+                        ai_agentHttp.post("session/message/delete", {
+                            session_id: activeSessionId,
+                            indices: [targetIndex]
+                        }).catch(console.error);
+                    }
                 }
             }
         });
@@ -584,7 +652,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         }
         const chunks: string[] = [];
         for (const s of sessions) {
-            const result = await ai_agentHttp.post("session/get", { session_id: s.id });
+            const result = s.user_id
+                ? await admin_call("get", { session_id: s.id, user_id: s.user_id })
+                : await ai_agentHttp.post("session/get", { session_id: s.id });
             if (result.code !== RCode.Success || !result.data) {
                 continue;
             }
@@ -657,10 +727,15 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 setSelectedMsgIds(new Set());
                 setBatchMode(false);
                 if (activeSessionId && indicesToDelete.length > 0) {
-                    ai_agentHttp.post("session/message/delete", {
-                        session_id: activeSessionId,
-                        indices: indicesToDelete
-                    }).catch(console.error);
+                    const ownerId = owner_of_session(activeSessionId);
+                    if (ownerId) {
+                        admin_call("message_delete", { session_id: activeSessionId, user_id: ownerId, indices: indicesToDelete }).catch(console.error);
+                    } else {
+                        ai_agentHttp.post("session/message/delete", {
+                            session_id: activeSessionId,
+                            indices: indicesToDelete
+                        }).catch(console.error);
+                    }
                 }
             }
         });
@@ -671,8 +746,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         confirm_dell_all({
             sub_title: t("cf_ses"),
             confirm_fun: async () => {
-                for (const sid of selectedSessionIds) {
-                    await ai_agentHttp.post("session/delete", { session_id: sid });
+                if (admin_mode_ref.current) {
+                    await admin_call("batch_delete", { session_ids: Array.from(selectedSessionIds) });
+                } else {
+                    for (const sid of selectedSessionIds) {
+                        await ai_agentHttp.post("session/delete", { session_id: sid });
+                    }
                 }
                 setSelectedSessionIds(new Set());
                 setBatchMode(false);
@@ -686,6 +765,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         });
     };
 
+    /**
+     * 删除全部会话：
+     * 普通模式删除当前用户自己的全部会话；
+     * 超管「所有用户会话」模式下跨用户，不做「全部清空」（风险过高），
+     * 该模式下按钮不展示（见 SessionList 的 onClearAllSessions 传参）。
+     */
     const clearAllSessions = () => {
         confirm_dell_all({
             sub_title: t("cf_all"),
@@ -698,6 +783,22 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         });
     };
 
+    /** 超管：切换「查看所有用户会话」模式 */
+    const toggleAllUsersMode = async () => {
+        const next = !admin_all_mode;
+        set_admin_all_mode(next);
+        admin_mode_ref.current = next;
+        // 切换模式后列表来源不同，清空当前选中并重新加载
+        setActiveSessionId("");
+        setMessages([]);
+        const result = next
+            ? await admin_call("list_all_sessions")
+            : await ai_agentHttp.get("sessions");
+        const list: SessionListItem[] = result.code === RCode.Success ? (result.data ?? []) : [];
+        setSessions(list);
+        if (list[0]?.id) await loadSession(list[0].id, false, list[0].user_id);
+    };
+
     // ===== 用量统计弹窗 =====
     const showUsageStatsPopup = async (sessionId: string) => {
         set_prompt_card({
@@ -707,7 +808,10 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             cancel: () => set_prompt_card({ open: false }),
         });
         try {
-            const result = await ai_agentHttp.post("session/usage_stats", { session_id: sessionId });
+            const ownerId = owner_of_session(sessionId);
+            const result = ownerId
+                ? await admin_call("usage_stats", { session_id: sessionId, user_id: ownerId })
+                : await ai_agentHttp.post("session/usage_stats", { session_id: sessionId });
             if (result.code === RCode.Success && result.data) {
                 const stats: ai_agent_usage_stats = result.data;
                 set_prompt_card({
@@ -772,10 +876,13 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             ),
             confirm: async () => {
                 try {
-                    const result = await ai_agentHttp.post("session/setting", {
-                        session_id: sessionId,
-                        file_cwd_path: cwd_value.trim(),
-                    });
+                    const ownerId = owner_of_session(sessionId);
+                    const result = ownerId
+                        ? await admin_call("setting", { session_id: sessionId, user_id: ownerId, file_cwd_path: cwd_value.trim() })
+                        : await ai_agentHttp.post("session/setting", {
+                            session_id: sessionId,
+                            file_cwd_path: cwd_value.trim(),
+                        });
                     if (result.code === RCode.Success) {
                         NotySuccess(t('保存成功'));
                     }
@@ -1029,7 +1136,10 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                         onToggleSessionSelect={toggleSessionSelect}
                         onToggleBatchMode={toggleBatchMode}
                         onBatchDeleteSessions={batchDeleteSessions}
-                        onClearAllSessions={clearAllSessions}
+                        onClearAllSessions={admin_all_mode ? undefined : clearAllSessions}
+                        allUsersMode={admin_all_mode}
+                        onToggleAllUsersMode={toggleAllUsersMode}
+                        showAllUsersEntry={is_root}
                     />
                 )}
 
@@ -1067,6 +1177,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                     <ChatInput
                         ref={chatInputRef}
                         onSend={handleSend}
+                        // 超管「查看全部会话」模式：聊天请求会以当前登录用户身份落库，跨用户会写错数据，故禁止发送
+                        readonly={admin_all_mode}
                         // 本地正在发当前会话，或当前会话本身正在执行中(running，比如刷新页面/其它页面在跑)
                         // 都显示“发送中/停止”按钮；直接取会话的 running 状态，刷新后也不丢失
                         sending={sendingSessionId === activeSessionId || activeSessionRunning}
