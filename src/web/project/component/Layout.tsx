@@ -102,7 +102,11 @@ function Layout() {
         seconds,
         three
     ]
-    const hidden_navList : NavItem[][] = [
+    // 隐藏路由（没有左侧按钮的页面，如 Studio / GitStudio / 各种设置子页）。
+    // 这些组件必须缓存住 JSX 元素引用：否则 Layout 每次重渲染都会生成新的 element，
+    // 传给 <Route element> 后 react-router 会判定为“不同元素”而卸载重挂载，
+    // 导致 Studio 等页面里已加载/已打开的状态被清空（例如折叠左侧文件树就丢内容）。
+    const hidden_navList : NavItem[][] = React.useMemo(() => [
         [
             { rto: `${routerConfig.share}`, component: <Share />},
             { rto: `${routerConfig.share_list_setting_page}`, component: <ShareListSetting />},
@@ -116,7 +120,7 @@ function Layout() {
             { rto: `${routerConfig.md_editor_setting_page}`, component: <MdEditorSettingPage />},
             { rto: `${routerConfig.md_theme_editor_page}`, component: <MdThemeEditorPage />}
         ]
-    ]
+    ], [])
     if(user_base_info.sys_env?.show_login_user_info) {
         MainNavList[MainNavList.length-1].push({name:user_base_info.user_data.note??user_base_info.user_data.username,icon:"person",rto:'/setting/private_env_setting'})
     }

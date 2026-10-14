@@ -303,8 +303,10 @@ export default function Studio(props) {
         editor_data.get_editor()?.['formatCode']()
     }
 
-    /** 左侧面板是否显示大纲（仅 md 文件、且面板已展开、且切到大纲视图时） */
-    const outline_on = is_md && show_nav && nav_content === "outline";
+    /** 左侧面板是否显示大纲（仅 md 文件、且切到大纲视图时）。
+     *  不再依赖 show_nav：面板收起时只是被隐藏（display:none），
+     *  组件仍保持挂载，避免收起/展开时 FolderTree 与 MdOutline 相互替换导致树状态丢失。 */
+    const outline_on = is_md && nav_content === "outline";
 
     return <div className={"studio studio--file"}>
         <Header ignore_tags={true}
@@ -331,28 +333,36 @@ export default function Studio(props) {
             {!is_md && have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
-            {show_nav && (
-                <div className={"studio-nav"} style={{width: `${nav_width - 1}em`}}
-                     onContextMenu={(event) => {
-                         handleContextMenu(event, edit_filename.name, getRouterAfter('file', folder_path), true, get_item)
-                     }}
-                >
-                    {outline_on
-                        ? <MdOutline items={outline_items} active_pos={outline_active}
-                                     on_click={(item) => md_api.current?.goto_heading(item)}/>
-                        : <FolderTree pre_path={pre_path} list={list} click={click}
-                                      handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>}
-                    {/* 底部切换：md 文件可以在大纲与目录之间切，其他文件没有大纲，不显示 */}
-                    {is_md && (
-                        <div className={"studio-nav-switch"}>
-                            <ActionButton
-                                icon={outline_on ? "folder" : "list"}
-                                title={outline_on ? t("文件目录") : t("大纲")}
-                                onClick={() => set_nav_content(outline_on ? "folder" : "outline")}/>
-                        </div>
-                    )}
+            {/* 左侧面板：用 display 控制显隐，而不是条件渲染。
+                条件渲染会在收起时把 FolderTree 整棵树卸载，树节点展开状态（Folder 的局部 state）随之丢失，
+                再次展开时所有已打开的目录都会被折叠回去。这里始终挂载、仅隐藏，从而保留展开/加载状态。 */}
+            <div className={"studio-nav"}
+                 style={{display: show_nav ? undefined : "none", width: `${nav_width - 1}em`}}
+                 onContextMenu={(event) => {
+                     handleContextMenu(event, edit_filename.name, getRouterAfter('file', folder_path), true, get_item)
+                 }}
+            >
+                {/* 大纲 / 目录：两个都保持挂载，用 display 切换显隐。
+                    若用条件渲染，切到大纲会把 FolderTree 卸载，树的展开/已加载状态全部丢失，
+                    再切回目录时所有打开的目录都会折叠回去。 */}
+                <div className={"studio-nav-outline"} style={{display: outline_on ? undefined : "none"}}>
+                    <MdOutline items={outline_items} active_pos={outline_active}
+                               on_click={(item) => md_api.current?.goto_heading(item)}/>
                 </div>
-            )}
+                <div className={"studio-nav-folder"} style={{display: outline_on ? "none" : undefined}}>
+                    <FolderTree pre_path={pre_path} list={list} click={click}
+                                handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
+                </div>
+                {/* 底部切换：md 文件可以在大纲与目录之间切，其他文件没有大纲，不显示 */}
+                {is_md && (
+                    <div className={"studio-nav-switch"}>
+                        <ActionButton
+                            icon={outline_on ? "folder" : "list"}
+                            title={outline_on ? t("文件目录") : t("大纲")}
+                            onClick={() => set_nav_content(outline_on ? "folder" : "outline")}/>
+                    </div>
+                )}
+            </div>
             {show_nav && <div className={"studio__divider"} ref={studioDividerRef} onPointerDown={handlePointerDown}
                  onPointerUp={handlePointerup}/>}
             {drag &&
