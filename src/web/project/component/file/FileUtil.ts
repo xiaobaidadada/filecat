@@ -562,7 +562,7 @@ export const user_click_file = () => {
                     click_file(param);
                 }
             })
-            return true;
+            return false;
         }
         const {name, context} = param;
         let model = getEditModelType(name);

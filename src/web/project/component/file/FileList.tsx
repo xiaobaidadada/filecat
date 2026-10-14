@@ -17,13 +17,14 @@ import {
     use_file_open,
     user_click_file
 } from "./FileUtil";
-import {InputTextIcon} from "../../../meta/component/Input";import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
+import {InputTextIcon} from "../../../meta/component/Input";
+import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
 import {use_auth_check} from "../../util/store.util";
 import {formatFileSize} from '../../../../common/ValueUtil';
-import {getShortTime} from "../../../project/util/common_util";
+import {getShortTime} from "../../util/common_util";
 import {workflow_dir_name, WorkFlowRealTimeReq, WorkFlowRealTimeRsq} from "../../../../common/req/file.req";
 import {ws} from "../../util/ws";
 import {CmdType} from "../../../../common/frame/WsData";
