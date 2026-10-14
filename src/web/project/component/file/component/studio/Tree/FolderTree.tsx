@@ -7,6 +7,8 @@ import {InputTextIcon} from "../../../../../../meta/component/Input";
 export function FolderTree(props: {
     list: FileTreeList,
     pre_path: string,
+    /** 当前打开文件的完整路径，用于高亮选中行 */
+    active_path?: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
     handleContextMenu?: (event, name,path, isDir,toggleExpansion) => void,
     fatherNowToggleExpansion?:()=>void
@@ -20,6 +22,7 @@ export function FolderTree(props: {
             return <Folder pre_path={`${props.pre_path}${value.name}${value.type===FileTypeEnum.folder ? "/":""}`} key={index} name={value.name} type={value.type}
                            handleContextMenu={props.handleContextMenu}
                            fatherNowToggleExpansion={props.fatherNowToggleExpansion}
+                           active_path={props.active_path}
                            children={value.children} click={props.click} size={value.size}/>
         })}
     </div>

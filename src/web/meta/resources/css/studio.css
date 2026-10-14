@@ -91,6 +91,14 @@
     color: var(--hover) ;
 }
 
+/* 当前打开/选中文件的树行常驻高亮（与 hover 区分开，hover 只改文字色）
+   注意：主题里 `.studio .studio-nav,.studio-nav div,.studio-body { background: var(--surfacePrimary) !important }`
+   用了 !important 把背景压成白色，这里必须同样用 !important 才能覆盖 */
+.studio-nav .studio-item-title--active {
+    background: var(--primary-light, #d2e3fc) !important;
+    border-radius: 2px;
+}
+
 .studio-item-title-tag {
     width: 1.5rem;
 }

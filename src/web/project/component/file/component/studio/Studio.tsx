@@ -462,7 +462,7 @@ export default function Studio(props) {
                                on_click={(item) => md_api.current?.goto_heading(item)}/>
                 </div>
                 <div className={"studio-nav-folder"} style={{display: outline_on ? "none" : undefined}}>
-                    <FolderTree pre_path={pre_path} list={list} click={click}
+                    <FolderTree pre_path={pre_path} list={list} click={click} active_path={edit_file_path}
                                 handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
                 </div>
                 {/* 底部切换：md 文件可以在大纲与目录之间切，其他文件没有大纲，不显示 */}

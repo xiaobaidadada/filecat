@@ -6,6 +6,8 @@ import {Icon} from "../../../../../../meta/component/Button";
 export function Folder(props: FileTree & {
     key: any,
     pre_path: string,
+    /** 当前打开文件的完整路径，与本节点 pre_path 相等时高亮该行 */
+    active_path?: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
     handleContextMenu?: (event, name, path, isDir, toggleExpansion) => void
     fatherNowToggleExpansion?:()=>void,
@@ -52,7 +54,7 @@ export function Folder(props: FileTree & {
                         props.handleContextMenu(event, props.name, props.pre_path, props.type === FileTypeEnum.folder, nowToggleExpansion)
                     }
                 }}
-                     className={"studio-item-title"}>
+                     className={`studio-item-title${props.active_path === props.pre_path ? " studio-item-title--active" : ""}`}>
                     <i className={"material-icons studio-item-title-tag"} data-icon={(expanded ? 'arrow_drop_down' : 'arrow_right')}>{props.type == "file" ? "" : (expanded ? 'arrow_drop_down' : 'arrow_right')}</i>
                     {/*<i className={"material-icons"}*/}
                     {/*   aria-label={props.name}*/}
@@ -76,6 +78,7 @@ export function Folder(props: FileTree & {
                                 {<Folder type={child.type} size={child.size} click={props.click} name={child.name} key={index}
                                          children={child.children} pre_path={`${props.pre_path}${child.name}${child.type===FileTypeEnum.folder ? "/":""}`}
                                          handleContextMenu={props.handleContextMenu}
+                                         active_path={props.active_path}
                                          fatherNowToggleExpansion={nowToggleExpansion}
                                 />}
                             </React.Fragment>
