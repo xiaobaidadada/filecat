@@ -1584,6 +1584,17 @@ export class FileService  {
                 return;
             }
         }
+        // 越权校验：分享链接只能下载分享路径内的文件
+        const check_one = (p: string) => {
+            if (!userService.isSubPath(item.path, decodeURIComponent(p))) {
+                throw "path is invalid";
+            }
+        };
+        if (Array.isArray(file)) {
+            for (const f of file) check_one(f);
+        } else {
+            check_one(file);
+        }
         this.download({file,cache,show,range,res})
     }
 
@@ -1611,8 +1622,14 @@ export class FileService  {
             }
 
             const fileName = path.basename(sysPath)
-            const stats = await FileUtil.statSync(sysPath);
-            // const range = ctx.header("Range");
+            let stats;
+            try {
+                stats = await FileUtil.statSync(sysPath);
+            } catch (e) {
+                // 路径不存在等异常：返回 404，不要让异常冒泡成 unhandled rejection
+                if (!res.headersSent) res.status(404).send("File not found");
+                return;
+            }
             const fileSize = stats.size;
             if (range) {
                 const encodedFileName = encodeURIComponent(fileName).replace(/%20/g, '+');
@@ -1682,7 +1699,13 @@ export class FileService  {
                     res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
                     return;
                 }
-                const stats = await FileUtil.statSync(real_pack_path ?? sysPath);
+                let stats;
+                try {
+                    stats = await FileUtil.statSync(real_pack_path ?? sysPath);
+                } catch (e) {
+                    // 文件不存在则跳过，避免整包失败和 unhandled rejection
+                    continue;
+                }
                 if (stats.isFile()) {
                     archive.file(real_pack_path ?? sysPath, {name: path.basename(sysPath)});
                 } else {

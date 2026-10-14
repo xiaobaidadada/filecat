@@ -85,7 +85,10 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
         }
         // 下载拦截
         if(req.originalUrl.startsWith(share_download_start_pre)) {
-            FileServiceImpl.download_for_public(req);
+            FileServiceImpl.download_for_public(req).catch(e => {
+                if (!res.headersSent) res.status(500).send("download error");
+                console.error("download_for_public error:", e);
+            });
             return ;
         }
         if (req.originalUrl.startsWith(download_start_pre)) {
@@ -94,7 +97,10 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
                 res.send(JSON.stringify(AuthFail('失败')));
                 return
             }
-            FileServiceImpl.download_for_private(req);
+            FileServiceImpl.download_for_private(req).catch(e => {
+                if (!res.headersSent) res.status(500).send("download error");
+                console.error("download_for_private error:", e);
+            });
             return ;
         }
         // 校验可以用params
