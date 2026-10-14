@@ -141,7 +141,7 @@ export default function Studio(props) {
     const {check_user_auth} = use_auth_check();
 
     /** Studio 当前工作目录：URL 上的目录路径（已解码），供右侧 AI 聊天面板按目录定位会话 */
-    const chat_cwd = folder_path || "";
+    const chat_cwd = getRouterAfter('file', folder_path);
 
     function shellClick() {
         if (file_shell_hidden === true || file_shell_hidden === false) {

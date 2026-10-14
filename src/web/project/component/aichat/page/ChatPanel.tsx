@@ -16,6 +16,7 @@ import { CmdType } from "../../../../../common/frame/WsData";
 
 import { ai_agentHttp, settingHttp } from "../../../util/config";
 import { debounce } from "../../../../../common/fun.util";
+import { normalize_path } from "../../../../../common/StringUtil";
 import { move_element } from "../../../../../common/ListUtil";
 import { use_auth_check } from "../../../util/store.util";
 import { copyToClipboard } from "../../../util/FunUtil";
@@ -372,7 +373,10 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const result = await ai_agentHttp.get("sessions");
         if (result.code !== RCode.Success) return null;
         const list: ai_agent_chat_session_meta[] = result.data ?? [];
-        const matched = list.find(it => it.file_cwd_path === cwd);
+        // 归一化后比较，避免尾部斜杠、重复分隔符、正反斜杠导致的同目录匹配不上
+        const ok_cwd = normalize_path(cwd);
+        if(!ok_cwd) return null;
+        const matched = list.find(it => normalize_path(it.file_cwd_path) === ok_cwd);
         if (matched) {
             return matched.id;
         }

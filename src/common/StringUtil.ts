@@ -253,6 +253,20 @@ export function removeTrailingPath(str) {
     return trimmedStr; // 返回没有尾部反斜杠和空白字符的字符串
 }
 
+/**
+ * 路径归一化：统一分隔符为 /，压缩重复分隔符，去掉首尾斜杠
+ * 用于跨平台、跨入口比较同一路径（如会话工作目录 file_cwd_path）
+ */
+export function normalize_path(p?: string): string {
+    if (!p) return "";
+
+    return p.trim()
+        .split("\\").join("/")
+        .split("/")
+        .filter(Boolean)
+        .join("/");
+}
+
 export function matchGitignore(path: string, rule: string): boolean {
     if (!path || !rule) return false;
     // 统一路径分隔符
