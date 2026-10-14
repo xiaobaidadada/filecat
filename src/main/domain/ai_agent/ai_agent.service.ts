@@ -858,6 +858,10 @@ export class Ai_agentService {
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
         const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.ai_config_env);
 
+        // 会话级工作目录（file_cwd_path）：作为 cwd 传给 chat_core，
+        // 让 AI 知道当前工作位置：相对路径按此目录拼接，system prompt 里也会展示它。
+        const session_cwd = session.file_cwd_path || undefined;
+
         // 最终会话 id（session_id 可能为空，此时用 ensure 出来的 session.id）
         const finalSessionId = session_id || session.id;
 
@@ -907,6 +911,8 @@ export class Ai_agentService {
                 user_id: userId,
                 controller,
                 session_id: finalSessionId,
+                // 会话配置的工作目录：相对路径解析与 system prompt 展示都用它
+                cwd: session_cwd,
                 // 把共享引用传给 chat()，其内部会实时把本轮消息 push 进来
                 once_messages_list: run_pojo.once_messages_list,
                 // ===== 流式推送：把每个文本片段推送给【订阅了本会话的连接】 =====

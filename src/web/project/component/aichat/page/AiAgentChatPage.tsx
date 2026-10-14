@@ -667,6 +667,42 @@ export default function AiAgentChatPage() {
         }
     };
 
+    // ===== 会话设置弹框（配置该会话的服务器工作目录 file_cwd_path） =====
+    const showSessionSettingPopup = (sessionId: string) => {
+        // 输入值保存在闭包变量里，确认时读取（与重命名弹框同风格）
+        let cwd_value = sessions.find(s => s.id === sessionId)?.file_cwd_path ?? "";
+        set_prompt_card({
+            open: true,
+            title: t('会话设置'),
+            context_div: (
+                <div className="session-setting">
+                    <div className="session-setting__label">{t('服务器工作目录')}</div>
+                    <InputText
+                        value={cwd_value}
+                        placeholder={t('服务器工作目录提示')}
+                        handleInputChange={(value) => { cwd_value = value; }}
+                    />
+                </div>
+            ),
+            confirm: async () => {
+                try {
+                    const result = await ai_agentHttp.post("session/setting", {
+                        session_id: sessionId,
+                        file_cwd_path: cwd_value.trim(),
+                    });
+                    if (result.code === RCode.Success) {
+                        NotySuccess(t('保存成功'));
+                    }
+                } catch {
+                    // 路径非法等错误由 http 层统一提示，这里无需额外处理
+                }
+                set_prompt_card({ open: false });
+                await loadSessions(activeSessionId);
+            },
+            cancel: () => set_prompt_card({ open: false }),
+        });
+    };
+
     // ===== 生命周期 =====
     const init = async () => {
         // 拉取 env 配置
@@ -884,6 +920,7 @@ export default function AiAgentChatPage() {
                     onDeleteSession={deleteSession}
                     onToggleCmdAuto={toggleCmdAuto}
                     onShowUsageStats={showUsageStatsPopup}
+                    onShowSessionSetting={showSessionSettingPopup}
                     batchMode={batchMode}
                     selectedSessionIds={selectedSessionIds}
                     onToggleSessionSelect={toggleSessionSelect}

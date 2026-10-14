@@ -127,6 +127,37 @@ export class Ai_AgentController {
         return Sucess("ok");
     }
 
+    /**
+     * 设置会话的通用参数（合并语义：只覆盖传入的字段，其余保留）。
+     * body: { session_id: string, ...要更新的设置项 }
+     *
+     * 目前支持：
+     *   - file_cwd_path: 服务器工作目录。会作为聊天时的 cwd 传给 AI，
+     *     AI 由此知道自己的工作目录，相对路径也按它解析；传空字符串表示清除。
+     *
+     * 后续新增会话级参数直接往 body 里加字段即可，无需新增接口。
+     */
+    @Post("/session/setting")
+    async session_setting(@Req() ctx, @Body() data: any) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(ctx.headers.authorization);
+        const setting: { file_cwd_path?: string } = {};
+        if (data?.file_cwd_path !== undefined) {
+            const cwd = String(data.file_cwd_path).trim();
+            // 非空时需要校验路径是否在当前用户允许访问的范围内
+            if (cwd) {
+                userService.check_user_path(ctx.headers.authorization, cwd);
+            }
+            setting.file_cwd_path = cwd;
+        }
+        aiAgentMemoryService.sessions_update_setting(
+            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            data?.session_id,
+            setting
+        );
+        return Sucess("ok");
+    }
+
     @Post("/session/get")
     async session_get(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);

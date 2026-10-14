@@ -452,6 +452,13 @@ export class ai_agent_chat_session_item {
     /** 命令检测是否开启：开启后该会话执行命令不再弹确认框（自动允许） */
     cmd_auto_allow?: boolean;
 
+    /**
+     * 该会话对应的服务器工作目录（绝对路径）。
+     * 隐藏字段：前端不强展示，通过会话设置弹框配置；
+     * 聊天时作为 cwd 传给 AI（相对路径按此目录拼接，并作为 system prompt 里的“当前工作目录”）。
+     */
+    file_cwd_path?: string;
+
     /** 列表中的排序权重（越小越靠前），由用户拖动排序时写入 */
     sort_index?: number;
 }
@@ -483,6 +490,8 @@ export class ai_agent_chat_session_meta {
     usage_stats?: ai_agent_usage_stats;
     /** 命令检测是否开启（免确认） */
     cmd_auto_allow?: boolean;
+    /** 该会话的服务器工作目录（绝对路径），见 ai_agent_chat_session_item.file_cwd_path */
+    file_cwd_path?: string;
     /**
      * 会话在列表中的排序权重（越小越靠前）。
      * 用户手动拖动排序时写入；未设置过的会话按 updated_at 兜底排序。

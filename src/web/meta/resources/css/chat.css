@@ -750,6 +750,18 @@
     font-weight: 700;
 }
 
+/* 会话设置弹框内容（prompt_card 内）*/
+.session-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.session-setting__label {
+    font-size: 0.9em;
+    color: var(--textPrimary, #222);
+}
+
 /* AI 思考指示器 */
 .ai-thinking-indicator {
     display: flex;

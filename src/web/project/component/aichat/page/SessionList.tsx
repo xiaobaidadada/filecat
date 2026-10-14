@@ -23,6 +23,7 @@ export default function SessionList({
                                         onDeleteSession,
                                         onToggleCmdAuto,
                                         onShowUsageStats,
+                                        onShowSessionSetting,
                                         batchMode,
                                         selectedSessionIds,
                                         onToggleSessionSelect,
@@ -39,6 +40,8 @@ export default function SessionList({
     onDeleteSession: (id: string) => void;
     onToggleCmdAuto?: (id: string, allow: boolean) => void;
     onShowUsageStats: (id: string) => void;
+    /** 打开「会话设置」弹框（配置该会话的服务器工作目录） */
+    onShowSessionSetting?: (id: string) => void;
     batchMode?: boolean;
     selectedSessionIds?: Set<string>;
     onToggleSessionSelect?: (id: string) => void;
@@ -150,6 +153,10 @@ export default function SessionList({
                                         {
                                             name: t('字符消耗统计'),
                                             click: () => onShowUsageStats(session.id)
+                                        },
+                                        {
+                                            name: t('设置'),
+                                            click: () => onShowSessionSetting?.(session.id)
                                         },
                                         {
                                             name: t('删除'),

@@ -230,6 +230,7 @@ export class AiAgentMemoryService {
             file_name: fileName,
             usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
             cmd_auto_allow: session.cmd_auto_allow ?? false,
+            file_cwd_path: session.file_cwd_path,
         };
     }
 
@@ -299,6 +300,7 @@ export class AiAgentMemoryService {
                 sort_index: it.sort_index,
                 usage_stats: it.usage_stats ? {...it.usage_stats} : undefined,
                 cmd_auto_allow: it.cmd_auto_allow ?? false,
+                file_cwd_path: it.file_cwd_path,
             }));
     }
 
@@ -501,6 +503,30 @@ export class AiAgentMemoryService {
         const session = this.read_session(userId, meta);
         if (!session) return;
         session.cmd_auto_allow = allow;
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        this.upsertMeta(store, userId, session, fileName);
+    }
+
+    /**
+     * 更新会话的通用设置参数（合并语义：只覆盖传入的字段，其余保留）。
+     * 目前支持 file_cwd_path（服务器工作目录），后续新增会话级参数直接在此扩展。
+     * @param userId 用户 ID
+     * @param sessionId 会话 ID
+     * @param setting 需要更新的设置项
+     */
+    public sessions_update_setting(userId: string, sessionId: string, setting: {
+        /** 服务器工作目录（绝对路径）；空字符串表示清除 */
+        file_cwd_path?: string;
+    }) {
+        const store = this.read_index_of_session();
+        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+        if (!meta) return;
+        const session = this.read_session(userId, meta);
+        if (!session) return;
+        if (setting.file_cwd_path !== undefined) {
+            // 空/空白视为清除该配置
+            session.file_cwd_path = setting.file_cwd_path.trim() || undefined;
+        }
         const fileName = this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }

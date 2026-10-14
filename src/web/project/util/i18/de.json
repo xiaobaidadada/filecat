@@ -988,5 +988,8 @@
   "已禁用": "Deaktiviert",
   "prt_local": "Lokales Verzeichnis. Geben Sie einen vorhandenen absoluten Pfad auf diesem Rechner als Quelle an; nach dem Einbinden können Sie ihn in filecat als Verzeichnislink nutzen.",
   "移动到最上": "Nach oben",
-  "移动到最下": "Nach unten"
+  "移动到最下": "Nach unten",
+    "会话设置": "Sitzungseinstellungen",
+    "服务器工作目录": "Arbeitsverzeichnis auf dem Server",
+    "服务器工作目录提示": "z. B. D:\\projects\\myapp"
 }

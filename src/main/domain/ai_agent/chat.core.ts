@@ -376,6 +376,7 @@ export class ChatCore {
         // 在 update_llm_prompt 工具更新后重新调用，可实时刷新注入的内容。
         const buildSystemContent = (currentLlmEdit: string) => `
 filecat 当前软件用户当前所在的根目录是 ${rootPath}，
+${cwd ? `当前会话设置的服务器工作目录（cwd）是 ${cwd} .` : ''}
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
 当前会话id 为：${session_id}
