@@ -17,8 +17,9 @@ import {ableExtBeautify, FileMenuData, getFileFormat} from "../../../../../../co
 import {PromptEnum} from "../../../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
-import {useLocation, useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
+import {useUpdateUrlParams} from "../../FileUtil";
 // import Ace from "../Ace";
 
 
@@ -97,9 +98,12 @@ export default function Studio(props) {
     const [md_dirty, set_md_dirty] = useState(false);
 
     // ===== 右侧 AI 聊天面板 =====
-    // 是否展开右侧聊天面板；聊天面板绑定「当前 Studio 工作目录」，
-    // 打开时按工作目录定位会话（找不到就新建），并记住会话 id 到 sessionStorage。
-    const [chat_open, set_chat_open] = useState(false);
+    // 是否展开右侧聊天面板：状态同步到 url 参数 chat_open，刷新/切换文件后仍保持。
+    // 聊天面板绑定「当前 Studio 工作目录」，打开时按工作目录定位会话（找不到就新建），并记住会话 id 到 sessionStorage。
+    const updateParams = useUpdateUrlParams();
+    const [searchParams] = useSearchParams();
+    const chat_open = searchParams.get("chat_open") === "1";
+    const set_chat_open = (open: boolean) => updateParams("chat_open", open ? "1" : null);
     // 右侧面板宽度（em）；默认占右侧可用空间约 40%，最小 320px，最大 70%
     const [chat_width, set_chat_width] = useState(33);
     const chatDividerRef = useRef(null);
@@ -139,6 +143,16 @@ export default function Studio(props) {
 
     /** 权限校验：AI 聊天页与右侧面板使用同一权限 */
     const {check_user_auth} = use_auth_check();
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    // 无 AI 聊天页权限时，自动清掉 url 参数并关闭面板（含直接访问带该参数的链接）。
+    // 必须等 user_base_info 加载完成再判断，否则首屏会把已授权用户的参数误删。
+    const chat_open_auth = check_user_auth(UserAuth.ai_agent_page);
+    useEffect(() => {
+        if (!user_base_info?.user_data) return;
+        if (chat_open && !chat_open_auth) {
+            updateParams("chat_open", null);
+        }
+    }, [chat_open, chat_open_auth, user_base_info]);
 
     /** Studio 当前工作目录：URL 上的目录路径（已解码），供右侧 AI 聊天面板按目录定位会话 */
     const chat_cwd = getRouterAfter('file', folder_path);
@@ -431,7 +445,7 @@ export default function Studio(props) {
                 需与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示该按钮 */}
             {check_user_auth(UserAuth.ai_agent_page) && (
                 <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
-                              onClick={() => set_chat_open(v => !v)}/>
+                              onClick={() => set_chat_open(!chat_open)}/>
             )}
             {/* 保存按钮：md 走 md 编辑器自己的保存；画板/思维导图走各自句柄的 save；
                 其余文本文件走 Studio 自己的 file_save */}
