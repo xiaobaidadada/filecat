@@ -319,6 +319,16 @@ export class AiAgentMemoryService {
         // 这样它一定排在所有已排序会话之前，又不影响已有会话之间的相对顺序。
         // 若已有会话都没有 sort_index（从未拖动过），则留空，由 list() 按 updated_at 倒序自然置顶。
         const existing = this.user_meta_index_by_store(store, userId).sessions;
+        if (file_cwd_path) {
+            // 这种创建是在目录下打开，自动创建的，需要检测
+            const ok_path = path.normalize(file_cwd_path);
+            for (const it  of existing) {
+                if (it.file_cwd_path && path.normalize(it.file_cwd_path) === ok_path) {
+                    const hit = this.read_session(userId, it);
+                    if (hit) return cloneSession(hit);
+                }
+            }
+        }
         const min_sort = existing.reduce<number | undefined>((min, it) => {
             if (it.sort_index === undefined) return min;
             return min === undefined || it.sort_index < min ? it.sort_index : min;
@@ -334,7 +344,7 @@ export class AiAgentMemoryService {
             updated_at: Date.now(),
             sys_prompt_id: sys_prompt_id,
             // 会话工作目录（可选）：按目录定位会话时由调用方传入
-            file_cwd_path: file_cwd_path || undefined,
+            file_cwd_path: file_cwd_path ,
             sort_index: min_sort === undefined ? undefined : min_sort - 1,
         };
         const fileName = this.writeSession(userId, session);

@@ -473,7 +473,7 @@ export function use_handleContextMenu() {
         }
         const list: any[] = [
             common_handle_item,
-            {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"}
+            // {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"}
         ];
         if(nowFileList?.folders?.find(v=>v.name === '.git')) {
             list.push({r: t("查看Git提交"), v: "git_page"})
