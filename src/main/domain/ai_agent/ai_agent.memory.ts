@@ -356,6 +356,7 @@ export class AiAgentMemoryService {
                     if (hit) return cloneSession(hit);
                 }
             }
+            title = title || `Dir ${path.basename(ok_path)}`
         }
         const min_sort = existing.reduce<number | undefined>((min, it) => {
             if (it.sort_index === undefined) return min;
