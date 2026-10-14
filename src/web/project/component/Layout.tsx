@@ -163,7 +163,7 @@ function Layout() {
                     {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
                         <ExcalidrawEditor/>
                     </Suspense>}
-                    {mind_editor.url !== undefined && <Suspense fallback={<div></div>}>
+                    {(mind_editor.url !== undefined || mind_editor.code_source !== undefined) && <Suspense fallback={<div></div>}>
                         <MindEditor/>
                     </Suspense>}
             {md_editor.url !== undefined && <Suspense fallback={<div></div>}>

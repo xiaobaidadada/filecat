@@ -1,4 +1,6 @@
 import React, {useEffect, useRef} from "react";
+import {useAtom} from "jotai";
+import {$stroe} from "../../../../util/store";
 import {EditorState, TextSelection} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
 import {Node as PmNode} from "prosemirror-model";
@@ -22,7 +24,7 @@ import {OutlineItem} from "./MdOutline";
 import {
     build_source_highlight_plugin,
 } from "./md_source_highlight";
-import {build_graph_plugin} from "./md_graph";
+import {build_graph_plugin, OpenMindHandler} from "./md_graph";
 import {build_math_plugin, MathView} from "./md_math_view";
 import {md_node_views, set_html_doc_dir} from "./md_html";
 import {
@@ -186,10 +188,23 @@ function table_enter(state: EditorState, dispatch?: (tr: any) => void): boolean 
 const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysiwygEditor(props, ref) {
     const host_ref = useRef<HTMLDivElement>(null);
     const view_ref = useRef<EditorView | null>(null);
+    const [, set_mind_editor] = useAtom($stroe.mind_editor);
     const on_change_ref = useRef(props.on_change);
     const on_save_ref = useRef(props.on_save);
     const on_selection_ref = useRef(props.on_selection_change);
     const on_source_mode_ref = useRef(props.on_source_mode_change);
+    // 点导图卡片时打开全屏思维导图编辑器（复用项目 .mind 编辑器）。
+    // 用 ref 承接最新实现，供只创建一次的 ProseMirror 插件稳定调用。
+    const open_mind_ref = useRef<OpenMindHandler>();
+    open_mind_ref.current = (code, write_back) => {
+        set_mind_editor({
+            name: "思维导图",
+            // 直接把代码块内容当数据源，不落文件
+            code_source: code,
+            // 保存时把编辑后的数据写回代码块
+            on_save_code: (data_str) => write_back(data_str),
+        });
+    };
     useEffect(() => {
         on_change_ref.current = props.on_change;
         on_save_ref.current = props.on_save;
@@ -212,7 +227,8 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 // 源码模式的语法高亮（用 Decoration，不写进文档）
                 build_source_highlight_plugin(),
                 // ```mermaid / ```svg 代码块：光标移出时整块替换成渲染好的图
-                build_graph_plugin(),
+                // ```smm-mind：点图打开全屏思维导图编辑器（复用项目 .mind 编辑器）
+                build_graph_plugin((code, write_back) => open_mind_ref.current?.(code, write_back)),
                 // 数学公式：光标移出时排版，光标进入时变回 LaTeX 源码
                 build_math_plugin(),
                 build_input_rules(),

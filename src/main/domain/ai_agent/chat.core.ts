@@ -73,7 +73,7 @@ export interface ChatOptions {
     once_messages_list?: ai_agent_message_item[];
 }
 
-const t1 = "支持输出 ```mermaid  和 ```svg  两种方案画图显示，mermaid优先使用，因为输出的文字描述体积比较小，画泳道图什么的比较方便。"
+const t1 = "支持输出 ```mermaid  和 ```svg ,```smm-mind 三种种方案画图显示，mermaid优先使用，因为输出的文字描述体积比较小，画泳道图什么的比较方便，smm-mind支持的格式是SimpleMindMap的思维导图。"
 
 export class ChatCore {
 

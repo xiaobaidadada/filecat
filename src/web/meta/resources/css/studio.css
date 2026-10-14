@@ -1351,6 +1351,11 @@ line.git-log__graph-edge {
     z-index: 1000;
 }
 
+/* 从 md 的 ```smm-mind 代码块打开时，要盖在 md 编辑器（同样 z-index:1000）之上 */
+#mind-container.mind-container--over {
+    z-index: 1100;
+}
+
 #mind-container .mind-context {
     display: flex;
     flex-direction: column;

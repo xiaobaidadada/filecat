@@ -184,7 +184,15 @@ export const $stroe = {
     // excalidraw编辑器
     excalidraw_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
     // 思维导图编辑器（.mind）
-    mind_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
+    // code_source：从 md 的 ```smm-mind 代码块打开时，直接携带数据（此时不读 url）
+    // on_save_code：代码块来源的保存回调，把编辑后的数据写回代码块
+    mind_editor: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+        code_source?: string,
+        on_save_code?: (data: string) => void,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

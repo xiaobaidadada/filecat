@@ -129,7 +129,7 @@
 
 .md-outline-tip {
     padding: 0.5em 0.75em;
-    color: var(--textTertiary, #9aa0a6);
+    color: var(--textSecondary, #5f6368);
     font-size: 0.9em;
 }
 
@@ -165,7 +165,7 @@
     flex-shrink: 0;
     text-align: center;
     visibility: hidden;
-    color: var(--textTertiary, #9aa0a6);
+    color: var(--textSecondary, #5f6368);
     cursor: pointer;
 }
 
@@ -1029,6 +1029,33 @@
 /* 语法错误时没有图可放大，也不该给出编辑入口以外的暗示 */
 .md-graph--error .md-graph__body {
     cursor: default;
+}
+
+/* ---- ```smm-mind 思维导图 ---- */
+/* 导图是交互式组件（可缩放/平移），不是静态图：给固定高度并铺满宽度。
+   注意 simple-mind-map 会直接把画布挂在传入的容器上（容器即 .md-graph--mind），
+   没有 .md-graph__body 这一层，所以高度必须写在容器自身上。 */
+.md-graph--mind {
+    height: 360px;
+    /* 导图需要确定的画布尺寸；父容器是收缩宽度时也要撑开 */
+    width: 100%;
+    min-width: 320px;
+    box-sizing: border-box;
+    padding: 0;
+    text-align: left;
+    overflow: hidden;
+    cursor: default;
+}
+
+/* 全屏放大：铺满遮罩。
+   用视口尺寸而不是 100% —— 遮罩内层是按内容收缩的 flex 容器，
+   百分比高度算不出确定值，simple-mind-map 会因容器宽高为 0 而报错。 */
+.md-graph-zoom__body .md-graph--mind {
+    width: 80vw;
+    height: 80vh;
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
 }
 
 /* ---- 图形全屏放大 ---- */

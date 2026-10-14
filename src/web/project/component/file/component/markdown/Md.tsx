@@ -10,6 +10,7 @@ import 'github-markdown-css/github-markdown.css';
 import {join_url} from "../../../../../../common/StringUtil";
 import {using_add_md__copy_button} from "../../FileUtil";
 import {is_graph_lang, render_graph} from "../md_editor/graph_render";
+import {is_mind_lang, prepare_mind} from "../md_editor/mind_graph";
 import {install_math, render_math_blocks} from "../md_editor/md_math";
 import {encode_html} from "../md_editor/md_html";
 import i18n from "../../../../util/in18resource";
@@ -119,7 +120,9 @@ async function render_graph_blocks(root: HTMLElement) {
     const codes = root.querySelectorAll<HTMLElement>("pre > code[class*='language-']");
     for (const code of Array.from(codes)) {
         const lang = language_of(code);
-        if (!is_graph_lang(lang)) {
+        const is_graph = is_graph_lang(lang);
+        const is_mind = is_mind_lang(lang);
+        if (!is_graph && !is_mind) {
             continue;
         }
         const target = code.closest(".code-block-with-copy") ?? code.parentElement;
@@ -128,10 +131,14 @@ async function render_graph_blocks(root: HTMLElement) {
         }
         const source = code.textContent ?? "";
         const holder = document.createElement("div");
+        target.replaceWith(holder);
+        if (is_mind) {
+            await mount_mind_block(holder, source);
+            continue;
+        }
         holder.className = "md-graph md-graph--loading";
         holder.textContent = i18n.t("rendering");
-        target.replaceWith(holder);
-        const res = await render_graph(lang, source);
+        const res = await render_graph(lang as any, source);
         // 组件可能已卸载，或这段内容已被重新渲染
         if (!holder.isConnected) {
             continue;
@@ -146,6 +153,20 @@ async function render_graph_blocks(root: HTMLElement) {
     }
 }
 
+/** 预览页的思维导图代码块：容器已挂到文档，直接初始化只读导图 */
+async function mount_mind_block(holder: HTMLElement, source: string) {
+    holder.className = "md-graph md-graph--mind md-graph--loading";
+    holder.textContent = i18n.t("rendering");
+    const task = await prepare_mind(source);
+    // 内容可能已被重新渲染，容器不在文档里就不要再初始化
+    if (!holder.isConnected) {
+        return;
+    }
+    holder.className = "md-graph md-graph--mind";
+    holder.textContent = "";
+    task.mount(holder);
+}
+
 /** 从 code 元素的 class 里取出语言名（hljs language-mermaid → mermaid） */
 function language_of(code: HTMLElement): string {
     const hit = code.className.match(/language-([\w-]+)/);
@@ -155,11 +176,16 @@ function language_of(code: HTMLElement): string {
 export default function Md(props: {context: string}) {
     const ref = useRef<HTMLDivElement>(null);
     using_add_md__copy_button();
+    // 不用 dangerouslySetInnerHTML：React 每次重渲染都会重设 innerHTML，
+    // 会把 render_graph_blocks 替换出来的图形冲掉（而 context 没变时 effect 不会重跑）。
+    // 改为手动写入，保证「写入 HTML → 渲染图形」在同一个 effect 里连续完成。
     useEffect(() => {
-        if (ref.current) {
-            render_graph_blocks(ref.current);
-            render_math_blocks(ref.current);
+        if (!ref.current) {
+            return;
         }
+        ref.current.innerHTML = md.render(props.context ?? "");
+        render_graph_blocks(ref.current);
+        render_math_blocks(ref.current);
     }, [props.context]);
-    return <div ref={ref} dangerouslySetInnerHTML={{__html: md.render(props.context)}}/>;
+    return <div ref={ref}/>;
 }

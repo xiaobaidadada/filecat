@@ -7,6 +7,7 @@ import {useTranslation} from "react-i18next";
 import MindMap from "simple-mind-map";
 // 库的样式，必须引入，否则连线/节点都不可见
 import "simple-mind-map/dist/simpleMindMap.esm.css";
+import {to_simple_mind_data} from "./md_editor/mind_graph";
 
 /**
  * 基于 simple-mind-map 的思维导图编辑器（.mind）。
@@ -25,8 +26,13 @@ export type MindHandle = {
 };
 
 type Props = {
-    /** 读取内容的地址 */
-    url: string;
+    /** 读取内容的地址（与 data 二选一） */
+    url?: string;
+    /**
+     * 直接提供的内容（与 url 二选一）。
+     * 用于代码块等「数据来自外部、不落文件」的场景：给了 data 就不再请求 url。
+     */
+    data?: string;
     /** 切换文件时用于重建编辑器的 key */
     reset_key?: string;
     /** 保存实现：由外壳决定写到哪 */
@@ -96,7 +102,11 @@ export default function MindMapEditor(props: Props) {
     // 初始化 / 切换文件
     useEffect(() => {
         const el = containerRef.current;
-        if (!el || !props.url) {
+        if (!el) {
+            return;
+        }
+        // url 与 data 至少有一个，否则没有内容可加载
+        if (!props.url && props.data === undefined) {
             return;
         }
         let cancelled = false;
@@ -164,20 +174,29 @@ export default function MindMapEditor(props: Props) {
 
         (async () => {
             try {
-                const rsq = await Http.get(props.url);
-                if (cancelled) {
-                    return;
+                let raw: any = null;
+                if (props.data !== undefined) {
+                    // 外部直接给内容（代码块场景），不请求网络
+                    raw = props.data;
+                } else {
+                    const rsq = await Http.get(props.url as string);
+                    if (cancelled) {
+                        return;
+                    }
+                    raw = rsq;
                 }
                 let data: any = null;
-                // 后端把文件内容原样返回（字符串）；空文件/非法 JSON 时回退到空导图
-                if (typeof rsq === "string" && rsq.trim()) {
+                // 内容原样返回（字符串）；空/非法 JSON 时回退到空导图
+                if (typeof raw === "string" && raw.trim()) {
                     try {
-                        data = JSON.parse(rsq);
+                        data = JSON.parse(raw);
                     } catch {
                         data = null;
                     }
+                } else if (raw && typeof raw === "object") {
+                    data = raw;
                 }
-                data = toSimpleMindData(data);
+                data = to_simple_mind_data(data);
                 await init(data);
             } catch (e) {
                 if (!cancelled) {
@@ -195,7 +214,7 @@ export default function MindMapEditor(props: Props) {
             mindRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.url]);
+    }, [props.url, props.data]);
 
     // Ctrl+S 保存：捕获阶段拦截，避免被浏览器/外层抢走
     useEffect(() => {
@@ -277,40 +296,4 @@ export default function MindMapEditor(props: Props) {
 function readScale(mm: any): number {
     const s = mm?.view?.getTransformData?.()?.state?.scale;
     return typeof s === "number" && s > 0 ? Math.round(s * 100) : 100;
-}
-
-/** 把文件内容规整成 simple-mind-map 能吃的节点数据。
- * 兼容两种格式：
- *   1. 本库自己的完整数据（含 root 字段）
- *   2. 更早的自研格式 {version, root:{id,text,children}} —— 转成本库的 {data:{text},children}
- */
-function toSimpleMindData(input: any): any {
-    if (!input || typeof input !== "object") {
-        return null;
-    }
-    // 本库格式：root 下是一个节点对象（含 data.text）
-    if (input.root && typeof input.root === "object") {
-        if (input.root.data) {
-            // 已经是本库节点结构，直接返回
-            return input.root;
-        }
-        // 旧自研格式：节点是 {id,text,children}
-        return convertLegacyNode(input.root);
-    }
-    // 可能直接就是节点对象
-    if (input.data && typeof input.data === "object") {
-        return input;
-    }
-    return convertLegacyNode(input);
-}
-
-/** 把旧自研节点（text/children）转成 simple-mind-map 节点（data.text/children） */
-function convertLegacyNode(n: any): any {
-    return {
-        data: {
-            text: typeof n?.text === "string" ? n.text : "",
-            ...(n?.note ? {note: n.note} : {}),
-        },
-        children: Array.isArray(n?.children) ? n.children.map(convertLegacyNode) : [],
-    };
 }

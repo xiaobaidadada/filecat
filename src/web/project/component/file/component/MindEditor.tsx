@@ -21,6 +21,9 @@ export default function MindEditor() {
     // 用 ref 承接最新的 save，供 keydown 稳定调用
     const apiRef = useRef<MindHandle | null>(null);
 
+    // 代码块来源：数据直接来自 md 的 ```smm-mind，不落文件
+    const is_code_source = mind_editor.code_source !== undefined;
+
     const close = () => {
         if (dirty && !window.confirm(t("有未保存的修改，确定要关闭吗？"))) {
             return;
@@ -38,17 +41,21 @@ export default function MindEditor() {
     // 页面卸载时若有未保存内容，提示用户（与 md 编辑器保持一致的行为，不加额外提示）
 
 
-    if (mind_editor.url === undefined) {
+    if (mind_editor.url === undefined && !is_code_source) {
         return null;
     }
 
     return (
-        <div id={"mind-container"}>
+        // 代码块来源时（从 md 编辑器里打开）抬高一层：
+        // md 编辑器自身是 z-index:1000 的全屏浮层，两者同层时后者会盖住前者。
+        <div id={"mind-container"} className={is_code_source ? "mind-container--over" : undefined}>
             <div className={"mind-context"}>
                 <MindMapEditor
                     fullscreen
-                    reset_key={mind_editor.url}
-                    url={mind_editor.url}
+                    reset_key={mind_editor.url ?? mind_editor.name}
+                    // 代码块来源直接把内容当数据（不请求文件）
+                    url={is_code_source ? undefined : mind_editor.url}
+                    data={is_code_source ? mind_editor.code_source : undefined}
                     on_dirty={set_dirty}
                     register={(handle) => {
                         apiRef.current = handle;
@@ -69,6 +76,14 @@ export default function MindEditor() {
                         </div>
                     }
                     on_save={async (context: string) => {
+                        // 代码块来源：写回 md 的 ```smm-mind，不落文件
+                        if (is_code_source) {
+                            mind_editor.on_save_code?.(context);
+                            NotySuccess(t("保存成功"));
+                            // 写回代码块后关闭全屏编辑器
+                            set_mind_editor({});
+                            return true;
+                        }
                         const rsq = await fileHttp.post(
                             `save/${encodeURIComponent(getRouterAfter("file", getRouterPath()))}${mind_editor.name}`,
                             {context},
