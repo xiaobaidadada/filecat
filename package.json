@@ -85,7 +85,6 @@
     "fs-extra": "^11.2.0",
     "github-markdown-css": "^5.6.1",
     "highlight.js": "^11.11.1",
-    "katex": "^0.16.47",
     "html-webpack-plugin": "^5.6.6",
     "http-proxy-middleware": "4.1.1",
     "https-proxy-agent": "^7.0.6",
@@ -93,6 +92,7 @@
     "iconv-lite": "^0.6.3",
     "jieba-wasm": "^2.4.0",
     "jotai": "^2.20.1",
+    "katex": "^0.16.47",
     "listr2": "^8.2.1",
     "lodash": "4.17.23",
     "markdown-it": "15.0.1",
@@ -102,6 +102,7 @@
     "markdown-it-sup": "^2.0.0",
     "markdown-it-task-lists": "^2.1.1",
     "material-icons": "^1.13.12",
+    "mermaid": "^11.17.2",
     "mime-types": "^2.1.35",
     "minizlib": "^3.1.0",
     "mustache": "^4.2.0",
@@ -133,6 +134,7 @@
     "reflect-metadata": "^0.2.1",
     "rimraf": "^5.0.5",
     "routing-controllers": "^0.10.4",
+    "simple-mind-map": "^0.14.0-fix.3",
     "sshpk": "^1.18.0",
     "style-loader": "^3.3.4",
     "systeminformation": "5.31.7",
@@ -205,8 +207,5 @@
     "assets": [
       "build/**/**"
     ]
-  },
-  "dependencies": {
-    "mermaid": "^12.1.0"
   }
 }

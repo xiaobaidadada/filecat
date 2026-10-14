@@ -21,6 +21,8 @@ export enum FileTypeEnum {
     md = "md",
     excalidraw = "excalidraw",
     draw = "draw",
+    /** 思维导图文件 */
+    mind = "mind",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

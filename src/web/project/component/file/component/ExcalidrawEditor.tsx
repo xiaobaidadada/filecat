@@ -21,7 +21,7 @@ type ExcalidrawSceneData = {
     libraryItems?: any[];
 };
 
-function parseScene(raw: any): ExcalidrawSceneData | null {
+export function parseScene(raw: any): ExcalidrawSceneData | null {
     if (!raw) {
         return null;
     }

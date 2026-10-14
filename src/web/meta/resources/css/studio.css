@@ -1308,3 +1308,157 @@ line.git-log__graph-edge {
     display: flex;
     flex-direction: column;
 }
+
+/* ===== 内嵌画板编辑器（Studio 打开 .draw / .excalidraw） =====
+   Excalidraw 要求父容器有确定高度，这里撑满 studio-editor */
+.studio-editor--draw,
+.studio-editor--mind {
+    display: flex;
+    margin: 0;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.excalidraw-inline {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 思维导图编辑器（.mind，基于 simple-mind-map） ===== */
+
+/* 全屏浮层外壳：与 #excalidraw-container 完全对称 */
+#mind-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #fafafa;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1000;
+}
+
+#mind-container .mind-context {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* 浮层顶部条：文件名 + 保存 + 关闭 */
+.mind-topbar {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-shrink: 0;
+    height: 2.6rem;
+    padding: 0 .6rem;
+    background: var(--surfacePrimary, #fff);
+    border-bottom: 1px solid var(--divider, #e8eaed);
+}
+
+.mind-topbar__icon {
+    font-size: 1.1rem;
+    color: var(--icon-blue, #1a73e8);
+}
+
+.mind-topbar__name {
+    font-size: .9rem;
+    color: var(--textPrimary, #202124);
+}
+
+.mind-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surfacePrimary, #fff);
+    border: 1px solid var(--divider, #e8eaed);
+}
+
+/* 全屏模式下不需要外边框（浮层已经铺满） */
+.mind-wrap--full {
+    border: 0;
+}
+
+.mind-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    flex-shrink: 0;
+    padding: .2rem .4rem;
+    border-bottom: 1px solid var(--divider, #e8eaed);
+    background: var(--surfacePrimary, #fafafa);
+}
+
+.mind-toolbar__gap {
+    flex: 1;
+}
+
+.mind-toolbar__zoom {
+    min-width: 3.2rem;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--textSecondary, #5f6368);
+    font-variant-numeric: tabular-nums;
+}
+
+.mind-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--textPrimary, #202124);
+    cursor: pointer;
+}
+
+.mind-btn:hover:not(:disabled) {
+    background: var(--hover, rgba(0, 0, 0, .06));
+    color: var(--blue, #1a73e8);
+}
+
+.mind-btn:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.mind-btn .material-icons {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.mind-canvas {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* simple-mind-map 的挂载点，必须撑满容器并给库一个确定尺寸 */
+.mind-mount {
+    width: 100%;
+    height: 100%;
+}
+
+.mind-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    color: var(--textSecondary, #5f6368);
+    background: var(--surfacePrimary, #fff);
+}

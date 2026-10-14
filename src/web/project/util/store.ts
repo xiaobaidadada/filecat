@@ -183,6 +183,8 @@ export const $stroe = {
     image_editor: atom<{path?: string, name?: string, close?: () => any}>({}),
     // excalidraw编辑器
     excalidraw_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
+    // 思维导图编辑器（.mind）
+    mind_editor: atom<{url?: string, name?: string, close?: () => any}>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

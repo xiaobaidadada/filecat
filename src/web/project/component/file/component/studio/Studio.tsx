@@ -29,10 +29,24 @@ import type {MdEditorPaneApi, MdEditorPaneProps} from "../md_editor/MdEditor";
 import type {OutlineItem} from "../md_editor/MdOutline";
 // 通用聊天面板：这里以「内嵌模式」放到右侧，Header 由面板自己渲染
 const ChatPanel = React.lazy(() => import("../../../aichat/page/ChatPanel"));
+// 内嵌画板编辑器（.draw / .excalidraw）
+const ExcalidrawInline = React.lazy(() => import("../ExcalidrawInline"));
+// 内嵌思维导图编辑器（.mind）
+const MindMapInline = React.lazy(() => import("../MindMapInline"));
 
 /** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
 function is_markdown_file(name: string): boolean {
     return getFileFormat(name) === FileTypeEnum.md;
+}
+
+/** 是否用画板编辑器打开：.draw / .excalidraw（getFileFormat 已把 .draw 归一为 excalidraw） */
+function is_draw_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.excalidraw;
+}
+
+/** 是否是思维导图文件：.mind 后缀 */
+function is_mind_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.mind;
 }
 
 /** 左侧面板显示的内容 */
@@ -62,8 +76,16 @@ export default function Studio(props) {
 
     // 当前文件是否用 md 编辑器打开
     const is_md = is_markdown_file(edit_filename.name);
+    // 当前文件是否用画板编辑器打开（.draw / .excalidraw）
+    const is_draw = is_draw_file(edit_filename.name);
+    // 当前文件是否是思维导图（.mind）
+    const is_mind = is_mind_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
+    // 画板编辑器句柄（保存按钮）
+    const excalidraw_api = useRef<any>(null);
+    // 思维导图编辑器句柄（保存按钮）
+    const mind_api = useRef<any>(null);
     // md 编辑器上报的大纲数据与当前高亮项
     const [outline_items, set_outline_items] = useState<OutlineItem[]>([]);
     const [outline_active, set_outline_active] = useState(-1);
@@ -190,6 +212,8 @@ export default function Studio(props) {
         set_nav_content("folder");
         set_md_dirty(false);
     }
+
+
     const open_file = (pojo: FileTree,pre_path)=>{
         if(pojo.size > MAX_SIZE_TXT) {
             set_confirm({
@@ -409,7 +433,16 @@ export default function Studio(props) {
                 <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
                               onClick={() => set_chat_open(v => !v)}/>
             )}
-            {!is_md && have_update && <ActionButton title={"保存"} icon={"save"} onClick={file_save}/>}
+            {/* 保存按钮：md 走 md 编辑器自己的保存；画板/思维导图走各自句柄的 save；
+                其余文本文件走 Studio 自己的 file_save */}
+            {is_md
+                ? (md_dirty ? <ActionButton title={t("保存")} icon={"save"} onClick={() => md_api.current?.save()}/> : null)
+                : is_draw
+                    ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
+                    : is_mind
+                        ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
+                        : (have_update ? <ActionButton title={"保存"} icon={"save"} onClick={file_save}/> : null)
+            }
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
             {/* 左侧面板：用 display 控制显隐，而不是条件渲染。
@@ -450,6 +483,7 @@ export default function Studio(props) {
                 />
             }
             {/* md 文件走 md 编辑器（含工具栏、右键菜单、大纲、主题、源码模式），
+                .draw/.excalidraw 走内嵌画板，.mind 走思维导图，
                 其他文件走 Ace 文本编辑器。
                 md 编辑器嵌进来自带 md-editor-context 外壳，因此这里不再包 studio-editor 的内边距。 */}
             {is_md
@@ -468,6 +502,42 @@ export default function Studio(props) {
                                 md_api.current = api;
                             },
                         }}/>
+                    </React.Suspense>
+                </div>
+                : is_draw
+                ? <div className={"studio-editor studio-editor--draw"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <ExcalidrawInline
+                            reset_key={edit_file_path}
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            save_path={edit_file_path}
+                            on_dirty={set_have_update}
+                            on_saved={() => set_have_update(false)}
+                            register={(handle) => {
+                                excalidraw_api.current = handle;
+                            }}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_mind
+                ? <div className={"studio-editor studio-editor--mind"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <MindMapInline
+                            reset_key={edit_file_path}
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            on_dirty={set_have_update}
+                            on_saved={() => set_have_update(false)}
+                            register={(handle) => {
+                                mind_api.current = handle;
+                            }}
+                            on_save={async (context: string) => {
+                                const rsq = await fileHttp.post(
+                                    `save/${encodeURIComponent(edit_file_path)}`,
+                                    {context},
+                                );
+                                return rsq.code === RCode.Success;
+                            }}
+                        />
                     </React.Suspense>
                 </div>
                 : <div className={"studio-editor"} key={edit_file_path}>

@@ -23,6 +23,7 @@ const Preview = React.lazy(() => import("./file/component/Preview"))
 const MarkDown = React.lazy(() => import("./file/component/MarkDown"))
 const MdEditor = React.lazy(() => import("./file/component/md_editor/MdEditor"))
 const ExcalidrawEditor = React.lazy(() => import("./file/component/ExcalidrawEditor"))
+const MindEditor = React.lazy(() => import("./file/component/MindEditor"))
 const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
 const TcpProxy = React.lazy(() => import("./net/tcp_proxy/TcpProxy"))
@@ -47,6 +48,7 @@ function Layout() {
     const [headerMin, setHeaderMin] = useAtom($stroe.header_min);
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
+    const [mind_editor, set_mind_editor] = useAtom($stroe.mind_editor);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [custom_fun_opt, set_custom_fun_opt] = useAtom($stroe.custom_fun_opt);
     // const [nav_style, set_nav_style] = useAtom($stroe.nav_style);
@@ -158,9 +160,12 @@ function Layout() {
                 <FileShell/>
             </Suspense>
             {image_editor.path !== undefined && <Suspense fallback={<div></div>}><ImageEditor/></Suspense>}
-            {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
-                <ExcalidrawEditor/>
-            </Suspense>}
+                    {excalidraw_editor.url !== undefined && <Suspense fallback={<div></div>}>
+                        <ExcalidrawEditor/>
+                    </Suspense>}
+                    {mind_editor.url !== undefined && <Suspense fallback={<div></div>}>
+                        <MindEditor/>
+                    </Suspense>}
             {md_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <MdEditor/>
             </Suspense>}

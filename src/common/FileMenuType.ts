@@ -50,6 +50,8 @@ export function getFileFormat(filename:string): FileTypeEnum {
         return FileTypeEnum.image;
     } else if (extension === FileTypeEnum.excalidraw || extension === FileTypeEnum.draw) {
         return FileTypeEnum.excalidraw;
+    } else if (extension === FileTypeEnum.mind) {
+        return FileTypeEnum.mind;
     } else if(extension === FileTypeEnum.workflow_act) {
         return FileTypeEnum.workflow_act;
     } else if(extension === 'url') {

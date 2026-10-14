@@ -26,6 +26,7 @@ export function FileNew(props) {
     const select_item = [
         {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
+        {title:`${t("思维导图")}`,value:".mind"},
         {title: `workflow${t("格式")}`, value:".act"},
         {title: `url${t("格式")}`, value:".url"},
     ]
@@ -45,6 +46,12 @@ export function FileNew(props) {
             }
             if (format === ".draw" ) {
                 context = "{}";
+            } else if (format === ".mind") {
+                // 空思维导图：一个根节点，打开即可编辑
+                context = JSON.stringify({
+                    version: 1,
+                    root: {id: "root", text: "中心主题", children: []}
+                });
             } else if (format === ".act") {
                 context = workflow_txt;
             }  else if (format === ".url") {

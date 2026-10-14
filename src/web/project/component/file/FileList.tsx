@@ -4,6 +4,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
+import {routerConfig} from "../../../../common/RouterConfig";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {PromptEnum} from "../prompts/Prompt";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
@@ -65,6 +66,7 @@ export default function FileList() {
     const [, set_image_editor] = useAtom($stroe.image_editor);
     const [, set_markdown] = useAtom($stroe.markdown);
     const [, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
+    const [, set_mind_editor] = useAtom($stroe.mind_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -222,6 +224,7 @@ export default function FileList() {
         set_image_editor({});
         set_markdown({});
         set_excalidraw_editor({});
+        set_mind_editor({});
     };
 
     /**
@@ -267,6 +270,7 @@ export default function FileList() {
             return true;
         }
         // text 需显式指定 model，其余由 click_file 依据文件类型判断
+        // （mind 与 excalidraw 都走 click_file 分派到各自的浮层编辑器）
         click_file({
             name, opt_shell: true,
             ...(mode === "text" ? {model: "text"} : {}),
