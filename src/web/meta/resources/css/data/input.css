@@ -6,6 +6,14 @@
     min-width: 100%;
 }
 
+/* 下拉列表限制高度并允许滚动：列表可能很长（如 DDNS 的几十个 IP 来源），
+   不做限制会撑满整个屏幕 */
+.awesomplete > ul {
+    max-height: 16rem;
+    overflow-y: auto;
+    z-index: 100;
+}
+
 .input {
     /* border-radius: .1em;  <- 旧的，太硬了 */
     border-radius: 6px;      /* 现代 UI 标配：更圆润的倒角 */

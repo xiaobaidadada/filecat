@@ -126,26 +126,21 @@ function Input(props: {
                 return String(item);
             });
 
-            // 聚焦时是否强制展示全部选项：
-            // 输入框已预填了当前选中值，若按该值过滤会只剩它自己，
-            // 用户必须手动删空文字才能看到其它选项，非常反直觉。
-            let show_all = false;
+
             const awesomplete = new Awesomplete(inputRef.current, {
                 list: listData,
                 minChars: 0,
+                maxItems: listData.length,
                 autoFirst: true,
-                // 🌟 核心修改 1：重写过滤器。show_all 为真或输入框为空时，显示所有选项
                 filter: (text, input) => {
-                    if (show_all || input.trim() === "") {
-                        return true; // 空输入时，所有条目都算匹配成功
+                    if ( input.trim() === "") {
+                        return true;
                     }
-                    // 如果不为空，则走默认的“包含”匹配逻辑（不区分大小写）
                     return Awesomplete.FILTER_CONTAINS(text, input);
                 },
-                // 🌟 核心修改 2：防止空状态下排序被打乱
                 sort: (a, b) => {
-                    if (show_all || inputRef.current?.value.trim() === "") {
-                        return 0; // 保持原样输出
+                    if ( inputRef.current?.value.trim() === "") {
+                        return 0;
                     }
                     return a.label < b.label ? -1 : 1;
                 }
@@ -154,9 +149,7 @@ function Input(props: {
             // 聚焦时：强制展示全部选项（不论输入框当前有没有值），
             // 避免「只匹配到当前已选值」导致其它选项看不见。
             const handleFocus = () => {
-                show_all = true;
                 awesomplete.evaluate();
-                show_all = false;
             };
 
             // 选中下拉项时的逻辑
