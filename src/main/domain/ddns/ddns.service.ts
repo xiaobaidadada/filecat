@@ -5,6 +5,7 @@ import {data_common_key} from "../data/data_type";
 import {get_updater} from "./providers";
 import * as os from "os";
 import * as crypto from "crypto";
+import {ServerEvent} from "../../other/config";
 
 // IP 缓存有效期：30 秒内的多次查询直接复用，避免频繁请求外部接口
 const IP_CACHE_TTL = 30 * 1000;
@@ -356,5 +357,8 @@ export class DdnsService {
 
 export const ddnsService = new DdnsService();
 
+ServerEvent.on("start", (data) => {
 // 进程启动时恢复定时任务（仅当存在开启中的配置才真正启动定时器）
-ddnsService.refresh_task_state();
+    ddnsService.refresh_task_state();
+})
+
