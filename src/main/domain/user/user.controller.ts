@@ -64,11 +64,12 @@ export class UserController {
 
         } catch(err){
             await CommonUtil.sleep_lock_key("-",1000)
-            throw err;
+            console.log(err)
+            return AuthFail('login error');
         }
 
         await CommonUtil.sleep_lock_key('-',1000)
-        return AuthFail('password error');
+        return AuthFail('login error');
     }
 
 
