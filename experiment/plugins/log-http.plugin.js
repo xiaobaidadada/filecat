@@ -1,70 +1,73 @@
-/**
- * 示例插件 - 日志与 HTTP 请求监听
- *
- * 演示插件系统的两个回调：
- *   on_log(level, args)  —— 项目里所有 console.log/info/warn/error/debug 都会回调
- *   on_http(info)        —— 每个 HTTP 请求处理完成后回调（带登录用户信息）
- *
- * 安装方法：
- *   在 FileCat「设置 -> 插件配置」中添加一条：
- *     - 名称: 日志与请求监听
- *     - 路径: <本文件绝对路径>
- *     - 开启: 是
- *   保存后会立即加载。
- *
- * 本 demo 把收集到的日志和请求写入 <filecat数据目录>/plugin-log-http/ 目录下：
- *   - log.log   每行一条日志
- *   - http.log  每行一条请求
- * 方便直接看效果；实际使用时可以改成上报到自己的服务、写入数据库等。
- */
 
 const fs = require('fs');
 const path = require('path');
 
 // ---- 可修改的配置区 ----
-const OPTIONS = {
-    // 是否把日志写入文件
-    save_log: true,
-    // 是否把 HTTP 请求写入文件
-    save_http: true,
-    // 只记录这些级别的日志；留空表示全部级别
-    // 可选: 'log' | 'info' | 'warn' | 'error' | 'debug'
-    log_levels: [],
-    // 忽略这些路径前缀的 HTTP 请求（例如静态资源、心跳）
-    http_ignore_prefix: ['/api/sys/ws'],
-    // 控制台是否也打印一份（调试用）
-    print_console: false,
-};
+const LOG_DIR = '/temp';
+const RETENTION_DAYS = 7; // 保留天数
 // ------------------------
 
-// 输出目录（延迟到 activate 时才知道 work_dir）
-let out_dir = '';
-let log_file = '';
-let http_file = '';
+function get_log_file() {
+    const date = new Date().toLocaleDateString('sv-SE', {
+        timeZone: 'Asia/Shanghai',
+    });
+    return path.join(LOG_DIR, `filecat操作日志-${date}.log`);
+}
 
-/** 把一行文本追加到文件（出错不抛出，避免影响主流程） */
-function append_line(file, line) {
+function clean_old_logs() {
+    const expire_time = Date.now() - RETENTION_DAYS * 86400000;
+
     try {
-        fs.appendFileSync(file, line + '\n');
-    } catch (e) {
-        // 写文件失败时只在控制台提示，不能让主流程报错
-        console.error('[log-http plugin] 写文件失败:', e.message);
+        for (const file of fs.readdirSync(LOG_DIR)) {
+            const match = file.match(/^filecat操作日志-(\d{4}-\d{2}-\d{2})\.log$/);
+            if (!match) continue;
+
+            const file_time = new Date(`${match[1]}T00:00:00+08:00`).getTime();
+            if (file_time < expire_time) {
+                fs.unlinkSync(path.join(LOG_DIR, file));
+            }
+        }
+    } catch {}
+}
+
+function append_line(line) {
+    try {
+        fs.appendFileSync(get_log_file(), line + '\n');
+    } catch {}
+}
+
+function format_args(args) {
+    return args.map(v => {
+        if (typeof v === 'string') return v;
+        if (v instanceof Error) return v.stack || v.message;
+        try {
+            return JSON.stringify(v) ?? String(v);
+        } catch {
+            return String(v);
+        }
+    }).join(' ');
+}
+
+// 安全地把对象转成单行 JSON，循环引用等异常时退化为 String
+function to_json(v) {
+    try {
+        return JSON.stringify(v);
+    } catch {
+        return String(v);
     }
 }
 
-/** 把 console 的参数格式化成一个字符串 */
-function format_args(args) {
-    return args
-        .map((v) => {
-            if (typeof v === 'string') return v;
-            if (v instanceof Error) return v.stack || v.message;
-            try {
-                return JSON.stringify(v);
-            } catch (e) {
-                return String(v);
-            }
-        })
-        .join(' ');
+// 敏感请求头脱敏，避免把凭据写进日志
+function mask_headers(headers) {
+    if (!headers || typeof headers !== 'object') return headers;
+    const masked = { ...headers };
+    const secret_keys = ['authorization', 'cookie', 'proxy-authorization', 'x-api-key'];
+    for (const key of Object.keys(masked)) {
+        if (secret_keys.includes(key.toLowerCase())) {
+            masked[key] = '***';
+        }
+    }
+    return masked;
 }
 
 const filecat_plugin = {
@@ -72,64 +75,59 @@ const filecat_plugin = {
         id: 'log-http-listener',
         name: '日志与请求监听插件',
         version: '1.0.0',
-        description: '监听项目全部日志输出与 HTTP 请求，可落盘或上报',
-        author: 'filecat',
+        description: '按天记录项目日志与 HTTP 请求，并自动清理过期日志',
+        author: 'ok1',
     },
 
-    activate(context) {
-        out_dir = path.join(context.env.work_dir, 'plugin-log-http');
+    activate() {
         try {
-            fs.mkdirSync(out_dir, {recursive: true});
-        } catch (e) {
-            console.error('[log-http plugin] 创建目录失败:', e.message);
-        }
-        log_file = path.join(out_dir, 'log.log');
-        http_file = path.join(out_dir, 'http.log');
-        console.log(`[log-http plugin] 已激活，输出目录: ${out_dir}`);
+            fs.mkdirSync(LOG_DIR, { recursive: true });
+            clean_old_logs();
+        } catch {}
     },
 
-    deactivate() {
-        console.log('[log-http plugin] 已停用');
-    },
+    deactivate() {},
 
-    /**
-     * 日志回调：项目里每次 console.xxx 都会调用。
-     * @param level 'log' | 'info' | 'warn' | 'error' | 'debug'
-     * @param args  原始参数
-     */
     on_log(level, args) {
-        if (OPTIONS.log_levels.length > 0 && !OPTIONS.log_levels.includes(level)) {
-            return;
-        }
-        const text = `[${new Date().toISOString()}][${level}] ${format_args(args)}`;
-        if (OPTIONS.print_console) {
-            console.log('[plugin on_log]', text);
-        }
-        if (OPTIONS.save_log && log_file) {
-            append_line(log_file, text);
-        }
+        append_line(`[${new Date().toISOString()}][${level}] ${format_args(args)}`);
     },
 
-    /**
-     * HTTP 请求回调：请求处理完成后调用。
-     * @param info { method, url, path, ip, headers, status, duration, user }
-     *   info.user 是登录用户的安全信息（username / user_id / id 等），未登录为 null
-     */
     on_http(info) {
-        if (OPTIONS.http_ignore_prefix.some((p) => info.path.startsWith(p))) {
-            return;
-        }
         const user = info.user
             ? `${info.user.username}(id=${info.user.id})`
             : '未登录';
-        const text = `[${new Date().toISOString()}] ${info.method} ${info.url} `
-            + `status=${info.status} ${info.duration}ms ip=${info.ip} user=${user}`;
-        if (OPTIONS.print_console) {
-            console.log('[plugin on_http]', text);
+
+        const lines = [];
+        // 概要行
+        lines.push(
+            `[${new Date().toISOString()}][HTTP] ${info.method} ${info.url} `
+            + `status=${info.status} ${info.duration}ms ip=${info.ip} user=${user}`
+        );
+        // 请求行：协议/主机/HTTP 版本/查询串
+        lines.push(
+            `   请求: protocol=${info.protocol || '-'} hostname=${info.hostname || '-'} `
+            + `httpVersion=${info.httpVersion || '-'} search=${info.search || '-'}`
+        );
+        // UA 与 Referer
+        lines.push(`   UA: ${info.req?.headers?.['user-agent'] || '-'}`);
+        lines.push(`   Referer: ${info.req?.headers?.['referer'] || '-'}`);
+        // 请求头（脱敏）
+        lines.push(`   请求头: ${to_json(mask_headers(info.headers))}`);
+        // 查询参数与路由参数
+        lines.push(`   查询参数: ${to_json(info.query ?? {})}`);
+        lines.push(`   路由参数: ${to_json(info.params ?? {})}`);
+        // 请求体（POST/PUT）
+        if (info.method !== 'GET' && info.method !== 'HEAD') {
+            lines.push(`   请求体: ${to_json(info.body ?? {})}`);
         }
-        if (OPTIONS.save_http && http_file) {
-            append_line(http_file, text);
-        }
+        // 响应头
+        let res_headers;
+        try {
+            res_headers = info.res?.getHeaders ? info.res.getHeaders() : undefined;
+        } catch {}
+        lines.push(`   响应头: ${to_json(res_headers ?? {})}`);
+
+        append_line(lines.join('\n'));
     },
 };
 

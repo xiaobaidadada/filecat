@@ -155,19 +155,43 @@ export type PluginLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 /**
  * 传给插件 on_http 回调的请求信息。
  * user 为「安全用户数据」（不含密码等敏感字段），未登录时为 null。
+ *
+ * 除了下面这些便捷字段，插件还可以直接访问原始的 Express 请求/响应对象：
+ *   - info.req：完整的 Request（query、body、params、cookies、所有 header、
+ *     protocol、hostname、ip、socket、httpVersion、get() 等全都能拿到）
+ *   - info.res：完整的 Response（已经发送的 header、cookie、statusCode 等）
+ * 也就是说 HTTP 的「所有东西」都在这里，便捷字段只是为了省去手写解析。
  */
 export interface PluginHttpInfo {
-    /** 请求方法，如 GET / POST */
+    /** 原始 Express 请求对象（HTTP 请求的全部信息都在这里） */
+    req: any;
+    /** 原始 Express 响应对象（响应头、cookie、状态码等都在这里） */
+    res: any;
+    /** 请求方法，如 GET / POST（等价 req.method） */
     method: string;
-    /** 请求路径（含查询串） */
+    /** 请求路径（含查询串），等价 req.originalUrl */
     url: string;
     /** 请求路径（不含查询串） */
     path: string;
     /** 客户端 IP */
     ip: string;
-    /** 请求头 */
+    /** 请求头，等价 req.headers */
     headers: any;
-    /** HTTP 响应状态码 */
+    /** 查询参数，等价 req.query */
+    query: any;
+    /** 路由参数，等价 req.params */
+    params: any;
+    /** 请求体（POST/PUT 等）；部分接口在插件回调时可能还未被 body-parser 解析 */
+    body: any;
+    /** URL 查询串，等价 req.url 中 ? 之后的部分 */
+    search: string;
+    /** 协议，如 http / https，等价 req.protocol */
+    protocol: string;
+    /** 主机名，等价 req.hostname */
+    hostname: string;
+    /** HTTP 协议版本，如 1.1 */
+    httpVersion: string;
+    /** HTTP 响应状态码，等价 res.statusCode */
     status: number;
     /** 处理耗时（毫秒） */
     duration: number;
