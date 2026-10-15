@@ -544,6 +544,12 @@ export function InputRow(props: {
     required?: boolean,
     input_max_width?: string,
     vertical?: boolean,
+    /**
+     * 把 children 区域也变成水平 flex 容器（子元素水平排列并垂直居中对齐）。
+     * 用于「一行里放多个控件」的场景（如 输入框 + 单位文字 + 按钮），
+     * 调用方就不必再自己套一层 div 做 flex 排列。
+     */
+    row?: boolean,
     children?: any
     // React 内置属性：显式声明才能让调用方直接在 <InputRow key={...}> 上使用。
     // 内联字面量类型不会自动带上 key，不写会报 TS2322。
@@ -552,6 +558,13 @@ export function InputRow(props: {
     const input_css: any = {flex: 1, minWidth: 0}
     if(props.input_max_width) {
         input_css['maxWidth'] = props.input_max_width;
+    }
+    // row 模式下 children 容器水平排列，子元素较多时换行
+    if(props.row) {
+        input_css['display'] = 'flex';
+        input_css['alignItems'] = 'center';
+        input_css['gap'] = '0.4rem';
+        input_css['flexWrap'] = 'wrap';
     }
     const star = props.required && <span style={{color: 'red', marginRight: '0.15rem'}}>*</span>;
 

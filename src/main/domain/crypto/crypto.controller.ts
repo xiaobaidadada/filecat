@@ -1,8 +1,6 @@
 import {Body, Controller, Get, JsonController, Param, Post, Req} from "routing-controllers";
-import {ddnsService} from "../ddns/ddns.service";
 import {Sucess} from "../../other/Result";
 import {crypto_service} from "./crypto.service";
-import {DdnsConnection} from "../../../common/req/ddns.pojo";
 import {userService} from "../user/user.service";
 import {UserAuth} from "../../../common/req/user.req";
 

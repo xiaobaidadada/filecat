@@ -45,10 +45,9 @@ export enum data_common_key {
     role_unique_id_num = "role_unique_id_num",
     sys_all_roles = "sys_all_roles", // 系统上所有的角色
 
-    ddns_http_url_key = "ddns_http_url_key",
-    ddns_tx_key = "tengxun_ddns_key",
-    ddns_dnspod_key = "ddns_dnspod",
-    ddns_ali_key = "ali_ddns_key",
+    ddns_http_url_key = "ddns_http_url_key", // IP 获取来源（HTTP 接口）列表
+    ddns_list = "ddns_list", // 所有 DDNS 配置（各平台统一一个列表）
+    ddns_sync_interval = "ddns_sync_interval", // DDNS 同步间隔（秒）
     navindex_net_key_list = "navindex_net_key_list",
     navindex_wol_key = "navindex_wol_key",
     customer_router_key = "customer_router_key",

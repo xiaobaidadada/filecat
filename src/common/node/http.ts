@@ -77,6 +77,24 @@ export class HttpRequest {
     return axios(config);
   }
 
+  /**
+   * 发送请求并返回 { status, data }，任何 HTTP 状态码都不抛异常（网络错误时 status=0）。
+   * 用于需要根据状态码判断成功/失败、且要拿到错误响应体的场景（如各类 DNS API）。
+   */
+  public static async send(config: AxiosRequestConfig): Promise<{ status: number, data: any }> {
+    try {
+      const res = await HttpRequest.request(config);
+      return {status: res.status, data: res.data};
+    } catch (e: any) {
+      // 有响应体（4xx/5xx）时，axios 会挂在 error.response 上
+      if (e?.response) {
+        return {status: e.response.status, data: e.response.data};
+      }
+      console.error(`[HttpRequest] send 失败: ${config.url}`, e?.message ?? e);
+      return {status: 0, data: e?.message ?? String(e)};
+    }
+  }
+
   /** Range 分片大小（512KB），避免代理在长连接传输中断开 */
   private static readonly RANGE_CHUNK_SIZE = 512 * 1024;
 
