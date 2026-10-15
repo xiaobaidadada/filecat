@@ -21,6 +21,7 @@ export class DataUtil {
     public static init(file:file_key,default_value:string = "{}") {
         let value = this.data_path_map[file];
         if (value === undefined || value=== null) {
+            console.log(`init data ${file} in work_dir ${Env.work_dir}`)
             this.data_path_map[file] = value = path.join(Env.work_dir, file);
             if (!fs.existsSync(value)) {
                 fse.ensureDirSync(Env.work_dir)
