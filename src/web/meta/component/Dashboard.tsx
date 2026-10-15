@@ -14,11 +14,15 @@ export interface MenuOption {
 
 export function Menu(props: { optionList: MenuOption[], father_route: string }) {
 
+    // 订阅路由变化：直接用 window.location 判断会拿不到响应式更新，
+    // 导致从父级路由（如 /setting）跳到子路由后仍沿用旧的「无匹配」状态、默认高亮第一项。
+    const location = useLocation();
+
     const optionList = [...props.optionList].sort(
         (a, b) => (a.index ?? 0) - (b.index ?? 0)
     );
     const components = optionList.map(v=>v.component);
-    const have_key = have_key_by_router_key_list(props.optionList.map(v=>v.rto))
+    const have_key = have_key_by_router_key_list(props.optionList.map(v=>v.rto), location.pathname)
 
     return (
         <div className="dashboard">

@@ -27,7 +27,7 @@ export const DDNS_PROVIDERS: DdnsProviderMeta[] = [
         provider: DdnsProvider.dnspod,
         label: "DNSPod（腾讯）",
         fields: [
-            {label: "ID", placeholder: "如 322736"},
+            {label: "ID", placeholder: "ID"},
             {label: "Token", placeholder: "在密钥管理中生成", password: true},
         ],
         info: "DNSPod 老版 API。在 dnspod.cn 控制台「用户中心 - 密钥管理」创建 API Token，分别填入 ID 与 Token。",

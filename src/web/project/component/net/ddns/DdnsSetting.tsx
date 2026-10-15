@@ -298,7 +298,8 @@ export function DdnsSetting() {
                         t("开启"),
                         t("账号状态"),
                         t("上次同步"),
-                        t("操作")
+                        t("备注"),
+                        t("操作"),
                     ]} rows={list.map((item, index) => {
                         return [
                             <p>{index}</p>,
@@ -308,6 +309,7 @@ export function DdnsSetting() {
                             <TextTip tip_context={`${format_time(item.time)} ${item.message ?? ""}`}>
                                 {short_time(item.time)}
                             </TextTip>,
+                            <TextTip context={item.note}></TextTip>,
                             <div className={"div-row"}>
                                 <ActionButton icon={"check"} title={t("验证")} onClick={() => verify(item.id)}/>
                                 <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit_item(item)}/>

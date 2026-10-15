@@ -85,8 +85,10 @@ export function getRouterPath() {
     return path;
 }
 
-export function get_router_key_set() {
-   return new Set(getRouterPath().split("/"));
+export function get_router_key_set(path?: string) {
+   // 允许外部传入当前路径（React Router 的 location.pathname），
+   // 不传时退回直接读取 window.location，兼容旧调用方。
+   return new Set((path ?? getRouterPath()).split("/"));
 }
 
 export function get_filter_key(key: string) {
@@ -94,8 +96,9 @@ export function get_filter_key(key: string) {
     return key.replace(/[/*]/g, "");
 }
 
-export function have_key_by_router_key_list(router_key_list:string[]) {
-    const set = get_router_key_set()
+export function have_key_by_router_key_list(router_key_list:string[], path?: string) {
+    // path 传入时用响应式的路由路径判断，避免未订阅路由变化导致判断滞后
+    const set = get_router_key_set(path)
     let have = false
     for (const key of router_key_list) {
         const filter_key = get_filter_key(key)

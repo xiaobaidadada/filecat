@@ -16,8 +16,8 @@ export default function  TcpProxy() {
     const menuRots = [
         {index: 1, name:t("客户端"), rto: "tcp_proxy_client/",component:<TcpProxyClient />},
         {index: 2, name:t("服务端"), rto: "tcp_proxy_server_info/",component:<TcpProxyServerSetting />},
-        {index: 3, name:t("服务端")+"-"+t("客户端列表"), rto: "tcp_proxy_server_client/",component:<TcpProxyServerClient />},
-        {index: 4, name:t("服务端")+"-"+t("客户端功能"), rto: "tcp_proxy_server_client_setting/",component:<TcpProxyServerClientSetting />},
+        {index: 3, name:`${t("客户端列表")}(${t("服务端")})`, rto: "tcp_proxy_server_client/",component:<TcpProxyServerClient />},
+        {index: 4, name:`${t("客户端功能")}(${t("服务端")})`, rto: "tcp_proxy_server_client_setting/",component:<TcpProxyServerClientSetting />},
     ];
 
     return  <Menu optionList={menuRots} father_route={routerConfig.net_proxy}>

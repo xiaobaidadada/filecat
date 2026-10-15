@@ -18,13 +18,13 @@ export default function Net() {
     if (check_user_auth(UserAuth.vir_net)) {
         menuRots.push(...[
             {index: 1, name: t("系统代理"), rto: "proxy_sys/", component: <NetProxy/>},
-            {index: 2, name: "Tun proxy " + t("客户端"), rto: "client/", component: <NetClient/>},
-            {index: 3, name: "Tun proxy " + t("服务端"), rto: "server/", component: <NetServer/>},
+            {index: 3, name: "Tun proxy " + t("客户端"), rto: "client/", component: <NetClient/>},
+            {index: 4, name: "Tun proxy " + t("服务端"), rto: "server/", component: <NetServer/>},
         ])
     }
     if (check_user_auth(UserAuth.ddns)) {
         menuRots.push(...[
-            {index: 4, name: "DDNS", rto: "ddns/", component: <DdnsSetting/>},
+            {index: 2, name: "DDNS", rto: "ddns/", component: <DdnsSetting/>},
         ])
     }
     return <Menu optionList={menuRots} father_route={routerConfig.net}>
