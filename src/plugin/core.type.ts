@@ -131,6 +131,48 @@ export interface Plugin {
      * 注意：多个插件同时注册时，按注册顺序依次调用，第一个不是「继续(2)」的返回值即生效。
      */
     shell_cmd_check?: (token: string, cmd: string, params: any[]) => Promise<number> | number;
+
+    /**
+     * 【日志回调】项目所有日志输出（console.log/info/warn/error/debug）都会调用它。
+     * 插件可借此收集/转发系统日志。
+     * @param level 日志级别：'log' | 'info' | 'warn' | 'error' | 'debug'
+     * @param args 原始日志参数（调用 console.xxx 时传入的参数列表）
+     */
+    on_log?: (level: PluginLogLevel, args: any[]) => void;
+
+    /**
+     * 【HTTP 请求回调】所有 HTTP 请求处理完成后都会调用它。
+     * 仅当请求携带有效登录 token 时才会带上 user 信息；
+     * 未登录 / 登录信息拿不到时 user 为 null。
+     * @param info 请求与响应信息
+     */
+    on_http?: (info: PluginHttpInfo) => void;
+}
+
+/** 日志级别 */
+export type PluginLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+
+/**
+ * 传给插件 on_http 回调的请求信息。
+ * user 为「安全用户数据」（不含密码等敏感字段），未登录时为 null。
+ */
+export interface PluginHttpInfo {
+    /** 请求方法，如 GET / POST */
+    method: string;
+    /** 请求路径（含查询串） */
+    url: string;
+    /** 请求路径（不含查询串） */
+    path: string;
+    /** 客户端 IP */
+    ip: string;
+    /** 请求头 */
+    headers: any;
+    /** HTTP 响应状态码 */
+    status: number;
+    /** 处理耗时（毫秒） */
+    duration: number;
+    /** 登录用户信息（安全字段，不含密码），未登录为 null */
+    user: any | null;
 }
 
 

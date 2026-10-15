@@ -101,6 +101,34 @@ export async function start_main() {
     const filecat_middleware = use_filecat_middleware(sys_pre);
     expressApp.use(filecat_middleware);
 
+    // =======================================================
+    // 插件 HTTP 请求回调：响应结束后把请求信息分发给插件
+    // =======================================================
+    expressApp.use((req: Request, res: Response, next) => {
+        const start = Date.now();
+        res.on('finish', () => {
+            try {
+                const token = (req.headers.authorization as string)
+                    || (req.query && req.query['token'] as string);
+                settingService.emit_plugin_http({
+                    method: req.method,
+                    url: req.originalUrl,
+                    path: req.originalUrl.split('?')[0],
+                    ip: (req.headers['x-forwarded-for']?.toString().split(',')[0].trim())
+                        || req.socket?.remoteAddress || '',
+                    headers: req.headers,
+                    status: res.statusCode,
+                    duration: Date.now() - start,
+                    user: settingService.get_http_user_info(token),
+                });
+            } catch (e) {
+                // 回调分发失败不能影响正常请求
+                console.error('[Plugin] emit_plugin_http 异常:', e?.message ?? e);
+            }
+        });
+        next();
+    });
+
     // 创建 应用并注册控制器
     const app = useExpressServer(expressApp, {
         cors: false,

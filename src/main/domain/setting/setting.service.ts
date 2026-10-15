@@ -41,7 +41,7 @@ import {
     sys_env_pojo,
     workflow_setting_item
 } from "../../../common/req/common.pojo";
-import {plug_item, Plugin, PluginRoute} from "../../../plugin";
+import {plug_item, Plugin, PluginHttpInfo, PluginLogLevel, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
     ai_agent_Item,
@@ -1449,7 +1449,86 @@ export class SettingService {
     /** 插件注册的「shell 命令校验」回调列表（替代旧版自定义 shell 命令校验） */
     plugin_shell_cmd_check_list: { id: string; handler: (token: string, cmd: string, params: any[]) => any }[] = [];
 
+    /** 插件注册的「日志」回调列表 */
+    plugin_log_list: { id: string; handler: (level: PluginLogLevel, args: any[]) => any }[] = [];
+
+    /** 插件注册的「HTTP 请求」回调列表 */
+    plugin_http_list: { id: string; handler: (info: PluginHttpInfo) => any }[] = [];
+
     running_plugin_list: Plugin[] = []
+
+    // ============ 日志 hook ============
+    // 是否已经劫持过 console（只劫持一次，避免重复包装）
+    private console_hooked = false;
+    // 正在分发日志回调中（防止插件内部打印日志造成无限递归）
+    private in_plugin_log_emit = false;
+    // 正在分发 HTTP 回调中（防止插件内部发起请求造成回环）
+    private in_plugin_http_emit = false;
+
+    /**
+     * 劫持 console 的 log/info/warn/error/debug，把日志分发给所有插件日志回调。
+     * 只在插件系统首次加载时调用一次；没有插件注册日志回调时不做任何额外动作。
+     */
+    private _hook_console() {
+        if (this.console_hooked) return;
+        this.console_hooked = true;
+        const levels: PluginLogLevel[] = ['log', 'info', 'warn', 'error', 'debug'];
+        for (const level of levels) {
+            const original = console[level].bind(console);
+            console[level] = (...args: any[]) => {
+                // 先按原样输出，保证原有日志行为不变
+                original(...args);
+                // 再分发给插件（插件的报错不能影响主流程）
+                if (this.plugin_log_list.length === 0) return;
+                // 防止插件在 on_log 里又打印日志导致无限递归
+                if (this.in_plugin_log_emit) return;
+                this.in_plugin_log_emit = true;
+                try {
+                    for (const item of this.plugin_log_list) {
+                        try {
+                            item.handler(level, args);
+                        } catch (e) {
+                            original(`[Plugin] on_log 回调异常 (${item.id}):`, e?.message ?? e);
+                        }
+                    }
+                } finally {
+                    this.in_plugin_log_emit = false;
+                }
+            };
+        }
+    }
+
+    /**
+     * 根据请求的 token 解析出登录用户信息（安全字段，不含密码）。
+     * 拿不到（未登录/token 失效）时返回 null，绝不抛错。
+     */
+    public get_http_user_info(token?: string): any | null {
+        if (!token) return null;
+        try {
+            return userService.get_safe_user_data(userService.get_user_info_by_token(token));
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /** 把一条 HTTP 请求信息分发给所有插件回调 */
+    public emit_plugin_http(info: PluginHttpInfo) {
+        if (this.plugin_http_list.length === 0) return;
+        // 防止插件在 on_http 里再发起（被本服务接收的）请求造成无限回环
+        if (this.in_plugin_http_emit) return;
+        this.in_plugin_http_emit = true;
+        try {
+            for (const item of this.plugin_http_list) {
+                try {
+                    item.handler(info);
+                } catch (e) {
+                    console.error(`[Plugin] on_http 回调异常 (${item.id}):`, e?.message ?? e);
+                }
+            }
+        } finally {
+            this.in_plugin_http_emit = false;
+        }
+    }
 
     get_plugin_list(): plug_item[] {
         return DataUtil.get(data_common_key.filecat_plugin_list) ?? [];
@@ -1478,6 +1557,10 @@ export class SettingService {
         this.plugin_routes.clear();
         this.plugin_login_auth_list = [];
         this.plugin_shell_cmd_check_list = [];
+        this.plugin_log_list = [];
+        this.plugin_http_list = [];
+        // 首次加载插件时劫持 console，让插件能收到全系统日志
+        this._hook_console();
         const list = this.get_plugin_list();
 
         const results = await Promise.allSettled(
@@ -1581,6 +1664,38 @@ export class SettingService {
         this.plugin_shell_cmd_check_list = this.plugin_shell_cmd_check_list.filter(it => it.id !== plugin.meta.id);
     }
 
+    /**
+     * 注册插件的「日志」回调
+     */
+    private _register_plugin_log(plugin: Plugin) {
+        if (!plugin.on_log) return;
+        this.plugin_log_list.push({id: plugin.meta.id, handler: plugin.on_log});
+        console.log(`[Plugin] "${plugin.meta.name}" 已注册日志回调`);
+    }
+
+    /**
+     * 注销插件的「日志」回调
+     */
+    private _unregister_plugin_log(plugin: Plugin) {
+        this.plugin_log_list = this.plugin_log_list.filter(it => it.id !== plugin.meta.id);
+    }
+
+    /**
+     * 注册插件的「HTTP 请求」回调
+     */
+    private _register_plugin_http(plugin: Plugin) {
+        if (!plugin.on_http) return;
+        this.plugin_http_list.push({id: plugin.meta.id, handler: plugin.on_http});
+        console.log(`[Plugin] "${plugin.meta.name}" 已注册 HTTP 请求回调`);
+    }
+
+    /**
+     * 注销插件的「HTTP 请求」回调
+     */
+    private _unregister_plugin_http(plugin: Plugin) {
+        this.plugin_http_list = this.plugin_http_list.filter(it => it.id !== plugin.meta.id);
+    }
+
     private _resolve_plugin(item: plug_item): Plugin {
         this._evict_require_cache(item.path);
 
@@ -1623,6 +1738,9 @@ export class SettingService {
         // 注册登录鉴权 / shell 命令校验回调（替代旧版内置功能）
         this._register_plugin_login_auth(plugin);
         this._register_plugin_shell_cmd_check(plugin);
+        // 注册日志 / HTTP 请求回调
+        this._register_plugin_log(plugin);
+        this._register_plugin_http(plugin);
 
         // 保存 path 供卸载时清缓存
         (plugin as any).__plugin_path__ = item.path;
@@ -1650,6 +1768,8 @@ export class SettingService {
         this.plugin_routes.clear();
         this.plugin_login_auth_list = [];
         this.plugin_shell_cmd_check_list = [];
+        this.plugin_log_list = [];
+        this.plugin_http_list = [];
     }
 
     private async _unload_single_plugin(plugin: Plugin): Promise<void> {
@@ -1663,6 +1783,9 @@ export class SettingService {
             // 注销登录鉴权 / shell 命令校验回调
             this._unregister_plugin_login_auth(plugin);
             this._unregister_plugin_shell_cmd_check(plugin);
+            // 注销日志 / HTTP 请求回调
+            this._unregister_plugin_log(plugin);
+            this._unregister_plugin_http(plugin);
             await plugin.deactivate?.();
         } finally {
             // 无论 deactivate 是否报错，都清除缓存
