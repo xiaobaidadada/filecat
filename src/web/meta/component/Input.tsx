@@ -126,13 +126,17 @@ function Input(props: {
                 return String(item);
             });
 
+            // 聚焦时是否强制展示全部选项：
+            // 输入框已预填了当前选中值，若按该值过滤会只剩它自己，
+            // 用户必须手动删空文字才能看到其它选项，非常反直觉。
+            let show_all = false;
             const awesomplete = new Awesomplete(inputRef.current, {
                 list: listData,
                 minChars: 0,
                 autoFirst: true,
-                // 🌟 核心修改 1：重写过滤器。当输入框为空时，强制显示所有选项
+                // 🌟 核心修改 1：重写过滤器。show_all 为真或输入框为空时，显示所有选项
                 filter: (text, input) => {
-                    if (input.trim() === "") {
+                    if (show_all || input.trim() === "") {
                         return true; // 空输入时，所有条目都算匹配成功
                     }
                     // 如果不为空，则走默认的“包含”匹配逻辑（不区分大小写）
@@ -140,22 +144,28 @@ function Input(props: {
                 },
                 // 🌟 核心修改 2：防止空状态下排序被打乱
                 sort: (a, b) => {
-                    if (inputRef.current?.value.trim() === "") {
+                    if (show_all || inputRef.current?.value.trim() === "") {
                         return 0; // 保持原样输出
                     }
                     return a.label < b.label ? -1 : 1;
                 }
             });
 
-            // 点击或聚焦时自动展开下拉菜单
+            // 聚焦时：强制展示全部选项（不论输入框当前有没有值），
+            // 避免「只匹配到当前已选值」导致其它选项看不见。
             const handleFocus = () => {
-                awesomplete.evaluate(); // 🌟 显式调用 evaluate() 比单纯派发事件更稳定
+                show_all = true;
+                awesomplete.evaluate();
+                show_all = false;
             };
 
             // 选中下拉项时的逻辑
             const handleSelect = (event: any) => {
-                const selectedText = event.text.label ?? event.text.value ?? event.text;
-                const selectedValue = event.text.value ?? event.text;
+                // awesomplete 的 event.text 可能是对象（{label,value}）也可能是纯字符串，
+                // 这里统一做安全取值，避免异常格式导致读取属性报错。
+                const text = event?.text;
+                const selectedText = text?.label ?? text?.value ?? text;
+                const selectedValue = text?.value ?? text;
 
                 setValue(selectedText);
 
