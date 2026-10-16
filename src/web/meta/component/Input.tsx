@@ -204,7 +204,7 @@ function Input(props: {
                         style={{flex: 1, minWidth: 0, paddingRight: isPassword ? "2.4em" : undefined}}
                         onClick={(event) => event.stopPropagation()}
                         disabled={!!props.disabled}
-                        className={css}
+                        className={css + (props.type === "color" ? " input--color" : "")}
                         type={isPassword && passwordVisible ? "text" : props.type}
                         placeholder={props.placeholder}
                         onChange={(event) => {

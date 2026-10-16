@@ -70,6 +70,18 @@
     /*borderRadius: 4px;*/
 }
 
+/* 颜色选择器：原生 input[type=color] 缩成一个小色块，点击弹系统调色板 */
+.input--color {
+    flex: 0 0 auto !important;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 1px;
+    border: 1px solid var(--borderPrimary, #dadce0);
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
 .input--textarea {
     line-height: 1.15;
     font-family: monospace;

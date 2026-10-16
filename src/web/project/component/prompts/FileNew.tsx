@@ -28,7 +28,7 @@ export function FileNew(props) {
         {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
         {title:`${t("思维导图")}`,value:".mind"},
-        {title:`${t("时间轴")}`,value:".timeline"},
+        {title:`${t("时间线")}`,value:".timeline"},
         {title: `workflow${t("格式")}`, value:".act"},
         {title: `url${t("格式")}`, value:".url"},
     ]

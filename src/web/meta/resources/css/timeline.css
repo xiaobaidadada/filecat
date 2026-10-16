@@ -1,4 +1,4 @@
-/* ===== 时间轴编辑器（.timeline） ===== */
+/* ===== 时间线编辑器（.timeline） ===== */
 
 /* 全屏浮层外壳：与 #mind-container / #excalidraw-container 对称 */
 #timeline-container {
@@ -209,10 +209,9 @@
     background-size: 20px 20px;
 }
 
-/* 纵向：整体上下滚动，内容横向铺满 */
+/* 纵向：整体上下滚动，横向也可滚动（事件拖到屏幕外时能看回来，像无限画布） */
 .timeline-canvas--vertical {
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
 }
@@ -225,77 +224,25 @@
     flex-direction: row;
 }
 
-/* 两端延长把手：不铺满整块区域，只保留一个明确的箭头按钮。
-   箭头默认隐藏，鼠标移到这块留白（画布边缘）时才淡入。 */
-.timeline-pad {
-    position: relative;
-    flex-shrink: 0;
-    user-select: none;
-    touch-action: none;
-    display: flex;
-}
-
-.timeline-canvas--vertical .timeline-pad {
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    cursor: ns-resize;
-}
-
-.timeline-canvas--horizontal .timeline-pad {
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    cursor: ew-resize;
-}
-
-/* 箭头手柄本体：默认隐藏，鼠标靠近画布边缘（即移到留白区域）时才淡入 */
-.timeline-pad__handle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .1rem;
-    padding: .15rem .6rem;
-    border: 1px dashed var(--borderPrimary, #dadce0);
-    border-radius: 999px;
-    background: var(--surfacePrimary, #fff);
-    color: var(--textSecondary, #9aa0a6);
-    cursor: inherit;
-    opacity: 0;
-    transition: opacity .15s, color .12s, border-color .12s;
-}
-
-.timeline-pad:hover .timeline-pad__handle {
-    opacity: 1;
-    color: var(--blue, #1a73e8);
-    border-color: var(--blue, #1a73e8);
-}
-
-.timeline-pad__handle .material-icons {
-    font-size: 1.05rem;
-    line-height: 1;
-}
-
-.timeline-pad__hint {
-    font-size: .7rem;
-    white-space: nowrap;
-    pointer-events: none;
-}
-
-/* 横向时箭头旋转 90°，提示左右拖动 */
-.timeline-canvas--horizontal .timeline-pad__handle .material-icons {
-    transform: rotate(-90deg);
-}
-
-/* 内层画布：作为拖拽坐标参照 */
+/* 内层画布：作为拖拽坐标参照。
+   纵向时通过「对称内边距 + 负左边距」撑出可横向滚动的空间（大小由内容决定之外，
+   这里留固定余量，保证事件拖到屏幕外也能滚回来），主轴仍保持在视口正中。 */
 .timeline-inner {
     position: relative;
     flex-shrink: 0;
+    /* 纵向时的横向可滚动余量，由 JS 按卡片实际伸出量动态设置 */
+    --side-scroll: 0px;
+    /* 整体缩放：CSS zoom 让画布内所有尺寸（字号/间距/圆角/图标）一并等比缩放，
+       JS 侧一律在 zoom=1 的空间里计算位置与尺寸 */
+    zoom: var(--zoom, 1);
 }
 
 .timeline-canvas--vertical .timeline-inner {
     width: 100%;
     min-height: 1em;
+    box-sizing: content-box;
+    padding-inline: var(--side-scroll);
+    margin-left: calc(-1 * var(--side-scroll));
 }
 
 /* 横向：内容纵向铺满，阶段从左往右排 */
@@ -306,33 +253,6 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-}
-
-/* 主轴：位于侧向中点，贯穿整个画布 */
-.timeline-axis {
-    position: absolute;
-    pointer-events: none;
-    z-index: 1;
-}
-.timeline-canvas--vertical .timeline-axis {
-    top: -2rem;
-    bottom: -2rem;
-    left: 50%;
-    /* 同时给宽度和边框宽度，solid 用背景填充、虚线用边框绘制，两者视觉宽度一致 */
-    width: 3px;
-    margin-left: -1.5px;
-    border-left-width: 3px;
-    border-left-style: solid;
-}
-
-.timeline-canvas--horizontal .timeline-axis {
-    left: -2rem;
-    right: -2rem;
-    top: 50%;
-    height: 3px;
-    margin-top: -1.5px;
-    border-top-width: 3px;
-    border-top-style: solid;
 }
 
 /* 拖拽时的对齐辅助线 */
@@ -360,6 +280,34 @@
     flex-shrink: 0;
 }
 
+/* 正在被拖动的阶段：整段淡出并浮起，让位给的落点看得清 */
+.timeline-phase--dragging {
+    opacity: .45;
+}
+
+/* 阶段拖动时的落点指示线：纵向时是横线，横向时是竖线 */
+.timeline-drop {
+    position: absolute;
+    z-index: 8;
+    pointer-events: none;
+    background: var(--blue, #1a73e8);
+    border-radius: 2px;
+}
+
+.timeline-canvas--vertical .timeline-drop {
+    left: 0;
+    right: 0;
+    height: 2px;
+    margin-top: -1px;
+}
+
+.timeline-canvas--horizontal .timeline-drop {
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+}
+
 .timeline-canvas--vertical .timeline-phase {
     width: 100%;
 }
@@ -374,6 +322,7 @@
     z-index: 4;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: .25rem;
     background: var(--surfacePrimary, #fff);
 }
@@ -384,24 +333,28 @@
     right: calc(50% + 1.6rem);
     width: max-content;
     max-width: 40%;
-    height: 2.1rem;
-    padding: 0 .5rem;
+    min-height: 2.1rem;
+    height: auto;
+    padding: .2rem .5rem;
     border: 1px solid var(--divider, #e8eaed);
-    border-radius: 999px;
+    border-radius: .55rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
 }
 
 .timeline-canvas--horizontal .timeline-phase__head {
-    top: 0;
+    /* 横向时阶段头横排文字，紧贴主轴上方（事件卡片在 2.6rem 之外，不会重叠） */
+    bottom: calc(50% + .3rem);
     left: .3rem;
-    flex-direction: column;
-    height: max-content;
-    max-height: 60%;
-    width: 2.4rem;
-    padding: .6rem 0;
+    width: max-content;
+    min-width: 11rem;
+    max-width: 14rem;
+    min-height: 2.1rem;
+    height: auto;
+    padding: .2rem .5rem;
     border: 1px solid var(--divider, #e8eaed);
-    border-radius: 999px;
+    border-radius: .55rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    background: var(--surfacePrimary, #fff);
 }
 
 .timeline-phase__toggle {
@@ -409,6 +362,24 @@
     cursor: pointer;
     color: var(--textSecondary, #5f6368);
     flex-shrink: 0;
+}
+
+/* 拖动排序手柄：提示阶段头可按住拖动换序 */
+.timeline-phase__drag {
+    font-size: 1.05rem;
+    color: var(--textSecondary, #9aa0a6);
+    cursor: grab;
+    flex-shrink: 0;
+}
+
+.timeline-phase__drag:active {
+    cursor: grabbing;
+}
+
+/* 阶段拖动进行中：整页显示抓取光标 */
+body.timeline-phase-dragging,
+body.timeline-phase-dragging * {
+    cursor: grabbing !important;
 }
 
 .timeline-phase__toggle:hover {
@@ -425,21 +396,71 @@
     font-weight: 600;
     padding: .05rem .2rem;
     outline: none;
+    /* 多行自适应：名称必须完整显示，高度由 JS 按内容设置 */
+    resize: none;
+    overflow: hidden;
+    line-height: 1.25;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: inherit;
 }
 
-.timeline-phase__name:hover,
+/* 阶段描述：在名称下方，与事件描述一致，空时不渲染、非空完整换行 */
+.timeline-phase__desc {
+    flex: 0 0 100%;
+    min-width: 0;
+    font-size: .76rem;
+    color: var(--textSecondary, #5f6368);
+    padding: .05rem .2rem;
+    line-height: 1.25;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* 阶段头宽度调节把手：贴在远离主轴的那条外边缘 */
+.timeline-phase__width {
+    position: absolute;
+    z-index: 5;
+    touch-action: none;
+    background: var(--divider, #dadce0);
+    border-radius: 3px;
+    opacity: .45;
+    transition: opacity .12s, background .12s;
+}
+
+.timeline-phase__head:hover .timeline-phase__width {
+    opacity: 1;
+}
+
+.timeline-phase__width:hover {
+    background: var(--blue, #1a73e8);
+    opacity: 1;
+}
+
+/* 纵向：阶段头在主轴左侧，把手是左边缘的竖条 */
+.timeline-canvas--vertical .timeline-phase__width {
+    top: 50%;
+    left: -5px;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 60%;
+    cursor: ew-resize;
+}
+
+/* 横向：阶段头在主轴上方，把手是上边缘的横条 */
+.timeline-canvas--horizontal .timeline-phase__width {
+    left: 50%;
+    top: -5px;
+    transform: translateX(-50%);
+    height: 5px;
+    width: 60%;
+    cursor: ns-resize;
+}
 .timeline-phase__name:focus {
     border-color: var(--borderPrimary, #dadce0);
     border-radius: 3px;
     background: var(--surfacePrimary, #fff);
-}
-
-.timeline-canvas--horizontal .timeline-phase__name {
-    /* 横向时阶段头是竖条，文字竖排 */
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    flex: 1;
-    width: 100%;
 }
 
 .timeline-phase__op {
@@ -463,12 +484,11 @@
     color: var(--icon-red, #ea4335);
 }
 
-/* 阶段轴带：贴合主轴，用阶段色给这一段轴着色（覆盖在中性主轴之上） */
+/* 阶段轴带：就是主轴本身，各阶段首尾相接拼成整条轴，用阶段色着色 */
 .timeline-phase__band {
     position: absolute;
     pointer-events: none;
-    z-index: 2;
-    border-radius: 2px;
+    z-index: 1;
 }
 
 .timeline-canvas--vertical .timeline-phase__band {
@@ -477,6 +497,9 @@
     left: 50%;
     width: 3px;
     margin-left: -1.5px;
+    /* 线型由行内样式给出：实线用 background，虚线/点线用 border */
+    border-left-width: 3px;
+    border-left-style: none;
 }
 
 .timeline-canvas--horizontal .timeline-phase__band {
@@ -485,37 +508,19 @@
     top: 50%;
     height: 3px;
     margin-top: -1.5px;
-}
-
-/* 阶段沿轴拉伸把手：横跨阶段底部的一条窄带，层级低于事件卡片，
-   既方便拖拉伸，又不会挡住卡片与连线把手上的点击 */
-.timeline-phase__resize {
-    position: absolute;
-    z-index: 1;
-    touch-action: none;
-}
-
-.timeline-canvas--vertical .timeline-phase__resize {
-    left: 0;
-    right: 0;
-    bottom: -3px;
-    height: 7px;
-    cursor: ns-resize;
-}
-
-.timeline-canvas--horizontal .timeline-phase__resize {
-    top: 0;
-    bottom: 0;
-    right: -3px;
-    width: 7px;
-    cursor: ew-resize;
-}
-
-.timeline-phase__resize:hover {
-    background: rgba(26, 115, 232, .18);
+    border-top-width: 3px;
+    border-top-style: none;
 }
 
 /* ===== 事件卡片 ===== */
+/*
+ * 侧向留白：卡片距主轴的距离（连线长度），完全由用户拖动决定。
+ * 时间文字必须自己待在「节点 → 卡片起始线」的缝里，不能靠挤走卡片来腾空间。
+ */
+.timeline-phase {
+    --node-r: 12px;
+}
+
 .timeline-event {
     position: absolute;
     box-sizing: border-box;
@@ -523,7 +528,7 @@
     touch-action: none;
     user-select: none;
     z-index: 2;
-    /* 侧向留白：卡片距主轴的距离（连线长度） */
+    /* 侧向留白：卡片距主轴的距离（用户拖动设定） */
     --side-gap: 2.6rem;
 }
 
@@ -534,8 +539,7 @@
 .timeline-canvas--vertical .timeline-event {
     /* 宽度自适应：主轴一侧的可用空间的一半左右，避免卡片过宽铺满屏幕 */
     width: min(22rem, calc(50% - var(--side-gap) - 1.5rem));
-    /* 卡片中心对准 offset 位置 */
-    transform: translateY(-50%);
+    /* 卡片顶部对齐 top（同侧卡片按实测高度顺序排布，避免重叠） */
 }
 
 /* 纵向：卡片从主轴（容器水平中点）往外偏移 --side-gap */
@@ -548,9 +552,10 @@
 }
 
 .timeline-canvas--horizontal .timeline-event {
-    width: 12rem;
-    /* 卡片中心对准 offset 位置 */
-    transform: translateX(-50%);
+    /* 横向时沿轴是水平方向，卡片要够宽，否则文本竖着堆会把卡片撑得很高 */
+    width: 20rem;
+    max-width: 20rem;
+    /* 卡片左边缘对齐 left（同侧卡片按实测宽度顺序排布，避免重叠） */
 }
 
 /* 横向：卡片从主轴（容器垂直中点）往上下偏移 --side-gap */
@@ -558,8 +563,16 @@
     bottom: calc(50% + var(--side-gap));
 }
 
+/*
+ * 横向布局时阶段头骑在主轴上方，会占用 side=right 卡片的侧向空间。
+ * 右侧卡片在 --side-gap 之外再让开阶段头高度（--head-side），避免重叠。
+ */
 .timeline-canvas--horizontal .timeline-event--side-right {
-    top: calc(50% + var(--side-gap));
+    top: calc(50% + var(--side-gap) + var(--head-side, 0px));
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__link {
+    height: calc(var(--side-gap) + var(--head-side, 0px));
 }
 
 .timeline-event:hover,
@@ -599,20 +612,96 @@
 .timeline-event__title {
     font-size: .85rem;
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* 标题允许换行，内容长时完整显示（不缩略） */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 
-.timeline-canvas--horizontal .timeline-event__title {
-    white-space: normal;
-}
-
-.timeline-event__date {
-    margin-top: .1rem;
+/* 日期：贴在连线靠中轴的一端，骑在连线上 */
+/* 时间：骑在中轴上，起始时间在节点左侧、结束时间在节点右侧 */
+.timeline-event__time {
+    position: absolute;
+    z-index: 4;
     font-size: .72rem;
+    line-height: 1;
+    padding: .05rem .3rem;
+    white-space: nowrap;
     color: var(--textSecondary, #5f6368);
+    background: var(--surfacePrimary, #fff);
+    border-radius: 3px;
     font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+/* 节点半径（供时间避开节点用）：与 .timeline-node--xxx 保持一致 */
+.timeline-event--node-dot { --node-r: 6px; }
+.timeline-event--node-circle { --node-r: 13px; }
+.timeline-event--node-square { --node-r: 9px; }
+.timeline-event--node-image { --node-r: 22px; }
+
+/*
+ * 节点位置：距离卡片侧向边缘 --side-gap（卡片内为负方向）。
+ * 时间以节点中心为基准，沿轴向（侧向方向）向左/右让开 node-r + 间距：
+ *   start 时间在节点「外侧」，end 时间在节点「内侧」。
+ * 纵向布局：侧向 = 水平（left/right）；横向布局：侧向 = 垂直（top/bottom）。
+ */
+.timeline-canvas--vertical .timeline-event__time {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* 卡片在轴左侧：节点在卡片右边，start 再往右（外侧），end 往左（内侧） */
+.timeline-canvas--vertical .timeline-event--side-left .timeline-event__time--start {
+    right: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
+    transform: translateY(-50%) translateX(100%);
+}
+
+/* 结束时间压在连线下方，避免遮挡连线 */
+.timeline-canvas--vertical .timeline-event--side-left .timeline-event__time--end {
+    right: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
+    top: calc(50% + .9rem);
+    transform: none;
+}
+
+/* 卡片在轴右侧：节点在卡片左边，start 再往左（外侧），end 往右（内侧） */
+.timeline-canvas--vertical .timeline-event--side-right .timeline-event__time--start {
+    left: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
+    transform: translateY(-50%) translateX(-100%);
+}
+
+.timeline-canvas--vertical .timeline-event--side-right .timeline-event__time--end {
+    left: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
+    top: calc(50% + .9rem);
+    transform: none;
+}
+
+/* 横向布局：时间水平居中于节点，沿垂直方向分列节点上下 */
+.timeline-canvas--horizontal .timeline-event__time {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__time--start {
+    bottom: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
+    transform: translateX(-50%) translateY(100%);
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__time--end {
+    bottom: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
+    left: calc(50% + .9rem);
+    transform: none;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__time--start {
+    top: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
+    transform: translateX(-50%) translateY(-100%);
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__time--end {
+    top: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
+    left: calc(50% + .9rem);
+    transform: none;
 }
 
 .timeline-event__desc {
@@ -620,10 +709,10 @@
     font-size: .75rem;
     color: var(--textSecondary, #5f6368);
     line-height: 1.35;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+    /* 描述完整换行显示，不做行数缩略 */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* 卡片宽度调节把手：贴在卡片「远离主轴」的那条外边缘 */
@@ -832,38 +921,41 @@
     justify-content: center;
     border-radius: 50%;
     border: 2px solid var(--surfacePrimary, #fff);
+    /* 节点半径：侧向定位用它把节点中心对齐到主轴上，各样式按自身尺寸覆盖 */
+    --node-r: 6px;
 }
 
 /* 纵向：节点定位到卡片与主轴之间的连线上 */
 .timeline-canvas--vertical .timeline-node {
     top: 50%;
-    margin-top: -7px;
+    margin-top: calc(-1 * var(--node-r));
 }
 
 .timeline-canvas--vertical .timeline-event--side-left .timeline-node {
-    right: calc(-1 * var(--side-gap) - 5.5px);
+    right: calc(-1 * var(--side-gap) - var(--node-r));
 }
 
 .timeline-canvas--vertical .timeline-event--side-right .timeline-node {
-    left: calc(-1 * var(--side-gap) - 5.5px);
+    left: calc(-1 * var(--side-gap) - var(--node-r));
 }
 
 /* 横向：节点定位到主轴的那一侧 */
 .timeline-canvas--horizontal .timeline-node {
     left: 50%;
-    margin-left: -7px;
+    margin-left: calc(-1 * var(--node-r));
 }
 
 .timeline-canvas--horizontal .timeline-event--side-left .timeline-node {
-    bottom: calc(-1 * var(--side-gap) - 5.5px);
+    bottom: calc(-1 * var(--side-gap) - var(--node-r));
 }
 
 .timeline-canvas--horizontal .timeline-event--side-right .timeline-node {
-    top: calc(-1 * var(--side-gap) - 5.5px);
+    top: calc(-1 * var(--side-gap) - var(--node-r));
 }
 
 /* 节点样式：圆点（小） */
 .timeline-node--dot {
+    --node-r: 6px;
     width: 12px;
     height: 12px;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, .9);
@@ -871,6 +963,7 @@
 
 /* 节点样式：圆形（大，带白边） */
 .timeline-node--circle {
+    --node-r: 13px;
     width: 26px;
     height: 26px;
     margin-top: -13px;
@@ -889,6 +982,7 @@
 
 /* 节点样式：方形 */
 .timeline-node--square {
+    --node-r: 9px;
     width: 18px;
     height: 18px;
     border-radius: 2px;
@@ -902,6 +996,7 @@
 
 /* 节点样式：图片（圆形缩略图） */
 .timeline-node--image {
+    --node-r: 22px;
     width: 44px;
     height: 44px;
     margin-top: -22px;
@@ -989,8 +1084,11 @@
 }
 
 .timeline-panel__textarea {
-    min-height: 4rem;
-    resize: vertical;
+    /* 普通输入框：不自动增高、不限制最大高度，保留原生滚动与手动拉伸 */
+    min-height: 3.4rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .timeline-panel__input:focus,
@@ -1090,6 +1188,53 @@
 }
 
 .timeline-panel__del .material-icons {
+    font-size: .95rem;
+}
+
+/* 「添加事件」按钮：与删除按钮同构，用主色区分 */
+.timeline-panel__add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    margin-top: .6rem;
+    padding: .35rem 0;
+    font-size: .8rem;
+    color: var(--blue, #1a73e8);
+    background: transparent;
+    border: 1px solid var(--blue, #1a73e8);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.timeline-panel__add:hover {
+    background: rgba(26, 115, 232, .08);
+}
+
+/* 事件时间：起始/结束两个输入框并排 */
+.timeline-panel__times {
+    display: flex;
+    gap: .5rem;
+}
+
+.timeline-panel__times .timeline-panel__input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 阶段前/后插入：两个按钮并排一行 */
+.timeline-panel__insert {
+    display: flex;
+    gap: .5rem;
+    margin-top: .6rem;
+}
+
+.timeline-panel__insert .timeline-panel__add {
+    flex: 1;
+    margin-top: 0;
+}
+
+.timeline-panel__add .material-icons {
     font-size: .95rem;
 }
 

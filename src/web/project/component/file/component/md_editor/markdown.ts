@@ -201,8 +201,10 @@ export function markdown_to_doc(markdown: string): PMNode {
 // ---------------------------------------------------------------------------
 
 // 转义 Markdown 中有特殊含义的字符
+// 注意：不转义 [ ] —— 它们只有成对组成 [text](url) 时才有语法含义，
+// 单独出现按普通文本处理即可；转义反而会破坏用户输入的图片/链接语法。
 function escape_text(text: string): string {
-    return text.replace(/([\\`*_[\]<>])/g, "\\$1");
+    return text.replace(/([\\`*_<>])/g, "\\$1");
 }
 
 // 单元格内的竖线必须转义，否则会把一行拆成更多列

@@ -92,6 +92,16 @@ export function build_input_rules() {
             // `行内代码`：内容里不允许再出现反引号，与 Markdown 单反引号的规则一致
             mark_input_rule(/(?:`)([^`]+)(?:`)$/, "code"),
 
+            // ![alt](url) → 图片节点（敲完右括号即时成型，方便引用本地 .timeline / .mermaid 等）
+            new InputRule(/!\[([^\]]*)\]\(([^)\s]+)\)$/, (state, match, start, end) => {
+                const alt = match[1] ?? "";
+                const src = match[2];
+                if (!src) {
+                    return null;
+                }
+                return state.tr.replaceWith(start, end, state.schema.nodes.image.create({src, alt}));
+            }),
+
             // 智能标点
             ...smartQuotes,
             ellipsis,

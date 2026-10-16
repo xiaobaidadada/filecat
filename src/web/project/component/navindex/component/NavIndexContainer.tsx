@@ -198,14 +198,14 @@ export function NavIndexContainer(props: {
                             <InputText value={item.name} handleInputChange={(value) => {
                                 item.name = value;
                             }} placeholder={t("输入类目名")} no_border={true}/>
-                            <InputText value={item.color} handleInputChange={(value) => {
+                            <InputText value={item.color} type={"color"} handleInputChange={(value) => {
                                 item.color = value;
                             }} placeholder={"color"} no_border={true}/>
                         </React.Fragment>
                         :
                         (props.items.map((v, i) => (
                             <div key={i}>
-                                <InputText value={item[v.key]} handleInputChange={(value) => {
+                                <InputText value={item[v.key]} type={v.key === "color" ? "color" : undefined} handleInputChange={(value) => {
                                     item[v.key] = value;
                                 }} placeholder={v.preName} no_border={true}/>
                             </div>

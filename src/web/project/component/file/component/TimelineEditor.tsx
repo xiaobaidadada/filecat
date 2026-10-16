@@ -55,6 +55,8 @@ export default function TimelineEditor() {
         return null;
     }
 
+    const [edit_mode, set_edit_mode] = useState(false);
+
     return (
         <div id={"timeline-container"}>
             <div className={"timeline-context"}>
@@ -63,8 +65,10 @@ export default function TimelineEditor() {
                     reset_key={timeline_editor.url ?? timeline_editor.name}
                     url={timeline_editor.url}
                     on_dirty={set_dirty}
+                    on_edit_mode_change={set_edit_mode}
                     register={(handle) => {
                         apiRef.current = handle;
+                        set_edit_mode(handle.is_edit_mode());
                     }}
                     header={
                         <div className="timeline-topbar">
@@ -72,10 +76,12 @@ export default function TimelineEditor() {
                             <span className="timeline-topbar__name">{timeline_editor.name}</span>
                             {dirty && <span className="timeline-topbar__dirty">*</span>}
                             <span className="timeline-topbar__gap"/>
-                            <button type="button" className="timeline-btn"
-                                    title={t("保存") + " (Ctrl+S)"} onClick={save}>
-                                <span className="material-icons">save</span>
-                            </button>
+                            {edit_mode && (
+                                <button type="button" className="timeline-btn"
+                                        title={t("保存") + " (Ctrl+S)"} onClick={save}>
+                                    <span className="material-icons">save</span>
+                                </button>
+                            )}
                             <button type="button" className="timeline-btn"
                                     title={t("关闭")} onClick={close}>
                                 <span className="material-icons">close</span>

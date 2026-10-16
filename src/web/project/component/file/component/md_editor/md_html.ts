@@ -1,9 +1,13 @@
 import {Node as PmNode} from "prosemirror-model";
 import {EditorView, NodeView} from "prosemirror-view";
+import {createRoot, type Root} from "react-dom/client";
+import {createElement} from "react";
 import {fileHttp} from "../../../../util/config";
 import hljs from "highlight.js";
 import {is_graph_lang, render_graph} from "./graph_render";
 import {prepare_mind} from "./mind_graph";
+import {parse_doc} from "../timeline/timeline_util";
+import TimelineInline from "../timeline/TimelineInline";
 
 /**
  * Markdown 里内嵌 HTML 的展示。
@@ -392,11 +396,12 @@ class HtmlInlineView implements NodeView {
  */
 /**
  * 按扩展名判断一个图片引用的目标是不是「可渲染的图形文件」。
- *   .mermaid → mermaid 源码文件（fetch 内容后按 mermaid 渲染）
- *   .mind    → 思维导图数据文件（fetch 内容后按导图渲染）
+ *   .mermaid  → mermaid 源码文件（fetch 内容后按 mermaid 渲染）
+ *   .mind     → 思维导图数据文件（fetch 内容后按导图渲染）
+ *   .timeline → 时间线数据文件（fetch 内容后导出为静态 SVG 展示）
  * .svg 交给浏览器原生 <img> 渲染，不需要特殊处理。
  */
-type GraphFileKind = "mermaid" | "mind";
+type GraphFileKind = "mermaid" | "mind" | "timeline";
 
 function graph_file_kind(src: string): GraphFileKind | null {
     const clean = src.split(/[?#]/)[0].toLowerCase();
@@ -405,6 +410,9 @@ function graph_file_kind(src: string): GraphFileKind | null {
     }
     if (clean.endsWith(".mind")) {
         return "mind";
+    }
+    if (clean.endsWith(".timeline")) {
+        return "timeline";
     }
     return null;
 }
@@ -430,6 +438,8 @@ class ImageFileView implements NodeView {
     private src: string;
     /** 思维导图实例销毁函数（mermaid 不需要） */
     private mind_unmount: (() => void) | null = null;
+    /** 内嵌时间线的 React root（销毁时要卸载，避免内存泄漏） */
+    private timeline_root: Root | null = null;
 
     constructor(node: PmNode) {
         this.node = node;
@@ -488,6 +498,28 @@ class ImageFileView implements NodeView {
                     body.innerHTML = res.svg;
                     return;
                 }
+                // timeline：挂载只读的时间线编辑器（完全复用编辑器渲染，外观一致）
+                if (this.kind === "timeline") {
+                    const parsed = parse_doc(text);
+                    if (!body.isConnected) {
+                        return;
+                    }
+                    if (!parsed) {
+                        this.dom.classList.add("md-graph--error");
+                        body.textContent = "invalid timeline";
+                        return;
+                    }
+                    this.dom.classList.add("md-graph--timeline");
+                    body.remove();
+                    this.dom.textContent = "";
+                    const holder = document.createElement("div");
+                    holder.className = "md-timeline-embed";
+                    this.dom.append(holder);
+                    const root = createRoot(holder);
+                    root.render(createElement(TimelineInline, {doc: parsed, readonly: true}));
+                    this.timeline_root = root;
+                    return;
+                }
                 // mind：内容解析成导图数据后挂载只读实例
                 const mount = await prepare_mind(text);
                 if (!this.dom.isConnected) {
@@ -536,6 +568,9 @@ class ImageFileView implements NodeView {
     private destroy_instance() {
         this.mind_unmount?.();
         this.mind_unmount = null;
+        // React root 必须显式卸载，否则组件树会留在内存里
+        this.timeline_root?.unmount();
+        this.timeline_root = null;
     }
 
     destroy() {

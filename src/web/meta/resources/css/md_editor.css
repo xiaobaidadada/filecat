@@ -1144,6 +1144,25 @@
     height: 360px;
 }
 
+/* 时间线文件（.timeline）：直接内嵌只读编辑器，位置与缩放跟编辑器保持一致，
+   高度按内容撑开（外层 .timeline-canvas 自己就是滚动容器） */
+.md-graph--file.md-graph--timeline {
+    display: block;
+    text-align: left;
+}
+
+.md-timeline-embed {
+    width: 100%;
+}
+
+.md-timeline-embed .timeline-wrap {
+    height: auto;
+}
+
+.md-timeline-embed .timeline-canvas {
+    max-height: 70vh;
+}
+
 .md-graph--file.md-graph--mind .md-graph__mind-host {
     width: 100%;
     height: 100%;
