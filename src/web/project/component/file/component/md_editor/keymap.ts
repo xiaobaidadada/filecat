@@ -153,8 +153,9 @@ function match_block_syntax(text: string): {
         return {type: "bullet_list"};
     }
 
-    // 有序列表：1. / 1)
-    if (/^\d+[.)]?$/.test(t)) {
+    // 有序列表：1. / 1)（必须带点或右括号，纯数字不算 —— 否则「2024 回车」
+    // 这种普通数字开头的句子会被误转成有序列表）
+    if (/^\d+[.)]$/.test(t)) {
         return {type: "ordered_list"};
     }
 
@@ -204,6 +205,16 @@ export const convert_on_enter: Command = (state, dispatch) => {
         // 与 input rule（敲空格成型）的行为保持一致。
         const node = type.createAndFill(matched.attrs) ?? type.create(matched.attrs);
         tr.replaceWith(start, end, node);
+        // 替换后光标会随事务自动映射，落在新节点的边界之外（对空的代码块尤其明显：
+        // 光标根本不在块内，块高度塌陷成一条，用户的下一句输入会落到块外面）。
+        // 这里显式把光标送进新节点内部（start + 1 即节点内容起点），
+        // 保证「敲 ```js 回车」之后光标就在代码块里，接着就能打字。
+        const inner = Math.min(start + 1, tr.doc.content.size);
+        try {
+            tr.setSelection(TextSelection.near(tr.doc.resolve(inner), 1));
+        } catch {
+            // 位置异常时保留默认选区，不影响转换本身
+        }
         tr.scrollIntoView();
         dispatch(tr);
     }

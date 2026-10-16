@@ -2,6 +2,8 @@ import {Node as PmNode} from "prosemirror-model";
 import {EditorView, NodeView} from "prosemirror-view";
 import {fileHttp} from "../../../../util/config";
 import hljs from "highlight.js";
+import {is_graph_lang, render_graph} from "./graph_render";
+import {prepare_mind} from "./mind_graph";
 
 /**
  * Markdown 里内嵌 HTML 的展示。
@@ -388,11 +390,174 @@ class HtmlInlineView implements NodeView {
  * 它要用到 md_math，而 md_math 又要用本模块的 encode/decode，
  * 在这里直接引用会绕成环。见 MdWysiwygEditor 里的 nodeViews 组装。
  */
+/**
+ * 按扩展名判断一个图片引用的目标是不是「可渲染的图形文件」。
+ *   .mermaid → mermaid 源码文件（fetch 内容后按 mermaid 渲染）
+ *   .mind    → 思维导图数据文件（fetch 内容后按导图渲染）
+ * .svg 交给浏览器原生 <img> 渲染，不需要特殊处理。
+ */
+type GraphFileKind = "mermaid" | "mind";
+
+function graph_file_kind(src: string): GraphFileKind | null {
+    const clean = src.split(/[?#]/)[0].toLowerCase();
+    if (clean.endsWith(".mermaid")) {
+        return "mermaid";
+    }
+    if (clean.endsWith(".mind")) {
+        return "mind";
+    }
+    return null;
+}
+
+/**
+ * 图片节点的 NodeView。
+ *
+ * 普通图片（png/jpg/svg…）按原样渲染成 <img>，相对路径沿用 resolve_src 解析。
+ * 但 `![..](./xx.mermaid)` / `![..](./xx.mind)` 这类引用指向的是「文本内容文件」，
+ * 用 <img> 加载只会变成裂图。这里按扩展名特判：把文件内容取回来，
+ * 复用编辑器里已有的图形渲染（mermaid → SVG，mind → 只读导图），
+ * 让它们以图形方式直接显示在文档里，而不是一个坏掉的图片占位。
+ *
+ * 与 ```mermaid / ```smm-mind 代码块的差别：那些是内联源码，本 NodeView 是
+ * 外部文件引用，内容需要 fetch 一次；只读展示，不提供编辑入口（文件内容本身
+ * 不在本文档里，编辑入口没有意义）。
+ */
+class ImageFileView implements NodeView {
+    dom: HTMLElement;
+    private node: PmNode;
+    private kind: GraphFileKind | null;
+    /** 当前渲染对应的 src，用于 update 时判断要不要重渲染 */
+    private src: string;
+    /** 思维导图实例销毁函数（mermaid 不需要） */
+    private mind_unmount: (() => void) | null = null;
+
+    constructor(node: PmNode) {
+        this.node = node;
+        this.src = node.attrs.src as string;
+        this.kind = graph_file_kind(this.src);
+        this.dom = this.kind ? this.build_graph() : this.build_image();
+    }
+
+    /** 普通图片：直接 <img>，交给外面统一的「加载失败画问号」逻辑处理 */
+    private build_image(): HTMLElement {
+        const img = document.createElement("img");
+        img.src = resolve_src(this.src);
+        img.alt = (this.node.attrs.alt as string) ?? "";
+        const title = this.node.attrs.title as string;
+        if (title) {
+            img.title = title;
+        }
+        return img;
+    }
+
+    /** 图形文件：容器复用 .md-graph 的观感，内部按类型渲染。
+     *  用 <span>（配 CSS display:block）而不是 <div>：image 是行内节点，
+     *  会被包在段落 <p> 里，<div> 嵌在 <p> 内是非法的 HTML 结构。 */
+    private build_graph(): HTMLElement {
+        const dom = document.createElement("span");
+        dom.className = "md-graph md-graph--file";
+        // 图形是不可编辑内容，标 false 避免被当作文本参与光标移动
+        dom.setAttribute("contenteditable", "false");
+        const body = document.createElement("span");
+        body.className = "md-graph__body";
+        dom.append(body);
+        this.render_graph_body(body);
+        return dom;
+    }
+
+    /** 取文件内容并渲染进 body */
+    private render_graph_body(body: HTMLElement) {
+        const url = resolve_src(this.src);
+        body.textContent = "loading";
+        fetch(url)
+            .then(r => r.text())
+            .then(async text => {
+                if (!this.dom.isConnected) {
+                    return;
+                }
+                if (this.kind === "mermaid") {
+                    const res = await render_graph("mermaid", text);
+                    if (!body.isConnected) {
+                        return;
+                    }
+                    if (res.error) {
+                        this.dom.classList.add("md-graph--error");
+                        body.textContent = res.error;
+                        return;
+                    }
+                    body.innerHTML = res.svg;
+                    return;
+                }
+                // mind：内容解析成导图数据后挂载只读实例
+                const mount = await prepare_mind(text);
+                if (!this.dom.isConnected) {
+                    return;
+                }
+                this.dom.classList.add("md-graph--mind");
+                body.remove();
+                this.dom.textContent = "";
+                const inst = await mount.mount(this.dom);
+                this.mind_unmount = () => inst.destroy();
+            })
+            .catch(() => {
+                if (body.isConnected) {
+                    this.dom.classList.add("md-graph--error");
+                    body.textContent = "load failed";
+                }
+            });
+    }
+
+    update(node: PmNode): boolean {
+        if (node.type !== this.node.type) {
+            return false;
+        }
+        this.node = node;
+        const next_src = node.attrs.src as string;
+        // 图片地址或类型变了就重建 DOM；否则沿用（避免每次 update 都重新 fetch）
+        if (next_src !== this.src) {
+            this.destroy_instance();
+            this.src = next_src;
+            this.kind = graph_file_kind(next_src);
+            const next = this.kind ? this.build_graph() : this.build_image();
+            this.dom.replaceWith(next);
+            this.dom = next;
+        } else if (!this.kind) {
+            // 普通图片：src 未变时只需同步 alt/title（DOM 复用）
+            const img = this.dom as HTMLImageElement;
+            img.alt = (node.attrs.alt as string) ?? "";
+            const title = node.attrs.title as string;
+            if (title) {
+                img.title = title;
+            }
+        }
+        return true;
+    }
+
+    private destroy_instance() {
+        this.mind_unmount?.();
+        this.mind_unmount = null;
+    }
+
+    destroy() {
+        this.destroy_instance();
+    }
+
+    stopEvent(event: Event): boolean {
+        // 图形内部不响应编辑器事件；普通图片放行（让光标能落在图片旁边）
+        return this.kind ? this.dom.contains(event.target as globalThis.Node) : false;
+    }
+
+    ignoreMutation(): boolean {
+        return true;
+    }
+}
+
 export function md_node_views() {
     return {
         html_block: (node: PmNode, view: EditorView, get_pos: () => number) =>
             new HtmlBlockView(node, view, get_pos),
         html_inline: (node: PmNode, view: EditorView, get_pos: () => number) =>
             new HtmlInlineView(node, view, get_pos),
+        image: (node: PmNode) => new ImageFileView(node),
     };
 }

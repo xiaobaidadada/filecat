@@ -4,7 +4,7 @@ import {useAtom} from "jotai";
 import {$stroe} from "../../../../util/store";
 import {EditorState, TextSelection} from "prosemirror-state";
 import {EditorView} from "prosemirror-view";
-import {Node as PmNode} from "prosemirror-model";
+import {Node as PmNode, Slice} from "prosemirror-model";
 import {history, redo, undo} from "prosemirror-history";
 import {keymap} from "prosemirror-keymap";
 import {
@@ -20,7 +20,7 @@ import {dropCursor} from "prosemirror-dropcursor";
 import {gapCursor} from "prosemirror-gapcursor";
 import {tableEditing, columnResizing, goToNextCell, tableNodeTypes} from "prosemirror-tables";
 import {md_schema} from "./schema";
-import {markdown_to_doc, doc_to_markdown} from "./markdown";
+import {markdown_to_doc, doc_to_markdown, slice_to_markdown} from "./markdown";
 import {OutlineItem} from "./MdOutline";
 import {
     build_source_highlight_plugin,
@@ -219,6 +219,10 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
             return;
         }
         const s = md_schema;
+        // HTML 块 / 图片渲染相对路径时要知道文档在哪，先把这个上下文交给 md_html。
+        // 必须放在 markdown_to_doc 之前：解析阶段就会用到 doc_dir，
+        // 放后面的话首帧解析出来的相对路径是错的。
+        set_html_doc_dir(props.doc_path ? props.doc_path.replace(/[^/]*$/, "") : "");
         const state = EditorState.create({
             doc: markdown_to_doc(props.value ?? ""),
             plugins: [
@@ -302,8 +306,8 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
             ],
         });
 
-        // HTML 块渲染相对图片时要知道文档在哪，先把这个上下文交给 md_html
-        set_html_doc_dir(props.doc_path ? props.doc_path.replace(/[^/]*$/, "") : "");
+        // HTML 块渲染相对图片时要知道文档在哪 —— 已在创建 state 之前设置过
+        // （见上方 set_html_doc_dir），此处无需重复。
         // 图片占位：上来就先标成失败（CSS 画成问号），load 到了立刻摘掉露出真图。
         //
         // 为什么反过来做（默认失败而不是默认正常）：
@@ -398,22 +402,44 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                 window.open(href, "_blank", "noopener,noreferrer");
                 return true;
             },
-            // 粘贴到代码块内时，必须把纯文本整段塞进去。
-            // ProseMirror 默认按块解析剪贴板文本，多行内容会被拆成一堆段落节点，
-            // 表现就是「只有第一行留在代码块里，其余全部漏到外面」。
+            // 复制到外部（其它编辑器、聊天框等）时，text/plain 输出 Markdown 原文，
+            // 而不是渲染后的纯文本 —— 否则 # 标题、``` 围栏、** 加粗这些标记会全部丢失。
+            clipboardTextSerializer: (slice) => slice_to_markdown(slice as any),
+            // 粘贴的统一接管点，分三种情况：
+            //
+            // 1) 光标在代码块内 —— 必须把纯文本整段塞进去。
+            //    ProseMirror 默认按块解析剪贴板文本，多行内容会被拆成一堆段落节点，
+            //    表现就是「只有第一行留在代码块里，其余全部漏到外面」。
+            //
+            // 2) 剪贴板来自「整块源码」（html 只有一个 <pre>，即源码模式 / 别的 md 编辑器全文复制）
+            //    —— 直接按 Markdown 解析 text/plain。
+            //    不能让 ProseMirror 走 html 解析：它是 markdown 编辑器，
+            //    把一段源码当代码块粘进来正是用户抱怨的「平白多一层 ```」。
+            //
+            // 3) 其余情况（普通富文本、图片等）返回 false，保持 ProseMirror 原生行为。
             handlePaste(view, event) {
                 const text = event.clipboardData?.getData("text/plain");
                 if (!text) {
                     return false;
                 }
                 const {from, to} = view.state.selection;
-                if (!is_in_code_block(view.state.doc, from) || !is_in_code_block(view.state.doc, to)) {
-                    return false;
+                if (is_in_code_block(view.state.doc, from) && is_in_code_block(view.state.doc, to)) {
+                    view.dispatch(
+                        view.state.tr.insertText(text.replace(/\r\n?/g, "\n"), from, to).scrollIntoView()
+                    );
+                    return true;
                 }
-                view.dispatch(
-                    view.state.tr.insertText(text.replace(/\r\n?/g, "\n"), from, to).scrollIntoView()
-                );
-                return true;
+                // 源码形态的剪贴板：按 Markdown 解析（源码模式整篇就是一个代码块，
+                // 这里取到的 text 就是用户想粘贴的 Markdown 原文）
+                const html = event.clipboardData?.getData("text/html");
+                if (html && is_source_like_html(html)) {
+                    const doc = markdown_to_doc(text);
+                    view.dispatch(view.state.tr.replaceSelection(
+                        new Slice(doc.content, 0, 0)
+                    ).scrollIntoView());
+                    return true;
+                }
+                return false;
             },
             // 按住 Ctrl/Cmd 时给编辑器根节点打标记，CSS 据此把链接切成「可点击」样式（小手 + 实线下划线）；
             // 同时承载源码模式下的输入接管（见下方 beforeinput / Enter 的说明）。
@@ -778,6 +804,33 @@ function is_in_code_block(doc: PmNode, pos: number): boolean {
         }
     }
     return false;
+}
+
+/**
+ * 判断剪贴板里的 HTML 是不是「一整块源码」的形态（只含一个 <pre>）。
+ *
+ * 为什么需要它：ProseMirror 的粘贴逻辑要求 text/html 与 text/plain 内容一致，
+ * 一旦发现 html 丢了内容（比如纯文本里有的 # 、``` 在 html 里找不到），
+ * 就会判定 html 不可信，结果是把两条通道的内容都塞进文档 —— 内容重复。
+ * 而 Markdown 源码类来源（filecat 的源码模式、别的 md 编辑器全文复制）
+ * 复制出来的 html 恰好就是「一个 <pre> 包着源码」，与纯文本天然不一致。
+ *
+ * 这种情况用户真正想要的是「按 Markdown 解析这段源码」，所以这里识别出来，
+ * 交给 handlePaste 走 markdown_to_doc 处理，绕开 ProseMirror 的 html 解析。
+ * 普通富文本（网页复制的排版内容）html 结构是多块的 <p>/<h1>，不会命中，
+ * 仍然交给 ProseMirror 原生处理，格式照旧保留。
+ */
+function is_source_like_html(html: string): boolean {
+    if (!html) {
+        return false;
+    }
+    try {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const blocks = Array.from(doc.body.children);
+        return blocks.length === 1 && blocks[0].tagName === "PRE";
+    } catch {
+        return false;
+    }
 }
 
 /**

@@ -187,9 +187,12 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 /** Markdown 文本 → ProseMirror 文档 */
 export function markdown_to_doc(markdown: string): PMNode {
     const html = md.render(markdown ?? "");
-    const container = document.createElement("div");
-    container.innerHTML = html;
-    return PMDOMParser.fromSchema(md_schema).parse(container);
+    // 用 DOMParser 而不是 container.innerHTML：
+    // innerHTML 解析出的 <img src="./x.png"> 属于「活动文档」的一部分，
+    // 浏览器会立即按页面 URL 去请求它（相对路径必然 404，还会污染控制台）；
+    // DOMParser 产出的是惰性文档，不会发起任何资源请求。
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    return PMDOMParser.fromSchema(md_schema).parse(parsed.body);
 }
 
 
@@ -390,7 +393,7 @@ function serialize_list_item(li: PMNode, indent: string, marker: string, child_i
 }
 
 /** 序列化一组块级节点，块之间空一行 */
-function serialize_children(node: PMNode, indent = ""): string {
+function serialize_children(node: PMNode | {forEach: (cb: (child: PMNode) => void) => void}, indent = ""): string {
     const blocks: string[] = [];
     node.forEach(child => {
         blocks.push(serialize_block(child, indent));
@@ -401,4 +404,29 @@ function serialize_children(node: PMNode, indent = ""): string {
 /** ProseMirror 文档 → Markdown 文本 */
 export function doc_to_markdown(doc: PMNode): string {
     return serialize_children(doc).trim() + "\n";
+}
+
+/**
+ * 把一段选区（Slice）序列化成 Markdown 文本，供复制到外部时使用。
+ *
+ * 为什么要单独做：ProseMirror 默认的 text/plain 输出是「渲染后的纯文本」，
+ * 复制出去会丢掉 # 标题、```js 围栏、** 加粗 等标记，
+ * 粘贴到别处就变成一堆没有格式的裸文字。这里改走 Markdown 原文序列化，
+ * 复制到任何文本编辑器里都是合法的 Markdown。
+ *
+ * 一个例外：源码模式下整篇文档就是一个 ```markdown 代码块，
+ * 全选复制时若照常序列化，会平白多出一层 ``` 外框，粘到另一个 md 里
+ * 就变成「整篇被包进代码块」。这种「内容本身就是 Markdown 原文」的情况，
+ * 直接取代码块内部文本即可。
+ *
+ * slice.content 是 Fragment，与节点一样支持 forEach，可直接复用 serialize_children。
+ */
+export function slice_to_markdown(slice: {content: PMNode | any}): string {
+    const nodes: PMNode[] = [];
+    slice.content.forEach((child: PMNode) => nodes.push(child));
+    if (nodes.length === 1 && nodes[0].type.name === "code_block" && nodes[0].attrs.language === "markdown") {
+        // 源码模式：内容已经是 Markdown 源码，去掉外层围栏再输出
+        return nodes[0].textContent.replace(/\n*$/, "") + "\n";
+    }
+    return serialize_children(slice.content).trim() + "\n";
 }

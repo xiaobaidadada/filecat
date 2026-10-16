@@ -1128,6 +1128,27 @@
     height: auto;
 }
 
+/* ---- 图片语法引用的本地图形文件（.mermaid / .mind）----
+   这类引用走图片语法 ![](...)，image 是行内节点、被包在段落 <p> 里，
+   所以容器本身用 span + display:block 让它独占一行，
+   避免用 div 导致「div 嵌 p」的非法结构。 */
+.md-graph--file {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* 导图文件（.mind）：与代码块导图一致，需要确定高度给画布用 */
+.md-graph--file.md-graph--mind {
+    height: 360px;
+}
+
+.md-graph--file.md-graph--mind .md-graph__mind-host {
+    width: 100%;
+    height: 100%;
+}
+
 /* 图片默认画成问号占位，加载成功后再摘掉标记、露出真图。
    为什么用「默认失败」而不是「默认正常、失败才换」：
    文件不存在时后端返回的不是 404 而是 200 + JSON 错误体，
