@@ -37,7 +37,8 @@ import {
  * 一套数据、两种方向：
  *  - 纵向（默认）：主轴竖直，阶段自上而下排布，事件挂在左右两侧
  *  - 横向：主轴水平，阶段自左而右排布，事件挂在上下两侧
- * 事件可拖动改变「沿轴位置」与「所属侧」；阶段可通过拖动交换顺序；卡片宽度也可拖动调整。
+ * 事件不能用拖动改变位置与所属侧（只能用右侧编辑栏的按钮）；
+ * 阶段可通过拖动交换顺序；卡片宽度、连线长度可拖动调整。
  */
 
 export type TimelineHandle = {
@@ -71,7 +72,6 @@ type Props = {
 };
 
 /** 事件在文档中的定位 */
-type EventLoc = {phase_index: number; event_index: number};
 
 /**
  * 阶段头沿轴方向的厚度（px，zoom=1）。
@@ -82,14 +82,6 @@ const PHASE_HEAD_SIZE = 36;
 const HEAD_OFFSET = 4.8;
 /** 阶段头与首张卡片之间的安全间距（避免贴住／压住） */
 const HEAD_GAP = 6;
-
-/** 对齐辅助线样式：纵向时是水平线（跨侧向），横向时是垂直线 */
-function guide_style(pos: number, vertical: boolean, color: string): React.CSSProperties {
-    if (vertical) {
-        return {top: `${pos}px`, borderTop: `1px dashed ${color}`};
-    }
-    return {left: `${pos}px`, borderLeft: `1px dashed ${color}`};
-}
 
 /** 节点样式对应的 CSS 类名后缀 */
 function node_class(style: TimelineNodeStyle): string {
@@ -132,9 +124,6 @@ export default function TimelineEditor(props: Props) {
     const [selected_id, set_selected_id] = useState<string | null>(null);
     /** 选中对象的类型：阶段 / 事件 */
     const [selected_kind, set_selected_kind] = useState<"phase" | "event">("event");
-    /** 拖拽时的对齐辅助线位置（px，相对 timeline-inner；null 表示不显示） */
-    const [guide, set_guide] = useState<number | null>(null);
-
     const innerRef = useRef<HTMLDivElement | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const dirtyRef = useRef(false);
@@ -146,16 +135,12 @@ export default function TimelineEditor(props: Props) {
     const redoRef = useRef<string[]>([]);
     const [history_tick, set_history_tick] = useState(0);
 
-    const dragRef = useRef<{moved: boolean} | null>(null);
-    const dragLocRef = useRef<EventLoc | null>(null);
     /** 阶段拖动状态：记录被拖阶段的当前索引与开始时的文档快照 */
     const phase_dragRef = useRef<{from: number; snapshot: string} | null>(null);
     /** 正在被拖动的阶段 id（用于高亮） */
     const [drag_phase_id, set_drag_phase_id] = useState<string | null>(null);
     /** 落点插入位置（px，相对 timeline-inner 沿轴） */
     const [drop_pos, set_drop_pos] = useState<number | null>(null);
-    const pendingRef = useRef<TimelineDoc | null>(null);
-    const drag_snapshotRef = useRef<string | null>(null);
 
     const docRef = useRef<TimelineDoc>(doc);
     docRef.current = doc;
@@ -321,10 +306,10 @@ export default function TimelineEditor(props: Props) {
         return Math.max(acc.left, acc.right);
     };
 
-    /** 某阶段沿轴占用的尺寸：折叠时只剩头；展开时取「按数量估算」与「按实测高度」的较大者 */
+    /** 某阶段沿轴占用的尺寸：折叠时只剩头；展开时按事件实测高度累加（未测量到的事件用固定槽位估算） */
     const phase_span = (p: TimelinePhase) => {
         if (p.collapsed) return collapsed_h(p);
-        return Math.max(phase_size(p), PHASE_HEAD_SIZE + events_total(p));
+        return PHASE_HEAD_SIZE + events_total(p);
     };
 
     /** 每个阶段沿轴方向的起点（折叠阶段按其阶段头实际高度计） */
@@ -337,135 +322,6 @@ export default function TimelineEditor(props: Props) {
         }
         return list;
     }, [doc.phases, head_heights, event_heights]);
-
-    // ===================== 事件拖拽 =====================
-
-    /**
-     * 根据鼠标位置计算事件新的归属阶段与位置。
-     * 横向时把 clientX 当作「沿轴」、clientY 当作「侧向」，纵向时相反。
-     */
-    const handle_event_drag = useCallback(
-        (client_x: number, client_y: number) => {
-            const loc = dragLocRef.current;
-            const el = innerRef.current;
-            if (!loc || !el) return;
-            const rect = el.getBoundingClientRect();
-            const z = zoomRef.current;
-            // 拖拽期间以「上一次移动后的待定文档」为准，避免 setDoc 尚未渲染导致
-            // docRef 与 dragLocRef 指向不一致而错删/错移事件。
-            const cur = pendingRef.current ?? docRef.current;
-            const is_vertical = cur.layout.direction === "vertical";
-            // 沿轴方向 / 侧向的本地逻辑坐标（屏幕坐标 / 缩放）
-            const local_along = (is_vertical ? client_y - rect.top : client_x - rect.left) / z;
-            const local_side = (is_vertical ? client_x - rect.left : client_y - rect.top) / z;
-            // 轴所在的侧向位置（取容器侧向尺寸的中点）
-            const side_size = is_vertical ? el.offsetWidth : el.offsetHeight;
-            const axis_side = side_size / 2;
-            const phases = cur.phases;
-
-            // 定位目标阶段：沿轴落在哪个区间就归哪个
-            let target = phases.length - 1;
-            for (let i = 0; i < phases.length; i++) {
-                const start = phase_offsets[i];
-                if (local_along <= start + phase_span(phases[i])) {
-                    target = i;
-                    break;
-                }
-            }
-            const phase = phases[target];
-            if (!phase || phase.collapsed) return;
-
-            // 侧向决定归属哪一侧（纵向=左右，横向=上下）
-            const side: TimelineSide = local_side < axis_side ? "left" : "right";
-
-            const src_phase = phases[loc.phase_index];
-            const moving = src_phase.events[loc.event_index];
-            if (!moving) return;
-            const updated: TimelineEvent = {...moving, side};
-
-            // 同一阶段内拖动：按沿轴落点重排事件顺序（位置由数组顺序决定）
-            if (loc.phase_index === target) {
-                const others = phase.events.filter((e) => e.id !== moving.id);
-                // 目标位置：找第一张「沿轴中心在指针下方」的卡片，插到它前面
-                const start = phase_offsets[target];
-                const axis_default = is_vertical ? EVENT_SLOT_SIZE : 240;
-                const GAP = 12;
-                const cursor: Record<string, number> = {left: 0, right: 0};
-                let dest = others.length;
-                others.forEach((e, i) => {
-                    const s = cur.layout.alternate ? (i % 2 === 0 ? "left" : "right") : e.side;
-                    const size = event_heights[e.id] ?? axis_default;
-                    const at = cursor[s];
-                    cursor[s] = at + size + GAP;
-                    const center = start + PHASE_HEAD_SIZE + at + size / 2;
-                    if (local_along < center && dest === others.length) dest = i;
-                });
-                const next_events = [...others];
-                next_events.splice(dest, 0, updated);
-                const next: TimelineDoc = {
-                    ...cur,
-                    phases: phases.map((p, pi) => (pi === target ? {...p, events: next_events} : p)),
-                };
-                pendingRef.current = next;
-                const ni = next_events.findIndex((e) => e.id === updated.id);
-                dragLocRef.current = {phase_index: target, event_index: ni};
-                set_guide(local_along);
-                return;
-            }
-
-            // 跨阶段拖动：从原阶段移除，追加到目标阶段
-            const next: TimelineDoc = {
-                ...cur,
-                phases: phases.map((p, pi) => {
-                    if (pi === loc.phase_index) {
-                        return {...p, events: p.events.filter((_, ei) => ei !== loc.event_index)};
-                    }
-                    if (pi === target) {
-                        return {...p, events: [...p.events, updated]};
-                    }
-                    return p;
-                }),
-            };
-            const ni = next.phases[target].events.findIndex((e) => e.id === updated.id);
-            dragLocRef.current = {phase_index: target, event_index: ni};
-            pendingRef.current = next;
-            set_guide(local_along);
-        },
-        [phase_offsets, event_heights],
-    );
-
-    // 拖拽事件：统一挂 document，鼠标移出元素也能继续
-    useEffect(() => {
-        const on_move = (e: PointerEvent) => {
-            const drag = dragRef.current;
-            if (!drag) return;
-            drag.moved = true;
-            handle_event_drag(e.clientX, e.clientY);
-            if (pendingRef.current) setDoc(pendingRef.current);
-        };
-        const on_up = () => {
-            const drag = dragRef.current;
-            if (!drag) return;
-            dragRef.current = null;
-            dragLocRef.current = null;
-            pendingRef.current = null;
-            set_guide(null);
-            // 拖拽结束：把拖拽前的快照补进撤销栈
-            if (drag.moved && drag_snapshotRef.current != null) {
-                push_history(drag_snapshotRef.current);
-                mark_dirty(true);
-            }
-            drag_snapshotRef.current = null;
-        };
-        document.addEventListener("pointermove", on_move);
-        document.addEventListener("pointerup", on_up);
-        document.addEventListener("pointercancel", on_up);
-        return () => {
-            document.removeEventListener("pointermove", on_move);
-            document.removeEventListener("pointerup", on_up);
-            document.removeEventListener("pointercancel", on_up);
-        };
-    }, [handle_event_drag, push_history]);
 
     // 阶段拖动：按住阶段头拖动，按指针在轴上的落点交换阶段顺序
     useEffect(() => {
@@ -529,19 +385,16 @@ export default function TimelineEditor(props: Props) {
     }, [phase_offsets, push_history]);
 
     /** 在事件卡片上按下：开始拖拽 */
+    /** 点击事件卡片：只做选中（不启动任何拖动，沿轴位置只能通过右侧编辑栏的上下移按钮调整） */
     const on_event_pointer_down = (e: React.PointerEvent, phase_index: number, event_index: number) => {
         if (!edit_modeRef.current) return;
         if (e.button !== 0) return;
         const target = e.target as HTMLElement;
-        // 点在输入框/按钮/宽度把手上不启动卡片拖拽，避免误触发
+        // 点在输入框/按钮/宽度把手上不处理，避免误触发
         if (target.closest("input, textarea, button, select, [data-event-width], [data-event-link]")) return;
         e.stopPropagation();
         set_selected_kind("event");
         set_selected_id(doc.phases[phase_index].events[event_index].id);
-        dragRef.current = {moved: false};
-        dragLocRef.current = {phase_index, event_index};
-        drag_snapshotRef.current = stringify_doc(docRef.current);
-        pendingRef.current = null;
     };
 
     /**
@@ -662,13 +515,16 @@ export default function TimelineEditor(props: Props) {
             // 左侧/上侧卡片往外拖（往左/上）是变长，方向相反
             if (render_side === "left") delta = -delta;
             const len = clamp_num(start_len + delta, MIN_LINK_LENGTH, MAX_LINK_LENGTH, start_len);
-            setDoc((d) => ({
-                ...d,
-                phases: d.phases.map((p) => ({
+            const next = {
+                ...docRef.current,
+                phases: docRef.current.phases.map((p) => ({
                     ...p,
                     events: p.events.map((it) => (it.id === id ? {...it, link_length: len} : it)),
                 })),
-            }));
+            };
+            // 同步更新 ref，保证松手时 snapshot 比较、保存都能拿到最新值
+            docRef.current = next;
+            setDoc(next);
         };
         const on_up = () => {
             document.removeEventListener("pointermove", on_move);
@@ -822,7 +678,6 @@ export default function TimelineEditor(props: Props) {
         set_selected_id((cur) => (cur === id ? null : cur));
     };
 
-    /** 一键折叠/展开所有阶段：写入文档并持久化（与其他修改一致） */
     /** 一键折叠/展开所有阶段：视图模式也能按，但只在编辑模式下才会被保存 */
     const toggle_collapse_all = () => {
         const any_open = docRef.current.phases.some((p) => !p.collapsed);
@@ -1101,13 +956,6 @@ export default function TimelineEditor(props: Props) {
                         <option value="dotted">{t("点线")}</option>
                     </select>
                 </label>
-                {/* 两侧交替分布 */}
-                <button type="button"
-                        className={`timeline-btn${layout.alternate ? " timeline-btn--on" : ""}`}
-                        title={t("两侧交替分布")}
-                        onClick={() => set_layout({alternate: !layout.alternate})}>
-                    <span className="material-icons">compare_arrows</span>
-                </button>
                 {/* 显示连线 */}
                 <button type="button"
                         className={`timeline-btn${layout.show_connector ? " timeline-btn--on" : ""}`}
@@ -1115,11 +963,6 @@ export default function TimelineEditor(props: Props) {
                         onClick={() => set_layout({show_connector: !layout.show_connector})}>
                     <span className="material-icons">timeline</span>
                 </button>
-                {/* 主轴颜色 */}
-                <label className="timeline-toolbar__color" title={t("主轴颜色")}>
-                    <input type="color" value={layout.axis_color}
-                           onChange={(e) => set_layout({axis_color: e.target.value})}/>
-                </label>
                 </>}
                 <span className="timeline-toolbar__gap"/>
                 <button type="button" className="timeline-btn" title={t("撤销") + " (Ctrl+Z)"}
@@ -1151,10 +994,6 @@ export default function TimelineEditor(props: Props) {
                 <div className={`timeline-canvas timeline-canvas--${layout.direction}`} ref={scrollRef}
                      onScroll={on_scroll}>
                     <div className="timeline-inner" ref={innerRef} style={{"--zoom": zoom} as React.CSSProperties}>
-                        {/* 拖拽时的对齐辅助线 */}
-                        {guide !== null && (
-                            <div className="timeline-guide" style={guide_style(guide, vertical, layout.axis_color)}/>
-                        )}
                         {/* 阶段拖动时的落点指示线 */}
                         {drop_pos !== null && (
                             <div className="timeline-drop"
@@ -1212,6 +1051,11 @@ export default function TimelineEditor(props: Props) {
                                 <span key={c} className="timeline-swatch" style={{background: c}}
                                       onClick={() => update_phase(selected_phase.id, {color: c})}/>
                             ))}
+                            {/* 无级调色：原生取色器，可与左侧预设色板配合使用 */}
+                            <label className="timeline-swatch timeline-swatch--pick" title={t("自定义颜色")}>
+                                <input type="color" value={selected_phase.color || layout.axis_color}
+                                       onChange={(e) => update_phase(selected_phase.id, {color: e.target.value})}/>
+                            </label>
                         </div>
                         <label className="timeline-panel__label">{t("阶段头")}</label>
                         <div className="timeline-panel__seg">
@@ -1314,8 +1158,13 @@ export default function TimelineEditor(props: Props) {
                                 <span key={c} className="timeline-swatch" style={{background: c}}
                                       onClick={() => update_event(selected.event.id, {color: c})}/>
                             ))}
+                            {/* 无级调色：原生取色器 */}
+                            <label className="timeline-swatch timeline-swatch--pick" title={t("自定义颜色")}>
+                                <input type="color" value={selected.event.color || selected_phase?.color || layout.axis_color}
+                                       onChange={(e) => update_event(selected.event.id, {color: e.target.value})}/>
+                            </label>
                         </div>
-                        <div className="timeline-panel__hint">{t("拖动事件卡片可改变位置与所属阶段")}</div>
+                        <div className="timeline-panel__hint">{t("用上移下移调整事件顺序，用左右切换事件所在侧")}</div>
                         {/* 事件在本阶段内的顺序调整 */}
                         <div className="timeline-panel__insert">
                             <button type="button" className="timeline-panel__add"
@@ -1386,16 +1235,6 @@ type PhaseBlockProps = {
     key?: React.Key;
 };
 
-/**
- * textarea 高度跟随内容自适应（仅阶段头名称使用：名称必须完整显示，
- * 右侧面板的输入框是普通 textarea，不做自动增高）
- */
-function auto_grow(el: HTMLTextAreaElement | null) {
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-}
-
 /** 阶段块：阶段头 + 事件卡片 + 折叠逻辑 */
 function PhaseBlock(props: PhaseBlockProps) {
     const {phase, layout, zoom, vertical, selected_id, t} = props;
@@ -1416,8 +1255,7 @@ function PhaseBlock(props: PhaseBlockProps) {
 
     /** 折叠态高度必须用阶段头实测高度，否则名称换行后各阶段会上下重合 */
     const head_px = props.head_height ?? PHASE_HEAD_SIZE;
-    /** 阶段容器高度：折叠 = 头高；展开 = max(按数量估算, 按同侧卡片实测累加) */
-    const expanded = phase_size(phase);
+    /** 阶段容器高度：折叠 = 头高；展开 = 同侧卡片实测高度累加 */
     const by_events = (() => {
         const GAP = 12;
         const axis_default = vertical ? EVENT_SLOT_SIZE : 240;
@@ -1428,7 +1266,8 @@ function PhaseBlock(props: PhaseBlockProps) {
         });
         return HEAD_OFFSET + head_px + HEAD_GAP + Math.max(acc.left, acc.right);
     })();
-    const span = collapsed ? Math.max(PHASE_HEAD_SIZE, HEAD_OFFSET + head_px + HEAD_GAP) + 10 : Math.max(expanded, by_events);
+    // 展开态高度以同侧卡片实测累加为准（by_events 里未测量到的事件才用固定槽位估算）
+    const span = collapsed ? Math.max(PHASE_HEAD_SIZE, HEAD_OFFSET + head_px + HEAD_GAP) + 10 : by_events;
     // 阶段轴带 = 主轴本身：实线填色，虚线/点线用边框绘制
     const band_style: React.CSSProperties =
         layout.line_style === "solid"
@@ -1464,15 +1303,9 @@ function PhaseBlock(props: PhaseBlockProps) {
                       onClick={() => props.on_update_phase(phase.id, {collapsed: !collapsed})}>
                     {collapsed ? "expand_more" : "expand_less"}
                 </span>
-                <textarea className="timeline-phase__name" readOnly={!props.edit_mode} value={phase.name}
-                          rows={1}
-                          style={{color}}
-                          title={phase.name}
-                          ref={auto_grow}
-                          onChange={(e) => {
-                              auto_grow(e.currentTarget);
-                              props.on_update_phase(phase.id, {name: e.target.value});
-                          }}/>
+                <div className="timeline-phase__name" style={{color}} title={phase.name}>
+                    {phase.name}
+                </div>
                 {phase.desc && (
                     <div className="timeline-phase__desc" title={phase.desc}>{phase.desc}</div>
                 )}
@@ -1515,27 +1348,44 @@ function PhaseBlock(props: PhaseBlockProps) {
                         });
                         return phase.events.map((e, ei) => {
                             const side = side_of(ei);
+                            // 沿轴位置：阶段头高度 + 头部偏移 + 同侧前序累加
+                            const pos = HEAD_OFFSET + head_px + HEAD_GAP + along[ei];
+                            // 节点中心 = 卡片沿轴起点 + 卡片沿轴尺寸的一半（节点恒在卡片沿轴中心）
+                            const node_center = pos + size_of(e.id) / 2;
+                            const node_style = layout.node_style;
                             return (
-                            <EventBubble
-                                key={e.id}
-                                event={e}
-                                phase={phase}
-                                layout={layout}
-                                vertical={vertical}
-                                zoom={zoom}
-                                side={side}
-                                along={along[ei]}
-                                head_size={head_px}
-                                on_height={(h) => props.on_event_height(e.id, h)}
-                                event_index={ei}
-                                phase_index={props.phase_index}
-                                selected={selected_id === e.id}
-                                on_down={props.on_event_down}
-                                on_width_down={props.on_width_down}
-                                on_link_down={props.on_link_down}
-                                on_delete={props.on_delete_event}
-                                t={t}
-                            />
+                            <React.Fragment key={e.id}>
+                                {/* 时间独立挂在阶段容器上：start 恒在轴左、end 恒在轴右，
+                                    不随卡片挂哪一侧变化；水平紧贴节点边缘，沿轴分列节点前后。
+                                    带上节点样式类是为了拿到 --node-r（节点半径）。 */}
+                                {e.startTime && (
+                                    <div className={`timeline-event__time timeline-event__time--start timeline-event--node-${node_style}`}
+                                         style={vertical ? {top: node_center} : {left: node_center}}>{e.startTime}</div>
+                                )}
+                                {e.endTime && (
+                                    <div className={`timeline-event__time timeline-event__time--end timeline-event--node-${node_style}`}
+                                         style={vertical ? {top: node_center} : {left: node_center}}>{e.endTime}</div>
+                                )}
+                                <EventBubble
+                                    event={e}
+                                    phase={phase}
+                                    layout={layout}
+                                    vertical={vertical}
+                                    zoom={zoom}
+                                    side={side}
+                                    along={along[ei]}
+                                    head_size={head_px}
+                                    on_height={(h) => props.on_event_height(e.id, h)}
+                                    event_index={ei}
+                                    phase_index={props.phase_index}
+                                    selected={selected_id === e.id}
+                                    on_down={props.on_event_down}
+                                    on_width_down={props.on_width_down}
+                                    on_link_down={props.on_link_down}
+                                    on_delete={props.on_delete_event}
+                                    t={t}
+                                />
+                            </React.Fragment>
                             );
                         });
                     })()}
@@ -1644,13 +1494,6 @@ function EventBubble(props: EventBubbleProps) {
                     ? <img src={event.image} alt=""/>
                     : null}
             </div>
-            {/* 时间：骑在中轴上，起始时间在节点左侧、结束时间在节点右侧 */}
-            {event.startTime && (
-                <div className="timeline-event__time timeline-event__time--start">{event.startTime}</div>
-            )}
-            {event.endTime && (
-                <div className="timeline-event__time timeline-event__time--end">{event.endTime}</div>
-            )}
             <div className="timeline-event__body">
                 <div className="timeline-event__title" style={{color}}>{event.title || t("未命名")}</div>
                 {event.desc && <div className="timeline-event__desc">{event.desc}</div>}

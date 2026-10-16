@@ -166,31 +166,6 @@
     cursor: pointer;
 }
 
-/* 主轴颜色选择器 */
-.timeline-toolbar__color {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.8rem;
-    height: 1.8rem;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.timeline-toolbar__color:hover {
-    background: var(--hover, rgba(0, 0, 0, .06));
-}
-
-.timeline-toolbar__color input[type="color"] {
-    width: 1.15rem;
-    height: 1.15rem;
-    padding: 0;
-    border: 1px solid var(--borderPrimary, #dadce0);
-    border-radius: 3px;
-    background: none;
-    cursor: pointer;
-}
-
 /* ===== 主体：画布 + 属性面板 ===== */
 .timeline-body {
     flex: 1;
@@ -390,15 +365,12 @@ body.timeline-phase-dragging * {
 .timeline-phase__name {
     flex: 1;
     min-width: 0;
-    border: 1px solid transparent;
-    background: transparent;
     font-size: .88rem;
     font-weight: 600;
     padding: .05rem .2rem;
-    outline: none;
-    /* 多行自适应：名称必须完整显示，高度由 JS 按内容设置 */
-    resize: none;
-    overflow: hidden;
+    /* 多行展示：名称完整换行显示，超出上限后滚动 */
+    max-height: 5.5rem;
+    overflow: auto;
     line-height: 1.25;
     white-space: pre-wrap;
     word-break: break-word;
@@ -457,12 +429,6 @@ body.timeline-phase-dragging * {
     width: 60%;
     cursor: ns-resize;
 }
-.timeline-phase__name:focus {
-    border-color: var(--borderPrimary, #dadce0);
-    border-radius: 3px;
-    background: var(--surfacePrimary, #fff);
-}
-
 .timeline-phase__op {
     font-size: 1rem;
     cursor: pointer;
@@ -618,11 +584,14 @@ body.timeline-phase-dragging * {
     white-space: pre-wrap;
 }
 
-/* 日期：贴在连线靠中轴的一端，骑在连线上 */
-/* 时间：骑在中轴上，起始时间在节点左侧、结束时间在节点右侧 */
+/* 时间：挂在阶段容器上。start 恒在轴左、end 恒在轴右（与卡片挂哪一侧无关）；
+   水平紧贴节点边缘，沿轴方向分列节点前后（start 在前、end 在后）。
+   节点圆心在卡片沿轴中心，位置由内联 top/left 传入。 */
 .timeline-event__time {
     position: absolute;
-    z-index: 4;
+    /* 高于卡片（含连线），避免连线穿过时间文字 */
+    z-index: 7;
+    --time-gap: .22rem;
     font-size: .72rem;
     line-height: 1;
     padding: .05rem .3rem;
@@ -634,74 +603,28 @@ body.timeline-phase-dragging * {
     pointer-events: none;
 }
 
-/* 节点半径（供时间避开节点用）：与 .timeline-node--xxx 保持一致 */
-.timeline-event--node-dot { --node-r: 6px; }
-.timeline-event--node-circle { --node-r: 13px; }
-.timeline-event--node-square { --node-r: 9px; }
-.timeline-event--node-image { --node-r: 22px; }
-
-/*
- * 节点位置：距离卡片侧向边缘 --side-gap（卡片内为负方向）。
- * 时间以节点中心为基准，沿轴向（侧向方向）向左/右让开 node-r + 间距：
- *   start 时间在节点「外侧」，end 时间在节点「内侧」。
- * 纵向布局：侧向 = 水平（left/right）；横向布局：侧向 = 垂直（top/bottom）。
- */
-.timeline-canvas--vertical .timeline-event__time {
-    top: 50%;
-    transform: translateY(-50%);
+/* 纵向：轴在容器水平中线。start 右边缘贴节点左边缘，end 左边缘贴节点右边缘。
+   沿轴（垂直）方向：start 整体上移到节点上方，end 下移到节点下方。 */
+.timeline-canvas--vertical .timeline-event__time--start {
+    right: calc(50% + var(--node-r));
+    transform: translateY(calc(-100% - var(--time-gap)));
 }
 
-/* 卡片在轴左侧：节点在卡片右边，start 再往右（外侧），end 往左（内侧） */
-.timeline-canvas--vertical .timeline-event--side-left .timeline-event__time--start {
-    right: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
-    transform: translateY(-50%) translateX(100%);
+.timeline-canvas--vertical .timeline-event__time--end {
+    left: calc(50% + var(--node-r));
+    transform: translateY(var(--time-gap));
 }
 
-/* 结束时间压在连线下方，避免遮挡连线 */
-.timeline-canvas--vertical .timeline-event--side-left .timeline-event__time--end {
-    right: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
-    top: calc(50% + .9rem);
-    transform: none;
+/* 横向：轴在容器垂直中线。start 下边缘贴节点上边缘，end 上边缘贴节点下边缘。
+   沿轴（水平）方向：start 左移到节点左侧，end 右移到节点右侧。 */
+.timeline-canvas--horizontal .timeline-event__time--start {
+    bottom: calc(50% + var(--node-r));
+    transform: translateX(calc(-100% - var(--time-gap)));
 }
 
-/* 卡片在轴右侧：节点在卡片左边，start 再往左（外侧），end 往右（内侧） */
-.timeline-canvas--vertical .timeline-event--side-right .timeline-event__time--start {
-    left: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
-    transform: translateY(-50%) translateX(-100%);
-}
-
-.timeline-canvas--vertical .timeline-event--side-right .timeline-event__time--end {
-    left: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
-    top: calc(50% + .9rem);
-    transform: none;
-}
-
-/* 横向布局：时间水平居中于节点，沿垂直方向分列节点上下 */
-.timeline-canvas--horizontal .timeline-event__time {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__time--start {
-    bottom: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
-    transform: translateX(-50%) translateY(100%);
-}
-
-.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__time--end {
-    bottom: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
-    left: calc(50% + .9rem);
-    transform: none;
-}
-
-.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__time--start {
-    top: calc(-1 * var(--side-gap) - var(--node-r) - .3rem);
-    transform: translateX(-50%) translateY(-100%);
-}
-
-.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__time--end {
-    top: calc(-1 * var(--side-gap) + var(--node-r) + .3rem);
-    left: calc(50% + .9rem);
-    transform: none;
+.timeline-canvas--horizontal .timeline-event__time--end {
+    top: calc(50% + var(--node-r));
+    transform: translateX(var(--time-gap));
 }
 
 .timeline-event__desc {
@@ -953,6 +876,12 @@ body.timeline-phase-dragging * {
     top: calc(-1 * var(--side-gap) - var(--node-r));
 }
 
+/* 节点半径：节点自身、以及挂在阶段容器上的时间元素（带同名类）共用 */
+.timeline-event--node-dot { --node-r: 6px; }
+.timeline-event--node-circle { --node-r: 13px; }
+.timeline-event--node-square { --node-r: 9px; }
+.timeline-event--node-image { --node-r: 22px; }
+
 /* 节点样式：圆点（小） */
 .timeline-node--dot {
     --node-r: 6px;
@@ -1084,8 +1013,10 @@ body.timeline-phase-dragging * {
 }
 
 .timeline-panel__textarea {
-    /* 普通输入框：不自动增高、不限制最大高度，保留原生滚动与手动拉伸 */
+    /* 普通输入框：不自动增高、保留原生滚动；限制最大高度，避免无限向下扩展 */
     min-height: 3.4rem;
+    max-height: 12rem;
+    resize: vertical;
     line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-word;
@@ -1159,6 +1090,24 @@ body.timeline-phase-dragging * {
 
 .timeline-swatch--auto {
     background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 50% / 8px 8px;
+}
+
+/* 无级调色：伪装成色板小圆点，内部放原生取色器 */
+.timeline-swatch--pick {
+    overflow: hidden;
+    background: conic-gradient(#f44 0 25%, #fd4 0 50%, #4c8 0 75%, #48f 0);
+    position: relative;
+}
+
+.timeline-swatch--pick input[type="color"] {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .timeline-panel__hint {
