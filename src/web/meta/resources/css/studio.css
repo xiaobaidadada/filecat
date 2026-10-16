@@ -1320,7 +1320,8 @@ line.git-log__graph-edge {
 /* ===== 内嵌画板编辑器（Studio 打开 .draw / .excalidraw） =====
    Excalidraw 要求父容器有确定高度，这里撑满 studio-editor */
 .studio-editor--draw,
-.studio-editor--mind {
+.studio-editor--mind,
+.studio-editor--timeline {
     display: flex;
     margin: 0;
     flex-basis: 0;

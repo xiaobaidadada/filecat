@@ -8,6 +8,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {FileCompressType} from "../../../../common/file.pojo";
 import {CardPrompt} from "../../../meta/component/Card";
+import {default_doc, stringify_doc} from "../file/component/timeline/timeline_util";
 // @ts-ignore
 import ymlRaw  from "../../../../common/template/workflow.yml?raw"
 
@@ -27,6 +28,7 @@ export function FileNew(props) {
         {title:`${t("empty")}`,value:""},
         {title:`excalidraw${t("格式")}`,value:".draw"},
         {title:`${t("思维导图")}`,value:".mind"},
+        {title:`${t("时间轴")}`,value:".timeline"},
         {title: `workflow${t("格式")}`, value:".act"},
         {title: `url${t("格式")}`, value:".url"},
     ]
@@ -52,6 +54,9 @@ export function FileNew(props) {
                     version: 1,
                     root: {id: "root", text: "中心主题", children: []}
                 });
+            } else if (format === ".timeline") {
+                // 空时间轴：一份可直接编辑的初始文档
+                context = stringify_doc(default_doc());
             } else if (format === ".act") {
                 context = workflow_txt;
             }  else if (format === ".url") {

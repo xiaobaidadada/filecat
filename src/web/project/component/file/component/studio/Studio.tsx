@@ -34,6 +34,8 @@ const ChatPanel = React.lazy(() => import("../../../aichat/page/ChatPanel"));
 const ExcalidrawInline = React.lazy(() => import("../ExcalidrawInline"));
 // 内嵌思维导图编辑器（.mind）
 const MindMapInline = React.lazy(() => import("../MindMapInline"));
+// 内嵌时间轴编辑器（.timeline）
+const TimelineInline = React.lazy(() => import("../timeline/TimelineInline"));
 
 /** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
 function is_markdown_file(name: string): boolean {
@@ -48,6 +50,11 @@ function is_draw_file(name: string): boolean {
 /** 是否是思维导图文件：.mind 后缀 */
 function is_mind_file(name: string): boolean {
     return getFileFormat(name) === FileTypeEnum.mind;
+}
+
+/** 是否是时间轴文件：.timeline 后缀 */
+function is_timeline_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.timeline;
 }
 
 /** 左侧面板显示的内容 */
@@ -81,12 +88,16 @@ export default function Studio(props) {
     const is_draw = is_draw_file(edit_filename.name);
     // 当前文件是否是思维导图（.mind）
     const is_mind = is_mind_file(edit_filename.name);
+    // 当前文件是否是时间轴（.timeline）
+    const is_timeline = is_timeline_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
     // 画板编辑器句柄（保存按钮）
     const excalidraw_api = useRef<any>(null);
     // 思维导图编辑器句柄（保存按钮）
     const mind_api = useRef<any>(null);
+    // 时间轴编辑器句柄（保存按钮）
+    const timeline_api = useRef<any>(null);
     // md 编辑器上报的大纲数据与当前高亮项
     const [outline_items, set_outline_items] = useState<OutlineItem[]>([]);
     const [outline_active, set_outline_active] = useState(-1);
@@ -273,6 +284,11 @@ export default function Studio(props) {
     const handleKeyDown = (event) => {
         if (event.ctrlKey && event.key === 's') {
             event.preventDefault();
+            // md / 画板 / 思维导图 / 时间轴 各自有专属编辑器，
+            // 它们内部已经处理了 Ctrl+S，这里只负责纯文本文件，避免误调 Ace 的取值而报错。
+            if (is_md || is_draw || is_mind || is_timeline) {
+                return;
+            }
             if (have_update) {
                 file_save();
             }
@@ -284,7 +300,7 @@ export default function Studio(props) {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [have_update]);
+    }, [have_update, is_md, is_draw, is_mind, is_timeline]);
     let change = () => {
         // editor_data.set_value_temp(value);
         if (!have_update) {
@@ -438,7 +454,9 @@ export default function Studio(props) {
                     ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
                     : is_mind
                         ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
-                        : (have_update ? <ActionButton title={"保存"} icon={"save"} onClick={file_save}/> : null)
+                        : is_timeline
+                            ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
+                            : (have_update ? <ActionButton title={"保存"} icon={"save"} onClick={file_save}/> : null)
             }
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
@@ -526,6 +544,26 @@ export default function Studio(props) {
                             on_saved={() => set_have_update(false)}
                             register={(handle) => {
                                 mind_api.current = handle;
+                            }}
+                            on_save={async (context: string) => {
+                                const rsq = await fileHttp.post(
+                                    `save/${encodeURIComponent(edit_file_path)}`,
+                                    {context},
+                                );
+                                return rsq.code === RCode.Success;
+                            }}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_timeline
+                ? <div className={"studio-editor studio-editor--timeline"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <TimelineInline
+                            reset_key={edit_file_path}
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            on_dirty={set_have_update}
+                            register={(handle) => {
+                                timeline_api.current = handle;
                             }}
                             on_save={async (context: string) => {
                                 const rsq = await fileHttp.post(

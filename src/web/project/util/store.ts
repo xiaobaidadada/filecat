@@ -193,6 +193,12 @@ export const $stroe = {
         code_source?: string,
         on_save_code?: (data: string) => void,
     }>({}),
+    // 时间轴编辑器（.timeline）
+    timeline_editor: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

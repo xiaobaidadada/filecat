@@ -1,0 +1,1107 @@
+/* ===== 时间轴编辑器（.timeline） ===== */
+
+/* 全屏浮层外壳：与 #mind-container / #excalidraw-container 对称 */
+#timeline-container {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--surfacePrimary, #fafafa);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1000;
+}
+
+#timeline-container .timeline-context {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* 浮层顶部条 */
+.timeline-topbar {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-shrink: 0;
+    height: 2.6rem;
+    padding: 0 .6rem;
+    background: var(--surfacePrimary, #fff);
+    border-bottom: 1px solid var(--divider, #e8eaed);
+}
+
+.timeline-topbar__icon {
+    font-size: 1.1rem;
+    color: var(--icon-blue, #1a73e8);
+}
+
+.timeline-topbar__name {
+    font-size: .9rem;
+    color: var(--textPrimary, #202124);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.timeline-topbar__dirty {
+    color: var(--icon-orange, #fbbc04);
+    font-weight: 600;
+}
+
+.timeline-topbar__gap {
+    flex: 1;
+}
+
+/* 编辑器主体 */
+.timeline-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surfacePrimary, #fff);
+    border: 1px solid var(--divider, #e8eaed);
+}
+
+.timeline-wrap--full {
+    border: 0;
+}
+
+/* ===== 工具栏 ===== */
+.timeline-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    padding: .25rem .45rem;
+    border-bottom: 1px solid var(--divider, #e8eaed);
+    background: var(--surfacePrimary, #fafafa);
+}
+
+.timeline-toolbar__gap {
+    flex: 1;
+}
+
+.timeline-toolbar__divider {
+    width: 1px;
+    height: 1.1rem;
+    margin: 0 .2rem;
+    background: var(--divider, #dadce0);
+}
+
+.timeline-toolbar__zoom {
+    min-width: 3.2rem;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--textSecondary, #5f6368);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 图标按钮 */
+.timeline-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--textPrimary, #202124);
+    cursor: pointer;
+}
+
+.timeline-btn:hover:not(:disabled) {
+    background: var(--hover, rgba(0, 0, 0, .06));
+    color: var(--blue, #1a73e8);
+}
+
+.timeline-btn:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+/* 处于开启状态的切换按钮 */
+.timeline-btn--on {
+    color: var(--blue, #1a73e8);
+    background: var(--primary-light, #d2e3fc);
+}
+
+.timeline-btn .material-icons {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* 带图标的下拉选择：外层 label 装图标，内部 select 无边框 */
+.timeline-toolbar__select {
+    display: inline-flex;
+    align-items: center;
+    gap: .1rem;
+    height: 1.8rem;
+    padding: 0 .2rem;
+    border-radius: 3px;
+    color: var(--textSecondary, #5f6368);
+}
+
+.timeline-toolbar__select:hover {
+    background: var(--hover, rgba(0, 0, 0, .06));
+}
+
+.timeline-toolbar__select .material-icons {
+    font-size: 1rem;
+}
+
+.timeline-toolbar__select select {
+    height: 1.6rem;
+    border: 0;
+    background: transparent;
+    font-size: .78rem;
+    color: var(--textPrimary, #202124);
+    outline: none;
+    cursor: pointer;
+}
+
+/* 主轴颜色选择器 */
+.timeline-toolbar__color {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.timeline-toolbar__color:hover {
+    background: var(--hover, rgba(0, 0, 0, .06));
+}
+
+.timeline-toolbar__color input[type="color"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1px solid var(--borderPrimary, #dadce0);
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
+/* ===== 主体：画布 + 属性面板 ===== */
+.timeline-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+.timeline-canvas {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: var(--surfacePrimary, #fff);
+    /* 网格底纹，让留白与拖拽区域可见 */
+    background-image: radial-gradient(var(--divider, #e8eaed) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* 纵向：整体上下滚动，内容横向铺满 */
+.timeline-canvas--vertical {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 横向：整体左右滚动，内容纵向铺满 */
+.timeline-canvas--horizontal {
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: row;
+}
+
+/* 两端延长把手：不铺满整块区域，只保留一个明确的箭头按钮。
+   箭头默认隐藏，鼠标移到这块留白（画布边缘）时才淡入。 */
+.timeline-pad {
+    position: relative;
+    flex-shrink: 0;
+    user-select: none;
+    touch-action: none;
+    display: flex;
+}
+
+.timeline-canvas--vertical .timeline-pad {
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    cursor: ns-resize;
+}
+
+.timeline-canvas--horizontal .timeline-pad {
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    cursor: ew-resize;
+}
+
+/* 箭头手柄本体：默认隐藏，鼠标靠近画布边缘（即移到留白区域）时才淡入 */
+.timeline-pad__handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    padding: .15rem .6rem;
+    border: 1px dashed var(--borderPrimary, #dadce0);
+    border-radius: 999px;
+    background: var(--surfacePrimary, #fff);
+    color: var(--textSecondary, #9aa0a6);
+    cursor: inherit;
+    opacity: 0;
+    transition: opacity .15s, color .12s, border-color .12s;
+}
+
+.timeline-pad:hover .timeline-pad__handle {
+    opacity: 1;
+    color: var(--blue, #1a73e8);
+    border-color: var(--blue, #1a73e8);
+}
+
+.timeline-pad__handle .material-icons {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.timeline-pad__hint {
+    font-size: .7rem;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* 横向时箭头旋转 90°，提示左右拖动 */
+.timeline-canvas--horizontal .timeline-pad__handle .material-icons {
+    transform: rotate(-90deg);
+}
+
+/* 内层画布：作为拖拽坐标参照 */
+.timeline-inner {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.timeline-canvas--vertical .timeline-inner {
+    width: 100%;
+    min-height: 1em;
+}
+
+/* 横向：内容纵向铺满，阶段从左往右排 */
+.timeline-canvas--horizontal .timeline-inner {
+    height: 100%;
+    min-height: 1em;
+    min-width: 1em;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+}
+
+/* 主轴：位于侧向中点，贯穿整个画布 */
+.timeline-axis {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+}
+.timeline-canvas--vertical .timeline-axis {
+    top: -2rem;
+    bottom: -2rem;
+    left: 50%;
+    /* 同时给宽度和边框宽度，solid 用背景填充、虚线用边框绘制，两者视觉宽度一致 */
+    width: 3px;
+    margin-left: -1.5px;
+    border-left-width: 3px;
+    border-left-style: solid;
+}
+
+.timeline-canvas--horizontal .timeline-axis {
+    left: -2rem;
+    right: -2rem;
+    top: 50%;
+    height: 3px;
+    margin-top: -1.5px;
+    border-top-width: 3px;
+    border-top-style: solid;
+}
+
+/* 拖拽时的对齐辅助线 */
+.timeline-guide {
+    position: absolute;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.timeline-canvas--vertical .timeline-guide {
+    left: 0;
+    right: 0;
+    height: 0;
+}
+
+.timeline-canvas--horizontal .timeline-guide {
+    top: 0;
+    bottom: 0;
+    width: 0;
+}
+
+/* ===== 阶段 ===== */
+.timeline-phase {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.timeline-canvas--vertical .timeline-phase {
+    width: 100%;
+}
+
+.timeline-canvas--horizontal .timeline-phase {
+    height: 100%;
+}
+
+/* 阶段头：绝对定位在阶段左上方，紧邻主轴但不压住它 */
+.timeline-phase__head {
+    position: absolute;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    background: var(--surfacePrimary, #fff);
+}
+
+.timeline-canvas--vertical .timeline-phase__head {
+    top: .3rem;
+    /* 从主轴中点往左偏移：50% - 自身宽度 - 间距 */
+    right: calc(50% + 1.6rem);
+    width: max-content;
+    max-width: 40%;
+    height: 2.1rem;
+    padding: 0 .5rem;
+    border: 1px solid var(--divider, #e8eaed);
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.timeline-canvas--horizontal .timeline-phase__head {
+    top: 0;
+    left: .3rem;
+    flex-direction: column;
+    height: max-content;
+    max-height: 60%;
+    width: 2.4rem;
+    padding: .6rem 0;
+    border: 1px solid var(--divider, #e8eaed);
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.timeline-phase__toggle {
+    font-size: 1.05rem;
+    cursor: pointer;
+    color: var(--textSecondary, #5f6368);
+    flex-shrink: 0;
+}
+
+.timeline-phase__toggle:hover {
+    color: var(--blue, #1a73e8);
+}
+
+/* 阶段名：无边框输入，看起来像标题，聚焦才显框 */
+.timeline-phase__name {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: .88rem;
+    font-weight: 600;
+    padding: .05rem .2rem;
+    outline: none;
+}
+
+.timeline-phase__name:hover,
+.timeline-phase__name:focus {
+    border-color: var(--borderPrimary, #dadce0);
+    border-radius: 3px;
+    background: var(--surfacePrimary, #fff);
+}
+
+.timeline-canvas--horizontal .timeline-phase__name {
+    /* 横向时阶段头是竖条，文字竖排 */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    flex: 1;
+    width: 100%;
+}
+
+.timeline-phase__op {
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--textSecondary, #5f6368);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .12s;
+}
+
+.timeline-phase:hover .timeline-phase__op {
+    opacity: 1;
+}
+
+.timeline-phase__op:hover {
+    color: var(--blue, #1a73e8);
+}
+
+.timeline-phase__del:hover {
+    color: var(--icon-red, #ea4335);
+}
+
+/* 阶段轴带：贴合主轴，用阶段色给这一段轴着色（覆盖在中性主轴之上） */
+.timeline-phase__band {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 2px;
+}
+
+.timeline-canvas--vertical .timeline-phase__band {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 3px;
+    margin-left: -1.5px;
+}
+
+.timeline-canvas--horizontal .timeline-phase__band {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    margin-top: -1.5px;
+}
+
+/* 阶段沿轴拉伸把手：横跨阶段底部的一条窄带，层级低于事件卡片，
+   既方便拖拉伸，又不会挡住卡片与连线把手上的点击 */
+.timeline-phase__resize {
+    position: absolute;
+    z-index: 1;
+    touch-action: none;
+}
+
+.timeline-canvas--vertical .timeline-phase__resize {
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 7px;
+    cursor: ns-resize;
+}
+
+.timeline-canvas--horizontal .timeline-phase__resize {
+    top: 0;
+    bottom: 0;
+    right: -3px;
+    width: 7px;
+    cursor: ew-resize;
+}
+
+.timeline-phase__resize:hover {
+    background: rgba(26, 115, 232, .18);
+}
+
+/* ===== 事件卡片 ===== */
+.timeline-event {
+    position: absolute;
+    box-sizing: border-box;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    z-index: 2;
+    /* 侧向留白：卡片距主轴的距离（连线长度） */
+    --side-gap: 2.6rem;
+}
+
+.timeline-event:active {
+    cursor: grabbing;
+}
+
+.timeline-canvas--vertical .timeline-event {
+    /* 宽度自适应：主轴一侧的可用空间的一半左右，避免卡片过宽铺满屏幕 */
+    width: min(22rem, calc(50% - var(--side-gap) - 1.5rem));
+    /* 卡片中心对准 offset 位置 */
+    transform: translateY(-50%);
+}
+
+/* 纵向：卡片从主轴（容器水平中点）往外偏移 --side-gap */
+.timeline-canvas--vertical .timeline-event--side-left {
+    right: calc(50% + var(--side-gap));
+}
+
+.timeline-canvas--vertical .timeline-event--side-right {
+    left: calc(50% + var(--side-gap));
+}
+
+.timeline-canvas--horizontal .timeline-event {
+    width: 12rem;
+    /* 卡片中心对准 offset 位置 */
+    transform: translateX(-50%);
+}
+
+/* 横向：卡片从主轴（容器垂直中点）往上下偏移 --side-gap */
+.timeline-canvas--horizontal .timeline-event--side-left {
+    bottom: calc(50% + var(--side-gap));
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right {
+    top: calc(50% + var(--side-gap));
+}
+
+.timeline-event:hover,
+.timeline-event--on {
+    z-index: 6;
+}
+
+/* 卡片本体 */
+.timeline-event__body {
+    padding: .4rem .5rem;
+    border-radius: 6px;
+    background: var(--surfacePrimary, #fff);
+    border: 1px solid var(--divider, #e8eaed);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+    transition: box-shadow .12s;
+}
+
+/* 卡片样式：朴素（无边框无阴影） */
+.timeline-event--plain .timeline-event__body {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+/* 卡片样式：气泡（圆角很大、带左侧色条） */
+.timeline-event--bubble .timeline-event__body {
+    border-radius: 16px;
+    padding: .35rem .8rem;
+    border-left: 4px solid var(--ev-color, #1a73e8);
+}
+
+.timeline-event--on .timeline-event__body {
+    box-shadow: 0 0 0 2px var(--primary-light, #d2e3fc), 0 3px 8px rgba(0, 0, 0, .16);
+}
+
+.timeline-event__title {
+    font-size: .85rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.timeline-canvas--horizontal .timeline-event__title {
+    white-space: normal;
+}
+
+.timeline-event__date {
+    margin-top: .1rem;
+    font-size: .72rem;
+    color: var(--textSecondary, #5f6368);
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline-event__desc {
+    margin-top: .15rem;
+    font-size: .75rem;
+    color: var(--textSecondary, #5f6368);
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* 卡片宽度调节把手：贴在卡片「远离主轴」的那条外边缘 */
+.timeline-event__width {
+    position: absolute;
+    z-index: 4;
+    touch-action: none;
+    /* 常显一个淡色细条，提示这里可以拖宽度 */
+    background: var(--divider, #dadce0);
+    border-radius: 3px;
+    opacity: .5;
+    transition: opacity .12s, background .12s;
+}
+
+.timeline-event:hover .timeline-event__width,
+.timeline-event--on .timeline-event__width {
+    opacity: 1;
+}
+
+.timeline-event__width:hover {
+    background: var(--blue, #1a73e8);
+    opacity: 1;
+}
+
+/* 纵向：把手是卡片外边缘的竖条 */
+.timeline-canvas--vertical .timeline-event__width {
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    cursor: ew-resize;
+}
+
+/* 左侧卡片的外边缘在左边；右侧卡片的外边缘在右边 */
+.timeline-canvas--vertical .timeline-event--side-left .timeline-event__width {
+    left: -3px;
+}
+
+.timeline-canvas--vertical .timeline-event--side-right .timeline-event__width {
+    right: -3px;
+}
+
+/* 横向：把手是卡片外边缘的横条 */
+.timeline-canvas--horizontal .timeline-event__width {
+    left: 4px;
+    right: 4px;
+    height: 4px;
+    cursor: ns-resize;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__width {
+    top: -3px;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__width {
+    bottom: -3px;
+}
+
+/* 连线上的长度把手：默认不显形，悬停卡片时出现一个小圆点 */
+.timeline-event__link-handle {
+    position: absolute;
+    z-index: 5;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surfacePrimary, #fff);
+    border: 2px solid var(--ev-color, #1a73e8);
+    cursor: ew-resize;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity .12s;
+}
+
+.timeline-event:hover .timeline-event__link-handle,
+.timeline-event--on .timeline-event__link-handle {
+    opacity: 1;
+}
+
+.timeline-event__link-handle:hover {
+    background: var(--ev-color, #1a73e8);
+}
+
+/* 纵向：把手落在连线中间（卡片靠轴的那一侧，距卡片 --side-gap / 2） */
+.timeline-canvas--vertical .timeline-event__link-handle {
+    top: 50%;
+    margin-top: -6px;
+}
+
+.timeline-canvas--vertical .timeline-event--side-left .timeline-event__link-handle {
+    right: calc(-1 * var(--side-gap) / 2 - 6px);
+}
+
+.timeline-canvas--vertical .timeline-event--side-right .timeline-event__link-handle {
+    left: calc(-1 * var(--side-gap) / 2 - 6px);
+}
+
+/* 横向：把手是上下方向拖动 */
+.timeline-canvas--horizontal .timeline-event__link-handle {
+    left: 50%;
+    margin-left: -6px;
+    cursor: ns-resize;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__link-handle {
+    bottom: calc(-1 * var(--side-gap) / 2 - 6px);
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__link-handle {
+    top: calc(-1 * var(--side-gap) / 2 - 6px);
+}
+
+/* 阶段头被隐藏后，轴上的恢复按钮 */
+.timeline-phase__show-head {
+    position: absolute;
+    z-index: 4;
+    font-size: 1rem;
+    color: var(--textSecondary, #9aa0a6);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s, color .12s;
+}
+
+.timeline-phase:hover .timeline-phase__show-head {
+    opacity: 1;
+}
+
+.timeline-phase__show-head:hover {
+    color: var(--blue, #1a73e8);
+}
+
+.timeline-canvas--vertical .timeline-phase__show-head {
+    top: .3rem;
+    left: 50%;
+    margin-left: .5rem;
+}
+
+.timeline-canvas--horizontal .timeline-phase__show-head {
+    left: .3rem;
+    top: calc(50% + .6rem);
+}
+
+/* 删除按钮：悬停才显示 */
+.timeline-event__del {
+    position: absolute;
+    top: .1rem;
+    right: .1rem;
+    font-size: .9rem;
+    color: var(--textSecondary, #9aa0a6);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s;
+    z-index: 2;
+}
+
+.timeline-event:hover .timeline-event__del {
+    opacity: 1;
+}
+
+.timeline-event__del:hover {
+    color: var(--icon-red, #ea4335);
+}
+
+/* 连线：卡片到主轴 */
+.timeline-event__link {
+    position: absolute;
+    z-index: -1;
+}
+
+.timeline-canvas--vertical .timeline-event__link {
+    top: 50%;
+    height: 0;
+    width: var(--side-gap);
+    border-top-width: 2px;
+}
+
+/* 卡片的「靠轴边」到主轴之间画连线 */
+.timeline-canvas--vertical .timeline-event--side-left .timeline-event__link {
+    right: calc(-1 * var(--side-gap));
+}
+
+.timeline-canvas--vertical .timeline-event--side-right .timeline-event__link {
+    left: calc(-1 * var(--side-gap));
+}
+
+.timeline-canvas--horizontal .timeline-event__link {
+    left: 50%;
+    width: 0;
+    height: var(--side-gap);
+    border-left-width: 2px;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-event__link {
+    bottom: calc(-1 * var(--side-gap));
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-event__link {
+    top: calc(-1 * var(--side-gap));
+}
+
+/* ===== 节点（画在主轴上的圆点/方块/图片） ===== */
+.timeline-node {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--surfacePrimary, #fff);
+}
+
+/* 纵向：节点定位到卡片与主轴之间的连线上 */
+.timeline-canvas--vertical .timeline-node {
+    top: 50%;
+    margin-top: -7px;
+}
+
+.timeline-canvas--vertical .timeline-event--side-left .timeline-node {
+    right: calc(-1 * var(--side-gap) - 5.5px);
+}
+
+.timeline-canvas--vertical .timeline-event--side-right .timeline-node {
+    left: calc(-1 * var(--side-gap) - 5.5px);
+}
+
+/* 横向：节点定位到主轴的那一侧 */
+.timeline-canvas--horizontal .timeline-node {
+    left: 50%;
+    margin-left: -7px;
+}
+
+.timeline-canvas--horizontal .timeline-event--side-left .timeline-node {
+    bottom: calc(-1 * var(--side-gap) - 5.5px);
+}
+
+.timeline-canvas--horizontal .timeline-event--side-right .timeline-node {
+    top: calc(-1 * var(--side-gap) - 5.5px);
+}
+
+/* 节点样式：圆点（小） */
+.timeline-node--dot {
+    width: 12px;
+    height: 12px;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .9);
+}
+
+/* 节点样式：圆形（大，带白边） */
+.timeline-node--circle {
+    width: 26px;
+    height: 26px;
+    margin-top: -13px;
+    border-width: 3px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+}
+
+.timeline-canvas--horizontal .timeline-node--circle {
+    margin-left: -13px;
+    margin-top: 0;
+}
+
+.timeline-canvas--vertical .timeline-node--circle {
+    margin-top: -13px;
+}
+
+/* 节点样式：方形 */
+.timeline-node--square {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    margin-top: -9px;
+}
+
+.timeline-canvas--horizontal .timeline-node--square {
+    margin-left: -9px;
+    margin-top: 0;
+}
+
+/* 节点样式：图片（圆形缩略图） */
+.timeline-node--image {
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    border-width: 2px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .22);
+}
+
+.timeline-canvas--horizontal .timeline-node--image {
+    margin-left: -22px;
+    margin-top: 0;
+}
+
+.timeline-node--image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 圆点样式在横向时同样居中 */
+.timeline-canvas--horizontal .timeline-node--dot {
+    margin-left: -6px;
+    margin-top: 0;
+}
+
+/* ===== 属性面板 ===== */
+.timeline-panel {
+    width: 16rem;
+    flex-shrink: 0;
+    overflow: auto;
+    padding: .6rem;
+    border-left: 1px solid var(--divider, #e8eaed);
+    background: var(--surfacePrimary, #fff);
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+
+.timeline-panel__title {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    padding-bottom: .4rem;
+    margin-bottom: .2rem;
+    border-bottom: 1px solid var(--divider, #e8eaed);
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--textPrimary, #202124);
+}
+
+.timeline-panel__title .material-icons {
+    font-size: 1rem;
+    color: var(--icon-blue, #1a73e8);
+}
+
+.timeline-panel__close {
+    margin-left: auto;
+    cursor: pointer;
+    color: var(--textSecondary, #9aa0a6);
+}
+
+.timeline-panel__close:hover {
+    color: var(--icon-red, #ea4335);
+}
+
+.timeline-panel__label {
+    margin-top: .3rem;
+    font-size: .75rem;
+    color: var(--textSecondary, #5f6368);
+}
+
+.timeline-panel__input,
+.timeline-panel__textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: .3rem .4rem;
+    font-family: inherit;
+    font-size: .82rem;
+    color: var(--textPrimary, #202124);
+    background: #fff;
+    border: 1px solid var(--borderPrimary, #dadce0);
+    border-radius: 3px;
+    outline: none;
+}
+
+.timeline-panel__textarea {
+    min-height: 4rem;
+    resize: vertical;
+}
+
+.timeline-panel__input:focus,
+.timeline-panel__textarea:focus {
+    border-color: var(--blue, #1a73e8);
+}
+
+/* 左/右（上/下）方向切换 */
+.timeline-panel__seg,
+.timeline-seg {
+    display: flex;
+}
+
+.timeline-seg__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .25rem .4rem;
+    font-size: .78rem;
+    color: var(--textSecondary, #5f6368);
+    background: transparent;
+    border: 1px solid var(--borderPrimary, #dadce0);
+    cursor: pointer;
+}
+
+.timeline-seg__btn .material-icons {
+    font-size: 1rem;
+}
+
+.timeline-seg__btn:first-child {
+    border-radius: 3px 0 0 3px;
+}
+
+.timeline-seg__btn:last-child {
+    border-radius: 0 3px 3px 0;
+    border-left: 0;
+}
+
+.timeline-seg__btn:hover {
+    color: var(--blue, #1a73e8);
+}
+
+.timeline-seg__btn--on {
+    color: var(--blue, #1a73e8);
+    border-color: var(--blue, #1a73e8);
+    background: var(--primary-light, #d2e3fc);
+}
+
+/* 颜色选择 */
+.timeline-panel__colors {
+    display: flex;
+    gap: .3rem;
+    padding: .2rem 0;
+}
+
+.timeline-swatch {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid var(--borderPrimary, #dadce0);
+}
+
+.timeline-swatch:hover {
+    transform: scale(1.15);
+}
+
+.timeline-swatch--auto {
+    background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 50% / 8px 8px;
+}
+
+.timeline-panel__hint {
+    margin-top: .4rem;
+    font-size: .72rem;
+    color: var(--textSecondary, #9aa0a6);
+    line-height: 1.4;
+}
+
+.timeline-panel__del {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    margin-top: .6rem;
+    padding: .35rem 0;
+    font-size: .8rem;
+    color: var(--icon-red, #ea4335);
+    background: transparent;
+    border: 1px solid var(--icon-red, #ea4335);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.timeline-panel__del:hover {
+    background: rgba(234, 67, 53, .08);
+}
+
+.timeline-panel__del .material-icons {
+    font-size: .95rem;
+}
+
+/* 加载 / 错误遮罩 */
+.timeline-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    color: var(--textSecondary, #5f6368);
+    background: var(--surfacePrimary, #fff);
+    z-index: 30;
+}

@@ -68,6 +68,7 @@ export default function FileList() {
     const [, set_markdown] = useAtom($stroe.markdown);
     const [, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
     const [, set_mind_editor] = useAtom($stroe.mind_editor);
+    const [, set_timeline_editor] = useAtom($stroe.timeline_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -223,6 +224,7 @@ export default function FileList() {
         set_markdown({});
         set_excalidraw_editor({});
         set_mind_editor({});
+        set_timeline_editor({});
     };
 
     /**

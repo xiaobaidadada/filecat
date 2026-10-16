@@ -23,6 +23,8 @@ export enum FileTypeEnum {
     draw = "draw",
     /** 思维导图文件 */
     mind = "mind",
+    /** 时间轴文件 */
+    timeline = "timeline",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

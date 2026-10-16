@@ -52,6 +52,8 @@ export function getFileFormat(filename:string): FileTypeEnum {
         return FileTypeEnum.excalidraw;
     } else if (extension === FileTypeEnum.mind) {
         return FileTypeEnum.mind;
+    } else if (extension === FileTypeEnum.timeline) {
+        return FileTypeEnum.timeline;
     } else if(extension === FileTypeEnum.workflow_act) {
         return FileTypeEnum.workflow_act;
     } else if(extension === 'url') {

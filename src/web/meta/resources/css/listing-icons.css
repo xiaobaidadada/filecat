@@ -244,6 +244,10 @@
 .file-icons [aria-label$=".mind"] i { color: var(--icon-yellow) }
 .file-icons [aria-label$=".mind"] i::before { content: 'code' }
 
+/* 时间轴：图标与颜色跟 .json 保持一致 */
+.file-icons [aria-label$=".timeline"] i { color: var(--icon-yellow) }
+.file-icons [aria-label$=".timeline"] i::before { content: 'code' }
+
 .file-icons [aria-label$=".url"] i { color: var(--icon-blue) }
 .file-icons [aria-label$=".url"] i::before { content: 'link' }
 

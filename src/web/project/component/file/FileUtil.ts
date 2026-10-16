@@ -427,6 +427,7 @@ const preview_file_type_list = ["text",
     FileTypeEnum.excalidraw,
     FileTypeEnum.draw,
     FileTypeEnum.mind,
+    FileTypeEnum.timeline,
     FileTypeEnum.pdf,
     FileTypeEnum.image,
     FileTypeEnum.video
@@ -442,6 +443,8 @@ export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode
     if (type === FileTypeEnum.excalidraw || type === FileTypeEnum.draw) return "excalidraw";
     // 思维导图直接进 Studio 打开
     if (type === FileTypeEnum.mind) return "mind";
+    // 时间轴直接进 Studio 打开
+    if (type === FileTypeEnum.timeline) return "timeline";
     if (type === FileTypeEnum.pdf || type === FileTypeEnum.image || type === FileTypeEnum.video) return "preview";
     return "text";
 }
@@ -459,7 +462,7 @@ export function use_share_preview() {
 }
 
 // 打开文件的方式（写入 url 参数，刷新后据此恢复）
-export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind";
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline";
 
 export interface file_open_param {
     name: string;
@@ -538,6 +541,7 @@ export const user_click_file = () => {
 
     const [excalidraw_editor, set_excalidraw_editor] = useAtom($stroe.excalidraw_editor);
     const [mind_editor, set_mind_editor] = useAtom($stroe.mind_editor);
+    const [timeline_editor, set_timeline_editor] = useAtom($stroe.timeline_editor);
     const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
@@ -653,6 +657,9 @@ export const user_click_file = () => {
                     break;
                 case FileTypeEnum.mind:
                     set_mind_editor({url, name, close: param.close});
+                    break;
+                case FileTypeEnum.timeline:
+                    set_timeline_editor({url, name, close: param.close});
                     break;
                 case FileTypeEnum.md:
                     // set_markdown({
