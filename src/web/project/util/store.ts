@@ -237,4 +237,11 @@ export const $stroe = {
     ai_chat_input_height: sync_atomWithStorage<number>("ai_chat_input_height", 5),
     // Studio 右侧 AI 聊天面板宽度（em）
     studio_chat_width: sync_atomWithStorage<number>("studio_chat_width", 33),
+    // 目录 → 该目录下当前使用的 AI 会话 id。
+    // 文件列表 / Studio 内嵌聊天面板都用它记忆「切回某个目录时用哪个会话」，
+    // 存的是映射表（key 为目录路径），与单纯记单个会话不是一个语义。
+    ai_chat_session_by_cwd: sync_atomWithStorage<Record<string, string>>("ai_chat_session_by_cwd", {}),
+    // 读取/写入该映射表的通用工具，避免各处重复实现存取逻辑
+    get_ai_chat_session: (map: Record<string, string> | undefined, cwd: string): string | undefined =>
+        map?.[cwd] || undefined,
 };

@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "7.10.1",
+  "version": "7.10.2",
   "description": "File browser and server manager",
   "author": "xiaobaidadada",
   "repository": {
@@ -43,7 +43,7 @@
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "better-sqlite3": "^12.6.2",
-    "node-libsmb2": "^1.1.0",
+    "node-libsmb2": "^1.1.1",
     "node-process-watcher": "^1.6.6"
   },
   "devDependencies": {

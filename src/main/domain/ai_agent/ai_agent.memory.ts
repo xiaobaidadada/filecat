@@ -9,8 +9,13 @@ import {userService} from "../user/user.service";
 import {llmPost, readLlmResponse} from "./llm_request";
 import {
     ai_agent_chat_session_item,
-    ai_agent_chat_session_meta, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
-    ai_agent_usage_stats, ai_agent_item_dotenv, getContentAsString,
+    ai_agent_chat_session_meta,
+    ai_agent_item_dotenv,
+    ai_agent_message_attachment_item,
+    ai_agent_message_item,
+    ai_agent_message_list,
+    ai_agent_usage_stats,
+    getContentAsString,
 } from "../../../common/req/filecat.ai.pojo";
 import {estimateTokenCount} from "./token_counter";
 
@@ -341,7 +346,7 @@ export class AiAgentMemoryService {
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title = "新会话", source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
+    public create_session(userId: string, title :string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
         const store = this.read_index_of_session();
         // 新会话要显示在列表最顶部：取所有已有会话最小的 sort_index - 1，
         // 这样它一定排在所有已排序会话之前，又不影响已有会话之间的相对顺序。
@@ -356,7 +361,6 @@ export class AiAgentMemoryService {
                     if (hit) return cloneSession(hit);
                 }
             }
-            title = title || `Dir ${path.basename(ok_path)}`
         }
         const min_sort = existing.reduce<number | undefined>((min, it) => {
             if (it.sort_index === undefined) return min;
@@ -639,7 +643,7 @@ export class AiAgentMemoryService {
         stats.output_tokens = (stats.output_tokens || 0) + outputTokens;
         stats.recent_output_tokens = outputTokens;
 
-        if (!session.title || session.title === "新会话") {
+        if (!session.title) {
             session.title = this.createTitle(getContentAsString(userMessage.content));
         }
         await this.compressIfNeeded(session, env);
@@ -728,8 +732,7 @@ export class AiAgentMemoryService {
     }
 
     private createTitle(text: string) {
-        const title = (text ?? "").replace(/\s+/g, " ").trim().slice(0, 28);
-        return title || "新会话";
+        return (text ?? "").replace(/\s+/g, " ").trim().slice(0, 28) ;
     }
 
     // 一轮消息回答完，消息数超限则裁剪旧消息，并用 AI 从被裁消息中提取长期记忆

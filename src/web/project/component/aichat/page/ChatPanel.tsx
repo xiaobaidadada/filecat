@@ -51,6 +51,7 @@ import ChatMessageList from "./ChatMessageList";
 import ChatInput, { ChatInputHandle } from "./ChatInput";
 import BackgroundProcessPanel from "./BackgroundProcessPanel";
 import { ws } from "../../../util/ws";
+import {use_get_now_abs_path} from "../../file/FileUtil";
 
 /**
  * 会话列表项：普通模式下即会话 meta；
@@ -84,7 +85,7 @@ export interface ChatPanelProps {
      */
     sync_url?: boolean;
 
-    /** 会话定位完成后回调（嵌入场景用于把「当前会话 id」存进 sessionStorage 等） */
+    /** 会话定位完成后回调（嵌入场景用于把「当前会话 id」按目录持久化到外部） */
     on_session_change?: (sessionId: string) => void;
 }
 
@@ -340,7 +341,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         if (sync_url && url_session_id !== session.id) {
             write_url_session(session.id);
         }
-        // 通知外部当前会话变化（嵌入场景用于持久化到 sessionStorage）
+        // 通知外部当前会话变化（嵌入场景用于按目录持久化）
         on_session_change?.(session.id);
         // 该会话是否正在执行中（其它标签页 / 发起后切走）
         setActiveSessionRunning(!!session.running);
@@ -378,7 +379,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         // 仅当调用方显式传入了提示词 id 时才使用它。
         const targetPromptId = sysPromptId ?? "";
         const result = await ai_agentHttp.post("session", {
-            title: "新会话",
+            // title: "新会话",
             sys_prompt_id: targetPromptId || undefined,
             // 面板绑定了工作目录时，新会话也要带上，保证后续按目录能定位到它
             file_cwd_path: init_cwd || undefined,
@@ -411,16 +412,14 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const result = await ai_agentHttp.get("sessions");
         if (result.code !== RCode.Success) return null;
         const list: ai_agent_chat_session_meta[] = result.data ?? [];
-        // 归一化后比较，避免尾部斜杠、重复分隔符、正反斜杠导致的同目录匹配不上
-        const ok_cwd = normalize_path(cwd);
-        if(!ok_cwd) return null;
-        const matched = list.find(it => normalize_path(it.file_cwd_path) === ok_cwd);
+        cwd = normalize_path(cwd)
+        const matched = list.find(it => normalize_path(it.file_cwd_path) === cwd);
         if (matched) {
             return matched.id;
         }
         // 没有匹配会话 → 新建一个并写入工作目录
         const created = await ai_agentHttp.post("session", {
-            title: "新会话",
+            // title: "新会话",
             file_cwd_path: cwd,
         });
         if (created.code !== RCode.Success) return null;
@@ -529,7 +528,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         let sessionId = activeSessionId;
         if (!sessionId) {
             const result = await ai_agentHttp.post("session", {
-                title: (text || pendingAttachments[0]?.name || "新会话").slice(0, 28),
+                title: (text || pendingAttachments[0]?.name).slice(0, 28),
                 // 与「新建会话」保持一致：默认不继承当前选中的系统提示词
                 sys_prompt_id: undefined,
                 // 面板绑定了工作目录时，新会话也要带上，保证后续按目录能定位到它

@@ -1,7 +1,7 @@
 import {getByIndexs, getNextByLoop, sort, webPathJoin} from "../../../../common/ListUtil";
 import {getRouterAfter, getRouterPath} from "../../util/WebPath";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
-import {DirListShowTypeEmum, fileTypes, UserBaseInfo} from "../../../../common/req/user.req";
+import {DirListShowTypeEmum, fileTypes, SysEnum, UserBaseInfo} from "../../../../common/req/user.req";
 import {QuickCmdItem} from "../../../../common/req/setting.req";
 import {PromptEnum} from "../prompts/Prompt";
 import {$stroe} from "../../util/store";
@@ -705,4 +705,22 @@ export const user_click_file = () => {
     }
 
     return {click_file};
+}
+
+
+// 前端获取某个文件 在前端当前目录下 在服务器的绝对路径
+export function use_get_now_abs_path() {
+    const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
+
+    return (filename?: string) => {
+        const path = UserBaseInfo.get_now_dir(user_base_info)
+        let fp = path_join(path, decodeURIComponent(getRouterAfter('file', getRouterPath())))
+        if (user_base_info.sys === SysEnum.win) {
+            fp = fp.replaceAll("/", '\\')
+        } else if (fp.includes("\\")) {
+            fp = fp.replaceAll("\\", '/')
+        }
+        // 空白处右键没有文件名，此时对应当前目录本身
+        return filename ? path_join(fp, filename) : fp
+    }
 }

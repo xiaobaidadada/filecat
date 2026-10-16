@@ -853,8 +853,7 @@ export class Ai_agentService {
         const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
         const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
         const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
-            || formatAttachmentTitle(latestUserMessage?.attachments)
-            || "新会话";
+            || formatAttachmentTitle(latestUserMessage?.attachments);
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
         const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.ai_config_env);
 

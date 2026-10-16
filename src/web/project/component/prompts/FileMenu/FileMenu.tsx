@@ -31,7 +31,7 @@ import {routerConfig} from "../../../../../common/RouterConfig";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
-import {use_click_folder, use_file_open, user_click_file} from "../../file/FileUtil";
+import {use_click_folder, use_file_open, use_get_now_abs_path, user_click_file} from "../../file/FileUtil";
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 import {mountHttp} from "../../../util/config";
 import MountEditor from "../../setting/mount/MountEditor";
@@ -180,6 +180,7 @@ export function FileMenu() {
     const [, set_file_list_refresh] = useAtom($stroe.file_list_refresh);
     /** 挂载列表：用于判断当前右键目录是否已被挂载 */
     const [mount_list, setMountList] = useState<any[]>([]);
+    const get_bas_path = use_get_now_abs_path()
 
     /** 拉取挂载列表（失败时静默，不影响右键菜单其它功能） */
     const load_mount_list = async () => {
@@ -220,15 +221,7 @@ export function FileMenu() {
     }, [showPrompt.show]);
 
     const get_ab_path = () => {
-        const path = UserBaseInfo.get_now_dir(user_base_info)
-        let fp = path_join(path, decodeURIComponent(getRouterAfter('file', getRouterPath())))
-        if (user_base_info.sys === SysEnum.win) {
-            fp = fp.replaceAll("/", '\\')
-        } else if (fp.includes("\\")) {
-            fp = fp.replaceAll("\\", '/')
-        }
-        // 空白处右键没有文件名，此时对应当前目录本身
-        return showPrompt.data.filename ? path_join(fp, showPrompt.data.filename) : fp
+        return get_bas_path(showPrompt.data.filename)
     }
 
     const items_folder = [

@@ -99,7 +99,7 @@ export default function Studio(props) {
 
     // ===== 右侧 AI 聊天面板 =====
     // 是否展开右侧聊天面板：状态同步到 url 参数 chat_open，刷新/切换文件后仍保持。
-    // 聊天面板绑定「当前 Studio 工作目录」，打开时按工作目录定位会话（找不到就新建），并记住会话 id 到 sessionStorage。
+    // 聊天面板绑定「当前 Studio 工作目录」，打开时按工作目录定位会话（找不到就新建），并把会话 id 记到 $stroe。
     const updateParams = useUpdateUrlParams();
     const [searchParams] = useSearchParams();
     const chat_open = searchParams.get("chat_open") === "1";
@@ -109,33 +109,15 @@ export default function Studio(props) {
     const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = useRef(null);
     const [chat_drag, set_chat_drag] = useState(false);
-    /** 已定位好的会话 id（由 ChatPanel 定位后回调写入，用于 sessionStorage 记录） */
+    /** 已定位好的会话 id（由 ChatPanel 定位后回调写入，用于按目录记录会话） */
     const [chat_session_id, set_chat_session_id] = useState<string | undefined>(undefined);
-    /** 工作目录对应的 sessionStorage key：每个目录各自记住自己的会话 */
-    const chat_storage_key = "studio_chat_session";
+    /** 工作目录 → 会话 id 映射，持久化在 $stroe（切回同一目录仍是同一个会话） */
+    const [ai_chat_session_by_cwd, set_ai_chat_session_by_cwd] = useAtom($stroe.ai_chat_session_by_cwd);
     /** 读取该工作目录上次的会话 id（仅作为初始提示，仍以工作目录匹配结果为准） */
-    const read_chat_session = (cwd: string): string | undefined => {
-        try {
-            const raw = sessionStorage.getItem(chat_storage_key);
-            if (!raw) return undefined;
-            const map = JSON.parse(raw);
-            return map?.[cwd] || undefined;
-        } catch {
-            return undefined;
-        }
-    };
-
+    const read_chat_session = (cwd: string): string | undefined => $stroe.get_ai_chat_session(ai_chat_session_by_cwd, cwd);
     /** 记录该工作目录当前会话 id */
-    const write_chat_session = (cwd: string, sessionId: string) => {
-        try {
-            const raw = sessionStorage.getItem(chat_storage_key);
-            const map = raw ? JSON.parse(raw) : {};
-            map[cwd] = sessionId;
-            sessionStorage.setItem(chat_storage_key, JSON.stringify(map));
-        } catch {
-            // sessionStorage 不可用（隐私模式等）时静默忽略，不影响功能
-        }
-    };
+    const write_chat_session = (cwd: string, sessionId: string) =>
+        set_ai_chat_session_by_cwd({...ai_chat_session_by_cwd, [cwd]: sessionId});
 
 
     const location = useLocation();

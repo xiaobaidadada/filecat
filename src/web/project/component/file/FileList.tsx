@@ -17,7 +17,7 @@ import {
     title_workflow_file_success,
     use_file_open,
     useUpdateUrlParams,
-    user_click_file
+    user_click_file, use_get_now_abs_path
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -126,33 +126,18 @@ export default function FileList() {
     const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = React.useRef<HTMLDivElement | null>(null);
     const [chat_drag, set_chat_drag] = useState(false);
-    /** 已定位好的会话 id（由 ChatPanel 回调写入，用于 sessionStorage 记录） */
+    /** 已定位好的会话 id（由 ChatPanel 回调写入，用于按目录记录会话） */
     const [chat_session_id, set_chat_session_id] = useState<string | undefined>(undefined);
     /** 当前目录路径（用于按目录定位/记忆会话） */
-    const chat_cwd = getRouterAfter('file', getRouterPath());
-    /** 目录 → 会话 id 的映射，存在 sessionStorage，保证同一目录切回来还是同一个会话 */
-    const chat_storage_key = "file_list_chat_session";
+    const get_abs_path_in_file_page = use_get_now_abs_path();
+    // const chat_cwd = getRouterAfter('file', getRouterPath());
+    /** 目录 → 会话 id 映射，持久化在 $stroe（切回同一目录仍是同一个会话） */
+    const [ai_chat_session_by_cwd, set_ai_chat_session_by_cwd] = useAtom($stroe.ai_chat_session_by_cwd);
     /** 读取该目录上次的会话 id（仅作初始提示，最终仍以工作目录匹配结果为准） */
-    const read_chat_session = (cwd: string): string | undefined => {
-        try {
-            const raw = sessionStorage.getItem(chat_storage_key);
-            if (!raw) return undefined;
-            return JSON.parse(raw)?.[cwd] || undefined;
-        } catch {
-            return undefined;
-        }
-    };
+    const read_chat_session = (cwd: string): string | undefined => $stroe.get_ai_chat_session(ai_chat_session_by_cwd, cwd);
     /** 记录该目录当前会话 id */
-    const write_chat_session = (cwd: string, sessionId: string) => {
-        try {
-            const raw = sessionStorage.getItem(chat_storage_key);
-            const map = raw ? JSON.parse(raw) : {};
-            map[cwd] = sessionId;
-            sessionStorage.setItem(chat_storage_key, JSON.stringify(map));
-        } catch {
-            // sessionStorage 不可用（隐私模式等）时静默忽略，不影响功能
-        }
-    };
+    const write_chat_session = (cwd: string, sessionId: string) =>
+        set_ai_chat_session_by_cwd({...ai_chat_session_by_cwd, [cwd]: sessionId});
 
     const handleContextMenu = use_handleContextMenu()
 
@@ -640,11 +625,11 @@ export default function FileList() {
                                 <ChatPanel
                                     inline_header={true}
                                     sync_url={false}
-                                    file_cwd_path={chat_cwd}
-                                    session_id={chat_session_id ?? read_chat_session(chat_cwd)}
+                                    file_cwd_path={get_abs_path_in_file_page()}
+                                    session_id={chat_session_id ?? read_chat_session(get_abs_path_in_file_page())}
                                     on_session_change={(id) => {
                                         set_chat_session_id(id);
-                                        write_chat_session(chat_cwd, id);
+                                        write_chat_session(get_abs_path_in_file_page(), id);
                                     }}
                                 />
                             </React.Suspense>

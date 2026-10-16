@@ -105,9 +105,10 @@ export class Ai_AgentController {
             }
             userService.check_user_path(ctx.headers.authorization, sysPath);
             cwd = sysPath
+            data.title = data?.title || `Dir ${path.basename(cwd)}`
         }
         return Sucess(aiAgentMemoryService.create_session(
-            user?.id ?? user?.user_id ?? user?.username ?? "default",
+            user?.id ,
             data?.title,
             undefined,
             data?.sys_prompt_id,
@@ -253,7 +254,7 @@ export class Ai_AgentController {
     async sessions_clear(@Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.clear(user?.id ?? user?.user_id ?? user?.username ?? "default")
+        aiAgentMemoryService.clear(user?.id)
         return Sucess("")
     }
 
@@ -410,7 +411,7 @@ export class Ai_AgentController {
     }, @Res() res: Response, @Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const userId = user?.id;
         try {
             const response = await llmImagesGenerate(data);
             const result = await response.json();
@@ -464,7 +465,7 @@ export class Ai_AgentController {
     }, @Res() res: Response, @Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const userId = user?.id;
         try {
             const response = await llmAudioSpeech(data);
             // 音频直接返回二进制流
@@ -508,7 +509,7 @@ export class Ai_AgentController {
     }, @Res() res: Response, @Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const userId = user?.id;
         try {
             const response = await llmEmbeddings(data);
             const result = await response.json();
@@ -566,7 +567,7 @@ export class Ai_AgentController {
         const { session_id, subscribe } = ctx;
         if (!session_id) return '';
         const user = userService.get_user_info_by_token(wss.token);
-        const userId = user?.id ?? user?.user_id ?? user?.username ?? "default";
+        const userId = user?.id;
         if (subscribe) {
             ai_agentService.subscribeSession(userId, session_id, wss);
         } else {
