@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "7.11.0",
+  "version": "7.12.0",
   "description": "File browser and server manager",
   "author": "xiaobaidadada",
   "repository": {
@@ -56,6 +56,7 @@
     "@excalidraw/excalidraw": "^0.18.1",
     "@larksuiteoapi/node-sdk": "^1.68.0",
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@office-kit/xlsx": "^0.24.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^26.0.0",

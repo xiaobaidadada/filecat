@@ -1321,7 +1321,8 @@ line.git-log__graph-edge {
    Excalidraw 要求父容器有确定高度，这里撑满 studio-editor */
 .studio-editor--draw,
 .studio-editor--mind,
-.studio-editor--timeline {
+.studio-editor--timeline,
+.studio-editor--excel {
     display: flex;
     margin: 0;
     flex-basis: 0;

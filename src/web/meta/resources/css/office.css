@@ -1,0 +1,219 @@
+/* xlsx 表格编辑器样式 */
+.office-editor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--background-primary, #fff);
+    z-index: 1000;
+}
+
+.office-editor__topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0 .8em;
+    height: 3em;
+    border-bottom: 1px solid var(--surfaceSecondary);
+    background: var(--background-primary, #fff);
+}
+
+.office-editor__name {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    font-size: .95em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.office-editor__dirty {
+    width: .45em;
+    height: .45em;
+    border-radius: 50%;
+    background: var(--primary, #2196f3);
+    flex: none;
+}
+
+.office-editor__ops {
+    display: flex;
+    align-items: center;
+    gap: .6em;
+    flex: none;
+}
+
+.office-editor__saving {
+    font-size: .85em;
+    opacity: .6;
+}
+
+.office-editor__body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.office-editor__tip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    opacity: .6;
+    font-size: .9em;
+}
+
+.office-editor__tip--error {
+    color: var(--red, #d93025);
+    opacity: 1;
+    white-space: pre-wrap;
+    padding: 2em;
+    text-align: center;
+}
+
+/* ============ xlsx ============ */
+.studio-editor--excel > * {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.xlsx-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.xlsx-tabs {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .3em;
+    padding: .3em .6em;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--surfaceSecondary);
+}
+
+.xlsx-tab {
+    padding: .2em .8em;
+    border-radius: .3em;
+    font-size: .85em;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: .7;
+}
+
+.xlsx-tab:hover {
+    background: var(--surfaceSecondary);
+    opacity: 1;
+}
+
+.xlsx-tab--active {
+    background: var(--primary-light, #d2e3fc);
+    opacity: 1;
+    font-weight: 600;
+}
+
+.xlsx-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    position: relative;
+}
+
+.xlsx-grid {
+    position: relative;
+}
+
+.xlsx-head {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .76em;
+    opacity: .75;
+    background: var(--surfaceSecondary);
+    border-right: 1px solid var(--border, #e0e0e0);
+    border-bottom: 1px solid var(--border, #e0e0e0);
+    box-sizing: border-box;
+    user-select: none;
+    z-index: 3;
+}
+
+.xlsx-head--row {
+    z-index: 2;
+}
+
+.xlsx-cell {
+    position: absolute;
+    display: block;
+    padding: 0 .35em;
+    font-size: 11px;
+    line-height: 1.4;
+    box-sizing: border-box;
+    border-right: 1px solid var(--border, #e0e0e0);
+    border-bottom: 1px solid var(--border, #e0e0e0);
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: cell;
+    color: #000;
+}
+
+/* 单行内容垂直居中：行高 = 格子高度 */
+.xlsx-cell > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: inherit;
+    line-height: var(--cell-h, 1.4);
+}
+
+/* 与 Excel 一致：右侧为空时，不换行的长文本溢出显示，而不是省略号截断 */
+.xlsx-cell--spill {
+    overflow: visible;
+    z-index: 1;
+}
+
+/* 溢出只向右展开，避免左对齐文本从左侧被切掉 */
+.xlsx-cell--spill > span,
+.xlsx-cell--spill > :not(.xlsx-cell__input) {
+    display: block;
+    width: max-content;
+}
+
+/* 源文件里设置了自动换行的单元格：按行高裁切，不出现省略号 */
+.xlsx-cell--wrap {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+}
+
+.xlsx-cell:hover {
+    outline: 1px solid var(--primary, #2196f3);
+    outline-offset: -1px;
+}
+
+.xlsx-cell__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--primary, #2196f3);
+    border-radius: 0;
+    outline: none;
+    font: inherit;
+    font-size: inherit;
+    padding: 0 .2em;
+    background: var(--background-primary, #fff);
+    color: #000;
+    resize: none;
+    box-sizing: border-box;
+    z-index: 10;
+}

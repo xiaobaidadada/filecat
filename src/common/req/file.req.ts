@@ -9,6 +9,11 @@ export interface saveTxtReq {
     context: string
 }
 
+/** 二进制文件保存（xlsx） */
+export interface saveBinReq {
+    base64: string
+}
+
 export interface sqliteQueryReq {
     path: string;
     sql: string;

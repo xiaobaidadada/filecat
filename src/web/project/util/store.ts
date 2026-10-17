@@ -199,6 +199,12 @@ export const $stroe = {
         name?: string,
         close?: () => any,
     }>({}),
+    // 表格编辑器（.xlsx）
+    excel_editor: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

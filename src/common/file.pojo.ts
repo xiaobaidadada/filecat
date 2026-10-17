@@ -25,6 +25,8 @@ export enum FileTypeEnum {
     mind = "mind",
     /** 时间轴文件 */
     timeline = "timeline",
+    /** 表格文件 xlsx */
+    excel = "excel",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

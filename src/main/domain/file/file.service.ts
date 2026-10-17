@@ -1151,6 +1151,38 @@ export class FileService  {
         });
     }
 
+    /**
+     * 保存二进制文件（xlsx）。office-kit 系列只产出字节，
+     * 这里统一接收 base64，写完落盘或流式写回挂载的网盘。
+     */
+    public async save_bin(token, base64?: string, filePath?: string) {
+        if (!base64) {
+            return;
+        }
+        let sysPath = decodeURIComponent(filePath);
+        if (path.isAbsolute(sysPath)) {
+
+        } else {
+            sysPath = path.join(settingService.getFileRootPath(token), sysPath);
+        }
+        userService.check_user_path(token, sysPath);
+        userService.check_user_only_path(token, sysPath);
+
+        const buf = Buffer.from(base64, 'base64');
+
+        // 挂载接管：流式写回网盘（不落服务器磁盘）
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const r = require_driver(mount_res.real_path);
+            assert_cap(r.driver, "write", "保存文件", mount_res.match);
+            const {Readable} = require("stream");
+            await r.driver.write(r.inner_path, Readable.from([buf]), buf.length);
+            return;
+        }
+
+        await FileUtil.writeFileSync(sysPath, new Uint8Array(buf));
+    }
+
     // public common_save(path:string,context:string) {
     //     fs.writeFileSync(path, context);
     // }

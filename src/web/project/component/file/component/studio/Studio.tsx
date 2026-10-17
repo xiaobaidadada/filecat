@@ -36,6 +36,8 @@ const ExcalidrawInline = React.lazy(() => import("../ExcalidrawInline"));
 const MindMapInline = React.lazy(() => import("../MindMapInline"));
 // 内嵌时间轴编辑器（.timeline）
 const TimelineInline = React.lazy(() => import("../timeline/TimelineInline"));
+// 内嵌表格编辑器（.xlsx）
+const XlsxPane = React.lazy(() => import("../office/XlsxPane"));
 
 /** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
 function is_markdown_file(name: string): boolean {
@@ -55,6 +57,11 @@ function is_mind_file(name: string): boolean {
 /** 是否是时间轴文件：.timeline 后缀 */
 function is_timeline_file(name: string): boolean {
     return getFileFormat(name) === FileTypeEnum.timeline;
+}
+
+/** 是否是表格文件：.xlsx 后缀 */
+function is_excel_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.excel;
 }
 
 /** 左侧面板显示的内容 */
@@ -90,6 +97,8 @@ export default function Studio(props) {
     const is_mind = is_mind_file(edit_filename.name);
     // 当前文件是否是时间轴（.timeline）
     const is_timeline = is_timeline_file(edit_filename.name);
+    // 当前文件是否是表格（.xlsx）
+    const is_excel = is_excel_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
     // 画板编辑器句柄（保存按钮）
@@ -98,6 +107,8 @@ export default function Studio(props) {
     const mind_api = useRef<any>(null);
     // 时间轴编辑器句柄（保存按钮）
     const timeline_api = useRef<any>(null);
+    // 表格编辑器句柄（保存按钮）
+    const excel_api = useRef<{ save: () => Promise<boolean> } | null>(null);
     // md 编辑器上报的大纲数据与当前高亮项
     const [outline_items, set_outline_items] = useState<OutlineItem[]>([]);
     const [outline_active, set_outline_active] = useState(-1);
@@ -211,9 +222,12 @@ export default function Studio(props) {
     const load_file = async (name, pre_path) => {
         // const model = getEditModelType(name) ?? "text";
         // set_edit_model(model);
-        const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
-        setEditorValue(rsq.data);
-        editor_data.set_value_temp(rsq.data);
+        // 表格是二进制文件，由 XlsxPane 自己按 url 读取字节，这里不能当文本读
+        if (!is_excel_file(name)) {
+            const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
+            setEditorValue(rsq.data);
+            editor_data.set_value_temp(rsq.data);
+        }
         set_edit_filename({path: pre_path, name});
         set_edit_file_path(pre_path);
         // 换成别的文件时左侧面板回到目录视图：大纲是上一个 md 文件的，留着会对不上
@@ -286,7 +300,7 @@ export default function Studio(props) {
             event.preventDefault();
             // md / 画板 / 思维导图 / 时间轴 各自有专属编辑器，
             // 它们内部已经处理了 Ctrl+S，这里只负责纯文本文件，避免误调 Ace 的取值而报错。
-            if (is_md || is_draw || is_mind || is_timeline) {
+            if (is_md || is_draw || is_mind || is_timeline || is_excel) {
                 return;
             }
             if (have_update) {
@@ -300,7 +314,7 @@ export default function Studio(props) {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [have_update, is_md, is_draw, is_mind, is_timeline]);
+    }, [have_update, is_md, is_draw, is_mind, is_timeline, is_excel]);
     let change = () => {
         // editor_data.set_value_temp(value);
         if (!have_update) {
@@ -454,8 +468,10 @@ export default function Studio(props) {
                     ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
                     : is_mind
                         ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
-                        : is_timeline
-                            ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
+                    : is_timeline
+                        ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
+                        : is_excel
+                            ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excel_api.current?.save()}/>
                             : (have_update ? <ActionButton title={"保存"} icon={"save"} onClick={file_save}/> : null)
             }
         </Header>
@@ -571,6 +587,19 @@ export default function Studio(props) {
                                     {context},
                                 );
                                 return rsq.code === RCode.Success;
+                            }}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_excel
+                ? <div className={"studio-editor studio-editor--excel"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <XlsxPane
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            save_path={edit_file_path}
+                            on_dirty={set_have_update}
+                            bind_save={(fn) => {
+                                excel_api.current = {save: fn};
                             }}
                         />
                     </React.Suspense>

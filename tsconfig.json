@@ -25,7 +25,14 @@
     "skipLibCheck": true,
     "jsx": "react",
     "resolveJsonModule": true,
-    "incremental": true
+    "incremental": true,
+    // office 系列包是纯 ESM 且用 exports 子路径导出，node10 解析不到；
+    // 这里用 paths 精确映射到类型文件，避免为几个包改全局 moduleResolution
+    "baseUrl": ".",
+    "paths": {
+      "@office-kit/xlsx/io": ["node_modules/@office-kit/xlsx/dist/io/index.d.ts"],
+      "@office-kit/xlsx/node": ["node_modules/@office-kit/xlsx/dist/node.d.ts"]
+    }
   },
   "include": [
 //    "libs",

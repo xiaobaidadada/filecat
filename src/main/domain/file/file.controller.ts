@@ -15,6 +15,7 @@ import {
     file_share_item,
     fileInfoReq,
     saveTxtReq,
+    saveBinReq,
     WorkflowGetReq,
     WorkFlowRealTimeOneReq,
     WorkFlowRealTimeReq,
@@ -120,6 +121,16 @@ export class FileController {
         if (userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
             userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
             await FileServiceImpl.save(ctx.headers.authorization, data?.context, path);
+            return Sucess("1");
+        }
+        return Fail("no permission")
+    }
+
+    @Post('/save_bin/:path([^"]{0,})') // 保存二进制文件（xlsx）最大 50MB
+    async save_bin(@Req() ctx, @Param("path") path?: string, @Body({options: {limit: 50000000}}) data?: saveBinReq) {
+        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update, false) ||
+            userService.have_user_auth(ctx.headers.authorization, UserAuth.filecat_file_context_update_upload_created_copy_decompression, false)) {
+            await FileServiceImpl.save_bin(ctx.headers.authorization, data?.base64, path);
             return Sucess("1");
         }
         return Fail("no permission")
