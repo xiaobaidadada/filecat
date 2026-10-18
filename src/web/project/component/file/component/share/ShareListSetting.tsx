@@ -82,7 +82,7 @@ export default function ShareListSetting() {
                                 navigate(-1);
                             }}/>
             </HeaderPortal>
-        <RowColumn  widthPer={100}  >
+        <RowColumn  widthPer={100}  maxWidth={"60rem"}>
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件分享列表")}</h2>
             <ActionButton icon={"info"} title={t("提示")} onClick={info_click}/>
             </span>}
