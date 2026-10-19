@@ -494,7 +494,7 @@ export function FileMenu() {
                     title: "确认",
                     confirm: async () => {
                         set_prompt_card({open: false})
-                        const result = await ai_agentHttp.post("ai_load_one_file", {
+                        const result = await ai_agentHttp.post("docs_load_file", {
                             param_path: get_ab_path()
                         });
                         if (result.code === RCode.Success) {
@@ -516,7 +516,7 @@ export function FileMenu() {
                     title: "确认",
                     confirm: async () => {
                         set_prompt_card({open: false})
-                        const result = await ai_agentHttp.post("ai_del", {
+                        const result = await ai_agentHttp.post("docs_del", {
                             param_path: get_ab_path()
                         });
                         if (result.code === RCode.Success) {

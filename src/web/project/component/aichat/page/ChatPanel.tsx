@@ -180,8 +180,6 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     const autoScrollRef = useRef(true);
     /** 当前活动会话在“接收其它页面广播”时的实时 assistant 气泡 id（用于追加文本） */
     const liveBubbleIdRef = useRef<number | null>(null);
-    /** 上次刷新会话列表的时间（用于节流 running 旋转标记的刷新） */
-    const lastRefreshRef = useRef(0);
     /** 当前已订阅(绑定 ws 与 session)的会话 id；用于切换/结束/卸载时退订 */
     const subscribedSessionRef = useRef<string | null>(null);
     /**
@@ -270,6 +268,20 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         if (result.code === RCode.Success) {
             setSessions(result.data ?? []);
         }
+    };
+
+    /**
+     * 本地更新某个会话的「执行中」标记，不发请求。
+     * 收到流式消息 = 正在执行，收到结束/错误 = 结束，这些信息 WS 消息里已经带了，
+     * 没必要为此反复拉整个会话列表。
+     */
+    const markSessionRunning = (sessionId: string, running: boolean) => {
+        setSessions(prev => {
+            // 列表里没有该会话（或状态已一致）时原样返回，避免无意义的重渲染
+            const target = prev.find(it => it.id === sessionId);
+            if (!target || !!target.running === running) return prev;
+            return prev.map(it => (it.id === sessionId ? {...it, running} : it));
+        });
     };
 
     // ===== 从用户消息构建请求体 =====
@@ -1017,6 +1029,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         //  - 若带最终 once_messages_list，直接用其替换末尾的“实时预览气泡”，刷新列表即可（避免读文件竞态）；
         //  - 否则退化为重新 loadSession 拉取内容。
         const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
+            // 无论是否是当前活动会话，结束都要清掉列表里的 running 标记
+            markSessionRunning(sessionId, false);
             if (activeId() && activeId() === sessionId) {
                 liveBubbleIdRef.current = null;
                 setActiveSessionRunning(false);
@@ -1041,20 +1055,18 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 } else {
                     loadSession(sessionId).catch(() => {});
                 }
-                refreshSessions();
             }
+            // 会话结束后标题/更新时间可能已变，拉一次列表同步元信息（每次对话仅一次，不是流式期间）
+            refreshSessions();
         };
 
         const handleChatMsg = (data: any) => {
             const ctx = data?.context || {};
             if (!ctx.session_id) return; // 无会话 id（老版本）不处理
             appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends);
-            // 收到流式广播说明该会话确实在运行，更新会话列表的“执行中”旋转标记（节流避免频繁请求）
-            const now = Date.now();
-            if (now - lastRefreshRef.current > 1500) {
-                lastRefreshRef.current = now;
-                refreshSessions();
-            }
+            // 收到流式广播就说明该会话在运行，直接把列表里的 running 标记置上。
+            // 之前这里是每 1.5s 拉一次完整会话列表，只为刷新这个布尔标记，代价过大。
+            markSessionRunning(ctx.session_id, true);
         };
         const handleChatEnd = (data: any) => {
             const ctx = data?.context || {};

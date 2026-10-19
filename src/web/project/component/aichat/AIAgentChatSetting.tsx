@@ -848,7 +848,7 @@ export default function AIAgentChatSetting() {
                                               {/*    confirm_dell_all({*/}
                                               {/*        sub_title:"确认重建索引吗",*/}
                                               {/*        confirm_fun:()=>{*/}
-                                              {/*            ai_agentHttp.post("ai_load_restart", {});*/}
+                                              {/*            ai_agentHttp.post("docs_load_restart", {});*/}
                                               {/*            NotySucess("ok")*/}
                                               {/*        }*/}
                                               {/*    })*/}
@@ -858,7 +858,7 @@ export default function AIAgentChatSetting() {
                                               {/*    confirm_dell_all({*/}
                                               {/*        sub_title:"关闭索引",*/}
                                               {/*        confirm_fun:()=>{*/}
-                                              {/*            ai_agentHttp.post("ai_load_close", {});*/}
+                                              {/*            ai_agentHttp.post("docs_load_close", {});*/}
                                               {/*            NotySucess("ok")*/}
                                               {/*        }*/}
                                               {/*    })*/}
@@ -895,7 +895,7 @@ export default function AIAgentChatSetting() {
                                                     confirm_dell_all({
                                                         sub_title:"手动加载",
                                                         confirm_fun:()=>{
-                                                            ai_agentHttp.post("ai_load_one_file", {
+                                                            ai_agentHttp.post("docs_load_file", {
                                                                 param_path:item.dir
                                                             });
                                                             NotySuccess("ok")
@@ -907,7 +907,7 @@ export default function AIAgentChatSetting() {
                                                     confirm_dell_all({
                                                         sub_title:"从索引删除",
                                                         confirm_fun:()=>{
-                                                            ai_agentHttp.post("ai_del", {
+                                                            ai_agentHttp.post("docs_del", {
                                                                 param_path:item.dir
                                                             });
                                                             NotySuccess("ok")

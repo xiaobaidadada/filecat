@@ -187,14 +187,15 @@ export class BackgroundProcessManager {
     /**
      * 获取某个进程的输出内容
      * @param pid 进程 ID
-     * @returns 输出文件路径，如果进程不存在则返回 null
+     * @returns 输出文件路径与所属会话，如果进程不存在则返回 null
      */
-    public getProcessOutput(pid: number): { output_file: string; running: boolean } | null {
+    public getProcessOutput(pid: number): { output_file: string; running: boolean; session_id: string } | null {
         const record = this.processes.get(pid);
         if (!record) return null;
         return {
             output_file: record.output_file,
             running: record.running,
+            session_id: record.session_id,
         };
     }
 

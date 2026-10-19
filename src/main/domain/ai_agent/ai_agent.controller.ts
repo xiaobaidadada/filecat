@@ -644,15 +644,18 @@ export class Ai_AgentController {
         return ai_agentService.docs_info
     }
 
-    @Post("/ai_load_one_file")
-    async ai_load_one_file(@Req() ctx, @Body() data: any) {
+    // 知识库：把单个文件/目录加入 AI 知识库索引
+    @Post("/docs_load_file")
+    async docs_load_file(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        // 路径校验：只能加载当前用户可访问范围内的文件，避免越权读取服务器任意文件
+        userService.check_user_path(ctx.headers.authorization, data?.param_path);
         await ai_agentService.load_one_file(ctx.headers.authorization, data.param_path)
         return  Sucess("")
     }
 
-    // @Post("/ai_load_restart")
-    // async ai_load_restart(@Req() ctx, @Body() data: any) {
+    // @Post("/docs_load_restart")
+    // async docs_load_restart(@Req() ctx, @Body() data: any) {
     //     userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
     //     await ai_agentService.close_index()
     //     await ThreadsFilecat.restart()
@@ -661,8 +664,8 @@ export class Ai_AgentController {
     //     return  Sucess("")
     // }
 
-    // @Post("/ai_load_close")
-    // async ai_load_close(@Req() ctx, @Body() data: any) {
+    // @Post("/docs_load_close")
+    // async docs_load_close(@Req() ctx, @Body() data: any) {
     //     userService.check_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
     //     await ai_agentService.close_index()
     //     Wss.sendToAllClient(CmdType.ai_load_info, ai_agentService.docs_info,ai_agentService.all_wss_set)
@@ -688,9 +691,12 @@ export class Ai_AgentController {
         return Sucess("")
     }
 
-    @Post("/ai_del")
-    async ai_del(@Req() ctx, @Body() data: any) {
+    // 知识库：把单个文件/目录从索引中删除（只删索引，不删磁盘文件）
+    @Post("/docs_del")
+    async docs_del(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        // 路径校验：只能操作当前用户可访问范围内的文件索引
+        userService.check_user_path(ctx.headers.authorization, data?.param_path);
         ai_agentService.delete_index_with_progress(data.param_path).catch(console.error);
         return  Sucess("")
     }
@@ -708,19 +714,19 @@ export class Ai_AgentController {
     /**
      * 获取所有供应商及其可选模型（聊天主页模型选择器使用）。
      * 仅返回已开启且配置了模型列表的供应商，且**不含 token/key 等敏感字段**。
+     *
+     * 权限：只需要「AI 聊天页」权限即可读取。
+     * 这是只读的展示数据（供应商备注/地址/模型名），任何能进聊天页的用户都要能拿到，
+     * 否则模型选择器会空白；能否**切换**由 set_active_model 单独校验 ai_model_switch。
      */
     @Get("/public_models")
     async publicModels(@Req() ctx) {
-        if (userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_model_switch, false)) {
-            return Sucess([]);
-        }
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         return Sucess(ai_agentService.get_public_models());
     }
 
     /**
-     * 切换当前激活的供应商与模型（前端模型选择器调用）
-     * body: { index: number, model_name: string }
-     * 语义：将指定供应商 open=true 并设置其 model，其余供应商 open=false。
+     * 切换当前激活的供应商与模型（前端模型选择器调用） 所有用户公用一个模型
      * 权限：拥有「允许切换 AI 模型」或「AI 配置」任一即可。
      */
     @Post("/set_active_model")
@@ -739,13 +745,36 @@ export class Ai_AgentController {
 
     // ===== AI 后台进程管理 WS 路由 =====
 
+    /**
+     * 校验某个后台进程是否属于当前登录用户，是则返回进程记录，否则返回 null。
+     * 进程记录只带 session_id，而 session 是按用户隔离的，因此用会话归属者反查。
+     */
+    private check_bg_process_owner(token: string, pid: number) {
+        const record = backgroundProcessManager.getProcessOutput(pid);
+        if (!record) return null;
+        const user = userService.get_user_info_by_token(token);
+        // root 可以管理所有进程；普通用户只能碰自己会话下的进程
+        if (user?.is_root) return record;
+        const owner = aiAgentMemoryService.find_owner_by_session_id(record.session_id);
+        if (!owner || `${owner}` !== `${user?.id}`) return null;
+        return record;
+    }
+
     /** 客户端请求后台进程列表 */
     @msg(CmdType.ai_bg_process_list_req)
     async aiBgProcessList(data: WsData<any>) {
         const wss = data.wss as Wss;
         userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(wss.token);
         const ctx = data.context || {};
-        const processes = backgroundProcessManager.listProcesses(ctx.session_id || undefined);
+        // 普通用户只能看到自己会话下的进程，避免跨用户窥探他人命令
+        let processes = backgroundProcessManager.listProcesses(ctx.session_id || undefined);
+        if (!user?.is_root) {
+            processes = processes.filter((it) => {
+                const owner = aiAgentMemoryService.find_owner_by_session_id(it.session_id);
+                return owner && `${owner}` === `${user?.id}`;
+            });
+        }
         return { processes };
     }
 
@@ -756,9 +785,10 @@ export class Ai_AgentController {
         userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const ctx = data.context || {};
         const { pid } = ctx;
-        const result = backgroundProcessManager.getProcessOutput(pid);
+        // 归属校验：非 root 用户不能读取他人会话进程的输出
+        const result = this.check_bg_process_owner(wss.token, pid);
         if (!result) {
-            return { success: false, message: `进程 PID=${pid} 不存在或已被清理。` };
+            return { success: false, message: `进程 PID=${pid} 不存在或无权访问。` };
         }
         let output = "";
         try {
@@ -784,6 +814,10 @@ export class Ai_AgentController {
         userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
         const ctx = data.context || {};
         const { pid } = ctx;
+        // 归属校验：非 root 用户不能终止他人会话的进程
+        if (!this.check_bg_process_owner(wss.token, pid)) {
+            return { success: false, pid, message: "进程不存在或无权操作" };
+        }
         const killed = backgroundProcessManager.killProcess(pid);
         return { success: killed, pid, message: killed ? "进程已终止" : "进程不存在或已退出" };
     }
