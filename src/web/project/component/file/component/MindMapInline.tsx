@@ -12,6 +12,9 @@ import {register_mind_themes} from "./md_editor/mind_theme";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import PromptInput from "../../../../meta/component/PromptInput";
+import {FileMenuItem, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {Icon} from "../../../../meta/component/Button";
+import {MaterialIcon} from "material-icons";
 
 // 补充主题要在实例化前注册好（库只有 default 一套内置主题）
 register_mind_themes(MindMap);
@@ -32,25 +35,36 @@ export type MindHandle = {
     is_dirty: () => boolean;
 };
 
-/** 右键菜单项：命令名 + 图标 + 文案 key + 需要的入参  */
-type MindMenu = {
+/** 节点右键菜单定义。库不提供菜单 UI，只提供命令，菜单由我们自己渲染。
+ *  cmd 是命令名，children 有值时渲染成二级菜单 */
+type MindMenuDef = {
     cmd: string;
-    icon: string;
+    icon: MaterialIcon;
     label: string;
-    /** 有该值时作为 execCommand 的额外参数 */
-    arg?: () => any;
+    children?: MindMenuDef[];
 };
 
-/** 节点右键菜单。库不提供菜单 UI，只提供命令，菜单由我们自己渲染 */
-const NODE_MENU: MindMenu[] = [
+const NODE_MENU: MindMenuDef[] = [
     {cmd: "INSERT_CHILD_NODE", icon: "account_tree", label: "添加子节点"},
     {cmd: "INSERT_NODE", icon: "subdirectory_arrow_right", label: "添加同级节点"},
     {cmd: "INSERT_PARENT_NODE", icon: "arrow_upward", label: "插入父节点"},
     {cmd: "CUT_NODE", icon: "content_cut", label: "剪切"},
     {cmd: "PASTE_NODE", icon: "content_paste", label: "粘贴"},
     {cmd: "REMOVE_NODE", icon: "delete", label: "删除节点"},
-    {cmd: "SET_NODE_NOTE", icon: "sticky_note_2", label: "节点备注"},
-    {cmd: "SET_NODE_TAG", icon: "sell", label: "节点标签"},
+    // 插入类集中在子菜单，对应删除项放在同一个子菜单里成对出现
+    {
+        cmd: "INSERT_GROUP", icon: "add_circle_outline", label: "插入",
+        children: [
+            {cmd: "SET_NODE_ICON", icon: "emoji_emotions", label: "插入图标"},
+            {cmd: "REMOVE_NODE_ICON", icon: "format_clear", label: "删除图标"},
+            {cmd: "SET_NODE_NOTE", icon: "sticky_note_2", label: "节点备注"},
+            {cmd: "REMOVE_NODE_NOTE", icon: "speaker_notes_off", label: "删除备注"},
+            {cmd: "SET_NODE_TAG", icon: "sell", label: "节点标签"},
+            {cmd: "REMOVE_NODE_TAG", icon: "label_off", label: "删除标签"},
+            {cmd: "SET_NODE_HYPERLINK", icon: "link", label: "插入超链接"},
+            {cmd: "REMOVE_NODE_HYPERLINK", icon: "link_off", label: "删除超链接"},
+        ],
+    },
     // 概要：选中多个同级节点后执行，会生成一个跨这些节点的新节点
     {cmd: "ADD_GENERALIZATION", icon: "call_merge", label: "添加概要"},
     {cmd: "REMOVE_GENERALIZATION", icon: "call_split", label: "删除概要"},
@@ -123,10 +137,6 @@ export default function MindMapEditor(props: Props) {
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
     /** 当前布局，跟随导图数据里的 layout */
     const [layout, setLayout] = useState("mindMap");
-    /** 图标面板是否展开 */
-    const [iconPanelOpen, setIconPanelOpen] = useState(false);
-    /** 图标要插入到哪个节点（点面板时记下来，避免后续激活节点变化） */
-    const [iconTarget, setIconTarget] = useState<any>(null);
     /** 右键菜单：位置 + 目标节点 */
     const [menu, setMenu] = useState<{ x: number; y: number; node: any } | null>(null);
 
@@ -354,70 +364,53 @@ export default function MindMapEditor(props: Props) {
         return node;
     };
 
-    /** 在画布下方弹出图标面板，点图标插入到选中节点 */
-    const toggleIconPanel = () => {
-        const node = active_node();
-        if (!node) {
-            return;
-        }
-        setIconTarget(node);
-        setIconPanelOpen(v => !v);
+    /** 文本类字段的弹框配置：插入时预填已有值，删除时直接清空 */
+    const TEXT_FIELDS: Record<string, { title: string, placeholder: string, get: (node: any) => string }> = {
+        SET_NODE_NOTE: {
+            title: "节点备注",
+            placeholder: "请输入节点备注",
+            get: (node) => node.getData("note") || "",
+        },
+        SET_NODE_TAG: {
+            title: "节点标签",
+            placeholder: "请输入节点标签，多个用逗号分隔",
+            get: (node) => (node.getData("tag") || []).join(","),
+        },
+        SET_NODE_HYPERLINK: {
+            title: "插入超链接",
+            placeholder: "请输入链接地址",
+            get: (node) => node.getData("hyperlink") || "",
+        },
     };
 
-    /** 从图标列表里选一个加到节点。
-     *  库里 SET_NODE_ICON 存的是 name 字符串，且必须是 `type_图标名` 格式
-     *  （渲染时按 _ 拆开去图标表里查），不是对象。 */
-    const pickIcon = (group: any, item: any) => {
-        const node = iconTarget;
-        if (!node) {
-            return;
-        }
-        const exist = Array.isArray(node.getData("icon")) ? node.getData("icon") : [];
-        mindRef.current.execCommand("SET_NODE_ICON", node, [...exist, `${group.type}_${item.name}`]);
-        setIconPanelOpen(false);
-        markDirty();
-    };
-
-    /** 弹出输入框设置节点备注或标签，工具栏和右键菜单共用 */
+    /** 弹框里输入备注 / 标签 / 超链接，确认后写回节点 */
     const edit_node_text = (node: any, cmd: string) => {
         if (!node) {
             return;
         }
-        const is_note = cmd === "SET_NODE_NOTE";
-        const is_tag = cmd === "SET_NODE_TAG";
-        const is_link = cmd === "SET_NODE_HYPERLINK";
-        let input = "";
-        if (is_note) {
-            input = node.getData("note") || "";
-        }
-        if (is_tag) {
-            input = (node.getData("tag") || []).join(",");
-        }
-        const title = is_note ? t("节点备注") : is_tag ? t("节点标签") : t("插入超链接");
-        const placeholder = is_note ? t("请输入节点备注")
-            : is_tag ? t("请输入节点标签，多个用逗号分隔")
-                : t("请输入链接地址");
+        const cfg = TEXT_FIELDS[cmd];
+        const init = cfg.get(node);
         // 输入值暂存在局部变量，点确认时再统一提交
-        let value = input;
+        let value = init;
         set_prompt_card({
             open: true,
-            title: title,
+            title: t(cfg.title),
             context_div: (
                 <PromptInput
-                    initValue={input}
-                    placeholder={placeholder}
+                    initValue={init}
+                    placeholder={t(cfg.placeholder)}
                     onChange={(v) => value = v}
                 />
             ),
             confirm: () => {
                 const v = value.trim();
-                if (is_note) {
-                    mindRef.current.execCommand("SET_NODE_NOTE", node, v);
-                } else if (is_tag) {
-                    mindRef.current.execCommand("SET_NODE_TAG", node,
+                if (cmd === "SET_NODE_TAG") {
+                    mindRef.current.execCommand(cmd, node,
                         v.split(/[,，]/).map(s => s.trim()).filter(Boolean));
-                } else if (is_link) {
-                    mindRef.current.execCommand("SET_NODE_HYPERLINK", node, v, v);
+                } else if (cmd === "SET_NODE_HYPERLINK") {
+                    mindRef.current.execCommand(cmd, node, v, v);
+                } else {
+                    mindRef.current.execCommand(cmd, node, v);
                 }
                 set_prompt_card({open: false});
                 markDirty();
@@ -426,10 +419,54 @@ export default function MindMapEditor(props: Props) {
         });
     };
 
-    /** 给选中节点加超链接 */
-    const insertHyperlink = () => {
-        edit_node_text(active_node(), "SET_NODE_HYPERLINK");
+    /** 弹框里选图标，点一个直接写入节点 */
+    const pick_icon = (node: any) => {
+        if (!node) {
+            return;
+        }
+        const exist = Array.isArray(node.getData("icon")) ? node.getData("icon") : [];
+        set_prompt_card({
+            open: true,
+            title: t("插入图标"),
+            context_div: (
+                <div className="prompt-icon-list">
+                    {MIND_ICONS.flatMap((group: any) =>
+                        (group.list || []).map((it: any, i: number) => (
+                            <button type="button" key={group.type + i} className="prompt-icon-list__item"
+                                    title={it.name}
+                                    dangerouslySetInnerHTML={{__html: it.icon}}
+                                    onClick={() => {
+                                        // 库里存的是 `type_图标名` 字符串，渲染时按 _ 拆开查图标表
+                                        mindRef.current.execCommand("SET_NODE_ICON", node,
+                                            [...exist, `${group.type}_${it.name}`]);
+                                        set_prompt_card({open: false});
+                                        markDirty();
+                                    }}/>
+                        ))
+                    )}
+                </div>
+            ),
+            cancel: () => set_prompt_card({open: false}),
+        });
     };
+
+    /** 删除类命令：清空对应字段，不需要用户输入 */
+    const remove_node_data = (node: any, cmd: string) => {
+        if (!node) {
+            return;
+        }
+        if (cmd === "REMOVE_NODE_ICON") {
+            mindRef.current.execCommand("SET_NODE_ICON", node, []);
+        } else if (cmd === "REMOVE_NODE_NOTE") {
+            mindRef.current.execCommand("SET_NODE_NOTE", node, "");
+        } else if (cmd === "REMOVE_NODE_TAG") {
+            mindRef.current.execCommand("SET_NODE_TAG", node, []);
+        } else if (cmd === "REMOVE_NODE_HYPERLINK") {
+            mindRef.current.execCommand("SET_NODE_HYPERLINK", node, "", "");
+        }
+        markDirty();
+    };
+
 
     /** 添加概要：把选中的多个同级节点合并到一个新节点。
      *  库的 ADD_GENERALIZATION 无参调用即可（内部读 activeNodeList），
@@ -489,8 +526,19 @@ export default function MindMapEditor(props: Props) {
         return () => el.removeEventListener("contextmenu", onCtx, true);
     }, []);
 
+    /** 把菜单定义转成项目 Dropdown 需要的结构，文案在这里翻译 */
+    const menu_items = (defs: MindMenuDef[]): any[] => defs.map(it => ({
+        v: it.cmd,
+        r: (
+            <div className={"common-tag-center mind-menu-row"}>
+                <Icon icon={it.icon} not_use_icon_style={true}/>
+                <span>{t(it.label)}</span>
+            </div>
+        ),
+        items: it.children ? menu_items(it.children) : undefined,
+    }));
     /** 执行菜单里的命令 */
-    const run_menu = (item: MindMenu) => {
+    const run_menu = (cmd: string) => {
         const mm = mindRef.current;
         const m = menu;
         if (!mm || !m) {
@@ -498,17 +546,27 @@ export default function MindMapEditor(props: Props) {
         }
         setMenu(null);
         // 概要命令内部读 activeNodeList，不能传节点进去
-        if (item.cmd === "ADD_GENERALIZATION" || item.cmd === "REMOVE_GENERALIZATION") {
-            mm.execCommand(item.cmd);
+        if (cmd === "ADD_GENERALIZATION" || cmd === "REMOVE_GENERALIZATION") {
+            mm.execCommand(cmd);
             markDirty();
             return;
         }
-        // 备注 / 标签需要用户输入，走全局弹框
-        if (item.cmd === "SET_NODE_NOTE" || item.cmd === "SET_NODE_TAG") {
-            edit_node_text(m.node, item.cmd);
+        // 备注 / 标签 / 超链接需要用户输入，走全局弹框
+        if (cmd === "SET_NODE_NOTE" || cmd === "SET_NODE_TAG" || cmd === "SET_NODE_HYPERLINK") {
+            edit_node_text(m.node, cmd);
             return;
         }
-        mm.execCommand(item.cmd, m.node);
+        // 图标走弹框选择
+        if (cmd === "SET_NODE_ICON") {
+            pick_icon(m.node);
+            return;
+        }
+        // 删除类直接清空字段
+        if (cmd.startsWith("REMOVE_NODE_")) {
+            remove_node_data(m.node, cmd);
+            return;
+        }
+        mm.execCommand(cmd, m.node);
         markDirty();
     };
 
@@ -544,19 +602,6 @@ export default function MindMapEditor(props: Props) {
                 <button type="button" className="mind-btn" title={t("添加概要") + " (Ctrl+G)"}
                         onClick={() => addGeneralization()}>
                     <span className="material-icons">call_merge</span>
-                </button>
-                <span className="mind-toolbar__sep"/>
-                <button type="button" className="mind-btn" title={t("插入图标")}
-                        onClick={() => toggleIconPanel()}>
-                    <span className="material-icons">emoji_emotions</span>
-                </button>
-                <button type="button" className="mind-btn" title={t("插入超链接")}
-                        onClick={() => insertHyperlink()}>
-                    <span className="material-icons">link</span>
-                </button>
-                <button type="button" className="mind-btn" title={t("节点备注")}
-                        onClick={() => edit_node_text(active_node(), "SET_NODE_NOTE")}>
-                    <span className="material-icons">sticky_note_2</span>
                 </button>
                 <span className="mind-toolbar__sep"/>
                 <span className="mind-toolbar__zoom">{scale}%</span>
@@ -622,27 +667,10 @@ export default function MindMapEditor(props: Props) {
                 {loading && <div className="mind-mask">Loading...</div>}
                 {error && <div className="mind-mask">{error}</div>}
                 {menu && (
-                    <div className="mind-menu" style={{left: menu.x, top: menu.y}}>
-                        {NODE_MENU.map(it => (
-                            <button type="button" key={it.cmd} className="mind-menu__item"
-                                    onClick={() => run_menu(it)}>
-                                <span className="material-icons">{it.icon}</span>
-                                <span>{t(it.label)}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
-                {iconPanelOpen && (
-                    <div className="mind-icon-panel">
-                        {MIND_ICONS.flatMap((group: any) =>
-                            (group.list || []).map((it: any, i: number) => (
-                                <button type="button" key={group.type + i} className="mind-icon-panel__item"
-                                        title={it.name}
-                                        dangerouslySetInnerHTML={{__html: it.icon}}
-                                        onClick={() => pickIcon(group, it)}/>
-                            ))
-                        )}
-                    </div>
+                    <OverlayTransparent click={() => setMenu(null)}>
+                        <FileMenuItem x={menu.x} y={menu.y} items={menu_items(NODE_MENU)}
+                                      click={(cmd: string) => run_menu(cmd)}/>
+                    </OverlayTransparent>
                 )}
             </div>
         </div>

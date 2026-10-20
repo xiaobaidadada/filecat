@@ -1134,5 +1134,8 @@
   "请输入节点标签，多个用逗号分隔": "Tags eingeben, durch Kommas getrennt",
   "添加概要": "Zusammenfassung hinzufügen",
   "删除概要": "Zusammenfassung entfernen",
-  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Zuerst die Knoten auswählen (Strg halten und ziehen für Mehrfachauswahl)"
+  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Zuerst die Knoten auswählen (Strg halten und ziehen für Mehrfachauswahl)",
+  "删除图标": "Symbol entfernen",
+  "删除备注": "Notiz entfernen",
+  "删除超链接": "Link entfernen"
 }

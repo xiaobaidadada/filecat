@@ -1134,5 +1134,8 @@
   "请输入节点标签，多个用逗号分隔": "Saisissez les étiquettes séparées par des virgules",
   "添加概要": "Ajouter un résumé",
   "删除概要": "Supprimer le résumé",
-  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Sélectionnez d'abord les nœuds (Ctrl + glisser pour multisélection)"
+  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Sélectionnez d'abord les nœuds (Ctrl + glisser pour multisélection)",
+  "删除图标": "Supprimer l'icône",
+  "删除备注": "Supprimer la note",
+  "删除超链接": "Supprimer le lien"
 }

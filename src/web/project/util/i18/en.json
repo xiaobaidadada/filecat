@@ -1138,5 +1138,8 @@
   "请输入节点标签，多个用逗号分隔": "Enter tags, separated by commas",
   "添加概要": "Add summary",
   "删除概要": "Remove summary",
-  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Select the nodes to merge first (hold Ctrl and drag to multi-select)"
+  "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Select the nodes to merge first (hold Ctrl and drag to multi-select)",
+  "删除图标": "Remove icon",
+  "删除备注": "Remove note",
+  "删除超链接": "Remove link"
 }
