@@ -1417,6 +1417,136 @@ line.git-log__graph-edge {
     flex: 1;
 }
 
+/* 工具栏分组之间的竖分隔线 */
+.mind-toolbar__sep {
+    width: 1px;
+    height: 1.1rem;
+    margin: 0 .25rem;
+    background: var(--divider, #e8eaed);
+    flex-shrink: 0;
+}
+
+/* 第二行工具栏（结构/连线/主题）比主工具栏矮一些 */
+.mind-toolbar--sub {
+    padding: .15rem .4rem;
+}
+
+.mind-select {
+    height: 1.6rem;
+    padding: 0 .3rem;
+    border: 1px solid var(--divider, #e8eaed);
+    border-radius: 3px;
+    background: var(--surfacePrimary, #fff);
+    color: var(--textPrimary, #202124);
+    font-size: .76rem;
+    cursor: pointer;
+    max-width: 8rem;
+}
+
+.mind-select:hover {
+    border-color: var(--blue, #1a73e8);
+}
+
+/* 图标选择面板，浮在画布左下角 */
+.mind-icon-panel {
+    position: absolute;
+    left: .5rem;
+    bottom: .5rem;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 1.9rem);
+    gap: .15rem;
+    max-width: 16rem;
+    max-height: 40%;
+    overflow-y: auto;
+    padding: .3rem;
+    border: 1px solid var(--divider, #e8eaed);
+    border-radius: 4px;
+    background: var(--surfacePrimary, #fff);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
+}
+
+.mind-icon-panel__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: .15rem;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--textPrimary, #202124);
+}
+
+.mind-icon-panel__item:hover {
+    background: var(--hover, rgba(0, 0, 0, .06));
+}
+
+/* simple-mind-map 富文本节点：库没有重置 <p> 的默认 margin（16px 0），
+   会把 foreignObject 里的文字顶出可视区，只剩省略号残影，这里统一清掉 */
+.mind-mount .smm-richtext-node-wrap p {
+    margin: 0;
+}
+
+.mind-mount .smm-richtext-node-wrap > * {
+    margin: 0;
+}
+
+.mind-icon-panel__item svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* 弹框里的一行输入 + 确认（meta/component/PromptInput） */
+.prompt-input {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    min-width: 20rem;
+}
+
+.prompt-input__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 节点右键菜单（库只提供命令，菜单 UI 由这里渲染） */
+.mind-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 8.5rem;
+    padding: .2rem 0;
+    border: 1px solid var(--divider, #e8eaed);
+    border-radius: 4px;
+    background: var(--surfacePrimary, #fff);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .16);
+}
+
+.mind-menu__item {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    width: 100%;
+    padding: .3rem .6rem;
+    border: 0;
+    background: transparent;
+    color: var(--textPrimary, #202124);
+    font-size: .8rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mind-menu__item:hover {
+    background: var(--hover, rgba(0, 0, 0, .06));
+}
+
+.mind-menu__item .material-icons {
+    font-size: 1rem;
+    color: var(--textSecondary, #5f6368);
+}
+
 .mind-toolbar__zoom {
     min-width: 3.2rem;
     text-align: center;

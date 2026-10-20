@@ -87,6 +87,11 @@ module.exports = {
         // .mjs 不能省：mermaid 等包的 exports 直接指向 .mjs 产物，
         // webpack 按这份扩展名列表去找入口，缺了就会报 Can't resolve
         extensions: ['.tsx', '.ts', '.js', '.jsx', '.mjs'],
+        fallback: {
+            // simple-mind-map 导出 xmind 的插件依赖 sax，sax 引入了 node 的 stream；
+            // 浏览器端走不到那条路径，给个空实现即可
+            stream: false,
+        },
     },
     plugins: [
         new HtmlWebpackPlugin({

@@ -37,7 +37,7 @@ function load_mind_map(): Promise<any> {
     if (!mind_task) {
         // JS 和样式一起动态加载，没有思维导图的文档不会下载它们
         mind_task = Promise.all([
-            import("simple-mind-map"),
+            import("simple-mind-map/full.js"),
             import("simple-mind-map/dist/simpleMindMap.esm.css"),
         ]).then(([mod]) => mod.default);
     }
@@ -79,12 +79,13 @@ export function to_simple_mind_data(input: any): any {
     if (input.data?.nodeData) {
         return convert_node_data(input.data.nodeData);
     }
-    // 本库格式：root 下是一个节点对象（含 data.text）
+    // 本库完整数据格式：{layout, theme, view, root}
+    // 外层的布局/主题/视图必须一起保留，否则每次打开都会退回默认
     if (input.root && typeof input.root === "object") {
         if (input.root.data) {
-            return input.root;
+            return input;
         }
-        return convert_legacy_node(input.root);
+        return {...input, root: convert_legacy_node(input.root)};
     }
     // 可能直接就是节点对象
     if (input.data && typeof input.data === "object") {
@@ -193,13 +194,17 @@ export async function prepare_mind(code: string): Promise<MindMount> {
             el.append(host);
             const mm = new MindMap({
                 el: host,
-                data: data ?? {data: {text: ""}},
+                data: data?.root ?? data ?? {data: {text: ""}},
                 // 默认只读：不能编辑节点，但可以缩放/平移查看；放大编辑时放开
                 readonly: !options?.editable,
                 // 构造期容器尺寸已就绪，可以直接自适应
                 fit: true,
                 ...MIND_ZOOM_OPTIONS,
             });
+            // 构造函数不读完整数据里的布局/主题，要单独恢复一次
+            if (data?.root) {
+                mm.setFullData(data);
+            }
             return {
                 destroy: () => {
                     destroyed = true;
