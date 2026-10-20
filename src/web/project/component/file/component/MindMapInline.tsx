@@ -467,26 +467,6 @@ export default function MindMapEditor(props: Props) {
         markDirty();
     };
 
-
-    /** 添加概要：把选中的多个同级节点合并到一个新节点。
-     *  库的 ADD_GENERALIZATION 无参调用即可（内部读 activeNodeList），
-     *  但它要求至少一个非根、非概要节点，不满足时静默无反应，这里补个提示。 */
-    const addGeneralization = () => {
-        const mm = mindRef.current;
-        if (!mm) {
-            return;
-        }
-        const list = (mm.renderer?.activeNodeList || []).filter(
-            (n: any) => !n.isRoot && !n.isGeneralization
-        );
-        if (list.length === 0) {
-            NotyFail(t("请先选中要合并的节点（按住 Ctrl 拖框可多选）"));
-            return;
-        }
-        mm.execCommand("ADD_GENERALIZATION");
-        markDirty();
-    };
-
     /** 右键菜单打开时，点击别处就关掉。
      *  用 setTimeout 注册：右键操作本身会附带一次 click，直接同步注册会立刻把菜单关掉 */
     useEffect(() => {
@@ -598,10 +578,6 @@ export default function MindMapEditor(props: Props) {
                 <button type="button" className="mind-btn" title={t("重做") + " (Ctrl+Y)"}
                         onClick={() => mindRef.current?.execCommand?.("FORWARD")}>
                     <span className="material-icons">redo</span>
-                </button>
-                <button type="button" className="mind-btn" title={t("添加概要") + " (Ctrl+G)"}
-                        onClick={() => addGeneralization()}>
-                    <span className="material-icons">call_merge</span>
                 </button>
                 <span className="mind-toolbar__sep"/>
                 <span className="mind-toolbar__zoom">{scale}%</span>
