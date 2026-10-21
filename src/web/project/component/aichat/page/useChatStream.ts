@@ -16,7 +16,7 @@ import {
     ai_agent_content_part
 } from "../../../../../common/req/filecat.ai.pojo";
 import {Message} from "./chatTypes";
-import {toUiMessages} from "./messageUtils";
+import {toUiMessages, next_msg_id} from "./messageUtils";
 import React, {useState} from 'react';
 /** 排队消息的结构 */
 interface QueuedMsg {
@@ -140,7 +140,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
             let target = chunkBubbleMap.get(chunkIndex);
             if (!target) {
-                target = { id: Date.now() + Math.random(), sender: 'bot', text: '', is_loading: true };
+                target = { id: next_msg_id(), sender: 'bot', text: '', is_loading: true };
                 newMessages.push(target);
                 chunkBubbleMap.set(chunkIndex, target);
             }
@@ -206,7 +206,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 last.text = last.text ? `${last.text}\n\n${errText}` : errText;
                 last.is_loading = false;
             } else {
-                newMessages.push({ id: Date.now() + Math.random(), sender: 'bot', text: errText });
+                newMessages.push({ id: next_msg_id(), sender: 'bot', text: errText });
             }
             if (getActiveSessionId() === sessionId) setMessages([...newMessages]);
             onDone();
@@ -251,7 +251,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         }));
 
         const userMsg: Message = {
-            id: Date.now(),
+            id: next_msg_id(),
             sender: 'user',
             text: next.text,
             attachments: next.attachments,

@@ -41,7 +41,7 @@ import {formatTokenCount} from "../../../../../common/token_counter";
 
 // ===== 拆分的子模块 =====
 import { Message, message_to_text } from "./chatTypes";
-import { toUiMessages } from "./messageUtils";
+import { toUiMessages, next_msg_id } from "./messageUtils";
 import { buildAttachments } from "./attachmentUtils";
 import { useChatStream } from "./useChatStream";
 import { handleNonCompletionsRequest } from "./RequestTypeRenderers";
@@ -180,6 +180,10 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     const autoScrollRef = useRef(true);
     /** 当前活动会话在“接收其它页面广播”时的实时 assistant 气泡 id（用于追加文本） */
     const liveBubbleIdRef = useRef<number | null>(null);
+    // 本轮实时气泡：chunk_index -> 气泡 id。
+    // 后端每轮 LLM 输出带一个 chunk_index，必须按它精确命中气泡；
+    // 只按“末尾 bot 气泡”猜会在刷新后（live_messages 已渲染多个气泡）错位。
+    const chunkBubbleRef = useRef(new Map<number, number>());
     /** 当前已订阅(绑定 ws 与 session)的会话 id；用于切换/结束/卸载时退订 */
     const subscribedSessionRef = useRef<string | null>(null);
     /**
@@ -380,7 +384,15 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         if (session.live_messages?.length) {
             messages = [...messages,...session.live_messages];
         }
-        setMessages( toUiMessages(messages));
+        const uiMessages = toUiMessages(messages);
+        // live_messages 排在末尾，按下标顺序对应各轮 chunk_index，登记后增量才能续写同一个气泡
+        chunkBubbleRef.current.clear();
+        const liveCount = session.live_messages?.length ?? 0;
+        for (let i = 0; i < liveCount; i++) {
+            const m = uiMessages[uiMessages.length - liveCount + i];
+            if (m) chunkBubbleRef.current.set(i, m.id);
+        }
+        setMessages(uiMessages);
         setSelectedSysPromptId(session.sys_prompt_id ?? "");
         if (switch_menu) {
             set_ai_session_collapsed(false);
@@ -1015,20 +1027,35 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const sendingSessionIdNow = () => sendingSessionIdRef.current;
 
         // 追加/更新实时文本到当前查看的会话
-        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any, notice?: boolean) => {
+        // chunk_index 由后端给出（每轮 LLM 输出一个），据此精确定位气泡，实现多气泡流式与刷新后续写
+        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any, notice?: boolean, chunk_index = 0) => {
             if (!activeId() || activeId() !== sessionId) return;
             // 本地正在发送该会话时，由 useChatStream 负责渲染，这里跳过避免重复
             if (sendingSessionIdNow() === sessionId) return;
 
             setMessages(prev => {
-                const last = prev[prev.length - 1];
-                // 末尾是本轮正在写入的 bot 气泡就复用它，否则新开一个
-                const target = last && last.sender === 'bot' ? { ...last } : {
-                    id: Date.now() + Math.random(),
-                    sender: 'bot' as const,
-                    text: '',
-                };
-                // 临时提示：直接替换文字，不产生任何真实内容
+                const map = chunkBubbleRef.current;
+                // 临时提示单独占一个 key，避免提示文字混进正文气泡
+                const key = notice ? -(chunk_index + 1) : chunk_index;
+                let list = prev;
+
+                // 收到真实内容，先移除同轮的临时提示气泡
+                if (!notice) {
+                    const temp_i = -(chunk_index + 1)
+                    const noticeId = map.get(temp_i);
+                    if (noticeId !== undefined) {
+                        list = list.filter(m => m.id !== noticeId);
+                        map.delete(temp_i);
+                    }
+                }
+
+                const targetId = map.get(key);
+                const idx = targetId === undefined ? -1 : list.findIndex(m => m.id === targetId);
+                const target = idx === -1
+                    ? { id: next_msg_id(), sender: 'bot' as const, text: '' }
+                    : { ...list[idx] };
+                if (idx === -1) map.set(key, target.id);
+
                 if (notice) {
                     target.text = text;
                     target.is_loading = true;
@@ -1038,12 +1065,15 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 }
                 if (tool_call_ends) {
                     target.content_list = [{ tool_call_ends, content: target.text, role: "assistant" }];
+                    target.is_loading = false;
                 }
                 liveBubbleIdRef.current = target.id;
                 if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
-                return last && last.sender === 'bot'
-                    ? [...prev.slice(0, -1), target]
-                    : [...prev, target];
+
+                if (idx === -1) return [...list, target];
+                const next = list.slice();
+                next[idx] = target;
+                return next;
             });
         };
 
@@ -1053,6 +1083,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
             // 无论是否是当前活动会话，结束都要清掉列表里的 running 标记
             markSessionRunning(sessionId, false);
+            chunkBubbleRef.current.clear();
             if (activeId() && activeId() === sessionId) {
                 liveBubbleIdRef.current = null;
                 setActiveSessionRunning(false);
@@ -1089,7 +1120,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             if (!ctx.session_id) return; // 无会话 id（老版本）不处理
 
             // 处理消息
-            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends, ctx.notice);
+            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends, ctx.notice, ctx.chunk_index);
 
             // 收到流式广播就说明该会话在运行，直接把列表里的 running 修改会话运行状态
             markSessionRunning(ctx.session_id, true);
