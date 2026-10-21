@@ -261,7 +261,8 @@
 
 /* 消息气泡 - Codex 风格 */
 .chat-message {
-    padding: 0.75rem 1rem;
+    /* 上下预留悬浮操作条空间：按钮在气泡内部，鼠标不会移出导致 hover 丢失，也不会压住内容 */
+    padding: 2rem 1rem 1.75rem;
     border-radius: 0;
     max-width: 100%;
     word-break: break-word;
@@ -438,8 +439,9 @@
 
 .message-actions {
     position: absolute;
-    right: 8px;
-    top: 0px;
+    /* 落在气泡内顶部的预留区（.chat-message 的 padding-top），鼠标不会移出气泡导致 hover 丢失 */
+    right: 0.5rem;
+    top: 0.3rem;
     display: flex;
     gap: 4px;
     opacity: 0;
@@ -447,6 +449,7 @@
     transition: opacity 0.15s ease, transform 0.15s ease;
     z-index: 5;
 }
+
 
 .chat-message:hover .message-actions {
     opacity: 1;
@@ -526,8 +529,9 @@
     align-items: center;
     gap: 4px;
     position: absolute;
-    bottom: 2px;
-    right: 4px;
+    /* 落在气泡内底部的预留区，鼠标不会移出气泡导致 hover 丢失 */
+    bottom: 0.3rem;
+    right: 0.5rem;
     height: 20px;
     margin-top: 0;
     opacity: 0;
