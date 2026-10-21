@@ -1,5 +1,3 @@
-
-
 export class ai_docs_item {
     dir: string;
     auto_load: boolean = false;
@@ -72,16 +70,16 @@ index_storage_type=memory
 `
 
 export class ai_agent_option_item {
-    value:string;
-    label:string;
+    value: string;
+    label: string;
 }
 
 export class ai_agent_option_item_extra {
-    options_agent_url_list?:ai_agent_option_item[]
-    options_agent_key_list?:ai_agent_option_item[]
-    options_agent_model_list?:ai_agent_option_item[]
+    options_agent_url_list?: ai_agent_option_item[]
+    options_agent_key_list?: ai_agent_option_item[]
+    options_agent_model_list?: ai_agent_option_item[]
 
-    options_local_file_path_prompt_list?:string[];
+    options_local_file_path_prompt_list?: string[];
 }
 
 /**
@@ -119,26 +117,26 @@ export class ai_agent_Item {
     tool_mode?: boolean = false;
 
     // show time
-    show_options?:ai_agent_option_item_extra
+    show_options?: ai_agent_option_item_extra
 
-    public static get_label_by_v(v?:string,list?:ai_agent_option_item[]) {
-        if(!v || !list?.length) return v;
+    public static get_label_by_v(v?: string, list?: ai_agent_option_item[]) {
+        if (!v || !list?.length) return v;
         for (const i of list) {
-            if(i.value === v) return i.label;
+            if (i.value === v) return i.label;
         }
         return v;
     }
 
-    public static have_label_by_v(v?:string,list?:ai_agent_option_item[]) {
-        if(!v || !list?.length) return false;
+    public static have_label_by_v(v?: string, list?: ai_agent_option_item[]) {
+        if (!v || !list?.length) return false;
         for (const i of list) {
-            if(i.value === v) return true;
+            if (i.value === v) return true;
         }
         return false;
     }
 }
 
-export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
+export class ai_agent_item_dotenv extends ai_agent_option_item_extra {
     tool_call_max = 500; // 聊天循环最大次数
     // char_max = 12000; // 单轮请求字符最大数量，多了会截断
     // messages_current_max = 100; // 聊天消息最多发送最近的多少条去请求（这些设置更能节省token）
@@ -154,6 +152,7 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra{
      *  默认开启（目前主流模型基本都支持）。 */
     support_image = true;
 }
+
 export const ai_agent_item_dotenv_default = `
 
 
@@ -370,7 +369,7 @@ export class ai_agent_tool_call_item {
     error?: string;
     /** 执行耗时（毫秒） */
     duration_ms?: number;
-    tool_call_id:string
+    tool_call_id: string
 }
 
 /**
@@ -413,7 +412,7 @@ export type ai_agent_content_image = {
 
 export type tool_call_type = {
     "id": string,
-    "type": "function"|string,
+    "type": "function" | string,
     "function": {
         "name": string,
         "arguments": string
@@ -436,7 +435,7 @@ export class ai_agent_message_item {
     content?: ai_agent_content;
     tool_call_id?: string;
     attachments?: ai_agent_message_attachment_item[];
-    tool_calls?:tool_call_type[]
+    tool_calls?: tool_call_type[]
 
     // ============ 多模态结果字段（前端自判断） ============
     /** 图片生成结果（OpenAI 格式 images/generations 的 response.data） */
@@ -448,9 +447,9 @@ export class ai_agent_message_item {
 
 
     // 临时用
-    tool_call_ends?:ai_agent_tool_call_item[];
+    tool_call_ends?: ai_agent_tool_call_item[];
     // 不给 ai 给前端
-    content_list?:ai_agent_message_item[];
+    content_list?: ai_agent_message_item[];
 
     /** 预计算的 token 数（存储时写入，压缩判断时直接读） */
     token_count?: number;
@@ -485,7 +484,7 @@ export function getContentLength(content: ai_agent_content): number {
     if (Array.isArray(content)) {
         return content.reduce((sum, part) => {
             const part_p = part
-            if(part_p.type) {
+            if (part_p.type) {
                 if (part_p.type === 'text') return sum + part_p.text.length;
                 if (part_p.type === 'image_url') return sum + (part_p.image_url.url?.length ?? 0);
             }
@@ -587,11 +586,11 @@ export class ai_rebot_item {
     /** 索引 */
     index?: number;
     /** 运行时状态 */
-    // _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
+        // _status?: 'connecting' | 'connected' | 'disconnected' | 'error';
     _status_msg?: string;
     user_id?: string;
 
-    model_index?: string|number; // 使用指定模型编号
+    model_index?: string | number; // 使用指定模型编号
 }
 
 /** 机器人配置存储结构 */
@@ -605,4 +604,17 @@ export class ai_rebot_setting {
 export class ai_long_term_memory_setting {
     /** 是否开启长期记忆 */
     open: boolean = false;
+}
+
+export class ai_chat_send_message {
+    session_id: string;
+    text?: string;
+    /** 当前消息块在本次聊天中的序号（从 0 开始递增），前端用它区分不同气泡 */
+    chunk_index?: number;
+    message?: string;
+    tool_call_ends?: ai_agent_tool_call_item[];
+    once_messages_list?: ai_agent_message_item[];
+    _interrupted?: boolean;
+    // 临时状态提示标记（正在调用/执行工具），前端据此覆盖显示而不追加正文
+    notice?: boolean;
 }

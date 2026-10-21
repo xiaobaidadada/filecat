@@ -35,7 +35,7 @@ import {
     ai_agent_content_part,
     ai_agent_usage_stats,
     ai_system_prompt_item,
-    ai_agent_Item,
+    ai_agent_Item, ai_chat_send_message,
 } from "../../../../../common/req/filecat.ai.pojo";
 import {formatTokenCount} from "../../../../../common/token_counter";
 
@@ -376,16 +376,11 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         if (subscribedSessionRef.current) {
             ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: true });
         }
-        // 若会话正在执行中，把后端返回的实时内容(未落盘 live_messages)与历史消息直接拼接渲染。
-        // 本轮 user 消息已由 session/get 并入 session.messages，live_messages 只含未落盘的 assistant 输出，
-        // 两者来源天然不重叠，直接拼接即可，无需额外去重。
-        const baseMessages = toUiMessages(session.messages);
-        if (session.running && session.live_messages?.length) {
-            setMessages([...baseMessages, ...toUiMessages(session.live_messages)]);
-        } else {
-            setMessages(baseMessages);
+        let messages = session.messages
+        if (session.live_messages?.length) {
+            messages = [...messages,...session.live_messages];
         }
-        // 恢复该会话保存的系统提示词选择（自动选中）
+        setMessages( toUiMessages(messages));
         setSelectedSysPromptId(session.sys_prompt_id ?? "");
         if (switch_menu) {
             set_ai_session_collapsed(false);
@@ -1090,11 +1085,13 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         };
 
         const handleChatMsg = (data: any) => {
-            const ctx = data?.context || {};
+            const ctx:ai_chat_send_message = data?.context || {};
             if (!ctx.session_id) return; // 无会话 id（老版本）不处理
+
+            // 处理消息
             appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends, ctx.notice);
-            // 收到流式广播就说明该会话在运行，直接把列表里的 running 标记置上。
-            // 之前这里是每 1.5s 拉一次完整会话列表，只为刷新这个布尔标记，代价过大。
+
+            // 收到流式广播就说明该会话在运行，直接把列表里的 running 修改会话运行状态
             markSessionRunning(ctx.session_id, true);
         };
         const handleChatEnd = (data: any) => {

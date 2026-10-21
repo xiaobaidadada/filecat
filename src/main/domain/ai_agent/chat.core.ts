@@ -600,17 +600,9 @@ const workMessages: ai_agent_message_list = [
             }
             workMessages.push(assistantWorkMessage);
 
-            // 没有 tool_calls，直接结束
+            // todo 没有 tool_calls，直接结束
             if (_interrupted || (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0)) {
-                // 中断保护：若对话被停止（_interrupted）时，LLM 已经返回了 tool_calls，但对应的
-                // 工具结果（tool_call_ends）并未产生。此时不应删除这些 tool_calls，而是为每个
-                // 未执行的 tool_call 构建一个“假的 callItem”（标记为被中断/未完成）填充进
-                // tool_call_ends。这样：
-                //   1. 前端工具调用面板能完整展示每个调用（包括被中断的），而不是凭空消失；
-                //   2. 落盘后 llm_normalizeMessage 也能依据 tool_call_ends / tool_calls 自动生成
-                //      对应的“被中断”tool 响应，避免“带 tool_calls 却缺 tool 响应”报错
-                //      （OpenAI: An assistant message with 'tool_calls' must be followed by tool messages...）。
-                if (_interrupted && assistantMessage.tool_calls?.length) {
+               if (_interrupted && assistantMessage.tool_calls?.length) {
                     for (const tc of assistantMessage.tool_calls) {
                         // 该 tool_call 是否已产生结果（跳过已完成的）
                         const hasEnd = (assistantMessage.tool_call_ends ?? [])

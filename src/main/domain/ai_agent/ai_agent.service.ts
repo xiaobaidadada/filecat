@@ -38,7 +38,7 @@ import {
     ai_docs_item,
     ai_docs_load_info,
     ai_docs_setting_param,
-    getContentAsString,
+    getContentAsString, ai_chat_send_message,
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
@@ -762,8 +762,10 @@ export class Ai_agentService {
      * 订阅机制：只有绑定到该会话（订阅）的连接才会收到，避免向所有连接广播。
      * @param token      用户 ws token（用于拿到该用户的连接池，再按 id 匹配订阅者）
      * @param subscriberIds 该会话的订阅连接 id 集合
+     * @param cmdType
+     * @param context
      */
-    private sendToSubscribers(token: string, subscriberIds: Set<string>, cmdType: CmdType, context: any) {
+    private sendToSubscribers(token: string, subscriberIds: Set<string>, cmdType: CmdType, context: ai_chat_send_message) {
         if (!subscriberIds?.size) return;
         const all = WsUtil.get_all_wss_by_token(token);
         if (!all?.length) return;
