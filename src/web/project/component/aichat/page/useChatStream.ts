@@ -18,12 +18,21 @@ import {
 import {Message} from "./chatTypes";
 import {toUiMessages} from "./messageUtils";
 import React, {useState} from 'react';
-
 /** 排队消息的结构 */
 interface QueuedMsg {
     text: string;
     attachments: ai_agent_message_attachment_item[];
 }
+
+/**
+ * 判断一条消息是否值得保留：用户消息永远保留；
+ * bot 消息必须有真实内容（正文 / 工具块 / 附件），否则只是个临时占位，应当丢弃。
+ */
+function has_real_content(m: Message) {
+    if (m.sender !== 'bot') return true;
+    return !!(m.text || m.content_list?.length || m.attachments?.length);
+}
+
 
 interface UseChatStreamOptions {
     /** 当前所有消息的引用（闭包内需要最新值） */
@@ -88,83 +97,63 @@ export function useChatStream(opts: UseChatStreamOptions) {
         const abortHandle = { abort: () => {} };
         abortRef.current = abortHandle;
 
-        // 创建初始加载气泡
-        const loadingMsg: Message = {
+
+        const noticeMsg: Message = {
             id: userMsg.id + 1,
             sender: 'bot',
-            text: "AI思考中...",
+            text: "AI thinking ...",
             is_loading: true,
         };
-        newMessages.push(loadingMsg);
-
-        // 同步更新到 state，供 UI 立即展示
+        newMessages.push(noticeMsg);
         setMessages([...newMessages]);
 
         const chunkBubbleMap = new Map<number, Message>();
-        let firstTextChunk = true;
-        let currentLoading = loadingMsg;
 
-        // ===== ai_chat_msg：处理流式文本 =====
+        const flush = () => {
+            if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
+        };
+
+        const drop_notice = () => {
+            const i = newMessages.indexOf(noticeMsg);
+            if (i !== -1) newMessages.splice(i, 1);
+        };
+
         const handleChatMsg = (data: WsData<any>) => {
             const ctx = data.context || {};
-            // 多会话可并行执行，广播会推给同一连接上的所有监听器；
-            // 这里必须按 session_id 过滤，否则会把别的会话的流式文本混进本会话气泡。
             if (ctx.session_id !== sessionId) return;
             const chunkText: string = ctx.text || '';
-            const tool_call_ends = ctx.tool_call_ends
+            const tool_call_ends = ctx.tool_call_ends;
             const chunkIndex: number = ctx.chunk_index ?? 0;
-            if (chunkText === '[DONE]') return;
 
-            // 普通文本
-            if (firstTextChunk) {
-                // 第一个文本块：替换加载气泡
-                firstTextChunk = false;
-                currentLoading.text = chunkText;
-                if (tool_call_ends) {
-                    currentLoading.content_list = [{
-                        tool_call_ends,
-                        content: currentLoading.text,
-                        role: "assistant"
-                    }]
-                }
-                currentLoading.is_loading = false;
-                currentLoading.chunk_index = chunkIndex;
-                chunkBubbleMap.set(chunkIndex, currentLoading);
-                // 若用户已切换会话，则不覆盖当前显示的 messages（仅维护本闭包）
-                if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
-            } else {
-                const existing = chunkBubbleMap.get(chunkIndex);
-                if (existing) {
-                    // 同一 chunk 追加文本
-                    existing.text += chunkText;
-                    if (tool_call_ends) {
-                        existing.content_list = [{
-                            tool_call_ends,
-                            content: existing.text,
-                            role: "assistant"
-                        }]
-                    }
-                    if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
-                } else {
-                    // 新的 chunk_index → 创建新气泡
-                    const newBubble: Message = {
-                        id: Date.now() + Math.random(),
-                        sender: 'bot',
-                        text: chunkText,
-                        chunk_index: chunkIndex,
-                    };
-                    if (tool_call_ends) {
-                        newBubble.content_list = [{
-                            tool_call_ends,
-                            content: newBubble.text,
-                            role: "assistant"
-                        }]
-                    }
-                    newMessages.push(newBubble);
-                    chunkBubbleMap.set(chunkIndex, newBubble);
-                    if (getActiveSessionId() === sessionId) setMessagesDebounced([...newMessages]);
-                }
+            if (ctx.notice) {
+                noticeMsg.text = chunkText;
+                noticeMsg.is_loading = true;
+                if (!newMessages.includes(noticeMsg)) newMessages.push(noticeMsg);
+                flush();
+                return;
             }
+
+            if (chunkText === '[DONE]') return;
+            if (!chunkText && !tool_call_ends) return;
+
+            drop_notice();
+
+            let target = chunkBubbleMap.get(chunkIndex);
+            if (!target) {
+                target = { id: Date.now() + Math.random(), sender: 'bot', text: '', is_loading: true };
+                newMessages.push(target);
+                chunkBubbleMap.set(chunkIndex, target);
+            }
+
+            if (chunkText) {
+                target.text = target.text + chunkText;
+                target.is_loading = false;
+            }
+            if (tool_call_ends) {
+                target.content_list = [{ tool_call_ends, content: target.text, role: "assistant" }];
+                target.is_loading = false;
+            }
+            flush();
         };
 
         // ===== ai_chat_end：清理并收尾 =====
@@ -176,25 +165,24 @@ export function useChatStream(opts: UseChatStreamOptions) {
             abortRef.current = null;
             // 只清理自己发起的会话标记（避免误清并行运行的其它会话）
             setSending(prev => prev === sessionId ? null : prev);
-            // 清理未完成的加载气泡
-            currentLoading.is_loading = false;
+            // 收尾：把本轮没产出真实内容的 bot 气泡删掉（可能只剩"AI思考中"或工具提示）
             // 本地发起时最终渲染由本 hook 负责（全局 handleEnd 会因 sendingSessionId 命中而提前返回）。
             // 若后端带回了本轮最终消息列表，直接用它重建成最终气泡（含耗时等元信息），
             // 与全局 handleEnd 的处理方式保持一致，避免两条路径渲染结果不同。
             if (getActiveSessionId() === sessionId) {
                 if (ctx.once_messages_list?.length) {
                     // once_messages_list 只含 assistant（不含用户消息）。
-                    // 用与全局 handleEnd 一致的策略：末尾是本轮临时 bot 气泡就替换它，否则追加，
-                    // 这样不会误删用户消息，也不会残留“AI思考中”占位气泡。
+                    // 末尾是本轮的 bot 气泡就替换它，否则追加。
                     const finalMsgs = toUiMessages(ctx.once_messages_list);
                     setMessages(prev => {
-                        const last = prev[prev.length - 1];
+                        const cleaned = prev.filter(has_real_content);
+                        const last = cleaned[cleaned.length - 1];
                         return last?.sender === 'bot'
-                            ? [...prev.slice(0, -1), ...finalMsgs]
-                            : [...prev, ...finalMsgs];
+                            ? [...cleaned.slice(0, -1), ...finalMsgs]
+                            : [...cleaned, ...finalMsgs];
                     });
                 } else {
-                    setMessages([...newMessages]);
+                    setMessages(newMessages.filter(has_real_content));
                 }
             }
             refreshSessions();
@@ -211,12 +199,16 @@ export function useChatStream(opts: UseChatStreamOptions) {
             abortRef.current = null;
             // 只清理自己发起的会话标记
             setSending(prev => prev === sessionId ? null : prev);
-            currentLoading.text = "AI请求出错: " + (ctx.message || '未知错误');
-            currentLoading.is_loading = false;
-            // 若用户已切换会话，则不覆盖当前显示的 messages
-            if (getActiveSessionId() === sessionId) {
-                setMessages([...newMessages]);
+            const errText = "AI request error: " + (ctx.message || '未知错误');
+            drop_notice();
+            const last = [...newMessages].reverse().find(m => m.sender === 'bot');
+            if (last) {
+                last.text = last.text ? `${last.text}\n\n${errText}` : errText;
+                last.is_loading = false;
+            } else {
+                newMessages.push({ id: Date.now() + Math.random(), sender: 'bot', text: errText });
             }
+            if (getActiveSessionId() === sessionId) setMessages([...newMessages]);
             onDone();
         };
 

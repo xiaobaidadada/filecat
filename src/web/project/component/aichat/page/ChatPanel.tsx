@@ -991,37 +991,35 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const sendingSessionIdNow = () => sendingSessionIdRef.current;
 
         // 追加/更新实时文本到当前查看的会话
-        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any) => {
+        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any, notice?: boolean) => {
             if (!activeId() || activeId() !== sessionId) return;
             // 本地正在发送该会话时，由 useChatStream 负责渲染，这里跳过避免重复
             if (sendingSessionIdNow() === sessionId) return;
 
             setMessages(prev => {
-                // 若末尾已是 bot（正被实时输出的气泡），直接追加；否则新建一个实时气泡。
                 const last = prev[prev.length - 1];
-                if (last && last.sender === 'bot') {
-                    const next = [...prev];
-                    const m = { ...last };
-                    m.text += text;
-                    if (tool_call_ends) {
-                        m.content_list = [{ tool_call_ends, content: m.text, role: "assistant" }];
-                    }
-                    next[next.length - 1] = m;
-                    liveBubbleIdRef.current = m.id;
-                    if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
-                    return next;
-                }
-                const liveMsg: Message = {
+                // 末尾是本轮正在写入的 bot 气泡就复用它，否则新开一个
+                const target = last && last.sender === 'bot' ? { ...last } : {
                     id: Date.now() + Math.random(),
-                    sender: 'bot',
-                    text,
+                    sender: 'bot' as const,
+                    text: '',
                 };
-                if (tool_call_ends) {
-                    liveMsg.content_list = [{ tool_call_ends, content: text, role: "assistant" }];
+                // 临时提示：直接替换文字，不产生任何真实内容
+                if (notice) {
+                    target.text = text;
+                    target.is_loading = true;
+                } else if (text) {
+                    target.text = target.text + text;
+                    target.is_loading = false;
                 }
-                liveBubbleIdRef.current = liveMsg.id;
+                if (tool_call_ends) {
+                    target.content_list = [{ tool_call_ends, content: target.text, role: "assistant" }];
+                }
+                liveBubbleIdRef.current = target.id;
                 if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
-                return [...prev, liveMsg];
+                return last && last.sender === 'bot'
+                    ? [...prev.slice(0, -1), target]
+                    : [...prev, target];
             });
         };
 
@@ -1045,12 +1043,14 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                     // 用最终助手内容替换“实时预览气泡”：仅当末尾确实是 bot(实时)气泡时才替换，否则直接追加，避免误删 user 消息
                     setMessages(prev => {
                         const finalMsgs = toUiMessages(once_messages_list);
-                        const last = prev[prev.length - 1];
+                        // 剔除本轮没有真实内容的占位气泡
+                        const cleaned = prev.filter(m => m.sender !== 'bot' || m.text || m.content_list?.length || m.attachments?.length);
+                        const last = cleaned[cleaned.length - 1];
                         const replaceLast = last?.sender === 'bot';
                         if (replaceLast) {
-                            return [...prev.slice(0, -1), ...finalMsgs];
+                            return [...cleaned.slice(0, -1), ...finalMsgs];
                         }
-                        return [...prev, ...finalMsgs];
+                        return [...cleaned, ...finalMsgs];
                     });
                 } else {
                     loadSession(sessionId).catch(() => {});
@@ -1063,7 +1063,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const handleChatMsg = (data: any) => {
             const ctx = data?.context || {};
             if (!ctx.session_id) return; // 无会话 id（老版本）不处理
-            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends);
+            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends, ctx.notice);
             // 收到流式广播就说明该会话在运行，直接把列表里的 running 标记置上。
             // 之前这里是每 1.5s 拉一次完整会话列表，只为刷新这个布尔标记，代价过大。
             markSessionRunning(ctx.session_id, true);

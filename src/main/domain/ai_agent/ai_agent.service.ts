@@ -937,6 +937,8 @@ export class Ai_agentService {
                         text: payload.text,
                         chunk_index: payload.chunk_index,
                         tool_call_ends: payload.tool_call_ends,
+                        // 临时状态提示标记（正在调用/执行工具），前端据此覆盖显示而不追加正文
+                        notice: payload.notice,
                     });
                 },
                 // ===== 结束推送：发送 ai_chat_end 含 meta 信息 =====
@@ -981,9 +983,18 @@ export class Ai_agentService {
             });
             // 保存错误到会话
             try {
+                // 异常退出时 run_pojo.once_messages_list 里可能已有本轮已流式输出、
+                // 已推送给前端的内容。先原样落盘，再追加错误消息，
+                // 否则用户看到的正文刷新后就消失了（只剩一条错误）。
+                const produced = run_pojo.once_messages_list ?? [];
+                const partialText = produced
+                    .map(it => getContentAsString(it.content))
+                    .filter(Boolean)
+                    .join("\n\n");
                 const errMsg: ai_agent_message_item = {
                     role: "assistant",
-                    content: errorMsg,
+                    // 已有正文时追加错误说明，避免错误信息覆盖用户已看到的内容
+                    content: partialText ? `${partialText}\n\n[error] ${errorMsg}` : errorMsg,
                 };
                 // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
                 aiAgentMemoryService.append_message_to_session(userId, session.id, errMsg);

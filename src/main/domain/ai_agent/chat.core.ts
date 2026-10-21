@@ -41,6 +41,12 @@ export interface ChatMsgPayload {
     /** 当前消息块在本次聊天中的序号（从 0 开始递增），前端用它区分不同气泡 */
     chunk_index: number;
     tool_call_ends?:ai_agent_tool_call_item[];
+    /**
+     * 临时状态提示（如「正在调用 xxx 工具」）。
+     * 仅用于前端消除等待期无反馈的问题，不会写入 assistantMessage.content，
+     * 也不会进入下一轮 LLM 上下文，避免污染对话历史。
+     */
+    notice?: boolean;
 }
 
 export interface on_end_param { once_messages_list?: ai_agent_message_item[], _interrupted?: boolean }
@@ -507,6 +513,13 @@ const workMessages: ai_agent_message_list = [
                             text: chunk.content,
                             chunk_index: globalChunkIndex
                         });
+                    } else if(typeof chunk === 'string') {
+                        assistantMessage.content += chunk;
+                        // 携带 chunk_index，让前端可以区分独立气泡
+                        on_msg({
+                            text: chunk,
+                            chunk_index: globalChunkIndex
+                        });
                     }
 
                     // ===== 2. tool_calls 流 =====
@@ -523,6 +536,15 @@ const workMessages: ai_agent_message_list = [
                                         arguments: tc.function?.arguments??""
                                     }
                                 });
+                                // 模型决定调用工具时首个 chunk 就带 name，立刻推一条状态提示。
+                                // 否则这段时间前端完全无输出，用户无法判断是在等模型还是已经卡住。
+                                if (tc.function?.name) {
+                                    on_msg({
+                                        text: `Calling tool ${tc.function.name} ...`,
+                                        chunk_index: globalChunkIndex,
+                                        notice: true
+                                    });
+                                }
                                 continue;
                             }
 
@@ -647,6 +669,12 @@ const workMessages: ai_agent_message_list = [
                         callItem.tool_args = args;
                         tool_info_value = ai_agentService.getToolInfo(toolName, args) ?? tool_info_value;
                         callItem.tool_display_name = tool_info_value.get_name?.() ?? toolName;
+                        // 工具真正开始执行时再推一次状态，覆盖长时间执行期间的空窗
+                        on_msg({
+                            text: `Running ${callItem.tool_display_name} ...`,
+                            chunk_index: globalChunkIndex,
+                            notice: true
+                        });
                         await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss, session_id);
 
                         let result;
@@ -830,14 +858,24 @@ const workMessages: ai_agent_message_list = [
                         if (event.data === '[DONE]') return;
                         try {
                             const json = JSON.parse(event.data);
-                            // 兼容 OpenAI 格式
-                            const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
-                            if (message) {
-                                props.call_data(message);
+                            //  OpenAI 格式
+                            if (json.choices) {
+                                for (const choice of json.choices) {
+                                    props.call_data(choice.delta??choice.message);
+                                }
+                            } else if(json.error) {
+                                props.call_data(event.data);
                             }
+                            // const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
+                            // if (message) {
+                            //     props.call_data(message);
+                            // } else if(json.error) {
+                            //     props.call_data(JSON.stringify(json.error));
+                            // }
                         } catch (e) {
                             // 解析失败可能是因为收到了非 JSON 的数据行，可以忽略或记录
                             console.warn("SSE 解析 JSON 失败，数据内容:", event.data);
+                            props.call_data(event.data);
                         }
                     }
                 });

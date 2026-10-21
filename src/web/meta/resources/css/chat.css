@@ -276,8 +276,14 @@
     background: #eff6ff;
     color: #1e293b;
     align-self: flex-end;
-    border-radius: 12px;
-    margin: 6px 0 6px 60px;
+    /* 按内容收缩，短消息不拉成整条色块 */
+    width: fit-content;
+    /* 长消息限制最大宽度，超过则自动换行 */
+    max-width: 80%;
+    /*padding: .5rem .9rem;*/
+    border-radius: 1.125rem;
+    /* 右侧留一点内边距，气泡不贴容器边缘 */
+    margin: .25rem 1.25rem .25rem 3rem;
     border-bottom: none;
 }
 
@@ -495,18 +501,39 @@
     text-overflow: ellipsis;
 }
 
+/* 正文容器：建立 BFC，阻止 markdown 的 <p> 默认 margin 穿透到气泡外层，
+   否则单行短消息会被上下各 15px 的 margin 撑成又矮又胖的方块 */
+.chat-message-body {
+    display: flow-root;
+}
+
+/* 正文里首个/末个段落去掉外边距，避免首尾多余留白 */
+.chat-message-body :first-child {
+    margin-top: 0;
+}
+.chat-message-body :last-child {
+    margin-bottom: 0;
+}
+
 /* 折叠时正文隐藏 */
 .chat-message.collapsed .chat-message-body {
     display: none;
 }
+
 /* 消息底部操作条：默认隐藏，鼠标悬浮消息时才显示 */
 .message-collapse-bar {
     display: flex;
     gap: 4px;
-    margin-top: 6px;
+    /* 绝对定位：默认不占文档流，否则哪怕透明也会把气泡底部撑出空白，
+       让单行短消息显得又矮又胖 */
+    position: absolute;
+    bottom: -1.5rem;
+    right: 0;
+    margin-top: 0;
     opacity: 0;
     transition: opacity 0.15s ease;
     z-index: 4;
+    pointer-events: none;
 }
 
 /* 本轮 AI 回复耗时：与「折叠/全部折叠」同排紧挨，跟随操作条一起显隐 */
@@ -522,6 +549,8 @@
 
 .chat-message:hover .message-collapse-bar {
     opacity: 1;
+    /* 显示时恢复可点击（默认设了 pointer-events: none 避免透明层挡住文字） */
+    pointer-events: auto;
 }
 
 .message-collapse-bar button {
