@@ -30,6 +30,7 @@ import {
     phase_size,
     stringify_doc,
 } from "./timeline_util";
+import {InputText, InputTextarea} from "../../../../../meta/component/Input";
 
 /**
  * 时间线编辑器（.timeline）。
@@ -1040,11 +1041,11 @@ export default function TimelineEditor(props: Props) {
                                   onClick={() => set_selected_id(null)}>close</span>
                         </div>
                         <label className="timeline-panel__label">{t("名称")}</label>
-                        <textarea className="timeline-panel__textarea" readOnly={!edit_mode} value={selected_phase.name}
-                                  onChange={(e) => update_phase(selected_phase.id, {name: e.target.value})}/>
+                        <InputTextarea width="100%" readOnly={!edit_mode} value={selected_phase.name}
+                                       handleInputChange={(v) => update_phase(selected_phase.id, {name: v})}/>
                         <label className="timeline-panel__label">{t("描述")}</label>
-                        <textarea className="timeline-panel__textarea" readOnly={!edit_mode} value={selected_phase.desc ?? ""}
-                                  onChange={(e) => update_phase(selected_phase.id, {desc: e.target.value})}/>
+                        <InputTextarea width="100%" readOnly={!edit_mode} value={selected_phase.desc ?? ""}
+                                       handleInputChange={(v) => update_phase(selected_phase.id, {desc: v})}/>
                         <label className="timeline-panel__label">{t("颜色")}</label>
                         <div className="timeline-panel__colors">
                             {TIMELINE_COLORS.map((c) => (
@@ -1119,24 +1120,24 @@ export default function TimelineEditor(props: Props) {
                                   onClick={() => set_selected_id(null)}>close</span>
                         </div>
                         <label className="timeline-panel__label">{t("标题")}</label>
-                        <input className="timeline-panel__input" value={selected.event.title}
-                               onChange={(e) => update_event(selected.event.id, {title: e.target.value})}/>
+                        <InputText width="100%" value={selected.event.title}
+                                   handleInputChange={(v) => update_event(selected.event.id, {title: v})}/>
                         <label className="timeline-panel__label">{t("描述")}</label>
-                        <textarea className="timeline-panel__textarea" readOnly={!edit_mode} value={selected.event.desc ?? ""}
-                                  onChange={(e) => update_event(selected.event.id, {desc: e.target.value})}/>
+                        <InputTextarea width="100%" readOnly={!edit_mode} value={selected.event.desc ?? ""}
+                                       handleInputChange={(v) => update_event(selected.event.id, {desc: v})}/>
                         <label className="timeline-panel__label">{t("时间")}</label>
                         <div className="timeline-panel__times">
-                            <input className="timeline-panel__input" value={selected.event.startTime ?? ""}
-                                   placeholder={t("起始时间")}
-                                   onChange={(e) => update_event(selected.event.id, {startTime: e.target.value})}/>
-                            <input className="timeline-panel__input" value={selected.event.endTime ?? ""}
-                                   placeholder={t("结束时间")}
-                                   onChange={(e) => update_event(selected.event.id, {endTime: e.target.value})}/>
+                            <InputText width="100%" value={selected.event.startTime ?? ""}
+                                       placeholder={t("起始时间")}
+                                       handleInputChange={(v) => update_event(selected.event.id, {startTime: v})}/>
+                            <InputText width="100%" value={selected.event.endTime ?? ""}
+                                       placeholder={t("结束时间")}
+                                       handleInputChange={(v) => update_event(selected.event.id, {endTime: v})}/>
                         </div>
                         <label className="timeline-panel__label">{t("图片地址")}</label>
-                        <input className="timeline-panel__input" value={selected.event.image ?? ""}
-                               placeholder="https://..."
-                               onChange={(e) => update_event(selected.event.id, {image: e.target.value})}/>
+                        <InputText width="100%" value={selected.event.image ?? ""}
+                                   placeholder="https://..."
+                                   handleInputChange={(v) => update_event(selected.event.id, {image: v})}/>
                         <label className="timeline-panel__label">{t("方向")}</label>
                         <div className="timeline-panel__seg">
                             <button type="button"

@@ -500,7 +500,7 @@
 }
 .git-commit-input:focus {
     outline: none;
-    border-color: var(--blue);
+    border-color: #d1d5db;
 }
 
 /* 操作按钮行 */
@@ -1178,7 +1178,7 @@ line.git-log__graph-edge {
 }
 .hook-item__text:focus {
     outline: none;
-    border-color: var(--blue);
+    border-color: #d1d5db;
 }
 
 /* ===== 变更列表：工具栏 / 全选 / 树形 ===== */

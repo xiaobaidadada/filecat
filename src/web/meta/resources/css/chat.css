@@ -88,8 +88,8 @@
 }
 
 .chat-session-search-input:focus {
-    border-color: var(--primary, #4f46e5);
-    box-shadow: 0 0 0 2px var(--primary-light, rgba(79, 70, 229, 0.15));
+    outline: none;
+    border-color: #d1d5db;
 }
 
 .chat-session-search-input::placeholder {
@@ -411,15 +411,13 @@
     box-sizing: border-box;
     outline: none;
     transition: border-color 0.15s ease;
-    background: #fafafa;
+    background: #fff;
 }
 
 .chat-input-area textarea.chat-input:focus,
 .chat-input-area .ace-input-container.chat-input:focus-within,
 .chat-input-area .rich-textarea.chat-input:focus {
-    border-color: var(--primary);
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+    border-color: #d1d5db;
 }
 
 /* ace 编辑器内部去掉默认背景，继承外层 */
@@ -988,8 +986,8 @@
 }
 
 .model-selector-dropdown:focus {
-    border-color: var(--primary, #4f46e5);
-    box-shadow: 0 0 0 2px var(--primary-light, rgba(79, 70, 229, 0.15));
+    outline: none;
+    border-color: #d1d5db;
 }
 
 /* ===== 批量选择模式样式 ===== */

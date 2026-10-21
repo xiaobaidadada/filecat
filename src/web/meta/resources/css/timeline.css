@@ -998,35 +998,6 @@ body.timeline-phase-dragging * {
     color: var(--textSecondary, #5f6368);
 }
 
-.timeline-panel__input,
-.timeline-panel__textarea {
-    box-sizing: border-box;
-    width: 100%;
-    padding: .3rem .4rem;
-    font-family: inherit;
-    font-size: .82rem;
-    color: var(--textPrimary, #202124);
-    background: #fff;
-    border: 1px solid var(--borderPrimary, #dadce0);
-    border-radius: 3px;
-    outline: none;
-}
-
-.timeline-panel__textarea {
-    /* 普通输入框：不自动增高、保留原生滚动；限制最大高度，避免无限向下扩展 */
-    min-height: 3.4rem;
-    max-height: 12rem;
-    resize: vertical;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.timeline-panel__input:focus,
-.timeline-panel__textarea:focus {
-    border-color: var(--blue, #1a73e8);
-}
-
 /* 左/右（上/下）方向切换 */
 .timeline-panel__seg,
 .timeline-seg {
@@ -1166,7 +1137,8 @@ body.timeline-phase-dragging * {
     gap: .5rem;
 }
 
-.timeline-panel__times .timeline-panel__input {
+.timeline-panel__times .timeline-panel__input,
+.timeline-panel__times input {
     flex: 1;
     min-width: 0;
 }

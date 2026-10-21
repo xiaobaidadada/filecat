@@ -473,8 +473,7 @@ body.rtl .card.floating .card-content .file-list {
     line-height: 28px !important;
 }
 .ace-input-container .ace_editor:focus-within {
-    border-color: var(#1677ff);
-    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+    border-color: #d1d5db;
     outline: none;
 }
 /* 隐藏 gutter（行号区） */

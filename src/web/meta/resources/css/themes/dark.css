@@ -187,11 +187,6 @@ td .input:focus {
   border: 1px solid var(--divider);
   border-radius: var(--border-radius-sm);
 }
-.input:hover,
-.input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-light);
-}
 .input--red {
   background: var(--accent-light);
   color: var(--accent);
@@ -399,9 +394,9 @@ table th {
 }
 .chat-input-area textarea:focus,
 .chat-input-area .rich-textarea.chat-input:focus {
-  border-color: var(--primary);
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.32);
   background: var(--surfaceSecondary);
-  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .chat-input-area {
@@ -459,8 +454,8 @@ table th {
 }
 
 .chat-session-search-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-light);
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.32);
 }
 .chat-session-item.active,
 .chat-session-item:hover {
@@ -555,8 +550,8 @@ table th {
   color: var(--textPrimary);
 }
 .model-selector-dropdown:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-light);
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.32);
 }
 
 /* ===== 暗黑模式 - 用量统计弹框 ===== */
