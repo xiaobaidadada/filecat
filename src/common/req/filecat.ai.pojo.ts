@@ -212,6 +212,69 @@ max_tool_content_chars=200
 support_image=true
 `
 
+/**
+ * AI 全局配置（对所有供应商生效的「默认」设置）。
+ * 每个供应商里的同名字段与这里是「合并 + 覆盖」关系，不是整段覆盖：
+ * - sys_prompt：字符串拼接，全局在前、供应商在后
+ * - json_params：k-v 合并，供应商的同名 k 覆盖全局
+ * - dotenv：k-v 合并，供应商的同名 k 覆盖全局
+ */
+export class ai_agent_global_setting {
+    /** 全局系统提示词，会拼在所有供应商 prompt 的前面 */
+    sys_prompt?: string;
+    /** 全局请求参数 JSON，作为所有供应商的默认参数 */
+    json_params?: string;
+    /** 全局额外参数（ini 风格 k-v），作为所有供应商的默认值 */
+    dotenv?: string;
+}
+
+/**
+ * 把「全局 + 供应商」的 sys_prompt 拼接起来。
+ * 两段都有时用空行分隔；只有一段时直接返回那一段。
+ */
+export function merge_sys_prompt(global_prompt?: string, item_prompt?: string): string {
+    const g = (global_prompt ?? '').trim();
+    const i = (item_prompt ?? '').trim();
+    if (!g) return i;
+    if (!i) return g;
+    return `${g}\n\n${i}`;
+}
+
+/**
+ * 把「全局 + 供应商」的 JSON 请求参数字符串合并成一个对象。
+ * 供应商的同名 k 覆盖全局；任一段解析失败只跳过那一段，不抛错。
+ */
+export function merge_json_params(global_json?: string, item_json?: string): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const raw of [global_json, item_json]) {
+        if (!raw) continue;
+        try {
+            const obj = JSON.parse(raw);
+            if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+                Object.assign(result, obj);
+            }
+        } catch {
+            // 单段格式错误不影响另一段，静默跳过
+        }
+    }
+    return result;
+}
+
+/**
+ * 把全局配置合并进一个供应商配置，返回新的对象（不改原对象）。
+ * - sys_prompt：字符串拼接
+ * - json_params：k-v 合并（供应商覆盖全局）
+ * - dotenv：不在这里处理（env 需要单独加载），由调用方先全局后供应商加载到同一对象
+ */
+export function apply_global_config(item: ai_agent_Item, global_cfg?: ai_agent_global_setting): ai_agent_Item {
+    if (!global_cfg) return item;
+    return {
+        ...item,
+        sys_prompt: merge_sys_prompt(global_cfg.sys_prompt, item.sys_prompt),
+        json_params: JSON.stringify(merge_json_params(global_cfg.json_params, item.json_params)),
+    };
+}
+
 export class ai_mcp_server_item {
     name: string;
     open: boolean = false;

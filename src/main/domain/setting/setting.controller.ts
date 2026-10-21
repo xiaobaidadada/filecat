@@ -16,7 +16,7 @@ import {ServerEvent} from "../../other/config";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {aiAgentMemoryService} from "../ai_agent/ai_agent.memory";
 import {aiAgentLongTermMemoryService} from "../ai_agent/ai_agent.long_term_memory";
-import {ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
+import {ai_agent_global_setting, ai_agent_Item, ai_mcp_server_item, ai_rebot_setting, ai_system_prompt_item} from "../../../common/req/filecat.ai.pojo";
 import {Public} from "../../other/middleware/decorator";
 import mime from "mime-types";
 import {md_editor_setting_pojo} from "../../../common/req/common.pojo";
@@ -157,6 +157,22 @@ export class SettingController {
         // 全部数据配置，需要编辑权限才能看到
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
         return Sucess(settingService.ai_agent_setting());
+    }
+
+    // AI 全局默认设置（prompt / 请求参数 json / 额外参数）—— 所有供应商共享的默认值
+    @Get("/ai_agent_global_setting")
+    ai_agent_global_setting_get(@Req() ctx) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        return Sucess(settingService.ai_agent_global_setting());
+    }
+
+    @Post("/ai_agent_global_setting/save")
+    ai_agent_global_setting_save(@Body() req: ai_agent_global_setting, @Req() ctx) {
+        userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_setting);
+        settingService.ai_agent_global_setting_save(req ?? {});
+        // 重新加载，让全局配置立刻对已开启的供应商生效
+        ai_agentService.load_key();
+        return Sucess("1");
     }
 
     // mcp 相关

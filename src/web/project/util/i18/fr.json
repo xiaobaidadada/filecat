@@ -1137,5 +1137,11 @@
   "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Sélectionnez d'abord les nœuds (Ctrl + glisser pour multisélection)",
   "删除图标": "Supprimer l'icône",
   "删除备注": "Supprimer la note",
-  "删除超链接": "Supprimer le lien"
+  "删除超链接": "Supprimer le lien",
+  "供应商设置": "Paramètres des fournisseurs",
+  "默认model": "Modèle par défaut",
+  "全局prompt": "Prompt global",
+  "全局": "Global",
+  "model请求参数json编写": "JSON des paramètres",
+  "额外参数设置": "Paramètres supplémentaires"
 }

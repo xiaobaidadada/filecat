@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from "react-i18next";
 import {ActionButton} from "./Button";
+import {InputTextarea} from "./Input";
 
 export interface HookItem {
     name: string;
@@ -93,7 +94,7 @@ export default function HookEditor({items, on_read, on_save, on_delete}: Props) 
                                     <ActionButton icon={"check"} title={t('保存并启用')} onClick={save}/>
                                     <ActionButton icon={"close"} title={t('取消')} onClick={() => setEditing(null)}/>
                                 </div>
-                                <textarea className="hook-item__text" value={content}
+                                <InputTextarea className="hook-item__text" value={content}
                                           spellCheck={false}
                                           disabled={loading}
                                           onChange={e => setContent(e.target.value)}/>

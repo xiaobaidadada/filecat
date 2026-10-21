@@ -4,7 +4,7 @@ import {useAtom} from "jotai";
 import {$stroe} from "../../util/store";
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {InputText} from "../../../meta/component/Input";
+import {InputText, InputTextarea} from "../../../meta/component/Input";
 import {Rows} from "../../../meta/component/Table";
 import {settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -78,8 +78,7 @@ export default function BrowserProxyCard() {
               rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save}/>}>
 
             <div>{t("wbvpn_allow")}</div>
-            <textarea
-                className={"input input--block"}
+            <InputTextarea
                 style={{minHeight: '5rem', resize: 'vertical'}}
                 placeholder={t('wbvpn_allow_ph')}
                 value={allow_text}

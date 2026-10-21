@@ -3,6 +3,7 @@ import {gitHttp} from "../../../../util/config";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {useTranslation} from "react-i18next";
 import {ActionButton} from "../../../../../meta/component/Button";
+import {InputTextarea} from "../../../../../meta/component/Input";
 import Header from "../../../../../meta/component/Header";
 import {useNavigate} from "react-router-dom";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
@@ -613,8 +614,7 @@ export default function GitStudio() {
                                                 current_branch={branchInfo.current}
                                                 on_checkout={refresh_repo}
                                                 on_compare={(branch) => setDiffTarget({kind: 'remote', branch})}/>
-                                <textarea className="git-commit-input"
-                                          placeholder={t('git_msg')}
+                                <InputTextarea placeholder={t('git_msg')}
                                           value={commitMessage}
                                           onChange={e => setCommitMessage(e.target.value)}
                                           rows={3}/>

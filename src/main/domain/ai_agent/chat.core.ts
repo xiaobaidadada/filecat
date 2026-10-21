@@ -84,7 +84,7 @@ export class ChatCore {
      */
     private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface, session_id?: string): Promise<boolean> {
         // 如果 dotenv 配置了直接执行，或者没有 wss 连接，跳过确认
-        if (ai_agentService.ai_config_env?.allow_exec_cmd_directly || wss == null) {
+        if (ai_agentService.opened_ai_config_env?.allow_exec_cmd_directly || wss == null) {
             return true;
         }
 
@@ -352,8 +352,8 @@ export class ChatCore {
         let current_llm_edit_prompt = enableLlmEditPrompt ? promptConfig.matchedLlmPrompt : '';
 
         // 使用传入的配置，如果未传入则回退到全局变量
-        const config = aiConfig ?? ai_agentService.ai_config;
-        const env = aiEnv ?? ai_agentService.ai_config_env;
+        const config = aiConfig ?? ai_agentService.opened_ai_config;
+        const env = aiEnv ?? ai_agentService.opened_ai_config_env;
 
         if (!config) {
             throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");

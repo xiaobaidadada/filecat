@@ -51,7 +51,7 @@ export function ActionButton(props:{icon?:MaterialIcon,title:string,onClick?:(ev
             {
                 props.icon ?
                     <Icon icon={props.icon} style={{
-                        color:props.selected===true?"#2196f3":""
+                        color:props.selected===true?"var(--icon-blue)":undefined
                     }}/> :
                     props.title
             }

@@ -1457,14 +1457,6 @@ line.git-log__graph-edge {
     margin: 0;
 }
 
-/* 弹框里的一行输入（meta/component/PromptInput） */
-.prompt-input {
-    display: flex;
-    flex-direction: column;
-    gap: .6rem;
-    min-width: 20rem;
-}
-
 /* 弹框里的图标选择 */
 .prompt-icon-list {
     display: grid;

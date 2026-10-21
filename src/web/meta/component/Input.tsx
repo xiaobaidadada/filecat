@@ -282,6 +282,93 @@ export function InputText(props: {
     });
 }
 
+/**
+ * 多行输入框（textarea）通用组件。
+ * 视觉与 InputText 保持一致（复用 input / input--block 样式），
+ * 额外叠加 input--textarea 获得等宽字体、最小高度与纵向拖拽缩放。
+ * 取值方式二选一：
+ * - value + handleInputChange：受控用法（推荐，与 InputText 一致）
+ * - onChange：需要事件对象时使用（如 e.target、按键判断）
+ */
+export function InputTextarea(props: {
+    placeholder?: string,
+    /** 受控值；传入后组件完全受控 */
+    value?: string,
+    /** 受控用法下的值变化回调，参数为最新字符串 */
+    handleInputChange?: (value: string) => void,
+    /** 需要事件对象时使用（受控/非受控都可传） */
+    onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void,
+    onBlur?: (event: React.FocusEvent<HTMLTextAreaElement>) => void,
+    onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void,
+    rows?: number,
+    disabled?: boolean,
+    readOnly?: boolean,
+    /** 拼写检查，代码类内容一般传 false */
+    spellCheck?: boolean,
+    /** 额外 class，追加到基础样式之后 */
+    className?: string,
+    /** 行内样式，可覆盖高度等 */
+    style?: React.CSSProperties,
+    maxWidth?: string,
+    width?: string,
+    /** 挂载后自动聚焦 */
+    focus?: boolean,
+    /** 透传 ref，拿到原生 textarea 元素 */
+    textareaRef?: React.Ref<HTMLTextAreaElement>,
+}) {
+    const ref = useRef<HTMLTextAreaElement>(null);
+
+    // 外部 value 变化时同步 DOM 值（非受控场景也能正确显示初始值）
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.value = props.value == null ? "" : props.value;
+        }
+    }, [props.value]);
+
+    useEffect(() => {
+        if (props.focus && ref.current) {
+            ref.current.focus();
+        }
+    }, [props.focus]);
+
+    // 合并内部 ref 与外部传入的 ref
+    const setRef = (el: HTMLTextAreaElement | null) => {
+        (ref as any).current = el;
+        const r = props.textareaRef;
+        if (typeof r === "function") r(el);
+        else if (r) (r as any).current = el;
+    };
+
+    const css = ["input", "input--block", "input--textarea", props.className].filter(Boolean).join(" ");
+    const style: React.CSSProperties = {
+        ...(props.width ? {width: props.width} : {}),
+        ...(props.maxWidth ? {maxWidth: props.maxWidth} : {}),
+        ...props.style,
+    };
+
+    return <textarea
+        ref={setRef}
+        className={css}
+        style={style}
+        placeholder={props.placeholder}
+        rows={props.rows}
+        disabled={props.disabled}
+        readOnly={props.readOnly}
+        spellCheck={props.spellCheck}
+        value={props.value}
+        onChange={(event) => {
+            if (props.handleInputChange) {
+                props.handleInputChange(event.target.value);
+            }
+            if (props.onChange) {
+                props.onChange(event);
+            }
+        }}
+        onBlur={props.onBlur}
+        onKeyDown={props.onKeyDown}
+    />;
+}
+
 export function InputPassword(props: {
     placeholder?: string,
     handleInputChange?: (value: string) => void,

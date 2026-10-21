@@ -5,7 +5,7 @@ import {RCode} from "../../../../common/Result.pojo"
 import {NotySuccess, NotyFail} from "../../util/noty"
 import {useAtom} from "jotai"
 import {$stroe} from "../../util/store"
-import {InputRow, InputText, Select} from '../../../meta/component/Input'
+import {InputRow, InputText, InputTextarea, Select} from '../../../meta/component/Input'
 
 /**
  * systemd 服务可视化编辑面板内容（新建 / 编辑共用）。
@@ -269,8 +269,7 @@ export function SystemdEditor(props: {
     // 渲染文本 tab：可直接编辑完整 .service 内容
     const renderText = () => {
         return (
-            <textarea
-                className="input--textarea input--no_border"
+            <InputTextarea
                 style={{width: '100%', minHeight: '16rem', fontFamily: 'monospace', fontSize: '0.85rem', boxSizing: 'border-box'}}
                 value={text}
                 onChange={(e) => setText(e.target.value)}

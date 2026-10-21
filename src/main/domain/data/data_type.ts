@@ -84,6 +84,7 @@ export enum data_common_key {
     http_server_key = "http_server_key",
     proxy_server_code_prefix = "proxy_server_code_prefix",
     ai_agent_model_setting = "ai_agent_model_setting", // ai模型的设置
+    ai_agent_global_setting = "ai_agent_global_setting", // ai 全局默认设置（prompt/json参数/额外参数）
     ai_agent_mcp_setting = "ai_agent_mcp_setting", // ai mcp 服务设置
     ai_agent_docs_setting = "ai_agent_docs_setting",
     ai_agent_chat_session_store = "ai_agent_chat_session_store",

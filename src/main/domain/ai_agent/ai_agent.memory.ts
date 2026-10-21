@@ -774,7 +774,7 @@ export class AiAgentMemoryService {
     /** 用 AI 从消息中提取长期记忆要点 */
     private async extractLongTermMemory(messages: ai_agent_message_list): Promise<string> {
         if (!messages?.length) return '';
-        const cfg = ai_agentService.ai_config;
+        const cfg = ai_agentService.opened_ai_config;
         if (!cfg) return '';
 
         // 把消息序列化为纯文本

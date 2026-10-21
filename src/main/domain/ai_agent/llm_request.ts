@@ -302,8 +302,8 @@ export async function llmPost(
     env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
-    const cfg = config || ai_agentService.ai_config;
-    const envCfg = env || ai_agentService.ai_config_env;
+    const cfg = config || ai_agentService.opened_ai_config;
+    const envCfg = env || ai_agentService.opened_ai_config_env;
     const url = resolveRequestUrl(cfg, cfg.request_type);
     const headers = buildHeaders(cfg, "application/json");
     return sendPost(url, headers, body, envCfg, signal, false);
@@ -320,8 +320,8 @@ export async function llmPostStream(
     config?: ai_agent_Item,
     env?: ai_agent_item_dotenv,
 ): Promise<Response> {
-    const cfg = config || ai_agentService.ai_config;
-    const envCfg = env || ai_agentService.ai_config_env;
+    const cfg = config || ai_agentService.opened_ai_config;
+    const envCfg = env || ai_agentService.opened_ai_config_env;
     const url = resolveRequestUrl(cfg, cfg.request_type);
     const headers = buildHeaders(cfg, "application/json");
     return sendPost(url, headers, body, envCfg, signal, true);
@@ -346,8 +346,8 @@ export async function llmImagesGenerate(
     env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
-    const cfg = config || ai_agentService.ai_config;
-    const envCfg = env || ai_agentService.ai_config_env;
+    const cfg = config || ai_agentService.opened_ai_config;
+    const envCfg = env || ai_agentService.opened_ai_config_env;
     const body = buildImagesBody({
         ...params,
         model: cfg.model,
@@ -372,8 +372,8 @@ export async function llmAudioSpeech(
     env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
-    const cfg = config || ai_agentService.ai_config;
-    const envCfg = env || ai_agentService.ai_config_env;
+    const cfg = config || ai_agentService.opened_ai_config;
+    const envCfg = env || ai_agentService.opened_ai_config_env;
     const body = buildAudioSpeechBody({
         ...params,
         model: cfg.model,
@@ -397,8 +397,8 @@ export async function llmEmbeddings(
     env?: ai_agent_item_dotenv,
     signal?: AbortSignal
 ): Promise<Response> {
-    const cfg = config || ai_agentService.ai_config;
-    const envCfg = env || ai_agentService.ai_config_env;
+    const cfg = config || ai_agentService.opened_ai_config;
+    const envCfg = env || ai_agentService.opened_ai_config_env;
     const body = buildEmbeddingsBody({
         ...params,
         model: cfg.model,
@@ -414,7 +414,7 @@ export async function llmEmbeddings(
  */
 function parseExtraParams(config?: ai_agent_Item): Record<string, any> | undefined {
     try {
-        const cfg = config || ai_agentService.ai_config;
+        const cfg = config || ai_agentService.opened_ai_config;
         if (cfg.json_params) {
             const obj = JSON.parse(cfg.json_params);
             // 对于非 completions 类型，stream 等参数不适用

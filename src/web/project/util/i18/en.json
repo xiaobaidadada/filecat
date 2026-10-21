@@ -1141,5 +1141,11 @@
   "请先选中要合并的节点（按住 Ctrl 拖框可多选）": "Select the nodes to merge first (hold Ctrl and drag to multi-select)",
   "删除图标": "Remove icon",
   "删除备注": "Remove note",
-  "删除超链接": "Remove link"
+  "删除超链接": "Remove link",
+  "供应商设置": "Provider Settings",
+  "默认model": "Default model",
+  "全局prompt": "Global prompt",
+  "全局": "Global",
+  "model请求参数json编写": "Request params JSON",
+  "额外参数设置": "Extra params"
 }

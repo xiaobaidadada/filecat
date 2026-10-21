@@ -218,7 +218,7 @@ export class AiAgentLongTermMemoryService {
 
     /** 用 AI 将 source + dest 压缩合并为一段精炼文本 */
     private async aiCompress(source: string, dest: string): Promise<string> {
-        const cfg = ai_agentService.ai_config;
+        const cfg = ai_agentService.opened_ai_config;
         if (!cfg) throw new Error('ai config not found');
 
         const body: any = {

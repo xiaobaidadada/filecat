@@ -31,13 +31,14 @@ import {download_ripgrep} from "../bin/download-ripgrep";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {
     ai_agent_content,
+    apply_global_config,
     ai_agent_Item,
     ai_agent_item_dotenv, ai_agent_message_attachment_item, ai_agent_message_item, ai_agent_message_list,
     ai_agent_option_item_extra,
     ai_docs_item,
     ai_docs_load_info,
     ai_docs_setting_param,
-    getContentAsString
+    getContentAsString,
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
 import {ai_agent_params_type} from "./tools/ai_agent.constant";
@@ -116,8 +117,8 @@ export class Ai_agentService {
     docs_info = new ai_docs_load_info()
     public all_wss_set = new Set<Wss>;
 
-    public ai_config: ai_agent_Item
-    public ai_config_env = new ai_agent_item_dotenv()
+    public opened_ai_config: ai_agent_Item
+    public opened_ai_config_env = new ai_agent_item_dotenv()
 
 
     public async search_docs({keywords}: { keywords: string[] }) {
@@ -518,8 +519,8 @@ export class Ai_agentService {
 
     get_env() {
         return {
-            ai_config_env:ai_agentService.ai_config_env,
-            ai_config:ai_agentService.ai_config
+            ai_config_env:ai_agentService.opened_ai_config_env,
+            ai_config:ai_agentService.opened_ai_config
         };
     }
 
@@ -638,10 +639,23 @@ export class Ai_agentService {
         this.load_key()
     }
 
+    /**
+     * 把「全局 + 供应商」的 ini 风格额外参数合并进 target。
+     * Env.load 本身就是逐行 target[key] = 值 的覆盖语义，
+     * 所以先加载全局、再加载供应商，后加载的同名 key 自然覆盖前者。
+     * 注意：必须加载进**同一个** target 对象才有效。
+     */
+    private load_merged_dotenv(target: ai_agent_item_dotenv, global_env?: string, item_env?: string): void {
+        if (global_env) Env.load(global_env, target);
+        if (item_env) Env.load(item_env, target);
+    }
+
     public load_key() {
-        this.ai_config_env = new ai_agent_item_dotenv()
+        this.opened_ai_config_env = new ai_agent_item_dotenv()
         // this.have_ai_is_open = false
         const r = settingService.ai_agent_setting()
+        // 全局默认配置：与每个供应商合并（供应商覆盖全局）
+        const global_cfg = settingService.ai_agent_global_setting();
         ai_tool_models = []; // 重置
         let have_open = false
         for (const it of r.models) {
@@ -652,17 +666,17 @@ export class Ai_agentService {
                 // MODEL = it.model
                 // BASE_URL = it.url
                 // API_KEY = it.token
-                this.ai_config = it
-                if (it.dotenv) {
-                    Env.load(it.dotenv, this.ai_config_env);
-                }
+                // 合并全局配置后再生效：prompt 拼接、json 按 k-v 覆盖
+                this.opened_ai_config = apply_global_config(it, global_cfg)
+                // 额外参数：先加载全局，再加载供应商，后者同名 key 自然覆盖前者
+                this.load_merged_dotenv(this.opened_ai_config_env, global_cfg.dotenv, it.dotenv)
                 have_open = true
                 // this.have_ai_is_open = true
                 // 不 return，继续收集所有 tool 模型
             }
         }
         if(have_open === false) {
-            this.ai_config = undefined
+            this.opened_ai_config = undefined
         }
         // API_KEY = undefined
         // BASE_URL = undefined
@@ -855,7 +869,7 @@ export class Ai_agentService {
         const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
             || formatAttachmentTitle(latestUserMessage?.attachments);
         const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
-        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.ai_config_env);
+        const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.opened_ai_config_env);
 
         // 会话级工作目录（file_cwd_path）：作为 cwd 传给 chat_core，
         // 让 AI 知道当前工作位置：相对路径按此目录拼接，system prompt 里也会展示它。
@@ -950,7 +964,7 @@ export class Ai_agentService {
                         elapsed_ms,
                     };
                     // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.ai_config_env).catch(console.error);
+                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.opened_ai_config_env).catch(console.error);
                 },
                 token,
                 sys_prompt_id,
@@ -1065,24 +1079,25 @@ export class Ai_agentService {
             throw new Error(`未找到 index=${index} 的 model tool 配置`);
         }
 
-        // 为目标模型构建独立的 env 配置（不修改全局变量）
+        // 为目标模型构建独立的 env 配置（不修改全局变量），并合并全局默认参数
+        const global_cfg = settingService.ai_agent_global_setting();
+        const mergedItem = apply_global_config(modelItem, global_cfg);
         const modelEnv = new ai_agent_item_dotenv();
-        if (modelItem.dotenv) {
-            Env.load(modelItem.dotenv, modelEnv);
-        }
+        // 先全局后供应商，同名 key 由供应商覆盖
+        this.load_merged_dotenv(modelEnv, global_cfg.dotenv, modelItem.dotenv);
 
-        const requestType = modelItem.request_type || 'completions';
+        const requestType = mergedItem.request_type || 'completions';
 
         // ====== 根据 request_type 分发，直接传入 config 和 env ======
         switch (requestType) {
             case 'completions': {
                 // 对话类型：调用 chat_core.chat 获得完整功能链；透传外部 controller 让子模型能被“暂停”中断
-                return await this.callModelToolAsChat(modelItem, modelEnv, args.prompt,user_id, session_id, wss, externalController);
+                return await this.callModelToolAsChat(mergedItem, modelEnv, args.prompt,user_id, session_id, wss, externalController);
             }
 
             case 'images': {
                 // 图片生成
-                const res = await llmImagesGenerate({prompt: args.prompt}, modelItem, modelEnv);
+                const res = await llmImagesGenerate({prompt: args.prompt}, mergedItem, modelEnv);
                 const result = await res.json();
                 const images = (result?.data ?? []).map((img: any) =>
                     `![生成图片](${img.url || `data:image/png;base64,${img.b64_json}`})${img.revised_prompt ? `\n> ${img.revised_prompt}` : ''}`
@@ -1092,7 +1107,7 @@ export class Ai_agentService {
 
             case 'embeddings': {
                 // 向量嵌入
-                const res = await llmEmbeddings({input: args.prompt}, modelItem, modelEnv);
+                const res = await llmEmbeddings({input: args.prompt}, mergedItem, modelEnv);
                 const result = await res.json();
                 const data = result?.data ?? [];
                 const dims = data[0]?.embedding?.length ?? 0;
@@ -1101,7 +1116,7 @@ export class Ai_agentService {
 
             case 'audio_speech': {
                 // 文本转语音
-                const res = await llmAudioSpeech({input: args.prompt}, modelItem, modelEnv);
+                const res = await llmAudioSpeech({input: args.prompt}, mergedItem, modelEnv);
                 const arrayBuffer = await res.arrayBuffer();
                 const audioBuffer = Buffer.from(arrayBuffer);
                 const base64Audio = audioBuffer.toString('base64');
@@ -1112,12 +1127,12 @@ export class Ai_agentService {
             case 'audio_transcription':
             case 'audio_translation': {
                 // 语音转录/翻译 — 直接走原始 llmPost 非流式请求
-                return await this.callModelToolRaw(modelItem, modelEnv, args.prompt);
+                return await this.callModelToolRaw(mergedItem, modelEnv, args.prompt);
             }
 
             default: {
                 // 兜底：走原始非流式请求
-                return await this.callModelToolRaw(modelItem, modelEnv, args.prompt);
+                return await this.callModelToolRaw(mergedItem, modelEnv, args.prompt);
             }
         }
     }
@@ -1376,7 +1391,7 @@ export class Ai_agentService {
                 content: error_msg,
             };
             // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, undefined, ai_agentService.ai_config_env);
+            await aiAgentMemoryService.appendTurn(userId, session_id, userMsg, errMsg, undefined, ai_agentService.opened_ai_config_env);
         } catch (e) {
             console.log(e)
         }

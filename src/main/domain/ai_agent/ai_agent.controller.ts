@@ -392,7 +392,7 @@ export class Ai_AgentController {
             content: prompt,
         };
         // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, undefined, env ?? ai_agentService.ai_config_env);
+        await aiAgentMemoryService.appendTurn(userId, session.id, userMsg, assistantMessage, undefined, env ?? ai_agentService.opened_ai_config_env);
         return session.id;
     }
 

@@ -25,6 +25,7 @@ import {using_confirm} from "../prompts/prompt.util";
 import {PromptPageItem, SwitchPagePrompt} from "../prompts/PromptCard";
 import {use_select_config} from "../../util/react.config";
 import {
+    ai_agent_global_setting,
     ai_agent_Item,
     ai_agent_item_dotenv_default, ai_docs_item, ai_docs_load_info,
     ai_mcp_server_item,
@@ -66,9 +67,11 @@ export default function AIAgentChatSetting() {
     const {t} = useTranslation();
     const {initUserInfo,} = useContext(GlobalContext);
     // 表格列：去掉了「model类型」「成为tool」两列（改为在「更多属性 → 额外参数设置」里用 request_type / tool_mode 配置）
-    const headers = [t("编号"),t("url"), t("是否开启"), t("key"),"model",t("更多属性"),t("备注") ];
+    const headers = [t("编号"),t("url"), t("是否开启"), t("key"),t("默认model"),t("更多属性"),t("备注") ];
     const headers_docs = [t("编号"),t("本地目录"), t("自动加载"),t("备注") ];
     const [rows, setRows] = useState<ai_agent_Item[]>([]);
+    /** AI 全局默认设置：prompt / 请求参数 json / 额外参数，与各供应商合并后生效 */
+    const [global_cfg, set_global_cfg] = useState<ai_agent_global_setting>({});
     const [docs_list,set_docs_list] = useState<ai_docs_item[]>([]);
     const [mcp_list,set_mcp_list] = useState<ai_mcp_server_item[]>([]);
     const [load_info,set_load_info] = useState<ai_docs_load_info>(null);
@@ -117,6 +120,11 @@ export default function AIAgentChatSetting() {
         const result = await settingHttp.get("ai_agent_setting");
         if (result.code === RCode.Success) {
             setRows(result.data.models);
+        }
+        // 全局默认设置（prompt / 请求参数 / 额外参数）
+        const g = await settingHttp.get("ai_agent_global_setting");
+        if (g.code === RCode.Success) {
+            set_global_cfg(g.data ?? {});
         }
 
         await ws.addMsg(CmdType.ai_load_info, (data:WsData<ai_docs_load_info>)=>{
@@ -238,6 +246,13 @@ export default function AIAgentChatSetting() {
             rows[i].index = i;
         }
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
+        if (result.code === RCode.Success) {
+            NotySuccess("保存成功")
+        }
+    }
+    /** 保存全局默认设置 */
+    const save_global = async (data?: ai_agent_global_setting) => {
+        const result = await settingHttp.post("ai_agent_global_setting/save", data ?? global_cfg);
         if (result.code === RCode.Success) {
             NotySuccess("保存成功")
         }
@@ -481,7 +496,52 @@ export default function AIAgentChatSetting() {
                 <Dashboard>
                     <Row>
                         <Column widthPer={100}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("Model")+" "+t("设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={async ()=>{
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("供应商设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div>
+                                <ActionButton icon={"short_text"} title={t("全局prompt")}  onClick={() => {
+                                    // 全局默认配置：所有供应商合并使用，供应商里的同名设置覆盖它
+                                    setEditorSetting({
+                                        model: "ace/mode/text",
+                                        open: true,
+                                        fileName: "",
+                                        save: async (context) => {
+                                            global_cfg.sys_prompt = context;
+                                            set_global_cfg({...global_cfg});
+                                            editor_data.set_value_temp('');
+                                            await save_global({...global_cfg, sys_prompt: context});
+                                        }
+                                    })
+                                    editor_data.set_value_temp(global_cfg.sys_prompt ?? '');
+                                }}/>
+                                <ActionButton icon={"edit_attributes"} title={t("全局")+" "+t("model请求参数json编写")}  onClick={() => {
+                                    setEditorSetting({
+                                        model: "ace/mode/json",
+                                        open: true,
+                                        fileName: "",
+                                        save: async (context) => {
+                                            global_cfg.json_params = context;
+                                            set_global_cfg({...global_cfg});
+                                            editor_data.set_value_temp('');
+                                            await save_global({...global_cfg, json_params: context});
+                                        },
+                                        can_format: true
+                                    })
+                                    editor_data.set_value_temp(global_cfg.json_params ?? '');
+                                }}/>
+                                <ActionButton icon={"settings"} title={t("全局")+" "+t("额外参数设置")}  onClick={() => {
+                                    setEditorSetting({
+                                        model: "ace/mode/ini",
+                                        open: true,
+                                        fileName: "",
+                                        save: async (context) => {
+                                            global_cfg.dotenv = context;
+                                            set_global_cfg({...global_cfg});
+                                            editor_data.set_value_temp('');
+                                            await save_global({...global_cfg, dotenv: context});
+                                        }
+                                    })
+                                    editor_data.set_value_temp(global_cfg.dotenv ?? '');
+                                }}/>
+                                <ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={async ()=>{
                                 await save()
                             }}/></div>}>
                                 <Table headers={headers} onRowDrag={(from, to) => {

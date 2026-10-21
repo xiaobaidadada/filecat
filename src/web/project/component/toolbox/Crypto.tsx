@@ -4,7 +4,7 @@ import {NavIndexContainer} from "../navindex/component/NavIndexContainer";
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {TimeConverTer} from "./TimeConverTer";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {InputTextIcon, Select} from "../../../meta/component/Input";
+import {InputTextIcon, InputTextarea, Select} from "../../../meta/component/Input";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {useTranslation} from "react-i18next";
 import {Rows} from "../../../meta/component/Table";
@@ -88,7 +88,7 @@ export function Crypto() {
                                   save_openssh('pub')
                               }}/>}
                     >
-                        <textarea className={"input--textarea input--no_border"}
+                        <InputTextarea
                                   style={{
                                       width: "100%",
                                       height: "270px",
@@ -97,7 +97,7 @@ export function Crypto() {
                                       set_publicKey(event.target.value)
                                   }}
                                   value={publicKey}
-                        ></textarea>
+                        />
                     </Card>
                 </Column>
                 <Column>
@@ -111,7 +111,7 @@ export function Crypto() {
                               <ButtonText text={t('ssh_dir')} clickFun={() => {
                                   save_openssh('pri')
                               }}/>}>
-                        <textarea className={"input--textarea input--no_border"}
+                        <InputTextarea
                                   style={{
                                       width: "100%",
                                       height: "270px",
@@ -120,7 +120,7 @@ export function Crypto() {
                                   onChange={(event) => {
                                       set_privateKey(event.target.value)
                                   }}
-                        ></textarea>
+                        />
                     </Card>
                 </Column>
             </Row>

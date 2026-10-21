@@ -364,7 +364,7 @@ export default function MindMapEditor(props: Props) {
         return node;
     };
 
-    /** 文本类字段的弹框配置：插入时预填已有值，删除时直接清空 */
+    /** 文本类字段的弹框配置：插入时预填已有值，删除时直接清空。三者统一用多行输入 */
     const TEXT_FIELDS: Record<string, { title: string, placeholder: string, get: (node: any) => string }> = {
         SET_NODE_NOTE: {
             title: "节点备注",
@@ -399,6 +399,7 @@ export default function MindMapEditor(props: Props) {
                 <PromptInput
                     initValue={init}
                     placeholder={t(cfg.placeholder)}
+                    multiline
                     onChange={(v) => value = v}
                 />
             ),

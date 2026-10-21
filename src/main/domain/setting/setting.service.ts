@@ -44,6 +44,7 @@ import {
 import {plug_item, Plugin, PluginHttpInfo, PluginLogLevel, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
+    ai_agent_global_setting,
     ai_agent_Item,
     ai_agent_item_dotenv_default,
     ai_docs_setting,
@@ -859,6 +860,15 @@ export class SettingService {
         return DataUtil.get(data_common_key.ai_agent_mcp_setting, file_key.ai_setting_data) ?? {
             list: []
         };
+    }
+
+    /** AI 全局默认设置（prompt / 请求参数 json / 额外参数 ini），对所有供应商生效 */
+    ai_agent_global_setting(): ai_agent_global_setting {
+        return DataUtil.get(data_common_key.ai_agent_global_setting, file_key.ai_setting_data) ?? {};
+    }
+
+    ai_agent_global_setting_save(data: ai_agent_global_setting) {
+        DataUtil.set(data_common_key.ai_agent_global_setting, data, file_key.ai_setting_data);
     }
 
     // 系统会话提示词
