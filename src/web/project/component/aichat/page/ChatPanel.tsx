@@ -248,8 +248,18 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     const scrollToBottom = (smooth = false) => {
         const el = chatContainerRef.current;
         if (!el) return;
+        // 内容里 markdown/代码块/图片是异步撑高的，单帧滚动会停在旧高度，
+        // 导致底部文字被遮住。这里连续两帧校正一次，等布局稳定。
         el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+        requestAnimationFrame(() => {
+            const el2 = chatContainerRef.current;
+            if (!el2) return;
+            el2.scrollTo({ top: el2.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+        });
     };
+
+    // 切换会话后需要滚到底：置位标记，由监听 messages 的 useLayoutEffect 执行
+    const pendingScrollRef = useRef(false);
 
     // ===== 会话操作函数（refreshSessions 需要提前声明，供 useChatStream 使用） =====
     /**
@@ -382,7 +392,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         }
         // 后台进程面板打开时，切换会话后刷新进程列表
         bgPanelRef.current.refresh?.();
-        requestAnimationFrame(() => scrollToBottom(false));
+        // React 渲染是异步批处理的，需等 DOM 更新并完成布局后再滚动，
+        // 否则 scrollHeight 还是旧值，会停在顶部。
+        pendingScrollRef.current = true;
         return true;
     };
 
@@ -979,7 +991,24 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         if (!el) return;
         const onScroll = () => { autoScrollRef.current = isNearBottom(el); };
         el.addEventListener("scroll", onScroll);
-        return () => el.removeEventListener("scroll", onScroll);
+
+        // markdown/代码块/图片会异步撑高内容，撑高后需要重新贴底，
+        // 否则滚动发生在内容变高之前，会停在顶部（切换会话尤其明显）。
+        const stick = () => {
+            if (autoScrollRef.current) el.scrollTop = el.scrollHeight;
+        };
+        const ro = new ResizeObserver(stick);
+        // 新消息是动态追加的，需要把新增元素也纳入高度监听
+        const observe_all = () => [...el.children].forEach(c => ro.observe(c));
+        observe_all();
+        const mo = new MutationObserver(() => { observe_all(); stick(); });
+        mo.observe(el, { childList: true });
+
+        return () => {
+            el.removeEventListener("scroll", onScroll);
+            ro.disconnect();
+            mo.disconnect();
+        };
     }, []);
 
     // ===== 实时广播监听：接收“其它标签页 / 刷新后”正在进行的同一会话的输出 =====
@@ -1094,6 +1123,11 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     }, []);
 
     useLayoutEffect(() => {
+        // 切换会话后必须无条件滚到底：此时 autoScrollRef 可能因上一会话滚到上面而变成 false
+        if (pendingScrollRef.current) {
+            pendingScrollRef.current = false;
+            autoScrollRef.current = true;
+        }
         if (autoScrollRef.current) scrollToBottom(false);
     }, [messages]);
 

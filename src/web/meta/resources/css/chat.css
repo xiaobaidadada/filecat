@@ -247,7 +247,7 @@
 /* 消息列表 - Codex 风格 */
 .chat-messages {
     flex: 1;
-    padding: 0;
+    padding: 0 0 1.5rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
