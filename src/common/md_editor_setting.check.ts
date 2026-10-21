@@ -20,5 +20,4 @@ export const MD_EDITOR_SETTING_FIELDS: Record<
     line_height: (v) => CheckUtil.size(v, true),
     // 主题名会被当作文件名（<主题名>.css）用，走文件名校验
     theme: CheckUtil.filename,
-    auto_save_interval: CheckUtil.uint,
 };

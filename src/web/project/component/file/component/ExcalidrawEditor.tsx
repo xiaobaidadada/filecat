@@ -9,7 +9,9 @@ import {useNavigate} from "react-router-dom";
 import {Http} from "../../../util/http";
 import {useTranslation} from "react-i18next";
 import {RCode} from "../../../../../common/Result.pojo";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import "@excalidraw/excalidraw/index.css";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
 type ExcalidrawSceneData = {
     type?: string;
@@ -52,6 +54,8 @@ export default function ExcalidrawEditor() {
     useEffect(() => {
         saveRef.current = save;
     });
+    // 场景有改动标记（自动保存用；保存成功后清除）
+    const dirty_ref = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -125,8 +129,12 @@ export default function ExcalidrawEditor() {
 
         if (rsq.code === RCode.Success) {
             NotySuccess("保存成功");
+            dirty_ref.current = false;
         }
     };
+
+    // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
+    use_editor_auto_save(EditorAutoSaveEnum.draw, () => dirty_ref.current, () => save());
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
@@ -158,6 +166,10 @@ export default function ExcalidrawEditor() {
                         langCode="zh-CN"
                         initialData={initialData}
                         excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                        onChange={() => {
+                            // 场景变化即有未保存改动（自动保存用）
+                            dirty_ref.current = true;
+                        }}
                         onKeyDown={(event) => {
                             if ((event.ctrlKey || event.metaKey) && (event.key === "s" || event.key === "S" || event.keyCode === 83)) {
                                 event.preventDefault();

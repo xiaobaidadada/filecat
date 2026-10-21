@@ -7,6 +7,8 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useTranslation} from "react-i18next";
 import TimelineEditorBody, {TimelineHandle} from "./timeline/TimelineInline";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
 /**
  * 时间轴全屏编辑器（.timeline）。
@@ -35,6 +37,11 @@ export default function TimelineEditor() {
     const save = async () => {
         await apiRef.current?.save();
     };
+    // 自动保存读最新 dirty 状态用的 ref
+    const dirty_ref = useRef(dirty);
+    dirty_ref.current = dirty;
+    // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
+    use_editor_auto_save(EditorAutoSaveEnum.timeline, () => dirty_ref.current, () => save());
 
     // Esc 关闭：与项目其它全屏浮层（md / mind 编辑器等）保持一致
     useEffect(() => {

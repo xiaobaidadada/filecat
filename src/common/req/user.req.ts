@@ -160,6 +160,17 @@ export enum user_file_time_show_type {
     time="time",
 }
 
+// 支持自动保存的编辑器
+export enum EditorAutoSaveEnum {
+    ace = "ace", // 文本编辑器
+    md = "md",
+    mind = "mind", // 思维导图
+    draw = "draw",
+    timeline = "timeline",
+    image = "image",
+    excel = "excel",
+}
+
 export class UserData extends UserLogin {
     cwd: string; // 目录顶级范围 (role 作用)
     access_dirs: string[] = []; // cwd 是第一个 这里是其它的可访问的 (role 作用)
@@ -205,6 +216,13 @@ export class UserData extends UserLogin {
 
     sys_done_prompt?:{
         tag_delete?: boolean;
+    }
+
+    // 编辑器自动保存配置（个人保存）：哪些编辑器开启、间隔几秒
+    editor_auto_save?: {
+        enable: boolean;
+        interval: number;
+        editors: EditorAutoSaveEnum[]; // 选中的编辑器
     }
 }
 

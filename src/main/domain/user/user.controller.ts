@@ -200,6 +200,8 @@ export class UserController {
         ai_chat_zoom?: number,
         is_sys_done_prompt?: boolean, // 是否更新系统已完成提示（如网址导航 tag 删除提示）
         sys_done_prompt?: { tag_delete?: boolean },
+        is_editor_auto_save?: boolean, // 是否更新编辑器自动保存配置
+        editor_auto_save?: {enable: boolean, interval: number, editors: string[]},
         value?:any,
     }, @Req() req: Request) {
         const user_data = userService.get_user_info_by_token(req.headers.authorization);
@@ -229,6 +231,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {md_editor_theme: theme} as UserData);
         } else if(body.is_ai_chat_zoom) {
             userService.only_update_user_data(user_id, {ai_chat_zoom: body.ai_chat_zoom} as UserData);
+        } else if(body.is_editor_auto_save) {
+            userService.only_update_user_data(user_id, {editor_auto_save: body.editor_auto_save} as UserData);
         } else {
             userService.only_update_user_data(user_id, {file_list_show_type: body.type} as UserData);
         }

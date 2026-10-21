@@ -3,7 +3,7 @@ import {Column, Dashboard, Row, RowColumn} from "../../../meta/component/Dashboa
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
 import {Table} from "../../../meta/component/Table";
-import {InputPassword, InputText, Select} from "../../../meta/component/Input";
+import {InputPassword, InputRow, InputText, Select} from "../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
 import {settingHttp, userHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
@@ -19,10 +19,11 @@ import {useAtom} from 'jotai';
 import {$stroe} from "../../util/store";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {use_themes_list, using_env_prompt} from "./util";
-import {themes, UserLogin} from "../../../../common/req/user.req";
+import {EditorAutoSaveEnum, themes, UserLogin} from "../../../../common/req/user.req";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {use_select_config} from "../../util/react.config";
 import {move_element} from "../../../../common/ListUtil";
+import {AUTO_SAVE_EDITORS} from "../../util/editor_auto_save";
 
 export function PrivateEnv() {
     const {t, i18n} = useTranslation();
@@ -51,6 +52,11 @@ export function PrivateEnv() {
     const [theme, set_theme] = useState<themes>("");
     const [upload_file_ignore, set_upload_file_ignore] = useState<themes>("");
 
+    // 编辑器自动保存：总开关 / 间隔秒数 / 勾选的编辑器列表
+    const [auto_save_enable, set_auto_save_enable] = useState(false);
+    const [auto_save_interval, set_auto_save_interval] = useState("");
+    const [auto_save_editors, set_auto_save_editors] = useState<EditorAutoSaveEnum[]>([]);
+
     const getItems = async () => {
         // 文件夹根路径
         const result = await settingHttp.get("filesSetting");
@@ -74,6 +80,11 @@ export function PrivateEnv() {
         set_language(userInfo?.user_data?.language);
         set_theme(userInfo?.user_data?.theme);
         set_upload_file_ignore(userInfo?.user_data?.upload_file_ignore)
+        // 自动保存配置回填（user_data.editor_auto_save）
+        const auto_save = userInfo?.user_data?.editor_auto_save;
+        set_auto_save_enable(!!auto_save?.enable);
+        set_auto_save_interval(auto_save?.interval != null ? String(auto_save.interval) : "");
+        set_auto_save_editors(auto_save?.editors ?? []);
     }, []);
 
 
@@ -228,6 +239,27 @@ export function PrivateEnv() {
         initUserInfo();
     }
 
+    // 编辑器自动保存配置保存
+    const save_editor_auto_save = async () => {
+        const interval = parseInt(String(auto_save_interval), 10);
+        if (isNaN(interval) || interval < 1) {
+            NotyFail(t("请输入不小于 1 的整数（秒）"));
+            return;
+        }
+        const result = await userHttp.post(Http_controller_router.user_save_private_attr, {
+            is_editor_auto_save: true,
+            editor_auto_save: {
+                enable: auto_save_enable,
+                interval,
+                editors: auto_save_editors,
+            },
+        });
+        if (result.code === RCode.Success) {
+            NotySuccess("修改成功");
+            initUserInfo();
+        }
+    }
+
     return (<React.Fragment>
         <Row>
 
@@ -272,6 +304,36 @@ export function PrivateEnv() {
                             set_upload_file_ignore(value)
                         }} placeholderOut={t("拖拽文件上传忽略列表")} placeholder={"node_modules *.js"}
                                    no_border={true}/>
+                    </Card>
+                </Dashboard>
+
+                <Dashboard>
+                    <Card title={t("编辑器自动保存")}
+                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_editor_auto_save}/>}>
+                        <InputRow label={t("开启")}>
+                            <Select value={auto_save_enable} onChange={(value) => {
+                                set_auto_save_enable(value);
+                            }} options={select_list} no_border={true}/>
+                        </InputRow>
+                        <InputRow label={t("自动保存间隔(秒)")}>
+                            <InputText type={"number"} value={auto_save_interval}
+                                       handleInputChange={(value) => {
+                                           set_auto_save_interval(value);
+                                       }} placeholder={"30"} no_border={true}/>
+                        </InputRow>
+                        <h3>{t("编辑器")}</h3>
+                        {AUTO_SAVE_EDITORS.map(it => (
+                            <div key={it.id}>
+                                <input type="checkbox" checked={auto_save_editors.includes(it.id)}
+                                       onChange={(e) => {
+                                           const checked = e.target.checked;
+                                           set_auto_save_editors(checked ?
+                                               [...auto_save_editors, it.id] :
+                                               auto_save_editors.filter(v => v !== it.id));
+                                       }}/>
+                                {t(it.label)}
+                            </div>
+                        ))}
                     </Card>
                 </Dashboard>
 

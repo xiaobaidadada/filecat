@@ -37,7 +37,6 @@ const FIELDS: { key: keyof md_editor_setting_pojo, label: string }[] = [
     {key: "content_padding", label: "正文左右边距"},
     {key: "font_size", label: "正文字号"},
     {key: "line_height", label: "行高"},
-    {key: "auto_save_interval", label: "as_iv"},
 ];
 
 export default function MdEditorSettingPage() {
@@ -75,7 +74,7 @@ export default function MdEditorSettingPage() {
             const v = (values[f.key] ?? "").trim();
             const ok = MD_EDITOR_SETTING_FIELDS[f.key](v);
             if (ok === null) {
-                NotyFail(`${t(f.label)}: ${t(f.key === "auto_save_interval" ? "as_num" : "请输入合法的 CSS 值，例如 10px、3rem、80%")}`);
+                NotyFail(`${t(f.label)}: ${t("请输入合法的 CSS 值，例如 10px、3rem、80%")}`);
                 return;
             }
             body[f.key] = ok;

@@ -687,8 +687,6 @@
   "正文左右边距": "Seitlicher Inhaltsabstand",
   "正文字号": "Schriftgröße des Inhalts",
   "行高": "Zeilenhöhe",
-  "as_iv": "Auto-Speicher-Intervall (Sek.)",
-  "as_num": "Bitte eine ganze Zahl ab 0 eingeben",
   "恢复默认": "Standard wiederherstellen",
   "保存中": "Wird gespeichert",
   "预览": "Vorschau",
@@ -1143,5 +1141,16 @@
   "全局prompt": "Globaler Prompt",
   "全局": "Global",
   "model请求参数json编写": "Anfrageparameter JSON",
-  "额外参数设置": "Zusätzliche Parameter"
+  "额外参数设置": "Zusätzliche Parameter",
+  "编辑器自动保存": "Editor-Auto-Speichern",
+  "自动保存间隔(秒)": "Auto-Speicher-Intervall (Sek.)",
+  "请输入不小于 1 的整数（秒）": "Bitte eine ganze Zahl ab 1 eingeben (Sekunden)",
+  "文本编辑器(ace)": "Text-Editor (Ace)",
+  "md编辑器": "MD-Editor",
+  "思维导图编辑器": "Mindmap-Editor",
+  "draw编辑器": "Draw-Editor",
+  "时间线编辑器": "Zeitleisten-Editor",
+  "图片编辑器": "Bild-Editor",
+  "excel编辑器": "Excel-Editor",
+  "编辑器": "Editoren"
 }

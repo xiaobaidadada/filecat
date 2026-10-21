@@ -687,8 +687,6 @@
   "正文左右边距": "Margen lateral del contenido",
   "正文字号": "Tamaño de fuente del contenido",
   "行高": "Altura de línea",
-  "as_iv": "Intervalo de guardado automático (seg)",
-  "as_num": "Introduce un entero mayor o igual que 0",
   "恢复默认": "Restaurar valores predeterminados",
   "保存中": "Guardando",
   "预览": "Vista previa",
@@ -1143,5 +1141,16 @@
   "全局prompt": "Prompt global",
   "全局": "Global",
   "model请求参数json编写": "JSON de parámetros",
-  "额外参数设置": "Parámetros extra"
+  "额外参数设置": "Parámetros extra",
+  "编辑器自动保存": "Autoguardado del editor",
+  "自动保存间隔(秒)": "Intervalo de autoguardado (s)",
+  "请输入不小于 1 的整数（秒）": "Introduzca un entero >= 1 (segundos)",
+  "文本编辑器(ace)": "Editor de texto (Ace)",
+  "md编辑器": "Editor MD",
+  "思维导图编辑器": "Editor de mapas mentales",
+  "draw编辑器": "Editor de dibujo",
+  "时间线编辑器": "Editor de líneas de tiempo",
+  "图片编辑器": "Editor de imágenes",
+  "excel编辑器": "Editor de Excel",
+  "编辑器": "Editores"
 }

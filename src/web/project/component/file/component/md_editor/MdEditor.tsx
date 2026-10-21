@@ -23,6 +23,8 @@ import {MdThemeMenu} from "./MdThemeMenu";
 import * as lodash from "lodash";
 import {useNavigate} from "react-router-dom";
 import {routerConfig} from "../../../../../../common/RouterConfig";
+import {use_editor_auto_save} from "../../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
 
 // 所见即所得 Markdown 编辑器容器。
 //
@@ -375,25 +377,11 @@ export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
     };
     const save_ref = useRef(save);
     save_ref.current = save;
-
-    // 自动保存：每 N 秒检查一次，有未保存的改动就静默保存。
-    // N 取全局设置里的 auto_save_interval（秒），为 0 时不做任何事（相当于关闭）。
-    // 用 dirty_ref 读取最新值，避免把 dirty 放进依赖导致定时器被反复重建。
+    // 对外（register.dirty）查询未保存状态的 ref，读取最新值
     const dirty_ref = useRef(dirty);
     dirty_ref.current = dirty;
-    const auto_save_interval = editor_setting?.auto_save_interval ?? 0;
-    useEffect(() => {
-        // 只读打开（如分享模式）不自动保存
-        if (md_editor.readonly || auto_save_interval <= 0) {
-            return;
-        }
-        const timer = setInterval(() => {
-            if (dirty_ref.current) {
-                save_ref.current(true);
-            }
-        }, auto_save_interval * 1000);
-        return () => clearInterval(timer);
-    }, [auto_save_interval, md_editor.readonly]);
+    // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）；只读模式不自动保存
+    use_editor_auto_save(EditorAutoSaveEnum.md, () => dirty_ref.current, (silent) => save(silent), md_editor.readonly);
 
     // 导出 PDF：交给浏览器打印对话框，
     // 用户可在其中预览、选页码范围、并「另存为 PDF」。

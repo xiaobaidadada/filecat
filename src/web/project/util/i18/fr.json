@@ -687,8 +687,6 @@
   "正文左右边距": "Marge latérale du contenu",
   "正文字号": "Taille de police du contenu",
   "行高": "Hauteur de ligne",
-  "as_iv": "Intervalle de sauvegarde auto (s)",
-  "as_num": "Saisissez un entier supérieur ou égal à 0",
   "恢复默认": "Rétablir les valeurs par défaut",
   "保存中": "Enregistrement",
   "预览": "Aperçu",
@@ -1143,5 +1141,16 @@
   "全局prompt": "Prompt global",
   "全局": "Global",
   "model请求参数json编写": "JSON des paramètres",
-  "额外参数设置": "Paramètres supplémentaires"
+  "额外参数设置": "Paramètres supplémentaires",
+  "编辑器自动保存": "Sauvegarde automatique de l'éditeur",
+  "自动保存间隔(秒)": "Intervalle de sauvegarde (s)",
+  "请输入不小于 1 的整数（秒）": "Veuillez saisir un entier >= 1 (secondes)",
+  "文本编辑器(ace)": "Éditeur de texte (Ace)",
+  "md编辑器": "Éditeur MD",
+  "思维导图编辑器": "Éditeur de cartes mentales",
+  "draw编辑器": "Éditeur de dessin",
+  "时间线编辑器": "Éditeur de chronologie",
+  "图片编辑器": "Éditeur d'images",
+  "excel编辑器": "Éditeur Excel",
+  "编辑器": "Éditeurs"
 }

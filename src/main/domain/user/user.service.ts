@@ -82,6 +82,7 @@ export class UserService {
             upload_file_ignore: user.upload_file_ignore,
             upload_file_ignore_list: user.upload_file_ignore_list,
             sys_done_prompt: user.sys_done_prompt,
+            editor_auto_save: user.editor_auto_save,
         };
     }
 

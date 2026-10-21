@@ -7,6 +7,8 @@ import {loadJsFileOnce} from "../../../../util/file";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {useLocation, useNavigate} from "react-router-dom";
+import {use_editor_auto_save} from "../../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
 
 let loadfile_done = false;
 let filerobotImageEditor;
@@ -15,6 +17,8 @@ export default function ImageEditor() {
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const navigate = useNavigate();
     const location = useLocation();
+    // 图片被修改标记（自动保存用；保存成功后清除）
+    const dirty_ref = React.useRef(false);
 
     const loadFile = async ()=>{
         if (!loadfile_done) {
@@ -42,7 +46,12 @@ export default function ImageEditor() {
                 const blob = await new Promise<Blob>(resolve =>
                     editedImageObject.imageCanvas.toBlob(resolve, editedImageObject.mimeType));
                 await fileHttp.put(`${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`, blob, undefined);
+                dirty_ref.current = false;
                 NotySuccess('保存成功')
+            },
+            // 图像被修改（自动保存的 dirty 标记）
+            onModify: () => {
+                dirty_ref.current = true;
             },
             annotationsCommon: {
                 fill: '#151717', // text颜色
@@ -82,6 +91,15 @@ export default function ImageEditor() {
             }
         }
     }, []);
+
+    // 编辑器自动保存（个人设置里可配置）。
+    // filerobot 没有编程式保存 API，只能通过点击它的「保存(Save)」按钮触发 onSave，
+    // 这里在定时器到点时模拟点击该按钮。
+    use_editor_auto_save(EditorAutoSaveEnum.image, () => dirty_ref.current, () => {
+        const btn = Array.from(document.querySelectorAll('#editor_container button'))
+            .find(b => (b.textContent || '').includes('Save') || (b.textContent || '').includes('保存')) as HTMLButtonElement | undefined;
+        btn?.click();
+    });
 
     return <div id={"image-editor-container"}>
         <div className={"image-editor-context"}>

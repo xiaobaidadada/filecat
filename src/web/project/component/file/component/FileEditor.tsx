@@ -10,6 +10,8 @@ import {NotySuccess} from "../../../util/noty";
 import Ace from "./Ace";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {ableExtBeautify} from "../../../../../common/FileMenuType";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
 // const Ace = React.lazy(() => import("./Ace"));
 
@@ -17,6 +19,9 @@ import {ableExtBeautify} from "../../../../../common/FileMenuType";
 export default function FileEditor() {
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
     const [have_update,set_have_update] = useState(false);
+    // 自动保存读最新 dirty 状态用的 ref
+    const have_update_ref = useRef(have_update);
+    have_update_ref.current = have_update;
     const [shellShow,setShellShow] = useAtom($stroe.fileShellShow);
     const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
 
@@ -73,6 +78,8 @@ export default function FileEditor() {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [have_update,editorSetting]);
+    // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
+    use_editor_auto_save(EditorAutoSaveEnum.ace, () => !!editorSetting.save && have_update_ref.current, () => save());
     return editorSetting.open && (<div id="editor-container">
         <Header ignore_tags={true} left_children={[
             <ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,

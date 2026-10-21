@@ -697,8 +697,6 @@
   "正文左右边距": "Content side padding",
   "正文字号": "Content font size",
   "行高": "Line height",
-  "as_iv": "Auto-save interval (sec)",
-  "as_num": "Enter an integer of 0 or greater",
   "恢复默认": "Restore defaults",
   "保存中": "Saving",
   "预览": "Preview",
@@ -1147,5 +1145,16 @@
   "全局prompt": "Global prompt",
   "全局": "Global",
   "model请求参数json编写": "Request params JSON",
-  "额外参数设置": "Extra params"
+  "额外参数设置": "Extra params",
+  "编辑器自动保存": "Editor Auto-Save",
+  "自动保存间隔(秒)": "Auto-save interval (sec)",
+  "请输入不小于 1 的整数（秒）": "Please enter an integer >= 1 (seconds)",
+  "文本编辑器(ace)": "Text editor (Ace)",
+  "md编辑器": "MD editor",
+  "思维导图编辑器": "Mind map editor",
+  "draw编辑器": "Draw editor",
+  "时间线编辑器": "Timeline editor",
+  "图片编辑器": "Image editor",
+  "excel编辑器": "Excel editor",
+  "编辑器": "Editors"
 }

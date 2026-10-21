@@ -7,6 +7,8 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {useTranslation} from "react-i18next";
 import MindMapEditor, {MindHandle} from "./MindMapInline";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
 /**
  * 思维导图全屏编辑器（.mind）。
@@ -38,6 +40,11 @@ export default function MindEditor() {
     const save = async () => {
         await apiRef.current?.save();
     };
+    // 自动保存读最新 dirty 状态用的 ref
+    const dirty_ref = useRef(dirty);
+    dirty_ref.current = dirty;
+    // 编辑器自动保存（个人设置里可配置）；代码块来源（md 内嵌）不落文件，不自动保存
+    use_editor_auto_save(EditorAutoSaveEnum.mind, () => !is_code_source && dirty_ref.current, () => save(), is_code_source);
 
     // Esc 关闭：与项目其它全屏浮层（md 编辑器等）保持一致
     useEffect(() => {
