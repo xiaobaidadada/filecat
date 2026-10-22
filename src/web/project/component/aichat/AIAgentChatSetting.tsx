@@ -495,7 +495,7 @@ export default function AIAgentChatSetting() {
             <FullScreenContext>
                 <Dashboard>
                     <Row>
-                        <Column widthPer={100}>
+                        <Column widthPer={100} maxWidth={"130rem"}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("供应商设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div>
                                 <ActionButton icon={"short_text"} title={t("全局prompt")}  onClick={() => {
                                     // 全局默认配置：所有供应商合并使用，供应商里的同名设置覆盖它
@@ -625,7 +625,7 @@ export default function AIAgentChatSetting() {
                     </Row>
 
                     <Row>
-                        <Column widthPer={70}>
+                        <Column widthPer={70} maxWidth={"100rem"}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
@@ -700,7 +700,7 @@ export default function AIAgentChatSetting() {
                         </Column>
                     </Row>
                     <Row>
-                        <Column widthPer={70}>
+                        <Column widthPer={70} maxWidth={"100rem"}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> </span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
@@ -878,7 +878,7 @@ export default function AIAgentChatSetting() {
                         </Column>
                     </Row>
                     <Row>
-                        <Column widthPer={50}>
+                        <Column widthPer={50} maxWidth={"80rem"}>
                                 <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
                                           titleCom={<div>
 
@@ -983,7 +983,7 @@ export default function AIAgentChatSetting() {
                         </Column>
                         {
                             load_info &&
-                            <Column widthPer={50}>
+                            <Column widthPer={50} maxWidth={"80rem"}>
                                 <Card title={t("知识库加载信息")}>
                                     <TextLine left={t("最近一次加载")+"，"+t("加载进度")} right={load_info?.progress}/>
                                     <TextLine left={`${t(`最近一次加载`)}，${t(`总文件数量`)}`} right={load_info?.num}/>

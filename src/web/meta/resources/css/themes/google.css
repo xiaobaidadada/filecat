@@ -328,11 +328,7 @@ table th {
   color: var(--primary);
 }
 
-.chat-message.bot{
-  /*background: var(--primary-light);*/
-  border-radius: var(--border-radius);
-}
-
+/* 气泡形状统一由 chat.css 控制 */
 .chat-input-area textarea {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);

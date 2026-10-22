@@ -4,6 +4,13 @@
   --surfacePrimary: #1e1e1e;
   --surfaceSecondary: #2d2d2d;
   --divider: rgba(255, 255, 255, 0.12);
+  /* 深色下边框和悬浮态必须用白色透明，否则沿用根部的黑色值，在深色背景上几乎不可见 */
+  --borderPrimary: rgba(255, 255, 255, 0.12);
+  --borderSecondary: rgba(255, 255, 255, 0.2);
+  --hover: rgba(255, 255, 255, 0.08);
+  /* 聊天气泡：用户气泡用中性实色，深色背景上有明确厚度 */
+  --chat-user-bg: #333537;
+  --chat-user-text: inherit;
   --icon: #ffffff;
   --textPrimary: rgba(255, 255, 255, 0.87);
   --textSecondary: rgba(255, 255, 255, 0.6);
@@ -325,17 +332,8 @@ table th {
   color: var(--primary);
 }
 
-.chat-message.bot{
-  background: var(--primary-light);
-  border-radius: var(--border-radius);
-  color: var(--textPrimary);
-  border-bottom: 1px solid var(--divider);
-}
-.chat-message.user {
-  background: #1a2a3a;
-  color: var(--textPrimary);
-  border-bottom: none;
-}
+/* 气泡配色与形状统一由 chat.css 控制，这里不再覆盖外层容器，
+   否则会给 .chat-message 再铺一层背景，和内部气泡叠成双层 */
 .chat-message.bot::before {
   background: var(--primary);
   opacity: 0.6;

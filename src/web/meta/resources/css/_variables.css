@@ -35,6 +35,10 @@
   --dividerPrimary: rgba(255, 255, 255, 0.4);
   --dividerSecondary: rgba(255, 255, 255, 0.9);
 
+  /* 聊天气泡底色：用户气泡用中性实色，和 GPT 一致的观感，深色主题在各自主题文件里覆盖 */
+  --chat-user-bg: #f4f4f4;
+  --chat-user-text: inherit;
+
   --filewidth: 33%;
 
   /* ai 聊天记录内容缩放百分比，由用户的 ai_chat_zoom 个人设置覆盖 */

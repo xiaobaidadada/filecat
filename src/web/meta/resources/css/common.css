@@ -76,6 +76,9 @@
     position: relative;
     display: inline-block;
 }
+.menu-select-wrapper:hover{
+    cursor: pointer;
+}
 
 .menu-select-popup {
     /* position/top/left 由 JS 控制，不要写在这里 */
