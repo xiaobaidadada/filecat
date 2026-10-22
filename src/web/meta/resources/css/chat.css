@@ -281,6 +281,7 @@
     width: fit-content;
     /* 长消息限制最大宽度，超过则自动换行 */
     max-width: 80%;
+    /* 用户气泡自己的紧凑内边距，覆盖 .chat-message 的通用 padding */
     /*padding: .5rem .9rem;*/
     border-radius: 1.125rem;
     /* 右侧留一点内边距，气泡不贴容器边缘 */
@@ -437,21 +438,42 @@
 
 .message-actions {
     position: absolute;
-    /* 落在气泡内顶部的预留区（.chat-message 的 padding-top），鼠标不会移出气泡导致 hover 丢失 */
-    right: 0.5rem;
     top: 0.3rem;
     display: flex;
+    width: max-content;
     gap: 4px;
+    /* 按钮永远排一行：气泡过窄时整条向外展开，而不是把按钮文字挤成多行 */
+    flex-wrap: nowrap;
+    white-space: nowrap;
     opacity: 0;
     transform: translateY(-4px);
     transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 5;
+    /* 必须高于同气泡内的底部折叠条(z-index: 6)，否则气泡很矮时按钮被它盖住点不到 */
+    z-index: 7;
 }
 
+/* 机器人气泡靠左：按钮从气泡左侧开始向右排 */
+.chat-message.bot .message-actions {
+    left: 0.5rem;
+}
 
-.chat-message:hover .message-actions {
+/* 用户气泡靠右：按钮从气泡右侧开始向左排 */
+.chat-message.user .message-actions {
+    right: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* 气泡很窄时操作条会伸出气泡边界，鼠标移出去会丢失父级 hover；
+   因此操作条自身在被悬停时也保持显示，按钮伸出的部分同样可以点到 */
+.chat-message:hover .message-actions,
+.message-actions:hover {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
+}
+
+.chat-message:hover {
+    z-index: 10;
 }
 
 .message-actions button {
@@ -465,6 +487,9 @@
     color: #6b7280;
     transition: all 0.15s ease;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* 按钮文字不换行，气泡很窄时由整条操作条溢出而不是挤压文字 */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .message-actions button:hover {
@@ -527,15 +552,28 @@
     align-items: center;
     gap: 4px;
     position: absolute;
-    /* 落在气泡内底部的预留区，鼠标不会移出气泡导致 hover 丢失 */
     bottom: 0.3rem;
-    right: 0.5rem;
     height: 20px;
     margin-top: 0;
+    /* 按内容定宽 + 不换行：气泡过窄时整条向外展开，不挤压按钮文字 */
+    width: max-content;
+    flex-wrap: nowrap;
+    white-space: nowrap;
     opacity: 0;
     transition: opacity 0.15s ease;
     z-index: 6;
     pointer-events: none;
+}
+
+/* 机器人气泡靠左：底部条从气泡左侧开始向右排 */
+.chat-message.bot .message-collapse-bar {
+    left: 0.5rem;
+}
+
+/* 用户气泡靠右：底部条从气泡右侧开始向左排 */
+.chat-message.user .message-collapse-bar {
+    right: 0.5rem;
+    justify-content: flex-end;
 }
 
 /* 本轮 AI 回复耗时：与「折叠/全部折叠」同排紧挨，跟随操作条一起显隐 */
@@ -565,6 +603,9 @@
     font-weight: 500;
     color: #9ca3af;
     transition: all 0.15s ease;
+    /* 按钮文字不换行 */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .message-collapse-bar button:hover {
