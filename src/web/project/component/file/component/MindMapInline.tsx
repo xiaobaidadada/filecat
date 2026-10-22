@@ -29,8 +29,8 @@ register_mind_themes(MindMap);
  */
 
 export type MindHandle = {
-    /** 立即保存，返回是否成功 */
-    save: () => Promise<boolean>;
+    /** 立即保存，返回是否成功；silent 为自动保存，不弹提示 */
+    save: (silent?: boolean) => Promise<boolean>;
     /** 是否有未保存的改动 */
     is_dirty: () => boolean;
 };
@@ -116,7 +116,7 @@ type Props = {
     /** 切换文件时用于重建编辑器的 key */
     reset_key?: string;
     /** 保存实现：由外壳决定写到哪 */
-    on_save: (context: string) => Promise<boolean>;
+    on_save: (context: string, silent?: boolean) => Promise<boolean>;
     on_saved?: () => void;
     on_dirty?: (dirty: boolean) => void;
     register?: (handle: MindHandle) => void;
@@ -166,13 +166,13 @@ export default function MindMapEditor(props: Props) {
         return JSON.stringify(mm.getData(true));
     };
 
-    const save = async (): Promise<boolean> => {
+    const save = async (silent = false): Promise<boolean> => {
         const mm = mindRef.current;
         if (!mm) {
-            NotyFail(t("编辑器尚未就绪"));
+            if (!silent) NotyFail(t("编辑器尚未就绪"));
             return false;
         }
-        const ok = await latest.current.props.on_save(buildContext());
+        const ok = await latest.current.props.on_save(buildContext(), silent);
         if (ok) {
             dirtyRef.current = false;
             latest.current.props.on_dirty?.(false);

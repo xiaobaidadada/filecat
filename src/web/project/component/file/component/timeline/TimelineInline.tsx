@@ -43,8 +43,8 @@ import {InputText, InputTextarea} from "../../../../../meta/component/Input";
  */
 
 export type TimelineHandle = {
-    /** 立即保存，返回是否成功 */
-    save: () => Promise<boolean>;
+    /** 立即保存，返回是否成功；silent 为自动保存，不弹提示 */
+    save: (silent?: boolean) => Promise<boolean>;
     /** 是否有未保存的改动 */
     is_dirty: () => boolean;
     /** 当前是否处于编辑模式（视图模式下的改动绝不保存） */
@@ -58,8 +58,8 @@ type Props = {
     doc?: TimelineDoc;
     /** 切换文件时用于重建编辑器的 key */
     reset_key?: string;
-    /** 保存实现：由外壳决定写到哪 */
-    on_save: (context: string) => Promise<boolean>;
+    /** 保存实现：由外壳决定写到哪；silent 为自动保存，不弹提示 */
+    on_save: (context: string, silent?: boolean) => Promise<boolean>;
     on_dirty?: (dirty: boolean) => void;
     /** 编辑模式变化通知（外壳据此显隐保存按钮等） */
     on_edit_mode_change?: (edit: boolean) => void;
@@ -222,12 +222,12 @@ export default function TimelineEditor(props: Props) {
         set_history_tick((v) => v + 1);
     }, []);
 
-    const save = async (): Promise<boolean> => {
+    const save = async (silent = false): Promise<boolean> => {
         // 视图模式绝不落盘：即使外壳/快捷键绕过了按钮隐藏，这里也直接拒绝
         if (!edit_modeRef.current) {
             return false;
         }
-        const ok = await latest.current.props.on_save(stringify_doc(docRef.current));
+        const ok = await latest.current.props.on_save(stringify_doc(docRef.current), silent);
         if (ok) mark_dirty(false);
         return ok;
     };

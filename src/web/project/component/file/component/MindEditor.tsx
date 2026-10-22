@@ -37,14 +37,14 @@ export default function MindEditor() {
         mind_editor?.close?.();
     };
 
-    const save = async () => {
-        await apiRef.current?.save();
+    const save = async (silent = false) => {
+        await apiRef.current?.save(silent);
     };
     // 自动保存读最新 dirty 状态用的 ref
     const dirty_ref = useRef(dirty);
     dirty_ref.current = dirty;
     // 编辑器自动保存（个人设置里可配置）；代码块来源（md 内嵌）不落文件，不自动保存
-    use_editor_auto_save(EditorAutoSaveEnum.mind, () => !is_code_source && dirty_ref.current, () => save(), is_code_source);
+    use_editor_auto_save(EditorAutoSaveEnum.mind, () => !is_code_source && dirty_ref.current, (silent) => save(silent), is_code_source);
 
     // Esc 关闭：与项目其它全屏浮层（md 编辑器等）保持一致
     useEffect(() => {
@@ -98,11 +98,11 @@ export default function MindEditor() {
                             </button>
                         </div>
                     }
-                    on_save={async (context: string) => {
+                    on_save={async (context: string, silent?: boolean) => {
                         // 代码块来源：写回 md 的 ```smm-mind，不落文件
                         if (is_code_source) {
                             mind_editor.on_save_code?.(context);
-                            NotySuccess(t("保存成功"));
+                            if (!silent) NotySuccess(t("保存成功"));
                             // 写回代码块后关闭全屏编辑器
                             set_mind_editor({});
                             return true;
@@ -112,7 +112,8 @@ export default function MindEditor() {
                             {context},
                         );
                         if (rsq.code === RCode.Success) {
-                            NotySuccess(t("保存成功"));
+                            // 自动保存不弹成功提示
+                            if (!silent) NotySuccess(t("保存成功"));
                             return true;
                         }
                         return false;

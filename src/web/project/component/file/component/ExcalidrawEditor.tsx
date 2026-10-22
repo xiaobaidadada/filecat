@@ -102,9 +102,9 @@ export default function ExcalidrawEditor() {
         excalidraw_editor?.close?.();
     };
 
-    const save = async () => {
+    const save = async (silent = false) => {
         if (!excalidrawAPI) {
-            NotyFail("Editor is not ready");
+            if (!silent) NotyFail("Editor is not ready");
             return;
         }
 
@@ -128,13 +128,14 @@ export default function ExcalidrawEditor() {
         );
 
         if (rsq.code === RCode.Success) {
-            NotySuccess("保存成功");
+            // 自动保存不弹成功提示，只在手动保存时提示
+            if (!silent) NotySuccess("保存成功");
             dirty_ref.current = false;
         }
     };
 
     // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
-    use_editor_auto_save(EditorAutoSaveEnum.draw, () => dirty_ref.current, () => save());
+    use_editor_auto_save(EditorAutoSaveEnum.draw, () => dirty_ref.current, (silent) => save(silent));
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {

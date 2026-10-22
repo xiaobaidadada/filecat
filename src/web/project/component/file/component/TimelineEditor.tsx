@@ -34,14 +34,14 @@ export default function TimelineEditor() {
         timeline_editor?.close?.();
     };
 
-    const save = async () => {
-        await apiRef.current?.save();
+    const save = async (silent = false) => {
+        await apiRef.current?.save(silent);
     };
     // 自动保存读最新 dirty 状态用的 ref
     const dirty_ref = useRef(dirty);
     dirty_ref.current = dirty;
     // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
-    use_editor_auto_save(EditorAutoSaveEnum.timeline, () => dirty_ref.current, () => save());
+    use_editor_auto_save(EditorAutoSaveEnum.timeline, () => dirty_ref.current, (silent) => save(silent));
 
     // Esc 关闭：与项目其它全屏浮层（md / mind 编辑器等）保持一致
     useEffect(() => {
@@ -95,13 +95,14 @@ export default function TimelineEditor() {
                             </button>
                         </div>
                     }
-                    on_save={async (context: string) => {
+                    on_save={async (context: string, silent?: boolean) => {
                         const rsq = await fileHttp.post(
                             `save/${encodeURIComponent(getRouterAfter("file", getRouterPath()))}${timeline_editor.name}`,
                             {context},
                         );
                         if (rsq.code === RCode.Success) {
-                            NotySuccess(t("保存成功"));
+                            // 自动保存不弹成功提示
+                            if (!silent) NotySuccess(t("保存成功"));
                             return true;
                         }
                         return false;

@@ -19,6 +19,8 @@ export default function ImageEditor() {
     const location = useLocation();
     // 图片被修改标记（自动保存用；保存成功后清除）
     const dirty_ref = React.useRef(false);
+    // 自动保存触发时为 true，onSave 回调据此跳过成功提示
+    const silent_ref = React.useRef(false);
 
     const loadFile = async ()=>{
         if (!loadfile_done) {
@@ -47,7 +49,9 @@ export default function ImageEditor() {
                     editedImageObject.imageCanvas.toBlob(resolve, editedImageObject.mimeType));
                 await fileHttp.put(`${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`, blob, undefined);
                 dirty_ref.current = false;
-                NotySuccess('保存成功')
+                // 自动保存不弹成功提示
+                if (!silent_ref.current) NotySuccess('保存成功');
+                silent_ref.current = false;
             },
             // 图像被修改（自动保存的 dirty 标记）
             onModify: () => {
@@ -95,10 +99,12 @@ export default function ImageEditor() {
     // 编辑器自动保存（个人设置里可配置）。
     // filerobot 没有编程式保存 API，只能通过点击它的「保存(Save)」按钮触发 onSave，
     // 这里在定时器到点时模拟点击该按钮。
-    use_editor_auto_save(EditorAutoSaveEnum.image, () => dirty_ref.current, () => {
+    use_editor_auto_save(EditorAutoSaveEnum.image, () => dirty_ref.current, (silent) => {
         const btn = Array.from(document.querySelectorAll('#editor_container button'))
             .find(b => (b.textContent || '').includes('Save') || (b.textContent || '').includes('保存')) as HTMLButtonElement | undefined;
-        btn?.click();
+        if (!btn) return;
+        silent_ref.current = !!silent;
+        btn.click();
     });
 
     return <div id={"image-editor-container"}>
