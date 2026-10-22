@@ -979,9 +979,12 @@ export class Ai_agentService {
             cleanupRunning();
             const errorMsg = error?.message ?? JSON.stringify(error);
             // 推错误给【订阅了本会话的连接】
+            // 带上本轮已产出的 once_messages_list：前端据此就地重建本轮气泡，
+            // 不必整份重新拉取会话，避免中断/报错时消息列表被整体替换导致气泡重建。
             this.sendToSubscribers(token, run_pojo.subscribers, CmdType.ai_chat_error, {
                 session_id: finalSessionId,
                 message: errorMsg,
+                once_messages_list: run_pojo.once_messages_list ?? [],
             });
             // 保存错误到会话
             try {

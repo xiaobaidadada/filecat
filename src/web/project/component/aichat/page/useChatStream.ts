@@ -7,7 +7,7 @@
  * 3. 处理聊天结束 / 错误，自动清理 WS 监听
  * 4. 消息排队机制：sending 时用户发送的消息进入队列，当前轮结束后自动处理
  */
-import {useRef} from "react";
+import React, {useRef, useState} from "react";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
 import {
@@ -16,8 +16,7 @@ import {
     ai_agent_content_part
 } from "../../../../../common/req/filecat.ai.pojo";
 import {Message} from "./chatTypes";
-import {toUiMessages, next_msg_id} from "./messageUtils";
-import React, {useState} from 'react';
+import {toUiMessages, next_placeholder_id} from "./messageUtils";
 /** 排队消息的结构 */
 interface QueuedMsg {
     text: string;
@@ -56,6 +55,11 @@ interface UseChatStreamOptions {
     buildRequestMessages: (msg: Message) => ai_agent_message_item[];
     /** 获取当前选中的系统提示词 ID */
     getSelectedSysPromptId: () => string;
+    /**
+     * 标记本轮由本地发起（值为会话 id）。
+     * 广播订阅层据此让路，避免两边同时收尾导致 id 重排、出现重复 key。
+     */
+    setLocalOwner: (sessionId: string | null) => void;
 }
 
 export function useChatStream(opts: UseChatStreamOptions) {
@@ -70,6 +74,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         scrollToBottom,
         buildRequestMessages,
         getSelectedSysPromptId,
+        setLocalOwner,
     } = opts;
 
     /** 排队消息队列 */
@@ -88,10 +93,20 @@ export function useChatStream(opts: UseChatStreamOptions) {
         userMsg: Message,
         onDone: () => void,
     ) => {
-        const newMessages = [...getMessages(), userMsg];
+        const baseMessages = getMessages();
+        // 记录本轮起点（user 消息的位置）：收尾时用它把本轮产生的气泡整段替换掉，
+        // 不依赖“末尾是不是 bot”这类猜测，也不会误伤本轮之前的任何历史气泡
+        const turnStartIndex = baseMessages.length;
+        // 本轮气泡直接使用“最终位置 id”：user 恒为 turnStartIndex + 1，
+        // bot 为 turnStartIndex + 2 起。收尾时 id 与之一致，气泡不会被重建。
+        const userFinalId = turnStartIndex + 1;
+        const userBubble: Message = { ...userMsg, id: userFinalId };
+        const newMessages = [...baseMessages, userBubble];
         setMessages(newMessages);
         // 标记“本地正在发送的会话”
         setSending(sessionId);
+        // 标记本轮由本地发起：广播订阅层据此让路，避免两边同时收尾导致 id 重排
+        setLocalOwner(sessionId);
 
         // 创建 AbortSignal 控制句柄
         const abortHandle = { abort: () => {} };
@@ -99,7 +114,9 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
 
         const noticeMsg: Message = {
-            id: userMsg.id + 1,
+            // notice 是“本条 bot 气泡还没内容”的临时占位，用独立负号 id，
+            // 与正文气泡 id 段完全隔离，避免和正文气泡撞 key。
+            id: -1,
             sender: 'bot',
             text: "AI thinking ...",
             is_loading: true,
@@ -126,6 +143,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
             const chunkIndex: number = ctx.chunk_index ?? 0;
 
             if (ctx.notice) {
+                // notice 用独立 id（负号段），与正文气泡的 id 段完全隔离：
+                // 复用正文 id 会让 notice 与"已创建但尚无内容"的正空气泡撞 key，
+                // React 报 duplicate key 并可能丢弃其中一个节点。
+                noticeMsg.id = -1;
                 noticeMsg.text = chunkText;
                 noticeMsg.is_loading = true;
                 if (!newMessages.includes(noticeMsg)) newMessages.push(noticeMsg);
@@ -140,7 +161,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
             let target = chunkBubbleMap.get(chunkIndex);
             if (!target) {
-                target = { id: next_msg_id(), sender: 'bot', text: '', is_loading: true };
+                // id 由「本轮起点 + chunkIndex」唯一确定，保证与 user 气泡、
+                // notice 占位（负号段）都不冲突
+                const id = userFinalId + 1 + chunkIndex;
+                target = { id, sender: 'bot', text: '', is_loading: true };
                 newMessages.push(target);
                 chunkBubbleMap.set(chunkIndex, target);
             }
@@ -163,27 +187,29 @@ export function useChatStream(opts: UseChatStreamOptions) {
             if (ctx.session_id !== sessionId) return;
             cleanup();
             abortRef.current = null;
+            // 本轮由本地收尾完成，释放标记；后续若再收到同会话的 end（不应发生）也不会重复处理
+            setLocalOwner(null);
             // 只清理自己发起的会话标记（避免误清并行运行的其它会话）
             setSending(prev => prev === sessionId ? null : prev);
-            // 收尾：把本轮没产出真实内容的 bot 气泡删掉（可能只剩"AI思考中"或工具提示）
-            // 本地发起时最终渲染由本 hook 负责（全局 handleEnd 会因 sendingSessionId 命中而提前返回）。
-            // 若后端带回了本轮最终消息列表，直接用它重建成最终气泡（含耗时等元信息），
-            // 与全局 handleEnd 的处理方式保持一致，避免两条路径渲染结果不同。
+            // 收尾：本轮以 once_messages_list 为权威数据重建末尾气泡。
+            // 该列表已包含本轮所有 assistant 片段（多轮工具调用各一条，且带完整 content_list），
+            // 流式阶段的气泡可能只渲染了一部分（如工具块尚未推送），保留它会与权威数据重复。
             if (getActiveSessionId() === sessionId) {
-                if (ctx.once_messages_list?.length) {
-                    // once_messages_list 只含 assistant（不含用户消息）。
-                    // 末尾是本轮的 bot 气泡就替换它，否则追加。
-                    const finalMsgs = toUiMessages(ctx.once_messages_list);
-                    setMessages(prev => {
-                        const cleaned = prev.filter(has_real_content);
-                        const last = cleaned[cleaned.length - 1];
-                        return last?.sender === 'bot'
-                            ? [...cleaned.slice(0, -1), ...finalMsgs]
-                            : [...cleaned, ...finalMsgs];
-                    });
-                } else {
-                    setMessages(newMessages.filter(has_real_content));
-                }
+                setMessages(prev => {
+                    const cleaned = prev.filter(has_real_content);
+                    let next = cleaned;
+                    if (ctx.once_messages_list?.length) {
+                        // 本轮 user 气泡 = 最后一个 user 气泡；它之后的都是本轮 bot 片段
+                        let userIdx = -1;
+                        for (let i = cleaned.length - 1; i >= 0; i--) {
+                            if (cleaned[i].sender === 'user') { userIdx = i; break; }
+                        }
+                        const tailStart = userIdx >= 0 ? userIdx + 1 : cleaned.length;
+                        const head = cleaned.slice(0, tailStart);
+                        next = [...head, ...toUiMessages(ctx.once_messages_list)];
+                    }
+                    return next.map((m, i) => ({ ...m, id: i + 1 }));
+                });
             }
             refreshSessions();
             scrollToBottom(true);
@@ -206,9 +232,12 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 last.text = last.text ? `${last.text}\n\n${errText}` : errText;
                 last.is_loading = false;
             } else {
-                newMessages.push({ id: next_msg_id(), sender: 'bot', text: errText });
+                newMessages.push({ id: userFinalId + 1, sender: 'bot', text: errText });
             }
-            if (getActiveSessionId() === sessionId) setMessages([...newMessages]);
+            if (getActiveSessionId() === sessionId) {
+                // 错误路径同样按最终位置重算 id，与正常收尾保持一致，避免气泡重挂
+                setMessages([...newMessages].map((m, i) => ({ ...m, id: i + 1 })));
+            }
             onDone();
         };
 
@@ -251,7 +280,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         }));
 
         const userMsg: Message = {
-            id: next_msg_id(),
+            id: next_placeholder_id(),
             sender: 'user',
             text: next.text,
             attachments: next.attachments,

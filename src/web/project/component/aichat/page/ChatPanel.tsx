@@ -1,91 +1,62 @@
 /**
- * ChatPanel — 完整的 AI 聊天界面（会话列表 + 聊天主体）
+ * ChatPanel — AI 聊天界面容器（会话列表 + 聊天主体）。
  *
- * 这是「整页聊天」抽出来的通用组件：
- *   - 不传任何 props 时，行为与原来的 AI 聊天页完全一致（默认模式）；
- *   - 传 inline_header 时，顶部按钮就地渲染成面板自带的 Header，
- *     不与宿主页面共用全局 Header（用于把聊天整体嵌到别的页面右侧的场景）。
+ * 不传 props 时行为与原整页聊天完全一致；传 inline_header 时把 Header 就地渲染，
+ * 用于把聊天嵌进宿主页面右侧（Studio）。
  *
- * 之所以把「会话列表」也包进来，是为了让嵌入场景与整页场景没有任何特殊分支。
+ * 职责拆分：
+ *   - useSessionManager   会话列表/切换/增删改/超管模式
+ *   - useMessageList      气泡状态/滚动/批量选择/消息级操作
+ *   - useChatSubscription 实时广播订阅（其它标签页/刷新后的流式输出）
+ *   - useChatStream       本地发起对话的流式收发
+ * 本文件只做编排与渲染。
  */
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { CmdType } from "../../../../../common/frame/WsData";
 
 import { ai_agentHttp, settingHttp } from "../../../util/config";
 import { debounce } from "../../../../../common/fun.util";
-import { normalize_path } from "../../../../../common/StringUtil";
-import { move_element } from "../../../../../common/ListUtil";
 import { use_auth_check } from "../../../util/store.util";
-import { copyToClipboard } from "../../../util/FunUtil";
-import { NotySuccess } from "../../../util/noty";
-import { using_confirm } from "../../prompts/prompt.util";
 import { RCode } from "../../../../../common/Result.pojo";
 import { useCmdConfirm } from "../useCmdConfirm";
 import { $stroe } from "../../../util/store";
 import { InputText } from "../../../../meta/component/Input";
-
 import {
-    ai_agent_chat_session_item,
-    ai_agent_chat_session_meta,
-    ai_agent_item_dotenv,
-    ai_agent_message_item,
-    ai_agent_content_part,
-    ai_agent_usage_stats,
-    ai_system_prompt_item,
-    ai_agent_Item, ai_chat_send_message,
+    ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_item,
+    ai_system_prompt_item, ai_agent_usage_stats, ai_agent_chat_session_item,
 } from "../../../../../common/req/filecat.ai.pojo";
-import {formatTokenCount} from "../../../../../common/token_counter";
+import { formatTokenCount } from "../../../../../common/token_counter";
+import { ws } from "../../../util/ws";
+import { CmdType } from "../../../../../common/frame/WsData";
+import { NotySuccess } from "../../../util/noty";
 
-// ===== 拆分的子模块 =====
-import { Message, message_to_text } from "./chatTypes";
-import { toUiMessages, next_msg_id } from "./messageUtils";
+import { Message } from "./chatTypes";
+import { next_placeholder_id } from "./messageUtils";
 import { buildAttachments } from "./attachmentUtils";
 import { useChatStream } from "./useChatStream";
+import { useSessionManager } from "./useSessionManager";
+import { useMessageList } from "./useMessageList";
+import { useChatSubscription } from "./useChatSubscription";
 import { handleNonCompletionsRequest } from "./RequestTypeRenderers";
 import ChatHeader, { ModelGroup } from "./ChatHeader";
 import SessionList from "./SessionList";
 import ChatMessageList from "./ChatMessageList";
 import ChatInput, { ChatInputHandle } from "./ChatInput";
 import BackgroundProcessPanel from "./BackgroundProcessPanel";
-import { ws } from "../../../util/ws";
-import {use_get_now_abs_path} from "../../file/FileUtil";
-
-/**
- * 会话列表项：普通模式下即会话 meta；
- * 超级管理员「所有用户会话」模式下额外带属主信息（user_id / owner_name）。
- */
-type SessionListItem = ai_agent_chat_session_meta & { user_id?: string; owner_name?: string };
 
 /** ChatPanel 对外参数 */
 export interface ChatPanelProps {
-    /**
-     * 内嵌模式：ChatHeader 就地渲染成面板自带的一条 Header，
-     * 不通过 HeaderPortal 注入全站顶部 Header。
-     * 集成方（如 Studio 右侧面板）用这个开关，避免与宿主页面抢同一个 portal 槽位。
-     */
+    /** 内嵌模式：Header 就地渲染，不注入全站顶部 Header */
     inline_header?: boolean;
-
-    /**
-     * 初始定位的会话 id。按工作目录匹配失败时作为兜底。
-     */
+    /** 初始定位的会话 id */
     session_id?: string;
-
-    /**
-     * 初始工作目录：挂载后按会话列表顺序找第一个 file_cwd_path 完全一致的会话；
-     * 找不到就用它新建一个会话。用于「打开当前工作目录的 AI 会话」。
-     */
+    /** 初始工作目录：按它找会话，找不到就新建 */
     file_cwd_path?: string;
-
-    /**
-     * 当前会话是否同步到 URL 的 ?session= 参数。
-     * 整页模式需要（默认 true）；嵌入到宿主页面时必须传 false，否则会污染宿主的 URL。
-     */
+    /** 当前会话是否同步到 URL 的 ?session=（嵌入场景传 false） */
     sync_url?: boolean;
-
-    /** 会话定位完成后回调（嵌入场景用于把「当前会话 id」按目录持久化到外部） */
+    /** 会话定位完成后回调 */
     on_session_change?: (sessionId: string) => void;
 }
 
@@ -99,535 +70,265 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     } = props;
 
     const { t } = useTranslation();
-    // 当前会话同步到 URL（?session=xxx），刷新/分享链接可恢复到同一会话。
-    // 用 replace 而非 push，避免每次点会话都往浏览器历史里塞一条记录。
-    // 嵌入场景（sync_url=false）不读不写 URL，避免和宿主页面的 query 互相干扰。
+    // 整页模式把当前会话写进 URL；嵌入模式不读不写，避免污染宿主 query
     const [search_params, set_search_params] = useSearchParams();
     const url_session_id = sync_url ? (search_params.get("session") || "") : "";
-    /** 把当前会话 id 写进 URL（仅整页模式；嵌入模式跳过） */
     const write_url_session = (sessionId: string | null) => {
         if (!sync_url) return;
         set_search_params(prev => {
             const next = new URLSearchParams(prev);
-            if (sessionId) {
-                next.set("session", sessionId);
-            } else {
-                next.delete("session");
-            }
+            if (sessionId) next.set("session", sessionId);
+            else next.delete("session");
             return next;
         }, { replace: true });
     };
-    const confirm_dell_all = using_confirm();
+
     const { check_user_auth } = use_auth_check();
     useCmdConfirm();
 
-    // ===== 核心状态 =====
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [sessions, setSessions] = useState<SessionListItem[]>([]);
-    /** 超管：是否处于「查看所有用户会话」模式（跨用户排序无意义，禁用拖动排序） */
-    const [admin_all_mode, set_admin_all_mode] = useState(false);
-    const [activeSessionId, setActiveSessionId] = useState<string>("");
-    // 当前“本地正在发送”的会话 id；null 表示本地没有在发送。
-    // 用会话 id 而非布尔，是为了区分“本地发起”与“其它标签页/刷新后在跑”，
-    // 避免切换会话时误以为当前会话在发送（导致发送按钮/生成动画错显示）。
-    const [sendingSessionId, setSendingSessionId] = useState<string | null>(null);
-    /** 当前活动会话是否正在执行中（其它页面/发起后切走）；用于展示“执行中”状态和接收实时广播 */
-    const [activeSessionRunning, setActiveSessionRunning] = useState(false);
-    const chatInputRef = useRef<ChatInputHandle>(null);
-    const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
-
     // ===== 全局/持久化状态 =====
     const [user_base_info] = useAtom($stroe.user_base_info);
-    /** 超级管理员：可查看/操作所有用户的会话 */
     const is_root = !!user_base_info?.user_data?.is_root;
     const [ai_session_collapsed, set_ai_session_collapsed] = useAtom($stroe.ai_session_collapsed);
     const [ai_bg_expanded, set_ai_bg_expanded] = useAtom($stroe.ai_bg_expanded);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [ai_chat_zoom] = useAtom($stroe.ai_chat_zoom);
-    const [batchMode, setBatchMode] = useState(false);
-    const [selectedMsgIds, setSelectedMsgIds] = useState<Set<number>>(new Set());
+
+    const [sendingSessionId, setSendingSessionId] = useState<string | null>(null);
+    const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
     const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(new Set());
-    const [selectedSysPromptId, setSelectedSysPromptId] = useState<string>("");
-
-    /**
-     * 切换“系统提示词”选择：更新本地状态，并把选择持久化到当前会话，
-     * 这样下次加载该会话时会自动恢复该提示词。
-     */
-    const handleSystemPromptChange = (id: string) => {
-        setSelectedSysPromptId(id);
-        // 只有在已有活动会话时才需要持久化
-        if (activeSessionId) {
-            const ownerId = owner_of_session(activeSessionId);
-            if (ownerId) {
-                admin_call("sys_prompt", {
-                    session_id: activeSessionId,
-                    user_id: ownerId,
-                    sys_prompt_id: id || undefined
-                }).catch(console.error);
-            } else {
-                ai_agentHttp.post("session/sys_prompt", {
-                    session_id: activeSessionId,
-                    sys_prompt_id: id || undefined
-                }).catch(console.error);
-            }
-        }
-    };
-
-    // ===== 引用 =====
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const chatContainerRef = useRef<HTMLDivElement>(null);
-    const autoScrollRef = useRef(true);
-    /** 当前活动会话在“接收其它页面广播”时的实时 assistant 气泡 id（用于追加文本） */
-    const liveBubbleIdRef = useRef<number | null>(null);
-    // 本轮实时气泡：chunk_index -> 气泡 id。
-    // 后端每轮 LLM 输出带一个 chunk_index，必须按它精确命中气泡；
-    // 只按“末尾 bot 气泡”猜会在刷新后（live_messages 已渲染多个气泡）错位。
-    const chunkBubbleRef = useRef(new Map<number, number>());
-    /** 当前已订阅(绑定 ws 与 session)的会话 id；用于切换/结束/卸载时退订 */
-    const subscribedSessionRef = useRef<string | null>(null);
-    /**
-     * 实例级后台进程面板引用。
-     * 之前是模块级单例，多实例（整页 + 嵌入）会互相覆盖，
-     * 这里改成本实例自己的 ref，只作用于本面板的面板实例。
-     */
-    const bgPanelRef = useRef<{ refresh?: () => void; onCountChange?: (count: number) => void }>({});
-    // ===== 实时值 ref（供 useEffect([]) 的全局监听闭包读取最新 state） =====
-    const activeSessionIdRef = useRef(activeSessionId);
-    const sendingSessionIdRef = useRef<string | null>(sendingSessionId);
-    useEffect(() => { activeSessionIdRef.current = activeSessionId; }, [activeSessionId]);
-    useEffect(() => { sendingSessionIdRef.current = sendingSessionId; }, [sendingSessionId]);
-    // /ai_agent_setting/env 返回结构：{ ai_config: 当前激活的供应商配置, ai_config_env: 其 dotenv 配置 }
-    const env_config = useRef<{ ai_config?: ai_agent_Item; ai_config_env?: ai_agent_item_dotenv }>({});
     const [sysPromptList, setSysPromptList] = useState<ai_system_prompt_item[]>([]);
     const [currentModelName, setCurrentModelName] = useState('');
-    // 所有供应商聚合的模型分组（聊天头部模型选择器使用，来源于后端 public_models）
     const [modelGroups, setModelGroups] = useState<ModelGroup[]>([]);
+    const [bgProcessCount, setBgProcessCount] = useState(0);
 
+    const chatInputRef = useRef<ChatInputHandle>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const bgPanelRef = useRef<{ refresh?: () => void; onCountChange?: (count: number) => void }>({});
+    const env_config = useRef<{ ai_config?: ai_agent_Item; ai_config_env?: ai_agent_item_dotenv }>({});
+
+    // 会话列表展开/收起（沿用原 atom 语义：true 为收起）
+    const set_session_panel_open = (open: boolean) => set_ai_session_collapsed(!open);
+
+    // sendingSessionId 的实时 ref，供订阅层闭包读取
+    const sendingSessionIdRef = useRef<string | null>(null);
+    useEffect(() => { sendingSessionIdRef.current = sendingSessionId; }, [sendingSessionId]);
     /**
-     * 拉取所有供应商聚合的模型分组（仅返回已开启且配置了模型的供应商）。
-     * 失败时静默（例如用户无「切换模型/AI配置」权限，接口会返回错误）。
+     * 本轮由本地发起的会话 id。
+     * 与 sendingSessionIdRef 分开：后者在收到 end 时立刻清空，
+     * 广播订阅层若依赖它判断「该谁收尾」会失效，导致两边同时收尾。
      */
+    const localOwnerRef = useRef<string | null>(null);
+
+    // ===== 跨 Hook 共享的 ref =====
+    // 这些值由会话层维护，但消息层/订阅层的闭包也要读，用 ref 打通，避免 Hook 相互依赖。
+    const sessions_ref_shared = useRef<{ id: string; user_id?: string }[]>([]);
+    const active_session_id_shared = useRef<string>("");
+    const session_admin_mode_ref = useRef<boolean>(false);
+    /** 当前已订阅的会话 id（切换/结束/卸载时退订） */
+    const subscribed_session_ref = useRef<string | null>(null);
+
+    // ===== 消息层（先建，会话层加载完成后通过回调把消息铺进来） =====
+    // 会话层需要消息层的 apply_session，用 ref 转发避免 Hook 构造顺序耦合
+    const apply_session_ref = useRef<(s: any) => void>(() => { });
+
+    const msg = useMessageList({
+        admin_call: (action, payload) => ai_agentHttp.post("admin/session", { action, ...(payload || {}) }),
+        owner_of_session: (id) => session_admin_mode_ref.current
+            ? sessions_ref_shared.current.find(s => s.id === id)?.user_id
+            : undefined,
+        get_sessions: () => sessions_ref_shared.current,
+        activeSessionId: active_session_id_shared.current,
+        admin_mode_ref: session_admin_mode_ref,
+    });
+
+    apply_session_ref.current = msg.apply_session;
+
+    // ===== 会话层 =====
+    const session_api = useSessionManager({
+        on_session_loaded: (session) => apply_session_ref.current(session),
+        set_session_panel_open,
+        on_session_change,
+        init_cwd,
+        write_url_session,
+        url_session_id,
+        init_session_id,
+    });
+
+    // 共享 ref 与会话层状态保持同步（供消息层/订阅层的闭包读取最新值）
+    useEffect(() => {
+        active_session_id_shared.current = session_api.activeSessionId;
+        session_admin_mode_ref.current = session_api.admin_all_mode;
+        sessions_ref_shared.current = session_api.sessions;
+    }, [session_api.activeSessionId, session_api.admin_all_mode, session_api.sessions]);
+
+    // ===== 订阅层 =====
+    const sub = useChatSubscription({
+        active_session_id_ref: active_session_id_shared,
+        local_owner_ref: localOwnerRef,
+        subscribed_ref: subscribed_session_ref,
+        set_messages: msg.setMessages,
+        scroll_to_bottom: () => msg.scrollToBottom(false),
+        auto_scroll_ref: msg.autoScrollRef,
+        mark_session_running: session_api.markSessionRunning,
+        refresh_sessions: session_api.refreshSessions,
+        reload_session: (id) => session_api.loadSession(id),
+        set_active_session_running: session_api.setActiveSessionRunning,
+    });
+
+    // ===== 本地流式 hook =====
+    const setMessagesDebounced = useRef(
+        debounce((msgs: Message[]) => {
+            msg.setMessages(msgs);
+            if (msg.autoScrollRef.current) msg.scrollToBottom(false);
+        }, 50)
+    ).current;
+
+    /** 从用户消息构建 AI 请求体 */
+    const buildRequestMessages = (um: Message): ai_agent_message_item[] => {
+        const imageAttachments = (um.attachments ?? []).filter(a => a.kind === "image");
+        if (imageAttachments.length > 0) {
+            const content: any[] = [];
+            if (um.text) content.push({ type: "text", text: um.text });
+            for (const img of imageAttachments) {
+                content.push({ type: "image_url", image_url: { url: img.content } });
+            }
+            return [{ content, role: 'user', attachments: um.attachments ?? [] }];
+        }
+        return [{
+            content: um.text,
+            role: um.sender === 'bot' ? 'assistant' : 'user',
+            attachments: um.attachments ?? [],
+        }];
+    };
+
+    const chatStream = useChatStream({
+        getMessages: () => msg.messages,
+        setMessages: msg.setMessages,
+        setMessagesDebounced,
+        setSending: setSendingSessionId,
+        getActiveSessionId: () => active_session_id_shared.current,
+        setActiveSessionId: session_api.setActiveSessionId,
+        refreshSessions: session_api.refreshSessions,
+        scrollToBottom: msg.scrollToBottom,
+        buildRequestMessages,
+        getSelectedSysPromptId: () => session_api.selectedSysPromptId,
+        setLocalOwner: (id) => { localOwnerRef.current = id; },
+    });
+
+    /** 从 env 配置同步当前模型展示值 */
+    const syncCurrentModelFromEnv = (envData: { ai_config?: ai_agent_Item }) => {
+        setCurrentModelName(envData?.ai_config?.model ?? '');
+    };
+
+    /** 拉取所有供应商聚合的模型分组（无权限时静默） */
     const loadPublicModels = async () => {
         try {
             const result = await ai_agentHttp.get("public_models");
-            if (result.code === RCode.Success) {
-                setModelGroups(result.data?.groups ?? []);
-            }
+            if (result.code === RCode.Success) setModelGroups(result.data?.groups ?? []);
         } catch {
             setModelGroups([]);
         }
     };
 
-    /**
-     * 从 env 配置（当前激活供应商）同步 currentModelName 的展示值。
-     * 注意：/ai_agent_setting/env 返回的是 { ai_config_env, ai_config }，
-     * 其中 ai_config 才是当前激活的 ai_agent_Item（含 model 字段）。
-     */
-    const syncCurrentModelFromEnv = (envData: { ai_config?: ai_agent_Item; ai_config_env?: ai_agent_item_dotenv }) => {
-        const modelName = envData?.ai_config?.model ?? '';
-        setCurrentModelName(modelName);
-    };
-    const [bgProcessCount, setBgProcessCount] = useState(0); // 所有会话的后台进程总数
+    /** 当前模型的请求类型 */
+    const getRequestType = () => env_config.current?.ai_config?.request_type || 'completions';
 
-    /** 从 env_config 中读取当前模型的 request_type */
-    const getRequestType = () => env_config?.current?.ai_config?.request_type || 'completions';
-
-    // ===== 防抖版 setMessages（自动滚动） =====
-    const setMessagesDebounced = useRef(
-        debounce((msgs: Message[]) => {
-            setMessages(msgs);
-            if (autoScrollRef.current) {
-                scrollToBottom(false);
-            }
-        }, 50)
-    ).current;
-
-    // ===== 滚动相关 =====
-    const isNearBottom = (el: HTMLElement, threshold = 120) => {
-        const { scrollTop, scrollHeight, clientHeight } = el;
-        return scrollHeight - (scrollTop + clientHeight) < threshold;
-    };
-
-    const scrollToBottom = (smooth = false) => {
-        const el = chatContainerRef.current;
-        if (!el) return;
-        // 内容里 markdown/代码块/图片是异步撑高的，单帧滚动会停在旧高度，
-        // 导致底部文字被遮住。这里连续两帧校正一次，等布局稳定。
-        el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-        requestAnimationFrame(() => {
-            const el2 = chatContainerRef.current;
-            if (!el2) return;
-            el2.scrollTo({ top: el2.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-        });
-    };
-
-    // 切换会话后需要滚到底：置位标记，由监听 messages 的 useLayoutEffect 执行
-    const pendingScrollRef = useRef(false);
-
-    // ===== 会话操作函数（refreshSessions 需要提前声明，供 useChatStream 使用） =====
-    /**
-     * 超级管理员的统一接口：对任意用户会话做增删改查。
-     * 用 ref 读取最新的 admin_all_mode，供全局闭包/回调使用。
-     */
-    const admin_mode_ref = useRef(false);
-    useEffect(() => { admin_mode_ref.current = admin_all_mode; }, [admin_all_mode]);
-    const admin_call = (action: string, payload: Record<string, any> = {}) =>
-        ai_agentHttp.post("admin/session", { action, ...payload });
-
-    const refreshSessions = async () => {
-        const result = admin_mode_ref.current
-            ? await admin_call("list_all_sessions")
-            : await ai_agentHttp.get("sessions");
-        if (result.code === RCode.Success) {
-            setSessions(result.data ?? []);
-        }
-    };
-
-    /**
-     * 本地更新某个会话的「执行中」标记，不发请求。
-     * 收到流式消息 = 正在执行，收到结束/错误 = 结束，这些信息 WS 消息里已经带了，
-     * 没必要为此反复拉整个会话列表。
-     */
-    const markSessionRunning = (sessionId: string, running: boolean) => {
-        setSessions(prev => {
-            // 列表里没有该会话（或状态已一致）时原样返回，避免无意义的重渲染
-            const target = prev.find(it => it.id === sessionId);
-            if (!target || !!target.running === running) return prev;
-            return prev.map(it => (it.id === sessionId ? {...it, running} : it));
-        });
-    };
-
-    // ===== 从用户消息构建请求体 =====
-    const buildRequestMessages = (msg: Message): ai_agent_message_item[] => {
-        const imageAttachments = (msg.attachments ?? []).filter(a => a.kind === "image");
-        if (imageAttachments.length > 0) {
-            const content: ai_agent_content_part[] = [];
-            if (msg.text) content.push({ type: "text", text: msg.text });
-            for (const img of imageAttachments) {
-                content.push({ type: "image_url", image_url: { url: img.content } });
-            }
-            return [{ content, role: 'user', attachments: msg.attachments ?? [] }];
-        }
-        return [{
-            content: msg.text,
-            role: msg.sender === 'bot' ? 'assistant' : 'user',
-            attachments: msg.attachments ?? []
-        }];
-    };
-
-    // ===== 聊天流 hook =====
-    const chatStream = useChatStream({
-        getMessages: () => messages,
-        setMessages,
-        setMessagesDebounced,
-        // setSending 语义改为：设置“本地正在发送的会话 id”（string|null）
-        setSending: setSendingSessionId,
-        getActiveSessionId: () => activeSessionIdRef.current,
-        setActiveSessionId,
-        refreshSessions,
-        scrollToBottom,
-        buildRequestMessages,
-        getSelectedSysPromptId: () => selectedSysPromptId,
-    });
-
-    // ===== 会话操作 =====
-    const loadSessions = async (selectId?: string | null): Promise<boolean> => {
-        const result = admin_mode_ref.current
-            ? await admin_call("list_all_sessions")
-            : await ai_agentHttp.get("sessions");
-        if (result.code !== RCode.Success) return false;
-        const list: SessionListItem[] = result.data ?? [];
-        setSessions(list);
-        const nextId = selectId === null
-            ? (list[0]?.id ?? "")
-            : (selectId || activeSessionId || list[0]?.id || "");
-        if (nextId) {
-            const ownerId = list.find(s => s.id === nextId)?.user_id;
-            return await loadSession(nextId, false, ownerId);
-        } else {
-            setMessages([]);
-            setActiveSessionId("");
-            // 没有可显示的会话时清掉 URL 里的 session，避免刷新后再次尝试加载已删除的会话
-            write_url_session(null);
-            return false;
-        }
-    };
-
-    const loadSession = async (sessionId: string, switch_menu = false, ownerId_override?: string): Promise<boolean> => {
-        // 超管在所有用户会话模式下：按该会话的属主(user_id)读取
-        const ownerId = ownerId_override ?? sessions.find(s => s.id === sessionId)?.user_id;
-        const result = admin_mode_ref.current && ownerId
-            ? await admin_call("get", { session_id: sessionId, user_id: ownerId })
-            : await ai_agentHttp.post("session/get", { session_id: sessionId });
-        if (result.code !== RCode.Success || !result.data) return false;
-        const session = result.data as ai_agent_chat_session_item & { running?: boolean; live_messages?: ai_agent_message_item[] };
-        setActiveSessionId(session.id);
-        // 同步到 URL（仅整页模式；且当与当前 URL 不一致时才写，避免多余的 history 操作）
-        if (sync_url && url_session_id !== session.id) {
-            write_url_session(session.id);
-        }
-        // 通知外部当前会话变化（嵌入场景用于按目录持久化）
-        on_session_change?.(session.id);
-        // 该会话是否正在执行中（其它标签页 / 发起后切走）
-        setActiveSessionRunning(!!session.running);
-        // ===== 订阅绑定：把当前 ws 连接与该会话绑定（仅当该会话正在执行时） =====
-        // 订阅后后端只向订阅此会话的连接推送实时输出；切换/结束时退订。
-        if (subscribedSessionRef.current && subscribedSessionRef.current !== session.id) {
-            ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: false });
-        }
-        subscribedSessionRef.current = session.running ? session.id : null;
-        if (subscribedSessionRef.current) {
-            ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: true });
-        }
-        let messages = session.messages
-        if (session.live_messages?.length) {
-            messages = [...messages,...session.live_messages];
-        }
-        const uiMessages = toUiMessages(messages);
-        // live_messages 排在末尾，按下标顺序对应各轮 chunk_index，登记后增量才能续写同一个气泡
-        chunkBubbleRef.current.clear();
-        const liveCount = session.live_messages?.length ?? 0;
-        for (let i = 0; i < liveCount; i++) {
-            const m = uiMessages[uiMessages.length - liveCount + i];
-            if (m) chunkBubbleRef.current.set(i, m.id);
-        }
-        setMessages(uiMessages);
-        setSelectedSysPromptId(session.sys_prompt_id ?? "");
-        if (switch_menu) {
-            set_ai_session_collapsed(false);
-        }
-        // 后台进程面板打开时，切换会话后刷新进程列表
-        bgPanelRef.current.refresh?.();
-        // React 渲染是异步批处理的，需等 DOM 更新并完成布局后再滚动，
-        // 否则 scrollHeight 还是旧值，会停在顶部。
-        pendingScrollRef.current = true;
-        return true;
-    };
-
-    const createSession = async (sysPromptId?: string) => {
-        // 新建会话默认不继承当前选中的系统提示词（置空）；
-        // 仅当调用方显式传入了提示词 id 时才使用它。
-        const targetPromptId = sysPromptId ?? "";
-        const result = await ai_agentHttp.post("session", {
-            // title: "新会话",
-            sys_prompt_id: targetPromptId || undefined,
-            // 面板绑定了工作目录时，新会话也要带上，保证后续按目录能定位到它
-            file_cwd_path: init_cwd || undefined,
-        });
-        if (result.code !== RCode.Success) return;
-        const session = result.data as ai_agent_chat_session_item;
-        setActiveSessionId(session.id);
-        setMessages([]);
-        setSelectedSysPromptId(session.sys_prompt_id ?? "");
-        set_ai_session_collapsed(false);
-        await loadSessions(session.id);
-        requestAnimationFrame(() => {
-            const el = document.querySelector('.chat-input') as HTMLTextAreaElement;
-            if (el) {
-                el.style.height = 'auto';
-                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-            }
-        });
-    };
-
-    /**
-     * 按工作目录定位会话：从会话列表自上而下找第一个 file_cwd_path 完全一致的会话；
-     * 找不到就用该目录新建一个会话。用于「打开当前工作目录的 AI 会话」。
-     * 返回最终要打开的会话 id（失败或 cwd 为空时返回 null）。
-     */
-    const locate_session_by_cwd = async (cwd: string): Promise<string | null> => {
-        // 工作目录为空（例如 Studio 打开的是根目录）时不做匹配，
-        // 否则会误命中「没设置过工作目录」的会话。
-        if (!cwd) return null;
-        const result = await ai_agentHttp.get("sessions");
-        if (result.code !== RCode.Success) return null;
-        const list: ai_agent_chat_session_meta[] = result.data ?? [];
-        cwd = normalize_path(cwd)
-        const matched = list.find(it => normalize_path(it.file_cwd_path) === cwd);
-        if (matched) {
-            return matched.id;
-        }
-        // 没有匹配会话 → 新建一个并写入工作目录
-        const created = await ai_agentHttp.post("session", {
-            // title: "新会话",
-            file_cwd_path: cwd,
-        });
-        if (created.code !== RCode.Success) return null;
-        return (created.data as ai_agent_chat_session_item).id;
-    };
-
-    /**
-     * 会话列表拖动排序：按“被拖项 id → 落点项 id”重排，再持久化到后端。
-     * 用 id 而非下标，避免搜索过滤时展示顺序与全量数组下标错位。
-     * 超管「所有用户会话」模式下跨用户排序无意义，直接不处理。
-     */
-    const reorderSessions = (from_id: string, to_id: string) => {
-        if (admin_mode_ref.current) return;
-        const from = sessions.findIndex(it => it.id === from_id);
-        const to = sessions.findIndex(it => it.id === to_id);
-        if (from < 0 || to < 0 || from === to) return;
-        const next = move_element<ai_agent_chat_session_meta>(sessions, from, to);
-        setSessions(next);
-        ai_agentHttp.post("sessions/update/sort", {
-            session_ids: next.map(it => it.id),
-        }).catch(() => {});
-    };
-
-    /** 在超管所有用户模式下，取出某会话的属主 user_id（否则返回 undefined，走普通用户接口） */
-    const owner_of_session = (sessionId: string): string | undefined => {
-        if (!admin_mode_ref.current) return undefined;
-        return sessions.find(s => s.id === sessionId)?.user_id;
-    };
-
-    const deleteSession = (sessionId: string) => {
-        confirm_dell_all({
-            sub_title: "确认删除这个会话吗?",
-            confirm_fun: async () => {
-                const ownerId = owner_of_session(sessionId);
-                if (ownerId) {
-                    await admin_call("delete", { session_id: sessionId, user_id: ownerId });
-                } else {
-                    await ai_agentHttp.post("session/delete", { session_id: sessionId });
-                }
-                if (activeSessionId === sessionId) {
-                    setActiveSessionId("");
-                    await loadSessions(null);
-                } else {
-                    await loadSessions(activeSessionId);
-                }
-            }
-        });
-    };
-
-    const renameSession = (sessionId: string, title: string) => {
-        let new_name = title;
-        confirm_dell_all({
-            confirm_fun: async () => {
-                const ownerId = owner_of_session(sessionId);
-                if (ownerId) {
-                    await admin_call("rename", { session_id: sessionId, user_id: ownerId, title: new_name });
-                } else {
-                    await ai_agentHttp.post("sessions/update/meta", { id: sessionId, title: new_name });
-                }
-                await loadSessions(activeSessionId);
-            },
-            context_div: (
-                <div className="card-content">
-                    <InputText value={new_name} handleInputChange={(value) => { new_name = value; }} />
-                </div>
-            )
-        });
-    };
-
-    // 切换会话的命令检测开关（开启后该会话执行命令不再弹确认框）
-    const toggleCmdAuto = async (sessionId: string, allow: boolean) => {
-        const ownerId = owner_of_session(sessionId);
-        if (ownerId) {
-            await admin_call("cmd_auto", { session_id: sessionId, user_id: ownerId, allow });
-        } else {
-            await ai_agentHttp.post("session/cmd_auto_allow", { session_id: sessionId, allow });
-        }
-        NotySuccess(allow ? t('命令检测已开启') : t('命令检测已关闭'));
-        await loadSessions(activeSessionId);
-    };
-
-    // ===== 发送消息 =====
+    // ===== 发送 =====
     const handleSend = async () => {
-        // 超管「所有用户会话」模式下禁止发送，避免消息被写入当前登录用户的会话
-        if (admin_mode_ref.current) return;
+        // 超管「所有用户会话」模式禁止发送：请求会以当前登录用户落库，跨用户会写错数据
+        if (session_api.admin_all_mode) return;
         const text = (chatInputRef.current?.getValue() ?? '').trim();
         if (!text && pendingAttachments.length === 0) return;
 
-        // 当前活动会话本地正在执行中 → 加入排队（其它会话本地在跑不影响本会话发送）
-        if (sendingSessionId === activeSessionId) {
+        // 当前会话本地正在执行 → 排队（其它会话在跑不影响本会话发送）
+        if (sendingSessionId === session_api.activeSessionId) {
             const attachments = await buildAttachments(pendingAttachments);
             chatStream.enqueueMessage(text, attachments);
             chatInputRef.current?.clear();
             setPendingAttachments([]);
             const queuedMsg: Message = {
-                id: Date.now(),
+                id: next_placeholder_id(),
                 sender: 'user',
                 text: text + (chatStream.getQueueLength() > 1 ? ` ⏳(排队中...)` : ''),
                 attachments,
             };
-            setMessages(prev => [...prev, queuedMsg]);
+            msg.setMessages(prev => [...prev, queuedMsg]);
             return;
         }
 
-        // 确保有会话
-        let sessionId = activeSessionId;
+        // 无会话时先建一个
+        let sessionId = session_api.activeSessionId;
         if (!sessionId) {
             const result = await ai_agentHttp.post("session", {
                 title: (text || pendingAttachments[0]?.name).slice(0, 28),
-                // 与「新建会话」保持一致：默认不继承当前选中的系统提示词
                 sys_prompt_id: undefined,
-                // 面板绑定了工作目录时，新会话也要带上，保证后续按目录能定位到它
                 file_cwd_path: init_cwd || undefined,
             });
             if (result.code !== RCode.Success) return;
             const session = result.data as ai_agent_chat_session_item;
             sessionId = session.id;
-            setActiveSessionId(sessionId);
+            session_api.setActiveSessionId(sessionId);
             on_session_change?.(sessionId);
-            await loadSessions(sessionId);
+            await session_api.loadSessions(sessionId);
         }
 
         const attachments = await buildAttachments(pendingAttachments);
-        const userMsg: Message = { id: Date.now(), sender: 'user', text, attachments };
+        const userMsg: Message = { id: next_placeholder_id(), sender: 'user', text, attachments };
         chatInputRef.current?.clear();
         setPendingAttachments([]);
 
-
         const requestType = getRequestType();
 
-        // 非 completions → 走专用处理器
+        // 非 completions → 专用处理器（该路径自己渲染气泡）
         if (requestType !== 'completions') {
-            const botMsg: Message = { id: userMsg.id + 1, sender: 'bot', text: "处理中...", is_loading: true };
-            const newMessages = [...messages, userMsg, botMsg];
-            setMessages(newMessages);
+            const botMsg: Message = { id: msg.messages.length + 2, sender: 'bot', text: "处理中...", is_loading: true };
+            const userMsgWithId: Message = { ...userMsg, id: msg.messages.length + 1 };
+            const newMessages = [...msg.messages, userMsgWithId, botMsg];
+            msg.setMessages(newMessages);
             setSendingSessionId(sessionId);
 
-            const handled = await handleNonCompletionsRequest(requestType, text, sessionId, async (resultText, extra) => {
-                botMsg.text = resultText;
-                botMsg.is_loading = false;
-                if (extra?.images) botMsg.images = extra.images;
-                if (extra?.audio) botMsg.audio = extra.audio;
-                if (extra?.embeddings) botMsg.embeddings = extra.embeddings;
-                setMessages([...newMessages]);
-                setSendingSessionId(null);
-                refreshSessions();
-                scrollToBottom(true);
-                chatStream.processPendingQueue();
-            });
+            const handled = await handleNonCompletionsRequest(
+                requestType, text, sessionId,
+                async (resultText, extra) => {
+                    botMsg.text = resultText;
+                    botMsg.is_loading = false;
+                    if (extra?.images) botMsg.images = extra.images;
+                    if (extra?.audio) botMsg.audio = extra.audio;
+                    if (extra?.embeddings) botMsg.embeddings = extra.embeddings;
+                    msg.setMessages([...newMessages]);
+                    setSendingSessionId(null);
+                    session_api.refreshSessions();
+                    msg.scrollToBottom(true);
+                    chatStream.processPendingQueue();
+                }
+            );
 
             if (!handled) {
                 botMsg.text = `请求类型 "${requestType}" 的专用处理器尚未实现，请使用 completions 类型。`;
                 botMsg.is_loading = false;
-                setMessages([...newMessages]);
+                msg.setMessages([...newMessages]);
                 setSendingSessionId(null);
                 chatStream.processPendingQueue();
             }
             return;
         }
 
-        // completions → 走 WebSocket 流式
+        // completions → WebSocket 流式
         chatStream.startChatStream(sessionId, userMsg, () => chatStream.processPendingQueue());
     };
 
-    // ===== 附件操作 =====
+    // ===== 附件 =====
     const addAttachments = (files: FileList | File[]) => {
         const list = Array.from(files ?? []).filter(Boolean);
         if (!list.length) return;
         setPendingAttachments(prev => [...prev, ...list]);
     };
-
     const removePendingAttachment = (index: number) => {
         setPendingAttachments(prev => prev.filter((_, i) => i !== index));
     };
-
     const openFilePicker = () => { fileInputRef.current?.click(); };
-
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         const files = e.dataTransfer?.files;
         if (files && files.length > 0) {
@@ -635,201 +336,13 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             addAttachments(files);
         }
     };
-
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
     };
 
-    // ===== 消息操作 =====
-    const handleDelete = (id: number) => {
-        confirm_dell_all({
-            sub_title: t("cf_one"),
-            confirm_fun: async () => {
-                const targetIndex = messages.findIndex(m => m.id === id);
-                if (targetIndex < 0) return;
-                const newMessages = messages.filter(m => m.id !== id);
-                setMessages(newMessages);
-                if (activeSessionId) {
-                    const ownerId = owner_of_session(activeSessionId);
-                    if (ownerId) {
-                        admin_call("message_delete", { session_id: activeSessionId, user_id: ownerId, indices: [targetIndex] }).catch(console.error);
-                    } else {
-                        ai_agentHttp.post("session/message/delete", {
-                            session_id: activeSessionId,
-                            indices: [targetIndex]
-                        }).catch(console.error);
-                    }
-                }
-            }
-        });
-    };
+    // ===== 弹窗：Token 统计 / 会话设置 =====
+    const owner_of = (sessionId: string) => session_api.owner_of_session(sessionId);
 
-    const handleCopy = async (msg: Message) => {
-        copyToClipboard(message_to_text(msg));
-        NotySuccess('复制成功');
-    };
-
-    /**
-     * 全部复制：把「AI 聊天记录」下所有会话的消息按会话顺序、消息顺序拼接。
-     *
-     * 气泡上的按钮没法知道其它会话的内容，所以这里逐个会话调 session/get 取回。
-     * 顺序按会话列表（sessions）本身的顺序来，与侧边栏看到的排列一致。
-     */
-    const handleCopyAll = async () => {
-        if (!sessions.length) {
-            NotySuccess('暂无聊天记录');
-            return;
-        }
-        const chunks: string[] = [];
-        for (const s of sessions) {
-            const result = s.user_id
-                ? await admin_call("get", { session_id: s.id, user_id: s.user_id })
-                : await ai_agentHttp.post("session/get", { session_id: s.id });
-            if (result.code !== RCode.Success || !result.data) {
-                continue;
-            }
-            const session = result.data as ai_agent_chat_session_item & { live_messages?: ai_agent_message_item[] };
-            const msgs = [...(session.messages ?? []), ...(session.live_messages ?? [])];
-            const body = toUiMessages(msgs)
-                .map(message_to_text)
-                .filter(Boolean)
-                .join("\n\n\n");
-            if (body) {
-                chunks.push(body);
-            }
-        }
-        if (!chunks.length) {
-            NotySuccess('暂无聊天记录');
-            return;
-        }
-        copyToClipboard(chunks.join("\n\n\n"));
-        NotySuccess('复制成功');
-    };
-
-    /**
-     * 复制所选：按消息在会话里的原始顺序拼接（不是勾选顺序）。
-     * messages 本身就是按时间排列的，直接顺序过滤即可。
-     */
-    const handleBatchCopy = () => {
-        const text = messages
-            .filter(m => selectedMsgIds.has(m.id))
-            .map(message_to_text)
-            .filter(Boolean)
-            .join("\n\n\n");
-        if (!text) {
-            NotySuccess('暂无内容');
-            return;
-        }
-        copyToClipboard(text);
-        NotySuccess('复制成功');
-    };
-
-    // ===== 批量操作 =====
-    const toggleBatchMode = () => {
-        if (batchMode) { setSelectedMsgIds(new Set()); setSelectedSessionIds(new Set()); }
-        setBatchMode(prev => !prev);
-    };
-
-    const toggleMsgSelect = (id: number) => {
-        setSelectedMsgIds(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
-    };
-
-    const toggleSessionSelect = (id: string) => {
-        setSelectedSessionIds(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
-    };
-
-    const batchDeleteMessages = () => {
-        if (selectedMsgIds.size === 0) return;
-        confirm_dell_all({
-            sub_title: t("cf_msgs"),
-            confirm_fun: async () => {
-                const indicesToDelete: number[] = [];
-                messages.forEach((m, idx) => { if (selectedMsgIds.has(m.id)) indicesToDelete.push(idx); });
-                setMessages(messages.filter(m => !selectedMsgIds.has(m.id)));
-                setSelectedMsgIds(new Set());
-                setBatchMode(false);
-                if (activeSessionId && indicesToDelete.length > 0) {
-                    const ownerId = owner_of_session(activeSessionId);
-                    if (ownerId) {
-                        admin_call("message_delete", { session_id: activeSessionId, user_id: ownerId, indices: indicesToDelete }).catch(console.error);
-                    } else {
-                        ai_agentHttp.post("session/message/delete", {
-                            session_id: activeSessionId,
-                            indices: indicesToDelete
-                        }).catch(console.error);
-                    }
-                }
-            }
-        });
-    };
-
-    const batchDeleteSessions = () => {
-        if (selectedSessionIds.size === 0) return;
-        confirm_dell_all({
-            sub_title: t("cf_ses"),
-            confirm_fun: async () => {
-                if (admin_mode_ref.current) {
-                    await admin_call("batch_delete", { session_ids: Array.from(selectedSessionIds) });
-                } else {
-                    for (const sid of selectedSessionIds) {
-                        await ai_agentHttp.post("session/delete", { session_id: sid });
-                    }
-                }
-                setSelectedSessionIds(new Set());
-                setBatchMode(false);
-                if (selectedSessionIds.has(activeSessionId)) {
-                    setActiveSessionId("");
-                    await loadSessions(null);
-                } else {
-                    await loadSessions(activeSessionId);
-                }
-            }
-        });
-    };
-
-    /**
-     * 删除全部会话：
-     * 普通模式删除当前用户自己的全部会话；
-     * 超管「所有用户会话」模式下跨用户，不做「全部清空」（风险过高），
-     * 该模式下按钮不展示（见 SessionList 的 onClearAllSessions 传参）。
-     */
-    const clearAllSessions = () => {
-        confirm_dell_all({
-            sub_title: t("cf_all"),
-            confirm_fun: async () => {
-                await ai_agentHttp.post("sessions/clear", {});
-                setActiveSessionId("");
-                setMessages([]);
-                await loadSessions(null);
-            }
-        });
-    };
-
-    /** 超管：切换「查看所有用户会话」模式 */
-    const toggleAllUsersMode = async () => {
-        const next = !admin_all_mode;
-        set_admin_all_mode(next);
-        admin_mode_ref.current = next;
-        // 切换模式后列表来源不同，清空当前选中并重新加载
-        setActiveSessionId("");
-        setMessages([]);
-        const result = next
-            ? await admin_call("list_all_sessions")
-            : await ai_agentHttp.get("sessions");
-        const list: SessionListItem[] = result.code === RCode.Success ? (result.data ?? []) : [];
-        setSessions(list);
-        if (list[0]?.id) await loadSession(list[0].id, false, list[0].user_id);
-    };
-
-    // ===== 用量统计弹窗 =====
     const showUsageStatsPopup = async (sessionId: string) => {
         set_prompt_card({
             open: true,
@@ -838,9 +351,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             cancel: () => set_prompt_card({ open: false }),
         });
         try {
-            const ownerId = owner_of_session(sessionId);
+            const ownerId = owner_of(sessionId);
             const result = ownerId
-                ? await admin_call("usage_stats", { session_id: sessionId, user_id: ownerId })
+                ? await session_api.admin_call("usage_stats", { session_id: sessionId, user_id: ownerId })
                 : await ai_agentHttp.post("session/usage_stats", { session_id: sessionId });
             if (result.code === RCode.Success && result.data) {
                 const stats: ai_agent_usage_stats = result.data;
@@ -887,10 +400,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         }
     };
 
-    // ===== 会话设置弹框（配置该会话的服务器工作目录 file_cwd_path） =====
     const showSessionSettingPopup = (sessionId: string) => {
-        // 输入值保存在闭包变量里，确认时读取（与重命名弹框同风格）
-        let cwd_value = sessions.find(s => s.id === sessionId)?.file_cwd_path ?? "";
+        let cwd_value = session_api.sessions.find(s => s.id === sessionId)?.file_cwd_path ?? "";
         set_prompt_card({
             open: true,
             title: t('会话设置'),
@@ -906,61 +417,59 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
             ),
             confirm: async () => {
                 try {
-                    const ownerId = owner_of_session(sessionId);
+                    const ownerId = owner_of(sessionId);
                     const result = ownerId
-                        ? await admin_call("setting", { session_id: sessionId, user_id: ownerId, file_cwd_path: cwd_value.trim() })
+                        ? await session_api.admin_call("setting", {
+                            session_id: sessionId, user_id: ownerId, file_cwd_path: cwd_value.trim()
+                        })
                         : await ai_agentHttp.post("session/setting", {
-                            session_id: sessionId,
-                            file_cwd_path: cwd_value.trim(),
+                            session_id: sessionId, file_cwd_path: cwd_value.trim()
                         });
-                    if (result.code === RCode.Success) {
-                        NotySuccess(t('保存成功'));
-                    }
+                    if (result.code === RCode.Success) NotySuccess(t('保存成功'));
                 } catch {
-                    // 路径非法等错误由 http 层统一提示，这里无需额外处理
+                    // 路径非法等错误由 http 层统一提示
                 }
                 set_prompt_card({ open: false });
-                await loadSessions(activeSessionId);
+                await session_api.loadSessions(session_api.activeSessionId);
             },
             cancel: () => set_prompt_card({ open: false }),
         });
     };
 
-    // ===== 生命周期 =====
+    // ===== 会话列表相关 =====
+    const toggleSessionPanel = () => set_ai_session_collapsed(prev => !prev);
+
+    const toggleSessionSelect = (id: string) => {
+        setSelectedSessionIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    /** 进入/退出批量模式时清空两侧选择 */
+    const toggleBatchMode = () => {
+        if (msg.batchMode) {
+            msg.setSelectedMsgIds(new Set());
+            setSelectedSessionIds(new Set());
+        }
+        msg.setBatchMode(prev => !prev);
+    };
+
+    // ===== 启动 =====
     const init = async () => {
-        // 拉取 env 配置
         const envResult = await settingHttp.get("ai_agent_setting/env");
         if (envResult.code === RCode.Success) {
             env_config.current = envResult.data;
             syncCurrentModelFromEnv(envResult.data);
         }
-        // 拉取聚合的所有供应商模型（用于模型选择器）
         await loadPublicModels();
-        // 会话定位优先级：
-        //   1) 传了 file_cwd_path → 先按工作目录找/建会话（嵌入场景的「打开当前工作目录会话」）
-        //   2) 否则用 URL 指定的会话（整页模式下支持刷新/分享链接）
-        //   3) 都没有 → 默认加载列表首个
-        // 定位失败时逐级退回默认逻辑。
-        if (init_cwd) {
-            const located = await locate_session_by_cwd(init_cwd);
-            const ok = located ? await loadSessions(located) : false;
-            if (!ok) await loadSessions();
-        } else if (init_session_id) {
-            const ok = await loadSessions(init_session_id);
-            if (!ok) await loadSessions();
-        } else if (url_session_id) {
-            const ok = await loadSessions(url_session_id);
-            if (!ok) await loadSessions();
-        } else {
-            await loadSessions();
-        }
+        await session_api.init_active_session();
+
         const sysPromptResult = await ai_agentHttp.get("system_prompts");
-        if (sysPromptResult.code === RCode.Success) {
-            setSysPromptList(sysPromptResult.data ?? []);
-        }
+        if (sysPromptResult.code === RCode.Success) setSysPromptList(sysPromptResult.data ?? []);
     };
 
-    /** 切换模型成功后：刷新聚合列表 + env 配置，并同步当前模型展示值 */
     const handleModelChanged = async () => {
         await loadPublicModels();
         const envResult = await settingHttp.get("ai_agent_setting/env");
@@ -972,198 +481,26 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     useEffect(() => {
         init();
-        requestAnimationFrame(() => scrollToBottom(false));
+        requestAnimationFrame(() => msg.scrollToBottom(false));
 
-        // 复用 BackgroundProcessPanel 的请求结果获取全局进程总数
         bgPanelRef.current.onCountChange = setBgProcessCount;
         bgPanelRef.current.refresh?.();
 
-        // 订阅后台进程数变化通知
         const handle_bg_count = (data: any) => {
             const count = data?.context?.count;
-            if (typeof count === 'number') {
-                setBgProcessCount(count);
-            }
+            if (typeof count === 'number') setBgProcessCount(count);
         };
         ws.addMsg(CmdType.ai_bg_process_count_notify, handle_bg_count);
 
         return () => {
-            // 只移除自己的 handler，不能清空该类型的全部监听（多实例场景会误伤别的实例）
+            // 只移除自己的 handler，不能清空该类型全部监听（多实例会误伤）
             ws.off_message(`message_${CmdType.ai_bg_process_count_notify}`, handle_bg_count);
         };
     }, []);
 
-    useEffect(() => {
-        const el = chatContainerRef.current;
-        if (!el) return;
-        const onScroll = () => { autoScrollRef.current = isNearBottom(el); };
-        el.addEventListener("scroll", onScroll);
-
-        // markdown/代码块/图片会异步撑高内容，撑高后需要重新贴底，
-        // 否则滚动发生在内容变高之前，会停在顶部（切换会话尤其明显）。
-        const stick = () => {
-            if (autoScrollRef.current) el.scrollTop = el.scrollHeight;
-        };
-        const ro = new ResizeObserver(stick);
-        // 新消息是动态追加的，需要把新增元素也纳入高度监听
-        const observe_all = () => [...el.children].forEach(c => ro.observe(c));
-        observe_all();
-        const mo = new MutationObserver(() => { observe_all(); stick(); });
-        mo.observe(el, { childList: true });
-
-        return () => {
-            el.removeEventListener("scroll", onScroll);
-            ro.disconnect();
-            mo.disconnect();
-        };
-    }, []);
-
-    // ===== 实时广播监听：接收“其它标签页 / 刷新后”正在进行的同一会话的输出 =====
-    // 核心诉求：切换会话 / 刷新页面后，切回正在执行的会话，不仅能通过 session/get 的
-    // live_messages 看到最新内容，还能继续实时收到该会话后续的输出。
-    useEffect(() => {
-        // 用 ref 读最新 state（useEffect 闭包捕获的是首渲染快照，必须用 ref 才能拿到实时值）
-        const activeId = () => activeSessionIdRef.current;
-        const sendingSessionIdNow = () => sendingSessionIdRef.current;
-
-        // 追加/更新实时文本到当前查看的会话
-        // chunk_index 由后端给出（每轮 LLM 输出一个），据此精确定位气泡，实现多气泡流式与刷新后续写
-        const appendLiveText = (sessionId: string, text: string, tool_call_ends?: any, notice?: boolean, chunk_index = 0) => {
-            if (!activeId() || activeId() !== sessionId) return;
-            // 本地正在发送该会话时，由 useChatStream 负责渲染，这里跳过避免重复
-            if (sendingSessionIdNow() === sessionId) return;
-
-            setMessages(prev => {
-                const map = chunkBubbleRef.current;
-                // 临时提示单独占一个 key，避免提示文字混进正文气泡
-                const key = notice ? -(chunk_index + 1) : chunk_index;
-                let list = prev;
-
-                // 收到真实内容，先移除同轮的临时提示气泡
-                if (!notice) {
-                    const temp_i = -(chunk_index + 1)
-                    const noticeId = map.get(temp_i);
-                    if (noticeId !== undefined) {
-                        list = list.filter(m => m.id !== noticeId);
-                        map.delete(temp_i);
-                    }
-                }
-
-                const targetId = map.get(key);
-                const idx = targetId === undefined ? -1 : list.findIndex(m => m.id === targetId);
-                const target = idx === -1
-                    ? { id: next_msg_id(), sender: 'bot' as const, text: '' }
-                    : { ...list[idx] };
-                if (idx === -1) map.set(key, target.id);
-
-                if (notice) {
-                    target.text = text;
-                    target.is_loading = true;
-                } else if (text) {
-                    target.text = target.text + text;
-                    target.is_loading = false;
-                }
-                if (tool_call_ends) {
-                    target.content_list = [{ tool_call_ends, content: target.text, role: "assistant" }];
-                    target.is_loading = false;
-                }
-                liveBubbleIdRef.current = target.id;
-                if (autoScrollRef.current) requestAnimationFrame(() => scrollToBottom(false));
-
-                if (idx === -1) return [...list, target];
-                const next = list.slice();
-                next[idx] = target;
-                return next;
-            });
-        };
-
-        // 结束：若当前查看的会话正是刚结束的会话：
-        //  - 若带最终 once_messages_list，直接用其替换末尾的“实时预览气泡”，刷新列表即可（避免读文件竞态）；
-        //  - 否则退化为重新 loadSession 拉取内容。
-        const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
-            // 无论是否是当前活动会话，结束都要清掉列表里的 running 标记
-            markSessionRunning(sessionId, false);
-            chunkBubbleRef.current.clear();
-            if (activeId() && activeId() === sessionId) {
-                liveBubbleIdRef.current = null;
-                setActiveSessionRunning(false);
-                // 会话已结束，退订该会话（后端已不再有该会话的运行登记，退订避免残留）
-                if (subscribedSessionRef.current === sessionId) {
-                    ws.sendData(CmdType.ai_chat_subscribe, { session_id: sessionId, subscribe: false });
-                    subscribedSessionRef.current = null;
-                }
-                // 该会话若是“本地发起”的，则由 useChatStream 负责收尾渲染；这里只处理非本地的情况
-                if (sendingSessionIdNow() === sessionId) return;
-                if (once_messages_list?.length) {
-                    // 用最终助手内容替换“实时预览气泡”：仅当末尾确实是 bot(实时)气泡时才替换，否则直接追加，避免误删 user 消息
-                    setMessages(prev => {
-                        const finalMsgs = toUiMessages(once_messages_list);
-                        // 剔除本轮没有真实内容的占位气泡
-                        const cleaned = prev.filter(m => m.sender !== 'bot' || m.text || m.content_list?.length || m.attachments?.length);
-                        const last = cleaned[cleaned.length - 1];
-                        const replaceLast = last?.sender === 'bot';
-                        if (replaceLast) {
-                            return [...cleaned.slice(0, -1), ...finalMsgs];
-                        }
-                        return [...cleaned, ...finalMsgs];
-                    });
-                } else {
-                    loadSession(sessionId).catch(() => {});
-                }
-            }
-            // 会话结束后标题/更新时间可能已变，拉一次列表同步元信息（每次对话仅一次，不是流式期间）
-            refreshSessions();
-        };
-
-        const handleChatMsg = (data: any) => {
-            const ctx:ai_chat_send_message = data?.context || {};
-            if (!ctx.session_id) return; // 无会话 id（老版本）不处理
-
-            // 处理消息
-            appendLiveText(ctx.session_id, ctx.text || "", ctx.tool_call_ends, ctx.notice, ctx.chunk_index);
-
-            // 收到流式广播就说明该会话在运行，直接把列表里的 running 修改会话运行状态
-            markSessionRunning(ctx.session_id, true);
-        };
-        const handleChatEnd = (data: any) => {
-            const ctx = data?.context || {};
-            if (ctx.session_id) handleEnd(ctx.session_id, ctx.once_messages_list);
-        };
-        const handleChatError = (data: any) => {
-            const ctx = data?.context || {};
-            if (ctx.session_id) handleEnd(ctx.session_id);
-        };
-
-        ws.addMsg(CmdType.ai_chat_msg, handleChatMsg);
-        ws.addMsg(CmdType.ai_chat_end, handleChatEnd);
-        ws.addMsg(CmdType.ai_chat_error, handleChatError);
-
-        return () => {
-            ws.off_message(`message_${CmdType.ai_chat_msg}`, handleChatMsg);
-            ws.off_message(`message_${CmdType.ai_chat_end}`, handleChatEnd);
-            ws.off_message(`message_${CmdType.ai_chat_error}`, handleChatError);
-            // 组件卸载时退订正在绑定的会话
-            if (subscribedSessionRef.current) {
-                ws.sendData(CmdType.ai_chat_subscribe, { session_id: subscribedSessionRef.current, subscribe: false });
-                subscribedSessionRef.current = null;
-            }
-        };
-    }, []);
-
-    useLayoutEffect(() => {
-        // 切换会话后必须无条件滚到底：此时 autoScrollRef 可能因上一会话滚到上面而变成 false
-        if (pendingScrollRef.current) {
-            pendingScrollRef.current = false;
-            autoScrollRef.current = true;
-        }
-        if (autoScrollRef.current) scrollToBottom(false);
-    }, [messages]);
-
-    const toggleSessionPanel = () => {
-        set_ai_session_collapsed(prev => !prev);
-    };
-
     // ===== 渲染 =====
+    const sending = sendingSessionId === session_api.activeSessionId || session_api.activeSessionRunning;
+
     return (
         <React.Fragment>
             <ChatHeader
@@ -1173,88 +510,89 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 modelGroups={modelGroups}
                 onModelChanged={handleModelChanged}
                 sysPromptList={sysPromptList}
-                batchMode={batchMode}
-                selectedMsgCount={selectedMsgIds.size}
+                batchMode={msg.batchMode}
+                selectedMsgCount={msg.selectedMsgIds.size}
                 sessionVisible={!ai_session_collapsed}
                 onToggleSessionPanel={toggleSessionPanel}
-                onCreateSession={createSession}
-                onBatchDeleteMessages={batchDeleteMessages}
+                onCreateSession={session_api.createSession}
+                onBatchDeleteMessages={msg.batchDeleteMessages}
+                onToggleBatchMode={toggleBatchMode}
                 bgProcessVisible={ai_bg_expanded}
                 bgProcessCount={bgProcessCount}
                 onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
-                selectedSysPromptId={selectedSysPromptId}
-                setSelectedSysPromptId={handleSystemPromptChange}
+                selectedSysPromptId={session_api.selectedSysPromptId}
+                setSelectedSysPromptId={session_api.changeSystemPrompt}
             />
 
-            <div className={"chat-page" + (inline_header ? " chat-page--embedded" : " chat-page-with-sessions")}
-                 style={{"--ai-chat-zoom": ai_chat_zoom}}>
-                {/* 移动端遮罩：会话列表弹出时铺满屏幕，点击空白处收起 */}
+            <div
+                className={"chat-page" + (inline_header ? " chat-page--embedded" : " chat-page-with-sessions")}
+                style={{ "--ai-chat-zoom": ai_chat_zoom } as React.CSSProperties}
+            >
+                {/* 移动端遮罩：会话列表展开时铺满，点击空白收起 */}
                 {!ai_session_collapsed && (
                     <div className="chat-session-overlay" onClick={() => set_ai_session_collapsed(true)} />
                 )}
 
                 {!ai_session_collapsed && (
                     <SessionList
-                        sessions={sessions}
-                        activeSessionId={activeSessionId}
-                        onSelectSession={(id) => loadSession(id, false)}
-                        onReorderSessions={reorderSessions}
-                        onRenameSession={renameSession}
-                        onDeleteSession={deleteSession}
-                        onToggleCmdAuto={toggleCmdAuto}
+                        sessions={session_api.sessions}
+                        activeSessionId={session_api.activeSessionId}
+                        onSelectSession={(id) => session_api.loadSession(id, false)}
+                        onReorderSessions={session_api.reorderSessions}
+                        onRenameSession={session_api.renameSession}
+                        onDeleteSession={session_api.deleteSession}
+                        onToggleCmdAuto={session_api.toggleCmdAuto}
                         onShowUsageStats={showUsageStatsPopup}
                         onShowSessionSetting={showSessionSettingPopup}
-                        batchMode={batchMode}
+                        batchMode={msg.batchMode}
                         selectedSessionIds={selectedSessionIds}
                         onToggleSessionSelect={toggleSessionSelect}
                         onToggleBatchMode={toggleBatchMode}
-                        onBatchDeleteSessions={batchDeleteSessions}
-                        onClearAllSessions={admin_all_mode ? undefined : clearAllSessions}
-                        allUsersMode={admin_all_mode}
-                        onToggleAllUsersMode={toggleAllUsersMode}
+                        onBatchDeleteSessions={() => session_api.batchDeleteSessions(
+                            selectedSessionIds,
+                            () => { setSelectedSessionIds(new Set()); msg.setBatchMode(false); }
+                        )}
+                        onClearAllSessions={session_api.admin_all_mode ? undefined : session_api.clearAllSessions}
+                        allUsersMode={session_api.admin_all_mode}
+                        onToggleAllUsersMode={session_api.toggleAllUsersMode}
                         showAllUsersEntry={is_root}
                     />
                 )}
 
-                {/* 后台进程面板 — 与会话列表一样，通过 atom 控制是否挂载 */}
-                <BackgroundProcessPanel panelRef={bgPanelRef}/>
+                <BackgroundProcessPanel panelRef={bgPanelRef} />
 
                 <section className="chat-main">
-                    {messages?.length === 0 && (
+                    {msg.messages?.length === 0 && (
                         <div className="chat-header">
                             <div>{t('ai_ask')}</div>
                         </div>
                     )}
 
                     <ChatMessageList
-                        messages={messages}
-                        batchMode={batchMode}
-                        selectedMsgIds={selectedMsgIds}
-                        // 本地该会话在发 或 该会话正被其它页面执行 → 都显示“执行中”生成动画
-                        sending={sendingSessionId === activeSessionId || activeSessionRunning}
-                        chatContainerRef={chatContainerRef}
+                        messages={msg.messages}
+                        batchMode={msg.batchMode}
+                        selectedMsgIds={msg.selectedMsgIds}
+                        sending={sending}
+                        chatContainerRef={msg.chatContainerRef}
                         messagesEndRef={messagesEndRef}
-                        onToggleMsgSelect={toggleMsgSelect}
-                        onDelete={handleDelete}
-                        onCopy={handleCopy}
-                        onCopyAll={handleCopyAll}
+                        onToggleMsgSelect={msg.toggleMsgSelect}
+                        onDelete={msg.handleDelete}
+                        onCopy={msg.handleCopy}
+                        onCopyAll={msg.handleCopyAll}
                         onToggleBatchMode={toggleBatchMode}
-                        onBatchCopy={handleBatchCopy}
-                        onBatchDelete={batchDeleteMessages}
-                        // 只有「选了气泡、没选会话」时才显示气泡批量条，
-                        // 否则会话列表的批量删除会被这条覆盖语义
-                        showBatchBar={batchMode && selectedMsgIds.size > 0 && selectedSessionIds.size === 0}
+                        onBatchCopy={msg.handleBatchCopy}
+                        onBatchDelete={msg.batchDeleteMessages}
+                        // 只有「选了气泡、没选会话」时才显示气泡批量条
+                        showBatchBar={msg.batchMode && msg.selectedMsgIds.size > 0 && selectedSessionIds.size === 0}
                         t={t}
                     />
 
                     <ChatInput
                         ref={chatInputRef}
                         onSend={handleSend}
-                        // 超管「查看全部会话」模式：聊天请求会以当前登录用户身份落库，跨用户会写错数据，故禁止发送
-                        readonly={admin_all_mode}
-                        // 本地正在发当前会话，或当前会话本身正在执行中(running，比如刷新页面/其它页面在跑)
-                        // 都显示“发送中/停止”按钮；直接取会话的 running 状态，刷新后也不丢失
-                        sending={sendingSessionId === activeSessionId || activeSessionRunning}
+                        // 超管查看全部会话模式禁止发送
+                        readonly={session_api.admin_all_mode}
+                        sending={sending}
                         onAbort={chatStream.abort}
                         pendingAttachments={pendingAttachments}
                         onRemoveAttachment={removePendingAttachment}

@@ -265,6 +265,18 @@
     margin-top: 0;
 }
 
+/* 批量模式下顶部不留白：批量操作条是 sticky top:0，会贴在容器的 padding 内沿，
+   若保留 padding 就会在它与 header 之间露出一条缝。 */
+.chat-messages:has(> .chat-message-batch-bar) {
+    padding-top: 0;
+}
+
+/* 操作条本身在文档流里占位，但气泡盒用了负 margin 抵消上留白，
+   批量模式下需要把这段留白补回来，否则首条消息会钻到操作条下面。 */
+.chat-messages:has(> .chat-message-batch-bar) > .chat-message-batch-bar + .chat-message {
+    margin-top: 2.1rem;
+}
+
 /* 末条消息不抵消底部预留空间，保证底部折叠条不会被输入框区域压住 */
 .chat-messages > .chat-message:last-child {
     margin-bottom: 0;
@@ -1070,6 +1082,12 @@
     padding-left: 2.5rem;
 }
 
+/* 批量选择模式：气泡上只需要勾选框，
+   悬浮操作条(删除/复制等)会和勾选框抢同一块位置，容易误触，这里直接隐藏 */
+.chat-message.batch-mode .message-actions {
+    display: none;
+}
+
 /*
  * 气泡批量操作条：选中的都是聊天气泡（没勾会话项）时，浮在消息区顶部。
  * sticky 保证滚动聊天记录时它一直在视野里，不跟着划走。
@@ -1077,33 +1095,37 @@
 .chat-message-batch-bar {
     position: sticky;
     top: 0;
-    z-index: 6;
+    /* 必须高于气泡自身的悬浮操作条(.message-actions z-index 7)与 hover 态(10)，
+       否则批量操作条会被后面气泡的按钮盖住，看起来像透明 */
+    z-index: 20;
     display: flex;
     align-items: center;
     gap: .5rem;
-    padding: .5rem .75rem;
-    margin: 0 0 .5rem;
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
+    /* 上下内边距撑高：既让按钮不那么局促，也补回父容器去掉的顶部留白，
+       使操作条紧贴 header 且首条消息不被压住 */
+    padding: .75rem 1rem;
+    margin: 0;
+    background: var(--surfacePrimary, #fff);
+    border-bottom: 1px solid var(--borderPrimary, #e5e7eb);
     box-shadow: 0 .0625rem .1875rem rgba(0, 0, 0, 0.04);
 }
 
 .chat-message-batch-bar .batch-bar-count {
     font-size: .75rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--textSecondary, #6b7280);
     margin-right: auto;
 }
 
 .chat-message-batch-bar button {
     padding: .1875rem .625rem;
-    border: 1px solid #e5e7eb;
-    background: #fff;
+    border: 1px solid var(--borderPrimary, #e5e7eb);
+    background: var(--surfacePrimary, #fff);
     cursor: pointer;
     border-radius: .375rem;
     font-size: .6875rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--textSecondary, #6b7280);
     transition: all 0.15s ease;
     box-shadow: 0 .0625rem .125rem rgba(0, 0, 0, 0.04);
 }
@@ -1118,15 +1140,27 @@
     color: #dc2626;
 }
 
+/*
+ * 批量选择复选框：贴气泡上角，不再垂直居中。
+ * bot 气泡靠左 → 复选框放左上角；user 气泡靠右 → 放右上角。
+ * top 取 .35rem：落在 .chat-message 的顶部留白里（该留白本来是给悬浮操作条用的），
+ * 既不压正文，也不会被 hover 展开的操作条盖住。
+ */
 .chat-message-checkbox {
     position: absolute;
-    left: .5rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: .3rem;
+    left: .25rem;
     width: 1.125rem;
     height: 1.125rem;
     cursor: pointer;
     accent-color: var(--primary, #4f46e5);
+    z-index: 8;
+}
+
+/* user 气泡内容右对齐，复选框改挂右上角 */
+.chat-message.user .chat-message-checkbox {
+    left: auto;
+    right: .25rem;
 }
 
 .chat-session-item.batch-mode {

@@ -176,7 +176,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     width={"auto"}
                                 />
                             )}
-                            {/* 消息批量操作：只在 batchMode 且已选消息时显示删除按钮 */}
+                            {/* 消息批量操作：进入批量模式后必须始终有退出入口（消息为空时也不例外） */}
+                            {batchMode && (
+                                <ActionButton
+                                    icon={"done"}
+                                    title={t("完成")}
+                                    onClick={onToggleBatchMode}
+                                />
+                            )}
                             {batchMode && selectedMsgCount > 0 && (
                                 <ActionButton icon={"delete"} title={t("删除选中消息")} onClick={onBatchDeleteMessages} />
                             )}

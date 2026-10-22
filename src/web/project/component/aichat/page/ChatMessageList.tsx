@@ -140,20 +140,13 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                                         {renderMessageByType(msg)}
                                     </div>
                                 )}
-                                {/* 消息操作条：鼠标悬浮才显示；折叠按钮与删除/复制等在同一行，气泡再窄也不换行 */}
+                                {/* 消息操作条：鼠标悬浮才显示；折叠按钮与删除/复制等在同一行，气泡再窄也不换行。
+                                    批量模式下勾选交给左上/右上角的复选框，这里不再放"选择"文字按钮。 */}
                                 <div className="message-actions">
-                                    {batchMode ? (
-                                        <button onClick={() => onToggleMsgSelect(msg.id)}>
-                                            {selectedMsgIds.has(msg.id) ? t("取消选择") : t("选择")}
-                                        </button>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => onDelete(msg.id)}>{t("删除")}</button>
-                                            <button onClick={() => onCopy(msg)}>{t("复制")}</button>
-                                            <button onClick={onCopyAll}>{t("全部复制")}</button>
-                                            <button onClick={onToggleBatchMode}>{t("多选")}</button>
-                                        </>
-                                    )}
+                                    <button onClick={() => onDelete(msg.id)}>{t("删除")}</button>
+                                    <button onClick={() => onCopy(msg)}>{t("复制")}</button>
+                                    <button onClick={onCopyAll}>{t("全部复制")}</button>
+                                    <button onClick={onToggleBatchMode}>{t("多选")}</button>
                                 </div>
 
                                 {/* 消息底部操作条：折叠/全部折叠 + 本轮耗时，鼠标悬浮才显示 */}

@@ -600,9 +600,10 @@ const workMessages: ai_agent_message_list = [
             }
             workMessages.push(assistantWorkMessage);
 
-            // todo 没有 tool_calls，直接结束
+
             if (_interrupted || (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0)) {
                if (_interrupted && assistantMessage.tool_calls?.length) {
+                   // 这些tool调用必须要有返回，不然下次请求llm会报错
                     for (const tc of assistantMessage.tool_calls) {
                         // 该 tool_call 是否已产生结果（跳过已完成的）
                         const hasEnd = (assistantMessage.tool_call_ends ?? [])

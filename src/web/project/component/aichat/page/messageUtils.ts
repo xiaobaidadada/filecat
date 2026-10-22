@@ -22,26 +22,29 @@ export function getMessageText(message: ai_agent_message_item): string {
 }
 
 /**
- * 消息 id 自增种子。不能只用 Date.now() + index：
- * 一次页面加载里 toUiMessages 会被调用多次（历史消息、实时消息、结束收尾各一次），
- * 各次的下标都从 0 开始，同一毫秒内会生成重复 id，引发 React key 冲突。
+ * 本地占位消息 id 生成器（消息尚未落盘时使用）。
+ * 负数命名空间与位置派生的历史 id（1、2、3...）天然隔离，永不冲突。
  */
-let msg_id_seed = 0;
+let placeholder_seed = 0;
 
-/** 生成全局唯一的消息 id */
-export function next_msg_id(): number {
-    return ++msg_id_seed;
+/** 生成本地占位消息 id（负数） */
+export function next_placeholder_id(): number {
+    return -(++placeholder_seed);
 }
 
 /**
  * 将 AI 消息列表转换为 UI 层的 Message 列表
  * 仅保留 user / assistant 角色的消息
+ *
+ * id 由消息在【过滤后】列表中的位置派生：同一条消息无论转换多少次，
+ * 只要它在数组中的位置不变，id 就不变，避免 React 全量重挂载。
  */
 export function toUiMessages(messages: ai_agent_message_item[] = []): Message[] {
+    let idx = 0;
     return messages
         .filter(it => it.role === "user" || it.role === "assistant")
         .map((it) => ({
-            id: next_msg_id(),
+            id: ++idx,
             sender: it.role === "assistant" ? "bot" : "user",
             text: getMessageText(it),
             attachments: it.attachments ?? [],
