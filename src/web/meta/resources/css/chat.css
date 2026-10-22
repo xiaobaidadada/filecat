@@ -247,7 +247,8 @@
 /* 消息列表 - Codex 风格 */
 .chat-messages {
     flex: 1;
-    padding: 0 0 1.5rem;
+    /* 上下留出首/末条消息悬浮操作条的空间，避免按钮被滚动容器边缘裁掉或被输入框压住 */
+    padding: 1.4rem 0 1.4rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -259,10 +260,21 @@
     font-size: calc(16px * var(--ai-chat-zoom, 100) / 100);
 }
 
+/* 首条消息不再抵消顶部预留空间，避免悬浮操作条顶到滚动容器边缘被裁掉 */
+.chat-messages > .chat-message:first-child {
+    margin-top: 0;
+}
+
+/* 末条消息不抵消底部预留空间，保证底部折叠条不会被输入框区域压住 */
+.chat-messages > .chat-message:last-child {
+    margin-bottom: 0;
+}
+
 /* 消息气泡 - Codex 风格 */
 .chat-message {
-    /* 上下预留悬浮操作条空间：按钮在气泡内部，鼠标不会移出导致 hover 丢失，也不会压住内容 */
-    padding: 2rem 1rem 1.75rem;
+    /* 上下预留悬浮操作条的高度，这块空间不产生可见留白：
+       背景色落在 .chat-message-body 上，body 按内容自身高度渲染 */
+    padding: 2.1rem 0 1.9rem;
     border-radius: 0;
     max-width: 100%;
     word-break: break-word;
@@ -270,23 +282,32 @@
     position: relative;
     font-size: 0.95em;
     border-bottom: 1px solid var(--divider, #e5e7eb);
+    /* 用 flex 让正文容器垂直居中，抵消上下 padding 造成的视觉偏移 */
+    display: flex;
+    align-items: center;
 }
 
 /* 用户消息：右侧淡蓝背景 */
 .chat-message.user {
-    background: #eff6ff;
-    color: #1e293b;
     align-self: flex-end;
     /* 按内容收缩，短消息不拉成整条色块 */
     width: fit-content;
     /* 长消息限制最大宽度，超过则自动换行 */
     max-width: 80%;
-    /* 用户气泡自己的紧凑内边距，覆盖 .chat-message 的通用 padding */
-    /*padding: .5rem .9rem;*/
     border-radius: 1.125rem;
-    /* 右侧留一点内边距，气泡不贴容器边缘 */
-    margin: .25rem 1.25rem .25rem 3rem;
+    /* 上下负 margin 抵消 .chat-message 预留的操作条空间，消息间距仍按视觉气泡计算；
+       底部少抵消 0.9rem，形成气泡之间的视觉间距 */
+    margin: -1.85rem 1.25rem -0.95rem 3rem;
     border-bottom: none;
+}
+
+/* 用户气泡的可见色块落在正文容器上：上下不留内边距，
+   高度完全由行高决定，避免胶囊上下出现多余留白被看起来撑大 */
+.chat-message.user .chat-message-body {
+    background: #eff6ff;
+    color: #1e293b;
+    padding: .15rem .9rem;
+    border-radius: 1.125rem;
 }
 
 /* AI 消息：左侧白色/浅灰背景 */
@@ -294,15 +315,16 @@
     background: transparent;
     color: #1e293b;
     align-self: flex-start;
-    padding-left: 2.5rem;
+    /* 上下负 margin 抵消预留的操作条空间，底部少抵消形成气泡间距，左右留出气泡与头像位置 */
+    margin: -1.85rem 1.25rem -0.95rem 2.5rem;
 }
 
 /* AI 头像小标识（放在气泡左侧） */
 .chat-message.bot::before {
     content: '';
     position: absolute;
-    left: 10px;
-    top: 0.85rem;
+    left: -2.2rem;
+    top: 0.35rem;
     width: 20px;
     height: 20px;
     border-radius: 6px;
@@ -438,7 +460,8 @@
 
 .message-actions {
     position: absolute;
-    top: 0.3rem;
+    /* 与正文保持明显间距（上移约 1.5 倍按钮高），不贴着文字 */
+    top: 0.15rem;
     display: flex;
     width: max-content;
     gap: 4px;
@@ -552,7 +575,8 @@
     align-items: center;
     gap: 4px;
     position: absolute;
-    bottom: 0.3rem;
+    /* 与正文保持明显间距，不贴着文字 */
+    bottom: 0.15rem;
     height: 20px;
     margin-top: 0;
     /* 按内容定宽 + 不换行：气泡过窄时整条向外展开，不挤压按钮文字 */
@@ -587,9 +611,11 @@
 }
 
 
-.chat-message:hover .message-collapse-bar {
+.chat-message:hover .message-collapse-bar,
+.message-collapse-bar:hover {
     opacity: 1;
-    /* 显示时恢复可点击（默认设了 pointer-events: none 避免透明层挡住文字） */
+    /* 显示时恢复可点击（默认设了 pointer-events: none 避免透明层挡住文字）；
+       溢出气泡边界时靠自身 hover 维持显示，按钮伸出的部分也能点到 */
     pointer-events: auto;
 }
 
