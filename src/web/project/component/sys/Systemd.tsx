@@ -232,7 +232,7 @@ export function Systemd(props) {
                     const rsq1 = await sysHttp.post("systemd/sys/save", saveBody)
                     if (rsq1.code === RCode.Success) {
                         editor_data.set_value_temp('')
-                        setEditorSetting({open: false, model: '', fileName: '', save: null})
+                        // setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
                 }
             })

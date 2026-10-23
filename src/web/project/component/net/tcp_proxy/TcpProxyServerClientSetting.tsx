@@ -175,11 +175,12 @@ export function TcpProxyServerClientSetting() {
     const save_sync_task_of = async (task: tcp_proxy_sync_task_item) => {
         const r = await tcpProxy.post("sync_task_save", task)
         if (r.code === RCode.Success) {
-            NotySuccess(t("成功"))
+            // NotySuccess(t("成功"))
             await load_sync_tasks()
-        } else {
-            NotyFail(r.message ?? t("操作失败"))
         }
+        // else {
+        //     NotyFail(r.message ?? t("操作失败"))
+        // }
     }
 
     return (<Row>

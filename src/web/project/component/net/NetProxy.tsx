@@ -215,10 +215,10 @@ export function NetProxy(props) {
                     context,
                     key: item.random_key
                 });
-                if (rsq.code === 0) {
-                    editor_data.set_value_temp('')
-                    setEditorSetting({open: false, model: '', fileName: '', save: null})
-                }
+                // if (rsq.code === 0) {
+                //     editor_data.set_value_temp('')
+                //     setEditorSetting({open: false, model: '', fileName: '', save: null})
+                // }
             }
         })
         editor_data.set_value_temp(res.data)

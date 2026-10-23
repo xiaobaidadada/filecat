@@ -269,9 +269,9 @@ export function Env() {
 
     const save_plugin_list = async () => {
         const result = await settingHttp.post("plugin/list/save", plugin_rows);
-        if (result.code === RCode.Success) {
-            NotySuccess(t("保存成功"))
-        }
+        // if (result.code === RCode.Success) {
+        //     NotySuccess(t("保存成功"))
+        // }
     }
 
     const plugin_rows_del = (index) => {
@@ -479,7 +479,7 @@ export function Env() {
                                     set_plugin_rows([...plugin_rows])
                                 }} options={select_list}
                                         no_border={true}/>,
-                                <AceButton icon={"edit"} save={async (value: string) => {
+                                <AceButton icon={"edit"} value={item.params} save={async (value: string) => {
                                     item.params = value
                                     await save_plugin_list()
                                 }} title={""}/>,

@@ -62,7 +62,7 @@ export default function SqlPresetSetting() {
         });
         if (rsp?.code !== RCode.Success) return;
         await initUserInfo();
-        NotySuccess(t("保存成功"));
+        // NotySuccess(t("保存成功"));
     };
 
     // 用 Ace 文本编辑器编辑某条预设的字段（sql / env）

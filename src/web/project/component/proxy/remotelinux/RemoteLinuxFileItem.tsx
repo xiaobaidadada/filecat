@@ -62,7 +62,7 @@ export function RemoteLinuxFileItem(props: FileItemData & { index?: number,itemW
                         const rsq = await sshHttp.post("update/file/text", req);
                         if (rsq.code === 0) {
                             editor_data.set_value_temp('')
-                            NotySuccess("success");
+                            // NotySuccess("success");
                         }
                     }
                 })
