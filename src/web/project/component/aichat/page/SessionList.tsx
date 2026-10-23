@@ -220,7 +220,7 @@ export default function SessionList({
                         title={toSessionTitle(current_session.title)}
                         onClick={() => scroll_to_session(current_session.id)}
                     >
-                        <i className="material-icons">my_location</i>
+                        {/*<i className="material-icons">my_location</i>*/}
                         <span>{toSessionTitle(current_session.title)}</span>
                     </button>
                 )}

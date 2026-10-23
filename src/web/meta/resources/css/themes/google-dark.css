@@ -642,9 +642,10 @@ table th {
 /* ===== Google 暗黑模式 - 保留原 google-dark 的其他内容 ===== */
 
 
-.menu_select {
+.menu_select ,.dropdown , .dropdown_item_children{
   border-radius: var(--border-radius-sm);
 }
+
 
 .usage-stats-popup {
   background: var(--surfacePrimary);

@@ -382,9 +382,10 @@ table th {
   border-color: rgba(0, 0, 0, 0.28);
 }
 
-.menu_select {
+.menu_select,.dropdown , .dropdown_item_children {
   border-radius: var(--border-radius-sm);
 }
+
 
 .usage-stats-popup {
   background: var(--surfacePrimary);

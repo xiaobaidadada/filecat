@@ -49,7 +49,7 @@ body.rtl .dropdown {
 }
 
 /* 内层铺底色与阴影交给外层容器统一控制；左右留白让 hover 背景不贴卡片边缘 */
-.menu_select .dropdown {
+.menu_select > .dropdown {
     background: transparent;
     box-shadow: none;
 }
@@ -60,7 +60,7 @@ body.rtl .dropdown {
 .menu_select .dropdown > div > span {
     display: block;
     padding: .5rem;
-    font-size: .875rem;
+    /*font-size: .875rem;*/
 }
 
 
@@ -104,6 +104,8 @@ body.rtl .dropdown {
     z-index: 99999;
     display: block;
     top: -.5rem;
+    background: var(--divider);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .15);
 }
 
 
