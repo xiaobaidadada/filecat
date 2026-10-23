@@ -6,6 +6,8 @@ import Awesomplete from "awesomplete";
 import "awesomplete/awesomplete.css";
 import {createPortal} from 'react-dom';
 import {Icon} from "./Button";
+import {use_click_outside} from "./use_click_outside";
+import {use_floating} from "./use_floating";
 
 export function InputTextIcon(props: {
     placeholder?: string,
@@ -403,6 +405,11 @@ export interface SelectProps {
     width?: string, // 自动扩容可以写 auto
     disabled?: boolean,
     /**
+     * 下拉列表高度上限（rem）。超过后列表内部滚动，未超过时按内容高度显示。
+     * 不传则不限制高度，只保证不溢出视口。
+     */
+    max_height?: number,
+    /**
      * 额外外边距，用于在 Header 等「多个组件并排」的布局中与相邻元素拉开间隔。
      * 例如 "0 0 0 1em"（左侧留 1em）或 "0 1em 0 0"（右侧留 1em）。
      */
@@ -476,86 +483,44 @@ export interface SelectProps {
 
 export function Select(props: SelectProps) {
     const [open, setOpen] = useState(false);
-    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const triggerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selected = props.options.find(o => o.value === (props.value ?? props.defaultValue));
 
-    // 点击外部关闭逻辑保持不变
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (
-                triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
-                dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
-            ) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
+    // 点击外部关闭：触发器与 portal 出来的下拉都算内部
+    use_click_outside(open, [triggerRef, dropdownRef], () => setOpen(false));
 
-    // 核心修改：使用 useEffect 在 open 变化时重新计算位置
-    useEffect(() => {
-        if (open && triggerRef.current && dropdownRef.current) {
-            const triggerRect = triggerRef.current.getBoundingClientRect();
-            // 注意：此时 dropdownRef 尚带着上一次的 maxHeight，先清掉再量真实内容高度
-            dropdownRef.current.style.maxHeight = "";
-            const dropdownHeight = dropdownRef.current.offsetHeight;
-            // 下拉列表宽度随「最宽选项」自适应（由 CSS width:max-content 撑开），
-            // 但为了量出这个宽度以便做水平边界修正，先取 offsetWidth
-            const dropdownWidth = dropdownRef.current.offsetWidth;
-            const viewportHeight = window.innerHeight;
-            const viewportWidth = window.innerWidth;
+    // 浮层定位：下方放不下自动翻到上方，左右越界平移回来，尺寸量好前保持隐藏
+    const pos = use_floating({
+        active: open,
+        trigger_ref: triggerRef,
+        floating_ref: dropdownRef,
+        max_height: props.max_height,
+    });
 
-            const MARGIN = 8; // 视口边缘安全间距
-            const GAP = 4;    // 下拉与触发框之间的间距
+    // 下拉实际样式：位置来自通用定位，宽度跟随触发框与内容。
+    // 高度由 CSS 的 max-height 决定（rem），这里只透传变量：
+    //   --floating-max-height：调用方通过 <Select max_height={rem}/> 指定
+    //   --floating-available：视口内剩余空间兜底
+    const dropdownStyle: React.CSSProperties = {
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        // 不设 width（交给 CSS width:max-content 由最宽选项决定）；
+        // 仅设 minWidth 保证列表不窄于触发框
+        minWidth: triggerRef.current?.getBoundingClientRect().width,
+        maxWidth: "calc(100vw - 1rem)",
+        ...pos.css_vars,
+        zIndex: 9999,
+        // 尺寸量好之前先隐藏，避免先出现在错误位置再跳过去
+        visibility: pos.ready ? "visible" : "hidden",
+    };
 
-            // 计算上下方可用垂直空间（扣除安全间距）
-            const spaceBelow = viewportHeight - triggerRect.bottom - MARGIN - GAP;
-            const spaceAbove = triggerRect.top - MARGIN - GAP;
-            // 取较大的可用空间作为列表最大高度，保证列表始终能完整显示在视口内
-            const maxHeight = Math.max(spaceBelow, spaceAbove, 0);
-
-            // 优先在下方显示；仅当下方放不下、且上方空间更大时才翻转到上方
-            const showAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-            // 列表实际渲染高度（受 maxHeight 限制）
-            const renderedHeight = Math.min(dropdownHeight, maxHeight);
-
-            let top;
-            if (showAbove) {
-                top = triggerRect.top - renderedHeight - GAP; // 在上方，且保留间距
-            } else {
-                top = triggerRect.bottom + GAP;               // 默认在下方
-            }
-            // 兜底：把 top 钳制在视口内，避免因边界情况溢出屏幕
-            top = Math.max(MARGIN, Math.min(top, viewportHeight - MARGIN - renderedHeight));
-
-            // 水平方向：默认与触发框左对齐；若列表比触发框宽并超出视口右缘，则左移到不超边界的位置
-            let left = triggerRect.left;
-            if (left + dropdownWidth > viewportWidth - MARGIN) {
-                left = Math.max(MARGIN, viewportWidth - MARGIN - dropdownWidth);
-            }
-
-            setDropdownStyle({
-                position: "fixed",
-                top: top,
-                left: left,
-                // 不设 width（交给 CSS width:max-content 由最宽选项决定）；
-                // 仅设 minWidth 保证列表不窄于触发框（选中态宽度与列表宽度解耦）
-                minWidth: triggerRect.width,
-                maxWidth: `calc(100vw - ${MARGIN * 2}px)`,
-                // 限制最大高度，超出时可滚动（配合 CSS overflow-y:auto）
-                maxHeight: maxHeight > 0 ? `${maxHeight}px` : undefined,
-                zIndex: 9999,
-            });
-        }
-    }, [open]); // 依赖 open 状态
 
     const handleOpen = () => {
         if (props.disabled) return;
-        setOpen(!open); // 只负责开关，位置计算交给 useEffect
+        setOpen(!open); // 只负责开关，位置计算交给 use_floating
     };
 
     return (
@@ -585,9 +550,9 @@ export function Select(props: SelectProps) {
                         expand_more
                     </i>
                 </div>
-
                 {open && createPortal(
-                    <div ref={dropdownRef} className="select_dropdown" style={dropdownStyle}>
+                    <div ref={dropdownRef} className="select_dropdown" data-layer="popup" style={dropdownStyle}>
+
                         {props.options.map((item, index) => {
                             // 与上一个选项的 group 不同时，先渲染一条分组标题（含分割线）
                             const prev = index > 0 ? props.options[index - 1] : undefined;

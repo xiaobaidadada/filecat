@@ -467,7 +467,7 @@ body.rtl .card.floating .card-content .file-list {
 
 /* AceInput 模拟 input 样式 */
 .ace-input-container .ace_editor {
-    border: 1px solid var(--border-color, #d9d9d9);
+    border: 1px solid var(--borderPrimary, #d9d9d9);
     border-radius: 4px;
     font-family: inherit;
     line-height: 28px !important;

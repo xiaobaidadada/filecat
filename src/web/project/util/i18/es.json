@@ -1152,5 +1152,6 @@
   "时间线编辑器": "Editor de líneas de tiempo",
   "图片编辑器": "Editor de imágenes",
   "excel编辑器": "Editor de Excel",
-  "编辑器": "Editores"
+  "编辑器": "Editores",
+  "cron表达式": "Expresión Cron"
 }

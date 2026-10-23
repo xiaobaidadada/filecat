@@ -33,7 +33,7 @@ import { CmdType } from "../../../../../common/frame/WsData";
 import { NotySuccess } from "../../../util/noty";
 
 import { Message } from "./chatTypes";
-import { next_placeholder_id } from "./messageUtils";
+import { next_placeholder_id, toUiMessages } from "./messageUtils";
 import { buildAttachments } from "./attachmentUtils";
 import { useChatStream } from "./useChatStream";
 import { useSessionManager } from "./useSessionManager";
@@ -132,6 +132,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     // ===== 消息层（先建，会话层加载完成后通过回调把消息铺进来） =====
     // 会话层需要消息层的 apply_session，用 ref 转发避免 Hook 构造顺序耦合
     const apply_session_ref = useRef<(s: any) => void>(() => { });
+    // 订阅层在会话层之后创建，这里用 ref 转发其绑定能力，供会话加载回调使用
+    const sub_ref = useRef<{ bind_live_bubbles: (m: Message[], n: number) => void } | null>(null);
 
     const msg = useMessageList({
         admin_call: (action, payload) => ai_agentHttp.post("admin/session", { action, ...(payload || {}) }),
@@ -147,7 +149,22 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     // ===== 会话层 =====
     const session_api = useSessionManager({
-        on_session_loaded: (session) => apply_session_ref.current(session),
+        on_session_loaded: (session) => {
+            // 该会话正在执行时把当前连接登记为订阅者。
+            // 刷新页面后 ws 是全新连接，旧的订阅关系已随旧连接销毁，
+            // 不重新订阅就再也收不到后续流式内容（页面卡在当前内容不再更新）。
+            if (session.running) {
+                ws.sendData(CmdType.ai_chat_subscribe, { session_id: session.id, subscribe: true });
+                subscribed_session_ref.current = session.id;
+            }
+            apply_session_ref.current(session);
+            // 把已渲染的 live_messages 末尾气泡登记到 chunk_index 映射上，
+            // 否则刷新后收到的第一个 chunk 找不到对应气泡，会新建一个（内容重复）。
+            if (session.live_messages?.length) {
+                const ui = toUiMessages([...(session.messages ?? []), ...session.live_messages]);
+                sub_ref.current?.bind_live_bubbles(ui, session.live_messages.length);
+            }
+        },
         set_session_panel_open,
         on_session_change,
         init_cwd,
@@ -176,6 +193,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         reload_session: (id) => session_api.loadSession(id),
         set_active_session_running: session_api.setActiveSessionRunning,
     });
+    sub_ref.current = sub;
 
     // ===== 本地流式 hook =====
     const setMessagesDebounced = useRef(

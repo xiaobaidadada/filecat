@@ -120,9 +120,12 @@ export function useChatSubscription(deps: Deps) {
 
         /** 会话结束（正常结束与报错共用） */
         const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
+            // 结束通知会发给该用户所有连接（含未订阅本会话的连接），
+            // 所以非当前会话也要把列表里的“执行中”标记落下来，否则一直转圈。
             mark_session_running(sessionId, false);
-            chunkBubbleRef.current.clear();
             if (activeId() && activeId() === sessionId) {
+                // chunk 映射只属于当前渲染的会话，别的会话结束时不能清空它
+                chunkBubbleRef.current.clear();
                 set_active_session_running(false);
                 // 后端已无该会话运行登记，退订避免残留
                 if (subscribed_ref.current === sessionId) {
@@ -166,11 +169,14 @@ export function useChatSubscription(deps: Deps) {
         };
         const handleChatEnd = (data: any) => {
             const ctx = data?.context || {};
-            if (ctx.session_id) handleEnd(ctx.session_id, ctx.once_messages_list);
+            if (!ctx.session_id) return;
+            // running 标记由 handleEnd 统一处理（含非当前会话）
+            handleEnd(ctx.session_id, ctx.once_messages_list);
         };
         const handleChatError = (data: any) => {
             const ctx = data?.context || {};
-            if (ctx.session_id) handleEnd(ctx.session_id, ctx.once_messages_list);
+            if (!ctx.session_id) return;
+            handleEnd(ctx.session_id, ctx.once_messages_list);
         };
 
         ws.addMsg(CmdType.ai_chat_msg, handleChatMsg);

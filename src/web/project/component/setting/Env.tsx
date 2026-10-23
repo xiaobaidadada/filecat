@@ -22,6 +22,7 @@ import {use_auth_check} from "../../util/store.util";
 import {move_element, sort} from "../../../../common/ListUtil";
 import {env_item, workflow_setting_item} from "../../../../common/req/common.pojo";
 import {using_env_prompt} from "./util";
+import {CronInput} from "./CronInput";
 import {plug_item} from "../../../../plugin";
 import {use_select_config} from "../../util/react.config";
 import {editor_data} from "../../util/store.util";
@@ -44,7 +45,7 @@ export function Env() {
     const headers_outside_software = [t("软件"), t("是否安装"), t("路径")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const env_path_dir_headers = [t("编号"), t("路径"), t("是否开启"), t("备注")];
-    const workflow_setting_headers = [t("编号"), t("文件路径"), t("是否开启"), t("系统启动执行"), t("corn表达式"), t("用户id"), t("备注")];
+    const workflow_setting_headers = [t("编号"), t("文件路径"), t("是否开启"), t("系统启动执行"), t("cron表达式"), t("用户id"), t("备注")];
     const dir_upload_headers = [t("编号"), t("路径"), t("单用户并发数量"), t("系统并发数量"), t("big_res"), t("big_sz"), t("大文件并发数量"), t("big_ck"), t("备注")];
     const plugin_headers = [t("编号"), t("名称"), t("路径"), t("是否开启"), t("params"), t("备注")];
     const {check_user_auth} = use_auth_check();
@@ -353,6 +354,60 @@ export function Env() {
                        })} width={"10rem"} onRowDrag={dir_upload_row_drag}/>
             </CardFull>
         </RowColumn>
+
+        {/* Workflow Job 有 7 列（含 cron 表达式），放在半宽列里每列只剩几十像素，
+            单独占整行才能让 cron 表达式、文件路径等有用宽度 */}
+        <RowColumn widthPer={100} maxWidth={"100rem"}>
+            <CardFull self_title={<span className={" div-row "}><h2>{t("Workflow Job")}</h2>
+                <ActionButton icon={"info"} onClick={() => {
+                    soft_ware_info_click("Workflow")
+                }} title={t("信息")}/></span>}
+                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                          set_workflow_setting_rows([...workflow_setting_rows, {open: false}])
+                      }}/>
+                          <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/>
+                      </div>}>
+                <Table headers={workflow_setting_headers} rows={workflow_setting_rows.map((item, index) => {
+                    const new_list = [
+                        <div>{index}</div>,
+                        <InputText value={item.file_path} handleInputChange={(value) => {
+                            item.file_path = value;
+                        }} no_border={true}/>,
+
+                        <Select value={!!item.open} onChange={(value: any) => {
+                            item.open = value
+                            set_workflow_setting_rows([...workflow_setting_rows])
+                        }} options={select_list}
+                                no_border={true}/>,
+
+                        <Select value={!!item.sys_power_on} onChange={(value: any) => {
+                            item.sys_power_on = value
+                            set_workflow_setting_rows([...workflow_setting_rows])
+                        }} options={select_list}
+                                no_border={true}/>,
+
+                        <CronInput value={item.cron_str} onChange={(value) => {
+                            item.cron_str = value;
+                            // 必须重建数组触发重渲染，否则触发器上显示的还是旧表达式
+                            set_workflow_setting_rows([...workflow_setting_rows]);
+                        }} no_border={true}/>,
+
+                        <InputText value={item.user_id} handleInputChange={(value) => {
+                            item.user_id = value;
+                        }} no_border={true}/>,
+
+                        <InputText value={item.note} handleInputChange={(value) => {
+                            item.note = value;
+                        }} no_border={true}/>,
+
+                        <ActionButton icon={"delete"} title={t("删除")}
+                                      onClick={() => workflow_setting_row_del(index)}/>,
+                    ];
+                    return new_list;
+                })} width={"10rem"} onRowDrag={workflow_setting_row_drag}/>
+            </CardFull>
+        </RowColumn>
+
         <Row>
 
             <Column widthPer={50} maxWidth={"50rem"}>
@@ -399,53 +454,6 @@ export function Env() {
                             set_pty_cmd(value)
                         }}/>
                     </Card>
-
-                    <CardFull self_title={<span className={" div-row "}><h2>{t("Workflow Job")}</h2>
-                    <ActionButton icon={"info"} onClick={() => {
-                        soft_ware_info_click("Workflow")
-                    }} title={t("信息")}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
-                                  set_workflow_setting_rows([...workflow_setting_rows, {open: false}])
-                              }}/>
-                                  <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/>
-                              </div>}>
-                        <Table headers={workflow_setting_headers} rows={workflow_setting_rows.map((item, index) => {
-                            const new_list = [
-                                <div>{index}</div>,
-                                <InputText value={item.file_path} handleInputChange={(value) => {
-                                    item.file_path = value;
-                                }} no_border={true}/>,
-
-                                <Select value={!!item.open} onChange={(value: any) => {
-                                    item.open = value
-                                    set_workflow_setting_rows([...workflow_setting_rows])
-                                }} options={select_list}
-                                        no_border={true}/>,
-
-                                <Select value={!!item.sys_power_on} onChange={(value: any) => {
-                                    item.sys_power_on = value
-                                    set_workflow_setting_rows([...workflow_setting_rows])
-                                }} options={select_list}
-                                        no_border={true}/>,
-
-                                <InputText value={item.cron_str} handleInputChange={(value) => {
-                                    item.cron_str = value;
-                                }} no_border={true}/>,
-
-                                <InputText value={item.user_id} handleInputChange={(value) => {
-                                    item.user_id = value;
-                                }} no_border={true}/>,
-
-                                <InputText value={item.note} handleInputChange={(value) => {
-                                    item.note = value;
-                                }} no_border={true}/>,
-
-                                <ActionButton icon={"delete"} title={t("删除")}
-                                              onClick={() => workflow_setting_row_del(index)}/>,
-                            ];
-                            return new_list;
-                        })} width={"10rem"} onRowDrag={workflow_setting_row_drag}/>
-                    </CardFull>
 
 
                     {/* 插件配置管理 */}

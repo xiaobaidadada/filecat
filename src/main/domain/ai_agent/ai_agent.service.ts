@@ -740,6 +740,8 @@ export class Ai_agentService {
         if (!controller) return false;
         controller.abort();
         // 立刻销掉运行登记，前端刷新列表时不再显示 running
+        // 注意：这里不广播状态，abort 会抛出 AbortError，
+        // chat_ws 的 catch / finally 里的 cleanupRunning 会统一广播结束状态。
         this.activeChatControllers.delete(sessionId);
         this.runningChats.delete(sessionId);
         return true;
@@ -764,16 +766,20 @@ export class Ai_agentService {
      * @param subscriberIds 该会话的订阅连接 id 集合
      * @param cmdType
      * @param context
+     * @param to_all_connections 为 true 时忽略订阅关系，发给该用户所有连接。
+     *        用于「会话结束/报错」这类状态事件：用户切到别的会话后已退订本会话，
+     *        但会话列表里那条“执行中”的标记必须能落下来，否则会一直转圈。
+     *        流式正文（ai_chat_msg）绝不能走这个模式，否则会串到别的会话页面。
      */
-    private sendToSubscribers(token: string, subscriberIds: Set<string>, cmdType: CmdType, context: ai_chat_send_message) {
-        if (!subscriberIds?.size) return;
+    private sendToSubscribers(token: string, subscriberIds: Set<string>, cmdType: CmdType, context: ai_chat_send_message, to_all_connections = false) {
+        if (!to_all_connections && !subscriberIds?.size) return;
         const all = WsUtil.get_all_wss_by_token(token);
         if (!all?.length) return;
         const data = new WsData(cmdType);
         data.context = context;
         const encoded = data.encode();
         for (const w of all) {
-            if (subscriberIds.has(w.id)) {
+            if (to_all_connections || subscriberIds.has(w.id)) {
                 w.sendData(encoded);
             }
         }
@@ -910,7 +916,6 @@ export class Ai_agentService {
             if (r) r.subscribers?.delete(wss.id);
         });
 
-        // 清理“运行中”登记（正常结束 / 中断 / 异常时都清理）
         const cleanupRunning = () => {
             this.runningChats.delete(finalSessionId);
             this.activeChatControllers.delete(finalSessionId);
@@ -954,7 +959,7 @@ export class Ai_agentService {
                         session_id: finalSessionId,
                         once_messages_list,
                         _interrupted: stats?._interrupted,
-                    });
+                    }, true);
                     // 保存会话记录
                     const assistantText = once_messages_list
                         .map(it => getContentAsString(it.content))
@@ -985,7 +990,7 @@ export class Ai_agentService {
                 session_id: finalSessionId,
                 message: errorMsg,
                 once_messages_list: run_pojo.once_messages_list ?? [],
-            });
+            }, true);
             // 保存错误到会话
             try {
                 // 异常退出时 run_pojo.once_messages_list 里可能已有本轮已流式输出、

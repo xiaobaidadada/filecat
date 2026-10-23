@@ -7,7 +7,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: var(--background-primary, #fff);
+    background: var(--surfacePrimary, #fff);
     z-index: 1000;
 }
 
@@ -20,7 +20,7 @@
     padding: 0 .8em;
     height: 3em;
     border-bottom: 1px solid var(--surfaceSecondary);
-    background: var(--background-primary, #fff);
+    background: var(--surfacePrimary, #fff);
 }
 
 .office-editor__name {
@@ -139,8 +139,8 @@
     font-size: .76em;
     opacity: .75;
     background: var(--surfaceSecondary);
-    border-right: 1px solid var(--border, #e0e0e0);
-    border-bottom: 1px solid var(--border, #e0e0e0);
+    border-right: 1px solid var(--borderPrimary, #e0e0e0);
+    border-bottom: 1px solid var(--borderPrimary, #e0e0e0);
     box-sizing: border-box;
     user-select: none;
     z-index: 3;
@@ -157,8 +157,8 @@
     font-size: 11px;
     line-height: 1.4;
     box-sizing: border-box;
-    border-right: 1px solid var(--border, #e0e0e0);
-    border-bottom: 1px solid var(--border, #e0e0e0);
+    border-right: 1px solid var(--borderPrimary, #e0e0e0);
+    border-bottom: 1px solid var(--borderPrimary, #e0e0e0);
     overflow: hidden;
     white-space: nowrap;
     cursor: cell;
@@ -211,7 +211,7 @@
     font: inherit;
     font-size: inherit;
     padding: 0 .2em;
-    background: var(--background-primary, #fff);
+    background: var(--surfacePrimary, #fff);
     color: #000;
     resize: none;
     box-sizing: border-box;

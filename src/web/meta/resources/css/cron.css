@@ -1,0 +1,275 @@
+/*
+ * cron 表达式编辑与显示。
+ * 触发器沿用表单项的视觉风格；展开的编辑器用浮层，避免撑高表格行。
+ */
+
+.cron-input {
+    position: relative;
+    width: 100%;
+    /* 不能设 min-width：表格列本身只有几十像素，撑出去会压到相邻单元格的输入框上，
+       导致相邻 input 拦截点击。这里只约束不溢出，文字由内部省略号处理。 */
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* 触发器在极窄的表格列里也能点开：隐藏描述，只留一个图标按钮的观感 */
+.cron-input__display--compact .cron-input__desc,
+.cron-input__display--compact .cron-input__expr {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---- 触发器：表达式 + 人话描述 ---- */
+.cron-input__display {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .5rem;
+    border: 1px solid var(--borderPrimary, #e5e7eb);
+    border-radius: .3rem;
+    cursor: pointer;
+    background: var(--surfacePrimary, transparent);
+    min-width: 0;
+    white-space: nowrap;
+}
+
+/* 表格单元格内使用时去掉边框，与 InputText 的 no_border 保持一致 */
+.cron-input__display--no-border {
+    border-color: transparent;
+    background: transparent;
+    padding: .2rem 0;
+}
+
+.cron-input__display:hover {
+    background: var(--hover, rgba(0, 0, 0, .04));
+}
+
+.cron-input__expr {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: .82em;
+    white-space: nowrap;
+    /* 表达式优先展示完整，描述在剩余空间里截断 */
+    flex: 0 0 auto;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cron-input__expr--invalid {
+    color: var(--red, #dc2626);
+}
+
+.cron-input__desc {
+    font-size: .78em;
+    color: var(--textSecondary, #6b7280);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cron-input__arrow {
+    flex: 0 0 auto;
+    font-size: 1.1em;
+    color: var(--textSecondary, #6b7280);
+    transition: transform .15s;
+}
+
+.cron-input--open .cron-input__arrow {
+    transform: rotate(180deg);
+}
+
+/* ---- 浮层编辑器 ----
+   用 fixed 定位：表格列很窄、卡片可能带 overflow，absolute 会被裁掉。
+   位置由组件按视口实时计算，这里只固定宽度与外观。 */
+.cron-editor {
+    position: fixed;
+    width: min(24rem, calc(100vw - 1rem));
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    padding: .75rem;
+    background: var(--surfacePrimary, #fff);
+    border: 1px solid var(--borderPrimary, #e5e7eb);
+    border-radius: .4rem;
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .12);
+    /* 高度上限由 JS 通过 CSS 变量注入（rem）：
+       --floating-max-height 是高度上限，--floating-available 是视口内剩余空间。
+       JS 始终会传这两个值，这里的兜底仅在 JS 未运行时生效。 */
+    max-height: min(var(--floating-max-height, 26rem), var(--floating-available, 26rem));
+    /* 滚动交给内部 .cron-editor__scroll，这样底部「完成」按钮始终可见 */
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+/* 内容超出可用高度时内部滚动，底部操作区保持可见 */
+.cron-editor__scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.cron-editor__row {
+    display: flex;
+    gap: .5rem;
+    align-items: flex-start;
+}
+
+.cron-editor__title {
+    flex: 0 0 auto;
+    font-size: .82em;
+    color: var(--textSecondary, #6b7280);
+    padding-top: .3rem;
+}
+
+.cron-editor__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    flex: 1 1 auto;
+}
+
+.cron-preset {
+    padding: .2rem .55rem;
+    font-size: .82em;
+    border: 1px solid var(--borderPrimary, #e5e7eb);
+    border-radius: .9rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cron-preset:hover {
+    background: var(--hover, rgba(0, 0, 0, .05));
+}
+
+/* ---- 逐段编辑 ---- */
+.cron-editor__fields {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    margin-top: .6rem;
+    padding-top: .6rem;
+    border-top: 1px solid var(--borderSecondary, #f1f2f4);
+}
+
+.cron-field {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    min-height: 2rem;
+}
+
+.cron-field__label {
+    flex: 0 0 2.6rem;
+    font-size: .85em;
+    color: var(--textSecondary, #6b7280);
+}
+
+.cron-field__param {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .85em;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cron-field__param--list {
+    flex-wrap: wrap;
+}
+
+/* 指定值的小标签：下拉 + 删除按钮 */
+.cron-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .1rem;
+    padding: 0 .2rem;
+    border-radius: .25rem;
+    background: var(--surfaceSecondary, rgba(0, 0, 0, .04));
+}
+
+.cron-tag__del,
+.cron-tag__add {
+    font-size: 1em;
+    cursor: pointer;
+    color: var(--textSecondary, #6b7280);
+    line-height: 1;
+    user-select: none;
+}
+
+.cron-tag__del:hover,
+.cron-tag__add:hover {
+    color: var(--textPrimary, #111);
+}
+
+.cron-tag__add {
+    padding: 0 .2rem;
+}
+
+/* ---- 底部：结果预览 ---- */
+.cron-editor__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-top: .6rem;
+    padding-top: .6rem;
+    border-top: 1px solid var(--borderSecondary, #f1f2f4);
+}
+
+.cron-editor__preview {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: .82em;
+    color: var(--textSecondary, #6b7280);
+    word-break: break-all;
+}
+
+.cron-editor__done {
+    flex: 0 0 auto;
+    padding: .25rem .8rem;
+    font-size: .85em;
+    border: 1px solid var(--borderPrimary, #e5e7eb);
+    border-radius: .3rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cron-editor__done:hover {
+    background: var(--hover, rgba(0, 0, 0, .05));
+}
+
+/* ---- Workflow Job 表格 ----
+   Table 组件给每个 td 写了内联 width，CSS 改不动列宽，
+   所以这里不干预列宽，只保证 cron 单元格内容不撑破表格。 */
+.card-content:has(.cron-input) > table td:has(.cron-input) {
+    overflow: hidden;
+}
+
+/* ---- 只读展示 ---- */
+.cron-display {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    min-width: 0;
+}
+
+.cron-display code {
+    font-size: .85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cron-display__desc {
+    font-size: .8em;
+    color: var(--textSecondary, #6b7280);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
