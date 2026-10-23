@@ -6,7 +6,7 @@ import {NotySuccess} from "../../project/util/noty";
 export interface CardProps {
     title?: string;
     self_title?: any;
-    titleCom?: React.ReactNode;
+    rightTopCom?: React.ReactNode;
     children?: React.ReactNode;
     rightBottomCom?: React.ReactNode;
     key?:any
@@ -25,7 +25,7 @@ function CardComponent(props: CardProps, type: Type) {
     }}>
         <div className={"card-title"}>
             {props.self_title ? props.self_title : <h2>{props.title}</h2>}
-            <div className={"not-select-div"}>{props.titleCom && props.titleCom}</div>
+            <div className={"not-select-div"}>{props.rightTopCom}</div>
         </div>
         <div className={contextClass}>
             {props.children}

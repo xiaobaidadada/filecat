@@ -62,7 +62,7 @@ export function TableListRender(props: {
     return <Dashboard>
             <CardFull  self_title={<span className={" div-row "}><h2>{props.title}</h2>
                 {props.info_click && <ActionButton icon={"info"} onClick={()=>{props.info_click()}} title={"信息"}/>}
-            </span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+            </span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={props.headers} rows={rows.map((itemList, index) => {
                     const list = [];
                     for (let i=0;i<props.headers.length;i++) {

@@ -208,7 +208,7 @@ export function TcpProxyServerClientSetting() {
                         })
                     }} title={t("信息")}/>
                 </span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_task}/></div>}>
+                          rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_task}/></div>}>
                     <Table headers={list_headers} rows={sync_task_list.map((item, index) => {
                         return [
                             <p>{index}</p>,

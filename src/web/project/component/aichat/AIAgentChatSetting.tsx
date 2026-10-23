@@ -496,7 +496,7 @@ export default function AIAgentChatSetting() {
                 <Dashboard>
                     <Row>
                         <Column widthPer={100} maxWidth={"130rem"}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("供应商设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} titleCom={<div>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("供应商设置")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(tip_text)}} title={"信息"}/></span>} rightTopCom={<div>
                                 <ActionButton icon={"short_text"} title={t("全局prompt")}  onClick={() => {
                                     // 全局默认配置：所有供应商合并使用，供应商里的同名设置覆盖它
                                     setEditorSetting({
@@ -626,7 +626,7 @@ export default function AIAgentChatSetting() {
 
                     <Row>
                         <Column widthPer={70} maxWidth={"100rem"}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
@@ -701,7 +701,7 @@ export default function AIAgentChatSetting() {
                     </Row>
                     <Row>
                         <Column widthPer={70} maxWidth={"100rem"}>
-                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> </span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
+                            <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> </span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
@@ -765,7 +765,7 @@ export default function AIAgentChatSetting() {
                             </CardFull>
 
                             <CardFull self_title={<span className={" div-row "}><h2>{t("系统会话提示词")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(sys_prompt_tip)}} title={"信息"}/></span>}
-                                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add_sys_prompt}/>
+                                      rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add_sys_prompt}/>
                                           <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                               save_sys_prompts()
                                           }}/></div>}>
@@ -842,7 +842,7 @@ export default function AIAgentChatSetting() {
 
                             {/* ============ 长期记忆 ============ */}
                             <CardFull self_title={<span className={" div-row "}><h2>{t("长期记忆")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(t("开启后跨会话保存记忆。四个固定文件：周/月/年/永久。每周结束自动压缩周→月，每月结束自动压缩月→年，每年结束自动压缩年→永久。编辑按钮可手动查看和修改。"))}} title={"信息"}/></span>}
-                                      titleCom={<div>
+                                      rightTopCom={<div>
                                           <Switch checked={long_term_memory_open} onChange={async (v)=>{
                                               set_long_term_memory_open(v);
                                               await settingHttp.post("ai_long_term_memory_setting/save", {open: v});
@@ -880,7 +880,7 @@ export default function AIAgentChatSetting() {
                     <Row>
                         <Column widthPer={50} maxWidth={"80rem"}>
                                 <CardFull self_title={<span className={" div-row "}><h2>{t("本地知识库")}</h2> <ActionButton icon={"info"} onClick={()=>{tip(docs_tip)}} title={"信息"}/></span>}
-                                          titleCom={<div>
+                                          rightTopCom={<div>
 
                                               <Switch checked={index_switch} onChange={async (v)=>{
                                                   await ai_agentHttp.post("docs_on_set", {

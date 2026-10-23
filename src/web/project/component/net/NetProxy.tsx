@@ -271,7 +271,7 @@ export function NetProxy(props) {
                 user_base_info.sys === SysEnum.mac && <Column>
                     {mac_proxies.map((proxy, index1) => <CardFull key={index1} self_title={<span
                         className={" div-row "}><h2>{proxy.name}</h2> </span>}
-                                                                  titleCom={<div><ActionButton
+                                                                  rightTopCom={<div><ActionButton
                                                                       icon={"save"} title={t("保存")}
                                                                       onClick={() => {
                                                                           save_proxy_mac(index1)
@@ -304,7 +304,7 @@ export function NetProxy(props) {
 
             <Column>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("Tcp Proxy")}</h2> </span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={tcp_add}/><ActionButton
+                          rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={tcp_add}/><ActionButton
                               icon={"save"} title={t("保存")} onClick={save_outside_software}/></div>}>
                     <Table headers={tcp_proxy_list_header} rows={tcp_proxy_list.map((item, index) => {
                         const new_list = [
@@ -335,7 +335,7 @@ export function NetProxy(props) {
 
 
                 <CardFull self_title={<span className={" div-row "}><h2>{t("Http Proxy Server")}</h2> </span>}
-                          titleCom={<div>
+                          rightTopCom={<div>
                               <ActionButton icon={"add"} title={t("添加端口实例")} onClick={() => {
                                   httpServer.list.push({
                                       open: false,

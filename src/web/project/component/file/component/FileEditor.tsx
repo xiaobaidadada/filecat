@@ -79,7 +79,8 @@ export default function FileEditor() {
         };
     }, [have_update,editorSetting]);
     // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）
-    use_editor_auto_save(EditorAutoSaveEnum.ace, () => !!editorSetting.save && have_update_ref.current, () => save());
+    use_editor_auto_save(EditorAutoSaveEnum.ace, () => !!editorSetting.save && have_update_ref.current, () => save(),editorSetting.not_auto_save);
+
     return editorSetting.open && (<div id="editor-container">
         <Header ignore_tags={true} left_children={[
             <ActionButton key={1} title={"取消"} icon={"close"} onClick={cancel}/>,

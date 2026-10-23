@@ -142,7 +142,7 @@ export default function MdEditorSettingPage() {
                 <Dashboard>
                     <Row>
                         <Column widthPer={33} maxWidth={"30rem"}>
-                            <Card title={t("编辑器设置")} titleCom={<>
+                            <Card title={t("编辑器设置")} rightTopCom={<>
                                 <ButtonText text={t("恢复默认")} clickFun={reset_default}/>
                                 {can_edit &&
                                     <Button text={saving ? t("保存中") : t("保存")}

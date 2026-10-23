@@ -347,7 +347,7 @@ export function PrivateEnv() {
                                                                                                                soft_ware_info_click("文件夹路径")
                                                                                                            }}
                                                                                                            title={t("信息")}/></span>}
-                        titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton
+                        rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton
                             icon={"save"} title={t("保存")} onClick={save}/></div>}>
                         <Table headers={headers} rows={rows.map((item, index) => {
                             const new_list = [
@@ -373,7 +373,7 @@ export function PrivateEnv() {
                         icon={"info"} onClick={() => {
                         soft_ware_info_click("保护目录")
                     }} title={t("信息")}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton
+                              rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={protection_dir_add}/><ActionButton
                                   icon={"save"} title={t("保存")} onClick={protection_dir_save}/></div>}>
                         <Table headers={protection_dir_headers} rows={protection_dir_rows.map((item, index) => {
                             const new_list = [
@@ -398,7 +398,7 @@ export function PrivateEnv() {
                         soft_ware_info_click("目录快捷命令")
                     }}
                                   title={"info"}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={quick_cmd_add}/>
+                              rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={quick_cmd_add}/>
                                   <ActionButton icon={"save"} title={t("保存")} onClick={quick_cmd_save}/>
                               </div>}>
                         <Table headers={quick_cmd_headers} rows={quick_cmd_rows.map((item, index) => {
@@ -426,7 +426,7 @@ export function PrivateEnv() {
                         soft_ware_info_click("文件快捷命令")
                     }}
                                   title={"info"}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={file_quick_cmd_add}/>
+                              rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={file_quick_cmd_add}/>
                                   <ActionButton icon={"save"} title={t("保存")} onClick={file_quick_cmd_save}/>
                               </div>}>
                         <Table headers={file_quick_cmd_headers} rows={file_quick_cmd_rows.map((item, index) => {

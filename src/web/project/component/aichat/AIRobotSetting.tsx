@@ -211,7 +211,7 @@ export const RebotCard: React.FC<{
                     </span>
                 </div>
             }
-            titleCom={
+            rightTopCom={
                 <div className="airebot-setting__card-actions">
                     <Switch
                         checked={!!item.open}

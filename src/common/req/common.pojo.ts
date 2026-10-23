@@ -226,7 +226,34 @@ export interface sys_env_pojo {
     // 网页代理端口模式使用的端口范围 [起始, 结束]（在范围内自动分配空闲端口）
     browser_proxy_port_start?: number
     browser_proxy_port_end?: number
+    // 环境控制（env 风格的通用 k-v 文本，目前只用到 Host 头访问控制）
+    // 前端直接编辑并保存这份原始文本，未开启的项以 # 注释形式保存
+    control_env_str?: string
+    // control_env_str 解析后的结果，由后端在保存时填充，供运行时判断使用
+    control_env?: control_env_pojo
 }
+
+// 环境控制配置。
+// 每一项都是 env 风格的 key = [数组] 文本；是否存在（非注释）即代表是否启用。
+// 目前支持：
+//   allowed_hosts —— 只允许匹配的 Host 访问
+//   forbid_hosts  —— 拒绝匹配的 Host 访问
+// 规则为正则表达式（完整匹配），Host 只取主机名（不含端口）。
+export interface control_env_pojo {
+    allowed_hosts?: string[]
+    forbid_hosts?: string[]
+    allowed_private_host?: boolean
+}
+
+// 环境控制的默认值 —— 唯一定义处，前后端都从这里取
+export const CONTROL_ENV_DEFAULT: control_env_pojo = {}
+
+// 环境控制的默认文本（两项都注释掉 = 都不启用）
+export const CONTROL_ENV_STR_DEFAULT: string =
+`# allowed_hosts = ["127.0.0.1"]
+# forbid_hosts = []
+# allowed_private_host = false
+`
 
 // md 编辑器全局设置（所有用户共用，由管理员在设置页调整）
 // 尺寸类字段存成「数值+单位」的 CSS 字符串，单位由用户自己选（px/%/rem/em/vw），

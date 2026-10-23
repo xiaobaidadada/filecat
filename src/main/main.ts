@@ -91,6 +91,17 @@ export async function start_main() {
     const expressApp = express();
 
     // 2. 挂载最基础的解析器（必须在最顶层）
+    // =======================================================
+    // 主机头访问控制：最高优先级，未通过直接断开连接（不返回任何响应）
+    // =======================================================
+    expressApp.use((req: Request, res: Response, next) => {
+        if (settingService.check_host_allow(req.headers.host)) {
+            next();
+            return;
+        }
+        req.socket?.destroy();
+    });
+
     const cookieParser = require('cookie-parser');
     expressApp.use(cookieParser());
     expressApp.use(compression());

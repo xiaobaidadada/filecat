@@ -119,7 +119,7 @@ export default function DockerSetting() {
                                     });
                                 }}/>
                                 </span>}
-                                    titleCom={
+                                    rightTopCom={
 
                                         <ActionButton icon={"save"} title={t("保存")} onClick={() => save()}/>
                                     }>

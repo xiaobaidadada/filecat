@@ -104,12 +104,13 @@ export const $stroe = {
         open: false
     }),
     // 编辑器设置
-    editorSetting: atom<{menu_list?: any[], model?: string, open?: boolean, fileName?: string, save?: any, opt_shell?: boolean, can_format?: boolean, close?: () => any}>({
+    editorSetting: atom<{menu_list?: any[], model?: string, open?: boolean, fileName?: string, save?: any, opt_shell?: boolean, can_format?: boolean, close?: () => any,not_auto_save?:boolean}>({
         model: 'text',
         open: false,
         fileName: '',
         save: null,
-        can_format: false
+        can_format: false,
+        not_auto_save: false
     }),
     windows_width: atom<{width: number, is_mobile: boolean}>({
         width: typeof window !== 'undefined' ? window.innerWidth : 1200,

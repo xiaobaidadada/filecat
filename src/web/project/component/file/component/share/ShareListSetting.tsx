@@ -86,7 +86,7 @@ export default function ShareListSetting() {
             <CardFull self_title={<span className={" div-row "}><h2>{t("文件分享列表")}</h2>
             <ActionButton icon={"info"} title={t("提示")} onClick={info_click}/>
             </span>}
-                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
+                      rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={save}/></div>}>
                 <Table headers={headers} onRowDrag={(from, to) => {
                     set_rows(move_element(rows, from, to));
                 }} rows={rows.map((item:file_share_item, index) => {

@@ -291,7 +291,7 @@ export function Systemd(props) {
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`systemd系统单元(${systemd_rows.length})`}
-                                  titleCom={<InputText placeholder={"过滤单元"} value={systemd_filterkey}  handleInputChange={(value) => {
+                                  rightTopCom={<InputText placeholder={"过滤单元"} value={systemd_filterkey} handleInputChange={(value) => {
                                       set_systemd_filterkey(value);
                                   }} handlerEnter={searchSystemd}/>}>
                             <Table headers={systemd_headers} rows={systemd_rows} width={"10rem"}/>
@@ -304,7 +304,7 @@ export function Systemd(props) {
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`filecat监控单元(${rows.length})`}
-                                  titleCom={<InputText placeholder={"过滤单元"} value={filterKey}  handleInputChange={(value) => {
+                                  rightTopCom={<InputText placeholder={"过滤单元"} value={filterKey} handleInputChange={(value) => {
                                       setFilterKey(value)
                                   }}/>}>
                             <Table headers={headers} rows={rows} width={"10rem"}/>

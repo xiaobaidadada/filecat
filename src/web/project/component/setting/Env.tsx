@@ -243,12 +243,12 @@ export function Env() {
             fileName: "",
             save: async (context) => {
                 const save_result = await settingHttp.post("env/process/save", {text: context});
-                if (save_result.code === RCode.Success) {
-                    NotySuccess(t("保存成功"));
-                } else {
-                    NotyFail(t("保存失败"));
-                }
-                editor_data.set_value_temp('');
+                // if (save_result.code === RCode.Success) {
+                //     NotySuccess(t("保存成功"));
+                // } else {
+                //     NotyFail(t("保存失败"));
+                // }
+                // editor_data.set_value_temp('');
             }
         });
     }
@@ -306,8 +306,8 @@ export function Env() {
             <CardFull self_title={<span className={" div-row "}><h2>{t("up_conc")}</h2> <ActionButton
                 icon={"info"} onClick={() => {
                 soft_ware_info_click("文件上传")
-            }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
-                                                                        onClick={dir_upload_rows_add}/><ActionButton
+            }} title={t("信息")}/></span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")}
+                                                                           onClick={dir_upload_rows_add}/><ActionButton
                 icon={"save"} title={t("保存")} onClick={dir_upload_max_num_save}/></div>}>
                 <Table headers={dir_upload_headers}
                        rows={dir_upload_rows.map((item: dir_upload_max_num_item, index) => {
@@ -362,7 +362,7 @@ export function Env() {
                 <ActionButton icon={"info"} onClick={() => {
                     soft_ware_info_click("Workflow")
                 }} title={t("信息")}/></span>}
-                      titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                      rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
                           set_workflow_setting_rows([...workflow_setting_rows, {open: false}])
                       }}/>
                           <ActionButton icon={"save"} title={t("保存")} onClick={workflow_setting_rows_save}/>
@@ -417,7 +417,7 @@ export function Env() {
                     <ActionButton icon={"info"} onClick={() => {
                         soft_ware_info_click("环境路径")
                     }} title={t("信息")}/></span>}
-                              titleCom={
+                              rightTopCom={
                                   <div>
                                       <ActionButton icon={"list"} title={t("查看")} onClick={view_process_env}/>
                                       <ActionButton icon={"edit"} title={t("编辑")} onClick={edit_process_env}/>
@@ -461,7 +461,7 @@ export function Env() {
                         <ActionButton icon={"info"} onClick={() => {
                             soft_ware_info_click("插件配置")
                         }} title={t("信息")}/></span>}
-                              titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
+                              rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={() => {
                                   set_plugin_rows([...plugin_rows, {name: "", path: "", note: "", open: false}])
                               }}/>
                                   <ActionButton icon={"save"} title={t("保存")} onClick={save_plugin_list}/></div>}>
@@ -502,8 +502,8 @@ export function Env() {
                     <CardFull self_title={<span className={" div-row "}><h2>{t("系统保护路径")}</h2> <ActionButton
                         icon={"info"} onClick={() => {
                         soft_ware_info_click("保护目录")
-                    }} title={t("信息")}/></span>} titleCom={<div><ActionButton icon={"add"} title={t("添加")}
-                                                                                onClick={protection_sys_dir_add}/><ActionButton
+                    }} title={t("信息")}/></span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")}
+                                                                                   onClick={protection_sys_dir_add}/><ActionButton
                         icon={"save"} title={t("保存")} onClick={protection_sys_dir_save}/></div>}>
                         <Table headers={protection_dir_headers} rows={protection_sys_dir_rows.map((item, index) => {
                             const new_list = [
@@ -522,8 +522,8 @@ export function Env() {
                     </CardFull>
 
 
-                    <CardFull title={t("外部软件")} titleCom={<ActionButton icon={"save"} title={t("保存")}
-                                                                            onClick={save_outside_software}/>}>
+                    <CardFull title={t("外部软件")} rightTopCom={<ActionButton icon={"save"} title={t("保存")}
+                                                                               onClick={save_outside_software}/>}>
                         <Table headers={headers_outside_software} rows={rows_outside_software.map((item, index) => {
                             const new_list = [
                                 <div>{item.id}</div>,

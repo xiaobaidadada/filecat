@@ -293,7 +293,7 @@ export function User() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("用户")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
-                          titleCom={<div className={"div-row"} style={{gap: '0.5rem'}}>
+                          rightTopCom={<div className={"div-row"} style={{gap: '0.5rem'}}>
                               {/* 搜索框：参照内网穿透客户端搜索，输入后回车触发过滤 */}
                               <InputText placeholder={t("过滤")} value={user_filter_key} handleInputChange={(value) => {
                                   set_user_filter_key(value);

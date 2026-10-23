@@ -207,7 +207,7 @@ export default function BrowserProxyTargets() {
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("网页代理目标")}</h2>
                     <ActionButton icon={"info"} title={t("信息")} onClick={info_click}/></span>}
-                          titleCom={<div>
+                          rightTopCom={<div>
                               {can_edit && !is_edit && <ActionButton icon={"add"} title={t("添加")} onClick={create_target}/>}
                           </div>}>
                     <Table headers={headers} rows={rows.map((item) => {

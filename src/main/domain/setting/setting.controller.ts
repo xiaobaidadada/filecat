@@ -20,6 +20,7 @@ import {ai_agent_global_setting, ai_agent_Item, ai_mcp_server_item, ai_rebot_set
 import {Public} from "../../other/middleware/decorator";
 import mime from "mime-types";
 import {md_editor_setting_pojo} from "../../../common/req/common.pojo";
+import {FileUtil} from "../file/FileUtil";
 
 @JsonController("/setting")
 export class SettingController {
@@ -466,10 +467,10 @@ export class SettingController {
             for (const item of list) {
                 const l = item.split(' ');
                 for (const it of l) {
-                    if (!fs.existsSync(it)) {
+                    if (!await FileUtil.access(it)) {
                         throw "dir not found"
                     }
-                    const stats = fs.statSync(it);
+                    const stats = await FileUtil.statSync(it);
                     if (!stats.isDirectory()) {
                         throw "dir not a dir"
                     }

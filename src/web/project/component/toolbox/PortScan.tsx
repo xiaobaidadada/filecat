@@ -123,7 +123,7 @@ export function PortScan() {
             <Row>
                 <Column>
                     <Card title={t("TCP ")+t('端口扫描')}
-                          titleCom={
+                          rightTopCom={
                               <span>
                                   {progress && (
                                       <span>{t('已发现')}: {progress.openCount}</span>

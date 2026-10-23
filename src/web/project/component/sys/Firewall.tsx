@@ -175,7 +175,7 @@ export function Firewall() {
 
                 {/* 添加规则 */}
                 <Column widthPer={35}>
-                    <CardFull title={t("添加ufw规则")} titleCom={
+                    <CardFull title={t("添加ufw规则")} rightTopCom={
                         <ActionButton icon={"add"} title={t("添加")} onClick={addRule}/>
                     }>
                         <InputRow label={t("动作")} label_width={"4rem"} input_max_width={"8rem"}>
@@ -204,7 +204,7 @@ export function Firewall() {
 
             <Row>
                 <Column widthPer={80}>
-                    <CardFull title={t("规则列表")} titleCom={
+                    <CardFull title={t("规则列表")} rightTopCom={
                         <div style={{display: 'flex', gap: '0.4rem'}}>
                             <ButtonText text={t("名单视图")} clickFun={() => setViewMode("list")}/>
                             <ButtonText text={t("文本视图")} clickFun={() => setViewMode("text")}/>

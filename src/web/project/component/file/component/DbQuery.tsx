@@ -317,7 +317,7 @@ export default function DbQuery() {
             <div className={"db-query-page__content"}>
                 <Card
                     title={"SQL 查询"}
-                    titleCom={
+                    rightTopCom={
                         <div className={"db-query-page__preset-bar"}>
                             {activeEnv && (
                                 <InputText
@@ -378,7 +378,7 @@ export default function DbQuery() {
 
                 <Card
                     title={"查询结果"}
-                    titleCom={
+                    rightTopCom={
                         <span className={"db-query-page__result-meta"}>
                             {result ? `${result.row_count} 行` : "暂无结果"}
                             {hasQuery && (

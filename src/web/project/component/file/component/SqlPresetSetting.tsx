@@ -96,7 +96,7 @@ export default function SqlPresetSetting() {
                     <Dashboard>
                         <Row>
                             <Column widthPer={60}>
-                                <CardFull self_title={<span className={"div-row"}><h2>{t("SQL 预设")}</h2></span>} titleCom={
+                                <CardFull self_title={<span className={"div-row"}><h2>{t("SQL 预设")}</h2></span>} rightTopCom={
                                     <div className={"db-query-setting__toolbar"}>
                                         <ActionButton icon={"add"} title={t("添加")}
                                                       onClick={() => setPresets([...presets, {note: "", sql: "", env: sqlEnvDefault} as SqlPresetItem])} />

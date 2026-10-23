@@ -450,7 +450,7 @@ export function Http() {
                 </Column>
                 <Column>
 
-                    <Card title={status_code} titleCom={
+                    <Card title={status_code} rightTopCom={
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             {/* 响应体专用格式化按钮 */}
                             <ActionButton title={t("格式化")} icon={"data_object"} onClick={() => {

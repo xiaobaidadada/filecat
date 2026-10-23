@@ -82,7 +82,7 @@ export function NetClient(props) {
         <Row>
 
             <Column>
-                <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>} titleCom={<div>{t("连接状态")}<StatusCircle ok={connet_state} /></div>}>
+                <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={save}/>} rightTopCom={<div>{t("连接状态")}<StatusCircle ok={connet_state} /></div>}>
                     <InputText placeholder={"ip "} value={ip} handleInputChange={(d)=>{setIp(d)}}/>
                     <InputText placeholder={"mask"} value={mask} handleInputChange={(d)=>{setMask(d)}}/>
                     <InputText placeholder={`${t("服务器")} ip`} value={serverIp} handleInputChange={(d)=>{setServerIp(d)}}/>

@@ -259,8 +259,8 @@ export function Docker(props) {
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`${t('镜像')} (${rows_images.length})`}
-                                  titleCom={<InputText placeholder={t('过滤镜像')} value={images_filterkey}
-                                                       handleInputChange={(value) => {
+                                  rightTopCom={<InputText placeholder={t('过滤镜像')} value={images_filterkey}
+                                                          handleInputChange={(value) => {
                                                            set_images_filterkey(value);
                                                        }} handlerEnter={search_image}/>}>
                             <Table headers={headers_images} rows={rows_images.map((value, index) => {
@@ -280,8 +280,8 @@ export function Docker(props) {
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`${t("容器")} (${rows.length})`}
-                                  titleCom={<InputText placeholder={t("过滤")} value={filterKey}
-                                                       handleInputChange={(value) => {
+                                  rightTopCom={<InputText placeholder={t("过滤")} value={filterKey}
+                                                          handleInputChange={(value) => {
                                                            setFilterKey(value)
                                                        }}/>}>
                             <Table headers={headers} rows={rows} width={"10rem"}/>

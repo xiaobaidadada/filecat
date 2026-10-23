@@ -164,7 +164,7 @@ export function TcpProxyServerSetting() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("服务器")+t("端口映射")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                         </span>}
-              titleCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
+              rightTopCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
                   set_client_filter_Key(value);
               }} handlerEnter={()=>{
                   get_all_open_server_client_proxy_fig()

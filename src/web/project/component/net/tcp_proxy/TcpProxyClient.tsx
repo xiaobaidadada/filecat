@@ -144,7 +144,7 @@ export function TcpProxyClient(props) {
                 <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={() => {
                     clients[0].index = 0
                     save(clients[0])
-                }}/>} titleCom={<div>{t("连接状态")}<StatusCircle ok={!!clients[0]?.status}/></div>}>
+                }}/>} rightTopCom={<div>{t("连接状态")}<StatusCircle ok={!!clients[0]?.status}/></div>}>
 
                     <InputText placeholder={`${t("服务器")} ip`} value={clients[0]?.serverIp}
                                handleInputChange={(d) => {

@@ -18,10 +18,11 @@ import {
 } from "../../../../common/req/setting.req";
 import {useTranslation} from "react-i18next";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
-import {use_auth_check} from "../../util/store.util";
+import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
-import {getShortTime} from "../../../project/util/common_util";
+import {CONTROL_ENV_STR_DEFAULT} from "../../../../common/req/common.pojo";
+import {getShortTime} from "../../util/common_util";
 import {GlobalContext} from "../../GlobalProvider";
 import {AutoUpgrade} from "./AutoUpgrade";
 import BrowserProxyCard from "./BrowserProxyCard";
@@ -35,6 +36,8 @@ export function Sys() {
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [, setEditorSetting] = useAtom($stroe.editorSetting);
+
 
     // HTTPS 设置
     const [https_open, set_https_open] = useState(false);
@@ -44,6 +47,8 @@ export function Sys() {
     const [tokenMode, setTokenMode] = useState(TokenTimeMode.close);
     const [tokenPersist, setTokenPersist] = useState(false);
     const [tokenSeconds, setTokenSeconds] = useState(undefined);
+    // 环境控制原始文本
+    const [control_env_str, set_control_env_str] = useState("");
 
     const {t, i18n} = useTranslation();
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
@@ -68,48 +73,43 @@ export function Sys() {
             NotySuccess("修改成功")
         }
     }
-    useEffect(() => {
-        const getOpen = async () => {
-            const all_open_result = await settingHttp.get("sys_option/status");
-            if (all_open_result.code === RCode.Success) {
-                set_recycle_open(all_open_result.data.recycle_open);
-                set_recycle_dir(all_open_result.data.recycle_dir);
-                const sys_env = all_open_result.data.sys_env;
-                set_web_site_title(sys_env?.web_site_title);
-                set_site_logo(sys_env?.logo || '');
-                set_show_login_user_info(sys_env?.show_login_user_info);
-                set_http_proxy(sys_env?.http_proxy || '');
-                // HTTPS 设置
-                const https_setting = all_open_result.data.https_setting;
-                if (https_setting) {
-                    set_https_open(https_setting.open);
-                    set_https_cert_path(https_setting.cert_path || '');
-                    set_https_key_path(https_setting.key_path || '');
-                }
-            }
-            // const result = await settingHttp.get("self_auth_open");
-            // setAuthopen(result.data);
-            //
-            // const result2 = await settingHttp.get("shell_cmd_check_open");
-            // set_shell_cmd_open(result2.data);
-
-            const result1 = await settingHttp.get("token");
-            if (result1.code === RCode.Success) {
-                const data = result1.data as TokenSettingReq;
-                if (!data) {
-                    return;
-                }
-                if (data['length']) {
-                    setTokenSeconds(data['length']);
-                }
-                if (data['mode']) {
-                    setTokenMode(data['mode']);
-                }
-                if (data['persist'] !== undefined) {
-                    setTokenPersist(data['persist']);
-                }
+    const getOpen = async () => {
+        const all_open_result = await settingHttp.get("sys_option/status");
+        if (all_open_result.code === RCode.Success) {
+            set_recycle_open(all_open_result.data.recycle_open);
+            set_recycle_dir(all_open_result.data.recycle_dir);
+            const sys_env = all_open_result.data.sys_env;
+            set_web_site_title(sys_env?.web_site_title);
+            set_site_logo(sys_env?.logo || '');
+            set_show_login_user_info(sys_env?.show_login_user_info);
+            set_http_proxy(sys_env?.http_proxy || '');
+            set_control_env_str(sys_env?.control_env_str || CONTROL_ENV_STR_DEFAULT);
+            // HTTPS 设置
+            const https_setting = all_open_result.data.https_setting;
+            if (https_setting) {
+                set_https_open(https_setting.open);
+                set_https_cert_path(https_setting.cert_path || '');
+                set_https_key_path(https_setting.key_path || '');
             }
         }
+        const result1 = await settingHttp.get("token");
+        if (result1.code === RCode.Success) {
+            const data = result1.data as TokenSettingReq;
+            if (!data) {
+                return;
+            }
+            if (data['length']) {
+                setTokenSeconds(data['length']);
+            }
+            if (data['mode']) {
+                setTokenMode(data['mode']);
+            }
+            if (data['persist'] !== undefined) {
+                setTokenPersist(data['persist']);
+            }
+        }
+    }
+    useEffect(() => {
         getOpen();
     }, []);
 
@@ -208,7 +208,27 @@ export function Sys() {
                                 )
                             })
                         }} title={t("信息")}/></span>}
-                        rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}>
+                        rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_sys_env}/>}
+                        rightTopCom={<ActionButton icon={"tune"} title={t("环境控制")}
+                                                   onClick={() => {
+                                                       editor_data.set_value_temp(control_env_str || CONTROL_ENV_STR_DEFAULT);
+                                                       setEditorSetting({
+                                                           model: "ace/mode/ini",
+                                                           open: true,
+                                                           fileName: "",
+                                                           not_auto_save: true,// 这里比较敏感，禁止使用自动保存
+                                                           save: async (context: string) => {
+                                                               const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
+                                                                   type: sys_setting_type.sys_env,
+                                                                   value: {control_env_str: context}
+                                                               });
+                                                               if (result.code === RCode.Success) {
+                                                                   NotySuccess(t("修改成功"));
+                                                                   getOpen();
+                                                               }
+                                                           }
+                                                       });
+                                                   }}/>}>
 
                         {t("网站标题")}
                         <InputText value={web_site_title} handleInputChange={(value) => {

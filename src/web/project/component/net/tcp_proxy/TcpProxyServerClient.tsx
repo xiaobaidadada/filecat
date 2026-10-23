@@ -190,7 +190,7 @@ export function TcpProxyServerClient() {
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
 
-              titleCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
+              rightTopCom={<InputText placeholder={t("过滤")} value={client_filter_Key} handleInputChange={(value) => {
                   set_client_filter_Key(value);
               }} handlerEnter={()=>{
                   getItems()

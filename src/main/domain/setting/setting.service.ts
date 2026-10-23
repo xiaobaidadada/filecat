@@ -3,6 +3,10 @@ import {MD_EDITOR_SETTING_FIELDS} from "../../../common/md_editor_setting.check"
 import path from "path";
 import fs from "fs";
 import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
+import {
+    CONTROL_ENV_DEFAULT,
+    control_env_pojo
+} from "../../../common/req/common.pojo";
 import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
@@ -58,6 +62,7 @@ import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
 import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
+import {is_private_ipv4_literal} from "../../../common/node/net";
 
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -484,6 +489,9 @@ export class SettingService {
         if (!(p.browser_proxy_port_end > 0)) {
             p.browser_proxy_port_end = 5710;
         }
+        if (!p.control_env) {
+            p.control_env = {...CONTROL_ENV_DEFAULT};
+        }
         return p;
     }
 
@@ -529,12 +537,46 @@ export class SettingService {
         if (!(result.browser_proxy_port_end >= result.browser_proxy_port_start && result.browser_proxy_port_end <= 65535)) {
             result.browser_proxy_port_end = result.browser_proxy_port_start;
         }
+        // 环境控制：保存原始文本，同时解析出运行时用的结构
+        if (typeof result.control_env_str === "string") {
+            const parsed: control_env_pojo = {};
+            Env.load(result.control_env_str, parsed);
+            result.control_env = parsed;
+        }
         return DataUtil.set(data_common_key.sys_env_key, result);
     }
 
     // 获取 filecat 系统全局 http 代理地址（空表示未设置）
     public get_http_proxy(): string {
         return this.get_sys_env()?.http_proxy;
+    }
+
+    /**
+     * 判断 Host 头是否放行。
+     * 存在 forbid_hosts（未注释）时命中即拒；
+     * 存在 allowed_hosts（未注释）时必须命中。
+     * 正则均为完整匹配，Host 只取主机名（去掉端口）。
+     */
+    public check_host_allow(host_header: string): boolean {
+        const env = this.get_sys_env().control_env;
+        if (!env) return true;
+        const allowed = env.allowed_hosts;
+        const forbid = env.forbid_hosts;
+        // 两项都未启用（默认状态，零开销）
+        if (!allowed && !forbid ) return true;
+        const host = String(host_header ?? '').split(":")?.[0];
+        if (!host) return false;
+        if(env.allowed_private_host && is_private_ipv4_literal(host)) {
+            return true;
+        }
+        const hit = (list: string[]) => list.some(r => new RegExp(`^(?:${r})$`, 'i').test(host));
+        if (forbid !== undefined && hit(forbid)) {
+            return false;
+        }
+        if (allowed !== undefined && !hit(allowed)) {
+            return false;
+        }
+        return true;
     }
 
     // 获取 md 编辑器全局设置。存档即完整快照，无存档（首次）时用默认值。

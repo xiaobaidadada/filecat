@@ -111,7 +111,7 @@ export function Process(props) {
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`${t('进程')} (${count})`}
-                                  titleCom={<InputText placeholder={t("过滤")} value={filterKey} handleInputChange={(value) => {
+                                  rightTopCom={<InputText placeholder={t("过滤")} value={filterKey} handleInputChange={(value) => {
                                       setFilterKey(value);
                                   }}/>}>
                             <Table headers={headers} rows={rows} width={"10rem"}/>

@@ -166,7 +166,7 @@ export function Role() {
                 <CardFull self_title={<span className={" div-row "}><h2>{t("角色")}</h2>
                     {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
-                          titleCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_user}/></div>}>
+                          rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={create_user}/></div>}>
                     <Table headers={headers} rows={rows.map((item, index) => {
                         const new_list = [
                             <p>{item.role_id}</p>,

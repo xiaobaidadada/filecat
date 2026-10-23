@@ -121,7 +121,7 @@ export default function MdThemeEditorPage() {
             <FullScreenContext>
                 <div className={"md-theme-editor"}>
                     <div className={"md-theme-editor__left"}>
-                        <Card title={is_new ? t("新建主题") : t("编辑主题")} titleCom={<>
+                        <Card title={is_new ? t("新建主题") : t("编辑主题")} rightTopCom={<>
                             {can_edit &&
                                 <ButtonText text={saving ? t("保存中") : t("保存")}
                                             clickFun={() => {
@@ -156,7 +156,7 @@ export default function MdThemeEditorPage() {
                         </Card>
                     </div>
                     <div className={"md-theme-editor__right"}>
-                        <Card title={t("预览")} titleCom={
+                        <Card title={t("预览")} rightTopCom={
                             <span className={"md-theme-editor__tip"}>{t("主题实时预览")}</span>
                         }>
                             <MdPreview className={"md-theme-preview"}/>

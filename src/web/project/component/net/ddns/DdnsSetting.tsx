@@ -281,7 +281,7 @@ export function DdnsSetting() {
                         })
                     }} title={t("信息")}/>
                 </span>}
-                          titleCom={<div>
+                          rightTopCom={<div>
                               <ActionButton icon={"sync"} title={t("立即同步")} selected={syncing} onClick={sync_now}/>
                               <ActionButton icon={"dns"} title={t("IP 来源管理")} onClick={open_source_manager}/>
                               <ActionButton icon={"add"} title={t("添加")} onClick={create}/>
@@ -327,7 +327,7 @@ export function DdnsSetting() {
                         self_title={<span className={" div-row "}>
                             <h2>{t(`${edit.is_new ? "添加" : "编辑"}`)}</h2>
                         </span>}
-                        titleCom={<ActionButton icon={"info"} title={t("信息")} onClick={show_info}/>}
+                        rightTopCom={<ActionButton icon={"info"} title={t("信息")} onClick={show_info}/>}
                         rightBottomCom={<div>
                             <ActionButton icon={"cancel"} title={t("取消")} onClick={close_edit}/>
                             <ActionButton icon={"save"} title={t("保存")} onClick={save}/>

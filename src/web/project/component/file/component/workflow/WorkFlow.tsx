@@ -216,7 +216,7 @@ export default function WorkFlow(props) {
                             <CardFull self_title={<span className={" div-row "}><h2>{t("历史记录")}</h2>
                                 {/*<ActionButton icon={"info"} onClick={()=>{soft_ware_info_click()}} title={"信息"}/>*/}
                 </span>}
-                                      titleCom={<div className={" div-row "}>
+                                      rightTopCom={<div className={" div-row "}>
                                           <InputText
                                               disabled={search_name_status}
                                               value={search_name}

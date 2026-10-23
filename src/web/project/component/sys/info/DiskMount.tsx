@@ -197,7 +197,7 @@ export function DiskMount() {
             <FullScreenContext>
                 <Row>
                     <Column widthPer={40}>
-                        <Card title={t("物理块(硬盘)设备、逻辑卷、物理卷")} titleCom={<div>
+                        <Card title={t("物理块(硬盘)设备、逻辑卷、物理卷")} rightTopCom={<div>
                             {check_user_auth(UserAuth.sys_disk_mount) &&
                                 <ActionButton icon={"file_open"} title={t("打开挂载文件")} onClick={async () => {
                                     click_file({
