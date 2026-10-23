@@ -150,6 +150,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     // ===== 会话层 =====
     const session_api = useSessionManager({
         on_session_loaded: (session) => {
+            // 会话切换/清空时可能没有会话（如新建会话前先清空旧状态）
+            if (!session) return;
             // 该会话正在执行时把当前连接登记为订阅者。
             // 刷新页面后 ws 是全新连接，旧的订阅关系已随旧连接销毁，
             // 不重新订阅就再也收不到后续流式内容（页面卡在当前内容不再更新）。

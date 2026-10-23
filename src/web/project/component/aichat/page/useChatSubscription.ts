@@ -103,6 +103,8 @@ export function useChatSubscription(deps: Deps) {
                     target.is_loading = true;
                 } else if (text) {
                     target.text = target.text + text;
+                    const part = target.content_list?.[0];
+                    if (part) part.content = target.text;
                     target.is_loading = false;
                 }
                 if (tool_call_ends) {

@@ -171,6 +171,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
             if (chunkText) {
                 target.text = target.text + chunkText;
+                const part = target.content_list?.[0];
+                if (part) part.content = target.text;
                 target.is_loading = false;
             }
             if (tool_call_ends) {

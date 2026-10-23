@@ -13,6 +13,8 @@ import { using_confirm } from "../../prompts/prompt.util";
 import { RCode } from "../../../../../common/Result.pojo";
 import { InputText } from "../../../../meta/component/Input";
 import { NotySuccess } from "../../../util/noty";
+import { useAtom } from "jotai";
+import { $stroe } from "../../../util/store";
 import {
     ai_agent_chat_session_item,
     ai_agent_chat_session_meta,
@@ -49,6 +51,8 @@ export function useSessionManager(options: Options) {
 
     const { t } = useTranslation();
     const confirm_dell_all = using_confirm();
+    // 最近一次使用的 AI 会话 id，持久化在 localStorage
+    const [last_session_id, set_last_session_id] = useAtom($stroe.ai_last_session_id);
 
     const [sessions, setSessions] = useState<SessionListItem[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string>("");
@@ -116,6 +120,8 @@ export function useSessionManager(options: Options) {
             live_messages?: ai_agent_message_item[];
         };
         setActiveSessionId(session.id);
+        // 记录最近一次使用的会话，供从其它主页面切回 AI 页时恢复
+        set_last_session_id(session.id);
         if (url_session_id !== session.id) write_url_session(session.id);
         on_session_change?.(session.id);
         setActiveSessionRunning(!!session.running);
@@ -125,7 +131,7 @@ export function useSessionManager(options: Options) {
         return true;
     };
 
-    /** 拉列表并选中（selectId 为 null 表示选第一个） */
+    /** 拉列表并选中（selectId 为 null 表示选第一个）；selectId 不存在时返回 false */
     const loadSessions = async (selectId?: string | null): Promise<boolean> => {
         const result = admin_mode_ref.current
             ? await admin_call("list_all_sessions")
@@ -144,6 +150,8 @@ export function useSessionManager(options: Options) {
             on_session_loaded(null);
             return false;
         }
+        // 明确指定了会话 id 时必须能在列表中找到，否则视为该会话已不存在
+        if (selectId && !list.some(s => s.id === selectId)) return false;
         const ownerId = list.find(s => s.id === nextId)?.user_id;
         return await loadSession(nextId, false, ownerId);
     };
@@ -325,7 +333,7 @@ export function useSessionManager(options: Options) {
         }
     };
 
-    /** 启动定位：按 cwd → init_session_id → url → 列表首个 */
+    /** 启动定位：按 cwd → init_session_id → url → 最近使用 → 列表首个 */
     const init_active_session = async () => {
         if (init_cwd) {
             const located = await locate_session_by_cwd(init_cwd);
@@ -338,7 +346,10 @@ export function useSessionManager(options: Options) {
             const ok = await loadSessions(url_session_id);
             if (!ok) await loadSessions();
         } else {
-            await loadSessions();
+            // 从其它主页面切回时没有 URL 会话参数：用最近一次使用的会话，
+            // 该会话可能已被删除，loadSessions 失败会回退到列表首个
+            const ok = last_session_id ? await loadSessions(last_session_id) : false;
+            if (!ok) await loadSessions();
         }
     };
 

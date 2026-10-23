@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useTranslation} from "react-i18next";
 
 import {Icon, ActionButton} from "../../../../meta/component/Button";
@@ -65,6 +65,8 @@ export default function SessionList({
 }) {
     const {t} = useTranslation();
     const [searchText, setSearchText] = useState('');
+    // 列表容器引用：用于把当前选中会话滚动到可见区域
+    const items_wrap_ref = useRef<HTMLDivElement>(null);
     // 拖动排序状态：拖动源下标 / 当前悬停的目标下标
     const [drag_index, set_drag_index] = useState<number | null>(null);
     const [over_index, set_over_index] = useState<number | null>(null);
@@ -164,6 +166,30 @@ export default function SessionList({
             || (allUsersMode && (s.owner_name || '').toLowerCase().includes(searchText.toLowerCase())))
         : sessions;
 
+    /** 当前选中的会话（可能被搜索过滤掉，因此从完整列表中取） */
+    const current_session = sessions.find(s => s.id === activeSessionId);
+
+    /**
+     * 滚动到当前选中会话所在位置。
+     * 列表用 [data-session-id] 定位；被搜索过滤掉时先清空搜索再滚动。
+     */
+    const scroll_to_session = (id: string) => {
+        const scroll = () => {
+            const wrap = items_wrap_ref.current;
+            const el = wrap?.querySelector<HTMLElement>(`[data-session-id="${id}"]`);
+            if (!el) return;
+            // behavior: 'smooth' 让跳动有过程，用户能看清落点
+            el.scrollIntoView({block: 'center', behavior: 'smooth'});
+        };
+        if (!filteredSessions.some(s => s.id === id)) {
+            // 当前会话不在过滤结果里：清空搜索，等列表重新渲染后再滚动
+            setSearchText('');
+            requestAnimationFrame(() => requestAnimationFrame(scroll));
+            return;
+        }
+        scroll();
+    };
+
     // 拖动结束：回调被拖项与落点项的具体 id，由上层按 id 重排（避免过滤时下标错位）
     const handle_drop = (to: number) => {
         const from = drag_index;
@@ -187,10 +213,21 @@ export default function SessionList({
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                 />
+                {/* 当前选中会话：与搜索框一起固定显示，点击滚动到该会话位置 */}
+                {current_session && (
+                    <button
+                        className="chat-session-current"
+                        title={toSessionTitle(current_session.title)}
+                        onClick={() => scroll_to_session(current_session.id)}
+                    >
+                        <i className="material-icons">my_location</i>
+                        <span>{toSessionTitle(current_session.title)}</span>
+                    </button>
+                )}
             </div>
-            <div className="chat-session-items-wrap">
+            <div className="chat-session-items-wrap" ref={items_wrap_ref}>
                 {filteredSessions.map((session, index) => (
-                    <div key={session.id}>
+                    <div key={session.id} data-session-id={session.id}>
                         <button
                             className={`chat-session-item ${activeSessionId === session.id ? "active" : ""} ${batchMode ? 'batch-mode' : ''} ${session.running ? 'is-running' : ''} ${drag_index === index ? 'row-dragging' : ''} ${over_index === index && drag_index !== null && drag_index !== index ? 'row-drop-target' : ''}`}
                             // ===== 拖动排序：仅开启排序回调且非「所有用户会话」模式时生效 =====

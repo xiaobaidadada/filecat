@@ -253,6 +253,8 @@ export const $stroe = {
     // 文件列表 / Studio 内嵌聊天面板都用它记忆「切回某个目录时用哪个会话」，
     // 存的是映射表（key 为目录路径），与单纯记单个会话不是一个语义。
     ai_chat_session_by_cwd: sync_atomWithStorage<Record<string, string>>("ai_chat_session_by_cwd", {}),
+    // 最近一次使用的 AI 会话 id：从其它主页面切回 AI 页时优先恢复它
+    ai_last_session_id: sync_atomWithStorage<string>("ai_last_session_id", ""),
     // 读取/写入该映射表的通用工具，避免各处重复实现存取逻辑
     get_ai_chat_session: (map: Record<string, string> | undefined, cwd: string): string | undefined =>
         map?.[cwd] || undefined,

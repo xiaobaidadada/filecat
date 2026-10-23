@@ -59,7 +59,7 @@
 .chat-session-list {
     width: 13.75rem;
     min-width: 11.25rem;
-    padding: .625rem;
+    padding: .325rem;
     /*border-right: 1px solid #e5e7eb;*/
     display: flex;
     flex-direction: column;
@@ -71,8 +71,11 @@
 
 /* 会话搜索框 */
 .chat-session-search {
-    padding: 0 0 .5rem 0;
+    padding: .375rem 0 .5rem 0;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .375rem;
 }
 
 .chat-session-search-input {
@@ -94,6 +97,39 @@
 
 .chat-session-search-input::placeholder {
     color: #9ca3af;
+}
+
+/* 当前选中会话：与搜索框一起固定在顶部，点击滚动到该会话位置 */
+.chat-session-current {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    width: 100%;
+    min-width: 0;
+    padding: .1875rem .5rem;
+    border: 1px solid transparent;
+    border-radius: .5rem;
+    background: var(--hover, rgba(0, 0, 0, .04));
+    /*color: var(--primary, #4f46e5);*/
+    font-size: .8125rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.chat-session-current:hover {
+    background: var(--primary-light, rgba(79, 70, 229, .12));
+}
+
+.chat-session-current .material-icons {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* 标题过长时省略，不能撑破侧栏 */
+.chat-session-current span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .chat-session-item {
