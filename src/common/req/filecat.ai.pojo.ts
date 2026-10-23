@@ -552,6 +552,8 @@ export class ai_agent_chat_session_meta {
     usage_stats?: ai_agent_usage_stats;
     /** 命令检测是否开启（免确认） */
     cmd_auto_allow?: boolean;
+    /** 该会话使用的系统提示词 id（不设置表示不使用） */
+    sys_prompt_id?: string;
     /** 该会话的服务器工作目录（绝对路径），见 ai_agent_chat_session_item.file_cwd_path */
     file_cwd_path?: string;
     /**
@@ -562,6 +564,9 @@ export class ai_agent_chat_session_meta {
 
     /** 会话是否正在执行 AI 聊天（动态标记，不持久化；用于前端显示“执行中”旋转动画） */
     running?: boolean;
+
+    /** 会话属主名（仅超管「所有用户会话」视图由后端附加，普通列表无此字段） */
+    owner_name?: string;
 }
 
 // ============ 机器人配置 ============

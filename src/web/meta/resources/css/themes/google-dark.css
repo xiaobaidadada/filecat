@@ -542,10 +542,6 @@ table th {
 .chat-session-item small {
   color: var(--textSecondary);
 }
-.chat-session-source {
-  color: var(--icon-purple);
-}
-
 /* ===== Google 暗黑模式 - 模型选择器 ===== */
 .model-selector-dropdown {
   border-color: var(--divider);
@@ -645,14 +641,8 @@ table th {
 
 /* ===== Google 暗黑模式 - 保留原 google-dark 的其他内容 ===== */
 
-.menu-select-popup {
-  background: var(--surfacePrimary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-}
 
-.menu-select-item:hover {
-  background:var(--primary-light);
+.menu_select {
   border-radius: var(--border-radius-sm);
 }
 

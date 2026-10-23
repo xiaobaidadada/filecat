@@ -3,7 +3,7 @@ import {RefObject, useLayoutEffect, useState} from "react";
 /**
  * 浮层定位：让挂在 body 上的浮层（下拉列表、编辑面板等）始终留在视口内。
  *
- * 参考 FileMenuItem 的做法：浮层先以 visibility:hidden 渲染，量到真实尺寸后
+ * 参考 MenuSelect 的做法：浮层先以 visibility:hidden 渲染，量到真实尺寸后
  * 再做四边修正并显示，避免"先出现在错误位置再跳过去"的闪烁。
  *
  * 处理三种情况：

@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
 import {useTranslation} from "react-i18next";
 
-import {MenuSelect} from "../../prompts/Prompt";
 import {Icon, ActionButton} from "../../../../meta/component/Button";
-import {ai_agent_chat_session_meta} from "../../../../../common/req/filecat.ai.pojo";
+import {MenuSelect, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {ai_agent_chat_session_meta, ai_system_prompt_item} from "../../../../../common/req/filecat.ai.pojo";
+import SessionMetaList, {SessionMetaItem} from "./SessionMetaList";
 
 function toSessionTitle(title: string) {
     return title || "新会话";
@@ -34,6 +35,10 @@ export default function SessionList({
                                         onToggleAllUsersMode,
                                         /** 是否显示「所有用户会话」入口（root） */
                                         showAllUsersEntry,
+                                        /** 系统提示词列表（供会话菜单选择） */
+                                        sysPromptList,
+                                        /** 修改指定会话的系统提示词 */
+                                        onChangeSysPrompt,
                                     }: {
     sessions: (ai_agent_chat_session_meta & { user_id?: string; owner_name?: string })[];
     activeSessionId: string;
@@ -55,15 +60,101 @@ export default function SessionList({
     allUsersMode?: boolean;
     onToggleAllUsersMode?: () => void;
     showAllUsersEntry?: boolean;
+    sysPromptList?: ai_system_prompt_item[];
+    onChangeSysPrompt?: (session_id: string, sys_prompt_id: string) => void;
 }) {
     const {t} = useTranslation();
     const [searchText, setSearchText] = useState('');
     // 拖动排序状态：拖动源下标 / 当前悬停的目标下标
     const [drag_index, set_drag_index] = useState<number | null>(null);
     const [over_index, set_over_index] = useState<number | null>(null);
+    // 会话操作菜单：记录位置与目标会话，复用项目统一的 MenuSelect 弹出
+    const [menu, set_menu] = useState<{ x: number, y: number, session: ai_agent_chat_session_meta } | null>(null);
 
     // 「所有用户会话」模式下跨用户排序无意义，禁用拖动排序
     const can_reorder = !!onReorderSessions && !allUsersMode;
+
+    /** 按 id 找系统提示词的显示名（note 优先，否则截取正文） */
+    const sys_prompt_name_of = (id?: string) => {
+        if (!id) return "";
+        const item = sysPromptList?.find(it => String(it.index) === String(id));
+        if (!item) return "";
+        return item.note || item.prompt.slice(0, 20);
+    };
+
+    /**
+     * 会话行副信息标签：消息数 / 系统提示词 / 来源 / 属主
+     * 空值项由 SessionMetaList 统一过滤
+     */
+    const build_meta_items = (session: ai_agent_chat_session_meta): SessionMetaItem[] => [
+        {text: String(session.message_count ?? ''), className: 'chat-session-meta__count', title: t('消息数')},
+        {
+            text: sys_prompt_name_of(session.sys_prompt_id),
+            className: 'chat-session-meta__prompt',
+            title: t('系统提示词')
+        },
+        {
+            text: session.source !== 'web' ? session.source : '',
+            className: 'chat-session-meta__source',
+            title: t('来源')
+        },
+        {
+            text: allUsersMode ? (session.owner_name || '') : '',
+            className: 'chat-session-meta__owner',
+            title: session.owner_name
+        },
+    ];
+
+    /**
+     * 构建会话操作菜单项。
+     * 复用项目 Dropdown 的 items 结构：{r: 显示内容, v: 值, items?: 二级子菜单}
+     * 父项（带 items）不带 v，DropdownItem 无 v 时不会触发 click，只负责展开子菜单。
+     */
+    const build_menu_items = (session: ai_agent_chat_session_meta) => {
+        const items: any[] = [
+            {r: t('重命名'), v: 'rename', run: () => onRenameSession(session.id, session.title)},
+            // 「所有用户会话」模式下跨用户排序无意义，隐藏这两项
+            ...(allUsersMode ? [] : [
+                {
+                    r: t('移动到最上'), v: 'to_top', run: () => {
+                        const first = filteredSessions[0];
+                        if (first && first.id !== session.id) onReorderSessions?.(session.id, first.id);
+                    }
+                },
+                {
+                    r: t('移动到最下'), v: 'to_bottom', run: () => {
+                        const last = filteredSessions[filteredSessions.length - 1];
+                        if (last && last.id !== session.id) onReorderSessions?.(session.id, last.id);
+                    }
+                },
+            ]),
+            {
+                r: session.cmd_auto_allow ? t('命令检测关闭') : t('命令检测开启'),
+                v: 'cmd_auto',
+                run: () => onToggleCmdAuto?.(session.id, !session.cmd_auto_allow)
+            },
+        ];
+        // 系统提示词：二级子菜单，当前生效的那项由 pre_value 高亮
+        if (sysPromptList?.length) {
+            items.push({
+                r: t('系统提示词'),
+                items: [
+                    {r: t('不使用'), v: '', run: () => onChangeSysPrompt?.(session.id, '')},
+                    ...sysPromptList.map(it => ({
+                        r: sys_prompt_name_of(String(it.index)),
+                        v: String(it.index),
+                        run: () => onChangeSysPrompt?.(session.id, String(it.index))
+                    }))
+                ]
+            });
+        }
+        items.push(
+            {r: t('字符消耗统计'), v: 'usage', run: () => onShowUsageStats(session.id)},
+            {r: t('设置'), v: 'setting', run: () => onShowSessionSetting?.(session.id)},
+            {r: t('删除'), v: 'delete', run: () => onDeleteSession(session.id)},
+        );
+        return items;
+    };
 
     const filteredSessions = searchText.trim()
         ? sessions.filter(s => (s.title || '').toLowerCase().includes(searchText.toLowerCase())
@@ -86,6 +177,7 @@ export default function SessionList({
     };
 
     return (
+        <>
         <aside className="chat-session-list">
             <div className="chat-session-search">
                 <input
@@ -130,58 +222,22 @@ export default function SessionList({
                                 />
                             )}
                             <span>{toSessionTitle(session.title)}</span>
-                            {/* 所有用户会话模式：显示会话属主 */}
-                            {allUsersMode && session.owner_name && (
-                                <em className="chat-session-owner" title={session.owner_name}>{session.owner_name}</em>
-                            )}
                             {/* 会话正在执行中：显示旋转 loading 动画 */}
                             {session.running && <span className="chat-session-running" title={t('正在执行中')} />}
-                            <small>{session.message_count}</small>
-                            {session.source !== "web" && <em className="chat-session-source">{session.source}</em>}
+                            {/* 副信息统一走标签列表渲染，间距与背景由容器控制 */}
+                            <SessionMetaList items={build_meta_items(session)}/>
                             {!batchMode && (
-                                <MenuSelect
-                                    list={[
-                                        {
-                                            name: t('重命名'),
-                                            click: () => onRenameSession(session.id, session.title)
-                                        },
-                                        // 移动到最上/最下：复用拖动排序回调，目标取（过滤后）列表的首尾项
-                                        // 「所有用户会话」模式下跨用户排序无意义，隐藏这两项
-                                        ...(allUsersMode ? [] : [
-                                            {
-                                                name: t('移动到最上'),
-                                                click: () => {
-                                                    const first = filteredSessions[0];
-                                                    if (first && first.id !== session.id) onReorderSessions?.(session.id, first.id);
-                                                }
-                                            },
-                                            {
-                                                name: t('移动到最下'),
-                                                click: () => {
-                                                    const last = filteredSessions[filteredSessions.length - 1];
-                                                    if (last && last.id !== session.id) onReorderSessions?.(session.id, last.id);
-                                                }
-                                            },
-                                        ]),
-                                        {
-                                            name: session.cmd_auto_allow ? t('命令检测关闭') : t('命令检测开启'),
-                                            click: () => onToggleCmdAuto?.(session.id, !session.cmd_auto_allow)
-                                        },
-                                        {
-                                            name: t('字符消耗统计'),
-                                            click: () => onShowUsageStats(session.id)
-                                        },
-                                        {
-                                            name: t('设置'),
-                                            click: () => onShowSessionSetting?.(session.id)
-                                        },
-                                        {
-                                            name: t('删除'),
-                                            click: () => onDeleteSession(session.id)
-                                        }
-                                    ]}>
-                                    <Icon icon={'more_horiz'}/>
-                                </MenuSelect>
+                                <i
+                                    className="chat-session-more material-icons"
+                                    title={t('更多操作')}
+                                    onClick={(e) => {
+                                        // 阻止冒泡，避免顺带触发会话选中
+                                        e.stopPropagation();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        // 菜单从图标右下方弹出，MenuSelect 会自行做边界修正
+                                        set_menu({x: rect.right, y: rect.bottom, session});
+                                    }}
+                                >more_horiz</i>
                             )}
                         </button>
                     </div>
@@ -217,5 +273,21 @@ export default function SessionList({
                 )}
             </div>
         </aside>
+        {/* 会话操作菜单：复用项目统一的 MenuSelect（自带边界修正与二级子菜单） */}
+        {menu && (
+            <OverlayTransparent click={() => set_menu(null)}>
+                <MenuSelect
+                    x={menu.x}
+                    y={menu.y}
+                    items={build_menu_items(menu.session)}
+                    pre_value={menu.session.sys_prompt_id ? String(menu.session.sys_prompt_id) : ''}
+                    click={(v, item) => {
+                        set_menu(null);
+                        item?.run?.();
+                    }}
+                />
+            </OverlayTransparent>
+        )}
+    </>
     );
 }

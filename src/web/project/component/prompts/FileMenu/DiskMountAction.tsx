@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {$stroe} from "../../../util/store";
 import { useAtom } from 'jotai'; 
-import { FileMenuItem, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import { MenuSelect, Overlay, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {CardPrompt, ProgressCard} from "../../../../meta/component/Card";
 import {InputText} from "../../../../meta/component/Input";
 import {NotyFail, NotySuccess} from "../../../util/noty";
@@ -66,7 +66,7 @@ export function DiskMountAction(props) {
         return ;
     }
     return (<div>
-        {is_opt ? <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>}/> :
+        {is_opt ? <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y} items={items} click={click}/>}/> :
         <div>
             <CardPrompt title={t("挂载设备")} cancel={close} confirm={confirm} cancel_t={t("取消")} confirm_t={t("确定")}
                         context={[

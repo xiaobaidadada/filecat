@@ -12,7 +12,7 @@ import {register_mind_themes} from "./md_editor/mind_theme";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import PromptInput from "../../../../meta/component/PromptInput";
-import {FileMenuItem, OverlayTransparent} from "../../../../meta/component/Dashboard";
+import {MenuSelect, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {Icon} from "../../../../meta/component/Button";
 import {MaterialIcon} from "material-icons";
 
@@ -645,7 +645,7 @@ export default function MindMapEditor(props: Props) {
                 {error && <div className="mind-mask">{error}</div>}
                 {menu && (
                     <OverlayTransparent click={() => setMenu(null)}>
-                        <FileMenuItem x={menu.x} y={menu.y} items={menu_items(NODE_MENU)}
+                        <MenuSelect x={menu.x} y={menu.y} items={menu_items(NODE_MENU)}
                                       click={(cmd: string) => run_menu(cmd)}/>
                     </OverlayTransparent>
                 )}

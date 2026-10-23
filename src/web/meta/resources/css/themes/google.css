@@ -44,7 +44,6 @@
 }
 
 
-
 body {
   background: var(--background);
   color: var(--textPrimary);
@@ -287,7 +286,7 @@ table th {
 }
 
 .dropdown_item {
-  background: var(--surfacePrimary);
+  /*background: var(--surfacePrimary);*/
   margin: 0;
   border-radius: var(--border-radius-sm);
 }
@@ -383,14 +382,7 @@ table th {
   border-color: rgba(0, 0, 0, 0.28);
 }
 
-.menu-select-popup {
-  background: var(--surfacePrimary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-}
-
-.menu-select-item:hover {
-  background:var(--primary-light);
+.menu_select {
   border-radius: var(--border-radius-sm);
 }
 

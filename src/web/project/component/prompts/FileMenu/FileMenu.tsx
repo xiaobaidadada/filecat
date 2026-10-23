@@ -7,7 +7,7 @@ import {SysSoftware} from "../../../../../common/req/setting.req";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../prompt.util";
 import {useTranslation} from "react-i18next";
-import {FileMenuItem, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
+import {MenuSelect, OverlayTransparent, TextLine} from "../../../../meta/component/Dashboard";
 import {FileCompressType, FileInfo, FileTypeEnum} from "../../../../../common/file.pojo";
 import {use_auth_check, use_file_to_running} from "../../../util/store.util";
 import {DiskMountAction} from "./DiskMountAction";
@@ -676,7 +676,7 @@ export function FileMenu() {
         div = <div onWheel={() => {
             close();
         }}>
-            <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+            <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
                                                                       items={[
                                                                           {
                                                                               r: <div className={"common-tag-center"}>
@@ -734,7 +734,7 @@ export function FileMenu() {
             div = <div onWheel={() => {
                 close();
             }}>
-                <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
                                                                           items={items_images}
                                                                           click={async (v, item) => {
                                                                               // 图片专属项：编辑器打开 / 切换预览开关
@@ -764,7 +764,7 @@ export function FileMenu() {
             div = <div onWheel={() => {
                 close();
             }}>
-                <OverlayTransparent click={close} children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
                                                                           items={items_folder} click={right_click}/>}/>
             </div>
             break;
@@ -776,7 +776,7 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close}
-                                    children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                    children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
                                                             pre_value={showPrompt.data.item_pre_value}
                                                             items={showPrompt.data.items}
                                                             click={showPrompt.data.textClick}/>}
@@ -789,7 +789,7 @@ export function FileMenu() {
             div = (
                 <div onWheel={close}>
                     <OverlayTransparent click={close}
-                                        children={<FileMenuItem x={showPrompt.data.x} y={showPrompt.data.y}
+                                        children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
                                                                 items={finalItems} click={right_click}/>}
                     />
                 </div>

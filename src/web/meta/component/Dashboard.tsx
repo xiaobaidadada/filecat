@@ -148,7 +148,7 @@ export function ShowTextDiv (props:{content:string}) {
 }
 
 
-export function FileMenuItem(props: { x: number, y: number, items?: any, click?: (v,item) => void ,pre_value?: any}) {
+export function MenuSelect(props: { x: number, y: number, items?: any, click?: (v,item) => void ,pre_value?: any}) {
     const divRef = useRef(null);
     const [visible, setVisible] = useState(false); // 控制显示与否
     const [position, setPosition] = useState({ top: props.y, left: props.x });
@@ -191,13 +191,11 @@ export function FileMenuItem(props: { x: number, y: number, items?: any, click?:
     }, [props]);
     return <div
         ref={divRef}
+        className={"menu_select"}
         style={{
             position: 'fixed',
             top: `${position.top}px`,
             left: `${position.left}px`,
-            // backgroundColor: 'white',
-            // border: '1px solid black',
-            padding: '5px',
             zIndex: 1002,
             visibility: visible ? 'visible' : 'hidden', // 使用 visibility 控制显示
             // display: visible ? 'block' : 'none', // 通过 display 控制显示
@@ -227,7 +225,7 @@ export function DropdownTag(props: {
             setShow(!show)
         }}/>
         {show && <OverlayTransparent click={click}/>}
-        {show && <FileMenuItem x={position.left} y={position.top}
+        {show && <MenuSelect x={position.left} y={position.top}
                                items={props.items} click={props.click}/> }
     </div>
 
@@ -311,9 +309,8 @@ export function DropdownItem(props: {
                 if (props.click && props.value !== undefined) props.click(props.value, props.item);
             }}
         >
-            <div className="action">
-                <span>{props.context}</span>
-            </div>
+
+            <span>{props.context}</span>
 
             {isOpen && props.c && (
                 <div

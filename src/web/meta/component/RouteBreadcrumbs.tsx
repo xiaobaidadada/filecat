@@ -3,7 +3,7 @@ import {Link, useLocation, useMatch, useNavigate} from "react-router-dom";
 import {webPathJoin} from "../../../common/ListUtil";
 import {getRouterPath} from "../../project/util/WebPath";
 import {InputText} from "./Input";
-import {DivOverlayTransparent, FileMenuItem, OverlayTransparent} from "./Dashboard";
+import {DivOverlayTransparent, MenuSelect, OverlayTransparent} from "./Dashboard";
 import {useTranslation} from "react-i18next";
 import {Icon} from "./Button";
 // import '../resources/css/all.css'

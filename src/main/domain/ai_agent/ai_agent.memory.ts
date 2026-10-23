@@ -237,6 +237,8 @@ export class AiAgentMemoryService {
             usage_stats: session.usage_stats ? {...session.usage_stats} : undefined,
             cmd_auto_allow: session.cmd_auto_allow ?? false,
             file_cwd_path: session.file_cwd_path,
+            // 会话级系统提示词：写入索引，list() 才能读出来给前端列表标注
+            sys_prompt_id: session.sys_prompt_id,
         };
     }
 
@@ -307,6 +309,8 @@ export class AiAgentMemoryService {
                 usage_stats: it.usage_stats ? {...it.usage_stats} : undefined,
                 cmd_auto_allow: it.cmd_auto_allow ?? false,
                 file_cwd_path: it.file_cwd_path,
+                // 会话级系统提示词：前端会话列表要据此标注并支持在会话菜单里切换
+                sys_prompt_id: it.sys_prompt_id,
             }));
     }
 
@@ -533,7 +537,9 @@ export class AiAgentMemoryService {
         if (!session) return;
         // 空/undefined 均视为清除该系统提示词
         session.sys_prompt_id = sys_prompt_id || undefined;
-        this.writeSession(userId, session, meta.file_name);
+        const fileName = this.writeSession(userId, session, meta.file_name);
+        // 索引里也要同步，否则 list() 读不到该字段（列表无法显示会话所属提示词）
+        this.upsertMeta(store, userId, session, fileName);
     }
 
     /**

@@ -527,7 +527,6 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 setCurrentModelName={setCurrentModelName}
                 modelGroups={modelGroups}
                 onModelChanged={handleModelChanged}
-                sysPromptList={sysPromptList}
                 batchMode={msg.batchMode}
                 selectedMsgCount={msg.selectedMsgIds.size}
                 sessionVisible={!ai_session_collapsed}
@@ -538,8 +537,6 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 bgProcessVisible={ai_bg_expanded}
                 bgProcessCount={bgProcessCount}
                 onToggleBgProcess={() => set_ai_bg_expanded((v: boolean) => !v)}
-                selectedSysPromptId={session_api.selectedSysPromptId}
-                setSelectedSysPromptId={session_api.changeSystemPrompt}
             />
 
             <div
@@ -574,6 +571,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                         allUsersMode={session_api.admin_all_mode}
                         onToggleAllUsersMode={session_api.toggleAllUsersMode}
                         showAllUsersEntry={is_root}
+                        sysPromptList={sysPromptList}
+                        onChangeSysPrompt={(sid, pid) => session_api.changeSystemPrompt(pid, sid)}
                     />
                 )}
 

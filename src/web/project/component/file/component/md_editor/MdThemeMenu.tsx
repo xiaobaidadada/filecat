@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {ActionButton} from "../../../../../meta/component/Button";
-import {FileMenuItem, OverlayTransparent} from "../../../../../meta/component/Dashboard";
+import {MenuSelect, OverlayTransparent} from "../../../../../meta/component/Dashboard";
 import {md_theme_item} from "../../../../../../common/req/common.pojo";
 import {load_md_theme_list} from "./md_theme";
 import {get_select_style} from "../../../../util/FunUtil";
@@ -56,7 +56,7 @@ export function MdThemeMenu(props: {
             set_show(true);
         }}/>
         {show && <OverlayTransparent click={() => set_show(false)} children={
-            <FileMenuItem x={position.x} y={position.y}
+            <MenuSelect x={position.x} y={position.y}
                           items={[
                               // 值为空表示跟随系统设置里的主题
                               {r: sel(t("follow_sys"), ""), v: ""},

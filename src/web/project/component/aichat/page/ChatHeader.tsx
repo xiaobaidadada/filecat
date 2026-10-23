@@ -38,8 +38,6 @@ interface ChatHeaderProps {
     modelGroups: ModelGroup[];
     /** 切换模型成功后回调（用于父组件刷新分组与当前模型） */
     onModelChanged: () => void;
-    /** 系统提示词列表 */
-    sysPromptList: ai_system_prompt_item[];
     /** 批量模式 */
     batchMode: boolean;
     /** 已选消息数 */
@@ -60,10 +58,6 @@ interface ChatHeaderProps {
     bgProcessCount?: number;
     /** 切换后台进程面板 */
     onToggleBgProcess?: () => void;
-    /** 当前选中的系统提示词 ID */
-    selectedSysPromptId: string;
-    /** 设置当前选中的系统提示词 ID */
-    setSelectedSysPromptId: (id: string) => void;
     /**
      * 内嵌模式：不用 HeaderPortal 渲染到全站顶部 Header，
      * 而是在当前位置渲染成一条独立的自带 Header。
@@ -78,7 +72,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     setCurrentModelName,
     modelGroups,
     onModelChanged,
-    sysPromptList,
     batchMode,
     selectedMsgCount,
     sessionVisible,
@@ -89,8 +82,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     bgProcessVisible,
     bgProcessCount,
     onToggleBgProcess,
-    selectedSysPromptId,
-    setSelectedSysPromptId,
     inline,
 }) => {
     const { t } = useTranslation();
@@ -131,23 +122,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 selected={sessionVisible}
                             />
                             <ActionButton icon={"add"} title={t("新会话")} onClick={() => onCreateSession()} />
-                            {sysPromptList.length > 0 && (
-                                <Select
-                                    value={selectedSysPromptId}
-                                    options={[
-                                        { title: t("选择系统提示词"), value: "" },
-                                        ...sysPromptList.map((item) => ({
-                                            title: item.note || item.prompt.slice(0, 30),
-                                            value: String(item.index)
-                                        }))
-                                    ]}
-                                    onChange={(value) => {
-                                        setSelectedSysPromptId(value);
-                                    }}
-                                    no_border={true}
-                                    width={"auto"}
-                                />
-                            )}
                             {/* 当前模型下拉选择器（聚合所有供应商的模型，按供应商分组） */}
                             {can_switch_model && modelOptions.length > 0 && (
                                 <Select

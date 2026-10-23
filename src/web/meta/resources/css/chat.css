@@ -148,6 +148,56 @@
     font-size: .75rem;
 }
 
+/* 会话操作按钮：由 .chat-session-item > *:last-child 定位到右上角，这里只控制外观 */
+.chat-session-more {
+    font-size: 1.125rem;
+    line-height: 1;
+    color: #667085;
+    cursor: pointer;
+    user-select: none;
+}
+
+.chat-session-more:hover {
+    color: var(--primary, #4f46e5);
+}
+
+/* 会话行副信息：标签列表，容器负责间距 */
+.chat-session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .375rem;
+    margin-top: .25rem;
+}
+
+/* 单个标签：统一圆角胶囊样式，颜色走主题变量 */
+.chat-session-item .chat-session-meta > small {
+    display: inline-flex;
+    align-items: center;
+    max-width: 8rem;
+    padding: 0 .375rem;
+    font-size: .6875rem;
+    line-height: 1.125rem;
+    border-radius: .5rem;
+    background: var(--surfaceSecondary, rgba(0, 0, 0, .04));
+    color: var(--textSecondary, #667085);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 系统提示词标签：用主色区分，表示这是会话的“身份” */
+.chat-session-item .chat-session-meta > small.chat-session-meta__prompt {
+    color: var(--primary, #4f46e5);
+    background: var(--hover, rgba(79, 70, 229, .08));
+}
+
+/* 来源标签 */
+.chat-session-item .chat-session-meta > small.chat-session-meta__source {
+    color: #7c3aed;
+    background: rgba(124, 58, 237, .08);
+}
+
 /* 会话正在执行中：标题右侧的旋转 loading 小圆点 */
 /* 用 !important 固定尺寸，避免被 .chat-session-item span 的 display:block / 折叠时 width:100% 等规则覆盖导致圆点被拉伸放大 */
 .chat-session-running {
@@ -167,33 +217,6 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
-
-.chat-session-source {
-    display: inline-block;
-    margin-top: .125rem;
-    font-style: normal;
-    font-size: .6875rem;
-    color: #7c3aed;
-}
-
-/* 超管「所有用户会话」模式下会话项右侧的属主名 */
-.chat-session-owner {
-    display: inline-block;
-    margin-top: .125rem;
-    padding: 0 .375rem;
-    font-style: normal;
-    font-size: .6875rem;
-    line-height: 1rem;
-    border-radius: .5rem;
-    color: var(--textSecondary, #6b7280);
-    background: var(--hover, rgba(0, 0, 0, 0.05));
-    max-width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
 
 
 @media (max-width: 46rem) {

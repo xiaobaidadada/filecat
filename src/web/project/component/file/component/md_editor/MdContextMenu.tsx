@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {EditorView} from "prosemirror-view";
-import {FileMenuItem, OverlayTransparent} from "../../../../../meta/component/Dashboard";
+import {MenuSelect, OverlayTransparent} from "../../../../../meta/component/Dashboard";
 import {toggle_mark, toggle_bullet_list, toggle_ordered_list, toggle_blockquote, set_block_type} from "./keymap";
 import {
     addColumnAfter,
@@ -19,7 +19,7 @@ import {
 
 // 编辑器正文的右键菜单。
 //
-// 复用项目已有的 FileMenuItem（与文件列表右键菜单同一套外观与边界修正逻辑），
+// 复用项目已有的 MenuSelect（与文件列表右键菜单同一套外观与边界修正逻辑），
 // 因此这里只负责：拦截 contextmenu、组织菜单项、把命令作用到编辑器。
 
 interface Props {
@@ -272,7 +272,7 @@ export default function MdContextMenu(props: Props) {
     return (
         <>
             <OverlayTransparent click={close}/>
-            <FileMenuItem x={menu.x} y={menu.y} items={items} click={onclick}/>
+            <MenuSelect x={menu.x} y={menu.y} items={items} click={onclick}/>
         </>
     );
 }

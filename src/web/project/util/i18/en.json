@@ -1157,5 +1157,10 @@
   "图片编辑器": "Image editor",
   "excel编辑器": "Excel editor",
   "编辑器": "Editors",
-  "cron表达式": "Cron Expression"
+  "cron表达式": "Cron Expression",
+  "系统提示词": "System prompt",
+  "不使用": "None",
+  "消息数": "Messages",
+  "来源": "Source",
+  "更多操作": "More actions"
 }

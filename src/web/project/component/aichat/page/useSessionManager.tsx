@@ -303,20 +303,23 @@ export function useSessionManager(options: Options) {
         if (list[0]?.id) await loadSession(list[0].id, false, list[0].user_id);
     };
 
-    /** 切换系统提示词并持久化到会话 */
-    const changeSystemPrompt = (id: string) => {
-        setSelectedSysPromptId(id);
-        if (!activeSessionId) return;
-        const ownerId = owner_of_session(activeSessionId);
+    /** 切换系统提示词并持久化到指定会话（默认当前会话） */
+    const changeSystemPrompt = (id: string, session_id?: string) => {
+        const target = session_id || activeSessionId;
+        if (!target) return;
+        // 本地列表同步，避免菜单里的勾选标记要等刷新才更新
+        setSessions(prev => prev.map(s => s.id === target ? { ...s, sys_prompt_id: id || undefined } : s));
+        if (target === activeSessionId) setSelectedSysPromptId(id);
+        const ownerId = owner_of_session(target);
         if (ownerId) {
             admin_call("sys_prompt", {
-                session_id: activeSessionId,
+                session_id: target,
                 user_id: ownerId,
                 sys_prompt_id: id || undefined
             }).catch(console.error);
         } else {
             ai_agentHttp.post("session/sys_prompt", {
-                session_id: activeSessionId,
+                session_id: target,
                 sys_prompt_id: id || undefined
             }).catch(console.error);
         }

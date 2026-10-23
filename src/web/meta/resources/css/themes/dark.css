@@ -537,10 +537,6 @@ table th {
 .chat-session-item small {
   color: var(--textSecondary);
 }
-.chat-session-source {
-  color: var(--icon-purple);
-}
-
 /* ===== 暗黑模式 - 模型选择器 ===== */
 .model-selector-dropdown {
   border-color: var(--divider);
@@ -638,16 +634,6 @@ table th {
   color: var(--textSecondary);
 }
 
-.menu-select-popup {
-  background: var(--surfacePrimary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-}
-
-.menu-select-item:hover {
-  background:var(--primary-light);
-  border-radius: var(--border-radius-sm);
-}
 
 .usage-stats-popup {
   background: var(--surfacePrimary);
