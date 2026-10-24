@@ -2,6 +2,14 @@ import {StringUtil} from "./StringUtil";
 import {FileTypeEnum} from "./file.pojo";
 
 type menu_item = {r?:string,v?:any,items?:menu_item[]}
+
+/** 「切换目录」菜单项的值类型：根目录项、子目录项、添加项 */
+export enum FileMenuDirType {
+    root,
+    child,
+    add,
+}
+
 export class FileMenuData {
     x?:number;
     y?:number;

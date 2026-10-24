@@ -25,6 +25,7 @@
   "文件夹路径": "Folder Path",
   "编号": "Number",
   "路径": "Path",
+  "sub_dir": "Subdirectory",
   "是否默认": "Default",
   "备注": "Remarks",
   "编辑SQL": "Edit SQL",

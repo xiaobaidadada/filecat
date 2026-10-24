@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {ActionButton} from "../../../meta/component/Button";
 import {PromptEnum} from "../prompts/Prompt";
-import {FileMenuData} from "../../../../common/FileMenuType";
+import {FileMenuData, FileMenuDirType} from "../../../../common/FileMenuType";
 import {FileTypeEnum} from "../../../../common/file.pojo";
 import {useTranslation} from "react-i18next";
 import { useAtom } from 'jotai';
@@ -19,7 +19,7 @@ import {
     user_click_file
 } from "./FileUtil";
 import {fileHttp, gitHttp, userHttp} from "../../util/config";
-import {getNextByLoop} from "../../../../common/ListUtil";
+import {getNextByLoop, webPathJoin} from "../../../../common/ListUtil";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
@@ -315,16 +315,22 @@ export function FileMenu() {
             pojo.type = FileTypeEnum.directory;
             pojo.items = file_paths;
             pojo.item_pre_value = file_root_path
-            pojo.textClick = async (v:number) => {
-                if(v===-1) {
+            pojo.textClick = async (v: { type: FileMenuDirType, index?: number, rel?: string }) => {
+                if (v.type === FileMenuDirType.add) {
                     // 添加
                     navigate(`${routerConfig.setting_private_env_setting}`);
                     setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                     NotyWaring(t('请配置 文件夹路径'))
                     return;
                 }
-                baseSwitch(v);
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                // 点击子目录：根目录不切换，直接进到该子目录的路径
+                if (v.type === FileMenuDirType.child) {
+                    // await baseSwitch(v.index);
+                    navigate(webPathJoin(routerConfig.file, v.rel));
+                    return;
+                }
+                baseSwitch(v.index);
             }
             setShowPrompt({show: true, type: PromptEnum.FileMenu, overlay: false, data: pojo});
         }}/>

@@ -341,6 +341,15 @@ table tr.row-dragging {
     animation: .1s show forwards;
 }
 
+/* prompt_card 的 main_context_div 模式：只负责把内容居中 */
+.prompt_card_main {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1003;
+}
+
 .card>*>*:first-child {
     margin-top: 0;
 }

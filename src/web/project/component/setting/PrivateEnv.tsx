@@ -24,6 +24,7 @@ import {Http_controller_router} from "../../../../common/req/http_controller_rou
 import {use_select_config} from "../../util/react.config";
 import {move_element} from "../../../../common/ListUtil";
 import {AUTO_SAVE_EDITORS} from "../../util/editor_auto_save";
+import {DirChildrenEditor} from "../prompts/DirChildrenEditor";
 
 export function PrivateEnv() {
     const {t, i18n} = useTranslation();
@@ -38,7 +39,7 @@ export function PrivateEnv() {
     const themes_list = use_themes_list()
 
 
-    const headers = [t("编号"), t("路径"), t("是否默认"), t("备注")];
+    const headers = [t("编号"), t("路径"), t("是否默认"), t("备注"), t("sub_dir")];
     const protection_dir_headers = [t("编号"), t("路径"), t("备注")];
     const quick_cmd_headers = [t("编号"), t("命令"), t("父编号"), t("备注")];
     const file_quick_cmd_headers = [t("文件后缀"), t("命令"), t("其他参数"), t("备注")];
@@ -202,6 +203,21 @@ export function PrivateEnv() {
     // 外部软件信息解释
     const soft_ware_info_click = using_env_prompt();
 
+    // 子目录编辑弹框：整块由 DirChildrenEditor 渲染，不走普通卡片
+    const edit_children = (item) => {
+        set_prompt_card({
+            open: true,
+            main_context_div: (<DirChildrenEditor children_list={item.children} on_cancel={() => {
+                set_prompt_card({open: false});
+            }} on_confirm={(list) => {
+                item.children = list;
+                // 触发重渲染，更新表格里显示的子目录数量
+                setRows([...rows]);
+                set_prompt_card({open: false});
+            }}/>),
+        });
+    };
+
     const update_password = async () => {
         if (!username || !password) {
             NotyFail("账号密码不能为空")
@@ -361,6 +377,13 @@ export function PrivateEnv() {
                                 <InputText value={item.note} handleInputChange={(value) => {
                                     item.note = value;
                                 }} no_border={true}/>,
+                                <div className={"div-row"}>
+                                    <span>{item.children?.length ?? 0}</span>
+                                    {/* 系统默认那一行（index 0）是 cwd，不能配置子目录 */}
+                                    {index !== 0 &&
+                                        <ActionButton icon={"folder_open"} title={t("sub_dir")}
+                                                      onClick={() => edit_children(item)}/>}
+                                </div>,
                                 <div>
                                     {index !== 0 &&
                                         <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(index)}/>}

@@ -13,6 +13,10 @@ export function PromptCard() {
     }
     // return <CardPrompt
     // title={showPrompt.title} context={showPrompt.context_div} cancel={cancel} confirm={showPrompt.confirm}/>
+    // main_context_div 存在时整个弹框由它渲染，这里只做居中
+    if (showPrompt.main_context_div) {
+        return <div className={"prompt_card_main"}>{showPrompt.main_context_div}</div>;
+    }
     return (<div className={"card floating"}>
         <div className="card-title">
             <h2>{showPrompt.title ?? t("验证执行")}</h2>

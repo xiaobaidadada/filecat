@@ -100,7 +100,7 @@ export const $stroe = {
         handle: null
     }),
     // 通用卡片
-    prompt_card: atom<{open: boolean, context_div?: any, title?: string, cancel?: () => any, confirm?: () => any}>({
+    prompt_card: atom<{open: boolean, context_div?: any, main_context_div?: any, title?: string, cancel?: () => any, confirm?: () => any}>({
         open: false
     }),
     // 编辑器设置

@@ -1049,8 +1049,15 @@ export class SettingService {
             }
         }
         if (ok) base.default = true;
+        // 补全子目录的相对路径，前端用它跳转
+        const folder_items = user_data?.folder_items ?? [];
+        for (const item of folder_items) {
+            for (const child of item.children ?? []) {
+                child.rel = path.relative(item.path, child.path);
+            }
+        }
         return {
-            dirs: [base, ...user_data?.folder_items ?? []],
+            dirs: [base, ...folder_items],
             quick_cmd: [...user_data?.quick_cmd ?? []],
             file_quick_cmd: [...user_data?.file_quick_cmd ?? []]
         };
@@ -1071,7 +1078,25 @@ export class SettingService {
 
             // 校验路径是否合法
             for (const item of items) {
-                userService.check_user_path(token, item.path)
+                userService.check_user_path(token, item.path);
+                // 校验子目录：必须在父目录之下且不能与父目录相同
+                if (item.children) {
+                    const exists: string[] = [];
+                    for (const child of item.children) {
+                        if (child.path === item.path) {
+                            throw "子目录不能和父目录相同";
+                        }
+                        if (!userService.isSubPath(item.path, child.path)) {
+                            throw `子目录 ${child.path} 不在父目录 ${item.path} 之下`;
+                        }
+                        if (exists.includes(child.path)) {
+                            throw `子目录 ${child.path} 重复`;
+                        }
+                        exists.push(child.path);
+                        child.default = false;
+                        child.rel = path.relative(item.path, child.path);
+                    }
+                }
             }
             user_data.folder_items = items;
             let index;

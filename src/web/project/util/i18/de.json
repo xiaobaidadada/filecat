@@ -32,6 +32,7 @@
   "文件夹路径": "Ordnerpfad",
   "编号": "Nummer",
   "路径": "Pfad",
+  "sub_dir": "Unterverzeichnis",
   "是否默认": "Ist Standard?",
   "备注": "Bemerkung",
   "编辑SQL": "SQL bearbeiten",

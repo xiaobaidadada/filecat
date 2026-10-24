@@ -15,6 +15,10 @@ export class FileSettingItem {
     default: boolean = false;
     note: string;
     index: number;
+    // 子目录：只有两层，子项不带 default
+    children?: FileSettingItem[];
+    // 相对父目录的路径，由后端在读取时补全，前端用于跳转
+    rel?: string;
 }
 
 export class QuickCmdItem {

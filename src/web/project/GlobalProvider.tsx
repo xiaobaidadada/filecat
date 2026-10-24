@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import {auth_key_map} from "./util/store.util";
 import {get_select_style, setTheme} from "./util/FunUtil";
 import {is_share} from "./util/WebPath";
+import {FileMenuDirType} from "../../common/FileMenuType";
 import {Icon} from "../meta/component/Button";
 import {NotyConfirm} from "./util/noty";
 import {Http_controller_router} from "../../common/req/http_controller_router";
@@ -38,11 +39,20 @@ export const GlobalProvider = ({ children }) => {
         const list = [];
         if (result.code === RCode.Success) {
             for (let i=0; i<result.data.dirs.length; i++) {
+                const dir = result.data.dirs[i];
+                // 子目录一起带过来，切换目录菜单要展示成二级菜单
+                const children = dir.children?.map((child) => ({
+                    r: (<div style={{
+                        ...get_select_style(false)
+                    }}>{child.note || child.path}</div>),
+                    v: {type: FileMenuDirType.child, index: i, rel: child.rel},
+                }));
                 list.push({
                     r:(<div style={{
                         ...get_select_style(i===switch_result.data)
-                    }}>{result.data.dirs[i].note}</div>),
-                    v:i
+                    }}>{dir.note}</div>),
+                    v: {type: FileMenuDirType.root, index: i},
+                    items: children?.length ? children : undefined,
                 })
             }
             list.push({
@@ -50,7 +60,7 @@ export const GlobalProvider = ({ children }) => {
                     <Icon icon={'add'} not_use_icon_style={true}/>
                     <span>{"添加"}</span>
                 </div>),
-                v: -1
+                v: {type: FileMenuDirType.add}
             })
             setFile_paths(list);
         }
