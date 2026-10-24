@@ -1018,7 +1018,7 @@
   "请输入地址": "Bitte URL eingeben",
   "IP 来源管理": "IP-Quellen verwalten",
   "暂无数据": "Keine Daten",
-  "http_source_tip": "Fügen Sie einen HTTP-Endpunkt hinzu, der Ihre öffentliche IP zurückgibt.",
+  "http_source_tip": "Fügen Sie eine IP-Quelle hinzu: entweder einen HTTP-Endpunkt, der Ihre öffentliche IP zurückgibt (z. B. https://4.ipw.cn), oder eine feste IP-Adresse.",
   "同步间隔": "Sync-Intervall",
   "账号状态": "Konto",
   "上次同步": "Letzte Sync",

@@ -50,7 +50,6 @@ export function DdnsSetting() {
     const [list, set_list] = useState<DdnsConnection[]>([]);
     const [edit, set_edit] = useState<(DdnsConnection & { is_new?: boolean }) | null>(null);
     const [ip_options, set_ip_options] = useState<DdnsIPPojo[]>([]);
-    const [http_sources, set_http_sources] = useState<DdnsIPPojo[]>([]);
     const [interval, set_interval_value] = useState(60);
     const [syncing, set_syncing] = useState(false);
 
@@ -62,10 +61,6 @@ export function DdnsSetting() {
         const r = await ddnsHttp.get("ip_options");
         if (r.code === RCode.Success) set_ip_options(r.data ?? []);
     };
-    const load_http_sources = async () => {
-        const r = await ddnsHttp.get("http/list");
-        if (r.code === RCode.Success) set_http_sources(r.data ?? []);
-    };
     const load_interval = async () => {
         const r = await ddnsHttp.get("interval");
         if (r.code === RCode.Success) set_interval_value(r.data?.interval ?? 60);
@@ -74,7 +69,6 @@ export function DdnsSetting() {
     useEffect(() => {
         load_list();
         load_ip_options();
-        load_http_sources();
         load_interval();
     }, []);
 
@@ -255,12 +249,7 @@ export function DdnsSetting() {
         set_prompt_card({
             open: true,
             title: t("IP 来源管理"),
-            context_div: (
-                <HttpSourceManager sources={http_sources} on_refresh={async () => {
-                    await load_http_sources();
-                    await load_ip_options();
-                }}/>
-            )
+            context_div: <HttpSourceManager on_refresh={load_ip_options}/>
         });
     };
 
@@ -392,12 +381,25 @@ export function DdnsSetting() {
     </Row>)
 }
 
-/** 「IP 来源管理」弹窗内容组件（用真实 React 状态管理输入框） */
-function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Promise<void> }) {
+/** 「IP 来源管理」弹窗内容组件（自己持有并请求列表） */
+function HttpSourceManager(props: { on_refresh: () => Promise<void> }) {
     const {t} = useTranslation();
+    const [sources, set_sources] = useState<DdnsIPPojo[]>([]);
     const [url, set_url] = useState("");
     // 地址类型：ipv4 / ipv6 / fixed，选 fixed 时输入框直接填固定 IP
     const [addr_type, set_addr_type] = useState<"ipv4" | "ipv6" | ip_source_type.fixed>("ipv4");
+
+    /** 弹窗内数据变了，刷新自身列表并通知外层同步绑定下拉 */
+    const refresh = async () => {
+        const r = await ddnsHttp.get("http/list");
+        if (r.code === RCode.Success) set_sources(r.data ?? []);
+        await props.on_refresh();
+    };
+
+    // 挂载时（即点开弹窗）才请求来源列表
+    useEffect(() => {
+        refresh();
+    }, []);
 
     /** 添加一个 IP 来源，地址类型决定是 IP 地址族还是固定 IP */
     const add = async () => {
@@ -414,7 +416,7 @@ function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Pro
         if (r.code === RCode.Success) {
             NotySuccess(t("成功"));
             set_url("");
-            await props.on_refresh();
+            await refresh();
         } else {
             NotyFail(r.message ?? t("操作失败"));
         }
@@ -424,7 +426,7 @@ function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Pro
         const r = await ddnsHttp.post("http/del", item);
         if (r.code === RCode.Success) {
             NotySuccess(t("成功"));
-            await props.on_refresh();
+            await refresh();
         }
     };
 
@@ -450,11 +452,11 @@ function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Pro
             <ActionButton icon={"add"} title={t("添加")} onClick={add}/>
         </div>
         <div>
-            {props.sources.length === 0 && <p>{t("暂无数据")}</p>}
-            {props.sources.map((item, index) => (
+            {sources.length === 0 && <p>{t("暂无数据")}</p>}
+            {sources.map((item, index) => (
                 <div key={index} className={"div-row"}>
                     <span>{item.ifaceOrWww}（{item.isIPv4 ? "IPv4" : "IPv6"}
-                        {item.source_type === ip_source_type.fixed ? ` / ${t("固定 IP")}` : ""}）</span>
+                        {item.source_type === ip_source_type.fixed ? ` / ${t("IP")}` : ""}）</span>
                     <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
                 </div>
             ))}

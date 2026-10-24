@@ -1022,7 +1022,7 @@
   "请输入地址": "Please enter the URL",
   "IP 来源管理": "Manage IP Sources",
   "暂无数据": "No data",
-  "http_source_tip": "Add an HTTP endpoint that returns your public IP (e.g. https://4.ipw.cn). It will be used as an IP source for DDNS.",
+  "http_source_tip": "Add an IP source: either an HTTP endpoint that returns your public IP (e.g. https://4.ipw.cn), or a fixed IP address.",
   "同步间隔": "Sync Interval",
   "账号状态": "Account",
   "上次同步": "Last Sync",

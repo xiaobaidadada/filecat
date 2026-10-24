@@ -1018,7 +1018,7 @@
   "请输入地址": "Veuillez saisir l'URL",
   "IP 来源管理": "Gérer les sources IP",
   "暂无数据": "Aucune donnée",
-  "http_source_tip": "Ajoutez une URL HTTP renvoyant votre IP publique.",
+  "http_source_tip": "Ajoutez une source d'IP : une URL HTTP renvoyant votre IP publique (ex. https://4.ipw.cn) ou une IP fixe.",
   "同步间隔": "Intervalle de synchro",
   "账号状态": "Compte",
   "上次同步": "Dernière synchro",
