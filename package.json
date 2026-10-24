@@ -35,7 +35,8 @@
     "build-exe-mac-arm": "npm run exe-build && npm run build-exe-pkg filecat-mac-arm.tar.gz",
     "start": "node build/main.js",
     "test": "prebuild --upload-files-gz filecat-linux --set-version \"\" -u 11234 ",
-    "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2"
+    "server-debug-js2": "tsc && node build/server/main/server.js --env ./env2",
+    "tcp-client-build-test": "tsc && npx webpack --config shell/config/webpack.tcp-client-cli.config.js"
   },
   "optionalDependencies": {
     "@xiaobaidadada/dockerode": "^4.0.9",

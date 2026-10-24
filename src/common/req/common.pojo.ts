@@ -250,7 +250,7 @@ export const CONTROL_ENV_DEFAULT: control_env_pojo = {}
 
 // 环境控制的默认文本（两项都注释掉 = 都不启用）
 export const CONTROL_ENV_STR_DEFAULT: string =
-`# allowed_hosts = ["127.0.0.1"]
+`# allowed_hosts = ["127.0.0.1","host]
 # forbid_hosts = []
 # allowed_private_host = false
 `
