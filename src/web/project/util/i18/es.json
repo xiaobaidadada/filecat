@@ -475,6 +475,7 @@
   "父编号": "ID padre",
   "代理配置": "Configuración de proxy",
   "桥接配置": "Configuración del puente",
+  "brg_tip": "Establezca un puerto en el cliente. Al acceder a este puerto, el tráfico se reenvía a la primera dirección dentro del entorno de red de otro cliente.",
   "内网穿透": "Penetración de intranet",
   "fc_pxy": "Acceso proxy Filecat",
   "fc_pxyw": "Acceso proxy Filecat mediante frontend de servidor",

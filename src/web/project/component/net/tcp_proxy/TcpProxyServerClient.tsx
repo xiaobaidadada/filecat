@@ -251,7 +251,7 @@ export function TcpProxyServerClient() {
                 (edit_client) ?
                 <Dashboard>
                 <Card self_title={<span
-                        className={" div-row "}><h2>{t(`代理配置`)}</h2> </span>}
+                        className={" div-row "}><h2>{`${'服务器'} ${t(`代理配置`)}`}</h2> </span>}
                           rightBottomCom={<div>
                               <ActionButton icon={"save"} title={t("保存")} onClick={save_client_fig}/>
                           </div>}>
@@ -355,7 +355,24 @@ export function TcpProxyServerClient() {
                     </Card>
 
                     <Card self_title={<span
-                        className={" div-row "}><h2>{t(`桥接配置`)}</h2> </span>}>
+                        className={" div-row "}><h2>{`${t('客户端')} ${t(`桥接配置`)}`}</h2>
+                    <ActionButton title={"info"} icon={"info"} onClick={() => {
+                        set_prompt_card({
+                            open: true,
+                            title: "Info",
+                            confirm: async () => {
+                                set_prompt_card({open: false})
+                            },
+                            context_div: (
+                                <div className="card-content">
+                                    {t("在客户端设置一个端口，访问这个端口把流量转发到另一个客户端所在网络环境内的第一个地址")}
+                                </div>
+                            ),
+
+                        })
+                    }} />
+                    </span>}
+                       >
 
                         <ActionButton icon={"add"} onClick={() => {
                             edit_client_bridge_fig.push({

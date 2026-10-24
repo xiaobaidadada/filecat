@@ -476,6 +476,7 @@
   "父编号": "Eltern-ID",
   "代理配置": "Proxy-Konfiguration",
   "桥接配置": "Bridge-Konfiguration",
+  "brg_tip": "Legen Sie einen Port am Client fest. Der Zugriff auf diesen Port leitet den Datenverkehr an die erste Adresse in der Netzwerkumgebung eines anderen Clients weiter.",
   "内网穿透": "Intranet-Penetration",
   "fc_pxy": "Filecat-Proxy-Zugriff",
   "fc_pxyw": "Filecat-Proxy-Zugriff über Server-Frontend",
