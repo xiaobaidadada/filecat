@@ -71,7 +71,7 @@ const ARG_KEY_MAP: { [key: string]: string } = {
     "server-ip": "server_ip",
     "server-port": "server_port",
     "key": "key",
-    "name": "client_name",
+    "name": "name",
 };
 
 /** 合并 env 文件 / 命令行 两层来源，优先级后者高 */
@@ -165,9 +165,9 @@ export async function main(argv: string[] = process.argv.slice(2)) {
 }
 
 // 作为命令行工具直接执行时自动启动
-if (require.main === module) {
-    main().catch((e) => {
-        console.error(e.message);
-        process.exit(1);
-    });
-}
+
+main().catch((e) => {
+    console.error(e.message);
+    process.exit(1);
+});
+
