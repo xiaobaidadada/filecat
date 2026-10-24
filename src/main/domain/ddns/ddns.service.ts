@@ -97,9 +97,13 @@ export class DdnsService {
                 list.push(pojo);
             }
         }
-        // HTTP 来源：并发请求各自 URL 拿到公网 IP
+        // HTTP / 固定 IP 来源：固定 IP 直接用写死的字符串，不发起请求
         const url_list: DdnsIPPojo[] = DataUtil.get(data_common_key.ddns_http_url_key) ?? [];
         const http_results = await Promise.all(url_list.map(async (pojo) => {
+            if (pojo.source_type === ip_source_type.fixed) {
+                // 固定 IP：ifaceOrWww 存的就是 IP 本身
+                return {...pojo, ip: pojo.ifaceOrWww};
+            }
             try {
                 const text = await HttpRequest.get(pojo.ifaceOrWww, undefined, 8000);
                 if (typeof text === "string") {

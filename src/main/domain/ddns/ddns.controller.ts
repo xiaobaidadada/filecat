@@ -1,6 +1,7 @@
 import {Body, Controller, Get, JsonController, Post, Req} from "routing-controllers";
 import {ddnsService, DEFAULT_SYNC_INTERVAL} from "./ddns.service";
-import {DdnsConnection, DdnsIPPojo} from "../../../common/req/ddns.pojo";
+import {DdnsConnection, DdnsIPPojo, ip_source_type} from "../../../common/req/ddns.pojo";
+import {isIP} from "net";
 import {DataUtil} from "../data/DataUtil";
 import {Fail, Sucess} from "../../other/Result";
 import {deleteList} from "../../../common/ListUtil";
@@ -80,10 +81,21 @@ export class DdnsController {
         return Sucess(ddnsService.del(data.id));
     }
 
-    /** 添加一个 HTTP IP 来源 */
+    /** 添加一个 IP 来源（HTTP 地址 或 固定 IP） */
     @Post('/http/add')
     add_http(@Body() item: DdnsIPPojo, @Req() req) {
         userService.have_user_auth(req.headers.authorization, UserAuth.ddns);
+        item.ifaceOrWww = (item.ifaceOrWww ?? "").trim();
+        if (!item.ifaceOrWww) {
+            return Fail("请输入地址");
+        }
+        // 固定 IP 直接用字符串，但要校验它确实是个 IP
+        if (item.source_type === ip_source_type.fixed) {
+            const family = isIP(item.ifaceOrWww);
+            if (family !== (item.isIPv4 ? 4 : 6)) {
+                return Fail(item.isIPv4 ? "请输入合法的 IPv4 地址" : "请输入合法的 IPv6 地址");
+            }
+        }
         const list: DdnsIPPojo[] = DataUtil.get(data_common_key.ddns_http_url_key) ?? [];
         if (list.find(value => value.ifaceOrWww === item.ifaceOrWww)) {
             return Fail("已经存在");
@@ -93,7 +105,7 @@ export class DdnsController {
         return Sucess('ok');
     }
 
-    /** 删除一个 HTTP IP 来源 */
+    /** 删除一个 IP 来源（HTTP 地址 或 固定 IP） */
     @Post('/http/del')
     del_http(@Body() item: DdnsIPPojo, @Req() req) {
         userService.have_user_auth(req.headers.authorization, UserAuth.ddns);
@@ -103,7 +115,7 @@ export class DdnsController {
         return Sucess('ok');
     }
 
-    /** 获取已配置的 HTTP IP 来源列表 */
+    /** 获取已配置的 IP 来源列表（HTTP 地址 与 固定 IP 共用） */
     @Get('/http/list')
     http_list(@Req() req) {
         userService.have_user_auth(req.headers.authorization, UserAuth.ddns);

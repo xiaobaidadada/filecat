@@ -1,7 +1,8 @@
 // 获取 IP 的来源类型
 export enum ip_source_type {
     physics = "物理",   // 本机网卡
-    http_get = "http_get" // 通过 HTTP 接口获取（外部网络 IP）
+    http_get = "http_get", // 通过 HTTP 接口获取（外部网络 IP）
+    fixed = "fixed" // 固定 IP，直接写死一个字符串
 }
 
 // 账号/同步状态

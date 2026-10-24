@@ -80,7 +80,10 @@ export function DdnsSetting() {
 
     const provider_options = DDNS_PROVIDERS.map((v) => ({label: v.label, value: v.provider}));
     const source_options = ip_options.map((v) => ({
-        label: `${v.ifaceOrWww} (${v.isIPv4 ? "IPv4" : "IPv6"}) ${v.ip ?? ""}`,
+        // 固定 IP 本身就是地址，不用再重复显示一次当前 IP
+        label: v.source_type === ip_source_type.fixed
+            ? `${t("IP")} ${v.ifaceOrWww} (${v.isIPv4 ? "IPv4" : "IPv6"})`
+            : `${v.ifaceOrWww} (${v.isIPv4 ? "IPv4" : "IPv6"}) ${v.ip ?? ""}`,
         value: source_key(v),
     }));
 
@@ -393,8 +396,10 @@ export function DdnsSetting() {
 function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Promise<void> }) {
     const {t} = useTranslation();
     const [url, set_url] = useState("");
-    const [is_ipv4, set_is_ipv4] = useState(true);
+    // 地址类型：ipv4 / ipv6 / fixed，选 fixed 时输入框直接填固定 IP
+    const [addr_type, set_addr_type] = useState<"ipv4" | "ipv6" | ip_source_type.fixed>("ipv4");
 
+    /** 添加一个 IP 来源，地址类型决定是 IP 地址族还是固定 IP */
     const add = async () => {
         if (!url.trim()) {
             NotyFail(t("请输入地址"));
@@ -402,9 +407,9 @@ function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Pro
         }
         const r = await ddnsHttp.post("http/add", {
             ifaceOrWww: url.trim(),
-            isIPv4: is_ipv4,
+            isIPv4: addr_type !== "ipv6",
             ip: "",
-            source_type: ip_source_type.http_get,
+            source_type: addr_type === ip_source_type.fixed ? ip_source_type.fixed : ip_source_type.http_get,
         });
         if (r.code === RCode.Success) {
             NotySuccess(t("成功"));
@@ -426,18 +431,30 @@ function HttpSourceManager(props: { sources: DdnsIPPojo[], on_refresh: () => Pro
     return <div>
         <p>{t("http_source_tip")}</p>
         <div className={"div-row"}>
-            <Select options={[{label: "IPv4", value: "ipv4"}, {label: "IPv6", value: "ipv6"}]}
-                    value={is_ipv4 ? "ipv4" : "ipv6"}
+            <Select options={[
+                {label: "IPv4", value: "ipv4"},
+                {label: "IPv6", value: "ipv6"},
+                {label: t("IP"), value: ip_source_type.fixed},
+            ]}
+                    value={addr_type}
                     width={"6rem"}
-                    onChange={(v) => set_is_ipv4(v === "ipv4")}/>
-            <InputText value={url} placeholder={"https://4.ipw.cn"} handleInputChange={(v) => set_url(v)}/>
+                    onChange={(v) => {
+                        set_addr_type(v);
+                        set_url("");
+                    }}/>
+            <InputText value={url}
+                       placeholder={addr_type === ip_source_type.fixed
+                           ? "1.1.1.1"
+                           : (addr_type === "ipv6" ? "https://6.ipw.cn" : "https://4.ipw.cn")}
+                       handleInputChange={(v) => set_url(v)}/>
             <ActionButton icon={"add"} title={t("添加")} onClick={add}/>
         </div>
         <div>
             {props.sources.length === 0 && <p>{t("暂无数据")}</p>}
             {props.sources.map((item, index) => (
                 <div key={index} className={"div-row"}>
-                    <span>{item.ifaceOrWww}（{item.isIPv4 ? "IPv4" : "IPv6"}）</span>
+                    <span>{item.ifaceOrWww}（{item.isIPv4 ? "IPv4" : "IPv6"}
+                        {item.source_type === ip_source_type.fixed ? ` / ${t("固定 IP")}` : ""}）</span>
                     <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
                 </div>
             ))}
