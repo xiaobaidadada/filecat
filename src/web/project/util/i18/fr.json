@@ -682,8 +682,6 @@
   "sw_mdl": "Autoriser le changement de modèle IA",
   "选择模型": "Sélectionner un modèle",
   "mv_self": "Impossible de déplacer un dossier dans lui-même",
-  "nvdltp": "La fonction de favoris de navigation de sites a été supprimée. Les données d'origine ont été converties en fichiers .url. Ouvrez un fichier .url avec filecat pour obtenir le même accès rapide.",
-  "tmplctp": "Emplacement des fichiers : le répertoire tempfile/temp_delete_sys_tag_name_260926 dans le répertoire de base de données de filecat.",
   "网站 Logo": "Logo du site",
   "lclorur": "Chemin de fichier local ou URL d'image http(s)",
   "全部": "Tout",

@@ -11,7 +11,6 @@ import {
 import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
 import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
 import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
-import {UserAuth, UserData} from "../../../common/req/user.req";
 import {DataUtil} from "./DataUtil";
 import {sort} from "../../../common/ListUtil";
 import {userService} from "../user/user.service";
@@ -141,37 +140,6 @@ export class DataMigration {
                         }
                     };
                     write_list(list, cache_path);
-                }
-            },
-        },
-        {
-            // 标记所有用户「网址导航 tag 删除」提示为待提示
-            version: data_version_type.user_notify_tag_delete,
-            name: "标记用户 tag 删除提示",
-            run: () => {
-                const user_mapping: {
-                    [keys: string]: UserData
-                } = DataUtil.get<any>(data_common_key.user_id_info_data_mapping) ?? {};
-                let user_changed = false;
-                for (const user_id of Object.keys(user_mapping)) {
-                    const user_data = user_mapping[user_id];
-                    if (!user_data) {
-                        continue;
-                    }
-                    if (!userService.have_user_auth_by_data(user_data,UserAuth.nav_net_tag)) {
-                        continue;
-                    }
-                    let v = true
-                    if (user_data.sys_done_prompt?.tag_delete) {
-                        v = false
-                    } else if (user_data.sys_done_prompt?.tag_delete === false) {
-                        continue
-                    }
-                    user_data.sys_done_prompt = {...(user_data.sys_done_prompt ?? {}), tag_delete: v};
-                    user_changed = true;
-                }
-                if (user_changed) {
-                    DataUtil.set(data_common_key.user_id_info_data_mapping, user_mapping);
                 }
             },
         },

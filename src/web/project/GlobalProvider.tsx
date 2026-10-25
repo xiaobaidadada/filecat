@@ -11,8 +11,6 @@ import {get_select_style, setTheme} from "./util/FunUtil";
 import {is_share} from "./util/WebPath";
 import {FileMenuDirType} from "../../common/FileMenuType";
 import {Icon} from "../meta/component/Button";
-import {NotyConfirm} from "./util/noty";
-import {Http_controller_router} from "../../common/req/http_controller_router";
 import {MD_EDITOR_SETTING_DEFAULT} from "../../common/req/common.pojo";
 
 export const GlobalContext = createContext(undefined);
@@ -108,25 +106,6 @@ export const GlobalProvider = ({ children }) => {
                 set_ai_chat_zoom(p.user_data?.ai_chat_zoom);
             } else {
                 set_ai_chat_zoom(100)
-            }
-            // 网址导航 tag 功能已删除的提示：后端数据迁移时会把所有用户的 tag_delete 置为 true 表示「待提示」，
-            // 这里只在它严格等于 true 时弹出，用户确认后置回 false，避免重复提示
-            if (p.user_data?.sys_done_prompt?.tag_delete === true) {
-                NotyConfirm(
-                    t("nvdltp") +
-                    t("tmplctp"),
-                    () => {
-                        // 用户确认后记录已完成，下次加载不再提示
-                        userHttp.post(Http_controller_router.user_save_private_attr, {
-                            is_sys_done_prompt: true,
-                            sys_done_prompt: {
-                                ...p.user_data?.sys_done_prompt,
-                                tag_delete: false
-                            }
-                        });
-                    },
-                    "warning",
-                );
             }
         }
 

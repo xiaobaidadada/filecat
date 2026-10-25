@@ -198,8 +198,6 @@ export class UserController {
         md_editor_theme?: string,
         is_ai_chat_zoom?: boolean, // 是否更新 ai 聊天记录缩放比例
         ai_chat_zoom?: number,
-        is_sys_done_prompt?: boolean, // 是否更新系统已完成提示（如网址导航 tag 删除提示）
-        sys_done_prompt?: { tag_delete?: boolean },
         is_editor_auto_save?: boolean, // 是否更新编辑器自动保存配置
         editor_auto_save?: {enable: boolean, interval: number, editors: string[]},
         value?:any,
@@ -208,9 +206,6 @@ export class UserController {
         const user_id = userService.get_user_id(user_data.username);
         if (body.is_dir_list_type) {
             userService.only_update_user_data(user_id, {dir_show_type: body.type} as UserData);
-        } else if (body.is_sys_done_prompt) {
-            // 合并写入，避免覆盖 sys_done_prompt 中其它已完成标记
-            userService.only_update_user_data(user_id, {sys_done_prompt: {...(user_data.sys_done_prompt ?? {}), ...(body.sys_done_prompt ?? {})}} as UserData);
         } else if (body.not_pre_show_image !== undefined) {
             userService.only_update_user_data(user_id, {not_pre_show_image: body.not_pre_show_image} as UserData);
         } else if (body.is_pagination_mode) {

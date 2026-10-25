@@ -682,8 +682,6 @@
   "sw_mdl": "Permitir cambiar de modelo de IA",
   "选择模型": "Seleccionar modelo",
   "mv_self": "No se puede mover una carpeta dentro de sí misma",
-  "nvdltp": "La función de marcadores de navegación de sitios se ha eliminado. Los datos originales se han convertido en archivos .url. Abra un archivo .url con filecat para lograr el mismo acceso rápido.",
-  "tmplctp": "Ubicación de los archivos: el directorio tempfile/temp_delete_sys_tag_name_260926 dentro del directorio de base de datos de filecat.",
   "网站 Logo": "Logotipo del sitio",
   "lclorur": "Ruta de archivo local o URL de imagen http(s)",
   "全部": "Todo",

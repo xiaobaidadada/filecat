@@ -692,8 +692,6 @@
   "sw_mdl": "Allow switching AI models",
   "选择模型": "Select model",
   "mv_self": "Cannot move a folder into itself",
-  "nvdltp": "The site navigation bookmark feature has been removed. The original data has been converted to .url files. Open a .url file with filecat to achieve the same quick access.",
-  "tmplctp": "File location: the tempfile/temp_delete_sys_tag_name_260926 directory under the filecat database directory.",
   "网站 Logo": "Website Logo",
   "lclorur": "Local file path or http(s) image URL",
   "全部": "All",

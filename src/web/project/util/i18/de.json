@@ -682,8 +682,6 @@
   "sw_mdl": "Wechsel des KI-Modells erlauben",
   "选择模型": "Modell auswählen",
   "mv_self": "Ein Ordner kann nicht in sich selbst verschoben werden",
-  "nvdltp": "Die Lesezeichen-Funktion der Website-Navigation wurde entfernt. Die ursprünglichen Daten wurden in .url-Dateien umgewandelt. Öffnen Sie eine .url-Datei mit filecat, um denselben Schnellzugriff zu erhalten.",
-  "tmplctp": "Dateispeicherort: das Verzeichnis tempfile/temp_delete_sys_tag_name_260926 im filecat-Datenbankverzeichnis.",
   "网站 Logo": "Website-Logo",
   "lclorur": "Lokaler Dateipfad oder http(s)-Bild-URL",
   "全部": "Alle",

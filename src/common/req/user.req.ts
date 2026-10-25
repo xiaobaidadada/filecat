@@ -214,10 +214,6 @@ export class UserData extends UserLogin {
     upload_file_ignore?:string
     upload_file_ignore_list?:string[]
 
-    sys_done_prompt?:{
-        tag_delete?: boolean;
-    }
-
     // 编辑器自动保存配置（个人保存）：哪些编辑器开启、间隔几秒
     editor_auto_save?: {
         enable: boolean;

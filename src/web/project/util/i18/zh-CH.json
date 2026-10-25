@@ -24,8 +24,6 @@
   "srchbln": "以空白搜索模式打开目录",
   "sw_mdl": "允许切换 AI 模型",
   "mv_self": "不能将文件夹移动到自己里面",
-  "nvdltp": "网址导航收藏功能已被删除，原数据已转换为 .url 文件保存。使用 filecat 打开 .url 文件即可实现相同的跳转访问。",
-  "tmplctp": "文件位置：filecat 数据库目录下的 tempfile/temp_delete_sys_tag_name_260926 目录。",
   "lclorur": "本地文件路径或 http(s) 图片地址",
   "nprmtp": "你没有修改该设置的权限，以下为当前配置。",
   "rqappky": "请填写 AppKey",

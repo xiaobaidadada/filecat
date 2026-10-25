@@ -81,7 +81,6 @@ export class UserService {
             sql_preset_list: user.sql_preset_list,
             upload_file_ignore: user.upload_file_ignore,
             upload_file_ignore_list: user.upload_file_ignore_list,
-            sys_done_prompt: user.sys_done_prompt,
             editor_auto_save: user.editor_auto_save,
         };
     }

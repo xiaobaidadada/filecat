@@ -125,7 +125,7 @@ export enum data_version_type {
     tcp_proxy_client_all_fig = 4,
     http_proxy_server_multi_port = 5, // http代理服务器从单端口升级为多端口列表
     remove_sys_level_tag = 6, // 移除系统级别的tag功能
-    user_notify_tag_delete = 7, // 提示所有用户 tag 功能已删除 兼容有错误的历史
+    user_notify_tag_delete = 7, // 已废弃：原「tag 删除提示」功能已移除，保留编号避免后续版本号错位
     ai_setting_data = 8, // ai 相关字段从 data.json 抽离到 ai_setting_data.json
     baidu_credential_merge = 9, // 百度网盘应用配置+授权账号合并为普通凭据
     mount_credential_note = 10, // 挂载/凭据的 name 改名为 note；凭据=应用、账号拆到 accounts；挂载加 account_id
