@@ -1,12 +1,11 @@
-
 <p align="center">
-  <img src="./src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
+  <img src="../src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
 </p>
 
 <h1 align="center">FileCat</h1>
 
 <p align="center">
-  <i>A self-hosted Web file server and lightweight server management tool</i>
+  <i>一款自部署的 Web 文件服务器与轻量级服务器管理工具</i>
 </p>
 
 <p align="center">
@@ -28,67 +27,65 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#screenshots">Screenshots</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#quick-start">Quick Start</a>
+  <a href="#功能特性">功能特性</a> •
+  <a href="#功能截图">功能截图</a> •
+  <a href="#安装方式">安装方式</a> •
+  <a href="#快速运行">快速运行</a>
 </p>
 
 <p align="center">
-  <a href="./doc/CH_README.md">中文</a>
+  <a href="./doc/EN_README.md">English</a>
 </p>
 
 ---
 
-FileCat is a self-hosted Web file server and a **lightweight server management tool**. Once deployed, you can manage files on your server anytime and anywhere through a browser, while also enjoying a wide range of server management and operations features.
+FileCat 是一个需要自己部署的 Web 文件服务器，同时也是一款**轻量级服务器管理工具**。部署后，你可以随时随地通过浏览器管理服务器上的文件，并享受丰富的运维功能。
 
-FileCat 是一个自己部署使用的轻量级web文件与工具服务器，UI设计支持移动设备访问，此项目在文件服务器的基础上，提供了很多为开发者使用的功能（内网穿透、CI/CD、大文件日志查看、系统信息查看、安全的SSH终端等)，文件访问支持多种格式的预览和编辑，并支持markdown(.md)的所见即所得编辑体验。
+FileCat是采用[filebrowser](https://github.com/filebrowser/filebrowser)的ui来实现的。
 
-FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser).
-
-> **Core philosophy**: Centered around file management, FileCat integrates AI Agent, remote desktop, intranet tunneling, system monitoring, and other capabilities to make server management simpler.
+> **核心理念**：以文件管理为核心，融合 AI Agent、远程桌面、内网穿透、系统监控等能力，让服务器管理变得更简单。
 
 ---
 
-## Features
+## 功能特性
 
-| Category                     | Features                                                                                                                                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File Management              | Browse, upload, download, edit, and preview files online (images, videos, Markdown, drawings, etc.)                                                                                           |
-| Markdown WYSIWYG Editor      | Typora-like Markdown editing — what you see is what you get                                                                                                                                    |
-| Cloud Storage Mount         | Mount Baidu Netdisk / SSH(SFTP) / S3 / WebDAV / SMB as local folders, managed with the same file operations                                                                                          |
-| AI Agent                     | Integrates large language models to assist with server management and file processing (API configuration required). Supports QQ, WeCom, Feishu, DingTalk, and other third-party platform bots |
-| Intranet Tunneling           | Expose services on an internal network to the public internet, or enable communication between multiple internal networks                                                                     |
-| SSH Terminal                 | Built-in Web terminal for connecting to servers anytime through a browser                                                                                                                     |
-| Windows Remote Desktop       | Directly operate remote Windows desktops (RDP) through a browser                                                                                                                              |
-| System Information Dashboard | Real-time monitoring of CPU, memory, disk, network, and other system information                                                                                                              |
-| CI/CD Workflow               | Create custom command pipelines for continuous integration and deployment                                                                                                                     |
-| Large Log Viewer             | Instantly open text log files of any size and efficiently locate problems                                                                                                                     |
-| Excalidraw Drawing           | Built-in whiteboard drawing tool                                                                                                                                                              |
-| Multi-user Management        | Comprehensive permission management system                                                                                                                                                    |
-| Shareable Links              | Generate file sharing links for convenient downloads                                                                                                                                          |
-| Multiple Path Mounts         | Support mounting multiple filesystem paths                                                                                                                                                    |
+| 类别 | 功能                                                            |
+|------|---------------------------------------------------------------|
+| 文件管理 | 浏览、上传、下载、编辑、在线预览（图片、视频、Markdown、绘图等）                          |
+| 网盘与协议挂载 | 将百度网盘、SSH(SFTP)、S3、WebDAV 、SMB 挂载为本地目录，与本地文件使用同一套操作 |
+| Markdown 所见即所得 | 类 Typora 的 Markdown 编辑体验，所见即所得                                      |
+| AI Agent | 集成大语言模型，智能辅助运维和文件处理（需自行配置 API），支持接入 QQ， 企业微信 ，飞书 ，钉钉 第三方平台机器人 |
+| 内网穿透 | 将内网暴露到公网，或者多个内网之间互相通信                                         |
+| SSH 终端 | 浏览器内置 Web 终端，随时连接服务器                                          |
+| Windows 远程桌面 | 浏览器中直接操作远程 Windows 桌面（RDP）                                    |
+| 系统信息看板 | 实时 CPU、内存、磁盘、网络等系统监控                                          |
+| CI/CD 工作流 | 支持自定义命令流水线，实现持续集成与部署                                          |
+| 超大日志查看 | 任意大小的文本日志文件秒开，高效定位问题                                          |
+| Excalidraw 绘图 | 内置白板绘图工具                                                      |
+| 多用户管理 | 完善的权限体系                                                       |
+| 可分享链接 | 生成文件分享链接，方便他人下载                                               |
+| 多路径挂载 | 支持挂载多个文件系统路径                                                  |
 
 ---
 
-## Screenshots
+## 功能截图
 
 <table>
   <tr>
-    <td align="center"><b>File List</b></td>
+    <td align="center"><b>文件列表</b></td>
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/文件列表.png" alt="File List"/></td>
-    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./文件列表.png" alt="文件列表"/></td>
+    <td><img src="./AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
-    <td align="center"><b>Intranet Tunneling</b></td>
-    <td align="center"><b>System Information Dashboard</b></td>
+    <td align="center"><b>内网穿透</b></td>
+    <td align="center"><b>系统信息看板</b></td>
   </tr>
   <tr>
-    <td><img src="./doc/内网穿透.png" alt="Intranet Tunneling"/></td>
-    <td><img src="./doc/系统信息看板.png" alt="System Information Dashboard"/></td>
+    <td><img src="./内网穿透.png" alt="内网穿透"/></td>
+    <td><img src="./系统信息看板.png" alt="系统信息看板"/></td>
   </tr>
 </table>
 
@@ -96,37 +93,37 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
 
 ## Demo
 
-Online demo: **[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)**
+在线体验地址：**[http://demo.filecat.xiaobaidadada.fun/](http://demo.filecat.xiaobaidadada.fun/)**
 
-Username and password: `demo`/`demo` or `test`/`test`
+账号密码： `demo`/`demo`或者 `test`/`test`
 
-> The demo server is sponsored by [Yecaoyun](https://my.yecaoyun.com/aff.php?aff=7185).
+> Demo 服务器由 [野草云](https://my.yecaoyun.com/aff.php?aff=7185) 赞助提供
 
 ---
 
-## Installation
+## 安装方式
 
-> Minor bug fixes and feature updates are released and synchronized on npm in real time.
+> 小版本 bug 修复与功能更新仅在 npm 上实时发布同步。
 
-### 1. NPM Installation (Recommended)
+### 1. NPM 安装（推荐）
 
 ```bash
 npm install -g filecat
 ```
 
-On Linux, after installation, you can use `pm2` to keep the process running, or register FileCat as a systemd service for process management.
+对于 linux 系统，安装后可以选择使用 `pm2` 保活，或注册到 systemd保活。
 
-### 2. One-click Linux Installation Script
+### 2. Linux 一键脚本
 
 ```bash
 curl -o install.sh https://filecat.xiaobaidadada.fun/files/linux-install.sh && bash install.sh
 ```
 
-The script automatically downloads the binary package and performs the installation. Simply follow the prompts to enter the required parameters.
+自动下载二进制包并执行安装，按提示输入参数即可。
 
-### 3. Binary Package
+### 3. 二进制包
 
-Download the latest version for your operating system from [Releases](https://github.com/xiaobaidadada/filecat/releases).
+从 [Releases](https://github.com/xiaobaidadada/filecat/releases) 下载对应系统的最新版本。
 
 ### 4. Docker
 
@@ -137,37 +134,40 @@ docker run -d --name filecat --restart=always --net=host \
   --port 5567 --base_folder /home
 ```
 
-### 5. Build from Source
+### 5. 源码编译
 
 ```bash
 git clone https://github.com/xiaobaidadada/filecat.git
 cd filecat
 npm install
-npm run dev        # Development mode
-# or
-npm run build && node build/main.js  # Production mode
+npm run dev        # 开发模式
+# 或
+npm run build && node build/main.js  # 生产模式
 ```
 
 ---
 
-## Quick Start
+## 快速运行
 
-**Method 1**: After installing via NPM:
-
+**方式一**：NPM 安装后执行：
 ```bash
 filecat --port 5567
 ```
 
-**Method 2**: After extracting the binary package, run the `filecat-run.sh` script (Linux/Mac) or `filecat-run.cmd` script (Windows) included in the directory.
+**方式二**：二进制包解压后，目录内有 `filecat-run.sh`（Linux/Mac）或 `filecat-run.cmd`（Windows）运行脚本。
 
-**Default username/password**: `admin` / `admin`
+**默认账号/密码**：`admin` / `admin`
 
-> For more options, run `filecat --help`.
+> 更多参数请使用 `filecat --help` 查看。
 
-> **Permission Notice**: By default, FileCat can only access the installation directory after installation. Configure the directories and execution permissions accessible to each user in the settings.
+> **权限提示**：安装后默认能访问的文件目录是安装目录，请在设置中为每个用户配置可访问目录及执行权限。
 
 ---
 
-## Community
 
-Join the QQ group **824838674** for discussion, feedback, and support.
+## 社区交流
+
+加入 QQ 群 **824838674** 进行交流反馈
+
+
+

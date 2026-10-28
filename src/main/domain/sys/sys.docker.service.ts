@@ -1,7 +1,7 @@
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {SysPojo} from "../../../common/req/sys.pojo";
 import {Wss} from "../../../common/frame/ws.server";
-import {exec, spawn} from "child_process";
+import {spawn} from "child_process";
 import {SystemUtil} from "./sys.utl";
 import {getShell, getSys} from "../shell/shell.service";
 import WebSocket from "ws";
@@ -9,13 +9,22 @@ import path from "path";
 import {SysEnum} from "../../../common/req/user.req";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {FileUtil} from "../file/FileUtil";
-
 let sysJobInterval: any = null;
 let dockerJobInterval: any = null;
 let spawnChild: any = null;
 let docker_result_list: any = [];
-const dockerIndexMap = new Map();
+/**
+ * 容器完整 Id -> 行下标。
+ * 用完整 Id 做 key，避免短 Id / 长 Id 两套 key 串不起来；
+ * 对外查找时统一用 resolveIndex 兼容长短 Id。
+ */
+const dockerIndexMap = new Map<string, number>();
+/** 上一轮容器完整 Id 的顺序，用于跨轮次按 Id 继承内存/CPU 旧值 */
+let docker_index_order: string[] = [];
 const dockerMap = new Map<string, Wss>();
+/** 正在拉取容器信息的标记，避免定时器叠加并发请求 */
+let docker_fetching = false;
+
 
 export let docker: any;
 
@@ -29,45 +38,64 @@ class SysDockerService {
         }
         return r;
     }
-
     async pushDockerInfo(wss: Wss, results: any) {
+        if (wss.ws.readyState !== WebSocket.OPEN) {
+            throw new Error("连接不可用");
+        }
         const result = new WsData<SysPojo>(CmdType.docker_getting);
         result.context = results;
-        if (wss.ws.readyState === WebSocket.CLOSED) {
-            throw "断开连接";
-        }
         wss.sendData(result.encode());
     }
 
-    private async openDockerPush(wss: Wss) {
-        try {
-            await this.getDockerInfo();
-            await this.pushDockerInfo(wss, docker_result_list);
-        } catch (e) {
-            dockerMap.delete(wss.id);
-            return;
-        }
-        if (!dockerJobInterval) {
-            dockerJobInterval = setInterval(async () => {
-                if (dockerMap.size === 0) {
-                    clearInterval(dockerJobInterval);
-                    dockerJobInterval = null;
-                    this.killDockerSpwn();
-                    return;
-                }
-                for (const socketId of dockerMap.keys()) {
-                    const wss = dockerMap.get(socketId)!;
+    /**
+     * 启动定时推送。
+     * 定时器为模块级单例，所有连接共用；这里只保证「有连接时一定有定时器」，
+     * 原来的写法只在定时器为 null 时创建，清理过程中进来的新连接会拿不到推送。
+     */
+    private ensurePushTimer() {
+        if (dockerJobInterval) return;
+        dockerJobInterval = setInterval(async () => {
+            // 没有订阅者：停掉定时器并清理子进程
+            if (dockerMap.size === 0) {
+                this.stopPushTimer();
+                this.killDockerSpwn();
+                return;
+            }
+            // 上一轮还没拉完就跳过，避免 dockerode 请求堆积
+            if (docker_fetching) return;
+            docker_fetching = true;
+            try {
+                await this.getDockerInfo();
+                for (const [socketId, wss] of Array.from(dockerMap.entries())) {
                     try {
                         await this.pushDockerInfo(wss, docker_result_list);
                     } catch (e) {
                         console.log("docker信息推送失败", e);
                         dockerMap.delete(socketId);
-                        if (wss) wss.ws.close();
                     }
                 }
-            }, 1000);
+            } catch (e) {
+                console.log("docker信息刷新失败", e);
+            } finally {
+                docker_fetching = false;
+            }
+        }, 1000);
+    }
+
+    /** 停止定时推送（只停定时器，不清订阅关系） */
+    private stopPushTimer() {
+        if (dockerJobInterval) {
+            clearInterval(dockerJobInterval);
+            dockerJobInterval = null;
         }
     }
+
+    private async openDockerPush(wss: Wss) {
+        await this.getDockerInfo();
+        await this.pushDockerInfo(wss, docker_result_list);
+        this.ensurePushTimer();
+    }
+
 
     // ✅ 使用 dockerode 获取镜像列表（Linux / Mac）
     async get_all_images() {
@@ -99,19 +127,20 @@ class SysDockerService {
             return images;
         }
     }
-
     // ✅ 获取容器信息（自动切换 dockerode）
+    // 返回本轮构建的数组和 Id->下标 映射；stats 回调只会写自己这一轮的数组，
+    // 避免下一轮重置 docker_result_list 后异步回调写到错位的行。
     private async getAllContainer() {
         if (this.isUnixLike()) {
             const prevList = docker_result_list;
-            docker_result_list = [];
+            const list: any[][] = [];
+            const indexMap = new Map<string, number>();
 
             const containers = await docker.listContainers({all: true});
             containers.forEach((c, i) => {
-                const index = dockerIndexMap.get(c.Id);
-                const prev = typeof index === "number" ? prevList[index] : undefined;
-                docker_result_list.push([
-                    c.Id.substring(0, 10),
+                const prev = prevList[this.find_prev_index(prevList, c.Id)];
+                list.push([
+                    c.Id.substring(0, 12),
                     c.Names[0].replace(/^\//, ""),
                     c.Image,
                     c.Command,
@@ -119,31 +148,56 @@ class SysDockerService {
                     prev ? prev[5] : 0, // MemUsage
                     prev ? prev[6] : 0, // CPU%
                 ]);
-                dockerIndexMap.set(c.Id, i);
+                indexMap.set(c.Id, i);
             });
+
+            docker_result_list = list;
+            // 保留上一轮的完整 Id 顺序，供下一轮复用内存/CPU 旧值
+            docker_index_order = containers.map(c => c.Id);
+            dockerIndexMap.clear();
+            indexMap.forEach((v, k) => dockerIndexMap.set(k, v));
+            return {list, indexMap, full_ids: docker_index_order};
         } else {
             const p_c = docker_result_list;
-            docker_result_list = [];
+            const list: any[][] = [];
+            const indexMap = new Map<string, number>();
             let cons: any = await SystemUtil.execAsync('docker ps -a --no-trunc --format "table {{.ID}};;{{.Names}};;{{.Image}};;{{.Command}};;{{.Status}}"');
             cons = cons.toString().split(/\n|\r\n/).filter(v => v.length > 0);
             for (let i = 1; i < cons.length; i++) {
                 const con = cons[i];
-                const parts = con.split(";;").filter(v => v.length > 0);
-                const dockerIdIndex = dockerIndexMap.get(parts[0]);
-                const c = dockerIdIndex !== undefined && dockerIdIndex !== null ? p_c[dockerIdIndex] : undefined;
-                docker_result_list.push([
-                    parts[0].slice(0, 10),
+                const parts = con.split(";;");
+                if (parts.length < 5) continue;
+                const fullId = parts[0].trim();
+                const prev = p_c[this.find_prev_index(p_c, fullId)];
+                list.push([
+                    fullId.slice(0, 12),
                     parts[1],
                     parts[2],
                     parts[3],
                     parts[4],
-                    c !== undefined ? c[5] : 0,
-                    c !== undefined ? c[6] : 0,
+                    prev !== undefined ? prev[5] : 0,
+                    prev !== undefined ? prev[6] : 0,
                 ]);
-                dockerIndexMap.set(parts[0], i - 1);
+                indexMap.set(fullId, i - 1);
             }
+            docker_result_list = list;
+            docker_index_order = Array.from(indexMap.keys());
+            dockerIndexMap.clear();
+            indexMap.forEach((v, k) => dockerIndexMap.set(k, v));
+            return {list, indexMap};
         }
     }
+
+    /**
+     * 在上一轮结果里按 Id 找行下标，用于继承内存/CPU 旧值。
+     * 两轮之间容器顺序可能变化，不能用「同一个下标」直接取旧值。
+     */
+    private find_prev_index(prevList: any[][], fullId: string): number {
+        const idx = docker_index_order.indexOf(fullId);
+        if (idx >= 0 && prevList[idx]) return idx;
+        return -1;
+    }
+
 
     private killDockerSpwn() {
         if (spawnChild) {
@@ -151,30 +205,30 @@ class SysDockerService {
             spawnChild = null;
         }
     }
-
     private async getDockerInfo() {
         try {
             if (this.isUnixLike()) {
-                // Linux / macOS: dockerode + API 获取 stats
-                await this.getAllContainer();
-                const containers = await docker.listContainers({all: true});
-                for (const c of containers) {
-                    const container = docker.getContainer(c.Id);
+                // Linux / macOS: dockerode + API 获取 stats。
+                // 本轮数组用局部变量持有，stats 是异步回调，
+                // 只写自己这一轮的结果，不会因为下一轮重建数组而错位。
+                const {list, indexMap, full_ids} = await this.getAllContainer();
+                // 直接用本轮拿到的完整 Id 列表，不再重复请求 listContainers
+                for (const fullId of full_ids) {
+                    const container = docker.getContainer(fullId);
                     container.stats({stream: false}, (err, stats) => {
                         if (err || !stats) return;
-                        const index = dockerIndexMap.get(c.Id);
-                        if (typeof index === "number") {
-                            const mem = (stats.memory_stats.usage / 1024 / 1024).toFixed(1) + "MiB";
-                            const cpu = this.calcCPUPercent(stats);
-                            docker_result_list[index][5] = mem;
-                            docker_result_list[index][6] = cpu + "%";
-                        }
+                        const index = indexMap.get(fullId);
+                        if (typeof index !== "number") return;
+                        const row = list[index];
+                        if (!row) return;
+                        row[5] = (stats.memory_stats.usage / 1024 / 1024).toFixed(1) + "MiB";
+                        row[6] = this.calcCPUPercent(stats) + "%";
                     });
                 }
             } else {
                 // Windows fallback：spawn docker stats
                 if (spawnChild) return;
-                this.getAllContainer();
+                await this.getAllContainer();
                 let child = spawn('docker stats --all --no-trunc --format "table {{.ID}};;{{.MemUsage}};;{{.CPUPerc}}"', [], {shell: getShell()});
                 spawnChild = child;
                 child.stdout.on("data", (data) => {
@@ -182,13 +236,12 @@ class SysDockerService {
                     let containers = data.toString().split(/\n|\r\n/).filter(v => v.length > 1);
                     for (let i = 1; i < containers.length; i++) {
                         const container = containers[i];
-                        const parts = container.split(";;").filter(v => v.length > 0);
-                        if (parts.length < 3) break;
-                        const index = dockerIndexMap.get(parts[0]);
-                        if (typeof index === "number") {
-                            const mib = parts[1].split("/")[0];
-                            docker_result_list[index][5] = mib;
-                            docker_result_list[index][6] = parts[2];
+                        const parts = container.split(";;");
+                        if (parts.length < 3) continue;
+                        const index = dockerIndexMap.get(parts[0].trim());
+                        if (typeof index === "number" && docker_result_list[index]) {
+                            docker_result_list[index][5] = parts[1].split("/")[0].trim();
+                            docker_result_list[index][6] = parts[2].trim();
                         }
                     }
                 });
@@ -201,6 +254,10 @@ class SysDockerService {
                     console.error("Error:", err);
                     this.dockerClear();
                 });
+                // 进程退出后清空引用，否则后续刷新会一直卡在 if (spawnChild) return
+                child.on("exit", () => {
+                    if (spawnChild === child) spawnChild = null;
+                });
             }
         } catch (e) {
             console.log(e);
@@ -208,47 +265,88 @@ class SysDockerService {
         }
     }
 
+
     private calcCPUPercent(stats: any): string {
         const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
         const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
         const result = (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100.0;
         return result ? result.toFixed(2) : "0.00";
     }
-
     private dockerClear() {
-        if (dockerJobInterval) {
-            clearInterval(dockerJobInterval);
-            dockerJobInterval = null;
-        }
+        this.stopPushTimer();
         this.killDockerSpwn();
         dockerMap.clear();
+        docker_fetching = false;
     }
 
     async dockerGet(data: WsData<any>) {
-        const id = (data.wss as Wss).id;
+        const wss = data.wss as Wss;
+        const id = wss.id;
 
-        // 如果已经存在连接，直接刷新容器信息
-        if (dockerMap.get(id)) {
-            await this.getAllContainer();
-            return;
-        }
-
-        // 判断系统和 docker 命令可用性
+        // 判断系统和 docker 命令可用性（先判断，避免给不可用环境建立订阅）
         if (!this.isUnixLike() && !SystemUtil.commandIsExist("docker ps")) {
-            (data.wss as Wss).ws.close();
+            wss.ws.close();
             return;
         }
 
-        // 保存 websocket 连接
-        dockerMap.set(id, data.wss as Wss);
+        // 已订阅的连接：立即刷新并推送一次，不能只刷后端数组等定时器
+        if (dockerMap.has(id)) {
+            try {
+                await this.getDockerInfo();
+                await this.pushDockerInfo(wss, docker_result_list);
+                this.ensurePushTimer();
+            } catch (e) {
+                console.log("docker信息刷新失败", e);
+            }
+            return;
+        }
 
-        // 打开定时推送
-        await this.openDockerPush(data.wss as Wss);
+        // 保存 websocket 连接后打开定时推送
+        dockerMap.set(id, wss);
+        // 连接断开时立即退订，不用等下一次推送失败才清理
+        wss.setClose(() => {
+            this.removeDockerSocket(id);
+        });
+        try {
+            await this.openDockerPush(wss);
+        } catch (e) {
+            dockerMap.delete(id);
+            console.log("docker信息初始化失败", e);
+        }
+    }
+
+    /** 连接断开时取消订阅（供 ws 关闭回调调用，无需等下一次推送失败） */
+    removeDockerSocket(id: string) {
+        dockerMap.delete(id);
+    }
+
+
+    /** 把前端传来的短 Id 解析成 dockerode 可用的完整 Id */
+    private resolve_container_id(id: string): string {
+        if (!id) return id;
+        const full = docker_index_order.find(v => v.startsWith(id));
+        return full || id;
+    }
+
+    /** 容器操作后立即刷新并推送给所有订阅者，不用等定时器 */
+    private async refresh_and_push() {
+        try {
+            await this.getDockerInfo();
+            for (const [socketId, wss] of Array.from(dockerMap.entries())) {
+                try {
+                    await this.pushDockerInfo(wss, docker_result_list);
+                } catch (e) {
+                    dockerMap.delete(socketId);
+                }
+            }
+        } catch (e) {
+            console.log("docker信息刷新失败", e);
+        }
     }
 
 
     async dockerSwitch(data: WsData<any>) {
-        const id = data.context.dockerId;
+        const id = this.resolve_container_id(data.context.dockerId);
 
         if (this.isUnixLike()) {
             // 使用 dockerode
@@ -266,24 +364,24 @@ class SysDockerService {
             }
         } else {
             // fallback exec
+            if (data.context.dockerId.includes(" ")) throw new Error("error params");
             try {
                 if (data.context.type === "start") {
-                    await exec(`docker start ${id}`);
+                    await SystemUtil.execAsync(`docker start ${data.context.dockerId}`);
                 } else if (data.context.type === "stop") {
-                    await exec(`docker stop ${id}`);
+                    await SystemUtil.execAsync(`docker stop ${data.context.dockerId}`);
                 }
             } catch (err) {
                 console.error(`容器 ${id} ${data.context.type} 执行失败`);
             }
         }
 
-        // 更新容器列表
-        await this.getAllContainer();
+        await this.refresh_and_push();
     }
 
 
     async dockerDelContainer(data: WsData<any>) {
-        const id = data.context.dockerId;
+        const id = this.resolve_container_id(data.context.dockerId);
 
         if (this.isUnixLike()) {
             // 使用 dockerode
@@ -298,25 +396,26 @@ class SysDockerService {
             }
         } else {
             // fallback exec
+            if (data.context.dockerId.includes(" ")) throw new Error("error params");
             try {
-                await exec(`docker stop ${id}`);
+                await SystemUtil.execAsync(`docker stop ${data.context.dockerId}`);
             } catch (err) {
             }
             try {
-                await exec(`docker rm ${id}`);
+                await SystemUtil.execAsync(`docker rm ${data.context.dockerId}`);
             } catch (err) {
             }
         }
 
-        // 更新容器列表
-        await this.getAllContainer();
+        await this.refresh_and_push();
     }
 
 
     async check_image_delete(ids: string[]) {
         for (const it of ids) {
-            if (it.includes(" ")) throw "error params";
+            if (it.includes(" ") || it.includes(";") || it.includes("&") || it.includes("|")) throw "error params";
         }
+
 
         const not_delete_ids: string[] = [];
 
@@ -328,7 +427,7 @@ class SysDockerService {
                 if (inUse) not_delete_ids.push(id);
             }
         } else {
-            // fallback: execSync
+            // fallback: 逐个查询是否有容器在用该镜像
             for (const id of ids) {
                 const stdout = (await SystemUtil.execAsync(`docker ps -a --filter ancestor=${id} --format "{{.ID}}"`)).toString();
                 if (stdout.trim()) not_delete_ids.push(id);
@@ -338,10 +437,9 @@ class SysDockerService {
         return not_delete_ids;
     }
 
-
     async delete_image(ids: string[]) {
         for (const it of ids) {
-            if (it.includes(" ")) throw "error params";
+            if (it.includes(" ") || it.includes(";") || it.includes("&") || it.includes("|")) throw "error params";
         }
 
         if (this.isUnixLike()) {
@@ -355,11 +453,17 @@ class SysDockerService {
                 }
             }
         } else {
-            // fallback: execSync
-            const param = ids.join(" ");
-            await SystemUtil.execAsync(`docker rmi ${param}`);
+            // 逐个删除，不拼接成一条命令
+            for (const id of ids) {
+                try {
+                    await SystemUtil.execAsync(`docker rmi ${id}`);
+                } catch (err) {
+                    console.error(`删除镜像 ${id} 失败`);
+                }
+            }
         }
     }
+
 
 
     // ==================== Docker daemon 配置（代理走 systemd 环境变量，其余走 daemon.json） ====================

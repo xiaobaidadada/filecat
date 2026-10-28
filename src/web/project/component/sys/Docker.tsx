@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {Blank} from "../../../meta/component/Blank";
 import {Column, Dashboard, Row, } from '../../../meta/component/Dashboard';
 import {Card, CardFull, TextTip} from "../../../meta/component/Card";
@@ -76,39 +76,53 @@ export function Docker(props) {
             set_images_selected(set);
         }}/></span>];
 
+    // 统一把后端推送的容器数组转成表格行
+    const build_rows = (context: any[]) => {
+        const renders: any[] = [];
+        if (filter) {
+            for (const row of context) {
+                for (const col of row) {
+                    if (`${col}`.includes(filter)) {
+                        renders.push(row);
+                        break;
+                    }
+                }
+            }
+        } else {
+            renders.push(...context);
+        }
+        return renders.map((row) => {
+            const nextRow = row.map((cell) => (<TextTip context={cell}/>));
+            nextRow.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
+                setOptRow(nextRow);
+            }}/>));
+            return nextRow;
+        });
+    }
+
+    // 推送处理器放在 ref 里，保证 addMsg / off_message 拿到同一个函数引用
+    const handler_ref = useRef<(wsData: WsData<SysPojo>) => void>(() => {});
+
     const init = async () => {
         setRows([]);
         setOptRow([]);
+        // 先移除旧处理器，避免路由来回切换时重复注册导致重复 setRows
+        ws.off_message(`message_${CmdType.docker_getting}`, handler_ref.current);
+        const handler = (wsData: WsData<SysPojo>) => {
+            setRows(build_rows(wsData.context ?? []));
+        };
+        handler_ref.current = handler;
+        ws.addMsg(CmdType.docker_getting, handler);
         const data = new WsData(CmdType.docker_get);
-        await ws.send(data)
-        ws.addMsg(CmdType.docker_getting, (wsData: WsData<SysPojo>) => {
-            const renders: any[] = [];
-            if (filter) {
-                for (const row of wsData.context) {
-                    for (const col of row) {
-                        if (`${col}`.includes(filter)) {
-                            renders.push(row);
-                            break;
-                        }
-                    }
-                }
-            } else {
-                renders.push(...wsData.context);
-            }
-            setRows(renders.map((row) => {
-                const nextRow = row.map((cell) => (<TextTip context={cell}/>));
-                nextRow.push((<ActionButton icon={"place"} title={"选中"} onClick={() => {
-                    setOptRow(nextRow);
-                }}/>));
-                return nextRow;
-            }))
-        })
+        await ws.send(data);
     }
     useEffect(() => {
         setFilterKey(filter);
         init();
         return () => {
             (async () => {
+                // 卸载时移除推送处理器，否则下次进入页面会叠加多个处理器
+                ws.off_message(`message_${CmdType.docker_getting}`, handler_ref.current);
                 setShellShow({show: false, type: "", dockerId: ''})
                 // if (ws.isAilive()) {
                 //     ws.setPromise(async (resolve) => {

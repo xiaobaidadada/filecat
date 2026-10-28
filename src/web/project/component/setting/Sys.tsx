@@ -213,20 +213,24 @@ export function Sys() {
                                                    onClick={() => {
                                                        editor_data.set_value_temp(control_env_str || CONTROL_ENV_STR_DEFAULT);
                                                        setEditorSetting({
-                                                           model: "ace/mode/ini",
+                                                           model: "ace/mode/yaml",
                                                            open: true,
                                                            fileName: "",
                                                            not_auto_save: true,// 这里比较敏感，禁止使用自动保存
-                                                           save: async (context: string) => {
-                                                               const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
-                                                                   type: sys_setting_type.sys_env,
-                                                                   value: {control_env_str: context}
-                                                               });
-                                                               if (result.code === RCode.Success) {
-                                                                   NotySuccess(t("修改成功"));
-                                                                   getOpen();
-                                                               }
-                                                           }
+                                                            save: async (context: string) => {
+                                                                const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
+                                                                    type: sys_setting_type.sys_env,
+                                                                    value: {control_env_str: context}
+                                                                });
+                                                                if (result.code === RCode.Success) {
+                                                                    set_control_env_str(context);
+                                                                    NotySuccess(t("修改成功"));
+                                                                    getOpen();
+                                                                } else {
+                                                                    // 语法错误等保存失败要明确告知，否则用户以为存上了
+                                                                    NotyFail(`${result.message ?? t("保存失败")}`);
+                                                                }
+                                                            }
                                                        });
                                                    }}/>}>
 

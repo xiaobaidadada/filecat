@@ -8,12 +8,20 @@ import {
     data_version_type,
     file_key,
 } from "./data_type";
-import {tcp_proxy_client_all_fig, tcp_proxy_client_fig, tcp_proxy_server_config} from "../../../common/req/common.pojo";
+import {
+    CONTROL_ENV_DEFAULT,
+    CONTROL_ENV_STR_DEFAULT,
+    control_env_pojo,
+    tcp_proxy_client_all_fig,
+    tcp_proxy_client_fig,
+    tcp_proxy_server_config
+} from "../../../common/req/common.pojo";
 import {HttpProxyServerInstance, HttpServerProxy} from "../../../common/req/net.pojo";
 import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/sys.pojo";
 import {DataUtil} from "./DataUtil";
 import {sort} from "../../../common/ListUtil";
 import {userService} from "../user/user.service";
+import {stringify_yaml} from "../../../common/node/yaml.util";
 
 
 /**
@@ -306,6 +314,46 @@ export class DataMigration {
                     }
                 }
                 DataUtil.set(data_common_key.file_mount_list, mounts);
+            },
+        },
+        {
+            // 环境控制配置从 env 语法（key = [数组]）迁移为 yaml 语法。
+            // 旧文本里的注释行直接丢弃，未注释的项原样搬成 yaml 结构；
+            // 解析失败时保留原文本不动，用户进设置页能看到并自行修正。
+            version: data_version_type.control_env_yaml,
+            name: "环境控制配置迁移为 yaml 语法",
+            run: () => {
+                const env_data: any = DataUtil.get(data_common_key.sys_env_key);
+                if (!env_data || typeof env_data.control_env_str !== "string") return;
+                const old_str: string = env_data.control_env_str;
+                if (!old_str.trim()) {
+                    env_data.control_env_str = CONTROL_ENV_STR_DEFAULT;
+                    env_data.control_env = {...CONTROL_ENV_DEFAULT};
+                    DataUtil.set(data_common_key.sys_env_key, env_data);
+                    return;
+                }
+                // 已经像 yaml（有冒号缩进/列表）的不重复迁移
+                if (/^\s*[a-z_]+\s*:\s*$/m.test(old_str) || /^\s*-\s+/m.test(old_str)) {
+                    return;
+                }
+
+                const parsed: control_env_pojo = {};
+                Env.load(old_str, parsed);
+
+                const data: any = {};
+                if (Array.isArray(parsed.allowed_hosts) && parsed.allowed_hosts.length) {
+                    data.allowed_hosts = parsed.allowed_hosts;
+                }
+                if (Array.isArray(parsed.forbid_hosts) && parsed.forbid_hosts.length) {
+                    data.forbid_hosts = parsed.forbid_hosts;
+                }
+                if (parsed.allowed_private_host !== undefined) {
+                    data.allowed_private_host = parsed.allowed_private_host;
+                }
+                // 旧版没有转发规则，这里只迁移访问控制部分
+                env_data.control_env_str = stringify_yaml(data);
+                env_data.control_env = parsed;
+                DataUtil.set(data_common_key.sys_env_key, env_data);
             },
         },
     ];

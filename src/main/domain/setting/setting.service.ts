@@ -5,8 +5,10 @@ import fs from "fs";
 import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
 import {
     CONTROL_ENV_DEFAULT,
-    control_env_pojo
+    control_env_pojo,
+    control_env_proxy_rule,
 } from "../../../common/req/common.pojo";
+import {parse_yaml} from "../../../common/node/yaml.util";
 import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
@@ -539,11 +541,50 @@ export class SettingService {
         }
         // 环境控制：保存原始文本，同时解析出运行时用的结构
         if (typeof result.control_env_str === "string") {
-            const parsed: control_env_pojo = {};
-            Env.load(result.control_env_str, parsed);
-            result.control_env = parsed;
+            // yaml 语法错误直接抛给前端，避免存进一份解析不了的配置
+            const parsed = parse_yaml(result.control_env_str);
+            result.control_env = this.normalize_control_env(parsed);
         }
         return DataUtil.set(data_common_key.sys_env_key, result);
+    }
+
+    /**
+     * 规整 control_env 结构。
+     * 配置文本由用户手写，类型写错（如 allowed_hosts 写成字符串）时直接报错，
+     * 不做静默兜底，否则运行时会莫名其妙不生效。
+     */
+    private normalize_control_env(raw: any): control_env_pojo {
+        const result: control_env_pojo = {};
+        if (!raw || typeof raw !== "object") return result;
+        const str_list = (v: any, name: string): string[] | undefined => {
+            if (v === undefined || v === null) return undefined;
+            if (!Array.isArray(v)) throw `${name} 必须是列表`;
+            return v.map(it => `${it}`);
+        };
+        result.allowed_hosts = str_list(raw.allowed_hosts, "allowed_hosts");
+        result.forbid_hosts = str_list(raw.forbid_hosts, "forbid_hosts");
+        if (raw.allowed_private_host !== undefined && raw.allowed_private_host !== null) {
+            result.allowed_private_host = !!raw.allowed_private_host;
+        }
+        if (raw.proxy_rules !== undefined && raw.proxy_rules !== null) {
+            if (!Array.isArray(raw.proxy_rules)) throw "proxy_rules 必须是列表";
+            result.proxy_rules = raw.proxy_rules.map((it: any, i: number) => {
+                if (!it || typeof it !== "object") throw `proxy_rules[${i}] 必须是对象`;
+                if (!it.host) throw `proxy_rules[${i}].host 不能为空`;
+                if (!it.target) throw `proxy_rules[${i}].target 不能为空`;
+                // 目标地址必须是 http/https，避免配置成别的协议导致代理层异常
+                if (!/^https?:\/\//i.test(`${it.target}`)) throw `proxy_rules[${i}].target 必须是 http(s):// 开头`;
+                let path = it.path === undefined || it.path === null ? undefined : `${it.path}`;
+                if (path && !path.startsWith("/")) throw `proxy_rules[${i}].path 必须以 / 开头`;
+                return {
+                    host: `${it.host}`.toLowerCase(),
+                    path,
+                    target: `${it.target}`.replace(/\/+$/, ""),
+                    websocket: it.websocket === undefined ? true : !!it.websocket,
+                };
+            });
+        }
+        return result;
     }
 
     // 获取 filecat 系统全局 http 代理地址（空表示未设置）
@@ -577,6 +618,35 @@ export class SettingService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 按 Host 头匹配域名转发规则。
+     * 匹配顺序：先精确比 host（大小写不敏感），命中后再比 path 前缀；
+     * 同一域名有多条规则时，path 更具体（更长）的优先，与 nginx 的 location 前缀匹配一致。
+     * 没命中返回 null（继续走 filecat 自己的路由）。
+     */
+    public match_proxy_rule(host_header: string, url: string): control_env_proxy_rule & {pre_path: string} {
+        const env = this.get_sys_env().control_env;
+        const rules = env?.proxy_rules;
+        if (!rules?.length) return null;
+        const host = String(host_header ?? '').split(":")?.[0].toLowerCase();
+        if (!host) return null;
+        const req_path = (url ?? "/").split("?")[0];
+
+        let hit: control_env_proxy_rule = null;
+        for (const rule of rules) {
+            if (rule.host !== host) continue;
+            if (rule.path) {
+                if (!(req_path === rule.path || req_path.startsWith(rule.path + "/"))) continue;
+            }
+            // 同域名多条命中时取 path 最长的那条
+            if (!hit || (rule.path ?? "").length > (hit.path ?? "").length) {
+                hit = rule;
+            }
+        }
+        if (!hit) return null;
+        return {...hit, pre_path: hit.path ?? ""};
     }
 
     // 获取 md 编辑器全局设置。存档即完整快照，无存档（首次）时用默认值。

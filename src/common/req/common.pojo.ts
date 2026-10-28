@@ -226,33 +226,62 @@ export interface sys_env_pojo {
     // 网页代理端口模式使用的端口范围 [起始, 结束]（在范围内自动分配空闲端口）
     browser_proxy_port_start?: number
     browser_proxy_port_end?: number
-    // 环境控制（env 风格的通用 k-v 文本，目前只用到 Host 头访问控制）
-    // 前端直接编辑并保存这份原始文本，未开启的项以 # 注释形式保存
+    // 环境控制（yaml 风格的通用配置文本）
+    // 前端直接编辑并保存这份原始文本
     control_env_str?: string
     // control_env_str 解析后的结果，由后端在保存时填充，供运行时判断使用
     control_env?: control_env_pojo
 }
 
-// 环境控制配置。
-// 每一项都是 env 风格的 key = [数组] 文本；是否存在（非注释）即代表是否启用。
+// 域名转发规则（类似 nginx 的 server 段）
+// host：必填，精确匹配的主机名（不含端口），大小写不敏感
+// path：可选，路径前缀，命中后把请求转发到目标服务
+// target：必填，目标地址，如 http://127.0.0.1:3000
+// websocket：是否支持 websocket 升级转发
+export interface control_env_proxy_rule {
+    host: string
+    path?: string
+    target: string
+    websocket?: boolean
+}
+
+// 环境控制配置（yaml 语法）。
 // 目前支持：
-//   allowed_hosts —— 只允许匹配的 Host 访问
-//   forbid_hosts  —— 拒绝匹配的 Host 访问
-// 规则为正则表达式（完整匹配），Host 只取主机名（不含端口）。
+//   allowed_hosts        —— 只允许匹配的 Host 访问
+//   forbid_hosts         —— 拒绝匹配的 Host 访问
+//   allowed_private_host —— 放行私网 IP 直连
+//   proxy_rules          —— 按域名转发 HTTP 请求
+// allowed_hosts / forbid_hosts 的每一项为正则表达式（完整匹配），Host 只取主机名（不含端口）。
 export interface control_env_pojo {
     allowed_hosts?: string[]
     forbid_hosts?: string[]
     allowed_private_host?: boolean
+    proxy_rules?: control_env_proxy_rule[]
 }
 
 // 环境控制的默认值 —— 唯一定义处，前后端都从这里取
 export const CONTROL_ENV_DEFAULT: control_env_pojo = {}
 
-// 环境控制的默认文本（两项都注释掉 = 都不启用）
+// 环境控制的默认 yaml 文本（各项留空/注释 = 不启用）
 export const CONTROL_ENV_STR_DEFAULT: string =
-`# allowed_hosts = ["127.0.0.1","localhost]
-# forbid_hosts = []
-# allowed_private_host = false
+`# Host 访问控制（正则，完整匹配，不含端口）
+# allowed_hosts:
+#   - '^localhost$'
+#   - '^127\\.0\\.0\\.1$'
+# forbid_hosts:
+#   - '^evil\\.com$'
+
+# 放行私网 IP 直连（内网访问时不需要再逐个加白名单）
+allowed_private_host: false
+
+# 按域名转发 HTTP 请求（类似 nginx）
+# proxy_rules:
+#   - host: 'app.example.com'
+#     target: 'http://127.0.0.1:3000'
+#     websocket: true
+#   - host: 'api.example.com'
+#     path: '/v1'
+#     target: 'http://127.0.0.1:8080'
 `
 
 // md 编辑器全局设置（所有用户共用，由管理员在设置页调整）

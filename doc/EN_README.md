@@ -42,6 +42,8 @@
 
 FileCat is a self-hosted Web file server and a **lightweight server management tool**. Once deployed, you can manage files on your server anytime and anywhere through a browser, while also enjoying a wide range of server management and operations features.
 
+FileCat 是一个自己部署使用的轻量级web文件与工具服务器，UI设计支持移动设备访问，此项目在文件服务器的基础上，提供了很多为开发者使用的功能（内网穿透、CI/CD、大文件日志查看、系统信息查看、安全的SSH终端等)，文件访问支持多种格式的预览和编辑，并支持markdown(.md)的所见即所得编辑体验。
+
 FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser).
 
 > **Core philosophy**: Centered around file management, FileCat integrates AI Agent, remote desktop, intranet tunneling, system monitoring, and other capabilities to make server management simpler.
@@ -53,6 +55,8 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
 | Category                     | Features                                                                                                                                                                                      |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | File Management              | Browse, upload, download, edit, and preview files online (images, videos, Markdown, drawings, etc.)                                                                                           |
+| Markdown WYSIWYG Editor      | Typora-like Markdown editing — what you see is what you get                                                                                                                                    |
+| Cloud Storage Mount         | Mount Baidu Netdisk / SSH(SFTP) / S3 / WebDAV / SMB as local folders, managed with the same file operations                                                                                          |
 | AI Agent                     | Integrates large language models to assist with server management and file processing (API configuration required). Supports QQ, WeCom, Feishu, DingTalk, and other third-party platform bots |
 | Intranet Tunneling           | Expose services on an internal network to the public internet, or enable communication between multiple internal networks                                                                     |
 | SSH Terminal                 | Built-in Web terminal for connecting to servers anytime through a browser                                                                                                                     |
@@ -75,16 +79,16 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./文件列表.png" alt="File List"/></td>
-    <td><img src="./AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./doc/文件列表.png" alt="File List"/></td>
+    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
     <td align="center"><b>Intranet Tunneling</b></td>
     <td align="center"><b>System Information Dashboard</b></td>
   </tr>
   <tr>
-    <td><img src="./内网穿透.png" alt="Intranet Tunneling"/></td>
-    <td><img src="./系统信息看板.png" alt="System Information Dashboard"/></td>
+    <td><img src="./doc/内网穿透.png" alt="Intranet Tunneling"/></td>
+    <td><img src="./doc/系统信息看板.png" alt="System Information Dashboard"/></td>
   </tr>
 </table>
 
@@ -161,17 +165,6 @@ filecat --port 5567
 > For more options, run `filecat --help`.
 
 > **Permission Notice**: By default, FileCat can only access the installation directory after installation. Configure the directories and execution permissions accessible to each user in the settings.
-
----
-
-## Upgrade Guide
-
-1. **Regular Upgrade**: Upgrade according to your installation method:
-
-   * NPM: `npm -g i filecat`
-   * Docker: Pull the latest image again
-   * Binary: Download and replace the latest package
-2. **Automatic Upgrade** (v5.33.0+): Run the `filecat-upgrade` command to automatically upgrade according to the installation environment. Docker and binary installations also support custom download URL parameters.
 
 ---
 

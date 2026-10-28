@@ -45,6 +45,7 @@ import {MountController} from "./domain/mount/mount.controller";
 import {BrowserProxyPortController} from "./domain/setting/browser_proxy_port.controller";
 import {browserProxyPortService} from "./domain/setting/browser_proxy_port.service";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
+import {handle_host_proxy_upgrade, use_host_proxy_middleware} from "./other/middleware/HostProxy";
 import {tcpForwardService} from "./domain/net/tcp.forward.server.service";
 import {NetMsgType, NetUtil} from "./domain/net/util/NetUtil";
 
@@ -101,10 +102,16 @@ export async function start_main() {
         }
         req.socket?.destroy();
     });
-
     const cookieParser = require('cookie-parser');
     expressApp.use(cookieParser());
     expressApp.use(compression());
+
+    // =======================================================
+    // 域名转发：命中 control_env 里的 proxy_rules 时直接转发到目标服务，
+    // 与 nginx 的 server/location 行为一致；未命中继续走 filecat 自己的路由
+    // =======================================================
+    expressApp.use(use_host_proxy_middleware());
+
 
     // =======================================================
     // 3. 全系统最高优先级代理拦截（凌驾于一切中间件之上）
@@ -330,6 +337,8 @@ export async function start_main() {
     // ====================================================================
     const ws_filecat_middleware = use_ws_filecat_middleware(sys_pre)
     server.on('upgrade', async (request, socket, head) => {
+        // 域名转发规则命中时优先转发（含 websocket 升级）
+        if (handle_host_proxy_upgrade(request, socket, head)) return;
         if (await ws_filecat_middleware(request, socket, head) === 'contiue') {
             // 【回源】若非穿透连接，继续流转原系统的 WebSocket（保持你原有的逻辑不变）
             wss.handleUpgrade(request, socket, head, (ws) => {
