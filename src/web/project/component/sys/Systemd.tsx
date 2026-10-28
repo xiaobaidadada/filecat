@@ -137,6 +137,19 @@ export function Systemd(props) {
             }
         })
     }
+    // 重启 systemd 服务
+    // daemon-reload 只重读单元定义，不会重启已在运行的进程，
+    // 所以编辑保存后的新配置（ExecStart / Environment 等）必须重启才生效
+    const restart_systemd = async (name) =>{
+        setShowPrompt({open:true,handle:async ()=>{
+                const rsq = await sysHttp.post("systemd/sys/restart",{unit_name:name});
+                if (rsq.code === RCode.Success) {
+                    NotySuccess(t("重启成功"));
+                    setShowPrompt({open:false,handle:null});
+                }
+            }
+        })
+    }
     // 加载系统systemd单元
     const load_systemd = async ()=>{
             set_systemd_rows([]);
@@ -271,6 +284,8 @@ export function Systemd(props) {
                                 {check_user_auth(UserAuth.systemd) && <ActionButton icon={"edit"} title={"可视化编辑"} onClick={()=>{
                                     openEditor('edit', optRow[1].props.context);
                                 }}/>}
+                                {/* 只有同时存在于系统单元里的才允许重启 */}
+                                {check_user_auth(UserAuth.systemd) && inside_systemd.has(optRow[1].props.context) && <ActionButton icon={"restart_alt"} title={t("重启服务")} onClick={()=>{restart_systemd(optRow[1].props.context)}}/>}
                                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(optRow[1].props.context)}}/>
                                 {/*{optRow[1].props.context.includes("Up") ? (*/}
                                 {/*        <ActionButton icon={"stop"} title={"停止"} onClick={() => dswitch("stop")}/>) :*/}
@@ -282,6 +297,7 @@ export function Systemd(props) {
                                 {check_user_auth(UserAuth.systemd) && <ActionButton icon={"delete"} title={"删除系统上的sytemd"} onClick={()=>{delete_systemd_sys(systemd_opt_row[0].props.context)}}/>}
                 
                                 <ActionButton icon={"print"} title={"打印日志"} onClick={()=>{logs(systemd_opt_row[0].props.context)}}/>
+                                {check_user_auth(UserAuth.systemd) && <ActionButton icon={"restart_alt"} title={t("重启服务")} onClick={()=>{restart_systemd(systemd_opt_row[0].props.context)}}/>}
                                 {check_user_auth(UserAuth.systemd) && <ActionButton icon={"text_fields"} title={"sytemd文件内容"} onClick={()=>{get_sytemd_context(systemd_opt_row[0].props.context)}}/>}
                                 {(check_user_auth(UserAuth.systemd) && !inside_systemd.has(systemd_opt_row[0].props.context)) && (<ActionButton icon={"plus_one"} title={"添加到管理"} onClick={() => add_systemd(systemd_opt_row[0].props.context)}/>)}
                             </div>}

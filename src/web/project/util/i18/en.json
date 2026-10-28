@@ -1171,6 +1171,7 @@
   "环境变量": "Environment Variables",
   "暂无环境变量": "No environment variables",
   "环境变量的 KEY 不能为空": "Environment variable KEY cannot be empty",
-  "配置已保存，是否立即重启该服务让新配置生效？": "Configuration saved. Restart the service now to apply it?",
-  "重启成功": "Restarted successfully"
+  "重启成功": "Restarted successfully",
+  "重启服务": "Restart service",
+  "配置已保存，是否立即重启该服务让新配置生效？": "Configuration saved. Restart the service now to apply it?"
 }

@@ -1167,6 +1167,7 @@
   "环境变量": "Variables de entorno",
   "暂无环境变量": "Sin variables de entorno",
   "环境变量的 KEY 不能为空": "La KEY de la variable de entorno no puede estar vacía",
-  "配置已保存，是否立即重启该服务让新配置生效？": "Configuración guardada. ¿Reiniciar el servicio ahora para aplicarla?",
-  "重启成功": "Reiniciado correctamente"
+  "重启成功": "Reiniciado correctamente",
+  "重启服务": "Reiniciar servicio",
+  "配置已保存，是否立即重启该服务让新配置生效？": "Configuración guardada. ¿Reiniciar el servicio ahora para aplicarla?"
 }

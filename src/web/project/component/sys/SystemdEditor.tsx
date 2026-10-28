@@ -232,6 +232,8 @@ export function SystemdEditor(props: {
     // edit 模式已存在的文件绝对路径（由 get/context 返回），保存时原样写回
     const [path, setPath] = useState('')
     const [loading, setLoading] = useState(false)
+    // 保存后询问是否重启服务用的项目统一确认框
+    const [showPrompt, setShowPrompt] = useAtom($stroe.confirm)
 
     // 编辑模式：先拉取现有内容 + 绝对路径，预填到文本/表单
     useEffect(() => {
@@ -317,17 +319,24 @@ export function SystemdEditor(props: {
                 props.onDone?.()
             } else {
                 // 编辑：写回原有文件并 daemon-reload。
-                // 注意 daemon-reload 只重读单元定义，不会重启已在运行的进程，
-                // 所以这里要问用户是否立即重启，让新配置（含环境变量）真正生效。
                 await sysHttp.post('systemd/sys/save', {unit_name: unit, path, context})
                 NotySuccess(t('保存成功'))
                 props.onClose()
                 props.onDone?.()
-                // 弹框已关闭，用 confirm 询问是否需要重启服务
-                if (window.confirm(t('配置已保存，是否立即重启该服务让新配置生效？'))) {
-                    await sysHttp.post('systemd/sys/restart', {unit_name: unit})
-                    NotySuccess(t('重启成功'))
-                }
+                // daemon-reload 只重读单元定义，不会重启已在运行的进程，
+                // 新配置（ExecStart / Environment 等）需要重启服务才生效，
+                // 这里用项目统一的确认框询问用户是否立即重启。
+                setShowPrompt({
+                    open: true,
+                    title: t('配置已保存，是否立即重启该服务让新配置生效？'),
+                    handle: async () => {
+                        const rsq = await sysHttp.post('systemd/sys/restart', {unit_name: unit})
+                        if (rsq.code === RCode.Success) {
+                            NotySuccess(t('重启成功'))
+                            setShowPrompt({open: false, handle: null})
+                        }
+                    }
+                })
             }
         } catch (e) {
             // Http.post 内部已弹失败提示，这里仅阻止关闭即可
