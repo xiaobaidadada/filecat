@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
+  <img src="./src/web/meta/resources/img/logo-70.png" alt="FileCat Logo" width="70" height="70">
 </p>
 
 <h1 align="center">FileCat</h1>
@@ -76,16 +76,16 @@ FileCat是采用[filebrowser](https://github.com/filebrowser/filebrowser)的ui�
     <td align="center"><b>AI Agent</b></td>
   </tr>
   <tr>
-    <td><img src="./文件列表.png" alt="文件列表"/></td>
-    <td><img src="./AI能力.png" alt="AI Agent"/></td>
+    <td><img src="./doc/文件列表.png" alt="文件列表"/></td>
+    <td><img src="./doc/AI能力.png" alt="AI Agent"/></td>
   </tr>
   <tr>
     <td align="center"><b>内网穿透</b></td>
     <td align="center"><b>系统信息看板</b></td>
   </tr>
   <tr>
-    <td><img src="./内网穿透.png" alt="内网穿透"/></td>
-    <td><img src="./系统信息看板.png" alt="系统信息看板"/></td>
+    <td><img src="./doc/内网穿透.png" alt="内网穿透"/></td>
+    <td><img src="./doc/系统信息看板.png" alt="系统信息看板"/></td>
   </tr>
 </table>
 
