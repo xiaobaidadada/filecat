@@ -1163,5 +1163,10 @@
   "不使用": "Aucun",
   "消息数": "Messages",
   "来源": "Source",
-  "更多操作": "Plus d'actions"
+  "更多操作": "Plus d'actions",
+  "环境变量": "Variables d'environnement",
+  "暂无环境变量": "Aucune variable d'environnement",
+  "环境变量的 KEY 不能为空": "La KEY de la variable d'environnement ne peut pas être vide",
+  "配置已保存，是否立即重启该服务让新配置生效？": "Configuration enregistrée. Redémarrer le service maintenant pour l'appliquer ?",
+  "重启成功": "Redémarrage réussi"
 }

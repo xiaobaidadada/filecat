@@ -199,7 +199,6 @@ export class SysController {
         await systemd.save_sys_systemd(pojo.path, pojo.context);
         return Sucess("");
     }
-
     // 对系统上的 systemd 服务设置开机自启并立即启动（新建 systemd 后调用）
     @Post("/systemd/sys/enable")
     async enable_sys_systemd(@Body() pojo: { unit_name: string },@Req()req) {
@@ -208,6 +207,16 @@ export class SysController {
         await systemd.enable_sys_systemd(pojo.unit_name);
         return Sucess("");
     }
+
+    // 重启 systemd 服务，让修改后的配置（ExecStart / Environment 等）真正生效
+    @Post("/systemd/sys/restart")
+    async restart_sys_systemd(@Body() pojo: { unit_name: string },@Req()req) {
+        userService.have_user_auth(req.headers.authorization,UserAuth.all_sys);
+        userService.have_user_auth(req.headers.authorization,UserAuth.systemd);
+        await systemd.restart_sys_systemd(pojo.unit_name);
+        return Sucess("");
+    }
+
 
     // 日志
     @msg(CmdType.systemd_logs_get)

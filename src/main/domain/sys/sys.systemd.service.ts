@@ -228,7 +228,6 @@ export class SysSystemdService {
         };
     }
 
-
     // 保存 systemd 服务文件内容
     // path 是前端通过 systemd/get/context 接口拿到的系统绝对路径（如 /etc/systemd/system/xxx.service），
     // 这里直接用它 + 项目里的 FileUtil 写入（不做任何提权操作）。
@@ -241,17 +240,42 @@ export class SysSystemdService {
         }
         // 不做提权，按现有权限直接写；没有权限会直接抛错，由上层处理
         await FileUtil.writeFileSync(path, context);
-        await SystemUtil.execAsync(`systemctl daemon-reload`);
+        // 与 enable/delete 保持一致用 sudo：非 root 运行 filecat 时，
+        // 普通用户的 daemon-reload 会因权限不足失败
+        try {
+            await SystemUtil.execAsync(`sudo systemctl daemon-reload`);
+        } catch (e) {
+            // 已是 root 时 sudo 不存在/免密失败，退化为直接执行
+            await SystemUtil.execAsync(`systemctl daemon-reload`);
+        }
+    }
+
+    /**
+     * 重启服务，让新写入的配置（ExecStart / Environment 等）真正生效。
+     * daemon-reload 只重新读取单元定义，不会重启已在运行的进程，
+     * 所以编辑保存后必须显式 restart 才会应用。
+     */
+    async restart_sys_systemd(name:string) {
+        if (!name || !/^[a-zA-Z0-9_.@-]+$/.test(name)) {
+            throw "error unit name";
+        }
+        await SystemUtil.execAsync(`sudo systemctl restart ${name}`);
     }
 
     // 对系统上的 systemd 服务设置开机自启并立即启动（新建服务后调用）
     async enable_sys_systemd(name:string) {
+        if (!name || !/^[a-zA-Z0-9_.@-]+$/.test(name)) {
+            throw "error unit name";
+        }
         await SystemUtil.execAsync(`sudo systemctl enable ${name}`);
         await SystemUtil.execAsync(`sudo systemctl start ${name}`);
     }
 
 
     async delete_sys_systemd(name:string) {
+        if (!name || !/^[a-zA-Z0-9_.@-]+$/.test(name)) {
+            throw "error unit name";
+        }
         // 复用 get_systemd_context 已有的绝对路径获取逻辑
         const filePath = (await this.get_systemd_context(name)).path;
         await SystemUtil.execAsync(`sudo systemctl stop ${name}`);
@@ -261,6 +285,7 @@ export class SysSystemdService {
         await SystemUtil.execAsync(`sudo systemctl reset-failed`);
         await this.deleteSystemd(name);
     }
+
 
     async systemd_logs_get(data: WsData<any>) {
         // const socketId = (data.wss as Wss).id;

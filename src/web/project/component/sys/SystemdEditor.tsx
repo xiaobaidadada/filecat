@@ -28,7 +28,6 @@ import {InputRow, InputText, InputTextarea, Select} from '../../../meta/componen
  *        再调用 systemd/add 自动加入实时监控；
  *   编辑：直接覆盖写回原有文件（绝对路径由 get/context 返回）。
  */
-
 // .service 配置的常用字段，表单模式下的受控状态
 interface ServiceForm {
     description: string;   // [Unit] Description= 服务描述
@@ -38,7 +37,15 @@ interface ServiceForm {
     user_: string;         // User= 运行用户（可选）
     restart: string;       // Restart= 重启策略
     wanted: string;        // [Install] WantedBy= 安装目标
+    env: EnvItem[];        // [Service] Environment= 环境变量（可多条）
 }
+
+// 一条环境变量：key=value
+interface EnvItem {
+    key: string;
+    value: string;
+}
+
 
 const RESTART_OPTIONS = [
     {title: 'no（不自动重启）', value: 'no'},
@@ -58,7 +65,6 @@ const WANTED_OPTIONS = [
     {title: 'multi-user.target', value: 'multi-user.target'},
     {title: 'network.target', value: 'network.target'},
 ]
-
 // 空表单默认值
 const defaultForm = (): ServiceForm => ({
     description: '',
@@ -68,6 +74,7 @@ const defaultForm = (): ServiceForm => ({
     user_: 'root',
     restart: 'no',
     wanted: 'multi-user.target',
+    env: [],
 })
 
 // 根据表单字段生成 .service 内容
@@ -90,6 +97,17 @@ function buildService(unitName: string, form: ServiceForm): string {
     }
     if (form.user_.trim()) {
         lines.push(`User=${form.user_.trim()}`)
+    }
+    // 环境变量：每条单独一行 Environment=
+    // systemd 的规范是「整个 KEY=VALUE 用双引号包裹」来表示值含空格，
+    // 例如 Environment="VAR1=word1 word2"，而不是只给值加引号。
+    for (const item of form.env) {
+        const key = item.key.trim()
+        if (!key) continue
+        const value = item.value ?? ''
+        const kv = `${key}=${value}`
+        const need_quote = /[\s"'\\]/.test(value)
+        lines.push(`Environment=${need_quote ? `"${kv.replace(/"/g, '\\"')}"` : kv}`)
     }
     if (form.restart && form.restart !== 'no') {
         lines.push(`Restart=${form.restart.trim()}`)
@@ -128,8 +146,69 @@ function parseService(text: string): ServiceForm {
     form.user_ = get('Service', 'User')
     form.restart = get('Service', 'Restart') || 'no'
     form.wanted = get('Install', 'WantedBy') || 'multi-user.target'
+
+    // Environment 可以有多行，也可以单行写多个 "A=1" "B=2"，这里逐行收集
+    let inService = false
+    for (const line of text.split(/\r?\n/)) {
+        const trimmed = line.trim()
+        const secMatch = trimmed.match(/^\[(.*)\]$/)
+        if (secMatch) {
+            inService = (secMatch[1] || '').trim() === 'Service'
+            continue
+        }
+        if (!inService) continue
+        const kv = trimmed.match(/^Environment\s*=\s*(.*)$/i)
+        if (!kv) continue
+        const raw = kv[1].trim()
+        if (!raw) continue
+        /*
+         * 一行里可能有多个 KEY=VALUE。systemd 的写法有两种引号形式：
+         *   Environment="VAR1=word1 word2"   —— 整个 KEY=VALUE 被引号包裹
+         *   Environment=A=1 B=2              —— 无引号时以空格分隔
+         * 处理思路：先按引号把整行切成 token 序列（引号内的内容作为一个 token，
+         * 并标记它是否来自引号），再按「token 里有没有 =」判断是否是一个新的键值对：
+         *   有 = 且当前没有待合并的片段 -> 开一个新条目
+         *   没有 = 且上一个条目存在   -> 拼接进上一个条目的值（引号内含空格的情况）
+         */
+        const tokens: { text: string, quoted: boolean }[] = []
+        let pos = 0
+        while (pos < raw.length) {
+            const ch = raw[pos]
+            if (/\s/.test(ch)) {
+                pos++
+                continue
+            }
+            if (ch === '"' || ch === "'") {
+                const quote = ch
+                pos++
+                const start = pos
+                while (pos < raw.length && raw[pos] !== quote) pos++
+                tokens.push({text: raw.slice(start, pos), quoted: true})
+                pos++
+            } else {
+                const start = pos
+                while (pos < raw.length && !/\s/.test(raw[pos])) pos++
+                tokens.push({text: raw.slice(start, pos), quoted: false})
+            }
+        }
+        for (const tk of tokens) {
+            const text = tk.text
+            const eq = text.indexOf('=')
+            if (eq > 0) {
+                // 新条目：KEY=VALUE
+                form.env.push({
+                    key: text.slice(0, eq).trim(),
+                    value: text.slice(eq + 1),
+                })
+            } else if (form.env.length) {
+                // 没有 = 的片段，接在上一个值后面（引号内空格被切开时出现）
+                form.env[form.env.length - 1].value += ' ' + text
+            }
+        }
+    }
     return form
 }
+
 
 // 规范化服务名：统一带 .service 后缀
 function normalizeUnit(name: string): string {
@@ -183,10 +262,22 @@ export function SystemdEditor(props: {
         }
         setTab(next)
     }
-
     // 表单通用更新函数
     const setField = (key: keyof ServiceForm) => (value: string) => {
         setForm(prev => ({...prev, [key]: value}))
+    }
+
+    // 环境变量列表的增删改
+    const setEnvField = (index: number, key: 'key' | 'value', value: string) => {
+        setForm(prev => {
+            const env = [...prev.env]
+            env[index] = {...env[index], [key]: value}
+            return {...prev, env}
+        })
+    }
+
+    const removeEnv = (index: number) => {
+        setForm(prev => ({...prev, env: prev.env.filter((_, i) => i !== index)}))
     }
 
     // 校验并执行保存
@@ -202,6 +293,14 @@ export function SystemdEditor(props: {
             NotyFail(t('请至少填写 ExecStart 启动命令'))
             return
         }
+        // 环境变量的 key 不能为空，否则会生成非法的 Environment= 行
+        if (tab === 'form') {
+            const bad = form.env.find(it => !it.key.trim() && (it.value ?? '').trim() !== '')
+            if (bad) {
+                NotyFail(t('环境变量的 KEY 不能为空'))
+                return
+            }
+        }
         setLoading(true)
         try {
             if (props.mode === 'create') {
@@ -214,13 +313,22 @@ export function SystemdEditor(props: {
                 // 自动加入实时监控
                 await sysHttp.post('systemd/add', {unit_name: unit})
                 NotySuccess(t('添加成功'))
+                props.onClose()
+                props.onDone?.()
             } else {
-                // 编辑：写回原有文件（绝对路径）+ reload
+                // 编辑：写回原有文件并 daemon-reload。
+                // 注意 daemon-reload 只重读单元定义，不会重启已在运行的进程，
+                // 所以这里要问用户是否立即重启，让新配置（含环境变量）真正生效。
                 await sysHttp.post('systemd/sys/save', {unit_name: unit, path, context})
                 NotySuccess(t('保存成功'))
+                props.onClose()
+                props.onDone?.()
+                // 弹框已关闭，用 confirm 询问是否需要重启服务
+                if (window.confirm(t('配置已保存，是否立即重启该服务让新配置生效？'))) {
+                    await sysHttp.post('systemd/sys/restart', {unit_name: unit})
+                    NotySuccess(t('重启成功'))
+                }
             }
-            props.onClose()
-            props.onDone?.()
         } catch (e) {
             // Http.post 内部已弹失败提示，这里仅阻止关闭即可
             console.error('systemd 保存失败', e)
@@ -228,6 +336,7 @@ export function SystemdEditor(props: {
             setLoading(false)
         }
     }
+
 
     // 渲染表单 tab：每一行用通用 InputRow（label + 控件）布局
     const renderForm = () => {
@@ -262,6 +371,28 @@ export function SystemdEditor(props: {
                 <InputRow label={t('安装目标')}>
                     <Select options={WANTED_OPTIONS} value={form.wanted} onChange={setField('wanted')}/>
                 </InputRow>
+
+                {/* 环境变量：每条一行 key/value，对应 .service 里的 Environment= */}
+                <div className="div-row" style={{justifyContent: 'space-between'}}>
+                    <span>{t('环境变量')}</span>
+                    <button className="button button--flat button--grey"
+                            onClick={() => setForm(prev => ({...prev, env: [...prev.env, {key: '', value: ''}]}))}>
+                        {t('添加')}
+                    </button>
+                </div>
+                {form.env.length === 0 && (
+                    <div className="text-secondary" style={{fontSize: '0.85rem'}}>{t('暂无环境变量')}</div>
+                )}
+                {form.env.map((item, index) => (
+                    <div key={index} className="div-row" style={{gap: '0.4rem'}}>
+                        <InputText placeholder={'KEY'} value={item.key} width={'35%'}
+                                   handleInputChange={(v) => setEnvField(index, 'key', v)}/>
+                        <InputText placeholder={'value'} value={item.value} width={'50%'}
+                                   handleInputChange={(v) => setEnvField(index, 'value', v)}/>
+                        <button className="button button--flat button--grey"
+                                onClick={() => removeEnv(index)}>{t('删除')}</button>
+                    </div>
+                ))}
             </div>
         )
     }
