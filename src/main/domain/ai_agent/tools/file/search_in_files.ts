@@ -1,8 +1,34 @@
-import {RG_PATH} from "../../../bin/download-ripgrep";
 import fg from "fast-glob";
 import {readFile} from "fs/promises";
 import {spawnSync} from "child_process";
+import {createRequire} from "module";
 import {FileUtil} from "../../../file/FileUtil";
+
+const require_ = createRequire(__filename);
+
+/**
+ * 定位 ripgrep 可执行文件。
+ *
+ * 二进制由 @vscode/ripgrep 的各平台包提供，npm 安装时只装当前平台那一个，
+ * 运行时直接解析路径，无需下载。
+ * 该包的入口是 ESM，本项目编译到 CommonJS，不能直接 import，
+ * 但它内部逻辑就是这一句 require.resolve，等价实现即可。
+ *
+ * 当前平台没有对应预编译包（或安装时该可选依赖失败）时返回 null，
+ * 调用方会退到下面的 JS 实现。
+ */
+function get_rg_path(): string | null {
+    const arch = process.env.npm_config_arch || process.arch;
+    const platform_pkg = `@vscode/ripgrep-${process.platform}-${arch}`;
+    const binary_name = process.platform === "win32" ? "rg.exe" : "rg";
+    try {
+        return require_.resolve(`${platform_pkg}/bin/${binary_name}`);
+    } catch {
+        return null;
+    }
+}
+
+const RG_PATH = get_rg_path();
 
 export const search_in_files_tool = async ({
                                                pattern,
@@ -26,6 +52,8 @@ export const search_in_files_tool = async ({
     // 2. 忽略路径统一转为 ripgrep 的 glob 通配（fast-glob 与 rg 格式通用）
     const ignore = isFile ? [] : ignore_paths.map(p => p.replace(/^!/, ""));
 
+    // 3. ripgrep 二进制随 npm 包安装，当前平台没有预编译包时为 null，
+    //    此时跳过 ripgrep 直接走下面的 JS 实现
 
     // ======================================================
     // ✅ CASE 1: 使用 ripgrep

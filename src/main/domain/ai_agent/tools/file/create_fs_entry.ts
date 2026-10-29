@@ -1,5 +1,6 @@
-import {mkdir, writeFile} from "fs/promises";
+import {mkdir, stat, writeFile} from "fs/promises";
 import pathLib from "path"; // 导入 path 模块
+import {update_file_after_write} from "../utils/file_read_state";
 
 export const create_fs_entry_schema = {
     type: "function",
@@ -43,7 +44,7 @@ export const create_fs_entry_tool = async ({
     type?: "file" | "dir";
     content?: string;
     recursive?: boolean;
-}) => {
+}, session_id: string = "unknown") => {
     // 使用 pathLib.normalize 确保路径格式正确，处理跨平台差异
     const normalizedPath = pathLib.normalize(path);
 
@@ -62,8 +63,14 @@ export const create_fs_entry_tool = async ({
         // 使用 pathLib.dirname 自动获取父目录，无需手动计算字符串位置
         const dir = pathLib.dirname(normalizedPath);
 
-        await mkdir(dir, { recursive: true });
-        await writeFile(normalizedPath, content ?? "", "utf-8");
+        const [a,b,info] = await Promise.all([
+             mkdir(dir, { recursive: true }),
+             writeFile(normalizedPath, content ?? "", "utf-8"),
+             stat(normalizedPath)
+        ])
+
+        // 新建的文件登记为「已读取」，这样紧接着就能直接 edit_file 修改它
+        update_file_after_write(session_id, normalizedPath, content ?? "", Math.floor(info.mtimeMs), info.size);
 
         return {
             ok: true,

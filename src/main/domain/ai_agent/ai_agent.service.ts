@@ -27,7 +27,6 @@ import {pinyin} from "pinyin-pro";
 import {hash_str_to_number} from "../../../common/node/value.util";
 import {ServerEvent} from "../../other/config";
 import {chat_core} from "./chat.core";
-import {download_ripgrep} from "../bin/download-ripgrep";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {
     ai_agent_content,
@@ -47,6 +46,9 @@ import {wss_interface} from "../../../common/frame/type";
 import {exec_cmd_background_tool} from "./tools/command/exec_cmd_background";
 import {list_background_processes_tool} from "./tools/command/list_background_processes";
 import {get_background_process_output_tool} from "./tools/command/get_background_process_output";
+import {read_file_tool} from "./tools/file/read";
+import {edit_file_tool} from "./tools/file/edit_file";
+import {create_fs_entry_tool} from "./tools/file/create_fs_entry";
 import {SystemUtil} from "../sys/sys.utl";
 
 const {
@@ -259,13 +261,6 @@ export class Ai_agentService {
 
     async init() {
         this.load_key()
-        if(process.env.run_env !== "exe") {
-            if(ai_agentService.have_ai_open()) {
-                download_ripgrep().then(r => {
-
-                }).catch(e=>console.error(e?.message??e));
-            }
-        }
         await ThreadsFilecat.close()
         this.init_search_docs_param()
         await ai_agentMcpService.reload().catch(console.error);
@@ -1350,6 +1345,16 @@ export class Ai_agentService {
         }
         if(toolName === "sleep") {
             return CommonUtil.sleep_by_id(session_id,args);
+        }
+        // 文件操作类工具需要 session_id 来记录/校验文件的读取状态
+        if (toolName === "read_file") {
+            return read_file_tool(args, session_id);
+        }
+        if (toolName === "edit_file") {
+            return edit_file_tool(args, session_id);
+        }
+        if (toolName === "create_fs_entry") {
+            return create_fs_entry_tool(args, session_id);
         }
         // 其他内置
         if (Ai_agentTools[toolName as Ai_agentTools_type]) {
