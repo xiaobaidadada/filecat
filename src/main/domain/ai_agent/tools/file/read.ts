@@ -7,7 +7,7 @@ export const read_file_schema:ai_agent_params_type = {
     "type": "function",
     "function": {
         "name": "read_file",
-        "description": "读取本地文本文件，返回整份内容。文件过大时可自行指定字符上限进行截断。",
+        "description": "读取本地文本文件，返回整份内容。文件过大时可自行指定字符上限进行截断。只支持 UTF-8 编码。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -18,10 +18,6 @@ export const read_file_schema:ai_agent_params_type = {
                 "max_chars": {
                     "type": "number",
                     "description": "最多返回的字符数，超出则截断。不传默认 4000000"
-                },
-                "max_line_length": {
-                    "type": "number",
-                    "description": "单行最长字符数，超出则截断该行，防止压缩代码撑爆上下文。不传默认 2000"
                 }
             },
             "required": ["path"]
@@ -31,22 +27,19 @@ export const read_file_schema:ai_agent_params_type = {
 
 export const read_file_tool = async (
     session_id: string,
-    { path, max_chars, max_line_length }: { path: string; max_chars?: number; max_line_length?: number },
+    { path, max_chars }: { path: string; max_chars?: number },
 ) => {
-    const result = await read_file(path, max_chars, max_line_length);
+    const result = await read_file(path, max_chars);
 
     const hints: string[] = [];
-    if (result.truncated_by_chars) {
+    if (result.truncated) {
         hints.push(`文件超过单次返回上限，只返回了前 ${result.num_lines} 行，后续内容未返回`);
-    }
-    if (result.truncated_long_line) {
-        hints.push("文件中存在超长行，已按行截断显示");
     }
 
     return JSON.stringify({
         file_path: path,
         num_lines: result.num_lines,
-        truncated: result.truncated_by_chars,
+        truncated: result.truncated,
         file_content: result.content,
         hint: hints.length > 0 ? hints.join("；") : undefined,
     });

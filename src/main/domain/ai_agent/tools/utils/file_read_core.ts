@@ -1,10 +1,11 @@
 /**
- * 文件读取核心：整体读取文件，超长时按字符数截断。
+ * 文件读取核心：整体读取文件，超过字符上限时截断。
  *
  * 处理要点：
  *  1. 大文件不能整个塞进上下文 —— 超过字符上限就截断
- *  2. 平台换行差异（CRLF / LF）和 BOM 会污染长度计算 —— 读取时统一归一化
- *  3. 超长单行（压缩过的 js、min.css）会单独撑爆长度 —— 单行也截断
+ *  2. 统一换行符为 \n 返回给模型：模型无法分辨 \r\n 与 \n 的 token 差异，
+ *     照抄时会把 \r 丢掉导致 edit_file 匹配失败，所以这里剥掉每行行尾的 \r
+ *  3. 只支持 UTF-8，其它编码按 UTF-8 读出来就是乱码
  */
 
 import {readFile} from "fs/promises";
@@ -12,27 +13,39 @@ import {readFile} from "fs/promises";
 /** 默认最多返回的字符数（400 万字符） */
 export const DEFAULT_MAX_CHARS = 4 * 1000 * 1000;
 
-/** 单行最长字符数，超出部分截断，防止压缩代码把上下文撑爆 */
-export const MAX_LINE_LENGTH = 2000;
-
 export interface read_file_result {
-    /** 归一化后的内容 */
+    /** 文件内容，换行已归一化为 \n */
     content: string;
     /** 返回的行数 */
     num_lines: number;
     /** 是否因为字符上限被截断 */
-    truncated_by_chars: boolean;
-    /** 是否有单行被截断 */
-    truncated_long_line: boolean;
+    truncated: boolean;
 }
 
 /**
- * 去掉 UTF-8 BOM，并把 CRLF 统一成 LF。
- * 不做这步的话，\r 会被当成内容的一部分。
+ * 归一化换行符：CRLF 与 CR 全部转成 LF。
+ *
+ * 模型看到的内容永远只有 \n，抄写时不会因为丢失 \r 而匹配失败。
  */
-function normalize(text: string): string {
-    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
-    return text.includes("\r") ? text.replace(/\r\n?/g, "\n") : text;
+export function normalize_line_endings(text: string): string {
+    return text.replace(/\r\n?/g, "\n");
+}
+
+/**
+ * 还原换行符：把 LF 还原成原文件使用的换行符。
+ *
+ * 写入前用一次，保证文件本身的换行风格不被改动。
+ */
+export function restore_line_endings(text: string, eol: string): string {
+    if (eol === "\n") return text;
+    return text.replace(/\n/g, eol);
+}
+
+/** 判断文件使用的换行符：优先 CRLF，其次单独的 CR，否则按 LF */
+export function detect_eol(text: string): string {
+    if (text.includes("\r\n")) return "\r\n";
+    if (text.includes("\r")) return "\r";
+    return "\n";
 }
 
 /**
@@ -40,52 +53,48 @@ function normalize(text: string): string {
  *
  * @param path 文件绝对路径
  * @param max_chars 字符上限，超出就截断
- * @param max_line_length 单行字符上限，超出就截断该行
  */
-export async function read_file(
-    path: string,
-    max_chars: number ,
-    max_line_length: number ,
-): Promise<read_file_result> {
-    max_chars = max_chars || DEFAULT_MAX_CHARS;
-    max_line_length = max_line_length || MAX_LINE_LENGTH;
-    // readFile 内部由 libuv 按块读取并合并，一次拿到完整 Buffer。
+export async function read_file(path: string, max_chars: number = DEFAULT_MAX_CHARS): Promise<read_file_result> {
+    // readFile 内部由 libuv 按块读取并合并，一次拿到完整内容。
     // 不能用 handle.read 只调一次：返回值可能小于请求长度，会静默截断。
-    const buf = await readFile(path);
-    const text = normalize(buf.toString("utf-8"));
+    // 内容统一归一化为 \n，模型拿到的文本可以直接用于 edit_file 匹配。
+    const text = normalize_line_endings(await readFile(path, "utf-8"));
 
-    const lines: string[] = [];
-    let chars = 0;
-    let truncated_by_chars = false;
-    let truncated_long_line = false;
-
-    let pos = 0;
-    // pos < length 而非 <=：文件以换行结尾时，末尾换行之后没有内容，不该再产生空行
-    while (pos < text.length) {
-        let nl = text.indexOf("\n", pos);
-        if (nl === -1) nl = text.length;
-
-        let line = text.slice(pos, nl);
-        if (line.length > max_line_length) {
-            line = line.slice(0, max_line_length) + " … [本行过长已截断]";
-            truncated_long_line = true;
-        }
-
-        // +1 是换行符本身占的字符
-        if (chars + line.length + 1 > max_chars) {
-            truncated_by_chars = true;
-            break;
-        }
-        lines.push(line);
-        chars += line.length + 1;
-
-        pos = nl + 1;
+    // 超长单行不单独处理，统一由字符上限兜住
+    if (text.length <= max_chars) {
+        return {
+            content: text,
+            num_lines: count_lines(text),
+            truncated: false,
+        };
     }
 
+    // 截断点回退到最近的换行符，避免把一行切成半截
+    let cut = text.lastIndexOf("\n", max_chars);
+    if (cut <= 0) cut = max_chars;
+
+    const content = text.slice(0, cut);
     return {
-        content: lines.join("\n"),
-        num_lines: lines.length,
-        truncated_by_chars,
-        truncated_long_line,
+        content,
+        num_lines: count_lines(content),
+        truncated: true,
     };
+}
+
+/** 计算行数：末尾换行之后没有内容，不算一行 */
+function count_lines(text: string): number {
+    if (!text) return 0;
+    let count = 1;
+    let pos = 0;
+    while (true) {
+        const nl = text.indexOf("\n", pos);
+        if (nl === -1) break;
+        count++;
+        pos = nl + 1;
+        if (pos === text.length) {
+            count--;
+            break;
+        }
+    }
+    return count;
 }

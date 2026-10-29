@@ -1,91 +1,7 @@
-import { readFile, writeFile, stat } from "fs/promises";
-import {ai_agent_params_type} from "../ai_agent.tools";
-
-/**
- * 替换策略集。
- *
- * 每个策略是生成器：给定文件内容和待查找文本，产出「文件里真实存在的片段」。
- * 按顺序尝试，前一个策略的匹配结果优先，这样能保证精确匹配永远先于模糊匹配，
- * 避免模糊策略把本来能精确命中的地方改错。
- */
-
-// 策略1: 精确匹配（最常见，也最安全）
-export const SimpleReplacer = function* (_content: string, find: string) {
-    yield find;
-};
-
-// 策略2: 忽略每行首尾空格匹配
-// 模型经常在缩进上出错（tab 和空格混用），这一层专门兜住这种情况
-export const LineTrimmedReplacer = function* (content: string, find: string) {
-    const normalize = (s: string) =>
-        s.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
-    const findNormalized = normalize(find);
-
-    const contentLines = content.split('\n');
-    const findLineCount = find.split('\n').length;
-
-    for (let i = 0; i < contentLines.length; i++) {
-        const chunk = contentLines.slice(i, i + findLineCount).join('\n');
-        // 行数不够时 chunk 会变短，归一化后不可能相等，跳出省掉无谓比较
-        if (normalize(chunk) === findNormalized) {
-            yield chunk;
-        }
-    }
-};
-
-// 策略3: 引号字符归一化匹配
-// 模型的输出里经常出现中文引号或弯引号，与源码里的直引号不一致
-const QUOTE_MAP: Record<string, string> = {
-    '\u2018': "'", '\u2019': "'",
-    '\u201c': '"', '\u201d': '"',
-};
-const normalizeQuotes = (s: string) => s.replace(/[\u2018\u2019\u201c\u201d]/g, c => QUOTE_MAP[c] ?? c);
-
-export const QuoteNormalizedReplacer = function* (content: string, find: string) {
-    const normalizedFind = normalizeQuotes(find);
-    if (normalizedFind === find) return;
-    // 只有在文件里能精确找到归一化后的文本，才认为这个策略生效
-    if (content.includes(normalizedFind)) {
-        yield normalizedFind;
-    }
-};
-
-const REPLACERS = [SimpleReplacer, LineTrimmedReplacer, QuoteNormalizedReplacer];
-
-/**
- * 在内容里执行替换。
- *
- * @param content 文件原始内容
- * @param oldString 待替换文本
- * @param newString 替换后的文本
- * @param replaceAll 是否替换全部匹配
- * @throws 找不到匹配，或匹配不唯一（且未开启 replaceAll）
- */
-export function replace(content: string, oldString: string, newString: string, replaceAll = false): string {
-    if (oldString === newString) {
-        throw new Error("oldString 和 newString 相同，无需修改");
-    }
-
-    for (const replacer of REPLACERS) {
-        for (const search of replacer(content, oldString)) {
-            const index = content.indexOf(search);
-            if (index === -1) continue;
-
-            if (replaceAll) {
-                return content.split(search).join(newString);
-            }
-
-            // 必须唯一匹配，否则无法判断模型想改哪一处，宁可报错也不要猜
-            const lastIndex = content.lastIndexOf(search);
-            if (index !== lastIndex) {
-                throw new Error("待替换的内容在文件中出现了多次，请提供更多上下文以唯一定位，或设置 replaceAll=true 替换全部");
-            }
-
-            return content.substring(0, index) + newString + content.substring(index + search.length);
-        }
-    }
-    throw new Error("无法定位旧代码段，请检查缩进或提供更多上下文");
-}
+import { readFile, writeFile } from "fs/promises";
+import { ai_agent_params_type } from "../ai_agent.tools";
+import { detect_eol, normalize_line_endings, restore_line_endings } from "../utils/file_read_core";
+import { enqueue_file_task } from "../utils/file_queue";
 
 /**
  * 生成简单的行级 diff，让模型确认这次改了什么。
@@ -102,12 +18,12 @@ export const edit_schema: ai_agent_params_type = {
     type: "function",
     function: {
         name: "edit_file",
-        description: "编辑文件，通过匹配旧字符串进行替换。建议先 read_file 获取上下文。待替换内容必须在文件中唯一出现，否则请提供更多上下文或设置 replaceAll。",
+        description: "编辑文件，用 oldString 精确匹配文件中唯一的片段并替换成 newString。oldString 必须与文件内容完全一致（含缩进、空行、引号），建议先 read_file 拿到原文后照抄。匹配不到或出现多次都会失败。只支持 UTF-8 编码。",
         parameters: {
             type: "object",
             properties: {
                 path: { type: "string", description: "文件的绝对路径" },
-                oldString: { type: "string", description: "需要被替换的旧代码段（包含准确缩进）" },
+                oldString: { type: "string", description: "需要被替换的旧代码段，必须与文件内容逐字符一致（含准确缩进）" },
                 newString: { type: "string", description: "替换后的新代码段" },
                 replaceAll: { type: "boolean", description: "是否替换所有匹配项" }
             },
@@ -125,17 +41,45 @@ export const edit_file_tool = async (
         replaceAll?: boolean;
     },
 ) => {
-    try {
-        const content = await readFile(path, 'utf-8');
-        const updated_content = replace(content, oldString, newString, replaceAll);
-        await writeFile(path, updated_content, 'utf-8');
-
-        return {
-            ok: true,
-            message: "文件修改成功",
-            diff: build_diff(oldString, newString),
-        };
-    } catch (e: any) {
-        return { ok: false, message: `修改失败: ${e.message}` };
+    if (oldString === newString) {
+        return { ok: false, message: "修改失败: oldString 和 newString 相同，无需修改" };
     }
+
+    // 同一文件的多次编辑排进队列依次执行，避免并发读写互相覆盖
+    return enqueue_file_task(path, async () => {
+        try {
+            // 检测原文件换行风格后归一化为 \n 再匹配，
+            // 保证模型从 read_file 抄来的 LF 内容能匹配上 CRLF 文件
+            const raw_content = await readFile(path, "utf-8");
+            const eol = detect_eol(raw_content);
+            const content = normalize_line_endings(raw_content);
+
+            const index = content.indexOf(oldString);
+            if (index === -1) {
+                return { ok: false, message: "修改失败: 文件中找不到 oldString，请重新 read_file 后按原文照抄（注意缩进和空行）" };
+            }
+
+            let updated_content: string;
+            if (replaceAll) {
+                updated_content = content.split(oldString).join(newString);
+            } else {
+                if (index !== content.lastIndexOf(oldString)) {
+                    return { ok: false, message: "修改失败: oldString 在文件中出现了多次，请提供更多上下文以唯一定位，或设置 replaceAll=true 替换全部" };
+                }
+                updated_content = content.substring(0, index) + newString + content.substring(index + oldString.length);
+            }
+
+            // 写回前还原成原文件的换行风格，不改动文件行尾
+            updated_content = restore_line_endings(updated_content, eol);
+            await writeFile(path, updated_content, 'utf-8');
+
+            return {
+                ok: true,
+                message: "文件修改成功",
+                diff: build_diff(oldString, newString),
+            };
+        } catch (e: any) {
+            return { ok: false, message: `修改失败: ${e.message}` };
+        }
+    });
 };
