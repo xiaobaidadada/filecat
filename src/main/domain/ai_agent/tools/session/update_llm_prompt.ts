@@ -1,4 +1,4 @@
-import {ai_agent_params_type} from "./ai_agent.constant";
+import {ai_agent_params_type} from "../utils/ai_agent.constant";
 
 /**
  * "更新 LLM 编辑提示词"工具。

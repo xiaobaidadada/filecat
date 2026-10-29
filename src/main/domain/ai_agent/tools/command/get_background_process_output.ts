@@ -4,9 +4,9 @@
  * 根据 PID 读取对应后台进程的 stdout/stderr 输出文件内容。
  * 返回输出文件路径和内容。
  */
-import { ai_agent_params_type } from "./ai_agent.constant";
-import { backgroundProcessManager } from "../background_process.manager";
-import {FileUtil} from "../../file/FileUtil";
+import { ai_agent_params_type } from "../utils/ai_agent.constant";
+import { backgroundProcessManager } from "../../background_process.manager";
+import {FileUtil} from "../../../file/FileUtil";
 
 export const get_background_process_output_tool = async ({
     pid,

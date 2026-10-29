@@ -2,7 +2,7 @@ import { readFile, writeFile, unlink } from "fs/promises";
 import * as Diff from "diff";
 import path from "path";
 import fs from "fs";
-import { FileUtil } from "../../file/FileUtil";
+import { FileUtil } from "../../../file/FileUtil";
 
 export const apply_patch_tool = async ({ path: targetPath, text: patchText }: { path: string, text: string }) => {
     // 1. 严格校验绝对路径

@@ -1,8 +1,8 @@
-import {RG_PATH} from "../../bin/download-ripgrep";
+import {RG_PATH} from "../../../bin/download-ripgrep";
 import fg from "fast-glob";
 import {readFile} from "fs/promises";
 import {spawnSync} from "child_process";
-import {FileUtil} from "../../file/FileUtil";
+import {FileUtil} from "../../../file/FileUtil";
 
 export const search_in_files_tool = async ({
                                                pattern,

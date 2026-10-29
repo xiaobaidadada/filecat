@@ -1,18 +1,18 @@
-import {edit_file_tool} from "./edit_file";
-import {list_files_tool, read_file_tool} from "./read";
-import {exec_cmd_tool} from "./exec_cmd";
-import {http_request_tool} from "./http_request";
-import {search_docs_tool} from "./search_docs";
-import {search_in_files_tool} from "./search_in_files";
-import {create_fs_entry_tool} from "./create_fs_entry";
-import {apply_patch_tool} from "./apply_patch";
-import {exec_cmd_background_tool} from "./exec_cmd_background";
-import {list_background_processes_tool} from "./list_background_processes";
-import {get_background_process_output_tool} from "./get_background_process_output";
-import {sleep_tool} from "./sleep.tools";
-import {rename_file_tool} from "./rename_file";
-import {pick_model_tool} from "./pick_next_model";
-import {read_image_tool} from "./read_image";
+import {edit_file_tool} from "./file/edit_file";
+import {list_files_tool, read_file_tool} from "./file/read";
+import {exec_cmd_tool} from "./command/exec_cmd";
+import {http_request_tool} from "./http/http_request";
+import {search_docs_tool} from "./doc/search_docs";
+import {search_in_files_tool} from "./file/search_in_files";
+import {create_fs_entry_tool} from "./file/create_fs_entry";
+import {apply_patch_tool} from "./file/apply_patch";
+import {exec_cmd_background_tool} from "./command/exec_cmd_background";
+import {list_background_processes_tool} from "./command/list_background_processes";
+import {get_background_process_output_tool} from "./command/get_background_process_output";
+import {sleep_tool} from "./session/sleep.tools";
+import {rename_file_tool} from "./file/rename_file";
+import {pick_model_tool} from "./session/pick_next_model";
+import {read_image_tool} from "./file/read_image";
 
 
 export const Ai_agentTools = {

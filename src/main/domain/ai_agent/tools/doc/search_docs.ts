@@ -1,4 +1,4 @@
-import {ai_agentService} from "../ai_agent.service";
+import {ai_agentService} from "../../ai_agent.service";
 
 
 export const ai_tools_search_docs = {

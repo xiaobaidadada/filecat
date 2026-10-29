@@ -4,8 +4,8 @@
  * @param args.session_id 可选，按会话过滤
  * @param session_id 当前会话 ID（从 callTool 透传）
  */
-import { ai_agent_params_type } from "./ai_agent.constant";
-import { backgroundProcessManager } from "../background_process.manager";
+import { ai_agent_params_type } from "../utils/ai_agent.constant";
+import { backgroundProcessManager } from "../../background_process.manager";
 
 export const list_background_processes_tool = async (
     session_id: string = "unknown"

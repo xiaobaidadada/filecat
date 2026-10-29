@@ -8,8 +8,8 @@
  * @param args.cwd 工作目录（可选）
  * @param session_id 当前会话 ID
  */
-import { ai_agent_params_type } from "./ai_agent.constant";
-import { backgroundProcessManager } from "../background_process.manager";
+import { ai_agent_params_type } from "../utils/ai_agent.constant";
+import { backgroundProcessManager } from "../../background_process.manager";
 
 export const exec_cmd_background_tool = async (
     { cmd, cwd }: { cmd: string; cwd?: string },

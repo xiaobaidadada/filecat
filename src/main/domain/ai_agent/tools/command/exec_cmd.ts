@@ -1,5 +1,5 @@
-import {SystemUtil} from "../../sys/sys.utl";
-import {ai_agent_params_type} from "./ai_agent.constant";
+import {SystemUtil} from "../../../sys/sys.utl";
+import {ai_agent_params_type} from "../utils/ai_agent.constant";
 
 // 但是不用这个
 export const exec_cmd_tool = async ({cmd, cwd}: { cmd: string, cwd: string }) => {

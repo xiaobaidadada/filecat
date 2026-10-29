@@ -41,12 +41,12 @@ import {
     getContentAsString, ai_chat_send_message,
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
-import {ai_agent_params_type} from "./tools/ai_agent.constant";
+import {ai_agent_params_type} from "./tools/utils/ai_agent.constant";
 import {robotService} from "./api_robot/robotService";
 import {wss_interface} from "../../../common/frame/type";
-import {exec_cmd_background_tool} from "./tools/exec_cmd_background";
-import {list_background_processes_tool} from "./tools/list_background_processes";
-import {get_background_process_output_tool} from "./tools/get_background_process_output";
+import {exec_cmd_background_tool} from "./tools/command/exec_cmd_background";
+import {list_background_processes_tool} from "./tools/command/list_background_processes";
+import {get_background_process_output_tool} from "./tools/command/get_background_process_output";
 import {SystemUtil} from "../sys/sys.utl";
 
 const {

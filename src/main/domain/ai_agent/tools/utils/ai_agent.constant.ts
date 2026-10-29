@@ -1,20 +1,20 @@
-import {edit_schema} from "./edit_file";
-import {list_files_schema, read_file_schema} from "./read";
-import {exec_cmd_schema} from "./exec_cmd";
-import {http_request_schema} from "./http_request";
-import {search_in_files_schema} from "./search_in_files";
-import {create_fs_entry_schema} from "./create_fs_entry";
-import {apply_patch_schema} from "./apply_patch";
-import {exec_cmd_background_schema} from "./exec_cmd_background";
-import {list_background_processes_schema} from "./list_background_processes";
-import {get_background_process_output_schema} from "./get_background_process_output";
-import {sleep_schema} from "./sleep.tools";
-import {rename_file_schema} from "./rename_file";
-import {getProcessAddon} from "../../bin/bin";
-import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
-import {kill_background_processes_schema, kill_background_processes_tool} from "./kill_background_processes";
-import {pick_model_schema} from "./pick_next_model";
-import {read_image_schema} from "./read_image";
+import {edit_schema} from "../file/edit_file";
+import {list_files_schema, read_file_schema} from "../file/read";
+import {exec_cmd_schema} from "../command/exec_cmd";
+import {http_request_schema} from "../http/http_request";
+import {search_in_files_schema} from "../file/search_in_files";
+import {create_fs_entry_schema} from "../file/create_fs_entry";
+import {apply_patch_schema} from "../file/apply_patch";
+import {exec_cmd_background_schema} from "../command/exec_cmd_background";
+import {list_background_processes_schema} from "../command/list_background_processes";
+import {get_background_process_output_schema} from "../command/get_background_process_output";
+import {sleep_schema} from "../session/sleep.tools";
+import {rename_file_schema} from "../file/rename_file";
+import {getProcessAddon} from "../../../bin/bin";
+import {Ai_agentTools, tools_des_map} from "../ai_agent.tools";
+import {kill_background_processes_schema, kill_background_processes_tool} from "../command/kill_background_processes";
+import {pick_model_schema} from "../session/pick_next_model";
+import {read_image_schema} from "../file/read_image";
 
 export type ai_agent_params_type = {
     type: string,

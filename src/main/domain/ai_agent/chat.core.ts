@@ -2,7 +2,7 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {ai_agent_params_type, ai_tools} from "./tools/ai_agent.constant";
+import {ai_agent_params_type, ai_tools} from "./tools/utils/ai_agent.constant";
 import {ai_agentService} from "./ai_agent.service";
 import {llmPostStream} from "./llm_request";
 import {UserAuth, UserData} from "../../../common/req/user.req";
@@ -11,7 +11,7 @@ import {exec_type} from "pty-shell";
 import * as path from "path";
 import {get_error_str, StringUtil} from "../../../common/StringUtil";
 import { createParser } from 'eventsource-parser';
-import {ai_tools_search_docs} from "./tools/search_docs"; // 引入库
+import {ai_tools_search_docs} from "./tools/doc/search_docs"; // 引入库
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
 import {
@@ -27,9 +27,9 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
-import {pick_model_schema} from "./tools/pick_next_model";
-import {create_update_llm_prompt_schema} from "./tools/update_llm_prompt";
-import {is_image_tool_result, read_image_schema} from "./tools/read_image";
+import {pick_model_schema} from "./tools/session/pick_next_model";
+import {create_update_llm_prompt_schema} from "./tools/session/update_llm_prompt";
+import {is_image_tool_result, read_image_schema} from "./tools/file/read_image";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {SystemUtil} from "../sys/sys.utl";
 import {CommonUtil} from "../../../common/common.util";

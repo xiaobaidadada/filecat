@@ -1,5 +1,5 @@
 import {readdir, readFile, stat} from "fs/promises";
-import {ai_agent_params_type} from "./ai_agent.constant";
+import {ai_agent_params_type} from "../utils/ai_agent.constant";
 import pathModule from "path";
 
 

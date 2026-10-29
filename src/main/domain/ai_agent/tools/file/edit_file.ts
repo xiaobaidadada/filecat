@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "fs/promises";
-import { ai_agent_params_type } from "./ai_agent.constant";
+import { ai_agent_params_type } from "../utils/ai_agent.constant";
 
 // 1. Replacer 工具策略集
 // 策略1: 精确匹配

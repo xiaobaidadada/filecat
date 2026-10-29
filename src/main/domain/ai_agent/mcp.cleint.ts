@@ -3,7 +3,7 @@ import readline from "readline";
 import {Env} from "../../../common/node/Env";
 import {SystemUtil} from "../sys/sys.utl";
 import {ai_mcp_server_item} from "../../../common/req/filecat.ai.pojo";
-import {ai_agent_params_type} from "./tools/ai_agent.constant";
+import {ai_agent_params_type} from "./tools/utils/ai_agent.constant";
 import {
     buildClientInfo,
     classifyDiscoverResult,

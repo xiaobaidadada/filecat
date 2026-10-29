@@ -1,8 +1,8 @@
 /** 关闭当前会话指定后台进程（含子进程），使用 node-process-watcher 递归杀进程树 */
-import {ai_agent_params_type, ai_tools} from "./ai_agent.constant";
-import { backgroundProcessManager } from "../background_process.manager";
-import { getProcessAddon } from "../../bin/bin";
-import {Ai_agentTools, tools_des_map} from "./ai_agent.tools";
+import {ai_agent_params_type, ai_tools} from "../utils/ai_agent.constant";
+import { backgroundProcessManager } from "../../background_process.manager";
+import { getProcessAddon } from "../../../bin/bin";
+import {Ai_agentTools, tools_des_map} from "../ai_agent.tools";
 const kill_proc = getProcessAddon();
 
 export const kill_background_processes_tool = async (
