@@ -8,11 +8,10 @@ import { ai_agent_params_type } from "../utils/ai_agent.constant";
 import { backgroundProcessManager } from "../../background_process.manager";
 import {FileUtil} from "../../../file/FileUtil";
 
-export const get_background_process_output_tool = async ({
-    pid,
-}: {
-    pid: number;
-}) => {
+export const get_background_process_output_tool = async (
+    session_id: string,
+    { pid }: { pid: number },
+) => {
     const result = backgroundProcessManager.getProcessOutput(pid);
     if (!result) {
         return JSON.stringify({

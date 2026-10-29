@@ -29,22 +29,24 @@ function get_rg_path(): string | null {
 }
 
 const RG_PATH = get_rg_path();
-
-export const search_in_files_tool = async ({
-                                               pattern,
-                                               path: searchPath,
-                                               max_files = 50,
-                                               max_matches_per_file = 20,
-                                               ignore_case = true,
-                                               ignore_paths = ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"]
-                                           }: {
-    pattern: string;
-    path: string;
-    max_files?: number;
-    max_matches_per_file?: number;
-    ignore_case?: boolean;
-    ignore_paths?: string[];
-}) => {
+export const search_in_files_tool = async (
+    session_id: string,
+    {
+        pattern,
+        path: searchPath,
+        max_files = 50,
+        max_matches_per_file = 20,
+        ignore_case = true,
+        ignore_paths = ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"],
+    }: {
+        pattern: string;
+        path: string;
+        max_files?: number;
+        max_matches_per_file?: number;
+        ignore_case?: boolean;
+        ignore_paths?: string[];
+    },
+) => {
     // 1. 获取路径信息，判断是文件还是目录
     const stats = await FileUtil.statSync(searchPath);
     const isFile = stats.isFile();

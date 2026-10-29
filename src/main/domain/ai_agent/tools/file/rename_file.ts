@@ -25,10 +25,10 @@ export const rename_file_schema: ai_agent_params_type = {
     }
 };
 
-export const rename_file_tool = async ({path, newPath}: {
-    path: string;
-    newPath: string;
-}) => {
+export const rename_file_tool = async (
+    session_id: string,
+    { path, newPath }: { path: string; newPath: string },
+) => {
     try {
         const src = pathLib.normalize(path);
         const dst = pathLib.normalize(newPath);

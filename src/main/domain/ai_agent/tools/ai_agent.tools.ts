@@ -15,12 +15,46 @@ import {pick_model_tool} from "./session/pick_next_model";
 import {read_image_tool} from "./file/read_image";
 
 
-export const Ai_agentTools = {
+/**
+ * 所有工具的统一签名。
+ *
+ * 第一个参数固定是会话 id，所有工具都要接收，用于：
+ *  - 命令 / 后台进程按会话隔离
+ *  - 文件读取状态按会话分桶
+ *
+ * 第二个参数是各工具自己的参数，形状由各工具自行定义，因此这里不约束。
+ */
+export type Ai_agent_tool_fn = (session_id: string, args: any) => any;
+
+/**
+ * 所有工具名。
+ *
+ * 显式声明而不是用 keyof typeof Ai_agentTools 推导：
+ * 注册表若带索引签名，keyof 会变成 string | number，污染这个类型。
+ */
+export type Ai_agentTools_type =
+    | "read_file"
+    | "list_files"
+    | "edit_file"
+    | "exec_cmd"
+    | "exec_cmd_background"
+    | "list_background_processes"
+    | "get_background_process_output"
+    | "search_docs"
+    | "http_request"
+    | "search_in_files"
+    | "create_fs_entry"
+    | "sleep"
+    | "rename_file"
+    | "pick_model"
+    | "read_image";
+
+export const Ai_agentTools: Record<Ai_agentTools_type, Ai_agent_tool_fn> = {
     // 读取文件
     read_file: read_file_tool,
     // 读取目录
     list_files: list_files_tool,
-    // 修改文件 todo 使用替换修改完可以返回 diff
+    // 修改文件
     edit_file: edit_file_tool,
     // 执行命令
     exec_cmd: exec_cmd_tool,
@@ -36,15 +70,13 @@ export const Ai_agentTools = {
     http_request: http_request_tool,
     search_in_files: search_in_files_tool,
     create_fs_entry: create_fs_entry_tool,
-    sleep:sleep_tool,
-    rename_file:rename_file_tool,
-    pick_model:pick_model_tool,
-    // 读取本地图片（转成 base64 交给模型看图）
+    sleep: sleep_tool,
+    rename_file: rename_file_tool,
+    pick_model: pick_model_tool,
+    // 读取本地图片（转成 base64 交给模型看图片）
     read_image: read_image_tool
     // apply_patch: apply_patch_tool
-}
-
-export type Ai_agentTools_type = keyof typeof Ai_agentTools;
+};
 
 export const tools_des_map: Record<Ai_agentTools_type, {
     get_name: () => string,
@@ -145,3 +177,7 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     //     }
     // },
 };
+
+
+
+

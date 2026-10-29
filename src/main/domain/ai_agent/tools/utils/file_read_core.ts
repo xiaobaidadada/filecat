@@ -7,7 +7,7 @@
  *  3. 超长单行（压缩过的 js、min.css）会单独撑爆字节数 —— 按字节二次截断
  */
 
-import {open, stat} from "fs/promises";
+import {readFile} from "fs/promises";
 import {Stats} from "node:fs";
 
 /** 默认最多返回的行数 */
@@ -61,139 +61,96 @@ export async function read_file_in_range(
     limit?: number,
     max_bytes: number = DEFAULT_MAX_BYTES,
 ): Promise<read_range_result> {
-    const file_size = file_stat.size;
     const start_line = offset && offset > 0 ? offset : 1;
     const max_lines = limit && limit > 0 ? limit : DEFAULT_MAX_LINES;
 
-    // 小文件一次性读进来，省掉流式处理的开销；
-    // 大文件走流式，避免把几十 MB 一次性塞进内存
-    const SMALL_FILE_THRESHOLD = 10 * 1024 * 1024;
-    if (file_size <= SMALL_FILE_THRESHOLD) {
-        const handle = await open(file_path, "r");
-        try {
-            const buf = Buffer.allocUnsafe(file_size);
-            await handle.read(buf, 0, file_size, 0);
-            return slice_content(normalize(buf.toString("utf-8")), start_line, max_lines, max_bytes, true);
-        } finally {
-            await handle.close();
-        }
-    }
-
-    // 大文件：流式逐块读取，凑够需要的行数就停，不读完整文件
-    const CHUNK = 1024 * 1024;
-    const handle = await open(file_path, "r");
-    try {
-        const collected: string[] = [];
-        let position = 0;
-        // 需要跳过的行数（start_line - 1）
-        let remaining_skip = start_line - 1;
-        let collected_bytes = 0;
-        let truncated_by_bytes = false;
-        let done = false;
-        // 上一块末尾被切断的半行，需与本块开头拼接
-        let carry = "";
-
-        while (!done && position < file_size) {
-            // 按剩余字节数分配缓冲，最后一块可能远小于 CHUNK，
-            // 直接传 CHUNK 会让 handle.read 因越界抛 ERR_OUT_OF_RANGE
-            const read_size = Math.min(CHUNK, file_size - position);
-            const buf = Buffer.allocUnsafe(read_size);
-            const {bytesRead} = await handle.read(buf, 0, read_size, position);
-            if (bytesRead === 0) break;
-            position += bytesRead;
-
-            const text = carry + normalize(buf.subarray(0, bytesRead).toString("utf-8"));
-            carry = "";
-            const lines = text.split("\n");
-            // 文件读完了，末尾的换行会切出一个空串，那不是真实的一行
-            const at_eof = position >= file_size;
-            if (at_eof && lines.length > 0 && lines[lines.length - 1] === "") {
-                lines.pop();
-            }
-
-            for (let i = 0; i < lines.length; i++) {
-                // 最后一段可能被块边界切断，暂存到 carry，等下一块拼上再处理。
-                // 注意不能回退文件位置，否则同一行会被重复消费导致行号错位
-                if (i === lines.length - 1 && !at_eof) {
-                    carry = lines[i];
-                    break;
-                }
-                if (remaining_skip > 0) {
-                    remaining_skip--;
-                    continue;
-                }
-                const line = lines[i];
-                const line_bytes = Buffer.byteLength(line, "utf8");
-                if (collected_bytes + line_bytes > max_bytes) {
-                    truncated_by_bytes = true;
-                    done = true;
-                    break;
-                }
-                collected.push(line);
-                collected_bytes += line_bytes;
-                if (collected.length >= max_lines) {
-                    done = true;
-                    break;
-                }
-            }
-        }
-
-        // 文件末尾若有换行，split 会产生一个尾部空串，那不是真实的一行
-        if (collected.length > 0 && collected[collected.length - 1] === "") {
-            collected.pop();
-        }
-
-        const content = collected.join("\n");
-        return {
-            content,
-            start_line,
-            num_lines: collected.length,
-            // 大文件不做全量扫描，不统计总行数，避免为了一个数字再读一遍
-            total_lines: undefined,
-            truncated_by_lines: collected.length >= max_lines,
-            truncated_by_bytes,
-            truncated_long_line: content.split("\n").some(l => l.length > MAX_LINE_LENGTH),
-        };
-    } finally {
-        await handle.close();
-    }
+    // readFile 一次读完即可。
+    // 早先为了「避免大文件全塞内存」用 open + 分块循环，但那样每块都要
+    // 解码 + 归一化 + split，还要处理跨块的半行拼接，复杂度高且容易出错；
+    // 而 readFile 内部由 libuv 按块读取并合并，一次拿到完整 Buffer。
+    //
+    // 注意不能用 handle.read 只调一次：它的返回值可能小于请求长度，
+    // 会导致内容被静默截断。readFile 会读满整个文件。
+    const buf = await readFile(file_path);
+    return slice_content(normalize(buf.toString("utf-8")), start_line, max_lines, max_bytes);
 }
 
-/** 从已读入的完整内容里切出指定行范围 */
+
+/**
+ * 数行数：与 split("\n") 去掉末尾空元素后的长度等价，但不创建数组。
+ * 空串按 0 行算（与原来 split 后 pop 得 [] 的行为一致）。
+ */
+function count_lines(content: string): number {
+    if (!content) return 0;
+    let count = 0;
+    let pos = 0;
+    while (true) {
+        const nl = content.indexOf("\n", pos);
+        if (nl === -1) break;
+        count++;
+        pos = nl + 1;
+    }
+    // 末尾没有换行时，最后一段也是一行
+    if (content.charCodeAt(content.length - 1) !== 0x0a) count++;
+    return count;
+}
+
+/**
+ * 从已读入的完整内容里切出指定行范围。
+ *
+ * 不直接 content.split("\n")：大文件（上万行）split 会创建上万个字符串对象，
+ * 而实际通常只需要前 2000 行。这里用 indexOf 定位换行符，只截取需要的区间，
+ * 只有需要统计总行数时才完整扫一遍。
+ */
 function slice_content(
     content: string,
     start_line: number,
     max_lines: number,
     max_bytes: number,
-    count_total: boolean,
 ): read_range_result {
-    const all_lines = content.split("\n");
-    // 末尾的换行会切出一个空元素，去掉它，避免总行数多算 1
-    if (all_lines.length > 0 && all_lines[all_lines.length - 1] === "") all_lines.pop();
-
-    const total_lines = count_total ? all_lines.length : undefined;
-    const start_index = Math.min(start_line - 1, all_lines.length);
-
     const picked: string[] = [];
     let bytes = 0;
     let truncated_by_bytes = false;
     let truncated_long_line = false;
 
-    for (let i = start_index; i < all_lines.length; i++) {
+    // 当前扫描位置，以及还需要跳过的行数
+    let pos = 0;
+    let skip = start_line - 1;
+
+    // pos < length 而非 <=：文件以换行结尾时，末尾换行之后没有内容，
+    // 不应该再产生一个空行
+    while (pos < content.length) {
         if (picked.length >= max_lines) break;
 
-        let line = all_lines[i];
-        if (line.length > MAX_LINE_LENGTH) {
-            line = line.slice(0, MAX_LINE_LENGTH) + " … [本行过长已截断]";
-            truncated_long_line = true;
+        // 找下一个换行，找不到说明是最后一行
+        let nl = content.indexOf("\n", pos);
+        if (nl === -1) nl = content.length;
+
+        if (skip > 0) {
+            skip--;
+        } else {
+            let line = content.slice(pos, nl);
+            if (line.length > MAX_LINE_LENGTH) {
+                line = line.slice(0, MAX_LINE_LENGTH) + " … [本行过长已截断]";
+                truncated_long_line = true;
+            }
+            const line_bytes = Buffer.byteLength(line, "utf8");
+            if (bytes + line_bytes > max_bytes) {
+                truncated_by_bytes = true;
+                break;
+            }
+            picked.push(line);
+            bytes += line_bytes;
         }
-        const line_bytes = Buffer.byteLength(line, "utf8");
-        if (bytes + line_bytes > max_bytes) {
-            truncated_by_bytes = true;
-            break;
-        }
-        picked.push(line);
-        bytes += line_bytes;
+
+        pos = nl + 1;
+    }
+
+    // 统计总行数：计数用数换行符代替 split，避免为大文件造上万个字符串对象。
+    // 旧版 split 全文后总能拿到总行数，这里保持一致：只要没被字节上限截断就给总数。
+    let total_lines: number | undefined;
+    if (!truncated_by_bytes) {
+        total_lines = count_lines(content);
     }
 
     return {
@@ -210,11 +167,25 @@ function slice_content(
 /**
  * 给内容加行号，格式与 cat -n 一致：行号右对齐 6 位 + Tab。
  * 保持这个格式是因为模型对 cat -n 的输出最熟悉，引用行号时不容易出错。
+ *
+ * 不用 split + map + join（会额外产生两个数组），直接在字符串上扫描换行符拼接。
  */
 export function add_line_numbers(content: string, start_line: number): string {
     if (!content) return "";
-    return content
-        .split("\n")
-        .map((line, i) => `${String(start_line + i).padStart(6, " ")}\t${line}`)
-        .join("\n");
+    const out: string[] = [];
+    let pos = 0;
+    let line_no = start_line;
+    while (true) {
+        let nl = content.indexOf("\n", pos);
+        if (nl === -1) {
+            out.push(`${String(line_no).padStart(6, " ")}\t${content.slice(pos)}`);
+            break;
+        }
+        out.push(`${String(line_no).padStart(6, " ")}\t${content.slice(pos, nl)}`);
+        line_no++;
+        pos = nl + 1;
+        // 内容以换行结尾时不再产生额外行
+        if (pos === content.length) break;
+    }
+    return out.join("\n");
 }

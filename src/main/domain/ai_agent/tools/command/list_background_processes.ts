@@ -8,7 +8,8 @@ import { ai_agent_params_type } from "../utils/ai_agent.constant";
 import { backgroundProcessManager } from "../../background_process.manager";
 
 export const list_background_processes_tool = async (
-    session_id: string = "unknown"
+    session_id: string,
+    _args: Record<string, never>,
 ) => {
     const effectiveSessionId = session_id;
     const processes = backgroundProcessManager.listProcesses(

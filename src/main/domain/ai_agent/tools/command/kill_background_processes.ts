@@ -6,8 +6,8 @@ import {Ai_agentTools, tools_des_map} from "../ai_agent.tools";
 const kill_proc = getProcessAddon();
 
 export const kill_background_processes_tool = async (
+    session_id: string,
     args: { pid: number },
-    session_id: string = "unknown"
 ) => {
     const pid = args.pid;
     if (!pid || typeof pid !== "number") {

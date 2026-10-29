@@ -1,7 +1,10 @@
 import {ai_agent_params_type} from "../utils/ai_agent.constant";
 
 
-export const pick_model_tool = async ({max_call_num,model}: { max_call_num: number,model:string }) => {
+export const pick_model_tool = async (
+    session_id: string,
+    { max_call_num, model }: { max_call_num: number; model: string },
+) => {
     return `已经成功设置接下来要调用的模型为 ${model} 调用最大次数为 ${max_call_num}`
 }
 

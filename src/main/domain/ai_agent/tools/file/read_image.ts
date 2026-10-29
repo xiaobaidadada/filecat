@@ -101,7 +101,10 @@ export interface image_tool_result {
  *   1. 文件路径                   → 读文件，按内容魔数判断类型，转 base64
  *   2. data:image/...;base64, 文本 → 直接透传
  */
-export const read_image_tool = async ({path}: { path: string }): Promise<image_tool_result | string> => {
+export const read_image_tool = async (
+    session_id: string,
+    { path }: { path: string },
+): Promise<image_tool_result | string> => {
     const input = (path ?? "").trim();
     if (!input) {
         return "错误: path 不能为空";

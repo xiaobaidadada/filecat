@@ -22,6 +22,9 @@ export const ai_tools_search_docs = {
     }
 }
 
-export const search_docs_tool = async ({keywords}: { keywords: string[] }) => {
+export const search_docs_tool = async (
+    session_id: string,
+    { keywords }: { keywords: string[] },
+) => {
     return ai_agentService.search_docs({keywords})
 }

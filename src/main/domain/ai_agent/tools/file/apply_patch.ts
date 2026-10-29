@@ -4,7 +4,10 @@ import path from "path";
 import fs from "fs";
 import { FileUtil } from "../../../file/FileUtil";
 
-export const apply_patch_tool = async ({ path: targetPath, text: patchText }: { path: string, text: string }) => {
+export const apply_patch_tool = async (
+    session_id: string,
+    { path: targetPath, text: patchText }: { path: string, text: string },
+) => {
     // 1. 严格校验绝对路径
     if (!path.isAbsolute(targetPath)) {
         return { ok: false, error: `路径必须是完整的绝对路径: ${targetPath}` };

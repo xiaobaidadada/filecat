@@ -12,8 +12,8 @@ import { ai_agent_params_type } from "../utils/ai_agent.constant";
 import { backgroundProcessManager } from "../../background_process.manager";
 
 export const exec_cmd_background_tool = async (
+    session_id: string,
     { cmd, cwd }: { cmd: string; cwd?: string },
-    session_id: string = "unknown"
 ) => {
     const info = backgroundProcessManager.execBackground(
         cmd,

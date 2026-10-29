@@ -52,25 +52,28 @@ export const http_request_schema: ai_agent_params_type = {
     }
 };
 
-export const http_request_tool = async ({
-                                            url,
-                                            method = "GET",
-                                            headers = {},
-                                            query,
-                                            body,
-                                            timeout = 10000,
-                                            max_length = 8000,
-                                            proxy
-                                        }: {
-    url: string;
-    method?: string;
-    headers?: Record<string, string>;
-    query?: Record<string, string | number | boolean>;
-    body?: any;
-    timeout?: number;
-    max_length?: number;
-    proxy?: string;
-}) => {
+export const http_request_tool = async (
+    session_id: string,
+    {
+        url,
+        method = "GET",
+        headers = {},
+        query,
+        body,
+        timeout = 10000,
+        max_length = 8000,
+        proxy,
+    }: {
+        url: string;
+        method?: string;
+        headers?: Record<string, string>;
+        query?: Record<string, string | number | boolean>;
+        body?: any;
+        timeout?: number;
+        max_length?: number;
+        proxy?: string;
+    },
+) => {
     // ---------- URL 处理 ----------
     const u = new URL(url);
     if (query) {

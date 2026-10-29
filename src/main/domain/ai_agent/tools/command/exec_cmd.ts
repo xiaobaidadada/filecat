@@ -1,10 +1,18 @@
 import {SystemUtil} from "../../../sys/sys.utl";
 import {ai_agent_params_type} from "../utils/ai_agent.constant";
+import {register_session_cleaner} from "../session/session_cleanup";
 
-// 但是不用这个
-export const exec_cmd_tool = async ({cmd, cwd}: { cmd: string, cwd: string }) => {
-    return SystemUtil.execAsync(cmd, cwd)
+export const exec_cmd_tool = async (
+    session_id: string,
+    { cmd, cwd }: { cmd: string; cwd: string },
+) => {
+    return SystemUtil.command(session_id, {cmd, cwd})
 }
+
+// 会话结束时杀掉这个会话还在运行的命令
+register_session_cleaner("exec_cmd", (session_id) => {
+    SystemUtil.kill_command(session_id);
+});
 
 export const exec_cmd_schema:ai_agent_params_type = {
     type: "function",

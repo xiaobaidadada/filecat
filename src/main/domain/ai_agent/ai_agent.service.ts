@@ -43,13 +43,6 @@ import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmRespon
 import {ai_agent_params_type} from "./tools/utils/ai_agent.constant";
 import {robotService} from "./api_robot/robotService";
 import {wss_interface} from "../../../common/frame/type";
-import {exec_cmd_background_tool} from "./tools/command/exec_cmd_background";
-import {list_background_processes_tool} from "./tools/command/list_background_processes";
-import {get_background_process_output_tool} from "./tools/command/get_background_process_output";
-import {read_file_tool} from "./tools/file/read";
-import {edit_file_tool} from "./tools/file/edit_file";
-import {create_fs_entry_tool} from "./tools/file/create_fs_entry";
-import {SystemUtil} from "../sys/sys.utl";
 
 const {
     cut,
@@ -1325,46 +1318,22 @@ export class Ai_agentService {
         return ai_agentMcpService.getToolInfo(toolName, args);
     }
 
-    public async callTool(toolName: string, args: any,user_id:string, session_id?:string, wss?:wss_interface, externalController?: AbortController) {
+    public async callTool(toolName: string, args: any, user_id: string, session_id?: string, wss?: wss_interface, externalController?: AbortController) {
         // model tool（调用其他注册为 tool 的 AI 模型）；透传 externalController 使其子模型调用可被外层“暂停”中断
         if (this.isModelTool(toolName)) {
-            return this.callModelTool(toolName, args,user_id, session_id, wss, externalController);
+            return this.callModelTool(toolName, args, user_id, session_id, wss, externalController);
         }
-        // 内置工具 — 后台进程相关工具需要 session_id
-        if (toolName === "exec_cmd_background") {
-            return exec_cmd_background_tool(args, session_id);
-        }
-        if (toolName === "list_background_processes") {
-            return list_background_processes_tool(session_id);
-        }
-        if (toolName === "get_background_process_output") {
-            return get_background_process_output_tool(args);
-        }
-        if(toolName === "exec_cmd") {
-            return  SystemUtil.command(session_id,args);
-        }
-        if(toolName === "sleep") {
-            return CommonUtil.sleep_by_id(session_id,args);
-        }
-        // 文件操作类工具需要 session_id 来记录/校验文件的读取状态
-        if (toolName === "read_file") {
-            return read_file_tool(args, session_id);
-        }
-        if (toolName === "edit_file") {
-            return edit_file_tool(args, session_id);
-        }
-        if (toolName === "create_fs_entry") {
-            return create_fs_entry_tool(args, session_id);
-        }
-        // 其他内置
-        if (Ai_agentTools[toolName as Ai_agentTools_type]) {
-            return Ai_agentTools[toolName as Ai_agentTools_type](args);
+        // 内置工具统一调用，签名都是 (session_id, args)
+        const builtinTool = Ai_agentTools[toolName as Ai_agentTools_type];
+        if (builtinTool) {
+            return builtinTool(session_id, args);
         }
         // 检查是否是插件工具
         const pluginHandler = this.getPluginToolHandler(toolName);
         if (pluginHandler) {
             return pluginHandler(args);
         }
+        // 最后尝试 mcp的tool
         return ai_agentMcpService.callTool(toolName, args);
     }
 

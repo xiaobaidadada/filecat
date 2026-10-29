@@ -32,7 +32,7 @@ import {create_update_llm_prompt_schema} from "./tools/session/update_llm_prompt
 import {is_image_tool_result, read_image_schema} from "./tools/file/read_image";
 import {aiAgentMemoryService} from "./ai_agent.memory";
 import {SystemUtil} from "../sys/sys.utl";
-import {clear_session_file_state} from "./tools/utils/file_read_state";
+import {cleanup_session} from "./tools/session/session_cleanup";
 import {CommonUtil} from "../../../common/common.util";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
@@ -468,10 +468,11 @@ const workMessages: ai_agent_message_list = [
             ended = true;
             controller.signal.removeEventListener('abort', onAbort);
             on_end({ once_messages_list, _interrupted: interrupted });
-            SystemUtil.kill_command(session_id)
-            CommonUtil.sleep_delete_by_id(session_id)
-            // 释放本会话记录的文件读取状态
-            clear_session_file_state(session_id)
+            // 统一清理本会话各工具留下的运行时资源（命令、定时器、文件读取状态等）。
+            // 这里不 await：endOnce 是同步函数，清理失败也不应影响对话结束通知。
+            cleanup_session(session_id).catch((e) => {
+                console.error("[endOnce] 清理会话资源失败:", e?.message ?? e);
+            });
         };
         // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
         const onAbort = () => {

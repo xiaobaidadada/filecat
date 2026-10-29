@@ -117,12 +117,15 @@ export const edit_schema: ai_agent_params_type = {
     }
 };
 
-export const edit_file_tool = async ({ path, oldString, newString, replaceAll = false }: {
-    path: string;
-    oldString: string;
-    newString: string;
-    replaceAll?: boolean
-}, session_id: string = "unknown") => {
+export const edit_file_tool = async (
+    session_id: string,
+    { path, oldString, newString, replaceAll = false }: {
+        path: string;
+        oldString: string;
+        newString: string;
+        replaceAll?: boolean;
+    },
+) => {
     try {
         const info = await stat(path);
         if (info.isDirectory()) {

@@ -1,8 +1,12 @@
 import {readdir, readFile, stat} from "fs/promises";
 import {ai_agent_params_type} from "../utils/ai_agent.constant";
 import {add_line_numbers, read_file_in_range} from "../utils/file_read_core";
-import {mark_file_read} from "../utils/file_read_state";
+import {clear_session_file_state, mark_file_read} from "../utils/file_read_state";
+import {register_session_cleaner} from "../session/session_cleanup";
 import pathModule from "path";
+
+// 会话结束时清掉这个会话记录的文件读取状态，避免缓存无限增长
+register_session_cleaner("read_file", (session_id) => clear_session_file_state(session_id));
 
 export const read_file_schema:ai_agent_params_type = {
     "type": "function",
@@ -30,7 +34,10 @@ export const read_file_schema:ai_agent_params_type = {
     }
 }
 
-export const read_file_tool = async ({path, offset, limit}: { path: string; offset?: number; limit?: number }, session_id: string = "unknown") => {
+export const read_file_tool = async (
+    session_id: string,
+    { path, offset, limit }: { path: string; offset?: number; limit?: number },
+) => {
     const info = await stat(path);
 
     // 目录不能按文本读，给出明确提示而不是抛 EISDIR
@@ -39,32 +46,15 @@ export const read_file_tool = async ({path, offset, limit}: { path: string; offs
             error: `${path} 是目录，不是文件。查看目录内容请使用 list_files。`
         });
     }
-
-    const result = await read_file_in_range(info,path, offset, limit);
+    const result = await read_file_in_range(info, path, offset, limit);
 
     // 记录读取状态，供 edit_file 判断文件是否在读取后被外部改动。
     //
-    // read_file_in_range 返回的 content 是给模型看的，做了两步处理：
-    //  1. 去掉 BOM、把 CRLF 归一化成 LF
-    //  2. 去掉末尾换行（行号渲染不需要那个空行）
-    // 因此它和磁盘原文并不等价，直接当缓存会让 edit_file 误判「文件已改」。
-    // 完整读取时按字节数校验能否就地还原（仅补末尾换行）；还原不了就读一次原文。
-    // CRLF / BOM 文件属于后者，这类文件数量有限，多读一次可以接受。
-    let content: string;
-    if (result.start_line === 1 && !result.truncated_by_lines && !result.truncated_by_bytes) {
-        const expected_size = Buffer.byteLength(result.content, "utf8");
-        if (info.size === expected_size) {
-            content = result.content;
-        } else if (info.size === expected_size + 1) {
-            // 磁盘比返回内容多 1 字节，就是被去掉的那个末尾换行
-            content = result.content + "\n";
-        } else {
-            // 字节数对不上，说明存在 CRLF 或 BOM，读原文
-            content = await readFile(path, "utf-8");
-        }
-    } else {
-        content = await readFile(path, "utf-8");
-    }
+    // 需要的是磁盘原文，而 result.content 是给模型看的：
+    // 去掉了 BOM、CRLF 归一化成 LF、去掉了末尾换行，不能直接当缓存，
+    // 否则 edit_file 每次都会误判「文件已被改动」。这里单独读一次原文。
+    const content = await readFile(path, "utf-8");
+
 
     mark_file_read(session_id, path, {
         content,
@@ -186,7 +176,10 @@ async function buildTree(
     }
 }
 
-export const list_files_tool = async ({path = '.', depth = 1, ignore = ['node_modules']}: { path?: string; depth?: number; ignore?: string[] }) => {
+export const list_files_tool = async (
+    session_id: string,
+    { path = '.', depth = 1, ignore = ['node_modules'] }: { path?: string; depth?: number; ignore?: string[] },
+) => {
     // 检查路径是否存在
     try {
         await stat(path);

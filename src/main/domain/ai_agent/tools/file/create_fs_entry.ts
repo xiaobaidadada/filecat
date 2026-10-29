@@ -34,17 +34,20 @@ export const create_fs_entry_schema = {
 }
 
 
-export const create_fs_entry_tool = async ({
-                                               path,
-                                               type = "file",
-                                               content = "",
-                                               recursive = true
-                                           }: {
-    path: string;
-    type?: "file" | "dir";
-    content?: string;
-    recursive?: boolean;
-}, session_id: string = "unknown") => {
+export const create_fs_entry_tool = async (
+    session_id: string,
+    {
+        path,
+        type = "file",
+        content = "",
+        recursive = true,
+    }: {
+        path: string;
+        type?: "file" | "dir";
+        content?: string;
+        recursive?: boolean;
+    },
+) => {
     // 使用 pathLib.normalize 确保路径格式正确，处理跨平台差异
     const normalizedPath = pathLib.normalize(path);
 
