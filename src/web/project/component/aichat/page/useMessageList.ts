@@ -100,10 +100,8 @@ export function useMessageList(deps: Deps) {
         const onWheel = (e: WheelEvent) => {
             if (e.deltaY < 0) {
                 followRef.current = false;
-            } else if (isNearBottom(el, 300)) {
-                // 向下滚到接近底部就恢复跟随，并立刻贴底，之后新内容跟得上
+            } else if (el.scrollHeight - (el.scrollTop + el.clientHeight) < 4) {
                 followRef.current = true;
-                el.scrollTop = el.scrollHeight;
             }
         };
 
