@@ -2,7 +2,6 @@ import {Response} from "express";
 import {userService} from "../user/user.service";
 import {settingService} from "../setting/setting.service";
 import os from "os";
-import {ai_agent_params_type, ai_tools} from "./tools/utils/ai_agent.constant";
 import {ai_agentService} from "./ai_agent.service";
 import {llmPostStream} from "./llm_request";
 import {UserAuth, UserData} from "../../../common/req/user.req";
@@ -34,6 +33,7 @@ import {aiAgentMemoryService} from "./ai_agent.memory";
 import {SystemUtil} from "../sys/sys.utl";
 import {cleanup_session} from "./tools/session/session_cleanup";
 import {CommonUtil} from "../../../common/common.util";
+import {ai_agent_params_type, ai_tools} from "./tools/ai_agent.tools";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
 export interface ChatMsgPayload {
@@ -217,7 +217,6 @@ export class ChatCore {
             case "edit_file":
             case "create_fs_entry":
             case "rename_file":
-            case "apply_patch":
                 if (cwd != null && !path.isAbsolute(args.path)) {
                     args.path = path.join(cwd, args.path);
                 }

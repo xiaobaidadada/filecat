@@ -1,6 +1,7 @@
 import axios from "axios";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { ai_agent_params_type } from "../utils/ai_agent.constant";
+
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 export const http_request_schema: ai_agent_params_type = {
     type: "function",

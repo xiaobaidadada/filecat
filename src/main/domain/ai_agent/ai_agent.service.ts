@@ -2,7 +2,7 @@ import {AiToolItem} from "../../../plugin";
 import {Response} from "express";
 import {Readable} from "stream";
 import os from "os";
-import {Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./tools/ai_agent.tools";
+import {ai_agent_params_type, Ai_agentTools, Ai_agentTools_type, tools_des_map} from "./tools/ai_agent.tools";
 import {settingService} from "../setting/setting.service";
 import {ai_agentMcpService} from "./ai_agent.mcp";
 import path from "path";
@@ -40,7 +40,6 @@ import {
     getContentAsString, ai_chat_send_message,
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
-import {ai_agent_params_type} from "./tools/utils/ai_agent.constant";
 import {robotService} from "./api_robot/robotService";
 import {wss_interface} from "../../../common/frame/type";
 
@@ -1326,7 +1325,7 @@ export class Ai_agentService {
         // 内置工具统一调用，签名都是 (session_id, args)
         const builtinTool = Ai_agentTools[toolName as Ai_agentTools_type];
         if (builtinTool) {
-            return builtinTool(session_id, args);
+            return builtinTool.fn(session_id, args);
         }
         // 检查是否是插件工具
         const pluginHandler = this.getPluginToolHandler(toolName);

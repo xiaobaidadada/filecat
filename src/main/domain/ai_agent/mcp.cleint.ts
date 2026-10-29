@@ -3,7 +3,6 @@ import readline from "readline";
 import {Env} from "../../../common/node/Env";
 import {SystemUtil} from "../sys/sys.utl";
 import {ai_mcp_server_item} from "../../../common/req/filecat.ai.pojo";
-import {ai_agent_params_type} from "./tools/utils/ai_agent.constant";
 import {
     buildClientInfo,
     classifyDiscoverResult,
@@ -12,6 +11,7 @@ import {
     LEGACY_PROTOCOL_VERSION,
     PROBE_TIMEOUT_MS,
 } from "./mcp.protocol";
+import {ai_agent_params_type} from "./tools/ai_agent.tools";
 export interface JsonRpcRequest {
     jsonrpc: "2.0";
     /** 普通请求用数字 id；协议探测用字符串 id（官方约定，不占用正常 id 序列） */

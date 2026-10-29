@@ -1,6 +1,7 @@
 import {readFile} from "fs/promises";
 import pathModule from "path";
-import {ai_agent_params_type} from "../utils/ai_agent.constant";
+
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 export const read_image_schema: ai_agent_params_type = {
     "type": "function",

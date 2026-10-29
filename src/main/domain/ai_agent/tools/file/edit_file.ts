@@ -1,6 +1,6 @@
 import { readFile, writeFile, stat } from "fs/promises";
-import { ai_agent_params_type } from "../utils/ai_agent.constant";
 import { get_file_read_state, update_file_after_write } from "../utils/file_read_state";
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 /**
  * 替换策略集。

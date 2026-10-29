@@ -1,18 +1,21 @@
-import {edit_file_tool} from "./file/edit_file";
-import {list_files_tool, read_file_tool} from "./file/read";
-import {exec_cmd_tool} from "./command/exec_cmd";
-import {http_request_tool} from "./http/http_request";
-import {search_docs_tool} from "./doc/search_docs";
-import {search_in_files_tool} from "./file/search_in_files";
-import {create_fs_entry_tool} from "./file/create_fs_entry";
-import {apply_patch_tool} from "./file/apply_patch";
-import {exec_cmd_background_tool} from "./command/exec_cmd_background";
-import {list_background_processes_tool} from "./command/list_background_processes";
-import {get_background_process_output_tool} from "./command/get_background_process_output";
-import {sleep_tool} from "./session/sleep.tools";
-import {rename_file_tool} from "./file/rename_file";
-import {pick_model_tool} from "./session/pick_next_model";
-import {read_image_tool} from "./file/read_image";
+import {edit_file_tool, edit_schema} from "./file/edit_file";
+import {list_files_schema, list_files_tool, read_file_schema, read_file_tool} from "./file/read";
+import {exec_cmd_schema, exec_cmd_tool} from "./command/exec_cmd";
+import {http_request_schema, http_request_tool} from "./http/http_request";
+import {ai_tools_search_docs, search_docs_tool} from "./doc/search_docs";
+import {search_in_files_schema, search_in_files_tool} from "./file/search_in_files";
+import {create_fs_entry_schema, create_fs_entry_tool} from "./file/create_fs_entry";
+import {exec_cmd_background_schema, exec_cmd_background_tool} from "./command/exec_cmd_background";
+import {list_background_processes_schema, list_background_processes_tool} from "./command/list_background_processes";
+import {
+    get_background_process_output_schema,
+    get_background_process_output_tool
+} from "./command/get_background_process_output";
+import {sleep_schema, sleep_tool} from "./session/sleep.tools";
+import {rename_file_schema, rename_file_tool} from "./file/rename_file";
+import {pick_model_schema, pick_model_tool} from "./session/pick_next_model";
+import {read_image_schema, read_image_tool} from "./file/read_image";
+import {kill_background_processes_schema, kill_background_processes_tool} from "./command/kill_background_processes";
 
 
 /**
@@ -25,6 +28,20 @@ import {read_image_tool} from "./file/read_image";
  * 第二个参数是各工具自己的参数，形状由各工具自行定义，因此这里不约束。
  */
 export type Ai_agent_tool_fn = (session_id: string, args: any) => any;
+
+
+export type ai_agent_params_type = {
+    type: string,
+    function: {
+        name: string,
+        description: string,
+        parameters: {
+            type: string,
+            properties: any,
+            required: string[]
+        }
+    }
+}
 
 /**
  * 所有工具名。
@@ -47,35 +64,48 @@ export type Ai_agentTools_type =
     | "sleep"
     | "rename_file"
     | "pick_model"
-    | "read_image";
+    | "read_image"
+    | "kill_background_processes"
+    ;
 
-export const Ai_agentTools: Record<Ai_agentTools_type, Ai_agent_tool_fn> = {
+/**
+ * 一个工具的完整登记项：执行函数 + 暴露给模型的 schema。
+ *
+ * 两者放在一起，保证每个工具一定同时具备「能执行」和「能声明」，
+ * 不会出现注册了函数却忘记写 schema（或反过来）的情况。
+ */
+export type Ai_agent_tool_item = {
+    fn: Ai_agent_tool_fn;
+    schema: ai_agent_params_type;
+};
+
+export const Ai_agentTools: Record<Ai_agentTools_type, Ai_agent_tool_item> = {
     // 读取文件
-    read_file: read_file_tool,
+    read_file: {fn: read_file_tool, schema: read_file_schema},
     // 读取目录
-    list_files: list_files_tool,
+    list_files: {fn: list_files_tool, schema: list_files_schema},
     // 修改文件
-    edit_file: edit_file_tool,
+    edit_file: {fn: edit_file_tool, schema: edit_schema},
     // 执行命令
-    exec_cmd: exec_cmd_tool,
+    exec_cmd: {fn: exec_cmd_tool, schema: exec_cmd_schema},
     // 后台执行命令
-    exec_cmd_background: exec_cmd_background_tool,
+    exec_cmd_background: {fn: exec_cmd_background_tool, schema: exec_cmd_background_schema},
     // 获取后台进程列表
-    list_background_processes: list_background_processes_tool,
+    list_background_processes: {fn: list_background_processes_tool, schema: list_background_processes_schema},
     // 获取后台进程输出
-    get_background_process_output: get_background_process_output_tool,
+    get_background_process_output: {fn: get_background_process_output_tool, schema: get_background_process_output_schema},
     // 搜索本地知识库
-    search_docs: search_docs_tool,
+    search_docs: {fn: search_docs_tool, schema: ai_tools_search_docs},
     // 访问某个网页
-    http_request: http_request_tool,
-    search_in_files: search_in_files_tool,
-    create_fs_entry: create_fs_entry_tool,
-    sleep: sleep_tool,
-    rename_file: rename_file_tool,
-    pick_model: pick_model_tool,
+    http_request: {fn: http_request_tool, schema: http_request_schema},
+    search_in_files: {fn: search_in_files_tool, schema: search_in_files_schema},
+    create_fs_entry: {fn: create_fs_entry_tool, schema: create_fs_entry_schema},
+    sleep: {fn: sleep_tool, schema: sleep_schema},
+    rename_file: {fn: rename_file_tool, schema: rename_file_schema},
+    pick_model: {fn: pick_model_tool, schema: pick_model_schema},
     // 读取本地图片（转成 base64 交给模型看图片）
-    read_image: read_image_tool
-    // apply_patch: apply_patch_tool
+    read_image: {fn: read_image_tool, schema: read_image_schema},
+    kill_background_processes: {fn: kill_background_processes_tool, schema: kill_background_processes_schema},
 };
 
 export const tools_des_map: Record<Ai_agentTools_type, {
@@ -169,15 +199,26 @@ export const tools_des_map: Record<Ai_agentTools_type, {
         get_params: (args) => {
             return ` ${String(args.path ?? "").slice(0, 60)}`
         }
-    }
-    // apply_patch: {
-    //     get_name: () => "apply patch file",
-    //     get_params: (args) => {
-    //         return `path： ${args.path}`
-    //     }
-    // },
+    },
+    kill_background_processes:{
+        get_name: () => "kill background processes",
+        get_params: (args) => {
+            return args?.pid
+        }
+    },
 };
 
+// 为ai提供有限的系统信息。
+// 从注册表派生，因此不可能漏写或写错工具名。
+// 注意：pick_model、read_image、search_docs 受运行时开关控制，由 chat.core 按条件追加，不在这里。
+// 为ai提供有限的系统信息。
+// 从注册表派生，新增工具自动带上，不会漏。
+// 这三个受运行时开关控制，由 chat.core 按条件追加：
+//   pick_model  模型切换开关
+//   read_image  模型是否支持图片
+//   search_docs 知识库开关
+const dynamic_tools: Ai_agentTools_type[] = ["pick_model", "read_image", "search_docs"];
 
-
-
+export const ai_tools: ai_agent_params_type[] = Object.entries(Ai_agentTools)
+    .filter(([name]) => !dynamic_tools.includes(name as Ai_agentTools_type))
+    .map(([, item]) => item.schema);

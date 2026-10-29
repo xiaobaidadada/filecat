@@ -1,9 +1,9 @@
 import {readdir, readFile, stat} from "fs/promises";
-import {ai_agent_params_type} from "../utils/ai_agent.constant";
 import {add_line_numbers, read_file_in_range} from "../utils/file_read_core";
 import {clear_session_file_state, mark_file_read} from "../utils/file_read_state";
 import {register_session_cleaner} from "../session/session_cleanup";
 import pathModule from "path";
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 // 会话结束时清掉这个会话记录的文件读取状态，避免缓存无限增长
 register_session_cleaner("read_file", (session_id) => clear_session_file_state(session_id));

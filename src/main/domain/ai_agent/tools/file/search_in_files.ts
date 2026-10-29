@@ -3,6 +3,7 @@ import {readFile} from "fs/promises";
 import {spawnSync} from "child_process";
 import {createRequire} from "module";
 import {FileUtil} from "../../../file/FileUtil";
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 const require_ = createRequire(__filename);
 
@@ -179,7 +180,7 @@ export const search_in_files_tool = async (
     }, null, 2);
 };
 
-export const search_in_files_schema = {
+export const search_in_files_schema: ai_agent_params_type = {
     type: "function",
     function: {
         name: "search_in_files",

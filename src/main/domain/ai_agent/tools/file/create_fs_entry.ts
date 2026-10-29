@@ -1,8 +1,9 @@
 import {mkdir, stat, writeFile} from "fs/promises";
 import pathLib from "path"; // 导入 path 模块
 import {update_file_after_write} from "../utils/file_read_state";
+import {ai_agent_params_type} from "../ai_agent.tools";
 
-export const create_fs_entry_schema = {
+export const create_fs_entry_schema: ai_agent_params_type = {
     type: "function",
     function: {
         name: "create_fs_entry",

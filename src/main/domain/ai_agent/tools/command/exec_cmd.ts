@@ -1,6 +1,6 @@
 import {SystemUtil} from "../../../sys/sys.utl";
-import {ai_agent_params_type} from "../utils/ai_agent.constant";
 import {register_session_cleaner} from "../session/session_cleanup";
+import {ai_agent_params_type} from "../ai_agent.tools";
 
 export const exec_cmd_tool = async (
     session_id: string,

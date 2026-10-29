@@ -1,9 +1,9 @@
 /** 关闭当前会话指定后台进程（含子进程），使用 node-process-watcher 递归杀进程树 */
-import {ai_agent_params_type, ai_tools} from "../utils/ai_agent.constant";
 import { backgroundProcessManager } from "../../background_process.manager";
-import { getProcessAddon } from "../../../bin/bin";
-import {Ai_agentTools, tools_des_map} from "../ai_agent.tools";
-const kill_proc = getProcessAddon();
+// import { getProcessAddon } from "../../../bin/bin";
+import {SystemUtil} from "../../../sys/sys.utl";
+import {ai_agent_params_type, ai_tools} from "../ai_agent.tools";
+// const kill_proc = getProcessAddon();
 
 export const kill_background_processes_tool = async (
     session_id: string,
@@ -25,7 +25,8 @@ export const kill_background_processes_tool = async (
 
     try {
         // kill_process(pid, true) — 第二个参数 true = 递归杀子进程
-        kill_proc.kill_process(pid, true);
+        // kill_proc.kill_process(pid, true);
+        SystemUtil.killProcess(pid);
         return `已成功关闭进程 pid=${pid}（命令: ${target.cmd}），包括其所有子进程。`;
     } catch (e: any) {
         return `关闭进程 pid=${pid} 失败: ${e.message}`;
