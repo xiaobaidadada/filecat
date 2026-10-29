@@ -45,10 +45,16 @@ export function useMessageList(deps: Deps) {
 
     // ===== 滚动 =====
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const autoScrollRef = useRef(true);
+    /**
+     * 是否跟随新内容自动贴底。
+     * 只在用户「向上滚」时关掉，在用户「向下滚且已回到接近底部」时打开。
+     * 不能用滚动位置反推：持续输出时 scrollHeight 每帧都在涨，
+     * 位置上永远算「接近底部」，用户根本滑不出去。
+     */
+    const followRef = useRef(true);
     const pendingScrollRef = useRef(false);
 
-    /** 判断容器是否已接近底部（用户没往上翻时保持贴底） */
+    /** 判断容器是否已接近底部 */
     const isNearBottom = (el: HTMLElement, threshold = 120) => {
         const { scrollTop, scrollHeight, clientHeight } = el;
         return scrollHeight - (scrollTop + clientHeight) < threshold;
@@ -56,21 +62,21 @@ export function useMessageList(deps: Deps) {
 
     const scrollToBottom = (smooth = false) => {
         const el = chatContainerRef.current;
-        if (!el) return;
+        if (!el || !followRef.current) return;
         // markdown/代码块/图片会异步撑高，单帧滚动会停在旧高度，
         // 连续几帧校正直到高度稳定，避免刷新后停在中间。
         el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
         let frames = 0;
         const settle = () => {
             const el2 = chatContainerRef.current;
-            if (!el2) return;
+            if (!el2 || !followRef.current) return;
             el2.scrollTo({ top: el2.scrollHeight, behavior: smooth && frames === 0 ? "smooth" : "auto" });
             if (++frames < 6) requestAnimationFrame(settle);
         };
         requestAnimationFrame(settle);
     };
 
-    /** 切换会话后无条件滚到底（否则会沿用上一会话的 autoScroll 状态停在中间） */
+    /** 切换会话后无条件滚到底（否则会沿用上一会话的跟随状态停在中间） */
     const request_scroll_bottom = () => {
         pendingScrollRef.current = true;
     };
@@ -78,21 +84,45 @@ export function useMessageList(deps: Deps) {
     useLayoutEffect(() => {
         if (pendingScrollRef.current) {
             pendingScrollRef.current = false;
-            autoScrollRef.current = true;
+            followRef.current = true;
         }
-        if (autoScrollRef.current) scrollToBottom(false);
+        if (followRef.current) scrollToBottom(false);
     }, [messages]);
 
-    /** 内容异步撑高时保持贴底 */
+    /**
+     * 滚动跟随：内容异步撑高时贴底，用户上滑后不再打扰。
+     * wheel 的 deltaY 方向就是用户意图，比读滚动位置可靠（事件派发时布局还没变）。
+     */
     useEffect(() => {
         const el = chatContainerRef.current;
         if (!el) return;
-        const onScroll = () => { autoScrollRef.current = isNearBottom(el); };
-        el.addEventListener("scroll", onScroll);
+
+        const onWheel = (e: WheelEvent) => {
+            if (e.deltaY < 0) {
+                followRef.current = false;
+            } else if (isNearBottom(el, 300)) {
+                // 向下滚到接近底部就恢复跟随，并立刻贴底，之后新内容跟得上
+                followRef.current = true;
+                el.scrollTop = el.scrollHeight;
+            }
+        };
+
+        // 拖动滚动条没有 wheel 事件，靠 scroll 判断是否真的到底。
+        // 注意：这里不能只看 isNearBottom —— 流式输出时容器一直在长，
+        // 上滑后位置依旧在阈值内，无条件恢复会让用户永远滑不出去。
+        // 只有「滚动后确实贴到底」才恢复跟随。
+        const onScroll = () => {
+            const at_bottom = el.scrollHeight - (el.scrollTop + el.clientHeight) < 4;
+            if (at_bottom) followRef.current = true;
+        };
 
         const stick = () => {
-            if (autoScrollRef.current) el.scrollTop = el.scrollHeight;
+            if (!followRef.current) return;
+            el.scrollTop = el.scrollHeight;
         };
+
+        el.addEventListener("wheel", onWheel, { passive: true });
+        el.addEventListener("scroll", onScroll);
         const ro = new ResizeObserver(stick);
         const observe_all = () => [...el.children].forEach(c => ro.observe(c));
         observe_all();
@@ -100,6 +130,7 @@ export function useMessageList(deps: Deps) {
         mo.observe(el, { childList: true });
 
         return () => {
+            el.removeEventListener("wheel", onWheel);
             el.removeEventListener("scroll", onScroll);
             ro.disconnect();
             mo.disconnect();
@@ -237,7 +268,7 @@ export function useMessageList(deps: Deps) {
         messages, setMessages,
         batchMode, setBatchMode,
         selectedMsgIds, setSelectedMsgIds,
-        chatContainerRef, autoScrollRef,
+        chatContainerRef, followRef,
         isNearBottom, scrollToBottom, request_scroll_bottom,
         apply_session,
         handleDelete, handleCopy, handleCopyAll,

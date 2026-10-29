@@ -189,7 +189,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         subscribed_ref: subscribed_session_ref,
         set_messages: msg.setMessages,
         scroll_to_bottom: () => msg.scrollToBottom(false),
-        auto_scroll_ref: msg.autoScrollRef,
+        follow_ref: msg.followRef,
         mark_session_running: session_api.markSessionRunning,
         refresh_sessions: session_api.refreshSessions,
         reload_session: (id) => session_api.loadSession(id),
@@ -202,8 +202,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
         throttle((msgs: Message[]) => {
             msg.setMessages(msgs);
-            if (msg.autoScrollRef.current) msg.scrollToBottom(false);
-        }, 16)
+            if (msg.followRef.current) msg.scrollToBottom(false);
+        }, 50)
     ).current;
 
 

@@ -29,7 +29,7 @@ interface Deps {
     set_messages: React.Dispatch<React.SetStateAction<Message[]>>;
     /** 滚到底（用户没上翻时） */
     scroll_to_bottom: () => void;
-    auto_scroll_ref: React.MutableRefObject<boolean>;
+    follow_ref: React.MutableRefObject<boolean>;
     /** 更新会话列表的 running 标记 */
     mark_session_running: (sessionId: string, running: boolean) => void;
     /** 结束后的会话元信息刷新 */
@@ -43,7 +43,7 @@ interface Deps {
 export function useChatSubscription(deps: Deps) {
     const {
         active_session_id_ref, local_owner_ref, subscribed_ref,
-        set_messages, scroll_to_bottom, auto_scroll_ref,
+        set_messages, scroll_to_bottom, follow_ref,
         mark_session_running, refresh_sessions, reload_session, set_active_session_running,
     } = deps;
 
@@ -111,7 +111,7 @@ export function useChatSubscription(deps: Deps) {
                     target.content_list = [{ tool_call_ends, content: target.text, role: "assistant" }];
                     target.is_loading = false;
                 }
-                if (auto_scroll_ref.current) requestAnimationFrame(() => scroll_to_bottom());
+                if (follow_ref.current) requestAnimationFrame(() => scroll_to_bottom());
 
                 if (idx === -1) return [...list, target];
                 const next = list.slice();
