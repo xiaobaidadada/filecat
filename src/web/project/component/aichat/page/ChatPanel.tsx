@@ -203,7 +203,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         throttle((msgs: Message[]) => {
             msg.setMessages(msgs);
             if (msg.autoScrollRef.current) msg.scrollToBottom(false);
-        }, 16)
+        }, 20)
     ).current;
 
 
