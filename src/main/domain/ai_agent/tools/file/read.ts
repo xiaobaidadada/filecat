@@ -1,18 +1,13 @@
-import {readdir, readFile, stat} from "fs/promises";
-import {add_line_numbers, read_file_in_range} from "../utils/file_read_core";
-import {clear_session_file_state, mark_file_read} from "../utils/file_read_state";
-import {register_session_cleaner} from "../session/session_cleanup";
+import {readdir, stat} from "fs/promises";
+import {read_file} from "../utils/file_read_core";
 import pathModule from "path";
 import {ai_agent_params_type} from "../ai_agent.tools";
-
-// 会话结束时清掉这个会话记录的文件读取状态，避免缓存无限增长
-register_session_cleaner("read_file", (session_id) => clear_session_file_state(session_id));
 
 export const read_file_schema:ai_agent_params_type = {
     "type": "function",
     "function": {
         "name": "read_file",
-        "description": "读取本地文本文件内容，返回带行号的内容。文件较大时使用 offset/limit 分段读取，不要一次读完整个大文件。",
+        "description": "读取本地文本文件，返回整份内容。文件过大时可自行指定字符上限进行截断。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -20,13 +15,13 @@ export const read_file_schema:ai_agent_params_type = {
                     "type": "string",
                     "description": "文件的绝对路径"
                 },
-                "offset": {
+                "max_chars": {
                     "type": "number",
-                    "description": "从第几行开始读（1 开始计数），不传则从头开始"
+                    "description": "最多返回的字符数，超出则截断。不传默认 4000000"
                 },
-                "limit": {
+                "max_line_length": {
                     "type": "number",
-                    "description": "读取多少行，不传则默认 2000 行"
+                    "description": "单行最长字符数，超出则截断该行，防止压缩代码撑爆上下文。不传默认 2000"
                 }
             },
             "required": ["path"]
@@ -36,50 +31,13 @@ export const read_file_schema:ai_agent_params_type = {
 
 export const read_file_tool = async (
     session_id: string,
-    { path, offset, limit }: { path: string; offset?: number; limit?: number },
+    { path, max_chars, max_line_length }: { path: string; max_chars?: number; max_line_length?: number },
 ) => {
-    const info = await stat(path);
+    const result = await read_file(path, max_chars, max_line_length);
 
-    // 目录不能按文本读，给出明确提示而不是抛 EISDIR
-    if (info.isDirectory()) {
-        return JSON.stringify({
-            error: `${path} 是目录，不是文件。查看目录内容请使用 list_files。`
-        });
-    }
-    const result = await read_file_in_range(info, path, offset, limit);
-
-    // 记录读取状态，供 edit_file 判断文件是否在读取后被外部改动。
-    //
-    // 需要的是磁盘原文，而 result.content 是给模型看的：
-    // 去掉了 BOM、CRLF 归一化成 LF、去掉了末尾换行，不能直接当缓存，
-    // 否则 edit_file 每次都会误判「文件已被改动」。这里单独读一次原文。
-    const content = await readFile(path, "utf-8");
-
-
-    mark_file_read(session_id, path, {
-        content,
-        timestamp: Math.floor(info.mtimeMs),
-        size: info.size,
-        offset: offset && offset > 0 ? offset : undefined,
-        limit: limit && limit > 0 ? limit : undefined,
-    });
-
-    // 一行都没读到，通常是 offset 超出了文件末尾
-    if (result.num_lines === 0) {
-        return JSON.stringify({
-            error: `没有读到内容。文件共 ${result.total_lines ?? "未知"} 行，起始行 ${result.start_line} 已超出范围。`
-        });
-    }
-
-    const end_line = result.start_line + result.num_lines - 1;
-
-    // 把截断原因说清楚，模型才知道下一步该怎么继续读
     const hints: string[] = [];
-    if (result.truncated_by_lines) {
-        hints.push(`已达到单次最多 ${result.num_lines} 行的上限，如需继续请使用 offset=${end_line + 1}`);
-    }
-    if (result.truncated_by_bytes) {
-        hints.push("已达到单次读取的字节上限，如需继续请使用 offset 分段读取");
+    if (result.truncated_by_chars) {
+        hints.push(`文件超过单次返回上限，只返回了前 ${result.num_lines} 行，后续内容未返回`);
     }
     if (result.truncated_long_line) {
         hints.push("文件中存在超长行，已按行截断显示");
@@ -87,12 +45,9 @@ export const read_file_tool = async (
 
     return JSON.stringify({
         file_path: path,
-        start_line: result.start_line,
         num_lines: result.num_lines,
-        end_line,
-        total_lines: result.total_lines,
-        truncated: result.truncated_by_lines || result.truncated_by_bytes,
-        file_content: add_line_numbers(result.content, result.start_line),
+        truncated: result.truncated_by_chars,
+        file_content: result.content,
         hint: hints.length > 0 ? hints.join("；") : undefined,
     });
 }

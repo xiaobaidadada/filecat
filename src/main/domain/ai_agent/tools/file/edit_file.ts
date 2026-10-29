@@ -1,5 +1,4 @@
 import { readFile, writeFile, stat } from "fs/promises";
-import { get_file_read_state, update_file_after_write } from "../utils/file_read_state";
 import {ai_agent_params_type} from "../ai_agent.tools";
 
 /**
@@ -127,39 +126,9 @@ export const edit_file_tool = async (
     },
 ) => {
     try {
-        const info = await stat(path);
-        if (info.isDirectory()) {
-            return { ok: false, message: `修改失败: ${path} 是目录，不是文件` };
-        }
-
-        // 校验文件在模型读取之后有没有被外部改动过。
-        // 用服务端记录的读取状态判断，模型不需要传任何参数。
-        const read_state = get_file_read_state(session_id, path);
-        if (!read_state) {
-            return { ok: false, message: "修改失败: 该文件尚未读取，请先用 read_file 读取文件内容再进行编辑" };
-        }
-        // 分段读取只看到局部内容，不能据此做替换
-        if (read_state.offset !== undefined || read_state.limit !== undefined) {
-            return { ok: false, message: "修改失败: 上次是分段读取，只看到了文件的一部分，请先完整 read_file 一次再编辑" };
-        }
-        // mtime 或 size 变化说明文件被动过，但可能是 touch 这类内容未变的操作，
-        // 所以再用内容比对兜底，避免逼模型无谓地重读一次
-        if (Math.floor(info.mtimeMs) !== read_state.timestamp || info.size !== read_state.size) {
-            const current = await readFile(path, 'utf-8');
-            if (current !== read_state.content) {
-                return { ok: false, message: "修改失败: 文件在上次读取之后已被修改，请重新 read_file 获取最新内容后再编辑" };
-            }
-            // 内容没变，只是 mtime/size 元数据变了，更新记录后继续
-            update_file_after_write(session_id, path, current, Math.floor(info.mtimeMs), info.size);
-        }
-
         const content = await readFile(path, 'utf-8');
         const updated_content = replace(content, oldString, newString, replaceAll);
         await writeFile(path, updated_content, 'utf-8');
-
-        stat(path).then(updated_info=>{
-            update_file_after_write(session_id, path, updated_content, Math.floor(updated_info.mtimeMs), updated_info.size);
-        }).catch(console.error);
 
         return {
             ok: true,
