@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 import { ai_agentHttp, settingHttp } from "../../../util/config";
-import { debounce } from "../../../../../common/fun.util";
+import { throttle } from "../../../../../common/fun.util";
 import { use_auth_check } from "../../../util/store.util";
 import { RCode } from "../../../../../common/Result.pojo";
 import { useCmdConfirm } from "../useCmdConfirm";
@@ -199,11 +199,14 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
 
     // ===== 本地流式 hook =====
     const setMessagesDebounced = useRef(
-        debounce((msgs: Message[]) => {
+
+        throttle((msgs: Message[]) => {
             msg.setMessages(msgs);
             if (msg.autoScrollRef.current) msg.scrollToBottom(false);
-        }, 50)
+        }, 16)
     ).current;
+
+
 
     /** 从用户消息构建 AI 请求体 */
     const buildRequestMessages = (um: Message): ai_agent_message_item[] => {
