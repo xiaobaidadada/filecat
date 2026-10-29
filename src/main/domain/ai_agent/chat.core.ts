@@ -178,6 +178,21 @@ export class ChatCore {
             case "exec_cmd_background":
             case "exec_cmd": {
                 args.cwd = args.cwd || cwd || process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
+                const cmds = StringUtil.splitBashCommands(args.cmd)
+                for (const cmd of cmds) {
+                    const argv = cmd.split(" ");
+                    const code = await shellServiceImpl.check_exe_cmd({
+                        user_id: user.id,
+                        cwd: args.cwd,
+                        token: token,
+                        wss
+                    })(argv[0], argv.slice(1));
+
+                    if (code === exec_type.not) {
+                        throw new Error(`没有权限执行命令：${cmd}`);
+                    }
+                }
+
                 // 执行命令前需要用户确认
                 const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss, session_id);
                 if (!approved) {

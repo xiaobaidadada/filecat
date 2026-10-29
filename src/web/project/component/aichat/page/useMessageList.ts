@@ -47,22 +47,11 @@ export function useMessageList(deps: Deps) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const autoScrollRef = useRef(true);
     const pendingScrollRef = useRef(false);
-    /** 用户主动上滑过，此时任何自动贴底都要让路 */
-    const userScrollRef = useRef(false);
-    /** settle 动画帧句柄，用户滚动时立即取消 */
-    const settleRAFRef = useRef(0);
 
     /** 判断容器是否已接近底部（用户没往上翻时保持贴底） */
-    const isNearBottom = (el: HTMLElement, threshold = 8) => {
+    const isNearBottom = (el: HTMLElement, threshold = 120) => {
         const { scrollTop, scrollHeight, clientHeight } = el;
         return scrollHeight - (scrollTop + clientHeight) < threshold;
-    };
-
-    const cancel_settle = () => {
-        if (settleRAFRef.current) {
-            cancelAnimationFrame(settleRAFRef.current);
-            settleRAFRef.current = 0;
-        }
     };
 
     const scrollToBottom = (smooth = false) => {
@@ -72,30 +61,24 @@ export function useMessageList(deps: Deps) {
         // 连续几帧校正直到高度稳定，避免刷新后停在中间。
         el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
         let frames = 0;
-        // 不取消上一次 settle：流式输出时本函数会被高频调用，
-        // 取消会导致 settle 永远跑不完第一帧。settle 幂等，重复启动无害。
         const settle = () => {
             const el2 = chatContainerRef.current;
-            settleRAFRef.current = 0;
-            // 用户已经往上滑了，立刻放弃后续校正
-            if (!el2 || !autoScrollRef.current || userScrollRef.current) return;
+            if (!el2) return;
             el2.scrollTo({ top: el2.scrollHeight, behavior: smooth && frames === 0 ? "smooth" : "auto" });
-            if (++frames < 6) settleRAFRef.current = requestAnimationFrame(settle);
+            if (++frames < 6) requestAnimationFrame(settle);
         };
-        settleRAFRef.current = requestAnimationFrame(settle);
+        requestAnimationFrame(settle);
     };
 
     /** 切换会话后无条件滚到底（否则会沿用上一会话的 autoScroll 状态停在中间） */
     const request_scroll_bottom = () => {
         pendingScrollRef.current = true;
-        userScrollRef.current = false;
     };
 
     useLayoutEffect(() => {
         if (pendingScrollRef.current) {
             pendingScrollRef.current = false;
             autoScrollRef.current = true;
-            userScrollRef.current = false;
         }
         if (autoScrollRef.current) scrollToBottom(false);
     }, [messages]);
@@ -104,30 +87,8 @@ export function useMessageList(deps: Deps) {
     useEffect(() => {
         const el = chatContainerRef.current;
         if (!el) return;
-
-        // 用户主动上滑立刻接管；只认「向上滚」这个方向，不依赖当前位置
-        const on_user_intent = (e: Event) => {
-            let up = true;
-            if (e.type === "wheel") up = (e as WheelEvent).deltaY < 0;
-            if (up) {
-                userScrollRef.current = true;
-                autoScrollRef.current = false;
-                cancel_settle();
-            }
-        };
-        const on_scroll = () => {
-            // 程序滚动也会触发 scroll，只有用户接管后才允许改跟随状态，
-            // 否则 autoScrollRef 会被自己滚出来的事件误置为 false 导致永不跟随
-            if (!userScrollRef.current) return;
-            if (isNearBottom(el)) {
-                userScrollRef.current = false;
-                autoScrollRef.current = true;
-            }
-        };
-
-        el.addEventListener("wheel", on_user_intent, { passive: true });
-        el.addEventListener("touchmove", on_user_intent, { passive: true });
-        el.addEventListener("scroll", on_scroll, { passive: true });
+        const onScroll = () => { autoScrollRef.current = isNearBottom(el); };
+        el.addEventListener("scroll", onScroll);
 
         const stick = () => {
             if (autoScrollRef.current) el.scrollTop = el.scrollHeight;
@@ -139,11 +100,7 @@ export function useMessageList(deps: Deps) {
         mo.observe(el, { childList: true });
 
         return () => {
-            cancel_settle();
-            el.removeEventListener("wheel", on_user_intent);
-            el.removeEventListener("touchmove", on_user_intent);
-            el.removeEventListener("keydown", on_user_intent);
-            el.removeEventListener("scroll", on_scroll);
+            el.removeEventListener("scroll", onScroll);
             ro.disconnect();
             mo.disconnect();
         };
