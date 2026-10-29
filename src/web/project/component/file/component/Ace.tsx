@@ -6,13 +6,55 @@ import {ace, modest} from "../../../../meta/component/ace_setup";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 // import "ace-builds/src-noconflict/ext-language_tools";
 
 
 // name 是用于获取 类型的方式
-export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number}) {
+// save 传入后，本组件自己负责脏标记与自动保存（有保存入口的调用方都应传）；
+// 不传的调用方（如代理页、SQL 编辑器）只是把 Ace 当输入框用，保持原来的受控行为。
+// on_dirty 把未保存状态同步给调用方（如 Studio 据它决定是否拦截切换文件）。
+// register 把保存能力交出去，供外层 Header 按钮和 Ctrl+S 调用，与其他编辑器的约定一致。
+export interface AceApi {
+    /** 保存（silent 为自动保存，失败不提示） */
+    save: (silent?: boolean) => Promise<void>;
+}
+
+export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number,save?:(silent?:boolean)=>any,on_dirty?:(dirty:boolean)=>void,register?:(api:AceApi)=>void}) {
     const editorRef = useRef(null);
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
+    // 组件内部维护脏标记，保存成功后自行清掉，不再让调用方各自实现一遍
+    const [have_update, set_have_update] = useState(false);
+    const have_update_ref = useRef(have_update);
+    have_update_ref.current = have_update;
+    const save_ref = useRef(props.save);
+    save_ref.current = props.save;
+    const on_dirty_ref = useRef(props.on_dirty);
+    on_dirty_ref.current = props.on_dirty;
+    useEffect(() => {
+        on_dirty_ref.current?.(have_update);
+    }, [have_update]);
+    // 保存成功后由编辑器自己清脏：调用方只管把内容写到该去的地方，不用再操心状态
+    const save = async (silent?: boolean) => {
+        if (!save_ref.current || !have_update_ref.current) {
+            return;
+        }
+        const ok = await save_ref.current(silent);
+        if (ok !== false) {
+            set_have_update(false);
+        }
+    };
+    const save_expose_ref = useRef(save);
+    save_expose_ref.current = save;
+    const register_ref = useRef(props.register);
+    register_ref.current = props.register;
+    useEffect(() => {
+        register_ref.current?.({save: (silent?: boolean) => save_expose_ref.current(silent)});
+    }, []);
+    use_editor_auto_save(EditorAutoSaveEnum.ace,
+        () => !!save_ref.current && have_update_ref.current,
+        save);
     const theme = userInfo.user_data.theme?.includes("dark") ? "cloud_editor_dark" : "cloud9_day";
     useEffect(() => {
         const editor = ace.edit(editorRef.current, {
@@ -39,6 +81,7 @@ export default function Ace(props:{name: string,model?:string,on_change?:()=>voi
         })
         editor.focus();
         editor.on("change", function(e) {
+            set_have_update(true);
             if(props.on_change) {
                 props.on_change();
             }

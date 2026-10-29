@@ -101,6 +101,8 @@ export default function Studio(props) {
     const is_excel = is_excel_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
+    // 文本编辑器句柄（保存按钮 / Ctrl+S）
+    const ace_api = useRef<{ save: (silent?: boolean) => Promise<void> } | null>(null);
     // 画板编辑器句柄（保存按钮）
     const excalidraw_api = useRef<any>(null);
     // 思维导图编辑器句柄（保存按钮）
@@ -281,20 +283,9 @@ export default function Studio(props) {
         }
     }
 
-    async function file_save() {
-        if (!have_update) {
-            return;
-        }
-        const data: saveTxtReq = {
-            context: editor_data.get_editor_value()
-        }
-        const rsq = await fileHttp.post(`save/${encodeURIComponent(edit_file_path)}`, data)
-        if (rsq.code === 0) {
-            // NotySucess("保存成功");
-            set_have_update(false);
-        }
+    function file_save() {
+        ace_api.current?.save();
     }
-
     const handleKeyDown = (event) => {
         if (event.ctrlKey && event.key === 's') {
             event.preventDefault();
@@ -315,12 +306,6 @@ export default function Studio(props) {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [have_update, is_md, is_draw, is_mind, is_timeline, is_excel]);
-    let change = () => {
-        // editor_data.set_value_temp(value);
-        if (!have_update) {
-            set_have_update(true);
-        }
-    }
     const handleDrag = useCallback(lodash.throttle((event) => {
 
         const size = parseFloat(getComputedStyle(studio_nav_ref.current).fontSize);
@@ -460,8 +445,7 @@ export default function Studio(props) {
                 <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
                               onClick={() => set_chat_open(!chat_open)}/>
             )}
-            {/* 保存按钮：md 走 md 编辑器自己的保存；画板/思维导图走各自句柄的 save；
-                其余文本文件走 Studio 自己的 file_save */}
+            {/* 保存按钮：各编辑器自己提供 save（md/画板/思维导图/时间轴/表格/文本） */}
             {is_md
                 ? (md_dirty ? <ActionButton title={t("保存")} icon={"save"} onClick={() => md_api.current?.save()}/> : null)
                 : is_draw
@@ -606,7 +590,19 @@ export default function Studio(props) {
                 </div>
                 : <div className={"studio-editor"} key={edit_file_path}>
                     {edit_filename.name && <React.Suspense fallback={null}>
-                        <Ace name={edit_filename.name} on_change={change}/>
+                        <Ace name={edit_filename.name}
+                             on_dirty={set_have_update}
+                             register={(api) => {
+                                 ace_api.current = api;
+                             }}
+                             save={async (silent?: boolean) => {
+                                 const data: saveTxtReq = {context: editor_data.get_editor_value()};
+                                 const rsq = await fileHttp.post(`save/${encodeURIComponent(edit_file_path)}`, data);
+                                 if (rsq.code !== RCode.Success && !silent) {
+                                     NotyFail(t("保存失败"));
+                                 }
+                                 return rsq.code === RCode.Success;
+                             }}/>
                     </React.Suspense>}
                 </div>}
 
