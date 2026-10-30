@@ -18,6 +18,7 @@ import {
     getContentAsString,
 } from "../../../common/req/filecat.ai.pojo";
 import {estimateTokenCount} from "./token_counter";
+import {tool_message_content} from "./chat.core";
 
 type SessionMeta = ai_agent_chat_session_meta & {
     file_name: string;
@@ -121,7 +122,13 @@ function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boole
     let toolResponseCount = 0;
     if(message.tool_call_ends?.length) {
         for (const it of message.tool_call_ends) {
-            const raw = it.tool_result ?? it.error ?? "";
+            // 与 chat.core 实时执行时保持一致，统一用 JSON 结构交给模型
+            const raw = tool_message_content({
+                success: it.success,
+                duration_ms: it.duration_ms,
+                result: it.success ? (it.tool_result ?? "") : undefined,
+                error: it.success ? undefined : (it.error ?? it.tool_result ?? ""),
+            });
             // 最近一条 assistant 的 tool 结果不截断（可能是网络中断恢复，需要完整结果让 AI 知道 tool 已完成）
             if (_interrupted || raw.length <= toolContentLimit) {
                 list.push({

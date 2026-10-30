@@ -50,6 +50,22 @@ export interface ChatMsgPayload {
 
 export interface on_end_param { once_messages_list?: ai_agent_message_item[], _interrupted?: boolean }
 
+/**
+ * 把工具调用结果包装成统一的 JSON 结构。
+ *
+ * 模型侧拿到的 tool 消息统一是 {success, duration_ms, result | error}，
+ * 这样它能稳定解析结果、也能感知每次调用耗时。
+ * 本轮实时执行和历史重放都走这里，避免两种路径给模型不同格式。
+ */
+export function tool_message_content(param: {
+    success: boolean;
+    duration_ms?: number;
+    result?: string;
+    error?: string;
+}): string {
+    return JSON.stringify(param, null, 2);
+}
+
 export interface ChatOptions {
     originMessages: ai_agent_message_list;
     token?: string;
@@ -644,6 +660,10 @@ const workMessages: ai_agent_message_list = [
                         duration_ms: 0,
                         tool_call_id: call.id
                     };
+                    let result;
+                    let resultStr;
+                    /** tool 消息的 content：字符串，或含图片的多模态数组 */
+                    let tool_content: ai_agent_content = "";
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
                         callItem.tool_args = args;
@@ -657,10 +677,6 @@ const workMessages: ai_agent_message_list = [
                         });
                         await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss, session_id);
 
-                        let result;
-                        let resultStr;
-                        /** tool 消息的 content：字符串，或含图片的多模态数组 */
-                        let tool_content: ai_agent_content = "";
                         if (enableLlmEditPrompt && matchedPromptIndex >= 0 && toolName === "update_llm_prompt") {
                             // 由 chat.core 内部处理：LLM 总结会话内容，通过下标写回系统提示词列表项的 llm_prompt
                             // 更新后已全局保存，下一次对话会通过 resolveSystemPromptConfig 读取到最新内容，
@@ -688,11 +704,6 @@ const workMessages: ai_agent_message_list = [
                         }
                         callItem.success = true;
                         callItem.tool_result = resultStr;
-                        workMessages.push({
-                            role: "tool",
-                            tool_call_id: call.id,
-                            content: tool_content || resultStr
-                        });
 
                         // 其他 tool额外处理
                         if (env.open_pick_model && toolName === "pick_model") {
@@ -704,15 +715,21 @@ const workMessages: ai_agent_message_list = [
                         const msg = get_error_str(e)
                         callItem.success = false;
                         callItem.error = msg;
-
-                        workMessages.push({
-                            role: "tool",
-                            tool_call_id: call.id,
-                            content: msg
-                        });
                         console.log('tool执行失败，',`${toolName}，`,config?.model,call?.function?.arguments)
                     } finally {
                         callItem.duration_ms = Date.now() - startTime;
+                        // tool 消息在这里统一生成：此刻 duration_ms 才完整，
+                        // 成功/失败共用同一段组装逻辑，不必两处各写一遍。
+                        workMessages.push({
+                            role: "tool",
+                            tool_call_id: call.id,
+                            content: tool_content || tool_message_content({
+                                success: callItem.success,
+                                duration_ms: callItem.duration_ms,
+                                result: callItem.success ? callItem.tool_result : undefined,
+                                error: callItem.success ? undefined : callItem.error,
+                            })
+                        });
                         assistantMessage.tool_call_ends.push(callItem)
                     }
                 })()
