@@ -4,7 +4,7 @@
  * 根据 PID 读取对应后台进程的 stdout/stderr 输出文件内容。
  * 返回输出文件路径和内容。
  */
-import { backgroundProcessManager } from "../../background_process.manager";
+import { backgroundProcessManager, decode_output } from "../../background_process.manager";
 import {FileUtil} from "../../../file/FileUtil";
 import {ai_agent_params_type} from "../ai_agent.tools";
 
@@ -20,13 +20,15 @@ export const get_background_process_output_tool = async (
         });
     }
 
-    const { output_file, running } = result;
+    const { output_file, output_encoding, running } = result;
 
     // 读取输出文件内容
     let content = "";
     try {
         if (await FileUtil.access(output_file)) {
-            content = (await FileUtil.readFileSync(output_file)).toString();
+            const buf = await FileUtil.readFileSync(output_file);
+            // 按进程实际的输出编码解码，cmd 在中文 Windows 上是 GBK
+            content = decode_output(buf, output_encoding);
             // 截断过长的输出
             const MAX_OUTPUT = 50000;
             if (content.length > MAX_OUTPUT) {

@@ -16,6 +16,7 @@ import { data_dir_tem_name } from "../data/data_type";
 import { settingService } from "../setting/setting.service";
 import { FileUtil } from "../file/FileUtil";
 import {SystemUtil} from "../sys/sys.utl";
+import { ShellCommand } from "./tools/utils/shell/shell_command";
 
 // ==================== 类型定义 ====================
 
@@ -33,6 +34,8 @@ export interface BackgroundProcessRecord {
     start_time: number;
     /** 输出日志文件路径 */
     output_file: string;
+    /** 输出文件里内容的编码，读取时按它解码，否则中文会乱码 */
+    output_encoding: string;
     /** 进程是否还在运行 */
     running: boolean;
     /** 退出码（null 表示还在运行） */
@@ -47,6 +50,7 @@ export interface BackgroundProcessInfo {
     cwd: string;
     start_time: number;
     output_file: string;
+    output_encoding: string;
     running: boolean;
     exit_code: number | null;
 }
@@ -66,9 +70,9 @@ export class BackgroundProcessManager {
     constructor() {
         this.outputDir = DataUtil.get_tem_path(data_dir_tem_name.sys_file_dir);
         const bgDir = path.join(this.outputDir, "background_cmd_output");
+        this.outputDir = bgDir;
         // 异步初始化目录和清理
         this.initDir(bgDir);
-        this.outputDir = bgDir;
     }
 
     /** 异步初始化输出目录 */
@@ -96,28 +100,36 @@ export class BackgroundProcessManager {
      * @param cmd 要执行的命令
      * @param cwd 工作目录
      * @param session_id 所属会话 ID
+     * @param options
      * @returns 进程信息
      */
     public execBackground(
-        cmd: string,
+        cmd: string | string[],
         cwd: string = process.cwd(),
-        session_id: string = "unknown"
+        session_id: string = "unknown",
+        options?: { shell?: string; use_shell?: boolean }
     ): BackgroundProcessInfo {
-        const env = {
-            ...process.env,
-            PATH: settingService.get_env_path(),
-        };
-
-        // 生成输出文件名：pid_timestamp.log
-        const child = spawn(cmd, {
+        // 和前台命令共用同一个 ShellCommand，shell 选择、命令组装、编码判定完全一致，
+        // 避免同一个命令在前台和后台被不同 shell 解释出不同语义
+        const shell_command = ShellCommand.spawn({
+            cmd,
             cwd,
-            shell: true,
-            env,
-            stdio: ["ignore", "pipe", "pipe"],
+            use_shell: options?.use_shell,
+            shell: options?.shell,
+            env: {
+                ...process.env,
+                PATH: settingService.get_env_path(),
+            },
+            // 输出直接写文件，不在内存里再攒一份
+            collect_output: false,
         });
 
+        const child = shell_command.child;
         const outputFileName = `${child.pid}_${Date.now()}.log`;
         const outputFile = path.join(this.outputDir, outputFileName);
+
+        // 记录和展示统一用字符串，数组形式按空格拼回去
+        const cmd_text = Array.isArray(cmd) ? cmd.join(" ") : cmd;
 
         // 创建输出文件写入流
         const writeStream = fs.createWriteStream(outputFile, { flags: "a" });
@@ -126,39 +138,28 @@ export class BackgroundProcessManager {
         const record: BackgroundProcessRecord = {
             pid: child.pid!,
             session_id,
-            cmd,
+            cmd: cmd_text,
             cwd,
             start_time: Date.now(),
             output_file: outputFile,
+            output_encoding: shell_command.output_encoding,
             running: true,
             exit_code: null,
         };
 
-        // 重定向 stdout
+        // 输出按字节原样写文件，编码只在后面读取时用
         child.stdout?.on("data", (chunk: Buffer) => {
             writeStream.write(chunk);
         });
 
-        // 重定向 stderr
         child.stderr?.on("data", (chunk: Buffer) => {
             writeStream.write(chunk);
         });
 
-        // 进程退出
-        child.on("close", (code) => {
+        // 进程退出或出错，最终都会走到 ShellCommand 的 result
+        shell_command.result.then((result) => {
             record.running = false;
-            record.exit_code = code;
-            writeStream.end();
-            this.processes.delete(record.pid);
-            FileUtil.remove(outputFile);
-            this.onCountChange?.(this.processes.size);
-        });
-
-        // 进程错误（spawn 失败等）
-        child.on("error", (err) => {
-            record.running = false;
-            record.exit_code = -1;
-            writeStream.write(`\n[ERROR] ${err.message}\n`);
+            record.exit_code = result.code;
             writeStream.end();
             this.processes.delete(record.pid);
             FileUtil.remove(outputFile);
@@ -189,11 +190,12 @@ export class BackgroundProcessManager {
      * @param pid 进程 ID
      * @returns 输出文件路径与所属会话，如果进程不存在则返回 null
      */
-    public getProcessOutput(pid: number): { output_file: string; running: boolean; session_id: string } | null {
+    public getProcessOutput(pid: number): { output_file: string; output_encoding: string; running: boolean; session_id: string } | null {
         const record = this.processes.get(pid);
         if (!record) return null;
         return {
             output_file: record.output_file,
+            output_encoding: record.output_encoding,
             running: record.running,
             session_id: record.session_id,
         };
@@ -233,6 +235,7 @@ export class BackgroundProcessManager {
             cwd: record.cwd,
             start_time: record.start_time,
             output_file: record.output_file,
+            output_encoding: record.output_encoding,
             running: record.running,
             exit_code: record.exit_code,
         };
@@ -241,3 +244,22 @@ export class BackgroundProcessManager {
 
 /** 全局单例 */
 export const backgroundProcessManager = new BackgroundProcessManager();
+
+/**
+ * 按指定编码把输出字节解成字符串。
+ *
+ * 后台进程的输出是原样按字节写入文件的，所以读到的是准确的原始字节，
+ * 只要按正确的编码解码就不会乱码。cmd 在中文 Windows 上是 GBK。
+ */
+export function decode_output(buf: Buffer, encoding?: string): string {
+    const enc = encoding || "utf8";
+    if (enc === "utf8" || enc === "utf-8") {
+        return buf.toString("utf8");
+    }
+    try {
+        const iconv = require("iconv-lite");
+        return iconv.decode(buf, enc);
+    } catch {
+        return buf.toString("utf8");
+    }
+}

@@ -30,9 +30,7 @@ import {pick_model_schema} from "./tools/session/pick_next_model";
 import {create_update_llm_prompt_schema} from "./tools/session/update_llm_prompt";
 import {is_image_tool_result, read_image_schema} from "./tools/file/read_image";
 import {aiAgentMemoryService} from "./ai_agent.memory";
-import {SystemUtil} from "../sys/sys.utl";
 import {cleanup_session} from "./tools/session/session_cleanup";
-import {CommonUtil} from "../../../common/common.util";
 import {ai_agent_params_type, ai_tools} from "./tools/ai_agent.tools";
 
 /** on_msg 回调的参数结构：支持分块序号、消息类型等，让前端可以分多个独立气泡渲染 */
@@ -178,21 +176,7 @@ export class ChatCore {
             case "exec_cmd_background":
             case "exec_cmd": {
                 args.cwd = args.cwd || cwd || process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
-                const cmds = StringUtil.splitBashCommands(args.cmd)
-                for (const cmd of cmds) {
-                    const argv = cmd.split(" ");
-                    const code = await shellServiceImpl.check_exe_cmd({
-                        user_id: user.id,
-                        cwd: args.cwd,
-                        token: token,
-                        wss
-                    })(argv[0], argv.slice(1));
-
-                    if (code === exec_type.not) {
-                        throw new Error(`没有权限执行命令：${cmd}`);
-                    }
-                }
-
+                // 不对命令做用户设置的命令检测了，因为ai执行的不仅仅是命令而是一个bash脚本，暂时无法高质量的有效限制脚本使用的所有风险语
                 // 执行命令前需要用户确认
                 const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss, session_id);
                 if (!approved) {

@@ -15,7 +15,7 @@ import {settingService} from "../setting/setting.service";
 import {llmImagesGenerate, llmAudioSpeech, llmEmbeddings} from "./llm_request";
 import {max_req_size} from "../../../common/req/common.pojo";
 import {ai_agent_message_item, ai_agent_message_list, getContentAsString, ai_agent_chat_session_meta} from "../../../common/req/filecat.ai.pojo";
-import {backgroundProcessManager} from "./background_process.manager";
+import {backgroundProcessManager, decode_output} from "./background_process.manager";
 import {FileUtil} from "../file/FileUtil";
 import {ai_agent_item_dotenv} from "../../../common/req/filecat.ai.pojo";
 import {ai_agentMcpService} from "./ai_agent.mcp";
@@ -793,7 +793,8 @@ export class Ai_AgentController {
         let output = "";
         try {
             if (await FileUtil.access(result.output_file)) {
-                output = (await FileUtil.readFileSync(result.output_file)).toString();
+                // 按进程实际输出编码解码，cmd 在中文 Windows 上是 GBK
+                output = decode_output(await FileUtil.readFileSync(result.output_file), result.output_encoding);
             }
         } catch (e: any) {
             return { success: false, message: `读取输出失败: ${e.message}` };
