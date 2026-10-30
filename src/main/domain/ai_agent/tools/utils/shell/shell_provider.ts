@@ -17,7 +17,7 @@
  * 两者语法基本一致，但可执行文件和可用模块不同，
  * 让模型能明确指定要用哪个。
  */
-export type ShellType = "bash" | "pwsh" | "powershell" | "cmd";
+export type ShellType = "bash" | "sh" | "pwsh" | "powershell" | "cmd";
 
 export interface ShellProvider {
     /** 该 provider 对应的 shell 类型，全局唯一 */

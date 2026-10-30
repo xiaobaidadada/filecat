@@ -2,6 +2,7 @@ import {accessSync, constants, existsSync} from "fs";
 import {execFileSync} from "child_process";
 import {ShellProvider} from "./shell_provider";
 import {create_bash_provider} from "./bash_provider";
+import {create_sh_provider} from "./sh_provider";
 import {create_powershell_provider} from "./powershell_provider";
 import {create_cmd_provider} from "./cmd_provider";
 
@@ -55,14 +56,21 @@ function bash_candidates(): string[] {
         list.push(`${local_app_data}\\Programs\\Git\\bin\\bash.exe`);
     }
 
-    // Unix：标准位置，sh 放最后作为最小可用集合的兜底
+    // Unix：标准位置
     list.push("/bin/bash");
     list.push("/usr/bin/bash");
     list.push("/usr/local/bin/bash");
     list.push("/opt/homebrew/bin/bash");
+
+    return list;
+}
+
+/** sh（POSIX 标准 shell）的候选位置，任何 Unix 系统都必然存在其中一个 */
+function sh_candidates(): string[] {
+    const list: string[] = [];
     list.push("/bin/sh");
     list.push("/usr/bin/sh");
-
+    list.push("/usr/local/bin/sh");
     return list;
 }
 
@@ -138,7 +146,7 @@ function resolve_all_shells(): ShellProvider[] {
 
     if (is_win) {
 
-        // 4. cmd.exe 兜底
+        // cmd.exe
         const cmd = first_usable(cmd_candidates());
         push(cmd ? create_cmd_provider(cmd) : null);
 
@@ -159,12 +167,12 @@ function resolve_all_shells(): ShellProvider[] {
         return found;
     }
 
-    // 非 Windows：bash 是系统标准，没有别的选择
+    // 非 Windows：sh 是 POSIX 标准，任何 Unix 系统都有
     const bash = first_usable(bash_candidates()) ?? find_on_path("bash");
     push(bash ? create_bash_provider(bash) : null);
 
-    const pwsh = first_usable(pwsh_candidates()) ?? find_on_path("pwsh");
-    push(pwsh ? create_powershell_provider(pwsh, "pwsh") : null);
+    const sh = first_usable(sh_candidates()) ?? find_on_path("sh");
+    push(sh ? create_sh_provider(sh) : null);
 
     return found;
 }
@@ -187,10 +195,10 @@ function get_all_shells(): ShellProvider[] {
 }
 
 /** 获取默认的 shell provider（带缓存） */
-export function get_shell(): ShellProvider {
+export function get_shell(): ShellProvider|null {
     const all = get_all_shells();
     if (!all.length) {
-        throw new Error("找不到任何可用的 shell（bash / sh / pwsh / powershell / cmd 均不可用）");
+        return null;
     }
     return all[0];
 }
@@ -211,11 +219,11 @@ export function get_shells(): ShellProvider[] {
  * Windows 上装了 Git Bash 就会是 bash，和实际执行的一致。
  */
 export function get_shell_name(): string {
-    try {
-        return get_shell().type
-    } catch {
-        return "没有shell"
+    const shell = get_shell();
+    if (!shell) {
+        return "没有shell";
     }
+    return shell.type;
 }
 
 /**

@@ -1,7 +1,7 @@
 import {SystemUtil} from "../../../sys/sys.utl";
 import {register_session_cleaner} from "../session/session_cleanup";
 import {ai_agent_params_type} from "../ai_agent.tools";
-import {get_shell, get_shell_name, get_shells} from "../utils/shell/find_shell";
+import { get_shell_name, get_shells} from "../utils/shell/find_shell";
 import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 type exec_cmd_args = {
@@ -82,7 +82,7 @@ export const exec_cmd_schema:ai_agent_params_type = {
                 shell: {
                     type: "string",
                     enum: get_shells().map((p) => p.type),
-                    description: `可选，指定用哪个 shell 执行。不传则用默认的 ${get_shell().type}`
+                    description: `可选，指定用哪个 shell 执行。不传则用默认的 ${get_shell_name()}`
                 },
                 use_shell: {
                     type: "boolean",

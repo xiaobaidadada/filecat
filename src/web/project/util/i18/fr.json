@@ -985,6 +985,7 @@
   "访问地址": "URL d'accès",
   "打开": "Ouvrir",
   "已复制": "Copié",
+  "复制失败": "Échec de la copie",
   "添加成功": "Ajouté",
   "目标地址不能为空": "L'adresse cible ne peut pas être vide",
   "目标地址例如": "Adresse cible, ex. 192.168.1.1:8080",

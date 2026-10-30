@@ -989,6 +989,7 @@
   "访问地址": "Access URL",
   "打开": "Open",
   "已复制": "Copied",
+  "复制失败": "Copy failed",
   "添加成功": "Added",
   "目标地址不能为空": "Target address cannot be empty",
   "目标地址例如": "Target address, e.g. 192.168.1.1:8080",

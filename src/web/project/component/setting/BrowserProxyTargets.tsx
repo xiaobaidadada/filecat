@@ -9,6 +9,7 @@ import {InputText} from "../../../meta/component/Input";
 import {Table} from "../../../meta/component/Table";
 import {browserProxyPortHttp} from "../../util/config";
 import {NotyFail, NotySuccess} from "../../util/noty";
+import {copyToClipboard} from "../../util/FunUtil";
 import {using_confirm} from "../prompts/prompt.util";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {RCode} from "../../../../common/Result.pojo";
@@ -184,11 +185,10 @@ export default function BrowserProxyTargets() {
 
     const copy_url = async (item: ProxyTargetRow) => {
         const url = access_url(item);
-        try {
-            await navigator.clipboard.writeText(url);
+        if (copyToClipboard(url)) {
             NotySuccess(t("已复制"));
-        } catch (e) {
-            NotyFail(url);
+        } else {
+            NotyFail(t("复制失败"));
         }
     };
 

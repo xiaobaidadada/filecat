@@ -2,32 +2,48 @@
 import {themes, themes_list} from "../../../common/req/user.req";
 import {Global} from "../util/global";
 
-export function copyToClipboard(text) {
-    // const textarea = document.createElement('textarea');
-    // textarea.value = text;
-    // document.body.appendChild(textarea);
-    // textarea.select();
-    // document.execCommand('copy');  // 执行复制命令
-    // document.body.removeChild(textarea); // 复制完成后移除 textarea
+/**
+ * 复制文本到剪贴板，返回是否成功。
+ *
+ * 不使用 navigator.clipboard：它只在安全上下文（https 或 localhost）可用，
+ * filecat 常被通过 http + 内网 IP 访问，那种情况下 navigator.clipboard 是
+ * undefined，调用会直接抛错。所以统一用 textarea + execCommand 兜底。
+ */
+export function copyToClipboard(text: string | number | null | undefined): boolean {
+    const str = text == null ? "" : String(text);
+    if (!str) {
+        return false;
+    }
 
-    // 创建一个不可见的textarea元素
     const textArea = document.createElement('textarea');
-    textArea.value = text;
+    textArea.value = str;
 
-    // 让textarea不可见
+    // 固定定位到视口外，避免页面滚动；同时保持可聚焦
     textArea.style.position = 'fixed';
+    textArea.style.top = '0';
     textArea.style.left = '-9999px';
+    textArea.style.opacity = '0';
+    textArea.setAttribute('readonly', 'readonly');
 
-    // 把textarea添加到DOM中
     document.body.appendChild(textArea);
 
-    // 选中textarea中的文本
-    textArea.select();
-    textArea.setSelectionRange(0, 99999); // 对移动设备的支持
+    // 记录原焦点，复制后还原，避免打断用户正在编辑的输入框
+    const active = document.activeElement as HTMLElement | null;
 
-    document.execCommand('copy');
-    // 移除textarea元素
+    textArea.select();
+    textArea.setSelectionRange(0, str.length); // 移动设备需要显式设置范围
+
+    let ok = false;
+    try {
+        ok = document.execCommand('copy');
+    } catch (e) {
+        ok = false;
+    }
+
     document.body.removeChild(textArea);
+    active?.focus?.();
+
+    return ok;
 }
 
 // 内置主题列表的 value 集合，用于判断是否为内置主题
