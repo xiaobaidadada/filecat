@@ -1,8 +1,9 @@
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 
 export const pick_model_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { max_call_num, model }: { max_call_num: number; model: string },
 ) => {
     return `已经成功设置接下来要调用的模型为 ${model} 调用最大次数为 ${max_call_num}`

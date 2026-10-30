@@ -2,7 +2,7 @@ import { ai_rebot_item, ai_agent_Item, ai_agent_item_dotenv, ai_agent_message_it
 import {ai_agentService, } from "../ai_agent.service";
 import { aiAgentMemoryService } from "../ai_agent.memory";
 import { settingService } from "../../setting/setting.service";
-import { Env } from "../../../../common/node/Env";
+import { parse_yaml } from "../../../../common/node/yaml.util";
 import { chat_core, ChatOptions } from "../chat.core";
 import axios from "axios";
 
@@ -41,7 +41,7 @@ export function resolveModelConfig(
             const matched = models.find(m => m.index === modelIndex);
             if (matched) {
                 const modelEnv = new ai_agent_item_dotenv();
-                if (matched.dotenv) Env.load(matched.dotenv, modelEnv);
+                Object.assign(modelEnv, parse_yaml(matched.yaml_env ?? ""));
                 console.log(`[${tag}] 机器人 "${config.name}" 使用指定模型: ${matched.note || matched.model} (index=${modelIndex})`);
                 return { modelConfig: matched, modelEnv };
             }

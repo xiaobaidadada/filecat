@@ -2,6 +2,7 @@ import { readFile, writeFile } from "fs/promises";
 import { ai_agent_params_type } from "../ai_agent.tools";
 import { detect_eol, normalize_line_endings, restore_line_endings } from "../utils/file_read_core";
 import { enqueue_file_task } from "../utils/file_queue";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 /**
  * 生成简单的行级 diff，让模型确认这次改了什么。
@@ -33,7 +34,7 @@ export const edit_schema: ai_agent_params_type = {
 };
 
 export const edit_file_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { path, oldString, newString, replaceAll = false }: {
         path: string;
         oldString: string;

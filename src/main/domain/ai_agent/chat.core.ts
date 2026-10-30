@@ -11,6 +11,7 @@ import * as path from "path";
 import {get_error_str, StringUtil} from "../../../common/StringUtil";
 import { createParser } from 'eventsource-parser';
 import {ai_tools_search_docs} from "./tools/doc/search_docs"; // 引入库
+import {set_command_env_schema} from "./tools/session/set_command_env";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import { WsUtil} from "../../../common/frame/ws.server";
 import {
@@ -684,7 +685,7 @@ const workMessages: ai_agent_message_list = [
                             const updateResult = this.handleUpdateLlmPrompt(matchedPromptIndex, args);
                             resultStr = updateResult.message;
                         } else {
-                            result = await ai_agentService.callTool(toolName, args, user_id, session_id, options.wss, controller);
+                            result = await ai_agentService.callTool(toolName, args, user_id, session_id, options.wss, controller, env.command_env);
                             // 图片类结果：模型支持图片时以 OpenAI 多模态格式（image_url）带给模型，
                             // 让模型真正"看到"图；不支持时退化为纯文本说明。
                             if (is_image_tool_result(result)) {
@@ -790,6 +791,10 @@ const workMessages: ai_agent_message_list = [
         }
         if (ai_agentService.docs_switch_get()) {
             tools.push(ai_tools_search_docs);
+        }
+        // 开启 command_env_tool 后，AI 才能自己改命令环境变量
+        if (props.env.command_env_tool) {
+            tools.push(set_command_env_schema);
         }
         tools.push(...ai_agentService.getMcpTools());
         // 合并插件工具

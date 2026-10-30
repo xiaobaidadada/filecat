@@ -16,18 +16,29 @@ import {rename_file_schema, rename_file_tool} from "./file/rename_file";
 import {pick_model_schema, pick_model_tool} from "./session/pick_next_model";
 import {read_image_schema, read_image_tool} from "./file/read_image";
 import {kill_background_processes_schema, kill_background_processes_tool} from "./command/kill_background_processes";
+import {set_command_env_schema, set_command_env_tool} from "./session/set_command_env";
 
+
+/**
+ * 工具执行时能拿到的运行环境。
+ *
+ * 所有工具都接收同一个上下文对象，避免给个别工具单独塞参数：
+ *  - session_id：会话 id，用于命令 / 后台进程按会话隔离
+ *  - command_env：当前生效的命令环境变量，启动子进程时覆盖进去
+ */
+export type Ai_agent_tool_ctx = {
+    session_id: string;
+    /** 由当前供应商配置的 command_env，只有需要启动进程的工具才会用到 */
+    command_env?: Record<string, string>;
+};
 
 /**
  * 所有工具的统一签名。
  *
- * 第一个参数固定是会话 id，所有工具都要接收，用于：
- *  - 命令 / 后台进程按会话隔离
- *  - 文件读取状态按会话分桶
- *
+ * 第一个参数是运行上下文（含 session_id 等），所有工具都要接收；
  * 第二个参数是各工具自己的参数，形状由各工具自行定义，因此这里不约束。
  */
-export type Ai_agent_tool_fn = (session_id: string, args: any) => any;
+export type Ai_agent_tool_fn = (ctx: Ai_agent_tool_ctx, args: any) => any;
 
 
 export type ai_agent_params_type = {
@@ -66,6 +77,7 @@ export type Ai_agentTools_type =
     | "pick_model"
     | "read_image"
     | "kill_background_processes"
+    | "set_command_env"
     ;
 
 /**
@@ -106,6 +118,8 @@ export const Ai_agentTools: Record<Ai_agentTools_type, Ai_agent_tool_item> = {
     // 读取本地图片（转成 base64 交给模型看图片）
     read_image: {fn: read_image_tool, schema: read_image_schema},
     kill_background_processes: {fn: kill_background_processes_tool, schema: kill_background_processes_schema},
+    // 修改命令环境变量
+    set_command_env: {fn: set_command_env_tool, schema: set_command_env_schema},
 };
 
 export const tools_des_map: Record<Ai_agentTools_type, {
@@ -206,18 +220,22 @@ export const tools_des_map: Record<Ai_agentTools_type, {
             return args?.pid
         }
     },
+    set_command_env: {
+        get_name: () => "set command env",
+        get_params: (args) => {
+            return Object.keys(args?.env ?? {}).join(", ")
+        }
+    },
 };
 
 // 为ai提供有限的系统信息。
 // 从注册表派生，因此不可能漏写或写错工具名。
-// 注意：pick_model、read_image、search_docs 受运行时开关控制，由 chat.core 按条件追加，不在这里。
-// 为ai提供有限的系统信息。
-// 从注册表派生，新增工具自动带上，不会漏。
-// 这三个受运行时开关控制，由 chat.core 按条件追加：
-//   pick_model  模型切换开关
-//   read_image  模型是否支持图片
-//   search_docs 知识库开关
-const dynamic_tools: Ai_agentTools_type[] = ["pick_model", "read_image", "search_docs"];
+// 这几个受运行时开关控制，由 chat.core 按条件追加：
+//   pick_model       模型切换开关
+//   read_image       模型是否支持图片
+//   search_docs      知识库开关
+//   set_command_env  command_env_tool 开关
+const dynamic_tools: Ai_agentTools_type[] = ["pick_model", "read_image", "search_docs", "set_command_env"];
 
 export const ai_tools: ai_agent_params_type[] = Object.entries(Ai_agentTools)
     .filter(([name]) => !dynamic_tools.includes(name as Ai_agentTools_type))

@@ -111,7 +111,14 @@ export class ai_agent_Item {
     json_params?: string;
     sys_prompt?: string;
 
+    /**
+     * @deprecated 旧的 ini 风格额外参数，已不再读取。
+     * 保留字段只为兼容历史数据，新配置请使用 env（YAML）。
+     */
     dotenv?: string = '';
+
+    /** 额外参数（YAML 格式），字段定义见 ai_agent_item_dotenv */
+    yaml_env?: string = '';
 
     /** 是否将此 model 注册为一个 tool，供 AI agent 在对话中动态调用 */
     tool_mode?: boolean = false;
@@ -151,64 +158,84 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra {
      *  开启后 read_image 工具才可用，且工具返回的图片会以 image_url 形式带进消息。
      *  默认开启（目前主流模型基本都支持）。 */
     support_image = true;
+
+    /**
+     * 命令环境变量，k-v 结构。
+     * AI 通过内置命令工具（exec_cmd / exec_cmd_background）执行命令时，
+     * 这些变量会覆盖到子进程的环境变量上。
+     */
+    command_env?: Record<string, string> = {};
+
+    /** 是否允许 AI 通过 set_command_env 工具修改上面的 command_env */
+    command_env_tool = false;
 }
 
 export const ai_agent_item_dotenv_default = `
-
-
-
 # 聊天循环最大次数
-tool_call_max=500
-# 是否允许AI直接执行命令而不需要用户确认，默认为false，需要用户手动确认，如果使用 workflow 这里等价于为 true
-allow_exec_cmd_directly=false
+tool_call_max: 500
 
-# 可选的代理 url，如果指定了所有访问大模型的请求将会走代理
-#proxy_url=
+# 是否允许AI直接执行命令而不需要用户确认。
+# 默认为 false，需要用户手动确认；使用 workflow 时等价于 true。
+allow_exec_cmd_directly: false
 
-# 可选的多个url 以数组分割
-# options_agent_url_list=[{"value":"http://..","label":"openai"}]
+# 可选的大模型请求代理地址
+# proxy_url: http://127.0.0.1:7890
+
+# 可选的多个 url
+# options_agent_url_list:
+#   - value: http://...
+#     label: openai
 
 # 可选的多个 key
-# options_agent_key_list=[{"value":"sh-aaa","label":"option1"}]
+# options_agent_key_list:
+#   - value: sk-aaa
+#     label: option1
 
 # 可选的多个 model
-# options_agent_model_list=[{"value":"gpt-5.5","label":"gpt"}]
+# options_agent_model_list:
+#   - value: gpt-5.5
+#     label: gpt
 
-# 存放本地的 prompt 文件 用于每次聊天的时候自动读取并加载
-# options_local_file_path_prompt_list=["/prompt/a.txt"]
+# 本地 prompt 文件列表，每次聊天时自动读取并加载
+# options_local_file_path_prompt_list:
+#   - /prompt/a.txt
 
-# 开启切换模型 ，开启以后，你可以自己写 prompt 提供多个模型让 ai 自己根据每次聊天切换下一步调用其他模型的次数
-# open_pick_model=false
+# 开启切换模型，AI 可以根据 prompt 自己决定下一步调用哪个模型
+# open_pick_model: false
 
-# 压缩后仍然完整保留的最近消息数
-max_recent_messages=12
-# 当单个会话累计消息条数超过该值时，触发历史消息裁剪
-compress_message_count=16
-# 历史消息中 tool 输出的最大字符数，只保留调用形式让 AI 知道调用了就行
-max_tool_content_chars=200
+# 历史消息裁剪相关
+max_recent_messages: 12
+compress_message_count: 16
+max_tool_content_chars: 200
 
 # ===== 模型类型（request_type）=====
-# 必填项，不同类型的 model 接口格式不同，默认 completions。
-# 可选值：
+# 默认 completions，可选值：
 #   completions         标准对话/聊天补全 (chat/completions)
 #   images              图片生成 (images/generations)
 #   audio_speech        文本转语音 (audio/speech)
 #   audio_transcription 语音转文字 (audio/transcriptions)
 #   audio_translation   语音翻译 (audio/translations)
 #   embeddings          向量嵌入 (embeddings)
-#request_type=completions
+# request_type: completions
 
 # ===== 成为 tool（tool_mode）=====
-# 开启后该模型会作为一个工具被加载，可实现不同模型担任不同角色/能力，供 AI agent 在对话中动态调用。
+# 开启后该模型会作为一个工具被加载，供 AI agent 动态调用。
 # 注意：不能与「是否开启」(open) 同时为 true。
-#tool_mode=false
+# tool_mode: false
 
 # ===== 是否支持图片（support_image）=====
-# 开启后：1) 注册 read_image 工具，让 AI 能读取本地图片；
-#         2) 工具读到的图片会以 OpenAI 多模态格式 image_url 随消息发给模型，模型就能真正"看图"。
-# 关闭后：AI 看不到图片，read_image 只会返回一句文字说明。
-# 主流模型（gpt-4o、豆包、qwen-vl、deepseek-vl 等）都支持，默认开启。
-support_image=true
+# 开启后注册 read_image 工具，工具读到的图片会以 image_url 多模态格式随消息发给模型。
+support_image: true
+
+# ===== 命令环境变量（command_env）=====
+# AI 调用内置命令工具（exec_cmd / exec_cmd_background）执行命令时，
+# 这里配置的变量会覆盖到子进程的环境变量上。
+# command_env:
+#   NODE_ENV: production
+#   HTTP_PROXY: http://127.0.0.1:7890
+
+# 是否允许 AI 通过 set_command_env 工具修改上面的 command_env
+command_env_tool: false
 `
 
 /**
@@ -216,15 +243,23 @@ support_image=true
  * 每个供应商里的同名字段与这里是「合并 + 覆盖」关系，不是整段覆盖：
  * - sys_prompt：字符串拼接，全局在前、供应商在后
  * - json_params：k-v 合并，供应商的同名 k 覆盖全局
- * - dotenv：k-v 合并，供应商的同名 k 覆盖全局
+ * - yaml_env：YAML 文本，供应商整体覆盖全局
  */
 export class ai_agent_global_setting {
     /** 全局系统提示词，会拼在所有供应商 prompt 的前面 */
     sys_prompt?: string;
+
     /** 全局请求参数 JSON，作为所有供应商的默认参数 */
     json_params?: string;
-    /** 全局额外参数（ini 风格 k-v），作为所有供应商的默认值 */
+
+    /**
+     * @deprecated 旧的 ini 风格额外参数，已不再读取。
+     * 保留字段只为兼容历史数据，新配置请使用 yaml_env。
+     */
     dotenv?: string;
+
+    /** 全局额外参数（YAML 格式），字段定义见 ai_agent_item_dotenv */
+    yaml_env?: string;
 }
 
 /**

@@ -7,9 +7,10 @@
 import { backgroundProcessManager, decode_output } from "../../background_process.manager";
 import {FileUtil} from "../../../file/FileUtil";
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const get_background_process_output_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { pid }: { pid: number },
 ) => {
     const result = backgroundProcessManager.getProcessOutput(pid);

@@ -11,6 +11,7 @@ import {exec_type} from "pty-shell";
 import {shellServiceImpl} from "../shell/shell.service";
 import {UserAuth, UserData} from "../../../common/req/user.req";
 import {Env} from "../../../common/node/Env";
+import {parse_yaml, stringify_yaml} from "../../../common/node/yaml.util";
 import {FileUtil} from "../file/FileUtil";
 import {matchGitignore} from "../../../common/StringUtil";
 import {formatDuration, formatFileSize} from "../../../common/ValueUtil";
@@ -611,7 +612,7 @@ export class Ai_agentService {
         const list = settingService.ai_agent_setting()
         for (const p of list.models) {
             const pojo:ai_agent_option_item_extra = {}
-            Env.load(p.dotenv,pojo)
+            Object.assign(pojo, parse_yaml(p.yaml_env ?? ""))
             if(pojo.options_agent_model_list || pojo.options_agent_key_list || pojo.options_agent_url_list) {
                 if(p.show_options == null) {
                     p.show_options = {}
@@ -627,14 +628,43 @@ export class Ai_agentService {
     }
 
     /**
-     * 把「全局 + 供应商」的 ini 风格额外参数合并进 target。
-     * Env.load 本身就是逐行 target[key] = 值 的覆盖语义，
-     * 所以先加载全局、再加载供应商，后加载的同名 key 自然覆盖前者。
-     * 注意：必须加载进**同一个** target 对象才有效。
+     * 把「全局 + 供应商」的额外参数合并进 target。
+     * 两段都是 YAML 文本，先解析全局、再解析供应商，后者同名 key 覆盖前者。
+     * 旧字段 dotenv（ini 风格）已废弃，不再参与合并。
      */
-    private load_merged_dotenv(target: ai_agent_item_dotenv, global_env?: string, item_env?: string): void {
-        if (global_env) Env.load(global_env, target);
-        if (item_env) Env.load(item_env, target);
+    private load_merged_env(target: ai_agent_item_dotenv, global_env?: string, item_env?: string): void {
+        Object.assign(target, parse_yaml(global_env ?? ""), parse_yaml(item_env ?? ""));
+    }
+
+    /**
+     * 修改「当前生效供应商」的命令环境变量，并立即重新加载配置。
+     * 只动当前打开的那条供应商配置，不回写全局，避免影响其它供应商。
+     * 返回修改后生效的 command_env。
+     */
+    public set_command_env(env: Record<string, any>, replace: boolean): Record<string, string> {
+        const current = this.opened_ai_config;
+        if (!current) {
+            throw new Error("当前没有开启的供应商配置，无法设置命令环境变量");
+        }
+        const list = settingService.ai_agent_setting();
+        const target = list.models.find(m => m.index === current.index);
+        if (!target) {
+            throw new Error(`未找到 index=${current.index} 的供应商配置`);
+        }
+
+        // 现有 yaml_env 解析后改 command_env，再以 YAML 写回
+        const parsed = parse_yaml(target.yaml_env ?? "");
+        const next_env: Record<string, string> = replace ? {} : {...(parsed.command_env ?? {})};
+        for (const [k, v] of Object.entries(env)) {
+            if (v === null || v === undefined) continue;
+            next_env[k] = String(v);
+        }
+        parsed.command_env = next_env;
+        target.yaml_env = stringify_yaml(parsed);
+
+        DataUtil.set(data_common_key.ai_agent_model_setting, list, file_key.ai_setting_data);
+        this.load_key();
+        return this.opened_ai_config_env.command_env ?? {};
     }
 
     public load_key() {
@@ -656,7 +686,7 @@ export class Ai_agentService {
                 // 合并全局配置后再生效：prompt 拼接、json 按 k-v 覆盖
                 this.opened_ai_config = apply_global_config(it, global_cfg)
                 // 额外参数：先加载全局，再加载供应商，后者同名 key 自然覆盖前者
-                this.load_merged_dotenv(this.opened_ai_config_env, global_cfg.dotenv, it.dotenv)
+                this.load_merged_env(this.opened_ai_config_env, global_cfg.yaml_env, it.yaml_env)
                 have_open = true
                 // this.have_ai_is_open = true
                 // 不 return，继续收集所有 tool 模型
@@ -1092,7 +1122,7 @@ export class Ai_agentService {
         const mergedItem = apply_global_config(modelItem, global_cfg);
         const modelEnv = new ai_agent_item_dotenv();
         // 先全局后供应商，同名 key 由供应商覆盖
-        this.load_merged_dotenv(modelEnv, global_cfg.dotenv, modelItem.dotenv);
+        this.load_merged_env(modelEnv, global_cfg.yaml_env, modelItem.yaml_env);
 
         const requestType = mergedItem.request_type || 'completions';
 
@@ -1317,15 +1347,15 @@ export class Ai_agentService {
         return ai_agentMcpService.getToolInfo(toolName, args);
     }
 
-    public async callTool(toolName: string, args: any, user_id: string, session_id?: string, wss?: wss_interface, externalController?: AbortController) {
+    public async callTool(toolName: string, args: any, user_id: string, session_id?: string, wss?: wss_interface, externalController?: AbortController, command_env?: Record<string, string>) {
         // model tool（调用其他注册为 tool 的 AI 模型）；透传 externalController 使其子模型调用可被外层“暂停”中断
         if (this.isModelTool(toolName)) {
             return this.callModelTool(toolName, args, user_id, session_id, wss, externalController);
         }
-        // 内置工具统一调用，签名都是 (session_id, args)
+        // 内置工具统一调用：第一个参数是运行上下文，第二个是工具自身参数
         const builtinTool = Ai_agentTools[toolName as Ai_agentTools_type];
         if (builtinTool) {
-            return builtinTool.fn(session_id, args);
+            return builtinTool.fn({session_id, command_env}, args);
         }
         // 检查是否是插件工具
         const pluginHandler = this.getPluginToolHandler(toolName);

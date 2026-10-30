@@ -3,6 +3,7 @@ import pathLib from "path";
 import {access} from "fs/promises";
 
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const rename_file_schema: ai_agent_params_type = {
     type: "function",
@@ -27,7 +28,7 @@ export const rename_file_schema: ai_agent_params_type = {
 };
 
 export const rename_file_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { path, newPath }: { path: string; newPath: string },
 ) => {
     try {

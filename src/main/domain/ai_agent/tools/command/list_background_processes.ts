@@ -6,11 +6,13 @@
  */
 import { backgroundProcessManager } from "../../background_process.manager";
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const list_background_processes_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     _args: Record<string, never>,
 ) => {
+    const { session_id } = ctx;
     const effectiveSessionId = session_id;
     const processes = backgroundProcessManager.listProcesses(
         effectiveSessionId !== "unknown" ? effectiveSessionId : undefined

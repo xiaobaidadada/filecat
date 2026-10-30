@@ -11,16 +11,18 @@
 import { backgroundProcessManager } from "../../background_process.manager";
 import {ai_agent_params_type} from "../ai_agent.tools";
 import {get_shell, get_shell_name, get_shells} from "../utils/shell/find_shell";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const exec_cmd_background_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { cmd, cwd, shell, use_shell }: { cmd: string | string[]; cwd?: string; shell?: string; use_shell?: boolean },
 ) => {
+    const { session_id, command_env } = ctx;
     const info = backgroundProcessManager.execBackground(
         cmd,
         cwd || process.cwd(),
         session_id,
-        { shell, use_shell }
+        { shell, use_shell, extra_env: command_env }
     );
 
     return JSON.stringify(

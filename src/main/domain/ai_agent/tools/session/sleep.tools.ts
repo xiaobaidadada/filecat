@@ -1,12 +1,14 @@
 import {CommonUtil} from "../../../../../common/common.util";
 import {register_session_cleaner} from "./session_cleanup";
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 
 export const sleep_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { sleep_length }: { sleep_length: number },
 ) => {
+    const { session_id } = ctx;
     return CommonUtil.sleep_by_id(session_id, {sleep_length})
 }
 

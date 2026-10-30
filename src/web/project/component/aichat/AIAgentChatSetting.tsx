@@ -205,7 +205,7 @@ export default function AIAgentChatSetting() {
         setRows(list);
     }
     const add = ()=>{
-        setRows([...rows,{note:"",open:false,path:"",dotenv:ai_agent_item_dotenv_default,json_params : json_params_default}]);
+        setRows([...rows,{note:"",open:false,path:"",yaml_env:ai_agent_item_dotenv_default,json_params : json_params_default}]);
     }
     const add_docs = ()=>{
         set_docs_list([...docs_list,{note:"",auto_load:false,dir:""}]);
@@ -529,17 +529,17 @@ export default function AIAgentChatSetting() {
                                 }}/>
                                 <ActionButton icon={"settings"} title={t("全局")+" "+t("额外参数设置")}  onClick={() => {
                                     setEditorSetting({
-                                        model: "ace/mode/ini",
+                                        model: "ace/mode/yaml",
                                         open: true,
                                         fileName: "",
                                         save: async (context) => {
-                                            global_cfg.dotenv = context;
+                                            global_cfg.yaml_env = context;
                                             set_global_cfg({...global_cfg});
                                             editor_data.set_value_temp('');
-                                            await save_global({...global_cfg, dotenv: context});
+                                            await save_global({...global_cfg, yaml_env: context});
                                         }
                                     })
-                                    editor_data.set_value_temp(global_cfg.dotenv ?? '');
+                                    editor_data.set_value_temp(global_cfg.yaml_env ?? '');
                                 }}/>
                                 <ActionButton icon={"add"} title={t("添加")} onClick={add}/><ActionButton icon={"save"} title={t("保存")} onClick={async ()=>{
                                 await save()
@@ -594,13 +594,13 @@ export default function AIAgentChatSetting() {
                                                 })
                                             }}/>
                                             <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
-                                                editor_data.set_value_temp(rows[index].dotenv)
+                                                editor_data.set_value_temp(rows[index].yaml_env)
                                                 setEditorSetting({
-                                                    model: "ace/mode/ini",
+                                                    model: "ace/mode/yaml",
                                                     open: true,
                                                     fileName: "",
                                                     save:async (context)=>{
-                                                        rows[index].dotenv = context
+                                                        rows[index].yaml_env = context
                                                         setRows(rows)
                                                         editor_data.set_value_temp('')
                                                         save(rows)
@@ -672,7 +672,7 @@ export default function AIAgentChatSetting() {
                                             <ActionButton icon={"settings"} title={"env"} onClick={() => {
                                                 editor_data.set_value_temp(item.env ?? '')
                                                 setEditorSetting({
-                                                    model: "ace/mode/ini",
+                                                    model: "ace/mode/yaml",
                                                     open: true,
                                                     fileName: "",
                                                     save:async (context)=>{
@@ -738,7 +738,7 @@ export default function AIAgentChatSetting() {
                                             <ActionButton icon={"settings"} title={"headers"} onClick={() => {
                                                 editor_data.set_value_temp(item.headers ?? '')
                                                 setEditorSetting({
-                                                    model: "ace/mode/ini",
+                                                    model: "ace/mode/yaml",
                                                     open: true,
                                                     fileName: "",
                                                     save:async (context)=>{
@@ -893,7 +893,7 @@ export default function AIAgentChatSetting() {
                                               <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
                                                   editor_data.set_value_temp(docs_param.current)
                                                   setEditorSetting({
-                                                      model: "ace/mode/ini",
+                                                      model: "ace/mode/yaml",
                                                       open: true,
                                                       fileName: "",
                                                       save:async (context)=>{

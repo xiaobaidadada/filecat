@@ -2,6 +2,7 @@ import {SystemUtil} from "../../../sys/sys.utl";
 import {register_session_cleaner} from "../session/session_cleanup";
 import {ai_agent_params_type} from "../ai_agent.tools";
 import {get_shell, get_shell_name, get_shells} from "../utils/shell/find_shell";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 type exec_cmd_args = {
     cmd: string | string[];
@@ -11,9 +12,10 @@ type exec_cmd_args = {
     use_shell?: boolean;
 };
 export const exec_cmd_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { cmd, cwd, timeout, shell, use_shell }: exec_cmd_args,
 ) => {
+    const { session_id, command_env } = ctx;
     // 超时的语义就是终止命令，不会转成后台继续跑。
     // 不设默认超时：默认值容易误伤本来就耗时的任务；
     // 只有调用方明确给了 timeout 才计时。
@@ -21,6 +23,7 @@ export const exec_cmd_tool = async (
         timeout,
         shell,
         use_shell,
+        extra_env: command_env,
     });
 }
 

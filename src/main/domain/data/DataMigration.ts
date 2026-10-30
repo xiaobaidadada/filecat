@@ -23,7 +23,6 @@ import {sort} from "../../../common/ListUtil";
 import {userService} from "../user/user.service";
 import {stringify_yaml} from "../../../common/node/yaml.util";
 
-
 /**
  * 单个数据迁移步骤。
  * version：迁移完成后的目标版本号（即 data_version_type 枚举中的值）；
@@ -354,6 +353,70 @@ export class DataMigration {
                 env_data.control_env_str = stringify_yaml(data);
                 env_data.control_env = parsed;
                 DataUtil.set(data_common_key.sys_env_key, env_data);
+            },
+        },
+        {
+            /*
+             * AI 供应商的额外参数从 ini 语法（dotenv）迁移为 yaml 语法（yaml_env）。
+             *
+             * ini（key=value）不是合法的 yaml 键值对，直接换解析器会把内容读成一整段字符串，
+             * 所以这里显式转一次：
+             *  1. 每个供应商：dotenv 用 Env.load 解析成对象，写回 yaml_env，清空 dotenv
+             *  2. 全局配置：同样的处理
+             *
+             * 内置供应商如果 dotenv 为空（从未被用户改过），不写入 yaml_env，
+             * 交给 setting 初始化时填默认模板。
+             */
+            version: data_version_type.ai_agent_yaml_env,
+            name: "ai 供应商额外参数迁移为 yaml",
+            run: () => {
+                /** 把一段 ini 文本转成 yaml 文本，失败返回 null 表示不动 */
+                const ini_to_yaml = (old_text?: string): string | null => {
+                    if (typeof old_text !== "string" || !old_text.trim()) {
+                        return null;
+                    }
+                    // 已经像 yaml（行首「key:」或列表项「- 」）就不重复迁移
+                    if (/^\s*[\w.-]+\s*:/m.test(old_text) || /^\s*-\s+/m.test(old_text)) {
+                        return null;
+                    }
+                    const parsed: any = {};
+                    try {
+                        Env.load(old_text, parsed);
+                    } catch (e) {
+                        // 解析失败保留原文，让用户进设置页自行修正
+                        return null;
+                    }
+                    return stringify_yaml(parsed);
+                };
+
+                const setting: any = DataUtil.get(data_common_key.ai_agent_model_setting, file_key.ai_setting_data);
+                if (setting) {
+                    const models: any[] = Array.isArray(setting.models) ? setting.models : [];
+                    for (const item of models) {
+                        // 没迁移过才转换；已经转换过的直接清掉废弃字段
+                        if (item.yaml_env === undefined) {
+                            const yaml_text = ini_to_yaml(item.dotenv);
+                            if (yaml_text !== null) {
+                                item.yaml_env = yaml_text;
+                            }
+                        }
+                        delete item.dotenv;
+                    }
+                    DataUtil.set(data_common_key.ai_agent_model_setting, setting, file_key.ai_setting_data);
+                }
+
+                // 全局配置是独立的 key，单独处理
+                const global_cfg: any = DataUtil.get(data_common_key.ai_agent_global_setting, file_key.ai_setting_data);
+                if (global_cfg) {
+                    if (global_cfg.yaml_env === undefined) {
+                        const yaml_text = ini_to_yaml(global_cfg.dotenv);
+                        if (yaml_text !== null) {
+                            global_cfg.yaml_env = yaml_text;
+                        }
+                    }
+                    delete global_cfg.dotenv;
+                    DataUtil.set(data_common_key.ai_agent_global_setting, global_cfg, file_key.ai_setting_data);
+                }
             },
         },
     ];

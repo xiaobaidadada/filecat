@@ -36,6 +36,8 @@ export class SystemUtil {
             use_shell?: boolean;
             /** 指定用哪个 shell */
             shell?: string;
+            /** 追加/覆盖到子进程的环境变量（AI 的 command_env） */
+            extra_env?: Record<string, string>;
         }
     ): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -50,6 +52,7 @@ export class SystemUtil {
                     env: {
                         ...process.env,
                         PATH: settingService.get_env_path(),
+                        ...(options?.extra_env ?? {}),
                     },
                 });
             } catch (e) {

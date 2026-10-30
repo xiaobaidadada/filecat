@@ -2,6 +2,7 @@ import {readFile} from "fs/promises";
 import pathModule from "path";
 
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const read_image_schema: ai_agent_params_type = {
     "type": "function",
@@ -103,7 +104,7 @@ export interface image_tool_result {
  *   2. data:image/...;base64, 文本 → 直接透传
  */
 export const read_image_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { path }: { path: string },
 ): Promise<image_tool_result | string> => {
     const input = (path ?? "").trim();

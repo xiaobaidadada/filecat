@@ -130,6 +130,7 @@ export enum data_version_type {
     baidu_credential_merge = 9, // 百度网盘应用配置+授权账号合并为普通凭据
     mount_credential_note = 10, // 挂载/凭据的 name 改名为 note；凭据=应用、账号拆到 accounts；挂载加 account_id
     control_env_yaml = 11, // 环境控制配置 control_env_str 从 env 语法迁移为 yaml 语法
+    ai_agent_yaml_env = 12, // ai 供应商额外参数从 ini(dotenv) 迁移为 yaml(yaml_env)，并抽出 command_env
 }
 
 

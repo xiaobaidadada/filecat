@@ -107,7 +107,7 @@ export class BackgroundProcessManager {
         cmd: string | string[],
         cwd: string = process.cwd(),
         session_id: string = "unknown",
-        options?: { shell?: string; use_shell?: boolean }
+        options?: { shell?: string; use_shell?: boolean; extra_env?: Record<string, string> }
     ): BackgroundProcessInfo {
         // 和前台命令共用同一个 ShellCommand，shell 选择、命令组装、编码判定完全一致，
         // 避免同一个命令在前台和后台被不同 shell 解释出不同语义
@@ -119,6 +119,7 @@ export class BackgroundProcessManager {
             env: {
                 ...process.env,
                 PATH: settingService.get_env_path(),
+                ...(options?.extra_env ?? {}),
             },
             // 输出直接写文件，不在内存里再攒一份
             collect_output: false,

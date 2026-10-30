@@ -2,6 +2,7 @@ import axios from "axios";
 import { HttpsProxyAgent } from "https-proxy-agent";
 
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const http_request_schema: ai_agent_params_type = {
     type: "function",
@@ -54,7 +55,7 @@ export const http_request_schema: ai_agent_params_type = {
 };
 
 export const http_request_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     {
         url,
         method = "GET",

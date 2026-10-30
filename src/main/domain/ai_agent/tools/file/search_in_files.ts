@@ -4,6 +4,7 @@ import {spawnSync} from "child_process";
 import {createRequire} from "module";
 import {FileUtil} from "../../../file/FileUtil";
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 const require_ = createRequire(__filename);
 
@@ -31,7 +32,7 @@ function get_rg_path(): string | null {
 
 const RG_PATH = get_rg_path();
 export const search_in_files_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     {
         pattern,
         path: searchPath,

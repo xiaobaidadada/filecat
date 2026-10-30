@@ -2,6 +2,7 @@ import {readdir, stat} from "fs/promises";
 import {read_file} from "../utils/file_read_core";
 import pathModule from "path";
 import {ai_agent_params_type} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const read_file_schema:ai_agent_params_type = {
     "type": "function",
@@ -26,7 +27,7 @@ export const read_file_schema:ai_agent_params_type = {
 }
 
 export const read_file_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { path, max_chars }: { path: string; max_chars?: number },
 ) => {
     const result = await read_file(path, max_chars);
@@ -125,7 +126,7 @@ async function buildTree(
 }
 
 export const list_files_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     { path = '.', depth = 1, ignore = ['node_modules'] }: { path?: string; depth?: number; ignore?: string[] },
 ) => {
     // 检查路径是否存在

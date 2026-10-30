@@ -3,12 +3,14 @@ import { backgroundProcessManager } from "../../background_process.manager";
 // import { getProcessAddon } from "../../../bin/bin";
 import {SystemUtil} from "../../../sys/sys.utl";
 import {ai_agent_params_type, ai_tools} from "../ai_agent.tools";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 // const kill_proc = getProcessAddon();
 
 export const kill_background_processes_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     args: { pid: number },
 ) => {
+    const { session_id } = ctx;
     const pid = args.pid;
     if (!pid || typeof pid !== "number") {
         return "错误：请提供有效的进程 pid。";

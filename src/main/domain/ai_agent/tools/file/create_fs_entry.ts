@@ -2,6 +2,7 @@ import {mkdir, writeFile} from "fs/promises";
 import pathLib from "path"; // 导入 path 模块
 import {ai_agent_params_type} from "../ai_agent.tools";
 import {enqueue_file_task} from "../utils/file_queue";
+import type { Ai_agent_tool_ctx } from "../ai_agent.tools";
 
 export const create_fs_entry_schema: ai_agent_params_type = {
     type: "function",
@@ -36,7 +37,7 @@ export const create_fs_entry_schema: ai_agent_params_type = {
 
 
 export const create_fs_entry_tool = async (
-    session_id: string,
+    ctx: Ai_agent_tool_ctx,
     {
         path,
         type = "file",
