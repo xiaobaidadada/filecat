@@ -8,7 +8,7 @@ export const read_image_schema: ai_agent_params_type = {
     "type": "function",
     "function": {
         "name": "read_image",
-        "description": "把本地文件当作图片读取，让模型直接看到图片内容（可用于分析截图、界面布局、报错信息、图表等）。只要是图片格式的文件都能读，不限于常见后缀。如果文件内容本身就是 data:image/xxx;base64,... 形式的文本，也会被识别为图片。注意：只有当前模型开启了 support_image 才真正能看到图片。",
+        "description": "把本地文件当作图片读取，让模型直接看到图片内容（可用于分析截图、界面布局、报错信息、图表等）。只要是图片格式的文件都能读，不限于常见后缀。如果文件内容本身就是 data:image/xxx;base64,... 形式的文本，也会被识别为图片。注意：只有当前模型开启了 image_understanding 才真正能看到图片。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -81,7 +81,7 @@ function sniff_image_mime(buffer: Buffer): string | null {
  * 工具返回值中标记图片的结构。
  *
  * 这里不直接拼成 OpenAI 的消息片段，而是交给 chat.core 决定怎么用 ——
- * chat.core 需要根据「当前模型是否开启 support_image」来降级为纯文本说明。
+ * chat.core 需要根据「当前模型是否开启 image_understanding」来降级为纯文本说明。
  */
 export interface image_tool_result {
     /** 固定标记，chat.core 靠它识别这是图片结果 */

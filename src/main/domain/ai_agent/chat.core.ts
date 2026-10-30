@@ -97,6 +97,24 @@ export interface ChatOptions {
 
 const t1 = "支持输出 ```mermaid  和 ```svg ,```smm-mind 三种种方案画图显示，mermaid优先使用，因为输出的文字描述体积比较小，画泳道图什么的比较方便，smm-mind支持的格式是SimpleMindMap的思维导图。"
 
+/**
+ * 把命令环境变量渲染成一段提示词，让 AI 知道自己执行命令时带着哪些变量。
+ * 没配就返回空串，不往系统提示词里塞无用内容。
+ *
+ * 值里的换行会破坏提示词排版，统一压成空格。
+ */
+function command_env_desc(command_env?: Record<string, string>): string {
+    if (!command_env) return "";
+    const entries = Object.entries(command_env);
+    if (entries.length === 0) return "";
+    const lines = entries.map(([k, v]) => `  ${k}=${String(v).replace(/[\r\n]+/g, " ")}`);
+    return [
+        "AI 执行命令时会额外注入以下环境变量（覆盖到子进程环境上，优先级高于系统已有的同名变量）：",
+        ...lines,
+        "如果你需要通过环境变量传递配置，直接用即可，不需要再在命令里手工设置这些变量。",
+    ].join("\n");
+}
+
 export class ChatCore {
 
     /**
@@ -387,6 +405,7 @@ ${cwd ? `当前会话设置的服务器工作目录（cwd）是 ${cwd} .` : ''}
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
 当前会话id 为：${session_id}
+${command_env_desc(env.command_env)}
 
 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
 你的能力是控制电脑服务器，执行任何可以控制服务器的命令，实现高效的运维，写代码，服务器问答，智能电脑服务器的自动化助手。
@@ -689,8 +708,8 @@ const workMessages: ai_agent_message_list = [
                             // 图片类结果：模型支持图片时以 OpenAI 多模态格式（image_url）带给模型，
                             // 让模型真正"看到"图；不支持时退化为纯文本说明。
                             if (is_image_tool_result(result)) {
-                                if (env.support_image === false) {
-                                    resultStr = `${result.text}\n（当前模型未开启 support_image，无法查看图片内容，图片数据已忽略。）`;
+                                if (env.image_understanding === false) {
+                                    resultStr = `${result.text}\n（当前模型未开启 image_understanding，无法查看图片内容，图片数据已忽略。）`;
                                 } else {
                                     tool_content = [
                                         {type: "text", text: result.text},
@@ -786,7 +805,7 @@ const workMessages: ai_agent_message_list = [
         }
         // 模型支持图片时才注册 read_image：不支持图片的模型看到这个工具会瞎调用，
         // 调用后又拿不到图片（只会得到一句文字说明），反而浪费一轮对话。
-        if (props.env.support_image !== false) {
+        if (props.env.image_understanding !== false) {
             tools.push(read_image_schema);
         }
         if (ai_agentService.docs_switch_get()) {

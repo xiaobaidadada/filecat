@@ -246,16 +246,16 @@ export default function AIAgentChatSetting() {
             rows[i].index = i;
         }
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
-        // if (result.code === RCode.Success) {
-        //     NotySuccess("保存成功")
-        // }
+        if (result.code === RCode.Success) {
+            NotySuccess("保存成功")
+        }
     }
     /** 保存全局默认设置 */
     const save_global = async (data?: ai_agent_global_setting) => {
         const result = await settingHttp.post("ai_agent_global_setting/save", data ?? global_cfg);
-        // if (result.code === RCode.Success) {
-        //     NotySuccess("保存成功")
-        // }
+        if (result.code === RCode.Success) {
+            NotySuccess("保存成功")
+        }
     }
     const save_mcp = async (data_rows?:any) => {
         for (let i =0; i<mcp_list.length;i++) {
@@ -462,9 +462,9 @@ export default function AIAgentChatSetting() {
         }
         docs_update_tag.current = false;
         const result = await settingHttp.post("ai_docs_setting_save", body);
-        // if (result.code === RCode.Success) {
-        //     NotySuccess("保存成功")
-        // }
+        if (result.code === RCode.Success) {
+            NotySuccess("保存成功")
+        }
     }
     // 系统会话提示词相关
     const add_sys_prompt = () => {
@@ -479,9 +479,9 @@ export default function AIAgentChatSetting() {
             sys_prompt_list[i].index = i;
         }
         const result = await settingHttp.post("ai_system_prompts/save", {list: sys_prompt_list});
-        // if (result.code === RCode.Success) {
-        //     NotySuccess("保存成功")
-        // }
+        if (result.code === RCode.Success) {
+            NotySuccess("保存成功")
+        }
     }
     return <div>
         <HeaderPortal position={"right"}>

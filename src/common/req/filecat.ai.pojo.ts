@@ -154,10 +154,10 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra {
     compress_message_count = 16; // 当单个会话累计消息条数超过该值时，触发历史消息裁剪
     max_tool_content_chars = 200; // 历史消息中 tool 输出的最大字符数
 
-    /** 当前模型是否支持图片输入（OpenAI 的 image_url 多模态格式）。
+    /** 当前模型是否具备图片理解能力（OpenAI 的 image_url 多模态格式）。
      *  开启后 read_image 工具才可用，且工具返回的图片会以 image_url 形式带进消息。
      *  默认开启（目前主流模型基本都支持）。 */
-    support_image = true;
+    image_understanding = true;
 
     /**
      * 命令环境变量，k-v 结构。
@@ -223,9 +223,9 @@ max_tool_content_chars: 200
 # 注意：不能与「是否开启」(open) 同时为 true。
 # tool_mode: false
 
-# ===== 是否支持图片（support_image）=====
+# ===== 图片理解（image_understanding）=====
 # 开启后注册 read_image 工具，工具读到的图片会以 image_url 多模态格式随消息发给模型。
-support_image: true
+image_understanding: true
 
 # ===== 命令环境变量（command_env）=====
 # AI 调用内置命令工具（exec_cmd / exec_cmd_background）执行命令时，

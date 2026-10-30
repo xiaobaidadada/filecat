@@ -357,19 +357,41 @@ export class DataMigration {
         },
         {
             /*
-             * AI 供应商的额外参数从 ini 语法（dotenv）迁移为 yaml 语法（yaml_env）。
+             * AI 供应商配置的一次性整理 + 数据文件名补后缀。
              *
-             * ini（key=value）不是合法的 yaml 键值对，直接换解析器会把内容读成一整段字符串，
-             * 所以这里显式转一次：
-             *  1. 每个供应商：dotenv 用 Env.load 解析成对象，写回 yaml_env，清空 dotenv
-             *  2. 全局配置：同样的处理
+             * 1. 额外参数从 ini 语法（dotenv）迁移为 yaml 语法（yaml_env）。
+             *    ini（key=value）不是合法的 yaml 键值对，直接换解析器会把内容读成一整段字符串，
+             *    所以这里显式转一次：dotenv 用 Env.load 解析成对象，写回 yaml_env，清空 dotenv。
              *
-             * 内置供应商如果 dotenv 为空（从未被用户改过），不写入 yaml_env，
+             * 2. 字段 support_image 更名为 image_understanding。
+             *    它存在两处都要改，否则老配置里关掉的图片理解会静默回到默认开启：
+             *      a) yaml_env 文本里的 support_image: xxx
+             *      b) 对象上直接被写过的 support_image 属性（老代码 Env.load 遗留）
+             *
+             * 3. tcp_proxy_server_client 数据文件补上 .json 后缀。
+             *    必须在 DataUtil.init 建出空文件之前改，否则旧数据会被空文件顶掉。
+             *    DataMigration.run 在 start_main 里早于各服务启动，时机是安全的。
+             *
+             * 内置供应商如果 yaml_env 为空（从未被用户改过），不写入，
              * 交给 setting 初始化时填默认模板。
              */
             version: data_version_type.ai_agent_yaml_env,
             name: "ai 供应商额外参数迁移为 yaml",
             run: () => {
+                // ---- 3. tcp 代理数据文件补后缀 ----
+                // 旧文件存在就以它为准：可能有别的入口在迁移前已经 DataUtil.init 建出了空的 .json，
+                // 此时新文件只是空壳，直接覆盖掉，否则旧数据会被空文件顶掉。
+                // 迁移完必须 reload，把已进缓存（可能是空对象）的数据换成磁盘上的真实内容。
+                const legacy_tcp_path = path.join(Env.work_dir, "tcp_proxy_server_client");
+                const tcp_path = path.join(Env.work_dir, file_key.tcp_proxy_server_client);
+                if (fs.existsSync(legacy_tcp_path)) {
+                    fse.ensureDirSync(Env.work_dir);
+                    fs.copyFileSync(legacy_tcp_path, tcp_path);
+                    fs.unlinkSync(legacy_tcp_path);
+                    DataUtil.reload(file_key.tcp_proxy_server_client);
+                    console.log(`[数据迁移] 迁移旧数据文件 ${legacy_tcp_path} -> ${tcp_path}`);
+                }
+
                 /** 把一段 ini 文本转成 yaml 文本，失败返回 null 表示不动 */
                 const ini_to_yaml = (old_text?: string): string | null => {
                     if (typeof old_text !== "string" || !old_text.trim()) {
@@ -389,32 +411,66 @@ export class DataMigration {
                     return stringify_yaml(parsed);
                 };
 
+                /** 把 yaml 文本里的 support_image 换成 image_understanding */
+                const rename_image_key = (text?: string): string | undefined => {
+                    if (typeof text !== "string" || !text.includes("support_image")) {
+                        return undefined;
+                    }
+                    return text.replace(/^(\s*)support_image(\s*:)/gm, "$1image_understanding$2");
+                };
+
+                /** 把对象上的 support_image 搬到 image_understanding，已存在则不覆盖 */
+                const rename_image_prop = (obj: any) => {
+                    if (!obj || typeof obj !== "object" || !("support_image" in obj)) {
+                        return false;
+                    }
+                    if (obj.image_understanding === undefined) {
+                        obj.image_understanding = obj.support_image;
+                    }
+                    delete obj.support_image;
+                    return true;
+                };
+
+                /** 处理一条供应商/全局配置，返回是否有改动 */
+                const migrate_one = (item: any): boolean => {
+                    let changed = rename_image_prop(item);
+
+                    // 没迁移过才做 ini -> yaml；已经转换过的直接清掉废弃字段
+                    if (item.yaml_env === undefined) {
+                        const yaml_text = ini_to_yaml(item.dotenv);
+                        if (yaml_text !== null) {
+                            item.yaml_env = yaml_text;
+                            changed = true;
+                        }
+                    }
+                    delete item.dotenv;
+
+                    // 老配置里可能存的是 support_image，转完 yaml 再改 key
+                    const next_text = rename_image_key(item.yaml_env);
+                    if (next_text !== undefined) {
+                        item.yaml_env = next_text;
+                        changed = true;
+                    }
+                    return changed;
+                };
+
                 const setting: any = DataUtil.get(data_common_key.ai_agent_model_setting, file_key.ai_setting_data);
                 if (setting) {
+                    let changed = false;
                     const models: any[] = Array.isArray(setting.models) ? setting.models : [];
                     for (const item of models) {
-                        // 没迁移过才转换；已经转换过的直接清掉废弃字段
-                        if (item.yaml_env === undefined) {
-                            const yaml_text = ini_to_yaml(item.dotenv);
-                            if (yaml_text !== null) {
-                                item.yaml_env = yaml_text;
-                            }
+                        if (migrate_one(item)) {
+                            changed = true;
                         }
-                        delete item.dotenv;
                     }
-                    DataUtil.set(data_common_key.ai_agent_model_setting, setting, file_key.ai_setting_data);
+                    if (changed) {
+                        DataUtil.set(data_common_key.ai_agent_model_setting, setting, file_key.ai_setting_data);
+                    }
                 }
 
                 // 全局配置是独立的 key，单独处理
                 const global_cfg: any = DataUtil.get(data_common_key.ai_agent_global_setting, file_key.ai_setting_data);
-                if (global_cfg) {
-                    if (global_cfg.yaml_env === undefined) {
-                        const yaml_text = ini_to_yaml(global_cfg.dotenv);
-                        if (yaml_text !== null) {
-                            global_cfg.yaml_env = yaml_text;
-                        }
-                    }
-                    delete global_cfg.dotenv;
+                if (global_cfg && migrate_one(global_cfg)) {
                     DataUtil.set(data_common_key.ai_agent_global_setting, global_cfg, file_key.ai_setting_data);
                 }
             },

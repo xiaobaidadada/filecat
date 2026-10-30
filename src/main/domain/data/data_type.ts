@@ -12,7 +12,7 @@ export enum file_key {
     // flexsearch_index_db = "flexsearch_index_db.db",
     // flexsearch_name_index_db = "flexsearch_name_index_db.db",
     fts5_rag_db = "fts5_rag_db.db",
-    tcp_proxy_server_client = "tcp_proxy_server_client",
+    tcp_proxy_server_client = "tcp_proxy_server_client.json",
     ai_setting_data = "ai_setting_data.json" // 和ai相关的设置
 }
 

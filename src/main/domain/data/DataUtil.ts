@@ -33,6 +33,18 @@ export class DataUtil {
         }
     }
 
+    /**
+     * 磁盘上的数据文件被外部改动后，重新加载到缓存。
+     *
+     * 正常情况下不需要调用；只有数据迁移这类直接动文件的操作，
+     * 才需要在迁移完成后强制刷新，否则 init 已经跑过的话缓存里还是旧数据。
+     */
+    public static reload(file: file_key) {
+        delete this.data_path_map[file];
+        delete this.data_map[file];
+        this.init(file);
+    }
+
     private static checkFile(k,dir) {
         const p = path.join(Env.work_dir, dir, k);
         if (!fs.existsSync(p)) {
