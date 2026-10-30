@@ -137,6 +137,12 @@ function resolve_all_shells(): ShellProvider[] {
     };
 
     if (is_win) {
+
+        // 4. cmd.exe 兜底
+        const cmd = first_usable(cmd_candidates());
+        push(cmd ? create_cmd_provider(cmd) : null);
+
+
         // 1. pwsh（PowerShell 7 及以上）
         const pwsh = first_usable(pwsh_candidates()) ?? find_on_path("pwsh");
         push(pwsh ? create_powershell_provider(pwsh, "pwsh") : null);
@@ -149,9 +155,7 @@ function resolve_all_shells(): ShellProvider[] {
         const bash = first_usable(bash_candidates()) ?? find_on_path("bash");
         push(bash ? create_bash_provider(bash) : null);
 
-        // 4. cmd.exe 兜底
-        const cmd = first_usable(cmd_candidates());
-        push(cmd ? create_cmd_provider(cmd) : null);
+
         return found;
     }
 

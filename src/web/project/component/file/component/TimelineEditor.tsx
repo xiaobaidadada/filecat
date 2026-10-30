@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import TimelineEditorBody, {TimelineHandle} from "./timeline/TimelineInline";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {using_confirm} from "../../prompts/prompt.util";
 
 /**
  * 时间轴全屏编辑器（.timeline）。
@@ -20,18 +21,28 @@ export default function TimelineEditor() {
     const [timeline_editor, set_timeline_editor] = useAtom($stroe.timeline_editor);
     const [dirty, set_dirty] = useState(false);
     const {t} = useTranslation();
+    const confirm = using_confirm();
     /** 编辑器暴露的句柄，供保存按钮与快捷键使用 */
     const apiRef = useRef<TimelineHandle | null>(null);
 
-    const close = () => {
-        // 有未保存改动时二次确认，避免误关丢失
-        if (dirty && !window.confirm(t("有未保存的修改，确定要关闭吗？"))) {
-            return;
-        }
+    /** 真正执行关闭：清空编辑器状态并让 FileList 清掉 url 参数 */
+    const do_close = () => {
         set_timeline_editor({});
         // 用 FileList 传进来的 close（即 file_open(null)）清掉 url 上的
         // preview_file_name / preview_mode 参数，否则刷新页面会再次自动打开这个文件。
         timeline_editor?.close?.();
+    };
+
+    const close = () => {
+        // 有未保存改动时二次确认，避免误关丢失
+        if (dirty) {
+            confirm({
+                sub_title: t("有未保存的修改，确定要关闭吗？"),
+                confirm_fun: do_close,
+            });
+            return;
+        }
+        do_close();
     };
 
     const save = async (silent = false) => {

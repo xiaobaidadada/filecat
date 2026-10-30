@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import MindMapEditor, {MindHandle} from "./MindMapInline";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {using_confirm} from "../../prompts/prompt.util";
 
 /**
  * 思维导图全屏编辑器（.mind）。
@@ -20,21 +21,31 @@ export default function MindEditor() {
     const [mind_editor, set_mind_editor] = useAtom($stroe.mind_editor);
     const [dirty, set_dirty] = useState(false);
     const {t} = useTranslation();
+    const confirm = using_confirm();
     // 用 ref 承接最新的 save，供 keydown 稳定调用
     const apiRef = useRef<MindHandle | null>(null);
 
     // 代码块来源：数据直接来自 md 的 ```smm-mind，不落文件
     const is_code_source = mind_editor.code_source !== undefined;
 
-    const close = () => {
-        if (dirty && !window.confirm(t("有未保存的修改，确定要关闭吗？"))) {
-            return;
-        }
+    /** 真正执行关闭 */
+    const do_close = () => {
         set_mind_editor({});
         // 用 FileList 传进来的 close（即 file_open(null)）清掉 url 上的
         // preview_file_name / preview_mode 参数。不能自己 navigate(getRouterPath())：
         // 那只清 path，query 还在，刷新页面会再次自动打开这个文件。
         mind_editor?.close?.();
+    };
+
+    const close = () => {
+        if (dirty) {
+            confirm({
+                sub_title: t("有未保存的修改，确定要关闭吗？"),
+                confirm_fun: do_close,
+            });
+            return;
+        }
+        do_close();
     };
 
     const save = async (silent = false) => {
