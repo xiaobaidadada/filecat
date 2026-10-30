@@ -115,16 +115,19 @@ function find_on_path(name: string): string | null {
 /**
  * 按优先级探测所有可用的 shell。
  *
- * 顺序：bash/sh → pwsh → Windows PowerShell → cmd
+ * Windows：pwsh → Windows PowerShell → bash/sh → cmd
+ * Unix：    bash/sh → pwsh
  *
- * 之所以 bash 优先：bash 的命令语法在 Unix 和 Windows（Git Bash）上一致，
- * 模型写出来的命令不用按平台切换风格，出错率最低。
+ * Windows 上优先用 PowerShell：它是系统原生的，启动快、路径和参数规则统一，
+ * 不像 Git Bash 需要额外安装且启动有明显开销。
+ * cmd.exe 语法太弱（没有管道对象、变量语法受限），只作为最后兜底。
  *
  * 返回的列表保留了优先级顺序，第一个就是默认 shell。
  * 同名 shell 只保留第一个命中的（比如同时装了 Git Bash 的两个路径）。
  */
 function resolve_all_shells(): ShellProvider[] {
     const found: ShellProvider[] = [];
+    const is_win = process.platform === "win32";
 
     /** 同一 type 只收一次，避免列表里出现两个 bash */
     const push = (p: ShellProvider | null) => {
@@ -133,21 +136,31 @@ function resolve_all_shells(): ShellProvider[] {
         found.push(p);
     };
 
-    // 1. bash / sh
+    if (is_win) {
+        // 1. pwsh（PowerShell 7 及以上）
+        const pwsh = first_usable(pwsh_candidates()) ?? find_on_path("pwsh");
+        push(pwsh ? create_powershell_provider(pwsh, "pwsh") : null);
+
+        // 2. Windows PowerShell 5.1，系统自带，pwsh 没装时用它
+        const powershell = first_usable(windows_powershell_candidates());
+        push(powershell ? create_powershell_provider(powershell, "powershell") : null);
+
+        // 3. bash（Git Bash 等），装了才可用
+        const bash = first_usable(bash_candidates()) ?? find_on_path("bash");
+        push(bash ? create_bash_provider(bash) : null);
+
+        // 4. cmd.exe 兜底
+        const cmd = first_usable(cmd_candidates());
+        push(cmd ? create_cmd_provider(cmd) : null);
+        return found;
+    }
+
+    // 非 Windows：bash 是系统标准，没有别的选择
     const bash = first_usable(bash_candidates()) ?? find_on_path("bash");
     push(bash ? create_bash_provider(bash) : null);
 
-    // 2. pwsh（PowerShell 7 及以上）
     const pwsh = first_usable(pwsh_candidates()) ?? find_on_path("pwsh");
     push(pwsh ? create_powershell_provider(pwsh, "pwsh") : null);
-
-    // 3. Windows PowerShell 5.1
-    const powershell = first_usable(windows_powershell_candidates());
-    push(powershell ? create_powershell_provider(powershell, "powershell") : null);
-
-    // 4. cmd.exe 兜底
-    const cmd = first_usable(cmd_candidates());
-    push(cmd ? create_cmd_provider(cmd) : null);
 
     return found;
 }

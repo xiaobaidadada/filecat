@@ -24,12 +24,6 @@ export interface ExecResult {
 
     /** 输出过大被截断过 */
     truncated: boolean;
-
-    /**
-     * 已发出终止请求，但进程在宽限期内没有退出。
-     * 为 true 说明命令可能还在跑，结果只能当作尽力而为。
-     */
-    exit_pending?: boolean;
 }
 
 /** 启动命令的参数 */
@@ -55,17 +49,6 @@ export interface ShellCommandOptions {
     collect_output?: boolean;
 }
 
-/** 发出终止请求后，等待进程真正退出的宽限期 */
-const KILL_GRACE_MS = 2000;
-
-/**
- * 进程退出后等待输出排空的宽限期。
- *
- * 进程退出时管道里可能还有没读到的数据（输出量大、或子进程比 shell 晚退出）。
- * 给一点时间读完，否则结果末尾会丢掉几行。
- */
-const DRAIN_GRACE_MS = 250;
-
 /** 终止原因：没有终止 / 用户主动停 / 超时 */
 type StopReason = null | "stop" | "timeout";
 
@@ -73,12 +56,14 @@ type StopReason = null | "stop" | "timeout";
  * 一条正在执行的 shell 命令。
  *
  * 状态流转：
- *   running ──超时/主动停止──> stopping ──进程真正退出──> stopped
+ *   running ──超时/主动停止──> stopped
  *      │
  *      └──自然退出──> completed
  *
- * 关键点：stop()/超时只表达「已请求终止」，不在这里结算结果。
- * 只有进程真的退出了才算结束，否则会出现「报告已停止、进程却还在跑」的假象。
+ * 关键点：stop()/超时发的是强制终止（kill -9 / taskkill /f），
+ * 发出后立即结算，不再等进程退出事件。
+ * 强杀命令不保证进程会立刻消失，为了等一个「不会更准确」的退出码而挂起
+ * 调用方是没有意义的——被终止的结果只看 stopped/timed_out 就够了。
  *
  * 通过 ShellCommand.spawn() 创建，自己负责启动进程、收集输出、处理超时和退出。
  * 调用方拿到实例后只需监听 result 或调用 stop()。
@@ -93,13 +78,12 @@ export class ShellCommand {
     /** 启动时就确定的输出编码，无需调用方再传一次 */
     readonly output_encoding: string;
 
-    private status_value: "running" | "stopping" | "completed" | "stopped" = "running";
+    private status_value: "running" | "completed" | "stopped" = "running";
 
     private readonly abort_signal: AbortSignal | null;
     private readonly timeout: number;
 
     private timeout_timer: NodeJS.Timeout | null = null;
-    private kill_grace_timer: NodeJS.Timeout | null = null;
 
     private readonly stdout_tail = new OutputTail();
     private readonly stderr_tail = new OutputTail();
@@ -177,7 +161,7 @@ export class ShellCommand {
         return new ShellCommand(child, options, output_encoding);
     }
 
-    get status(): "running" | "stopping" | "completed" | "stopped" {
+    get status(): "running" | "completed" | "stopped" {
         return this.status_value;
     }
 
@@ -215,20 +199,33 @@ export class ShellCommand {
     /**
      * 监听进程退出。
      *
-     * 用 exit 而不是 close：close 要等所有 stdio 关闭，
-     * 如果命令留下了继承 fd 的孙进程，close 会一直不来，
-     * 导致明明命令结束了却卡住。
+     * 用 close 结算：close 表示「进程已退出 且 stdio 已全部关闭并读完」，
+     * 天然把管道排空这件事包含在内，不用人为猜一个等待时间。
+     *
+     * 同时监听 exit 作为兜底：如果命令留下了继承 fd 的孙进程，
+     * close 可能迟迟不来，这时退一步用 exit 的结果结算。
      */
     private watch_exit(): void {
-        const on_exit = () => {
-            if (this.settled) return;
-            this.clear_timeout();
-            // 给管道一点时间把残留数据读完再结算
-            setTimeout(() => this.finish(this.child.exitCode, this.child.signalCode, false), DRAIN_GRACE_MS);
-        };
+        let closed = false;
 
-        this.child.once("exit", on_exit);
-        this.child.once("error", on_exit);
+        this.child.once("close", (code, signal) => {
+            closed = true;
+            this.finish(code, signal);
+        });
+
+        this.child.once("exit", () => {
+            // close 紧跟着就会来，正常情况下什么都不用做；
+            // 若 close 迟迟不来（stdout 被孙进程占着），
+            // 已经拿到的输出就是全部能拿到的，直接结算
+            setImmediate(() => {
+                if (closed || this.settled) return;
+                this.finish(this.child.exitCode, this.child.signalCode);
+            });
+        });
+
+        this.child.once("error", () => {
+            this.finish(null, null);
+        });
     }
 
     private arm_timeout(): void {
@@ -238,12 +235,7 @@ export class ShellCommand {
             if (this.status_value !== "running") return;
 
             // 超时的语义就是终止，不会改成后台继续跑
-            this.request_stop("timeout");
-
-            // 宽限期内不退出就放弃等待，标记 exit_pending 让上层知道进程可能还在
-            this.kill_grace_timer = setTimeout(() => {
-                this.finish(null, "SIGKILL", true);
-            }, KILL_GRACE_MS);
+            this.terminate("timeout");
         }, this.timeout);
     }
 
@@ -252,66 +244,56 @@ export class ShellCommand {
             clearTimeout(this.timeout_timer);
             this.timeout_timer = null;
         }
-        if (this.kill_grace_timer) {
-            clearTimeout(this.kill_grace_timer);
-            this.kill_grace_timer = null;
-        }
+    }
+
+    /** 主动停止：强制终止并立即结算 */
+    stop(): void {
+        if (this.status_value !== "running") return;
+        this.terminate("stop");
     }
 
     /**
-     * 主动停止。
+     * 强制终止进程并结算。
      *
-     * 只把状态置为 stopping 并发出终止请求，不在这里立刻结算结果。
-     * 终态由进程退出事件决定；但如果进程在宽限期内不退出
-     * （忽略了终止信号、卡在不可中断状态），也必须在宽限期后强制结算，
-     * 否则调用方会永远等下去。
+     * 用的都是强杀（kill -9 / taskkill /f），发出去之后进程和它的输出
+     * 都不会再有意义，所以立即结算。
+     * 若此时还有尚未消费的管道数据，close 也不会再影响结果——
+     * 结果已经被定格，finish 的 settled 标志会拦住后续的重复结算。
      */
-    stop(): void {
-        if (this.status_value !== "running") return;
-        this.request_stop("stop");
-
-        // 宽限兜底：进程不退出也要收尾
-        if (!this.kill_grace_timer) {
-            this.kill_grace_timer = setTimeout(() => {
-                this.finish(null, "SIGKILL", true);
-            }, KILL_GRACE_MS);
-        }
-    }
-
-    /** 发出终止请求，把状态切到 stopping */
-    private request_stop(reason: Exclude<StopReason, null>): void {
-        this.status_value = "stopping";
+    /**
+     * 强制终止进程树并结算。
+     *
+     * 用 SystemUtil.killProcess 杀整棵进程树——只杀 shell 进程不够，
+     * 它派生的子进程会变成孤儿继续跑，还占着输出管道。
+     *
+     * 发出强杀后立即结算，不再等进程退出事件：
+     * 强杀不保证进程立刻消失，为了等一个不会更准确的退出码把调用方挂起没有意义。
+     */
+    private terminate(reason: Exclude<StopReason, null>): void {
         this.stop_reason = reason;
         const pid = this.child.pid;
-        if (!pid) return;
-        try {
-            SystemUtil.killProcess(pid)
-        } catch {
-            // 进程可能已经自己退出了，忽略
+        if (pid) {
+            SystemUtil.killProcess(pid);
         }
+        this.finish(null, "SIGKILL");
     }
 
     /** 结算最终结果 */
-    private finish(code: number | null, signal: string | null, exit_pending: boolean): void {
+    private finish(code: number | null, signal: string | null): void {
         if (this.settled) return;
         this.settled = true;
         this.clear_timeout();
 
-        if (this.status_value === "stopping") {
-            this.status_value = "stopped";
-        } else if (this.status_value === "running") {
-            this.status_value = "completed";
-        }
+        this.status_value = this.stop_reason !== null ? "stopped" : "completed";
 
         const result: ExecResult = {
-            // 被信号终止时 exitCode 是 null，按惯例转成 128+信号值
+            // 被信号终止时 exitCode 是 null，按惯例转成 137（128 + SIGKILL）
             code: code !== null ? code : (signal ? 137 : null),
             stdout: this.stdout_tail.result(),
             stderr: this.stderr_tail.result(),
             stopped: this.stop_reason !== null,
             timed_out: this.stop_reason === "timeout",
             truncated: this.stdout_tail.is_truncated() || this.stderr_tail.is_truncated(),
-            exit_pending: exit_pending || undefined,
         };
 
         if (this.resolve_result) {

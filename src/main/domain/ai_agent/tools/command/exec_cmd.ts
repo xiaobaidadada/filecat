@@ -1,7 +1,7 @@
 import {SystemUtil} from "../../../sys/sys.utl";
 import {register_session_cleaner} from "../session/session_cleanup";
 import {ai_agent_params_type} from "../ai_agent.tools";
-import {get_shell, get_shells} from "../utils/shell/find_shell";
+import {get_shell, get_shell_name, get_shells} from "../utils/shell/find_shell";
 
 type exec_cmd_args = {
     cmd: string | string[];
@@ -46,7 +46,7 @@ export const exec_cmd_schema:ai_agent_params_type = {
             `在服务器上执行系统命令，用于获取系统信息或执行系统操作。`,
 
             `当前系统可用的 shell 有：${shell_list_desc()}。`,
-            `默认使用 ${get_shell().type}，不指定 shell 时就是它。`,
+            `默认使用 ${get_shell_name()}，不指定 shell 时就是它。`,
 
             `不同 shell 语法不同，用错会被系统当成别的含义而不是报错，务必注意：`,
 
@@ -55,7 +55,6 @@ export const exec_cmd_schema:ai_agent_params_type = {
             `use_shell 设为 false 时不经过任何 shell，此时 cmd 必须传数组 [可执行文件, 参数1, 参数2...]，不接受字符串。适合执行确切的程序，参数可以逐项指定，不会被任何 shell 解释或分词。`,
 
             "优先使用专用工具而不是命令：读文件用 read_file（不要用 cat/head/tail），改文件用 edit_file（不要用 sed/awk），找文件用 list_files，搜内容用 search_in_files。",
-            "多条独立命令请分多次并行调用；有依赖关系时才用 && 串联。",
             "不要用这个工具启动需要长期运行的服务或守护进程，用 exec_cmd_background。",
             "命令输出过长时只保留末尾部分，并会标注已截断。",
         ].join("\n"),
