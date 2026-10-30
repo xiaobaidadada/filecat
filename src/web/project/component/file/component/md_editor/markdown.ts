@@ -42,6 +42,34 @@ md.renderer.rules.html_inline = (tokens, idx) => {
     return `<span data-html-inline="${encode_html(tokens[idx].content)}"></span>`;
 };
 
+/**
+ * 代码块：去掉 markdown-it 给的尾随换行。
+ *
+ * markdown-it 的 fence token，content 末尾永远带一个 \n（它是行的结束符，不是代码内容）。
+ * 如果原样放进 <pre><code>，ProseMirror 会把它当成代码块的最后一个字符存下来，
+ * 于是编辑器里凭空多出一行空行，保存时也会多出一个换行。
+ *
+ * 这里剥掉结尾的这一个 \n，让代码块内容严格等于用户真正写的东西。
+ * 注意只剥一个：用户自己在末尾敲的空行要原样保留
+ * （例如 "a\n\n" 里的第二个 \n 属于用户输入）。
+ */
+md.renderer.rules.fence = (tokens, idx) => {
+    const token = tokens[idx];
+    const lang = token.info ? token.info.trim().split(/\s+/)[0] : "";
+    // content 必然以 \n 结尾（markdown-it 保证），去掉这一个即恢复原始代码文本
+    const code = token.content.replace(/\n$/, "");
+    // 代码内容必须做 HTML 转义，否则 <div> & 之类会被当成标签
+    const escaped = md.utils.escapeHtml(code);
+    const cls = lang ? ` class="language-${escape_attr(lang)}"` : "";
+    const data_lang = lang ? ` data-language="${escape_attr(lang)}"` : "";
+    return `<pre${data_lang}><code${cls}>${escaped}</code></pre>\n`;
+};
+
+/** HTML 属性值转义 */
+function escape_attr(s: string): string {
+    return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // ---------------------------------------------------------------------------
 // 数学公式
 // ---------------------------------------------------------------------------
@@ -331,6 +359,8 @@ function serialize_block(node: PMNode, indent = ""): string {
         }
         case "code_block": {
             const lang = node.attrs.language ?? "";
+            // 解析时已经剥掉了 markdown-it 的尾随换行（见 fence renderer），
+            // textContent 就是用户写的代码原文，这里原样输出，一个字符都不增删。
             const text = node.textContent;
             // 内容里若含连续反引号，围栏必须比它更长，否则会被误判为围栏结束而截断
             let fence_len = 3;
@@ -340,6 +370,7 @@ function serialize_block(node: PMNode, indent = ""): string {
             const fence = "`".repeat(fence_len);
             // 内容每行都要跟着 indent，否则在列表内围栏会被判定提前结束，内容漏到代码块外
             const body = text.split("\n").map(l => indent + l).join("\n");
+            // 末尾补一个换行只是为了让收尾围栏独立成行，不改变代码内容
             return `${indent}${fence}${lang}\n${body}\n${indent}${fence}`;
         }
         case "horizontal_rule":
@@ -420,15 +451,54 @@ export function doc_to_markdown(doc: PMNode): string {
  * 全选复制时若照常序列化，会平白多出一层 ``` 外框，粘到另一个 md 里
  * 就变成「整篇被包进代码块」。这种「内容本身就是 Markdown 原文」的情况，
  * 直接取代码块内部文本即可。
- *
- * slice.content 是 Fragment，与节点一样支持 forEach，可直接复用 serialize_children。
  */
-export function slice_to_markdown(slice: {content: PMNode | any}): string {
+export function slice_to_markdown(slice: {content: PMNode | any; openStart?: number; openEnd?: number}): string {
     const nodes: PMNode[] = [];
     slice.content.forEach((child: PMNode) => nodes.push(child));
+
+    // 源码模式：整篇只有一个 markdown 代码块，取内部文本原样返回
     if (nodes.length === 1 && nodes[0].type.name === "code_block" && nodes[0].attrs.language === "markdown") {
-        // 源码模式：内容已经是 Markdown 源码，去掉外层围栏再输出
-        return nodes[0].textContent.replace(/\n*$/, "") + "\n";
+        return nodes[0].textContent;
     }
-    return serialize_children(slice.content).trim() + "\n";
+
+    // 实测各场景的 openStart / openEnd：
+    //   只选中列表项/引用块里的一段文字 -> 1 / 1
+    //   选中整个列表                      -> 3 / 3
+    //   全选整篇文档                      -> 3 / 1
+    // 只有 1/1 才表示「选区落在容器内部」，此时 content 是外层容器，
+    // 直接序列化会带上 "1. "、"> " 这类标记，而用户只要里面的文字。
+    // 其余情况都按完整块序列化，列表编号等结构得以保留。
+    const open_start = slice.openStart ?? 0;
+    const open_end = slice.openEnd ?? 0;
+    const single_inner = nodes.length === 1 && open_start === 1 && open_end === 1;
+
+    if (single_inner) {
+        return serialize_selection(slice.content);
+    }
+    return serialize_children(slice.content);
+}
+
+/**
+ * 序列化「选中了某个容器内部的一段内容」的选区。
+ *
+ * 调用前提：slice 是单块、openStart / openEnd 都是 1，
+ * 即 content 里装的是外层容器（ordered_list / bullet_list / blockquote），
+ * 而用户真正选中的是容器里的一层内容。
+ *
+ * 这里不输出容器自身的标记（列表编号、" > " 引用符），
+ * 直接按内容块序列化，得到用户实际选中的那段文字。
+ */
+function serialize_selection(node: any): string {
+    const blocks: string[] = [];
+    node.forEach((child: PMNode) => {
+        const is_container = ["ordered_list", "bullet_list", "list_item", "blockquote"].includes(child.type.name);
+        if (is_container) {
+            blocks.push(serialize_selection(child));
+        } else {
+            blocks.push(serialize_block(child, ""));
+        }
+    });
+    // 列表的兄弟项之间用单换行；其余块之间按 Markdown 惯例隔一个空行
+    const is_list = node.type && (node.type.name === "ordered_list" || node.type.name === "bullet_list");
+    return blocks.join(is_list ? "\n" : "\n\n");
 }
