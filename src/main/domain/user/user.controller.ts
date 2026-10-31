@@ -13,9 +13,9 @@ import {Http_controller_router} from "../../../common/req/http_controller_router
 import {Env} from "../../../common/node/Env";
 import {HttpRequest} from "../../../common/node/http";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
-import {withLock} from "../../../common/fun.util";
 import {CommonUtil} from "../../../common/common.util";
 import {mdThemeService} from "../setting/md_theme.service";
+import {withLock} from "../../../common/lock";
 
 interface UserLoginData {
     username: string;

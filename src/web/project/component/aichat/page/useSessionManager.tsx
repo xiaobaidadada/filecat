@@ -188,7 +188,7 @@ export function useSessionManager(options: Options) {
         const normalized = normalize_path(cwd);
         const matched = list.find(it => normalize_path(it.file_cwd_path) === normalized);
         if (matched) return matched.id;
-        const created = await ai_agentHttp.post("session", { file_cwd_path: normalized });
+        const created = await ai_agentHttp.post("session", { file_cwd_path: cwd });
         if (created.code !== RCode.Success) return null;
         return (created.data as ai_agent_chat_session_item).id;
     };

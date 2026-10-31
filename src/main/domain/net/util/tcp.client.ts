@@ -3,8 +3,8 @@ import net from "net";
 import { tcp_stream_util } from "./tcp_stream_util";
 import { msgClientMap, NetMsgType, NetUtil } from "./NetUtil";
 import { net_timeout, NetClientUtil } from "./NetClientUtil";
-import { withLock } from "../../../../common/fun.util";
 import { CommonUtil } from "../../../../common/common.util";
+import {withLock} from "../../../../common/lock";
 
 export class tcp_raw_socket {
     protected client: tcp_stream_util;

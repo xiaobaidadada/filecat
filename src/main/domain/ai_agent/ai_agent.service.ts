@@ -893,7 +893,7 @@ export class Ai_agentService {
         const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
         const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
             || formatAttachmentTitle(latestUserMessage?.attachments);
-        const session = aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
+        const session = await aiAgentMemoryService.ensure_session(userId, session_id, sessionTitle);
         const workMessages = aiAgentMemoryService.build_context_by_session(session, incomingMessages, ai_agentService.opened_ai_config_env);
 
         // 会话级工作目录（file_cwd_path）：作为 cwd 传给 chat_core，
@@ -1024,7 +1024,7 @@ export class Ai_agentService {
                     content: partialText ? `${partialText}\n\n[error] ${errorMsg}` : errorMsg,
                 };
                 // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                aiAgentMemoryService.append_message_to_session(userId, session.id, errMsg);
+                await aiAgentMemoryService.append_message_to_session(userId, session.id, errMsg);
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }

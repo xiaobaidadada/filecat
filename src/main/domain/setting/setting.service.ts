@@ -36,7 +36,6 @@ import {FileServiceImpl} from "../file/file.service";
 import {FileUtil} from "../file/FileUtil";
 import {get_base, get_sys_base_url_pre} from "../bin/bin";
 import {get_user_now_pwd} from "../../../common/DataUtil";
-import {withLock} from "../../../common/fun.util";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
@@ -65,6 +64,7 @@ import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
 import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
 import {is_private_ipv4_literal} from "../../../common/node/net";
+import {withLock} from "../../../common/lock";
 
 const ffmpeg = require('fluent-ffmpeg');
 

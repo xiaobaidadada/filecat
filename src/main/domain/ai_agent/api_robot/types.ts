@@ -56,7 +56,7 @@ export async function chatWithAI(params: BotChatParams): Promise<string | null> 
     const { uniqueId, content, chatType, source, sourceLabel, userId, systemUserId, modelConfig, modelEnv } = params;
     const sessionId = `${source.replace('robot_', '')}_${chatType.toLowerCase()}_${uniqueId}`;
 
-    const session = aiAgentMemoryService.ensure_session(
+    const session = await aiAgentMemoryService.ensure_session(
         systemUserId,
         sessionId,
         `${sourceLabel} ${chatType === 'C2C' ? '单聊' : '群聊'} - ${uniqueId.slice(0, 8)}...`,

@@ -11,7 +11,8 @@ const { spawn } = require('child_process');
 import WebSocket from "ws";
 import {data_common_key} from "../data/data_type";
 import {SystemUtil} from "./sys.utl";
-import {withLock} from "../../../common/fun.util";
+
+import {withLock} from "../../../common/lock";
 const systemd_key = data_common_key.systemd_key;
 
 let  spawnChild = getProcessAddon();

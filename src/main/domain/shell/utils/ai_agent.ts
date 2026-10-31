@@ -142,11 +142,19 @@ export class ai_agent_class {
             // 设置标志表示这是临时会话
         } else {
             // 正常会话，持久化存储
-            this.session = aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
-            this.sessionId = this.session.id;
-            this.messages = [
-                ...(this.session.messages ?? []),
-            ];
+            // 构造函数不能 await，这里先占位，由 init_session() 异步补齐
+            this.session = {
+                id: "",
+                title: "命令行会话",
+                messages: [],
+                summary: "",
+                long_term_memory: "",
+                source: "cli",
+                created_at: Date.now(),
+                updated_at: Date.now(),
+            };
+            this.sessionId = "";
+            this.messages = [];
             this.pendingMessages = [
                 ...messages.map(v => ({
                     content: v,
@@ -154,6 +162,19 @@ export class ai_agent_class {
                 })) as ai_agent_message_item[]
             ];
         }
+
+        // 非临时会话的持久化实例需要等异步结果，这里保存一个可等待的句柄
+        this.session_ready = this.init_session();
+    }
+
+    /** 持久化会话初始化：构造函数不能 await，由这里补齐后供 chat 前 await */
+    session_ready: Promise<void> = Promise.resolve();
+
+    private async init_session() {
+        if (this.isTemporarySession) return;
+        this.session = await aiAgentMemoryService.ensure_single_session(this.userId, "cli", "命令行会话");
+        this.sessionId = this.session.id;
+        this.messages = [...(this.session.messages ?? [])];
     }
 
     chat_done() {
@@ -168,6 +189,9 @@ export class ai_agent_class {
     }
 
     async chat() {
+
+        // 等待构造函数发起的持久化会话初始化完成（临时会话该 Promise 已 resolved）
+        await this.session_ready;
 
         this.print(ShellUtil.color("Ai:",'ai'));
         this.pty.not_write = true

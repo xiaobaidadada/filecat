@@ -1,6 +1,5 @@
-import fs from "fs";
 import path from "path";
-import fse from "fs-extra";
+import {FileUtil} from "../file/FileUtil";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {aiAgentLongTermMemoryService} from "./ai_agent.long_term_memory";
@@ -19,6 +18,7 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {estimateTokenCount} from "./token_counter";
 import {tool_message_content} from "./chat.core";
+import {RWLock} from "../../../common/lock";
 
 type SessionMeta = ai_agent_chat_session_meta & {
     file_name: string;
@@ -32,6 +32,8 @@ type SessionIndexStore = {
         };
     };
 };
+
+const session_lock = new RWLock();
 
 // 三个配置的默认值，当 env 未传或未设置时使用
 const DEFAULT_MAX_RECENT_MESSAGES = 12;
@@ -192,9 +194,15 @@ export class AiAgentMemoryService {
         return DataUtil.get_tem_path(data_dir_tem_name.ai_agent_chat_session_dir);
     }
 
+    /** 纯路径计算，不做 IO */
     private userDir(userId: string) {
-        const dir = path.join(this.sessionRoot(), safeName(userId));
-        fse.ensureDirSync(dir);
+        return path.join(this.sessionRoot(), safeName(userId));
+    }
+
+    /** 确保会话目录存在（写入前调用） */
+    private async ensure_user_dir(userId: string) {
+        const dir = this.userDir(userId);
+        await FileUtil.ensure_dir(dir);
         return dir;
     }
 
@@ -249,18 +257,20 @@ export class AiAgentMemoryService {
         };
     }
 
-    private writeSession(userId: string, session: ai_agent_chat_session_item, fileName?: string) {
+    private async writeSession(userId: string, session: ai_agent_chat_session_item, fileName?: string) {
         const nextFileName = fileName || this.sessionFileName(session.id);
-        fs.writeFileSync(this.sessionPath(userId, nextFileName), JSON.stringify(session));
+        await this.ensure_user_dir(userId);
+        await FileUtil.writeFileSync(this.sessionPath(userId, nextFileName), JSON.stringify(session));
         return nextFileName;
     }
 
-    private read_session(userId: string, meta: SessionMeta) {
+    private async read_session(userId: string, meta: SessionMeta) {
         try {
             const fileName = meta.file_name || this.sessionFileName(meta.id);
             const filePath = this.sessionPath(userId, fileName);
-            if (!fs.existsSync(filePath)) return null;
-            const session = JSON.parse(fs.readFileSync(filePath).toString()) as ai_agent_chat_session_item;
+            if (!await FileUtil.access(filePath)) return null;
+            const raw = await FileUtil.readFileSync(filePath);
+            const session = JSON.parse(raw.toString()) as ai_agent_chat_session_item;
             session.summary = session.summary ?? "";
             session.long_term_memory = session.long_term_memory ?? "";
             session.source = session.source ?? meta.source;
@@ -349,15 +359,15 @@ export class AiAgentMemoryService {
         return list.sort((a, b) => (b.updated_at ?? 0) - (a.updated_at ?? 0));
     }
 
-    public get_session(userId: string, sessionId: string) {
+    public async get_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         return session ? cloneSession(session) : null;
     }
 
-    public create_session(userId: string, title :string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
+    public async create_session(userId: string, title :string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
         const store = this.read_index_of_session();
         // 新会话要显示在列表最顶部：取所有已有会话最小的 sort_index - 1，
         // 这样它一定排在所有已排序会话之前，又不影响已有会话之间的相对顺序。
@@ -368,7 +378,7 @@ export class AiAgentMemoryService {
             const ok_path = path.normalize(file_cwd_path);
             for (const it  of existing) {
                 if (it.file_cwd_path && path.normalize(it.file_cwd_path) === ok_path) {
-                    const hit = this.read_session(userId, it);
+                    const hit = await this.read_session(userId, it);
                     if (hit) return cloneSession(hit);
                 }
             }
@@ -391,20 +401,20 @@ export class AiAgentMemoryService {
             file_cwd_path: file_cwd_path ,
             sort_index: min_sort === undefined ? undefined : min_sort - 1,
         };
-        const fileName = this.writeSession(userId, session);
+        const fileName = await this.writeSession(userId, session);
         this.upsertMeta(store, userId, session, fileName);
         return cloneSession(session);
     }
 
-    public ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web", sys_prompt_id?:string, ensureSessionId?:string) {
+    public async ensure_session(userId: string, sessionId?: string, title?: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web", sys_prompt_id?:string, ensureSessionId?:string) {
         if (sessionId) {
-            const session = this.get_session(userId, sessionId);
+            const session = await this.get_session(userId, sessionId);
             if (session) return session;
         }
         return this.create_session(userId, title, source, sys_prompt_id, ensureSessionId);
     }
 
-    public ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark", title: string) {
+    public async ensure_single_session(userId: string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark", title: string) {
         const meta = this.findMetaBySource(userId, source);
         if (meta) {
             return this.get_session(userId, meta.id);
@@ -412,27 +422,27 @@ export class AiAgentMemoryService {
         return this.create_session(userId, title, source);
     }
 
-    public delete(userId: string, sessionId: string) {
+    public async delete(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const user = this.user_meta_index_by_store(store, userId);
         const meta = user.sessions.find(it => it.id === sessionId);
         if (meta) {
             const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(sessionId));
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            if (await FileUtil.access(filePath)) {
+                await FileUtil.unlinkSync(filePath);
             }
         }
         user.sessions = user.sessions.filter(it => it.id !== sessionId);
         this.saveIndex(store);
     }
 
-    public clear(userId: string) {
+    public async clear(userId: string) {
         const store = this.read_index_of_session();
         const user = this.user_meta_index_by_store(store, userId);
         for (const meta of user.sessions) {
             const filePath = this.sessionPath(userId, meta.file_name || this.sessionFileName(meta.id));
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            if (await FileUtil.access(filePath)) {
+                await FileUtil.unlinkSync(filePath);
             }
         }
         user.sessions = [];
@@ -440,17 +450,17 @@ export class AiAgentMemoryService {
     }
 
     // 更新消息到会话 整体更新（不推荐使用，消息量大时请求体可能超限，优先使用 delete_messages_from_session）
-    public update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_message_list) {
+    public async update_messages_to_session(userId: string, sessionId: string, messages: ai_agent_message_list) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return;
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
             .map(llm_normalizeMessage_one);
         session.updated_at = Date.now();
-        const fileName = this.writeSession(userId, session, meta.file_name);
+        const fileName = await this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
 
@@ -460,11 +470,11 @@ export class AiAgentMemoryService {
      * @param sessionId 会话 ID
      * @param indices 要删除的消息在 messages 数组中的索引（从 0 开始），会自动排序并去重
      */
-    public delete_messages_from_session(userId: string, sessionId: string, indices: number[]) {
+    public async delete_messages_from_session(userId: string, sessionId: string, indices: number[]) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return;
         if (!session.messages?.length) return;
 
@@ -478,7 +488,7 @@ export class AiAgentMemoryService {
         }
 
         session.updated_at = Date.now();
-        const fileName = this.writeSession(userId, session, meta.file_name);
+        const fileName = await this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
 
@@ -487,47 +497,51 @@ export class AiAgentMemoryService {
      * 按传入的 id 顺序写入 sort_index（0,1,2...），未出现在列表中的会话保持原值。
      * @param sessionIds 排序后的会话 id 数组（索引即顺序）
      */
-    public sessions_update_sort(userId: string, sessionIds: string[]) {
+    public async sessions_update_sort(userId: string, sessionIds: string[]) {
         if (!Array.isArray(sessionIds) || sessionIds.length === 0) return;
         const store = this.read_index_of_session();
         const user = this.user_meta_index_by_store(store, userId);
         // id → 新顺序 的映射，便于 O(1) 查找
         const order_map = new Map<string, number>();
         sessionIds.forEach((id, index) => order_map.set(id, index));
-        user.sessions.forEach(meta => {
+        for (const meta of user.sessions) {
             const next = order_map.get(meta.id);
-            if (next === undefined) return;
+            if (next === undefined) continue;
             meta.sort_index = next;
             // 同步写入 session 文件，避免 appendTurn 时 toMeta 回写覆盖掉排序值
-            try {
-                const session = this.read_session(userId, meta);
-                if (session) {
-                    session.sort_index = next;
-                    this.writeSession(userId, session, meta.file_name);
+            await session_lock.run(meta.id, async () => {
+                try {
+                    const session = await this.read_session(userId, meta);
+                    if (session) {
+                        session.sort_index = next;
+                        await this.writeSession(userId, session, meta.file_name);
+                    }
+                } catch (e) {
+                    console.error("sessions_update_sort: 同步 session 文件失败", e);
                 }
-            } catch (e) {
-                console.error("sessions_update_sort: 同步 session 文件失败", e);
-            }
-        });
+            });
+        }
         this.saveIndex(store);
     }
 
-    public sessions_update_meta(userId: string, session:ai_agent_chat_session_meta ) {
+    public async sessions_update_meta(userId: string, session:ai_agent_chat_session_meta ) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === session.id);
         if (!meta) return;
         meta.title = session.title;
         this.saveIndex(store);
         // 同步更新 session 文件中的 title，防止 appendTurn 回写时覆盖掉用户修改的标题
-        try {
-            const sessionData = this.read_session(userId, meta);
-            if (sessionData) {
-                sessionData.title = session.title;
-                this.writeSession(userId, sessionData, meta.file_name);
+        await session_lock.run(meta.id, async () => {
+            try {
+                const sessionData = await this.read_session(userId, meta);
+                if (sessionData) {
+                    sessionData.title = session.title;
+                    await this.writeSession(userId, sessionData, meta.file_name);
+                }
+            } catch (e) {
+                console.error("sessions_update_meta: 同步更新 session 文件失败", e);
             }
-        } catch (e) {
-            console.error("sessions_update_meta: 同步更新 session 文件失败", e);
-        }
+        });
     }
 
     /**
@@ -536,15 +550,15 @@ export class AiAgentMemoryService {
      * @param sessionId 会话 ID
      * @param sys_prompt_id 系统提示词 ID（可能为空字符串表示清除）
      */
-    public update_sys_prompt(userId: string, sessionId: string, sys_prompt_id?: string) {
+    public async update_sys_prompt(userId: string, sessionId: string, sys_prompt_id?: string) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return;
         // 空/undefined 均视为清除该系统提示词
         session.sys_prompt_id = sys_prompt_id || undefined;
-        const fileName = this.writeSession(userId, session, meta.file_name);
+        const fileName = await this.writeSession(userId, session, meta.file_name);
         // 索引里也要同步，否则 list() 读不到该字段（列表无法显示会话所属提示词）
         this.upsertMeta(store, userId, session, fileName);
     }
@@ -555,14 +569,14 @@ export class AiAgentMemoryService {
      * @param sessionId 会话 ID
      * @param allow 是否开启免确认
      */
-    public sessions_update_cmd_auto_allow(userId: string, sessionId: string, allow: boolean) {
+    public async sessions_update_cmd_auto_allow(userId: string, sessionId: string, allow: boolean) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return;
         session.cmd_auto_allow = allow;
-        const fileName = this.writeSession(userId, session, meta.file_name);
+        const fileName = await this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
 
@@ -573,28 +587,30 @@ export class AiAgentMemoryService {
      * @param sessionId 会话 ID
      * @param setting 需要更新的设置项
      */
-    public sessions_update_setting(userId: string, sessionId: string, setting: {
+    public async sessions_update_setting(userId: string, sessionId: string, setting: {
         /** 服务器工作目录（绝对路径）；空字符串表示清除 */
         file_cwd_path?: string;
     }) {
-        const store = this.read_index_of_session();
-        const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
-        if (!meta) return;
-        const session = this.read_session(userId, meta);
-        if (!session) return;
-        if (setting.file_cwd_path !== undefined) {
-            // 空/空白视为清除该配置
-            session.file_cwd_path = setting.file_cwd_path.trim() || undefined;
-        }
-        const fileName = this.writeSession(userId, session, meta.file_name);
-        this.upsertMeta(store, userId, session, fileName);
+        await session_lock.run(sessionId, async () => {
+            const store = this.read_index_of_session();
+            const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
+            if (!meta) return;
+            const session = await this.read_session(userId, meta);
+            if (!session) return;
+            if (setting.file_cwd_path !== undefined) {
+                // 空/空白视为清除该配置
+                session.file_cwd_path = setting.file_cwd_path.trim() || undefined;
+            }
+            const fileName = await this.writeSession(userId, session, meta.file_name);
+            this.upsertMeta(store, userId, session, fileName);
+        });
     }
 
-    private get_origin_session(userId: string, sessionId: string) {
+    private async get_origin_session(userId: string, sessionId: string) {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return;
         session.messages = session.messages ?? [];
         return {session,meta,store};
@@ -608,20 +624,26 @@ export class AiAgentMemoryService {
      * @param sessionId 会话 ID
      * @param message 要追加的消息（会被标准化为 LLM 可识别的格式）
      */
-    public append_message_to_session(userId: string, sessionId: string, message: ai_agent_message_item) {
-        const r = this.get_origin_session(userId,sessionId);
-        if(!r)return;
-        const {session,meta,store} = r;
-        // 标准化消息，保证与历史消息结构一致（role/content/attachments/tool_calls）
-        session.messages.push(llm_normalizeMessage_one(message));
-        session.updated_at = Date.now();
-        const fileName = this.writeSession(userId, session, meta.file_name);
-        this.upsertMeta(store, userId, session, fileName);
+    public async append_message_to_session(userId: string, sessionId: string, message: ai_agent_message_item) {
+        await session_lock.run(sessionId, async () => {
+            const r = await this.get_origin_session(userId,sessionId);
+            if(!r)return;
+            const {session,meta,store} = r;
+            // 标准化消息，保证与历史消息结构一致（role/content/attachments/tool_calls）
+            session.messages.push(llm_normalizeMessage_one(message));
+            session.updated_at = Date.now();
+            const fileName = await this.writeSession(userId, session, meta.file_name);
+            this.upsertMeta(store, userId, session, fileName);
+        });
     }
 
     // 将本次机器人的聊天结果加入到历史会话中
     public async appendTurn(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }, env?: ai_agent_item_dotenv) {
-        const r = this.get_origin_session(userId,sessionId);
+        await session_lock.run(sessionId, () => this.appendTurn_unlocked(userId, sessionId, userMessage, assistantMessage, turnStats, env));
+    }
+
+    private async appendTurn_unlocked(userId:string, sessionId:string, userMessage:ai_agent_message_item, assistantMessage:ai_agent_message_item, turnStats?: { output_tokens?: number;input_tokens?: number; }, env?: ai_agent_item_dotenv) {
+        const r = await this.get_origin_session(userId,sessionId);
         if(!r)return;
         const {session,meta,store} = r;
         // 历史处理
@@ -666,7 +688,7 @@ export class AiAgentMemoryService {
             aiAgentLongTermMemoryService.syncMemory(session);
         }
 
-        const fileName = this.writeSession(userId, session, meta.file_name);
+        const fileName = await this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
     }
 
@@ -735,11 +757,11 @@ export class AiAgentMemoryService {
     }
 
     /** 获取会话的 token 消耗统计 */
-    public get_usage_stats(userId: string, sessionId: string): ai_agent_usage_stats | null {
+    public async get_usage_stats(userId: string, sessionId: string): Promise<ai_agent_usage_stats | null> {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
-        const session = this.read_session(userId, meta);
+        const session = await this.read_session(userId, meta);
         if (!session) return null;
         return session.usage_stats ?? null;
     }

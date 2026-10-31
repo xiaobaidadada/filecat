@@ -72,7 +72,7 @@ export class Ai_AgentController {
     async sessions_update_meta(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.sessions_update_meta(user?.id ,data)
+        await aiAgentMemoryService.sessions_update_meta(user?.id ,data)
         return Sucess("ok")
     }
 
@@ -85,7 +85,7 @@ export class Ai_AgentController {
     async sessions_update_sort(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.sessions_update_sort(user?.id, data?.session_ids ?? []);
+        await aiAgentMemoryService.sessions_update_sort(user?.id, data?.session_ids ?? []);
         return Sucess("ok");
     }
 
@@ -107,7 +107,7 @@ export class Ai_AgentController {
             cwd = sysPath
             data.title = data?.title || `Dir ${path.basename(cwd)}`
         }
-        return Sucess(aiAgentMemoryService.create_session(
+        return Sucess(await aiAgentMemoryService.create_session(
             user?.id ,
             data?.title,
             undefined,
@@ -125,7 +125,7 @@ export class Ai_AgentController {
     async session_sys_prompt(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.update_sys_prompt(
+        await aiAgentMemoryService.update_sys_prompt(
             user?.id ,
             data?.session_id,
             data?.sys_prompt_id
@@ -141,7 +141,7 @@ export class Ai_AgentController {
     async session_cmd_auto_allow(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.sessions_update_cmd_auto_allow(
+        await aiAgentMemoryService.sessions_update_cmd_auto_allow(
             user?.id ,
             data?.session_id,
             data?.allow === true
@@ -172,7 +172,7 @@ export class Ai_AgentController {
             }
             setting.file_cwd_path = cwd;
         }
-        aiAgentMemoryService.sessions_update_setting(
+        await aiAgentMemoryService.sessions_update_setting(
             user?.id ,
             data?.session_id,
             setting
@@ -185,7 +185,7 @@ export class Ai_AgentController {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
         const userId = user?.id ;
-        const session = aiAgentMemoryService.get_session(userId, data?.session_id);
+        const session = await aiAgentMemoryService.get_session(userId, data?.session_id);
         if (!session) return Sucess(null);
         // 若该会话正在执行中，把未落盘的实时内容并入返回结果：
         //  - 本轮 user 消息（last_user_message）并入 session.messages 末尾
@@ -211,7 +211,7 @@ export class Ai_AgentController {
     async session_delete(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.delete(user?.id , data?.session_id)
+        await aiAgentMemoryService.delete(user?.id , data?.session_id)
         return Sucess("")
     }
 
@@ -219,7 +219,7 @@ export class Ai_AgentController {
     async session_messages(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.update_messages_to_session(user?.id , data?.session_id, data?.messages)
+        await aiAgentMemoryService.update_messages_to_session(user?.id , data?.session_id, data?.messages)
         return Sucess("")
     }
 
@@ -231,7 +231,7 @@ export class Ai_AgentController {
     async session_message_delete(@Req() ctx, @Body() data: { session_id: string; indices: number[] }) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.delete_messages_from_session(
+        await aiAgentMemoryService.delete_messages_from_session(
             user?.id,
             data?.session_id,
             data?.indices ?? []
@@ -243,7 +243,7 @@ export class Ai_AgentController {
     async session_usage_stats(@Req() ctx, @Body() data: any) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        const stats = aiAgentMemoryService.get_usage_stats(
+        const stats = await aiAgentMemoryService.get_usage_stats(
             user?.id ,
             data?.session_id
         );
@@ -254,7 +254,7 @@ export class Ai_AgentController {
     async sessions_clear(@Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.ai_agent_page);
         const user = userService.get_user_info_by_token(ctx.headers.authorization);
-        aiAgentMemoryService.clear(user?.id)
+        await aiAgentMemoryService.clear(user?.id)
         return Sucess("")
     }
 
@@ -301,7 +301,7 @@ export class Ai_AgentController {
             case 'get': {
                 const sessionId = `${data?.session_id ?? ""}`;
                 const ownerId = owner_of(sessionId);
-                const session = mem.get_session(ownerId, sessionId);
+                const session = await mem.get_session(ownerId, sessionId);
                 if (!session) return Sucess(null);
                 if (ai_agentService.isChatRunning(session.id)) {
                     let msgs = session.messages ?? [];
@@ -386,7 +386,7 @@ export class Ai_AgentController {
         assistantMessage: ai_agent_message_item,
         env?: ai_agent_item_dotenv,
     ) {
-        const session = aiAgentMemoryService.ensure_session(userId, sessionId, prompt.slice(0, 28) );
+        const session = await aiAgentMemoryService.ensure_session(userId, sessionId, prompt.slice(0, 28) );
         const userMsg: ai_agent_message_item = {
             role: "user",
             content: prompt,

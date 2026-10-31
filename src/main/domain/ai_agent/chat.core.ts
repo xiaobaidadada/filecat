@@ -130,7 +130,7 @@ export class ChatCore {
 
         // 该会话开启了“命令免确认”（cmd_auto_allow），直接允许，不弹确认框
         if (session_id) {
-            const session = aiAgentMemoryService.get_session(user_id, session_id);
+            const session = await aiAgentMemoryService.get_session(user_id, session_id);
             if (session?.cmd_auto_allow) {
                 return true;
             }
