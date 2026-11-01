@@ -245,18 +245,40 @@ export interface control_env_proxy_rule {
     websocket?: boolean
 }
 
+// HTTPS 证书条目，语义同 nginx 的 ssl_certificate / ssl_certificate_key。
+// cert / key 既可以填证书文件路径，也可以直接填 PEM 内容。
+// server_name 精确匹配 SNI 域名；留空表示作为默认证书。
+export interface control_env_https_cert {
+    server_name?: string
+    cert: string
+    key: string
+}
+
+// HTTPS 监听配置。
+// 只监听一个端口，按 SNI 的域名选择不同证书，
+// 等价于 nginx 里一个 listen 下配多个 server_name + 各自证书。
+// default_cert / default_key 为 SNI 未命中或客户端不支持 SNI 时使用的兜底证书。
+export interface control_env_https {
+    open?: boolean
+    default_cert?: string
+    default_key?: string
+    cert_list?: control_env_https_cert[]
+}
+
 // 环境控制配置（yaml 语法）。
 // 目前支持：
 //   allowed_hosts        —— 只允许匹配的 Host 访问
 //   forbid_hosts         —— 拒绝匹配的 Host 访问
 //   allowed_private_host —— 放行私网 IP 直连
 //   proxy_rules          —— 按域名转发 HTTP 请求
+//   https                —— HTTPS 监听与按域名选择证书
 // allowed_hosts / forbid_hosts 的每一项为正则表达式（完整匹配），Host 只取主机名（不含端口）。
 export interface control_env_pojo {
     allowed_hosts?: string[]
     forbid_hosts?: string[]
     allowed_private_host?: boolean
     proxy_rules?: control_env_proxy_rule[]
+    https?: control_env_https
 }
 
 // 环境控制的默认值 —— 唯一定义处，前后端都从这里取
@@ -282,6 +304,21 @@ allowed_private_host: false
 #   - host: 'api.example.com'
 #     path: '/v1'
 #     target: 'http://127.0.0.1:8080'
+
+# HTTPS 按域名加载证书（类似 nginx 的 ssl_certificate）
+# cert/key 既可以写文件路径，也可以直接粘贴 PEM 内容
+# cert_list 里的 server_name 精确匹配 SNI 域名；未命中或客户端不带 SNI 时用默认那对
+# https:
+#   open: false
+#   default_cert: '/etc/ssl/a/fullchain.pem'
+#   default_key: '/etc/ssl/a/privkey.pem'
+#   cert_list:
+#     - server_name: 'a.example.com'
+#       cert: '/etc/ssl/a/fullchain.pem'
+#       key: '/etc/ssl/a/privkey.pem'
+#     - server_name: 'b.example.com'
+#       cert: '/etc/ssl/b/fullchain.pem'
+#       key: '/etc/ssl/b/privkey.pem'
 `
 
 // md 编辑器全局设置（所有用户共用，由管理员在设置页调整）

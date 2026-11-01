@@ -17,7 +17,6 @@ import {
     dir_upload_max_num_item,
     FileQuickCmdItem,
     FileSettingItem,
-    HttpsSettingReq,
     QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
@@ -584,6 +583,44 @@ export class SettingService {
                 };
             });
         }
+        if (raw.https !== undefined && raw.https !== null) {
+            if (typeof raw.https !== "object") throw "https 必须是对象";
+            const h = raw.https;
+            const result_https: any = {};
+            if (h.open !== undefined && h.open !== null) {
+                result_https.open = !!h.open;
+            }
+            const opt_str = (v: any, name: string) => {
+                if (v === undefined || v === null) return undefined;
+                if (typeof v !== "string") throw `${name} 必须是字符串`;
+                return v.trim();
+            };
+            // cert/key 既可以是文件路径，也可以是 PEM 内容，这里只做字符串校验
+            result_https.default_cert = opt_str(h.default_cert, "https.default_cert");
+            result_https.default_key = opt_str(h.default_key, "https.default_key");
+            if (h.cert_list !== undefined && h.cert_list !== null) {
+                if (!Array.isArray(h.cert_list)) throw "https.cert_list 必须是列表";
+                result_https.cert_list = h.cert_list.map((it: any, i: number) => {
+                    if (!it || typeof it !== "object") throw `https.cert_list[${i}] 必须是对象`;
+                    const cert = opt_str(it.cert, `https.cert_list[${i}].cert`);
+                    const key = opt_str(it.key, `https.cert_list[${i}].key`);
+                    // 证书和私钥必须成对，缺一个就无法完成 TLS 握手
+                    if (!cert) throw `https.cert_list[${i}].cert 不能为空`;
+                    if (!key) throw `https.cert_list[${i}].key 不能为空`;
+                    let server_name = it.server_name === undefined || it.server_name === null ? undefined : `${it.server_name}`.trim().toLowerCase();
+                    if (server_name === "") server_name = undefined;
+                    return {server_name, cert, key};
+                });
+            }
+            // 必须有一对默认证书：SNI 未命中或不支持 SNI 的客户端全靠它，
+            // 否则启动时无从选择证书（与 main.ts 的 load_https_context 保持一致）
+            if (result_https.open) {
+                if (!result_https.default_cert || !result_https.default_key) {
+                    throw "https.open 为真时必须配置 default_cert 和 default_key 作为默认证书";
+                }
+            }
+            result.https = result_https;
+        }
         return result;
     }
 
@@ -672,27 +709,6 @@ export class SettingService {
         }
         DataUtil.set(data_common_key.md_editor_setting_key, result);
         return result;
-    }
-
-    public get_https_setting(): HttpsSettingReq {
-        return DataUtil.get(data_common_key.https_setting) ?? {open: false, cert_path: '', key_path: ''};
-    }
-
-    public set_https_setting(req: HttpsSettingReq) {
-        // 校验路径
-        if (req.open) {
-            if (!req.cert_path || !req.key_path) {
-                throw '证书路径和私钥路径不能为空';
-            }
-            if (!fs.existsSync(req.cert_path)) {
-                throw `证书文件不存在: ${req.cert_path}`;
-            }
-            if (!fs.existsSync(req.key_path)) {
-                throw `私钥文件不存在: ${req.key_path}`;
-            }
-        }
-        DataUtil.set(data_common_key.https_setting, req);
-        // 通知服务器需要重启以应用 HTTPS 设置
     }
 
     // ============ 自动升级设置 ============

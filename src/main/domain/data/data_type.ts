@@ -102,7 +102,6 @@ export enum data_common_key {
     ai_system_prompts = "ai_system_prompts",
     // https_tunnel_server_fig = "https_tunnel_server_fig",
     filecat_plugin_list = "filecat_plugin_list", // 插件配置列表
-    https_setting = "https_setting", // HTTPS 证书配置
     ai_rebot_setting = "ai_rebot_setting", // 机器人配置
     token_cache = "token_cache", // token 缓存持久化
     auto_upgrade_setting = "auto_upgrade_setting", // 自动升级设置
@@ -131,6 +130,7 @@ export enum data_version_type {
     mount_credential_note = 10, // 挂载/凭据的 name 改名为 note；凭据=应用、账号拆到 accounts；挂载加 account_id
     control_env_yaml = 11, // 环境控制配置 control_env_str 从 env 语法迁移为 yaml 语法
     ai_agent_yaml_env = 12, // ai 供应商额外参数从 ini(dotenv) 迁移为 yaml(yaml_env)，并抽出 command_env
+    https_to_control_env = 13, // HTTPS 证书配置合并进 control_env 的 https 段（旧 key 为 https_setting）
 }
 
 

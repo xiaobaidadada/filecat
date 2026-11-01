@@ -21,7 +21,7 @@ import {navindex_pojo_type, temp_delete_sys_tag_name} from "../../../common/req/
 import {DataUtil} from "./DataUtil";
 import {sort} from "../../../common/ListUtil";
 import {userService} from "../user/user.service";
-import {stringify_yaml} from "../../../common/node/yaml.util";
+import {stringify_yaml, parse_yaml} from "../../../common/node/yaml.util";
 
 /**
  * 单个数据迁移步骤。
@@ -473,6 +473,52 @@ export class DataMigration {
                 if (global_cfg && migrate_one(global_cfg)) {
                     DataUtil.set(data_common_key.ai_agent_global_setting, global_cfg, file_key.ai_setting_data);
                 }
+            },
+        },
+        {
+            /*
+             * HTTPS 证书配置合并进 control_env 的 https 段。
+             *
+             * 旧版 https_setting 只有单个 open/cert_path/key_path，只能一张证书，
+             * 且与「环境控制」yaml 分开存，用户要改 HTTPS 得在两个地方来回看。
+             * 新版把证书放进 control_env 的 https 段，支持按 SNI 域名配多张证书
+             * （等价 nginx 一个 listen 下多个 server_name）。
+             *
+             * 迁移要点：
+             * 1. 旧数据 open 为假或路径不全时，只把 open:false 写进 yaml，不搬空的路径。
+             * 2. 旧的一对证书落到 default_cert/default_key，保证 SNI 未命中时仍有证书可用。
+             * 3. 迁移完把 https_setting 从 data.json 删掉，避免两份配置并存互相打架。
+             */
+            version: data_version_type.https_to_control_env,
+            name: "HTTPS 配置合并进 control_env",
+            run: () => {
+                // 旧枚举项已删除，这里直接用字符串 key 读取历史数据
+                const old: any = DataUtil.get("https_setting" as any);
+                const env_data: any = DataUtil.get(data_common_key.sys_env_key) ?? {};
+
+                // 旧的 yaml 文本解析成对象，避免直接覆盖用户已配的其它项
+                const current: control_env_pojo = {};
+                const old_str = typeof env_data.control_env_str === "string" ? env_data.control_env_str : "";
+                if (old_str.trim()) {
+                    Object.assign(current, parse_yaml(old_str));
+                }
+
+                const https: any = {...(current as any).https ?? {}};
+                // 旧配置已经迁移过（新版本字段存在）就不覆盖
+                if (https.open === undefined) {
+                    https.open = old?.open === true;
+                }
+                // 旧数据存的就是文件路径，路径和内容两种写法都支持，直接搬过去
+                if (old?.open && old?.cert_path && old?.key_path) {
+                    if (!https.default_cert) https.default_cert = `${old.cert_path}`;
+                    if (!https.default_key) https.default_key = `${old.key_path}`;
+                }
+                (current as any).https = https;
+
+                env_data.control_env_str = stringify_yaml(current);
+                env_data.control_env = current;
+                DataUtil.set(data_common_key.sys_env_key, env_data);
+                // DataUtil.del("https_setting" as any);
             },
         },
     ];

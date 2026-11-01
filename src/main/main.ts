@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import {SecureContext} from 'tls';
+import {ServerOptions} from 'https';
 import {createExpressServer, useExpressServer} from 'routing-controllers';
 // import {config} from "./other/config";
 // import dotenv from "dotenv";
@@ -43,6 +45,7 @@ import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
 import {BrowserProxyPortController} from "./domain/setting/browser_proxy_port.controller";
+import {control_env_https} from "../common/req/common.pojo";
 import {browserProxyPortService} from "./domain/setting/browser_proxy_port.service";
 import {use_filecat_middleware, TunnelDuplexStream, use_ws_filecat_middleware} from "./other/middleware/FilecatProxy";
 import {handle_host_proxy_upgrade, use_host_proxy_middleware} from "./other/middleware/HostProxy";
@@ -52,6 +55,7 @@ import {NetMsgType, NetUtil} from "./domain/net/util/NetUtil";
 // import {authorizationChecker} from "./other/middleware/decorator";
 const http = require('http');
 const https = require('https');
+const tls = require('tls');
 const Mustache = require('mustache');
 
 const WebSocket = require('ws');
@@ -66,6 +70,63 @@ function is_pro() {
     } catch  {
         return false;
     }
+}
+
+/**
+ * 读取证书配置。值既可以是 PEM 内容，也可以是文件路径。
+ * 内容含 "-----BEGIN" 就当成 PEM 原文，否则当路径读取文件。
+ */
+async function read_cert_value(value: string, label: string): Promise<Buffer> {
+    const text = `${value ?? ""}`.trim();
+    if (!text) throw new Error(`${label} 不能为空`);
+    if (text.includes("-----BEGIN")) {
+        return Buffer.from(text);
+    }
+    try {
+        return await FileUtil.readFileSync(text);
+    } catch (e) {
+        throw new Error(`${label} 读取失败，既不是有效的 PEM 内容，也读不到文件 ${text}: ${e?.message ?? e}`);
+    }
+}
+
+async function load_https_context(config: control_env_https) {
+    // 每对证书只加载一次：context 给 SNI 用，原文给顶层 cert/key（不支持 SNI 的客户端会用到）
+    const load_pair = async (cert_val: string, key_val: string, label: string) => {
+        const cert = await read_cert_value(cert_val, `${label} 证书`);
+        const key = await read_cert_value(key_val, `${label} 私钥`);
+        try {
+            return {cert, key, context: tls.createSecureContext({cert, key})};
+        } catch (e) {
+            throw new Error(`${label} 证书解析失败: ${e?.message ?? e}`);
+        }
+    };
+
+    if (!config.default_cert || !config.default_key) {
+        // 保存时已校验过必须有默认证书，这里兜住手动改过数据文件的情况
+        throw new Error("HTTPS 已启用但缺少默认证书，请配置 default_cert 和 default_key");
+    }
+    const fallback = await load_pair(config.default_cert, config.default_key, "默认");
+
+    const map = new Map<string, SecureContext>();
+    for (const item of config.cert_list ?? []) {
+        const loaded = await load_pair(item.cert, item.key, `域名 ${item.server_name ?? "未命名"}`);
+        // 未写 server_name 的条目只是额外的默认证书副本，不参与 SNI 匹配
+        if (item.server_name) {
+            map.set(item.server_name.toLowerCase(), loaded.context);
+        }
+    }
+
+    console.log(`HTTPS 已启用，共 ${map.size} 个域名证书`);
+
+    const options: ServerOptions = {
+        cert: fallback.cert,
+        key: fallback.key,
+        SNICallback: (servername, cb) => {
+            const hit = map.get(`${servername ?? ""}`.toLowerCase());
+            cb(null, hit ?? fallback.context);
+        },
+    };
+    return {options};
 }
 
 export async function start_main() {
@@ -282,22 +343,19 @@ export async function start_main() {
 
     const base_url = await get_base()
 
-    // 检查是否启用了 HTTPS
-    const https_setting = settingService.get_https_setting();
+    // 检查是否启用了 HTTPS（配置来自通用设置里的 control_env，按 SNI 域名选择证书）
+    const https_config = settingService.get_sys_env()?.control_env?.https;
     let server;
     let protocol = 'http';
 
-    if (https_setting.open && https_setting.cert_path && https_setting.key_path) {
+    if (https_config?.open) {
         try {
-            const httpsOptions = {
-                cert: fs.readFileSync(https_setting.cert_path),
-                key: fs.readFileSync(https_setting.key_path),
-            };
-            server = https.createServer(httpsOptions, app);
+            const loaded = await load_https_context(https_config);
+            server = https.createServer(loaded.options, app);
             protocol = 'https';
-            console.log(`HTTPS 已启用，证书: ${https_setting.cert_path}，私钥: ${https_setting.key_path}`);
         } catch (e) {
-            console.error('HTTPS 证书加载失败，回退到 HTTP:', e?.message);
+            // 证书加载失败不能让整个服务起不来，退回 HTTP 保证可用，同时明确告警
+            console.error('HTTPS 证书加载失败，已退回 HTTP 启动:', e?.message ?? e);
             server = http.createServer(app);
         }
     } else {

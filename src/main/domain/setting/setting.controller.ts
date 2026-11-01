@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {mdThemeService} from "./md_theme.service";
-import {HttpsSettingReq, sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
+import {sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {router_pre_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -434,7 +434,6 @@ export class SettingController {
             recycle_open: settingService.get_recycle_bin_status(), // 垃圾回收站功能
             recycle_dir: settingService.get_recycle_dir_str(), // 垃圾回收站 目录也返回
             sys_env: settingService.get_sys_env(),
-            https_setting: settingService.get_https_setting(),
         }
         return Sucess(r);
     }
@@ -495,11 +494,6 @@ export class SettingController {
             user_data.theme = body.value.theme;
             user_data.upload_file_ignore = body.value.upload_file_ignore
             await userService.save_user_info(user_data.id, user_data);
-        } else if (body.type === sys_setting_type.https) {
-            userService.have_user_auth(ctx.headers.authorization, UserAuth.https_file);
-            const httpsReq: HttpsSettingReq = body.value;
-            settingService.set_https_setting(httpsReq);
-            // ServerEvent.emit("https_setting_update");
         }
         return Sucess("1");
     }

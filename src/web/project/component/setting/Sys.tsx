@@ -11,7 +11,6 @@ import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
 import {
     AutoUpgradeSettingReq,
-    HttpsSettingReq,
     sys_setting_type,
     TokenSettingReq,
     TokenTimeMode
@@ -38,11 +37,6 @@ export function Sys() {
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     const [, setEditorSetting] = useAtom($stroe.editorSetting);
 
-
-    // HTTPS 设置
-    const [https_open, set_https_open] = useState(false);
-    const [https_cert_path, set_https_cert_path] = useState("");
-    const [https_key_path, set_https_key_path] = useState("");
 
     const [tokenMode, setTokenMode] = useState(TokenTimeMode.close);
     const [tokenPersist, setTokenPersist] = useState(false);
@@ -84,13 +78,6 @@ export function Sys() {
             set_show_login_user_info(sys_env?.show_login_user_info);
             set_http_proxy(sys_env?.http_proxy || '');
             set_control_env_str(sys_env?.control_env_str || CONTROL_ENV_STR_DEFAULT);
-            // HTTPS 设置
-            const https_setting = all_open_result.data.https_setting;
-            if (https_setting) {
-                set_https_open(https_setting.open);
-                set_https_cert_path(https_setting.cert_path || '');
-                set_https_key_path(https_setting.key_path || '');
-            }
         }
         const result1 = await settingHttp.get("token");
         if (result1.code === RCode.Success) {
@@ -139,31 +126,6 @@ export function Sys() {
             NotySuccess("清理完成，重新登录")
         }
     }
-    const save_https = async () => {
-        if (https_open) {
-            if (!https_cert_path) {
-                NotyFail("证书路径不能为空");
-                return;
-            }
-            if (!https_key_path) {
-                NotyFail("私钥路径不能为空");
-                return;
-            }
-        }
-        const httpsReq = new HttpsSettingReq();
-        httpsReq.open = https_open;
-        httpsReq.cert_path = https_cert_path;
-        httpsReq.key_path = https_key_path;
-        const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
-            type: sys_setting_type.https,
-            value: httpsReq,
-            open: https_open
-        });
-        if (result.code === RCode.Success) {
-            NotySuccess("HTTPS 设置已保存，需重启服务器才能生效");
-        }
-    }
-
     const save_sys_env = async () => {
         const result = await settingHttp.post(Http_controller_router.setting_sys_option_status_save, {
             type: sys_setting_type.sys_env, value: {
@@ -260,24 +222,6 @@ export function Sys() {
                             }}
                         />
 
-                    </Card>
-                    <Card title={t("https_s")}
-                          rightBottomCom={<ButtonText text={t('确定修改')} clickFun={save_https}/>}>
-                        <Select value={https_open} onChange={(value) => {
-                            set_https_open(value)
-                        }} options={[{title: t("开启"), value: true}, {title: t("关闭"), value: false}]}/>
-                        {https_open && <>
-                            <div>{t("ssl_crt")}</div>
-                            <InputText placeholder={t('crt_pth')} value={https_cert_path}
-                                       handleInputChange={(value) => {
-                                           set_https_cert_path(value)
-                                       }}/>
-                            <div>{t("ssl_key")}</div>
-                            <InputText placeholder={t('ky_pth')} value={https_key_path}
-                                       handleInputChange={(value) => {
-                                           set_https_key_path(value)
-                                       }}/>
-                        </>}
                     </Card>
                     <AutoUpgrade/>
                     <BrowserProxyCard/>
