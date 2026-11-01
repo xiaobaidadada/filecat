@@ -5,7 +5,7 @@ import {ActionButton} from "../../../../../meta/component/Button";
 import Header from "../../../../../meta/component/Header";
 import {FolderTree} from "./Tree/FolderTree";
 import {fileHttp} from "../../../../util/config";
-import {get_last_name, getRouterAfter, getRouterPrePath} from "../../../../util/WebPath";
+import {get_last_name, getRouterAfter, getRouterPrePath, remove_router_tail} from "../../../../util/WebPath";
 import {RCode} from "../../../../../../common/Result.pojo";
 import {FileTree, FileTypeEnum} from "../../../../../../common/file.pojo";
 import {editor_data, use_auth_check} from "../../../../util/store.util";
@@ -201,6 +201,34 @@ export default function Studio(props) {
             set_list([...folder_list,...file_list]);
         }
     }
+
+    /** 判断 child 是否就是 base 或位于 base 之下 */
+    const is_under = (child: string, base: string) => {
+        return child === base || child.startsWith(base + "/");
+    }
+
+    /**
+     * 重命名成功后的路径纠正。
+     * 树、编辑器数据源、URL 各自的路径状态相互独立，改名后必须一起搬移，
+     * 否则编辑器会继续指向已不存在的旧路径。
+     */
+    const handle_renamed = (old_path: string, new_path: string) => {
+        // 1. 编辑器打开的文件在改名范围内
+        if (edit_file_path && is_under(edit_file_path, old_path)) {
+            const next = new_path + edit_file_path.slice(old_path.length);
+            set_edit_file_path(next);
+            set_edit_filename({path: next, name: get_last_name(next)});
+        }
+        // 2. studio 当前所在目录在改名范围内，跳到新地址，由 URL 变化驱动重新加载
+        const cur_dir = remove_router_tail(getRouterAfter('file', folder_path));
+        if (is_under(cur_dir, old_path)) {
+            const next_dir = new_path + cur_dir.slice(old_path.length);
+            navigate(`/file/${encodeURIComponent(next_dir)}`, {replace: true});
+            return;
+        }
+        // 3. 只是同级子项改名，刷新列表即可
+        get_item();
+    }
     useEffect(() => {
         setEditorValue("");
         // @ts-ignore
@@ -210,7 +238,7 @@ export default function Studio(props) {
         //     return;
         // }
         get_item();
-    }, []);
+    }, [location]);
 
     const cancel = () => {
         // set_studio({});
@@ -399,7 +427,7 @@ export default function Studio(props) {
                     setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path,filename:name, call:isDir?()=>{call(true)}:call}});
                     break;
                 case "重命名":
-                    setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{path:path,dir:getRouterPrePath(path),call:()=>{call(true)},filename:name}});
+                    setShowPrompt({show: true,type:PromptEnum.FileRename,overlay: true,data:{path:path,dir:getRouterPrePath(path),call:(old_path,new_path)=>{handle_renamed(old_path,new_path)},filename:name}});
                     break;
                 default:
                     break;

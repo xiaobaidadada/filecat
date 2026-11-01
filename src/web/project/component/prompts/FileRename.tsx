@@ -50,7 +50,8 @@ export function FileRename(props) {
         if (rsq.code === 0) {
             cancel();
             if (showPrompt.data.call) {
-                showPrompt.data.call();
+                // 把改名前后路径交给调用方，让它纠正仍在指向旧路径的状态（如 studio 打开的编辑器）
+                showPrompt.data.call(filename, newName);
             } else {
                 navigate(getRouterPath());
             }

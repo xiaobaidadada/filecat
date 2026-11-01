@@ -22,7 +22,7 @@ export class FileMenuData {
     item_pre_value?: any
     files?:any;
     dir?:string;
-    call?:(e?:any)=>void;
+    call?:(...args:any[])=>void;
     ok?:any;
     dockerId?:string;
     name?:string;
