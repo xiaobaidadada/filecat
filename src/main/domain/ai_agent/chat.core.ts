@@ -493,12 +493,11 @@ const workMessages: ai_agent_message_list = [
                 console.error("[endOnce] 清理会话资源失败:", e?.message ?? e);
             });
         };
-        // 监听 abort：一旦取消立即标记中断，并触发 endOnce 终结对话。
+        // 暂停只是"请求"：这里只标记意图，不在这里收尾。
+        // 正在执行的工具要跑完，回到循环顶部才发现 _interrupted 并真正结束，
+        // 保证前端显示的"已暂停"和后台真实状态一致。
         const onAbort = () => {
             _interrupted = true;
-            // SystemUtil.kill_command(session_id)
-            // CommonUtil.sleep_delete_by_id(session_id)
-            endOnce();
         };
         controller.signal.addEventListener('abort', onAbort);
 

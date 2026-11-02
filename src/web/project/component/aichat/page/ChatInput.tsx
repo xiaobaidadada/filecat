@@ -45,6 +45,8 @@ export interface ChatInputHandle {
 const ChatInput = forwardRef<ChatInputHandle, {
     onSend: () => void;
     sending: boolean;
+    /** 已发出暂停请求、但后端还在把当前这批工具跑完 */
+    pausing?: boolean;
     onAbort: () => void;
     pendingAttachments: File[];
     onRemoveAttachment: (index: number) => void;
@@ -55,7 +57,7 @@ const ChatInput = forwardRef<ChatInputHandle, {
     fileInputRef: React.RefObject<HTMLInputElement>;
     /** 只读：查看全部会话时禁止发送（输入框置灰、按钮禁用） */
     readonly?: boolean;
-}>(({ onSend, sending, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef, readonly = false }, ref) => {
+}>(({ onSend, sending, pausing = false, onAbort, pendingAttachments, onRemoveAttachment, onOpenFilePicker, onAddFiles, onDrop, onDragOver, fileInputRef, readonly = false }, ref) => {
     const {t} = useTranslation();
     const rtRef = useRef<RichTextareaHandle>(null);
     const areaRef = useRef<HTMLDivElement>(null);
@@ -139,9 +141,12 @@ const ChatInput = forwardRef<ChatInputHandle, {
                 />
             </div>
             {!readonly && <ActionButton title={t("添加文件")} icon={"attach_file"} onClick={onOpenFilePicker}/>}
-            {/* 发送中 → 暂停按钮；空闲 → 发送按钮；只读 → 禁用发送 */}
+            {/* 发送中 → 暂停按钮；暂停中 → 黄色等待按钮；空闲 → 发送按钮；只读 → 禁用发送 */}
             {readonly ? (
                 <button className="little-button button" disabled={true}>{t("发送")}</button>
+            ) : pausing ? (
+                // 暂停已请求，但后端在等当前这批工具跑完；此时点它没有意义，置为不可点
+                <ButtonLittle color={"var( --icon-yellow)"} text={t("暂停中")} clickFun={() => {}} />
             ) : sending ? (
                 <ButtonLittle color={"var( --icon-red)"} text={t("暂停")} clickFun={onAbort} />
             ) : (

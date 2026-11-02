@@ -121,6 +121,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
      */
     const localOwnerRef = useRef<string | null>(null);
 
+    /**
+     * 清掉"暂停中"状态。useChatSubscription 先于 useChatStream 调用，
+     * 订阅层拿不到后者的 setPausing，用 ref 转发打通。
+     */
+    const reset_pausing_ref = useRef<() => void>(() => {});
+
     // ===== 跨 Hook 共享的 ref =====
     // 这些值由会话层维护，但消息层/订阅层的闭包也要读，用 ref 打通，避免 Hook 相互依赖。
     const sessions_ref_shared = useRef<{ id: string; user_id?: string }[]>([]);
@@ -194,6 +200,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         refresh_sessions: session_api.refreshSessions,
         reload_session: (id) => session_api.loadSession(id),
         set_active_session_running: session_api.setActiveSessionRunning,
+        // 本轮真正结束（含暂停等待工具跑完）后清掉"暂停中"状态
+        on_chat_end: () => reset_pausing_ref.current(),
     });
     sub_ref.current = sub;
 
@@ -239,6 +247,9 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         getSelectedSysPromptId: () => session_api.selectedSysPromptId,
         setLocalOwner: (id) => { localOwnerRef.current = id; },
     });
+
+    // 订阅层通过 on_chat_end 回调清 pausing，这里把真正的 setter 绑上去
+    reset_pausing_ref.current = () => chatStream.setPausing(false);
 
     /** 从 env 配置同步当前模型展示值 */
     const syncCurrentModelFromEnv = (envData: { ai_config?: ai_agent_Item }) => {
@@ -615,6 +626,7 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                         // 超管查看全部会话模式禁止发送
                         readonly={session_api.admin_all_mode}
                         sending={sending}
+                        pausing={chatStream.pausing}
                         onAbort={chatStream.abort}
                         pendingAttachments={pendingAttachments}
                         onRemoveAttachment={removePendingAttachment}

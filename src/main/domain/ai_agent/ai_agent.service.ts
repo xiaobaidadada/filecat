@@ -755,12 +755,11 @@ export class Ai_agentService {
     public abortChat(sessionId: string): boolean {
         const controller = this.activeChatControllers.get(sessionId);
         if (!controller) return false;
+        // 只发中断请求，清理一律交给 chat_core 的 on_end / chat_ws 的 finally。
+        // 这里若提前 delete，会出现两个问题：
+        //  1) abort 后这轮工具还要跑完，期间前端刷新拿不到 live 内容，页面空白；
+        //  2) runningChats 已空，同一会话能再起一轮，两轮输出互相串台。
         controller.abort();
-        // 立刻销掉运行登记，前端刷新列表时不再显示 running
-        // 注意：这里不广播状态，abort 会抛出 AbortError，
-        // chat_ws 的 catch / finally 里的 cleanupRunning 会统一广播结束状态。
-        this.activeChatControllers.delete(sessionId);
-        this.runningChats.delete(sessionId);
         return true;
     }
 

@@ -38,13 +38,15 @@ interface Deps {
     reload_session: (sessionId: string) => Promise<boolean>;
     /** 设置活动会话的执行中状态 */
     set_active_session_running: (running: boolean) => void;
+    /** 本轮对话真正结束时通知（用于清理"暂停中"状态等） */
+    on_chat_end?: (sessionId: string) => void;
 }
 
 export function useChatSubscription(deps: Deps) {
     const {
         active_session_id_ref, local_owner_ref, subscribed_ref,
         set_messages, scroll_to_bottom, follow_ref,
-        mark_session_running, refresh_sessions, reload_session, set_active_session_running,
+        mark_session_running, refresh_sessions, reload_session, set_active_session_running, on_chat_end,
     } = deps;
 
     // chunk_index -> 气泡 id。后端每轮输出带 chunk_index，必须按它精确命中气泡；
@@ -122,6 +124,8 @@ export function useChatSubscription(deps: Deps) {
 
         /** 会话结束（正常结束与报错共用） */
         const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
+            // 通知外层：本轮真的结束了，可以清掉"暂停中"状态
+            on_chat_end?.(sessionId);
             // 结束通知会发给该用户所有连接（含未订阅本会话的连接），
             // 所以非当前会话也要把列表里的“执行中”标记落下来，否则一直转圈。
             mark_session_running(sessionId, false);

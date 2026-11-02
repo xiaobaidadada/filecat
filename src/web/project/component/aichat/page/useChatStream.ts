@@ -77,6 +77,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
         setLocalOwner,
     } = opts;
 
+    /**
+     * 是否已发出暂停请求但还没真正停下。
+     * 暂停只是"请求"：后端会把当前这批工具执行完才结束，
+     * 这段时间按钮要显示为暂停中，而不是立刻变回发送。
+     */
+    const [pausing, setPausing] = useState(false);
+
     /** 排队消息队列 */
     const pendingQueueRef = useRef<QueuedMsg[]>([]);
     /** 当前请求的 AbortSignal 引用，用于暂停 */
@@ -305,14 +312,13 @@ export function useChatStream(opts: UseChatStreamOptions) {
     const abort = () => {
         const sid = getActiveSessionId();
         if (!sid) return;
-        // 发送取消指令给后端（无论是否本地发起；对非本地发起的会话也能停止）
+        // 暂停只是请求：后端会把当前这批工具执行完才真正结束。
+        // 所以这里绝不能清 sending，否则按钮会立刻变回"发送"，
+        // 和后端还在跑的真实状态不一致。改为标记 pausing，
+        // 等 ai_chat_end 到达（handleEnd）再统一清掉。
         ws.sendData(CmdType.ai_chat_abort, { session_id: sid });
-        if (abortRef.current) {
-            abortRef.current = null;
-            // 只清理自己发起的会话标记
-            setSending(prev => prev === sid ? null : prev);
-        }
-        // 非本地发起的会话停止后，收尾由全局监听的 handleEnd(收到 ai_chat_end) 完成
+        abortRef.current = null;
+        setPausing(true);
     };
 
     return {
@@ -321,5 +327,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         enqueueMessage,
         getQueueLength,
         abort,
+        pausing,
+        setPausing,
     };
 }
