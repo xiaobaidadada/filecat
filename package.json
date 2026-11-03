@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "7.19.3",
+  "version": "7.19.4",
   "description": "A self-hosted Web File browser and lightweight server management tool.",
   "author": "xiaobaidadada",
   "repository": {
@@ -46,7 +46,7 @@
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "better-sqlite3": "^12.6.2",
     "node-libsmb2": "^1.1.1",
-    "node-process-watcher": "^1.6.6"
+    "node-process-watcher": "^1.7.7"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",

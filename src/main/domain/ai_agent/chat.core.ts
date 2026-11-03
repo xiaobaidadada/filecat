@@ -499,7 +499,7 @@ const workMessages: ai_agent_message_list = [
         const onAbort = () => {
             _interrupted = true;
             cleanup_session(session_id).catch((e) => {
-                console.error("[endOnce] 清理会话资源失败:", e?.message ?? e);
+                console.error("[主动] 清理会话资源失败:", e?.message ?? e);
             });
         };
         controller.signal.addEventListener('abort', onAbort);
