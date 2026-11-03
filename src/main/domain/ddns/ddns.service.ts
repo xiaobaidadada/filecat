@@ -203,7 +203,7 @@ export class DdnsService {
                     continue;
                 }
                 const family = ip_item.isIPv4 ? "A" : "AAAA";
-                const hosts = (ip_item.ddnsHost ?? "").split(/[\s,]+/).filter((v) => v);
+                const hosts = DdnsIPPojo.split_host(ip_item.ddnsHost);
                 if (hosts.length === 0) {
                     ip_item.status = DdnsStatus.fail;
                     ip_item.message = "未配置域名";
@@ -260,7 +260,7 @@ export class DdnsService {
     /** 取配置里第一个绑定的域名及其地址族，用于老式协议探测验证 */
     private first_host(conn: DdnsConnection): { host: string, family: "A" | "AAAA" } {
         for (const item of conn.ips ?? []) {
-            const host = (item.ddnsHost ?? "").split(/[\s,]+/).filter((v) => v)[0];
+            const host = DdnsIPPojo.split_host(item.ddnsHost)[0];
             if (host) return {host, family: item.isIPv4 ? "A" : "AAAA"};
         }
         return {host: "", family: "A"};

@@ -43,6 +43,10 @@ export class DdnsIPPojo {
     status?: DdnsStatus;         // 上次同步状态
     message?: string;            // 上次同步信息
     time?: number;               // 上次同步时间戳（毫秒）
+
+    static split_host(ddnsHost?: string){
+        return (ddnsHost ?? "").split(/[\s,]+/).filter((v) => v);
+    }
 }
 
 // 一个 DDNS 配置条目。左侧列表每一项即一个 DdnsConnection。

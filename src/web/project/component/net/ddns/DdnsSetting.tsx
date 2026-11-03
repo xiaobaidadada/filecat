@@ -3,7 +3,7 @@ import {Column, Dashboard, Row} from "../../../../meta/component/Dashboard";
 import {Card, CardFull, StatusCircle, TextTip} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
 import {Table} from "../../../../meta/component/Table";
-import {InputCheckbox, InputRow, InputText, Select} from "../../../../meta/component/Input";
+import {InputCheckbox, InputRow, InputText, InputTextarea, Select} from "../../../../meta/component/Input";
 import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {useTranslation} from "react-i18next";
 import {ddnsHttp} from "../../../util/config";
@@ -362,9 +362,14 @@ export function DdnsSetting() {
                                                handleInputChange={(value) => select_source(index, value)}/>
                                 </InputRow>
                                 <InputRow label={t("域名")} label_width={"5rem"} required>
-                                    <InputText value={ip_item.ddnsHost}
-                                               placeholder={t("多个域名用空格分隔")}
-                                               handleInputChange={(value) => set_ip_field(index, "ddnsHost", value)}/>
+                                    <InputTextarea
+                                        style={{minHeight: '7rem', resize: 'vertical'}}
+                                        placeholder={t("多个域名用空格分隔")}
+                                        value={ip_item.ddnsHost}
+                                        onChange={(e) => {
+                                            set_ip_field(index, "ddnsHost", e.target.value)
+                                        }}
+                                    />
                                 </InputRow>
                                 {ip_item.time &&
                                     <InputRow label={t("上次同步")} label_width={"5rem"} row>
