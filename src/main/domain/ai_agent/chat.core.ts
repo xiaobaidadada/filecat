@@ -498,6 +498,9 @@ const workMessages: ai_agent_message_list = [
         // 保证前端显示的"已暂停"和后台真实状态一致。
         const onAbort = () => {
             _interrupted = true;
+            cleanup_session(session_id).catch((e) => {
+                console.error("[endOnce] 清理会话资源失败:", e?.message ?? e);
+            });
         };
         controller.signal.addEventListener('abort', onAbort);
 
