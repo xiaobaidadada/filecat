@@ -33,6 +33,8 @@ export interface FileMountItem {
     color?: string;
     /** 是否启用；停用后该目录恢复成本地目录 */
     enabled?: boolean;
+    /** 转发到对端：开启后该挂载目录下的终端、workflow 等请求在对端 FileCat 执行 */
+    forward_to_remote?: boolean;
     /** 创建者用户 id */
     user_id?: string;
     /** 创建时间 */

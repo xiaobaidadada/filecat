@@ -289,6 +289,11 @@ export class TcpProxyDriver implements FileDriver {
         return this.login();
     }
 
+    /** WS 透传到对端时，本机 token 对端不认，需要用对端自己的 token 发握手 */
+    public async get_forward_token(): Promise<string> {
+        return this.get_token();
+    }
+
     /**
      * 带登录态自动重试的统一入口。
      *
@@ -310,6 +315,29 @@ export class TcpProxyDriver implements FileDriver {
             result = await run(token);
         }
         return result;
+    }
+
+    /**
+     * 通用转发：把接口请求原样发到对端 FileCat 执行，返回对端统一结果体。
+     * 用于挂载开启「转发到对端」时，让 workflow 等接口在对端跑而不是读本地文件。
+     */
+    public async forward_api(url_path: string, body?: any): Promise<FileCatResult> {
+        const parsed = await this.with_auth<FileCatResult>(
+            async (token) => {
+                const res = await this.request("POST", url_path, {
+                    body,
+                    headers: {Authorization: token},
+                    timeout: 30000,
+                });
+                try {
+                    return JSON.parse(res.body.toString("utf8"));
+                } catch (e) {
+                    throw new Error(`对端返回异常（HTTP ${res.status}）`);
+                }
+            },
+            (r) => r.code !== 0 && is_auth_expired(r.code),
+        );
+        return parsed;
     }
 
     /**

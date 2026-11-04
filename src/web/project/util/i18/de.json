@@ -780,6 +780,8 @@
   "授权": "Autorisieren",
   "授权失败": "Autorisierung fehlgeschlagen",
   "strtdrt": "Startverzeichnis",
+  "ftr2rmt": "An Gegenstelle weiterleiten",
+  "ftr2rmt_tip": "Terminal- und Workflow-Anfragen in diesem Verzeichnis laufen auf dem entfernten FileCat",
   "授权检测": "Autorisierung prüfen",
   "scrtkep": "SecretKey leer lassen, um unverändert zu lassen",
   "编辑应用": "App bearbeiten",

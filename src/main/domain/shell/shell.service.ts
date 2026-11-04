@@ -350,7 +350,7 @@ export class ShellService {
         const PATH = settingService.get_env_path();
         const pojo = data.context as ShellInitPojo;
         if (pojo.init_path) pojo.init_path = decodeURIComponent(pojo.init_path);
-        const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
+        const sysPath = path.join(settingService.getFileRootPath((data.wss as Wss).token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         userService.check_user_path((data.wss as Wss).token, sysPath); // 系统路径也检查一下
         const user_data = userService.get_user_info_by_token((data.wss as Wss).token);
         const ptyShell = new PtyShell({

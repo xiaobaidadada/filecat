@@ -60,6 +60,8 @@ import {
 import {FileItemData} from "../../../common/file.pojo";
 import {pipeline} from "stream/promises";
 import {MountDriverType} from "../mount/driver/file_driver";
+import {TcpProxyDriver} from "../mount/driver/tcp_proxy_driver";
+import {mountService} from "../mount/mount.service";
 
 const archiver = require('archiver');
 const mime = require('mime-types');
@@ -149,6 +151,26 @@ export class FileService  {
     public async mount_info(token: string, param_path: string) {
         const sysPath = this.resolveFilePath(token, param_path ?? "");
         return Sucess(current_mount_info(sysPath));
+    }
+
+    /**
+     * 转发接口请求到对端 FileCat 执行。
+     * 仅挂载开启「转发到对端」时可用，用于 workflow 这类需要在对端读文件的接口。
+     */
+    public async forward_api(token: string, param_path: string, url_path: string, body: any) {
+        const sysPath = this.resolveFilePath(token, param_path ?? "");
+        const match = mountService.resolve(sysPath);
+        if (!match) {
+            throw new Error("当前目录不是挂载目录，无法转发到对端");
+        }
+        if (!match.mount.forward_to_remote) {
+            throw new Error("该挂载未开启「转发到对端」");
+        }
+        const driver = mountService.driver_of(match.mount);
+        if (!(driver instanceof TcpProxyDriver)) {
+            throw new Error("该挂载类型不支持转发到对端");
+        }
+        return await driver.forward_api(url_path, body);
     }
 
     private normalizeSqliteValue(value: any): any {

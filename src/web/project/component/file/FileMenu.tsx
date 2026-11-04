@@ -16,7 +16,8 @@ import {
     getFileNameByLocation,
     getFilesByIndexs,
     unsing_switch_grid_view,
-    user_click_file
+    user_click_file,
+    use_file_capabilities
 } from "./FileUtil";
 import {fileHttp, gitHttp, userHttp} from "../../util/config";
 import {getNextByLoop, webPathJoin} from "../../../../common/ListUtil";
@@ -56,8 +57,8 @@ export function FileMenu() {
     const [selectList, setSelectList] = useAtom($stroe.selectedFileList);
     const [clickList, setClickList] = useAtom($stroe.clickFileList);
     const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
-    /** 当前目录所属挂载；挂载目录里隐藏 shell 等本地专属功能 */
-    const [current_mount] = useAtom($stroe.current_mount);
+    /** 文件操作能力：终端等依赖对端 shell 的按钮统一在这里判断 */
+    const file_cap = use_file_capabilities();
     // const [windows_width, set_windows_width] = useAtom($stroe.windows_width);
 
     const [file_paths, setFile_paths] = useAtom($stroe.file_root_list);
@@ -300,8 +301,8 @@ export function FileMenu() {
         {workflow_show_click && <ActionButton icon={"api"} title={"workflow"} onClick={() => {
             set_workflow_show(!workflow_show)
         }}/>}
-        {/* shell 终端基于服务器本地 shell，挂载目录（网盘）里没有意义，故隐藏 */}
-        {!current_mount && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
+        {/* 终端依赖真实 shell，只有本地和内网穿透挂载（已开转发）才有 */}
+        {file_cap.can_terminal && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
         {check_user_auth(UserAuth.share_file) && <ActionButton icon={"share"} title={t("文件分享")} onClick={file_share}/>}
         <ActionButton icon={"grid_view"} title={t("切换样式")} onClick={switchGridView}/>
         <ActionButton icon={"create_new_folder"} title={t("创建文件夹")} onClick={dirnew}/>

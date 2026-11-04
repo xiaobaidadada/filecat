@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Card} from "../../../../meta/component/Card";
 import {ActionButton} from "../../../../meta/component/Button";
-import {InputRow, InputText, Select} from "../../../../meta/component/Input";
+import Switch from "../../../../meta/component/Button";import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
@@ -43,6 +43,8 @@ export default function MountPanel() {
     const [account_id, set_account_id] = useState("");
     const [root_dir, set_root_dir] = useState("");
     const [note, set_note] = useState("");
+    /** 转发到对端：仅内网穿透（tcp_proxy）挂载可开 */
+    const [forward_to_remote, set_forward_to_remote] = useState(false);
 
     const load = async () => {
         try {
@@ -83,6 +85,7 @@ export default function MountPanel() {
         set_account_id("");
         set_root_dir("");
         set_note("");
+        set_forward_to_remote(false);
     };
 
     /** 点标题栏的「+」开始新增 */
@@ -100,6 +103,7 @@ export default function MountPanel() {
         set_account_id(item.account_id ?? "");
         set_root_dir(item.root_dir ?? "");
         set_note(item.note ?? "");
+        set_forward_to_remote(Boolean(item.forward_to_remote));
     };
 
     const test = async () => {
@@ -151,6 +155,7 @@ export default function MountPanel() {
                 color: DEFAULT_COLOR,
                 readonly: false,
                 enabled: true,
+                forward_to_remote,
             });
             NotySuccess(t("保存成功"));
             close_form();
@@ -226,6 +231,11 @@ export default function MountPanel() {
                     <InputText placeholder={t("列表显示的名称")} value={note}
                                handleInputChange={set_note}/>
                 </InputRow>
+                {/* 只有内网穿透挂载能转发：其它驱动的对端不是 FileCat，没有它自己的前端和终端 */}
+                {driver === "tcp_proxy" && <InputRow label={t("ftr2rmt")} label_width={"6rem"}>
+                    <Switch checked={forward_to_remote} onChange={set_forward_to_remote}
+                            title={t("ftr2rmt_tip")}/>
+                </InputRow>}
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}

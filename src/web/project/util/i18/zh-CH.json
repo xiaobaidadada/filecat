@@ -32,6 +32,8 @@
   "munt_rq": "挂载目录不能为空",
   "nmuntpr": "当前账号没有目录挂载权限",
   "strtdrt": "起始目录",
+  "ftr2rmt": "转发到对端",
+  "ftr2rmt_tip": "开启后该目录下的终端、workflow 等请求在对端 FileCat 执行",
   "scrtkep": "SecretKey 留空表示不修改",
   "outh_ob": "手动授权（oob）",
   "pst_cd": "粘贴授权码 code",

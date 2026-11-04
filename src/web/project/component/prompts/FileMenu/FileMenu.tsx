@@ -31,7 +31,7 @@ import {routerConfig} from "../../../../../common/RouterConfig";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
-import {use_click_folder, use_file_open, use_get_now_abs_path, user_click_file} from "../../file/FileUtil";
+import {use_click_folder, use_file_open, use_get_now_abs_path, user_click_file, post_maybe_remote} from "../../file/FileUtil";
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 import {mountHttp} from "../../../util/config";
 import MountEditor from "../../setting/mount/MountEditor";
@@ -330,7 +330,9 @@ export function FileMenu() {
             }
                 break;
             case common_menu_type.run_workflow_by_pre_inputs: {
-                const rsq = await fileHttp.post("workflow/get/pre_inputs", {path: `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`});
+                const wf_path = `${getRouterAfter('file', getRouterPath())}${showPrompt.data.filename}`;
+                // 挂载开了「转发到对端」时，工作流的输入参数要在对端解析，不能读本地文件
+                const rsq = await post_maybe_remote("workflow/get/pre_inputs", {path: wf_path}, wf_path);
                 let list: workflow_pre_input [] = rsq.data;
                 const send_start_check = () => {
                     for (const it of list) {

@@ -4,11 +4,36 @@ import HttpProxy from 'http-proxy';
 import { NetMsgType, NetUtil } from "../../domain/net/util/NetUtil";
 import { Env } from "../../../common/node/Env";
 import { tcpForwardService } from "../../domain/net/tcp.forward.server.service";
+import { mountService } from "../../domain/mount/mount.service";
+import { TcpProxyDriver } from "../../domain/mount/driver/tcp_proxy_driver";
 const urlUtil = require('url');
 const cookieUtil = require('cookie');
 
 // 实例化 http-proxy 核心代理对象
 const httpProxyServer = HttpProxy.createProxyServer({});
+
+/** 按穿透客户端 id 取对端 FileCat 的登录 token，用于挂载转发时替换本机 token */
+async function get_forward_token(client_num_id: number): Promise<string> {
+    const mounts = mountService.list();
+    for (const mount of mounts) {
+        if (mount.driver !== "tcp_proxy" || !mount.forward_to_remote) {
+            continue;
+        }
+        const cred = mountService.get_credential(mount.credential_id);
+        if (parseInt(String(cred?.config?.client_num_id ?? ""), 10) !== client_num_id) {
+            continue;
+        }
+        try {
+            const driver = mountService.driver_of(mount);
+            if (driver instanceof TcpProxyDriver) {
+                return await driver.get_forward_token();
+            }
+        } catch (e) {
+            console.error('[WS穿透] 取对端 token 失败:', e?.message ?? e);
+        }
+    }
+    return "";
+}
 
 /**
  * 🔥 核心桥接器：将你的私有穿透多路复用通道 包装成 标准的 Node.js 双向流（Socket）
@@ -280,6 +305,20 @@ export const use_ws_filecat_middleware = (sys_pre) =>{
 
         const client_num_id_str = parsedUrl.query.tcp_client_num_id || cookies.tcp_client_num_id;
         const client_num_id = parseInt(client_num_id_str as string);
+
+        // 挂载「转发到对端」场景：前端带本机 token，对端 Cache 里没有会直接拒连。
+        // 检测到挂载标记就把 token 换成对端自己的，再继续原有穿透流程。
+        if (parsedUrl.query.forward_mount) {
+            const remote_token = await get_forward_token(client_num_id);
+            if (remote_token) {
+                const target = new URL(request.url, `http://${request.headers.host}`);
+                target.searchParams.set('token', remote_token);
+                target.searchParams.delete('forward_mount');
+                // 转发到对端后要继续走对端的正常流程，不能让它再匹配一次穿透
+                target.searchParams.delete('tcp_client_num_id');
+                request.url = `${target.pathname}${target.search}`;
+            }
+        }
 
         const client_config = tcpForwardService.get_tcp_filecat(client_num_id);
         const client = tcpForwardService.client_num_map[client_num_id];

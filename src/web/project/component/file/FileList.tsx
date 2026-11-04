@@ -210,6 +210,8 @@ export default function FileList() {
         try {
             const rsp = await fileHttp.post("file/mount_info", {param_path});
             setMountInfo(rsp?.data ?? null);
+            // 进入/离开「转发到对端」的挂载目录时 token 会变，重连让新 token 生效
+            await ws.connect();
         } catch (e) {
             setMountInfo(null);
         }

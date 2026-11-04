@@ -276,8 +276,7 @@ export class MountService {
      * 按挂载记录取驱动实例。
      * 凭据缺失或停用时会抛出明确错误，避免难以定位的失败。
      */
-    driver_of(mount: FileMountItem): FileDriver {
-        const cred = this.credential_of(mount);
+    driver_of(mount: FileMountItem): FileDriver {        const cred = this.credential_of(mount);
         if (!cred) {
             throw new Error(`挂载「${mount.note || mount.mount_path}」引用的凭据已不存在，请重新配置`);
         }

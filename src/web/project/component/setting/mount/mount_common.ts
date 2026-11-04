@@ -71,6 +71,8 @@ export interface MountRow {
     readonly?: boolean;
     color?: string;
     enabled?: boolean;
+    /** 转发到对端：该挂载目录下的终端、workflow 等请求在对端 FileCat 执行 */
+    forward_to_remote?: boolean;
     /** 前端标记：新加的行，尚未保存 */
     is_new?: boolean;
 }

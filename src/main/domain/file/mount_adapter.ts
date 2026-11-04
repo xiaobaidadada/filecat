@@ -99,6 +99,10 @@ export function current_mount_info(abs_path: string): {
     credential_note: string;
     /** 账号备注（仅百度等一凭据多账号的类型有；展示用，为空时回退账号名） */
     account_note: string;
+    /** 转发到对端：该挂载目录下的请求在对端 FileCat 执行 */
+    forward_to_remote: boolean;
+    /** 转发目标穿透客户端 id；未开启转发或取不到时为 null */
+    forward_client_num_id: number | null;
 } | null {
     const match = mountService.resolve(abs_path);
     if (!match) {
@@ -108,6 +112,13 @@ export function current_mount_info(abs_path: string): {
     // 凭据与账号备注属于展示信息，取不到时降级为空字符串，不影响挂载本身
     const cred = mountService.get_credential(m.credential_id);
     const acc = m.account_id ? (cred?.accounts ?? []).find(v => v.id === m.account_id) : undefined;
+    const forward_to_remote = Boolean(m.forward_to_remote);
+    let forward_client_num_id: number | null = null;
+    if (forward_to_remote) {
+        const raw = cred?.config?.client_num_id;
+        const num = parseInt(String(raw ?? ""), 10);
+        forward_client_num_id = isNaN(num) ? null : num;
+    }
     return {
         name: m.note || base_name(m.mount_path),
         driver: m.driver,
@@ -116,6 +127,8 @@ export function current_mount_info(abs_path: string): {
         readonly: Boolean(m.readonly),
         credential_note: cred?.note || "",
         account_note: acc ? (acc.note || acc.account_name || acc.nickname || "") : "",
+        forward_to_remote,
+        forward_client_num_id,
     };
 }
 

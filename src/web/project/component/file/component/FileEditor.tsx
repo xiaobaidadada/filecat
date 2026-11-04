@@ -10,6 +10,7 @@ import {NotySuccess} from "../../../util/noty";
 import Ace from "./Ace";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
 import {ableExtBeautify} from "../../../../../common/FileMenuType";
+import {use_file_capabilities} from "../FileUtil";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
@@ -24,6 +25,8 @@ export default function FileEditor() {
     have_update_ref.current = have_update;
     const [shellShow,setShellShow] = useAtom($stroe.fileShellShow);
     const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
+    /** 终端能力统一判断：网盘挂载没有 shell，内网穿透挂载需开转发 */
+    const file_cap = use_file_capabilities();
 
     function shellClick() {
         if (!shellShow.show) {
@@ -88,7 +91,7 @@ export default function FileEditor() {
         ]}>
             {editorSetting.menu_list && editorSetting.menu_list}
             { (editorSetting.can_format || ableExtBeautify(editorSetting.fileName)) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
-            {editorSetting.opt_shell && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
+            {editorSetting.opt_shell && file_cap.can_terminal && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {have_update && <ActionButton title={"保存"} icon={"save"} onClick={save}/>}
             <title >{editorSetting.fileName}</title>
         </Header>

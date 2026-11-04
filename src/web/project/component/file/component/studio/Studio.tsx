@@ -19,7 +19,7 @@ import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
-import {useUpdateUrlParams} from "../../FileUtil";
+import {use_file_capabilities, useUpdateUrlParams} from "../../FileUtil";
 // import Ace from "../Ace";
 
 
@@ -81,6 +81,8 @@ export default function Studio(props) {
     const [have_update, set_have_update] = useState(false);
     const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
     const [file_shell_hidden, set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
+    /** 终端能力统一判断：网盘挂载没有 shell，内网穿透挂载需开转发 */
+    const file_cap = use_file_capabilities();
     const studioDividerRef = useRef(null);
     const studio_nav_ref = useRef(null);
     const [drag, setShellDrag] = useState(false);
@@ -466,7 +468,7 @@ export default function Studio(props) {
                               onClick={() => md_api.current?.export_pdf()}/>,
             ]}
             { !is_md && ableExtBeautify(edit_filename.name) && <ActionButton title={"格式化"} icon={"data_object"} onClick={formatCode}/> }
-            <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>
+            {file_cap.can_terminal && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {/* 右侧 AI 聊天面板开关：打开后按「当前工作目录」定位该目录的 AI 会话。
                 需与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示该按钮 */}
             {check_user_auth(UserAuth.ai_agent_page) && (

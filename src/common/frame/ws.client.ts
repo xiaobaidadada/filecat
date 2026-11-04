@@ -30,7 +30,10 @@ export class WsClient {
 
     private name;
     private _socket: WebSocket;
-    private _url;
+    // 外部传进来的函数，每次都会变 变了就重新请求
+    private _url: string | (() => string);
+    /** 当前连接的完整地址，用于判断地址变化后是否需要重建 */
+    private _connected_url = "";
 
     private _msg_event: EventEmitter = new EventEmitter();
     private _msgResolveMap = new Map();
@@ -38,35 +41,60 @@ export class WsClient {
     private _heart_interval: any;
 
 
-    constructor(url: string, name?: string) {
+    constructor(url: string | (() => string), name?: string) {
         this._url = url;
         this.name = name;
     }
 
+    private get_url(): string {
+        return typeof this._url === 'function' ? this._url() : this._url;
+    }
+
+
+    private _connecting: Promise<boolean> | null = null;
 
     public async connect(): Promise<boolean> {
-        return new Promise(async (resolve, reject) => {
-            if (this._socket) {
-                // await CommonUtil.sleep(1000)
-                resolve(true);
-                return;
+        // url 可能已带 query（如挂载转发带 tcp_client_num_id），需用 & 续接
+        const connect_path = this.get_url();
+        const separator = connect_path.includes('?') ? '&' : '?';
+        const token = localStorage.getItem("token");
+        const target_url = `${protocol}//${connect_path}${separator}token=${token}&type=${WsConnectType.data}`;
+        // 地址变了（如切换到转发到对端的挂载目录）就丢弃旧连接重建
+        if (this._socket && this._connected_url !== target_url) {
+            const old = this._socket;
+            this._socket = null;
+            this._connected_url = "";
+            this._connecting = null;
+            try {
+                old.close();
+            } catch (e) {
             }
-            if (this._socket?.readyState === WebSocket.OPEN) {
-                return resolve(true);
-            }
+        }
+        if (this._socket?.readyState === WebSocket.OPEN) {
+            return true;
+        }
+        // 同一地址正在连接中，复用同一个 Promise，避免并发 connect 互相掐断
+        if (this._connecting && this._connected_url === target_url) {
+            return this._connecting;
+        }
+        this._connected_url = target_url;
+        this._connecting = this.open_socket(target_url);
+        return this._connecting;
+    }
 
-            this._socket = new WebSocket(
-                `${protocol}//${this._url}?token=${localStorage.getItem("token")}&type=${WsConnectType.data}`
-            );
-            this._socket.binaryType = "arraybuffer";
+    private open_socket(target_url: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            const socket = new WebSocket(target_url);
+            this._socket = socket;
+            socket.binaryType = "arraybuffer";
 
-            this._socket.addEventListener('open', () => {
+            socket.addEventListener('open', () => {
                 resolve(true);
                 this.start_heart_interval()
             });
             const hand_data = (event_data: any) => {
                 const data = WsData.decode(event_data);
-                data.client_wss = this._socket
+                data.client_wss = socket
                 if (data.code === RCode.Fail) {
                     NotyFail(data.message);
                 }
@@ -80,7 +108,7 @@ export class WsClient {
                 this.emit_message('message', data);
                 this.emit_message(`message_${data.cmdType}`, data);
             }
-            this._socket.addEventListener('message', async (event) => {
+            socket.addEventListener('message', async (event) => {
                 try {
                     let event_data = event.data;
                      if (event_data instanceof Blob) {
@@ -98,14 +126,20 @@ export class WsClient {
                 }
             });
 
-            this._socket.addEventListener('close', (event) => {
-                console.log(`WS 已断开: ${this._url}`, event.code, event.reason);
-                this._socket = null;
+            socket.addEventListener('close', (event) => {
+                console.log(`WS 已断开: ${this.get_url()}`, event.code, event.reason);
+                // 只在当前连接就是自己时清空，避免旧连接的 close 把新连接清掉
+                if (this._socket === socket) {
+                    this._socket = null;
+                    this._connected_url = "";
+                    this._connecting = null;
+                    this.stop_heart_interval()
+                }
+                resolve(false);
                 this.emit_message('close');
-                this.stop_heart_interval()
             });
 
-            this._socket.addEventListener('error', (event) => {
+            socket.addEventListener('error', (event) => {
                 console.error('WS 错误', event);
             });
         });
@@ -173,10 +207,19 @@ export class WsClient {
     /** 手动关闭 WS，不触发自动重连 */
     public async close() {
         if (!this._socket) return;
-        this._socket.close();
+        const socket = this._socket;
         this._socket = null;
+        this._connected_url = "";
+        this._connecting = null;
         this.stop_heart_interval()
+        socket.close();
         // this.stop_heartbeat()
+    }
+
+    /** 地址或 token 变化后重建连接（如切换挂载目录、开启转发到对端） */
+    public async reconnect() {
+        await this.close();
+        return this.connect();
     }
 
     // 多次add相同的 key 只会add一次

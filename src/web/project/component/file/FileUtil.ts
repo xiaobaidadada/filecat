@@ -17,6 +17,7 @@ import {useNavigate, useSearchParams} from "react-router-dom";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {browser_file_pojo} from "../../../../common/req/common.pojo";
 import {useAtom} from "jotai/index";
+import {getDefaultStore} from "jotai";
 import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../../common/ValueUtil";
 import {getEditModelType} from "../../../../common/StringUtil";
@@ -737,4 +738,49 @@ export function use_get_now_abs_path() {
         // 空白处右键没有文件名，此时对应当前目录本身
         return filename ? path_join(fp, filename) : fp
     }
+}
+
+/**
+ * 文件操作能力判断。
+ * 所有「某个按钮该不该显示」的判断统一从这里取，避免各组件各写一套条件。
+ *
+ * 终端、workflow 这类能力依赖对端存在真实 shell：
+ * - 本地目录：随时可用
+ * - 内网穿透挂载（tcp_proxy）：只有开了「转发到对端」才可用，此时请求会走穿透隧道
+ * - 其它网盘挂载：对端没有 shell，一律不可用
+ */
+export function use_file_capabilities() {
+    const [mount] = useAtom($stroe.current_mount);
+    const is_mount = Boolean(mount);
+    const driver: string = mount?.driver ?? "";
+    // 只有开启了转发的内网穿透挂载，请求才会落到对端 FileCat 上
+    const remote_exec = is_mount && driver === "tcp_proxy" && Boolean(mount?.forward_to_remote);
+    const can_terminal = !is_mount || remote_exec;
+    return {
+        /** 当前是否位于挂载目录 */
+        is_mount,
+        /** 挂载驱动类型；非挂载为空串 */
+        driver,
+        /** 请求是否在对端执行 */
+        remote_exec,
+        /** 能否打开终端 */
+        can_terminal,
+    };
+}
+
+/**
+ * 需要时把接口请求转发到对端执行。
+ * 未开启「转发到对端」时按原样在本地请求，行为完全不变。
+ */
+export async function post_maybe_remote(
+    url_path: string,
+    body: any,
+    param_path: string,
+) {
+    const mount = getDefaultStore().get($stroe.current_mount);
+    const remote = mount?.driver === "tcp_proxy" && Boolean(mount?.forward_to_remote);
+    if (!remote) {
+        return fileHttp.post(url_path, body);
+    }
+    return fileHttp.post("file/forward_api", {param_path, url_path, body});
 }

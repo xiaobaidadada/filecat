@@ -24,6 +24,8 @@ export interface MountSaveReq {
     readonly?: boolean;
     color?: string;
     enabled?: boolean;
+    /** 转发到对端：该挂载目录下的终端、workflow 等请求在对端 FileCat 执行 */
+    forward_to_remote?: boolean;
 }
 
 /** 凭据保存请求体 */
@@ -261,6 +263,7 @@ export class MountController {
             readonly: body.readonly,
             color: body.color,
             enabled: body.enabled !== false,
+            forward_to_remote: body.forward_to_remote === true,
             user_id: current_user_id(r),
         });
         return Sucess(item);
@@ -276,7 +279,7 @@ export class MountController {
         const patch: Partial<FileMountItem> = {};
         const keys: (keyof MountSaveReq)[] = [
             "driver", "mount_path", "credential_id", "account_id", "note",
-            "root_dir", "readonly", "color", "enabled",
+            "root_dir", "readonly", "color", "enabled", "forward_to_remote",
         ];
         for (const k of keys) {
             if (body[k] !== undefined) {

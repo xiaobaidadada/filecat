@@ -85,6 +85,14 @@ export class FileController {
         return FileServiceImpl.mount_info(ctx.headers.authorization, data.param_path);
     }
 
+    /** 转发接口请求到对端 FileCat 执行（仅开启「转发到对端」的挂载可用） */
+    @Post('/file/forward_api')
+    async forward_api(@Req() ctx, @Body() data: { param_path: string; url_path: string; body?: any }) {
+        return FileServiceImpl.forward_api(
+            ctx.headers.authorization, data.param_path, data.url_path, data.body
+        );
+    }
+
     // @Put('/:path([^"]{0,})')
     // async uploadFile(@Req() ctx, @Param("path") path?: string, @UploadedFile('file', {options: FileServiceImpl.fileUploadOptions}) file?: any) {
     //     // await FileServiceImpl.uploadFile(path, file,ctx.headers.authorization);
