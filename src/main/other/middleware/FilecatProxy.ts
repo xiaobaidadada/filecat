@@ -308,7 +308,8 @@ export const use_ws_filecat_middleware = (sys_pre) =>{
 
         // 挂载「转发到对端」场景：前端带本机 token，对端 Cache 里没有会直接拒连。
         // 检测到挂载标记就把 token 换成对端自己的，再继续原有穿透流程。
-        if (parsedUrl.query.forward_mount) {
+        const is_forward_mount = Boolean(parsedUrl.query.forward_mount);
+        if (is_forward_mount) {
             const remote_token = await get_forward_token(client_num_id);
             if (remote_token) {
                 const target = new URL(request.url, `http://${request.headers.host}`);
@@ -320,11 +321,14 @@ export const use_ws_filecat_middleware = (sys_pre) =>{
             }
         }
 
-        const client_config = tcpForwardService.get_tcp_filecat(client_num_id);
+        // 挂载转发只用隧道，不受「浏览器代理入口」开关影响；浏览器入口仍按 open_filecat 判断
+        const client_config = tcpForwardService.get_tcp_filecat(client_num_id, is_forward_mount);
         const client = tcpForwardService.client_num_map[client_num_id];
 
         if (client_config && client) {
-            if (client_config.filecat_use_local_page) {
+            // filecat_use_local_page 是浏览器入口的设置（页面用本机、只转发接口），
+            // 挂载转发的页面本来就是本机的，所有请求都该过去，不能套用这个限制
+            if (!is_forward_mount && client_config.filecat_use_local_page) {
                 if (!(request.url && request.url.startsWith(sys_pre))) {
                     socket.destroy();
                     return;

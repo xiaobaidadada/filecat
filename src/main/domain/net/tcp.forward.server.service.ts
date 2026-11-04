@@ -351,10 +351,16 @@ export class TcpForwardServerService {
     }
 
 
-    get_tcp_filecat(client_num_id:number) {
+    /**
+     * 取客户端配置。
+     * ignore_open_filecat 为真时不再要求 open_filecat：
+     * 那个开关只管「浏览器走这个客户端访问对端页面」这条入口，
+     * 挂载「转发到对端」只用隧道本身，两者互不影响。
+     */
+    get_tcp_filecat(client_num_id:number, ignore_open_filecat = false) {
         const list = this.server_client_get()
         for (const item of list) {
-            if(item.open_filecat && client_num_id === item.client_num_id) {
+            if((ignore_open_filecat || item.open_filecat) && client_num_id === item.client_num_id) {
                 return item
             }
         }
