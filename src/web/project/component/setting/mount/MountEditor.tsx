@@ -1,8 +1,9 @@
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {InputText, Select} from "../../../../meta/component/Input";
-import {ActionButton} from "../../../../meta/component/Button";
-import {mountHttp} from "../../../util/config";
+import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
+import Switch from "../../../../meta/component/Button";import {mountHttp} from "../../../util/config";
+import {using_tip} from "../../prompts/prompts.util";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
     CredentialRow,
@@ -30,6 +31,7 @@ interface Props {
  */
 export default function MountEditor(props: Props) {
     const {t} = useTranslation();
+    const show_tip = using_tip();
     const [drivers, set_drivers] = useState<DriverMeta[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
     const [row, set_row] = useState<any>({
@@ -41,6 +43,7 @@ export default function MountEditor(props: Props) {
         color: DEFAULT_COLOR,
         readonly: false,
         enabled: true,
+        forward_to_remote: false,
     });
 
     useEffect(() => {
@@ -70,6 +73,7 @@ export default function MountEditor(props: Props) {
                             color: item.color ?? DEFAULT_COLOR,
                             readonly: Boolean(item.readonly),
                             enabled: item.enabled !== false,
+                            forward_to_remote: Boolean(item.forward_to_remote),
                         });
                     }
                 } catch (e) {
@@ -131,6 +135,8 @@ export default function MountEditor(props: Props) {
                 color: row.color,
                 readonly: row.readonly,
                 enabled: row.enabled,
+                // 非内网穿透驱动不支持转发，切走时显式置 false，避免残留脏值
+                forward_to_remote: row.driver === "tcp_proxy" && Boolean(row.forward_to_remote),
             });
             NotySuccess(t("保存成功"));
             props.onDone();
@@ -145,9 +151,11 @@ export default function MountEditor(props: Props) {
                 options={drivers.map(d => ({title: d.name, value: d.type}))}
                 onChange={(v) => set_row({...row, driver: v, credential_id: "", account_id: ""})}/>
         <Select value={row.credential_id} options={cred_options()}
+                placeholder={t("选择凭据")}
                 onChange={(v) => set_row({...row, credential_id: v, account_id: ""})}/>
         {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
         {need_account && <Select value={row.account_id} options={cur_account_options}
+                placeholder={t("选择账号")}
                 onChange={(v) => set_row({...row, account_id: v})}/>}
         <InputText placeholder={t("strtdrt")} value={row.root_dir}
                    handleInputChange={(v) => set_row({...row, root_dir: v})}/>
@@ -158,10 +166,18 @@ export default function MountEditor(props: Props) {
         <Select value={row.readonly}
                 options={[{title: t("只读"), value: true}, {title: "读写", value: false}]}
                 onChange={(v) => set_row({...row, readonly: v})}/>
-        <div>
-            <ActionButton icon={"cancel"} title={t("取消")} onClick={props.onClose}/>
-            <ActionButton icon={"network_check"} title={t("测试连接")} onClick={do_test}/>
-            <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
+        {/* 只有内网穿透挂载能转发：其它驱动的对端不是 FileCat，没有它自己的前端和终端 */}
+        {row.driver === "tcp_proxy" && <div className={"div-row"}>
+            <span>{t("ftr2rmt")}</span>
+            <Switch checked={Boolean(row.forward_to_remote)}
+                    onChange={(v) => set_row({...row, forward_to_remote: v})}
+                    title={t("ftr2rmt_tip")}/>
+
+        </div>}
+        <div className={"div-row div-row--end"}>
+            <ButtonText text={t("取消")} clickFun={props.onClose}/>
+            <ButtonText text={t("测试连接")} clickFun={do_test}/>
+            <ButtonLittle text={t("保存")} clickFun={save}/>
         </div>
     </>);
 }

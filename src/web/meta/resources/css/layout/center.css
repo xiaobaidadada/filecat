@@ -96,3 +96,10 @@
     align-items: center; /* 垂直居中 */
 
 }
+
+/* 按钮行：靠右排列、不换行，用于弹框底部的操作按钮组 */
+.div-row.div-row--end {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 0.75em;
+}

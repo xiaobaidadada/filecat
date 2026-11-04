@@ -424,7 +424,12 @@ export interface SelectProps {
      * 典型用于表头筛选：触发框始终显示列名，选中值只影响下拉里的选中态。
      * 不传时按原逻辑显示当前选中项。
      */
-    trigger_label?: string
+    trigger_label?: string,
+    /**
+     * 未选中任何选项时触发框显示的提示文字。
+     * 不传则显示空字符串（此时触发框是一个没有任何文字的空白框，用户无法辨认用途）。
+     */
+    placeholder?: string
 }
 
 // export function Select(props: SelectProps) {
@@ -487,6 +492,9 @@ export function Select(props: SelectProps) {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selected = props.options.find(o => o.value === (props.value ?? props.defaultValue));
+    // 没有选中项时退化为 placeholder，避免触发框变成一个没有任何文字的空白框
+    const selected_label = selected?.title ?? selected?.label ?? selected?.value ?? props.placeholder ?? "";
+    const show_placeholder = !selected && !!props.placeholder;
 
     // 点击外部关闭：触发器与 portal 出来的下拉都算内部
     use_click_outside(open, [triggerRef, dropdownRef], () => setOpen(false));
@@ -542,9 +550,9 @@ export function Select(props: SelectProps) {
                     ].join(" ")}
                     onClick={handleOpen}
                 >
-                    <span className="select_trigger__label" style={{color: selected?.color || "inherit"}}>
+                    <span className={"select_trigger__label" + (show_placeholder ? " select_trigger__label--placeholder" : "")} style={{color: show_placeholder ? undefined : (selected?.color || "inherit")}}>
                         {/* 传了 trigger_label 时触发框固定显示该文字（如表头筛选始终显示列名），否则显示选中项 */}
-                        {props.trigger_label ?? (selected?.title ?? selected?.label ?? selected?.value ?? "")}
+                        {props.trigger_label ?? selected_label}
                     </span>
                     <i className={["material-icons", "select_trigger__icon", open ? "select_trigger__icon--open" : ""].join(" ")}>
                         expand_more

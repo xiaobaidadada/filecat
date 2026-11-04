@@ -251,6 +251,11 @@
     white-space: nowrap;
 }
 
+/* 未选中任何项时的提示文字，压暗以区别于真实选中值 */
+.select_trigger__label--placeholder {
+    color: #9ca3af;
+}
+
 .select_trigger__icon {
     font-size: 18px;
     color: #666;
