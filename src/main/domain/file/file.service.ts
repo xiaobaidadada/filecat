@@ -150,27 +150,16 @@ export class FileService  {
      */
     public async mount_info(token: string, param_path: string) {
         const sysPath = this.resolveFilePath(token, param_path ?? "");
-        return Sucess(current_mount_info(sysPath));
-    }
-
-    /**
-     * 转发接口请求到对端 FileCat 执行。
-     * 仅挂载开启「转发到对端」时可用，用于 workflow 这类需要在对端读文件的接口。
-     */
-    public async forward_api(token: string, param_path: string, url_path: string, body: any) {
-        const sysPath = this.resolveFilePath(token, param_path ?? "");
-        const match = mountService.resolve(sysPath);
-        if (!match) {
-            throw new Error("当前目录不是挂载目录，无法转发到对端");
+        const info = current_mount_info(sysPath);
+        if (!info) {
+            return Sucess(null);
         }
-        if (!match.mount.forward_to_remote) {
-            throw new Error("该挂载未开启「转发到对端」");
-        }
-        const driver = mountService.driver_of(match.mount);
-        if (!(driver instanceof TcpProxyDriver)) {
-            throw new Error("该挂载类型不支持转发到对端");
-        }
-        return await driver.forward_api(url_path, body);
+        // 挂载点在 URL 空间的相对路径：当前 URL 路径去掉「挂载内子路径」的尾部
+        // 例：param_path=filecat/挂测/mnt/a/b/，inner_path=/a/b/ → url_path=filecat/挂测/mnt
+        const inner = resolve_local_path(sysPath).inner_path.replace(/^\/+|\/+$/g, "");
+        const full = (param_path ?? "").replace(/^\/+|\/+$/g, "");
+        info.url_path = inner ? full.slice(0, full.length - inner.length).replace(/\/+$/, "") : full;
+        return Sucess(info);
     }
 
     private normalizeSqliteValue(value: any): any {

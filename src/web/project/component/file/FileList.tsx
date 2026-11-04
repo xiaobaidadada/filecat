@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {RouteBreadcrumbs} from "../../../meta/component/RouteBreadcrumbs";
-import { useAtom } from 'jotai'; 
+import { getDefaultStore, useAtom } from 'jotai'; 
 import {$stroe} from "../../util/store";
 import {fileHttp, userHttp} from "../../util/config";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
@@ -17,7 +17,7 @@ import {
     title_workflow_file_success,
     use_file_open,
     useUpdateUrlParams,
-    user_click_file, use_get_now_abs_path
+    user_click_file, use_get_now_abs_path, to_remote_dir_path
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -145,7 +145,10 @@ export default function FileList() {
 
     const workflow_watcher = async () => {
         const p = new WorkFlowRealTimeReq();
-        p.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        // 转发到对端时由对端监听它自己的目录，路径要去掉挂载点前缀。
+        // 用 store 直读而不是闭包里的 mount_info，避免拿到上一次渲染的旧挂载
+        const mount = getDefaultStore().get($stroe.current_mount);
+        p.dir_path = to_remote_dir_path(getRouterAfter('file', getRouterPath()), mount);
         ws.addMsg(CmdType.workflow_realtime, (data) => {
             // console.log(data.context)
             const pojo = data.context as WorkFlowRealTimeRsq;
@@ -173,9 +176,6 @@ export default function FileList() {
             }
             if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
                 have_workflow_water = true;
-                Promise.resolve().then(() => {
-                    workflow_watcher();
-                })
             }
             if (item.name === workflow_dir_name) {
                 have_workflow_water = true;
@@ -217,8 +217,18 @@ export default function FileList() {
         }
     }
 
-    /** 关闭所有编辑器/预览器：url 切走或后退时，已打开的覆盖层必须收掉，否则会盖住文件列表 */
-    const close_all_editors = () => {
+    /**
+     * 订阅目录内 workflow 的运行状态。
+     * 路径要用挂载信息换算成对端视角，而 mount_info 与文件列表是两个并发请求，
+     * 所以要等两边都就绪（workflow_show_click 由 file_after 置位）后再发。
+     */
+    useEffect(() => {
+        if (!workflow_show_click) {
+            return;
+        }
+        workflow_watcher();
+    }, [workflow_show_click, mount_info, location]);
+    /** 关闭所有编辑器/预览器：url 切走或后退时，已打开的覆盖层必须收掉，否则会盖住文件列表 */    const close_all_editors = () => {
         setEditorSetting({open: false});
         setFilePreview({open: false});
         set_md_editor({});

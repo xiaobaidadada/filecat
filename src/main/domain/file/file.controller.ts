@@ -39,6 +39,7 @@ import {Stats} from "fs";
 import {getFileFormat} from "../../../common/FileMenuType";
 import {Public} from "../../other/middleware/decorator";
 import {sqliteQueryReq} from "../../../common/req/file.req";
+import {require_driver, resolve_local_path} from "./mount_adapter";
 
 
 @JsonController("/file")
@@ -83,14 +84,6 @@ export class FileController {
     @Post('/file/mount_info')
     async mount_info(@Req() ctx, @Body() data: { param_path: string }) {
         return FileServiceImpl.mount_info(ctx.headers.authorization, data.param_path);
-    }
-
-    /** 转发接口请求到对端 FileCat 执行（仅开启「转发到对端」的挂载可用） */
-    @Post('/file/forward_api')
-    async forward_api(@Req() ctx, @Body() data: { param_path: string; url_path: string; body?: any }) {
-        return FileServiceImpl.forward_api(
-            ctx.headers.authorization, data.param_path, data.url_path, data.body
-        );
     }
 
     // @Put('/:path([^"]{0,})')
@@ -299,6 +292,17 @@ export class FileController {
     async workflow_get_pre_inputs(@Body() data: { path: string }, @Req() ctx) {
         const sysPath = path.join(settingService.getFileRootPath(ctx.headers.authorization), data.path ? decodeURIComponent(data.path) : "");
         userService.check_user_path(ctx.headers.authorization, sysPath);
+        // 路径落在挂载点内时由驱动读对端文件，不要再走本地磁盘
+        const mount_res = resolve_local_path(sysPath);
+        if (mount_res.match) {
+            const {driver, inner_path} = require_driver(mount_res.real_path);
+            const stream = await driver.read(inner_path);
+            const chunks: Buffer[] = [];
+            for await (const chunk of stream) {
+                chunks.push(Buffer.from(chunk));
+            }
+            return Sucess(await workflowService.workflow_get_pre_inputs_from_content(Buffer.concat(chunks).toString("utf8")));
+        }
         return Sucess(await workflowService.workflow_get_pre_inputs(sysPath));
     }
 

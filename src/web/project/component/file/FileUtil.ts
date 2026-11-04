@@ -769,18 +769,29 @@ export function use_file_capabilities() {
 }
 
 /**
- * 需要时把接口请求转发到对端执行。
- * 未开启「转发到对端」时按原样在本地请求，行为完全不变。
+ * 把本机 URL 路径转换成「对端视角」的相对路径。
+ *
+ * 开启「转发到对端」时，请求由对端 FileCat 处理，它不认识本机的挂载点，
+ * 所以要把 URL 里的挂载点前缀裁掉：
+ *   本机 filecat/挂测/filecat-home/test/worflow/
+ *   对端 test/worflow/
+ * 未开启转发时原样返回。
  */
-export async function post_maybe_remote(
-    url_path: string,
-    body: any,
-    param_path: string,
-) {
-    const mount = getDefaultStore().get($stroe.current_mount);
+export function to_remote_dir_path(full_path: string, mount?: any) {
     const remote = mount?.driver === "tcp_proxy" && Boolean(mount?.forward_to_remote);
-    if (!remote) {
-        return fileHttp.post(url_path, body);
+    const mount_url_path: string = mount?.url_path ?? "";
+    if (!remote || !mount_url_path) {
+        return full_path;
     }
-    return fileHttp.post("file/forward_api", {param_path, url_path, body});
+    const prefix = mount_url_path.replace(/\/+$/, "") + "/";
+    if (!full_path.startsWith(prefix)) {
+        return full_path;
+    }
+    return full_path.slice(prefix.length);
+}
+
+/** 当前 URL 路径的对端视角版本（转发挂载下会去掉挂载点前缀） */
+export function use_remote_dir_path() {
+    const [mount] = useAtom($stroe.current_mount);
+    return to_remote_dir_path(getRouterAfter('file', getRouterPath()), mount);
 }

@@ -29,6 +29,7 @@ import {FileUtil} from "../FileUtil";
 import {workflow_util} from "./workflow.util";
 import {WorkflowProcess} from "./workflow.process";
 import {CommonUtil} from "../../../../common/common.util";
+import {parse_yaml} from "../../../../common/node/yaml.util";
 
 
 const readYamlFile = require('read-yaml-file')
@@ -519,8 +520,18 @@ const realtime_user_dir_wss_map = new Map<string, Set<Wss>>(); // 路径和对�
 export class WorkflowService {
 
     async workflow_get_pre_inputs(path: string) {
-        const list: workflow_pre_input[] = [];
         const yml_data = await readYamlFile(path);
+        return this.parse_pre_inputs(yml_data);
+    }
+
+    /** 从已读到的 yaml 文本解析输入项，供挂载场景（文件在对端）复用 */
+    async workflow_get_pre_inputs_from_content(content: string) {
+        const yml_data = parse_yaml(content);
+        return this.parse_pre_inputs(yml_data);
+    }
+
+    private parse_pre_inputs(yml_data: any): workflow_pre_input[] {
+        const list: workflow_pre_input[] = [];
         if (yml_data.inputs && typeof yml_data.inputs === "object") {
             for (const key of Object.keys(yml_data.inputs)) {
                 const v = yml_data.inputs[key];

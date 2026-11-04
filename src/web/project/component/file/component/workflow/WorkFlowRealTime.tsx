@@ -15,7 +15,8 @@ import {tree_list, workflow_realtime_tree_list} from "../../../../../../common/r
 // import {Shell} from "../../../shell/Shell";
 import {Terminal} from "@xterm/xterm";
 import {NotyFail, NotySuccess} from "../../../../util/noty";
-import { get_children_list } from "./workflow.util";
+import {get_children_list} from "./workflow.util";
+import {to_remote_dir_path} from "../../FileUtil";
 
 const ShellLazy = React.lazy(() => import("../../../shell/ShellLazy"))
 
@@ -27,6 +28,7 @@ let input_page_num = -1;
 export default function WorkFlowRealTime(props) {
     const {t} = useTranslation();
     const [workflow_show,set_workflow_show] = useAtom($stroe.workflow_realtime_show);
+    const [current_mount] = useAtom($stroe.current_mount);
     const [task_rows,set_task_rows] = useState([]);
     const [job_list,set_job_list] = useState([])
     const [shellShow,setShellShow] = useState(false);
@@ -56,7 +58,7 @@ export default function WorkFlowRealTime(props) {
     const get_data = async (page_num_value?:number) => {
         const req = new WorkFlowRealTimeOneReq();
 
-        req.filename_path = `${getRouterAfter('file', getRouterPath())}${workflow_show.filename}`
+        req.filename_path = `${to_remote_dir_path(getRouterAfter('file', getRouterPath()), current_mount)}${workflow_show.filename}`
         ws.addMsg(CmdType.workflow_realtime_one_rsq,(data)=>{
             // console.log(data.context)
             // if(data.context.done === true) {

@@ -2,14 +2,17 @@ import {ws} from "../../../util/ws";
 import {CmdType} from "../../../../../common/frame/WsData";
 import {workflow_pre_input, WorkflowReq, WorkRunType} from "../../../../../common/req/file.req";
 import {getRouterAfter, getRouterPath} from "../../../util/WebPath";
-import { useAtom } from 'jotai';
+import { useAtom, getDefaultStore } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
+import {to_remote_dir_path} from "../../file/FileUtil";
 
 export const run_workflow= async (filename,code:3|4,inputs:workflow_pre_input[] = []) =>{
 
     const pojo = new WorkflowReq();
-    pojo.path = `${getRouterAfter('file', getRouterPath())}${filename}`;
+    const dir = getRouterAfter('file', getRouterPath());
+    // 转发到对端时参数里的路径必须是对端视角的，否则对端找不到文件
+    pojo.path = `${to_remote_dir_path(dir, getDefaultStore().get($stroe.current_mount))}${filename}`;
     pojo.inputs = inputs;
     if(code===3) {
         pojo.run_type = WorkRunType.start;

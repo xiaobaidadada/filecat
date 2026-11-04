@@ -9,6 +9,7 @@ import {$stroe} from "../../util/store";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 import {copyToClipboard} from "../../util/FunUtil";
 import {useCmdConfirm} from "../aichat/useCmdConfirm";
+import {to_remote_dir_path} from "../file/FileUtil";
 
 const ShellLazy = React.lazy(() => import("./ShellLazy"))
 
@@ -16,6 +17,7 @@ const ShellLazy = React.lazy(() => import("./ShellLazy"))
 export default function FileShell(props) {
     const [terminalState,setTerminalState] = useState(null)
     const [shellShow,setShellShow] = useAtom($stroe.fileShellShow);
+    const [current_mount] = useAtom($stroe.current_mount);
     const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const color =  userInfo.user_data.theme?.includes("dark")?"#FFFFFF":"#000000";
@@ -91,7 +93,8 @@ export default function FileShell(props) {
         terminalState.writeln('\x1b[38;2;29;153;243mopen shell...\x1b[0m ')
         const data = new WsData(CmdType.shell_open);
         const pojo = new ShellInitPojo();
-        pojo.init_path = shellShow.path;
+        // 转发到对端时去掉挂载点前缀，对端只认它自己的相对路径
+        pojo.init_path = to_remote_dir_path(shellShow.path, current_mount);
         pojo.rows = rows;
         pojo.cols = cols;
         pojo.http_token = localStorage.getItem('token');

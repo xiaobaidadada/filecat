@@ -94,6 +94,8 @@ export function current_mount_info(abs_path: string): {
     driver: string;
     color: string;
     mount_path: string;
+    /** 挂载点相对用户根目录的路径，用于把本机 URL 路径换算成对端视角的相对路径 */
+    url_path: string;
     readonly: boolean;
     /** 凭据备注（展示用） */
     credential_note: string;
@@ -124,6 +126,8 @@ export function current_mount_info(abs_path: string): {
         driver: m.driver,
         color: m.color || "#4a9eff",
         mount_path: m.mount_path,
+        // 由调用方按 URL 上下文补全，adapter 本身不知道 URL 路径
+        url_path: "",
         readonly: Boolean(m.readonly),
         credential_note: cred?.note || "",
         account_note: acc ? (acc.note || acc.account_name || acc.nickname || "") : "",

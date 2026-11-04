@@ -6,7 +6,7 @@ import {path_join} from "../../../common/path_util";
 
 /**
  * 挂载目录开启「转发到对端」时，WS 要隧道到对端：
- * 带 tcp_client_num_id 触发本机 filecat 代理，带 forward_mount 让代理把 token 换成对端的。
+ * tcp_client_num_id 触发本机 filecat 代理走隧道，forward_mount 让代理把 token 换成对端的。
  */
 function build_ws_url() {
     // baseUrl 以 / 结尾、pathname 以 / 开头，用 path_join 避免拼出 //

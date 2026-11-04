@@ -18,7 +18,7 @@ import {Table} from "../../../../../meta/component/Table";
 import {FullScreenDiv} from "../../../../../meta/component/Dashboard";
 import {InputText} from "../../../../../meta/component/Input";
 import {job_item, running_type, step_item, WorkflowGetReq, WorkflowGetRsq} from "../../../../../../common/req/file.req";
-import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
+import {use_remote_dir_path} from "../../FileUtil";
 import TreeView from "../../../../../meta/component/TreeView";
 import {tree_list} from "../../../../../../common/req/common.pojo";
 // import {Shell} from "../../../shell/Shell";
@@ -34,6 +34,8 @@ let input_page_num = -1;
 
 export default function WorkFlow(props) {
     const {t} = useTranslation();
+    // 转发到对端时路径要去掉挂载点前缀，对端只认它自己的相对路径
+    const dir_path_value = use_remote_dir_path();
     const [workflow_show,set_workflow_show] = useAtom($stroe.workflow_show);
     const [task_rows,set_task_rows] = useState([]);
     const [job_list,set_job_list] = useState([])
@@ -56,7 +58,7 @@ export default function WorkFlow(props) {
         const req = new WorkflowGetReq();
         req.page_num = page_num_value??page_num;
         req.page_size = page_size;
-        req.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        req.dir_path = dir_path_value
         const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_get,req);
         if(!data)return;
         const pojo = data.context as WorkflowGetRsq;
@@ -77,7 +79,7 @@ export default function WorkFlow(props) {
     const search_run_name = async (search_name)=>{
         const req = new WorkflowGetReq();
         req.search_name = search_name;
-        req.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        req.dir_path = dir_path_value
         set_search_name_status(true);
         const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_search_by_run_name,req);
         if(!data)return;
@@ -136,7 +138,7 @@ export default function WorkFlow(props) {
         set_step_tree_list([])
         const req = new WorkflowGetReq();
         req.index = item.index;
-        req.dir_path = `${getRouterAfter('file', getRouterPath())}`
+        req.dir_path = dir_path_value
         const data:WsData<WorkflowGetRsq> = await ws.sendData(CmdType.workflow_get,req);
         const pojo = data.context as WorkflowGetRsq;
         // @ts-ignore
