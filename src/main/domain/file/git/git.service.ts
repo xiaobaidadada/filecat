@@ -604,6 +604,44 @@ export class GitServiceImpl {
         }
     }
 
+    /**
+     * 撤销文件的修改：把工作区内容还原成版本库里的样子。
+     *
+     * 按文件当前所处的状态分别处理，避免「撤销」把用户别的改动也一起干掉：
+     *  - 未跟踪（新文件）：git 没有历史版本可还原，只能删除文件本身
+     *  - 已暂存：先取消暂存，再还原工作区，两步都做才算真正丢弃
+     *  - 仅工作区改动：直接还原工作区
+     *  - 已删除：同样走 checkout 还原回来
+     *
+     * files 里每一项带 staged/untracked 标记，由调用方（前端）按它自己的分组传入，
+     * 服务端不重复读一遍 git status，避免状态在两次调用之间变化导致误判。
+     */
+    async gitDiscard(token: string, relativePath: string, files: { path: string, staged: boolean, untracked: boolean }[]): Promise<Result<any>> {
+        try {
+            if (!files || files.length === 0) return Fail("no files");
+            const cwd = this.resolveWritePath(token, relativePath);
+            await this.ensureGitRepo(cwd);
+
+            const untracked = files.filter(f => f.untracked).map(f => `"${f.path}"`);
+            const staged = files.filter(f => !f.untracked && f.staged).map(f => `"${f.path}"`);
+            const worktree = files.filter(f => !f.untracked && !f.staged).map(f => `"${f.path}"`);
+
+            // 已暂存：先退回工作区，否则 checkout 只会还原暂存区里的那份
+            if (staged.length) await this.execGit(cwd, `reset HEAD ${staged.join(" ")}`);
+
+            // 已暂存 + 仅工作区：此刻都已回到「工作区有改动」，统一 checkout 还原
+            const restore = [...staged, ...worktree];
+            if (restore.length) await this.execGit(cwd, `checkout -- ${restore.join(" ")}`);
+
+            // 未跟踪文件：直接删掉，clean 比手动 unlink 更贴合 git 语义（保留 .gitignore 判断）
+            if (untracked.length) await this.execGit(cwd, `clean -f -- ${untracked.join(" ")}`);
+
+            return Sucess("ok");
+        } catch (e: any) {
+            return Fail(this.err_msg(e));
+        }
+    }
+
     async gitCommit(token: string, relativePath: string, message: string, allChanged = false): Promise<Result<any>> {
         try {
             if (!message || !message.trim()) {

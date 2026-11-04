@@ -49,6 +49,10 @@ interface Props {
     on_stage_one: (file: GitStatusFile, staged: boolean) => void;
     /** 查看文件的逐行归属 */
     on_view_blame: (file: GitStatusFile) => void;
+    /** 撤销单个文件的修改 */
+    on_discard_one: (file: GitStatusFile, staged: boolean) => void;
+    /** 撤销已选中的文件（工具栏按钮） */
+    on_discard_selected: () => void;
 }
 
 /** 取文件用于显示的短名（去掉目录前缀） */
@@ -130,6 +134,7 @@ function FileRow(props: {
     on_view_diff: (file: GitStatusFile, staged: boolean) => void;
     on_stage_one: (file: GitStatusFile, staged: boolean) => void;
     on_view_blame: (file: GitStatusFile) => void;
+    on_discard_one: (file: GitStatusFile, staged: boolean) => void;
     key?: React.Key;
 }) {
     const {t} = useTranslation();
@@ -165,6 +170,8 @@ function FileRow(props: {
                 <ActionButton icon={staged ? "remove" : "add"}
                               title={staged ? t('取消暂存') : t('暂存')}
                               onClick={() => props.on_stage_one(file, staged)}/>
+                <ActionButton icon={"undo"} title={t('discard')}
+                              onClick={() => props.on_discard_one(file, staged)}/>
             </span>
         </div>
     );
@@ -182,11 +189,11 @@ function TreeFolder(props: {
     on_view_diff: (file: GitStatusFile, staged: boolean) => void;
     on_stage_one: (file: GitStatusFile, staged: boolean) => void;
     on_view_blame: (file: GitStatusFile) => void;
+    on_discard_one: (file: GitStatusFile, staged: boolean) => void;
     key?: React.Key;
 }) {
     const {node, staged, file_map, prefix} = props;
-    const [expanded, setExpanded] = useState(true);
-    const full_path = prefix ? `${prefix}/${node.name}` : node.name;
+    const [expanded, setExpanded] = useState(true);    const full_path = prefix ? `${prefix}/${node.name}` : node.name;
 
     if (node.type === "file") {
         const f = file_map.get(full_path);
@@ -196,7 +203,8 @@ function TreeFolder(props: {
             <FileRow file={f} staged={staged} status={status} selected={props.selected}
                      active={props.active_path === f.path} leaf={true}
                      on_toggle={props.on_toggle} on_view_diff={props.on_view_diff}
-                     on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}/>
+                     on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}
+                     on_discard_one={props.on_discard_one}/>
         );
     }
 
@@ -219,7 +227,8 @@ function TreeFolder(props: {
                         <TreeFolder key={i} node={c} staged={staged} file_map={file_map} prefix={full_path}
                                     selected={props.selected} active_path={props.active_path}
                                     on_toggle={props.on_toggle} on_view_diff={props.on_view_diff}
-                                    on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}/>
+                                    on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}
+                                    on_discard_one={props.on_discard_one}/>
                     ))}
                 </div>
             )}
@@ -244,6 +253,7 @@ function ChangeSection(props: {
     on_stage_section: (files: GitStatusFile[], staged: boolean) => void;
     on_stage_one: (file: GitStatusFile, staged: boolean) => void;
     on_view_blame: (file: GitStatusFile) => void;
+    on_discard_one: (file: GitStatusFile, staged: boolean) => void;
 }) {
     const {t} = useTranslation();
     const {title, files, staged, selected} = props;
@@ -284,7 +294,8 @@ function ChangeSection(props: {
                         <TreeFolder key={i} node={node} staged={staged} file_map={file_map} prefix=""
                                     selected={props.selected} active_path={props.active_path}
                                     on_toggle={props.on_toggle} on_view_diff={props.on_view_diff}
-                                    on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}/>
+                                    on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}
+                                    on_discard_one={props.on_discard_one}/>
                     ))}
                 </div>
             ) : (
@@ -293,7 +304,8 @@ function ChangeSection(props: {
                              file={f} staged={staged} status={props.status_of(f)}
                              selected={props.selected} active={props.active_path === f.path} leaf={true}
                              on_toggle={props.on_toggle} on_view_diff={props.on_view_diff}
-                             on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}/>
+                             on_stage_one={props.on_stage_one} on_view_blame={props.on_view_blame}
+                             on_discard_one={props.on_discard_one}/>
                 ))
             )}
         </div>
@@ -324,6 +336,7 @@ export default function GitChangeList(props: Props) {
         on_stage_section: props.on_stage_section,
         on_stage_one: props.on_stage_one,
         on_view_blame: props.on_view_blame,
+        on_discard_one: props.on_discard_one,
     };
 
     return (
@@ -332,6 +345,10 @@ export default function GitChangeList(props: Props) {
                 <ActionButton icon={"account_tree"} title={t('树形展示')}
                               selected={tree_mode}
                               onClick={() => setTreeMode(!tree_mode)}/>
+                {props.selected.size > 0 && (
+                    <ActionButton icon={"undo"} title={`${t('discard')} (${props.selected.size})`}
+                                  onClick={props.on_discard_selected}/>
+                )}
             </div>
             <ChangeSection title={t('已暂存的更改')} files={staged_files} staged={true}
                            status_of={f => f.conflicted ? "U" : f.index} {...common}/>

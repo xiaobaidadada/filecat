@@ -1175,5 +1175,10 @@
   "重启成功": "Restarted successfully",
   "重启服务": "Restart service",
   "配置已保存，是否立即重启该服务让新配置生效？": "Configuration saved. Restart the service now to apply it?",
-    "暂停中": "Pausing"
+    "暂停中": "Pausing",
+    "discard": "Discard Changes",
+    "discarded": "Changes discarded",
+    "discard_untracked_tip": "This file is not tracked. Discarding will delete it permanently. Continue?",
+    "discard_modified_tip": "Local changes will be discarded and reverted to the repository version. Continue?",
+    "discard_selected_tip": "Local changes to the selected {{n}} file(s) will be discarded. Continue?"
 }

@@ -48,9 +48,26 @@ const LOG_PAGE_SIZE = 100;
 export default function GitStudio() {
     const {t} = useTranslation();
     const confirm_commit_all = using_confirm();
+    const confirm_discard = using_confirm();
     const navigate = useNavigate();
 
-    let dirPath = decodeURIComponent(getRouterAfter(routerConfig.git_page, getRouterPath()));
+    /**
+     * 从路由里取仓库路径。
+     * URL 中的路径可能被编码一层或两层（%25E5%25B7%25A5 这种是两层），
+     * 逐层解码到不再变化为止，否则中文目录会显示成 %E5%B7%A5 这种乱码。
+     */
+    let dirPath = getRouterAfter(routerConfig.git_page, getRouterPath());
+    for (let i = 0; i < 3; i++) {
+        let next: string;
+        try {
+            next = decodeURIComponent(dirPath);
+        } catch {
+            // 含非法百分号序列时不再解码，按原样使用
+            break;
+        }
+        if (next === dirPath) break;
+        dirPath = next;
+    }
     dirPath = dirPath.replace(/\/+$/, '');
 
     // ===== 仓库数据 =====
@@ -273,6 +290,49 @@ export default function GitStudio() {
         } catch (e: any) {
             NotyFail(e?.message);
         }
+    };
+
+    /** 撤销单个文件的修改（还原成版本库内容，未跟踪文件则删除） */
+    const discard_one = (file: GitStatusFile, staged: boolean) => {
+        confirm_discard({
+            title: t('discard'),
+            sub_title: file.untracked
+                ? t('discard_untracked_tip')
+                : t('discard_modified_tip'),
+            confirm_fun: () => do_discard([{path: file.path, staged, untracked: file.untracked}]),
+        });
+    };
+
+    /** 撤销选中的文件 */
+    const discard_selected = () => {
+        const targets = statusFiles.filter(f => selectedFiles.has(f.path));
+        if (targets.length === 0) return;
+        confirm_discard({
+            title: t('discard'),
+            sub_title: t('discard_selected_tip', {n: targets.length}),
+            confirm_fun: () => do_discard(targets.map(f => ({
+                path: f.path,
+                // 已暂存区优先：一个文件可能同时有暂存和工作区改动，撤销要两个都清掉
+                staged: f.staged,
+                untracked: f.untracked,
+            }))),
+        });
+    };
+
+    const do_discard = async (files: { path: string, staged: boolean, untracked: boolean }[]) => {
+        try {
+            setLoading(true);
+            const rsq = await gitHttp.post('discard', {path: dirPath, files});
+            if (rsq.code === 0) {
+                NotySuccess(t('discarded'));
+                // 被撤销的文件可能正在右侧显示 diff，其内容已失效
+                if (diffTarget?.kind === 'working' && files.some(f => f.path === diffTarget.path)) {
+                    setDiffTarget(null);
+                }
+                await loadStatus();
+            } else NotyFail(rsq.message);
+        } catch (e: any) { NotyFail(e?.message); }
+        finally { setLoading(false); }
     };
 
     // ===== 提交与远程 =====
@@ -566,6 +626,8 @@ export default function GitStudio() {
                                     on_stage_section={stage_section}
                                     on_stage_one={stage_one}
                                     on_view_blame={view_blame}
+                                    on_discard_one={discard_one}
+                                    on_discard_selected={discard_selected}
                                 />
                             </div>
                         )}

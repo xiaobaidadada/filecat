@@ -260,6 +260,14 @@ export class GitController {
         return gitService.gitReset(ctx.headers.authorization, data.path, data.files);
     }
 
+    @Post("/discard")
+    async discard(@Req() ctx, @Body() data: {
+        path: string;
+        files: { path: string, staged: boolean, untracked: boolean }[]
+    }): Promise<Result<any>> {
+        return gitService.gitDiscard(ctx.headers.authorization, data.path, data.files);
+    }
+
     @Post("/commit")
     async commit(@Req() ctx, @Body() data: { path: string; message: string; allChanged?: boolean }): Promise<Result<any>> {
         return gitService.gitCommit(ctx.headers.authorization, data.path, data.message, data.allChanged);

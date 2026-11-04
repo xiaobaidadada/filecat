@@ -1171,5 +1171,10 @@
   "重启成功": "Reiniciado correctamente",
   "重启服务": "Reiniciar servicio",
   "配置已保存，是否立即重启该服务让新配置生效？": "Configuración guardada. ¿Reiniciar el servicio ahora para aplicarla?",
-    "暂停中": "Pausando"
+    "暂停中": "Pausando",
+    "discard": "Descartar cambios",
+    "discarded": "Cambios descartados",
+    "discard_untracked_tip": "Este archivo no está bajo control de versiones. Descartar lo eliminará permanentemente. ¿Continuar?",
+    "discard_modified_tip": "Los cambios locales se descartarán y se restaurará la versión del repositorio. ¿Continuar?",
+    "discard_selected_tip": "Se descartarán los cambios locales de los {{n}} archivo(s) seleccionado(s). ¿Continuar?"
 }
