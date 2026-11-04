@@ -48,6 +48,32 @@ export class TunnelDuplexStream extends Duplex {
         // 等待 receiveFromTunnel 异步灌入数据
     }
 
+    /**
+     * 让 http 模块把这个 Duplex 当作 Socket 使用时所需的空实现。
+     * 它不是真正的 net.Socket，缺少这些方法会导致 http 内部报错/请求卡住。
+     * 注意：超时统一由 http.ClientRequest 自己控制，这里不注册 timeout 事件，
+     * 否则每次请求都会累积一个永不触发的监听器。
+     */
+    setNoDelay() {
+        return this;
+    }
+
+    setKeepAlive() {
+        return this;
+    }
+
+    setTimeout(_timeout: number, _cb?: () => void) {
+        return this;
+    }
+
+    ref() {
+        return this;
+    }
+
+    unref() {
+        return this;
+    }
+
     receiveFromTunnel(rawTcpBuffer: Buffer) {
         if (this.isDestroyed) return;
         this.push(rawTcpBuffer);

@@ -139,7 +139,7 @@ export function TcpProxyClient(props) {
     return <div>
         <Row>
 
-            <Column widthPer={33}>
+            <Column widthPer={33} maxWidth={"30rem"}>
 
                 <Card title={""} rightBottomCom={<ButtonText text={t('保存')} clickFun={() => {
                     clients[0].index = 0
@@ -182,7 +182,7 @@ export function TcpProxyClient(props) {
 
             </Column>
 
-            <Column widthPer={40}>
+            <Column widthPer={60} maxWidth={"90rem"}>
                 <Card self_title={<span
                     className={" div-row "}><h2>{t(`更多服务器`)}</h2> </span>}>
 
@@ -261,7 +261,7 @@ export function TcpProxyClient(props) {
 
             {
                 !!bridge_list?.length &&
-                <Column widthPer={40}>
+                <Column widthPer={40} maxWidth={"40rem"}>
                     <Card title={t("br_port")}>
                         <Table headers={client_bridge_headers} rows={bridge_list.map((item, index) => {
                             const new_list = [
@@ -277,7 +277,7 @@ export function TcpProxyClient(props) {
 
             {
                 !!client_sync_task_list?.length &&
-                <Column widthPer={40}>
+                <Column widthPer={40} maxWidth={"40rem"}>
                     <Card title={t("文件同步列表")}>
                         <Table headers={client_sync_task_headers} rows={client_sync_task_list.map((item, index) => {
                             const new_list = [

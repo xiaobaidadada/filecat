@@ -7,6 +7,7 @@ import {SmbDriver} from "./smb_driver";
 import {S3Driver} from "./s3_driver";
 import {BaiduDriver} from "./baidu_driver";
 import {LocalDriver} from "./local_driver";
+import {TcpProxyDriver} from "./tcp_proxy_driver";
 
 /**
  * 驱动实例缓存。
@@ -49,6 +50,8 @@ function create_driver(item: FileMountItem, cred: CredentialItem): FileDriver {
             return new BaiduDriver(config);
         case MountDriverType.local:
             return new LocalDriver(config);
+        case MountDriverType.tcp_proxy:
+            return new TcpProxyDriver(config);
         default:
             throw new Error(`不支持的挂载类型：${item.driver}`);
     }

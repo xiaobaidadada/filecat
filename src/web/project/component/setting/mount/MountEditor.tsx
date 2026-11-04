@@ -82,7 +82,7 @@ export default function MountEditor(props: Props) {
     /** 当前驱动类型可选的凭据来源 */
     const cred_options = () => credential_options(row.driver, creds);
 
-    /** 当前凭据是否需要再选账号（只有「一个应用多账号」的凭据才有 accounts） */
+    /** 当前凭据是否需要再选账号（只有「一凭据多账号」的凭据才有 accounts） */
     const cur_account_options = account_options(row.credential_id, creds);
     const need_account = cur_account_options.length > 0;
 
@@ -146,7 +146,7 @@ export default function MountEditor(props: Props) {
                 onChange={(v) => set_row({...row, driver: v, credential_id: "", account_id: ""})}/>
         <Select value={row.credential_id} options={cred_options()}
                 onChange={(v) => set_row({...row, credential_id: v, account_id: ""})}/>
-        {/* 只有「一个应用多账号」的凭据（百度）才需要再选具体账号 */}
+        {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
         {need_account && <Select value={row.account_id} options={cur_account_options}
                 onChange={(v) => set_row({...row, account_id: v})}/>}
         <InputText placeholder={t("strtdrt")} value={row.root_dir}

@@ -41,6 +41,8 @@ export enum MountDriverType {
     smb = "smb",
     s3 = "s3",
     baidu = "baidu",
+    // 通过内网穿透客户端访问对端 FileCat，用它的 HTTP 接口做文件操作
+    tcp_proxy = "tcp_proxy",
 }
 
 /**

@@ -12,6 +12,7 @@ import {
 } from "./credential.pojo";
 import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
+import {clear_tcp_proxy_token} from "./driver/tcp_proxy_driver";
 import {SmbDriver} from "./driver/smb_driver";
 import {LocalDriver, validate_local_mount} from "./driver/local_driver";
 import {DriverMeta, DRIVER_META_LIST} from "./driver/file_driver_type";
@@ -289,7 +290,7 @@ export class MountService {
     /**
      * 取挂载实际使用的「凭据形态」——就是凭据表里那一条，并把配置转成驱动需要的形态。
      *
-     * 百度是「一个应用多账号」：凭据存应用配置，账号在 accounts 里，
+     * 百度是「一凭据多账号」：凭据存应用配置，账号在 accounts 里，
      * 驱动只认 account_key（= 应用凭据 id）+ account_id（= 账号 uk）。
      */
     private credential_of(mount: FileMountItem): CredentialItem | undefined {
@@ -300,6 +301,18 @@ export class MountService {
         if (cred.type === "baidu") {
             return {...cred, config: {account_key: cred.id, account_id: mount.account_id}};
         }
+        // 内网穿透：客户端来自凭据本体，对端账号密码来自选中的 account
+        if (cred.type === "tcp_proxy") {
+            const acc = (cred.accounts ?? []).find(v => v.id === mount.account_id);
+            return {
+                ...cred,
+                config: {
+                    ...cred.config,
+                    username: acc?.account_name ?? "",
+                    password: acc?.password ?? "",
+                },
+            };
+        }
         return cred;
     }
 
@@ -309,7 +322,7 @@ export class MountService {
         if (!cred) {
             return credential_id ? "所选凭据不存在" : "请选择凭据";
         }
-        // 需要子账号的凭据（百度）必须指定账号，且账号已完成授权
+        // 「一凭据多账号」的类型（百度、内网穿透）必须指定账号
         const accounts = cred.accounts ?? [];
         if (cred.type === "baidu") {
             if (!account_id) {
@@ -321,6 +334,22 @@ export class MountService {
             }
             if (!acc.token?.access_token) {
                 return "所选账号尚未完成授权";
+            }
+        }
+        // 内网穿透必须选一个对端账号，且账号密码齐全（缺密码无法登录对端）
+        if (cred.type === "tcp_proxy") {
+            if (!account_id) {
+                return "请选择要挂载的账号";
+            }
+            const acc = accounts.find(v => v.id === account_id);
+            if (!acc) {
+                return "所选账号不存在";
+            }
+            if (!acc.account_name) {
+                return "所选账号缺少对端登录账号";
+            }
+            if (!acc.password) {
+                return "所选账号缺少对端登录密码";
             }
         }
         return undefined;
@@ -368,16 +397,86 @@ export class MountService {
         }
     }
 
-    /** 取某个凭据下的账号列表（不含 token 等敏感信息，给前端用） */
-    list_accounts(credential_id: string): Array<Omit<MountAccount, "token"> & { authorized: boolean }> {
+    /** 取某个凭据下的账号列表（不含 token / 密码等敏感信息，给前端用） */
+    list_accounts(credential_id: string): Array<Omit<MountAccount, "token" | "password"> & { authorized: boolean; has_password: boolean }> {
         const cred = this.get_credential(credential_id);
         if (!cred) {
             return [];
         }
-        return (cred.accounts ?? []).map(({token, ...rest}) => ({
+        return (cred.accounts ?? []).map(({token, password, ...rest}) => ({
             ...rest,
             authorized: Boolean(token?.access_token),
+            has_password: Boolean(password),
         }));
+    }
+
+    /**
+     * 新增/修改内网穿透凭据下的对端账号。
+     * 有 account_id 表示修改（密码留空 = 不修改），否则新增。
+     */
+    async save_tcp_proxy_account(req: {
+        credential_id: string;
+        account_id?: string;
+        note?: string;
+        account_name: string;
+        password?: string;
+    }): Promise<MountAccount> {
+        const list = this.list_credentials();
+        const cred = list.find(v => v.id === req.credential_id);
+        if (!cred) {
+            throw new Error("凭据不存在");
+        }
+        if (cred.type !== "tcp_proxy") {
+            throw new Error("该凭据不是内网穿透类型");
+        }
+        const account_name = String(req.account_name ?? "").trim();
+        if (!account_name) {
+            throw new Error("请填写对端账号");
+        }
+        const accounts = cred.accounts ?? [];
+        const exist = req.account_id ? accounts.find(v => v.id === req.account_id) : undefined;
+
+        let saved: MountAccount;
+        if (exist) {
+            exist.note = req.note ?? exist.note;
+            exist.account_name = account_name;
+            // 密码留空表示沿用原密码
+            if (req.password) {
+                exist.password = req.password;
+            }
+            saved = exist;
+        } else {
+            saved = {
+                id: `tcp_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+                note: req.note ?? "",
+                account_name,
+                password: req.password ?? "",
+                enabled: true,
+            };
+            accounts.push(saved);
+            cred.accounts = accounts;
+        }
+        this.set_credentials(list);
+        // 账号信息变了，旧登录缓存作废
+        clear_tcp_proxy_token(cred.config?.client_num_id);
+        return saved;
+    }
+
+    /** 删除内网穿透凭据下的对端账号；被挂载引用时拒绝 */
+    async remove_tcp_proxy_account(credential_id: string, account_id: string): Promise<void> {
+        const list = this.list_credentials();
+        const cred = list.find(v => v.id === credential_id);
+        if (!cred) {
+            throw new Error("凭据不存在");
+        }
+        const used = this.list_raw().find(v => v.credential_id === credential_id && v.account_id === account_id);
+        if (used) {
+            throw new Error(`该账号正在被挂载「${used.note || used.mount_path}」使用，无法删除`);
+        }
+        cred.accounts = (cred.accounts ?? []).filter(v => v.id !== account_id);
+        this.set_credentials(list);
+        // 账号被删，旧登录缓存作废
+        clear_tcp_proxy_token(cred.config?.client_num_id);
     }
 
     /** 驱动元信息（挂载类型下拉用） */

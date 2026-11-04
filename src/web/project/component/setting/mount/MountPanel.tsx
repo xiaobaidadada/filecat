@@ -68,7 +68,7 @@ export default function MountPanel() {
 
     /**
      * 当前凭据是否需要再选账号。
-     * 只有「一个应用多账号」的凭据（百度）才有 accounts，其余凭据不需要。
+     * 只有「一凭据多账号」的凭据（百度、内网穿透）才有 accounts，其余凭据不需要。
      */
     const cur_account_options = account_options(credential_id, creds);
     const need_account = cur_account_options.length > 0;
@@ -208,7 +208,7 @@ export default function MountPanel() {
                                 set_account_id("");
                             }}/>
                 </InputRow>
-                {/* 只有「一个应用多账号」的凭据（百度）才需要再选具体账号 */}
+                {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
                 {need_account && <InputRow label={t("账号")} label_width={"6rem"} required>
                     <Select value={account_id} options={cur_account_options}
                             onChange={set_account_id}/>

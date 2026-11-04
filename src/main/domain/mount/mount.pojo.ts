@@ -19,7 +19,7 @@ export interface FileMountItem {
     credential_id: string;
     /**
      * 引用的子账号 id。
-     * 仅「一个应用多账号」的凭据需要（目前是百度：account_id 即百度 uk）；
+     * 仅「一凭据多账号」的凭据需要（百度 account_id 是 uk，内网穿透是账号 id）；
      * 其他驱动凭据本身就是一份连接信息，留空。
      */
     account_id?: string;

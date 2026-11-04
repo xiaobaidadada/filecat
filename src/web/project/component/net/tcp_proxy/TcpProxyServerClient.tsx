@@ -326,11 +326,15 @@ export function TcpProxyServerClient() {
                                         edit_client.filecat_proxy_host_port = d
                                         set_edit_client({...edit_client})
                                     }}/>
-                                    <ActionButton icon={'content_copy'} title={t('复制filecat代理url')}  onClick={() => {
+                                    <ActionButton icon={'content_copy'} title={t('fc_pxyc')}  onClick={() => {
                                         const url = `${window.location.origin}?tcp_client_num_id=${edit_client.client_num_id}`
                                         copyToClipboard(url)
                                         NotySuccess(url)
                                     }}  />
+                                    <ActionButton icon={'open_in_new'} title={t('fc_pxyo')} onClick={() => {
+                                        const url = `${window.location.origin}?tcp_client_num_id=${edit_client.client_num_id}`
+                                        window.open(url, '_blank')
+                                    }} />
                                 </React.Fragment>
                             )
                         }

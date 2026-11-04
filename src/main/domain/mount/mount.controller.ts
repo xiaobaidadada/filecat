@@ -8,6 +8,7 @@ import {mountService} from "./mount.service";
 import {FileMountItem} from "./mount.pojo";
 import {CredentialItem, CredentialType} from "./credential.pojo";
 import {MountDriverType} from "./driver/file_driver";
+import {tcpForwardService} from "../net/tcp.forward.server.service";
 
 /** 挂载保存请求体 */
 export interface MountSaveReq {
@@ -15,7 +16,7 @@ export interface MountSaveReq {
     driver?: MountDriverType;
     mount_path?: string;
     credential_id?: string;
-    /** 引用的子账号 id（仅百度等一凭据多账号类型需要） */
+    /** 引用的子账号 id（一凭据多账号的类型需要：百度、内网穿透） */
     account_id?: string;
     /** 挂载备注；为空时用本地目录名 */
     note?: string;
@@ -132,6 +133,88 @@ export class MountController {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         // 凭据测试需要知道用哪个驱动，前端会带上
         return Sucess(await mountService.test_credential(body));
+    }
+
+    /**
+     * 凭据字段的下拉选项（目前只有 tcp_proxy 的穿透客户端）。
+     * 列出所有穿透客户端并标注在线状态：
+     * 挂载用的是隧道本身（驱动发 is_filecat 建连），不依赖 open_filecat 那个浏览器入口开关，
+     * 所以不按 open_filecat 过滤，只把离线标出来，避免用户以为服务器出错。
+     */
+    @Post("/credential/options")
+    async credential_options(@Body() body: { source: string }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        if (body?.source !== "tcp_client") {
+            return Sucess([]);
+        }
+        const list = tcpForwardService.server_client_get()
+            .map(v => {
+                const online = Boolean(tcpForwardService.client_num_map[v.client_num_id]);
+                const name = v.note || v.client_name || `客户端${v.client_num_id}`;
+                return {
+                    value: String(v.client_num_id),
+                    label: `${name}${online ? "" : "（离线）"}`,
+                };
+            });
+        return Sucess(list);
+    }
+
+    /** 内网穿透凭据下的对端账号列表 */
+    @Post("/credential/account_list")
+    async tcp_proxy_account_list(@Body() body: { credential_id: string }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(mountService.list_accounts(body?.credential_id ?? ""));
+    }
+
+    /** 新增 / 修改内网穿透凭据下的对端账号（密码留空表示不修改） */
+    @Post("/credential/account_save")
+    async tcp_proxy_account_save(@Body() body: {
+        credential_id: string;
+        account_id?: string;
+        note?: string;
+        account_name: string;
+        password?: string;
+    }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const acc = await mountService.save_tcp_proxy_account(body);
+        return Sucess({id: acc.id});
+    }
+
+    /** 删除内网穿透凭据下的对端账号 */
+    @Post("/credential/account_remove")
+    async tcp_proxy_account_remove(@Body() body: { credential_id: string; account_id: string }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        await mountService.remove_tcp_proxy_account(body?.credential_id, body?.account_id);
+        return Sucess(true);
+    }
+
+    /** 验证某个对端账号能否登录（密码错了立刻能看出来） */
+    @Post("/credential/account_verify")
+    async tcp_proxy_account_verify(@Body() body: {
+        credential_id: string;
+        account_id: string;
+        account_name?: string;
+        password?: string;
+    }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        const cred = mountService.get_credential(body?.credential_id);
+        if (!cred) {
+            return Sucess({ok: false, error: "凭据不存在"});
+        }
+        const acc = (cred.accounts ?? []).find(v => v.id === body?.account_id);
+        if (!acc) {
+            return Sucess({ok: false, error: "账号不存在"});
+        }
+        // 前端传了新密码就用新的，否则用已保存的密码
+        const rs = await mountService.test_credential({
+            type: "tcp_proxy",
+            config: {
+                client_num_id: cred.config?.client_num_id,
+                username: body.account_name || acc.account_name,
+                password: body.password || acc.password,
+            },
+        });
+        return Sucess(rs);
     }
 
     // ==================== 挂载 ====================
@@ -339,10 +422,11 @@ function mask_credential(item: CredentialItem): CredentialItem & {has_password?:
         }
         config[k] = v;
     }
-    // 账号里的 token 属敏感信息，只保留「是否已授权」等展示字段
-    const accounts = (item.accounts ?? []).map(({token, ...rest}) => ({
+    // 账号里的 token / 密码属敏感信息，只保留「是否已授权」等展示字段
+    const accounts = (item.accounts ?? []).map(({token, password, ...rest}) => ({
         ...rest,
         authorized: Boolean(token?.access_token),
+        has_password: Boolean(password),
         obtained_at: token?.obtained_at,
     }));
     return {

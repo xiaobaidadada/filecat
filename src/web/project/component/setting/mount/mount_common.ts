@@ -1,18 +1,20 @@
 /** 挂载相关组件共用的类型与常量 */
 
-/** 凭据下的子账号（目前仅百度网盘使用「一凭据多账号」） */
+/** 凭据下的子账号（百度网盘、内网穿透 FileCat 使用「一凭据多账号」） */
 export interface MountAccountRow {
-    /** 账号唯一 id（百度用 uk） */
+    /** 账号唯一 id（百度用 uk，内网穿透用生成 id） */
     id: string;
     /** 账号备注（用户自己起；为空时展示账号名） */
     note?: string;
-    /** 账号名（如百度账号名） */
+    /** 账号名（百度账号名 / 对端 FileCat 登录名） */
     account_name?: string;
     /** 昵称（如百度网盘昵称） */
     nickname?: string;
     avatar_url?: string;
     /** 是否已授权（token 不下发前端，只回传这个标记） */
     authorized?: boolean;
+    /** 是否已设置密码（密码不下发前端，只回传这个标记） */
+    has_password?: boolean;
     /** 授权时间戳 */
     obtained_at?: number;
     enabled?: boolean;
@@ -25,7 +27,7 @@ export interface CredentialRow {
     /** 备注（便于挂载时辨认） */
     note: string;
     config: Record<string, any>;
-    /** 子账号列表；只有「一个应用多账号」的类型才有（百度） */
+    /** 子账号列表；「一凭据多账号」的类型才有（百度、内网穿透） */
     accounts?: MountAccountRow[];
     enabled?: boolean;
     /** 是否已设置过密码类字段（编辑时留空表示不修改） */
@@ -45,6 +47,8 @@ export interface CredentialField {
     tip?: string;
     /** 开关类字段的默认值（未填写时生效） */
     default?: boolean;
+    /** 字段取值来自动态选项（目前只有穿透客户端下拉），选项由后端返回 */
+    options_source?: "tcp_client";
 }
 
 export interface CredentialMeta {
@@ -59,7 +63,7 @@ export interface MountRow {
     driver: string;
     mount_path: string;
     credential_id: string;
-    /** 引用的子账号 id（仅百度等一凭据多账号类型需要） */
+    /** 引用的子账号 id（一凭据多账号的类型需要：百度、内网穿透） */
     account_id?: string;
     /** 挂载备注；为空时展示本地目录名 */
     note?: string;
@@ -88,6 +92,7 @@ export const DRIVER_CREDENTIAL_TYPE: Record<string, string> = {
     s3: "s3",
     baidu: "baidu",
     local: "local",
+    tcp_proxy: "tcp_proxy",
 };
 
 /**
@@ -99,7 +104,7 @@ export function credential_options(driver: string, creds: CredentialRow[]) {
 }
 
 /**
- * 某个凭据可选的具体账号：只有「一凭据多账号」的凭据（百度）才有，
+ * 某个凭据可选的具体账号：只有「一凭据多账号」的凭据（百度、内网穿透）才有，
  * 其余凭据本身就是一份连接信息，返回空数组表示不需要再选账号。
  */
 export function account_options(credential_id: string, creds: CredentialRow[]) {

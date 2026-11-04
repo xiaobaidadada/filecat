@@ -19,6 +19,8 @@ const DEFAULT_TYPE = "webdav";
 
 /** 授权步骤的占位 key：第 2 步渲染 OAuth 授权 UI，不是普通输入字段 */
 const AUTHORIZE_STEP = "@authorize";
+/** 内网穿透的账号步骤占位 key：第 2 步渲染「对端账号」管理 UI */
+const TCP_ACCOUNT_STEP = "@tcp_account";
 
 /**
  * 分步填写流程。
@@ -35,6 +37,11 @@ const STEP_FLOW: Record<string, { keys: string[]; on_next?: "load_shares" | "sav
     baidu: [
         {keys: ["app_id", "app_key", "secret_key"], on_next: "save_app"},
         {keys: [AUTHORIZE_STEP]},
+    ],
+    // 内网穿透：先选客户端存下来，再管理该客户端下的对端账号（可多个）
+    tcp_proxy: [
+        {keys: ["client_num_id"], on_next: "save_app"},
+        {keys: [TCP_ACCOUNT_STEP]},
     ],
 };
 
@@ -91,9 +98,13 @@ export default function CredentialPanel() {
     const [step, set_step] = useState(1);
     /** 共享目录候选项（SMB 第 2 步的下拉） */
     const [shared_options, set_shared_options] = useState<{ label: string; value: string }[]>([]);
+    /** 穿透客户端候选项（tcp_proxy 的下拉），按 options_source 缓存 */
+    const [field_options, set_field_options] = useState<Record<string, { label: string; value: string }[]>>({});
     /** 百度授权相关状态 */
     const [auth_mode, set_auth_mode] = useState<"one_click" | "oob">("oob");
     const [auth_code, set_auth_code] = useState("");
+    /** 内网穿透：正在编辑的对端账号（空 = 新增） */
+    const [tcp_acc, set_tcp_acc] = useState<{id?: string; note: string; account_name: string; password: string} | null>(null);
     /** 凭据是否启用（列表行内的「使用」下拉） */
     const [enabled, set_enabled] = useState(true);
 
@@ -138,6 +149,19 @@ export default function CredentialPanel() {
     const start_add = () => {
         close_form();
         set_editing(true);
+    };
+
+    /** 按字段声明的 options_source 拉取下拉选项（目前只有穿透客户端） */
+    const load_field_options = async (field_list: CredentialField[]) => {
+        const sources = Array.from(new Set(
+            field_list.map(f => f.options_source).filter((s): s is "tcp_client" => Boolean(s)),
+        ));
+        const next: Record<string, { label: string; value: string }[]> = {};
+        for (const source of sources) {
+            const rsq = await mountHttp.post("credential/options", {source});
+            next[source] = (rsq?.data ?? []).map((v: any) => ({label: v.label, value: v.value}));
+        }
+        set_field_options(next);
     };
 
     /** 拉取远程主机的共享列表（目前仅 SMB 支持） */
@@ -264,6 +288,13 @@ export default function CredentialPanel() {
                 // Http 层已提示
             });
         }
+        // 有动态下拉字段的类型（tcp_proxy），编辑时也要把选项拉回来
+        const edit_fields = metas.find(m => m.type === item.type)?.fields ?? [];
+        if (edit_fields.some(f => f.options_source)) {
+            load_field_options(edit_fields).catch(() => {
+                // Http 层已提示
+            });
+        }
     };
 
     /** 打开百度授权页面 */
@@ -309,6 +340,119 @@ export default function CredentialPanel() {
         });
     };
 
+    /** 内网穿透：保存对端账号（密码留空 = 不修改） */
+    const save_tcp_account = async () => {
+        if (!tcp_acc) {
+            return;
+        }
+        if (!tcp_acc.account_name.trim()) {
+            NotyFail(t("请填写对端账号"));
+            return;
+        }
+        try {
+            await mountHttp.post("credential/account_save", {
+                credential_id: id,
+                account_id: tcp_acc.id,
+                note: tcp_acc.note,
+                account_name: tcp_acc.account_name,
+                password: tcp_acc.password,
+            });
+            NotySuccess(t("已保存"));
+            set_tcp_acc(null);
+            await load();
+        } catch (e) {
+            // Http 层已提示
+        }
+    };
+
+    /** 内网穿透：验证对端账号能否登录（密码错了立刻能看出来） */
+    const verify_tcp_account = async (acc: MountAccountRow) => {
+        // 正在编辑该账号时，用输入框里的最新值验证；否则用已保存的值
+        const editing = tcp_acc?.id === acc.id;
+        try {
+            const rsq = await mountHttp.post("credential/account_verify", {
+                credential_id: id,
+                account_id: acc.id,
+                account_name: editing ? tcp_acc.account_name : acc.account_name,
+                password: editing ? tcp_acc.password : undefined,
+            });
+            const d = rsq?.data ?? {};
+            if (d.ok) {
+                NotySuccess(t("账号可用"));
+            } else {
+                NotyFail(`${t("账号不可用")}：${d.error ?? ""}`);
+            }
+        } catch (e) {
+            // Http 层已提示
+        }
+    };
+
+    /** 内网穿透：删除对端账号 */
+    const remove_tcp_account = (acc: MountAccountRow) => {
+        confirm_del({
+            title: t("确认删除"),
+            sub_title: acc.note || acc.account_name || acc.id,
+            confirm_fun: async () => {
+                try {
+                    await mountHttp.post("credential/account_remove", {credential_id: id, account_id: acc.id});
+                    NotySuccess(t("已删除"));
+                    await load();
+                } catch (e) {
+                    // Http 层已提示
+                }
+            },
+        });
+    };
+
+    /** 内网穿透账号列表：读当前凭据的 accounts */
+    const tcp_accounts = (): MountAccountRow[] => {
+        return list.find(c => c.id === id)?.accounts ?? [];
+    };
+
+    /** 第 2 步：对端账号管理（每个账号一行，可备注、可改密码、可验证、可删除） */
+    const render_tcp_account = () => {
+        const accounts = tcp_accounts();
+        return <React.Fragment key={TCP_ACCOUNT_STEP}>
+            {/* 编辑区：新增或修改一个对端账号 */}
+            <div className={"div-row"}>
+                <InputRow label={t("备注")} label_width={"6rem"}>
+                    <InputText placeholder={t("便于辨认的名字")} value={tcp_acc?.note ?? ""}
+                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), note: v})}/>
+                </InputRow>
+            </div>
+            <div className={"div-row"}>
+                <InputRow label={t("对端账号")} label_width={"6rem"}>
+                    <InputText placeholder={t("对端 FileCat 登录名")} value={tcp_acc?.account_name ?? ""}
+                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), account_name: v})}/>
+                </InputRow>
+                <InputRow label={t("对端密码")} label_width={"6rem"}>
+                    <InputText placeholder={t("留空表示不修改")} value={tcp_acc?.password ?? ""}
+                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), password: v})}/>
+                </InputRow>
+            </div>
+            <div className={"div-row"}>
+                <ActionButton icon={"save"} title={t("保存账号")} onClick={save_tcp_account}/>
+                {tcp_acc && <ActionButton icon={"close"} title={t("取消")} onClick={() => set_tcp_acc(null)}/>}
+            </div>
+
+            {/* 账号列表 */}
+            {accounts.length > 0 && <Table headers={[t("备注"), t("对端账号"), t("密码"), t("操作")]}
+                   rows={accounts.map(acc => [
+                       <TextTip context={acc.note || acc.account_name || acc.id}/>,
+                       <TextTip context={acc.account_name || acc.id}/>,
+                       <TextTip context={acc.has_password ? t("已设置") : t("未设置")}/>,
+                       <div className={"div-row"}>
+                           <ActionButton icon={"network_check"} title={t("验证登录")}
+                                         onClick={() => verify_tcp_account(acc)}/>
+                           <ActionButton icon={"edit"} title={t("编辑")}
+                                         onClick={() => set_tcp_acc({id: acc.id, note: acc.note ?? "", account_name: acc.account_name ?? "", password: ""})}/>
+                           <ActionButton icon={"delete"} title={t("删除")}
+                                         onClick={() => remove_tcp_account(acc)}/>
+                       </div>,
+                   ])}/>}
+        </React.Fragment>;
+    };
+
     /** 授权检测：调百度 uinfo 验活某个账号 */
     const verify_account = async (cred_id: string, account_id: string) => {
         try {
@@ -348,6 +492,8 @@ export default function CredentialPanel() {
     const step_keys = flow?.[step - 1]?.keys ?? fields.map(f => f.key);
     /** 本步是否包含授权 UI */
     const show_authorize = step_keys.includes(AUTHORIZE_STEP);
+    /** 本步是否包含内网穿透账号 UI */
+    const show_tcp_account = step_keys.includes(TCP_ACCOUNT_STEP);
     /** 是否最后一步（最后一步才有「保存」） */
     const is_last = step === step_count;
     /** 是否分步类型 */
@@ -355,6 +501,14 @@ export default function CredentialPanel() {
 
     /** 普通字段渲染 */
     const render_field = (f: CredentialField) => {
+        // 动态下拉字段（如穿透客户端）：选项来自后端
+        if (f.options_source) {
+            return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
+                <Select value={config[f.key] ?? ""}
+                        options={field_options[f.options_source] ?? []}
+                        onChange={(v) => set_config({...config, [f.key]: v})}/>
+            </InputRow>;
+        }
         // SMB 的共享目录用下拉（列表来自远程主机）
         if (f.key === "share" && type === "smb") {
             return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
@@ -450,13 +604,21 @@ export default function CredentialPanel() {
                             // 换类型时清掉旧字段，避免串类型
                             set_config({});
                             set_shared_options([]);
+                            set_field_options({});
                             set_step(1);
                             set_auth_code("");
+                            // 新类型若有动态下拉字段，立即拉取选项
+                            const next_fields = metas.find(m => m.type === v)?.fields ?? [];
+                            if (next_fields.some(f => f.options_source)) {
+                                load_field_options(next_fields);
+                            }
                         }}/>
-                {/* 按当前步骤渲染字段；授权是特殊步骤，单独渲染 */}
+                {/* 按当前步骤渲染字段；授权 / 穿透账号是特殊步骤，单独渲染 */}
                 {show_authorize
                     ? render_authorize()
-                    : fields.filter(f => step_keys.includes(f.key)).map(render_field)}
+                    : show_tcp_account
+                        ? render_tcp_account()
+                        : fields.filter(f => step_keys.includes(f.key)).map(render_field)}
             </React.Fragment>}
 
             {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
