@@ -67,6 +67,13 @@ export class TcpForwardController {
         return Sucess({})
     }
 
+    @Post('/server_client_sort')
+    async server_client_sort(@Body() data: { ids: number[] }, @Req() req) {
+        userService.have_user_auth(req.headers.authorization, UserAuth.tcp_proxy);
+        await tcpForwardService.server_client_sort(data.ids)
+        return Sucess({})
+    }
+
     // 文件同步相关
     @Get('/sync_task_get')
     async sync_task_get(@Body() data: any, @Req() req) {

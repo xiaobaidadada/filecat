@@ -13,7 +13,7 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {UserAuth, UserData} from "../../../../../common/req/user.req";
-import {deleteList} from "../../../../../common/ListUtil";
+import {deleteList, move_element} from "../../../../../common/ListUtil";
 import {have_empty_char, join_url} from "../../../../../common/StringUtil";
 import {
     server_client_proxy, tcp_proxy_bridge_fig_item,
@@ -38,6 +38,34 @@ export function TcpProxyServerClient() {
     const {initUserInfo,reloadUserInfo} = useContext(GlobalContext);
     const [user_base_info,setUser_base_info] = useAtom($stroe.user_base_info);
     const [client_list, set_client_list] = useState([] as tcp_proxy_server_client[]);
+    // 全量客户端的 id 顺序（含被过滤掉、不在表格里显示的），拖拽排序要用它做底
+    const all_client_ids_ref = useRef<number[]>([]);
+
+    /**
+     * 拖动表格行调整客户端显示顺序。
+     * 先本地重排让操作立刻有反馈，再存到后端，刷新后顺序才保持。
+     * 不用 server_client_save 落盘，那条路径会断开并重连客户端。
+     *
+     * 列表可能是过滤后的子集，直接提交可见 id 会把隐藏项全挤到末尾，
+     * 所以拿全量顺序做底，只交换被拖动的两项在其中的位置。
+     */
+    const client_row_drag = (from: number, to: number) => {
+        const next = move_element(client_list, from, to);
+        set_client_list(next);
+
+        const moved = client_list[from];
+        const target = client_list[to];
+        if (!moved || !target) return;
+        const full_ids = all_client_ids_ref.current;
+        const from_at = full_ids.indexOf(moved.client_num_id);
+        const to_at = full_ids.indexOf(target.client_num_id);
+        if (from_at < 0 || to_at < 0) return;
+        const ids = [...full_ids];
+        ids.splice(from_at, 1);
+        ids.splice(to_at, 0, moved.client_num_id);
+        all_client_ids_ref.current = ids;
+        tcpProxy.post("server_client_sort", {ids});
+    };
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
     // const [is_save,set_is_is_save] = useState(false);
     const select_list = use_select_config()
@@ -93,6 +121,8 @@ export function TcpProxyServerClient() {
             const new_list = []
             const options = []
             client_num_id_map = {}
+            // 后端返回的就是持久化数组的顺序，先整体记下来供拖拽排序使用
+            all_client_ids_ref.current = list.map(v => v.client_num_id);
             for (const item of list) {
                 // 在线状态过滤：null 表示不过滤
                 if (status_filter !== null && !!item.status !== status_filter) {
@@ -241,7 +271,7 @@ export function TcpProxyServerClient() {
                             </div>,
                         ];
                         return new_list;
-                    })} width={"10rem"}/>
+                    })} width={"10rem"} onRowDrag={client_row_drag}/>
                 </CardFull>
             </Dashboard>
 

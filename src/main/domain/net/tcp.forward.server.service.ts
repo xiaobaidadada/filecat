@@ -361,6 +361,24 @@ export class TcpForwardServerService {
         return null
     }
 
+    /**
+     * 保存客户端列表的显示顺序。
+     * 只调整持久化数组的顺序，不动任何连接状态：
+     * 排序不该导致客户端重连，所以这里不能走 server_client_save。
+     * ids 里没出现的客户端原样排在后面，不会丢配置。
+     */
+    async server_client_sort(ids: number[]) {
+        const list = this.server_client_get();
+        const order = new Map<number, number>();
+        ids.forEach((id, index) => order.set(id, index));
+        const sorted = [...list].sort((a, b) => {
+            const ia = order.has(a.client_num_id) ? order.get(a.client_num_id) : Number.MAX_SAFE_INTEGER;
+            const ib = order.has(b.client_num_id) ? order.get(b.client_num_id) : Number.MAX_SAFE_INTEGER;
+            return ia - ib;
+        });
+        DataUtil.set(data_common_key.tcp_proxy_server_client_list, sorted, file_key.tcp_proxy_server_client);
+    }
+
     async server_client_save(item:tcp_proxy_server_client) {
         const list = this.server_client_get()
         const one = list.find(v=>v.client_num_id===item.client_num_id)
