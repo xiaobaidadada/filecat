@@ -213,6 +213,39 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 };
 
 /** Markdown 文本 → ProseMirror 文档 */
+// 列表项内的软换行要保留成硬换行（<br>）。
+//
+// breaks: false 时 markdown-it 把段内换行渲染成空格，列表项里的
+//   1. 第一行
+//      第二行
+// 会被并成「第一行 第二行」，保存后换行永久丢失。
+// 但不能全局开 breaks: true —— 那会把普通段落的软换行也升级成硬换行，
+// 段落往返时凭空多出 "  \n"。
+// 所以只对「位于 list_item 内」的 softbreak 标记成硬换行。
+md.core.ruler.push("list_item_softbreak_to_hard", (state: any) => {
+    // 逐层跟踪当前是否在列表项内
+    let li_depth = 0;
+    for (const token of state.tokens) {
+        if (token.type === "list_item_open") {
+            li_depth++;
+            continue;
+        }
+        if (token.type === "list_item_close") {
+            li_depth--;
+            continue;
+        }
+        if (li_depth <= 0 || token.type !== "inline" || !token.children) {
+            continue;
+        }
+        for (const child of token.children) {
+            if (child.type === "softbreak") {
+                child.type = "hardbreak";
+                child.tag = "br";
+            }
+        }
+    }
+});
+
 export function markdown_to_doc(markdown: string): PMNode {
     const html = md.render(markdown ?? "");
     // 用 DOMParser 而不是 container.innerHTML：
@@ -349,8 +382,14 @@ function display_width(s: string): number {
 /** 序列化单个块级节点（indent 用于列表内的嵌套层级） */
 function serialize_block(node: PMNode, indent = ""): string {
     switch (node.type.name) {
-        case "paragraph":
-            return indent + serialize_inline(node);
+        case "paragraph": {
+            // 段内可能含 hard_break（"  \n"）。在列表项内时，
+            // 换行后的内容必须跟着 indent，否则会被判定成列表项之外的新段落。
+            // 首行不加 indent：调用方（serialize_list_item）会把它接在 marker 后面。
+            const text = serialize_inline(node);
+            const lines = text.split("\n");
+            return lines[0] + lines.slice(1).map(l => `\n${indent}${l}`).join("");
+        }
         case "heading":
             return `${indent}${"#".repeat(node.attrs.level)} ${serialize_inline(node)}`;
         case "blockquote": {
@@ -418,10 +457,11 @@ function serialize_list_item(li: PMNode, indent: string, marker: string, child_i
     const checkbox = li.attrs.checked;
     const box = checkbox === null ? "" : checkbox ? "[x] " : "[ ] ";
     const parts: string[] = [];
-    li.forEach((child, _off, i) => {
-        parts.push(i === 0 ? serialize_block(child, "") : serialize_block(child, child_indent));
+    li.forEach(child => {
+        parts.push(serialize_block(child, child_indent));
     });
     const body_lines = parts.join("\n").split("\n");
+    // 首块的第一行接在 marker 之后，其余行（含被拆开的多行内容）保留 child_indent 缩进
     return marker + box + body_lines[0] + (body_lines.length > 1 ? "\n" + body_lines.slice(1).join("\n") : "");
 }
 
