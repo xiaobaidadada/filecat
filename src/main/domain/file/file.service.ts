@@ -299,6 +299,7 @@ export class FileService  {
             const mp = mount_points.get(path.resolve(filePath));
             const mount_fields = mp ? {
                 mount: true,
+                mount_id: mp.id,
                 mount_driver: mp.driver,
                 mount_color: mp.color,
                 mount_readonly: mp.readonly,
@@ -528,6 +529,7 @@ export class FileService  {
             const mp = mount_points.get(path.resolve(filePath));
             if (mp) {
                 pojo.mount = true;
+                pojo.mount_id = mp.id;
                 pojo.mount_driver = mp.driver;
                 pojo.mount_color = mp.color;
                 pojo.mount_readonly = mp.readonly;
@@ -569,6 +571,7 @@ export class FileService  {
             const mp = mount_points.get(path.resolve(res.real_path, item.name));
             if (mp) {
                 pojo.mount = true;
+                pojo.mount_id = mp.id;
                 pojo.mount_driver = mp.driver;
                 pojo.mount_color = mp.color;
                 pojo.mount_readonly = mp.readonly;
@@ -2409,6 +2412,7 @@ export class FileService  {
             // 挂载项统一打上挂载标记，前端据此识别（分享页与文件页表现一致）
             const mount_mark = {
                 mount: true,
+                mount_id: match.mount.id,
                 mount_driver: match.mount.driver,
                 mount_color: match.mount.color,
                 mount_readonly: match.mount.readonly,

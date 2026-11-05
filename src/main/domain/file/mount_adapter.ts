@@ -49,12 +49,13 @@ export function is_mounted(abs_path: string): boolean {
  * （显示特殊底色），而不是标记它里面的内容。
  */
 export function mounts_under(abs_dir: string): Map<string, {
+    id: string;
     name: string;
     driver: string;
     color: string;
     readonly: boolean;
 }> {
-    const map = new Map<string, {name: string; driver: string; color: string; readonly: boolean}>();
+    const map = new Map<string, {id: string; name: string; driver: string; color: string; readonly: boolean}>();
     // 总开关关闭时没有任何挂载生效，直接返回空，省去逐个路径匹配
     if (!mountService.is_enabled()) {
         return map;
@@ -74,6 +75,7 @@ export function mounts_under(abs_dir: string): Map<string, {
             continue;
         }
         map.set(mp, {
+            id: m.id,
             name: m.note || rest,
             driver: m.driver,
             color: m.color || "#4a9eff",
@@ -89,6 +91,8 @@ export function mounts_under(abs_dir: string): Map<string, {
  * 提示条展示：凭据备注 - 驱动名/账号备注 - 挂载备注。
  */
 export function current_mount_info(abs_path: string): {
+    /** 挂载记录 id，前端据此打开编辑/取消挂载 */
+    id: string;
     /** 挂载备注；为空时用本地目录名 */
     name: string;
     driver: string;
@@ -122,6 +126,7 @@ export function current_mount_info(abs_path: string): {
         forward_client_num_id = isNaN(num) ? null : num;
     }
     return {
+        id: m.id,
         name: m.note || base_name(m.mount_path),
         driver: m.driver,
         color: m.color || "#4a9eff",

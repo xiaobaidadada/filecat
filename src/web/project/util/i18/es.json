@@ -781,7 +781,7 @@
   "授权失败": "Autorización fallida",
   "strtdrt": "Dir inicial",
   "ftr2rmt": "Reenviar al remoto",
-  "ftr2rmt_tip": "Las solicitudes de terminal y workflow en este directorio se ejecutan en el FileCat remoto",
+  "ftr2rmt_tip": "Las solicitudes de terminal, workflow y git en este directorio se ejecutan en el FileCat remoto",
   "授权检测": "Comprobar autorización",
   "scrtkep": "Deja SecretKey vacío para no modificarlo",
   "编辑应用": "Editar app",

@@ -178,22 +178,9 @@ export function FileMenu() {
     const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
     const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
     const [, set_file_list_refresh] = useAtom($stroe.file_list_refresh);
-    /** 挂载列表：用于判断当前右键目录是否已被挂载 */
-    const [mount_list, setMountList] = useState<any[]>([]);
+    /** 当前目录所在的挂载，进入目录时已由文件列表查好；右键目录必然落在同一挂载内 */
+    const [current_mount] = useAtom($stroe.current_mount);
     const get_bas_path = use_get_now_abs_path()
-
-    /** 拉取挂载列表（失败时静默，不影响右键菜单其它功能） */
-    const load_mount_list = async () => {
-        if (!check_user_auth(UserAuth.file_mount)) {
-            return;
-        }
-        try {
-            const rsq = await mountHttp.post("list", {});
-            setMountList(Array.isArray(rsq?.data) ? rsq.data : []);
-        } catch (e) {
-            // ignore
-        }
-    }
 
     /**
      * 比较两个路径是否指向同一目录。
@@ -213,16 +200,12 @@ export function FileMenu() {
         return n(a).toLowerCase() === n(b).toLowerCase();
     }
 
-    // 右键菜单打开时刷新一次挂载列表（挂载可能在别处被改过）
-    React.useEffect(() => {
-        if (showPrompt.show) {
-            load_mount_list();
-        }
-    }, [showPrompt.show]);
-
     const get_ab_path = () => {
         return get_bas_path(showPrompt.data.filename)
     }
+
+    /** 右键目录本身就是挂载点时，目录列表项里带的挂载信息 */
+    const hit_mount_item = (nowFileList?.folders ?? []).find(v => v.mount && v.name === showPrompt.data.filename);
 
     const items_folder = [
         {r: t("o_stdo"), v: common_menu_type.sutdio},
@@ -236,16 +219,22 @@ export function FileMenu() {
         },
         ...must_needs,
 
-        // 目录挂载：仅在有 file_mount 权限时显示；已挂载显示编辑/取消，未挂载显示挂载
+        // 目录挂载：仅在有 file_mount 权限时显示。
+        // 两种信息都是现成的，右键不再额外请求：
+        //  1. 目标目录是不是挂载点 —— 目录列表项自带的 mount 标记
+        //  2. 是不是在某个挂载里 —— 当前挂载（进入目录时已查好）
         ...(check_user_auth(UserAuth.file_mount) ? (() => {
-            const ab_path = get_ab_path();
-            const mounted = mount_list.find(m => norm_compare(m.mount_path, ab_path));
-            return mounted ? [
-                {r: t("编辑挂载配置"), v: common_menu_type.mount_config},
-                {r: t("取消挂载"), v: common_menu_type.unmount_dir},
-            ] : [
-                {r: t("挂载"), v: common_menu_type.mount_dir},
-            ];
+            if (hit_mount_item) {
+                return [
+                    {r: t("编辑挂载配置"), v: common_menu_type.mount_config},
+                    {r: t("取消挂载"), v: common_menu_type.unmount_dir},
+                ];
+            }
+            // 已经在挂载目录内部，不再提供挂载，避免挂载嵌套
+            if (current_mount) {
+                return [];
+            }
+            return [{r: t("挂载"), v: common_menu_type.mount_dir}];
         })() : []),
     ];
     const items_images = [{
@@ -572,9 +561,8 @@ export function FileMenu() {
             }
                 break;
             case common_menu_type.mount_config: {
-                // 编辑已有挂载：按当前目录的绝对路径找挂载记录
-                const ab_path = get_ab_path();
-                const found = mount_list.find(m => norm_compare(m.mount_path, ab_path));
+                // 菜单只在右键目录就是挂载点时给这个入口，挂载信息直接取列表项里的
+                const found = hit_mount_item;
                 if (!found) {
                     NotyFail(t("该目录尚未挂载"));
                     break;
@@ -583,12 +571,11 @@ export function FileMenu() {
                     open: true,
                     title: t("编辑挂载配置"),
                     context_div: <MountEditor
-                        mount_id={found.id}
-                        mount_path={found.mount_path}
+                        mount_id={found.mount_id}
+                        mount_path={get_ab_path()}
                         onClose={() => set_prompt_card({open: false})}
                         onDone={() => {
                             set_prompt_card({open: false});
-                            load_mount_list();
                             set_file_list_refresh(v => v + 1);
                         }}
                     />
@@ -596,20 +583,18 @@ export function FileMenu() {
             }
                 break;
             case common_menu_type.unmount_dir: {
-                const ab_path = get_ab_path();
-                const found = mount_list.find(m => norm_compare(m.mount_path, ab_path));
+                const found = hit_mount_item;
                 if (!found) {
                     NotyFail(t("该目录尚未挂载"));
                     break;
                 }
                 confirm_del({
                     title: t("确认取消挂载"),
-                    sub_title: found.mount_path,
+                    sub_title: get_ab_path(),
                     confirm_fun: async () => {
                         try {
-                            await mountHttp.post("delete", {id: found.id});
+                            await mountHttp.post("delete", {id: found.mount_id});
                             NotySuccess(t("已取消挂载"));
-                            load_mount_list();
                             set_file_list_refresh(v => v + 1);
                         } catch (e) {
                             // Http 层已提示

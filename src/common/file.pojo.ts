@@ -44,6 +44,8 @@ export interface FileItemData {
     icon?: MaterialIcon,
     /** 该目录是网盘/远程协议的挂载点（前端据此加特殊样式） */
     mount?: boolean,
+    /** 挂载记录 id，用于对该挂载做编辑/取消 */
+    mount_id?: string,
     /** 挂载驱动类型 */
     mount_driver?: string,
     /** 挂载标识色 */

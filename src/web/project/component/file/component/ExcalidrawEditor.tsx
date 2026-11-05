@@ -187,7 +187,7 @@ export default function ExcalidrawEditor() {
                             <MainMenu.Item onSelect={close}>
                                 {t("关闭")}
                             </MainMenu.Item>
-                            <MainMenu.Item onSelect={save}>
+                            <MainMenu.Item onSelect={() => save()}>
                                 {t("保存到服务器")}
                             </MainMenu.Item>
                             <MainMenu.Group title="Excalidraw items">
