@@ -112,7 +112,7 @@ export enum UserAuth {
     private_sys_env, //个性化设置 语言 属性
     tcp_proxy = 85, // 内网穿透
     sys_setting_page, // 系统设置页面
-    https_file,
+    // https_file,
     port_scan, // TCP端口扫描
     ai_model_switch = 91, // 允许切换 AI 模型（AI 聊天主页的模型选择）
     md_editor_setting = 92, // md 编辑器全局设置（正文宽度/字号等）的修改

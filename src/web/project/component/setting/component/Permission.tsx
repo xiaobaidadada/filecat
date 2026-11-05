@@ -69,7 +69,7 @@ export function Permission(props:{
             title: t("系统设置权限"),
             list: [
                 { title: t("系统页面"), permission: UserAuth.sys_setting_page },
-                { title: t("htts"), permission: UserAuth.https_file },
+                // { title: t("htts"), permission: UserAuth.https_file },
                 { title: t("tk_time"), permission: UserAuth.token_update },
                 { title: t("修改密码"), permission: UserAuth.update_password },
                 { title: t("磁盘挂载"), permission: UserAuth.sys_disk_mount },
