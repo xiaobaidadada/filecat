@@ -18,6 +18,33 @@ export function guessAttachmentKind(file: File): "text" | "image" | "binary" {
     return "binary";
 }
 
+/** MIME → 常见扩展名，用于给截图这类没名字的文件补一个可读文件名 */
+const MIME_EXT: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/bmp": "bmp",
+    "image/svg+xml": "svg",
+};
+
+/**
+ * 补全从剪贴板粘进来、没有文件名的文件（典型是截图）。
+ * 浏览器截图粘贴得到的 File 名字可能是空串或 "image.png"，这里统一改成带时间戳的名字，
+ * 避免附件列表里出现同名条目或空名字。
+ */
+export function sanitize_pasted_files(files: File[]): File[] {
+    const stamp = Date.now();
+    return files.map((file, index) => {
+        if (file.name && file.name !== "image.png") {
+            return file;
+        }
+        const ext = MIME_EXT[file.type] ?? file.type?.split("/")[1] ?? "png";
+        const name = `screenshot_${stamp}_${index + 1}.${ext}`;
+        return new File([file], name, { type: file.type || "image/png" });
+    });
+}
+
 /** 以文本方式读取文件内容 */
 export function readFileAsText(file: File): Promise<string> {
     return file.text();

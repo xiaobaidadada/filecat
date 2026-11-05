@@ -1242,6 +1242,10 @@ export class FileService  {
      * 跨「挂载」的移动用「读 + 写」流转（不落服务器磁盘）。
      */
     private async mount_move_copy(src: string, dst: string, mode: "move" | "copy"): Promise<void> {
+        // 源和目标指向同一路径时，最后「删源」会把刚写好的目标也删掉，直接当无事发生
+        if (path.resolve(src) === path.resolve(dst)) {
+            return;
+        }
         const src_mount = resolve_local_path(src);
         const dst_mount = resolve_local_path(dst);
         const {Readable} = require("stream");
@@ -1342,11 +1346,14 @@ export class FileService  {
     }
 
     public async cut_exec(source_path: string, to_file: string) {
+        // 源和目标指向同一个路径时 rename 是空操作，再 rimraf 就会把文件删掉，必须提前拦截
+        if (path.resolve(source_path) === path.resolve(to_file)) {
+            return;
+        }
         // 先判断源与目标是否在同一个硬盘；不同盘 renameSync 会因 EXDEV 失败，需改用复制+删除
         const sameFs = await this.isSameFileSystem(source_path, path.dirname(to_file));
         if (sameFs) {
             await FileUtil.renameSync(source_path, to_file);
-            await rimraf(source_path);
         } else {
             // 跨盘移动：复制到目标后删除源
             await fse.copy(source_path, to_file, {overwrite: true});

@@ -70,7 +70,7 @@ function normalizeAttachment(attachment: ai_agent_message_attachment_item): ai_a
     };
 }
 
-function llm_normalizeMessage_one(message: ai_agent_message_item) {
+function llm_normalizeMessage_one(message: ai_agent_message_item, image_understanding?: boolean) {
     // delete (rest as Record<string, unknown>)['call_list'];
     const normalized: ai_agent_message_item = {
         // 这些字段是 llm 能够识别的字段
@@ -91,9 +91,17 @@ function llm_normalizeMessage_one(message: ai_agent_message_item) {
     }
     if(normalized.attachments?.length) {
         const contentStr = getContentAsString(normalized.content);
+        // 图片附件要作为 OpenAI 多模态 image_url 传给模型，模型才能真正"看到"图片；
+        // 未开启 image_understanding 时降级为纯文本说明，避免把 base64 当文字灌给模型。
+        const image_contents = image_understanding === false
+            ? []
+            : normalized.attachments
+                .filter(is_image_attachment)
+                .map(it => ({type: "image_url" as const, image_url: {url: it.content}}));
+        const text = `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim();
         return  {
             role: normalized.role,
-            content: `${normalized.attachments.map(formatAttachment).join("\n")} \n ${contentStr}`.trim(),
+            content: image_contents.length ? [{type: "text" as const, text}, ...image_contents] : text,
             tool_call_id: normalized.tool_call_id
         }
     }
@@ -106,16 +114,16 @@ function llm_normalizeMessage_one(message: ai_agent_message_item) {
  * @param _interrupted
  * @param maxToolContentChars 历史消息中 tool 输出的最大字符数
  */
-function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boolean, maxToolContentChars?: number) {
+function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boolean, maxToolContentChars?: number, image_understanding?: boolean) {
     const toolContentLimit = maxToolContentChars ?? DEFAULT_MAX_TOOL_CONTENT_CHARS;
     const list:ai_agent_message_item[] = []
     if(message.content_list?.length) {
         for (const it of message.content_list) {
-            list.push(...llm_normalizeMessage(it, _interrupted, toolContentLimit))
+            list.push(...llm_normalizeMessage(it, _interrupted, toolContentLimit, image_understanding))
         }
         return list;
     }
-    const normalized = llm_normalizeMessage_one(message)
+    const normalized = llm_normalizeMessage_one(message, image_understanding)
     list.push(normalized)
     if(normalized.attachments?.length) {
         return list;
@@ -172,7 +180,22 @@ function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boole
     return list;
 }
 
+/** 图片类附件：kind 是 image 且 content 本身就是 data url */
+function is_image_attachment(attachment: ai_agent_message_attachment_item) {
+    return attachment.kind === "image" && /^data:image\/[\w.+-]+;base64,/.test(attachment.content ?? "");
+}
+
 function formatAttachment(attachment: ai_agent_message_attachment_item) {
+    // 图片附件不把 base64 塞进文字里，只留一段说明，图片本身走 image_url 交给模型真正“看到”
+    if (is_image_attachment(attachment)) {
+        return [
+            "\n",
+            `[附件 ${attachment.name}]`,
+            `${attachment.name} mime类型: ${attachment.mime_type ?? "unknown"} `,
+            `${attachment.name} 大小: ${attachment.size ?? 0} bytes`,
+            `${attachment.name} 类型: image（图片内容已作为图片数据一并提供）`
+        ].join("\n");
+    }
     return [
         "\n",
         `[附件 ${attachment.name}]`,
@@ -184,8 +207,8 @@ function formatAttachment(attachment: ai_agent_message_attachment_item) {
 }
 
 // 格式化消息，把 json 结构化的数据字符串化给 llm 用
-function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item, maxToolContentChars?: number) {
-    const normalized = llm_normalizeMessage(message, message._interrupted, maxToolContentChars);
+function llm_render_message(content:ai_agent_message_list, message: ai_agent_message_item, maxToolContentChars?: number, image_understanding?: boolean) {
+    const normalized = llm_normalizeMessage(message, message._interrupted, maxToolContentChars, image_understanding);
     content.push(...normalized)
 }
 
@@ -458,7 +481,7 @@ export class AiAgentMemoryService {
         if (!session) return;
         session.messages = (messages ?? [])
             .filter(it => (it?.content || it?.attachments?.length) && (it.role === "user" || it.role === "assistant"))
-            .map(llm_normalizeMessage_one);
+            .map(it => llm_normalizeMessage_one(it));
         session.updated_at = Date.now();
         const fileName = await this.writeSession(userId, session, meta.file_name);
         this.upsertMeta(store, userId, session, fileName);
@@ -751,7 +774,7 @@ export class AiAgentMemoryService {
         context.push(...incoming)
         const new_content:ai_agent_message_list = []
         for (const it of context) {
-            llm_render_message(new_content, it, env?.max_tool_content_chars)
+            llm_render_message(new_content, it, env?.max_tool_content_chars, env?.image_understanding)
         }
         return new_content;
     }

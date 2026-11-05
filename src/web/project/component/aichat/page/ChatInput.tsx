@@ -6,6 +6,7 @@ import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import {debounce} from "../../../../../common/fun.util";
 import {use_drag_resize} from "../../../util/useDragResize";
+import {sanitize_pasted_files} from "./attachmentUtils";
 
 /**
  * 待发送附件条（文件标签展示）
@@ -130,10 +131,17 @@ const ChatInput = forwardRef<ChatInputHandle, {
                     disabled={readonly}
                     onEnter={() => onSend()}
                     onPaste={(e) => {
-                        const files = e.clipboardData?.files;
-                        if (files && files.length > 0) {
+                        // 截图粘贴时浏览器把图片放在 files 或 items 里，两种都要兼容：
+                        // Chrome/Safari 直接给 files，部分应用只给 items（需要 getAsFile 取出）
+                        const from_files: File[] = Array.from(e.clipboardData?.files ?? []);
+                        const from_items: File[] = Array.from(e.clipboardData?.items ?? [])
+                            .filter((item: DataTransferItem) => item.kind === "file")
+                            .map((item: DataTransferItem) => item.getAsFile())
+                            .filter((f): f is File => !!f);
+                        const files = from_files.length > 0 ? from_files : from_items;
+                        if (files.length > 0) {
                             e.preventDefault();
-                            onAddFiles(files);
+                            onAddFiles(sanitize_pasted_files(files));
                         }
                     }}
                     className="chat-input"

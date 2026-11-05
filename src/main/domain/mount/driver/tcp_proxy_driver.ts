@@ -586,13 +586,33 @@ export class TcpProxyDriver implements FileDriver {
     }
 
     async move(from: string, to: string): Promise<void> {
-        // 对端 cut 接口：files 是源列表，to 是目标「目录」
         const from_remote = this.remote_path(from);
         const to_remote = this.remote_path(to);
+        const to_dir = this.parent_dir(to_remote);
+
+        // 同目录内移动就是改名，对端 rename 一步到位
+        if (this.parent_dir(from_remote) === to_dir) {
+            await this.request_json("POST", "/api/file/rename", {
+                name: from_remote,
+                newName: to_remote,
+            });
+            return;
+        }
+
+        // 跨目录移动：cut 只能把文件挪进目标目录，文件名保持不变
         await this.request_json("POST", "/api/file/cut", {
             files: [from_remote],
-            to: this.parent_dir(to_remote),
+            to: to_dir,
         });
+
+        // 目标文件名和原文件名不同时，搬过去之后再改一次名
+        const moved_remote = to_dir ? `${to_dir}/${mount_basename(from_remote)}` : mount_basename(from_remote);
+        if (moved_remote !== to_remote) {
+            await this.request_json("POST", "/api/file/rename", {
+                name: moved_remote,
+                newName: to_remote,
+            });
+        }
     }
 
     async copy(from: string, to: string): Promise<void> {
