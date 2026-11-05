@@ -120,7 +120,7 @@ export function Systemd(props) {
             setShowPrompt({open:true,handle:async ()=>{
                     const rsq = await sysHttp.post("systemd/sys/delete",{unit_name:name});
                     if (rsq.code === RCode.Success) {
-                        NotySuccess("删除成功");
+                        NotySuccess(t("删除成功"));
                         setShowPrompt({open:false,handle:null});
                     }
                 }
@@ -131,7 +131,7 @@ export function Systemd(props) {
         setShowPrompt({open:true,handle:async ()=>{
                 const rsq = await sysHttp.post("systemd/delete",{unit_name:name});
                 if (rsq.code === RCode.Success) {
-                    NotySuccess("删除成功");
+                    NotySuccess(t("删除成功"));
                     setShowPrompt({open:false,handle:null});
                 }
             }
@@ -221,7 +221,7 @@ export function Systemd(props) {
         const rsq = await sysHttp.post("systemd/add",{unit_name:name});
         if (rsq.code === RCode.Success) {
             set_inside_systemd(new Set(rsq.data));
-            NotySuccess("添加成功");
+            NotySuccess(t("添加成功"));
         }
     }
     // 获取sytemd文件内容

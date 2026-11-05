@@ -19,14 +19,14 @@ export function NetWol(props) {
     const go = async (macAddress?: string) => {
         const mac_v = macAddress?macAddress:mac;
         if (!mac_v) {
-            NotyFail('mac地址不能为空')
+            NotyFail(t("mac地址不能为空"))
             return;
         }
         const rsp = await netHttp.post("wol/exec", {mac:mac_v});
         if (rsp.code !== RCode.Success) {
             return;
         }
-        NotySuccess('发送唤醒命令成功')
+        NotySuccess(t("发送唤醒命令成功"))
     }
 
     const getItems = async () => {
@@ -39,7 +39,7 @@ export function NetWol(props) {
     const saveItems = async (items) => {
         const rsq = await netHttp.post("wol/tag/save", items);
         if (rsq.code !== RCode.Success) {
-            NotyFail('网络错误')
+            NotyFail(t("网络错误"))
         }
     }
     const clickItem = async (item: any) => {

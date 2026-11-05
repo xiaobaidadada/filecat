@@ -111,7 +111,7 @@ export function RemoteLinux(props) {
         }
         const isNumber = /^\d+$/.test(v);
         if (!isNumber) {
-            NotyFail('不是数字');
+            NotyFail(t("不是数字"));
         }
         setPort(parseInt(v));
     }

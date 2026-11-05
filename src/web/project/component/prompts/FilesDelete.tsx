@@ -31,14 +31,14 @@ export function FilesDelete(props) {
         if (showPrompt.data.path) {
            const r = await fileHttp.delete(showPrompt.data.path);
            if (r.code === RCode.PROTECT_FILE) {
-               NotyFail("保护路径不能删除");
+               NotyFail(t("保护路径不能删除"));
            }
         } else {
             const files = getFilesByIndexs(nowFileList, selectedFileList);
             for (const file of files) {
                 const r = await fileHttp.delete(encodeURIComponent(getFileNameByLocation(file.name)))
                 if (r.code === RCode.PROTECT_FILE) {
-                    NotyFail("保护路径不能删除");
+                    NotyFail(t("保护路径不能删除"));
                 }
             }
         }

@@ -40,11 +40,11 @@ export function VideoTrans(props) {
     }
     const confirm = ()=> {
         if (!prompt || !newFileName) {
-            NotyFail("不能为空");
+            NotyFail(t("不能为空"));
             return
         }
         if (prompt===StringUtil.getFileExtension(showPrompt.data.filename)) {
-            NotyFail("和原文件格式后缀一样");
+            NotyFail(t("和原文件格式后缀一样"));
             return;
         }
         const sourceFileName = `${getRouterAfter('file',getRouterPath())}${showPrompt.data.filename}`;
@@ -60,14 +60,14 @@ export function VideoTrans(props) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySuccess("完成");
+                NotySuccess(t("完成"));
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()
             }
         })
         ws.subscribeUnconnect(()=>{
-            NotyFail("发生错误");
+            NotyFail(t("发生错误"));
             close()
         })
     }

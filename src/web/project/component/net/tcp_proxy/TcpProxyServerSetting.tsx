@@ -100,7 +100,7 @@ export function TcpProxyServerSetting() {
             notice_client:notice_client
         })
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
         }
     }
 

@@ -212,7 +212,7 @@ export function Docker(props) {
                     if (checkRsq.data.length === 0) {
                         const rsq = await sysHttp.post("docker/delete",{ids:keys});
                         if (rsq.code === RCode.Success) {
-                            NotySuccess("删除完成");
+                            NotySuccess(t("删除完成"));
                             load_images();
                             set_show_confirm({open:false,handle:null});
                         }

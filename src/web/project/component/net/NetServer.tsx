@@ -78,10 +78,10 @@ export function NetServer(props) {
         // pojo.udp_port = parseInt(udp_port)
         const result = await netHttp.post("vir/server/save", pojo);
         if (result.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
             return;
         }
-        NotySuccess("保存成功");
+        NotySuccess(t("保存成功"));
         set_opt_server_async(false);
     }
     const delete_h = async () => {

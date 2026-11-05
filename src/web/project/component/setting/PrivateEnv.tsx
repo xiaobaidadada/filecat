@@ -96,7 +96,7 @@ export function PrivateEnv() {
         }
         const result = await settingHttp.post("filesSetting/save", {dirs: rows});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             reloadUserInfo();
             initUserInfo()
         }
@@ -112,7 +112,7 @@ export function PrivateEnv() {
         // }
         const result = await settingHttp.post("filesSetting/save", {quick_cmd: quick_cmd_rows});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             // reloadUserInfo();
             initUserInfo();
         }
@@ -120,7 +120,7 @@ export function PrivateEnv() {
     const file_quick_cmd_save = async () => {
         const result = await settingHttp.post("filesSetting/save", {file_quick_cmd: file_quick_cmd_rows});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             initUserInfo();
         }
     }
@@ -128,7 +128,7 @@ export function PrivateEnv() {
     const protection_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/save", protection_dir_rows);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             reloadUserInfo();
         }
     }
@@ -220,11 +220,11 @@ export function PrivateEnv() {
 
     const update_password = async () => {
         if (!username || !password) {
-            NotyFail("账号密码不能为空")
+            NotyFail(t("账号密码不能为空"))
             return;
         }
         if (password !== confirm_password) {
-            NotyFail("两次密码不一样")
+            NotyFail(t("两次密码不一样"))
             return;
         }
         const user = new UserLogin();
@@ -234,7 +234,7 @@ export function PrivateEnv() {
         user.user_id = userInfo.user_data.id;
         const result = await userHttp.post("updatePassword", user);
         if (result.code === RCode.Success) {
-            NotySuccess("修改成功")
+            NotySuccess(t("修改成功"))
         }
     }
 
@@ -248,7 +248,7 @@ export function PrivateEnv() {
             }
         });
         if (result.code === RCode.Success) {
-            NotySuccess("修改成功")
+            NotySuccess(t("修改成功"))
         } else {
             return;
         }
@@ -271,7 +271,7 @@ export function PrivateEnv() {
             },
         });
         if (result.code === RCode.Success) {
-            NotySuccess("修改成功");
+            NotySuccess(t("修改成功"));
             initUserInfo();
         }
     }

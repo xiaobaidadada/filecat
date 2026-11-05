@@ -107,7 +107,7 @@ export function Env() {
     const save_pty_cmd = async () => {
         const result = await settingHttp.post("pty_cmd/save", {str: pty_cmd});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             reloadUserInfo();
         }
     }
@@ -116,7 +116,7 @@ export function Env() {
     const protection_sys_dir_save = async () => {
         const result = await settingHttp.post("protection_dir/sys/save", protection_sys_dir_rows);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             reloadUserInfo();
         }
     }
@@ -143,7 +143,7 @@ export function Env() {
         sort<dir_upload_max_num_item>(dir_upload_rows, (v) => v.index ?? 0);
         const result = await settingHttp.post("dir_upload_max_num/save", dir_upload_rows);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             reloadUserInfo();
         }
     }
@@ -186,7 +186,7 @@ export function Env() {
     const save_outside_software = async () => {
         const result = await settingHttp.post("outside/software/save", rows_outside_software);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             initUserInfo();
         }
     }
@@ -197,7 +197,7 @@ export function Env() {
     const update_env_path = async () => {
         const result = await settingHttp.post("env/path/save", {paths: env_path_dir_rows});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             get_env()
             initUserInfo();
         }

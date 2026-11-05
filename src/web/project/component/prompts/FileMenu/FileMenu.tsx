@@ -438,7 +438,7 @@ export function FileMenu() {
                     // 确定保存
                     const result = await settingHttp.post("add_share_file_list", item);
                     if (result.code === RCode.Success) {
-                        NotySuccess("添加成功")
+                        NotySuccess(t("添加成功"))
                         set_prompt_card({open: false})
                         navigate(`${routerConfig.share_list_setting_page}`);
                     }
@@ -489,7 +489,7 @@ export function FileMenu() {
                             param_path: get_ab_path()
                         });
                         if (result.code === RCode.Success) {
-                            NotySuccess("更新到AI知识库成功")
+                            NotySuccess(t("更新到AI知识库成功"))
                         }
                     },
                     context_div: (

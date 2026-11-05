@@ -5,6 +5,7 @@ import '@xterm/xterm/css/xterm.css'
 import {copyToClipboard} from "../../util/FunUtil";
 import {NotySuccess} from "../../util/noty";
 import {use_drag_resize} from "../../util/useDragResize";
+import {useTranslation} from "react-i18next";
 
 export interface ShellProps {
     show:boolean,
@@ -17,6 +18,7 @@ export interface ShellProps {
 
 export default function Shell(props:ShellProps) {
     const [shellHeight,setShellHeight] = useState(25);
+    const {t} = useTranslation();
     const shellDividerRef = useRef(null);
     // @ts-ignore
     const fitAddon = useCallback(new FitAddon(),[])
@@ -73,7 +75,7 @@ export default function Shell(props:ShellProps) {
                     const selectedText = props.terminal.getSelection();
                     if (selectedText) {
                         copyToClipboard(selectedText);
-                        NotySuccess("已复制");
+                        NotySuccess(t("已复制"));
                         // 阻止默认的 Ctrl + C 事件（防止它发送中断信号）
                         event.preventDefault();
                         props.terminal.focus();

@@ -180,14 +180,14 @@ export function useMessageList(deps: Deps) {
 
     const handleCopy = async (msg: Message) => {
         copyToClipboard(message_to_text(msg));
-        NotySuccess('复制成功');
+        NotySuccess(t("复制成功"));
     };
 
     /** 全部复制：按会话列表顺序遍历所有会话的消息 */
     const handleCopyAll = async () => {
         const sessions = get_sessions();
         if (!sessions.length) {
-            NotySuccess('暂无聊天记录');
+            NotySuccess(t("暂无聊天记录"));
             return;
         }
         const chunks: string[] = [];
@@ -202,11 +202,11 @@ export function useMessageList(deps: Deps) {
             if (body) chunks.push(body);
         }
         if (!chunks.length) {
-            NotySuccess('暂无聊天记录');
+            NotySuccess(t("暂无聊天记录"));
             return;
         }
         copyToClipboard(chunks.join("\n\n\n"));
-        NotySuccess('复制成功');
+        NotySuccess(t("复制成功"));
     };
 
     /** 复制所选：按消息原始顺序拼接 */
@@ -217,11 +217,11 @@ export function useMessageList(deps: Deps) {
             .filter(Boolean)
             .join("\n\n\n");
         if (!text) {
-            NotySuccess('暂无内容');
+            NotySuccess(t("暂无内容"));
             return;
         }
         copyToClipboard(text);
-        NotySuccess('复制成功');
+        NotySuccess(t("复制成功"));
     };
 
     const toggleBatchMode = () => {

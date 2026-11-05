@@ -96,7 +96,7 @@ export function Http() {
     const saveItems = async (items) => {
         const rsq = await netHttp.post("http/tag/save", items);
         if (rsq.code !== RCode.Success) {
-            NotyFail('网络错误');
+            NotyFail(t("网络错误"));
         }
     }
 
@@ -201,7 +201,7 @@ export function Http() {
     }
 
     const send = async () => {
-        if (!netHttp.have_http_method(url_type)) { NotyFail('不存在的http method'); return; }
+        if (!netHttp.have_http_method(url_type)) { NotyFail(t("不存在的http method")); return; }
         if (!url) { NotyFail('url is empty'); return; }
         set_status_code(undefined);
         set_status_body('');
@@ -458,7 +458,7 @@ export function Http() {
                             }} />
                             <ActionButton title={t("复制")} icon={"copy_all"} onClick={() => {
                                 const val = editor_data.get_editor_value(2);
-                                if (val) { copyToClipboard(val); NotySuccess("完成"); }
+                                if (val) { copyToClipboard(val); NotySuccess(t("完成")); }
                             }} />
                         </div>
                     }>

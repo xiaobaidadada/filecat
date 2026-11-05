@@ -227,7 +227,7 @@ export default function LogViewer(props) {
                     if (position <= 0) {
                         if (!top_alert) {
                             top_alert = true;
-                            NotyWaring('到达顶部');
+                            NotyWaring(t("到达顶部"));
                         }
                         last_position = element.scrollTop;
                         return;
@@ -342,7 +342,7 @@ export default function LogViewer(props) {
         try {
             v = parseInt(go_progress);
             if (v > 100 || v < 0) {
-                NotyFail('范围在0-100')
+                NotyFail(t("范围在0-100"))
                 throw "超过最大范围";
             }
             for (const item of dom_children_list) {

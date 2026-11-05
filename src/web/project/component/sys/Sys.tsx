@@ -90,7 +90,7 @@ export function Sys(props) {
                 list.push([<TextTip context={disk.name}/>, disk.typeName, disk.type, disk.total,
                     <ActionButton icon={"health_and_safety"} title={t("查看健康信息")} onClick={() => {
                         if (!have_smartmontools) {
-                            NotyFail("没有安装smartmontools")
+                            NotyFail(t("没有安装smartmontools"))
                             return;
                         }
                         set_disk_check({type:"check",data:disk});

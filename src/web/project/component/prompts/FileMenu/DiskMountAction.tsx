@@ -27,19 +27,19 @@ export function DiskMountAction(props) {
     }
     const confirm = async ()=> {
         if(!tarDir) {
-            NotyFail("挂载目录不能为空");
+            NotyFail(t("挂载目录不能为空"));
             return;
         }
         if (showPrompt.data.extra_data.mountpoints && showPrompt.data.extra_data.mountpoints.find(v=>v===tarDir)) {
-            NotyFail("重复挂载");
+            NotyFail(t("重复挂载"));
             return;
         }
         if (!showPrompt.data.extra_data.path) {
-            NotyFail("该设备块没有具体路径");
+            NotyFail(t("该设备块没有具体路径"));
             return;
         }
         if (!showPrompt.data.extra_data.fstype) {
-            NotyFail("该设备块没有文件系统");
+            NotyFail(t("该设备块没有文件系统"));
             return;
         }
         // else if (showPrompt.data.extra_data.fstype === "ntfs") {

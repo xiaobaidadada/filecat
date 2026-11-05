@@ -58,7 +58,7 @@ export default function ShareListSetting() {
     const save = async ()=>{
         const result = await settingHttp.post("set_share_file_list", rows);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             get_items()
         }
     }

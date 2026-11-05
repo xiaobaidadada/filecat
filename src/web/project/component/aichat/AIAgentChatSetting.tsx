@@ -247,14 +247,14 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_agent_setting/save", {models:data_rows??rows});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
     /** 保存全局默认设置 */
     const save_global = async (data?: ai_agent_global_setting) => {
         const result = await settingHttp.post("ai_agent_global_setting/save", data ?? global_cfg);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
     const save_mcp = async (data_rows?:any) => {
@@ -263,7 +263,7 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_mcp_setting/save", {list:data_rows??mcp_list});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             mcp_update_tag.current = false;
             // 保存成功后通过 WS 触发 MCP 重新加载（不用 HTTP，避免慢启动阻塞保存接口）
             // 加载状态由 mcp_status 实时推送回来
@@ -298,7 +298,7 @@ export default function AIAgentChatSetting() {
             const result = await settingHttp.post("ai_mcp_tools/reload", {index});
             if (result.code === RCode.Success) {
                 await loadMcpTools();
-                NotySuccess("MCP工具加载成功")
+                NotySuccess(t("MCP工具加载成功"))
                 return result.data ?? null;
             }
         } finally {
@@ -463,7 +463,7 @@ export default function AIAgentChatSetting() {
         docs_update_tag.current = false;
         const result = await settingHttp.post("ai_docs_setting_save", body);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
     // 系统会话提示词相关
@@ -480,7 +480,7 @@ export default function AIAgentChatSetting() {
         }
         const result = await settingHttp.post("ai_system_prompts/save", {list: sys_prompt_list});
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
     return <div>

@@ -38,7 +38,7 @@ export function CustomerApiRouter() {
     const save = async () => {
         const result = await settingHttp.post("api/customer_router/save", rows);
         if (result.code === RCode.Success) {
-            NotySuccess('保存成功')
+            NotySuccess(t("保存成功"))
         }
     }
     const add = ()=>{
@@ -54,7 +54,7 @@ export function CustomerApiRouter() {
     }
     const edit = async (item)=>{
         if (!item.router) {
-            NotyFail("路由不能为空");
+            NotyFail(t("路由不能为空"));
             return;
         }
         const res = await settingHttp.get(`jscode/${encodeURIComponent(item.router)}`);
@@ -71,7 +71,7 @@ export function CustomerApiRouter() {
                 if (rsq.code === RCode.Success) {
                     editor_data.set_value_temp('')
                     setEditorSetting({open: false,model:'',fileName:'',save:null})
-                    NotySuccess('成功')
+                    NotySuccess(t("成功"))
                 }
             }
         })

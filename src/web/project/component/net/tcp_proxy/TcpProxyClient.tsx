@@ -109,10 +109,10 @@ export function TcpProxyClient(props) {
     const del_client = async (index: number) => {
         const result = await tcpProxy.post("client_del", {index});
         if (result.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
             return;
         }
-        NotySuccess("保存成功")
+        NotySuccess(t("保存成功"))
         init()
     }
     const save = async (item: tcp_proxy_client_fig) => {
@@ -129,10 +129,10 @@ export function TcpProxyClient(props) {
         // pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         const result = await tcpProxy.post("client_save", pojo);
         if (result.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
             return;
         }
-        NotySuccess("保存成功")
+        NotySuccess(t("保存成功"))
     }
 
 

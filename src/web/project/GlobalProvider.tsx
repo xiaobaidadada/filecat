@@ -6,6 +6,7 @@ import {$stroe} from "./util/store";
 import {fileHttp, settingHttp, userHttp, mountHttp} from "./util/config";
 import {RCode} from "../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
+import {change_lang} from "./util/in18resource";
 import {auth_key_map} from "./util/store.util";
 import {get_select_style, setTheme} from "./util/FunUtil";
 import {is_share} from "./util/WebPath";
@@ -26,7 +27,7 @@ export const GlobalProvider = ({ children }) => {
     const [, set_mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
     const [, set_md_editor_setting] = useAtom($stroe.md_editor_setting);
     const [, set_md_theme_css] = useAtom($stroe.md_theme_css);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const getItems = async () => {
         const switch_result = await fileHttp.post("base_switch/get");
@@ -95,7 +96,7 @@ export const GlobalProvider = ({ children }) => {
             if(language === 'sys' || !language) {
                 language = navigator.language
             }
-            i18n.changeLanguage(language);
+            change_lang(language);
             auth_key_map.clear();
             if(p.user_data?.file_list_zoom != null) {
                 setZoomPercent(p.user_data?.file_list_zoom);

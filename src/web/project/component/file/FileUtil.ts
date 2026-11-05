@@ -26,6 +26,7 @@ import {routerConfig} from "../../../../common/RouterConfig";
 import {Http} from "../../util/http";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {editor_data} from "../../util/store.util";
+import i18n from "i18next";
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -344,7 +345,7 @@ export function title_workflow_file_fail(it){
 
 const copy = throttle((text) => {
     copyToClipboard(text)
-    NotySuccess('复制成功');
+    NotySuccess(i18n.t("复制成功"));
 });
 
 export function using_add_md__copy_button(){

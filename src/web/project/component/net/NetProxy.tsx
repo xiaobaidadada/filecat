@@ -119,7 +119,7 @@ export function NetProxy(props) {
         const result = await netHttp.post("http/proxy/set/win", pojo);
         if (result.code === RCode.Success) {
             init();
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
 
@@ -128,7 +128,7 @@ export function NetProxy(props) {
         const result = await netHttp.post("http/proxy/set/mac", [pojo]);
         if (result.code === RCode.Success) {
             init();
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
     const save_outside_software = async () => {
@@ -139,7 +139,7 @@ export function NetProxy(props) {
         }
         const result = await netHttp.post("vir/client/tcp_proxy/save", list);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
             init()
         }
     }
@@ -147,7 +147,7 @@ export function NetProxy(props) {
     const http_proxy_save = async () => {
         const result = await netHttp.post("http/proxy/server/save", httpServer);
         if (result.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
 

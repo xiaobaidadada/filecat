@@ -55,7 +55,7 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
 
         const format = get_zip_file_format_util(showPrompt.data.filename)
         if(!format) {
-            NotyFail("不支持的文件后缀");
+            NotyFail(t("不支持的文件后缀"));
             return;
         }
 
@@ -68,14 +68,14 @@ export function UnCompress(props:{click?:(v,item)=>void,list?:any[]}) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySuccess("完成");
+                NotySuccess(t("完成"));
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()
             }
         })
         ws.subscribeUnconnect(()=>{
-            NotyFail("发生错误");
+            NotyFail(t("发生错误"));
             close()
         })
     }

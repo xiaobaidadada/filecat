@@ -26,7 +26,7 @@ export function TimeConverTer(props) {
     }
     function switchTime() {
         if (!stamp && !time) {
-            NotyFail('不能都为空')
+            NotyFail(t("不能都为空"))
             return;
         }
         let stampp:number|string = 0;

@@ -54,7 +54,7 @@ export function Sys() {
     const set_recycle_save = async () => {
         if (recycle_open) {
             if (!recycle_dir) {
-                NotyFail("目录不能为空")
+                NotyFail(t("目录不能为空"))
                 return;
             }
         }
@@ -64,7 +64,7 @@ export function Sys() {
             open: recycle_open
         });
         if (result.code === RCode.Success) {
-            NotySuccess("修改成功")
+            NotySuccess(t("修改成功"))
         }
     }
     const getOpen = async () => {
@@ -106,12 +106,12 @@ export function Sys() {
         data.mode = tokenMode;
         data.persist = tokenPersist;
         if (TokenTimeMode.length === data.mode && !tokenSeconds) {
-            NotyFail("秒数不能为空")
+            NotyFail(t("秒数不能为空"))
         }
         data.length = parseInt(tokenSeconds);
         const result1 = await settingHttp.post("token/save", data);
         if (result1.code === RCode.Success) {
-            NotySuccess("保存成功")
+            NotySuccess(t("保存成功"))
         }
     }
 
@@ -123,7 +123,7 @@ export function Sys() {
     const tokenClearAll = async () => {
         const result1 = await settingHttp.get("token/clear");
         if (result1.code === RCode.Success) {
-            NotySuccess("清理完成，重新登录")
+            NotySuccess(t("清理完成，重新登录"))
         }
     }
     const save_sys_env = async () => {
@@ -136,7 +136,7 @@ export function Sys() {
             }
         });
         if (result.code === RCode.Success) {
-            NotySuccess("修改成功")
+            NotySuccess(t("修改成功"))
         } else {
             return;
         }

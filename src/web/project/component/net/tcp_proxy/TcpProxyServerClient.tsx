@@ -160,25 +160,25 @@ export function TcpProxyServerClient() {
     const save_client_fig = async ()=>{
         const r = await tcpProxy.post("server_client_save",edit_client)
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
         }
     }
     const server_client_del = async (client_num_id:number) => {
         const r = await tcpProxy.post("server_client_del",{client_num_id})
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
             getItems()
         }
     }
 
     const bridge_add = async (item:tcp_proxy_bridge_fig_item) => {
         if(item.client_num_id == null) {
-            NotyFail("未选择转发送 client")
+            NotyFail(t("未选择转发送 client"))
             return
         }
         const r = await tcpProxy.post("server_bridge_add_fig",item)
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
             get_server_bridge_get_one_fig(item.server_client_num_id)
 
         }
@@ -186,12 +186,12 @@ export function TcpProxyServerClient() {
 
     const bridge_edit = async (item:tcp_proxy_bridge_fig_item) => {
         if(item.client_num_id == null) {
-            NotyFail("未选择转发送 client")
+            NotyFail(t("未选择转发送 client"))
             return
         }
         const r = await tcpProxy.post("server_bridge_edit_fig",item)
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
             get_server_bridge_get_one_fig(item.server_client_num_id)
 
         }
@@ -200,7 +200,7 @@ export function TcpProxyServerClient() {
     const bridge_del = async (id:string,server_client_num_id) => {
         const r = await tcpProxy.post("server_bridge_del_fig",{id})
         if(r.code === RCode.Success) {
-            NotySuccess("成功")
+            NotySuccess(t("成功"))
             get_server_bridge_get_one_fig(server_client_num_id)
 
         }

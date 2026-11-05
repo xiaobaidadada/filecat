@@ -129,7 +129,7 @@ export default function ExcalidrawEditor() {
 
         if (rsq.code === RCode.Success) {
             // 自动保存不弹成功提示，只在手动保存时提示
-            if (!silent) NotySuccess("保存成功");
+            if (!silent) NotySuccess(t("保存成功"));
             dirty_ref.current = false;
         }
     };

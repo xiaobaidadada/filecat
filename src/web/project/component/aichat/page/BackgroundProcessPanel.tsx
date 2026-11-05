@@ -91,7 +91,7 @@ const BackgroundProcessPanel: React.FC<BackgroundProcessPanelProps> = function B
             setOutputData(result.context);
         } catch (e) {
             console.error("获取进程输出失败", e);
-            NotyFail("获取进程输出失败");
+            NotyFail(t("获取进程输出失败"));
         } finally {
             setOutputLoading(false);
         }
@@ -103,7 +103,7 @@ const BackgroundProcessPanel: React.FC<BackgroundProcessPanelProps> = function B
             wsd.context = { pid };
             const result = await ws.send(wsd);
             if (result?.context?.success) {
-                NotySuccess("进程已终止");
+                NotySuccess(t("进程已终止"));
                 fetchProcessList();
                 if (selectedPid === pid) {
                     setSelectedPid(null);
@@ -114,7 +114,7 @@ const BackgroundProcessPanel: React.FC<BackgroundProcessPanelProps> = function B
             }
         } catch (e) {
             console.error("终止进程失败", e);
-            NotyFail("终止进程失败");
+            NotyFail(t("终止进程失败"));
         }
     }, [fetchProcessList, selectedPid]);
 

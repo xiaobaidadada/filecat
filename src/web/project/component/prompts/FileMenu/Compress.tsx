@@ -38,7 +38,7 @@ export function Compress(props) {
     }
     const confirm = () => {
         if (!tar_filename) {
-            NotyFail("文件名不能为空");
+            NotyFail(t("文件名不能为空"));
             return;
         }
         const files = showPrompt.data.files;
@@ -58,7 +58,7 @@ export function Compress(props) {
             const v = parseInt(wsData.context);
             setProgress(v)
             if (v === 100) {
-                NotySuccess("完成");
+                NotySuccess(t("完成"));
                 navigate(getRouterPath());
                 // ws.unConnect();
                 close()
@@ -67,7 +67,7 @@ export function Compress(props) {
             setClickList([])
         })
         ws.subscribeUnconnect(() => {
-            NotyFail("发生错误");
+            NotyFail(t("发生错误"));
             close()
         })
     }

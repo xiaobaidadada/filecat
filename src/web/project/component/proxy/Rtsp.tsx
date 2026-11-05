@@ -105,7 +105,7 @@ export default function Rtsp() {
     const saveItems = async (items) => {
         const rsq = await videoHttp.post("tag/save", items);
         if (rsq.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
         }
     }
     const clickItem = async (item: any) => {

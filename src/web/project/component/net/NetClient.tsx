@@ -71,10 +71,10 @@ export function NetClient(props) {
         // pojo.model = isUdp?VirServerEnum.udp:VirServerEnum.tcp;
         const result = await netHttp.post("vir/client/save", pojo);
         if (result.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
             return;
         }
-        NotySuccess("保存成功")
+        NotySuccess(t("保存成功"))
     }
 
 

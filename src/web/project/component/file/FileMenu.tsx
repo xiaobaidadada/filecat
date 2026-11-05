@@ -177,7 +177,7 @@ export function FileMenu() {
             files[i] = getFileNameByLocation(file.name)
         }
         if (!files || files.length === 0) {
-            NotyFail("没有选中");
+            NotyFail(t("没有选中"));
             return;
         }
         setShowPrompt({show: true, type: PromptEnum.Compress, overlay: true, data: {files}});

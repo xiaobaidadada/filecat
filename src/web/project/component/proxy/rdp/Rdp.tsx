@@ -38,7 +38,7 @@ export function Rdp() {
             await loadJsFileOnce("rle.js");
             load = true;
         } catch (e) {
-            NotyFail("加载资源失败");
+            NotyFail(t("加载资源失败"));
             return;
         }
 
@@ -114,7 +114,7 @@ export function Rdp() {
     const saveItems = async (items) => {
         const rsq = await rdpHttp.post("tag/save", items);
         if (rsq.code !== RCode.Success) {
-            NotyFail("网络错误")
+            NotyFail(t("网络错误"))
         }
     }
     const clickItem = async (item: any) => {

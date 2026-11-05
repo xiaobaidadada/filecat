@@ -37,7 +37,7 @@ export function Crypto() {
 
     const save_openssh = async (type) => {
         if (!privateKey || !publicKey) {
-            NotyFail("密钥不能为空");
+            NotyFail(t("密钥不能为空"));
             return;
         }
         let name = "id_"+method;
@@ -54,7 +54,7 @@ export function Crypto() {
                     context: type === "pub" ? publicKey : privateKey,
                 });
                 if (result.code === RCode.Success) {
-                    NotySuccess("完成");
+                    NotySuccess(t("完成"));
                     setShowPrompt({open:false,handle:null});
                 }
             }
@@ -80,7 +80,7 @@ export function Crypto() {
                     <Card title={t('公钥')} rightTopCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (publicKey) {
                             copyToClipboard(publicKey);
-                            NotySuccess("完成")
+                            NotySuccess(t("完成"))
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&
@@ -104,7 +104,7 @@ export function Crypto() {
                     <Card title={t('私钥')} rightTopCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (privateKey) {
                             copyToClipboard(privateKey);
-                            NotySuccess("成功")
+                            NotySuccess(t("成功"))
                         }
                     }}/>}
                           rightBottomCom={form === "openssh_pem" &&

@@ -9,6 +9,7 @@ import {RCode} from "../../../../../../common/Result.pojo";
 import {useLocation, useNavigate} from "react-router-dom";
 import {use_editor_auto_save} from "../../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
+import {useTranslation} from "react-i18next";
 
 let loadfile_done = false;
 let filerobotImageEditor;
@@ -17,6 +18,7 @@ export default function ImageEditor() {
     const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const navigate = useNavigate();
     const location = useLocation();
+    const {t} = useTranslation();
     // 图片被修改标记（自动保存用；保存成功后清除）
     const dirty_ref = React.useRef(false);
     // 自动保存触发时为 true，onSave 回调据此跳过成功提示
@@ -28,7 +30,7 @@ export default function ImageEditor() {
                 await loadJsFileOnce("filerobot-image-editor.min.js");
                 loadfile_done = true;
             } catch (error) {
-                NotyFail("加载资源失败");
+                NotyFail(t("加载资源失败"));
                 return;
             }
         }
@@ -50,7 +52,7 @@ export default function ImageEditor() {
                 await fileHttp.put(`${encodeURIComponent(`${getRouterPrePath(path)}${name}.${extension}`)}`, blob, undefined);
                 dirty_ref.current = false;
                 // 自动保存不弹成功提示
-                if (!silent_ref.current) NotySuccess('保存成功');
+                if (!silent_ref.current) NotySuccess(t("保存成功"));
                 silent_ref.current = false;
             },
             // 图像被修改（自动保存的 dirty 标记）

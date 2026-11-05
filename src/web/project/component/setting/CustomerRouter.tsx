@@ -38,7 +38,7 @@ export function CustomerRouter() {
             if(router_jump?.page_self_router_api_data) {
                 for (const it of result.data) {
                     if(it[1] === router_jump?.page_self_router_api_data[1]) {
-                        NotyWaring("已经存在的页面资源路由配置目录设置")
+                        NotyWaring(t("已经存在的页面资源路由配置目录设置"))
                     }
                 }
                 const target = {}
@@ -114,7 +114,7 @@ export function CustomerRouter() {
                 }} save={async (req: [[]]) => {
                     const result = await settingHttp.post(Http_controller_router.setting_customer_workflow_router_save, req);
                     if (result.code === RCode.Success) {
-                        NotySuccess('保存成功')
+                        NotySuccess(t("保存成功"))
                     }
                 }} info_click={worlfow_api_info_click}/>
             </Column>

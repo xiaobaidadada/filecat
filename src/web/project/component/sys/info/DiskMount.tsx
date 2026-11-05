@@ -173,7 +173,7 @@ export function DiskMount() {
                       onClick={async () => {
                           const rsq2 = await sysHttp.post("cmd/exe", {type: SysCmd.mount});
                           if (rsq2.code === RCode.Success) {
-                              NotySuccess("挂载文件已生效")
+                              NotySuccess(t("挂载文件已生效"))
                           }
                       }}/>
     ]
@@ -210,7 +210,7 @@ export function DiskMount() {
                                 }}/>}
                             <ActionButton icon={"update"} title={t("刷新")} onClick={async () => {
                                 if (await get_blk() === RCode.Success) {
-                                    NotySuccess("刷新成功")
+                                    NotySuccess(t("刷新成功"))
                                 }
                             }}/>
                         </div>}>
