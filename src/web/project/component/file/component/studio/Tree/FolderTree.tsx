@@ -11,7 +11,9 @@ export function FolderTree(props: {
     active_path?: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
     handleContextMenu?: (event, name,path, isDir,toggleExpansion) => void,
-    fatherNowToggleExpansion?:()=>void
+    fatherNowToggleExpansion?:()=>void,
+    /** 重建后需要恢复展开的目录路径 */
+    expand_paths?: string[],
 }) {
 
     return <div>
@@ -23,6 +25,7 @@ export function FolderTree(props: {
                            handleContextMenu={props.handleContextMenu}
                            fatherNowToggleExpansion={props.fatherNowToggleExpansion}
                            active_path={props.active_path}
+                           expand_paths={props.expand_paths}
                            children={value.children} click={props.click} size={value.size}/>
         })}
     </div>

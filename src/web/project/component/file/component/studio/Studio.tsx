@@ -19,6 +19,7 @@ import {useTranslation} from "react-i18next";
 import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
+import {routerConfig} from "../../../../../../common/RouterConfig";
 import {use_file_capabilities, useUpdateUrlParams} from "../../FileUtil";
 // import Ace from "../Ace";
 
@@ -76,6 +77,10 @@ export default function Studio(props) {
     const [update, set_update] = useState<boolean>(false);
     // const [edit_model, set_edit_model] = useState("text");
     const [edit_filename, set_edit_filename] = useState({path: "", name: ""});
+    // 树的重建标记：重命名后子目录的 children 是内部 state，只能靠重建刷新
+    const [refresh_key, set_refresh_key] = useState(0);
+    // 已展开的目录，重建后恢复展开，避免改名后树被收起
+    const [expand_paths, set_expand_paths] = useState<string[]>([]);
     const [edit_file_path, set_edit_file_path] = useState("");
     const [confirm, set_confirm] = useAtom($stroe.confirm);
     const [have_update, set_have_update] = useState(false);
@@ -147,8 +152,15 @@ export default function Studio(props) {
 
 
     const location = useLocation();
-    let folder_path = location.pathname.split("/").filter(Boolean).pop();
-    folder_path = decodeURIComponent(folder_path);
+    // studio 路由形如 /studio_page/%2Ffile%2Fdir%2F，路径整体被 URI 编码，解码后要剥掉 /file 前缀
+    const folder_path = (() => {
+        const prefix = `${routerConfig.studio_page}/`;
+        const rest = location.pathname.startsWith(prefix)
+            ? location.pathname.slice(prefix.length)
+            : "";
+        const p = getRouterAfter('file', decodeURIComponent(rest));
+        return p.endsWith("/") ? p : `${p}/`;
+    })();
 
     /** 权限校验：AI 聊天页与右侧面板使用同一权限 */
     const {check_user_auth} = use_auth_check();
@@ -164,7 +176,7 @@ export default function Studio(props) {
     }, [chat_open, chat_open_auth, user_base_info]);
 
     /** Studio 当前工作目录：URL 上的目录路径（已解码），供右侧 AI 聊天面板按目录定位会话 */
-    const chat_cwd = getRouterAfter('file', folder_path);
+    const chat_cwd = folder_path;
 
     function shellClick() {
         if (file_shell_hidden === true || file_shell_hidden === false) {
@@ -174,7 +186,7 @@ export default function Studio(props) {
         if (!shellShow.show) {
             setShellShow({
                 show: true,
-                path: getRouterAfter('file', folder_path)
+                path: folder_path
             })
             set_file_shell_hidden(false);
         } else {
@@ -186,7 +198,7 @@ export default function Studio(props) {
     }
 
     const get_item = async () => {
-        const p = getRouterAfter('file', folder_path);
+        const p = folder_path;
         set_pre_path(p);
         set_edit_filename({path: p, name: get_last_name(p)});
         const rsp = await fileHttp.post('studio/get/item', {path: p});
@@ -222,13 +234,17 @@ export default function Studio(props) {
             set_edit_filename({path: next, name: get_last_name(next)});
         }
         // 2. studio 当前所在目录在改名范围内，跳到新地址，由 URL 变化驱动重新加载
-        const cur_dir = remove_router_tail(getRouterAfter('file', folder_path));
+        const cur_dir = remove_router_tail(folder_path);
         if (is_under(cur_dir, old_path)) {
             const next_dir = new_path + cur_dir.slice(old_path.length);
-            navigate(`/file/${encodeURIComponent(next_dir)}`, {replace: true});
+            // studio 的路径参数是完整的 /file/... 前端路径，整体 URI 编码
+            navigate(`${routerConfig.studio_page}/${encodeURIComponent(`/file/${next_dir}`)}`, {replace: true});
             return;
         }
         // 3. 只是同级子项改名，刷新列表即可
+        //    已展开的子目录有自己的 children state，只换父层 list 不会更新更深层的名字，
+        //    递增 key 让整棵树重建，子目录收起后按需重新展开
+        set_refresh_key(k => k + 1);
         get_item();
     }
     useEffect(() => {
@@ -239,6 +255,8 @@ export default function Studio(props) {
         // if (!studio.folder_path) {
         //     return;
         // }
+        // 换目录后旧的展开记录不再适用
+        set_expand_paths([]);
         get_item();
     }, [location]);
 
@@ -283,6 +301,8 @@ export default function Studio(props) {
     }
     const click = async (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => {
         if (pojo.type === "folder") {
+            // 记住展开过的目录，树重建后据此恢复展开状态
+            set_expand_paths(prev => prev.includes(pre_path) ? prev : [...prev, pre_path]);
             const rsp = await fileHttp.post('studio/get/item', {path: `${pre_path}`});
             if (rsp.code === RCode.Success) {
                 const folder_list = [];
@@ -496,7 +516,7 @@ export default function Studio(props) {
             <div className={"studio-nav"}
                  style={{display: show_nav ? undefined : "none", width: `${nav_width - 1}em`}}
                  onContextMenu={(event) => {
-                     handleContextMenu(event, edit_filename.name, getRouterAfter('file', folder_path), true, get_item)
+                     handleContextMenu(event, edit_filename.name, folder_path, true, get_item)
                  }}
             >
                 {/* 大纲 / 目录：两个都保持挂载，用 display 切换显隐。
@@ -507,8 +527,11 @@ export default function Studio(props) {
                                on_click={(item) => md_api.current?.goto_heading(item)}/>
                 </div>
                 <div className={"studio-nav-folder"} style={{display: outline_on ? "none" : undefined}}>
-                    <FolderTree pre_path={pre_path} list={list} click={click} active_path={edit_file_path}
-                                handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
+                    <React.Fragment key={refresh_key}>
+                        <FolderTree pre_path={pre_path} list={list} click={click} active_path={edit_file_path}
+                                    expand_paths={expand_paths}
+                                    handleContextMenu={handleContextMenu} fatherNowToggleExpansion={get_item}/>
+                    </React.Fragment>
                 </div>
                 {/* 底部切换：md 文件可以在大纲与目录之间切，其他文件没有大纲，不显示 */}
                 {is_md && (

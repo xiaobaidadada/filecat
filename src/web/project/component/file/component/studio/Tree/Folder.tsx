@@ -11,10 +11,12 @@ export function Folder(props: FileTree & {
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
     handleContextMenu?: (event, name, path, isDir, toggleExpansion) => void
     fatherNowToggleExpansion?:()=>void,
+    /** 重建后需要恢复展开的目录路径 */
+    expand_paths?: string[],
 }): React.JSX.Element {
     {
         // 这里的pre_path 是以/结尾的
-        const [expanded, setExpanded] = useState(false);
+        const [expanded, setExpanded] = useState(() => Boolean(props.expand_paths?.includes(props.pre_path)));
         const [children, setChildren] = useState<FileTree[]>([]);
         const set_children = (list: FileTree[]) => {
             setChildren(list);
@@ -45,6 +47,12 @@ export function Folder(props: FileTree & {
         useEffect(() => {
             setChildren(props.children);
         }, [props.children]);
+        // 由 expand_paths 初始展开时，子项还没加载，需要主动拉一次
+        useEffect(() => {
+            if (expanded && props.type === "folder" && props.click) {
+                props.click(props, set_children, props.pre_path);
+            }
+        }, []);
         return (
             <div className={"studio-item"}>
                 <div onClick={toggleExpansion} onContextMenu={(event) => {
