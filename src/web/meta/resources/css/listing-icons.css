@@ -35,6 +35,7 @@
 .file-icons [aria-label$=".ods"] i::before,
 .file-icons [aria-label$=".xls"] i::before,
 .file-icons [aria-label$=".xlsx"] i::before,
+.file-icons [aria-label$=".xlsm"] i::before,
 .file-icons [aria-label$=".gcfg"] i::before
 { content: 'border_all' }
 
@@ -172,6 +173,7 @@
 .file-icons [aria-label$=".ods"] i,
 .file-icons [aria-label$=".xls"] i,
 .file-icons [aria-label$=".xlsx"] i,
+.file-icons [aria-label$=".xlsm"] i,
 .file-icons [aria-label$=".gcfg"] i
 { color: var(--icon-green) }
 

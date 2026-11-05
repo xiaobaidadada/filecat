@@ -39,9 +39,10 @@ const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","w
 const compressing_list = new Set(["tar","zip","gz","tgz","rar"]);// compressing
 const image_list = new Set(["jpg","jpeg","png","gif"]);
 const sqlite_list = new Set(["db", "sqlite", "sqlite3"]);
-// Office 表格：走独立的表格编辑器
+// Office 表格：走独立的表格编辑器（xlsm 与 xlsx 同为 OOXML 包，编辑器可正常读写）
 const office_format_map = new Map<string, FileTypeEnum>([
     ["xlsx", FileTypeEnum.excel],
+    ["xlsm", FileTypeEnum.excel],
 ]);
 const txt = new Set(["txt","ts","js"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);
