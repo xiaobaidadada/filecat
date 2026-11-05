@@ -211,7 +211,7 @@ export function TcpProxyClient(props) {
                                    <InputText value={item.client_name} handleInputChange={(value) => {
                                        item.client_name = value;
                                    }} no_border={true}/>,
-                                   <InputText value={item.key} handleInputChange={(value) => {
+                                   <InputText type={"password"} value={item.key} handleInputChange={(value) => {
                                        item.key = value;
                                    }} no_border={true}/>,
                                    <StatusCircle ok={!!item.status}/>,
