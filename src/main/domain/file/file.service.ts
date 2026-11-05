@@ -42,6 +42,7 @@ import fg from "fast-glob";
 
 // 递归搜索的流句柄存在 wss.dataMap 里的 key，取消/断连时用它中止遍历
 const SEARCH_STREAM_KEY = "file_deep_search";
+
 import {
     PathResolution,
     resolve_local_path,
@@ -1492,6 +1493,31 @@ export class FileService  {
     }
 
     /**
+     * 把挂载目录打包成 zip 流式下发。
+     * 驱动的 read() 返回流，直接 append 进 archiver，不落盘。
+     */
+    private async zip_mount_folder(
+        driver: ReturnType<typeof require_driver>["driver"],
+        base_inner_path: string,
+        folder_name: string,
+        res: Response
+    ): Promise<void> {
+        const encoded = encodeURIComponent(folder_name).replace(/%20/g, "+");
+        res.set({
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": `attachment; filename="${encoded}.zip"; filename*=UTF-8''${encoded}.zip`,
+        });
+        const archive = archiver("zip", {zlib: {level: 5}});
+        archive.on("error", (e) => {
+            if (!res.headersSent) res.status(500).send(e.message);
+        });
+        archive.pipe(res);
+
+        await append_mount_dir_to_archive(archive, driver, base_inner_path, "");
+        await archive.finalize();
+    }
+
+    /**
      * 挂载文件的下载。
      * 优先用驱动给的直链做 302 跳转（浏览器直连网盘，完全不占服务器带宽）；
      * 拿不到直链的（WebDAV/百度等）走服务器中转，用流边读边发。
@@ -1510,8 +1536,8 @@ export class FileService  {
             return;
         }
         if (info.type === FileTypeEnum.folder) {
-            // 网盘目录无法打包下载（需要全部拉到服务器再压缩，违背不落盘原则）
-            res.status(400).send("挂载目录不支持打包下载，请进入目录后选择文件下载");
+            // 目录打包：边读驱动流边写进 zip，不落盘
+            await this.zip_mount_folder(mnt_r.driver, mnt_r.inner_path, info.name, res);
             return;
         }
         const file_name = info.name;
@@ -1736,20 +1762,39 @@ export class FileService  {
             for (const file of files) {
                 // const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(file));
                 const sysPath = decodeURIComponent(file);
-                // 挂载内的文件无法直接用 archiver 打包（archiver 只认本地路径），
-                // 需要先下到服务器再压，违背「不落盘」原则，因此直接拒绝；
-                // 但本地目录驱动（local）本质就是本地文件，可以正常打包
                 const m_res = resolve_local_path(sysPath);
+                // 挂载内的文件：用驱动流写进 zip，不落盘
                 if (m_res.match && m_res.match.mount.driver !== MountDriverType.local) {
-                    archive.abort();
-                    res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
-                    return;
+                    const mnt_r = require_driver(m_res.real_path);
+                    let info;
+                    try {
+                        info = await mnt_r.driver.stat(mnt_r.inner_path);
+                    } catch (e) {
+                        continue;
+                    }
+                    if (!info) continue;
+                    if (info.type === FileTypeEnum.folder) {
+                        // 目录递归展开进同一个 zip
+                        await append_mount_dir_to_archive(archive, mnt_r.driver, mnt_r.inner_path, path.basename(sysPath));
+                    } else {
+                        try {
+                            const stream = await mnt_r.driver.read(mnt_r.inner_path);
+                            archive.append(stream, {name: path.basename(sysPath)});
+                            await new Promise<void>((resolve) => {
+                                stream.once("end", () => resolve());
+                                stream.once("error", () => resolve());
+                            });
+                        } catch (e) {
+                            // 单个文件读失败不影响整包
+                        }
+                    }
+                    continue;
                 }
                 const real_pack_path = m_res.match ? (require_driver(sysPath).driver as any).local_real_path?.(m_res.match.inner_path) : null;
                 // 非本地驱动拿不到真实路径时，直接拒绝打包（网盘文件需先落盘）
                 if (m_res.match && !real_pack_path) {
                     archive.abort();
-                    res.status(400).send("挂载目录中的文件不支持打包下载，请单个下载");
+                    res.status(400).send("Files in the mounted directory do not support packaged download. Please download them individually.");
                     return;
                 }
                 let stats;
@@ -2503,3 +2548,39 @@ export class FileService  {
 }
 
 export const FileServiceImpl = new FileService();
+
+/**
+ * 把挂载目录递归写进 archiver 实例。
+ * 驱动的 read() 返回流，直接 append，不落盘；逐个文件串行读，避免同时打开过多流。
+ * zip_dir 为 zip 内的相对目录前缀。
+ */
+async function append_mount_dir_to_archive(
+    archive: ReturnType<typeof archiver>,
+    driver: ReturnType<typeof require_driver>["driver"],
+    inner_dir: string,
+    zip_dir: string
+): Promise<void> {
+    let items: FileItemData[];
+    try {
+        items = await driver.list(inner_dir);
+    } catch (e) {
+        return;
+    }
+    for (const item of items) {
+        const zip_name = zip_dir ? `${zip_dir}/${item.name}` : item.name;
+        if (item.type === FileTypeEnum.folder) {
+            await append_mount_dir_to_archive(archive, driver, item.path, zip_name);
+            continue;
+        }
+        try {
+            const stream = await driver.read(item.path);
+            archive.append(stream, {name: zip_name});
+            await new Promise<void>((resolve) => {
+                stream.once("end", () => resolve());
+                stream.once("error", () => resolve());
+            });
+        } catch (e) {
+            // 单个文件读失败不影响整包
+        }
+    }
+}
