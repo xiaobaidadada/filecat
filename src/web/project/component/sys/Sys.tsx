@@ -51,9 +51,8 @@ export function Sys(props) {
             // ws.sendData(CmdType.sys_cancel, {})
             return;
         }
-        const data = new WsData(CmdType.sys_get);
-        await ws.send(data)
-        ws.addMsg(CmdType.sys_getting, (wsData: WsData<SysPojo>) => {
+        // 必须先注册监听再发请求，否则推送可能先于监听到达而被丢弃
+        await ws.addMsg(CmdType.sys_getting, (wsData: WsData<SysPojo>) => {
             setCurrentLoad(wsData.context?.cpu_currentLoad)
             const memLeft = wsData.context?.memLeft;
             const memTotal = wsData.context?.memTotal;
@@ -63,6 +62,7 @@ export function Sys(props) {
             setNodeMemory(wsData.context?.node_memory_usage)
             setNodeCpuUsage(wsData.context?.node_cpu_usage)
         })
+        await ws.send(new WsData(CmdType.sys_get));
 
         // ws.subscribeUnconnect(init);
     }

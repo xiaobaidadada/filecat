@@ -169,6 +169,10 @@ export class WsClient {
         if (!this._socket) {
             await this.connect();
         }
+        // connect 可能失败（返回 false 且 _socket 仍为 null），此时直接报错，避免解空引用
+        if (!this._socket) {
+            throw new Error('WS 连接失败');
+        }
         if (this._socket.readyState !== WebSocket.OPEN) {
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('WS 连接超时')), 5000);
