@@ -21,7 +21,7 @@ import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {use_file_capabilities, use_ai_forward, useUpdateUrlParams} from "../../FileUtil";
-import {path_join} from "pty-shell/dist/path_util";
+import {path_join} from "../../../../../../common/path_util";
 import {UserBaseInfo} from "../../../../../../common/req/user.req";
 // import Ace from "../Ace";
 
