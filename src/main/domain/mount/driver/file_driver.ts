@@ -93,6 +93,22 @@ export interface FileDriver {
 
     /** 查询容量，不支持返回 null */
     quota(): Promise<{used: number; total: number} | null>;
+
+    /**
+     * 可选：把 git 接口调用转给本驱动的后端执行。
+     * 只有「对端就是另一个 FileCat」的驱动才实现（内网穿透），
+     * inner 是挂载点内的相对路径，route 是 git 接口名（如 status、log），
+     * 返回对端接口的完整响应（{code, message, data}）。
+     *
+     * 未实现表示该挂载不能执行 git；返回 null 表示「本机执行」。
+     */
+    git_request?(inner: string, route: string, body: any): Promise<any>;
+
+    /**
+     * 可选：把挂载点内的相对路径还原成本机 git 能直接用的真实目录。
+     * 只有本地目录挂载能给出（见 local_driver），其余返回 null。
+     */
+    local_real_path?(inner: string): string | null;
 }
 
 /**

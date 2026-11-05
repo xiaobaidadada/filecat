@@ -341,6 +341,8 @@ export function FileMenu() {
 
 
 export function use_handleContextMenu() {
+    /** 文件操作能力：判断当前挂载类型是否支持 Git 等功能 */
+    const file_cap = use_file_capabilities();
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
     const {t} = useTranslation();
     const {check_user_auth} = use_auth_check();
@@ -482,7 +484,9 @@ export function use_handleContextMenu() {
             common_handle_item,
             // {r: t("以配置表方式打开目录"), v: "gcfg_dir_config"}
         ];
-        if(nowFileList?.folders?.find(v=>v.name === '.git')) {
+        // 只有本地目录挂载、以及「转发到对端」的内网穿透挂载才支持 Git；
+        // 其它网盘驱动没有本地实体，右键不出现该入口
+        if (file_cap.git_available && nowFileList?.folders?.find(v => v.name === '.git')) {
             list.push({r: t("查看Git提交"), v: "git_page"})
         }
         if (check_user_auth(UserAuth.code_resource)) {

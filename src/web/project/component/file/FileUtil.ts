@@ -756,6 +756,9 @@ export function use_file_capabilities() {
     // 只有开启了转发的内网穿透挂载，请求才会落到对端 FileCat 上
     const remote_exec = is_mount && driver === "tcp_proxy" && Boolean(mount?.forward_to_remote);
     const can_terminal = !is_mount || remote_exec;
+    // Git 需要能落到真实磁盘目录：本地目录挂载可还原源路径，
+    // 转发到对端的内网穿透挂载由对端执行，其余网盘没有本地实体
+    const git_available = !is_mount || driver === "local" || remote_exec;
     return {
         /** 当前是否位于挂载目录 */
         is_mount,
@@ -765,6 +768,8 @@ export function use_file_capabilities() {
         remote_exec,
         /** 能否打开终端 */
         can_terminal,
+        /** 能否使用 Git 功能 */
+        git_available,
     };
 }
 

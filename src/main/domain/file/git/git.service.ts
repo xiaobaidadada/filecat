@@ -4,6 +4,7 @@ import {settingService} from "../../setting/setting.service";
 import {userService} from "../../user/user.service";
 import {FileUtil} from "../FileUtil";
 import path from "path";
+import {mountService} from "../../mount/mount.service";
 
 /**
  * 所有 git 命令统一携带的选项。
@@ -68,7 +69,27 @@ export class GitServiceImpl {
         if (!userService.isSubPath(root, target)) throw "path is invalid";
         // 用户访问权限校验（access_dirs / not_access_dirs）
         userService.check_user_path(token, target);
-        return target;
+        return this.to_real_path(target);
+    }
+
+    /**
+     * 把「挂载点内的路径」还原成 git 命令能直接用的真实目录。
+     *
+     * git 是本地进程，只能跑在真实磁盘目录上，所以只有能给出真实路径的驱动才行：
+     *  - 本地目录挂载：换算成它映射的源目录（local_driver.local_real_path）
+     *  - 内网穿透转发到对端：请求在进入业务层前就转给对端了，走不到这里
+     *  - 其它网盘驱动：没有本地实体，明确拒绝
+     */
+    private to_real_path(abs_path: string): string {
+        const res = mountService.resolve(abs_path);
+        if (!res) {
+            return abs_path;
+        }
+        const real = mountService.driver_of(res.mount).local_real_path?.(res.inner_path);
+        if (!real) {
+            throw "当前挂载不支持在本机执行 Git 操作";
+        }
+        return real;
     }
 
     /**

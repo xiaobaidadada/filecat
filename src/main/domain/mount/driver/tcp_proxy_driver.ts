@@ -295,6 +295,33 @@ export class TcpProxyDriver implements FileDriver {
     }
 
     /** WS 透传到对端时，本机 token 对端不认，需要用对端自己的 token 发握手 */
+    /**
+     * git 接口转发到对端 FileCat 执行。
+     *
+     * 挂载点内相对路径用 remote_path 换算成对端路径，和文件操作完全一致，
+     * 对端没有「挂载」这一层，仓库就是它自己根目录下的同名目录。
+     *
+     * 用 request 而不是 request_json：后者会把 Result 拆成 data 并在失败时抛错，
+     * 这里要把下游接口完整的 {code, message, data} 交给上层。
+     */
+    async git_request(inner: string, route: string, body: any): Promise<any> {
+        const remote_path = this.remote_path(inner);
+        return await this.with_auth<any>(
+            async (token) => {
+                const res = await this.request("POST", `/api/git/${route}`, {
+                    body: {...body, path: remote_path},
+                    headers: {Authorization: token},
+                    timeout: 60000,
+                });
+                try {
+                    return JSON.parse(res.body.toString("utf8"));
+                } catch (e) {
+                    throw new Error(`对端返回异常（HTTP ${res.status}）`);
+                }
+            },
+            (r: any) => r?.code !== 0 && is_auth_expired(r?.code),
+        );
+    }
     public async get_forward_token(): Promise<string> {
         return this.get_token();
     }
