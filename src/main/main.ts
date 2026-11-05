@@ -42,6 +42,7 @@ import {Ai_AgentController} from "./domain/ai_agent/ai_agent.controller";
 import os from "os";
 import {TcpForwardController} from "./domain/net/tcp.forward.controller";
 import {git_forward_middleware} from "./domain/file/git/git.forward";
+import {ai_forward_middleware} from "./domain/ai_agent/ai.forward";
 import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
@@ -222,6 +223,10 @@ export async function start_main() {
     // Git 接口：目标目录落在「转发到对端」的挂载里时，整个请求交给对端 FileCat 执行。
     // 放在路由之前，业务层的 60 个 git 接口都不用各自判断。
     expressApp.use(`${sys_pre}/git`, git_forward_middleware);
+
+    // AI 聊天接口：同上，挂载目录下由对端提供会话、模型和 prompt。
+    // AI 接口没有目录参数，靠前端带上来的 mount_path 头判断。
+    expressApp.use(`${sys_pre}/ai_agent`, ai_forward_middleware);
 
     // 创建 应用并注册控制器
     const app = useExpressServer(expressApp, {

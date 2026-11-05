@@ -7,7 +7,24 @@ import {front_config} from "./config";
 
 let now = Date.now();
 export class Http {
-    baseUrl:""
+    baseUrl: string = ""
+    /**
+     * 设置后，本实例所有请求都会带上 dir_path 头，
+     * 后端据此判断该目录落在哪个挂载、要不要转发到对端执行（见 ai_forward_middleware）。
+     */
+    forward_dir_path: string | null = null;
+
+    /** 统一构造请求头：token + 可选的当前目录标记 */
+    private auth_headers(extra?: Record<string, string>): Record<string, string> {
+        const headers: Record<string, string> = {
+            Authorization: localStorage.getItem('token'),
+            ...extra,
+        };
+        if (this.forward_dir_path) {
+            headers.dir_path = encodeURIComponent(this.forward_dir_path);
+        }
+        return headers;
+    }
     private check(data) {
         if (data && data.code===RCode.AuthFail) {
             localStorage.removeItem('token')
@@ -34,9 +51,7 @@ export class Http {
         try {
             url=url===undefined?'':url;
             const rsq = await axios.get(this.baseUrl+url,{
-                headers: {
-                    Authorization: localStorage.getItem('token')
-                }
+                headers: this.auth_headers()
             });
             this.check(rsq.data);
             return rsq.data
@@ -80,9 +95,7 @@ export class Http {
     // 返回原始字节，用于图片/音视频/xlsx 等二进制资源
     public async get_bytes(url = ""):Promise<Uint8Array> {
         const res = await fetch(this.baseUrl + url,{
-            headers:{
-                Authorization: localStorage.getItem('token')
-            }
+            headers: this.auth_headers()
         });
         if (!res.ok) {
             throw new Error(`请求失败: ${res.status}`);
@@ -94,10 +107,7 @@ export class Http {
     public async post_bytes(url = "", jsonData:any = {}) {
         const res = await fetch(this.baseUrl + url,{
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: localStorage.getItem('token') || ''
-            },
+            headers: this.auth_headers({'Content-Type': 'application/json'}),
             body: JSON.stringify(jsonData)
         });
         if (!res.ok) {
@@ -145,9 +155,7 @@ export class Http {
         try {
             url=url===undefined?'':url;
             const rsq = await axios.post(this.baseUrl+url, jsonData,{
-                headers: {
-                    Authorization: localStorage.getItem('token')
-                }
+                headers: this.auth_headers()
             });
             if (notCheck) {
                 this.check(rsq.data);
@@ -168,10 +176,7 @@ export class Http {
             url=url===undefined?'':url;
             const rsq = await axios.post(this.baseUrl+url, form_data,
                 {
-                    headers:{
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': localStorage.getItem('token')
-                    }
+                    headers: this.auth_headers({'Content-Type': 'multipart/form-data'})
                 });
             this.check(rsq.data);
             return rsq.data
@@ -189,10 +194,7 @@ export class Http {
             formData.append('file', file);
             const rsq = await axios.put(this.baseUrl+url, formData,
                 {
-                    headers:{
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': localStorage.getItem('token')
-                    },
+                    headers: this.auth_headers({'Content-Type': 'multipart/form-data'}),
                     onUploadProgress: (progressEvent) => {
                         // 上传进度监听
                         if (progressFun) {
@@ -213,9 +215,7 @@ export class Http {
        try {
            url=url===undefined?'':url;
            const rsq = await axios.delete(this.baseUrl+url,{
-               headers: {
-                   Authorization: localStorage.getItem('token')
-               }
+               headers: this.auth_headers()
            });
            this.check(rsq.data);
            return rsq.data
@@ -249,10 +249,7 @@ export class Http {
         try {
             await fetchEventSource(this.baseUrl + url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: localStorage.getItem('token') || ''
-                },
+                headers: this.auth_headers({'Content-Type': 'application/json'}),
                 body: JSON.stringify(jsonData),
                 signal: controller.signal,
 

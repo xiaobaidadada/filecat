@@ -10,7 +10,7 @@ import {useContext, useEffect, useRef, useState} from "react";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
-import {fileHttp, userHttp} from "../../util/config";
+import {fileHttp, userHttp, set_ai_forward} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -760,6 +760,9 @@ export function use_file_capabilities() {
     // Git 需要能落到真实磁盘目录：本地目录挂载可还原源路径，
     // 转发到对端的内网穿透挂载由对端执行，其余网盘没有本地实体
     const git_available = !is_mount || driver === "local" || remote_exec;
+    // AI 聊天需要能落到一个真实的服务进程：本地可以，
+    // 转发到对端的内网穿透挂载由对端跑，其余网盘没有可执行环境
+    const ai_chat_available = !is_mount || remote_exec;
     return {
         /** 当前是否位于挂载目录 */
         is_mount,
@@ -771,7 +774,27 @@ export function use_file_capabilities() {
         can_terminal,
         /** 能否使用 Git 功能 */
         git_available,
+        /** 能否使用 AI 聊天 */
+        ai_chat_available,
     };
+}
+
+/**
+ * 让 AI 相关请求跟着当前目录走。
+ *
+ * 位于「转发到对端」的内网穿透挂载时，AI 的会话、模型、prompt 全部由对端提供：
+ * 请求会带上 dir_path 头，后端 ai_forward_middleware 自己判断这个目录落在哪个挂载、
+ * 该挂载是否开了转发，前端不需要知道挂载的存在。
+ *
+ * FileList 传当前目录；Studio 是独立页面，传自己的 folder_path。
+ * 不传表示按本机处理。退出时自动还原。
+ */
+export function use_ai_forward(dir_path?: string) {
+    const target = dir_path || null;
+    useEffect(() => {
+        set_ai_forward(target);
+        return () => set_ai_forward(null);
+    }, [target]);
 }
 
 /**

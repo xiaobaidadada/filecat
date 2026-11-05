@@ -413,7 +413,8 @@ export function FileMenu() {
             case    common_menu_type.sutdio : {
                 // set_studio({folder_path: showPrompt.data.path, name: showPrompt.data.filename});
                 close();
-                navigate(`${routerConfig.studio_page}/${encodeURIComponent(showPrompt.data.path)}`);
+                // getRouterPath() 返回的是 URL 编码态路径，直接再编码会变成双重编码
+                navigate(`${routerConfig.studio_page}/${encodeURIComponent(decodeURIComponent(`/file/${get_menu_file_path()}`))}`);
             }
                 break;
             case common_menu_type.blank_search_mode : {

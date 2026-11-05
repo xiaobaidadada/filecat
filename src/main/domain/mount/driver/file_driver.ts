@@ -105,6 +105,15 @@ export interface FileDriver {
     git_request?(inner: string, route: string, body: any): Promise<any>;
 
     /**
+     * 可选：把 AI 聊天的接口调用转给本驱动的后端执行。
+     * AI 接口参数里没有目录路径，由前端把当前挂载的绝对路径放进 mount_path 头，
+     * 中间件据此找到挂载后调到这里。route 是接口名（如 session、audio/speech）。
+     *
+     * 未实现表示该挂载不转发 AI 请求，按本机处理。
+     */
+    ai_request?(route: string, method: string, body: any, base_path?: string, dir_path?: string): Promise<{content_type: string; session_id: string; body: Buffer}>;
+
+    /**
      * 可选：把挂载点内的相对路径还原成本机 git 能直接用的真实目录。
      * 只有本地目录挂载能给出（见 local_driver），其余返回 null。
      */

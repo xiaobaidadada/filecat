@@ -33,6 +33,15 @@ export const cryptoHttp = new Http(`${front_config.baseUrl}crypto/`);
 
 export const ai_agentHttp = new Http(`${front_config.baseUrl}ai_agent/`);
 
+/**
+ * 切换 AI 请求的落地位置。
+ * dir_path 非空时，请求头会带上当前目录，后端据此判断是否转发给该挂载的对端；
+ * 为空时按本机处理。AI 会话按目录定位，所以切目录必须同步切换。
+ */
+export function set_ai_forward(dir_path: string | null) {
+    ai_agentHttp.forward_dir_path = dir_path;
+}
+
 export const tcpProxy = new Http(`${front_config.baseUrl}tcp_forward/`);
 
 export const gitHttp = new Http(`${front_config.baseUrl}git/`);

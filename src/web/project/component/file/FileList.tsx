@@ -17,7 +17,7 @@ import {
     title_workflow_file_success,
     use_file_open,
     useUpdateUrlParams,
-    user_click_file, use_get_now_abs_path, to_remote_dir_path
+    user_click_file, use_get_now_abs_path, to_remote_dir_path, use_file_capabilities, use_ai_forward
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
 import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
@@ -117,6 +117,7 @@ export default function FileList() {
     // 无 AI 聊天页权限时，自动清掉 url 参数并关闭面板（含直接访问带该参数的链接）。
     // 必须等 user_base_info 加载完成再判断，否则首屏会把已授权用户的参数误删。
     const chat_open_auth = check_user_auth(UserAuth.ai_agent_page);
+    const file_cap = use_file_capabilities();
     useEffect(() => {
         if (!user_base_info?.user_data) return;
         if (chat_open && !chat_open_auth) {
@@ -132,6 +133,8 @@ export default function FileList() {
     const [chat_session_id, set_chat_session_id] = useState<string | undefined>(undefined);
     /** 当前目录路径（用于按目录定位/记忆会话） */
     const get_abs_path_in_file_page = use_get_now_abs_path();
+    // AI 聊天跟着当前目录走：目录落在开了转发的挂载里时，请求由对端处理（判断在后端）
+    use_ai_forward(get_abs_path_in_file_page());
     // const chat_cwd = getRouterAfter('file', getRouterPath());
     /** 目录 → 会话 id 映射，持久化在 $stroe（切回同一目录仍是同一个会话） */
     const [ai_chat_session_by_cwd, set_ai_chat_session_by_cwd] = useAtom($stroe.ai_chat_session_by_cwd);
@@ -620,7 +623,7 @@ export default function FileList() {
             <HeaderPortal position={"right"}>
                                 {/* AI 聊天面板开关：打开后按「当前目录」定位该目录的 AI 会话。
                                     与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示 */}
-                                {check_user_auth(UserAuth.ai_agent_page) && (
+                                {check_user_auth(UserAuth.ai_agent_page) && file_cap.ai_chat_available && (
                                     <ActionButton icon={"smart_toy"} title={t("AI 聊天")} selected={chat_open}
                                                   onClick={() => set_chat_open(!chat_open)}/>
                                 )}

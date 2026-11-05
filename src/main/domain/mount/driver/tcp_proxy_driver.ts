@@ -4,6 +4,7 @@ import {FileDriver, DriverCaps, MountDriverType} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {driver_item_to_file_item, norm_mount_path, mount_basename} from "./file_driver_type";
+import {relative_path} from "../mount.pojo";
 import {TunnelDuplexStream} from "../../../other/middleware/FilecatProxy";
 import {NetMsgType, NetUtil} from "../../net/util/NetUtil";
 import {tcpForwardService} from "../../net/tcp.forward.server.service";
@@ -373,6 +374,109 @@ export class TcpProxyDriver implements FileDriver {
             throw new Error(this.readable_error(parsed));
         }
         return parsed.data;
+    }
+
+    /**
+     * 把 AI 聊天相关的接口调用转给对端执行。
+     *
+     * AI 的接口参数里没有目录路径（只有 session_id 之类），所以由前端把当前
+     * 所在挂载的绝对路径放进 mount_path 头，中间件解析出挂载后调到这里。
+     * route 是接口名（如 session、sessions、audio/speech），
+     * 返回对端接口的完整响应（{code, message, data} 或二进制）。
+     */
+    async ai_request(route: string, method: string, body: any, base_path?: string, dir_path?: string): Promise<{content_type: string; session_id: string; body: Buffer}> {
+        // 会话按目录定位，file_cwd_path 是本机绝对路径，
+        // 对端不认识本机的挂载这一层，换成它对端的路径（与文件操作同一套换算）
+        const cwd = body?.file_cwd_path;
+        // 当前目录在挂载内的相对路径，用来把对端返回的绝对路径换回本机视角
+        let inner_dir = "";
+        if (dir_path && base_path) {
+            inner_dir = relative_path(dir_path, base_path) ?? "";
+        }
+        if (typeof cwd === "string" && cwd && base_path) {
+            const rel = relative_path(cwd, base_path);
+            if (rel !== null) {
+                body = {...body, file_cwd_path: this.remote_path(rel)};
+            }
+        }
+        const rsp = await this.with_auth(
+            async (token) => {
+                const res = await this.request(method, `/api/ai_agent/${route}`, {
+                    body,
+                    headers: {Authorization: token},
+                    timeout: 300000,
+                });
+                return {
+                    content_type: String(res.headers["content-type"] ?? ""),
+                    session_id: String(res.headers["x-session-id"] ?? ""),
+                    body: res.body,
+                };
+            },
+            // 只有 JSON 响应才可能承载鉴权失败码；二进制（音频）不参与判断
+            (r) => {
+                if (!r.content_type.includes("application/json")) {
+                    return false;
+                }
+                try {
+                    return is_auth_expired(JSON.parse(r.body.toString("utf8")).code);
+                } catch {
+                    return false;
+                }
+            },
+        );
+        // 对端返回的 file_cwd_path 是它对端的绝对路径（对端根 + 挂载内相对路径），
+        // 直接给前端会跟本机目录永远对不上，导致每次打开都新建会话。
+        // 这里按「挂载内相对路径」把它换算回本机绝对路径。
+        if (rsp.content_type.includes("application/json") && base_path) {
+            return {...rsp, body: this.localize_cwd(rsp.body, base_path, inner_dir)};
+        }
+        return rsp;
+    }
+
+    /**
+     * 把响应体里的 file_cwd_path 从对端绝对路径换算成本机绝对路径。
+     *
+     * 对端路径 = 对端用户根 + 挂载内相对路径，本机知道后者（inner_dir 是当前目录的，
+     * 其它会话的层级不同），所以用「以挂载内相对路径结尾」的项反推出对端根，
+     * 再用这个前缀做全局替换。
+     */
+    private localize_cwd(body: Buffer, base_path: string, inner_dir: string): Buffer {
+        let parsed: any;
+        try {
+            parsed = JSON.parse(body.toString("utf8"));
+        } catch {
+            return body;
+        }
+        const items: any[] = Array.isArray(parsed?.data) ? parsed.data : [parsed?.data];
+        // 用当前目录那条反推对端根：对端路径应该以当前目录的挂载内相对路径结尾
+        const suffix = inner_dir ? `/${inner_dir.replace(/^\/+|\/+$/g, "")}` : "";
+        let remote_root: string | null = null;
+        if (suffix) {
+            for (const it of items) {
+                const p = it?.file_cwd_path;
+                if (typeof p === "string" && p.endsWith(suffix)) {
+                    remote_root = p.slice(0, p.length - suffix.length);
+                    break;
+                }
+            }
+        }
+        if (!remote_root) {
+            return body;
+        }
+        const local_root = norm_mount_path(base_path).replace(/\/+$/, "");
+        const convert = (p: any) => {
+            if (typeof p !== "string" || !p.startsWith(remote_root as string)) {
+                return p;
+            }
+            const rest = p.slice((remote_root as string).length);
+            return norm_mount_path(`${local_root}${rest}`);
+        };
+        for (const it of items) {
+            if (it && typeof it === "object") {
+                it.file_cwd_path = convert(it.file_cwd_path);
+            }
+        }
+        return Buffer.from(JSON.stringify(parsed), "utf8");
     }
 
     /** 把对端返回码翻成用户能看懂、知道该去改什么的提示 */

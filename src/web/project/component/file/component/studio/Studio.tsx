@@ -20,7 +20,9 @@ import { MAX_SIZE_TXT } from "../../../../../../common/ValueUtil";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
 import {routerConfig} from "../../../../../../common/RouterConfig";
-import {use_file_capabilities, useUpdateUrlParams} from "../../FileUtil";
+import {use_file_capabilities, use_ai_forward, useUpdateUrlParams} from "../../FileUtil";
+import {path_join} from "pty-shell/dist/path_util";
+import {UserBaseInfo} from "../../../../../../common/req/user.req";
 // import Ace from "../Ace";
 
 
@@ -176,7 +178,9 @@ export default function Studio(props) {
     }, [chat_open, chat_open_auth, user_base_info]);
 
     /** Studio 当前工作目录：URL 上的目录路径（已解码），供右侧 AI 聊天面板按目录定位会话 */
-    const chat_cwd = folder_path;
+    const chat_cwd = path_join(UserBaseInfo.get_now_dir(user_base_info), folder_path);
+    // AI 聊天跟着当前目录走：目录落在开了转发的挂载里时，请求由对端处理（判断在后端）
+    use_ai_forward(chat_cwd);
 
     function shellClick() {
         if (file_shell_hidden === true || file_shell_hidden === false) {
@@ -491,7 +495,7 @@ export default function Studio(props) {
             {file_cap.can_terminal && <ActionButton icon={"terminal"} title={"shell"} onClick={shellClick}/>}
             {/* 右侧 AI 聊天面板开关：打开后按「当前工作目录」定位该目录的 AI 会话。
                 需与 AI 聊天页同一权限（UserAuth.ai_agent_page），无权限则不显示该按钮 */}
-            {check_user_auth(UserAuth.ai_agent_page) && (
+            {check_user_auth(UserAuth.ai_agent_page) && file_cap.ai_chat_available && (
                 <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
                               onClick={() => set_chat_open(!chat_open)}/>
             )}
