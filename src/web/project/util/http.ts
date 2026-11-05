@@ -67,6 +67,45 @@ export class Http {
         }
     }
 
+    // 返回原始字节，用于图片/音视频/xlsx 等二进制资源
+    // url 为完整地址（已含 baseUrl 与 token），如 getDownloadUrl 生成的结果
+    public static async get_bytes_url(full_url:string):Promise<Uint8Array> {
+        const res = await fetch(full_url);
+        if (!res.ok) {
+            throw new Error(`请求失败: ${res.status}`);
+        }
+        return new Uint8Array(await res.arrayBuffer());
+    }
+
+    // 返回原始字节，用于图片/音视频/xlsx 等二进制资源
+    public async get_bytes(url = ""):Promise<Uint8Array> {
+        const res = await fetch(this.baseUrl + url,{
+            headers:{
+                Authorization: localStorage.getItem('token')
+            }
+        });
+        if (!res.ok) {
+            throw new Error(`请求失败: ${res.status}`);
+        }
+        return new Uint8Array(await res.arrayBuffer());
+    }
+
+    // POST 拿二进制响应，返回字节和响应头（如音频合成要读 X-Session-Id、Content-Type）
+    public async post_bytes(url = "", jsonData:any = {}) {
+        const res = await fetch(this.baseUrl + url,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: localStorage.getItem('token') || ''
+            },
+            body: JSON.stringify(jsonData)
+        });
+        if (!res.ok) {
+            throw new Error(`请求失败: ${res.status}`);
+        }
+        return {bytes: new Uint8Array(await res.arrayBuffer()), headers: res.headers};
+    }
+
     getDownloadUrl(files,params?:any) {
         return this.getDownloadUrlV2(files,"download",params);
     }

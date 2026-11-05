@@ -410,28 +410,15 @@ export async function sendAudioSpeechRequest(
         }
     } catch {}
 
-    // 由于 audio/speech 返回二进制，需要用 fetch 获取
-    const token = localStorage.getItem("token") || "";
-    const resp = await fetch(`/api/ai_agent/audio/speech`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": token,
-        },
-        body: JSON.stringify(body),
-    });
+    // 由于 audio/speech 返回二进制，需要用字节方式获取
+    const {bytes: audioBytes, headers: audioHeaders} = await ai_agentHttp.post_bytes("audio/speech", body);
 
-    if (!resp.ok) {
-        throw new Error(`语音合成失败: ${resp.statusText}`);
-    }
-
-    const sessionIdFromHeader = resp.headers.get("X-Session-Id") || sessionId;
-    const arrayBuffer = await resp.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...Array.from(new Uint8Array(arrayBuffer))));
+    const sessionIdFromHeader = audioHeaders.get("X-Session-Id") || sessionId;
+    const base64 = btoa(String.fromCharCode(...Array.from(audioBytes)));
 
     return {
         session_id: sessionIdFromHeader,
-        audio: { data: base64, mime_type: resp.headers.get("content-type") || "audio/mpeg" },
+        audio: { data: base64, mime_type: audioHeaders.get("content-type") || "audio/mpeg" },
         text: `[音频文件: ${text.slice(0, 50)}...]`,
     };
 }

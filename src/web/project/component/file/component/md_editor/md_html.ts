@@ -3,6 +3,7 @@ import {EditorView, NodeView} from "prosemirror-view";
 import {createRoot, type Root} from "react-dom/client";
 import {createElement} from "react";
 import {fileHttp} from "../../../../util/config";
+import {Http} from "../../../../util/http";
 import hljs from "highlight.js";
 import {is_graph_lang, render_graph} from "./graph_render";
 import {prepare_mind} from "./mind_graph";
@@ -479,8 +480,7 @@ class ImageFileView implements NodeView {
     private render_graph_body(body: HTMLElement) {
         const url = resolve_src(this.src);
         body.textContent = "loading";
-        fetch(url)
-            .then(r => r.text())
+        Http.get(url)
             .then(async text => {
                 if (!this.dom.isConnected) {
                     return;

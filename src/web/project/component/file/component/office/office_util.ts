@@ -1,4 +1,5 @@
 import {fileHttp} from "../../../../util/config";
+import {Http} from "../../../../util/http";
 import {getRouterAfter, getRouterPath} from "../../../../util/WebPath";
 import {NotyFail} from "../../../../util/noty";
 
@@ -18,11 +19,7 @@ export function encode_path(path: string): string {
 
 /** 下载二进制文件 */
 export async function fetch_bytes(url: string): Promise<Uint8Array> {
-    const res = await fetch(url, {headers: {Authorization: localStorage.getItem("token")}});
-    if (!res.ok) {
-        throw new Error(`读取文件失败: ${res.status}`);
-    }
-    return new Uint8Array(await res.arrayBuffer());
+    return Http.get_bytes_url(url);
 }
 
 /** 保存二进制文件，返回是否成功 */

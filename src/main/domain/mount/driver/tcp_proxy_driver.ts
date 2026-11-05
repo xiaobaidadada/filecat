@@ -126,6 +126,11 @@ export class TcpProxyDriver implements FileDriver {
         return remote ? `/api/file/${encodeURI(remote)}` : "/api/file/";
     }
 
+    /** 对端下载接口 URL（原始字节，不经过文本预览） */
+    private download_url(remote: string, token: string): string {
+        return `/api/download?file=${encodeURIComponent(remote)}&token=${encodeURIComponent(token)}`;
+    }
+
     /** 当前在线的隧道客户端；不在线直接报错，避免请求挂死 */
     private get_client() {
         const client = tcpForwardService.client_num_map[this.client_num_id];
@@ -422,33 +427,30 @@ export class TcpProxyDriver implements FileDriver {
             const end = range[1] === undefined || range[1] === null ? "" : String(range[1]);
             extra_headers["Range"] = `bytes=${range[0]}-${end}`;
         }
-        // 对端对「文本文件」返回统一结果体 {code,data:"内容"}，对「二进制」才直出字节
+        // 必须走 /api/download 拿原始字节。
+        // /api/file/ 是「文本预览」接口，服务端会把内容 toString("utf8") 塞进 JSON，
+        // 二进制（xlsx/图片/压缩包）经这一趟无法还原，字节会被 U+FFFD 替换掉。
         const res = await this.with_auth(
-            (token) => this.request("GET", this.file_url(remote), {
-                headers: {Authorization: token, ...extra_headers},
+            (token) => this.request("GET", this.download_url(remote, token), {
+                headers: extra_headers,
             }),
-            // token 过期时会以 200 + AuthFail 返回，需要重登再取
+            // token 过期时会以 200 + AuthFail 的 JSON 返回，需要重登再试
             (r) => r.status < 400 && this.body_is_auth_fail(r.body),
         );
         if (res.status >= 400) {
             throw new Error(`读取对端文件失败（HTTP ${res.status}）`);
         }
-        const text = res.body.toString("utf8");
-        if (text.startsWith("{\"code\"")) {
+        // 鉴权失败是 JSON 错误体，正常下载则是文件本身，用 Content-Type 区分
+        const ctype = String(res.headers["content-type"] ?? "");
+        if (ctype.includes("application/json")) {
             let parsed: FileCatResult | undefined;
             try {
-                parsed = JSON.parse(text);
+                parsed = JSON.parse(res.body.toString("utf8"));
             } catch (e) {
                 // 不是 JSON，按原始字节返回
             }
-            if (parsed) {
-                if (is_auth_expired(parsed.code)) {
-                    throw new Error(this.readable_error(parsed));
-                }
-                // 只有 PreFile(=5) 才代表「这是文本文件内容」，其余是错误或其它结构
-                if (parsed.code === RCode.PreFile && typeof parsed.data === "string") {
-                    return Readable.from([Buffer.from(parsed.data, "utf8")]);
-                }
+            if (parsed && parsed.code !== 0) {
+                throw new Error(this.readable_error(parsed));
             }
         }
         return Readable.from([res.body]);
