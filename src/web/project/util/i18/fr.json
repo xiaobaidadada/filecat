@@ -1330,5 +1330,7 @@
   "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Session unique : chaque connexion génère un nouveau jeton et invalide tous les jetons précédents du compte.",
   "会话token设置": "Paramètres du jeton de session",
   "过期策略": "Politique d'expiration",
-  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Politique d'expiration : « Par défaut » utilise l'expiration intégrée d'une heure ; « Durée spécifiée » expire après le nombre de secondes saisi ; « Jamais » garde le jeton valide indéfiniment."
+  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Politique d'expiration : « Par défaut » utilise l'expiration intégrée d'une heure ; « Durée spécifiée » expire après le nombre de secondes saisi ; « Jamais » garde le jeton valide indéfiniment.",
+  "内网穿透 FileCat": "FileCat via tunnel",
+  "prt_tcp": "Accédez à FileCat sur une autre machine via un client tunnel. Ajoutez et connectez d'abord un client dans « Redirection TCP », puis sélectionnez-le ici et saisissez les identifiants de connexion distants."
 }

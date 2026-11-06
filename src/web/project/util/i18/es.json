@@ -1330,5 +1330,7 @@
   "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Sesión única: cada inicio de sesión emite un token nuevo e invalida todos los tokens anteriores de la cuenta.",
   "会话token设置": "Configuración del token de sesión",
   "过期策略": "Política de expiración",
-  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Política de expiración: «Predeterminado» usa la expiración integrada de 1 hora; «Tiempo especificado» expira tras los segundos introducidos; «Nunca expira» mantiene el token válido para siempre."
+  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Política de expiración: «Predeterminado» usa la expiración integrada de 1 hora; «Tiempo especificado» expira tras los segundos introducidos; «Nunca expira» mantiene el token válido para siempre.",
+  "内网穿透 FileCat": "FileCat por túnel",
+  "prt_tcp": "Accede a FileCat en otra máquina mediante un cliente de túnel. Primero añade y conecta un cliente en «Reenvío TCP», luego selecciónalo aquí e introduce las credenciales de inicio de sesión del otro equipo."
 }

@@ -1330,5 +1330,7 @@
   "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Einzelne Sitzung: Bei jeder Anmeldung wird ein neues Token ausgestellt und alle bisherigen Tokens des Kontos werden ungültig.",
   "会话token设置": "Sitzungs-Token-Einstellungen",
   "过期策略": "Ablaufrichtlinie",
-  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Ablaufrichtlinie: „Standard\" verwendet die integrierte Ablaufzeit von 1 Stunde; „Angegebene Zeit\" läuft nach den eingegebenen Sekunden ab; „Nie ablaufen\" hält den Token dauerhaft gültig."
+  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Ablaufrichtlinie: „Standard\" verwendet die integrierte Ablaufzeit von 1 Stunde; „Angegebene Zeit\" läuft nach den eingegebenen Sekunden ab; „Nie ablaufen\" hält den Token dauerhaft gültig.",
+  "内网穿透 FileCat": "Getunnelter FileCat",
+  "prt_tcp": "Greift über einen Tunnel-Client auf FileCat auf einem anderen Rechner zu. Zuerst unter „TCP-Weiterleitung\" einen Client hinzufügen und verbinden, dann hier diesen Client auswählen und die Login-Daten der Gegenseite eingeben."
 }

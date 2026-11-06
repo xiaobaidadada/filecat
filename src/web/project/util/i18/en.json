@@ -1334,5 +1334,7 @@
   "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Single session: every login issues a new token and invalidates all previous tokens of the account.",
   "会话token设置": "Session Token Settings",
   "过期策略": "Expiration Policy",
-  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Expiration policy: \"Default\" uses the built-in 1-hour expiration; \"Specified time\" expires after the number of seconds you enter; \"Never expire\" keeps the token valid forever."
+  "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Expiration policy: \"Default\" uses the built-in 1-hour expiration; \"Specified time\" expires after the number of seconds you enter; \"Never expire\" keeps the token valid forever.",
+  "内网穿透 FileCat": "Tunneled FileCat",
+  "prt_tcp": "Access FileCat running on another machine through a tunnel client. Add and connect a client under \"TCP Forward\" first, then pick that client here and enter the remote login credentials to mount its directories."
 }
