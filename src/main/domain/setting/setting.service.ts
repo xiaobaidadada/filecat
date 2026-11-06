@@ -507,7 +507,7 @@ export class SettingService {
      * 合并语义：只处理请求里传了的字段，未传的字段保留原值。
      * 这样「通用设置」和「网页代理」等多个 card 可以各自只提交自己负责的字段，互不覆盖。
      */
-    public set_sys_env(req: Partial<sys_env_pojo>) {
+    public async set_sys_env(req: Partial<sys_env_pojo>) {
         // 用数据库原始值做基线（避免 get_sys_env 的环境变量兜底被固化写回）
         const base: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
             web_site_title: 'FileCat',
@@ -550,7 +550,69 @@ export class SettingService {
             const parsed = parse_yaml(result.control_env_str);
             result.control_env = this.normalize_control_env(parsed);
         }
+        // 读取 local_setting_paths 里的外部配置合并进来，存库的是合并后的结果
+        await this.load_local_settings(result.control_env);
         return DataUtil.set(data_common_key.sys_env_key, result);
+    }
+
+    /**
+     * 把外部 yaml 文件的内容按规则合并到 control_env。
+     * 只对顶级 key 处理，不做对象深度合并：
+     * 1. 值不是对象：直接覆盖
+     * 2. 值是对象：把其中的 k-v 覆盖进目标对象的同名 key
+     * 3. 值是数组：元素 push 追加到目标数组
+     * local_setting_paths 是加载清单本身，外部文件里出现也忽略，避免递归加载。
+     */
+    private merge_local_settings(base: control_env_pojo, extra: any) {
+        if (!extra || typeof extra !== "object" || Array.isArray(extra)) return;
+        for (const [key, value] of Object.entries(extra)) {
+            if (key === "local_setting_paths") continue; // 避免递归
+            if (value === undefined || value === null) continue;
+            const current = (base as any)[key];
+            if (Array.isArray(value)) {
+                // 数组一律追加：外部文件用来往白名单、转发规则里补条目
+                if (!Array.isArray(current)) {
+                    (base as any)[key] = [];
+                }
+                (base as any)[key].push(...value);
+                continue;
+            }
+            if (typeof value === "object") {
+                // 对象只覆盖一层属性，不做递归，允许 https 这类配置只改其中一部分
+                if (!current || typeof current !== "object" || Array.isArray(current)) {
+                    (base as any)[key] = {};
+                }
+                for (const [sub_key, sub_value] of Object.entries(value)) {
+                    if (sub_value === undefined) continue;
+                    (base as any)[key][sub_key] = sub_value;
+                }
+                continue;
+            }
+            (base as any)[key] = value;
+        }
+    }
+
+    /**
+     * 读取 local_setting_paths 里的每个文件并合并到 control_env。
+     * 文件不存在直接跳过，其它读取/解析错误照常抛出，避免配置静默不生效。
+     */
+    private async load_local_settings(base: control_env_pojo) {
+        const paths = base.local_setting_paths;
+        if (!paths?.length) return;
+        for (const file_path of paths) {
+            if (!is_absolute_path(file_path)) {
+                throw `local_setting_paths 里的路径必须是绝对路径: ${file_path}`;
+            }
+            let text: string;
+            try {
+                text = await fs.promises.readFile(file_path, "utf-8");
+            } catch (e: any) {
+                // 只有“文件不存在”才跳过，权限不足等其它问题要让用户看到
+                if (e?.code === "ENOENT") continue;
+                throw `读取 ${file_path} 失败: ${e?.message ?? e}`;
+            }
+            this.merge_local_settings(base, parse_yaml(text));
+        }
     }
 
     /**
@@ -573,6 +635,12 @@ export class SettingService {
                 throw "http_proxy 必须以 http(s):// 开头";
             }
             result.http_proxy = http_proxy;
+        }
+        if (raw.local_setting_paths !== undefined && raw.local_setting_paths !== null) {
+            if (!Array.isArray(raw.local_setting_paths)) throw "local_setting_paths 必须是列表";
+            result.local_setting_paths = raw.local_setting_paths
+                .map((it: any) => `${it ?? ""}`.trim())
+                .filter((it: string) => it !== "");
         }
         result.allowed_hosts = str_list(raw.allowed_hosts, "allowed_hosts");
         result.forbid_hosts = str_list(raw.forbid_hosts, "forbid_hosts");

@@ -281,6 +281,8 @@ export interface control_env_https {
 export interface control_env_pojo {
     // filecat 系统自身发出的 HTTP 请求使用的代理地址，留空则回退到历史配置和环境变量
     http_proxy?: string
+    // 额外的本地 yaml 配置清单，逐个读取后按规则合并到本对象
+    local_setting_paths?: string[]
     allowed_hosts?: string[]
     forbid_hosts?: string[]
     allowed_private_host?: boolean
@@ -296,6 +298,11 @@ export const CONTROL_ENV_STR_DEFAULT: string =
 `# filecat 系统自身发出的 HTTP 请求使用的代理地址（版本检测、DDNS、命令下载等）
 # 留空则回退到环境变量 http_proxy / https_proxy
 # http_proxy: 'http://127.0.0.1:7890'
+
+# 额外的本地 yaml 配置清单（绝对路径），逐个读取后合并到本配置
+# 合并只处理顶级 key：标量直接覆盖、对象覆盖其中的键值、数组追加元素
+# local_setting_paths:
+#   - '/etc/filecat/extra.yaml'
 
 # Host 访问控制（正则，完整匹配，不含端口）
 # allowed_hosts:

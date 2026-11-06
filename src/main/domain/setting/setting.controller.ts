@@ -483,7 +483,7 @@ export class SettingController {
         } else if (body.type === sys_setting_type.sys_env) {
             userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_env_setting_key);
             // 合并语义：把前端传来的字段透传给 set_sys_env，只更新传入的字段
-            settingService.set_sys_env(body.value ?? {});
+            await settingService.set_sys_env(body.value ?? {});
             ServerEvent.emit("sys_env_update");
         } else if (body.type === sys_setting_type.private_sys_env) {
             // 个性化
