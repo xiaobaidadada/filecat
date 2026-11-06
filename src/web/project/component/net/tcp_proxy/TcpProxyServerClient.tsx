@@ -308,7 +308,7 @@ export function TcpProxyServerClient() {
                         ]}/>
                         </form>
                         {
-                            edit_client.open_filecat &&
+
                             (<React.Fragment>
                                     <form>
                                         {t("fc_pxyw")}:<Rows isFlex={true} columns={[

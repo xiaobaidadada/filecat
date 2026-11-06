@@ -263,20 +263,36 @@ export class TcpForwardServerService {
             const client = this.client_num_map[it.client_num_id]
             if (client) {
                 it.status = !!client?.client_util?.connected
-                if (client.client_remote_address != null) {
-                    it.client_remote_address = client.client_remote_address
-                }
-                if (client.online_start_time != null) {
-                    it.online_start_time = client.online_start_time
-                }
-                if (client.offline_time != null) {
-                    it.offline_time = client.offline_time
-                }
+                this.sync_client_runtime_fields(it, client)
             } else {
                 it.status = false
             }
         }
         return list;
+    }
+
+    /**
+     * 按 client_num_id 精确查一条配置，避免高频调用方（如挂载的文件操作）每次都遍历整份列表。
+     * 返回的仍然是从 DataUtil 里取出的那条对象本身，状态字段刷新逻辑和 server_client_get 一致。
+     */
+    server_client_get_by_id(client_num_id: number) {
+        let list :tcp_proxy_server_client[]=  DataUtil.get(data_common_key.tcp_proxy_server_client_list,file_key.tcp_proxy_server_client)
+        if(!list){
+            list = [];
+            DataUtil.set(data_common_key.tcp_proxy_server_client_list,list,file_key.tcp_proxy_server_client)
+        }
+        const it = list.find(v => v.client_num_id === client_num_id)
+        if (!it) {
+            return undefined
+        }
+        const client = this.client_num_map[it.client_num_id]
+        if (client) {
+            it.status = !!client?.client_util?.connected
+            this.sync_client_runtime_fields(it, client)
+        } else {
+            it.status = false
+        }
+        return it
     }
 
     get_new_client_num_id() {

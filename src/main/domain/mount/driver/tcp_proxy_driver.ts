@@ -154,11 +154,7 @@ export class TcpProxyDriver implements FileDriver {
         const socket_id = tcpForwardService.get_socket_id();
         const tunnelStream = new TunnelDuplexStream(client, socket_id);
 
-        // 对端 FileCat 端口：客户端用 is_filecat 时连的是它自己的 Env.port，
-        // 服务端没有记录这个值，只有配置了 filecat_proxy_host_port 才拿得到；
-        // 取不到就退回本机端口（两端端口一致时正确）
-        const client_fig = tcpForwardService.server_client_get()
-            .find(v => v.client_num_id === this.client_num_id);
+        const client_fig = tcpForwardService.server_client_get_by_id(this.client_num_id);
         const host_port = client_fig?.filecat_proxy_host_port;
         const target_port = host_port && host_port.includes(":")
             ? Number(host_port.split(":")[1]) || Env.port
@@ -189,10 +185,20 @@ export class TcpProxyDriver implements FileDriver {
         };
 
         try {
-            // 通知客户端连到它自己的 FileCat HTTP 端口
+            // 通知客户端连到它自己的 FileCat HTTP 端口。
+            // 配了 filecat_proxy_host_port 就按配置的地址连（和 FilecatProxy 的浏览器转发保持一致），
+            // 否则退回 is_filecat，由客户端连自己的 Env.port
+            const create_option: Record<string, unknown> = {socket_id};
+            if (host_port && host_port.includes(":")) {
+                const host_port_list = host_port.split(":");
+                create_option.client_proxy_host = host_port_list[0];
+                create_option.client_proxy_port = Number(host_port_list[1]);
+            } else {
+                create_option.is_filecat = true;
+            }
             await client.client_util.send_data_async(
                 NetMsgType.tcp_client_create_socket_for_server,
-                Buffer.from(JSON.stringify({socket_id, is_filecat: true})),
+                Buffer.from(JSON.stringify(create_option)),
             );
 
             // 用「直连 Socket 的 Agent」把 HTTP 请求跑在这条隧道上
