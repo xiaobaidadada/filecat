@@ -234,14 +234,19 @@ export interface sys_env_pojo {
 }
 
 // 域名转发规则（类似 nginx 的 server 段）
-// host：必填，精确匹配的主机名（不含端口），大小写不敏感
+// host：必填，匹配的主机名（不含端口），大小写不敏感；支持 *.example.com 通配一级子域
 // path：可选，路径前缀，命中后把请求转发到目标服务
-// target：必填，目标地址，如 http://127.0.0.1:3000
+// target：目标地址，如 http://127.0.0.1:3000；与 root 二选一
+// root：静态目录绝对路径，命中后把该目录作为 web 根；与 target 二选一
+// rewrite：可选，纯前缀替换，如 path 为 /v1、rewrite 为 /api，则 /v1/user 转到 /api/user；
+//          不填则剥掉 path 前缀
 // websocket：是否支持 websocket 升级转发
 export interface control_env_proxy_rule {
     host: string
     path?: string
-    target: string
+    target?: string
+    root?: string
+    rewrite?: string
     websocket?: boolean
 }
 
@@ -304,6 +309,17 @@ allowed_private_host: false
 #   - host: 'api.example.com'
 #     path: '/v1'
 #     target: 'http://127.0.0.1:8080'
+#   # 通配一级子域：a.example.com 命中，example.com 和 a.b.example.com 不命中
+#   - host: '*.example.com'
+#     target: 'http://127.0.0.1:4000'
+#   # 路径前缀替换：/v1/user -> /api/user；不配 rewrite 则剥掉 path 前缀
+#   - host: 'rw.example.com'
+#     path: '/v1'
+#     rewrite: '/api'
+#     target: 'http://127.0.0.1:8080'
+#   # 本地目录当 web 根，与 target 二选一
+#   - host: 'static.example.com'
+#     root: '/var/www/site'
 
 # HTTPS 按域名加载证书（类似 nginx 的 ssl_certificate）
 # cert/key 既可以写文件路径，也可以直接粘贴 PEM 内容

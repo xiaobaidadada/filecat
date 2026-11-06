@@ -2,6 +2,7 @@ import {DataUtil} from "../data/DataUtil";
 import {MD_EDITOR_SETTING_FIELDS} from "../../../common/md_editor_setting.check";
 import path from "path";
 import fs from "fs";
+import {isAbsolutePath as is_absolute_path} from "../../../common/path_util";
 import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
 import {
     CONTROL_ENV_DEFAULT,
@@ -69,6 +70,16 @@ const Mustache = require('mustache');
 const cron = require("node-cron");
 
 const customer_router_key = data_common_key.customer_router_key;
+
+/**
+ * 通配域名匹配：规则形如 *.example.com，只匹配一级子域。
+ * a.example.com 命中；example.com 和 a.b.example.com 都不命中，避免匹配范围超出预期。
+ */
+const host_matches_wildcard = (host: string, pattern: string): boolean => {
+    const suffix = pattern.slice(1);  // ".example.com"
+    if (!host.endsWith(suffix)) return false;
+    return host.slice(0, host.length - suffix.length).indexOf(".") === -1;
+};
 
 // 全局默认主题：服务端渲染 index.html 时写进 <head>，个人主题由前端 setTheme() 覆盖
 const DEFAULT_THEME: string = "google";
@@ -568,15 +579,32 @@ export class SettingService {
             result.proxy_rules = raw.proxy_rules.map((it: any, i: number) => {
                 if (!it || typeof it !== "object") throw `proxy_rules[${i}] 必须是对象`;
                 if (!it.host) throw `proxy_rules[${i}].host 不能为空`;
-                if (!it.target) throw `proxy_rules[${i}].target 不能为空`;
+                // target 和 root 二选一：一个转发到目标服务，一个直接以本地目录为 web 根
+                const has_target = it.target !== undefined && it.target !== null && `${it.target}`.trim() !== "";
+                const has_root = it.root !== undefined && it.root !== null && `${it.root}`.trim() !== "";
+                if (has_target && has_root) throw `proxy_rules[${i}] 的 target 和 root 只能填一个`;
+                if (!has_target && !has_root) throw `proxy_rules[${i}] 的 target 和 root 必须填一个`;
+                let root: string = undefined;
+                if (has_root) {
+                    root = `${it.root}`.trim();
+                    if (!is_absolute_path(root)) throw `proxy_rules[${i}].root 必须是绝对路径`;
+                }
                 // 目标地址必须是 http/https，避免配置成别的协议导致代理层异常
-                if (!/^https?:\/\//i.test(`${it.target}`)) throw `proxy_rules[${i}].target 必须是 http(s):// 开头`;
+                if (has_target && !/^https?:\/\//i.test(`${it.target}`)) throw `proxy_rules[${i}].target 必须是 http(s):// 开头`;
                 let path = it.path === undefined || it.path === null ? undefined : `${it.path}`;
                 if (path && !path.startsWith("/")) throw `proxy_rules[${i}].path 必须以 / 开头`;
+                let rewrite = it.rewrite === undefined || it.rewrite === null ? undefined : `${it.rewrite}`;
+                if (rewrite !== undefined && rewrite !== "") {
+                    if (!rewrite.startsWith("/")) throw `proxy_rules[${i}].rewrite 必须以 / 开头`;
+                    // 没有 path 前缀就无从替换
+                    if (!path) throw `proxy_rules[${i}] 配置了 rewrite 就必须同时配置 path`;
+                }
                 return {
                     host: `${it.host}`.toLowerCase(),
                     path,
-                    target: `${it.target}`.replace(/\/+$/, ""),
+                    target: has_target ? `${it.target}`.trim().replace(/\/+$/, "") : undefined,
+                    root,
+                    rewrite: rewrite === "" ? undefined : rewrite,
                     websocket: it.websocket === undefined ? true : !!it.websocket,
                 };
             });
@@ -657,7 +685,8 @@ export class SettingService {
 
     /**
      * 按 Host 头匹配域名转发规则。
-     * 匹配顺序：先精确比 host（大小写不敏感），命中后再比 path 前缀；
+     * 匹配顺序：先精确比 host（大小写不敏感），没有精确命中再试 *.example.com 通配；
+     * 通配只匹配一级子域（a.example.com 命中，a.b.example.com 和 example.com 不命中）。
      * 同一域名有多条规则时，path 更具体（更长）的优先，与 nginx 的 location 前缀匹配一致。
      * 没命中返回 null（继续走 filecat 自己的路由）。
      */
@@ -669,14 +698,33 @@ export class SettingService {
         if (!host) return null;
         const req_path = (url ?? "/").split("?")[0];
 
+        // 先找精确 host，再找通配 host：精确优先，避免通配规则抢走精确配置
         let hit: control_env_proxy_rule = null;
+        let hit_wildcard = false;
         for (const rule of rules) {
-            if (rule.host !== host) continue;
+            const is_wildcard = rule.host.startsWith("*.");
+            if (is_wildcard) {
+                if (!host_matches_wildcard(host, rule.host)) continue;
+            } else if (rule.host !== host) {
+                continue;
+            }
             if (rule.path) {
                 if (!(req_path === rule.path || req_path.startsWith(rule.path + "/"))) continue;
             }
-            // 同域名多条命中时取 path 最长的那条
-            if (!hit || (rule.path ?? "").length > (hit.path ?? "").length) {
+            if (!hit) {
+                hit = rule;
+                hit_wildcard = is_wildcard;
+                continue;
+            }
+            // 精确规则永远优先于通配规则
+            if (hit_wildcard && !is_wildcard) {
+                hit = rule;
+                hit_wildcard = false;
+                continue;
+            }
+            if (hit_wildcard !== is_wildcard) continue;
+            // 同类型下取 path 最长的那条
+            if ((rule.path ?? "").length > (hit.path ?? "").length) {
                 hit = rule;
             }
         }
