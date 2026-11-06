@@ -164,7 +164,7 @@ export function Sys() {
                             set_prompt_card({
                                 open: true, title: t("信息"), context_div: (
                                     <div>
-                                        <div>{t(`pxy_tip`)}</div>
+                                        <div>{t(`sys_env_setting_tip`)}</div>
                                     </div>
                                 )
                             })
