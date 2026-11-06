@@ -128,13 +128,6 @@ export function mount_enable_options(t: (s: string) => string) {
     ];
 }
 
-/** 挂载类型候选项（后端 driver/list 会覆盖，这里仅作兜底） */
-export const DRIVER_OPTIONS = [
-    {title: "WebDAV", value: "webdav"},
-    {title: "SSH / SFTP", value: "sftp"},
-    {title: "S3 兼容对象存储", value: "s3"},
-    {title: "百度网盘", value: "baidu"},
-];
 
 /** 时间戳 → yyyy-MM-dd HH:mm */
 export function fmt_time(ts?: number): string {

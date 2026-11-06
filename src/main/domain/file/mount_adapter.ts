@@ -93,8 +93,8 @@ export function mounts_under(abs_dir: string): Map<string, {
 export function current_mount_info(abs_path: string): {
     /** 挂载记录 id，前端据此打开编辑/取消挂载 */
     id: string;
-    /** 挂载备注；为空时用本地目录名 */
-    name: string;
+    /** 挂载备注 */
+    note: string;
     driver: string;
     color: string;
     mount_path: string;
@@ -127,7 +127,7 @@ export function current_mount_info(abs_path: string): {
     }
     return {
         id: m.id,
-        name: m.note || base_name(m.mount_path),
+        note: m.note ,
         driver: m.driver,
         color: m.color || "#4a9eff",
         mount_path: m.mount_path,
@@ -135,7 +135,7 @@ export function current_mount_info(abs_path: string): {
         url_path: "",
         readonly: Boolean(m.readonly),
         credential_note: cred?.note || "",
-        account_note: acc ? (acc.note || acc.account_name || acc.nickname || "") : "",
+        account_note: acc?.note ||"",
         forward_to_remote,
         forward_client_num_id,
     };

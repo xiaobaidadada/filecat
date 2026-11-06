@@ -65,7 +65,7 @@ export default function MountEditor(props: Props) {
                         .find((v: any) => v.id === props.mount_id);
                     if (item) {
                         set_row({
-                            driver: item.driver ?? "webdav",
+                            driver: item.driver ,
                             credential_id: item.credential_id ?? "",
                             account_id: item.account_id ?? "",
                             root_dir: item.root_dir ?? "",

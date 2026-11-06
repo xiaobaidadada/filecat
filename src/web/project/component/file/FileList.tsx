@@ -47,7 +47,6 @@ import {cloneDeep, throttle} from "lodash";
 import {formatDate} from "../../../../common/StringUtil";
 import {webPathJoin} from "../../../../common/ListUtil";
 import {ActionButton} from "../../../meta/component/Button";
-import {DRIVER_OPTIONS} from "../setting/mount/mount_common";
 
 
 const WorkFlow = React.lazy(() => import("./component/workflow/WorkFlow"));
@@ -600,7 +599,19 @@ export default function FileList() {
             {mount_info && (
                 <div className="mount-tip-bar" style={{borderLeftColor: mount_info.color}}>
                     <span className="material-icons" style={{color: mount_info.color}}>cloud</span>
-                    <span>{[mount_info.credential_note, mount_info.account_note || (DRIVER_OPTIONS.find(d => d.value === mount_info.driver)?.title ?? mount_info.driver), mount_info.name].filter(Boolean).join(" - ")}</span>
+                    <span>{[
+                        {
+                            v:  mount_info.driver,
+                            t:t("驱动")
+                        },
+                        {
+                            v:mount_info.credential_note,
+                            t:t("凭据")
+                        },
+                        {
+                            v:mount_info.account_note,
+                            t:t("账号")
+                        }].filter(v=>Boolean(v.v)).map(v=>`${v.v}(${v.t})`).join(" - ")}</span>
                     {mount_info.readonly && <span className="mount-readonly-tag">{t("只读")}</span>}
                 </div>
             )}
