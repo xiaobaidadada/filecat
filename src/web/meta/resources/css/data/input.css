@@ -362,3 +362,40 @@
 .form_row .input_radio_row {
     margin-bottom: 0;
 }
+
+/* 带标题的表单分组，同一卡片内有多组单选框时用来区分 */
+.form_group {
+    margin-top: 1em;
+}
+
+.form_group:first-child {
+    margin-top: 0;
+}
+
+.form_group .input_radio_row {
+    margin-bottom: 0;
+}
+
+/* 分组内的单选框行容器，与下方控件之间留间距 */
+.form_group > div {
+    margin-bottom: 0.5em;
+}
+
+.form_group > div:last-child {
+    margin-bottom: 0;
+}
+
+/* 复选框单独成行时，与上方留出间距 */
+.form_group > .input_radio_row {
+    margin-top: 0.6em;
+}
+
+/* 分组标题 */
+.form_label {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-bottom: 0.4em;
+    color: var(--textSecondary);
+    font-size: 0.9em;
+}

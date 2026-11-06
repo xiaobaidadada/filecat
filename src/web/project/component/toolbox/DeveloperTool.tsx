@@ -331,13 +331,13 @@ export function DeveloperTool() {
         <Column widthPer={50} maxWidth={'30rem'}>
           <RadixCard/>
         </Column>
+        <Column widthPer={50} maxWidth={'30rem'}>
+          <RandomCard/>
+        </Column>
       </Row>
       <Row>
         <Column widthPer={50} maxWidth={'30rem'}>
           <ColorCard/>
-        </Column>
-        <Column widthPer={50} maxWidth={'30rem'}>
-          <RandomCard/>
         </Column>
       </Row>
     </Dashboard>

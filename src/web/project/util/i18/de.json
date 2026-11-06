@@ -2,7 +2,6 @@
   "title": "FileCat",
   "修改密码": "Passwort ändern",
   "自定义auth": "Benutzerdefiniertes Auth",
-  "tk_exp": "Token-Ablaufzeit",
   "目标": "Ziel",
   "目标列表": "Ziele",
   "被同步的源目录": "Zu synchronisierendes Quellverzeichnis",
@@ -1328,5 +1327,7 @@
   "登录会话": "Anmeldesitzung",
   "独立token：每次登录都签发新的token，同一账号可以在多个设备同时登录，互不影响": "Eigenständiges Token: Bei jeder Anmeldung wird ein neues Token ausgestellt. Dasselbe Konto kann auf mehreren Geräten gleichzeitig angemeldet sein.",
   "复用token：该账号已有未过期的token时直接复用它，不会签发新的": "Token wiederverwenden: Hat das Konto bereits ein nicht abgelaufenes Token, wird dieses direkt zurückgegeben, statt ein neues auszustellen.",
-  "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Einzelne Sitzung: Bei jeder Anmeldung wird ein neues Token ausgestellt und alle bisherigen Tokens des Kontos werden ungültig."
+  "单会话：每次登录签发新的token，并让该账号此前的所有token立即失效": "Einzelne Sitzung: Bei jeder Anmeldung wird ein neues Token ausgestellt und alle bisherigen Tokens des Kontos werden ungültig.",
+  "会话token设置": "Sitzungs-Token-Einstellungen",
+  "过期策略": "Ablaufrichtlinie"
 }

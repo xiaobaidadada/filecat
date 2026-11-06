@@ -260,46 +260,56 @@ export function Sys() {
                     {/*<Card title={t("语言")} rightBottomCom={<ButtonText text={t('保存')} clickFun={switchLanguage}/>}>*/}
 
                     {/*</Card>*/}
-                    <Card title={t("tk_exp")} rightBottomCom={<Rows isFlex={true} columns={[
+                    <Card self_title={<span className={" div-row "}><h2>{t("会话token设置")}</h2>
+                        <ActionButton icon={"info"} title={t("登录会话")}
+                                      onClick={() => tip(session_mode_tip)}/></span>}
+                          rightBottomCom={<Rows isFlex={true} columns={[
                         <ButtonText text={t('清空token')} clickFun={tokenClearAll}/>,
                         <ButtonText text={t('保存')} clickFun={tokenUpdate}/>]}/>}>
-                        <Rows isFlex={true} columns={[
-                            <InputRadio value={1} context={t("关闭")} selected={tokenMode === TokenTimeMode.close}
-                                        onchange={() => {
-                                            setTokenMode(TokenTimeMode.close)
-                                        }}/>,
-                            <InputRadio value={1} context={t("指定时间")} selected={tokenMode === TokenTimeMode.length}
-                                        onchange={() => {
-                                            setTokenMode(TokenTimeMode.length)
-                                        }}/>,
-                            <InputRadio value={1} context={t("永不过期")} selected={tokenMode === TokenTimeMode.forver}
-                                        onchange={() => {
-                                            setTokenMode(TokenTimeMode.forver)
-                                        }}/>
-                        ]}/>
-                        {tokenMode === TokenTimeMode.length &&
-                            <InputText placeholder={t('秒')} value={tokenSeconds} handleInputChange={(value) => {
-                                setTokenSeconds(value)
-                            }}/>}
-                        <div className="form_row">
+                        <div className="form_group">
+                            <div className="form_label">{t("过期策略")}</div>
+                            <Rows isFlex={true} columns={[
+                                <InputRadio name={"token_time_mode"} value={1} context={t("关闭")}
+                                            selected={tokenMode === TokenTimeMode.close}
+                                            onchange={() => {
+                                                setTokenMode(TokenTimeMode.close)
+                                            }}/>,
+                                <InputRadio name={"token_time_mode"} value={1} context={t("指定时间")}
+                                            selected={tokenMode === TokenTimeMode.length}
+                                            onchange={() => {
+                                                setTokenMode(TokenTimeMode.length)
+                                            }}/>,
+                                <InputRadio name={"token_time_mode"} value={1} context={t("永不过期")}
+                                            selected={tokenMode === TokenTimeMode.forver}
+                                            onchange={() => {
+                                                setTokenMode(TokenTimeMode.forver)
+                                            }}/>
+                            ]}/>
+                            {tokenMode === TokenTimeMode.length &&
+                                <InputText placeholder={t('秒')} value={tokenSeconds}
+                                           handleInputChange={(value) => {
+                                               setTokenSeconds(value)
+                                           }}/>}
                             <InputCheckbox context={t("持久化")} selected={tokenPersist}
                                            onchange={() => setTokenPersist(!tokenPersist)}/>
                         </div>
-                        <div className="form_row">
+                        <div className="form_group">
+                            <div className="form_label">{t("登录会话")}</div>
                             <Rows isFlex={true} columns={[
-                                <InputRadio value={TokenSessionMode.independent} context={t("独立token")}
+                                <InputRadio name={"token_session_mode"} value={TokenSessionMode.independent}
+                                            context={t("独立token")}
                                             selected={tokenSessionMode === TokenSessionMode.independent}
                                             onchange={() => setTokenSessionMode(TokenSessionMode.independent)}/>,
-                                <InputRadio value={TokenSessionMode.reuse} context={t("复用token")}
+                                <InputRadio name={"token_session_mode"} value={TokenSessionMode.reuse}
+                                            context={t("复用token")}
                                             selected={tokenSessionMode === TokenSessionMode.reuse}
                                             onchange={() => setTokenSessionMode(TokenSessionMode.reuse)}/>,
-                                <InputRadio value={TokenSessionMode.single} context={t("单会话")}
+                                <InputRadio name={"token_session_mode"} value={TokenSessionMode.single}
+                                            context={t("单会话")}
                                             selected={tokenSessionMode === TokenSessionMode.single}
-                                            onchange={() => setTokenSessionMode(TokenSessionMode.single)}/>,
+                                            onchange={() => setTokenSessionMode(TokenSessionMode.single)}/>
                             ]}/>
-                            <ActionButton icon={"info"} title={t("登录会话")} onClick={() => tip(session_mode_tip)}/>
                         </div>
-
                     </Card>
                 </Column>
             </Row>
