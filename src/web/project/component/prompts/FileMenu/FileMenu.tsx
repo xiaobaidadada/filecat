@@ -47,6 +47,31 @@ export function FileMenu() {
     const navigate = useNavigate();
     const {check_user_auth} = use_auth_check();
 
+    // const [items, setItems,] = useState(show_items);
+    // const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
+    // const [studio, set_studio] = useAtom($stroe.studio);
+    const {click_file} = user_click_file();
+    const file_open = use_file_open();
+    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
+    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
+    const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
+    const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_realtime_show);
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    const {initUserInfo} = useContext(GlobalContext);
+    const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
+    const click_folder = use_click_folder()
+    const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
+    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
+    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
+    const [, set_file_list_refresh] = useAtom($stroe.file_list_refresh);
+    /** 当前目录所在的挂载，进入目录时已由文件列表查好；右键目录必然落在同一挂载内 */
+    const [current_mount] = useAtom($stroe.current_mount);
+    const get_bas_path = use_get_now_abs_path()
+
+
+    /** 右键目录本身就是挂载点时，目录列表项里带的挂载信息 */
+    const hit_mount_item = (nowFileList?.folders ?? []).find(v => v.mount && v.name === showPrompt.data.filename);
+
     const must_needs = [
         {
             // 所有文件和目录都有的选项
@@ -57,14 +82,24 @@ export function FileMenu() {
                 ]
 
         },
-        {
-            r: t("详细信息"), v: common_menu_type.file_base_info,
-            items: []
-        },
-        {r: t("重命名"), v: common_menu_type.file_rename},
-        {r: t("下载"), v: common_menu_type.file_download},
-        {r: t("删除"), v: common_menu_type.file_delete}
     ]
+
+    if (!hit_mount_item) {
+        const local_button_list = [
+            {
+                r: t("详细信息"), v: common_menu_type.file_base_info,
+                items: []
+            },
+            {
+                r: t("统计信息"),
+                v: common_menu_type.folder_size_info
+            },
+            {r: t("重命名"), v: common_menu_type.file_rename},
+            {r: t("删除"), v: common_menu_type.file_delete},
+            {r: t("下载"), v: common_menu_type.file_download},
+        ]
+        must_needs.push(...(local_button_list as any))
+    }
 
     //权限判断
     if (check_user_auth(UserAuth.share_file)) {
@@ -161,26 +196,6 @@ export function FileMenu() {
             }
         }
     }
-    // const [items, setItems,] = useState(show_items);
-    // const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting)
-    // const [studio, set_studio] = useAtom($stroe.studio);
-    const {click_file} = user_click_file();
-    const file_open = use_file_open();
-    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
-    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
-    const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
-    const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_realtime_show);
-    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
-    const {initUserInfo} = useContext(GlobalContext);
-    const [folder_info_list_data, set_folder_info_list_data] = useAtom($stroe.folder_info_list_data);
-    const click_folder = use_click_folder()
-    const [, set_blank_search_mode_for_temp] = useAtom($stroe.blank_search_mode_for_temp);
-    const [selectedFile, setSelectedFile] = useAtom($stroe.selectedFileList);
-    const [nowFileList, setNowFileList] = useAtom($stroe.nowFileList);
-    const [, set_file_list_refresh] = useAtom($stroe.file_list_refresh);
-    /** 当前目录所在的挂载，进入目录时已由文件列表查好；右键目录必然落在同一挂载内 */
-    const [current_mount] = useAtom($stroe.current_mount);
-    const get_bas_path = use_get_now_abs_path()
 
     /**
      * 比较两个路径是否指向同一目录。
@@ -204,18 +219,12 @@ export function FileMenu() {
         return get_bas_path(showPrompt.data.filename)
     }
 
-    /** 右键目录本身就是挂载点时，目录列表项里带的挂载信息 */
-    const hit_mount_item = (nowFileList?.folders ?? []).find(v => v.mount && v.name === showPrompt.data.filename);
 
     const items_folder = [
         {r: t("o_stdo"), v: common_menu_type.sutdio},
         {
             r: t("srchbln"),
             v: common_menu_type.blank_search_mode
-        },
-        {
-            r: t("统计信息"),
-            v: common_menu_type.folder_size_info
         },
         ...must_needs,
 
@@ -266,8 +275,10 @@ export function FileMenu() {
             case common_menu_type.open_text: {
                 const name = showPrompt.data.filename;
                 file_open({name, mode: "text"});
-                click_file({name, model: "text", size: showPrompt.data.size, opt_shell: true,
-                    close: () => file_open(null)});
+                click_file({
+                    name, model: "text", size: showPrompt.data.size, opt_shell: true,
+                    close: () => file_open(null)
+                });
             }
                 break;
             case common_menu_type.logviwer_text:
@@ -283,8 +294,10 @@ export function FileMenu() {
                 // case common_menu_type.logviwer_ios_8859_1:
             {
                 file_open({name: showPrompt.data.filename, mode: "log", log_enc: v, log_wrap: "wrap"});
-                set_file_log({show: true, fileName: showPrompt.data.filename, encoding: v, wrap: 'wrap',
-                    close: () => file_open(null)})
+                set_file_log({
+                    show: true, fileName: showPrompt.data.filename, encoding: v, wrap: 'wrap',
+                    close: () => file_open(null)
+                })
             }
                 break;
             case common_menu_type.logviwer_wrap:
@@ -665,24 +678,24 @@ export function FileMenu() {
             close();
         }}>
             <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                      items={[
-                                                                          {
-                                                                              r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'download'}
-                                                                                        not_use_icon_style={true}/>
-                                                                                  <span>{"download"}</span>
-                                                                              </div>,
-                                                                              v: common_menu_type.share_file_download
-                                                                          },
-                                                                          {
-                                                                              r: <div className={"common-tag-center"}>
-                                                                                  <Icon icon={'link'}
-                                                                                        not_use_icon_style={true}/>
-                                                                                  <span>{"copy curl"}</span>
-                                                                              </div>,
-                                                                              v: common_menu_type.share_file_copy_url
-                                                                          }
-                                                                      ]} click={right_click}/>}/>
+                                                                    items={[
+                                                                        {
+                                                                            r: <div className={"common-tag-center"}>
+                                                                                <Icon icon={'download'}
+                                                                                      not_use_icon_style={true}/>
+                                                                                <span>{"download"}</span>
+                                                                            </div>,
+                                                                            v: common_menu_type.share_file_download
+                                                                        },
+                                                                        {
+                                                                            r: <div className={"common-tag-center"}>
+                                                                                <Icon icon={'link'}
+                                                                                      not_use_icon_style={true}/>
+                                                                                <span>{"copy curl"}</span>
+                                                                            </div>,
+                                                                            v: common_menu_type.share_file_copy_url
+                                                                        }
+                                                                    ]} click={right_click}/>}/>
         </div>
         return (div);
     }
@@ -723,29 +736,32 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_images}
-                                                                          click={async (v, item) => {
-                                                                              // 图片专属项：编辑器打开 / 切换预览开关
-                                                                              if (v == common_menu_type.image_open) {
-                                                                                  file_open({name: showPrompt.data.filename, mode: "image_edit"});
-                                                                                  set_image_editor({
-                                                                                      path: showPrompt.data.path,
-                                                                                      name: showPrompt.data.filename,
-                                                                                      close: () => file_open(null),
-                                                                                  });
-                                                                                  close();
-                                                                              } else if (v == common_menu_type.image_preview) {
-                                                                                  await userHttp.post(Http_controller_router.user_save_private_attr, {
-                                                                                      not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
-                                                                                  });
-                                                                                  await initUserInfo();
-                                                                                  navigate(getRouterPath());
-                                                                                  close();
-                                                                              } else {
-                                                                                  // 其余通用项（复制名字/详细信息/重命名/下载/删除/分享等）交回通用处理，它内部会关闭菜单
-                                                                                  right_click(v, item);
-                                                                              }
-                                                                          }}/>}/>
+                                                                        items={items_images}
+                                                                        click={async (v, item) => {
+                                                                            // 图片专属项：编辑器打开 / 切换预览开关
+                                                                            if (v == common_menu_type.image_open) {
+                                                                                file_open({
+                                                                                    name: showPrompt.data.filename,
+                                                                                    mode: "image_edit"
+                                                                                });
+                                                                                set_image_editor({
+                                                                                    path: showPrompt.data.path,
+                                                                                    name: showPrompt.data.filename,
+                                                                                    close: () => file_open(null),
+                                                                                });
+                                                                                close();
+                                                                            } else if (v == common_menu_type.image_preview) {
+                                                                                await userHttp.post(Http_controller_router.user_save_private_attr, {
+                                                                                    not_pre_show_image: !user_base_info?.user_data?.not_pre_show_image
+                                                                                });
+                                                                                await initUserInfo();
+                                                                                navigate(getRouterPath());
+                                                                                close();
+                                                                            } else {
+                                                                                // 其余通用项（复制名字/详细信息/重命名/下载/删除/分享等）交回通用处理，它内部会关闭菜单
+                                                                                right_click(v, item);
+                                                                            }
+                                                                        }}/>}/>
             </div>
             break;
         case FileTypeEnum.folder:
@@ -753,7 +769,7 @@ export function FileMenu() {
                 close();
             }}>
                 <OverlayTransparent click={close} children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                          items={items_folder} click={right_click}/>}/>
+                                                                        items={items_folder} click={right_click}/>}/>
             </div>
             break;
         case FileTypeEnum.studio_file:
@@ -765,9 +781,9 @@ export function FileMenu() {
             }}>
                 <OverlayTransparent click={close}
                                     children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
-                                                            pre_value={showPrompt.data.item_pre_value}
-                                                            items={showPrompt.data.items}
-                                                            click={showPrompt.data.textClick}/>}
+                                                          pre_value={showPrompt.data.item_pre_value}
+                                                          items={showPrompt.data.items}
+                                                          click={showPrompt.data.textClick}/>}
                 />
             </div>
             break;
@@ -778,7 +794,7 @@ export function FileMenu() {
                 <div onWheel={close}>
                     <OverlayTransparent click={close}
                                         children={<MenuSelect x={showPrompt.data.x} y={showPrompt.data.y}
-                                                                items={finalItems} click={right_click}/>}
+                                                              items={finalItems} click={right_click}/>}
                     />
                 </div>
             );
