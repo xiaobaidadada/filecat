@@ -13,7 +13,6 @@ import {Cache} from "../../other/cache";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {ServerEvent} from "../../other/config";
 import {
-    AutoUpgradeSettingReq,
     dir_upload_max_num_item,
     FileQuickCmdItem,
     FileSettingItem,
@@ -63,7 +62,6 @@ import axios from "axios";
 import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
 import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
 import {is_private_ipv4_literal} from "../../../common/node/net";
-import {withLock} from "../../../common/lock";
 
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -711,133 +709,12 @@ export class SettingService {
         return result;
     }
 
-    // ============ 自动升级设置 ============
-
-    public get_auto_upgrade_setting(): AutoUpgradeSettingReq {
-        const data = DataUtil.get(data_common_key.auto_upgrade_setting);
-        if (!data) {
-            const def = new AutoUpgradeSettingReq();
-            return def;
-        }
-        return data as AutoUpgradeSettingReq;
-    }
-
     /**
-     * 获取版本检测地址（npm registry），统一入口：
-     * user.controller.ts 获取最新版本、自动升级检测、npm 升级镜像，都走这个地址
+     * 获取版本检测地址（npm registry），首页顶栏的版本检测走这里
      */
     public get_version_check_url(): string {
-        const setting = this.get_auto_upgrade_setting();
-        return setting.version_check_url || 'https://registry.npmjs.org';
-    }
-
-    public set_auto_upgrade_setting(req: AutoUpgradeSettingReq) {
-        if (!req.version_check_url) {
-            req.version_check_url = 'https://registry.npmjs.org';
-        }
-        try {
-            new URL(req.version_check_url);
-        } catch {
-            throw '版本检测地址格式不正确';
-        }
-        if (req.open) {
-            if (!req.check_interval_seconds || req.check_interval_seconds < 10) {
-                throw '检测间隔不能小于10秒';
-            }
-        }
-        DataUtil.set(data_common_key.auto_upgrade_setting, req);
-        // 重新初始化定时器
-        this.init_auto_upgrade();
-    }
-
-    auto_upgrade_timer: NodeJS.Timeout | null = null;
-
-    // 使用已有的 withLock 来防止并发执行
-    private _auto_upgrade_do = withLock(async () => {
-        const setting = this.get_auto_upgrade_setting();
-        if (!setting.open) return;
-
-        const runEnv = process.env.run_env as string;
-        // console.log(`[AutoUpgrade] 开始检测更新，当前版本: ${process.env.version}，安装方式: ${runEnv}`);
-
-        try {
-            // 获取最新版本号（统一使用 version_check_url）
-            const registryUrl = this.get_version_check_url();
-            const body = await HttpRequest.get(`${registryUrl}/filecat`, {}, 15000);
-            if (!body || typeof body !== 'object') {
-                console.log('[AutoUpgrade] 获取版本信息失败');
-                return;
-            }
-            const latestVersion = body['dist-tags']?.latest;
-            if (!latestVersion) {
-                console.log('[AutoUpgrade] 未获取到最新版本号');
-                return;
-            }
-            if (latestVersion === process.env.version) {
-                // console.log(`[AutoUpgrade] 已经是最新版本: ${process.env.version}`);
-                return;
-            }
-            console.log(`[AutoUpgrade] 发现新版本: ${latestVersion}，当前: ${process.env.version}`);
-
-            // 通过 IPC 通知父进程升级
-            if (runEnv === 'exe') {
-                const downloadUrl = setting.exe_download_url
-                    || `https://github.com/xiaobaidadada/filecat/releases/download/v${latestVersion}/filecat-${process.platform}-${process.arch}.tar.gz`;
-                console.log(`[AutoUpgrade] 开始下载: ${downloadUrl}`);
-                // 先下载到临时目录
-                const tempDir = path.join(Env.work_dir, data_dir_tem_name.filecat_upgrade_dir);
-                await FileUtil.mkdirSync(tempDir, {recursive: true});
-                const localPath = await ChildProcessUtil.down_load_file(downloadUrl, tempDir, (progress) => {
-                    if (progress % 20 === 0 || progress === 100) {
-                        console.log(`[AutoUpgrade] 下载进度: ${progress}%`);
-                    }
-                });
-                console.log(`[AutoUpgrade] 下载完成: ${localPath}`);
-                await ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade, {
-                    run_env: 'exe',
-                    file_path: localPath,
-                });
-            } else {
-                // npm 模式：registry 也用 version_check_url
-                await ChildProcessUtil.send_father(filecat_cmd.filecat_upgrade, {
-                    run_env: 'npm',
-                    registry: registryUrl,
-                    paths: process.env.PATH,
-                });
-            }
-        } catch (e) {
-            console.error('[AutoUpgrade] 检测或升级出错:', e?.message || e);
-        }
-    }, -1, false); // 无超时
-
-    public init_auto_upgrade() {
-        // 清理旧的定时器
-        if (this.auto_upgrade_timer) {
-            clearInterval(this.auto_upgrade_timer);
-            this.auto_upgrade_timer = null;
-        }
-
-        const setting = this.get_auto_upgrade_setting();
-        if (!setting.open) return;
-
-        const intervalMs = (setting.check_interval_seconds || 180) * 1000;
-        console.log(`[AutoUpgrade] 自动升级已启用，检测间隔: ${setting.check_interval_seconds} 秒`);
-        this.auto_upgrade_timer = setInterval(() => {
-            this._auto_upgrade_do().catch(e => {
-                console.error('[AutoUpgrade] 定时检测异常:', e?.message || e);
-            });
-        }, intervalMs);
-    }
-
-    /** 立即检查并升级（幂等：调用后仍复用已有的 timer，不会创建多个） */
-    public async upgrade_now(): Promise<void> {
-        const setting = this.get_auto_upgrade_setting();
-        if (!setting.open) {
-            throw '自动升级未开启';
-        }
-        console.log('[AutoUpgrade] 手动触发立即升级检查...');
-        // _auto_upgrade_do 本身已经有 withLock 防止并发
-        await this._auto_upgrade_do();
+        const data = DataUtil.get(data_common_key.auto_upgrade_setting) as { version_check_url?: string } | null;
+        return data?.version_check_url || 'https://registry.npmjs.org';
     }
 
     public get_recycle_dir_map_list(): string[][] {
@@ -922,8 +799,6 @@ export class SettingService {
 
         // 处理分享
         this.init_share()
-        // 初始化自动升级
-        this.init_auto_upgrade()
     }
 
     // update_files_setting: FileSettingItem[];

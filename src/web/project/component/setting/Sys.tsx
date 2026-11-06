@@ -10,7 +10,6 @@ import {useAtom} from 'jotai';
 import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
 import {
-    AutoUpgradeSettingReq,
     sys_setting_type,
     TokenSettingReq,
     TokenTimeMode
@@ -23,7 +22,6 @@ import {Http_controller_router} from "../../../../common/req/http_controller_rou
 import {CONTROL_ENV_STR_DEFAULT} from "../../../../common/req/common.pojo";
 import {getShortTime} from "../../util/common_util";
 import {GlobalContext} from "../../GlobalProvider";
-import {AutoUpgrade} from "./AutoUpgrade";
 import BrowserProxyCard from "./BrowserProxyCard";
 
 
@@ -223,7 +221,6 @@ export function Sys() {
                         />
 
                     </Card>
-                    <AutoUpgrade/>
                     <BrowserProxyCard/>
                 </Column>
 

@@ -5,7 +5,7 @@ import {Cache} from "../../other/cache";
 import {DataUtil} from "../data/DataUtil";
 import {settingService} from "./setting.service";
 import {mdThemeService} from "./md_theme.service";
-import {sys_setting_type, TokenSettingReq, TokenTimeMode, AutoUpgradeSettingReq} from "../../../common/req/setting.req";
+import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {router_pre_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
@@ -508,28 +508,6 @@ export class SettingController {
     workflow_setting_save(@Body() req: any, @Req() ctx) {
         userService.have_user_auth(ctx.headers.authorization, UserAuth.workflow_job);
         settingService.save_workflow_setting(req);
-        return Sucess("1");
-    }
-
-    // ============ 自动升级 API ============
-
-    @Get("/auto_upgrade_setting")
-    get_auto_upgrade_setting(@Req() ctx) {
-        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
-        return Sucess(settingService.get_auto_upgrade_setting());
-    }
-
-    @Post("/auto_upgrade_setting/save")
-    auto_upgrade_setting_save(@Body() req: AutoUpgradeSettingReq, @Req() ctx) {
-        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
-        settingService.set_auto_upgrade_setting(req);
-        return Sucess("1");
-    }
-
-    @Post("/auto_upgrade_setting/upgrade_now")
-    async upgrade_now(@Req() ctx) {
-        userService.have_user_auth(ctx.headers.authorization, UserAuth.sys_setting_page);
-        settingService.upgrade_now().catch(console.error);
         return Sucess("1");
     }
 
