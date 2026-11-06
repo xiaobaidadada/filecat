@@ -159,7 +159,11 @@ export class FileService  {
         // 例：param_path=filecat/挂测/mnt/a/b/，inner_path=/a/b/ → url_path=filecat/挂测/mnt
         const inner = resolve_local_path(sysPath).inner_path.replace(/^\/+|\/+$/g, "");
         const full = (param_path ?? "").replace(/^\/+|\/+$/g, "");
-        info.url_path = inner ? full.slice(0, full.length - inner.length).replace(/\/+$/, "") : full;
+        // param_path 是 URL 编码的，inner_path 是解码的，两者字符长度不可直接相减，
+        // 所以按「路径段」剥掉挂载内的层级，剩下的才是挂载点在 URL 空间里的前缀
+        const inner_seg_count = inner ? inner.split("/").filter(Boolean).length : 0;
+        const full_segs = full.split("/").filter(Boolean);
+        info.url_path = full_segs.slice(0, Math.max(0, full_segs.length - inner_seg_count)).join("/");
         return Sucess(info);
     }
 
