@@ -48,7 +48,7 @@ export function QrCode() {
   const download = () => {
     const canvas = canvas_ref.current
     if (!canvas || text === '') {
-      NotyFail(t('没有可下载的二维码'))
+      NotyFail(t('qr_none'))
       return
     }
     const url = canvas.toDataURL('image/png')
@@ -68,7 +68,7 @@ export function QrCode() {
               style={{width: '100%', height: '200px'}}
               spellCheck={false}
               handleInputChange={v => set_text(v)}
-              placeholder={t('输入要编码的文本或网址')}
+              placeholder={t('qr_in_ph')}
             />
             <div className={'div-row'} style={{alignItems: 'center', gap: '0.5em', marginTop: '0.5em', flexWrap: 'wrap'}}>
               <span className={'toolbox-label'}>{t('尺寸')}</span>
@@ -89,7 +89,7 @@ export function QrCode() {
             <div className={'toolbox-qr-preview'}>
               {/* canvas 必须常驻，条件渲染会导致 effect 执行时 ref 为 null */}
               <canvas ref={canvas_ref} style={{display: text === '' ? 'none' : 'block'}}/>
-              {text === '' && <span className={'toolbox-empty'}>{t('输入内容后这里会显示二维码')}</span>}
+              {text === '' && <span className={'toolbox-empty'}>{t('qr_empty')}</span>}
             </div>
           </Card>
         </Column>

@@ -1,8 +1,10 @@
 /* 工具箱通用样式 */
 
 /* Ace 编辑器需要显式高度，否则容器塌陷成 0 */
+/* Ace 编辑器占满可视区高度。上下留出工具栏与卡片间距，超出时页面自身滚动 */
 .toolbox-ace {
-    height: 24em;
+    height: calc(100vh - 24em);
+    min-height: 24em;
     border-radius: 6px;
     overflow: hidden;
     border: 1px solid var(--borderPrimary);
@@ -278,4 +280,46 @@ label.toolbox-check > input[type="checkbox"] {
 .toolbox-empty {
     color: var(--textSecondary);
     font-size: 0.875em;
+}
+
+/* 文本对比：.ace-diff 用 height:100%，父容器必须有确定高度 */
+.text-diff-box {
+    position: relative;
+    height: 26em;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.text-diff-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--textSecondary);
+    font-size: 0.875em;
+}
+
+/* .url 文件右键生成的二维码弹窗：只放一张二维码，点任意处关闭。
+   不能用 .card.floating —— 它自带 fixed + top/left 50% + translate 居中，
+   外层 .prompt_card_main 已经是 fixed 居中，两层叠加会错位。 */
+.qrcode-view-card {
+    display: inline-block;
+    padding: 1em;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    line-height: 0;
+    cursor: pointer;
+}
+
+.qrcode-view-canvas {
+    display: block;
+}
+
+.qrcode-view-error {
+    padding: 1em;
+    color: var(--red);
+    font-size: 0.875em;
+    line-height: normal;
 }

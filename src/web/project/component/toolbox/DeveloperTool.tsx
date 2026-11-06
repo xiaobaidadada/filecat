@@ -36,7 +36,7 @@ function TimeCard() {
   const date_to_ts = () => {
     const parsed = new Date(date_text.trim().replace(' ', 'T'))
     if (isNaN(parsed.getTime())) {
-      NotyFail(t('无法识别的日期格式，示例：2024-01-01 12:00:00'))
+      NotyFail(t('date_invalid'))
       return
     }
     set_ts(String(Math.floor(parsed.getTime() / 1000)))

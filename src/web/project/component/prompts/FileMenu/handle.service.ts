@@ -74,4 +74,6 @@ export enum common_menu_type {
     unmount_dir = "unmount_dir",
     // 查看/编辑该目录的挂载配置
     mount_config = "mount_config",
+    // .url 文件生成二维码，方便手机扫码打开
+    url_qrcode = "url_qrcode",
 }

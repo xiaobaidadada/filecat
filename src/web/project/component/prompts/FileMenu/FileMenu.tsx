@@ -28,6 +28,8 @@ import {SysEnum, UserAuth, UserBaseInfo} from "../../../../../common/req/user.re
 import {CardPrompt} from "../../../../meta/component/Card";
 import {RCode} from "../../../../../common/Result.pojo";
 import {routerConfig} from "../../../../../common/RouterConfig";
+import {Http} from "../../../util/http";
+import QrCodeView from "../../file/component/QrCodeView";
 import {formatFileSize} from "../../../../../common/ValueUtil";
 import {formatDate, formatPermissions} from "../../../../../common/StringUtil";
 import {Icon} from "../../../../meta/component/Button";
@@ -180,6 +182,13 @@ export function FileMenu() {
         show_items.unshift({
             r: t("MD编辑器"),
             v: common_menu_type.md_editor_open
+        });
+    }
+    // .url 快捷方式：生成二维码，方便手机扫码打开
+    if (showPrompt.data?.type === FileTypeEnum.url || /\.url$/i.test(showPrompt.data?.filename ?? "")) {
+        show_items.unshift({
+            r: t("生成二维码"),
+            v: common_menu_type.url_qrcode
         });
     }
     if (user_base_info.user_data?.file_quick_cmd) {
@@ -420,6 +429,24 @@ export function FileMenu() {
                     path: file_path,
                     name,
                     close: () => file_open(null),
+                });
+            }
+                break;
+            case common_menu_type.url_qrcode: {
+                // .url 文件内容就是一行网址，读出来整段画成二维码
+                const dir = getRouterAfter('file', getRouterPath());
+                const target_url = (await Http.get(`/api/file/${encodeURIComponent(dir)}${showPrompt.data.filename}`)).trim();
+                if (!target_url) {
+                    NotyFail(t("不能为空"));
+                    break;
+                }
+                set_prompt_card({
+                    open: true,
+                    main_context_div: (
+                        <div className={'qrcode-view-card'} onClick={() => set_prompt_card({open: false})}>
+                            <QrCodeView text={target_url}/>
+                        </div>
+                    )
                 });
             }
                 break;

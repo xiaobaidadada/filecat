@@ -11,6 +11,7 @@ import {Hash} from "./Hash";
 import {RegexTester} from "./RegexTester";
 import {DeveloperTool} from "./DeveloperTool";
 import {QrCode} from "./QrCode";
+import {TextDiff} from "./TextDiff";
 import {use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {routerConfig} from "../../../../common/RouterConfig";
@@ -23,12 +24,13 @@ export default function ToolBox(props) {
     const menuRots = [];
 
     menuRots.push(...[
+        {index: 1, name: t("开发者工具"), rto: "developer/",component: <DeveloperTool/>},
         {index: 1, name: t("时间工具"), rto: "timeutil/",component: <TimeConverTer/>},
         {index: 1, name: t("JSON 格式转换"), rto: "format/",component: <FormatConvert/>},
         {index: 1, name: t("编解码"), rto: "codec/",component: <Codec/>},
         {index: 1, name: t("摘要算法"), rto: "hash/",component: <Hash/>},
         {index: 1, name: t("正则测试"), rto: "regex/",component: <RegexTester/>},
-        {index: 1, name: t("开发者工具"), rto: "developer/",component: <DeveloperTool/>},
+        {index: 1, name: t("文本对比"), rto: "diff/",component: <TextDiff/>},
         {index: 1, name: t("二维码"), rto: "qrcode/",component: <QrCode/>},
         {index: 1, name: t("非对称密钥"), rto: "crypto/",component:    <Crypto/>},
     ])

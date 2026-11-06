@@ -12,56 +12,16 @@ const format_options: { label: string, value: format_name }[] = [
   {label: 'JSON', value: 'json'},
   {label: 'YAML', value: 'yaml'},
   {label: 'TOML', value: 'toml'},
-  {label: 'XML', value: 'xml'}
+  {label: 'XML', value: 'xml'},
+  {label: 'Properties', value: 'properties'}
 ]
-
-const sample_text: Record<format_name, string> = {
-  json: `{
-  "name": "filecat",
-  "version": 2,
-  "debug": true,
-  "tags": ["file", "server"],
-  "server": {
-    "host": "0.0.0.0",
-    "port": 5567
-  }
-}`,
-  yaml: `name: filecat
-version: 2
-debug: true
-tags:
-  - file
-  - server
-server:
-  host: 0.0.0.0
-  port: 5567`,
-  toml: `name = "filecat"
-version = 2
-debug = true
-tags = [ "file", "server" ]
-
-[server]
-host = "0.0.0.0"
-port = 5567`,
-  xml: `<root>
-  <name>filecat</name>
-  <version>2</version>
-  <debug>true</debug>
-  <tags>file</tags>
-  <tags>server</tags>
-  <server>
-    <host>0.0.0.0</host>
-    <port>5567</port>
-  </server>
-</root>`
-}
 
 /** AceCodeEditor 的 value 只在首次渲染生效，靠 key 变化强制重挂载来灌入新内容 */
 let editor_key_seed = 0
 
 /**
- * JSON / YAML / TOML / XML 互转。
- * 四种格式都是树状结构，统一解析成普通对象后再序列化到目标格式。
+ * JSON / YAML / TOML / XML / Properties 互转。
+ * 各格式统一解析成普通对象后再序列化到目标格式。
  */
 export function FormatConvert() {
   const {t} = useTranslation()
@@ -71,7 +31,7 @@ export function FormatConvert() {
   // 切换格式时把输入区内容带到新编辑器（AceCodeEditor 不跟随 value 变化）
   const [from_key, set_from_key] = useState(++editor_key_seed)
   const [to_key, set_to_key] = useState(++editor_key_seed)
-  const from_text_ref = useRef(sample_text.json)
+  const from_text_ref = useRef('')
   const to_text_ref = useRef('')
   const from_ref = useRef<AceCodeEditorHandle>(null)
   const to_ref = useRef<AceCodeEditorHandle>(null)
@@ -127,14 +87,13 @@ export function FormatConvert() {
               <ButtonText text={t('转换')} clickFun={() => do_convert(to)}/>
               <ButtonText text={t('格式化')} clickFun={() => do_convert(from)}/>
               <ButtonText text={t('结果转到输入')} clickFun={output_to_input}/>
-              <ButtonText text={t('示例')} clickFun={() => remount_from(sample_text[from])}/>
             </div>
             {error !== '' && <div className={'error_tip'}>{error}</div>}
           </Card>
         </Column>
       </Row>
       <Row>
-        <Column widthPer={50} maxWidth={'30rem'}>
+        <Column widthPer={50} maxWidth={'50rem'}>
           <Card title={t('输入') + '（' + from.toUpperCase() + '）'}>
             <AceCodeEditor
               key={from_key}
@@ -147,7 +106,7 @@ export function FormatConvert() {
             />
           </Card>
         </Column>
-        <Column widthPer={50} maxWidth={'30rem'}>
+        <Column widthPer={50} maxWidth={'50rem'}>
           <Card title={t('输出') + '（' + to.toUpperCase() + '）'}>
             <AceCodeEditor
               key={to_key}
