@@ -42,6 +42,8 @@ export function FileItem(props: FileItemData & { index?: number, itemWidth?: str
                     close: () => file_open(null),
                 });
                if (ok) {
+                   // .url 文件已在 click_file 里完成跳转，不该把 preview_mode 写进 url
+                   if (props.type === FileTypeEnum.url) return;
                    // 双击文件打开，同时把文件名与打开方式写入 url，刷新时能恢复打开状态
                    file_open({name, mode: get_open_mode_by_type(props.type)});
                }

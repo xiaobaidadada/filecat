@@ -451,6 +451,8 @@ export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode
     // 表格文件有独立编辑器
     if (type === FileTypeEnum.excel) return "excel";
     if (type === FileTypeEnum.pdf || type === FileTypeEnum.image || type === FileTypeEnum.video) return "preview";
+    // .url 文件内容是一个网址，双击就是跳转，不需要任何编辑器
+    if (type === FileTypeEnum.url) return "open";
     return "text";
 }
 
@@ -467,7 +469,7 @@ export function use_share_preview() {
 }
 
 // 打开文件的方式（写入 url 参数，刷新后据此恢复）
-export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel";
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "open";
 
 export interface file_open_param {
     name: string;
@@ -702,7 +704,13 @@ export const user_click_file = () => {
                     click_file(param);
                     break;
                 case FileTypeEnum.url:
-                    window.open(await Http.get(url), '_blank');
+                    // .url 文件内容就是一个网址，去掉首尾空白/换行再跳转，空内容给个提示
+                    const target_url = (await Http.get(url)).trim();
+                    if (!target_url) {
+                        NotyFail(t("不能为空"));
+                        break;
+                    }
+                    window.open(target_url, '_blank');
                     break;
                 case FileTypeEnum.unknow:
                 default:

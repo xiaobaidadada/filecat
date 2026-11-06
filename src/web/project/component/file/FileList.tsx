@@ -288,6 +288,11 @@ export default function FileList() {
         }
         // text 需显式指定 model，其余由 click_file 依据文件类型判断
         // （mind 与 excalidraw 都走 click_file 分派到各自的浮层编辑器）
+        // .url 是网址快捷方式，跳转优先于任何编辑器模式（含 url 里残留的 mode=text）
+        if (getFileFormat(name) === FileTypeEnum.url) {
+            click_file({name, opt_shell: true, close});
+            return true;
+        }
         click_file({
             name, opt_shell: true,
             ...(mode === "text" ? {model: "text"} : {}),
