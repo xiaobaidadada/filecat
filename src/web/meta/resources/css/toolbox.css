@@ -1,0 +1,281 @@
+/* 工具箱通用样式 */
+
+/* Ace 编辑器需要显式高度，否则容器塌陷成 0 */
+.toolbox-ace {
+    height: 24em;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--borderPrimary);
+}
+
+/* 转换/解析失败时的报错提示，长文本换行不撑破卡片 */
+.error_tip {
+    margin-top: 0.5em;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+    background: var(--input-red);
+    color: var(--red);
+    font-size: 0.875em;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* 普通文本输入框（非等宽） */
+.toolbox-textarea {
+    width: 100%;
+    min-height: 14em;
+    padding: 0.5em;
+    box-sizing: border-box;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 6px;
+    background: var(--surfacePrimary);
+    color: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+}
+
+/* 键值对列表：左标签右值，两列对齐 */
+.toolbox-kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35em 1em;
+    margin-top: 0.75em;
+    font-size: 0.875em;
+    align-items: baseline;
+}
+
+.toolbox-kv > span:nth-child(odd) {
+    color: var(--textSecondary);
+    white-space: nowrap;
+}
+
+/* 等宽内容，长串可换行 */
+.toolbox-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+}
+
+/* 可点击复制的内容 */
+.toolbox-copyable {
+    cursor: pointer;
+}
+
+.toolbox-copyable:hover {
+    color: var(--icon-blue);
+}
+
+.toolbox-label {
+    color: var(--textSecondary);
+    font-size: 0.875em;
+}
+
+/* 复选框 + 文字标签。不用 div-row，避免负 margin 和 flex 压缩文字。
+   选择器加 label. 前缀，压过项目全局 label { display: block } 的样式 */
+label.toolbox-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: 0.875em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+label.toolbox-check > input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* 摘要结果行 */
+.hash-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    padding: 0.35em 0;
+    border-bottom: 1px solid var(--borderPrimary);
+    font-size: 0.875em;
+}
+
+.hash-row:last-child {
+    border-bottom: none;
+}
+
+.hash-name {
+    width: 5.5em;
+    flex-shrink: 0;
+    color: var(--textSecondary);
+}
+
+.hash-value {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+}
+
+/* 正则匹配高亮 */
+.regex-mark {
+    background: var(--blue, #d2e3fc);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+.regex-preview {
+    margin-top: 0.5em;
+    padding: 0.5em 0.75em;
+    min-height: 4em;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.regex-empty {
+    color: var(--textSecondary);
+}
+
+/* 正则输入行：/pattern/flags 整体一行 */
+.regex-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.35em 0.5em;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 6px;
+    background: var(--surfacePrimary);
+}
+
+/* 去掉输入框自身边框，由外层容器统一呈现 */
+.regex-input-row .input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    flex: 1;
+    min-width: 0;
+}
+
+.regex-slash {
+    color: var(--textSecondary);
+    flex-shrink: 0;
+}
+
+/* flags 单独一行，可换行 */
+.regex-flag-row {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    flex-wrap: wrap;
+    margin-top: 0.6em;
+}
+
+/* flag 字母用等宽字体，与说明文字区分 */
+.regex-flag-letter {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 600;
+}
+
+/* 输入行右侧显示当前生效的 flags */
+.regex-flags {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    min-width: 1.5em;
+    color: var(--blue);
+    flex-shrink: 0;
+}
+
+.regex-match-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    font-size: 0.875em;
+}
+
+.regex-match-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75em;
+    padding: 0.25em 0;
+    border-bottom: 1px solid var(--borderPrimary);
+    flex-wrap: wrap;
+}
+
+.regex-match-item:last-child {
+    border-bottom: none;
+}
+
+.regex-match-index {
+    color: var(--textSecondary);
+    width: 2.5em;
+    flex-shrink: 0;
+}
+
+.regex-match-text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+}
+
+.regex-match-pos {
+    color: var(--textSecondary);
+    font-size: 0.85em;
+}
+
+.regex-match-groups {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+}
+
+.regex-group {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--surfaceSecondary);
+    padding: 0 0.35em;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+/* 颜色选择器 */
+.toolbox-color-picker {
+    width: 3em;
+    height: 2em;
+    padding: 0;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+}
+
+/* 原生下拉框，与项目输入框视觉一致 */
+.toolbox-select {
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--borderPrimary);
+    border-radius: 6px;
+    background: var(--surfacePrimary);
+    color: inherit;
+    font-size: 0.875em;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 二维码预览区 */
+.toolbox-qr-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1em;
+    background: #fff;
+    border-radius: 6px;
+    min-height: 18em;
+}
+
+/* 空状态占位文字 */
+.toolbox-empty {
+    color: var(--textSecondary);
+    font-size: 0.875em;
+}
