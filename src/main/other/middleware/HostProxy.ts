@@ -1,7 +1,9 @@
 import {Request, Response, NextFunction} from "express";
 import HttpProxy from "http-proxy";
 import express from "express";
+import path from "path";
 import {settingService} from "../../domain/setting/setting.service";
+import {control_env_proxy_root, control_env_proxy_rule} from "../../../common/req/common.pojo";
 
 /**
  * 域名转发代理：类似 nginx 的 server/location，按 Host + 路径前缀把请求转发到目标服务，
@@ -33,13 +35,45 @@ proxy.on("error", (err, req, res: any) => {
 // 静态目录按 root 缓存 express.static 中间件，避免每个请求都重建
 const static_handler_cache = new Map<string, any>();
 
-const get_static_handler = (root_path: string) => {
-    let handler = static_handler_cache.get(root_path);
+const get_static_handler = (root_path: string, index_file_name: string) => {
+    // 同一个目录可配不同的索引文件，缓存 key 要带上文件名
+    const cache_key = root_path + "\0" + index_file_name;
+    let handler = static_handler_cache.get(cache_key);
     if (!handler) {
-        handler = express.static(root_path, {index: "index.html"});
-        static_handler_cache.set(root_path, handler);
+        handler = express.static(root_path, {index: index_file_name});
+        static_handler_cache.set(cache_key, handler);
     }
     return handler;
+};
+
+
+/**
+ * 静态目录里找不到文件时的兜底处理，由规则配置决定：
+ * - fallback_status：直接返回该状态码（如 404）
+ * - fallback / spa：返回指定文件，交给前端路由或自定义错误页
+ * 都没配就不接管，继续 next() 交给 filecat 自己的路由。
+ */
+const static_fallback = (root: control_env_proxy_root) => {
+    if (root.fallback_status) {
+        const code = root.fallback_status;
+        return (req: Request, res: Response) => {
+            res.status(code).end();
+        };
+    }
+    const index_file_name = root.index_file_name || "index.html";
+    const file = root.fallback ?? (root.spa ? index_file_name : "");
+    if (!file) return null;
+    // 相对路径按 root 拼接，绝对路径直接使用，方便把错误页放到目录外面
+    const file_path = path.isAbsolute(file) ? file : path.join(root.path, file);
+    return (req: Request, res: Response, next: NextFunction) => {
+        // 保留原始 URL 给前端路由使用，只把实际要读的文件换掉
+        const origin_url = req.url;
+        req.url = "/" + path.basename(file_path);
+        res.sendFile(file_path, (err: any) => {
+            req.url = origin_url;
+            if (err) next();
+        });
+    };
 };
 
 /**
@@ -69,10 +103,17 @@ export const use_host_proxy_middleware = () => {
         }
 
         if (rule.root) {
+            // 配置可能来自旧版本或手写错误，静态目录结构不对时直接提示，不能让 express.static 抛栈
+            const root_path = rule.root.path;
+            const index_file_name = rule.root.index_file_name || "index.html";
             // 静态目录：同样要先把路径前缀处理掉，再交给 express.static 去找文件
             const origin_url = req.url;
             req.url = rewrite_path(origin_url, rule);
-            get_static_handler(rule.root)(req, res, (err: any) => {
+            const fallback = static_fallback(rule.root);
+            const handler = fallback
+                ? express.Router().use(get_static_handler(root_path, index_file_name)).use(fallback)
+                : get_static_handler(root_path, index_file_name);
+            handler(req, res, (err: any) => {
                 req.url = origin_url;
                 if (err) {
                     next(err);

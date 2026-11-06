@@ -237,7 +237,20 @@ export interface sys_env_pojo {
 // host：必填，匹配的主机名（不含端口），大小写不敏感；支持 *.example.com 通配一级子域
 // path：可选，路径前缀，命中后把请求转发到目标服务
 // target：目标地址，如 http://127.0.0.1:3000；与 root 二选一
-// root：静态目录绝对路径，命中后把该目录作为 web 根；与 target 二选一
+// root：静态目录配置，与 target 二选一
+export interface control_env_proxy_root {
+    // 静态目录绝对路径，命中后把该目录作为 web 根
+    path: string
+    // 访问目录时默认返回的文件名，默认 index.html
+    index_file_name?: string
+    // 找不到文件时回退到 index.html，供前端路由的单页应用使用
+    spa?: boolean
+    // 找不到文件时返回的文件（相对 path 的路径或绝对路径），与 fallback_status 二选一
+    fallback?: string
+    // 找不到文件时直接返回的状态码，如 404；与 fallback 二选一
+    fallback_status?: number
+}
+
 // rewrite：可选，纯前缀替换，如 path 为 /v1、rewrite 为 /api，则 /v1/user 转到 /api/user；
 //          不填则剥掉 path 前缀
 // websocket：是否支持 websocket 升级转发
@@ -245,7 +258,7 @@ export interface control_env_proxy_rule {
     host: string
     path?: string
     target?: string
-    root?: string
+    root?: control_env_proxy_root
     rewrite?: string
     websocket?: boolean
 }
@@ -332,7 +345,28 @@ allowed_private_host: false
 #     target: 'http://127.0.0.1:8080'
 #   # 本地目录当 web 根，与 target 二选一
 #   - host: 'static.example.com'
-#     root: '/var/www/site'
+#     root:
+#       path: '/var/www/site'
+#   # 前端路由的单页应用：找不到文件时回退到 index.html
+#   - host: 'docs.example.com'
+#     root:
+#       path: '/var/www/docs'
+#       spa: true
+#   # 指定默认索引文件名（默认 index.html），访问目录时返回该文件
+#   - host: 'home.example.com'
+#     root:
+#       path: '/var/www/site'
+#       index_file_name: 'home.html'
+#   # 找不到文件时返回指定的静态文件（相对 root.path 或绝对路径）
+#   - host: 'err.example.com'
+#     root:
+#       path: '/var/www/site'
+#       fallback: '404.html'
+#   # 找不到文件时直接返回状态码
+#   - host: 'api-doc.example.com'
+#     root:
+#       path: '/var/www/doc'
+#       fallback_status: 404
 
 # HTTPS 按域名加载证书（类似 nginx 的 ssl_certificate）
 # cert/key 既可以写文件路径，也可以直接粘贴 PEM 内容

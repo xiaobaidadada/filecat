@@ -7,6 +7,7 @@ import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
 import {
     CONTROL_ENV_DEFAULT,
     control_env_pojo,
+    control_env_proxy_root,
     control_env_proxy_rule,
     env_item,
     MD_EDITOR_SETTING_DEFAULT,
@@ -654,13 +655,39 @@ export class SettingService {
                 if (!it.host) throw `proxy_rules[${i}].host 不能为空`;
                 // target 和 root 二选一：一个转发到目标服务，一个直接以本地目录为 web 根
                 const has_target = it.target !== undefined && it.target !== null && `${it.target}`.trim() !== "";
-                const has_root = it.root !== undefined && it.root !== null && `${it.root}`.trim() !== "";
+                const has_root = it.root !== undefined && it.root !== null;
                 if (has_target && has_root) throw `proxy_rules[${i}] 的 target 和 root 只能填一个`;
                 if (!has_target && !has_root) throw `proxy_rules[${i}] 的 target 和 root 必须填一个`;
-                let root: string = undefined;
+                let root: control_env_proxy_root = undefined;
                 if (has_root) {
-                    root = `${it.root}`.trim();
-                    if (!is_absolute_path(root)) throw `proxy_rules[${i}].root 必须是绝对路径`;
+                    if (typeof it.root !== "object" || Array.isArray(it.root)) throw `proxy_rules[${i}].root 必须是对象`;
+                    const root_path = it.root.path === undefined || it.root.path === null ? "" : `${it.root.path}`.trim();
+                    if (root_path === "") throw `proxy_rules[${i}].root.path 不能为空`;
+                    if (!is_absolute_path(root_path)) throw `proxy_rules[${i}].root.path 必须是绝对路径`;
+                    root = {path: root_path};
+                    if (it.root.index_file_name !== undefined && it.root.index_file_name !== null) {
+                        const index_file_name = `${it.root.index_file_name}`.trim();
+                        // 只要文件名，带路径会让 express.static 的 index 行为变得不可预期
+                        if (index_file_name !== "") root.index_file_name = index_file_name;
+                    }
+                    if (it.root.spa !== undefined && it.root.spa !== null) {
+                        root.spa = !!it.root.spa;
+                    }
+                    // fallback 和 fallback_status 只能填一个，同时填会让人猜不到最终行为
+                    if (it.root.fallback !== undefined && it.root.fallback !== null) {
+                        const fallback = `${it.root.fallback}`.trim();
+                        if (fallback !== "") root.fallback = fallback;
+                    }
+                    if (it.root.fallback_status !== undefined && it.root.fallback_status !== null) {
+                        const code = Number(it.root.fallback_status);
+                        if (!Number.isInteger(code) || code < 100 || code > 599) {
+                            throw `proxy_rules[${i}].root.fallback_status 必须是 100~599 的整数`;
+                        }
+                        root.fallback_status = code;
+                    }
+                    if (root.fallback !== undefined && root.fallback_status !== undefined) {
+                        throw `proxy_rules[${i}].root 的 fallback 和 fallback_status 只能填一个`;
+                    }
                 }
                 // 目标地址必须是 http/https，避免配置成别的协议导致代理层异常
                 if (has_target && !/^https?:\/\//i.test(`${it.target}`)) throw `proxy_rules[${i}].target 必须是 http(s):// 开头`;
