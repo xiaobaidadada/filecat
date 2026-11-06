@@ -48,11 +48,12 @@ export function Sys() {
     const [control_env_str, set_control_env_str] = useState("");
 
     const {t, i18n} = useTranslation();
-    // 三种登录会话模式的说明，点 info 按钮弹出
+    // 三种登录会话模式的说明，点 info 按钮弹出（Markdown 渲染，用列表保证分行）
     const session_mode_tip = [
-        t("独立token：每次登录都签发新的token，同一账号可以在多个设备同时登录，互不影响"),
-        t("复用token：该账号已有未过期的token时直接复用它，不会签发新的"),
-        t("单会话：每次登录签发新的token，并让该账号此前的所有token立即失效")
+        `- ${t("过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效")}`,
+        `- ${t("独立token：每次登录都签发新的token，同一账号可以在多个设备同时登录，互不影响")}`,
+        `- ${t("复用token：该账号已有未过期的token时直接复用它，不会签发新的")}`,
+        `- ${t("单会话：每次登录签发新的token，并让该账号此前的所有token立即失效")}`
     ].join('\n');
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
@@ -269,7 +270,7 @@ export function Sys() {
                         <div className="form_group">
                             <div className="form_label">{t("过期策略")}</div>
                             <Rows isFlex={true} columns={[
-                                <InputRadio name={"token_time_mode"} value={1} context={t("关闭")}
+                                <InputRadio name={"token_time_mode"} value={1} context={t("默认")}
                                             selected={tokenMode === TokenTimeMode.close}
                                             onchange={() => {
                                                 setTokenMode(TokenTimeMode.close)
