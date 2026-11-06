@@ -8,6 +8,11 @@ import {
     CONTROL_ENV_DEFAULT,
     control_env_pojo,
     control_env_proxy_rule,
+    env_item,
+    MD_EDITOR_SETTING_DEFAULT,
+    md_editor_setting_pojo,
+    sys_env_pojo,
+    workflow_setting_item,
 } from "../../../common/req/common.pojo";
 import {parse_yaml} from "../../../common/node/yaml.util";
 import {Cache} from "../../other/cache";
@@ -38,13 +43,6 @@ import {get_user_now_pwd} from "../../../common/DataUtil";
 import {ai_agentService} from "../ai_agent/ai_agent.service";
 import {file_share_item} from "../../../common/req/file.req";
 import {generateRandomHash} from "../../../common/StringUtil";
-import {
-    env_item,
-    MD_EDITOR_SETTING_DEFAULT,
-    md_editor_setting_pojo,
-    sys_env_pojo,
-    workflow_setting_item
-} from "../../../common/req/common.pojo";
 import {plug_item, Plugin, PluginHttpInfo, PluginLogLevel, PluginRoute} from "../../../plugin";
 import {Env} from "../../../common/node/Env";
 import {
@@ -60,7 +58,6 @@ import {
 } from "../../../common/req/filecat.ai.pojo";
 import {HttpRequest} from "../../../common/node/http";
 import axios from "axios";
-import {ChildProcessUtil, filecat_cmd} from "../../../common/node/childProcessUtil";
 import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
 import {is_private_ipv4_literal} from "../../../common/node/net";
 
@@ -476,18 +473,18 @@ export class SettingService {
         const p: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
             web_site_title: 'FileCat',
             show_login_user_info: true,
-            http_proxy: null,
+            // http_proxy: null,
             logo: "",
             browser_proxy_allow: [],
             browser_proxy_port_start: 7000,
             browser_proxy_port_end: 8000
         }
-        if (p.http_proxy == null) {
-            p.http_proxy = process.env.http_proxy
-                || process.env.https_proxy
-                || process.env.HTTP_PROXY
-                || process.env.HTTPS_PROXY
-        }
+        // if (p.http_proxy == null) {
+        //     p.http_proxy = process.env.http_proxy
+        //         || process.env.https_proxy
+        //         || process.env.HTTP_PROXY
+        //         || process.env.HTTPS_PROXY
+        // }
         // 白名单兜底为空数组：读取失败/缺失时不能意外放开受限地址（策略侧仍按「白名单为空=更严」处理）
         if (!Array.isArray(p.browser_proxy_allow)) {
             p.browser_proxy_allow = [];
@@ -569,6 +566,14 @@ export class SettingService {
             if (!Array.isArray(v)) throw `${name} 必须是列表`;
             return v.map(it => `${it}`);
         };
+        if (raw.http_proxy !== undefined && raw.http_proxy !== null) {
+            const http_proxy = `${raw.http_proxy}`.trim();
+            // 非空时必须是 http(s):// 开头，免得填错后请求全部发不出去还查不出原因
+            if (http_proxy !== "" && !/^https?:\/\//i.test(http_proxy)) {
+                throw "http_proxy 必须以 http(s):// 开头";
+            }
+            result.http_proxy = http_proxy;
+        }
         result.allowed_hosts = str_list(raw.allowed_hosts, "allowed_hosts");
         result.forbid_hosts = str_list(raw.forbid_hosts, "forbid_hosts");
         if (raw.allowed_private_host !== undefined && raw.allowed_private_host !== null) {
@@ -650,9 +655,14 @@ export class SettingService {
         return result;
     }
 
-    // 获取 filecat 系统全局 http 代理地址（空表示未设置）
+    /**
+     * 获取 filecat 系统全局 http 代理地址（空表示未设置）。
+     * 优先级：环境控制 yaml 里的 http_proxy > 历史通用设置里的 http_proxy > 环境变量。
+     * 兼容历史：老用户把地址填在通用设置里，升级后仍能生效，重新保存一次环境控制即可迁移过来。
+     */
     public get_http_proxy(): string {
-        return this.get_sys_env()?.http_proxy;
+        const env = this.get_sys_env();
+        return env?.control_env?.http_proxy;
     }
 
     /**

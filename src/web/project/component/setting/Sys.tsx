@@ -29,6 +29,7 @@ export function Sys() {
     const [web_site_title, set_web_site_title] = useState("");
     const [site_logo, set_site_logo] = useState("");
     const [show_login_user_info, set_show_login_user_info] = useState(false);
+    // http 代理地址已经挪到「环境控制」的 yaml 里，这里仅保留历史值原样回传，避免保存时把它清空
     const [http_proxy, set_http_proxy] = useState("");
     const [recycle_open, set_recycle_open] = useState(false);
     const [recycle_dir, set_recycle_dir] = useState("");
@@ -203,12 +204,6 @@ export function Sys() {
                         <InputText placeholder={t('lclorur')} value={site_logo}
                                    handleInputChange={(value) => {
                                        set_site_logo(value)
-                                   }}/>
-
-                        <div>{t("pxy_url")}</div>
-                        <InputText placeholder={'http://127.0.0.1:7890'} value={http_proxy}
-                                   handleInputChange={(value) => {
-                                       set_http_proxy(value)
                                    }}/>
 
                         {t("lgn_usr")}

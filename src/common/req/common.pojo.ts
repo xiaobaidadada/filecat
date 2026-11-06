@@ -279,6 +279,8 @@ export interface control_env_https {
 //   https                —— HTTPS 监听与按域名选择证书
 // allowed_hosts / forbid_hosts 的每一项为正则表达式（完整匹配），Host 只取主机名（不含端口）。
 export interface control_env_pojo {
+    // filecat 系统自身发出的 HTTP 请求使用的代理地址，留空则回退到历史配置和环境变量
+    http_proxy?: string
     allowed_hosts?: string[]
     forbid_hosts?: string[]
     allowed_private_host?: boolean
@@ -291,7 +293,11 @@ export const CONTROL_ENV_DEFAULT: control_env_pojo = {}
 
 // 环境控制的默认 yaml 文本（各项留空/注释 = 不启用）
 export const CONTROL_ENV_STR_DEFAULT: string =
-`# Host 访问控制（正则，完整匹配，不含端口）
+`# filecat 系统自身发出的 HTTP 请求使用的代理地址（版本检测、DDNS、命令下载等）
+# 留空则回退到环境变量 http_proxy / https_proxy
+# http_proxy: 'http://127.0.0.1:7890'
+
+# Host 访问控制（正则，完整匹配，不含端口）
 # allowed_hosts:
 #   - '^localhost$'
 #   - '^127\\.0\\.0\\.1$'
