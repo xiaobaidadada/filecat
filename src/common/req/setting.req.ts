@@ -4,10 +4,21 @@ export enum TokenTimeMode {
     forver // 永不过期
 }
 
+/**
+ * 登录会话模式（三选一，互斥）
+ * 默认 independent：每次登录都是全新的 token，多设备互不影响。
+ */
+export enum TokenSessionMode {
+    independent, // 独立 token：每次登录都签发新 token，旧 token 继续有效
+    reuse,       // 复用 token：该用户已有有效 token 时直接返回它，不再新建
+    single       // 单会话：签发新 token 并踢掉该用户此前的所有 token
+}
+
 export class TokenSettingReq {
     mode: TokenTimeMode;
     length: number; // 秒
     persist?: boolean; // 是否持久化到磁盘（服务重启后还能用）
+    session_mode?: TokenSessionMode; // 登录会话模式，不传按 independent 处理
 }
 
 export class FileSettingItem {

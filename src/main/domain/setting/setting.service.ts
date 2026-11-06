@@ -26,7 +26,8 @@ import {
     QuickCmdItem,
     SysSoftware,
     SysSoftwareItem,
-    TokenTimeMode
+    TokenTimeMode,
+    TokenSessionMode
 } from "../../../common/req/setting.req";
 import {SystemUtil} from "../sys/sys.utl";
 import {Request} from "express";
@@ -888,7 +889,7 @@ export class SettingService {
         return DataUtil.get(data_common_key.token_setting);
     }
 
-    saveToken(mode: TokenTimeMode, length: number, persist?: boolean) {
+    saveToken(mode: TokenTimeMode, length: number, persist?: boolean, session_mode?: TokenSessionMode) {
         if (mode === TokenTimeMode.close) {
             Cache.set_default_time_len(60 * 60 * 1000);
         } else if (mode === TokenTimeMode.length) {
@@ -896,7 +897,13 @@ export class SettingService {
         } else if (mode === TokenTimeMode.forver) {
             Cache.set_default_time_len(-1);
         }
-        DataUtil.set(data_common_key.token_setting, {mode, length, persist});
+        // 未传或非法值一律按默认的独立 token 处理
+        let session = TokenSessionMode.independent;
+        if (session_mode === TokenSessionMode.reuse || session_mode === TokenSessionMode.single) {
+            session = session_mode;
+        }
+        Cache.set_session_mode(session);
+        DataUtil.set(data_common_key.token_setting, {mode, length, persist, session_mode: session});
     }
 
     share_timer: NodeJS.Timeout[] = []
@@ -938,8 +945,9 @@ export class SettingService {
 
     public init() {
         const data = DataUtil.get(data_common_key.token_setting);
-        if (!!data && !!data['mode']) {
-            this.saveToken(data['mode'], data["length"], data['persist']);
+        // mode 可能是 0（关闭），不能写成 !!data['mode']
+        if (!!data && data['mode'] !== undefined) {
+            this.saveToken(data['mode'], data["length"], data['persist'], data['session_mode']);
         }
         // 加载用户持久化的进程环境变量覆盖（重启后生效）
         this.init_process_env_override();

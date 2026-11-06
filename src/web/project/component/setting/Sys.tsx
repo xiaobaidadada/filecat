@@ -2,7 +2,7 @@ import React, {useContext, useEffect, useState} from 'react'
 import {Column, Dashboard, Row} from "../../../meta/component/Dashboard";
 import {Card} from "../../../meta/component/Card";
 import {ActionButton, ButtonText} from "../../../meta/component/Button";
-import {InputPassword, InputRadio, InputText, Select} from "../../../meta/component/Input";
+import {InputCheckbox, InputPassword, InputRadio, InputText, Select} from "../../../meta/component/Input";
 import {settingHttp, userHttp} from "../../util/config";
 import {themes, UserAuth, UserLogin} from "../../../../common/req/user.req";
 import {RCode} from "../../../../common/Result.pojo";
@@ -11,6 +11,7 @@ import {$stroe} from "../../util/store";
 import {Rows} from "../../../meta/component/Table";
 import {
     sys_setting_type,
+    TokenSessionMode,
     TokenSettingReq,
     TokenTimeMode
 } from "../../../../common/req/setting.req";
@@ -18,6 +19,7 @@ import {useTranslation} from "react-i18next";
 import {HeaderPortal} from "../../../meta/component/HeaderPortal";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {NotyFail, NotySuccess} from "../../util/noty";
+import {using_tip} from "../prompts/prompts.util";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {CONTROL_ENV_STR_DEFAULT} from "../../../../common/req/common.pojo";
 import {getShortTime} from "../../util/common_util";
@@ -39,11 +41,19 @@ export function Sys() {
 
     const [tokenMode, setTokenMode] = useState(TokenTimeMode.close);
     const [tokenPersist, setTokenPersist] = useState(false);
+    const [tokenSessionMode, setTokenSessionMode] = useState(TokenSessionMode.independent);
+    const tip = using_tip();
     const [tokenSeconds, setTokenSeconds] = useState(undefined);
     // 环境控制原始文本
     const [control_env_str, set_control_env_str] = useState("");
 
     const {t, i18n} = useTranslation();
+    // 三种登录会话模式的说明，点 info 按钮弹出
+    const session_mode_tip = [
+        t("独立token：每次登录都签发新的token，同一账号可以在多个设备同时登录，互不影响"),
+        t("复用token：该账号已有未过期的token时直接复用它，不会签发新的"),
+        t("单会话：每次登录签发新的token，并让该账号此前的所有token立即失效")
+    ].join('\n');
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const {check_user_auth} = use_auth_check();
 
@@ -93,6 +103,9 @@ export function Sys() {
             if (data['persist'] !== undefined) {
                 setTokenPersist(data['persist']);
             }
+            if (data['session_mode'] !== undefined) {
+                setTokenSessionMode(data['session_mode']);
+            }
         }
     }
     useEffect(() => {
@@ -104,6 +117,7 @@ export function Sys() {
         const data = new TokenSettingReq();
         data.mode = tokenMode;
         data.persist = tokenPersist;
+        data.session_mode = tokenSessionMode;
         if (TokenTimeMode.length === data.mode && !tokenSeconds) {
             NotyFail(t("秒数不能为空"))
         }
@@ -267,12 +281,24 @@ export function Sys() {
                             <InputText placeholder={t('秒')} value={tokenSeconds} handleInputChange={(value) => {
                                 setTokenSeconds(value)
                             }}/>}
-                        <label
-                            style={{display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, whiteSpace: 'nowrap'}}>
-                            <input type="checkbox" checked={tokenPersist}
-                                   onChange={() => setTokenPersist(!tokenPersist)}/>
-                            {t("持久化")}
-                        </label>
+                        <div className="form_row">
+                            <InputCheckbox context={t("持久化")} selected={tokenPersist}
+                                           onchange={() => setTokenPersist(!tokenPersist)}/>
+                        </div>
+                        <div className="form_row">
+                            <Rows isFlex={true} columns={[
+                                <InputRadio value={TokenSessionMode.independent} context={t("独立token")}
+                                            selected={tokenSessionMode === TokenSessionMode.independent}
+                                            onchange={() => setTokenSessionMode(TokenSessionMode.independent)}/>,
+                                <InputRadio value={TokenSessionMode.reuse} context={t("复用token")}
+                                            selected={tokenSessionMode === TokenSessionMode.reuse}
+                                            onchange={() => setTokenSessionMode(TokenSessionMode.reuse)}/>,
+                                <InputRadio value={TokenSessionMode.single} context={t("单会话")}
+                                            selected={tokenSessionMode === TokenSessionMode.single}
+                                            onchange={() => setTokenSessionMode(TokenSessionMode.single)}/>,
+                            ]}/>
+                            <ActionButton icon={"info"} title={t("登录会话")} onClick={() => tip(session_mode_tip)}/>
+                        </div>
 
                     </Card>
                 </Column>

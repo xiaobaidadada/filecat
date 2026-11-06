@@ -41,10 +41,10 @@ export class UserController {
                     const result = await item.handler(req.headers, req);
                     if (result) {
                         const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
-                        const cache: UserLoginData = {username: user.username, id: user_data.id};
-                        Cache.setValue(`${uuid}`, cache);
+                        const cache: UserLoginData = {username: user_data.username, id: user_data.id};
+                        const token = Cache.issue_token(user_data.username, uuid, cache);
                         await CommonUtil.sleep_lock_key(user.username, 1000 * CommonUtil.random01())
-                        return Sucess(uuid)
+                        return Sucess(token)
                     }
                 } catch (e) {
                     console.log(e)
@@ -56,10 +56,10 @@ export class UserController {
 
             if (!!user_data && hash_string(user.password) === user_data.hash_password) {
                 const uuid = generateSaltyUUID(user_data.username + user_data.hash_password);
-                const cache: UserLoginData = {username: user.username, id: user_data.id};
-                Cache.setValue(`${uuid}`, cache);
+                const cache: UserLoginData = {username: user_data.username, id: user_data.id};
+                const token = Cache.issue_token(user_data.username, uuid, cache);
                 await CommonUtil.sleep_lock_key(user.username,1000*CommonUtil.random01())
-                return Sucess(uuid)
+                return Sucess(token)
             }
 
         } catch(err){

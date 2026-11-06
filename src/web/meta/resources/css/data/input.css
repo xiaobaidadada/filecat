@@ -348,3 +348,17 @@
         display: inline-block;
     }
 }
+
+/* 一行「若干选项 + 说明按钮」的横向布局，选项与按钮垂直居中 */
+.form_row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    margin-top: 0.7em;
+}
+
+/* 行内的选项自带 margin-bottom，在这里统一由容器控制间距 */
+.form_row .input_radio_row {
+    margin-bottom: 0;
+}
