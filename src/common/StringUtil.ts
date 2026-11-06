@@ -1,6 +1,32 @@
 import {find_sep} from "./path_util";
 import {file_select_list} from "./file.pojo";
 
+const TOKEN_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+/**
+ * 生成密码学安全的随机字符串。
+ * 用 globalThis.crypto.getRandomValues（Node 18+ 与浏览器都支持），不用 Math.random。
+ * 256 不是 62 的整数倍，超过 248 的字节丢弃重取，保证每个字符等概率。
+ */
+function secure_random_string(length: number): string {
+    const max_valid = 256 - (256 % TOKEN_CHARS.length); // 248
+    let result = '';
+    while (result.length < length) {
+        const bytes = new Uint8Array(length - result.length);
+        globalThis.crypto.getRandomValues(bytes);
+        for (let i = 0; i < bytes.length; i++) {
+            if (bytes[i] >= max_valid) continue;
+            result += TOKEN_CHARS[bytes[i] % TOKEN_CHARS.length];
+            if (result.length === length) break;
+        }
+    }
+    return result;
+}
+
+export function generateSaltyUUID() {
+    return secure_random_string(60);
+}
+
 export class Param {
     key: string;
     value?: any;
@@ -131,24 +157,9 @@ export function getWebFirstKey(url: string) {
     return url.slice(1);
 }
 
-export function generateSaltyUUID(context: string= "") {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + (context ?? `${Date.now()}`);
-    let result = '';
-    for (let i = 0; i < 60; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        result += characters[randomIndex];
-    }
-    return result;
-}
-
 // 随机生成固定长度的字符串
 export function generateRandomHash(length = 16) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let hash = '';
-    for (let i = 0; i < length; i++) {
-        hash += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return hash;
+    return secure_random_string(length);
 }
 
 export function have_empty_char(str:string) {
