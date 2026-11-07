@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "7.24.0",
+  "version": "7.24.1",
   "description": "A self-hosted Web File browser and lightweight server management tool.",
   "author": "xiaobaidadada",
   "repository": {
@@ -155,6 +155,7 @@
     "unzip-stream": "^0.3.4",
     "video.js": "^8.17.2",
     "videojs-hotkeys": "^0.2.28",
+    "webdav-server": "^2.6.3",
     "webpack": "^5.96.1",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
@@ -207,8 +208,5 @@
     "assets": [
       "build/**/**"
     ]
-  },
-  "dependencies": {
-    "webdav-server": "^2.6.3"
   }
 }
