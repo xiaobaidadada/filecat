@@ -190,12 +190,35 @@ export class ws_file_upload_req {
     parallel_done_num: number; // 总并发数量
 }
 
-// 递归搜索文件名的请求参数
+// 递归搜索的类型：按文件名匹配（fast-glob）或按文件内容匹配（ripgrep）
+export type file_deep_search_type = "name" | "content";
+
+// 递归搜索的请求参数
 export class file_deep_search_req {
     // 搜索的起始目录（相对系统根目录的 web 路径）
     param_path: string;
-    // 文件名关键词
+    // 文件名关键词（name）或内容检索的正则/字面量（content）
     keyword: string;
+    // 缺省为 name，保持旧前端不带该字段时的行为不变
+    search_type?: file_deep_search_type;
+    // content 模式：把 keyword 当作正则，否则按字面量匹配；name 模式下同样生效
+    is_regex?: boolean;
+    // 忽略大小写，两种搜索方式都生效
+    ignore_case?: boolean;
+    // content 模式：返回命中的行内容
+    show_match_line?: boolean;
+    // 排除的文件名（如 node_modules、*.log），匹配到任意一条即跳过
+    exclude_names?: string[];
+    // 排除的具体路径（相对系统根目录的 web 路径），用于精确排除选中的文件/目录
+    exclude_paths?: string[];
+}
+
+// 内容搜索命中的一行
+export class file_deep_search_line {
+    // 行号，从 1 开始
+    line: number;
+    // 该行文本（已去掉结尾换行，过长会被截断）
+    text: string;
 }
 
 // 递归搜索命中的单条结果
@@ -205,6 +228,8 @@ export class file_deep_search_item {
     path: string;
     // 是否目录（由 fast-glob 的 markDirectories 判定，不做 stat）
     is_dir: boolean;
+    // 仅 content 模式且开启 show_match_line 时有值
+    lines?: file_deep_search_line[];
 }
 
 export class file_share_item {

@@ -194,6 +194,8 @@ export class UserController {
         is_file_list_zoom?: boolean,
         is_sql_preset?: boolean,
         sql_preset_list?: SqlPresetItem[],
+        is_search_exclude?: boolean, // 是否更新深度搜索的忽略名字
+        search_exclude_names?: string[],
         is_md_theme?: boolean, // 是否更新 md 编辑器个人主题
         md_editor_theme?: string,
         is_ai_chat_zoom?: boolean, // 是否更新 ai 聊天记录缩放比例
@@ -216,6 +218,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {file_list_zoom: body.value} as UserData);
         } else if(body.is_sql_preset) {
             userService.only_update_user_data(user_id, {sql_preset_list: body.sql_preset_list} as UserData);
+        } else if(body.is_search_exclude) {
+            userService.only_update_user_data(user_id, {search_exclude_names: body.search_exclude_names} as UserData);
         } else if(body.is_md_theme) {
             // 空串表示跟随系统设置里的主题；非空必须是真实存在的主题，
             // 否则会存进一个不存在的主题名，之后切主题既没样式、菜单里也高亮不出来。

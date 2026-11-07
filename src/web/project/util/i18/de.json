@@ -1332,5 +1332,21 @@
   "过期策略": "Ablaufrichtlinie",
   "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Ablaufrichtlinie: „Standard\" verwendet die integrierte Ablaufzeit von 1 Stunde; „Angegebene Zeit\" läuft nach den eingegebenen Sekunden ab; „Nie ablaufen\" hält den Token dauerhaft gültig.",
   "内网穿透 FileCat": "Getunnelter FileCat",
-  "prt_tcp": "Greift über einen Tunnel-Client auf FileCat auf einem anderen Rechner zu. Zuerst unter „TCP-Weiterleitung\" einen Client hinzufügen und verbinden, dann hier diesen Client auswählen und die Login-Daten der Gegenseite eingeben."
+  "prt_tcp": "Greift über einen Tunnel-Client auf FileCat auf einem anderen Rechner zu. Zuerst unter „TCP-Weiterleitung\" einen Client hinzufügen und verbinden, dann hier diesen Client auswählen und die Login-Daten der Gegenseite eingeben.",
+  "搜文件内容": "Dateiinhalte rekursiv durchsuchen",
+  "文件名": "Dateiname",
+  "文件内容": "Dateiinhalt",
+  "显示匹配行": "Trefferzeilen anzeigen",
+  "输入内容后搜": "Inhalt eingeben und Enter drücken zum Suchen",
+  "已排除": "Ausgeschlossen",
+  "排除当前目录下的项": "Elemente in diesem Verzeichnis ausschließen",
+  "过滤列表": "Liste filtern",
+  "忽略名字": "Namen ignorieren",
+  "按名字忽略": "Nach Name ignorieren",
+  "如 node_modules": "z. B. node_modules",
+  "保存忽略名字": "Ignorierte Namen speichern",
+  "打开文件": "Datei öffnen",
+  "忽略名字设置": "Einstellungen für ignorierte Namen",
+  "按名字忽略说明": "Hier konfigurierte Namen werden bei der Suche auf jeder Ebene übersprungen. Beispielsweise überspringt node_modules alle node_modules-Verzeichnisse und *.log alle .log-Dateien.",
+  "暂无": "Keine"
 }

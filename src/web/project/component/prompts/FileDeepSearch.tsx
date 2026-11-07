@@ -3,14 +3,15 @@ import {useNavigate} from "react-router-dom";
 import {useAtom} from "jotai";
 import {useTranslation} from "react-i18next";
 import {$stroe} from "../../util/store";
-import {file_deep_search_item, file_deep_search_req} from "../../../../common/req/file.req";
+import {file_deep_search_item, file_deep_search_req, file_deep_search_type} from "../../../../common/req/file.req";
 import {routerConfig} from "../../../../common/RouterConfig";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {WsClient} from "../../../../common/frame/ws.client";
-import {InputTextIcon} from "../../../meta/component/Input";
+import {InputCheckbox, InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
-import {Table} from "../../../meta/component/Table";
-import {TextTip} from "../../../meta/component/Card";
+import {SearchExcludePanel} from "./SearchExcludePanel";
+import {SearchIgnoreSetting} from "./SearchIgnoreSetting";
+import {user_click_file} from "../file/FileUtil";
 
 // 最多往 DOM 里渲染的结果条数。搜索结果可能几万条（例如关键词只输一个字母），
 // 全量渲染会直接卡死页面，所以只渲染前这么多条，其余提示用户细化关键词。
@@ -25,7 +26,22 @@ export function FileDeepSearch(props: { base_path: string }) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    const {click_file} = user_click_file();
     const [keyword, setKeyword] = useState("");
+    // 搜索方式：按文件名匹配，或按文件内容匹配
+    const [search_type, set_search_type] = useState<file_deep_search_type>("name");
+    // 正则、忽略大小写默认都不勾；显示匹配行只影响内容搜索，默认开启
+    const [is_regex, set_is_regex] = useState(false);
+    const [ignore_case, set_ignore_case] = useState(false);
+    const [show_match_line, set_show_match_line] = useState(true);
+    // 排除规则：具体路径来自弹窗内勾选，忽略名字来自用户持久化配置
+    const [exclude_paths, set_exclude_paths] = useState<string[]>([]);
+    const [ignore_names, set_ignore_names] = useState<string[]>([]);
+    // 排除面板是否展开
+    const [show_exclude, set_show_exclude] = useState(false);
+    // 是否处于「忽略名字设置」视图
+    const [setting_open, set_setting_open] = useState(false);
     const [searching, setSearching] = useState(false);
     const [list, setList] = useState<file_deep_search_item[]>([]);
     // 本次搜索命中的总条数。list 只保留能渲染的部分，总数要单独记，用于判断结果是否超出
@@ -40,6 +56,17 @@ export function FileDeepSearch(props: { base_path: string }) {
     const show_path = decodeURIComponent(props.base_path);
 
     const close = () => set_prompt_card({open: false});
+
+    // 从当前用户数据里取已保存的忽略名字
+    const load_saved_names = (): string[] => {
+        const saved = user_base_info?.user_data?.search_exclude_names;
+        return Array.isArray(saved) ? saved : [];
+    };
+
+    // 载入用户上次保存的忽略名字
+    useEffect(() => {
+        set_ignore_names(load_saved_names());
+    }, [user_base_info?.user_data?.search_exclude_names]);
 
     useEffect(() => {
         // 攒一批再渲染，避免命中很多时每来一条都触发一次 React 更新
@@ -98,7 +125,21 @@ export function FileDeepSearch(props: { base_path: string }) {
         const req: file_deep_search_req = {
             param_path: props.base_path,
             keyword: k,
+            search_type,
+            // 正则和忽略大小写两种搜索方式都支持
+            is_regex,
+            ignore_case,
         };
+        if (search_type === "content") {
+            req.show_match_line = show_match_line;
+        }
+        // 排除规则两种搜索都生效
+        if (exclude_paths.length) {
+            req.exclude_paths = exclude_paths;
+        }
+        if (ignore_names.length) {
+            req.exclude_names = ignore_names;
+        }
         // 后端 handler 立即回包（搜索在后台跑），所以这里正常能收到；加 catch 只是兜底网络异常
         ws.sendData(CmdType.file_deep_search, req).catch(() => {
         });
@@ -125,36 +166,111 @@ export function FileDeepSearch(props: { base_path: string }) {
         navigate(routerConfig.file + target.split("/").map(encodeURIComponent).join("/"));
     };
 
+    // 点结果行的「打开」按钮：目录直接进入，文件交给统一的 click_file 打开
+    // （由它按文件类型分派到文本/图片/md/表格等编辑器，和文件列表里双击完全一致）。
+    const open_item = async (item: file_deep_search_item) => {
+        if (item.is_dir) {
+            return jump(item);
+        }
+        // click_file 用「当前页面路径 + 文件名」拼地址，命中文件不在当前目录时会拼错。
+        // 这里先跳到文件所在目录再打开，交给 click_file 走和文件列表完全一致的默认逻辑。
+        const dir = item.path.slice(0, item.path.lastIndexOf("/") + 1) || "/";
+        close();
+        navigate(routerConfig.file + dir.split("/").map(encodeURIComponent).join("/"));
+        // 等目录切换生效后再打开，否则 click_file 仍按旧路由拼路径
+        await new Promise(r => setTimeout(r, 300));
+        await click_file({name: item.name, opt_shell: true});
+    };
+
+    const is_content = search_type === "content";
+
+    // 忽略名字设置页在弹窗内部切换视图，而不是换掉整个弹窗。
+    // 这样搜索结果、关键词、排除项都保留着，返回后可以直接继续操作。
+    if (setting_open) {
+        return <SearchIgnoreSetting on_back={() => {
+            set_setting_open(false);
+            // 设置页可能改了忽略名字，重新载入一遍再继续用
+            set_ignore_names(load_saved_names());
+        }}/>;
+    }
+
     return <div className="file-deep-search">
         <div className="file-deep-search__bar">
             <InputTextIcon icon={"search"}
                            value={keyword}
-                           placeholder={t("搜文件名")}
+                           placeholder={is_content ? t("搜文件内容") : t("搜文件名")}
                            handleInputChange={(v) => setKeyword(v)}
                            handleEnterPress={search}/>
             <button className="button button--flat" onClick={searching ? cancel : search}>
                 {searching ? t("取消") : t("搜索")}
             </button>
         </div>
+        {/* 搜索方式切换：文件名匹配走 fast-glob，内容匹配走 ripgrep */}
+        <div className="file-deep-search__tabs">
+            <button className={"file-deep-search__tab" + (is_content ? "" : " file-deep-search__tab--active")}
+                    onClick={() => set_search_type("name")}>{t("文件名")}</button>
+            <button className={"file-deep-search__tab" + (is_content ? " file-deep-search__tab--active" : "")}
+                    onClick={() => set_search_type("content")}>{t("文件内容")}</button>
+        </div>
+        {/* 文件名和内容搜索都支持正则、忽略大小写；显示匹配行只对内容搜索有意义 */}
+        <div className="file-deep-search__options">
+            <InputCheckbox context={t("正则")} selected={is_regex} onchange={() => set_is_regex(!is_regex)}/>
+            <InputCheckbox context={t("忽略大小写")} selected={ignore_case}
+                           onchange={() => set_ignore_case(!ignore_case)}/>
+            {is_content && <InputCheckbox context={t("显示匹配行")} selected={show_match_line}
+                                          onchange={() => set_show_match_line(!show_match_line)}/>}
+        </div>
         <div className="file-deep-search__hint">
             <span>{t("范围")}：{show_path}</span>
-            {total > 0 && <span className="file-deep-search__count">
-                {total > MAX_RENDER ? `${t("已显示")} ${MAX_RENDER} / ${total}` : `${total}`}
-            </span>}
+            <span className="file-deep-search__hint-right">
+                {(exclude_paths.length > 0 || ignore_names.length > 0) && <span className="file-deep-search__excluded">
+                    {t("已排除")} {exclude_paths.length + ignore_names.length}
+                </span>}
+                <button className={"file-deep-search__filter" + (show_exclude ? " file-deep-search__filter--active" : "")}
+                        onClick={() => set_show_exclude(!show_exclude)}>
+                    <span className="material-symbols-outlined">filter_alt</span>
+                    {t("过滤")}
+                </button>
+                {total > 0 && <span className="file-deep-search__count">
+                    {total > MAX_RENDER ? `${t("已显示")} ${MAX_RENDER} / ${total}` : `${total}`}
+                </span>}
+            </span>
         </div>
-        <div className="file-deep-search__body">
-            {list.length > 0 && <Table headers={[t("名称"), t("路径"), ""]}
-                   rows={list.map((item) => {
-                       const dir = item.path.slice(0, item.path.lastIndexOf("/") + 1);
-                       return [
-                           item.is_dir
-                               ? <span className="file-deep-search__dir">{item.name}</span>
-                               : item.name,
-                           <TextTip context={dir}/>,
-                           <ActionButton icon={"folder_open"} title={t("打开所在目录")}
-                                         onClick={() => jump(item)}/>,
-                       ];
-                   })}/>}
+        {show_exclude && <SearchExcludePanel base_path={props.base_path}
+                                            exclude_paths={exclude_paths}
+                                            ignore_names={ignore_names}
+                                            on_change_paths={set_exclude_paths}
+                                            on_change_names={set_ignore_names}
+                                            on_open_setting={() => set_setting_open(true)}/>}
+        <div className={"file-deep-search__body" + (is_content && show_match_line ? " file-deep-search__body--line" : "")}>
+            {list.length > 0 && <div className="file-deep-search__results">
+                {list.map((item) => {
+                    const dir = item.path.slice(0, item.path.lastIndexOf("/") + 1);
+                    return <div className="file-deep-search__row" key={item.path}>
+                        <div className="file-deep-search__name">
+                            {item.is_dir
+                                ? <span className="file-deep-search__dir">{item.name}</span>
+                                : <span className="file-deep-search__file" title={item.name}>{item.name}</span>}
+                            <span className="file-deep-search__path">{dir}</span>
+                            {/* 内容搜索时把命中的行跟在文件名下面，点行号打开文件 */}
+                            {item.lines && item.lines.length > 0 && <div className="file-deep-search__lines">
+                                {item.lines.map((l) => <div className="file-deep-search__line"
+                                                          key={l.line}
+                                                          onClick={() => open_item(item)}>
+                                    <span className="file-deep-search__line-no">{l.line}</span>
+                                    <span className="file-deep-search__line-text">{l.text}</span>
+                                </div>)}
+                            </div>}
+                        </div>
+                        <div className="file-deep-search__actions">
+                            <ActionButton icon={"open_in_new"} title={item.is_dir ? t("打开") : t("打开文件")}
+                                          onClick={() => open_item(item)}/>
+                            <ActionButton icon={"folder_open"} title={t("打开所在目录")}
+                                          onClick={() => jump(item)}/>
+                        </div>
+                    </div>;
+                })}
+            </div>}
             {searching && <div className="file-deep-search__empty">
                 <span className="chat-session-running" title={t("搜索中")}/>
                 {t("搜索中")}
@@ -163,7 +279,7 @@ export function FileDeepSearch(props: { base_path: string }) {
                 {t("结果过多")}
             </div>}
             {!searching && list.length === 0 && <div className="file-deep-search__empty">
-                {searched ? t("无匹配") : t("输入后搜")}
+                {searched ? t("无匹配") : (is_content ? t("输入内容后搜") : t("输入后搜"))}
             </div>}
         </div>
     </div>;

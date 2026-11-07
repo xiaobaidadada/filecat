@@ -1332,5 +1332,21 @@
   "过期策略": "Politique d'expiration",
   "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Politique d'expiration : « Par défaut » utilise l'expiration intégrée d'une heure ; « Durée spécifiée » expire après le nombre de secondes saisi ; « Jamais » garde le jeton valide indéfiniment.",
   "内网穿透 FileCat": "FileCat via tunnel",
-  "prt_tcp": "Accédez à FileCat sur une autre machine via un client tunnel. Ajoutez et connectez d'abord un client dans « Redirection TCP », puis sélectionnez-le ici et saisissez les identifiants de connexion distants."
+  "prt_tcp": "Accédez à FileCat sur une autre machine via un client tunnel. Ajoutez et connectez d'abord un client dans « Redirection TCP », puis sélectionnez-le ici et saisissez les identifiants de connexion distants.",
+  "搜文件内容": "Rechercher le contenu des fichiers récursivement",
+  "文件名": "Nom de fichier",
+  "文件内容": "Contenu du fichier",
+  "显示匹配行": "Afficher les lignes correspondantes",
+  "输入内容后搜": "Saisissez le contenu et appuyez sur Entrée pour rechercher",
+  "已排除": "Exclus",
+  "排除当前目录下的项": "Exclure des éléments de ce dossier",
+  "过滤列表": "Filtrer la liste",
+  "忽略名字": "Noms à ignorer",
+  "按名字忽略": "Ignorer par nom",
+  "如 node_modules": "ex. node_modules",
+  "保存忽略名字": "Enregistrer les noms ignorés",
+  "打开文件": "Ouvrir le fichier",
+  "忽略名字设置": "Paramètres des noms ignorés",
+  "按名字忽略说明": "Les noms configurés ici sont ignorés lors de la recherche, à tous les niveaux. Par exemple, node_modules ignore tous les dossiers node_modules et *.log ignore tous les fichiers .log.",
+  "暂无": "Aucun"
 }

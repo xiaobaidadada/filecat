@@ -94,3 +94,344 @@
 .file-deep-search__dir {
     color: var(--blue, #2196f3);
 }
+
+/* 搜索方式切换：文件名 / 文件内容，做成两个紧挨的下划线条 */
+.file-deep-search__tabs {
+    display: flex;
+    align-items: center;
+    gap: 1.2em;
+    margin-top: -0.2em;
+}
+
+.file-deep-search__tab {
+    padding: 0 0 0.3em;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--textSecondary, #757575);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.file-deep-search__tab:hover {
+    color: var(--textPrimary, #212121);
+}
+
+.file-deep-search__tab--active {
+    color: var(--blue, #2196f3);
+    border-bottom-color: var(--blue, #2196f3);
+}
+
+/* 内容搜索的附加选项（正则 / 忽略大小写 / 显示匹配行） */
+.file-deep-search__options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4em 1.2em;
+    font-size: 0.85em;
+}
+
+/* 显示匹配行时结果行高变大，容器高度跟着放宽一点 */
+.file-deep-search__body--line {
+    height: 30em;
+}
+
+.file-deep-search__name {
+    overflow: hidden;
+}
+
+.file-deep-search__file {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 命中行列表：每行「行号 + 代码」，行号固定宽度靠左 */
+.file-deep-search__lines {
+    margin-top: 0.25em;
+}
+
+.file-deep-search__line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    cursor: pointer;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+.file-deep-search__line:hover {
+    background: var(--surfaceSecondary, #f5f5f5);
+}
+
+.file-deep-search__line-no {
+    flex-shrink: 0;
+    min-width: 2.6em;
+    text-align: right;
+    color: var(--textSecondary, #757575);
+}
+
+.file-deep-search__line-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--textSecondary, #757575);
+}
+
+/* 提示行右侧：排除计数 + 过滤按钮，和左侧「范围」分开 */
+.file-deep-search__hint-right {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+}
+
+.file-deep-search__excluded {
+    color: var(--textSecondary, #757575);
+    font-size: 0.85em;
+}
+
+.file-deep-search__filter {
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    padding: 0.15em 0.6em;
+    border: 1px solid var(--borderPrimary, #e0e0e0);
+    border-radius: 1em;
+    background: none;
+    color: var(--textSecondary, #757575);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.file-deep-search__filter:hover {
+    color: var(--textPrimary, #212121);
+}
+
+.file-deep-search__filter--active {
+    border-color: var(--blue, #2196f3);
+    color: var(--blue, #2196f3);
+}
+
+.file-deep-search__filter .material-symbols-outlined {
+    font-size: 1.1em;
+}
+
+/* 结果行操作列：打开 + 打开所在目录，固定不换行、不被路径列挤压 */
+.file-deep-search__actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 0.4em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.file-deep-search__actions .action {
+    flex-shrink: 0;
+}
+
+/* 结果列表：每行左侧是名称/路径/命中行，右侧固定两个操作按钮 */
+.file-deep-search__results {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-deep-search__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1em;
+    padding: 0.5em 0.3em;
+    border-bottom: 1px solid var(--borderPrimary, #eee);
+}
+
+.file-deep-search__row:hover {
+    background: var(--surfaceSecondary, #fafafa);
+}
+
+.file-deep-search__row .file-deep-search__name {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-deep-search__path {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8em;
+    color: var(--textSecondary, #9e9e9e);
+    margin-top: 0.1em;
+}
+
+/* 排除规则面板：贴在过滤按钮下方，左右两块分栏 */
+.search-exclude {
+    display: flex;
+    gap: 1.5em;
+    padding: 0.8em 1em;
+    border: 1px solid var(--borderPrimary, #e0e0e0);
+    border-radius: 0.5em;
+    background: var(--surfaceSecondary, #fafafa);
+}
+
+.search-exclude__section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    flex: 1;
+    min-width: 0;
+}
+
+.search-exclude__title {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.search-exclude__hint {
+    font-size: 0.8em;
+    color: var(--textSecondary, #757575);
+}
+
+/* 目录/文件勾选列表，固定高度内部滚动，避免把主列表挤没 */
+.search-exclude__list {
+    height: 11em;
+    overflow-y: auto;
+    border: 1px solid var(--borderPrimary, #e0e0e0);
+    border-radius: 0.4em;
+    background: var(--surfacePrimary, #fff);
+    padding: 0.3em;
+}
+
+.search-exclude__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.2em 0.3em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.search-exclude__item:hover {
+    background: var(--surfaceSecondary, #f5f5f5);
+}
+
+.search-exclude__item .material-symbols-outlined {
+    font-size: 1.1em;
+    color: var(--textSecondary, #757575);
+}
+
+.search-exclude__item .search-exclude__icon--dir {
+    color: var(--blue, #2196f3);
+}
+
+.search-exclude__item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-exclude__empty {
+    padding: 1em;
+    text-align: center;
+    font-size: 0.85em;
+    color: var(--textSecondary, #757575);
+}
+
+/* 已选中的排除项（路径和忽略名字共用这个标签样式） */
+.search-exclude__chosen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+}
+
+.search-exclude__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    background: var(--surfacePrimary, #fff);
+    border: 1px solid var(--borderPrimary, #e0e0e0);
+    font-size: 0.8em;
+}
+
+.search-exclude__tag .material-symbols-outlined {
+    font-size: 1em;
+    cursor: pointer;
+    color: var(--textSecondary, #757575);
+}
+
+.search-exclude__tag .material-symbols-outlined:hover {
+    color: var(--textPrimary, #212121);
+}
+
+.search-exclude__add {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+/* 忽略名字设置页：接管整个弹窗后的独立布局 */
+.search-ignore-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    padding: 0.5em 0;
+}
+
+.search-ignore-setting__desc {
+    font-size: 0.85em;
+    color: var(--textSecondary, #757575);
+    line-height: 1.6;
+}
+
+.search-ignore-setting__add {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.search-ignore-setting__list {
+    min-height: 8em;
+    max-height: 16em;
+    overflow-y: auto;
+    border: 1px solid var(--borderPrimary, #e0e0e0);
+    border-radius: 0.5em;
+}
+
+.search-ignore-setting__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.4em 0.8em;
+    border-bottom: 1px solid var(--borderPrimary, #e0e0e0);
+}
+
+.search-ignore-setting__item:last-child {
+    border-bottom: none;
+}
+
+.search-ignore-setting__item .material-symbols-outlined {
+    font-size: 1.1em;
+    color: var(--textSecondary, #757575);
+}
+
+.search-ignore-setting__item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-ignore-setting__empty {
+    padding: 2em;
+    text-align: center;
+    font-size: 0.85em;
+    color: var(--textSecondary, #757575);
+}
+
+.search-ignore-setting__footer {
+    margin-top: 0.3em;
+}

@@ -37,11 +37,37 @@ import {isAbsolutePath} from "../../../common/path_util";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key, file_key} from "../data/data_type";
 import {getSys} from "../shell/shell.service";
-import {sqliteQueryReq, sqliteQueryResult, file_deep_search_req, file_deep_search_item} from "../../../common/req/file.req";
+import {sqliteQueryReq, sqliteQueryResult, file_deep_search_req, file_deep_search_item, file_deep_search_line} from "../../../common/req/file.req";
 import fg from "fast-glob";
+import {spawn, ChildProcess} from "child_process";
+import {resolve_rg_path} from "./ripgrep";
 
 // 递归搜索的流句柄存在 wss.dataMap 里的 key，取消/断连时用它中止遍历
 const SEARCH_STREAM_KEY = "file_deep_search";
+
+/**
+ * 把用户配置的排除项转成 fast-glob 的 ignore 规则。
+ * exclude_names 是文件名（支持 * 通配），对任意层级的同名项都生效；
+ * exclude_paths 是完整 web 路径，需要按搜索根目录转成相对路径，
+ * 因为 fast-glob 的 ignore 也是相对于 cwd 的。
+ */
+function build_fg_ignore(base_path: string, exclude_names: string[] = [], exclude_paths: string[] = []): string[] {
+    const ignore: string[] = [];
+    for (const name of exclude_names) {
+        const v = name.trim().replace(/^\/+/, "");
+        if (!v) continue;
+        // 不含斜杠时按名字匹配任意层级，用户填 node_modules 或 *.log 都是这个语义
+        ignore.push(v.includes("/") ? v : `**/${v}`);
+    }
+    const base = base_path.replace(/^\/+|\/+$/g, "");
+    for (const p of exclude_paths) {
+        const v = p.trim().replace(/^\/+|\/+$/g, "");
+        if (!v) continue;
+        const rel = base && v.startsWith(base + "/") ? v.slice(base.length + 1) : v;
+        ignore.push(rel, `${rel}/**`);
+    }
+    return ignore;
+}
 
 import {
     PathResolution,
@@ -384,26 +410,49 @@ export class FileService  {
     }
 
     /**
-     * 按文件名递归搜索（WS 流式）。
-     * 用 fast-glob 的流式接口边遍历边把命中推给前端，用户可以随时取消；
-     * 连接断开时也会自动停止遍历，不会在后台泄漏一个跑不完的扫描任务。
+     * 递归搜索（WS 流式）。
+     * search_type 为 name 时用 fast-glob 按文件名匹配；
+     * 为 content 时用 ripgrep 按文件内容匹配，ripgrep 不可用则降级为 JS 逐文件读取。
+     * 边遍历边把命中推给前端，用户可以随时取消；连接断开时也会自动停止。
      */
     public async file_deep_search(data: WsData<file_deep_search_req>) {
-        const wss = data.wss as Wss;
         const param = data.context as file_deep_search_req;
-        const token = wss.token;
         const k = (param.keyword ?? "").trim();
         if (!k) {
             return;
         }
+        if (param.search_type === "content") {
+            return this.file_deep_search_content(data, k);
+        }
+        return this.file_deep_search_name(data, k);
+    }
+
+    /** 按文件名递归搜索 */
+    private async file_deep_search_name(data: WsData<file_deep_search_req>, k: string) {
+        const wss = data.wss as Wss;
+        const param = data.context as file_deep_search_req;
+        const token = wss.token;
         const root_path = settingService.getFileRootPath(token);
         // 项目惯例：前端传原始路径，后端统一解码后再用
         const web_path = param.param_path ? decodeURIComponent(param.param_path) : "";
         const sysPath = path.join(root_path, web_path);
         userService.check_user_path(token, sysPath);
 
-        // 关键词里的 glob 元字符要转义，否则用户输入 * 会被当作通配符
-        const pattern = "**/*" + k.replace(/[*?[\]{}()!+@]/g, "\\$&") + "*";
+        // 关键词里的 glob 元字符要转义，否则用户输入 * 会被当作通配符。
+        // 勾选正则时不转义，但要做合法性校验，非法正则直接返回空结果而不是抛错。
+        let regex: RegExp | null = null;
+        if (param.is_regex) {
+            try {
+                regex = new RegExp(k, param.ignore_case ? "i" : "");
+            } catch (e) {
+                console.error("文件名搜索正则无效：", e);
+                wss.send(CmdType.file_deep_search_end, true);
+                return;
+            }
+        }
+        // 正则模式无法用 glob 表达，先全量列出再逐个用正则匹配文件名；
+        // 非正则模式直接用 glob 匹配，交给 fast-glob 提前剪枝，更快。
+        const pattern = regex ? "**/*" : "**/*" + k.replace(/[*?[\]{}()!+@]/g, "\\$&") + "*";
         const stream = fg.stream(pattern, {
             cwd: sysPath,
             onlyFiles: false,
@@ -412,6 +461,9 @@ export class FileService  {
             suppressErrors: true,
             // 让目录结果自带尾斜杠，前端据此区分文件和目录，无需再 stat
             markDirectories: true,
+            // 非正则模式下忽略大小写由 fast-glob 直接支持
+            caseSensitiveMatch: !param.ignore_case,
+            ignore: build_fg_ignore(web_path, param.exclude_names, param.exclude_paths),
         });
 
         // 攒一批再发，避免命中很多时每条都发一个 WS 包
@@ -440,8 +492,11 @@ export class FileService  {
             // markDirectories 会给目录加尾斜杠，去掉后再拼，目录标记单独用 is_dir 表示
             const is_dir = rel.endsWith("/");
             const pure_rel = is_dir ? rel.slice(0, -1) : rel;
+            const name = path.basename(pure_rel);
+            // 正则模式是全量遍历，这里按文件名过滤
+            if (regex && !regex.test(name)) return;
             buffer.push({
-                name: path.basename(pure_rel),
+                name,
                 path: ("/" + [web_path, pure_rel].join("/")).replace(/\/+/g, "/"),
                 is_dir,
             });
@@ -460,6 +515,272 @@ export class FileService  {
             aborted = true;
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             console.error("递归搜索失败：", e);
+            wss.send(CmdType.file_deep_search_end, true);
+        });
+    }
+
+    /**
+     * 按文件内容递归搜索。
+     * 优先用 ripgrep（快且天然遵守 .gitignore），当前平台没有二进制时降级为 JS 逐文件读取。
+     * 用户填的内容默认按字面量匹配，勾选「正则」后才当作正则解析。
+     */
+    private async file_deep_search_content(data: WsData<file_deep_search_req>, k: string) {
+        const wss = data.wss as Wss;
+        const param = data.context as file_deep_search_req;
+        const token = wss.token;
+        const root_path = settingService.getFileRootPath(token);
+        const web_path = param.param_path ? decodeURIComponent(param.param_path) : "";
+        const sysPath = path.join(root_path, web_path);
+        userService.check_user_path(token, sysPath);
+
+        const show_line = !!param.show_match_line;
+        const ignore_case = !!param.ignore_case;
+        // 用户没勾正则时把关键词转义成字面量，避免输入 . 或 ( 被当成元字符
+        const pattern = param.is_regex ? k : k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        const BATCH = 50;
+        let buffer: file_deep_search_item[] = [];
+        let aborted = false;
+        let child: ChildProcess | null = null;
+        // 已产出过结果的文件路径。buffer 发出后就清空了，后续同文件的命中行不能再追加，
+        // 用这个集合去重，避免一个文件刷满整个列表
+        const emitted = new Set<string>();
+
+        const flush = () => {
+            if (!buffer.length || aborted) return;
+            wss.send(CmdType.file_deep_search_data, buffer);
+            buffer = [];
+        };
+        const abort = () => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            child?.kill();
+        };
+        wss.setClose(abort);
+        wss.dataMap.set(SEARCH_STREAM_KEY, abort);
+        const finish = () => {
+            if (aborted) return;
+            flush();
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            wss.send(CmdType.file_deep_search_end, true);
+        };
+        // 相对系统根目录的绝对路径转成前端用的 web 路径
+        const to_web_path = (abs_path: string) => {
+            const rel = path.relative(sysPath, abs_path).replace(/\\/g, "/");
+            return ("/" + [web_path, rel].join("/")).replace(/\/+/g, "/");
+        };
+
+        const rg_path = await resolve_rg_path();
+        if (!rg_path) {
+            return this.file_deep_search_content_fallback(sysPath, web_path, pattern, param, data);
+        }
+
+        const args = ["--json", "--no-messages"];
+        if (ignore_case) args.push("-i");
+        // 每行最多这么多字节，防止单个超长行（压缩文件、单行 JSON）撑爆缓冲区
+        args.push("--max-columns", "500", "--max-columns-preview");
+        if (!show_line) {
+            // 不需要行内容时每个文件只取一条命中，输出量小一个数量级
+            args.push("--max-count", "1");
+        }
+        // 排除规则：名字按 glob 匹配（支持 *.log 这类通配），路径按前缀排除整个目录
+        for (const name of param.exclude_names ?? []) {
+            const v = name.trim();
+            if (v) args.push("--glob", `!${v}`);
+        }
+        // 选中的具体项是完整 web 路径，ripgrep 的 glob 以搜索根目录为基准，先转成相对路径
+        const rel_base = web_path.replace(/^\/+|\/+$/g, "");
+        for (const p of param.exclude_paths ?? []) {
+            const v = p.trim().replace(/^\/+|\/+$/g, "");
+            if (!v) continue;
+            const rel = rel_base && v.startsWith(rel_base + "/") ? v.slice(rel_base.length + 1) : v;
+            args.push("--glob", `!${rel}`, "--glob", `!${rel}/**`);
+        }
+        args.push("--", pattern, sysPath);
+
+        child = spawn(rg_path, args, {windowsHide: true});
+        let stdout_buf = "";
+        let stderr_buf = "";
+
+        const handle_line = (line: string) => {
+            if (aborted || !line) return;
+            let msg: any;
+            try {
+                msg = JSON.parse(line);
+            } catch {
+                return;
+            }
+            if (msg.type !== "match") return;
+            const msg_path: string = msg.data?.path?.text ?? "";
+            if (!msg_path) return;
+            const web_file_path = to_web_path(msg_path);
+
+            // 不显示行时每个文件只会有一条 match（--max-count 1），直接产出一条结果
+            if (!show_line) {
+                if (emitted.has(web_file_path)) return;
+                emitted.add(web_file_path);
+                buffer.push({
+                    name: path.basename(msg_path),
+                    path: web_file_path,
+                    is_dir: false,
+                });
+                if (buffer.length >= BATCH) flush();
+                return;
+            }
+            const raw_text: string = msg.data?.lines?.text ?? "";
+            const text = raw_text.replace(/\r?\n$/, "");
+            const line_no: number = msg.data?.line_number ?? 0;
+            // 同一个文件的多行命中合并成一条结果，避免一个文件刷满整个列表
+            const exist = buffer.find(f => f.path === web_file_path);
+            if (exist) {
+                exist.lines!.push({line: line_no, text});
+                return;
+            }
+            // 该文件这条结果已经发送过了，不能再追加（前端收不到已发出对象的后续修改）
+            if (emitted.has(web_file_path)) return;
+            emitted.add(web_file_path);
+            buffer.push({
+                name: path.basename(msg_path),
+                path: web_file_path,
+                is_dir: false,
+                lines: [{line: line_no, text}],
+            });
+            if (buffer.length >= BATCH) flush();
+        };
+
+        child.stdout?.on("data", (chunk: Buffer) => {
+            if (aborted) return;
+            stdout_buf += chunk.toString("utf8");
+            const parts = stdout_buf.split("\n");
+            // 最后一段可能是半行，留到下次
+            stdout_buf = parts.pop() ?? "";
+            for (const line of parts) handle_line(line);
+        });
+        child.stderr?.on("data", (chunk: Buffer) => {
+            stderr_buf += chunk.toString("utf8");
+        });
+        child.on("error", (e) => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            console.error("内容搜索失败：", e);
+            wss.send(CmdType.file_deep_search_end, true);
+        });
+        // 用 close 而不是 exit：close 保证 stdio 已经读完，不会丢最后一批结果
+        child.on("close", (code) => {
+            if (aborted) return;
+            if (stdout_buf) handle_line(stdout_buf);
+            stdout_buf = "";
+            // 退出码 1 是「没有命中」，属于正常结束；2 才是真的出错
+            if (code === 2) {
+                console.error("内容搜索出错：", stderr_buf.slice(0, 2000));
+            }
+            finish();
+        });
+    }
+
+    /**
+     * 内容搜索降级实现：没有 ripgrep 时用 fast-glob 列出文件再逐个读取。
+     * 只读文本文件，二进制文件靠文件中是否含 \0 判断后跳过。
+     */
+    private async file_deep_search_content_fallback(
+        sysPath: string, web_path: string, pattern: string, param: file_deep_search_req, data: WsData<file_deep_search_req>,
+    ) {
+        const wss = data.wss as Wss;
+        const show_line = !!param.show_match_line;
+        let regex: RegExp;
+        try {
+            regex = new RegExp(pattern, param.ignore_case ? "i" : "");
+        } catch (e) {
+            console.error("内容搜索正则无效：", e);
+            wss.send(CmdType.file_deep_search_end, true);
+            return;
+        }
+        const stream = fg.stream("**/*", {
+            cwd: sysPath,
+            onlyFiles: true,
+            dot: true,
+            followSymbolicLinks: false,
+            suppressErrors: true,
+            ignore: build_fg_ignore(web_path, param.exclude_names, param.exclude_paths),
+        });
+        let aborted = false;
+        let buffer: file_deep_search_item[] = [];
+        const flush = () => {
+            if (!buffer.length || aborted) return;
+            wss.send(CmdType.file_deep_search_data, buffer);
+            buffer = [];
+        };
+        const abort = () => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            (stream as any).destroy?.();
+        };
+        wss.setClose(abort);
+        wss.dataMap.set(SEARCH_STREAM_KEY, abort);
+
+        const pending: string[] = [];
+        const BATCH = 50;
+        // 串行读文件，避免一次打开几千个文件把句柄耗尽
+        let working = false;
+        const drain = async () => {
+            if (working) return;
+            working = true;
+            while (pending.length && !aborted) {
+                const rel = pending.shift()!;
+                const abs = path.join(sysPath, rel);
+                let content: string;
+                try {
+                    const st = await FileUtil.statSync(abs);
+                    // 跳过超大文件，避免把内存读爆
+                    if (st.size > 2 * 1024 * 1024) continue;
+                    const buf = await FileUtil.readFileSync(abs);
+                    // 含 \0 视为二进制文件
+                    if (buf.includes(0)) continue;
+                    content = buf.toString("utf8");
+                } catch {
+                    continue;
+                }
+                const lines = content.split(/\r?\n/);
+                const hits: file_deep_search_line[] = [];
+                for (let i = 0; i < lines.length; i++) {
+                    if (!regex.test(lines[i])) continue;
+                    hits.push({line: i + 1, text: lines[i].slice(0, 500)});
+                }
+                if (!hits.length) continue;
+                buffer.push({
+                    name: path.basename(rel),
+                    path: ("/" + [web_path, rel.replace(/\\/g, "/")].join("/")).replace(/\/+/g, "/"),
+                    is_dir: false,
+                    lines: show_line ? hits : undefined,
+                });
+                if (buffer.length >= BATCH) flush();
+            }
+            working = false;
+        };
+
+        stream.on("data", (entry: string) => {
+            if (aborted) return;
+            pending.push(entry);
+            drain();
+        });
+        // 等所有待处理文件读完再收尾，否则会丢最后一批结果
+        stream.on("end", async () => {
+            while ((pending.length || working) && !aborted) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            if (aborted) return;
+            flush();
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            wss.send(CmdType.file_deep_search_end, true);
+        });
+        stream.on("error", (e: any) => {
+            if (aborted) return;
+            aborted = true;
+            wss.dataMap.delete(SEARCH_STREAM_KEY);
+            console.error("内容搜索失败：", e);
             wss.send(CmdType.file_deep_search_end, true);
         });
     }

@@ -208,6 +208,7 @@ export class UserData extends UserLogin {
     file_list_zoom?:number;
 
     sql_preset_list?: SqlPresetItem[]; // SQL 查询预设列表（个人保存）
+    search_exclude_names?: string[]; // 深度搜索时按名字忽略的项（个人保存）
     md_editor_theme?: string; // md 编辑器主题 id（个人保存；空表示跟随系统设置里的默认主题）
     ai_chat_zoom?: number; // ai 聊天记录内容缩放百分比（个人保存）
 

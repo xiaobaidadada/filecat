@@ -1332,5 +1332,21 @@
   "过期策略": "Política de expiración",
   "过期策略：默认表示使用系统内置的1小时过期时间；指定时间按填写的秒数过期；永不过期则token一直有效": "Política de expiración: «Predeterminado» usa la expiración integrada de 1 hora; «Tiempo especificado» expira tras los segundos introducidos; «Nunca expira» mantiene el token válido para siempre.",
   "内网穿透 FileCat": "FileCat por túnel",
-  "prt_tcp": "Accede a FileCat en otra máquina mediante un cliente de túnel. Primero añade y conecta un cliente en «Reenvío TCP», luego selecciónalo aquí e introduce las credenciales de inicio de sesión del otro equipo."
+  "prt_tcp": "Accede a FileCat en otra máquina mediante un cliente de túnel. Primero añade y conecta un cliente en «Reenvío TCP», luego selecciónalo aquí e introduce las credenciales de inicio de sesión del otro equipo.",
+  "搜文件内容": "Buscar contenido de archivos de forma recursiva",
+  "文件名": "Nombre de archivo",
+  "文件内容": "Contenido del archivo",
+  "显示匹配行": "Mostrar líneas coincidentes",
+  "输入内容后搜": "Introduce el contenido y pulsa Enter para buscar",
+  "已排除": "Excluidos",
+  "排除当前目录下的项": "Excluir elementos de este directorio",
+  "过滤列表": "Filtrar lista",
+  "忽略名字": "Nombres a ignorar",
+  "按名字忽略": "Ignorar por nombre",
+  "如 node_modules": "ej. node_modules",
+  "保存忽略名字": "Guardar nombres ignorados",
+  "打开文件": "Abrir archivo",
+  "忽略名字设置": "Ajustes de nombres ignorados",
+  "按名字忽略说明": "Los nombres configurados aquí se omiten en la búsqueda en cualquier nivel. Por ejemplo, node_modules omite todos los directorios node_modules y *.log omite todos los archivos .log.",
+  "暂无": "Ninguno"
 }
