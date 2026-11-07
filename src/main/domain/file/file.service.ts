@@ -45,6 +45,11 @@ import {resolve_rg_path} from "./ripgrep";
 // 递归搜索的流句柄存在 wss.dataMap 里的 key，取消/断连时用它中止遍历
 const SEARCH_STREAM_KEY = "file_deep_search";
 
+// 搜索结果攒够多少条就推送一次
+const SEARCH_BATCH = 50;
+// 凑不满一批时的兜底推送间隔（毫秒），让小结果集也能边搜边出
+const SEARCH_FLUSH_INTERVAL = 200;
+
 /**
  * 把用户配置的排除项转成 fast-glob 的 ignore 规则。
  * exclude_names 是文件名（支持 * 通配），对任意层级的同名项都生效；
@@ -466,13 +471,30 @@ export class FileService  {
             ignore: build_fg_ignore(web_path, param.exclude_names, param.exclude_paths),
         });
 
-        // 攒一批再发，避免命中很多时每条都发一个 WS 包
-        const BATCH = 50;
+        // 攒一批再发，避免命中很多时每条都发一个 WS 包；
+        // 短时间内凑不满一批也定时兜底发出去，小结果集能边搜边出
         let buffer: file_deep_search_item[] = [];
+        // 兜底推送的定时器，收尾/取消/出错时都要清掉
+        let flush_timer: NodeJS.Timeout | null = null;
+        const clear_flush_timer = () => {
+            if (!flush_timer) return;
+            clearTimeout(flush_timer);
+            flush_timer = null;
+        };
         const flush = () => {
-            if (!buffer.length) return;
+            clear_flush_timer();
+            if (!buffer.length || aborted) return;
             wss.send(CmdType.file_deep_search_data, buffer);
             buffer = [];
+        };
+        const schedule_flush = () => {
+            if (flush_timer) return;
+            flush_timer = setTimeout(() => {
+                flush_timer = null;
+                if (!buffer.length || aborted) return;
+                wss.send(CmdType.file_deep_search_data, buffer);
+                buffer = [];
+            }, SEARCH_FLUSH_INTERVAL);
         };
 
         // 取消：客户端主动取消或连接断开都会走到这里，abort 后流会停止遍历
@@ -480,6 +502,9 @@ export class FileService  {
         const abort = () => {
             if (aborted) return;
             aborted = true;
+            // 必须回收定时器，否则断连后它仍会挂到超时，闭包里的数据也释放不掉
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             (stream as any).destroy?.();
         };
@@ -500,11 +525,17 @@ export class FileService  {
                 path: ("/" + [web_path, pure_rel].join("/")).replace(/\/+/g, "/"),
                 is_dir,
             });
-            if (buffer.length >= BATCH) flush();
+            if (buffer.length >= SEARCH_BATCH) {
+                flush();
+            } else {
+                schedule_flush();
+            }
         });
         stream.on("end", () => {
             if (aborted) return;
             flush();
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             wss.send(CmdType.file_deep_search_end, true);
         });
@@ -513,6 +544,8 @@ export class FileService  {
         stream.on("error", (e: any) => {
             if (aborted) return;
             aborted = true;
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             console.error("递归搜索失败：", e);
             wss.send(CmdType.file_deep_search_end, true);
@@ -538,22 +571,42 @@ export class FileService  {
         // 用户没勾正则时把关键词转义成字面量，避免输入 . 或 ( 被当成元字符
         const pattern = param.is_regex ? k : k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-        const BATCH = 50;
+        const BATCH = SEARCH_BATCH;
         let buffer: file_deep_search_item[] = [];
         let aborted = false;
         let child: ChildProcess | null = null;
+        // 兜底推送的定时器，任何时候收尾都要清掉，否则断连后仍会挂着，闭包里数据也释放不掉
+        let flush_timer: NodeJS.Timeout | null = null;
         // 已产出过结果的文件路径。buffer 发出后就清空了，后续同文件的命中行不能再追加，
         // 用这个集合去重，避免一个文件刷满整个列表
         const emitted = new Set<string>();
 
+        const clear_flush_timer = () => {
+            if (!flush_timer) return;
+            clearTimeout(flush_timer);
+            flush_timer = null;
+        };
         const flush = () => {
+            clear_flush_timer();
             if (!buffer.length || aborted) return;
             wss.send(CmdType.file_deep_search_data, buffer);
             buffer = [];
         };
+        // 凑不满一批时也定时推出去，避免小结果集要等到搜索结束才显示
+        const schedule_flush = () => {
+            if (flush_timer) return;
+            flush_timer = setTimeout(() => {
+                flush_timer = null;
+                if (!buffer.length || aborted) return;
+                wss.send(CmdType.file_deep_search_data, buffer);
+                buffer = [];
+            }, SEARCH_FLUSH_INTERVAL);
+        };
         const abort = () => {
             if (aborted) return;
             aborted = true;
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             child?.kill();
         };
@@ -562,6 +615,8 @@ export class FileService  {
         const finish = () => {
             if (aborted) return;
             flush();
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             wss.send(CmdType.file_deep_search_end, true);
         };
@@ -625,7 +680,11 @@ export class FileService  {
                     path: web_file_path,
                     is_dir: false,
                 });
-                if (buffer.length >= BATCH) flush();
+                if (buffer.length >= BATCH) {
+                    flush();
+                } else {
+                    schedule_flush();
+                }
                 return;
             }
             const raw_text: string = msg.data?.lines?.text ?? "";
@@ -646,7 +705,11 @@ export class FileService  {
                 is_dir: false,
                 lines: [{line: line_no, text}],
             });
-            if (buffer.length >= BATCH) flush();
+            if (buffer.length >= BATCH) {
+                flush();
+            } else {
+                schedule_flush();
+            }
         };
 
         child.stdout?.on("data", (chunk: Buffer) => {
@@ -663,6 +726,8 @@ export class FileService  {
         child.on("error", (e) => {
             if (aborted) return;
             aborted = true;
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             console.error("内容搜索失败：", e);
             wss.send(CmdType.file_deep_search_end, true);
@@ -707,14 +772,33 @@ export class FileService  {
         });
         let aborted = false;
         let buffer: file_deep_search_item[] = [];
+        // 兜底推送的定时器，收尾/取消/出错时都要清掉
+        let flush_timer: NodeJS.Timeout | null = null;
+        const clear_flush_timer = () => {
+            if (!flush_timer) return;
+            clearTimeout(flush_timer);
+            flush_timer = null;
+        };
         const flush = () => {
+            clear_flush_timer();
             if (!buffer.length || aborted) return;
             wss.send(CmdType.file_deep_search_data, buffer);
             buffer = [];
         };
+        const schedule_flush = () => {
+            if (flush_timer) return;
+            flush_timer = setTimeout(() => {
+                flush_timer = null;
+                if (!buffer.length || aborted) return;
+                wss.send(CmdType.file_deep_search_data, buffer);
+                buffer = [];
+            }, SEARCH_FLUSH_INTERVAL);
+        };
         const abort = () => {
             if (aborted) return;
             aborted = true;
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             (stream as any).destroy?.();
         };
@@ -722,7 +806,7 @@ export class FileService  {
         wss.dataMap.set(SEARCH_STREAM_KEY, abort);
 
         const pending: string[] = [];
-        const BATCH = 50;
+        const BATCH = SEARCH_BATCH;
         // 串行读文件，避免一次打开几千个文件把句柄耗尽
         let working = false;
         const drain = async () => {
@@ -756,7 +840,11 @@ export class FileService  {
                     is_dir: false,
                     lines: show_line ? hits : undefined,
                 });
-                if (buffer.length >= BATCH) flush();
+                if (buffer.length >= BATCH) {
+                    flush();
+                } else {
+                    schedule_flush();
+                }
             }
             working = false;
         };
@@ -773,12 +861,16 @@ export class FileService  {
             }
             if (aborted) return;
             flush();
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             wss.send(CmdType.file_deep_search_end, true);
         });
         stream.on("error", (e: any) => {
             if (aborted) return;
             aborted = true;
+            clear_flush_timer();
+            buffer = [];
             wss.dataMap.delete(SEARCH_STREAM_KEY);
             console.error("内容搜索失败：", e);
             wss.send(CmdType.file_deep_search_end, true);

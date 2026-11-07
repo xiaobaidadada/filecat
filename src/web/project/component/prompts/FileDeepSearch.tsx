@@ -52,6 +52,9 @@ export function FileDeepSearch(props: { base_path: string }) {
     const ws = useMemo(() => new WsClient(window.location.host, "file_deep_search"), []);
     // 必须在 setClose 之前就先断开，避免 React 卸载后又触发一次状态更新
     const closed = useRef(false);
+    // 用户主动取消当前这次搜索。后端可能还有数据在路上，靠它把后续的包丢掉；
+    // 重新发起搜索时要复位，否则新搜索的结果会被一起丢弃
+    const cancelled = useRef(false);
     // 路由里的路径是 URL 编码的，展示给用户时要解码，否则中文目录会显示成 %E6%B5%8B
     const show_path = decodeURIComponent(props.base_path);
 
@@ -74,7 +77,8 @@ export function FileDeepSearch(props: { base_path: string }) {
         let flush_timer: any = null;
         const flush = () => {
             flush_timer = null;
-            if (closed.current || !buffer.length) return;
+            // 取消后既不再接收，也不再把已经积压在 buffer 里的数据渲染出来
+            if (closed.current || cancelled.current || !buffer.length) return;
             const batch = buffer;
             buffer = [];
             setTotal(prev => prev + batch.length);
@@ -82,12 +86,13 @@ export function FileDeepSearch(props: { base_path: string }) {
             setList(prev => prev.length >= MAX_RENDER ? prev : [...prev, ...batch].slice(0, MAX_RENDER));
         };
         const on_data = (data: WsData<file_deep_search_item[]>) => {
-            if (closed.current) return;
+            // 用户点了取消，后端可能还有几批数据在路上，直接丢掉
+            if (closed.current || cancelled.current) return;
             buffer.push(...(data.context ?? []));
             if (flush_timer === null) flush_timer = setTimeout(flush, 100);
         };
         const on_end = () => {
-            if (closed.current) return;
+            if (closed.current || cancelled.current) return;
             flush();
             setSearching(false);
         };
@@ -118,6 +123,8 @@ export function FileDeepSearch(props: { base_path: string }) {
         if (!k || searching) {
             return;
         }
+        // 这次搜索重新开始接收数据（上一次可能被取消过）
+        cancelled.current = false;
         setList([]);
         setTotal(0);
         setSearched(true);
@@ -146,6 +153,7 @@ export function FileDeepSearch(props: { base_path: string }) {
     };
 
     const cancel = () => {
+        cancelled.current = true;
         // 同卸载：cancel 是单向通知，后端不回包，必然超时 reject，catch 掉避免未处理的拒绝
         ws.sendData(CmdType.file_deep_search_cancel, {}).catch(() => {
         });
@@ -153,7 +161,6 @@ export function FileDeepSearch(props: { base_path: string }) {
     };
 
     // 跳转。后端返回的 path 是相对系统根目录的完整 web 路径（以 / 开头），
-    // 可直接作为文件路由的路径：目录直接进入，文件则跳到它所在的目录。
     const jump = (item: file_deep_search_item) => {
         let target = item.is_dir ? item.path : item.path.slice(0, item.path.lastIndexOf("/") + 1);
         // 文件路由的目录形式以斜杠结尾
