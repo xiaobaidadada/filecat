@@ -75,7 +75,7 @@ export default function Studio(props) {
     // const [studio, set_studio] = useAtom($stroe.studio);
     const [list, set_list] = useState([]);
     const [pre_path, set_pre_path] = useState("")
-    const [editorValue, setEditorValue] = useState("");
+    // const [editorValue, setEditorValue] = useState("");
     const [update, set_update] = useState<boolean>(false);
     // const [edit_model, set_edit_model] = useState("text");
     const [edit_filename, set_edit_filename] = useState({path: "", name: ""});
@@ -204,7 +204,6 @@ export default function Studio(props) {
     const get_item = async () => {
         const p = folder_path;
         set_pre_path(p);
-        set_edit_filename({path: p, name: get_last_name(p)});
         const rsp = await fileHttp.post('studio/get/item', {path: p});
         if (rsp.code === RCode.Success) {
             const folder_list = [];
@@ -252,10 +251,15 @@ export default function Studio(props) {
         get_item();
     }
     useEffect(() => {
-        setEditorValue("");
+        // setEditorValue("");
         // @ts-ignore
         // set_edit_filename({});
         set_have_update(false);
+        // 换目录后编辑器里的旧文件不再属于当前目录，连同全局文本缓存一起清掉，
+        // 否则新打开的 Ace 会先渲染出上一个文件的内容
+        set_edit_filename({path: "", name: ""});
+        set_edit_file_path("");
+        editor_data.set_value_temp("");
         // if (!studio.folder_path) {
         //     return;
         // }
@@ -276,10 +280,12 @@ export default function Studio(props) {
     const load_file = async (name, pre_path) => {
         // const model = getEditModelType(name) ?? "text";
         // set_edit_model(model);
+        // editor_data 是全局缓存，换文件期间先清空，避免请求返回前 Ace 拿到上一个文件的内容
+        editor_data.set_value_temp("");
         // 表格是二进制文件，由 XlsxPane 自己按 url 读取字节，这里不能当文本读
         if (!is_excel_file(name)) {
             const rsq = await fileHttp.get(`${encodeURIComponent(pre_path)}`)
-            setEditorValue(rsq.data);
+            // setEditorValue(rsq.data);
             editor_data.set_value_temp(rsq.data);
         }
         set_edit_filename({path: pre_path, name});
@@ -444,7 +450,7 @@ export default function Studio(props) {
                             call(isDir);
                             set_have_update(false);
                             set_edit_filename({});
-                            setEditorValue("");
+                            // setEditorValue("");
                             editor_data.set_value_temp("");
                         }
                         setShowPrompt({show: true, type: PromptEnum.FilesDelete, overlay: true, data: {path: path, call:extra_call,filename:name}});
