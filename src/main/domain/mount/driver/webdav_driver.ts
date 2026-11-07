@@ -122,6 +122,14 @@ export class WebdavDriver implements FileDriver {
             timeout: 30000,
             // 允许响应体为流
             responseType: "stream",
+            // 网盘地址通常是内网/本机，不能走全局 HTTP 代理
+            proxy: false,
+            // axios 默认会把 XML 响应体解析成 JS 对象，这里保持原始流
+            transformResponse: [(data: any) => data],
+            headers: {
+                // 不带这个头时，部分 WebDAV 服务端（如 webdav-server）会返回 JSON 而不是 XML
+                Accept: "application/xml, text/xml, */*",
+            },
         });
     }
 

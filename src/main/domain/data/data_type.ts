@@ -108,6 +108,7 @@ export enum data_common_key {
     ai_long_term_memory_setting = "ai_long_term_memory_setting", // 长期记忆开关设置
     file_mount_list = "file_mount_list", // 文件挂载列表（把本地目录挂载到网盘/远程协议）
     mount_enabled = "mount_enabled", // 挂载功能总开关（关闭时不解析任何挂载，全部按本地目录处理）
+    file_server_list = "file_server_list", // 文件服务列表（把本地目录以 SMB/WebDAV/SFTP 协议对外提供）
     mount_credential_list = "mount_credential_list", // 挂载凭据列表（账号/身份信息，可被多个挂载复用）
     mount_baidu_app = "mount_baidu_app", // [已废弃，仅迁移用] 百度网盘开放平台应用配置
     mount_baidu_account = "mount_baidu_account", // [已废弃，仅迁移用] 百度网盘已授权账号列表

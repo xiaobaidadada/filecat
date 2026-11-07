@@ -300,7 +300,6 @@
   "普通PEM": "Standard PEM",
   "生成": "Generate",
   "ssh_dir": "Save to .ssh Directory",
-  "私钥": "Private Key",
   "时间转换器": "Time Converter",
   "格式化时间": "Format Time",
   "毫秒": "Milliseconds",
@@ -1352,5 +1351,18 @@
   "打开文件": "Open file",
   "忽略名字设置": "Ignore name settings",
   "按名字忽略说明": "Names configured here are skipped during search at any depth. For example, entering node_modules skips every node_modules directory, and *.log skips all .log files.",
-  "暂无": "None"
+  "暂无": "None",
+  "fsvroot": "Root path",
+  "fsvro_tip": "Reject all write operations; browsing and downloading only",
+  "对外提供的本地绝对路径": "Local absolute path to expose",
+  "共享名": "Share name",
+  "列表显示的名称": "Name shown in list",
+  "留空不修改": "Leave blank to keep unchanged",
+  "没有权限": "No permission",
+  "启动": "Start",
+  "停止": "Stop",
+  "文件服务": "File server",
+  "已停止": "Stopped",
+  "运行中": "Running",
+  "主机名": "Hostname"
 }

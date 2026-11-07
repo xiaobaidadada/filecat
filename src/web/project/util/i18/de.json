@@ -306,7 +306,6 @@
   "普通PEM": "Normales PEM",
   "生成": "Generieren",
   "ssh_dir": "In .ssh-Verzeichnis speichern",
-  "私钥": "Privat-Schlüssel",
   "时间转换器": "Zeitkonverter",
   "格式化时间": "Formatiere Zeit",
   "毫秒": "Millisekunde",
@@ -1348,5 +1347,18 @@
   "打开文件": "Datei öffnen",
   "忽略名字设置": "Einstellungen für ignorierte Namen",
   "按名字忽略说明": "Hier konfigurierte Namen werden bei der Suche auf jeder Ebene übersprungen. Beispielsweise überspringt node_modules alle node_modules-Verzeichnisse und *.log alle .log-Dateien.",
-  "暂无": "Keine"
+  "暂无": "Keine",
+  "fsvroot": "Stammverzeichnis",
+  "fsvro_tip": "Alle Schreibvorgänge ablehnen; nur Lesen und Herunterladen",
+  "对外提供的本地绝对路径": "Absoluter lokaler Pfad",
+  "共享名": "Freigabenname",
+  "列表显示的名称": "Name in der Liste",
+  "留空不修改": "Leer lassen, um unverändert zu lassen",
+  "没有权限": "Keine Berechtigung",
+  "启动": "Starten",
+  "停止": "Stoppen",
+  "文件服务": "Dateidienst",
+  "已停止": "Gestoppt",
+  "运行中": "Läuft",
+  "主机名": "Hostname"
 }

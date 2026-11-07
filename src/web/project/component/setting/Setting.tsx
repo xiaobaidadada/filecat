@@ -10,6 +10,7 @@ import {use_auth_check} from "../../util/store.util";
 import {Role} from "./Role";
 import {PrivateEnv} from "./PrivateEnv";
 import {MountSetting} from "./MountSetting";
+import {FileServerSetting} from "./FileServerSetting";
 import {routerConfig} from "../../../../common/RouterConfig";
 
 
@@ -31,12 +32,13 @@ export default function  Settings() {
     }
     if(check_user_auth(UserAuth.file_mount)) {
         menuRots.push({index: 5, name:t("网盘挂载"),rto: "mount_setting/",component: <MountSetting />})
+        menuRots.push({index: 6, name:t("文件服务"),rto: "file_server_setting/",component: <FileServerSetting />})
     }
     if(check_user_auth(UserAuth.user_manage)) {
-        menuRots.push({index:6, name:t("用户管理"), rto:"user_manager/",component: <User />})
+        menuRots.push({index:7, name:t("用户管理"), rto:"user_manager/",component: <User />})
     }
     if(check_user_auth(UserAuth.role_manage)) {
-        menuRots.push({index: 7, name:t("角色管理"),rto: "role_manager/",component: <Role />})
+        menuRots.push({index: 8, name:t("角色管理"),rto: "role_manager/",component: <Role />})
     }
 
 

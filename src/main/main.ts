@@ -46,6 +46,7 @@ import {ai_forward_middleware} from "./domain/ai_agent/ai.forward";
 import {GitController} from "./domain/file/git/git.controller";
 import {FirewallController} from "./domain/firewall/firewall.controller";
 import {MountController} from "./domain/mount/mount.controller";
+import {FileServerController} from "./domain/file_server/file_server.controller";
 import {BrowserProxyPortController} from "./domain/setting/browser_proxy_port.controller";
 import {control_env_https} from "../common/req/common.pojo";
 import {browserProxyPortService} from "./domain/setting/browser_proxy_port.service";
@@ -239,6 +240,7 @@ export async function start_main() {
             VirtualController, SettingController,
             SSHController, RdpController, VideoController,
             CryptoController, Ai_AgentController, TcpForwardController, GitController, FirewallController, MountController,
+            FileServerController,
             BrowserProxyPortController
         ],
         middlewares: [AuthMiddleware, GlobalErrorHandler],

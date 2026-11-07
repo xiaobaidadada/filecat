@@ -1,6 +1,6 @@
 {
   "name": "filecat",
-  "version": "7.23.1",
+  "version": "7.24.0",
   "description": "A self-hosted Web File browser and lightweight server management tool.",
   "author": "xiaobaidadada",
   "repository": {
@@ -45,7 +45,7 @@
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "better-sqlite3": "^12.6.2",
-    "node-libsmb2": "^1.1.1",
+    "node-libsmb2": "file:../node-libsmb2",
     "node-process-watcher": "^1.7.7"
   },
   "devDependencies": {
@@ -207,5 +207,8 @@
     "assets": [
       "build/**/**"
     ]
+  },
+  "dependencies": {
+    "webdav-server": "^2.6.3"
   }
 }
