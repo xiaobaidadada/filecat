@@ -115,6 +115,46 @@ function command_env_desc(command_env?: Record<string, string>): string {
     ].join("\n");
 }
 
+/**
+ * 从 LLM 错误响应体中提取错误码。
+ *
+ * 各家格式不统一（OpenAI `error.code`、部分网关 `code`、豆包 `error.type`），
+ * 这里按优先级取第一个非空字符串，取不到返回空串，由调用方决定怎么处理。
+ */
+export function parse_llm_error_code(text: string): string {
+    let json: any;
+    try {
+        json = JSON.parse(text);
+    } catch {
+        // 非 JSON 响应体不可能带结构化错误码，但可能是纯文本错误描述
+        return "";
+    }
+    const code = json?.error?.code ?? json?.code ?? json?.error?.type ?? json?.type;
+    return typeof code === "string" ? code : "";
+}
+
+/**
+ * 从 LLM 错误响应体中提取可读的错误描述。
+ *
+ * 取不到具体 message 时退回整段原文，保证用户至少能看到原始信息。
+ */
+export function extract_llm_error_message(text: string): string {
+    try {
+        const json = JSON.parse(text);
+        const msg = json?.error?.message ?? json?.message ?? json?.error?.msg;
+        if (typeof msg === "string" && msg) return msg;
+    } catch {
+        // 非 JSON 就是纯文本错误，直接返回原文
+    }
+    return text;
+}
+
+/**
+ * 上下文超限的错误码。各家命名基本一致，这里统一一个常量，
+ * 避免在判断处散落魔法字符串。
+ */
+const CONTEXT_LENGTH_EXCEEDED = "context_length_exceeded";
+
 export class ChatCore {
 
     /**
@@ -345,6 +385,52 @@ export class ChatCore {
         return result;
     }
 
+    /**
+     * 本轮内就地压缩消息（上下文超限时调用）。
+     *
+     * 与会话落盘阶段的 compressIfNeeded 有意区分开：
+     *  - compressIfNeeded 处理的是「已结束轮次」的历史，裁剪 + 提取长期记忆；
+     *  - 这里处理的是「尚未结束的本轮」workMessages，消息还没落盘，
+     *    只能就地改数组，且必须保留 system 消息（含系统提示词与工具定义约束）。
+     *
+     * 规则：system 之后的消息里，前 2/3 合并成一条 assistant 摘要，
+     * 保留最近 1/3 原样，这样刚刚产生的工具结果和结论不会丢。
+     *
+     * @param workMessages 本轮真正发给 LLM 的消息数组（会在原数组上修改）
+     */
+    private compress_in_turn_messages(workMessages: ai_agent_message_list) {
+        // system 消息（可能不止一条）必须保留，压缩只针对其后的会话内容
+        let head = 0;
+        while (head < workMessages.length && workMessages[head].role === "system") {
+            head++;
+        }
+        const body = workMessages.slice(head);
+        // 消息太少压了也没意义，直接返回
+        if (body.length < 3) return;
+
+        const compress_end = Math.floor(body.length * 2 / 3);
+        const dropped = body.slice(0, compress_end);
+        const kept = body.slice(compress_end);
+
+        // 摘要用文本形式呈现，并标注这是被压缩的历史，
+        // 让模型知道这段是概括而非逐字记录，避免它引述细节时出错。
+        const summary = dropped.map((m) => {
+            const text = getContentAsString(m.content);
+            const tool_info = m.tool_calls?.length
+                ? `[调用工具: ${m.tool_calls.map((t) => t.function?.name).filter(Boolean).join(", ")}]`
+                : "";
+            return `[${m.role}] ${text}${tool_info}`;
+        }).join("\n");
+
+        const summaryMessage: ai_agent_message_item = {
+            role: "assistant",
+            content: `（以下是本轮对话前段的压缩摘要，原始消息因上下文超限已被合并，细节可能不完整）\n${summary}`,
+        };
+
+        // 原数组就地替换，保证外部持有的 workMessages 引用仍然有效
+        workMessages.splice(head, body.length, summaryMessage, ...kept);
+    }
+
     public async chat(options: ChatOptions) {
         const {
             originMessages,
@@ -478,6 +564,8 @@ const workMessages: ai_agent_message_list = [
         let _interrupted: boolean = false
         /** 全局消息块序号：每次 AI 新产出（文本流 or 工具调用开始/结束）递增 */
         let globalChunkIndex = 0;
+        /** 本轮是否已因上下文超限做过压缩，防止无限重试 */
+        let context_compressed = false;
 
         // 幂等的结束通知：无论正常返回、中断还是异常退出，都确保只触发一次 on_end，
         // 避免 LLM abort / reader 永久挂起等原因导致前端收不到 ai_chat_end 而一直“输出中”。
@@ -522,7 +610,7 @@ const workMessages: ai_agent_message_list = [
             const toolCallMap = new Map<number, any>();
 
             //  调用 LLM（流式）
-            await this.callLLSync({
+            const llm_result = await this.callLLSync({
                 tools: finalTools,
                 config:config,
                 env:env,
@@ -610,6 +698,35 @@ const workMessages: ai_agent_message_list = [
                 if(loopEnv.max_call_num <= 0) {
                     config.model = loopEnv.init_model;
                 }
+            }
+
+            // ===== 上下文超限：压缩本轮消息后重试 =====
+            // 与 appendTurn 里的会话压缩不同：
+            //  - 那边是「跨轮」压缩，裁剪已落盘历史并提取长期记忆；
+            //  - 这里是「本轮」压缩，因为本轮还没结束、消息也还没落盘，
+            //    必须在 workMessages 里就地压缩，否则下一次请求仍然超限。
+            // 把本轮（system 之后）的消息中前面 2/3 合成一条摘要消息，
+            // 保留最近 1/3 原样，最大限度保留刚刚发生的事实与工具结果。
+            if (llm_result.error_code === CONTEXT_LENGTH_EXCEEDED) {
+                if (context_compressed) {
+                    // 已经压缩过还超限，说明剩余内容本身过长（如超大工具结果），
+                    // 不能再无限重试，直接按普通错误收尾。
+                    endOnce(true);
+                    return;
+                }
+                context_compressed = true;
+                // 上一次失败请求的 assistant 内容已经 push 进 workMessages，
+                // 但现在 assistantMessage 会被复用，先清空避免把错误文本带进下一轮
+                assistantMessage = {role: "assistant", content: "", tool_call_ends: []};
+                this.compress_in_turn_messages(workMessages);
+                // error_call 已经把中断标记置为 true，这里必须复位，
+                // 否则循环顶部的中断检查会直接收尾，压缩后的重试根本不会发出。
+                _interrupted = false;
+                on_msg({
+                    text: "\n\n[context_length_exceeded] 上下文超限，已压缩本轮前 2/3 的消息，正在重试...\n\n",
+                    chunk_index: globalChunkIndex
+                });
+                continue;
             }
 
             once_messages_list.push(assistantMessage);
@@ -800,7 +917,7 @@ const workMessages: ai_agent_message_list = [
             controller: AbortController,
             tools:ai_agent_params_type[]
         }
-    ) {
+    ): Promise<{ error_code?: string }> {
         const tools: ai_agent_params_type[] = [...ai_tools];
         if(props.env.open_pick_model) {
             tools.push(pick_model_schema)
@@ -858,13 +975,15 @@ const workMessages: ai_agent_message_list = [
 
             if (!res.ok) {
                 const text = await res.text();
+                // 错误统一交给外层处理，这里只负责把响应体原样带上，
+                // 让外层能拿到 code（如 context_length_exceeded）做对应补偿。
                 try {
                     const json = JSON.parse(text);
                     props.error_call(json.message || json.error?.message || text);
                 } catch {
                     props.error_call(text);
                 }
-                return;
+                return { error_code: parse_llm_error_code(text) };
             }
 
             const contentType = res.headers.get("content-type") || "";
@@ -874,6 +993,10 @@ const workMessages: ai_agent_message_list = [
             if (isSSE && res.body) {
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
+                // SSE 流内可能推 error 事件（如 context_length_exceeded），
+                // 用局部变量记录错误码，函数结束时统一返回给外层处理。
+                let sse_error_code: string | undefined;
+                let sse_error_text: string | undefined;
 
                 const parser = createParser({
                     onEvent: (event) => {
@@ -887,7 +1010,10 @@ const workMessages: ai_agent_message_list = [
                                     props.call_data(choice.delta??choice.message);
                                 }
                             } else if(json.error) {
-                                props.call_data(event.data);
+                                // SSE 流内 error：记录错误码和文本，交由外层统一处理
+                                //（上下文超限可由外层触发压缩重试，其他错误按普通异常上报）。
+                                sse_error_text = event.data;
+                                sse_error_code = parse_llm_error_code(event.data);
                             }
                             // const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
                             // if (message) {
@@ -919,13 +1045,19 @@ const workMessages: ai_agent_message_list = [
                 } finally {
                     parser.reset();
                 }
-                return;
+                // SSE 流内出现的 error 事件统一在这里上报给外层
+                if (sse_error_text !== undefined) {
+                    console.error("[LLM SSE] 服务端返回错误:", sse_error_text);
+                    props.error_call(extract_llm_error_message(sse_error_text));
+                }
+                return sse_error_code ? { error_code: sse_error_code } : {};
             }
 
             // --- 非 SSE 处理逻辑 ---
             const resultText = await res.text();
             const result = JSON.parse(resultText);
             props.call_data(result.choices[0].message);
+            return {};
 
         } catch (e: any) {
             console.log(`llm请求报错`,e)
@@ -935,6 +1067,9 @@ const workMessages: ai_agent_message_list = [
             } else {
                 props.error_call(e);
             }
+            // 网络层异常（含超时/连接被重置）也可能带上下文超限的错误体，
+            // 异常对象的 message 里同样尝试解析一次。
+            return { error_code: parse_llm_error_code(String(e?.message ?? "")) };
         }
     }
 
