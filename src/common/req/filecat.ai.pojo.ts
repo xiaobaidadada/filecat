@@ -168,6 +168,22 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra {
 
     /** 是否允许 AI 通过 set_command_env 工具修改上面的 command_env */
     command_env_tool = false;
+
+    /**
+     * 是否在请求里带上 stream_options.include_usage。
+     *
+     * 开启后 OpenAI 风格的接口会在流末尾返回 usage 字段，
+     * 其中包含 prompt_tokens_details.cached_tokens（命中缓存的输入 token）
+     * 和 completion_tokens_details.reasoning_tokens（推理消耗的 token）。
+     * 有这两个数据就不必再用 estimateTokenCount 估算，统计更准确。
+     *
+     * 注意：非 OpenAI 风格的接口（部分国产模型）传了可能报参数错误，
+     * 所以默认关闭，由用户按自己的服务商决定是否开启。
+     */
+    usage_request_param = false;
+
+    /** 是否关闭 token 数量统计。开启后不再估算 token，usage_stats 也不累加。 */
+    close_token_count = false;
 }
 
 export const ai_agent_item_dotenv_default = `
@@ -207,6 +223,14 @@ allow_exec_cmd_directly: false
 max_recent_messages: 12
 compress_message_count: 16
 max_tool_content_chars: 200
+
+# 是否在请求里带上 stream_options.include_usage，让接口返回 usage 数据
+# 开启后可拿到 cached_tokens / reasoning_tokens，token 统计更准确
+# 非 OpenAI 风格的接口传了可能报错，按服务商决定
+# usage_request_param: true
+
+# 是否关闭 token 数量统计（不再估算 token，usage_stats 不累加）
+# close_token_count: true
 
 # ===== 模型类型（request_type）=====
 # 默认 completions，可选值：

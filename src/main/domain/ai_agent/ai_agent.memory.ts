@@ -678,28 +678,35 @@ export class AiAgentMemoryService {
         session.updated_at = Date.now();
 
         // 预计算消息 token 并写入字段，持久化后压缩判断直接读
-        const [userTokens, assistantTokens] = await Promise.all([
-            estimateTokenCount(this.getMessageText(userMessage)),
-            estimateTokenCount(this.getMessageText(assistantMessage)),
-        ]);
-        userMessage.token_count = userTokens;
-        assistantMessage.token_count = assistantTokens;
+        // close_token_count 开启后完全跳过统计
+        if (!env?.close_token_count) {
+            // turnStats 有值说明开启了 usage_request_param 且服务商返回了真实 usage，
+            // 此时用真实数据；否则退回本地估算。
+            if (turnStats?.input_tokens === undefined) {
+                userMessage.token_count = await estimateTokenCount(this.getMessageText(userMessage));
+            }
+            if (turnStats?.output_tokens === undefined) {
+                assistantMessage.token_count = await estimateTokenCount(this.getMessageText(assistantMessage));
+            }
+        }
 
         // 更新 token 消耗统计
-        if (!session.usage_stats) {
-            session.usage_stats = new ai_agent_usage_stats();
+        if (!env?.close_token_count) {
+            if (!session.usage_stats) {
+                session.usage_stats = new ai_agent_usage_stats();
+            }
+            const stats = session.usage_stats;
+            stats.turns = (stats.turns || 0) + 1;
+
+            // 优先用 turnStats 的真实数据，没有才用本地估算值
+            const inputTokens = turnStats?.input_tokens ?? userMessage.token_count ?? 0;
+            const outputTokens = turnStats?.output_tokens ?? assistantMessage.token_count ?? 0;
+
+            stats.input_tokens = (stats.input_tokens || 0) + inputTokens;
+            stats.recent_input_tokens = inputTokens;
+            stats.output_tokens = (stats.output_tokens || 0) + outputTokens;
+            stats.recent_output_tokens = outputTokens;
         }
-        const stats = session.usage_stats;
-        stats.turns = (stats.turns || 0) + 1;
-
-        // 如果传入了 turnStats，使用传入的值；否则使用自动计算的值
-        const inputTokens = turnStats?.input_tokens ?? userTokens;
-        const outputTokens = turnStats?.output_tokens ?? assistantTokens;
-
-        stats.input_tokens = (stats.input_tokens || 0) + inputTokens;
-        stats.recent_input_tokens = inputTokens;
-        stats.output_tokens = (stats.output_tokens || 0) + outputTokens;
-        stats.recent_output_tokens = outputTokens;
 
         if (!session.title) {
             session.title = this.createTitle(getContentAsString(userMessage.content));

@@ -988,8 +988,8 @@ export class Ai_agentService {
                         _interrupted: stats?._interrupted,
                         elapsed_ms,
                     };
-                    // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, undefined, ai_agentService.opened_ai_config_env).catch(console.error);
+                    // 传真实 token 用量，没有时由 appendTurn 内部自动估算
+                    aiAgentMemoryService.appendTurn(userId, session.id, latestUserMessage, assistantMessage, stats?.token_stats, ai_agentService.opened_ai_config_env).catch(console.error);
                 },
                 token,
                 sys_prompt_id,

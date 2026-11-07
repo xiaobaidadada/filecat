@@ -49,7 +49,12 @@ export interface ChatMsgPayload {
     notice?: boolean;
 }
 
-export interface on_end_param { once_messages_list?: ai_agent_message_item[], _interrupted?: boolean }
+export interface on_end_param {
+    once_messages_list?: ai_agent_message_item[],
+    _interrupted?: boolean,
+    /** 本轮真实 token 用量（仅有 usage_request_param 时存在） */
+    token_stats?: { input_tokens?: number; output_tokens?: number }
+}
 
 /**
  * 把工具调用结果包装成统一的 JSON 结构。
@@ -566,6 +571,12 @@ const workMessages: ai_agent_message_list = [
         let globalChunkIndex = 0;
         /** 本轮是否已因上下文超限做过压缩，防止无限重试 */
         let context_compressed = false;
+        /**
+         * 本轮累计的真实 token 用量。
+         * 一次对话可能请求多次 LLM（工具调用循环），每次的 usage 都要累加。
+         * 只有开启 usage_request_param 且服务商确实返回 usage 才有值。
+         */
+        const token_stats: { input_tokens?: number; output_tokens?: number } = {};
 
         // 幂等的结束通知：无论正常返回、中断还是异常退出，都确保只触发一次 on_end，
         // 避免 LLM abort / reader 永久挂起等原因导致前端收不到 ai_chat_end 而一直“输出中”。
@@ -574,7 +585,7 @@ const workMessages: ai_agent_message_list = [
             if (ended) return;
             ended = true;
             controller.signal.removeEventListener('abort', onAbort);
-            on_end({ once_messages_list, _interrupted: interrupted });
+            on_end({ once_messages_list, _interrupted: interrupted, token_stats });
             // 统一清理本会话各工具留下的运行时资源（命令、定时器、文件读取状态等）。
             // 这里不 await：endOnce 是同步函数，清理失败也不应影响对话结束通知。
             cleanup_session(session_id).catch((e) => {
@@ -727,6 +738,17 @@ const workMessages: ai_agent_message_list = [
                     chunk_index: globalChunkIndex
                 });
                 continue;
+            }
+
+            // 累积真实 token 用量（开启 usage_request_param 且服务商返回 usage 时才有）
+            if (llm_result.usage) {
+                const u = llm_result.usage;
+                // prompt_tokens / completion_tokens 是 OpenAI 标准字段，
+                // 部分服务商只在 *_details 里给细分数据，这里兼容两种写法。
+                const input = u.prompt_tokens ?? 0;
+                const output = u.completion_tokens ?? 0;
+                token_stats.input_tokens = (token_stats.input_tokens ?? 0) + input;
+                token_stats.output_tokens = (token_stats.output_tokens ?? 0) + output;
             }
 
             once_messages_list.push(assistantMessage);
@@ -917,7 +939,7 @@ const workMessages: ai_agent_message_list = [
             controller: AbortController,
             tools:ai_agent_params_type[]
         }
-    ): Promise<{ error_code?: string }> {
+    ): Promise<{ error_code?: string; usage?: any }> {
         const tools: ai_agent_params_type[] = [...ai_tools];
         if(props.env.open_pick_model) {
             tools.push(pick_model_schema)
@@ -965,6 +987,13 @@ const workMessages: ai_agent_message_list = [
             console.error("解析 ai_config.json_params 失败", err);
         }
 
+        // 开启后让接口在流末尾返回 usage，含 cached_tokens / reasoning_tokens，
+        // 有了真实数据就不必再估算 token。
+        // 放在 json_params 合并之后，避免被用户自定义参数覆盖掉。
+        if (props.env.usage_request_param) {
+            json_body.stream_options = {...(json_body.stream_options ?? {}), include_usage: true};
+        }
+
         try {
             const res = await llmPostStream(
                 json_body,
@@ -997,6 +1026,8 @@ const workMessages: ai_agent_message_list = [
                 // 用局部变量记录错误码，函数结束时统一返回给外层处理。
                 let sse_error_code: string | undefined;
                 let sse_error_text: string | undefined;
+                // 流末尾的 usage（含 cached_tokens / reasoning_tokens）
+                let sse_usage: any;
 
                 const parser = createParser({
                     onEvent: (event) => {
@@ -1014,6 +1045,12 @@ const workMessages: ai_agent_message_list = [
                                 //（上下文超限可由外层触发压缩重试，其他错误按普通异常上报）。
                                 sse_error_text = event.data;
                                 sse_error_code = parse_llm_error_code(event.data);
+                            }
+                            // OpenAI 风格接口在流末尾单独发一个携带 usage 的 chunk
+                            //（此时 choices 为空数组）。开启 usage_request_param 后
+                            // 用这里的真实数据统计 token，比本地估算准确。
+                            if (json.usage) {
+                                sse_usage = json.usage;
                             }
                             // const message = json.choices?.[0]?.delta ?? json.choices?.[0]?.message;
                             // if (message) {
@@ -1050,7 +1087,7 @@ const workMessages: ai_agent_message_list = [
                     console.error("[LLM SSE] 服务端返回错误:", sse_error_text);
                     props.error_call(extract_llm_error_message(sse_error_text));
                 }
-                return sse_error_code ? { error_code: sse_error_code } : {};
+                return sse_error_code ? { error_code: sse_error_code, usage: sse_usage } : { usage: sse_usage };
             }
 
             // --- 非 SSE 处理逻辑 ---
