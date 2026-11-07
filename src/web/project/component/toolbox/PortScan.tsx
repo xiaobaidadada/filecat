@@ -121,7 +121,7 @@ export function PortScan() {
     return (
         <Dashboard>
             <Row>
-                <Column>
+                <Column widthPer={40} maxWidth={"35rem"}>
                     <Card title={t("TCP ")+t('端口扫描')}
                           rightTopCom={
                               <span>

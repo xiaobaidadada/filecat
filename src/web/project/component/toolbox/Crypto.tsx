@@ -76,7 +76,7 @@ export function Crypto() {
             </HeaderPortal>
         <Dashboard>
             <Row>
-                <Column>
+                <Column widthPer={50} maxWidth={"30rem"}>
                     <Card title={t('公钥')} rightTopCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (publicKey) {
                             copyToClipboard(publicKey);
@@ -100,7 +100,7 @@ export function Crypto() {
                         />
                     </Card>
                 </Column>
-                <Column>
+                <Column widthPer={50} maxWidth={"30rem"}>
                     <Card title={t('私钥')} rightTopCom={<ActionButton title={t('复制')} icon={"copy_all"} onClick={()=>{
                         if (privateKey) {
                             copyToClipboard(privateKey);
