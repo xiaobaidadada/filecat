@@ -1,6 +1,7 @@
 import {Body, JsonController, Post, Req} from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {userService} from "../user/user.service";
+import {UserAuth} from "../../../common/req/user.req";
 import {FileServerItem, FileServerType} from "./file_server.pojo";
 import {fileServerService} from "./file_server.service";
 
@@ -23,22 +24,14 @@ export interface FileServerSaveReq {
     smb_hostname?: string;
 }
 
-/** 取当前请求的用户 id */
-function current_user_id(r: any): string | undefined {
-    try {
-        return userService.get_user_info_by_token(r.headers.authorization)?.user_id;
-    } catch (e) {
-        return undefined;
-    }
-}
-
-/** 是否 root 账号 */
-function is_root_user(r: any): boolean {
-    try {
-        return Boolean(userService.get_user_info_by_token(r.headers.authorization)?.is_root);
-    } catch (e) {
-        return false;
-    }
+/**
+ * 校验请求方是否拥有「文件服务」权限。
+ *
+ * 与项目其他 controller 保持一致的写法：直接调 have_user_auth，
+ * root 账号自动放行，无权限时抛 "no permission"。
+ */
+function assert_file_server_auth(r: any) {
+    userService.have_user_auth(r.headers.authorization, UserAuth.file_server);
 }
 
 /**
@@ -71,10 +64,8 @@ export class FileServerController {
     /** 列表 */
     @Post("/list")
     async list(@Req() r) {
-        const uid = current_user_id(r);
-        const root = is_root_user(r);
+        assert_file_server_auth(r);
         const list = fileServerService.list()
-            .filter(v => root || v.user_id === uid)
             .map(v => ({...mask_secret(v), ...fileServerService.state(v.id)}));
         return Sucess(list);
     }
@@ -82,6 +73,7 @@ export class FileServerController {
     /** 新增 */
     @Post("/add")
     async add(@Body() body: FileServerSaveReq, @Req() r) {
+        assert_file_server_auth(r);
         const item = fileServerService.add({
             type: body.type as FileServerType,
             note: body.note ?? "",
@@ -95,7 +87,6 @@ export class FileServerController {
             webdav_password: body.webdav_password,
             smb_share_name: body.smb_share_name,
             smb_hostname: body.smb_hostname,
-            user_id: current_user_id(r),
         });
         return Sucess(mask_secret(item));
     }
@@ -106,6 +97,7 @@ export class FileServerController {
      */
     @Post("/update")
     async update(@Body() body: FileServerSaveReq, @Req() r) {
+        assert_file_server_auth(r);
         if (!body.id) {
             throw new Error("id is required");
         }
@@ -149,6 +141,7 @@ export class FileServerController {
     /** 删除 */
     @Post("/delete")
     async remove(@Body() body: {id: string}, @Req() r) {
+        assert_file_server_auth(r);
         await fileServerService.remove(body.id);
         return Sucess(true);
     }
@@ -156,6 +149,7 @@ export class FileServerController {
     /** 启动 */
     @Post("/start")
     async start(@Body() body: {id: string}, @Req() r) {
+        assert_file_server_auth(r);
         await fileServerService.start(body.id);
         return Sucess(fileServerService.state(body.id));
     }
@@ -163,6 +157,7 @@ export class FileServerController {
     /** 停止 */
     @Post("/stop")
     async stop(@Body() body: {id: string}, @Req() r) {
+        assert_file_server_auth(r);
         await fileServerService.stop(body.id);
         return Sucess(fileServerService.state(body.id));
     }

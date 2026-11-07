@@ -51,8 +51,6 @@ export interface FileServerItem {
     /** 服务端显示的主机名 */
     smb_hostname?: string;
 
-    /** 创建者用户 id */
-    user_id?: string;
     /** 创建时间 */
     created_at?: number;
 }

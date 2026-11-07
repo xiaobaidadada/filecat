@@ -77,6 +77,7 @@ export function Permission(props:{
                 // md 编辑器全局设置（正文宽度/字号/行高等），影响所有用户
                 { title: t("md_set"), permission: UserAuth.md_editor_setting },
                 { title: t("目录挂载"), permission: UserAuth.file_mount },
+                { title: t("文件服务"), permission: UserAuth.file_server },
             ]
         },
         {

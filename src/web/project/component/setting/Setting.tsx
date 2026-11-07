@@ -32,6 +32,8 @@ export default function  Settings() {
     }
     if(check_user_auth(UserAuth.file_mount)) {
         menuRots.push({index: 5, name:t("网盘挂载"),rto: "mount_setting/",component: <MountSetting />})
+    }
+    if(check_user_auth(UserAuth.file_server)) {
         menuRots.push({index: 6, name:t("文件服务"),rto: "file_server_setting/",component: <FileServerSetting />})
     }
     if(check_user_auth(UserAuth.user_manage)) {
