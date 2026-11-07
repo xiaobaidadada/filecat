@@ -327,16 +327,11 @@ export function DeveloperTool() {
       <Row>
         <Column widthPer={50} maxWidth={'30rem'}>
           <TimeCard/>
-        </Column>
-        <Column widthPer={50} maxWidth={'30rem'}>
-          <RadixCard/>
-        </Column>
-        <Column widthPer={50} maxWidth={'30rem'}>
           <RandomCard/>
         </Column>
-      </Row>
-      <Row>
+
         <Column widthPer={50} maxWidth={'30rem'}>
+          <RadixCard/>
           <ColorCard/>
         </Column>
       </Row>
