@@ -45,7 +45,7 @@
     "@xiaobaidadada/node-tuntap2-wintun": "^3.0.2",
     "@xiaobaidadada/ssh2-prebuilt": "^1.16.0",
     "better-sqlite3": "^12.6.2",
-    "node-libsmb2": "file:../node-libsmb2",
+    "node-libsmb2": "1.2.0",
     "node-process-watcher": "^1.7.7"
   },
   "devDependencies": {
