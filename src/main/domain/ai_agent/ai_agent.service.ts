@@ -1022,8 +1022,14 @@ export class Ai_agentService {
                     // 已有正文时追加错误说明，避免错误信息覆盖用户已看到的内容
                     content: partialText ? `${partialText}\n\n[error] ${errorMsg}` : errorMsg,
                 };
-                // 不传 turnStats，让 appendTurn 内部自动计算 token（异步，不阻塞前端）
-                await aiAgentMemoryService.append_message_to_session(userId, session.id, errMsg);
+                await aiAgentMemoryService.appendTurn(
+                    userId,
+                    session.id,
+                    latestUserMessage,
+                    errMsg,
+                    undefined,
+                    ai_agentService.opened_ai_config_env,
+                );
             } catch (e) {
                 console.error("保存错误会话失败", e);
             }

@@ -381,7 +381,7 @@ export class ChatCore {
         const env = aiEnv ?? ai_agentService.opened_ai_config_env;
 
         if (!config) {
-            throw new Error("api 没有设置，请设置诸如豆包、openai 的 model api");
+            throw new Error("API is not configured. Please set up a model API such as Doubao or OpenAI.");
         }
         let user_local_file_prompt = ""
         if(env.options_local_file_path_prompt_list?.length) {

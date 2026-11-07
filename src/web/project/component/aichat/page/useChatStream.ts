@@ -236,12 +236,26 @@ export function useChatStream(opts: UseChatStreamOptions) {
             setSending(prev => prev === sessionId ? null : prev);
             const errText = "AI request error: " + (ctx.message || '未知错误');
             drop_notice();
-            const last = [...newMessages].reverse().find(m => m.sender === 'bot');
-            if (last) {
-                last.text = last.text ? `${last.text}\n\n${errText}` : errText;
-                last.is_loading = false;
+            const producedOnce: any[] = ctx.once_messages_list ?? [];
+            const producedText = producedOnce
+                .map(it => (typeof it?.content === 'string' ? it.content : ''))
+                .filter(Boolean)
+                .join("\n\n");
+            const fullText = producedText ? `${producedText}\n\n${errText}` : errText;
+            const userIdx = newMessages.findIndex(m => m.id === userFinalId);
+            if (userIdx !== -1) {
+                // 保留本轮已流式创建的 bot 片段，错误说明接到最后一个片段上；
+                // 若本轮还没有任何 bot 片段，就在 user 后面补一个。
+                const tail = newMessages.slice(userIdx + 1);
+                const lastBot = [...tail].reverse().find(m => m.sender === 'bot');
+                if (lastBot) {
+                    lastBot.text = lastBot.text ? `${lastBot.text}\n\n${errText}` : errText;
+                    lastBot.is_loading = false;
+                } else {
+                    newMessages.push({ id: userFinalId + 1, sender: 'bot', text: fullText });
+                }
             } else {
-                newMessages.push({ id: userFinalId + 1, sender: 'bot', text: errText });
+                newMessages.push({ id: userFinalId + 1, sender: 'bot', text: fullText });
             }
             if (getActiveSessionId() === sessionId) {
                 // 错误路径同样按最终位置重算 id，与正常收尾保持一致，避免气泡重挂
